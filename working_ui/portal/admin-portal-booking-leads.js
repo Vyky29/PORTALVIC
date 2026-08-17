@@ -27,7 +27,8 @@
   var state = {
     /* Default portal-only — email interest import is outreach list, not visits. */
     filter: "all",
-    origin: "portal",
+    origin: "all",
+    trackFilter: "all",
     q: "",
     leads: [],
     meta: {},
@@ -35,6 +36,15 @@
     error: "",
     selected: {}, // email -> true
   };
+
+  var TRACK_STATUSES = [
+    { value: "new", label: "New" },
+    { value: "following_up", label: "Following up" },
+    { value: "waiting", label: "Waiting" },
+    { value: "not_booking", label: "Not booking" },
+    { value: "booked", label: "Booked" },
+    { value: "closed", label: "Closed" },
+  ];
 
   function configure(options) {
     if (!options) return;
@@ -141,6 +151,68 @@
     return "info";
   }
 
+  function trackStatusLabel(raw) {
+    var s = String(raw || "new").toLowerCase();
+    for (var i = 0; i < TRACK_STATUSES.length; i++) {
+      if (TRACK_STATUSES[i].value === s) return TRACK_STATUSES[i].label;
+    }
+    return String(raw || "New").replace(/_/g, " ");
+  }
+
+  function trackSelectHtml(r) {
+    var cur = String((r && r.track_status) || "new").toLowerCase();
+    var opts = TRACK_STATUSES.map(function (t) {
+      return (
+        '<option value="' +
+        esc(t.value) +
+        '"' +
+        (cur === t.value ? " selected" : "") +
+        ">" +
+        esc(t.label) +
+        "</option>"
+      );
+    }).join("");
+    return (
+      '<select class="inp bk-lead-track" data-id="' +
+      esc(r.id) +
+      '" style="max-width:9.5rem;min-width:0;font-size:12px" title="Office track status">' +
+      opts +
+      "</select>" +
+      (r.outreach_joined_at
+        ? '<div class="muted" style="font-size:10px;margin-top:3px">On outreach list</div>'
+        : cur !== "booked"
+          ? '<div class="muted" style="font-size:10px;margin-top:3px">Will join outreach</div>'
+          : "")
+    );
+  }
+
+  async function upsertLead(payload) {
+    var token = await portalAuthToken();
+    if (!token) return { error: "session_expired" };
+    var res = await fetch(
+      supabaseBase() + "/functions/v1/portal-admin-booking-leads-upsert",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+          apikey: cfg.getAnonKey(),
+        },
+        body: JSON.stringify(payload || {}),
+      }
+    );
+    var j = null;
+    try {
+      j = await res.json();
+    } catch (_e) {
+      j = null;
+    }
+    if (!res.ok || !j || !j.ok) {
+      return { error: (j && j.error) || "request_failed" };
+    }
+    return { lead: j.lead, outreach_joined: !!j.outreach_joined };
+  }
+
   async function fetchLeads() {
     var token = await portalAuthToken();
     if (!token) return { error: "session_expired", leads: [] };
@@ -159,7 +231,8 @@
             : state.filter,
         booking_status:
           state.filter === "reg_started" ? "registration_submitted" : "all",
-        origin: state.origin || "portal",
+        track_status: state.trackFilter || "all",
+        origin: state.origin || "all",
         q: state.q,
         limit: limit,
       }),
@@ -182,12 +255,11 @@
     var checked = em && state.selected[em] ? " checked" : "";
     var verified = imported
       ? chip("Import — not a portal visit", "warn")
-      : r.email_verified_at
-        ? chip("Verified", "ok")
-        : chip("Code sent / pending", "pend");
-    var services = Array.isArray(r.services_viewed) && r.services_viewed.length
-      ? esc(r.services_viewed.slice(0, 4).join(", "))
-      : '<span class="muted">—</span>';
+      : String((r.source || "")).toLowerCase().includes("office potential")
+        ? chip("Office potential", "info")
+        : r.email_verified_at
+          ? chip("Verified", "ok")
+          : chip("Code sent / pending", "pend");
     var formBits = [];
     if (r.form_pdf_url) {
       formBits.push(
@@ -222,6 +294,12 @@
       : '<div class="muted" style="font-size:11px;margin-top:2px;overflow-wrap:break-word">' +
         esc(r.source || "Booking Page") +
         "</div>";
+    var activity =
+      String(r.activity_interest || "").trim() ||
+      (Array.isArray(r.services_viewed) && r.services_viewed.length
+        ? r.services_viewed.slice(0, 3).join(", ")
+        : "");
+    var enquiry = String(r.enquiry_notes || "").trim();
     return (
       "<tr>" +
       '<td style="width:2.2rem;vertical-align:middle">' +
@@ -242,20 +320,22 @@
       "</td>" +
       '<td style="overflow-wrap:anywhere;min-width:0">' +
       esc(r.email || "—") +
-      "</td>" +
-      '<td style="min-width:0;overflow-wrap:break-word">' +
+      '<div class="muted" style="font-size:11px;margin-top:2px">' +
       esc(r.mobile || "—") +
+      "</div></td>" +
+      '<td style="min-width:0;max-width:10rem;overflow-wrap:break-word;font-size:12px">' +
+      (activity ? esc(activity) : '<span class="muted">—</span>') +
+      "</td>" +
+      '<td style="min-width:0;max-width:12rem;overflow-wrap:break-word;font-size:12px">' +
+      (enquiry ? esc(enquiry.slice(0, 160)) : '<span class="muted">—</span>') +
+      "</td>" +
+      '<td style="min-width:0">' +
+      trackSelectHtml(r) +
       "</td>" +
       "<td>" +
       chip(clientStatusLabel(r.client_status), statusTone(r.client_status)) +
-      "</td>" +
-      "<td>" +
-      chip(String(r.booking_status || "").replace(/_/g, " "), statusTone(r.booking_status)) +
       '<div style="margin-top:4px">' +
-      chip(
-        String(r.registration_status || "").replace(/_/g, " "),
-        String(r.registration_status || "").toLowerCase() === "submitted" ? "ok" : "info"
-      ) +
+      chip(String(r.booking_status || "").replace(/_/g, " "), statusTone(r.booking_status)) +
       "</div></td>" +
       "<td>" +
       verified +
@@ -266,13 +346,43 @@
       "</div>" +
       formSub +
       "</td>" +
-      '<td style="min-width:0;overflow-wrap:break-word">' +
-      services +
-      "</td>" +
       "<td>" +
       esc(formatWhen(r.last_activity_at || r.created_at)) +
       "</td>" +
       "</tr>"
+    );
+  }
+
+  function potentialFormHtml() {
+    var trackOpts = TRACK_STATUSES.map(function (t) {
+      return (
+        '<option value="' +
+        esc(t.value) +
+        '"' +
+        (t.value === "new" ? " selected" : "") +
+        ">" +
+        esc(t.label) +
+        "</option>"
+      );
+    }).join("");
+    return (
+      '<div class="card" style="margin:0 0 14px">' +
+      '<div class="card-pad" style="min-width:0">' +
+      '<p style="margin:0 0 8px;font-weight:700">Add / update potential client</p>' +
+      '<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;overflow-wrap:break-word">' +
+      "Track email, phone, enquiry, activity and status. If status is anything other than <strong>Booked</strong>, their email joins the marketing outreach list automatically." +
+      "</p>" +
+      '<div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;margin:0">' +
+      '<input class="inp" id="bkPotName" type="text" placeholder="Parent / carer name" style="max-width:180px;min-width:0" />' +
+      '<input class="inp" id="bkPotEmail" type="email" placeholder="Email *" style="max-width:220px;min-width:0" />' +
+      '<input class="inp" id="bkPotPhone" type="tel" placeholder="Phone" style="max-width:150px;min-width:0" />' +
+      '<input class="inp" id="bkPotActivity" type="text" placeholder="Activity (e.g. Aquatic Wed)" style="max-width:200px;min-width:0" />' +
+      '<select class="inp" id="bkPotStatus" style="max-width:150px;min-width:0">' +
+      trackOpts +
+      "</select>" +
+      '<input class="inp" id="bkPotEnquiry" type="text" placeholder="Enquiry / notes" style="flex:1 1 220px;min-width:0;max-width:28rem" />' +
+      '<button type="button" class="btn btn--pri btn--sm" id="bkPotSave">Save potential</button>' +
+      "</div></div></div>"
     );
   }
 
@@ -352,30 +462,60 @@
           ").</td></tr>"
         : rows.length
           ? rows.map(rowHtml).join("")
-          : '<tr><td colspan="10" class="muted">No portal OTP leads match this filter. Try <strong>All origins</strong> or <strong>Email interest import</strong> for outreach lists.</td></tr>';
+          : '<tr><td colspan="10" class="muted">No leads match this filter. Try <strong>All origins</strong>, <strong>Outreach list</strong>, or add a potential client above.</td></tr>';
+
+    var trackFilterOpts = [
+      { value: "all", label: "All track statuses" },
+      { value: "outreach", label: "On marketing outreach" },
+    ]
+      .concat(TRACK_STATUSES)
+      .map(function (t) {
+        var v = t.value;
+        var lab = t.label || trackStatusLabel(v);
+        return (
+          '<option value="' +
+          esc(v) +
+          '"' +
+          (state.trackFilter === v ? " selected" : "") +
+          ">" +
+          esc(lab) +
+          "</option>"
+        );
+      })
+      .join("");
 
     host.innerHTML =
+      potentialFormHtml() +
       clarifyBanner(meta) +
       selectionBarHtml() +
       '<div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px">' +
-      '<input class="inp" id="bkLeadSearch" type="search" placeholder="Search name, email, phone…" value="' +
+      '<input class="inp" id="bkLeadSearch" type="search" placeholder="Search name, email, phone, enquiry…" value="' +
       esc(state.q) +
       '" style="max-width:260px;min-width:0" />' +
       '<select class="inp" id="bkLeadOrigin" style="max-width:260px;min-width:0" title="Portal visits vs email interest import">' +
+      '<option value="all"' +
+      (state.origin === "all" ? " selected" : "") +
+      ">Origin: All</option>" +
+      '<option value="potential"' +
+      (state.origin === "potential" ? " selected" : "") +
+      ">Origin: Office potential clients</option>" +
+      '<option value="outreach"' +
+      (state.origin === "outreach" ? " selected" : "") +
+      ">Origin: Marketing outreach list</option>" +
       '<option value="portal"' +
       (state.origin === "portal" ? " selected" : "") +
       ">Origin: Portal OTP only</option>" +
       '<option value="email_interest"' +
       (state.origin === "email_interest" ? " selected" : "") +
-      ">Origin: Email interest import</option>" +
-      '<option value="all"' +
-      (state.origin === "all" ? " selected" : "") +
-      ">Origin: All (includes import)</option>" +
+      ">Origin: Email interest + outreach</option>" +
+      "</select>" +
+      '<select class="inp" id="bkLeadTrackFilter" style="max-width:220px;min-width:0">' +
+      trackFilterOpts +
       "</select>" +
       '<select class="inp" id="bkLeadFilter" style="max-width:220px;min-width:0">' +
       '<option value="all"' +
       (state.filter === "all" ? " selected" : "") +
-      ">All statuses</option>" +
+      ">All client statuses</option>" +
       '<option value="prospective"' +
       (state.filter === "prospective" ? " selected" : "") +
       ">Prospective</option>" +
@@ -413,7 +553,7 @@
       '<table class="tbl tbl--center tbl--dense" id="bkLeadTable">' +
       "<thead><tr>" +
       '<th style="width:2.2rem" title="Select"></th>' +
-      "<th>Parent / carer</th><th>Email</th><th>Phone</th><th>Client</th><th>Booking / reg</th><th>OTP</th><th>Form PDF</th><th>Services viewed</th><th>Last activity</th>" +
+      "<th>Parent / carer</th><th>Email / phone</th><th>Activity</th><th>Enquiry</th><th>Track status</th><th>Portal status</th><th>Verify</th><th>Forms</th><th>Updated</th>" +
       "</tr></thead><tbody>" +
       body +
       "</tbody></table></div></div>";
@@ -519,7 +659,9 @@
     var search = host.querySelector("#bkLeadSearch");
     var filter = host.querySelector("#bkLeadFilter");
     var origin = host.querySelector("#bkLeadOrigin");
+    var trackFilter = host.querySelector("#bkLeadTrackFilter");
     var refresh = host.querySelector("#bkLeadRefresh");
+    var potSave = host.querySelector("#bkPotSave");
     if (search) {
       search.addEventListener("keydown", function (ev) {
         if (ev.key === "Enter") {
@@ -534,7 +676,14 @@
     }
     if (origin) {
       origin.addEventListener("change", function () {
-        state.origin = String(origin.value || "portal");
+        state.origin = String(origin.value || "all");
+        state.selected = {};
+        void reload(host);
+      });
+    }
+    if (trackFilter) {
+      trackFilter.addEventListener("change", function () {
+        state.trackFilter = String(trackFilter.value || "all");
         state.selected = {};
         void reload(host);
       });
@@ -551,6 +700,88 @@
         void reload(host);
       });
     }
+    if (potSave) {
+      potSave.addEventListener("click", function () {
+        void (async function () {
+          var nameEl = host.querySelector("#bkPotName");
+          var emailEl = host.querySelector("#bkPotEmail");
+          var phoneEl = host.querySelector("#bkPotPhone");
+          var actEl = host.querySelector("#bkPotActivity");
+          var stEl = host.querySelector("#bkPotStatus");
+          var enqEl = host.querySelector("#bkPotEnquiry");
+          var email = String((emailEl && emailEl.value) || "")
+            .trim()
+            .toLowerCase();
+          if (!email || email.indexOf("@") < 0) {
+            cfg.toast("Email is required.");
+            return;
+          }
+          potSave.disabled = true;
+          var out = await upsertLead({
+            parent_name: String((nameEl && nameEl.value) || "").trim(),
+            email: email,
+            mobile: String((phoneEl && phoneEl.value) || "").trim(),
+            activity_interest: String((actEl && actEl.value) || "").trim(),
+            track_status: String((stEl && stEl.value) || "new"),
+            enquiry_notes: String((enqEl && enqEl.value) || "").trim(),
+          });
+          potSave.disabled = false;
+          if (out.error) {
+            cfg.toast("Could not save: " + out.error);
+            return;
+          }
+          cfg.toast(
+            out.outreach_joined
+              ? "Saved — email on marketing outreach (status is not Booked)."
+              : "Saved as Booked."
+          );
+          if (nameEl) nameEl.value = "";
+          if (emailEl) emailEl.value = "";
+          if (phoneEl) phoneEl.value = "";
+          if (actEl) actEl.value = "";
+          if (enqEl) enqEl.value = "";
+          if (stEl) stEl.value = "new";
+          state.origin = "potential";
+          void reload(host);
+        })();
+      });
+    }
+    host.querySelectorAll(".bk-lead-track").forEach(function (sel) {
+      sel.addEventListener("change", function () {
+        void (async function () {
+          var id = String(sel.getAttribute("data-id") || "").trim();
+          var lead = (state.leads || []).find(function (r) {
+            return String(r.id) === id;
+          });
+          if (!lead || !lead.email) {
+            cfg.toast("Missing lead email.");
+            return;
+          }
+          sel.disabled = true;
+          var out = await upsertLead({
+            id: id,
+            email: emailKey(lead),
+            parent_name: String(lead.parent_name || "").trim(),
+            mobile: String(lead.mobile || "").trim(),
+            track_status: String(sel.value || "new"),
+            enquiry_notes: String(lead.enquiry_notes || "").trim(),
+            activity_interest: String(lead.activity_interest || "").trim(),
+          });
+          sel.disabled = false;
+          if (out.error) {
+            cfg.toast("Status update failed: " + out.error);
+            void reload(host);
+            return;
+          }
+          cfg.toast(
+            out.outreach_joined
+              ? "Status updated — on outreach list."
+              : "Status updated (Booked)."
+          );
+          void reload(host);
+        })();
+      });
+    });
 
     host.querySelectorAll(".bk-lead-cb").forEach(function (cb) {
       cb.addEventListener("change", function () {
@@ -687,9 +918,10 @@
     return (
       '<h1 class="page-title">Enquiries &amp; intake</h1>' +
       '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">' +
-      "Portal OTP contacts and the email-interest outreach list. " +
-      "Tick people who viewed services or existing clients, then <strong>Send via Family broadcast</strong> (or copy emails/phones). " +
-      "Only Portal OTP counts as Booking Portal activity (~<strong>Portal visitors</strong> KPI), not the import." +
+      "Track <strong>potential clients</strong> (email, phone, enquiry, activity, status) at the top. " +
+      "If track status is anything other than <strong>Booked</strong>, their email joins the marketing outreach list automatically. " +
+      "Also lists Portal OTP contacts and the email-interest import. " +
+      "Tick rows → <strong>Send via Family broadcast</strong> (or copy emails/phones)." +
       "</p>" +
       '<div id="bkLeadHost"></div>'
     );

@@ -50,6 +50,7 @@ Deno.serve(async (req) => {
   let body: {
     client_status?: string;
     booking_status?: string;
+    track_status?: string;
     origin?: string;
     q?: string;
     limit?: number;
@@ -62,6 +63,7 @@ Deno.serve(async (req) => {
 
   const clientStatus = String(body.client_status || "").trim().toLowerCase();
   const bookingStatus = String(body.booking_status || "").trim().toLowerCase();
+  const trackStatus = String(body.track_status || "").trim().toLowerCase();
   const origin = String(body.origin || "portal").trim().toLowerCase();
   const q = String(body.q || "").trim().toLowerCase();
   const limit = Math.min(Math.max(Number(body.limit) || 150, 1), 400);
@@ -99,7 +101,7 @@ Deno.serve(async (req) => {
   let query = admin
     .from("portal_booking_leads")
     .select(
-      "id, parent_name, email, mobile, source, first_page_visited, privacy_notice_version, services_viewed, booking_status, registration_status, client_status, marketing_consent, email_verified_at, last_activity_at, created_at, updated_at",
+      "id, parent_name, email, mobile, source, first_page_visited, privacy_notice_version, services_viewed, booking_status, registration_status, client_status, marketing_consent, enquiry_notes, activity_interest, track_status, outreach_joined_at, email_verified_at, last_activity_at, created_at, updated_at",
     )
     .order("last_activity_at", { ascending: false })
     .limit(Math.min(limit * 3, 800));
@@ -110,10 +112,23 @@ Deno.serve(async (req) => {
   if (bookingStatus && bookingStatus !== "all") {
     query = query.eq("booking_status", bookingStatus);
   }
+  if (trackStatus === "outreach") {
+    query = query.not("outreach_joined_at", "is", null);
+  } else if (trackStatus && trackStatus !== "all") {
+    query = query.eq("track_status", trackStatus);
+  }
   if (origin === "email_interest") {
-    query = query.ilike("source", "%Email Interest%");
+    query = query.or(
+      "source.ilike.%Email Interest%,source.ilike.%Office potential%,outreach_joined_at.not.is.null",
+    );
   } else if (origin === "portal") {
-    query = query.not("source", "ilike", "%Email Interest%");
+    query = query
+      .not("source", "ilike", "%Email Interest%")
+      .not("source", "ilike", "%Office potential%");
+  } else if (origin === "potential") {
+    query = query.ilike("source", "%Office potential%");
+  } else if (origin === "outreach") {
+    query = query.not("outreach_joined_at", "is", null);
   }
 
   const { data, error } = await query;
@@ -136,6 +151,9 @@ Deno.serve(async (req) => {
         row.source,
         row.booking_status,
         row.client_status,
+        row.track_status,
+        row.enquiry_notes,
+        row.activity_interest,
         row.origin,
       ]
         .map((x) => String(x || "").toLowerCase())
