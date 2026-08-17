@@ -195,12 +195,19 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
     const subject = `${formLabel} submitted · ${participant} (${parent})`;
     const lines = [
       `${formLabel} received — review in Documents and Accept before confirming the place.`,
+    ];
+    if (String(opts.bookingSummary || "").toUpperCase().includes("EXISTING CLIENT")) {
+      lines.push(
+        "(Existing client — short place request; questionnaire already on file.)",
+      );
+    }
+    lines.push(
       "",
       `Participant: ${participant}`,
       `Parent: ${parent}`,
       `Email: ${email || "—"}`,
       `Phone: ${mobile || "—"}`,
-    ];
+    );
     if (bookingLine) lines.push(`Requested slot: ${bookingLine}`);
     if (holdLine) lines.push(holdLine);
     lines.push(`Document id: ${opts.documentId}`);

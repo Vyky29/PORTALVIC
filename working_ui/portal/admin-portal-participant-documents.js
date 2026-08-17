@@ -186,6 +186,15 @@
         var formType = String(d.form_type || '').toLowerCase();
         var isReg = !!REGISTRATION_TYPES[formType];
         var formLab = FORM_LABELS[formType] || d.form_type || '—';
+        try {
+          if (
+            formType === 'client_registration' &&
+            d.payload_json &&
+            d.payload_json.existing_client_confirm
+          ) {
+            formLab = 'Place request (existing client)';
+          }
+        } catch (_lab) {}
         var parentLine = [d.parent_name, d.parent_email].filter(Boolean).join(' · ') || '—';
         var pdfLink = d.pdf_signed_url
           ? '<button type="button" class="btn btn--pri btn--sm portal-pax-doc-open" data-url="' +

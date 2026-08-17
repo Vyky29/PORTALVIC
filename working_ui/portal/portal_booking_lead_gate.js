@@ -750,6 +750,13 @@
     return (s && s.token) || state.token || "";
   }
 
+  /** PIN / recognised existing family — skip full registration on Book. */
+  function isExistingClient() {
+    var lead = getLeadForPrefill();
+    var st = String((lead && lead.client_status) || "").toLowerCase();
+    return st === "active_client" || st === "registered";
+  }
+
   /**
    * Registration URL handoff: keep same host when possible + pass lead_session
    * so family.clubsensational.org / www can both recover the lead.
@@ -805,6 +812,7 @@
     pingActivity: pingActivity,
     getLeadForPrefill: getLeadForPrefill,
     getSessionToken: getSessionToken,
+    isExistingClient: isExistingClient,
     appendSessionToUrl: appendSessionToUrl,
     isUnlocked: function () {
       return !!state.unlocked;

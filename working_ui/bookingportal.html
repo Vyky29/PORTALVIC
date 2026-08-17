@@ -2153,7 +2153,7 @@
 
   <script src="/portal/portal_booking_offer.js?v=20260814-counsel-layout"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260812-preview-5s-clear"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260817-exist-confirm"></script>
   <script src="/portal/portal_booking_waitlist.js?v=20260813-waitlist-session"></script>
   <script>
 (function () {
@@ -2973,6 +2973,18 @@
     host.innerHTML = html;
   }
 
+  function isExistingClientBookingSession() {
+    try {
+      if (
+        window.PortalBookingLeadGate &&
+        typeof window.PortalBookingLeadGate.isExistingClient === "function"
+      ) {
+        return !!window.PortalBookingLeadGate.isExistingClient();
+      }
+    } catch (_e) {}
+    return false;
+  }
+
   function registrationUrlForSlot(slot, opts) {
     opts = opts || {};
     var bookingKind = String(opts.bookingKind || "term").trim().toLowerCase();
@@ -3002,9 +3014,10 @@
     } catch (_tok) {
       /* ignore */
     }
-    // Prefer same-origin registration so lead session + branding stay aligned with
-    // /parent (family portal) routes on www.clubsensational.org.
-    var path = "/parent/registration?" + q.toString();
+    /* Existing families: confirm place (+ photo if missing). New families: full form. */
+    var existing = isExistingClientBookingSession();
+    var pathBase = existing ? "/parent/booking-confirm" : "/parent/registration";
+    var path = pathBase + "?" + q.toString();
     try {
       var host = String(window.location.hostname || "").toLowerCase();
       if (/clubsensational\.org$/i.test(host) || /portalvic\.vercel\.app$/i.test(host)) {
@@ -3015,7 +3028,7 @@
     }
     if (typeof window.portalFamilyPortalUrl === "function") {
       try {
-        var abs = window.portalFamilyPortalUrl("registration");
+        var abs = window.portalFamilyPortalUrl(existing ? "booking-confirm" : "registration");
         if (abs) {
           var withQ = abs + (abs.indexOf("?") >= 0 ? "&" : "?") + q.toString();
           if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.appendSessionToUrl) {

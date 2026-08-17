@@ -112,6 +112,7 @@
     { "source": "/commissioning/terms-accept", "destination": "/commissioning_terms_accept.html" },
     { "source": "/la/terms-accept", "destination": "/commissioning_terms_accept.html" },
     { "source": "/parent/registration", "destination": "/parent_registration.html" },
+    { "source": "/parent/booking-confirm", "destination": "/parent_booking_confirm.html" },
     { "source": "/parent/finish-booking", "destination": "/parent_finish_booking.html" },
     { "source": "/finish-booking", "destination": "/parent_finish_booking.html" },
     { "source": "/bookingportal", "destination": "/bookingportal.html" },
