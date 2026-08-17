@@ -1422,10 +1422,23 @@
       if (category(r) === "partial") return "oneoff";
     }
     var n = instalmentCountFor(r);
-    if (isGoCardlessPaymentRow(r) || n >= 3) return "gc";
+    if (isGoCardlessPaymentRow(r)) return "gc";
+    /*
+     * 3+ instalments used to imply GC, but bank flexi / soft-hold rows can
+     * carry long schedules (Tom) — only treat as GC when method says so.
+     */
+    var hint = String(r._paymentMethodHint || "").toLowerCase();
+    if (
+      n >= 3
+      && hint !== "bank_transfer"
+      && hint !== "bank"
+      && hint !== "tide"
+      && hint !== "payment_link"
+    ) {
+      return "gc";
+    }
     if (n === 2) return "flexi";
     if (n === 1) return "oneoff";
-    var hint = String(r._paymentMethodHint || "").toLowerCase();
     if (hint === "bank_transfer" || hint === "bank" || hint === "tide") {
       /* No schedule yet: part-paid bank ⇒ flexi; otherwise unknown one-off. */
       if (category(r) === "partial") return "flexi";
@@ -3204,6 +3217,7 @@
   }
 
   function rowHasGoCardlessFee(r) {
+    if (String((r && r._paymentMethodHint) || "").toLowerCase() === "gocardless") return true;
     var d = (r && r.data) || {};
     var blob = [
       d.Services,
@@ -3211,9 +3225,7 @@
       r && r._paymentMethodHint,
       Object.keys((r && r._serviceParts) || {}).join(" "),
     ].join(" ");
-    if (isGoCardlessFeeLabel(blob)) return true;
-    return String((r && r._paymentMethodHint) || "").toLowerCase() === "gocardless"
-      && /admin\s*fee|direct\s*payment/i.test(blob);
+    return isGoCardlessFeeLabel(blob);
   }
 
   function serviceOneLinersFor(r) {
@@ -3414,11 +3426,23 @@
     if (/^(january|february|march|april|may|june|july|august|september|october|november|december)\s*$/i.test(s)) {
       return "";
     }
+    /* "October 2026" / "December 2026" from GC tracker line_description fragments */
+    if (/^(january|february|march|april|may|june|july|august|september|october|november|december)\s+20\d{2}\s*$/i.test(s)) {
+      return "";
+    }
+    /* Bare term labels from GC tracker text — not a service */
+    if (/^(autumn|spring|summer)(\s*term)?(\s*26\/27|\s*25\/26)?\s*$/i.test(s)) {
+      return "";
+    }
     if (/^\d{4}\s*['′']?\s*payment/i.test(s)) return "";
     if (/^payment\b/i.test(s) && !/aquatic|climb|multi|bespoke|physical|day\s*centre/i.test(s)) {
       return "";
     }
     if (/^gocardless\s*$/i.test(s)) return "";
+    if (/^(gc\s*)?tracker\s*$/i.test(s)) return "Admin Fee (GoCardless)";
+    if (/\bgc\s*tracker\b/i.test(s) || /\bgocardless\s*tracker\b/i.test(s)) {
+      return "Admin Fee (GoCardless)";
+    }
     s = s.replace(/\s*[—–-]\s*GBP\s*[\d,.]+.*$/i, "").trim();
     s = s.replace(/\s*·\s*demo\b.*$/i, "").trim();
     return s;
@@ -3675,7 +3699,11 @@
     return /admin\s*fee/i.test(t)
       || /direct\s*payment.*fee/i.test(t)
       || /gocardless.*fee/i.test(t)
-      || /^direct\s*payment\s*\(gocardless\)/i.test(t);
+      || /^direct\s*payment\s*\(gocardless\)/i.test(t)
+      /* Office GC instalment trackers (Maiyar/Linda scripts) — show as fee, not "GC tracker". */
+      || /\bgc\s*tracker\b/i.test(t)
+      || /\bgocardless\s*tracker\b/i.test(t)
+      || /^gc\s*fee\b/i.test(t);
   }
 
   /** "4.30 to 5 pm" / "12.30 to 2" / "5 to 6" → "4.30 pm to 5 pm". */
