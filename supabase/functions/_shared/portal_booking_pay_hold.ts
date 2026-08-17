@@ -25,7 +25,8 @@ export async function expireUnpaidBookingPayHolds(
   admin: SupabaseClient,
 ): Promise<{ expired: number }> {
   const now = new Date().toISOString();
-  const { data: rows, error } = await admin
+  // Primary path: awaiting_payment (after DB constraint allows it).
+  const { data: awaitingRows, error: awaitingErr } = await admin
     .from("portal_booking_slot_reservations")
     .update({
       status: "expired",
@@ -37,12 +38,30 @@ export async function expireUnpaidBookingPayHolds(
     .lt("hold_expires_at", now)
     .select("id, document_id");
 
-  if (error) {
-    console.warn("[expireUnpaidBookingPayHolds]", error.message);
-    return { expired: 0 };
+  if (awaitingErr) {
+    console.warn("[expireUnpaidBookingPayHolds] awaiting", awaitingErr.message);
   }
 
-  const expired = (rows || []).length;
+  // Fallback: validated rows tagged pay_hold_30m (pre-constraint / manual holds).
+  const { data: taggedRows, error: taggedErr } = await admin
+    .from("portal_booking_slot_reservations")
+    .update({
+      status: "expired",
+      released_at: now,
+      updated_at: now,
+      notes: "expired_unpaid_pay_hold_30m",
+    })
+    .eq("status", "validated")
+    .ilike("notes", "%pay_hold_30m%")
+    .lt("hold_expires_at", now)
+    .select("id, document_id");
+
+  if (taggedErr) {
+    console.warn("[expireUnpaidBookingPayHolds] tagged", taggedErr.message);
+  }
+
+  const rows = [...(awaitingRows || []), ...(taggedRows || [])];
+  const expired = rows.length;
   for (const row of rows || []) {
     const docId = String(row.document_id || "").trim();
     if (!docId) continue;
