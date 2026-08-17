@@ -14,7 +14,7 @@
   var PRODUCT_NAME = "CFK";
   var PAGE_TITLE = "Services";
   var PAGE_INTRO =
-    "Autumn 26/27 standing roster by programme and venue — who is booked, instructors, and open places. Live Booking Portal seats sit below for placing people. Covers stay in Scheduling.";
+    "One place for Autumn 26/27: (1) roster — who’s booked and teaching, (2) fill open roster lines with Assign, (3) live Booking Portal seats with Place. Covers stay in Scheduling.";
 
   var deps = {
     $: function (id) {
@@ -249,6 +249,17 @@
     } catch (_e) {}
   }
 
+  function capacityEmbedHtml() {
+    if (typeof deps.renderCapacityEmbedHtml === "function") {
+      try {
+        return deps.renderCapacityEmbedHtml() || "";
+      } catch (_e) {
+        return "";
+      }
+    }
+    return "";
+  }
+
   function openPlacesEmbedHtml() {
     var op = global.PortalAdminOpenPlaces2627;
     if (op && typeof op.viewHtml === "function") {
@@ -265,10 +276,22 @@
     var root = deps.$("c4kServicesRosterRoot");
     var filt = readFiltersFromDom();
     if (root) root.innerHTML = deps.renderRosterHtml(a, a, filt);
+    var capHost = deps.$("c4kServicesCapacityEmbed");
+    if (capHost && typeof deps.renderCapacityEmbedHtml === "function") {
+      try {
+        var capHtml = deps.renderCapacityEmbedHtml() || "";
+        if (capHtml) {
+          var wrap = document.createElement("div");
+          wrap.innerHTML = capHtml;
+          var next = wrap.firstElementChild;
+          if (next) capHost.replaceWith(next);
+        }
+      } catch (_e) {}
+    }
     if (typeof deps.afterRosterRefresh === "function") {
       try {
         deps.afterRosterRefresh(root || null);
-      } catch (_e) {}
+      } catch (_e2) {}
     }
   }
 
@@ -286,12 +309,13 @@
       deps.esc(PRODUCT_NAME) +
       "</span>" +
       ' <span class="chip" style="vertical-align:middle;margin-left:4px">Autumn 26/27</span></p>' +
-      '<div class="c4k-svc-jumpbar" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;min-width:0">' +
-      '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to the Services &amp; capacity board lower on this page">' +
-      '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path fill="currentColor" d="M12 16l-6-6 1.41-1.41L12 13.17l4.59-4.58L18 10z"/></svg>' +
-      "Go to Services &amp; capacity</button>" +
-      '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to live Open places board">' +
-      "Go to Open places</button></div>" +
+      '<div class="c4k-svc-jumpbar" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;min-width:0" role="navigation" aria-label="Jump on this page">' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="c4kServicesJumpRoster" title="Jump to the roster">' +
+      "1 · Roster</button>" +
+      '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to Assign on open roster lines">' +
+      "2 · Fill seats</button>" +
+      '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to live Booking Portal seats">' +
+      "3 · Live open places</button></div>" +
       '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>' +
       '<details class="c4k-svc-filters" id="c4kServicesFiltersPanel" open>' +
       '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class, instructor or participant</summary>' +
@@ -324,9 +348,13 @@
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterSpace"><span>Space available</span> <input type="checkbox" id="c4kSvcFilterSpace" /></label>' +
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterWait"><span>Participants on waiting list</span> <input type="checkbox" id="c4kSvcFilterWait" /></label>' +
       "</div></div></details>" +
-      '<div id="c4kServicesRosterRoot" style="min-width:0;margin-top:4px">' +
+      '<section id="c4kServicesRosterAnchor" aria-label="Roster" style="min-width:0;scroll-margin-top:14px">' +
+      '<h2 class="page-title" style="font-size:1.15rem;margin:14px 0 6px;min-width:0;overflow-wrap:break-word">1 · Roster</h2>' +
+      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who is booked, instructors, and open lines on each band. Use <strong>Open places ↓</strong> on a day to filter live seats below.</p>' +
+      '<div id="c4kServicesRosterRoot" style="min-width:0">' +
       rosterPart +
-      "</div>" +
+      "</div></section>" +
+      capacityEmbedHtml() +
       openPlacesEmbedHtml()
     );
   }

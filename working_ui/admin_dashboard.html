@@ -133,11 +133,11 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260813-wa-space-mobile"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260815-staff-tpl-ui"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
-  <script src="/portal/admin-open-places-2627.js?v=20260817-unified-services"></script>
+  <script src="/portal/admin-open-places-2627.js?v=20260817-services-one-board"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260813-wa-space-mobile" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260815-staff-tpl-ui" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
-  <script src="/portal/cfk-app.js?v=20260817-unified-services"></script>
+  <script src="/portal/cfk-app.js?v=20260817-services-one-board"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260704-search-combo"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -425,10 +425,10 @@
       { id:'session_disruptions', label:'Session disruptions' },
       { id:'c4k_waitlist', label:'Waiting list' },
       { id:'office_calendar', label:'Office calendar', hubLabel:'Office calendar' },
-      { id:'open_places_2627', label:'Open places (in Services)' },
+      { id:'open_places_2627', label:'Open places → Services §3' },
       { id:'c4k_reviews', label:'Reviews' },
       { id:'c4k_reports', label:'Report requests' },
-      { id:'servicecap', label:'Services & capacity (full page)' },
+      { id:'servicecap', label:'Fill seats → Services §2' },
       { id:'portal_activity', label:'Portal activity' },
       { id:'portal_training_progress', label:'Training & readiness' },
       { id:'portal_push_devices', label:'Staff push devices' },
@@ -2037,6 +2037,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id === 'novo_schedule') id = 'c4k_services';
       if(id === 'open_places_2627'){
         state.scrollToOpenPlaces = true;
+        id = 'c4k_services';
+      }
+      if(id === 'servicecap'){
+        state.scrollToCapacityEmbed = true;
         id = 'c4k_services';
       }
       if(id === 'novo_orders') id = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
@@ -14751,6 +14755,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           isoDateLocal: function(){ return adminServicesOverviewAnchorIso(); },
           getState: function(){ return state; },
           renderRosterHtml: viewC4kRosterServicesFromSlotsHtml,
+          renderCapacityEmbedHtml: adminServiceCapacityBoardEmbedHtml,
           spreadsheetAvailable: adminSpreadsheetAdapterAvailable,
           mergeSessions: adminMergeSpreadsheetSessions,
           programmeVenueBlocks: adminProgrammeVenueBlocksFromPack,
@@ -14758,7 +14763,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           collectCoaches: adminCollectCoachesFromPack,
           collectParticipants: adminCollectParticipantsFromPack,
           afterRosterRefresh: function(root){
-            bindCapacityBoardFilters(root || document.getElementById('c4kServicesRosterRoot') || document.getElementById('workspace') || document);
+            bindCapacityBoardFilters(document.getElementById('c4kServicesCapacityEmbed') || root || document.getElementById('workspace') || document);
           }
         });
       }
@@ -19027,7 +19032,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<strong>Open</strong> counts roster lines without a named participant. '+
         '<strong>Assign</strong> opens Edit term slot for that band (existing participant). '+
         '<strong>Offer</strong> jumps to matching waitlist rows. '+
-        'Also: <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services (Open places below)</button> · '+
+        'Also: jump bar on <strong>Services</strong> (1 Roster · 2 Fill seats · 3 Live open places) · '+
         '<button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_waitlist">Waiting list</button>. '+
         'Data source: <strong>'+esc(srcLabel)+'</strong>.';
       var headBlock = '';
@@ -19055,10 +19060,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function adminServiceCapacityBoardEmbedHtml(){
       var inner = adminServiceCapacityBoardInnerHtml({ bare: true });
       if(!inner) return '';
-      return '<section id="c4kServicesCapacityEmbed" class="c4k-svc-capmap-embed" aria-label="Services and capacity" style="margin-top:22px;scroll-margin-top:14px">'+
-        '<div class="c4k-svc-capmap-embed__head" style="border-top:1px solid var(--line,#e5e7eb);padding-top:16px;margin-bottom:10px">'+
-        '<h2 class="page-title" style="margin:0 0 4px">Services &amp; capacity</h2>'+
-        '<p class="page-intro" style="margin:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Autumn 26/27 standing bands (Booking Portal bridge). <strong>Open</strong> = free roster lines; <strong>Wait match</strong> links to the Waiting list.</p>'+
+      return '<section id="c4kServicesCapacityEmbed" class="c4k-svc-capmap-embed" aria-label="Fill open roster seats" style="margin-top:28px;scroll-margin-top:14px;border-top:1px solid var(--line,#e5e7eb);padding-top:16px">'+
+        '<div class="c4k-svc-capmap-embed__head" style="margin-bottom:10px;min-width:0">'+
+        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 4px;min-width:0;overflow-wrap:break-word">2 · Fill seats (roster lines)</h2>'+
+        '<p class="page-intro" style="margin:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Dense Mon–Sun map of standing bands. <strong>Open</strong> = roster lines without a named participant. Use <strong>Assign</strong> to place someone (creates / mounts an unpaid invoice). <strong>Offer</strong> opens matching waitlist rows. For live public seats, use section 3 below.</p>'+
         '</div>'+
         inner+'</section>';
     }
@@ -19803,10 +19808,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '</p></div>'
         );
       }
-      if(cardsHtml.indexOf('c4kServicesCapacityEmbed') < 0){
-        var capFall = adminServiceCapacityBoardEmbedHtml();
-        if(capFall) cardsHtml = cardsHtml + capFall;
-      }
+      /* Capacity board lives as section 2 on the Services page (cfk-app), not inside the roster HTML. */
       return cardsHtml;
     }
     function refreshC4kServicesPartial(){
@@ -23463,7 +23465,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         dashboard:'Live sessions on site — feedback, incidents, venue checks and day tools for staff on the rota.',
         operations_admin:'Participants (orders, finance, reports) and staff (HR, contracts, documents).',
         operator:'Control centre · KPIs · suggestions · new leads',
-        c4k_services:'Weekly CFK programme grid — roster, instructors, and live Open places 2026/27 below for placement.',
+        c4k_services:'One Autumn board: roster, fill open seats (Assign), and live Booking Portal places.',
+        open_places_2627:'Shortcut — opens Services and scrolls to live open places (§3).',
+        servicecap:'Shortcut — opens Services and scrolls to fill seats / Assign (§2).',
         c4k_sessions:'Live roster grid — who worked today, pending feedback, absents and flags.',
         roster_spreadsheets:'Read-only group session grids and staff hours timetable (spreadsheet layout).',
         term_roster_edit:'Change a recurring term slot from the anchor date or for one day only.',
@@ -23473,7 +23477,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_parent_notify_log:'Outbound sends and inbound WhatsApp replies to the API number.',
         portal_staff_whatsapp:'CS WhatsApp threads with staff (portal + phone).',
         portal_parent_broadcast:'Send one message (email + optional WhatsApp) to many families at once — review, select, preview and send in batch.',
-        open_places_2627:'Opens Services — live Autumn free seats sit under the roster for office placement.',
         staffhr:'Staff roster — open any person for full profile, HR notes and availability.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
         staffhr_contracts:'Employment contracts — create & send, plus Issue plan (checklist + NEST notices).',
@@ -23556,10 +23559,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         icon:'🎯',
         title:'Services & Participants',
         description:'Manage services, session capacity, participants, reviews, report requests and ClassForKids-related operational information.',
-        preview:['Services and open places','Participant profiles','Waiting list','Reviews and reports'],
+        preview:['One Services board (roster + fill + live places)','Participant profiles','Waiting list','Reviews and reports'],
         status:'Use this area to review clients, services, scheduling and session progress.',
         primary:['c4k_services','clients','c4k_waitlist','c4k_reviews'],
-        secondary:['scheduling','c4k_reports','servicecap','comms_ops']
+        secondary:['scheduling','c4k_reports','comms_ops']
       },
       {
         id:'staffhr',
@@ -23945,14 +23948,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var tiles =
         portalDashTileHtml('', '', 'new_participant', 'New participant', 'Name, age &amp; open slot', false, 'new_participant', 'new_participant')+
         portalDashTileHtml('c4k_waitlist', '', 'c4k_waitlist', 'Waiting list', 'Offers &amp; matching queue', false, 'waitlist')+
-        portalDashTileHtml('open_places_2627', '', 'open_places_2627', 'Open places 2026/27', 'On Services — live seats + place', false, 'open_places')+
-        portalDashTileHtml('leads', '', 'leads', 'Enquiries &amp; intake', 'New families &amp; triage', false, 'leads')+
-        portalDashTileHtml('servicecap', '', 'servicecap', 'Capacity', 'Mon–Sun snapshot &amp; tables', false, 'servicecap');
+        portalDashTileHtml('c4k_services', '', 'c4k_services', 'Services', 'Roster · fill seats · live places', false, 'c4k_services')+
+        portalDashTileHtml('open_places_2627', '', 'open_places_2627', 'Live open places', 'Jumps to Services §3', false, 'open_places')+
+        portalDashTileHtml('leads', '', 'leads', 'Enquiries &amp; intake', 'New families &amp; triage', false, 'leads');
       return (
         '<div class="dash-hub dash-hub--embed">'+
         portalDashPanel({
           title:'New leads',
-          subtitle:'Intake and capacity before sessions are booked',
+          subtitle:'Intake and placing people — use Services for roster + seats',
           iconId:'leads',
           panelClass:'dash-hub__panel--leads',
           tiles: tiles,
@@ -25449,22 +25452,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     function viewServiceCap(){
-      var strip = adminCapacityMonSunStripHtml();
-      var inner = adminServiceCapacityBoardInnerHtml({ omitHeader: true });
-      if(!inner){
-        return (
-          '<h1 class="page-title">Capacity</h1>'+
-          '<p class="page-intro">Week overview and the same detail table as under Services.</p>'+
-          strip+
-          '<p class="muted" style="margin:0;max-width:48rem;min-width:0;overflow-wrap:break-word">This section did not load — refresh the page.</p>'
-        );
-      }
-      return (
-        '<h1 class="page-title">Capacity</h1>'+
-        '<p class="page-intro">This week at a glance (Mon–Sun), then the same capacity table as under Services.</p>'+
-        strip+
-        '<div class="c4k-svc-capmap--standalone" style="min-width:0">'+inner+'</div>'
-      );
+      /* Legacy full page — setView redirects to Services §2. */
+      state.scrollToCapacityEmbed = true;
+      return viewC4kServices();
     }
     function opwfBookingsMockAppend(){
       if(typeof __OPWF_HTML==='undefined' || !__OPWF_HTML.bookBlock) return '';
@@ -27260,6 +27250,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ensureC4kServicesFiltersDelegated();
         var btnSv = $('c4kServicesRefreshBtn');
         if(btnSv) btnSv.onclick = function(){ portalAdminForceServicesRosterRefresh(); };
+        var btnJumpRoster = $('c4kServicesJumpRoster');
+        if(btnJumpRoster) btnJumpRoster.onclick = function(){
+          var rosterEl = $('c4kServicesRosterAnchor') || $('c4kServicesRosterRoot');
+          if(rosterEl) rosterEl.scrollIntoView({ block:'start', behavior:'smooth' });
+        };
         var btnJumpCap = $('c4kServicesJumpCapacity');
         if(btnJumpCap) btnJumpCap.onclick = function(){
           var capEl = $('c4kServicesCapacityEmbed');
@@ -27271,13 +27266,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(opEl) opEl.scrollIntoView({ block:'start', behavior:'smooth' });
         };
         portalAdminForceServicesRosterRefresh();
-        bindCapacityBoardFilters(document.getElementById('workspace') || document);
+        bindCapacityBoardFilters(document.getElementById('c4kServicesCapacityEmbed') || document.getElementById('workspace') || document);
         bindOpenPlaces2627Module();
         if(state.scrollToCapacityEmbed){
           state.scrollToCapacityEmbed = false;
           setTimeout(function(){
             var capEl = $('c4kServicesCapacityEmbed');
-            if(capEl) capEl.scrollIntoView({ block:'nearest', behavior:'smooth' });
+            if(capEl) capEl.scrollIntoView({ block:'start', behavior:'smooth' });
           }, 80);
         }
         if(state.scrollToOpenPlaces){

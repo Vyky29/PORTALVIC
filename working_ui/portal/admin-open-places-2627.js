@@ -125,18 +125,16 @@
   function viewHtml(opts) {
     var embedded = !!(opts && opts.embedded);
     var head = embedded
-      ? '<div id="op2627Anchor" class="op2627-embed" style="min-width:0">' +
-        '<h2 class="page-title" style="font-size:1.25rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">Open places 2026/27</h2>' +
+      ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:28px;min-width:0;scroll-margin-top:14px;border-top:1px solid var(--line,#e5e7eb);padding-top:16px">' +
+        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">3 · Live open places (Booking Portal)</h2>' +
         '<p class="page-intro" style="max-width:52rem;margin:0 0 12px;min-width:0;overflow-wrap:break-word">' +
-        "Live free seats (same source as the Booking Portal). Filter from Services above, or use " +
-        "<strong>Existing</strong> / <strong>New</strong> to place someone." +
+        "Public seats still free (capacity / taken / free — no names). Same source as the Booking Portal. " +
+        "Use <strong>Place existing</strong> or <strong>Place new</strong> on a free band. Filters follow Services above." +
         "</p>"
       : '<div class="page-head" style="min-width:0">' +
         '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Open places 2026/27</h2>' +
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-        "Live Autumn Term places for families who call or email — same data as the Booking Portal. " +
-        "Prefer <strong>Services</strong> for the full roster + this board together. " +
-        "Use <strong>Existing</strong> / <strong>New</strong> on a free band to place someone." +
+        "This board now lives under <strong>Services</strong> (section 3). Opening this shortcut takes you there." +
         "</p></div>";
     var close = embedded ? "</div>" : "";
     return (
@@ -392,10 +390,10 @@
             ? '<div class="op2627-place">' +
               '<button type="button" class="btn btn--pri btn--sm" data-op2627-place="existing" data-op2627-slot="' +
               esc(payload) +
-              '">Existing</button>' +
+              '">Place existing</button>' +
               '<button type="button" class="btn btn--sec btn--sm" data-op2627-place="new" data-op2627-slot="' +
               esc(payload) +
-              '">New</button>' +
+              '">Place new</button>' +
               "</div>"
             : '<span class="muted">—</span>';
         return (
