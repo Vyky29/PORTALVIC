@@ -16,7 +16,7 @@ const corsHeaders: Record<string, string> = {
 };
 
 const BUCKET = "participant-documents";
-const MAX_PDF_BYTES = 12 * 1024 * 1024;
+const MAX_PDF_BYTES = 18 * 1024 * 1024;
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const ALLOWED_FORM_TYPES = new Set(["climbing_registration", "client_registration"]);
 

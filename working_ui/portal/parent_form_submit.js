@@ -31,7 +31,7 @@
       return "The photo is too large. Choose a smaller JPEG/PNG (under 8 MB), or take a new photo.";
     }
     if (code === "pdf_too_large") {
-      return "The form PDF is too large to upload. Try a smaller participant photo, then submit again.";
+      return "The form PDF is still too large after compression. Tap Try again — we will resend a lighter PDF (your photo still uploads separately).";
     }
     if (code === "invalid_photo_type" || code === "photo_decode_failed") {
       return "That photo format is not supported. Please use a JPEG or PNG (not HEIC if your phone offers a choice).";

@@ -402,8 +402,8 @@
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="/portal/parent_form_submit.js?v=20260812-pdf-and-photo"></script>
-  <script src="/portal/parent_registration_portal.js?v=20260812-pdf-and-photo"></script>
+  <script src="/portal/parent_form_submit.js?v=20260817-pdf-thumb"></script>
+  <script src="/portal/parent_registration_portal.js?v=20260817-pdf-thumb"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-bookingportal"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260724-returning-no-privacy"></script>
   <script>
@@ -567,7 +567,7 @@
 
           <div class="field" data-icon="camera">
             <label class="field-label" for="participant_photo"><span class="field-label__text">Participant photo (face or ID) <span class="required-mark">*</span></span></label>
-            <p class="hint">Upload a clear photo of the participant&apos;s face, or a photo of their ID document. JPEG/PNG work best (on iPhone prefer &ldquo;Most Compatible&rdquo;). Large photos are compressed automatically before upload.</p>
+            <p class="hint">Upload a clear photo of the participant&apos;s face, or a photo of their ID document. JPEG/PNG work best (on iPhone prefer &ldquo;Most Compatible&rdquo;). Photos are compressed automatically; the full photo is stored separately from the PDF so large camera files should still submit.</p>
             <div class="photo-box" id="photoBox">
               <input type="file" id="participant_photo" name="participant_photo" accept="image/jpeg,image/png,image/webp,image/heic,image/*" capture="user" required />
               <img id="photoPreview" class="photo-preview" alt="Participant photo preview" />
@@ -814,8 +814,10 @@
     var photoInput = document.getElementById('participant_photo');
     var photoPreview = document.getElementById('photoPreview');
     var photoBox = document.getElementById('photoBox');
-    var photoDataUrl = null;
+    var photoDataUrl = null; /* preview + small PDF thumbnail only */
+    var photoPdfDataUrl = null; /* tiny JPEG for jsPDF embed (full photo uploads separately) */
     var photoUploadBlob = null;
+    var PDF_UPLOAD_MAX_BYTES = 10 * 1024 * 1024; /* stay under server 12MB limit */
 
     var FIELD_ICONS = {
       user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
@@ -912,6 +914,40 @@
       return /\.(jpe?g|png|webp|heic|heif|gif)$/.test(n);
     }
 
+    function canvasToJpegBlob(canvas, quality) {
+      return new Promise(function (resolve, reject) {
+        canvas.toBlob(
+          function (blob) {
+            if (!blob) reject(new Error('photo_decode_failed'));
+            else resolve(blob);
+          },
+          'image/jpeg',
+          quality,
+        );
+      });
+    }
+
+    function drawScaledCanvas(img, maxSide) {
+      var w = img.naturalWidth || img.width || 1;
+      var h = img.naturalHeight || img.height || 1;
+      var scale = Math.min(1, maxSide / Math.max(w, h));
+      var cw = Math.max(1, Math.round(w * scale));
+      var ch = Math.max(1, Math.round(h * scale));
+      var canvas = document.createElement('canvas');
+      canvas.width = cw;
+      canvas.height = ch;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.drawImage(img, 0, 0, cw, ch);
+      return canvas;
+    }
+
+    /**
+     * Full-res photos must NOT go into the PDF — that blows past the 12MB upload
+     * limit. Upload blob stays sharp enough for Documents; PDF gets a tiny thumb.
+     */
     function compressParticipantPhoto(file) {
       return new Promise(function (resolve, reject) {
         if (!file) {
@@ -922,53 +958,33 @@
         var img = new Image();
         img.onload = function () {
           URL.revokeObjectURL(url);
-          var maxSide = 1600;
-          var w = img.naturalWidth || img.width || 1;
-          var h = img.naturalHeight || img.height || 1;
-          var scale = Math.min(1, maxSide / Math.max(w, h));
-          var cw = Math.max(1, Math.round(w * scale));
-          var ch = Math.max(1, Math.round(h * scale));
-          var canvas = document.createElement('canvas');
-          canvas.width = cw;
-          canvas.height = ch;
-          var ctx = canvas.getContext('2d');
-          if (!ctx) {
+          var uploadCanvas = drawScaledCanvas(img, 1200);
+          var thumbCanvas = drawScaledCanvas(img, 420);
+          if (!uploadCanvas || !thumbCanvas) {
             reject(new Error('photo_decode_failed'));
             return;
           }
-          ctx.drawImage(img, 0, 0, cw, ch);
-          var quality = 0.82;
-          canvas.toBlob(
-            function (blob) {
-              if (!blob) {
-                reject(new Error('photo_decode_failed'));
-                return;
+          var qualities = [0.72, 0.62, 0.52, 0.42];
+          var targetUploadBytes = 900 * 1024;
+          function tryUpload(qi) {
+            var q = qualities[Math.min(qi, qualities.length - 1)];
+            return canvasToJpegBlob(uploadCanvas, q).then(function (blob) {
+              if (blob.size > targetUploadBytes && qi < qualities.length - 1) {
+                return tryUpload(qi + 1);
               }
               if (blob.size > 7.5 * 1024 * 1024) {
-                canvas.toBlob(
-                  function (blob2) {
-                    if (!blob2) {
-                      reject(new Error('photo_too_large'));
-                      return;
-                    }
-                    resolve({
-                      blob: blob2,
-                      dataUrl: canvas.toDataURL('image/jpeg', 0.7),
-                    });
-                  },
-                  'image/jpeg',
-                  0.7,
-                );
-                return;
+                throw new Error('photo_too_large');
               }
-              resolve({
+              var pdfDataUrl = thumbCanvas.toDataURL('image/jpeg', 0.55);
+              var previewDataUrl = uploadCanvas.toDataURL('image/jpeg', 0.7);
+              return {
                 blob: blob,
-                dataUrl: canvas.toDataURL('image/jpeg', quality),
-              });
-            },
-            'image/jpeg',
-            quality,
-          );
+                dataUrl: previewDataUrl,
+                pdfDataUrl: pdfDataUrl,
+              };
+            });
+          }
+          tryUpload(0).then(resolve).catch(reject);
         };
         img.onerror = function () {
           URL.revokeObjectURL(url);
@@ -981,6 +997,7 @@
     photoInput.addEventListener('change', function(){
       var file = photoInput.files && photoInput.files[0];
       photoDataUrl = null;
+      photoPdfDataUrl = null;
       photoUploadBlob = null;
       if (!file) {
         photoPreview.classList.remove('visible');
@@ -1001,6 +1018,7 @@
         .then(function (out) {
           photoUploadBlob = out.blob;
           photoDataUrl = out.dataUrl;
+          photoPdfDataUrl = out.pdfDataUrl || out.dataUrl;
           photoPreview.src = photoDataUrl;
           photoPreview.classList.add('visible');
           photoBox.classList.add('has-photo');
@@ -1239,9 +1257,10 @@
     function addParticipantSection(doc, y, lines, photoDataUrl, pageW, M, maxY) {
       var photoSize = 46;
       var gap = 8;
-      var textW = pageW - M * 2 - photoSize - gap;
+      var hasPhoto = !!photoDataUrl;
+      var textW = hasPhoto ? pageW - M * 2 - photoSize - gap : pageW - M * 2;
       var photoX = pageW - M - photoSize;
-      y = pdfEnsureSpace(doc, y, photoSize + 14, M, maxY);
+      y = pdfEnsureSpace(doc, y, (hasPhoto ? photoSize : 8) + 14, M, maxY);
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
@@ -1250,11 +1269,13 @@
       y += 7;
 
       var boxY = y - 1;
-      doc.setDrawColor(45, 132, 179);
-      doc.setLineWidth(0.35);
-      doc.setFillColor(255, 255, 255);
-      doc.rect(photoX, boxY, photoSize, photoSize, 'FD');
-      pdfFitImageInBox(doc, photoDataUrl, photoX + 1.5, boxY + 1.5, photoSize - 3, photoSize - 3);
+      if (hasPhoto) {
+        doc.setDrawColor(45, 132, 179);
+        doc.setLineWidth(0.35);
+        doc.setFillColor(255, 255, 255);
+        doc.rect(photoX, boxY, photoSize, photoSize, 'FD');
+        pdfFitImageInBox(doc, photoDataUrl, photoX + 1.5, boxY + 1.5, photoSize - 3, photoSize - 3);
+      }
 
       doc.setTextColor(0, 0, 0);
       var lineY = y;
@@ -1265,7 +1286,9 @@
         var label = String(row[0] || '').trim();
         /* Keep name/DOB beside photo while still on the first participant page. */
         var besidePhoto =
-          doc.internal.getNumberOfPages() === pageBefore && lineY < boxY + photoSize - 2;
+          hasPhoto &&
+          doc.internal.getNumberOfPages() === pageBefore &&
+          lineY < boxY + photoSize - 2;
         var x = M;
         var w = besidePhoto ? textW : pageW - M * 2;
         lineY = pdfEnsureSpace(doc, lineY, PDF_LINE * 2 + 2, M, maxY);
@@ -1281,7 +1304,7 @@
       });
 
       var endY = lineY;
-      if (doc.internal.getNumberOfPages() === pageBefore) {
+      if (hasPhoto && doc.internal.getNumberOfPages() === pageBefore) {
         endY = Math.max(lineY, boxY + photoSize + 4);
       }
       return endY + 4;
@@ -1306,11 +1329,16 @@
       function cacheFromImage(img){
         if (!img || !img.naturalWidth) return;
         try {
+          /* Tiny logo for PDF only — full PNG was bloating uploads. */
+          var maxSide = 96;
+          var w = img.naturalWidth;
+          var h = img.naturalHeight;
+          var scale = Math.min(1, maxSide / Math.max(w, h));
           var c = document.createElement('canvas');
-          c.width = img.naturalWidth;
-          c.height = img.naturalHeight;
-          c.getContext('2d').drawImage(img, 0, 0);
-          pdfBrandLogoDataUrl = c.toDataURL('image/png');
+          c.width = Math.max(1, Math.round(w * scale));
+          c.height = Math.max(1, Math.round(h * scale));
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          pdfBrandLogoDataUrl = c.toDataURL('image/jpeg', 0.75);
         } catch (_e) {}
       }
       if (logoEl) {
@@ -1371,7 +1399,7 @@
         var logoSize = 24;
         if (pdfBrandLogoDataUrl) {
           try {
-            doc.addImage(pdfBrandLogoDataUrl, 'PNG', M, y, logoSize, logoSize);
+            doc.addImage(pdfBrandLogoDataUrl, pdfBrandLogoDataUrl.indexOf('image/png') >= 0 ? 'PNG' : 'JPEG', M, y, logoSize, logoSize);
             y += logoSize + 5;
           } catch (logoErr) {
             console.warn(logoErr);
@@ -1424,7 +1452,7 @@
           ['Date of birth', fmtDate(val('participant_dob'))],
           ['Gender', val('participant_gender')],
           ['School / college / residential', val('participant_school')]
-        ], photoDataUrl, pageW, M, maxY);
+        ], photoPdfDataUrl || photoDataUrl, pageW, M, maxY);
 
         y = addSection(doc, y, 'Medical & support plans', [
           ['EHCP', radio('ehcp')],
@@ -1531,6 +1559,101 @@
           photo: photoFile,
           photo_filename: 'participant-photo.jpg',
           payload: submitPayload
+        }).catch(function (uploadErr) {
+          /* Auto-retry once with a text-only PDF if the first PDF was still too large.
+             Full participant photo is still uploaded as a separate file. */
+          var code = String((uploadErr && uploadErr.message) || '').toLowerCase();
+          if (code !== 'pdf_too_large') throw uploadErr;
+          console.warn('[registration] pdf_too_large — rebuilding PDF without embedded photo');
+          var lean = new JsPDF({ unit: 'mm', format: 'a4' });
+          var Lm = 14;
+          var Lw = lean.internal.pageSize.getWidth();
+          var Lmax = lean.internal.pageSize.getHeight() - 14;
+          var Ly = 18;
+          lean.setFont('helvetica', 'bold');
+          lean.setFontSize(14);
+          lean.setTextColor(45, 132, 179);
+          Ly = pdfDrawWrapped(lean, 'ClubSENsational — Client Registration', Lm, Ly, Lw - Lm * 2, 7, Lm, Lmax);
+          Ly += 4;
+          lean.setFont('helvetica', 'normal');
+          lean.setFontSize(9);
+          lean.setTextColor(80, 80, 80);
+          Ly = pdfDrawWrapped(
+            lean,
+            'Photo attached separately (not embedded — kept PDF under upload limit). ' +
+              new Date().toLocaleString('en-GB'),
+            Lm,
+            Ly,
+            Lw - Lm * 2,
+            5,
+            Lm,
+            Lmax
+          );
+          Ly += 6;
+          lean.setTextColor(0, 0, 0);
+          Ly = addSection(lean, Ly, 'Parent / guardian', [
+            ['Name', val('parent_name')],
+            ['Relationship', radio('relationship')],
+            ['Phone', val('parent_phone')],
+            ['Email', val('parent_email')],
+            ['Address', val('parent_address')],
+            ['Postcode', val('parent_postcode')]
+          ], Lw, Lm, Lmax);
+          Ly = addParticipantSection(lean, Ly, [
+            ['Name', val('participant_name')],
+            ['Date of birth', fmtDate(val('participant_dob'))],
+            ['Gender', val('participant_gender')],
+            ['School / college / residential', val('participant_school')]
+          ], null, Lw, Lm, Lmax);
+          Ly = addSection(lean, Ly, 'Medical & support plans', [
+            ['EHCP', radio('ehcp')],
+            ['EHCP details', val('ehcp_details')],
+            ['Social worker', radio('social_worker')],
+            ['Social worker contact', val('social_worker_contact')],
+            ['Motivators', val('motivators')],
+            ['Dislikes', val('dislikes')],
+            ['Medication', val('medication')],
+            ['Allergies', val('allergies')],
+            ['Medical conditions', val('medical_conditions')],
+            ['Health / emergency plan', radio('health_plan')],
+            ['Health plan details', val('health_plan_details')]
+          ], Lw, Lm, Lmax);
+          Ly = addSection(lean, Ly, 'Behaviour', [
+            ['Triggers', checks('triggers')],
+            ['Regulation strategies', checks('strategies')],
+            ['Additional notes', val('behaviour_notes')],
+            ['Support when regulated', radio('support_regulated')],
+            ['Support when dysregulated', radio('support_dysregulated')]
+          ], Lw, Lm, Lmax);
+          Ly = addSection(lean, Ly, 'Communication', [
+            ['Expressive communication', checks('expressive_comm')],
+            ['Understands instructions', radio('understand_instructions')],
+            ['Preferred strategies', val('comm_strategies')]
+          ], Lw, Lm, Lmax);
+          Ly = addSection(lean, Ly, 'Independence', [
+            ['Mobility', radio('mobility')],
+            ['Personal care', radio('personal_care')],
+            ['Task engagement', radio('task_engagement')],
+            ['Transitions', radio('transitions')],
+            ['Risk awareness', radio('risk_awareness')],
+            ['Anything else', val('anything_else')]
+          ], Lw, Lm, Lmax);
+          pdfStampPageNumbers(lean, Lm);
+          doc = lean;
+          pdfBlob = lean.output('blob');
+          return window.portalSubmitParentForm({
+            form_type: 'client_registration',
+            participant_name: val('participant_name'),
+            participant_dob: val('participant_dob'),
+            parent_name: val('parent_name'),
+            parent_email: val('parent_email'),
+            parent_phone: val('parent_phone'),
+            pdf: pdfBlob,
+            pdf_filename: filename,
+            photo: photoFile,
+            photo_filename: 'participant-photo.jpg',
+            payload: submitPayload
+          });
         }).then(function(res){
           var failEl = document.getElementById('parentSubmitFail');
           if (failEl) failEl.hidden = true;
