@@ -11,6 +11,10 @@ import { buildWeeklyOfferFromMadre } from "../_shared/portal_booking_seat_helper
 import { ensureReenrolUnconfirmedReleasedOnMadre } from "../_shared/portal_reenrol_release_madre.ts";
 import { runUnpaidAug15PlaceRelease } from "../_shared/portal_reenrol_release_unpaid_aug15.ts";
 import {
+  BOOKING_SLOT_HOLD_STATUSES,
+  expireUnpaidBookingPayHolds,
+} from "../_shared/portal_booking_pay_hold.ts";
+import {
   CRASH_HOLD_MINUTES,
   CRASH_INDIVIDUAL_WINDOWS,
   CRASH_PRICES,
@@ -420,6 +424,12 @@ Deno.serve(async (req) => {
   const intensive = await loadCrashIntensive(supabase);
 
   // Soft holds from new-client registration forms (Booking Portal → registration).
+  try {
+    await expireUnpaidBookingPayHolds(supabase);
+  } catch (e) {
+    console.warn("[portal-booking-offer] expire pay holds", e);
+  }
+
   await supabase
     .from("portal_booking_slot_reservations")
     .update({
@@ -432,7 +442,7 @@ Deno.serve(async (req) => {
   const { data: holds, error: holdsErr } = await supabase
     .from("portal_booking_slot_reservations")
     .select("slot_id")
-    .eq("status", "pending");
+    .in("status", [...BOOKING_SLOT_HOLD_STATUSES]);
 
   if (holdsErr) {
     console.warn("[portal-booking-offer] slot holds", holdsErr.message);

@@ -31,6 +31,11 @@ import {
   gocardlessCreateBillingRequest,
   gocardlessCreateBillingRequestFlow,
 } from "../_shared/gocardless.ts";
+import {
+  BOOKING_PAY_HOLD_MINUTES,
+  bookingPayHoldExpiresAt,
+  expireUnpaidBookingPayHolds,
+} from "../_shared/portal_booking_pay_hold.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -112,7 +117,7 @@ async function loadContext(
       .from("portal_booking_slot_reservations")
       .select("*")
       .eq("document_id", token.document_id)
-      .in("status", ["validated", "pending"])
+      .in("status", ["validated", "pending", "awaiting_payment"])
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -339,6 +344,12 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  try {
+    await expireUnpaidBookingPayHolds(admin);
+  } catch (e) {
+    console.warn("[portal-booking-finish] expire pay holds", e);
+  }
+
   let body: Record<string, unknown> = {};
   try {
     body = await req.json();
@@ -459,6 +470,7 @@ Deno.serve(async (req) => {
         day,
         time: timeLabel,
         slot_id: reservation?.slot_id || null,
+        reservation_status: reservation?.status || null,
       },
       term,
       term_label: termLabel,
@@ -476,7 +488,16 @@ Deno.serve(async (req) => {
       quotes,
       invoice,
       bank: tideBankDetailsFromEnv(),
+      pay_hold_minutes: Number(savedChoices.pay_hold_minutes) || BOOKING_PAY_HOLD_MINUTES,
+      pay_hold_expires_at:
+        savedChoices.pay_hold_expires_at ||
+        reservation?.hold_expires_at ||
+        null,
+      choices_json: savedChoices,
       completed: token.status === "completed",
+      place_released:
+        token.status === "expired_unpaid" ||
+        String(reservation?.status || "") === "expired",
     });
   }
 
@@ -725,6 +746,7 @@ Deno.serve(async (req) => {
     }
 
     const now = new Date().toISOString();
+    const payHoldExpires = bookingPayHoldExpiresAt();
     await admin
       .from("portal_booking_completion_tokens")
       .update({
@@ -740,10 +762,26 @@ Deno.serve(async (req) => {
           pay_plan: plan,
           scope_label: scopeLabel,
           saved_at: now,
+          pay_hold_minutes: BOOKING_PAY_HOLD_MINUTES,
+          pay_hold_expires_at: payHoldExpires,
         },
         updated_at: now,
       })
       .eq("id", token.id);
+
+    // Bank / GC setup: seat only held for the short pay window, then live again.
+    if (reservation?.id) {
+      const prevNotes = String(reservation.notes || "").trim();
+      await admin
+        .from("portal_booking_slot_reservations")
+        .update({
+          status: "awaiting_payment",
+          hold_expires_at: payHoldExpires,
+          updated_at: now,
+          notes: [prevNotes, "pay_hold_30m"].filter(Boolean).join("|").slice(0, 500),
+        })
+        .eq("id", String(reservation.id));
+    }
 
     await upsertServiceLineFromReservation(
       admin,
@@ -772,6 +810,8 @@ Deno.serve(async (req) => {
       gocardless_url: gocardlessUrl || invOut?.gocardless_url || null,
       bank,
       transfer_reference: transferRef,
+      pay_hold_minutes: BOOKING_PAY_HOLD_MINUTES,
+      pay_hold_expires_at: payHoldExpires,
       quote: {
         remaining_sessions: quote.remainingSessions,
         first_due_gbp: quote.paymentSchedule[0]?.amount_gbp ?? null,

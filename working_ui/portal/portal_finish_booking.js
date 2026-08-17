@@ -663,6 +663,8 @@
             data.bank = out.bank;
             data.transfer_reference = out.transfer_reference;
             data.gocardless_url = out.gocardless_url;
+            data.pay_hold_minutes = out.pay_hold_minutes;
+            data.pay_hold_expires_at = out.pay_hold_expires_at;
             data.status = "awaiting_payment";
             data.pay_plan = plan;
             showInvoice(data);
@@ -715,6 +717,37 @@
           '<p class="muted" style="margin:10px 0 0">When the first Direct Debit payment clears, the office can confirm and we send your Parent Portal PIN.</p>';
       }
     } else {
+      var holdMin =
+        Number(data.pay_hold_minutes) ||
+        (data.choices_json && Number(data.choices_json.pay_hold_minutes)) ||
+        30;
+      var holdExp =
+        data.pay_hold_expires_at ||
+        (data.choices_json && data.choices_json.pay_hold_expires_at) ||
+        "";
+      var holdLine = holdExp
+        ? "Place held until <strong>" +
+          esc(String(holdExp).replace("T", " ").slice(0, 16)) +
+          " UTC</strong> (" +
+          esc(String(holdMin)) +
+          " minutes from invoice). If unpaid by then, the seat returns to the Booking Portal."
+        : "Place held for <strong>" +
+          esc(String(holdMin)) +
+          " minutes</strong> only. If unpaid by then, the seat returns to the Booking Portal.";
+      var mailSub = encodeURIComponent(
+        "Payment made — " + (data.participant_name || inv.invoice_number || "booking"),
+      );
+      var mailBody = encodeURIComponent(
+        "Hi,\n\nI have paid the first instalment for " +
+          (data.participant_name || "my child") +
+          " (" +
+          (inv.invoice_number || "") +
+          ").\nAmount: £" +
+          (firstAmt != null ? firstAmt : "") +
+          "\nReference: " +
+          (data.transfer_reference || data.participant_name || "") +
+          "\n\nI can attach a photo/screenshot of the transfer if helpful.\n\nThanks",
+      );
       html +=
         '<div class="card-inner" style="margin:0 0 12px">' +
         "<div><strong>Payee</strong> " +
@@ -730,42 +763,18 @@
         esc(data.transfer_reference || data.participant_name || "") +
         "</div>" +
         "</div>" +
-        '<button type="button" class="btn btn--pri" id="fbConfirmPaid">I’ve paid the first instalment</button>' +
-        '<p class="muted" style="margin:10px 0 0">This tells the office you paid. Your Parent Portal PIN is sent only after they confirm the payment.</p>';
+        '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
+        holdLine +
+        "</p>" +
+        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>email or WhatsApp the office</strong> so they can check Tide and mark you paid. Attach a photo/screenshot if you can. There is no “I’ve paid” button here.</p>' +
+        '<a class="btn btn--pri" href="mailto:info@clubsensational.org?subject=' +
+        mailSub +
+        "&body=" +
+        mailBody +
+        '">Email office (info@…)</a>' +
+        '<p class="muted" style="margin:10px 0 0">Or WhatsApp the club number you already use — same message + photo is fine. Parent Portal PIN is sent only after the office confirms payment.</p>';
     }
     if (host) host.innerHTML = html;
-
-    var btn = document.getElementById("fbConfirmPaid");
-    if (btn) {
-      btn.onclick = function () {
-        btn.disabled = true;
-        btn.textContent = "Sending…";
-        void api("confirm_paid", {})
-          .then(function (out) {
-            if (out && out.awaiting_office) {
-              setStep("fbStepAwaitingOffice");
-              showNotice(
-                document.getElementById("fbNotice"),
-                out.message ||
-                  "Payment reported. The office will confirm and then send your PIN.",
-                "ok",
-              );
-              return;
-            }
-            setStep("fbStepDone");
-            showNotice(
-              document.getElementById("fbNotice"),
-              "Payment recorded. Check email / WhatsApp for your PIN.",
-              "ok",
-            );
-          })
-          .catch(function (err) {
-            btn.disabled = false;
-            btn.textContent = "I’ve paid the first instalment";
-            showNotice(document.getElementById("fbNotice"), err.message || "Failed", "error");
-          });
-      };
-    }
   }
 
   function ensureDemoChrome() {
