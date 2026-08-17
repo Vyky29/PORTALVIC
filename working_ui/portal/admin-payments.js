@@ -2232,8 +2232,28 @@
       out.client_name = displayName;
       out.amount = amount;
       out.amount_billed = amount;
-      out.amount_out = amount;
-      out.payment_status = amount > 0 ? "Outstanding" : "Paid";
+      /*
+       * Inherit Paid/Partial from the combined INV-P. Forcing Outstanding here
+       * made Jack Walker look unpaid after INV-P-0342 was marked paid (£2260).
+       */
+      var srcSt = String(r.payment_status || "").toLowerCase();
+      var srcPaidAmt = Number(r._amountPaid != null ? r._amountPaid : r.amount_paid_gbp) || 0;
+      var srcFace = Number(r.amount_billed) || Number(r.amount) || Number(r._amountAutumn) || 0;
+      if (srcSt.indexOf("paid") === 0 && srcSt.indexOf("partial") < 0) {
+        out.amount_out = 0;
+        out.payment_status = "Paid";
+        out._amountPaid = amount;
+      } else if (srcSt.indexOf("partial") === 0 || (srcPaidAmt > 0 && srcFace > srcPaidAmt)) {
+        var ratio = srcFace > 0 ? amount / srcFace : 0;
+        var partPaid = Math.round(srcPaidAmt * ratio * 100) / 100;
+        var remain = Math.max(0, Math.round((amount - partPaid) * 100) / 100);
+        out._amountPaid = partPaid;
+        out.amount_out = remain;
+        out.payment_status = remain > 0.009 ? "Partial" : "Paid";
+      } else {
+        out.amount_out = amount;
+        out.payment_status = amount > 0 ? "Outstanding" : "Paid";
+      }
       if (seasons) {
         out._amountAutumn = seasons.autumn;
         out._amountSpring = seasons.spring;
