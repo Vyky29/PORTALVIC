@@ -3247,6 +3247,14 @@
       out.push(t);
     }
 
+    /** Every GoCardless row must show the collection fee line. */
+    function finish() {
+      if (rowHasGoCardlessFee(r) || (r && r._serviceParts && r._serviceParts["Admin Fee (GoCardless)"])) {
+        push("Admin Fee (GoCardless)");
+      }
+      return dedupeCanonServiceOneLiners(out);
+    }
+
     /*
      * Cyrus: always list the full package (paid together), but stream rows
      * and Day Centre / Afterschool emphasis decide which lines are bold.
@@ -3254,7 +3262,7 @@
     if (r && (r._cyrusPart || paymentParticipantSlug(r) === "cyrus")) {
       if (termBucketFor(r) === "autumn_2627" || termBucketFor(r) === "summer_2526") {
         cyrusPackageServiceLines().forEach(push);
-        if (out.length) return dedupeCanonServiceOneLiners(out);
+        if (out.length) return finish();
       }
     }
 
@@ -3262,14 +3270,14 @@
     if (r && r._crash) {
       if (paymentParticipantSlug(r) === "zakariya") {
         zakariyaCrashServiceLines().forEach(push);
-        if (out.length) return dedupeCanonServiceOneLiners(out);
+        if (out.length) return finish();
       }
       if (paymentParticipantSlug(r) === "patrick") {
         push(
           String((r.data && r.data.Services) || "").trim()
           || "60' Climbing — July crash course · Westway · 11 am to 12 pm · Mon 20th to Thu 23rd July",
         );
-        if (out.length) return dedupeCanonServiceOneLiners(out);
+        if (out.length) return finish();
       }
       var crashPreset = String((r.data && r.data.Services) || "").trim();
       if (
@@ -3278,7 +3286,7 @@
         && !/\bsunday\b/i.test(crashPreset)
       ) {
         stitchServiceFragments(splitServiceList(crashPreset)).forEach(push);
-        if (out.length) return dedupeCanonServiceOneLiners(out);
+        if (out.length) return finish();
       }
       if (r._crashLineDesc) {
         parseBulletCrashOneLiners(r._crashLineDesc).forEach(push);
@@ -3287,7 +3295,7 @@
         while ((m = inlineRe.exec(String(r._crashLineDesc || "")))) {
           push(formatCrashParenBundle(m[1], m[2]));
         }
-        if (out.length) return dedupeCanonServiceOneLiners(out);
+        if (out.length) return finish();
       }
     }
 
@@ -3306,23 +3314,21 @@
       sessList.forEach(function (sess) {
         push(labelFromParticipantSession(sess));
       });
-      if (rowHasGoCardlessFee(r) || (r._serviceParts && r._serviceParts["Admin Fee (GoCardless)"])) {
-        push("Admin Fee (GoCardless)");
-      }
-      if (out.length) return dedupeCanonServiceOneLiners(out);
+      if (out.length) return finish();
     }
 
     var raw = String(d.Services || d.Service || "").trim();
     if (!raw || isPlaceholderServiceLabel(raw)) {
       push(formatServiceOneLiner(serviceDisplayParts(r)));
-      return dedupeCanonServiceOneLiners(out);
+      return finish();
     }
 
     if (/day\s*centre/i.test(raw)) {
       var dcWhole = formatServicePieceOneLiner(raw.replace(/\s*·\s*/g, " "), sessions)
         || formatServiceOneLiner(normalizeServiceParts(raw, sessions));
       if (dcWhole && looksLikeDayCentreLine(dcWhole) && !isBogusDayCentreLine(dcWhole)) {
-        return dedupeCanonServiceOneLiners([dcWhole]);
+        push(dcWhole);
+        return finish();
       }
     }
 
@@ -3344,15 +3350,15 @@
       if (one) push(one);
       else push(piece);
     });
-    if (out.length) return dedupeCanonServiceOneLiners(out);
+    if (out.length) return finish();
 
     splitServiceList(raw).forEach(function (piece) {
       expandRawServiceToCanonLines(piece, sessions).forEach(push);
     });
-    if (out.length) return dedupeCanonServiceOneLiners(out);
+    if (out.length) return finish();
 
     push(formatServiceOneLiner(serviceDisplayParts(r)));
-    return dedupeCanonServiceOneLiners(out);
+    return finish();
   }
 
   function isCyrusBespokeServiceLine(line) {
@@ -4169,7 +4175,9 @@
     var list = stitchServiceFragments(Object.keys(row._serviceParts));
     /* Keep a single GoCardless fee line even if invoice had Admin + Direct Payment. */
     var fee = "Admin Fee (GoCardless)";
-    var hasFee = list.some(function (s) { return s === fee || isGoCardlessFeeLabel(s); });
+    var hint = String((inv && inv.payment_method_hint) || row._paymentMethodHint || "").toLowerCase();
+    var hasFee = hint === "gocardless"
+      || list.some(function (s) { return s === fee || isGoCardlessFeeLabel(s); });
     list = list.filter(function (s) { return s !== fee && !isGoCardlessFeeLabel(s); });
     if (hasFee) list.push(fee);
     row._serviceParts = Object.create(null);
