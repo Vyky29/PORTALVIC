@@ -978,10 +978,12 @@
     mergeCompanyClientsFromRosterRows(built.clientNotesById, allRows);
 
     let clientsInfo = (source && source.clientsInfo) || [];
+    // Bundle ships a tiny Teflon demo clientsInfo (4 rows). Prefer the full
+    // Clients Info embed whenever it is richer so real participants are not blank.
     if (
-      (!clientsInfo || !clientsInfo.length) &&
       typeof window !== "undefined" &&
-      Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)
+      Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS) &&
+      window.PORTAL_CLIENTS_INFO_ROWS.length > (clientsInfo.length || 0)
     ) {
       clientsInfo = window.PORTAL_CLIENTS_INFO_ROWS;
     }

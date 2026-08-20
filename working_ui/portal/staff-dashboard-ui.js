@@ -4457,6 +4457,21 @@
       renderClientServiceButtons([]);
       syncClientSwimTermReviewButton(item);
       openSheet('clientSheet');
+      // Handheld used to skip clients_info load — ensure + refresh when embed arrives.
+      try{
+        if(typeof portalStaffEnsureDeferredDashboardScripts === 'function'){
+          void portalStaffEnsureDeferredDashboardScripts().then(function(){
+            if(currentOpenClientItem !== item) return;
+            if(typeof portalApplyClientsInfoToNotes === 'function') portalApplyClientsInfoToNotes();
+            const refreshed = resolveClientGeneralInfoText(item);
+            setClientInfoFormattedBody('clientGeneral', refreshed, 'No general information available.');
+            const genSheet = document.getElementById('clientGeneralSheet');
+            if(genSheet && genSheet.classList.contains('open')){
+              setClientInfoFormattedBody('clientGeneral', refreshed, 'No general information available.');
+            }
+          });
+        }
+      }catch(_){}
       const cs = document.getElementById('clientSheet');
       if(cs) cs.classList.toggle('client-sheet--roster-entry', !!item.directoryProfile);
       const qaDock = document.getElementById('dockClientQuickActions');

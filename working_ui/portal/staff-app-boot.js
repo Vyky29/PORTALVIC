@@ -180,7 +180,8 @@
 
     if (isHandheld) {
       var kick = function () {
-        global.setTimeout(start, 3500);
+        // Short defer so first paint stays light; still must run (was skipped entirely before).
+        global.setTimeout(start, 800);
       };
       if (document.readyState === "complete") kick();
       else global.addEventListener("load", kick, { once: true });
@@ -269,7 +270,9 @@
   }
 
   function onDomReady() {
-    if (!isHandheld) portalStaffStartDeferredDashboardScripts();
+    // Handheld must load clients_info + general-info hydrate too — otherwise
+    // General Info stays empty for almost every participant on phones/tablets.
+    portalStaffStartDeferredDashboardScripts();
     portalStaffDeferHeadExtras();
     if (isStaffApp && typeof global.portalStaffDeferWebPush === "function") {
       global.portalStaffDeferWebPush();
