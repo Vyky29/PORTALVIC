@@ -496,6 +496,20 @@
     "Sign in": "Iniciar sesión",
   };
 
+  /* Merge large dictionaries shipped in portal_ui_locale_dict.js */
+  try {
+    var _extra = global.__PORTAL_UI_LOCALE_EXTRA__ || {};
+    Object.keys(_extra).forEach(function (k) {
+      if (!STR_ES[k]) STR_ES[k] = _extra[k];
+    });
+  } catch (_mergeExtra) {}
+  var WORD_ES = {};
+  try {
+    WORD_ES = global.__PORTAL_UI_LOCALE_WORDS__ || {};
+  } catch (_w) {
+    WORD_ES = {};
+  }
+
   var PHRASE_LIST = null;
   var nodeSrc = typeof WeakMap !== "undefined" ? new WeakMap() : null;
   var attrSrc = typeof WeakMap !== "undefined" ? new WeakMap() : null;
@@ -583,22 +597,35 @@
     try {
       global.localStorage.setItem(STORAGE_KEY, next);
     } catch (_e) {}
-    if (!isExecSpanishEligible()) {
-      /* Still store preference; apply when identity resolves. */
+    /* If identity not ready yet but email/username looks exec, still apply. */
+    applyShell();
+    if (!isExecSpanishEligible() && next === "es") {
       paintToggle();
       return next;
     }
-    applyShell();
+    ensureObserver();
     translateTree(global.document && global.document.body);
     paintToggle();
     try {
       if (typeof global.renderNav === "function") global.renderNav();
     } catch (_rn) {}
     try {
+      /* Re-render current admin view so fresh English HTML gets translated */
+      if (
+        typeof global.portalAdminSetView === "function" &&
+        global.document &&
+        global.document.getElementById("workspace")
+      ) {
+        var hash = String((global.location && global.location.hash) || "").replace(/^#/, "");
+        if (hash) global.portalAdminSetView(hash);
+      }
+    } catch (_sv) {}
+    try {
       global.dispatchEvent(
         new CustomEvent("portal:ui-lang-changed", { detail: { lang: next } })
       );
     } catch (_e2) {}
+    scheduleTranslate();
     return next;
   }
 
@@ -615,6 +642,51 @@
       body.classList.toggle("portal-lang-en", lang !== "es");
     }
     return lang;
+  }
+
+  function translateTokens(s) {
+    if (!s || !WORD_ES || !Object.keys(WORD_ES).length) return s;
+    var shortOk = {
+      no: 1,
+      or: 1,
+      of: 1,
+      to: 1,
+      by: 1,
+      on: 1,
+      in: 1,
+      at: 1,
+      is: 1,
+      be: 1,
+      we: 1,
+      he: 1,
+      me: 1,
+      my: 1,
+      am: 1,
+      do: 1,
+      an: 1,
+      as: 1,
+      if: 1,
+      so: 1,
+      up: 1,
+      all: 1,
+      any: 1,
+      not: 1,
+      new: 1,
+      yes: 1,
+    };
+    return String(s).replace(/[A-Za-zÀ-ÿ']+/g, function (word) {
+      var lower = word.toLowerCase();
+      if (word.length < 3 && !shortOk[lower]) return word;
+      var tr = WORD_ES[lower];
+      if (!tr) return word;
+      if (word.length > 1 && word === word.toUpperCase()) {
+        return String(tr).toUpperCase();
+      }
+      if (word.charAt(0) === word.charAt(0).toUpperCase()) {
+        return String(tr).charAt(0).toUpperCase() + String(tr).slice(1);
+      }
+      return tr;
+    });
   }
 
   function translatePhrase(raw) {
@@ -639,6 +711,12 @@
         out = out.split(en).join(es);
         changed = true;
       }
+    }
+    /* Word-level pass for leftover English UI tokens */
+    var tok = translateTokens(out);
+    if (tok !== out) {
+      changed = true;
+      out = tok;
     }
     return changed ? out : raw;
   }
@@ -943,10 +1021,32 @@
     if (foot) mountToggleIn(foot, null);
   }
 
+  function wrapAdminSetView() {
+    try {
+      var sv = global.portalAdminSetView;
+      if (!sv || sv.__portalI18nWrapped) return;
+      var wrapped = function () {
+        var r = sv.apply(this, arguments);
+        if (getLang() === "es") {
+          setTimeout(function () {
+            translateTree(global.document && global.document.body);
+          }, 0);
+          setTimeout(function () {
+            translateTree(global.document && global.document.body);
+          }, 250);
+        }
+        return r;
+      };
+      wrapped.__portalI18nWrapped = true;
+      global.portalAdminSetView = wrapped;
+    } catch (_w) {}
+  }
+
   function boot(surface) {
     bootSurface = clean(surface) || bootSurface;
     applyShell();
     ensureLangToggle();
+    wrapAdminSetView();
     if (!isExecSpanishEligible()) {
       paintToggle();
       return getLang();
@@ -957,6 +1057,7 @@
       if (typeof global.renderNav === "function") global.renderNav();
     } catch (_rn) {}
     paintToggle();
+    scheduleTranslate();
     return getLang();
   }
 

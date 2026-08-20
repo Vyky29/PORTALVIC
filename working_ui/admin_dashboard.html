@@ -61,7 +61,8 @@
     })();
   </script>
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <script src="/portal/portal_ui_locale.js?v=20260818-es-full"></script>
+  <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
+  <script src="/portal/portal_ui_locale.js?v=20260820-es-full"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260720-dc-crash-weeks" />
   <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
@@ -2115,6 +2116,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         try{ renderNav(); }catch(_rnNav){}
       }
       try{ history.replaceState(null,'','#'+id); }catch(e){}
+      try{
+        if(window.PortalUiLocale && typeof window.PortalUiLocale.translateTree === 'function' &&
+           window.PortalUiLocale.getLang && window.PortalUiLocale.getLang() === 'es'){
+          window.PortalUiLocale.translateTree(document.body);
+          setTimeout(function(){
+            try{ window.PortalUiLocale.translateTree(document.body); }catch(_t2){}
+          }, 200);
+        }
+      }catch(_i18nView){}
     }
     window.portalAdminSetView = setView;
     window.portalAdminOpenTermSlotEdit = function(prefill){
