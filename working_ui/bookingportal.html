@@ -707,58 +707,187 @@
       outline: 2px solid var(--blue);
       outline-offset: 2px;
     }
-    .svc-info-sheet {
-      margin: 0 0 14px;
+    /* Service info popup — matches svc-card visual language */
+    #serviceInfoSheet {
+      z-index: 45;
+      align-items: center;
+      padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+      background: rgba(23, 50, 71, 0.42);
+    }
+    .svc-info-panel {
+      width: min(420px, 100%);
+      max-height: min(92dvh, 720px);
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border-radius: var(--radius);
+      box-shadow: 0 18px 48px rgba(23, 50, 71, 0.22);
+      background: var(--white);
+      border: 1px solid var(--line);
+      min-width: 0;
+      position: relative;
+    }
+    .svc-info-panel__close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 3;
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--ink);
+      font: inherit;
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(23, 50, 71, 0.18);
+    }
+    .svc-info-panel__close:hover { background: #fff; }
+    .svc-info-panel__close:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
+    .svc-info-panel__scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .svc-info-hero {
+      position: relative;
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      min-width: 0;
+    }
+    .svc-info-hero .svc-card__media {
+      border-radius: 0;
+      aspect-ratio: 16 / 10;
+    }
+    .svc-info-hero .svc__icon {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translate(-50%, 50%);
+      margin: 0;
+      width: 48px;
+      height: 48px;
+      z-index: 2;
+    }
+    .svc-info-body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 28px 18px 8px;
+      text-align: center;
+      min-width: 0;
+    }
+    .svc-info-body h3 {
+      margin: 0;
+      color: var(--ink);
+      font-size: clamp(1.15rem, 3.2vw, 1.4rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      overflow-wrap: break-word;
+      width: 100%;
       min-width: 0;
     }
     .svc-info-sheet__lead {
-      margin: 0 0 12px;
+      margin: 0;
       font-size: 0.92rem;
       color: var(--text);
       line-height: 1.5;
       overflow-wrap: break-word;
+      width: 100%;
+      text-align: left;
     }
     .svc-info-sheet__meta {
       display: flex;
       flex-wrap: wrap;
+      justify-content: center;
       gap: 8px;
-      margin: 0 0 12px;
+      margin: 0;
       min-width: 0;
+      width: 100%;
     }
     .svc-info-sheet__label {
-      margin: 0 0 8px;
+      margin: 4px 0 0;
       font-size: 0.78rem;
       font-weight: 800;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--muted);
+      width: 100%;
+      text-align: left;
     }
     .svc-info-sheet__list {
-      margin: 0 0 12px;
-      padding: 0 0 0 1.15em;
-      color: var(--ink);
-      font-size: 0.92rem;
-      line-height: 1.45;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      width: 100%;
       min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
     }
     .svc-info-sheet__list li {
-      margin: 0 0 6px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f3f7fb;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-size: 0.88rem;
+      line-height: 1.4;
       overflow-wrap: break-word;
       min-width: 0;
     }
-    .svc-info-sheet__list li:last-child { margin-bottom: 0; }
+    .svc-info-sheet__list li svg {
+      flex: 0 0 auto;
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      color: var(--ok);
+    }
+    .svc-info-sheet__list li span {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
     .svc-info-sheet__link {
       margin: 0;
       font-size: 0.86rem;
+      width: 100%;
+      text-align: center;
     }
     .svc-info-sheet__link a {
       color: var(--blueDeep);
       font-weight: 700;
       overflow-wrap: break-word;
     }
-    #serviceInfoSheet { z-index: 45; }
-    #serviceInfoSheet .sheet__panel {
-      max-height: min(88dvh, 640px);
+    .svc-info-panel__footer {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px 16px max(14px, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--line);
+      background: linear-gradient(180deg, #fafcfe 0%, #fff 100%);
+      min-width: 0;
+    }
+    .svc-info-panel__footer .btn {
+      width: 100%;
     }
 
     .offer-block {
@@ -1919,13 +2048,12 @@
   </div>
 
   <div class="sheet" id="serviceInfoSheet" hidden>
-    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="svcInfoTitle">
-      <h3 id="svcInfoTitle">Service</h3>
-      <div id="svcInfoBody" class="svc-info-sheet"></div>
-      <div class="sheet__actions">
+    <div class="sheet__panel svc-info-panel" role="dialog" aria-modal="true" aria-labelledby="svcInfoTitle">
+      <button type="button" class="svc-info-panel__close" id="svcInfoClose" aria-label="Close">×</button>
+      <div id="svcInfoBody" class="svc-info-panel__scroll"></div>
+      <div class="svc-info-panel__footer">
         <button type="button" class="btn" id="svcInfoBook">See weekly times</button>
         <a class="btn btn--soft" id="svcInfoWebsite" href="https://www.clubsensational.org/" target="_blank" rel="noopener noreferrer">Full details on website</a>
-        <button type="button" class="btn btn--soft" id="svcInfoClose">Close</button>
       </div>
     </div>
   </div>
@@ -2515,6 +2643,7 @@
 
   function serviceInfoBodyHtml(s) {
     var info = serviceInfoPack(s);
+    var pack = serviceIconPack(s.id);
     var chips =
       '<div class="svc-info-sheet__meta">' +
       '<span class="chip">' +
@@ -2540,7 +2669,13 @@
         ? '<p class="svc-info-sheet__label">What to expect</p><ul class="svc-info-sheet__list">' +
           info.bullets
             .map(function (b) {
-              return "<li>" + esc(b) + "</li>";
+              return (
+                "<li>" +
+                ICONS.check +
+                "<span>" +
+                esc(b) +
+                "</span></li>"
+              );
             })
             .join("") +
           "</ul>"
@@ -2551,13 +2686,25 @@
         '" target="_blank" rel="noopener noreferrer">Read the full service page on our website</a></p>'
       : "";
     return (
+      '<div class="svc-info-hero">' +
+      serviceMediaHtml(s.id) +
+      '<div class="svc__icon ' +
+      pack.cls +
+      '" aria-hidden="true">' +
+      pack.svg +
+      "</div></div>" +
+      '<div class="svc-info-body">' +
+      '<h3 id="svcInfoTitle">' +
+      esc(s.name) +
+      "</h3>" +
+      chips +
+      venues +
       '<p class="svc-info-sheet__lead">' +
       esc(info.lead) +
       "</p>" +
-      chips +
-      venues +
       bullets +
-      link
+      link +
+      "</div>"
     );
   }
 
@@ -2573,21 +2720,20 @@
     var s = mock.serviceById(serviceId);
     if (!s) return;
     var sheet = document.getElementById("serviceInfoSheet");
-    var title = document.getElementById("svcInfoTitle");
     var body = document.getElementById("svcInfoBody");
     var bookBtn = document.getElementById("svcInfoBook");
     var webLink = document.getElementById("svcInfoWebsite");
     var info = serviceInfoPack(s);
-    if (title) title.textContent = s.name;
     if (body) body.innerHTML = serviceInfoBodyHtml(s);
     if (bookBtn) {
-      bookBtn.textContent = serviceInfoBookLabel(s);
+      bookBtn.innerHTML = ICONS.arrow + " " + esc(serviceInfoBookLabel(s));
       bookBtn.setAttribute("data-svc-info-book", s.id);
     }
     if (webLink) {
       if (info.url) {
         webLink.href = info.url;
         webLink.hidden = false;
+        webLink.innerHTML = ICONS.info + " Full details on website";
       } else {
         webLink.hidden = true;
       }
