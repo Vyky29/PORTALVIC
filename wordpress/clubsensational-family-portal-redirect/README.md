@@ -12,7 +12,7 @@ Proxies desde `family.clubsensational.org` (Vercel):
 ## Instalación / actualización
 
 1. Sube la carpeta a `wp-content/plugins/clubsensational-family-portal-redirect/` (o ZIP → Plugins → Add New)
-2. Activa / actualiza **clubSENsational Family Portal Proxy** (v1.5+)
+2. Activa / actualiza **clubSENsational Family Portal Proxy** (v1.6+)
 3. Prueba:
    - https://www.clubsensational.org/parent
    - https://www.clubsensational.org/bookingportal
@@ -37,15 +37,23 @@ Si el header usa un menú de WordPress (Appearance → Menus), el plugin **susti
 
 Si el menú está **solo** en Elementor (enlaces manuales, sin menú WP), edita el header en Elementor y copia la tabla de arriba.
 
-## Splash & Connect /splash/ (v1.5+)
+## Splash & Connect /splash/ (v1.6+)
 
-Ya no hay **Multi-Activity los miércoles en Acton**. El plugin oculta en `/splash/`:
+Ya no hay **Multi-Activity los miércoles en Acton**. La página vive en **Vercel** (`working_ui/splash.html`, generada sin bloque Acton/Wednesday). El plugin hace **proxy** de `/splash/` igual que `/bookingportal`.
 
-- El bloque **Acton Centre / Wednesday** (sección Elementor `ffc7ab4`)
-- La fila del mapa **Acton Centre (W3 6NE)** (`cb0281b`)
-- Texto del pie: "Tuesday, Wednesday & Thursday Afternoon" y "W3 6NE" en Locations
+Regenerar tras cambios en WordPress (opcional):
 
-Solo queda visible **SwimFarm / Sunday**. Para un arreglo permanente, edita la página en Elementor y borra esas secciones a mano.
+```bash
+node scripts/build-splash-page.mjs
+```
+
+**Sin subir el plugin v1.6**, la copia corregida sigue en:
+
+- https://family.clubsensational.org/splash/
+
+**Con plugin v1.6** en WordPress, también en:
+
+- https://www.clubsensational.org/splash/
 
 ## Requisitos
 
