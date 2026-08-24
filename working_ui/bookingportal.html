@@ -707,26 +707,28 @@
       outline: 2px solid var(--blue);
       outline-offset: 2px;
     }
-    /* Service info popup — matches svc-card visual language */
-    #serviceInfoSheet {
-      z-index: 45;
-      align-items: center;
-      padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
-      background: rgba(23, 50, 71, 0.42);
+    /* Service info — inline panel on the page (not a blocking modal) */
+    .svc-info-inline {
+      margin: 0 0 20px;
+      scroll-margin-top: 100px;
+      min-width: 0;
+      width: 100%;
     }
     .svc-info-panel {
-      width: min(420px, 100%);
-      max-height: min(92dvh, 720px);
+      width: 100%;
       padding: 0;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      display: block;
       border-radius: var(--radius);
-      box-shadow: 0 18px 48px rgba(23, 50, 71, 0.22);
+      box-shadow: 0 10px 28px rgba(23, 50, 71, 0.08);
       background: var(--white);
-      border: 1px solid var(--line);
+      border: 1px solid rgba(45, 132, 179, 0.35);
       min-width: 0;
       position: relative;
+    }
+    .svc-card.is-info-open {
+      border-color: rgba(45, 132, 179, 0.55);
+      box-shadow: 0 0 0 3px rgba(45, 132, 179, 0.18);
     }
     .svc-info-panel__close {
       position: absolute;
@@ -753,11 +755,8 @@
       outline: 2px solid var(--blue);
       outline-offset: 2px;
     }
-    .svc-info-panel__scroll {
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
+    .svc-info-panel__body {
+      min-width: 0;
     }
     .svc-info-hero {
       position: relative;
@@ -769,7 +768,11 @@
     }
     .svc-info-hero .svc-card__media {
       border-radius: 0;
-      aspect-ratio: 16 / 10;
+      aspect-ratio: 16 / 7;
+      max-height: 280px;
+    }
+    .svc-info-hero .svc-card__media img {
+      object-position: center 35%;
     }
     .svc-info-hero .svc__icon {
       position: absolute;
@@ -786,7 +789,7 @@
       flex-direction: column;
       align-items: center;
       gap: 12px;
-      padding: 28px 18px 8px;
+      padding: 28px 18px 16px;
       text-align: center;
       min-width: 0;
     }
@@ -877,17 +880,24 @@
       overflow-wrap: break-word;
     }
     .svc-info-panel__footer {
-      flex: 0 0 auto;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 12px 16px max(14px, env(safe-area-inset-bottom));
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 14px 16px 16px;
       border-top: 1px solid var(--line);
       background: linear-gradient(180deg, #fafcfe 0%, #fff 100%);
       min-width: 0;
     }
     .svc-info-panel__footer .btn {
-      width: 100%;
+      flex: 1 1 180px;
+      min-width: 0;
+    }
+    @media (min-width: 720px) {
+      .svc-info-inline {
+        max-width: min(100%, 920px);
+        margin-left: auto;
+        margin-right: auto;
+      }
     }
 
     .offer-block {
@@ -1973,6 +1983,17 @@
 
     <section class="services" id="serviceCards" aria-label="Our services"></section>
 
+    <div id="serviceInfoInline" class="svc-info-inline" hidden>
+      <article class="svc-info-panel" role="region" aria-labelledby="svcInfoTitle">
+        <button type="button" class="svc-info-panel__close" id="svcInfoClose" aria-label="Close">×</button>
+        <div id="svcInfoBody" class="svc-info-panel__body"></div>
+        <div class="svc-info-panel__footer">
+          <button type="button" class="btn" id="svcInfoBook">See weekly times</button>
+          <a class="btn btn--soft" id="svcInfoWebsite" href="https://www.clubsensational.org/" target="_blank" rel="noopener noreferrer">Full details on website</a>
+        </div>
+      </article>
+    </div>
+
     <section class="filters" aria-label="Filters">
       <h2 class="filters__title">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -2043,17 +2064,6 @@
       <div class="sheet__actions">
         <a class="btn" id="sheetMail" href="mailto:info@clubsensational.org">Email the office</a>
         <button type="button" class="btn btn--soft" id="sheetClose">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="sheet" id="serviceInfoSheet" hidden>
-    <div class="sheet__panel svc-info-panel" role="dialog" aria-modal="true" aria-labelledby="svcInfoTitle">
-      <button type="button" class="svc-info-panel__close" id="svcInfoClose" aria-label="Close">×</button>
-      <div id="svcInfoBody" class="svc-info-panel__scroll"></div>
-      <div class="svc-info-panel__footer">
-        <button type="button" class="btn" id="svcInfoBook">See weekly times</button>
-        <a class="btn btn--soft" id="svcInfoWebsite" href="https://www.clubsensational.org/" target="_blank" rel="noopener noreferrer">Full details on website</a>
       </div>
     </div>
   </div>
@@ -2716,14 +2726,23 @@
     return "See weekly times & book";
   }
 
-  function openServiceInfo(serviceId) {
+  var activeInfoServiceId = "";
+
+  function markInfoServiceCard(serviceId) {
+    document.querySelectorAll(".svc-card[data-service-id]").forEach(function (card) {
+      card.classList.toggle("is-info-open", !!serviceId && card.getAttribute("data-service-id") === serviceId);
+    });
+  }
+
+  function openServiceInfo(serviceId, opts) {
     var s = mock.serviceById(serviceId);
     if (!s) return;
-    var sheet = document.getElementById("serviceInfoSheet");
+    var inline = document.getElementById("serviceInfoInline");
     var body = document.getElementById("svcInfoBody");
     var bookBtn = document.getElementById("svcInfoBook");
     var webLink = document.getElementById("svcInfoWebsite");
     var info = serviceInfoPack(s);
+    activeInfoServiceId = s.id || "";
     if (body) body.innerHTML = serviceInfoBodyHtml(s);
     if (bookBtn) {
       bookBtn.innerHTML = ICONS.arrow + " " + esc(serviceInfoBookLabel(s));
@@ -2738,7 +2757,11 @@
         webLink.hidden = true;
       }
     }
-    if (sheet) sheet.hidden = false;
+    if (inline) inline.hidden = false;
+    markInfoServiceCard(s.id);
+    if ((!opts || opts.scroll !== false) && inline && typeof inline.scrollIntoView === "function") {
+      inline.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
     try {
       if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.isUnlocked()) {
         void window.PortalBookingLeadGate.pingActivity({
@@ -2752,8 +2775,10 @@
   }
 
   function closeServiceInfo() {
-    var sheet = document.getElementById("serviceInfoSheet");
-    if (sheet) sheet.hidden = true;
+    activeInfoServiceId = "";
+    var inline = document.getElementById("serviceInfoInline");
+    if (inline) inline.hidden = true;
+    markInfoServiceCard("");
   }
 
   function timetableAboutBtnHtml(s) {
@@ -3824,6 +3849,9 @@
   function refresh() {
     renderServiceCards();
     renderTimetables();
+    if (activeInfoServiceId) {
+      openServiceInfo(activeInfoServiceId, { scroll: false });
+    }
   }
 
   function jumpToService(serviceId) {
@@ -3861,9 +3889,6 @@
   });
 
   document.getElementById("svcInfoClose").addEventListener("click", closeServiceInfo);
-  document.getElementById("serviceInfoSheet").addEventListener("click", function (e) {
-    if (e.target === e.currentTarget) closeServiceInfo();
-  });
   document.getElementById("svcInfoBook").addEventListener("click", function () {
     var sid = this.getAttribute("data-svc-info-book") || "";
     closeServiceInfo();
