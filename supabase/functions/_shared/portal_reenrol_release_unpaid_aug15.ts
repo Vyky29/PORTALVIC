@@ -37,6 +37,7 @@ export const UNPAID_AUG15_EXCLUDE_CONTACTS = new Set<string>([
   "170", // Jack Stratton
   "186", // Stephanie Ng
   "89", // Tom Eriksson
+  "176", // Erik Ndregjoni — office hold to 31 Aug 23:59; release 1 Sep 00:00
 ]);
 
 function clean(v: unknown, max = 200): string {

@@ -15,6 +15,10 @@ import {
   runUnpaidAug15PlaceRelease,
   UNPAID_AUG15_RELEASE_LIVE_FROM_ISO,
 } from "../_shared/portal_reenrol_release_unpaid_aug15.ts";
+import {
+  runOfficeHoldSep1PlaceRelease,
+  OFFICE_HOLD_SEP1_LIVE_FROM_ISO,
+} from "../_shared/portal_office_hold_release_sep1.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -107,5 +111,28 @@ Deno.serve(async (req) => {
     "madre",
     result.madre_changed,
   );
-  return json(200, result);
+
+  const sep1 = await runOfficeHoldSep1PlaceRelease(admin, {
+    force: !!body.force,
+    dry_run: !!body.dry_run,
+  });
+  if (!sep1.ok) {
+    console.error("[office-hold-sep1-release]", sep1.error);
+    return json(500, { unpaid_aug15: result, office_hold_sep1: sep1 });
+  }
+  console.log(
+    "[office-hold-sep1-release]",
+    sep1.skipped ? "skipped" : sep1.dry_run ? "dry_run" : "applied",
+    "cases",
+    sep1.cases?.length,
+    "madre",
+    sep1.madre_changed,
+  );
+
+  return json(200, {
+    unpaid_aug15: result,
+    office_hold_sep1: sep1,
+    live_from_aug15: UNPAID_AUG15_RELEASE_LIVE_FROM_ISO,
+    live_from_sep1: OFFICE_HOLD_SEP1_LIVE_FROM_ISO,
+  });
 });
