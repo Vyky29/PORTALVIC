@@ -709,7 +709,7 @@
     }
     /* Service info — inline panel on the page (not a blocking modal) */
     .svc-info-inline {
-      margin: 0 0 20px;
+      margin: 0 0 24px;
       scroll-margin-top: 100px;
       min-width: 0;
       width: 100%;
@@ -720,7 +720,7 @@
       overflow: hidden;
       display: block;
       border-radius: var(--radius);
-      box-shadow: 0 10px 28px rgba(23, 50, 71, 0.08);
+      box-shadow: 0 12px 32px rgba(23, 50, 71, 0.1);
       background: var(--white);
       border: 1px solid rgba(45, 132, 179, 0.35);
       min-width: 0;
@@ -768,8 +768,8 @@
     }
     .svc-info-hero .svc-card__media {
       border-radius: 0;
-      aspect-ratio: 16 / 7;
-      max-height: 280px;
+      aspect-ratio: 16 / 6;
+      max-height: 380px;
     }
     .svc-info-hero .svc-card__media img {
       object-position: center 35%;
@@ -780,23 +780,27 @@
       bottom: 0;
       transform: translate(-50%, 50%);
       margin: 0;
-      width: 48px;
-      height: 48px;
+      width: 56px;
+      height: 56px;
       z-index: 2;
+    }
+    .svc-info-hero .svc__icon svg {
+      width: 26px !important;
+      height: 26px !important;
     }
     .svc-info-body {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 12px;
-      padding: 28px 18px 16px;
+      gap: 14px;
+      padding: 34px clamp(20px, 4vw, 32px) 22px;
       text-align: center;
       min-width: 0;
     }
     .svc-info-body h3 {
       margin: 0;
       color: var(--ink);
-      font-size: clamp(1.15rem, 3.2vw, 1.4rem);
+      font-size: clamp(1.28rem, 3.6vw, 1.75rem);
       font-weight: 800;
       letter-spacing: -0.02em;
       overflow-wrap: break-word;
@@ -805,11 +809,12 @@
     }
     .svc-info-sheet__lead {
       margin: 0;
-      font-size: 0.92rem;
+      font-size: clamp(0.96rem, 2vw, 1.05rem);
       color: var(--text);
-      line-height: 1.5;
+      line-height: 1.55;
       overflow-wrap: break-word;
       width: 100%;
+      max-width: 52rem;
       text-align: left;
     }
     .svc-info-sheet__meta {
@@ -847,13 +852,13 @@
       align-items: flex-start;
       gap: 10px;
       margin: 0;
-      padding: 10px 12px;
+      padding: 12px 14px;
       border-radius: 12px;
       background: #f3f7fb;
       border: 1px solid var(--line);
       color: var(--ink);
-      font-size: 0.88rem;
-      line-height: 1.4;
+      font-size: clamp(0.9rem, 1.8vw, 0.98rem);
+      line-height: 1.45;
       overflow-wrap: break-word;
       min-width: 0;
     }
@@ -868,35 +873,26 @@
       min-width: 0;
       overflow-wrap: break-word;
     }
-    .svc-info-sheet__link {
-      margin: 0;
-      font-size: 0.86rem;
-      width: 100%;
-      text-align: center;
-    }
-    .svc-info-sheet__link a {
-      color: var(--blueDeep);
-      font-weight: 700;
-      overflow-wrap: break-word;
-    }
     .svc-info-panel__footer {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      padding: 14px 16px 16px;
+      padding: 16px clamp(20px, 4vw, 32px) 20px;
       border-top: 1px solid var(--line);
       background: linear-gradient(180deg, #fafcfe 0%, #fff 100%);
       min-width: 0;
     }
     .svc-info-panel__footer .btn {
-      flex: 1 1 180px;
+      width: 100%;
       min-width: 0;
+      padding: 13px 16px;
+      font-size: 0.95rem;
     }
-    @media (min-width: 720px) {
-      .svc-info-inline {
-        max-width: min(100%, 920px);
-        margin-left: auto;
-        margin-right: auto;
+    @media (min-width: 900px) {
+      .svc-info-sheet__list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
       }
     }
 
@@ -1989,7 +1985,6 @@
         <div id="svcInfoBody" class="svc-info-panel__body"></div>
         <div class="svc-info-panel__footer">
           <button type="button" class="btn" id="svcInfoBook">See weekly times</button>
-          <a class="btn btn--soft" id="svcInfoWebsite" href="https://www.clubsensational.org/" target="_blank" rel="noopener noreferrer">Full details on website</a>
         </div>
       </article>
     </div>
@@ -2690,11 +2685,6 @@
             .join("") +
           "</ul>"
         : "";
-    var link = info.url
-      ? '<p class="svc-info-sheet__link"><a href="' +
-        esc(info.url) +
-        '" target="_blank" rel="noopener noreferrer">Read the full service page on our website</a></p>'
-      : "";
     return (
       '<div class="svc-info-hero">' +
       serviceMediaHtml(s.id) +
@@ -2713,7 +2703,6 @@
       esc(info.lead) +
       "</p>" +
       bullets +
-      link +
       "</div>"
     );
   }
@@ -2740,22 +2729,11 @@
     var inline = document.getElementById("serviceInfoInline");
     var body = document.getElementById("svcInfoBody");
     var bookBtn = document.getElementById("svcInfoBook");
-    var webLink = document.getElementById("svcInfoWebsite");
-    var info = serviceInfoPack(s);
     activeInfoServiceId = s.id || "";
     if (body) body.innerHTML = serviceInfoBodyHtml(s);
     if (bookBtn) {
       bookBtn.innerHTML = ICONS.arrow + " " + esc(serviceInfoBookLabel(s));
       bookBtn.setAttribute("data-svc-info-book", s.id);
-    }
-    if (webLink) {
-      if (info.url) {
-        webLink.href = info.url;
-        webLink.hidden = false;
-        webLink.innerHTML = ICONS.info + " Full details on website";
-      } else {
-        webLink.hidden = true;
-      }
     }
     if (inline) inline.hidden = false;
     markInfoServiceCard(s.id);
