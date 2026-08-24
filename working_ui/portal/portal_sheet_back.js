@@ -141,9 +141,31 @@
 
     backNavActive = true;
     try {
+      // Leaving Participants via the blue sheet handle must land on Quick menu
+      // (yellow Menú Rápido), never a half-selected Participants dock on the bare dashboard.
+      if (current === "clientsSheet") {
+        if (open) {
+          open("menuSheet", { skipNavRecord: true, bypassAnnouncementLock: true });
+        } else if (close) {
+          close({ bypassAnnouncementLock: true });
+          clearStack();
+        }
+        portalSyncQuickMenuDockChrome();
+        portalSyncParticipantsDockChrome();
+        if (typeof global.syncDockNavContext === "function") global.syncDockNavContext();
+        return true;
+      }
       if (entry && entry.from) {
         if (portalIsDockFooterSheet(current) && portalIsDockFooterSheet(entry.from)) {
-          portalCloseToDashboard();
+          // Peer dock sheets (e.g. menu ↔ other): prefer previous sheet, not wipe-to-dashboard.
+          if (open) open(entry.from, { skipNavRecord: true, bypassAnnouncementLock: true });
+          else if (close) {
+            close({ bypassAnnouncementLock: true });
+            clearStack();
+          }
+          portalSyncQuickMenuDockChrome();
+          portalSyncParticipantsDockChrome();
+          if (typeof global.syncDockNavContext === "function") global.syncDockNavContext();
           return true;
         }
         if (open) open(entry.from, { skipNavRecord: true });
@@ -180,6 +202,15 @@
   }
 
   function portalCloseParticipantsFlow() {
+    // Match blue-handle back: leave Participants on Quick menu, not bare dashboard.
+    var open = typeof global.openSheet === "function" ? global.openSheet : null;
+    if (open) {
+      open("menuSheet", { skipNavRecord: true, bypassAnnouncementLock: true });
+      portalSyncQuickMenuDockChrome();
+      portalSyncParticipantsDockChrome();
+      if (typeof global.syncDockNavContext === "function") global.syncDockNavContext();
+      return true;
+    }
     return portalCloseToDashboard();
   }
 
