@@ -2,7 +2,7 @@
 /**
  * Plugin Name: clubSENsational Family Portal Proxy
  * Description: Serves /parent and /bookingportal on www.clubsensational.org via reverse proxy (URL stays on your domain).
- * Version: 1.4.0
+ * Version: 1.5.0
  * Author: clubSENsational
  *
  * Proxies family portal pages and static assets from family.clubsensational.org (Vercel).
@@ -89,6 +89,67 @@ function cs_family_portal_sync_services_menu($items, $menu, $args)
     }
 
     return $filtered;
+}
+
+/**
+ * Splash & Connect page: Wed Acton Multi-Activity is no longer offered (Aug 2026).
+ * Hides the Acton venue block and related footer copy until Elementor is edited.
+ */
+function cs_family_portal_is_splash_page(): bool
+{
+    if (function_exists('is_page') && is_page('splash')) {
+        return true;
+    }
+    $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/');
+    return (bool) preg_match('#^/splash/?$#', $path);
+}
+
+add_action('wp_head', 'cs_family_portal_splash_hide_wed_acton_styles', 99);
+
+function cs_family_portal_splash_hide_wed_acton_styles(): void
+{
+    if (!cs_family_portal_is_splash_page()) {
+        return;
+    }
+    echo '<style id="cs-splash-hide-wed-acton">';
+    echo '.elementor-element-ffc7ab4{display:none!important;}';
+    echo '.elementor-element-cb0281b{display:none!important;}';
+    echo '</style>';
+}
+
+add_action('wp_footer', 'cs_family_portal_splash_hide_wed_acton_script', 99);
+
+function cs_family_portal_splash_hide_wed_acton_script(): void
+{
+    if (!cs_family_portal_is_splash_page()) {
+        return;
+    }
+    ?>
+    <script>
+    (function () {
+      function cleanSplashFooter() {
+        document.querySelectorAll(".elementor-icon-box-description").forEach(function (el) {
+          var html = el.innerHTML;
+          if (/Tuesday,\s*Wednesday\s*&\s*Thursday/i.test(html)) {
+            html = html.replace(
+              /<b>Tuesday,\s*Wednesday\s*&\s*Thursday<\/b><\/br>\s*Afternoon<\/br><\/br>\s*/i,
+              ""
+            );
+          }
+          if (/W10 6RP<\/br>\s*&<\/br>\s*W3 6NE/i.test(html)) {
+            html = html.replace(/<\/br>\s*&<\/br>\s*W3 6NE/i, "");
+          }
+          el.innerHTML = html;
+        });
+      }
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", cleanSplashFooter);
+      } else {
+        cleanSplashFooter();
+      }
+    })();
+    </script>
+    <?php
 }
 
 add_action('plugins_loaded', 'cs_family_portal_early_proxy', 1);

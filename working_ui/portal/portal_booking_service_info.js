@@ -41,11 +41,11 @@
     },
     multi: {
       infoLead:
-        "Splash & Connect is a 90-minute multidisciplinary session combining 45 minutes of land-based learning with 45 minutes of swimming — nurturing mind and body together.",
+        "Splash & Connect is a 90-minute multidisciplinary session at SwimFarm on Sundays — 45 minutes of land-based learning plus 45 minutes of swimming, nurturing mind and body together.",
       infoBullets: [
+        "Sundays at SwimFarm: 9.30-11, 11-12.30, and 12.30-2 (three 90-minute bands)",
         "Communication, social skills, independence, and life skills through group games",
         "Swimming for motor skills, wellness, and anxiety reduction",
-        "Holistic support integrating social, emotional, and physical development",
         "1:1 support with structured visual routines",
       ],
       infoUrl: "https://www.clubsensational.org/splash/",

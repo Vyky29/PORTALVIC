@@ -116,7 +116,7 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
     priceHint: "From £120 / 90 min session",
     pricePerSession: 120,
     blurb:
-      "Splash & Connect: a 90-minute multidisciplinary block — land-based learning (communication, social skills, independence) plus swimming. One visit that supports mind and body for the participant.",
+      "Splash & Connect: a 90-minute multidisciplinary block at SwimFarm on Sundays — land-based learning (communication, social skills, independence) plus swimming. One visit that supports mind and body for the participant.",
   },
   bespoke: {
     id: "bespoke",
@@ -335,15 +335,14 @@ function slotMidMinutes(slot: OfferSlot): number {
 /**
  * Collapse Multi raw MADRE fragments into operator timetable rows
  * (same rules as admin Services register):
- * - Wed Acton → withheld from public booking until opening is confirmed
+ * - Wed Multi (all venues) → not offered publicly (Aug 2026)
  * - Sun SwimFarm → three 90′ bands 9.30–11 / 11–12.30 / 12.30–2, cap 6
  */
 function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
   const rest: OfferSlot[] = [];
   const sunSwim: OfferSlot[] = [];
   for (const s of slots) {
-    if (s.serviceId === "multi" && s.venue === "Acton" && s.day === "Wednesday") {
-      /* Hide Wed Acton Multi from booking portal — opening not confirmed. */
+    if (s.serviceId === "multi" && s.day === "Wednesday") {
       continue;
     } else if (
       s.serviceId === "multi" &&
@@ -593,10 +592,9 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
   folded = ensureClimbingSundayOpenBand(folded);
   /* Day Centre + Bespoke are office-arranged only — never expose MADRE capacity as bookable slots. */
   folded = folded.filter((s) => s.serviceId !== "day_centre" && s.serviceId !== "bespoke");
-  /* Defence in depth: Wed Acton Multi stays off the public offer. */
+  /* Defence in depth: Wed Multi stays off the public offer. */
   folded = folded.filter(
-    (s) =>
-      !(s.serviceId === "multi" && s.venue === "Acton" && s.day === "Wednesday"),
+    (s) => !(s.serviceId === "multi" && s.day === "Wednesday"),
   );
   // Never expose client keys on the public offer payload.
   for (const s of folded) delete s.bookedKeys;

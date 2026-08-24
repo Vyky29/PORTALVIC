@@ -89,8 +89,8 @@
       priceHint: "From £120 / 90 min session",
       pricePerSession: 120,
       blurb:
-        "Splash & Connect: a 90-minute multidisciplinary block — land-based learning (communication, social skills, independence) plus swimming. One visit that supports mind and body for the participant.",
-      venues: ["SwimFarm", "Northolt"],
+        "Splash & Connect: a 90-minute multidisciplinary block at SwimFarm on Sundays — land-based learning (communication, social skills, independence) plus swimming. One visit that supports mind and body for the participant.",
+      venues: ["SwimFarm"],
     },
     {
       id: "bespoke",
@@ -245,7 +245,6 @@
     { id: "ph-act-sat-1200", serviceId: "physical", venue: "Acton", day: "Saturday", timeLabel: "12.00 – 1.00", sortTime: "12:00", capacity: 2, taken: 1 },
 
     { id: "ma-sf-mon-1600", serviceId: "multi", venue: "SwimFarm", day: "Monday", timeLabel: "4.00 – 5.30", sortTime: "16:00", capacity: 2, taken: 2 },
-    { id: "ma-sf-wed-1600", serviceId: "multi", venue: "SwimFarm", day: "Wednesday", timeLabel: "4.00 – 5.30", sortTime: "16:00", capacity: 2, taken: 1 },
     { id: "ma-nor-sat-0930", serviceId: "multi", venue: "Northolt", day: "Saturday", timeLabel: "9.30 – 11.00", sortTime: "09:30", capacity: 2, taken: 0 },
     { id: "ma-nor-sat-1130", serviceId: "multi", venue: "Northolt", day: "Saturday", timeLabel: "11.30 – 1.00", sortTime: "11:30", capacity: 2, taken: 2 },
 
