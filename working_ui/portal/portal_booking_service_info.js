@@ -63,12 +63,14 @@
     },
     day_centre: {
       infoLead:
-        "A weekday daytime programme at SwimFarm (Mon–Fri, 11am–4pm): table work, sensory time, gym, swimming, life skills, and more. Places are arranged with the office so we can discuss the day, funding, and support needs.",
+        "The Day Centre is a weekday programme at SwimFarm — a structured day with peers, not a single activity slot. Each person follows a predictable sequence (circle time, classroom or vocational work, gym, swimming, lunch and life skills, then sport or leisure), with visual schedules and an end-of-day photo résumé. Support is usually 1:1 on site; 2:1 is used for pool transitions, personal care, or planned community trips. New starters often build up through familiarisation visits before a full day. Places, hours, and funding are agreed with the office first.",
       infoBullets: [
-        "Open Monday to Friday, 11am – 4pm at SwimFarm",
-        "Table work, sensory room, gym, swimming, and life skills",
-        "Music, relaxation, and community trips when staffing allows",
-        "Funding and bespoke quotes — enquire with the office",
+        "Mon–Fri, 11am–4pm at SwimFarm — shorter blocks while settling in, building up step by step",
+        "Circle time, vocational packaging, maths, handwriting, gym, swimming, basketball, and group snack or karaoke",
+        "Sensory regulation, life skills at mealtimes, and shared Hub activities with other participants",
+        "Aquatic work within the day — water familiarisation, skills, confidence, and regulation in the pool",
+        "Community outings (shops, local trips) when 2:1 cover is planned for that participant",
+        "Digital visual routines and photo updates so families see how the day went",
       ],
       infoUrl: "https://www.clubsensational.org/contact-us/",
     },

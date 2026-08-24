@@ -2753,14 +2753,14 @@
     var acts = Array.isArray(s.infoActivities) ? s.infoActivities : [];
     if (!acts.length) {
       acts = [
-        "Table work (maths, puzzles, handwriting)",
-        "Sensory room and quiet regulation",
-        "Gym and trampoline",
-        "Swimming / pool time",
-        "Lunch and life skills",
-        "Relaxation",
-        "Music and karaoke",
-        "Community trips (cafe, park, shops) when staffing allows",
+        "Circle time and shared Hub activities with peers",
+        "Vocational tasks (packing, matching, envelopes) plus maths and handwriting",
+        "Gym circuits, basketball, and structured physical activity",
+        "Swimming / aquatic within the day",
+        "Lunch, life skills, and group snack",
+        "Sensory room and regulation time",
+        "Karaoke, film, and end-of-day photo résumé",
+        "Community trips (shops, local outings) with 2:1 when planned",
       ];
     }
     return (
@@ -2771,7 +2771,7 @@
       esc(hours) +
       "</p>" +
       '<p class="dc-info__lead">' +
-      "We do not offer online slots for Day Centre. Places are arranged with the office so we can talk through the day, funding, and the support the participant needs." +
+      "The Day Centre is a structured weekday at SwimFarm — circle time, classroom or vocational work, gym, swimming, life skills, and peer activities. Support is usually 1:1 on site (2:1 for transitions, personal care, or community trips). We agree hours, familiarisation, and funding with the office before offering a place — not through online booking." +
       "</p>" +
       '<p class="dc-info__label">A typical day may include</p>' +
       '<ul class="dc-info__list">' +
@@ -3501,7 +3501,7 @@
       (isDc ? "Day Centre" : isCounsel ? "Counselling" : "Bespoke Programme");
     title.textContent = "Enquire about " + name;
     body.textContent = isDc
-      ? "Day Centre at SwimFarm · Monday to Friday, 11am – 4pm. Places are arranged with the office (not booked online) so we can explain the day, funding, and support needs."
+      ? "Day Centre at SwimFarm · Mon–Fri, 11am–4pm. A structured day with circle time, vocational work, gym, swimming, and peer activities — usually 1:1 on site, 2:1 when needed for transitions or community trips. Places are agreed with the office (not booked online), including familiarisation and funding."
       : isCounsel
         ? "Counselling for young people and adults with autism and their families. Person-centred sessions in Chiswick or online via Zoom. We start with a short assessment phone call to match time and commitment."
         : "Bespoke Programme — no online slots. After you enquire, the office reviews the participant and then agrees what we can offer and which available time fits.";
