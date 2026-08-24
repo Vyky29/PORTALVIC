@@ -397,20 +397,15 @@
       box-shadow: 0 6px 18px rgba(23, 50, 71, 0.04);
       width: 100%;
       text-align: center;
-      cursor: pointer;
-      font: inherit;
-      color: inherit;
       overflow: hidden;
       transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
     }
-    .svc-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 14px 28px rgba(23, 50, 71, 0.1);
-      border-color: rgba(45, 132, 179, 0.35);
-    }
-    .svc-card:focus-visible {
-      outline: 2px solid var(--blue);
-      outline-offset: 2px;
+    @media (hover: hover) {
+      .svc-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 28px rgba(23, 50, 71, 0.1);
+        border-color: rgba(45, 132, 179, 0.35);
+      }
     }
     .svc-card.is-active {
       border-color: rgba(45, 132, 179, 0.55);
@@ -674,12 +669,20 @@
       overflow-wrap: anywhere;
     }
     .chip svg { width: 13px; height: 13px; flex: 0 0 auto; color: var(--blue); }
+    .svc-card__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 2px;
+      padding: 0 14px;
+      min-width: 0;
+      width: 100%;
+    }
     .svc-card__cta {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      margin-top: 2px;
       padding: 11px 14px;
       border-radius: 12px;
       background: var(--blue);
@@ -687,9 +690,76 @@
       font-weight: 800;
       font-size: 0.9rem;
       width: 100%;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      min-width: 0;
+      overflow-wrap: break-word;
     }
-    .svc-card__cta svg { width: 16px; height: 16px; }
-    .svc-card.is-active .svc-card__cta { background: var(--blueDeep); }
+    .svc-card__cta--info {
+      background: var(--white);
+      color: var(--blueDeep);
+      border: 1px solid rgba(45, 132, 179, 0.35);
+    }
+    .svc-card__cta svg { width: 16px; height: 16px; flex: 0 0 auto; }
+    .svc-card.is-active .svc-card__cta:not(.svc-card__cta--info) { background: var(--blueDeep); }
+    .svc-card__cta:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
+    .svc-info-sheet {
+      margin: 0 0 14px;
+      min-width: 0;
+    }
+    .svc-info-sheet__lead {
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+      color: var(--text);
+      line-height: 1.5;
+      overflow-wrap: break-word;
+    }
+    .svc-info-sheet__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 12px;
+      min-width: 0;
+    }
+    .svc-info-sheet__label {
+      margin: 0 0 8px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .svc-info-sheet__list {
+      margin: 0 0 12px;
+      padding: 0 0 0 1.15em;
+      color: var(--ink);
+      font-size: 0.92rem;
+      line-height: 1.45;
+      min-width: 0;
+    }
+    .svc-info-sheet__list li {
+      margin: 0 0 6px;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .svc-info-sheet__list li:last-child { margin-bottom: 0; }
+    .svc-info-sheet__link {
+      margin: 0;
+      font-size: 0.86rem;
+    }
+    .svc-info-sheet__link a {
+      color: var(--blueDeep);
+      font-weight: 700;
+      overflow-wrap: break-word;
+    }
+    #serviceInfoSheet { z-index: 45; }
+    #serviceInfoSheet .sheet__panel {
+      max-height: min(88dvh, 640px);
+    }
 
     .offer-block {
       scroll-margin-top: 96px;
@@ -954,6 +1024,22 @@
       text-align: center;
       max-width: 36rem;
       width: 100%;
+    }
+    .timetable__about {
+      margin: 8px 0 0;
+      min-width: 0;
+      width: 100%;
+      text-align: center;
+    }
+    .timetable__about-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      min-width: 0;
+      max-width: 100%;
     }
     .venue-block {
       margin: 18px 0 0;
@@ -1832,6 +1918,18 @@
     </div>
   </div>
 
+  <div class="sheet" id="serviceInfoSheet" hidden>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="svcInfoTitle">
+      <h3 id="svcInfoTitle">Service</h3>
+      <div id="svcInfoBody" class="svc-info-sheet"></div>
+      <div class="sheet__actions">
+        <button type="button" class="btn" id="svcInfoBook">See weekly times</button>
+        <a class="btn btn--soft" id="svcInfoWebsite" href="https://www.clubsensational.org/" target="_blank" rel="noopener noreferrer">Full details on website</a>
+        <button type="button" class="btn btn--soft" id="svcInfoClose">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div class="booking-gate" id="bookingLeadGate" hidden>
     <div
       class="booking-gate__panel"
@@ -2152,6 +2250,7 @@
   </div>
 
   <script src="/portal/portal_booking_offer.js?v=20260814-counsel-layout"></script>
+  <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260817-exist-confirm"></script>
   <script src="/portal/portal_booking_waitlist.js?v=20260813-waitlist-session"></script>
@@ -2403,6 +2502,125 @@
     return !!s.enquireOnly && !(s.intensiveBlocks || s.tier === "core");
   }
 
+  function serviceInfoPack(s) {
+    if (window.PortalBookingServiceInfo && typeof window.PortalBookingServiceInfo.pack === "function") {
+      return window.PortalBookingServiceInfo.pack(s);
+    }
+    return {
+      lead: String((s && s.blurb) || "").trim(),
+      bullets: [],
+      url: "",
+    };
+  }
+
+  function serviceInfoBodyHtml(s) {
+    var info = serviceInfoPack(s);
+    var chips =
+      '<div class="svc-info-sheet__meta">' +
+      '<span class="chip">' +
+      ICONS.clock +
+      esc(s.durationHint) +
+      "</span>" +
+      (s.priceHint
+        ? '<span class="chip">' + ICONS.pound + esc(s.priceHint) + "</span>"
+        : "") +
+      (s.ageHint
+        ? '<span class="chip">' + ICONS.users + esc(s.ageHint) + "</span>"
+        : "") +
+      "</div>";
+    var venues =
+      s.venues && s.venues.length
+        ? '<div class="svc-info-sheet__meta"><span class="chip">' +
+          ICONS.pin +
+          esc(s.venues.map(mock.venueLabel).join(", ")) +
+          "</span></div>"
+        : "";
+    var bullets =
+      info.bullets && info.bullets.length
+        ? '<p class="svc-info-sheet__label">What to expect</p><ul class="svc-info-sheet__list">' +
+          info.bullets
+            .map(function (b) {
+              return "<li>" + esc(b) + "</li>";
+            })
+            .join("") +
+          "</ul>"
+        : "";
+    var link = info.url
+      ? '<p class="svc-info-sheet__link"><a href="' +
+        esc(info.url) +
+        '" target="_blank" rel="noopener noreferrer">Read the full service page on our website</a></p>'
+      : "";
+    return (
+      '<p class="svc-info-sheet__lead">' +
+      esc(info.lead) +
+      "</p>" +
+      chips +
+      venues +
+      bullets +
+      link
+    );
+  }
+
+  function serviceInfoBookLabel(s) {
+    if (!s) return "See weekly times";
+    if (isOfficeEnquireService(s)) return "See how it works";
+    if (s.enquireOnly) return "See details";
+    if (s.intensiveBlocks) return "See course times";
+    return "See weekly times & book";
+  }
+
+  function openServiceInfo(serviceId) {
+    var s = mock.serviceById(serviceId);
+    if (!s) return;
+    var sheet = document.getElementById("serviceInfoSheet");
+    var title = document.getElementById("svcInfoTitle");
+    var body = document.getElementById("svcInfoBody");
+    var bookBtn = document.getElementById("svcInfoBook");
+    var webLink = document.getElementById("svcInfoWebsite");
+    var info = serviceInfoPack(s);
+    if (title) title.textContent = s.name;
+    if (body) body.innerHTML = serviceInfoBodyHtml(s);
+    if (bookBtn) {
+      bookBtn.textContent = serviceInfoBookLabel(s);
+      bookBtn.setAttribute("data-svc-info-book", s.id);
+    }
+    if (webLink) {
+      if (info.url) {
+        webLink.href = info.url;
+        webLink.hidden = false;
+      } else {
+        webLink.hidden = true;
+      }
+    }
+    if (sheet) sheet.hidden = false;
+    try {
+      if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.isUnlocked()) {
+        void window.PortalBookingLeadGate.pingActivity({
+          booking_status: "exploring_services",
+          service_viewed: s.id || "",
+        });
+      }
+    } catch (_e) {
+      /* ignore */
+    }
+  }
+
+  function closeServiceInfo() {
+    var sheet = document.getElementById("serviceInfoSheet");
+    if (sheet) sheet.hidden = true;
+  }
+
+  function timetableAboutBtnHtml(s) {
+    return (
+      '<p class="timetable__about">' +
+      '<button type="button" class="btn btn--soft timetable__about-btn" data-svc-info="' +
+      esc(s.id) +
+      '">' +
+      ICONS.info +
+      " About this service</button></p>"
+    );
+  }
+
   function serviceCardHtml(s, active) {
     var pack = serviceIconPack(s.id);
     var allSlots = mock.filterSlots({ serviceId: s.id, hideFull: false });
@@ -2452,11 +2670,9 @@
           "</span></div>"
         : "");
     return (
-      '<button type="button" class="svc-card' +
+      '<article class="svc-card' +
       (active === s.id ? " is-active" : "") +
-      '" data-jump-service="' +
-      esc(s.id) +
-      '" aria-controls="timetable-' +
+      '" data-service-id="' +
       esc(s.id) +
       '">' +
       serviceMediaHtml(s.id) +
@@ -2478,13 +2694,24 @@
       '<div class="svc-meta">' +
       chips +
       "</div>" +
-      '<span class="svc-card__cta">' +
+      '<div class="svc-card__actions">' +
+      '<button type="button" class="svc-card__cta svc-card__cta--info" data-svc-info="' +
+      esc(s.id) +
+      '">' +
+      ICONS.info +
+      " About this service</button>" +
+      '<button type="button" class="svc-card__cta" data-jump-service="' +
+      esc(s.id) +
+      '" aria-controls="timetable-' +
+      esc(s.id) +
+      '">' +
       esc(ctaLabel) +
       " " +
       ICONS.arrow +
-      "</span>" +
+      "</button>" +
       "</div>" +
-      "</button>"
+      "</div>" +
+      "</article>"
     );
   }
 
@@ -2894,6 +3121,7 @@
       "</h3>" +
       "</div></div>" +
       '<p class="timetable__range">July weeks open first, then each half term.</p>' +
+      timetableAboutBtnHtml(s) +
       "</div>" +
       body +
       "</article>"
@@ -2963,7 +3191,9 @@
                 ? "Contact the office to enquire"
                 : mock.TERM_RANGE || "Sat 5 September 2026 – Fri 18 December 2026"
           ) +
-          "</p></div>" +
+          "</p>" +
+          timetableAboutBtnHtml(s) +
+          "</div>" +
           body +
           "</article>"
         );
@@ -3462,6 +3692,12 @@
   }
 
   document.getElementById("serviceCards").addEventListener("click", function (e) {
+    var infoBtn = e.target && e.target.closest && e.target.closest("[data-svc-info]");
+    if (infoBtn) {
+      e.preventDefault();
+      openServiceInfo(infoBtn.getAttribute("data-svc-info"));
+      return;
+    }
     var card = e.target && e.target.closest && e.target.closest("[data-jump-service]");
     if (!card) return;
     var sid = card.getAttribute("data-jump-service");
@@ -3478,7 +3714,23 @@
     jumpToService(sid);
   });
 
+  document.getElementById("svcInfoClose").addEventListener("click", closeServiceInfo);
+  document.getElementById("serviceInfoSheet").addEventListener("click", function (e) {
+    if (e.target === e.currentTarget) closeServiceInfo();
+  });
+  document.getElementById("svcInfoBook").addEventListener("click", function () {
+    var sid = this.getAttribute("data-svc-info-book") || "";
+    closeServiceInfo();
+    if (sid) jumpToService(sid);
+  });
+
   document.getElementById("timetableHost").addEventListener("click", function (e) {
+    var infoBtn = e.target && e.target.closest && e.target.closest("[data-svc-info]");
+    if (infoBtn) {
+      e.preventDefault();
+      openServiceInfo(infoBtn.getAttribute("data-svc-info"));
+      return;
+    }
     var dcBtn = e.target && e.target.closest && e.target.closest("[data-dc-enquire]");
     if (dcBtn) {
       var dcId = dcBtn.getAttribute("data-dc-enquire") || "day_centre";
