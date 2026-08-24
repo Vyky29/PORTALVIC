@@ -2,13 +2,93 @@
 /**
  * Plugin Name: clubSENsational Family Portal Proxy
  * Description: Serves /parent and /bookingportal on www.clubsensational.org via reverse proxy (URL stays on your domain).
- * Version: 1.3.3
+ * Version: 1.4.0
  * Author: clubSENsational
  *
  * Proxies family portal pages and static assets from family.clubsensational.org (Vercel).
  */
 if (!defined('ABSPATH')) {
     exit;
+}
+
+/**
+ * Public services aligned with booking portal + live offer (Aug 2026).
+ * Replaces the SERVICES submenu children so outdated items (e.g. Active Play & Movement,
+ * Emotional Support) do not appear when the header uses a WordPress menu.
+ */
+function cs_family_portal_services_catalog(): array
+{
+    return [
+        ['label' => 'Aquatic Activity', 'path' => '/swimming/'],
+        ['label' => 'Climbing Activity', 'path' => '/climbing/'],
+        ['label' => 'Physical Activity', 'path' => '/fitness/'],
+        ['label' => 'Multi-Activity', 'path' => '/splash/'],
+        ['label' => 'Day Centre', 'path' => '/bookingportal#timetable-day_centre'],
+        ['label' => 'Bespoke Programme', 'path' => '/be-spoke/'],
+        ['label' => 'Counselling', 'path' => '/counselling/'],
+        ['label' => 'Intensive Courses & Camps', 'path' => '/holidays/'],
+    ];
+}
+
+add_filter('wp_get_nav_menu_items', 'cs_family_portal_sync_services_menu', 20, 3);
+
+function cs_family_portal_sync_services_menu($items, $menu, $args)
+{
+    if (empty($items) || !is_array($items)) {
+        return $items;
+    }
+
+    $services_parent_id = null;
+    foreach ($items as $item) {
+        $title = isset($item->title) ? trim((string) $item->title) : '';
+        if ($title !== '' && strcasecmp($title, 'Services') === 0 && (int) $item->menu_item_parent === 0) {
+            $services_parent_id = (int) $item->ID;
+            break;
+        }
+    }
+
+    if (!$services_parent_id) {
+        return $items;
+    }
+
+    $filtered = [];
+    $had_children = false;
+    foreach ($items as $item) {
+        if ((int) $item->menu_item_parent === $services_parent_id) {
+            $had_children = true;
+            continue;
+        }
+        $filtered[] = $item;
+    }
+
+    if (!$had_children) {
+        return $items;
+    }
+
+    $order = 1;
+    $fake_id = 900000;
+    foreach (cs_family_portal_services_catalog() as $row) {
+        $obj = new stdClass();
+        $obj->ID = $fake_id++;
+        $obj->db_id = $obj->ID;
+        $obj->menu_item_parent = $services_parent_id;
+        $obj->object_id = $obj->ID;
+        $obj->post_parent = $services_parent_id;
+        $obj->type = 'custom';
+        $obj->object = 'custom';
+        $obj->title = $row['label'];
+        $obj->url = home_url($row['path']);
+        $obj->target = '';
+        $obj->attr_title = '';
+        $obj->description = '';
+        $obj->classes = ['menu-item', 'menu-item-type-custom', 'menu-item-object-custom'];
+        $obj->xfn = '';
+        $obj->status = 'publish';
+        $obj->menu_order = $order++;
+        $filtered[] = $obj;
+    }
+
+    return $filtered;
 }
 
 add_action('plugins_loaded', 'cs_family_portal_early_proxy', 1);

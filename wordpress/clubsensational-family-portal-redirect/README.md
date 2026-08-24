@@ -12,10 +12,30 @@ Proxies desde `family.clubsensational.org` (Vercel):
 ## Instalación / actualización
 
 1. Sube la carpeta a `wp-content/plugins/clubsensational-family-portal-redirect/` (o ZIP → Plugins → Add New)
-2. Activa / actualiza **clubSENsational Family Portal Proxy** (v1.3+)
+2. Activa / actualiza **clubSENsational Family Portal Proxy** (v1.4+)
 3. Prueba:
    - https://www.clubsensational.org/parent
    - https://www.clubsensational.org/bookingportal
+   - Menú **Services** (alineado con booking portal; sin Active Play & Movement ni Emotional Support)
+
+## Menú Services (v1.4+)
+
+Si el header usa un menú de WordPress (Appearance → Menus), el plugin **sustituye** los hijos de **Services** por:
+
+| Servicio | Enlace |
+|----------|--------|
+| Aquatic Activity | `/swimming/` |
+| Climbing Activity | `/climbing/` |
+| Physical Activity | `/fitness/` |
+| Multi-Activity | `/splash/` |
+| Day Centre | `/bookingportal#timetable-day_centre` |
+| Bespoke Programme | `/be-spoke/` |
+| Counselling | `/counselling/` |
+| Intensive Courses & Camps | `/holidays/` |
+
+**Quitados:** Active Play & Movement, Emotional Support (sustituido por Counselling).
+
+Si el menú está **solo** en Elementor (enlaces manuales, sin menú WP), edita el header en Elementor y copia la tabla de arriba.
 
 ## Requisitos
 
