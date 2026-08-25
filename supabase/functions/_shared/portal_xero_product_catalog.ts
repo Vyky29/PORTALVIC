@@ -169,12 +169,13 @@ const TERM_DATE_WINDOWS: Record<
   },
   spring: {
     weekday: {
-      start: "2027-01-04",
+      // Club week 1 starts Sat 9 Jan (not school Mon 4 Jan).
+      start: "2027-01-09",
       end: "2027-03-25",
       closures: [["2027-02-15", "2027-02-18"]],
     },
     weekend: {
-      start: "2027-01-08",
+      start: "2027-01-09",
       end: "2027-03-25",
       closures: [
         ["2027-02-13", "2027-02-14"],
@@ -186,7 +187,10 @@ const TERM_DATE_WINDOWS: Record<
     weekday: {
       start: "2027-04-17",
       end: "2027-07-22",
-      closures: [["2027-05-31", "2027-06-03"]],
+      closures: [
+        ["2027-05-03", "2027-05-03"], // Early May bank holiday — after-schools closed
+        ["2027-05-31", "2027-06-03"],
+      ],
     },
     weekend: {
       start: "2027-04-17",
