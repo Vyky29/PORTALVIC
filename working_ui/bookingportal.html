@@ -1921,6 +1921,328 @@
       cursor: pointer;
       text-decoration: underline;
     }
+
+    /* Compact row layout preview: ?layout=rows (local / A-B test) */
+    body.booking-svc-rows .services__preview-note {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #fff8e6;
+      border: 1px solid rgba(244, 183, 64, 0.45);
+      color: var(--ink);
+      font-size: 0.86rem;
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+    body.booking-svc-rows .services__preview-note a {
+      color: var(--blueDeep);
+      font-weight: 700;
+    }
+    body.booking-svc-rows .services__label:not(.services__label--rows) { display: none; }
+    body.booking-svc-rows .services__rows-band {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: stretch;
+      min-width: 0;
+      width: 100%;
+    }
+    body.booking-svc-rows .services__rows-band + .services__rows-band {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+    body.booking-svc-rows .services__label--rows {
+      display: block;
+      margin: 0 0 4px;
+      padding: 0;
+      font-size: 0.78rem;
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
+    body.booking-svc-rows .page {
+      display: flex;
+      flex-direction: column;
+    }
+    body.booking-svc-rows .brand { order: 1; }
+    body.booking-svc-rows .offer-banner { order: 2; }
+    body.booking-svc-rows .filters { order: 3; }
+    body.booking-svc-rows #serviceCards { order: 4; }
+    body.booking-svc-rows #offerTimes { order: 6; }
+    body.booking-svc-rows .foot { order: 99; }
+    body.booking-svc-rows.booking-svc-rows--has-context #serviceCards { order: 3; }
+    body.booking-svc-rows.booking-svc-rows--has-context .filters { order: 5; }
+    body.booking-svc-rows .services__grid--rows {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    body.booking-svc-rows .svc-card--row {
+      flex-direction: row;
+      align-items: stretch;
+      text-align: left;
+      padding: 0;
+      gap: 0;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__body {
+      flex: 1 1 auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 12px 14px;
+      gap: 10px 14px;
+      min-width: 0;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__row-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 8px;
+      flex: 0 1 132px;
+      min-width: min(100%, 112px);
+      padding: 6px 8px;
+      min-height: 0;
+    }
+    body.booking-svc-rows .svc-card--row .svc__icon {
+      margin-top: 0;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 46px;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__row-title {
+      min-width: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    body.booking-svc-rows .svc-card--row h3 {
+      text-align: center;
+      font-size: 0.98rem;
+      width: 100%;
+      overflow-wrap: break-word;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__actions {
+      flex: 0 0 auto;
+      width: auto;
+      min-width: 0;
+      margin-left: auto;
+      align-self: center;
+      padding-right: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__avail {
+      margin: 0;
+      width: 100%;
+      min-width: 0;
+      display: flex;
+      justify-content: center;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__avail .chip {
+      max-width: 100%;
+    }
+    body.booking-svc-rows .svc-card--row .chip--open {
+      background: var(--okSoft);
+      border-color: rgba(34, 139, 87, 0.25);
+      color: var(--ok);
+    }
+    body.booking-svc-rows .svc-card--row .chip--open svg { color: var(--ok); }
+    body.booking-svc-rows .svc-card--row .chip--full {
+      background: var(--dangerSoft);
+      border-color: rgba(198, 62, 62, 0.25);
+      color: var(--danger);
+    }
+    body.booking-svc-rows .svc-card--row .chip--full svg { color: var(--danger); }
+    body.booking-svc-rows .svc-card--row .svc-card__row-main {
+      flex: 1 1 280px;
+      min-width: min(100%, 240px);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__blurb {
+      text-align: left;
+      font-size: 0.84rem;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+    }
+    body.booking-svc-rows .svc-card--row .svc-meta {
+      align-items: flex-start;
+    }
+    body.booking-svc-rows .svc-card--row .svc-meta__row {
+      justify-content: flex-start;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__cta {
+      width: auto;
+      min-width: 148px;
+      white-space: nowrap;
+    }
+    @media (max-width: 720px) {
+      body.booking-svc-rows .svc-card--row .svc-card__body {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      body.booking-svc-rows .svc-card--row .svc-card__row-head,
+      body.booking-svc-rows .svc-card--row .svc-card__row-main {
+        flex: 1 1 auto;
+        width: 100%;
+      }
+      body.booking-svc-rows .svc-card--row .svc-card__row-head {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 8px;
+        padding: 0;
+      }
+      body.booking-svc-rows .svc-card--row .svc-card__row-title {
+        align-items: center;
+      }
+      body.booking-svc-rows .svc-card--row h3 {
+        text-align: center;
+      }
+      body.booking-svc-rows .svc-card--row .svc-card__actions {
+        margin-left: 0;
+        width: 100%;
+      }
+      body.booking-svc-rows .svc-card--row .svc-card__cta {
+        width: 100%;
+      }
+    }
+    body.booking-svc-rows .svc-info-inline,
+    body.booking-svc-rows .offer-block__title,
+    body.booking-svc-rows .timetable__head {
+      display: none !important;
+    }
+    body.booking-svc-rows .svc-context-bar {
+      scroll-margin-top: 96px;
+      min-width: 0;
+      width: 100%;
+    }
+    body.booking-svc-rows .svc-context-bar--inline {
+      grid-column: 1 / -1;
+      margin: 2px 0 12px;
+    }
+    body.booking-svc-rows .svc-rows-detail-stack {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-width: 0;
+      width: 100%;
+      margin: 0 0 8px;
+    }
+    body.booking-svc-rows .svc-rows-detail-stack .filters {
+      margin: 0;
+    }
+    body.booking-svc-rows .svc-rows-detail-stack .offer-block {
+      margin: 0;
+    }
+    body.booking-svc-rows .svc-context-bar__inner {
+      background: var(--white);
+      border: 1px solid rgba(45, 132, 179, 0.35);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(23, 50, 71, 0.08);
+      overflow: hidden;
+      min-width: 0;
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-hero .svc-card__media {
+      aspect-ratio: 16 / 6;
+      max-height: none;
+      min-height: min(44vw, 360px);
+      border-radius: 0;
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-hero .svc-card__media img {
+      object-position: center 35%;
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-hero .svc__icon {
+      position: static;
+      transform: none;
+      width: 56px;
+      height: 56px;
+      margin: -30px auto 0;
+      flex-shrink: 0;
+      border: 2px solid #fff;
+      box-shadow: 0 6px 14px rgba(23, 50, 71, 0.12);
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px 10px;
+      width: 100%;
+      min-width: 0;
+      text-align: center;
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-body h3 {
+      margin-top: 4px;
+    }
+    body.booking-svc-rows .timetable {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 0;
+      margin: 0;
+    }
+    body.booking-svc-rows .timetable + .timetable {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+    body.booking-svc-rows .timetable__rows-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin: 0 0 10px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      min-width: 0;
+    }
+    body.booking-svc-rows .timetable__rows-head-icon {
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: #e8f4fa;
+      color: var(--blueDeep);
+    }
+    body.booking-svc-rows .timetable__rows-head-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+    body.booking-svc-rows .timetable__rows-head-title {
+      margin: 0;
+      min-width: 0;
+      flex: 1 1 auto;
+      font-size: 1rem;
+      line-height: 1.3;
+      color: var(--blueDeep);
+      overflow-wrap: break-word;
+    }
+    body.booking-svc-rows .filters {
+      margin-bottom: 16px;
+    }
   </style>
 </head>
 <body>
@@ -2382,7 +2704,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260814-counsel-layout"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260825-halfhour-bands"></script>
   <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260817-exist-confirm"></script>
@@ -2392,6 +2714,14 @@
   "use strict";
   var mock = window.PortalBookingOffer;
   if (!mock) return;
+
+  var SVC_ROWS_LAYOUT = (function () {
+    var q = new URLSearchParams(window.location.search || "");
+    return q.get("layout") === "rows" || q.get("compact") === "1";
+  })();
+  if (SVC_ROWS_LAYOUT) {
+    document.body.classList.add("booking-svc-rows");
+  }
 
   var logo = document.getElementById("bookingBrandLogo");
   if (logo && typeof window.portalBrandApplyLogoImg === "function") {
@@ -2635,6 +2965,38 @@
     return !!s.enquireOnly && !(s.intensiveBlocks || s.tier === "core");
   }
 
+  function serviceVisibleInFilters(s, filters) {
+    filters = filters || {};
+    if (filters.serviceId && s.id !== filters.serviceId) return false;
+    if (isOfficeEnquireService(s)) {
+      if (filters.venue && s.venues && s.venues.length && s.venues.indexOf(filters.venue) < 0) {
+        return false;
+      }
+      if (filters.day || filters.timeLabel) return false;
+      return true;
+    }
+    var slots = mock.filterSlots({
+      serviceId: s.id,
+      venue: filters.venue || "",
+      day: filters.day || "",
+      timeLabel: filters.timeLabel || "",
+      hideFull: !!filters.hideFull,
+    });
+    return slots.length > 0;
+  }
+
+  function rowsSlotFiltersActive(filters) {
+    filters = filters || {};
+    return !!(filters.venue || filters.day || filters.timeLabel || filters.hideFull);
+  }
+
+  function rowsTimesBlockVisible(filters) {
+    if (!SVC_ROWS_LAYOUT) return true;
+    if (activeInfoServiceId) return true;
+    if (filters && filters.serviceId) return true;
+    return rowsSlotFiltersActive(filters);
+  }
+
   function serviceInfoPack(s) {
     if (window.PortalBookingServiceInfo && typeof window.PortalBookingServiceInfo.pack === "function") {
       return window.PortalBookingServiceInfo.pack(s);
@@ -2723,9 +3085,74 @@
     });
   }
 
+  function serviceContextBarHtml(s) {
+    return (
+      '<article class="svc-context-bar__inner svc-context-bar__inner--full">' +
+      serviceInfoBodyHtml(s).replace(' id="svcInfoTitle"', ' id="svcContextTitle"') +
+      "</article>"
+    );
+  }
+
+  function restoreRowsPageSections() {
+    if (!SVC_ROWS_LAYOUT) return;
+    var cards = document.getElementById("serviceCards");
+    var filters = document.querySelector(".filters");
+    var times = document.getElementById("offerTimes");
+    var inline = document.getElementById("serviceInfoInline");
+    if (!cards || !filters || !times) return;
+    if (inline && inline.parentNode === cards.parentNode) {
+      inline.after(filters);
+    } else {
+      cards.after(filters);
+    }
+    filters.after(times);
+  }
+
+  function mountRowsDetailStack() {
+    if (!SVC_ROWS_LAYOUT) {
+      restoreRowsPageSections();
+      return;
+    }
+    var stack = document.getElementById("serviceRowsDetailStack");
+    var filters = document.querySelector(".filters");
+    var times = document.getElementById("offerTimes");
+    if (!activeInfoServiceId || !stack || !filters || !times) {
+      restoreRowsPageSections();
+      return;
+    }
+    stack.appendChild(filters);
+    stack.appendChild(times);
+  }
+
+  function updateServiceContextBar() {
+    /* Rows layout: context panel is rendered inline in renderServiceCards(). */
+  }
+
   function openServiceInfo(serviceId, opts) {
     var s = mock.serviceById(serviceId);
     if (!s) return;
+    if (SVC_ROWS_LAYOUT) {
+      activeInfoServiceId = s.id || "";
+      fService.value = s.id || "";
+      refresh();
+      var bar = document.getElementById("serviceContextBar");
+      if ((!opts || opts.scroll !== false) && bar) {
+        bar.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if ((!opts || opts.scroll !== false) && document.querySelector(".filters")) {
+        document.querySelector(".filters").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      try {
+        if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.isUnlocked()) {
+          void window.PortalBookingLeadGate.pingActivity({
+            booking_status: "exploring_services",
+            service_viewed: s.id || "",
+          });
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+      return;
+    }
     var inline = document.getElementById("serviceInfoInline");
     var body = document.getElementById("svcInfoBody");
     var bookBtn = document.getElementById("svcInfoBook");
@@ -2770,10 +3197,77 @@
     );
   }
 
-  function serviceCardHtml(s, active) {
+  function timetableHeadHtml(s, filters, pack, intensiveNote) {
+    if (SVC_ROWS_LAYOUT) return "";
+    var venueSuffix =
+      filters.venue && !isOfficeEnquireService(s)
+        ? " (" + esc(mock.venueLabel(filters.venue)) + ")"
+        : "";
+    var range =
+      intensiveNote ||
+      (s.id === "day_centre"
+        ? "Tue 1 September 2026 – Fri 18 December 2026 · Mon–Fri 11am–4pm"
+        : s.id === "bespoke"
+          ? "Contact the office to enquire"
+          : mock.TERM_RANGE || "Sat 5 September 2026 – Fri 18 December 2026");
+    return (
+      '<div class="timetable__head">' +
+      timetablePhotoHtml(s.id) +
+      '<div class="timetable__title-row">' +
+      '<div class="timetable__title-main">' +
+      '<div class="timetable__icon ' +
+      pack.cls +
+      '" aria-hidden="true">' +
+      pack.svg +
+      "</div>" +
+      "<h3>" +
+      esc(s.name) +
+      venueSuffix +
+      "</h3>" +
+      "</div></div>" +
+      '<p class="timetable__range">' +
+      esc(range) +
+      "</p>" +
+      timetableAboutBtnHtml(s) +
+      "</div>"
+    );
+  }
+
+  function timetableRowsHeadHtml(s, pack) {
+    return (
+      '<div class="timetable__rows-head">' +
+      '<div class="timetable__rows-head-icon ' +
+      pack.cls +
+      '" aria-hidden="true">' +
+      pack.svg +
+      "</div>" +
+      '<h3 class="timetable__rows-head-title">' +
+      esc(s.name) +
+      "</h3>" +
+      "</div>"
+    );
+  }
+
+  function serviceRowsAvailabilityChipHtml(s, allSlots, openN) {
+    if (isOfficeEnquireService(s) || s.enquireOnly || !allSlots.length) return "";
+    var chip =
+      openN > 0
+        ? '<span class="chip chip--open">' + ICONS.check + " Places available</span>"
+        : '<span class="chip chip--full">' + ICONS.x + " Fully booked</span>";
+    return '<p class="svc-card__avail">' + chip + "</p>";
+  }
+
+  function serviceCardHtml(s, active, filters) {
+    filters = filters || {};
     var pack = serviceIconPack(s.id);
-    var allSlots = mock.filterSlots({ serviceId: s.id, hideFull: false });
-    var openN = allSlots.filter(function (slot) {
+    var slotsForAvail = mock.filterSlots({
+      serviceId: s.id,
+      venue: filters.venue || "",
+      day: filters.day || "",
+      timeLabel: filters.timeLabel || "",
+      hideFull: false,
+    });
+    var openN = slotsForAvail.filter(function (slot) {
       return !mock.isFull(slot);
     }).length;
     var officeEnquire = isOfficeEnquireService(s);
@@ -2793,13 +3287,13 @@
       ctaLabel = "See details";
     } else {
       hint =
-        allSlots.length +
+        slotsForAvail.length +
         " weekly time" +
-        (allSlots.length === 1 ? "" : "s") +
+        (slotsForAvail.length === 1 ? "" : "s") +
         " · " +
         openN +
         " with places" +
-        (openN < allSlots.length ? " · fully booked shown below" : "");
+        (openN < slotsForAvail.length ? " · fully booked shown below" : "");
       ctaLabel = "See weekly times";
     }
     var chips =
@@ -2818,6 +3312,39 @@
           esc(s.venues.map(mock.venueLabel).join(", ")) +
           "</span></div>"
         : "");
+    if (SVC_ROWS_LAYOUT) {
+      return (
+        '<article class="svc-card svc-card--row' +
+        (active === s.id ? " is-active" : "") +
+        '" data-service-id="' +
+        esc(s.id) +
+        '">' +
+        '<div class="svc-card__body">' +
+        '<div class="svc-card__row-head">' +
+        '<div class="svc__icon ' +
+        pack.cls +
+        '">' +
+        pack.svg +
+        "</div>" +
+        '<div class="svc-card__row-title">' +
+        "<h3>" +
+        esc(s.name) +
+        "</h3>" +
+        "</div></div>" +
+        '<div class="svc-card__row-main">' +
+        '<p class="svc-card__blurb">' +
+        esc(s.blurb) +
+        "</p></div>" +
+        '<div class="svc-card__actions">' +
+        '<button type="button" class="svc-card__cta svc-card__cta--info" data-svc-info="' +
+        esc(s.id) +
+        '">' +
+        ICONS.info +
+        " About this service</button>" +
+        serviceRowsAvailabilityChipHtml(s, slotsForAvail, openN) +
+        "</div></div></article>"
+      );
+    }
     return (
       '<article class="svc-card' +
       (active === s.id ? " is-active" : "") +
@@ -2942,18 +3469,96 @@
 
   function renderServiceCards() {
     var host = document.getElementById("serviceCards");
+    var filters = currentFilters();
     var active = fService.value || "";
     var byId = {};
     (mock.SERVICES || []).forEach(function (s) {
       byId[s.id] = s;
     });
+    if (
+      activeInfoServiceId &&
+      (!byId[activeInfoServiceId] || !serviceVisibleInFilters(byId[activeInfoServiceId], filters))
+    ) {
+      activeInfoServiceId = "";
+    }
+    function visibleIds(ids) {
+      return ids.filter(function (id) {
+        return byId[id] && serviceVisibleInFilters(byId[id], filters);
+      });
+    }
+    /* About open: keep sibling cards under the selected service (filters apply to times only). */
+    function rowsCardIds(ids) {
+      var ctxId = String(activeInfoServiceId || "").trim();
+      if (ctxId) {
+        return ids.filter(function (id) {
+          return !!byId[id];
+        });
+      }
+      return visibleIds(ids);
+    }
     function row(ids) {
-      return ids
+      return visibleIds(ids)
         .map(function (id) {
-          return byId[id] ? serviceCardHtml(byId[id], active) : "";
+          return serviceCardHtml(byId[id], active, filters);
         })
         .join("");
     }
+    function rowWithInlineContext(ids) {
+      var ctxId = String(activeInfoServiceId || "").trim();
+      return rowsCardIds(ids)
+        .map(function (id) {
+          if (!byId[id]) return "";
+          var html = serviceCardHtml(byId[id], active, filters);
+          if (ctxId && id === ctxId) {
+            html +=
+              '<div id="serviceContextBar" class="svc-context-bar svc-context-bar--inline" aria-live="polite">' +
+              serviceContextBarHtml(byId[id]) +
+              "</div>" +
+              '<div class="svc-rows-detail-stack" id="serviceRowsDetailStack"></div>';
+          }
+          return html;
+        })
+        .join("");
+    }
+    function rowsBandHtml(label, ids) {
+      var visible = rowsCardIds(ids);
+      if (!visible.length) return "";
+      return (
+        '<div class="services__rows-band">' +
+        '<p class="services__label services__label--rows">' +
+        esc(label) +
+        "</p>" +
+        '<div class="services__grid services__grid--rows">' +
+        rowWithInlineContext(visible) +
+        "</div></div>"
+      );
+    }
+    if (SVC_ROWS_LAYOUT) {
+      var ctxId = String(activeInfoServiceId || "").trim();
+      document.body.classList.toggle("booking-svc-rows--has-context", !!ctxId);
+      markInfoServiceCard(ctxId || "");
+      /* Filters/times live in #serviceRowsDetailStack while context is open; pull them
+         back onto .page before replacing #serviceCards HTML or those nodes are lost. */
+      restoreRowsPageSections();
+      host.innerHTML =
+        '<p class="services__preview-note">Preview: filters first until About; then photo + service info, filters, venues. ' +
+        '<a href="' +
+        esc(window.location.pathname) +
+        '">Back to default cards</a></p>' +
+        '<div class="services__group">' +
+        rowsBandHtml("Core services", ["aquatic", "climbing", "physical"]) +
+        rowsBandHtml("Other services", [
+          "multi",
+          "day_centre",
+          "bespoke",
+          "intensive",
+          "counselling",
+        ]) +
+        "</div>";
+      mountRowsDetailStack();
+      return;
+    }
+    restoreRowsPageSections();
     host.innerHTML =
       '<div class="services__group">' +
       '<p class="services__label">Core services</p>' +
@@ -3191,7 +3796,7 @@
       .join("");
   }
 
-  function renderIntensiveTimetable(s, filters, pack) {
+  function renderIntensiveTimetable(s, filters, pack, showRowsHead) {
     var slots = mock.filterSlots({
       serviceId: s.id,
       venue: filters.venue,
@@ -3252,26 +3857,13 @@
         })
         .join("");
     }
+    var rowsHead = showRowsHead ? timetableRowsHeadHtml(s, pack) : "";
     return (
       '<article class="timetable" id="timetable-' +
       esc(s.id) +
       '">' +
-      '<div class="timetable__head">' +
-      timetablePhotoHtml(s.id) +
-      '<div class="timetable__title-row">' +
-      '<div class="timetable__title-main">' +
-      '<div class="timetable__icon ' +
-      pack.cls +
-      '" aria-hidden="true">' +
-      pack.svg +
-      "</div>" +
-      "<h3>" +
-      esc(s.name) +
-      "</h3>" +
-      "</div></div>" +
-      '<p class="timetable__range">July weeks open first, then each half term.</p>' +
-      timetableAboutBtnHtml(s) +
-      "</div>" +
+      rowsHead +
+      timetableHeadHtml(s, filters, pack, "July weeks open first, then each half term.") +
       body +
       "</article>"
     );
@@ -3279,9 +3871,19 @@
 
   function renderTimetables() {
     var host = document.getElementById("timetableHost");
+    var timesBlock = document.getElementById("offerTimes");
     var filters = currentFilters();
+    if (SVC_ROWS_LAYOUT && timesBlock) {
+      timesBlock.hidden = !rowsTimesBlockVisible(filters);
+      if (timesBlock.hidden) {
+        host.innerHTML = "";
+        return;
+      }
+    }
     var services = mock.SERVICES.filter(function (s) {
-      return !filters.serviceId || s.id === filters.serviceId;
+      if (filters.serviceId && s.id !== filters.serviceId) return false;
+      if (SVC_ROWS_LAYOUT && !serviceVisibleInFilters(s, filters)) return false;
+      return true;
     });
 
     if (!services.length) {
@@ -3289,11 +3891,13 @@
       return;
     }
 
+    var showRowsHead = SVC_ROWS_LAYOUT && !activeInfoServiceId && services.length > 0;
+
     var html = services
       .map(function (s) {
         var pack = serviceIconPack(s.id);
         if (s.intensiveBlocks) {
-          return renderIntensiveTimetable(s, filters, pack);
+          return renderIntensiveTimetable(s, filters, pack, showRowsHead);
         }
         var body;
         if (isOfficeEnquireService(s)) {
@@ -3311,38 +3915,13 @@
             ? venuesAccordionHtml(s, venues, true)
             : '<p class="empty">No times match the filters for this service. Clear filters to see the full offer (including fully booked).</p>';
         }
+        var rowsHead = showRowsHead ? timetableRowsHeadHtml(s, pack) : "";
         return (
           '<article class="timetable" id="timetable-' +
           esc(s.id) +
           '">' +
-          '<div class="timetable__head">' +
-          timetablePhotoHtml(s.id) +
-          '<div class="timetable__title-row">' +
-          '<div class="timetable__title-main">' +
-          '<div class="timetable__icon ' +
-          pack.cls +
-          '" aria-hidden="true">' +
-          pack.svg +
-          "</div>" +
-          "<h3>" +
-          esc(s.name) +
-          (filters.venue && !isOfficeEnquireService(s)
-            ? " (" + esc(mock.venueLabel(filters.venue)) + ")"
-            : "") +
-          "</h3>" +
-          "</div>" +
-          "</div>" +
-          '<p class="timetable__range">' +
-          esc(
-            s.id === "day_centre"
-              ? "Tue 1 September 2026 – Fri 18 December 2026 · Mon–Fri 11am–4pm"
-              : s.id === "bespoke"
-                ? "Contact the office to enquire"
-                : mock.TERM_RANGE || "Sat 5 September 2026 – Fri 18 December 2026"
-          ) +
-          "</p>" +
-          timetableAboutBtnHtml(s) +
-          "</div>" +
+          rowsHead +
+          timetableHeadHtml(s, filters, pack, "") +
           body +
           "</article>"
         );
@@ -3826,8 +4405,11 @@
 
   function refresh() {
     renderServiceCards();
+    if (SVC_ROWS_LAYOUT) {
+      mountRowsDetailStack();
+    }
     renderTimetables();
-    if (activeInfoServiceId) {
+    if (activeInfoServiceId && !SVC_ROWS_LAYOUT) {
       openServiceInfo(activeInfoServiceId, { scroll: false });
     }
   }
@@ -3939,11 +4521,17 @@
     fDay.value = "";
     fTime.value = "";
     fHideFull.checked = false;
+    activeInfoServiceId = "";
     refresh();
   });
 
   [fService, fVenue, fDay, fTime, fHideFull].forEach(function (el) {
-    el.addEventListener("change", refresh);
+    el.addEventListener("change", function (e) {
+      if (SVC_ROWS_LAYOUT && el === fService && e && e.isTrusted) {
+        activeInfoServiceId = "";
+      }
+      refresh();
+    });
   });
 
   mock

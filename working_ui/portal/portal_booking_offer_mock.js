@@ -219,6 +219,9 @@
 
   /** Illustrative weekly / holiday template — shapes match real MADRE-style slots. */
   var MOCK_SLOTS = [
+    { id: "aq-act-tue-1730", serviceId: "aquatic", venue: "Acton", day: "Tuesday", timeLabel: "5.30 – 6.00", sortTime: "17:30", capacity: 1, taken: 0 },
+    { id: "aq-act-tue-1730-60", serviceId: "aquatic", venue: "Acton", day: "Tuesday", timeLabel: "5.30 – 6.30", sortTime: "17:30", capacity: 1, taken: 0 },
+    { id: "aq-act-tue-1800", serviceId: "aquatic", venue: "Acton", day: "Tuesday", timeLabel: "6.00 – 6.30", sortTime: "18:00", capacity: 1, taken: 0 },
     { id: "aq-act-mon-1600", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "4.00 – 4.30", sortTime: "16:00", capacity: 1, taken: 1 },
     { id: "aq-act-mon-1630", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "4.30 – 5.00", sortTime: "16:30", capacity: 1, taken: 0 },
     { id: "aq-act-mon-1700", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "5.00 – 5.30", sortTime: "17:00", capacity: 1, taken: 0 },
@@ -304,6 +307,9 @@
   };
 
   function seatsLeft(slot) {
+    if (slot && slot.bandLeft != null) {
+      return Math.max(0, Number(slot.bandLeft));
+    }
     return Math.max(0, Number(slot.capacity || 0) - Number(slot.taken || 0));
   }
 
@@ -453,6 +459,105 @@
     });
   }
 
+  function formatClubHalfHour(mins) {
+    var h24 = Math.floor(mins / 60);
+    var m = mins % 60;
+    var h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    return h12 + "." + pad2(m);
+  }
+
+  function slotRangeMinutes(slot) {
+    var start = slotStartMinutes(slot);
+    if (start == null) return null;
+    var label = String((slot && slot.timeLabel) || "");
+    var m = label.match(
+      /(\d{1,2})(?:[:.](\d{2}))?\s*[–\-]\s*(\d{1,2})(?:[:.](\d{2}))?/i
+    );
+    if (!m) return { start: start, end: start + 30 };
+    var endH = parseInt(m[3], 10);
+    var endM = parseInt(m[4] || "0", 10);
+    var startH = Math.floor(start / 60);
+    if (endH < startH) {
+      if (start < 12 * 60 && endH <= 8) endH += 12;
+      else if (start >= 12 * 60 && endH < 12) endH += 12;
+    }
+    var end = endH * 60 + endM;
+    if (end <= start) end = start + 30;
+    return { start: start, end: end };
+  }
+
+  function shouldAggregateDaySlots(slots) {
+    if (!slots || !slots.length) return false;
+    if (
+      slots.some(function (s) {
+        return s.blockId || s.bookingMode === "weekly_pack" || s.enquireOnly;
+      })
+    ) {
+      return false;
+    }
+    return /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/.test(
+      String(slots[0].day || "")
+    );
+  }
+
+  function aggregateSlotsToHalfHourBands(slots) {
+    if (!shouldAggregateDaySlots(slots)) return slots;
+    var bands = Object.create(null);
+    (slots || []).forEach(function (slot) {
+      var range = slotRangeMinutes(slot);
+      if (!range) return;
+      var bandStart = Math.floor(range.start / 30) * 30;
+      for (var b = bandStart; b < range.end; b += 30) {
+        var bandEnd = b + 30;
+        if (bandEnd > range.end) continue;
+        var key = pad2(Math.floor(b / 60)) + ":" + pad2(b % 60);
+        if (!bands[key]) {
+          bands[key] = { start: b, end: bandEnd, parts: [] };
+        }
+        var seen = bands[key].parts.some(function (p) {
+          return p.id === slot.id;
+        });
+        if (!seen) bands[key].parts.push(slot);
+      }
+    });
+    return Object.keys(bands)
+      .sort()
+      .map(function (key) {
+        var band = bands[key];
+        var ref = band.parts[0];
+        var left = band.parts.reduce(function (n, p) {
+          return n + seatsLeft(p);
+        }, 0);
+        var capacity = band.parts.reduce(function (n, p) {
+          return n + (Number(p.capacity) || 0);
+        }, 0);
+        var taken = band.parts.reduce(function (n, p) {
+          return n + (Number(p.taken) || 0);
+        }, 0);
+        var openIds = band.parts
+          .filter(function (p) {
+            return !isFull(p);
+          })
+          .map(function (p) {
+            return p.id;
+          });
+        return {
+          id: openIds[0] || ref.id,
+          serviceId: ref.serviceId,
+          venue: ref.venue,
+          day: ref.day,
+          sortTime: key,
+          timeLabel: formatClubHalfHour(band.start) + " – " + formatClubHalfHour(band.end),
+          capacity: capacity,
+          taken: taken,
+          activityName: ref.activityName,
+          bandPickIds: openIds.join(","),
+          bandLeft: left,
+        };
+      });
+  }
+
   /** Group slots: venue → day → slots[] (preserves day/time sort of filterSlots). */
   function groupSlotsByVenueThenDay(slots) {
     var byVenue = Object.create(null);
@@ -480,10 +585,69 @@
         venue: venue,
         venueLabel: venueLabel(venue),
         days: dayKeys.map(function (day) {
-          return { day: day, slots: daysMap[day] };
+          return {
+            day: day,
+            slots: aggregateSlotsToHalfHourBands(daysMap[day]),
+          };
         }),
       };
     });
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function slotStartMinutes(slot) {
+    var label = String((slot && slot.timeLabel) || "").trim();
+    if (!label || /tbc/i.test(label)) return null;
+    var sort = String((slot && slot.sortTime) || "").trim();
+    var colon = sort.match(/^(\d{1,2}):(\d{2})/);
+    if (colon) return parseInt(colon[1], 10) * 60 + parseInt(colon[2], 10);
+    var start = label.split(/\s*[–\-]\s*/)[0].trim().split(/\s+/)[0];
+    var dot = start.match(/^(\d{1,2})\.(\d{2})$/);
+    if (dot) return parseInt(dot[1], 10) * 60 + parseInt(dot[2], 10);
+    var c2 = start.match(/^(\d{1,2}):(\d{2})$/);
+    if (c2) return parseInt(c2[1], 10) * 60 + parseInt(c2[2], 10);
+    var hr = start.match(/^(\d{1,2})$/);
+    if (hr) return parseInt(hr[1], 10) * 60;
+    return null;
+  }
+
+  function slotStartKey(slot) {
+    var mins = slotStartMinutes(slot);
+    if (mins == null) return "";
+    return pad2(Math.floor(mins / 60)) + ":" + pad2(mins % 60);
+  }
+
+  function formatFilterStartTime(totalMinutes) {
+    var h24 = Math.floor(totalMinutes / 60);
+    var m = totalMinutes % 60;
+    var h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    var ampm = h24 < 12 ? "am" : "pm";
+    var sep = ampm === "am" && h12 < 11 ? "." : ":";
+    var minsPart = m === 0 ? "00" : pad2(m);
+    return h12 + sep + minsPart + " " + ampm;
+  }
+
+  function filterStartTimeOptions(slots) {
+    var map = Object.create(null);
+    (slots || []).forEach(function (slot) {
+      var mins = slotStartMinutes(slot);
+      if (mins == null) return;
+      var key = pad2(Math.floor(mins / 60)) + ":" + pad2(mins % 60);
+      if (!map[key]) {
+        map[key] = { id: key, name: formatFilterStartTime(mins), sort: mins };
+      }
+    });
+    return Object.keys(map)
+      .map(function (k) {
+        return map[k];
+      })
+      .sort(function (a, b) {
+        return a.sort - b.sort;
+      });
   }
 
   function uniqueSorted(values) {
@@ -513,19 +677,7 @@
       days: uniqueSorted(MOCK_SLOTS.map(function (s) {
         return s.day;
       })),
-      times: uniqueSorted(
-        MOCK_SLOTS.map(function (s) {
-          return s.timeLabel;
-        }).sort(function (a, b) {
-          var sa = MOCK_SLOTS.find(function (x) {
-            return x.timeLabel === a;
-          });
-          var sb = MOCK_SLOTS.find(function (x) {
-            return x.timeLabel === b;
-          });
-          return String((sa && sa.sortTime) || "").localeCompare(String((sb && sb.sortTime) || ""));
-        })
-      ),
+      times: filterStartTimeOptions(MOCK_SLOTS),
     };
   }
 
@@ -538,7 +690,7 @@
       if (filters.serviceId && slot.serviceId !== filters.serviceId) return false;
       if (filters.venue && slot.venue !== filters.venue) return false;
       if (filters.day && slot.day !== filters.day) return false;
-      if (filters.timeLabel && slot.timeLabel !== filters.timeLabel) return false;
+      if (filters.timeLabel && slotStartKey(slot) !== filters.timeLabel) return false;
       if (filters.hideFull && isFull(slot)) return false;
       return true;
     }).sort(function (a, b) {
