@@ -51,6 +51,11 @@ export type PortalInvoicePdfInput = {
    * Used for LA managed / NHS managed funder invoices.
    */
   showStamp?: boolean;
+  /**
+   * When true, skip the Payment plan block and the "Pay in full by..." one-off line.
+   * Used for LA / NHS funder invoices (no parent instalment plan on the PDF).
+   */
+  hidePaymentPlan?: boolean;
   amountPaidGbp?: number | null;
   creditAppliedGbp?: number | null;
   /** Instalment plan rows (re-enrolment term invoices). */
@@ -570,9 +575,11 @@ export async function buildPortalTaxInvoicePdf(
     y -= 16;
   }
 
-  const schedule = (input.paymentSchedule || []).filter(
-    (r) => r && Number(r.amount_gbp) > 0,
-  );
+  const schedule = input.hidePaymentPlan
+    ? []
+    : (input.paymentSchedule || []).filter(
+      (r) => r && Number(r.amount_gbp) > 0,
+    );
   if (schedule.length) {
     page.drawText("Payment plan", {
       x: left,
@@ -606,7 +613,7 @@ export async function buildPortalTaxInvoicePdf(
       { x: left, y, size: 9, font: fontBold, color: ink },
     );
     y -= 16;
-  } else if (input.dueDateIso && !input.paid) {
+  } else if (input.dueDateIso && !input.paid && !input.hidePaymentPlan) {
     page.drawText(
       pdfSafeText(
         `Pay in full by ${formatUkDate(input.dueDateIso)} (one-off — invoice total above).`,

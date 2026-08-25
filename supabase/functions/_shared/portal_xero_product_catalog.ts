@@ -468,20 +468,35 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
   for (const agg of byKey.values()) {
     const mapRow = input.productMap.get(agg.service_key);
     const label = mapRow?.label || agg.description.split("—")[0].trim();
-    const qty = Math.max(1, agg.sessions);
-    const unit = round4(agg.termTotal / qty);
     const day =
       weekdayFromText(agg.details[0] || "") ||
       String(agg.details[0] || "").split(/\s+/)[0] ||
       "";
+    const catalogQty = Math.max(1, agg.sessions);
+    const unit = round4(agg.termTotal / catalogQty);
+    // Prefer real calendar dates (includes Early May BH closures) over catalogue weights.
+    const actualDates = day ? collectTermSessionDates(input.term, day) : [];
+    const qty = actualDates.length > 0 ? actualDates.length : catalogQty;
+    const amount = round2(unit * qty);
+    const dayLabel = day
+      ? day.charAt(0).toUpperCase() + day.slice(1).toLowerCase()
+      : "";
+    const baseLabel = label || agg.description;
+    const alreadyHasDay =
+      !!dayLabel && new RegExp(`\\b${dayLabel}s?\\b`, "i").test(baseLabel);
     lines.push({
       service_key: agg.service_key,
-      description: label || agg.description,
+      description:
+        dayLabel && !alreadyHasDay
+          ? `${baseLabel} — ${dayLabel}s`
+          : baseLabel,
       detail: agg.details.join(" · ") || null,
-      dates: slotTermSessionDates(input.term, day, qty),
+      dates: actualDates.length
+        ? formatGroupedSessionDates(actualDates)
+        : slotTermSessionDates(input.term, day, qty),
       quantity: qty,
       unit_price_gbp: unit,
-      amount_gbp: agg.termTotal,
+      amount_gbp: amount,
       xero_item_code: xeroItemCodeForService(mapRow, input.vatMode),
     });
   }

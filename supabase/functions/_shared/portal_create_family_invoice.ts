@@ -204,14 +204,14 @@ function invoiceDescriptionLines(input: {
     ? descriptionFromInput.slice(0, firstBlank >= 0 ? firstBlank : 1)
     : descriptionFromInput.slice(0, 12);
   if (input.isLaFunded) {
-    /* LA / NHS funder invoices: never print participant or parent names. */
+    /* LA / NHS funder invoices: never print participant or parent names.
+     * Do not print Payment Method (Flexi / bank) — authority invoices are BACS to the LA. */
     return [
       ...descriptionBody,
       "",
       `Client ID: ${input.clientIdLabel || "—"}`,
       `PO: ${input.poLabel || "—"}`,
       input.reference ? `- Reference: ${input.reference}` : null,
-      `- Payment Method: ${input.modeLabel}`,
     ].filter((x): x is string => x !== null);
   }
   return [
@@ -368,6 +368,7 @@ export async function createPortalFamilyInvoice(
       paid: false,
       isDraft: !isLaFunded,
       showStamp: !isLaFunded,
+      hidePaymentPlan: isLaFunded,
       paymentSchedule: createSchedule,
       amountPaidGbp: 0,
     });
@@ -637,6 +638,7 @@ export async function regeneratePortalInvoiceSharePdf(
       partiallyPaid: isPartial,
       isDraft: !isPaid && !isPartial,
       showStamp: paymentMethodHint !== "la_funded",
+      hidePaymentPlan: paymentMethodHint === "la_funded",
       paymentSchedule,
       amountPaidGbp,
     });
