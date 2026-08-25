@@ -298,6 +298,14 @@
 
   function shouldAggregateDaySlots(slots) {
     if (!slots || !slots.length) return false;
+    /* Half-hour place bands are Aquatic only (swimming). Climbing stays 60', Multi 90'. */
+    if (
+      slots.some(function (s) {
+        return String(s.serviceId || "") !== "aquatic";
+      })
+    ) {
+      return false;
+    }
     if (
       slots.some(function (s) {
         return s.blockId || s.bookingMode === "weekly_pack" || s.enquireOnly;
@@ -310,7 +318,7 @@
     );
   }
 
-  /** Weekly standing rows → 30-minute bands with summed places (overlapping 30'/60' sessions). */
+  /** Aquatic weekly rows → 30-minute bands with summed places (overlapping 30'/60' sessions). */
   function aggregateSlotsToHalfHourBands(slots) {
     if (!shouldAggregateDaySlots(slots)) return slots;
     var bands = Object.create(null);

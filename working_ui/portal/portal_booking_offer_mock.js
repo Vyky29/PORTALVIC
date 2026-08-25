@@ -489,6 +489,14 @@
 
   function shouldAggregateDaySlots(slots) {
     if (!slots || !slots.length) return false;
+    /* Half-hour place bands are Aquatic only (swimming). Climbing stays 60', Multi 90'. */
+    if (
+      slots.some(function (s) {
+        return String(s.serviceId || "") !== "aquatic";
+      })
+    ) {
+      return false;
+    }
     if (
       slots.some(function (s) {
         return s.blockId || s.bookingMode === "weekly_pack" || s.enquireOnly;
