@@ -471,9 +471,9 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
   const lines: PortalInvoiceLineItem[] = [];
   for (const agg of byKey.values()) {
     const mapRow = input.productMap.get(agg.service_key);
-    const label = mapRow?.label || agg.description.split("—")[0].trim();
     const day =
       weekdayFromText(agg.details[0] || "") ||
+      weekdayFromText(agg.description || "") ||
       String(agg.details[0] || "").split(/\s+/)[0] ||
       "";
     const catalogQty = Math.max(1, agg.sessions);
@@ -485,33 +485,25 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
     const dayLabel = day
       ? day.charAt(0).toUpperCase() + day.slice(1).toLowerCase()
       : "";
-    // Prefer a clean service title (strip any clock already baked into labels).
-    let baseLabel = (label || agg.description)
+    // Clean service title only — never keep clocks from display labels / product map.
+    const serviceTitle = String(mapRow?.label || agg.description || "Programme")
       .replace(
-        /\s*[-–—]?\s*\d{1,2}(?:[.:]\d{1,2})?\s*(?:am|pm)?\s*(?:to|-)\s*\d{1,2}(?:[.:]\d{1,2})?\s*(?:am|pm)?/gi,
+        /\s*[-–—,]?\s*\d{1,2}(?:[.:]\d{1,2})?\s*(?:am|pm)?\s*(?:to|-)\s*\d{1,2}(?:[.:]\d{1,2})?\s*(?:am|pm)?/gi,
         "",
       )
+      .replace(
+        /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)s?\b/gi,
+        "",
+      )
+      .replace(/\s*[-–—,]\s*$/g, "")
       .replace(/\s+/g, " ")
-      .replace(/\s*,\s*$/g, "")
       .trim();
-    const alreadyHasDay =
-      !!dayLabel && new RegExp(`\\b${dayLabel}s?\\b`, "i").test(baseLabel);
-    let descriptionOut = baseLabel;
-    if (dayLabel && agg.timeLabel) {
-      if (alreadyHasDay) {
-        descriptionOut = baseLabel.replace(
-          new RegExp(`\\b(${dayLabel}s?)\\b`, "i"),
-          `$1 ${agg.timeLabel}`,
-        );
-      } else {
-        descriptionOut = `${baseLabel} — ${dayLabel}s ${agg.timeLabel}`;
-      }
-    } else if (dayLabel && !alreadyHasDay) {
-      descriptionOut = `${baseLabel} — ${dayLabel}s`;
-    }
-    const detailOut = agg.timeLabel
-      ? [dayLabel, agg.timeLabel].filter(Boolean).join(" ")
-      : agg.details.join(" · ") || null;
+    const dayBit = dayLabel
+      ? `${dayLabel}s${agg.timeLabel ? ` ${agg.timeLabel}` : ""}`
+      : agg.timeLabel || "";
+    const descriptionOut = [serviceTitle, dayBit].filter(Boolean).join(", ");
+    // Time already sits next to the weekday in description — do not repeat in detail.
+    const detailOut = null;
     lines.push({
       service_key: agg.service_key,
       description: descriptionOut,
