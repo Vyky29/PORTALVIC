@@ -427,6 +427,7 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
       service_key: string;
       description: string;
       details: string[];
+      timeLabel: string;
       sessions: number;
       termTotal: number;
     }
@@ -445,6 +446,7 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
     const service_key = serviceKeyFromSlot(slot);
     const description = lineDescriptionForSlot(slot);
     const detail = slotSessionDetail(slot);
+    const timeLabel = formatTimeSlotLabel(String(slot.timeSlot || ""));
     const sessions = Number(slot.sessions?.[input.term] || 0);
     const aggregateKey = `${service_key}\u0000${detail}`;
     const prev = byKey.get(aggregateKey);
@@ -453,11 +455,13 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
       prev.termTotal = round2(prev.termTotal + termTotal);
       if (description.length > prev.description.length) prev.description = description;
       if (detail && !prev.details.includes(detail)) prev.details.push(detail);
+      if (timeLabel && !prev.timeLabel) prev.timeLabel = timeLabel;
     } else {
       byKey.set(aggregateKey, {
         service_key,
         description,
         details: detail ? [detail] : [],
+        timeLabel,
         sessions: sessions > 0 ? sessions : 1,
         termTotal: round2(termTotal),
       });
@@ -481,16 +485,37 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
     const dayLabel = day
       ? day.charAt(0).toUpperCase() + day.slice(1).toLowerCase()
       : "";
-    const baseLabel = label || agg.description;
+    // Prefer a clean service title (strip any clock already baked into labels).
+    let baseLabel = (label || agg.description)
+      .replace(
+        /\s*[-–—]?\s*\d{1,2}(?:[.:]\d{1,2})?\s*(?:am|pm)?\s*(?:to|-)\s*\d{1,2}(?:[.:]\d{1,2})?\s*(?:am|pm)?/gi,
+        "",
+      )
+      .replace(/\s+/g, " ")
+      .replace(/\s*,\s*$/g, "")
+      .trim();
     const alreadyHasDay =
       !!dayLabel && new RegExp(`\\b${dayLabel}s?\\b`, "i").test(baseLabel);
+    let descriptionOut = baseLabel;
+    if (dayLabel && agg.timeLabel) {
+      if (alreadyHasDay) {
+        descriptionOut = baseLabel.replace(
+          new RegExp(`\\b(${dayLabel}s?)\\b`, "i"),
+          `$1 ${agg.timeLabel}`,
+        );
+      } else {
+        descriptionOut = `${baseLabel} — ${dayLabel}s ${agg.timeLabel}`;
+      }
+    } else if (dayLabel && !alreadyHasDay) {
+      descriptionOut = `${baseLabel} — ${dayLabel}s`;
+    }
+    const detailOut = agg.timeLabel
+      ? [dayLabel, agg.timeLabel].filter(Boolean).join(" ")
+      : agg.details.join(" · ") || null;
     lines.push({
       service_key: agg.service_key,
-      description:
-        dayLabel && !alreadyHasDay
-          ? `${baseLabel} — ${dayLabel}s`
-          : baseLabel,
-      detail: agg.details.join(" · ") || null,
+      description: descriptionOut,
+      detail: detailOut,
       dates: actualDates.length
         ? formatGroupedSessionDates(actualDates)
         : slotTermSessionDates(input.term, day, qty),

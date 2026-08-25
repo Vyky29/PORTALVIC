@@ -214,6 +214,7 @@ function buildWeeklySlot(opts: {
   durationMin: number;
   day: string;
   ratio?: string;
+  timeSlot?: string;
 }): ParsedSlot {
   const day = normalizeDay(opts.day);
   const isWeekend = WEEKEND_DAYS.has(day);
@@ -224,6 +225,7 @@ function buildWeeklySlot(opts: {
       ? 90
       : opts.durationMin || 30;
   const price = unitPriceFor(serviceType, durationMin);
+  const timeSlot = String(opts.timeSlot || "").trim() || undefined;
   const slot: ParsedSlot = {
     id: opts.id,
     raw: opts.raw,
@@ -236,6 +238,7 @@ function buildWeeklySlot(opts: {
     sessions: { ...counts },
     termTotals: termTotals(price, counts),
     ratio: opts.ratio,
+    timeSlot,
   };
   slot.displayLabel = buildSlotDisplayLabel(slot);
   return slot;
@@ -339,6 +342,22 @@ function termTotals(price: number | null, counts: { autumn: number; spring: numb
  *   `30' Aquatic Activity, Monday - 6 to 6.30`
  * Catalogue parse expects a paren day: `30' Aquatic Activity (Monday)`.
  */
+function extractTimeRangeFromServiceText(raw: string): string {
+  const clock = "\\d{1,2}(?:[.:]\\d{1,2})?(?:\\s*(?:am|pm))?";
+  const s = String(raw || "");
+  const m = s.match(
+    new RegExp(
+      `[-–—]\\s*((?:${clock})\\s*(?:(?:to|-)\\s*(?:${clock}))?)\\s*$`,
+      "i",
+    ),
+  );
+  if (!m) return "";
+  return m[1]
+    .replace(/\s+/g, " ")
+    .replace(/\s*-\s*/g, " to ")
+    .trim();
+}
+
 function normalizeServiceSegment(raw: string): string {
   let s = String(raw || "")
     .replace(/[''′](?:\s*[''′])+/g, "'")
@@ -495,6 +514,7 @@ export function mergeWeeklySlotsFromRosterAndPayment(
 }
 
 function parseOneSegment(segment: string, index: number): ParsedSlot[] {
+  const timeFromRaw = extractTimeRangeFromServiceText(segment);
   let raw = normalizeServiceSegment(segment);
   if (!raw || raw === "—" || raw === "-") return [];
 
@@ -567,6 +587,7 @@ function parseOneSegment(segment: string, index: number): ParsedSlot[] {
         durationMin,
         day,
         ratio: ratio || undefined,
+        timeSlot: timeFromRaw || undefined,
       }),
     );
     return expandByMultiplier(slots, multiplier, index);
@@ -604,6 +625,7 @@ function parseOneSegment(segment: string, index: number): ParsedSlot[] {
         durationMin,
         day,
         ratio: ratio || undefined,
+        timeSlot: timeFromRaw || undefined,
       }),
     );
   return expandByMultiplier(slots, multiplier, index);
