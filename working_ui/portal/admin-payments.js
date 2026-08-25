@@ -1101,7 +1101,7 @@
   /**
    * Autumn 26/27 season totals for the Total column.
    * Prefer catalogue booked_* once; never invent Spring/Summer from an inflated
-   * instalment sum. Weekday programme weights: 14 / 10 / 13 (annual 37).
+   * instalment sum. Weekday programme weights: 14 / 11 / 13 (annual 38; Mon 37 with Early May BH).
    * ACAT Mon aquatic (Day Centre): 15 / 12 / 16 (annual 43) × £50.
    */
   function autumnCatalogSeasonTotals(r) {
@@ -2003,7 +2003,7 @@
     var multiRate = 120;
     /* Wed Multi removed; Wed Aquatic is 60' (£100), Sun Multi kept. */
     var aqRate = 100;
-    var wd = { autumn: 14, spring: 10, summer: 13, annual: 37 };
+    var wd = { autumn: 14, spring: 11, summer: 13, annual: 38 };
     var we = { autumn: 13, spring: 9, summer: 11, annual: 33 };
     function term(period) {
       var dc = thuRate * wd[period];
@@ -2128,7 +2128,7 @@
           "::thu-bespoke",
           pack.autumn.dc,
           thuSvcLabel,
-          "14 / 10 / 13 / 37",
+          "14 / 11 / 13 / 38",
           "£90 / session (friendly rate; std £125/hr)",
           {
             autumn: pack.autumn.dc,
@@ -2142,7 +2142,7 @@
           "::afterschool",
           pack.autumn.as,
           afterSvcLines.join("\n"),
-          "weekday 14/10/13 · weekend 13/9/11",
+          "weekday 14/11/13 · weekend 13/9/11",
           d.Cost || "Catalogue Multi £120 · Aquatic 60' £100",
           {
             autumn: pack.autumn.as,

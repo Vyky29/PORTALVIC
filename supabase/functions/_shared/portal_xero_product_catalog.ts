@@ -169,13 +169,12 @@ const TERM_DATE_WINDOWS: Record<
   },
   spring: {
     weekday: {
-      // Club week 1 starts Sat 9 Jan (not school Mon 4 Jan).
-      start: "2027-01-09",
+      start: "2027-01-04",
       end: "2027-03-25",
       closures: [["2027-02-15", "2027-02-18"]],
     },
     weekend: {
-      start: "2027-01-09",
+      start: "2027-01-08",
       end: "2027-03-25",
       closures: [
         ["2027-02-13", "2027-02-14"],

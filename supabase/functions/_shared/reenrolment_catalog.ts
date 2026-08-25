@@ -5,9 +5,9 @@ import { canonicalParticipantClientId } from "./participant_identity.ts";
 export const REENROL_ACADEMIC_YEAR = "2026-27";
 
 export const SESSION_COUNTS = {
-  // Weekday spring starts Sat 9 Jan (first Mon 11 Jan). Summer catalogue = 13;
-  // Monday annual is 36 when Early May BH (3 May) is closed via TERM_DATE_WINDOWS.
-  weekday: { autumn: 14, spring: 10, summer: 13, annual: 37 },
+  // Catalogue weekday annual = 38 (Tue–Fri). Monday = 37 when Early May BH
+  // (3 May) is closed via TERM_DATE_WINDOWS summer closures.
+  weekday: { autumn: 14, spring: 11, summer: 13, annual: 38 },
   weekend: { autumn: 13, spring: 9, summer: 11, annual: 33 },
 } as const;
 
