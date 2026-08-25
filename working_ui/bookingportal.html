@@ -1922,21 +1922,9 @@
       text-decoration: underline;
     }
 
-    /* Compact row layout preview: ?layout=rows (local / A-B test) */
+    /* Service rows layout (default). Opt out: ?layout=cards */
     body.booking-svc-rows .services__preview-note {
-      margin: 0 0 12px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: #fff8e6;
-      border: 1px solid rgba(244, 183, 64, 0.45);
-      color: var(--ink);
-      font-size: 0.86rem;
-      line-height: 1.4;
-      overflow-wrap: break-word;
-    }
-    body.booking-svc-rows .services__preview-note a {
-      color: var(--blueDeep);
-      font-weight: 700;
+      display: none;
     }
     body.booking-svc-rows .services__label:not(.services__label--rows) { display: none; }
     body.booking-svc-rows .services__rows-band {
@@ -2717,7 +2705,11 @@
 
   var SVC_ROWS_LAYOUT = (function () {
     var q = new URLSearchParams(window.location.search || "");
-    return q.get("layout") === "rows" || q.get("compact") === "1";
+    var layout = String(q.get("layout") || "").trim().toLowerCase();
+    if (layout === "cards" || layout === "classic" || layout === "grid") return false;
+    if (layout === "rows" || q.get("compact") === "1") return true;
+    /* Default: rows layout on /bookingportal and /bookingservice */
+    return true;
   })();
   if (SVC_ROWS_LAYOUT) {
     document.body.classList.add("booking-svc-rows");
@@ -3541,10 +3533,6 @@
          back onto .page before replacing #serviceCards HTML or those nodes are lost. */
       restoreRowsPageSections();
       host.innerHTML =
-        '<p class="services__preview-note">Preview: filters first until About; then photo + service info, filters, venues. ' +
-        '<a href="' +
-        esc(window.location.pathname) +
-        '">Back to default cards</a></p>' +
         '<div class="services__group">' +
         rowsBandHtml("Core services", ["aquatic", "climbing", "physical"]) +
         rowsBandHtml("Other services", [
