@@ -65,6 +65,8 @@ export type PortalFamilyInvoiceCreateInput = {
   paymentSchedule?: InvoicePaymentScheduleRow[];
   billingTerm?: "autumn" | "spring" | "summer" | null;
   lineItems?: PortalInvoiceLineItem[];
+  /** Skip PO: line on PDF (Ealing year INV-Ps). */
+  omitPoLine?: boolean;
 };
 
 export type PortalFamilyInvoiceCreateResult =
@@ -191,6 +193,8 @@ function invoiceDescriptionLines(input: {
   modeLabel: string;
   isLaFunded: boolean;
   hasLineItems: boolean;
+  /** Ealing year INV-Ps: Client ID + Reference only (no PO line). */
+  omitPoLine?: boolean;
 }): string[] {
   const descriptionFromInput = String(input.lineDescription)
     .split("\n")
@@ -210,7 +214,7 @@ function invoiceDescriptionLines(input: {
       ...descriptionBody,
       "",
       `Client ID: ${input.clientIdLabel || "—"}`,
-      `PO: ${input.poLabel || "—"}`,
+      input.omitPoLine ? null : `PO: ${input.poLabel || "—"}`,
       input.reference ? `- Reference: ${input.reference}` : null,
     ].filter((x): x is string => x !== null);
   }
@@ -347,6 +351,10 @@ export async function createPortalFamilyInvoice(
     modeLabel,
     isLaFunded,
     hasLineItems: !!input.lineItems?.length,
+    omitPoLine:
+      !!input.omitPoLine ||
+      /ealing/i.test(clean(input.readyBy, 120)) ||
+      /ealing/i.test(clean(input.notes, 200)),
   });
 
   let pdfBytes: Uint8Array;
@@ -616,6 +624,9 @@ export async function regeneratePortalInvoiceSharePdf(
     modeLabel,
     isLaFunded: paymentMethodHint === "la_funded",
     hasLineItems: lineItems.length > 0,
+    omitPoLine:
+      /ealing/i.test(clean(share.ready_by, 160)) ||
+      /ealing/i.test(clean(share.notes, 200)),
   });
 
   let pdfBytes: Uint8Array;
