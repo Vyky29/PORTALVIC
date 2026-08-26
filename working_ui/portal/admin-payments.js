@@ -2200,6 +2200,10 @@
       return null;
     }
     if (termBucketFor(r) !== "autumn_2627") return null;
+    /* Jack S: Multi paid on main INV-P — no separate ACAT Outstanding line in this table. */
+    if (slug === "jacks" && r._officeSplitPaidOnly) {
+      return null;
+    }
     var blob = rowServiceBlob(r);
     var hasAquaticMon =
       /aquatic|swim/i.test(blob)
@@ -6080,6 +6084,13 @@
     });
   }
 
+  /** Office follow-up Autumn INV-P on a separate service (e.g. Jack S ACAT £700) — not the main re-enrol row. */
+  function isOfficeSplitAutumnSibling(inv) {
+    var rb = String((inv && inv.ready_by) || "").toLowerCase();
+    if (!rb || rb.indexOf("office_") !== 0) return false;
+    return /acat|aquatic|split|_2627/.test(rb);
+  }
+
   function buildReenrolRowsFromInvoices(allInvs) {
     allInvs = allInvs || [];
     var invs = allInvs.filter(isAutumnReenrolInvoice);
@@ -6156,6 +6167,10 @@
         row.amount_billed = Math.max(Number(row.amount_billed) || 0, amt);
       }
       if (st === "paid") {
+        var paidOnInv = Number(inv.amount_paid_gbp) || amt;
+        if (paidOnInv > 0) {
+          row._amountPaid = Math.max(Number(row._amountPaid) || 0, paidOnInv);
+        }
         /* Paid Autumn INV-P — clear outstanding unless a later autumn sibling is open. */
         if (!(Number(row.amount_out) > 0) && String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
           row.amount_out = 0;
@@ -6188,6 +6203,14 @@
           row.payment_status = "Partial";
         }
       } else if (st !== "void") {
+        /*
+         * Office split sibling (Jack S ACAT aquatic on its own INV-P) — keep main
+         * re-enrol row Paid on the Multi invoice; do not show Partial / £2260.
+         */
+        if (isOfficeSplitAutumnSibling(inv)) {
+          row._officeSplitSiblingUnpaid = true;
+          return;
+        }
         /* Outstanding: catalogue autumn still unpaid (don't stack instalment GBP). */
         if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
           row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
@@ -6254,10 +6277,38 @@
             Math.round((row._amountAutumn - Number(row._amountPaid)) * 100) / 100,
           );
         } else if (Number(row.amount_out) > 0) {
-          row.amount_out = row._amountAutumn;
+          /* Keep split balance when one Autumn INV-P is paid and another is open. */
+          if (!(Number(row._amountPaid) > 0)) {
+            row.amount_out = row._amountAutumn;
+          }
         }
       } else {
         row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
+      }
+      var autumnFaceFix = Number(row._amountAutumn) || 0;
+      var paidFix = Number(row._amountPaid) || 0;
+      if (
+        autumnFaceFix > 0
+        && paidFix > 0
+        && paidFix + 0.009 < autumnFaceFix
+        && Number(row.amount_out) > 0.009
+      ) {
+        row.payment_status = "Partial";
+        row.amount_out = Math.max(
+          0,
+          Math.round((autumnFaceFix - paidFix) * 100) / 100,
+        );
+      } else if (
+        String(row.payment_status || "").toLowerCase().indexOf("paid") === 0
+        && autumnFaceFix > 0
+        && paidFix + 0.009 < autumnFaceFix
+      ) {
+        row._amountPaid = paidFix || Number(row.amount_billed) || 0;
+        row.amount_out = Math.max(
+          0,
+          Math.round((autumnFaceFix - row._amountPaid) * 100) / 100,
+        );
+        row.payment_status = "Partial";
       }
       if (String(row.payment_status || "").toLowerCase().indexOf("partial") === 0) {
         /* Keep Flexi / GoCardless partial — do not collapse to Paid/Outstanding. */
@@ -6265,6 +6316,19 @@
         row.payment_status = "Paid";
       } else if (row.amount_out > 0) {
         row.payment_status = "Outstanding";
+      }
+      /*
+       * Paid Multi-only re-enrol when ACAT aquatic lives on a separate office INV-P
+       * (Jack Stratton INV-P-0115 £1560 paid; INV-P-0445 £700 tracked separately).
+       */
+      if (row._officeSplitSiblingUnpaid && Number(row._amountPaid) > 0) {
+        var paidOnly = Math.round(Number(row._amountPaid) * 100) / 100;
+        row.payment_status = "Paid";
+        row.amount_out = 0;
+        row._amountAutumn = paidOnly;
+        row.amount = paidOnly;
+        row.amount_billed = paidOnly;
+        row._officeSplitPaidOnly = true;
       }
       row.sheet = classifyPayGroup({
         sheet: row.sheet,
