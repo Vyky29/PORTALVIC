@@ -18,6 +18,7 @@ import {
   sha256Hex,
 } from "../_shared/booking_lead_auth.ts";
 import { notifyOfficeRegistrationSubmitted } from "../_shared/portal_booking_lead_office_notify.ts";
+import { sendFinishBookingAfterRegistration } from "../_shared/portal_booking_finish.ts";
 import { saveParticipantAvatarWithArchive } from "../_shared/participant_avatar.ts";
 
 const SLOT_HOLD_DAYS = 21;
@@ -528,6 +529,27 @@ Deno.serve(async (req) => {
     console.warn("[portal-booking-existing-confirm] notify", notifyErr);
   }
 
+  let finishUrl: string | null = null;
+  let finishUrlSent = false;
+  try {
+    const sent = await sendFinishBookingAfterRegistration(admin, {
+      id: String(docRow.id),
+      participant_name: child.display_name,
+      parent_name: clean(lead.parent_name, 120) || null,
+      parent_email: parentEmail || null,
+      parent_phone: clean(lead.mobile, 40) || null,
+      payload_json: payload,
+    }, {
+      reservationId: holdRow?.id ? String(holdRow.id) : null,
+      leadId: String(lead.id),
+      variant: "registration_submitted",
+    });
+    finishUrl = sent.finish_url;
+    finishUrlSent = sent.finish_url_sent;
+  } catch (finishErr) {
+    console.warn("[portal-booking-existing-confirm] finish link", finishErr);
+  }
+
   return bookingLeadJson({
     ok: true,
     document_id: docRow.id,
@@ -536,5 +558,7 @@ Deno.serve(async (req) => {
     contact_id: child.contact_id,
     participant_name: child.display_name,
     photo_updated: !!photoBytes,
+    finish_url: finishUrl,
+    finish_url_sent: finishUrlSent,
   });
 });

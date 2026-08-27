@@ -1,5 +1,5 @@
 // portal-booking-finish — public finish-booking after Accept (magic token).
-// Actions: load | save_choices | create_invoice | confirm_paid
+// Actions: load | save_choices | create_invoice | create_stripe_checkout | confirm_paid
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -16,6 +16,7 @@ import {
 import {
   bookingTermDisplayLabel,
   clientKeyFromName,
+  createFinishBookingStripeCheckout,
   inferBillingTerm,
   inferServiceKey,
   inferUnitPriceGbp,
@@ -40,6 +41,7 @@ import {
 } from "../_shared/portal_booking_context.ts";
 import {
   BOOKING_PAY_HOLD_MINUTES,
+  BOOKING_SLOT_HOLD_STATUSES,
   bookingPayHoldExpiresAt,
   expireUnpaidBookingPayHolds,
 } from "../_shared/portal_booking_pay_hold.ts";
@@ -179,6 +181,46 @@ function trialQuotePayload(q: {
     payment_method_hint: q.paymentMethodHint,
     is_trial: true,
   };
+}
+
+/** Short hold while parent completes Stripe Checkout (trial only). */
+const TRIAL_STRIPE_HOLD_MINUTES = BOOKING_PAY_HOLD_MINUTES;
+
+async function holdTrialSlotForStripeCheckout(
+  admin: ReturnType<typeof createClient>,
+  reservation: Record<string, unknown> | null,
+  documentId: string,
+  holdExpiresIso: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const slotId = clean(reservation?.slot_id, 160);
+  const reservationId = clean(reservation?.id, 80);
+  if (!slotId || !reservationId) return { ok: false, error: "reservation_missing" };
+
+  const { count, error: countErr } = await admin
+    .from("portal_booking_slot_reservations")
+    .select("id", { count: "exact", head: true })
+    .eq("slot_id", slotId)
+    .in("status", [...BOOKING_SLOT_HOLD_STATUSES])
+    .neq("document_id", documentId);
+  if (countErr) {
+    console.warn("[portal-booking-finish] trial slot count", countErr.message);
+  } else if ((count || 0) >= 2) {
+    return { ok: false, error: "slot_unavailable" };
+  }
+
+  const { error: updErr } = await admin
+    .from("portal_booking_slot_reservations")
+    .update({
+      status: "awaiting_payment",
+      hold_expires_at: holdExpiresIso,
+      released_at: null,
+      updated_at: new Date().toISOString(),
+      notes: "trial_stripe_checkout|booking_kind=trial",
+    })
+    .eq("id", reservationId)
+    .eq("document_id", documentId);
+  if (updErr) return { ok: false, error: "slot_hold_failed" };
+  return { ok: true };
 }
 
 async function ensureContact(
@@ -598,8 +640,15 @@ Deno.serve(async (req) => {
     if (!scope) {
       return json(400, { ok: false, error: "booking_scope_required" });
     }
+    if (scope === "trial_session" && planOnly !== "stripe_instant") {
+      return json(400, {
+        ok: false,
+        error: "trial_stripe_required",
+        message: "Trial sessions must be paid by card / Apple Pay.",
+      });
+    }
 
-    const plan = planOnly;
+    const plan = scope === "trial_session" ? "stripe_instant" : planOnly;
     const now = new Date().toISOString();
     await admin
       .from("portal_booking_completion_tokens")
@@ -641,7 +690,7 @@ Deno.serve(async (req) => {
     const scope = parseBookingScope(body.booking_scope) || savedScope;
     if (!scope) return json(400, { ok: false, error: "booking_scope_required" });
     if (scope === "trial_session") {
-      plan = "one_off_bank";
+      plan = "stripe_instant";
     }
     if (!plan) return json(400, { ok: false, error: "pay_plan_required" });
     if (plan === "own_way" && funding === "la_direct_payments") {
@@ -674,7 +723,7 @@ Deno.serve(async (req) => {
         : "Using Own money (private family funds)";
     const paymentLabel =
       scope === "trial_session"
-        ? "Trial session · pay now"
+        ? "Trial session · Card / Apple Pay (pay now)"
         : plan === "gocardless_monthly"
           ? "GoCardless (monthly)"
           : plan === "flexi_bank"
@@ -727,6 +776,28 @@ Deno.serve(async (req) => {
     if (!ownerId) return json(500, { ok: false, error: "invoice_owner_missing" });
 
     const asOf = new Date().toISOString().slice(0, 10);
+    const payHoldExpires = isTrial
+      ? bookingPayHoldExpiresAt(Date.now())
+      : bookingPayHoldExpiresAt();
+
+    if (isTrial && reservation?.id) {
+      const held = await holdTrialSlotForStripeCheckout(
+        admin,
+        reservation as Record<string, unknown>,
+        String(doc.id),
+        payHoldExpires,
+      );
+      if (!held.ok) {
+        return json(409, {
+          ok: false,
+          error: held.error,
+          message: held.error === "slot_unavailable"
+            ? "That trial slot was just taken. Choose another time or ask the office."
+            : "Could not hold the trial slot.",
+        });
+      }
+    }
+
     const created = await createPortalFamilyInvoice(admin, {
       contactId: ensured.contactId,
       amountGbp: quote.invoiceTotalGbp,
@@ -796,7 +867,6 @@ Deno.serve(async (req) => {
     }
 
     const now = new Date().toISOString();
-    const payHoldExpires = bookingPayHoldExpiresAt();
     await admin
       .from("portal_booking_completion_tokens")
       .update({
@@ -819,8 +889,8 @@ Deno.serve(async (req) => {
       })
       .eq("id", token.id);
 
-    // Bank / GC setup: seat only held for the short pay window, then live again.
-    if (reservation?.id) {
+    // Bank / GC: short pay window. Trial: same window but Stripe only — seat frees if unpaid.
+    if (reservation?.id && !isTrial) {
       const prevNotes = String(reservation.notes || "").trim();
       await admin
         .from("portal_booking_slot_reservations")
@@ -854,13 +924,51 @@ Deno.serve(async (req) => {
       String(doc.participant_name || ""),
     );
 
+    let stripeCheckout: Record<string, unknown> | null = null;
+    if (isTrial && invoiceId) {
+      const stripe = await createFinishBookingStripeCheckout(admin, {
+        invoiceShareId: invoiceId,
+        contactId: ensured.contactId,
+        invoiceNumber: clean(invOut?.invoice_number, 40),
+        participantName: String(doc.participant_name || ""),
+        amountGbp: quote.invoiceTotalGbp,
+        rawFinishToken: rawToken,
+      });
+      if (!stripe.ok) {
+        if (isTrial && reservation?.id) {
+          await admin
+            .from("portal_booking_slot_reservations")
+            .update({
+              status: "released",
+              released_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              notes: "trial_stripe_failed|booking_kind=trial",
+            })
+            .eq("id", String(reservation.id));
+        }
+        return json(stripe.error === "stripe_not_configured" ? 503 : 502, {
+          ok: false,
+          error: stripe.error,
+          message: stripe.message || "Could not start card payment.",
+        });
+      }
+      stripeCheckout = {
+        checkout_url: stripe.checkout_url,
+        session_id: stripe.session_id,
+        charge_gbp: stripe.charge_gbp,
+        fee_gbp: stripe.fee_gbp,
+      };
+    }
+
     return json(200, {
       ok: true,
       invoice: invOut,
       gocardless_url: gocardlessUrl || invOut?.gocardless_url || null,
-      bank,
-      transfer_reference: transferRef,
-      pay_hold_minutes: BOOKING_PAY_HOLD_MINUTES,
+      bank: isTrial ? null : bank,
+      transfer_reference: isTrial ? null : transferRef,
+      stripe_checkout: stripeCheckout,
+      checkout_url: stripeCheckout?.checkout_url || null,
+      pay_hold_minutes: isTrial ? TRIAL_STRIPE_HOLD_MINUTES : BOOKING_PAY_HOLD_MINUTES,
       pay_hold_expires_at: payHoldExpires,
       quote: {
         remaining_sessions: quote.remainingSessions,
@@ -872,7 +980,63 @@ Deno.serve(async (req) => {
     });
   }
 
+  if (action === "create_stripe_checkout") {
+    if (token.status === "completed") {
+      return json(200, { ok: true, status: "completed", completed: true });
+    }
+    if (!token.invoice_share_id) {
+      return json(400, { ok: false, error: "invoice_required" });
+    }
+    const scope = parseBookingScope(body.booking_scope) || savedScope;
+    if (scope !== "trial_session") {
+      return json(400, { ok: false, error: "trial_stripe_only" });
+    }
+    const { data: invRow } = await admin
+      .from("portal_parent_invoice_share")
+      .select("id, invoice_number, amount_gbp, payment_status, contact_id")
+      .eq("id", token.invoice_share_id)
+      .maybeSingle();
+    if (!invRow || invRow.payment_status === "paid") {
+      return json(409, { ok: false, error: "invoice_not_payable" });
+    }
+    if (reservation?.id) {
+      const held = await holdTrialSlotForStripeCheckout(
+        admin,
+        reservation as Record<string, unknown>,
+        String(doc.id),
+        bookingPayHoldExpiresAt(),
+      );
+      if (!held.ok) {
+        return json(409, { ok: false, error: held.error });
+      }
+    }
+    const stripe = await createFinishBookingStripeCheckout(admin, {
+      invoiceShareId: String(invRow.id),
+      contactId: String(invRow.contact_id || token.contact_id || ""),
+      invoiceNumber: clean(invRow.invoice_number, 40),
+      participantName: String(doc.participant_name || ""),
+      amountGbp: Number(invRow.amount_gbp) || 0,
+      rawFinishToken: rawToken,
+    });
+    if (!stripe.ok) {
+      return json(502, { ok: false, error: stripe.error, message: stripe.message });
+    }
+    return json(200, {
+      ok: true,
+      checkout_url: stripe.checkout_url,
+      stripe_checkout: stripe,
+    });
+  }
+
   if (action === "confirm_paid") {
+    const scopePaid = parseBookingScope(body.booking_scope) || savedScope;
+    if (scopePaid === "trial_session") {
+      return json(400, {
+        ok: false,
+        error: "trial_stripe_required",
+        message: "Trial sessions must be paid by card / Apple Pay.",
+      });
+    }
     if (token.status === "completed") {
       return json(200, {
         ok: true,
@@ -906,12 +1070,29 @@ Deno.serve(async (req) => {
     await admin
       .from("portal_parent_invoice_share")
       .update({
+        payment_status: "pending_confirmation",
         parent_reported_paid_at: now,
         parent_reported_method: "bank_transfer",
         parent_reported_ref: clean(body.payment_ref, 80) || null,
         updated_at: now,
       })
       .eq("id", token.invoice_share_id);
+
+    if (reservation?.id) {
+      const holdExtended = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+      await admin
+        .from("portal_booking_slot_reservations")
+        .update({
+          status: "awaiting_payment",
+          hold_expires_at: holdExtended,
+          updated_at: now,
+          notes: String(reservation.notes || "")
+            .replace(/\|?pay_hold_30m/gi, "")
+            .concat("|parent_reported_pending_admin")
+            .slice(0, 500),
+        })
+        .eq("id", String(reservation.id));
+    }
 
     await admin
       .from("portal_booking_completion_tokens")

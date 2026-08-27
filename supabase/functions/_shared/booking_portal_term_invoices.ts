@@ -23,7 +23,8 @@ export type NewClientPayPlan =
   | "gocardless_monthly"
   | "flexi_bank"
   | "one_off_bank"
-  | "own_way";
+  | "own_way"
+  | "stripe_instant";
 
 const GC_FEE = 1.5;
 /** Own way: always keep 2 sessions prepaid + £50 admin / term. */
@@ -170,6 +171,14 @@ export function parseNewClientPayPlan(raw: unknown): NewClientPayPlan | null {
     s === "own_arrangement"
   ) {
     return "own_way";
+  }
+  if (
+    s === "stripe_instant" ||
+    s === "stripe" ||
+    s === "card" ||
+    s === "apple_pay"
+  ) {
+    return "stripe_instant";
   }
   return null;
 }
@@ -501,9 +510,9 @@ export function quoteNewClientTrialInvoice(args: {
     invoiceTotalGbp: unit,
     sessionDatesLabel: "1 trial session",
     remainingDateIsos: [asOf],
-    plan: "one_off_bank",
+    plan: "stripe_instant",
     paymentSchedule: schedule,
-    paymentMethodHint: "bank_transfer",
+    paymentMethodHint: "stripe",
     reference: formatTrialSessionReference({
       sessionDateIso: args.sessionDateIso,
       day,

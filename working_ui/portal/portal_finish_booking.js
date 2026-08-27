@@ -1,5 +1,5 @@
 /**
- * Parent finish-booking page after admin Accept.
+ * Parent finish-booking page (magic link after registration submit or admin resend).
  */
 (function (global) {
   "use strict";
@@ -168,7 +168,7 @@
               status: "pending",
             },
           ],
-          payment_method_hint: "bank_transfer",
+          payment_method_hint: "stripe",
           is_trial: true,
         },
       },
@@ -365,28 +365,35 @@
   function startTrialPayNow(data, notice) {
     var funding = data.funding_code || "privately_funded";
     data.booking_scope = "trial_session";
-    data.pay_plan = "one_off_bank";
-    showNotice(notice, "Creating trial invoice…", "");
+    data.pay_plan = "stripe_instant";
+    showNotice(notice, "Preparing card payment…", "");
     return api("save_choices", {
       funding_code: funding,
       booking_scope: "trial_session",
-      pay_plan: "one_off_bank",
+      pay_plan: "stripe_instant",
     })
       .then(function () {
         return api("create_invoice", {
           funding_code: funding,
           booking_scope: "trial_session",
-          pay_plan: "one_off_bank",
+          pay_plan: "stripe_instant",
         });
       })
       .then(function (out) {
         data.invoice = out.invoice || data.invoice;
-        data.bank = out.bank || data.bank;
+        data.checkout_url = out.checkout_url || (out.stripe_checkout && out.stripe_checkout.checkout_url) || null;
+        data.stripe_checkout = out.stripe_checkout || null;
+        data.pay_hold_minutes = out.pay_hold_minutes;
+        data.pay_hold_expires_at = out.pay_hold_expires_at;
         data.status = "awaiting_payment";
         showInvoice(data);
+        if (data.checkout_url && !isDemoMode()) {
+          global.location.href = data.checkout_url;
+          return;
+        }
         showNotice(
           notice,
-          "Trial invoice ready — pay now to confirm your session.",
+          "Trial ready — pay now with card or Apple Pay to confirm your session.",
           "ok",
         );
       });
@@ -696,6 +703,15 @@
     var firstAmt = first && first.amount_gbp != null ? first.amount_gbp : inv.amount_gbp;
     var bank = data.bank || {};
     var gcUrl = data.gocardless_url || inv.gocardless_url || "";
+    var checkoutUrl =
+      data.checkout_url ||
+      (data.stripe_checkout && data.stripe_checkout.checkout_url) ||
+      "";
+    var isTrial =
+      data.booking_scope === "trial_session" ||
+      data.pay_plan === "stripe_instant" ||
+      inv.payment_method_hint === "stripe" ||
+      (data.quotes && data.quotes.trial_one_off && data.quotes.trial_one_off.is_trial);
     var html =
       '<p style="margin:0 0 8px"><strong>Invoice ' +
       esc(inv.invoice_number || "") +
@@ -715,6 +731,48 @@
           esc(gcUrl) +
           '">Set up GoCardless</a>' +
           '<p class="muted" style="margin:10px 0 0">When the first Direct Debit payment clears, the office can confirm and we send your Parent Portal PIN.</p>';
+      }
+    } else if (isTrial) {
+      var holdMin =
+        Number(data.pay_hold_minutes) ||
+        (data.choices_json && Number(data.choices_json.pay_hold_minutes)) ||
+        30;
+      var holdExp =
+        data.pay_hold_expires_at ||
+        (data.choices_json && data.choices_json.pay_hold_expires_at) ||
+        "";
+      var holdLine = holdExp
+        ? "Your place is held until <strong>" +
+          esc(String(holdExp).replace("T", " ").slice(0, 16)) +
+          " UTC</strong> while you pay. If payment is not completed in time, the slot goes back on the Booking Portal."
+        : "Pay now with card or Apple Pay. If payment is not completed in time, the slot is not booked.";
+      var chargeNote =
+        data.stripe_checkout && data.stripe_checkout.charge_gbp
+          ? '<p class="muted" style="margin:0 0 10px">Total charged (incl. card fee): <strong>' +
+            esc(money(data.stripe_checkout.charge_gbp)) +
+            "</strong></p>"
+          : "";
+      if (isDemoMode()) {
+        html +=
+          '<button type="button" class="btn btn--pri" id="fbConfirmPaid">Demo: paid with card</button>';
+      } else if (checkoutUrl) {
+        html +=
+          chargeNote +
+          '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
+          holdLine +
+          "</p>" +
+          '<a class="btn btn--pri" id="fbStripePay" href="' +
+          esc(checkoutUrl) +
+          '">Pay with card / Apple Pay</a>' +
+          '<p class="muted" style="margin:10px 0 0">Secure payment via Stripe. Your trial is confirmed only after payment succeeds.</p>';
+      } else {
+        html +=
+          chargeNote +
+          '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
+          holdLine +
+          "</p>" +
+          '<button type="button" class="btn btn--pri" id="fbStripeRetry">Pay with card / Apple Pay</button>' +
+          '<p class="muted" style="margin:10px 0 0">Bank transfer is not available for trial sessions.</p>';
       }
     } else {
       var holdMin =
@@ -766,7 +824,7 @@
         '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
         holdLine +
         "</p>" +
-        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>email or WhatsApp the office</strong> so they can check Tide and mark you paid. Attach a photo/screenshot if you can. There is no “I’ve paid” button here.</p>' +
+        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>email or WhatsApp the office</strong> so they can check Tide and mark you paid. Attach a photo/screenshot if you can. There is no "I\'ve paid" button here.</p>' +
         '<a class="btn btn--pri" href="mailto:info@clubsensational.org?subject=' +
         mailSub +
         "&body=" +
@@ -775,6 +833,23 @@
         '<p class="muted" style="margin:10px 0 0">Or WhatsApp the club number you already use — same message + photo is fine. Parent Portal PIN is sent only after the office confirms payment.</p>';
     }
     if (host) host.innerHTML = html;
+    var stripeRetry = document.getElementById("fbStripeRetry");
+    if (stripeRetry) {
+      stripeRetry.onclick = function () {
+        showNotice(document.getElementById("fbNotice"), "Opening payment…", "");
+        void api("create_stripe_checkout", { booking_scope: "trial_session" })
+          .then(function (out) {
+            if (out.checkout_url) global.location.href = out.checkout_url;
+          })
+          .catch(function (err) {
+            showNotice(
+              document.getElementById("fbNotice"),
+              err.message || "Could not start payment.",
+              "error",
+            );
+          });
+      };
+    }
   }
 
   function ensureDemoChrome() {
@@ -835,7 +910,19 @@
       .then(function (data) {
         showNotice(notice, "", "");
         bind(data);
-        if (qs("gc") === "1" && data.status === "awaiting_payment") {
+        if (qs("stripe") === "1" && data.status === "awaiting_payment") {
+          showNotice(
+            notice,
+            "Payment received — confirming your trial. If your PIN is not here in a minute, refresh this page.",
+            "ok",
+          );
+        } else if (qs("stripe_cancel") === "1") {
+          showNotice(
+            notice,
+            "Payment was not completed. Your slot is not booked until you pay with card / Apple Pay.",
+            "error",
+          );
+        } else if (qs("gc") === "1" && data.status === "awaiting_payment") {
           showNotice(
             notice,
             "If GoCardless is complete, refresh in a minute — we will send your PIN when the first payment clears.",

@@ -33,7 +33,9 @@ from build_machine_exports import (  # noqa: E402
 
 CALENDAR_FROM = "2026-08-31"
 CALENDAR_TO = "2026-12-31"
-SESSION_FROM = "2026-09-01"
+SESSION_FROM = "2026-09-01"  # Day Centre only Mon 1 Sep
+AFTERSCHOOL_WEEKEND_FROM = "2026-09-05"  # Sat/Sun after-school from club weekend
+AFTERSCHOOL_WEEKDAY_FROM = "2026-09-08"  # Week 2 Mon — weekday after-school (e.g. Cyrus Tue)
 SESSION_TO = "2026-12-17"
 TERM_BREAK_FROM = "2026-10-26"
 TERM_BREAK_TO = "2026-10-30"
@@ -69,7 +71,7 @@ def monday_template() -> list[tuple[str, str, str]]:
         _pairs("Emanuel", "11-1", "SwimFarm"),
         _pairs("Fadi", "1-3", "SwimFarm"),
         _pairs("Michelle", "11-4", "SwimFarm"),
-        _pairs("Victor", "11-4", "SwimFarm"),
+        _pairs("Victor", "11-4", "SwimFarm"),  # Ikram
         _pairs("Raul", "11-1", "SwimFarm"),
         _pairs("Emanuel", "1-4", "SwimFarm"),
         _pairs("Youssef", "12.30-3", "SwimFarm"),
@@ -90,7 +92,7 @@ def tuesday_template() -> list[tuple[str, str, str]]:
         _pairs("Roberto", "11-3", "SwimFarm"),  # Ikram
         _pairs("Michelle", "11-4", "SwimFarm"),  # Ikram
         _pairs("Victor", "12.30-3", "SwimFarm"),  # Fadi
-        _pairs("Victor", "3.30-5", "SwimFarm"),  # Cyrus (participant)
+        _pairs("Victor", "3.30-5", "SwimFarm"),  # Cyrus bespoke (Thu → Tue)
         _pairs("Raul", "12.30-3", "SwimFarm"),  # Fadi
         _pairs("Michelle", "3-4", "SwimFarm"),  # Ikram
         _pairs("Luliya", "4.30-6.30", "Acton"),
@@ -107,7 +109,7 @@ def wednesday_template() -> list[tuple[str, str, str]]:
         _pairs("Fadi", "1-3", "SwimFarm"),
         _pairs("Michelle", "11-4", "SwimFarm"),
         _pairs("Virginia", "11-4", "SwimFarm"),
-        _pairs("Victor", "1-4", "SwimFarm"),
+        _pairs("Victor", "1-4", "SwimFarm"),  # Emanuel
         _pairs("Raul", "12.30-3", "SwimFarm"),
         _pairs("Javier", "4-6.30", "Acton"),
         _pairs("Youssef", "4-6.30", "Acton"),
@@ -137,7 +139,7 @@ def friday_template() -> list[tuple[str, str, str]]:
         _pairs("Emanuel", "11-1", "SwimFarm"),
         _pairs("Fadi", "1-3", "SwimFarm"),
         _pairs("Michelle", "11-4", "SwimFarm"),
-        _pairs("Victor", "11-4", "SwimFarm"),
+        _pairs("Victor", "11-4", "SwimFarm"),  # Ikram
         _pairs("Raul", "11-1", "SwimFarm"),
         _pairs("Emanuel", "1-3", "SwimFarm"),
         _pairs("Youssef", "12.30-3", "SwimFarm"),
@@ -298,6 +300,8 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
             "termBreakFrom": TERM_BREAK_FROM,
             "termBreakTo": TERM_BREAK_TO,
             "termResumeDate": SESSION_FROM,
+            "termAfterSchoolWeekendFrom": AFTERSCHOOL_WEEKEND_FROM,
+            "termAfterSchoolWeekdayFrom": AFTERSCHOOL_WEEKDAY_FROM,
             "termSummerDatedRosterFrom": "2026-06-01",
             "termSummerDatedRosterThrough": "2026-07-19",
             "termFeedbackReminderFromIso": SESSION_FROM,
@@ -320,7 +324,9 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
             "termStaffCatchUpFeedbackDatesByProfileKey": {},
             "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {},
             "termStaffLateSubmissionBypassProfileKeys": [],
-            "termClientFirstSessionDate": {},
+            "termClientFirstSessionDate": {
+                "cyrus": "2026-09-09",
+            },
             "termHalfTermWeekStarts": HALF_TERM_WEEK_STARTS,
             "termStaffWeekdayIndicesByProfileKey": staff_wd,
             "termStaffWeekdayIndicesDashboardByProfileKey": staff_wd_dashboard,

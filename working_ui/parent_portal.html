@@ -4809,6 +4809,56 @@
     }
     .pp-pax-subview-title { margin: 0 0 6px; font-size: 17px; font-weight: 800; color: var(--ink); overflow-wrap: break-word; }
     .pp-pax-subview-note { margin: 0 0 12px; font-size: 12px; }
+    .pp-feedback-year-badge {
+      display: inline-block;
+      margin: 0 0 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--blue);
+      background: rgba(37, 99, 235, 0.08);
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .pp-feedback-year-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+      min-width: 0;
+    }
+    .pp-feedback-year-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      width: 100%;
+      min-width: 0;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      text-align: left;
+      cursor: pointer;
+    }
+    .pp-feedback-year-btn:hover,
+    .pp-feedback-year-btn:focus-visible {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
+    .pp-feedback-year-btn__label {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
+    .pp-feedback-year-btn__hint {
+      font-size: 12px;
+      color: var(--muted);
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
     .pp-gen-card { padding: 14px; margin-bottom: 12px; }
     .pp-gen-list { display: grid; gap: 10px; min-width: 0; }
     .pp-gen-profile {
@@ -5238,8 +5288,8 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260723-date-svc-stack"></script>
   <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260817-no-ive-paid"></script>
-  <script src="/portal/parent_portal_app.js?v=20260811-anas-service-days"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260827-afterschool-week2"></script>
+  <script src="/portal/parent_portal_app.js?v=20260827-feedback-year"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

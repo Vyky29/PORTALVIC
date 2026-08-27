@@ -84,7 +84,7 @@
 
   /**
    * Autumn 26/27 standing rows missing from summer MADRE (weekday snap source dates).
-   * Victor Tue 3.30-5 Cyrus was timetable-only until live MADRE catches up.
+   * Cyrus bespoke with Victor Tue 3.30-5 (was Thu); first session Tue 9 Sep.
    */
   function applyAutumnStandingParticipantRows(rows) {
     var out = Array.isArray(rows) ? rows.slice() : [];
@@ -93,7 +93,7 @@
         client_name: "Cyrus",
         day: "Tuesday",
         instructors: "VICTOR",
-        service: "Day Centre",
+        service: "Bespoke Programme",
         area: "Hub Room",
         time_slot: "3.30 to 5",
         venue: "SwimFarm",

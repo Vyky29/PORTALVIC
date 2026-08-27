@@ -129,15 +129,32 @@ export function nextWeekdayOnOrAfter(
   return null;
 }
 
+/** Autumn 26/27 first bookable session by weekday (matches term_from_timetable + roster). */
+export function firstBookableSessionFloorIso(
+  dayName: string | null | undefined,
+): string | null {
+  const day = String(dayName || "").trim().toLowerCase();
+  if (!day) return null;
+  if (day === "saturday" || day === "sunday") return "2026-09-05";
+  if (day === "monday") return "2026-09-07";
+  if (WEEKDAYS.includes(day)) return "2026-09-08";
+  return null;
+}
+
 export function resolveSessionDateIso(input: {
   dateIso?: string | null;
   day?: string | null;
   asOfIso?: string | null;
 }): string | null {
+  const floor = firstBookableSessionFloorIso(input.day);
   const direct = clean(input.dateIso, 10);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(direct)) return direct;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(direct)) {
+    if (floor && direct < floor) return nextWeekdayOnOrAfter(input.day, floor);
+    return direct;
+  }
   const asOf = clean(input.asOfIso, 10) || new Date().toISOString().slice(0, 10);
-  return nextWeekdayOnOrAfter(input.day, asOf);
+  const base = floor && asOf < floor ? floor : asOf;
+  return nextWeekdayOnOrAfter(input.day, base);
 }
 
 async function sha256Hex(value: string): Promise<string> {

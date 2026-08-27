@@ -20,8 +20,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   createPortalFamilyInvoice,
+  formatHfPdfHeaderMarker,
   resolvePortalInvoiceOwnerUserId,
 } from "../../supabase/functions/_shared/portal_create_family_invoice.ts";
+import { buildHfLaHeader, toHfLaLineLayout } from "../../supabase/functions/_shared/hf_invoice_pdf_layout.ts";
 import {
   buildReenrolMonthlyLineItems,
   buildReenrolTermLineItems,
@@ -447,6 +449,7 @@ for (const job of jobs) {
         `${job.label} · ${REENROL_ACADEMIC_YEAR}`,
       );
     }
+    if (p.bucket === "hf") lineItems = toHfLaLineLayout(lineItems);
   } else if (job.kind === "term" && job.term) {
     lineItems = buildReenrolTermLineItems({
       slots: p.weekly,
@@ -499,6 +502,17 @@ for (const job of jobs) {
       ? "schedule:term_3"
       : "schedule:year_1";
 
+  const hfHeaderMarker =
+    p.bucket === "hf"
+      ? formatHfPdfHeaderMarker(
+          buildHfLaHeader([...p.weekly, ...p.dayCentre], p.clientKey),
+        )
+      : "";
+  const notesBase =
+    `${job.marker} · ${scheduleTag} · ${p.funder} · ${p.clientKey} · ` +
+    `${p.clientName} · office funder INV-P for email/download · not shown to parents`;
+  const notes = hfHeaderMarker ? `${hfHeaderMarker} ${notesBase}` : notesBase;
+
   const createdInv = await createPortalFamilyInvoice(admin, {
     contactId: p.contactId,
     amountGbp,
@@ -510,9 +524,7 @@ for (const job of jobs) {
     service: p.dayCentre.length && !p.weekly.length
       ? "Day Centre · funded"
       : "Afterschools / weekends · funded",
-    notes:
-      `${job.marker} · ${scheduleTag} · ${p.funder} · ${p.clientKey} · ` +
-      `${p.clientName} · office funder INV-P for email/download · not shown to parents`,
+    notes,
     title: `Invoice — ${p.clientName} · ${job.label}`,
     shareStatus: "ready",
     paymentMethodHint: "la_funded",

@@ -221,8 +221,22 @@ export function isHfYearDraftInvoice(input: {
   notes?: string | null;
 }): boolean {
   const readyBy = clean(input.readyBy, 160);
+  /* Office-only year PDFs for manual LA send — never canonical monthly billing. */
+  return /hf_year_draft/i.test(readyBy);
+}
+
+/** H&F LA invoices (monthly + year draft): Client ID then PO Number on PDF header. */
+export function isHfLaInvoice(input: {
+  readyBy?: string | null;
+  notes?: string | null;
+}): boolean {
+  const readyBy = clean(input.readyBy, 160);
   const notes = clean(input.notes, 800);
-  return /hf_year_draft/i.test(readyBy) || /\[\[hf:/i.test(notes);
+  return (
+    isHfYearDraftInvoice(input) ||
+    /\[\[hf:/i.test(notes) ||
+    /office_funder_2627_hf_(month|year_draft)_/i.test(readyBy)
+  );
 }
 
 /** Office marker: [[hf_months:September 2026=150.00|October 2026=200.00|…]] */
@@ -414,6 +428,8 @@ function invoiceDescriptionLines(input: {
   /** Ealing year INV-Ps: Client ID + Reference only (no PO line). */
   omitPoLine?: boolean;
   hfYearDraft?: boolean;
+  /** H&F LA: PO Number line under Client ID (Ealing year has no PO). */
+  hfLaInvoice?: boolean;
   ealingService?: string | null;
   ealingSlot?: string | null;
   ealingVenue?: string | null;
@@ -447,7 +463,7 @@ function invoiceDescriptionLines(input: {
     if (ealingHeader) {
       return [
         `Client ID: ${input.clientIdLabel || "—"}`,
-        input.hfYearDraft ? `PO: ${input.poLabel || "—"}` : null,
+        input.hfLaInvoice ? `PO Number: ${input.poLabel || "—"}` : null,
         clean(input.ealingService, 120)
           ? `Service: ${clean(input.ealingService, 120)}`
           : null,
@@ -643,6 +659,10 @@ export async function createPortalFamilyInvoice(
     readyBy: input.readyBy,
     notes: input.notes,
   });
+  const hfLaInvoice = isHfLaInvoice({
+    readyBy: input.readyBy,
+    notes: input.notes,
+  });
   const hfMonthlySchedule = hfYearDraft ? parseHfMonthlySchedule(input.notes) : null;
   const bookingHdr =
     parseBookingPdfHeader(notes) ||
@@ -679,6 +699,7 @@ export async function createPortalFamilyInvoice(
     hasLineItems: !!input.lineItems?.length,
     omitPoLine: laServiceHeader,
     hfYearDraft,
+    hfLaInvoice,
     ealingService: laHdr?.service || null,
     ealingSlot: laHdr?.slot || null,
     ealingVenue: laHdr?.venue || null,
@@ -960,6 +981,10 @@ export async function regeneratePortalInvoiceSharePdf(
     readyBy: share.ready_by,
     notes: share.notes,
   });
+  const hfLaInvoice = isHfLaInvoice({
+    readyBy: share.ready_by,
+    notes: share.notes,
+  });
   const hfMonthlySchedule = hfYearDraft ? parseHfMonthlySchedule(share.notes) : null;
   const laHdr = isLaServiceHeader ? parseLaPdfHeader(share.notes) : null;
   const shareNotes = clean(share.notes, 800) || null;
@@ -997,6 +1022,7 @@ export async function regeneratePortalInvoiceSharePdf(
     hasLineItems: lineItems.length > 0,
     omitPoLine: isLaServiceHeader,
     hfYearDraft,
+    hfLaInvoice,
     ealingService: laHdr?.service || null,
     ealingSlot: laHdr?.slot || null,
     ealingVenue: laHdr?.venue || null,

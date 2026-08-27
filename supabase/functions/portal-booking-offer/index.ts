@@ -8,6 +8,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders } from "../_shared/parent_portal_auth.ts";
 import type { MadreDoc } from "../_shared/portal_madre_fold_logic.ts";
 import { buildWeeklyOfferFromMadre } from "../_shared/portal_booking_seat_helper.ts";
+import { resolveSessionDateIso } from "../_shared/portal_booking_context.ts";
 import { ensureReenrolUnconfirmedReleasedOnMadre } from "../_shared/portal_reenrol_release_madre.ts";
 import { runUnpaidAug15PlaceRelease } from "../_shared/portal_reenrol_release_unpaid_aug15.ts";
 import {
@@ -57,7 +58,7 @@ const AUTUMN_TERM = {
   dayCentreStart: "2026-09-01",
   closedRanges: [{ start: "2026-10-26", end: "2026-10-30" }],
   range:
-    "Sat 5 September 2026 – Fri 18 December 2026 · Day Centre from Tue 1 September",
+    "Sat 5 September 2026 – Fri 18 December 2026 · Day Centre from Tue 1 September · Mon after-school from 7 September · Tue–Fri from 8 September",
 };
 
 async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
@@ -471,6 +472,12 @@ Deno.serve(async (req) => {
     }
   }
 
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const weeklySlotsPublic = weekly.slots.map((slot) => ({
+    ...slot,
+    dateIso: resolveSessionDateIso({ day: slot.day, asOfIso: todayIso }),
+  }));
+
   const intensiveService = {
     id: "intensive",
     name: "Intensive Courses & Camps",
@@ -511,7 +518,7 @@ Deno.serve(async (req) => {
       closedRanges: AUTUMN_TERM.closedRanges,
     },
     SERVICES: [...weekly.services, intensiveService],
-    MOCK_SLOTS: [...weekly.slots, ...intensive.slots],
+    MOCK_SLOTS: [...weeklySlotsPublic, ...intensive.slots],
     INTENSIVE_BLOCKS: intensive.blocks,
     stats: {
       madre_rows: weekly.rowCount,

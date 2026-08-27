@@ -282,12 +282,21 @@
             if (doneEl) {
               doneEl.hidden = false;
               var name = out.data.participant_name || "your child";
+              var finishUrl = out.data.finish_url ? String(out.data.finish_url) : "";
               var msg = doneEl.querySelector("[data-bc-done-msg]");
               if (msg) {
-                msg.textContent =
-                  "Thanks — we have your place request for " +
-                  name +
-                  ". The office will review and send the next step (funding / payment). You do not need to complete the full registration form again.";
+                msg.textContent = finishUrl
+                  ? "Thanks — taking you to payment for " +
+                    name +
+                    " now. Your place is held for 30 minutes while you pay."
+                  : "Thanks — we have your place request for " +
+                    name +
+                    ". Check your email or WhatsApp for the payment link.";
+              }
+              if (finishUrl) {
+                setTimeout(function () {
+                  global.location.href = finishUrl;
+                }, 1200);
               }
             }
             setStatus(statusEl, "", "");

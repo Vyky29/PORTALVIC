@@ -39,6 +39,15 @@ import {
   expandAbsentDatesFromLeave,
   PARENT_SESSION_TERM_START_ISO,
 } from "../_shared/parent_attendance_summary.ts";
+import {
+  feedbackYearSessionFromIso,
+  feedbackYearsForParticipant,
+  PARENT_FEEDBACK_CURRENT_YEAR,
+  participantNeedsFeedbackYearPicker,
+  resolveParentFeedbackYear,
+  sessionDateInFeedbackYear,
+  weekStartInFeedbackYear,
+} from "../_shared/parent_feedback_academic_year.ts";
 import { REENROL_ACADEMIC_YEAR } from "../_shared/reenrolment_catalog.ts";
 import { buildReenrolmentParentSummary } from "../_shared/reenrolment_parent_summary.ts";
 import { resolveParticipantInvoiceFunding } from "../_shared/portal_invoice_funding.ts";
@@ -56,7 +65,7 @@ const LEAD_INBOX_CLIENT_ID = "_inbox";
 const PARENT_ACH_QUERY_LIMIT = 500;
 /** Max feedback rows returned per parent page load. */
 const PARENT_FEEDBACK_LIMIT = 60;
-const TERM_LABEL = "Summer Term 2026";
+const TERM_LABEL = "Autumn Term 2026/27";
 
 type DetailSection = "general" | "sessions" | "achievements" | "swim" | "weekly_notes";
 
@@ -827,7 +836,7 @@ Deno.serve(async (req) => {
   const session = await resolveParentPortalSession(req, supabase);
   if (!session) return parentPortalJsonInvalid();
 
-  let body: { contact_id?: string; sections?: string[] } = {};
+  let body: { contact_id?: string; sections?: string[]; feedback_year?: string } = {};
   try {
     body = await req.json();
   } catch (_) {
@@ -973,6 +982,32 @@ Deno.serve(async (req) => {
 
   const generalFields = wantGeneral ? parseGeneralInfoSheet(generalInfoSheet) : [];
 
+  const wantFeedbackSections = (wantSessions || wantWeeklyNotes) && !suppressSessionProgress;
+  let rosterForFeedback: Awaited<ReturnType<typeof fetchRosterServiceLines>> = null;
+  let hasDayCentreForFeedback = false;
+  if (wantFeedbackSections || wantGeneral) {
+    rosterForFeedback = await fetchRosterServiceLines(supabase, identityInput);
+    hasDayCentreForFeedback = servicesDetailHasDayCentre(rosterForFeedback?.detail || []);
+  }
+
+  const feedbackYearPickerRequired = participantNeedsFeedbackYearPicker(
+    registrationDateIso,
+    hasDayCentreForFeedback,
+  );
+  const feedbackYearsAvailable = feedbackYearsForParticipant(
+    registrationDateIso,
+    hasDayCentreForFeedback,
+  );
+  const feedbackYearRequested = clean(body.feedback_year, 20);
+  const feedbackYearResolved =
+    feedbackYearPickerRequired && wantFeedbackSections && !feedbackYearRequested
+      ? null
+      : resolveParentFeedbackYear(feedbackYearRequested || PARENT_FEEDBACK_CURRENT_YEAR);
+  const feedbackTermStartIso = feedbackYearResolved
+    ? feedbackYearSessionFromIso(feedbackYearResolved, hasDayCentreForFeedback)
+    : PARENT_SESSION_TERM_START_ISO;
+  const feedbackTermEndIso = feedbackYearResolved?.toIso || "2027-08-31";
+
   let rawFeedback: Record<string, unknown>[] = [];
   let sessionsOut: Record<string, unknown>[] = [];
   let rosterServicesCount = 0;
@@ -983,8 +1018,12 @@ Deno.serve(async (req) => {
     venue: string;
     area: string;
   }> = [];
+  if (rosterForFeedback) {
+    rosterServicesCount = rosterForFeedback.count;
+    rosterServicesDetail = rosterForFeedback.detail;
+  }
 
-  if (wantSessions && !suppressSessionProgress) {
+  if (wantSessions && !suppressSessionProgress && feedbackYearResolved) {
     const fbSel =
       "id, session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, created_at";
 
@@ -995,7 +1034,8 @@ Deno.serve(async (req) => {
           .from("session_feedback")
           .select(fbSel)
           .in("client_id", clientSlugs)
-          .gte("session_date", PARENT_SESSION_TERM_START_ISO),
+          .gte("session_date", feedbackYearResolved.fromIso)
+          .lte("session_date", feedbackTermEndIso),
       );
     }
     for (const nm of lookupNames.slice(0, 4)) {
@@ -1004,7 +1044,8 @@ Deno.serve(async (req) => {
           .from("session_feedback")
           .select(fbSel)
           .ilike("client_name", nm)
-          .gte("session_date", PARENT_SESSION_TERM_START_ISO),
+          .gte("session_date", feedbackYearResolved.fromIso)
+          .lte("session_date", feedbackTermEndIso),
       );
     }
 
@@ -1022,7 +1063,8 @@ Deno.serve(async (req) => {
         const id = String(row.id || "");
         if (!id || seenIds.has(id)) continue;
         const sessionDate = isoFromAny(row.session_date);
-        if (sessionDate && sessionDate < PARENT_SESSION_TERM_START_ISO) continue;
+        if (!sessionDate || !sessionDateInFeedbackYear(sessionDate, feedbackYearResolved)) continue;
+        if (sessionDate < feedbackTermStartIso) continue;
         seenIds.add(id);
         rawFeedback.push(row);
       }
@@ -1038,9 +1080,9 @@ Deno.serve(async (req) => {
     const feedbackIds = rawFeedback.map((r) => String(r.id)).filter(Boolean);
     const cacheById = new Map<string, Record<string, unknown>>();
     const venueByService = await loadParticipantVenueByService(supabase, identityInput, lookupNames);
-    const rosterForSessions = await fetchRosterServiceLines(supabase, identityInput);
+    const rosterForSessions = rosterForFeedback || await fetchRosterServiceLines(supabase, identityInput);
     const dayCentreBookedByDay = dayCentreBookedTimeByWeekday(rosterForSessions?.detail || []);
-    if (rosterForSessions) {
+    if (rosterForSessions && !rosterServicesCount) {
       rosterServicesCount = rosterForSessions.count;
       rosterServicesDetail = rosterForSessions.detail;
     }
@@ -1117,7 +1159,7 @@ Deno.serve(async (req) => {
   };
   /** Earliest slot_clear_client date (left mid-term) — used to paint later missed chips red. */
   let placeLeftFromIso = "";
-  const wantAttendanceChips = (wantSessions || wantGeneral) && !suppressSessionProgress;
+  const wantAttendanceChips = (wantSessions || wantGeneral) && !suppressSessionProgress && !!feedbackYearResolved;
   if (wantAttendanceChips && clientSlugs.length) {
     const { data: overrideRows, error: ovErr } = await supabase
       .from("schedule_overrides")
@@ -1128,7 +1170,8 @@ Deno.serve(async (req) => {
         "client_absence_announced",
         "slot_clear_client",
       ])
-      .gte("session_date", PARENT_SESSION_TERM_START_ISO)
+      .gte("session_date", feedbackTermStartIso)
+      .lte("session_date", feedbackTermEndIso)
       .in("anchor_client_id", clientSlugs);
     if (ovErr) {
       console.error("[parent-portal-participant-detail] schedule_overrides error", ovErr);
@@ -1146,14 +1189,14 @@ Deno.serve(async (req) => {
       rawFeedback,
       overrideRows || [],
       clientSlugs,
-      PARENT_SESSION_TERM_START_ISO,
+      feedbackTermStartIso,
     );
   } else if (wantAttendanceChips && rawFeedback.length) {
     attendanceSummary = buildParentAttendanceSummary(
       rawFeedback,
       [],
       clientSlugs,
-      PARENT_SESSION_TERM_START_ISO,
+      feedbackTermStartIso,
     );
   }
 
@@ -1586,7 +1629,7 @@ Deno.serve(async (req) => {
 
   let weeklyNotes: Record<string, unknown>[] = [];
   let weeklyNoteLatest: Record<string, unknown> | null = null;
-  if (wantWeeklyNotes && !suppressSessionProgress) {
+  if (wantWeeklyNotes && !suppressSessionProgress && feedbackYearResolved) {
     const { data: noteRows, error: noteErr } = await supabase
       .from("portal_parent_weekly_notes")
       .select(
@@ -1594,19 +1637,23 @@ Deno.serve(async (req) => {
       )
       .eq("contact_id", contactId)
       .eq("share_status", "ready")
+      .gte("week_start", feedbackYearResolved.fromIso)
+      .lte("week_start", feedbackTermEndIso)
       .order("week_start", { ascending: false })
       .limit(52);
     if (noteErr) {
       console.error("[parent-portal-participant-detail] weekly_notes", noteErr);
     } else {
-      weeklyNotes = (noteRows || []).map((n) => ({
-        id: n.id,
-        week_start: n.week_start,
-        week_end: n.week_end,
-        body: clean(n.body, 4000),
-        generated_at: n.generated_at || null,
-        generated_early: !!n.generated_early,
-      }));
+      weeklyNotes = (noteRows || [])
+        .map((n) => ({
+          id: n.id,
+          week_start: n.week_start,
+          week_end: n.week_end,
+          body: clean(n.body, 4000),
+          generated_at: n.generated_at || null,
+          generated_early: !!n.generated_early,
+        }))
+        .filter((n) => weekStartInFeedbackYear(String(n.week_start || ""), feedbackYearResolved));
       // One note per week (newest wins) — defensive if rows ever race.
       const byWeek = new Map<string, Record<string, unknown>>();
       for (const n of weeklyNotes) {
@@ -1629,7 +1676,17 @@ Deno.serve(async (req) => {
   return new Response(
     JSON.stringify({
       ok: true,
-      term_label: TERM_LABEL,
+      term_label: feedbackYearResolved?.label || TERM_LABEL,
+      feedback_year: feedbackYearResolved?.key || null,
+      feedback_year_label: feedbackYearResolved?.label || null,
+      feedback_year_picker_required:
+        feedbackYearPickerRequired && wantFeedbackSections && !feedbackYearRequested,
+      feedback_years_available: feedbackYearsAvailable.map((y) => ({
+        key: y.key,
+        label: y.label,
+        is_current: y.isCurrent,
+      })),
+      feedback_year_default: PARENT_FEEDBACK_CURRENT_YEAR,
       sections_loaded: Array.from(sections),
       portal_access: isFormerClient ? "former" : "active",
       has_session_feedback: hasSessionFeedback,

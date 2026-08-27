@@ -39,6 +39,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termBreakFrom": "2026-10-26",
   "termBreakTo": "2026-10-30",
   "termResumeDate": "2026-09-01",
+  "termAfterSchoolWeekendFrom": "2026-09-05",
+  "termAfterSchoolWeekdayFrom": "2026-09-08",
   "termSummerDatedRosterFrom": "2026-06-01",
   "termSummerDatedRosterThrough": "2026-07-19",
   "termFeedbackReminderFromIso": "2026-09-01",
@@ -82,7 +84,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termStaffCatchUpFeedbackDatesByProfileKey": {},
   "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {},
   "termStaffLateSubmissionBypassProfileKeys": [],
-  "termClientFirstSessionDate": {},
+  "termClientFirstSessionDate": {
+    "cyrus": "2026-09-09"
+  },
   "termHalfTermWeekStarts": [
     "2026-10-26"
   ],

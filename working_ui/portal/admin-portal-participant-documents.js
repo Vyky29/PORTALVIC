@@ -37,7 +37,8 @@
       title: 'Registration forms',
       intro:
         '<strong>New-client registration</strong> — PDF + photo from Booking Portal leads (not climbing). ' +
-        'Flow: slot → registration form → <strong>Accept</strong> (finish-booking link) → funding &amp; payment → office marks invoice paid → Parent Portal PIN. ' +
+        'Flow: slot → registration → <strong>payment</strong> (finish-booking link sent automatically) → office marks invoice paid → suitability review post-payment → Parent Portal PIN. ' +
+        '<strong>Accept</strong> marks the form reviewed / resends the link if needed. ' +
         'Climbing forms: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_climbing_registrations">Climbing registrations</button>. ' +
         'Annual consents: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Parent consents</button>.',
       empty: 'No client registration forms yet.',

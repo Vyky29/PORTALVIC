@@ -17,23 +17,33 @@ import {
   formatBookingPdfHeaderMarker,
   regeneratePortalInvoiceSharePdf,
 } from "../../supabase/functions/_shared/portal_create_family_invoice.ts";
-import {
-  bookingPortalServiceLabel,
-  formatTrialSessionReference,
-} from "../../supabase/functions/_shared/booking_portal_term_invoices.ts";
-import {
-  resolveSessionDateIso,
-  type PortalBookingRequest,
-} from "../../supabase/functions/_shared/portal_booking_context.ts";
+import { bookingPortalServiceLabel } from "../../supabase/functions/_shared/booking_portal_term_invoices.ts";
+import { type PortalBookingRequest } from "../../supabase/functions/_shared/portal_booking_context.ts";
 
 const APPLY = (Deno.env.get("APPLY") || "") === "1";
 const CONTACT_ID = "403";
 const INVOICE_NUMBER = "INV-P-0370";
 const DOC_ID = "98856501-f360-4fac-8b4b-d75a045a14ae";
 const TOKEN_ID = "99416c3f-6f15-45f1-944b-2a09c420ea31";
-const SLOT_ID = (Deno.env.get("SLOT_ID") || "").trim();
+const SLOT_ID = (Deno.env.get("SLOT_ID") ||
+  "live-aquatic-northolt-monday-16-30-4-30-5-00").trim();
 /** Northolt Mon 4.30-5 trial: Dan (primary; Luliya also on pool shift). */
 const TRIAL_INSTRUCTOR = clean(Deno.env.get("TRIAL_INSTRUCTOR") || "Dan", 80);
+const SESSION_DATE_ISO = clean(Deno.env.get("SESSION_DATE_ISO") || "2026-09-07", 10);
+
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function formatCompactSessionDate(iso: string): string {
+  const m = iso.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return iso.slice(0, 10);
+  const day = Number(m[3]);
+  const month = MONTH_SHORT[Number(m[2]) - 1] || "Jan";
+  return `${day} ${month}`;
+}
+
+function normalizeTimeLabel(time: string): string {
+  return clean(time, 80).replace(/\s*[–—-]\s*/g, " - ");
+}
 
 function loadEnv(p: string) {
   if (!existsSync(p)) return;
@@ -148,21 +158,28 @@ if (!bookingRequest) {
   Deno.exit(1);
 }
 
-const sessionDateIso = resolveSessionDateIso({
-  dateIso: bookingRequest.date_iso,
-  day: bookingRequest.day,
-  asOfIso: "2026-08-22",
-});
-const reference = formatTrialSessionReference({
-  sessionDateIso,
-  day: bookingRequest.day,
-  timeLabel: bookingRequest.time,
-  asOfIso: "2026-08-22",
-});
-const bookingService = bookingPortalServiceLabel("AQUATIC_30", bookingRequest.service_name || "Aquatic Activity", {
-  isTrial: true,
-});
-const bookingSlot = [bookingRequest.day, bookingRequest.time].filter(Boolean).join(" ");
+bookingRequest = {
+  ...bookingRequest,
+  date_iso: SESSION_DATE_ISO,
+};
+
+const sessionDateIso = SESSION_DATE_ISO;
+const reference = "Trial session";
+const lineServiceLabel = bookingPortalServiceLabel(
+  "AQUATIC_30",
+  bookingRequest.service_name || "Aquatic Activity",
+  { isTrial: false },
+);
+const bookingService = bookingPortalServiceLabel(
+  "AQUATIC_30",
+  bookingRequest.service_name || "Aquatic Activity",
+  { isTrial: true },
+);
+const timeNorm = normalizeTimeLabel(bookingRequest.time || "");
+const lineDetail = [bookingRequest.day, timeNorm].filter(Boolean).join(" ") +
+  " - Trial (1 session)";
+const lineDates = formatCompactSessionDate(sessionDateIso);
+const bookingSlot = [bookingRequest.day, timeNorm].filter(Boolean).join(" ");
 const bookingMarker = formatBookingPdfHeaderMarker({
   service: bookingService,
   slot: bookingSlot,
@@ -189,6 +206,9 @@ console.log(APPLY ? "APPLY" : "DRY");
 console.log({
   bookingRequest,
   reference,
+  lineServiceLabel,
+  lineDetail,
+  lineDates,
   bookingSlot,
   venue: bookingRequest.venue,
   parentNameFromDoc,
@@ -254,6 +274,8 @@ if (!reservationId) {
   reservationId = String(holdRow?.id || "");
 } else {
   await admin.from("portal_booking_slot_reservations").update({
+    date_iso: sessionDateIso,
+    time_label: timeNorm || bookingRequest.time,
     notes: `office_backfill|booking_kind=trial|instructor=${TRIAL_INSTRUCTOR}`,
     updated_at: new Date().toISOString(),
   }).eq("id", reservationId);
@@ -269,9 +291,9 @@ await admin.from("portal_parent_invoice_share").update({
   notes,
   line_items: [{
     service_key: "AQUATIC_30",
-    description: "Aquatic Activity",
-    detail: `${bookingSlot} · Trial (1 session)`,
-    dates: "1 trial session",
+    description: lineServiceLabel,
+    detail: lineDetail,
+    dates: lineDates,
     quantity: 1,
     unit_price_gbp: 50,
     amount_gbp: 50,

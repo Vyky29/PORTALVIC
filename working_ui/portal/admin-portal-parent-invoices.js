@@ -707,9 +707,14 @@
     return false;
   }
 
+  function isHfYearDraftInvoice(inv) {
+    return /hf_year_draft/i.test(String((inv && inv.ready_by) || ''));
+  }
+
   function canonicalInvoices(invoices) {
     var list = invoices || [];
     return list.filter(function (inv) {
+      if (isHfYearDraftInvoice(inv)) return false;
       return !isScheduleShadowInvoice(inv, list);
     });
   }
@@ -756,6 +761,8 @@
     var ref = String(inv.reference_text || inv.reference || '').toLowerCase();
     var hay = blob + ' ' + notes + ' ' + readyBy + ' ' + ref;
     var n = rows.length;
+    /* Office-only H&F year PDFs — not canonical billing (excluded from canonicalInvoices). */
+    if (/hf_year_draft/.test(readyBy)) return '';
     /* Office funder INV-Ps (LA/NHS) tagged in notes / ready_by. */
     if (/schedule:monthly_11|_hf_month_/.test(hay)) {
       return 'Monthly ×11 (Sep–Jul)';

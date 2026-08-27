@@ -3201,7 +3201,7 @@
         ? "Tue 1 September 2026 – Fri 18 December 2026 · Mon–Fri 11am–4pm"
         : s.id === "bespoke"
           ? "Contact the office to enquire"
-          : mock.TERM_RANGE || "Sat 5 September 2026 – Fri 18 December 2026");
+          : mock.TERM_RANGE || "Sat 5 September 2026 – Fri 18 December 2026 · Mon after-school from 7 September · Tue–Fri from 8 September");
     return (
       '<div class="timetable__head">' +
       timetablePhotoHtml(s.id) +
@@ -4075,7 +4075,7 @@
         '"><strong>Book term place</strong><span>Secure the standing place for the rest of the term (or year). After approval you’ll choose funding and payment plan.</span></button>' +
         '<button type="button" class="sheet__choice" data-book-kind="trial" data-slot-id="' +
         esc(slot.id) +
-        '"><strong>Book a trial</strong><span>One session only — pay now' +
+        '"><strong>Book a trial</strong><span>One session — pay with card / Apple Pay after we accept your registration' +
         (price ? " (" + esc(price) + ")" : "") +
         ". Great if you want to try first.</span></button>";
     }

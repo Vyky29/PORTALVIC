@@ -2516,6 +2516,53 @@
     return from;
   }
 
+  var PARENT_FEEDBACK_CURRENT_YEAR = "2026-27";
+  var PARENT_FEEDBACK_PRIOR_YEAR = "2025-26";
+  var PARENT_FEEDBACK_DAY_CENTRE_START = "2026-09-01";
+  var PARENT_FEEDBACK_AFTERSCHOOL_START = "2026-09-05";
+
+  function participantAutumnStartIso(data) {
+    return participantHasDayCentre(data)
+      ? PARENT_FEEDBACK_DAY_CENTRE_START
+      : PARENT_FEEDBACK_AFTERSCHOOL_START;
+  }
+
+  /** Returning families pick a year first; new Autumn 26/27 starters go straight in. */
+  function participantNeedsFeedbackYearPicker(data) {
+    if (data && data.feedback_year_picker_required === false) return false;
+    if (data && data.feedback_year_picker_required === true) return true;
+    var reg = participantSessionStartIso(data);
+    var autumnStart = participantAutumnStartIso(data);
+    if (!reg) return true;
+    return reg < autumnStart;
+  }
+
+  function defaultFeedbackYearKey(data) {
+    return (data && data.feedback_year_default) || PARENT_FEEDBACK_CURRENT_YEAR;
+  }
+
+  function feedbackYearsAvailable(data) {
+    if (Array.isArray(data && data.feedback_years_available) && data.feedback_years_available.length) {
+      return data.feedback_years_available;
+    }
+    if (participantNeedsFeedbackYearPicker(data)) {
+      return [
+        { key: PARENT_FEEDBACK_PRIOR_YEAR, label: "Summer 2025/26", is_current: false },
+        { key: PARENT_FEEDBACK_CURRENT_YEAR, label: "2026/27", is_current: true },
+      ];
+    }
+    return [{ key: PARENT_FEEDBACK_CURRENT_YEAR, label: "2026/27", is_current: true }];
+  }
+
+  function feedbackYearLabel(data, yearKey) {
+    var key = String(yearKey || data.feedback_year || "").trim();
+    var list = feedbackYearsAvailable(data);
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].key === key) return list[i].label || key;
+    }
+    return (data && data.feedback_year_label) || key;
+  }
+
   function isoInRange(iso, from, to) {
     if (!iso || !from || !to) return false;
     return iso >= from && iso <= to;
@@ -2549,10 +2596,24 @@
     return false;
   }
 
-  /** True when this 26/27 date is before the service kind starts (non-Day-Centre → 5 Sept). */
+  /** True when this 26/27 date is before the service kind starts.
+   *  Day Centre from 1 Sep; weekend after-school from 5 Sep; weekday after-school from 8 Sep (week 2). */
+  function jsDowFromIso(iso) {
+    var p = String(iso || "").split("-");
+    if (p.length !== 3) return -1;
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay();
+  }
+
+  var NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM = "2026-09-08";
+
   function nextYearDateBeforeServiceStart(iso, isDayCentreService) {
     if (isDayCentreService) return false;
-    return iso >= "2026-09-01" && iso < NEXT_YEAR_AFTERSCHOOL_FROM;
+    if (!iso || iso < PARENT_FEEDBACK_DAY_CENTRE_START) return true;
+    var dow = jsDowFromIso(iso);
+    if (dow === 0 || dow === 6) {
+      return iso < NEXT_YEAR_AFTERSCHOOL_FROM;
+    }
+    return iso < NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM;
   }
 
   function currentYearTermToIso(data) {
@@ -3543,7 +3604,64 @@
    * Split term date chips: current/first term vs later terms.
    * Used on the hub (This term / Later terms) and Sessions Overview.
    */
-  function buildTermSessionDateParts(data, statusByIso) {
+  function buildTermSessionDateParts(data, statusByIso, viewOpts) {
+    viewOpts = viewOpts || {};
+    var feedbackYearKey = String(
+      viewOpts.feedbackYear || viewOpts.feedbackYearKey || data.feedback_year || "",
+    ).trim();
+
+    if (feedbackYearKey === PARENT_FEEDBACK_PRIOR_YEAR) {
+      function chipsOnlySummer(list, ariaLabel) {
+        if (!list.length) return "";
+        return (
+          '<div class="pp-hub-ops__date-chips" role="list" aria-label="' +
+          esc(ariaLabel) +
+          '">' +
+          list
+            .map(function (d) {
+              return dateChipSpanHtml(d, statusByIso);
+            })
+            .join("") +
+          "</div>"
+        );
+      }
+      function rowHtmlSummer(label, list) {
+        if (!list.length) return "";
+        return (
+          '<div class="pp-hub-ops__date-chips-row">' +
+          '<div class="pp-hub-ops__date-chips-label">' +
+          (termHalfRowIcon(label) || "") +
+          "<span>" +
+          esc(label) +
+          "</span></div>" +
+          chipsOnlySummer(list, label) +
+          "</div>"
+        );
+      }
+      var summerDatesOnly = findCurrentSummerSessionDates(data);
+      var sFirst = [];
+      var sSecond = [];
+      summerDatesOnly.forEach(function (d) {
+        if (isFirstHalfTermDate(d.iso, data, false)) sFirst.push(d);
+        else sSecond.push(d);
+      });
+      var rows = [];
+      if (sFirst.length) rows.push(rowHtmlSummer("Summer · First half term", sFirst));
+      if (sSecond.length) rows.push(rowHtmlSummer("Summer · Second half term", sSecond));
+      var inner =
+        rows.length ?
+          '<div class="pp-hub-ops__date-chips-stack" aria-label="Summer 2025/26 session dates">' +
+          termChipColorLegendHtml() +
+          rows.join("") +
+          "</div>"
+        : "";
+      return {
+        thisTermHtml: "",
+        laterTermsHtml: "",
+        oldTermDatesHtml: "",
+        fullHtml: inner,
+      };
+    }
     function chipsOnly(list, ariaLabel) {
       if (!list.length) return "";
       return (
@@ -3636,6 +3754,10 @@
       }
     }
 
+    if (feedbackYearKey === PARENT_FEEDBACK_CURRENT_YEAR) {
+      completedTermHtml = "";
+    }
+
     if (crashDates.length) {
       var crashGroups = groupCrashDatesByActivity(crashDates);
       var activityRows = [];
@@ -3647,7 +3769,7 @@
           rowHtml(g.label, visible, g.icon || "", "pp-hub-ops__date-chips-label--activity"),
         );
       });
-      if (activityRows.length) {
+      if (activityRows.length && feedbackYearKey !== PARENT_FEEDBACK_CURRENT_YEAR) {
         crashHtml =
           '<div class="pp-hub-ops__date-chips-section" aria-label="July Intensive Courses & Camps">' +
           '<div class="pp-hub-ops__date-chips-section-head">' +
@@ -3748,7 +3870,7 @@
           thisChunks.push(completedTermHtml);
         }
       }
-    } else {
+    } else if (feedbackYearKey !== PARENT_FEEDBACK_CURRENT_YEAR) {
       // Through Fri 17 Jul, not re-enrolled: Summer only (green past / blue upcoming).
       // No 26/27 red preview until the term has ended.
       var summerDatesOnly = findCurrentSummerSessionDates(data);
@@ -3791,8 +3913,8 @@
     };
   }
 
-  function termSessionDateChipsHtml(data, statusByIso) {
-    return buildTermSessionDateParts(data, statusByIso).fullHtml;
+  function termSessionDateChipsHtml(data, statusByIso, viewOpts) {
+    return buildTermSessionDateParts(data, statusByIso, viewOpts).fullHtml;
   }
 
   /** Weekday columns for Day Centre services only (My booking 2026/27). */
@@ -4624,7 +4746,97 @@
     return !(data && data.session_progress) || data.session_progress.enabled !== false;
   }
 
-  function renderSessions(host, data, opts) {
+  function renderFeedbackYearPicker(host, data, opts, targetView) {
+    var years = feedbackYearsAvailable(data);
+    var title = targetView === "weekly_notes" ? "Weekly notes" : "Sessions Overview";
+    var body =
+      '<h3 class="pp-pax-subview-title">' +
+      esc(title) +
+      "</h3>" +
+      '<p class="pp-muted pp-pax-subview-note">Choose the year to open. If your child started in Autumn 2026/27, you go straight to this year with no extra step.</p>' +
+      '<div class="pp-feedback-year-grid" role="list" aria-label="Session feedback years">';
+    years.forEach(function (y) {
+      body +=
+        '<button type="button" class="pp-feedback-year-btn" role="listitem" data-pp-feedback-year="' +
+        esc(y.key) +
+        '" data-pp-target-view="' +
+        esc(targetView) +
+        '">' +
+        '<span class="pp-feedback-year-btn__label">' +
+        esc(y.label) +
+        "</span>" +
+        '<span class="pp-feedback-year-btn__hint">' +
+        esc(y.is_current ? "Current year" : "Past sessions") +
+        "</span></button>";
+    });
+    body += "</div>";
+    host.innerHTML = subviewShell(data, "feedback_year", body);
+    bindBack(host, data, opts);
+    host.querySelectorAll("[data-pp-feedback-year]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (btn.disabled) return;
+        var yearKey = btn.getAttribute("data-pp-feedback-year") || "";
+        var view = btn.getAttribute("data-pp-target-view") || "sessions";
+        if (!yearKey) return;
+        btn.disabled = true;
+        btn.setAttribute("aria-busy", "true");
+        var section = view === "weekly_notes" ? "weekly_notes" : "sessions";
+        void opts
+          .loadSection(section, false, { feedbackYear: yearKey })
+          .then(function (fresh) {
+            openSubview(host, fresh || data, opts, view, {
+              feedbackYear: yearKey,
+              skipYearPicker: true,
+            });
+          })
+          .catch(function () {
+            if (typeof opts.onSectionError === "function") opts.onSectionError(section);
+          })
+          .finally(function () {
+            btn.disabled = false;
+            btn.removeAttribute("aria-busy");
+          });
+      });
+    });
+  }
+
+  function openSessionFeedbackEntry(host, data, opts, view, viewOpts) {
+    viewOpts = viewOpts || {};
+    var section = view === "weekly_notes" ? "weekly_notes" : "sessions";
+    var yearKey =
+      viewOpts.feedbackYear ||
+      data.feedback_year ||
+      defaultFeedbackYearKey(data);
+    if (participantNeedsFeedbackYearPicker(data) && !viewOpts.skipYearPicker && !viewOpts.feedbackYear) {
+      renderFeedbackYearPicker(host, data, opts, view);
+      return Promise.resolve();
+    }
+    var loadOpts = { feedbackYear: yearKey };
+    if (
+      opts &&
+      typeof opts.isSectionLoaded === "function" &&
+      opts.isSectionLoaded(section, loadOpts)
+    ) {
+      openSubview(host, data, opts, view, Object.assign({}, viewOpts, { feedbackYear: yearKey, skipYearPicker: true }));
+      return Promise.resolve();
+    }
+    if (opts && typeof opts.loadSection === "function") {
+      host.innerHTML = '<p class="pcso-loading" role="status">Loading…</p>';
+      return opts
+        .loadSection(section, false, loadOpts)
+        .then(function (fresh) {
+          openSubview(host, fresh || data, opts, view, {
+            feedbackYear: yearKey,
+            skipYearPicker: true,
+          });
+        });
+    }
+    openSubview(host, data, opts, view, Object.assign({}, viewOpts, { feedbackYear: yearKey, skipYearPicker: true }));
+    return Promise.resolve();
+  }
+
+  function renderSessions(host, data, opts, viewOpts) {
+    viewOpts = viewOpts || {};
     if (!sessionProgressEnabled(data)) {
       host.innerHTML = subviewShell(
         data,
@@ -4635,11 +4847,17 @@
       bindBack(host, data, opts);
       return;
     }
-    var termChips = termSessionDateChipsHtml(data);
+    var termChips = termSessionDateChipsHtml(data, null, viewOpts);
+    var yearBadge = viewOpts.feedbackYear
+      ? '<p class="pp-feedback-year-badge" aria-label="Selected year">' +
+        esc(feedbackYearLabel(data, viewOpts.feedbackYear)) +
+        "</p>"
+      : "";
     host.innerHTML = subviewShell(
       data,
       "sessions",
       '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
+        yearBadge +
         '<p class="pp-muted pp-pax-subview-note">Term dates below, then date, service, instructor, engagement, regulation and independence — absents are listed as Absent. Shown separately for each activity when your child does more than one.</p>' +
         (termChips
           ? '<section class="pp-sessions-term-dates" aria-label="Term session dates">' +
@@ -5248,7 +5466,8 @@
     bindBack(host, data, opts);
   }
 
-  function renderWeeklyNotes(host, data, opts) {
+  function renderWeeklyNotes(host, data, opts, viewOpts) {
+    viewOpts = viewOpts || {};
     if (!sessionProgressEnabled(data)) {
       host.innerHTML = subviewShell(
         data,
@@ -5313,6 +5532,11 @@
       data,
       "weekly_notes",
       '<h3 class="pp-pax-subview-title">Weekly notes</h3>' +
+        (viewOpts.feedbackYear
+          ? '<p class="pp-feedback-year-badge" aria-label="Selected year">' +
+            esc(feedbackYearLabel(data, viewOpts.feedbackYear)) +
+            "</p>"
+          : "") +
         '<p class="pp-muted pp-pax-subview-note">One short note per week. Open a week to read it — older notes stay collapsed so the list stays easy to scroll.</p>' +
         body,
     );
@@ -8531,6 +8755,28 @@
   function openSubview(host, data, opts, view, viewOpts) {
     viewOpts = viewOpts || {};
     closeHubMenuSheet();
+    if (view === "sessions" || view === "weekly_notes") {
+      if (!viewOpts.skipYearPicker) {
+        var section = view === "weekly_notes" ? "weekly_notes" : "sessions";
+        var yearKey =
+          viewOpts.feedbackYear || data.feedback_year || defaultFeedbackYearKey(data);
+        var loadOpts = { feedbackYear: yearKey };
+        var needsPicker =
+          participantNeedsFeedbackYearPicker(data) && !viewOpts.feedbackYear;
+        var needsLoad =
+          opts &&
+          typeof opts.isSectionLoaded === "function" &&
+          !opts.isSectionLoaded(section, loadOpts);
+        if (needsPicker || needsLoad) {
+          void openSessionFeedbackEntry(host, data, opts, view, viewOpts);
+          return;
+        }
+        viewOpts = Object.assign({}, viewOpts, {
+          feedbackYear: yearKey,
+          skipYearPicker: true,
+        });
+      }
+    }
     if (view !== "hub") hideReenrolPopup();
     if (isFormerClient(data)) {
       var allowed = { hub: true };
@@ -8557,10 +8803,10 @@
       void ensureGeneralFieldsAsync(data).then(function () {
         renderGeneral(host, data, opts);
       });
-    }     else if (view === "sessions") renderSessions(host, data, opts);
+    }     else if (view === "sessions") renderSessions(host, data, opts, viewOpts);
     else if (view === "achievements") renderAchievements(host, data, opts);
     else if (view === "swim") renderSwim(host, data, opts);
-    else if (view === "weekly_notes") renderWeeklyNotes(host, data, opts);
+    else if (view === "weekly_notes") renderWeeklyNotes(host, data, opts, viewOpts);
     else if (view === "announcements") renderAnnouncements(host, data, opts);
     else if (view === "team") renderTeam(host, data, opts);
     else if (view === "booking") renderBooking(host, data, opts);
@@ -8602,6 +8848,21 @@
         var view = btn.getAttribute("data-pp-open");
         var section = sectionByView[view];
         closeHubMenuSheet();
+        if (view === "sessions" || view === "weekly_notes") {
+          btn.disabled = true;
+          btn.setAttribute("aria-busy", "true");
+          void openSessionFeedbackEntry(host, data, opts, view)
+            .catch(function () {
+              if (typeof opts.onSectionError === "function") {
+                opts.onSectionError(view === "weekly_notes" ? "weekly_notes" : "sessions");
+              }
+            })
+            .finally(function () {
+              btn.disabled = false;
+              btn.removeAttribute("aria-busy");
+            });
+          return;
+        }
         /* Booking + invoices need fresh reenrolment / pay flags from the server. */
         var refreshGeneral =
           (view === "booking" || view === "invoices") &&

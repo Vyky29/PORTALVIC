@@ -13,6 +13,11 @@ import {
 import { hashFamilyPin, newRandomFamilyPin } from "./parent_portal_pin.ts";
 import { familyPersonIdsForParent, upsertFamilyPin } from "./parent_portal_pin_family.ts";
 import {
+  extractBookingRequest,
+  bookingRequestSummary,
+  normalizePendingBookingRequest,
+} from "./portal_booking_context.ts";
+import {
   type BookingTermKey,
   type NewClientPayPlan,
   bookingTermDisplayLabel,
@@ -22,6 +27,11 @@ import {
   quoteNewClientMidTermInvoice,
   quoteNewClientTrialInvoice,
 } from "./booking_portal_term_invoices.ts";
+import {
+  stripeConfigured,
+  stripeCreateCheckoutSession,
+  stripeGrossUpFromGbp,
+} from "./stripe_checkout.ts";
 
 export const FINISH_TOKEN_TTL_DAYS = 14;
 export const DEFAULT_SESSION_GBP = 50;
@@ -244,17 +254,24 @@ export async function notifyParentFinishBooking(opts: {
   slotSummary: string | null;
   rawToken: string;
   admin?: SupabaseClient | null;
+  /** registration_submitted = pay now, suitability reviewed after payment */
+  variant?: "accepted" | "registration_submitted";
 }): Promise<{ emailOk: boolean; waOk: boolean; waError?: string }> {
   const name = clean(opts.parentName, 120) || "Parent / carer";
   const participant = clean(opts.participantName, 120) || "your child";
   const link = finishBookingUrl(opts.rawToken);
   const slot = clean(opts.slotSummary, 200);
+  const autoPay = opts.variant === "registration_submitted";
   // Flat body for Meta contact_update template (newlines are stripped).
-  const bodyText =
-    `clubSENsational accepted the registration for ${participant}. ` +
-    (slot ? `Place: ${slot}. ` : "") +
-    `Finish booking (funding, payment, first instalment): ${link} ` +
-    `After the office confirms your payment we send your Parent Portal PIN.`;
+  const bodyText = autoPay
+    ? `clubSENsational received the registration for ${participant}. ` +
+      (slot ? `Place: ${slot}. ` : "") +
+      `Complete booking and payment now: ${link} ` +
+      `The office reviews suitability after payment.`
+    : `clubSENsational accepted the registration for ${participant}. ` +
+      (slot ? `Place: ${slot}. ` : "") +
+      `Finish booking (funding, payment, first instalment): ${link} ` +
+      `After the office confirms your payment we send your Parent Portal PIN.`;
 
   let emailOk = false;
   let waOk = false;
@@ -269,13 +286,20 @@ export async function notifyParentFinishBooking(opts: {
     const mail = await sendParentEmailViaSmtp({
       config: smtp,
       to: email,
-      subject: `Finish booking · ${participant}`,
-      bodyText:
-        `Hi ${name},\n\n` +
-        `clubSENsational has accepted the registration for ${participant}.\n\n` +
-        (slot ? `Requested place: ${slot}\n\n` : "") +
-        `Please finish your booking:\n${link}\n\n` +
-        `After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\n— clubSENsational`,
+      subject: autoPay
+        ? `Complete booking · ${participant}`
+        : `Finish booking · ${participant}`,
+      bodyText: autoPay
+        ? `Hi ${name},\n\n` +
+          `Thank you — we received the registration for ${participant}.\n\n` +
+          (slot ? `Requested place: ${slot}\n\n` : "") +
+          `Please complete booking and payment now:\n${link}\n\n` +
+          `Your place is held for 30 minutes while you pay. After payment, the office checks that the service is suitable for your child. If it is not, we will cancel and refund.\n\n— clubSENsational`
+        : `Hi ${name},\n\n` +
+          `clubSENsational has accepted the registration for ${participant}.\n\n` +
+          (slot ? `Requested place: ${slot}\n\n` : "") +
+          `Please finish your booking:\n${link}\n\n` +
+          `After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\n— clubSENsational`,
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-notify] email", mail.error);
@@ -310,6 +334,256 @@ export async function notifyParentFinishBooking(opts: {
   });
 
   return { emailOk, waOk, waError };
+}
+
+function finishNotifyEmailNorm(v: string | null | undefined): string {
+  return String(v || "").trim().toLowerCase();
+}
+
+function finishNotifyPhoneLast10(v: string | null | undefined): string {
+  return String(v || "").replace(/\D/g, "").slice(-10);
+}
+
+function normalizePendingBookingFromRows(
+  rows: Array<{ pending_booking_request?: unknown }> | null | undefined,
+) {
+  for (const row of rows || []) {
+    const br = normalizePendingBookingRequest(row?.pending_booking_request);
+    if (br) return br;
+  }
+  return null;
+}
+
+async function resolveFinishBookingLeadAndReservation(
+  admin: SupabaseClient,
+  doc: {
+    id: string;
+    parent_email: string | null;
+    parent_phone: string | null;
+    payload_json?: unknown;
+  },
+  reservationIdHint: string | null,
+): Promise<{ leadId: string | null; reservationId: string | null; slotSummary: string | null }> {
+  let reservationId = reservationIdHint;
+  let slotSummary: string | null = null;
+
+  if (reservationId) {
+    const { data: hold } = await admin
+      .from("portal_booking_slot_reservations")
+      .select("id, service_name, venue, day_label, time_label")
+      .eq("id", reservationId)
+      .maybeSingle();
+    if (hold) {
+      slotSummary = [hold.service_name, hold.venue, hold.day_label, hold.time_label]
+        .filter(Boolean)
+        .join(" · ");
+    }
+  }
+
+  if (!reservationId) {
+    const { data: holds } = await admin
+      .from("portal_booking_slot_reservations")
+      .select("id, status, service_name, venue, day_label, time_label")
+      .eq("document_id", doc.id)
+      .in("status", ["validated", "pending", "awaiting_payment"])
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (holds?.[0]) {
+      reservationId = String(holds[0].id);
+      slotSummary = [
+        holds[0].service_name,
+        holds[0].venue,
+        holds[0].day_label,
+        holds[0].time_label,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+    }
+  }
+
+  const leadIds = new Set<string>();
+  const email = finishNotifyEmailNorm(doc.parent_email);
+  if (email) {
+    const { data: byEmail } = await admin
+      .from("portal_booking_leads")
+      .select("id, pending_booking_request")
+      .eq("email_norm", email)
+      .limit(5);
+    for (const row of byEmail || []) {
+      if (row?.id) leadIds.add(String(row.id));
+    }
+    if (!slotSummary) {
+      const br =
+        extractBookingRequest(
+          doc.payload_json && typeof doc.payload_json === "object"
+            ? doc.payload_json as Record<string, unknown>
+            : null,
+        ) || normalizePendingBookingFromRows(byEmail);
+      slotSummary = bookingRequestSummary(br);
+    }
+  }
+
+  const phone = finishNotifyPhoneLast10(doc.parent_phone);
+  if (phone.length >= 10) {
+    const { data: byPhone } = await admin
+      .from("portal_booking_leads")
+      .select("id, pending_booking_request")
+      .eq("phone_lookup", phone)
+      .limit(5);
+    for (const row of byPhone || []) {
+      if (row?.id) leadIds.add(String(row.id));
+    }
+    if (!slotSummary) {
+      const br =
+        extractBookingRequest(
+          doc.payload_json && typeof doc.payload_json === "object"
+            ? doc.payload_json as Record<string, unknown>
+            : null,
+        ) || normalizePendingBookingFromRows(byPhone);
+      slotSummary = bookingRequestSummary(br);
+    }
+  }
+
+  return { leadId: [...leadIds][0] || null, reservationId, slotSummary };
+}
+
+/** Prepare slot holds so finish-booking can proceed without admin Accept first. */
+export async function prepareReservationsForFinishBooking(
+  admin: SupabaseClient,
+  documentId: string,
+): Promise<number> {
+  const nowIso = new Date().toISOString();
+  const { data: holds } = await admin
+    .from("portal_booking_slot_reservations")
+    .select("id, status, notes")
+    .eq("document_id", documentId)
+    .eq("status", "pending");
+
+  let prepared = 0;
+  for (const hold of holds || []) {
+    const prevNotes = String(hold.notes || "").trim();
+    const keepTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
+    if (keepTrial) {
+      const { error: rErr } = await admin
+        .from("portal_booking_slot_reservations")
+        .update({
+          status: "released",
+          released_at: nowIso,
+          updated_at: nowIso,
+          notes: "auto_finish_link|booking_kind=trial|awaiting_stripe_pay",
+        })
+        .eq("id", hold.id)
+        .eq("status", "pending");
+      if (!rErr) prepared += 1;
+      else console.warn("[prepareReservationsForFinishBooking] trial release", rErr.message);
+      continue;
+    }
+    const { error: vErr } = await admin
+      .from("portal_booking_slot_reservations")
+      .update({
+        status: "validated",
+        validated_at: nowIso,
+        updated_at: nowIso,
+        notes: "auto_finish_link",
+      })
+      .eq("id", hold.id)
+      .eq("status", "pending");
+    if (!vErr) prepared += 1;
+    else console.warn("[prepareReservationsForFinishBooking] validate", vErr.message);
+  }
+  return prepared;
+}
+
+/**
+ * Mint finish-booking link and notify parent right after registration submit.
+ * Admin suitability review happens after payment, not before.
+ */
+export async function sendFinishBookingAfterRegistration(
+  admin: SupabaseClient,
+  doc: {
+    id: string;
+    participant_name: string;
+    parent_name: string | null;
+    parent_email: string | null;
+    parent_phone: string | null;
+    payload_json?: unknown;
+  },
+  opts?: {
+    reservationId?: string | null;
+    leadId?: string | null;
+    notify?: boolean;
+    variant?: "accepted" | "registration_submitted";
+  },
+): Promise<{
+  finish_url: string;
+  finish_url_sent: boolean;
+  email_ok: boolean;
+  wa_ok: boolean;
+  token_id: string | null;
+  reservations_prepared: number;
+}> {
+  const reservationsPrepared = await prepareReservationsForFinishBooking(admin, doc.id);
+
+  const resolved = await resolveFinishBookingLeadAndReservation(
+    admin,
+    doc,
+    opts?.reservationId ? String(opts.reservationId) : null,
+  );
+  const leadId = opts?.leadId ? String(opts.leadId) : resolved.leadId;
+  const reservationId = resolved.reservationId;
+
+  const minted = await mintFinishBookingToken(admin, {
+    leadId,
+    documentId: doc.id,
+    reservationId,
+  });
+  const finishUrl = finishBookingUrl(minted.rawToken);
+
+  let emailOk = false;
+  let waOk = false;
+  if (opts?.notify !== false) {
+    const notify = await notifyParentFinishBooking({
+      parentName: doc.parent_name,
+      parentEmail: doc.parent_email,
+      parentPhone: doc.parent_phone,
+      participantName: doc.participant_name,
+      slotSummary: resolved.slotSummary,
+      rawToken: minted.rawToken,
+      admin,
+      variant: opts?.variant || "registration_submitted",
+    });
+    emailOk = notify.emailOk;
+    waOk = notify.waOk;
+  }
+
+  const nowIso = new Date().toISOString();
+  await admin
+    .from("portal_booking_completion_tokens")
+    .update({
+      finish_link_sent_at: nowIso,
+      updated_at: nowIso,
+    })
+    .eq("id", minted.tokenId);
+
+  if (leadId) {
+    await admin
+      .from("portal_booking_leads")
+      .update({
+        booking_status: "booking_started",
+        last_activity_at: nowIso,
+        updated_at: nowIso,
+      })
+      .eq("id", leadId);
+  }
+
+  return {
+    finish_url: finishUrl,
+    finish_url_sent: emailOk || waOk,
+    email_ok: emailOk,
+    wa_ok: waOk,
+    token_id: minted.tokenId,
+    reservations_prepared: reservationsPrepared,
+  };
 }
 
 export async function notifyParentPortalPin(opts: {
@@ -423,6 +697,149 @@ export async function issueParentPortalPinForCompletion(
   });
 
   return { pin4 };
+}
+
+/** After Stripe pays a trial invoice, mark the slot validated (booked). */
+export async function confirmTrialSlotAfterStripePayment(
+  admin: SupabaseClient,
+  invoiceShareId: string,
+): Promise<void> {
+  const invId = clean(invoiceShareId, 80);
+  if (!invId) return;
+
+  const { data: token } = await admin
+    .from("portal_booking_completion_tokens")
+    .select("id, document_id, reservation_id, choices_json")
+    .eq("invoice_share_id", invId)
+    .maybeSingle();
+  if (!token) return;
+
+  const choices =
+    token.choices_json && typeof token.choices_json === "object"
+      ? (token.choices_json as Record<string, unknown>)
+      : {};
+  if (parseBookingScope(choices.booking_scope) !== "trial_session") return;
+
+  const now = new Date().toISOString();
+  const holdFar = new Date(Date.now() + FINISH_TOKEN_TTL_DAYS * 86400000).toISOString();
+  const reservationId = clean(token.reservation_id, 80);
+  if (reservationId) {
+    await admin
+      .from("portal_booking_slot_reservations")
+      .update({
+        status: "validated",
+        validated_at: now,
+        hold_expires_at: holdFar,
+        released_at: null,
+        notes: "trial_paid_stripe|booking_kind=trial",
+        updated_at: now,
+      })
+      .eq("id", reservationId);
+  } else if (token.document_id) {
+    await admin
+      .from("portal_booking_slot_reservations")
+      .update({
+        status: "validated",
+        validated_at: now,
+        hold_expires_at: holdFar,
+        released_at: null,
+        notes: "trial_paid_stripe|booking_kind=trial",
+        updated_at: now,
+      })
+      .eq("document_id", token.document_id)
+      .in("status", ["awaiting_payment", "pending", "released"]);
+  }
+}
+
+export async function createFinishBookingStripeCheckout(
+  admin: SupabaseClient,
+  opts: {
+    invoiceShareId: string;
+    contactId: string;
+    invoiceNumber: string;
+    participantName: string;
+    amountGbp: number;
+    rawFinishToken: string;
+  },
+): Promise<
+  | { ok: true; checkout_url: string; session_id: string; charge_gbp: number; fee_gbp: number }
+  | { ok: false; error: string; message?: string }
+> {
+  if (!stripeConfigured()) {
+    return {
+      ok: false,
+      error: "stripe_not_configured",
+      message: "Card / Apple Pay is not available yet. Contact the office.",
+    };
+  }
+  const dueAmount = Number(opts.amountGbp) || 0;
+  if (!(dueAmount > 0)) {
+    return { ok: false, error: "amount_required" };
+  }
+  const gross = stripeGrossUpFromGbp(dueAmount);
+  if (gross.charge_pence < 30) {
+    return { ok: false, error: "amount_too_small" };
+  }
+
+  const invNo = clean(opts.invoiceNumber, 40);
+  const displayName = clean(opts.participantName, 80) || "participant";
+  const productName = invNo
+    ? `Trial session · Invoice ${invNo} · ${displayName}`
+    : `Trial session · ${displayName}`;
+  const productNameWithFee =
+    gross.fee_pence > 0
+      ? `${productName} (incl. £${gross.fee_gbp.toFixed(2)} card fee)`
+      : productName;
+
+  const origin = portalPublicOrigin();
+  const finishPath = "/parent/finish-booking";
+  const tokenQ = encodeURIComponent(opts.rawFinishToken);
+  const successUrl =
+    `${origin}${finishPath}?t=${tokenQ}&stripe=1&invoice=${encodeURIComponent(opts.invoiceShareId)}`;
+  const cancelUrl = `${origin}${finishPath}?t=${tokenQ}&stripe_cancel=1`;
+
+  const created = await stripeCreateCheckoutSession({
+    amountPence: gross.charge_pence,
+    currency: "gbp",
+    productName: productNameWithFee,
+    successUrl,
+    cancelUrl,
+    clientReferenceId: opts.invoiceShareId,
+    metadata: {
+      invoice_share_id: opts.invoiceShareId,
+      contact_id: opts.contactId,
+      invoice_number: invNo || "",
+      invoice_net_pence: String(gross.net_pence),
+      stripe_fee_pence: String(gross.fee_pence),
+      charge_pence: String(gross.charge_pence),
+      finish_booking: "1",
+    },
+  });
+
+  if (!created.ok) {
+    return {
+      ok: false,
+      error: created.error,
+      message: created.detail || "Could not start card payment.",
+    };
+  }
+
+  await admin
+    .from("portal_parent_invoice_share")
+    .update({
+      stripe_checkout_session_id: created.id,
+      payment_method_hint: "stripe",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", opts.invoiceShareId);
+
+  return {
+    ok: true,
+    checkout_url: created.url,
+    session_id: created.id,
+    charge_gbp: gross.charge_gbp,
+    fee_gbp: gross.fee_gbp,
+  };
 }
 
 /** After first instalment is paid (bank confirm or GC), complete booking + PIN. */

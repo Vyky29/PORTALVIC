@@ -1,6 +1,6 @@
 // portal-admin-participant-document-review
-// Admin accepts a parent registration PDF: mark reviewed + validate slot hold,
-// then mint finish-booking link and notify the parent (email + WhatsApp).
+// Admin marks registration reviewed (post-payment suitability) and can resend finish-booking link.
+// New registrations auto-receive the finish link on submit — Accept is no longer a payment gate.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -9,8 +9,7 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 import {
-  mintFinishBookingToken,
-  notifyParentFinishBooking,
+  sendFinishBookingAfterRegistration,
 } from "../_shared/portal_booking_finish.ts";
 import {
   extractBookingRequest,
@@ -121,41 +120,24 @@ async function mintAndNotify(
     parent_name: string | null;
     parent_email: string | null;
     parent_phone: string | null;
+    payload_json?: unknown;
   },
+  variant: "accepted" | "registration_submitted" = "accepted",
 ): Promise<{
   finish_url_sent: boolean;
   email_ok: boolean;
   wa_ok: boolean;
   token_id: string | null;
 }> {
-  const { leadId, reservationId, slotSummary } = await resolveLeadAndReservation(admin, doc);
-  const minted = await mintFinishBookingToken(admin, {
-    leadId,
-    documentId: doc.id,
-    reservationId,
+  const sent = await sendFinishBookingAfterRegistration(admin, doc, {
+    variant,
+    notify: true,
   });
-  const notify = await notifyParentFinishBooking({
-    parentName: doc.parent_name,
-    parentEmail: doc.parent_email,
-    parentPhone: doc.parent_phone,
-    participantName: doc.participant_name,
-    slotSummary,
-    rawToken: minted.rawToken,
-    admin,
-  });
-  const nowIso = new Date().toISOString();
-  await admin
-    .from("portal_booking_completion_tokens")
-    .update({
-      finish_link_sent_at: nowIso,
-      updated_at: nowIso,
-    })
-    .eq("id", minted.tokenId);
   return {
-    finish_url_sent: notify.emailOk || notify.waOk,
-    email_ok: notify.emailOk,
-    wa_ok: notify.waOk,
-    token_id: minted.tokenId,
+    finish_url_sent: sent.finish_url_sent,
+    email_ok: sent.email_ok,
+    wa_ok: sent.wa_ok,
+    token_id: sent.token_id,
   };
 }
 
@@ -226,11 +208,8 @@ Deno.serve(async (req) => {
   }
 
   if (action === "resend_finish_link") {
-    if (String(doc.status || "").toLowerCase() !== "reviewed") {
-      return portalAdminJson(400, { ok: false, error: "not_accepted_yet" });
-    }
     try {
-      const sent = await mintAndNotify(admin, doc);
+      const sent = await mintAndNotify(admin, doc, "accepted");
       return portalAdminJson(200, {
         ok: true,
         action: "resend_finish_link",
@@ -274,9 +253,22 @@ Deno.serve(async (req) => {
     for (const hold of holds || []) {
       const prevNotes = String(hold.notes || "").trim();
       const keepTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
-      const nextNotes = keepTrial
-        ? "accepted_by_admin|booking_kind=trial"
-        : "accepted_by_admin";
+      if (keepTrial) {
+        const { error: rErr } = await admin
+          .from("portal_booking_slot_reservations")
+          .update({
+            status: "released",
+            released_at: nowIso,
+            updated_at: nowIso,
+            notes: "accepted_by_admin|booking_kind=trial|awaiting_stripe_pay",
+          })
+          .eq("id", hold.id)
+          .eq("status", "pending");
+        if (!rErr) reservationsValidated += 0;
+        else console.warn("[portal-admin-participant-document-review] trial release", rErr.message);
+        continue;
+      }
+      const nextNotes = "accepted_by_admin";
       const { error: vErr } = await admin
         .from("portal_booking_slot_reservations")
         .update({
@@ -290,6 +282,16 @@ Deno.serve(async (req) => {
       if (!vErr) reservationsValidated += 1;
       else console.warn("[portal-admin-participant-document-review] validate", vErr.message);
     }
+  }
+
+  /* Also count holds already prepared by auto finish-link on submit. */
+  const { count: validatedCount } = await admin
+    .from("portal_booking_slot_reservations")
+    .select("id", { count: "exact", head: true })
+    .eq("document_id", documentId)
+    .in("status", ["validated", "awaiting_payment"]);
+  if (validatedCount && validatedCount > reservationsValidated) {
+    reservationsValidated = validatedCount;
   }
 
   let leadsUpdated = 0;
@@ -376,6 +378,6 @@ Deno.serve(async (req) => {
     leads_updated: leadsUpdated,
     ...finishNotify,
     next_step:
-      "Parent was sent a finish-booking link to choose funding, payment, and pay the first instalment.",
+      "Parent was sent a finish-booking link (or already received one on submit). Mark paid after bank/Stripe; review suitability post-payment.",
   });
 });

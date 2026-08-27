@@ -1682,11 +1682,14 @@
             return portalMode.afterSubmitSuccess();
           }
           if (window.portalFinishParentSubmit) {
-            var holdMsg = (res && res.slot_held)
-              ? ' Your selected session is held while the office reviews this form. After they accept you, they will set funding and payment and confirm your place.'
-              : (bookingRequest
-                ? ' Your selected session was sent with this form for the office to review.'
-                : '');
+            var finishUrl = res && res.finish_url ? String(res.finish_url) : "";
+            var holdMsg = finishUrl
+              ? " Continue to payment now — your place is held for 30 minutes while you pay."
+              : (res && res.slot_held
+                ? " Your selected session is held. Check your email or WhatsApp for the payment link."
+                : (bookingRequest
+                  ? " Your selected session was sent with this form."
+                  : ""));
             try {
               if (window.PortalBookingLeadGate) {
                 void window.PortalBookingLeadGate.pingActivity({
@@ -1695,16 +1698,32 @@
                 });
               }
             } catch (_leadPing) {}
-            window.portalFinishParentSubmit({
-              formEl: form,
-              successEl: document.getElementById('parentSubmitDone'),
-              noticeEl: document.getElementById('formNotice'),
-              submitBtn: btn,
-              message:
-                'Form and photo were sent to clubSENsational Documents. A PDF copy also downloaded to your device.' +
-                holdMsg +
-                ' You do not need to email us — you can close this page.'
-            });
+            if (finishUrl) {
+              window.portalFinishParentSubmit({
+                formEl: form,
+                successEl: document.getElementById('parentSubmitDone'),
+                noticeEl: document.getElementById('formNotice'),
+                submitBtn: btn,
+                message:
+                  'Form sent. Taking you to payment now…' +
+                  holdMsg +
+                  ' The office reviews suitability after payment.'
+              });
+              setTimeout(function () {
+                global.location.href = finishUrl;
+              }, 1200);
+            } else {
+              window.portalFinishParentSubmit({
+                formEl: form,
+                successEl: document.getElementById('parentSubmitDone'),
+                noticeEl: document.getElementById('formNotice'),
+                submitBtn: btn,
+                message:
+                  'Form and photo were sent to clubSENsational Documents. A PDF copy also downloaded to your device.' +
+                  holdMsg +
+                  ' You do not need to email us — you can close this page.'
+              });
+            }
           }
         }).catch(function(err){
           console.error(err);

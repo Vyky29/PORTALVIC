@@ -33,6 +33,15 @@
     if (patch.attendance_summary) base.attendance_summary = patch.attendance_summary;
     if (Array.isArray(patch.weekly_notes)) base.weekly_notes = patch.weekly_notes;
     if (patch.weekly_note_latest !== undefined) base.weekly_note_latest = patch.weekly_note_latest;
+    if (patch.feedback_year != null) base.feedback_year = patch.feedback_year;
+    if (patch.feedback_year_label != null) base.feedback_year_label = patch.feedback_year_label;
+    if (patch.feedback_year_picker_required != null) {
+      base.feedback_year_picker_required = !!patch.feedback_year_picker_required;
+    }
+    if (Array.isArray(patch.feedback_years_available)) {
+      base.feedback_years_available = patch.feedback_years_available;
+    }
+    if (patch.feedback_year_default != null) base.feedback_year_default = patch.feedback_year_default;
     if (Array.isArray(patch.club_announcements)) base.club_announcements = patch.club_announcements;
     if (patch.general && base.general) {
       Object.assign(base.general, patch.general);
@@ -43,7 +52,10 @@
     return base;
   }
 
-  async function fetchParticipantSections(contactId, sections) {
+  async function fetchParticipantSections(contactId, sections, opts) {
+    opts = opts && typeof opts === "object" ? opts : {};
+    var payload = { contact_id: contactId, sections: sections };
+    if (opts.feedbackYear) payload.feedback_year = String(opts.feedbackYear);
     var res = await fetch(fn("parent-portal-participant-detail"), {
       method: "POST",
       headers: {
@@ -52,7 +64,7 @@
         Authorization: "Bearer " + anonKey(),
         "x-parent-portal-session": state.session.token,
       },
-      body: JSON.stringify({ contact_id: contactId, sections: sections }),
+      body: JSON.stringify(payload),
     });
     var body = await res.json().catch(function () {
       return {};
@@ -170,16 +182,22 @@
           });
         });
       },
-      isSectionLoaded: function (section) {
-        return !!state.participant.loaded[section];
+      isSectionLoaded: function (section, loadOpts) {
+        loadOpts = loadOpts && typeof loadOpts === "object" ? loadOpts : {};
+        var key = section;
+        if (loadOpts.feedbackYear) key = section + ":" + String(loadOpts.feedbackYear);
+        return !!state.participant.loaded[key];
       },
-      loadSection: function (section, force) {
-        if (!force && state.participant.loaded[section]) {
+      loadSection: function (section, force, loadOpts) {
+        loadOpts = loadOpts && typeof loadOpts === "object" ? loadOpts : {};
+        var cacheKey = section;
+        if (loadOpts.feedbackYear) cacheKey = section + ":" + String(loadOpts.feedbackYear);
+        if (!force && state.participant.loaded[cacheKey]) {
           return Promise.resolve(state.participant.data);
         }
-        return fetchParticipantSections(contactId, [section]).then(function (patch) {
+        return fetchParticipantSections(contactId, [section], loadOpts).then(function (patch) {
           state.participant.data = mergeParticipantBody(state.participant.data, patch);
-          state.participant.loaded[section] = true;
+          state.participant.loaded[cacheKey] = true;
           if (section === "sessions" && patch.pending_review_count > 0) {
             showNotice(
               $("ppParticipantNotice"),
@@ -1205,10 +1223,17 @@
     state.participant = { contactId: contactId, data: null, loaded: {} };
 
     try {
-      var body = await fetchParticipantSections(contactId, ["general", "weekly_notes"]);
-      state.participant.data = body;
+      var body = await fetchParticipantSections(contactId, ["general"]);
       state.participant.loaded.general = true;
-      state.participant.loaded.weekly_notes = true;
+      if (!body.feedback_year_picker_required) {
+        var fbYear = body.feedback_year_default || "2026-27";
+        var notesPatch = await fetchParticipantSections(contactId, ["weekly_notes"], {
+          feedbackYear: fbYear,
+        });
+        body = mergeParticipantBody(body, notesPatch);
+        state.participant.loaded["weekly_notes:" + fbYear] = true;
+      }
+      state.participant.data = body;
       rememberContactId(contactId);
 
       var p = body.participant || {};

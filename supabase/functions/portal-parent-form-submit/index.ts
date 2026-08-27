@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { syncParentFormPhotoToParticipantAvatar } from "../_shared/participant_avatar.ts";
 import { ensureInterestedClientFromRegistration } from "../_shared/portal_interested_client.ts";
 import { notifyOfficeRegistrationSubmitted } from "../_shared/portal_booking_lead_office_notify.ts";
+import { sendFinishBookingAfterRegistration } from "../_shared/portal_booking_finish.ts";
 import {
   extractBookingRequest,
   loadPendingBookingFromLeadSession,
@@ -501,11 +502,40 @@ Deno.serve(async (req) => {
     console.warn("[portal-parent-form-submit] office notify", notifyErr);
   }
 
+  let finishBooking: {
+    finish_url: string;
+    finish_url_sent: boolean;
+  } | null = null;
+  if (bookingRequest && formType === "client_registration") {
+    try {
+      const sent = await sendFinishBookingAfterRegistration(admin, {
+        id: String(row.id),
+        participant_name: participantName,
+        parent_name: parentName,
+        parent_email: parentEmail,
+        parent_phone: parentPhone,
+        payload_json: payload,
+      }, {
+        reservationId,
+        leadId: primaryLeadId,
+        variant: "registration_submitted",
+      });
+      finishBooking = {
+        finish_url: sent.finish_url,
+        finish_url_sent: sent.finish_url_sent,
+      };
+    } catch (finishErr) {
+      console.warn("[portal-parent-form-submit] finish link", finishErr);
+    }
+  }
+
   return json(200, {
     ok: true,
     id: row.id,
     submitted_at: row.submitted_at,
     reservation_id: reservationId,
     slot_held: !!reservationId,
+    finish_url: finishBooking?.finish_url || null,
+    finish_url_sent: finishBooking?.finish_url_sent || false,
   });
 });

@@ -15,6 +15,7 @@ import {
   invoiceFundingCategoryLabel,
   resolveParticipantInvoiceFunding,
 } from "../_shared/portal_invoice_funding.ts";
+import { isHfYearDraftInvoice } from "../_shared/portal_create_family_invoice.ts";
 import {
   namesMatch,
   paymentRowToContext,
@@ -715,6 +716,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
   /** Real funder INV-Ps already covering a payment pack (by ready_by / notes marker). */
   const funderCoveredPackKeys = new Set<string>();
   for (const inv of invoices) {
+    if (isHfYearDraftInvoice({ readyBy: inv.ready_by, notes: inv.notes })) continue;
     if (clean(inv.payment_method_hint, 40) !== "la_funded") continue;
     if (clean(inv.created_via, 40) === "la_office_auto") continue;
     const cid = clean(inv.contact_id, 120);
@@ -729,6 +731,12 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       if (
         markerBlob.includes(`_${clientKey}`) &&
         /office_funder_2627_nhs_(month|year)_/.test(markerBlob)
+      ) {
+        funderCoveredPackKeys.add(`${cid}::${clientKey}`);
+      }
+      if (
+        markerBlob.includes(`_${clientKey}`) &&
+        /office_funder_2627_hf_month_/.test(markerBlob)
       ) {
         funderCoveredPackKeys.add(`${cid}::${clientKey}`);
       }
@@ -844,6 +852,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
    * for audit but must not appear in admin Finance.
    */
   invoices = invoices.filter((inv) => {
+    if (isHfYearDraftInvoice({ readyBy: inv.ready_by, notes: inv.notes })) return false;
     const share = clean(inv.share_status, 20).toLowerCase();
     if (share !== "hidden") return true;
     if (inv.is_la_office_auto === true || clean(inv.created_via, 40) === "la_office_auto") {

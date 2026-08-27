@@ -315,6 +315,17 @@
     return /day\s*centre/i.test(blob) || blob.indexOf("day_centre") >= 0;
   }
 
+  function afterSchoolActiveOnIso(iso) {
+    iso = normIso(iso);
+    if (!iso || iso < "2026-09-01") return false;
+    var t = termCfg();
+    var weekendFrom = normIso(t.termAfterSchoolWeekendFrom) || "2026-09-05";
+    var weekdayFrom = normIso(t.termAfterSchoolWeekdayFrom) || "2026-09-08";
+    var dow = new Date(iso + "T12:00:00").getDay();
+    if (dow === 0 || dow === 6) return iso >= weekendFrom;
+    return iso >= weekdayFrom;
+  }
+
   /** First calendar day a staff member counts for a service (e.g. Day Centre mornings). */
   function staffServiceStartIso(staffId, serviceKey) {
     var id = String(staffId || "").trim().toLowerCase();
@@ -334,7 +345,10 @@
     var id = String(staffId || "").trim().toLowerCase();
     if (!iso || !id || !sessionRow) return true;
     if (!staffDateInView(iso, id)) return false;
-    if (!rosterRowIsDayCentre(sessionRow)) return true;
+    if (!rosterRowIsDayCentre(sessionRow)) {
+      if (iso >= "2026-09-01" && !afterSchoolActiveOnIso(iso)) return false;
+      return true;
+    }
     var start = staffServiceStartIso(id, "day_centre");
     if (start && iso < start) return false;
     return true;

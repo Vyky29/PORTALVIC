@@ -213,11 +213,13 @@ def export_staff_weekly_csv(templates: dict[str, list[tuple[str, str, str]]]) ->
         ("Tuesday", "Roberto", "11-3"): "Day Centre · Ikram",
         ("Tuesday", "Michelle", "11-4"): "Day Centre · Ikram",
         ("Tuesday", "Victor", "12.30-3"): "Day Centre · Fadi",
-        ("Tuesday", "Victor", "3.30-5"): "Aquatic · Cyrus (participant)",
+        ("Tuesday", "Victor", "3.30-5"): "Bespoke · Cyrus (Tue, was Thu)",
         ("Tuesday", "Raul", "12.30-3"): "Day Centre · Fadi",
         ("Tuesday", "Michelle", "3-4"): "Day Centre · Ikram",
         ("Monday", "Dan", "4.30-6.30"): "Northolt aquatic pool",
         ("Monday", "Luliya", "4.30-6.30"): "Northolt aquatic pool",
+        ("Monday", "Victor", "12.30-3"): "Day Centre · Fadi",
+        ("Friday", "Victor", "12.30-3"): "Day Centre · Fadi",
     }
     rows: list[dict] = []
     for day in DAY_ORDER:
