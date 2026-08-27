@@ -765,13 +765,21 @@
         String(staffIdForMatch || "").trim().toLowerCase();
       const staffKeyOut = stored || String(selfKey).toLowerCase();
 
-      if (
+      // Only enforce service/date gates for rows inside this term's calendar view.
+      // Summer MADRE dated rows (Jun–Jul) stay in the model as weekday standing
+      // templates for Autumn days (same projection as admin Services).
+      const ptd =
+        typeof window !== "undefined" ? window.PortalTermCalendarDashboard : null;
+      const rowInTermView =
         sessionDate &&
         /^\d{4}-\d{2}-\d{2}$/.test(sessionDate) &&
-        typeof window !== "undefined" &&
-        window.PortalTermCalendarDashboard &&
-        typeof window.PortalTermCalendarDashboard.staffSessionServiceActiveOnDate === "function" &&
-        !window.PortalTermCalendarDashboard.staffSessionServiceActiveOnDate(
+        ptd &&
+        typeof ptd.staffDateInView === "function" &&
+        ptd.staffDateInView(sessionDate, staffKeyOut);
+      if (
+        rowInTermView &&
+        typeof ptd.staffSessionServiceActiveOnDate === "function" &&
+        !ptd.staffSessionServiceActiveOnDate(
           staffKeyOut,
           { rosterService, service: rosterService },
           sessionDate
