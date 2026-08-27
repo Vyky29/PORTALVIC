@@ -36,18 +36,40 @@ VENUE_LABEL = {
     "Westway": "Westway",
 }
 
-# Autumn instructor overrides vs summer weekly-template-reference (Roberto off Northolt; Angel/Giuseppe/Bismark gone).
-INSTRUCTOR_OVERRIDE: dict[tuple[str, str, str, str], str] = {
-    # weekday, venue, time_norm, participant_key -> autumn instructor
-    ("Monday", "Northolt", "4.30 to 5", "yunis"): "Dan",
-    ("Monday", "Northolt", "4.30 to 5", "trial_new"): "Dan",
-    ("Monday", "Northolt", "5 to 6", "amar ra"): "Dan",
-    ("Monday", "Northolt", "5 to 5.30", "gemma"): "Dan",
-    ("Monday", "Northolt", "5.30 to 6", "zayana"): "Dan",
-    ("Monday", "Northolt", "6 to 6.30", "adaam ah"): "Dan",
-    ("Monday", "Northolt", "6 to 6.30", "yamik"): "Luliya",
-    ("Monday", "SwimFarm", "4.30 to 6", "tinashe"): "TBC (was Bismark/Giuseppe/John)",
-}
+# Monday Northolt standing (patch-madre-monday-acton + dan-amar-luliya-gemma + zayana):
+#   Roberto Mon clients → Luliya (Yunis, Yamik, …)
+#   Dan 5–6 Amar Rai only; 4.30–5 open for trials when Luliya has Yunis
+#   Luliya: Gemma 5–5.30, Zayana 5.30–6, Adaam Ah 6–6.30, Yunis 4.30–5
+MONDAY_NORTHOLT_STANDING: list[tuple[str, str, str]] = [
+    ("4.30 to 5", "yunis", "Luliya"),
+    ("4.30 to 5", "rayden rana (trial inv-p-0370)", "Dan"),
+    ("4.30 to 5", "trial_new", "Dan"),
+    ("5 to 5.30", "gemma", "Luliya"),
+    ("5 to 6", "amar ra", "Dan"),
+    ("5.30 to 6", "zayana", "Luliya"),
+    ("6 to 6.30", "adaam ah", "Luliya"),
+    ("6 to 6.30", "yamik", "Luliya"),
+]
+
+# Wednesday Northolt (patch-madre-wed-northolt-drop-roberto-dan-luliya)
+WEDNESDAY_NORTHOLT_STANDING: list[tuple[str, str, str]] = [
+    ("4.30 to 5", "tyson", "Dan"),
+    ("4.30 to 5", "vithura", "Luliya"),
+    ("5 to 5.30", "ruben", "Dan"),
+    ("5 to 6", "amar ra", "Dan"),
+    ("5.30 to 6.30", "mia", "Dan"),
+    ("6 to 6.30", "amber", "Luliya"),
+]
+
+INSTRUCTOR_OVERRIDE: dict[tuple[str, str, str, str], str] = {}
+for _t, _p, _i in MONDAY_NORTHOLT_STANDING:
+    INSTRUCTOR_OVERRIDE[("Monday", "Northolt", _t, _p)] = _i
+for _t, _p, _i in WEDNESDAY_NORTHOLT_STANDING:
+    INSTRUCTOR_OVERRIDE[("Wednesday", "Northolt", _t, _p)] = _i
+
+INSTRUCTOR_OVERRIDE[("Monday", "SwimFarm", "4.30 to 6", "tinashe")] = (
+    "TBC (was Bismark/Giuseppe/John)"
+)
 
 
 def load_autumn_templates() -> dict[str, list[tuple[str, str, str]]]:
@@ -170,7 +192,7 @@ def autumn_instructor(row: dict) -> str:
     inst = row["summer_instructor"]
     # Roberto no longer on Northolt Mon — route to Dan/Luliya pool.
     if row["weekday"] == "Monday" and row["venue"] == "Northolt" and "ROBERTO" in inst.upper():
-        return "Dan (was Roberto)"
+        return "Luliya (was Roberto)"
     if any(x in inst.upper() for x in ("ANGEL", "GIUSEPPE", "BISMARK")):
         return "TBC / departed"
     return inst
@@ -260,7 +282,7 @@ def export_crossref_csv(
             "autumn_instructor_planned": "Dan",
             "staff_pool_on_duty": ", ".join(mon_northolt_staff),
             "booking_match": "OK" if "Dan" in mon_northolt_staff else "CHECK",
-            "notes": "Trial assigned to Dan (Northolt Mon 4.30-5); Luliya also on pool 4.30-6.30",
+            "notes": "Trial 4.30-5 → Dan (open); Luliya has Yunis same band. Gemma/Zayana/Adaam → Luliya not Dan.",
         }
     )
     for p in participants:
