@@ -12,6 +12,11 @@ import {
   mintFinishBookingToken,
   notifyParentFinishBooking,
 } from "../_shared/portal_booking_finish.ts";
+import {
+  extractBookingRequest,
+  bookingRequestSummary,
+  normalizePendingBookingRequest,
+} from "../_shared/portal_booking_context.ts";
 
 function clean(v: unknown, max = 80): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -31,6 +36,7 @@ async function resolveLeadAndReservation(
     id: string;
     parent_email: string | null;
     parent_phone: string | null;
+    payload_json?: unknown;
   },
 ): Promise<{ leadId: string | null; reservationId: string | null; slotSummary: string | null }> {
   let reservationId: string | null = null;
@@ -59,26 +65,52 @@ async function resolveLeadAndReservation(
   if (email) {
     const { data: byEmail } = await admin
       .from("portal_booking_leads")
-      .select("id")
+      .select("id, pending_booking_request")
       .eq("email_norm", email)
       .limit(5);
     for (const row of byEmail || []) {
       if (row?.id) leadIds.add(String(row.id));
+    }
+    if (!slotSummary) {
+      const br = extractBookingRequest(
+        doc.payload_json && typeof doc.payload_json === "object"
+          ? doc.payload_json as Record<string, unknown>
+          : null,
+      ) || normalizePendingBookingFromRows(byEmail);
+      slotSummary = bookingRequestSummary(br);
     }
   }
   const phone = phoneLast10(doc.parent_phone);
   if (phone.length >= 10) {
     const { data: byPhone } = await admin
       .from("portal_booking_leads")
-      .select("id")
+      .select("id, pending_booking_request")
       .eq("phone_lookup", phone)
       .limit(5);
     for (const row of byPhone || []) {
       if (row?.id) leadIds.add(String(row.id));
     }
+    if (!slotSummary) {
+      const br = extractBookingRequest(
+        doc.payload_json && typeof doc.payload_json === "object"
+          ? doc.payload_json as Record<string, unknown>
+          : null,
+      ) || normalizePendingBookingFromRows(byPhone);
+      slotSummary = bookingRequestSummary(br);
+    }
   }
   const leadId = [...leadIds][0] || null;
   return { leadId, reservationId, slotSummary };
+}
+
+function normalizePendingBookingFromRows(
+  rows: Array<{ pending_booking_request?: unknown }> | null | undefined,
+) {
+  for (const row of rows || []) {
+    const br = normalizePendingBookingRequest(row?.pending_booking_request);
+    if (br) return br;
+  }
+  return null;
 }
 
 async function mintAndNotify(

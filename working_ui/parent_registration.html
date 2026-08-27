@@ -1090,7 +1090,26 @@
       }
     }
 
-    var bookingRequest = bookingRequestFromUrl();
+    var BOOKING_REQ_KEY = 'clubsens_pending_booking_request_v1';
+    function persistBookingRequest(br) {
+      if (!br || !br.slot_id) return;
+      try {
+        sessionStorage.setItem(BOOKING_REQ_KEY, JSON.stringify(br));
+      } catch (_e) {}
+    }
+    function restoreBookingRequest() {
+      try {
+        var raw = sessionStorage.getItem(BOOKING_REQ_KEY);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        return parsed && parsed.slot_id ? parsed : null;
+      } catch (_e2) {
+        return null;
+      }
+    }
+
+    var bookingRequest = bookingRequestFromUrl() || restoreBookingRequest();
+    if (bookingRequest && bookingRequest.slot_id) persistBookingRequest(bookingRequest);
 
     (function applyBookingLeadPrefill() {
       var gate = window.PortalBookingLeadGate;

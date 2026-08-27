@@ -16,6 +16,7 @@ import {
   xeroItemCodeForService,
   type ProductMapRow,
 } from "./portal_xero_product_catalog.ts";
+import { resolveSessionDateIso } from "./portal_booking_context.ts";
 
 export type BookingTermKey = "autumn" | "spring" | "summer";
 export type NewClientPayPlan =
@@ -68,6 +69,56 @@ function round2(n: number): number {
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function formatUkDateWithWeekday(iso: string | null | undefined): string {
+  const s = String(iso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+  const [y, m, d] = s.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/** e.g. 30' Aquatic Activity (Trial session) */
+export function bookingPortalServiceLabel(
+  serviceKey: string,
+  serviceLabel: string,
+  opts?: { isTrial?: boolean },
+): string {
+  const key = clean(serviceKey, 40).toUpperCase();
+  let duration = "30'";
+  if (key.includes("60")) duration = "60'";
+  else if (key.includes("45")) duration = "45'";
+  const base = clean(serviceLabel, 120) || "Activity";
+  const trial = opts?.isTrial ? " (Trial session)" : "";
+  if (/^\d+'/.test(base)) return `${base}${trial}`;
+  return `${duration} ${base}${trial}`;
+}
+
+export function formatTrialSessionReference(input: {
+  sessionDateIso?: string | null;
+  day?: string | null;
+  timeLabel?: string | null;
+  asOfIso?: string | null;
+}): string {
+  const day = clean(input.day, 40);
+  const time = clean(input.timeLabel, 80);
+  const sessionDate = resolveSessionDateIso({
+    dateIso: input.sessionDateIso,
+    day,
+    asOfIso: input.asOfIso,
+  });
+  const datePart = sessionDate
+    ? formatUkDateWithWeekday(sessionDate)
+    : day || "TBC";
+  const timePart = time ? `, ${time}` : "";
+  return clean(`Trial session (${datePart}${timePart})`, 120);
 }
 
 function isoToday(asOf?: string | Date | null): string {
@@ -414,6 +465,8 @@ export function quoteNewClientTrialInvoice(args: {
   serviceLabel?: string | null;
   detail?: string | null;
   day?: string | null;
+  timeLabel?: string | null;
+  sessionDateIso?: string | null;
   vatMode?: PortalInvoiceVatMode;
   productMap?: Map<string, ProductMapRow> | null;
 }): NewClientProRataQuote | { error: string } {
@@ -451,10 +504,12 @@ export function quoteNewClientTrialInvoice(args: {
     plan: "one_off_bank",
     paymentSchedule: schedule,
     paymentMethodHint: "bank_transfer",
-    reference: "Trial session",
+    reference: formatTrialSessionReference({
+      sessionDateIso: args.sessionDateIso,
+      day,
+      timeLabel: args.timeLabel,
+    }),
     lineDescription:
-      `Booking Portal trial session · pay now.\n\n` +
-      `One session at £${unit.toFixed(2)}. Place is held as a trial after payment.\n\n` +
       "Structured activity support delivered for a SEND participant.",
     lineItems: [
       {

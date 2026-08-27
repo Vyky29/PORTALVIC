@@ -67,6 +67,8 @@ export type PortalInvoicePdfInput = {
     status: string;
     paid_at?: string | null;
   }>;
+  /** H&F year draft — per-month claim amounts on payment advice (page 2). */
+  paymentAdviceMonths?: Array<{ label: string; amountGbp: number }> | null;
 };
 
 const VAT_NUMBER = "450697474";
@@ -284,7 +286,7 @@ export async function buildPortalTaxInvoicePdf(
   const meta = [
     ["Invoice Date", formatUkDate(input.invoiceDateIso)],
     ["Invoice Number", pdfSafeText(input.invoiceNumber)],
-    ["Reference", pdfSafeText(input.reference || "").slice(0, 40) || "-"],
+    ["Reference", pdfSafeText(input.reference || "").slice(0, 60) || "-"],
     ["VAT Number", VAT_NUMBER],
   ];
   const serviceLabel = pdfSafeText(input.service || "").slice(0, 48);
@@ -435,9 +437,10 @@ export async function buildPortalTaxInvoicePdf(
           )
           : round4Money(rowSplit.net / line.quantity);
       const rowVatLabel = rowIsCredit ? "No VAT" : vatLabel;
-      const rowDesc = wrapPdfLines(line.description, 34).slice(0, 3);
+      const rowDesc = wrapPdfLines(line.description, 46).slice(0, 3);
       const rowDetail = line.detail ? wrapPdfLines(line.detail, 40).slice(0, 2) : [];
-      const rowDates = line.dates ? wrapPdfLines(line.dates, 55).slice(0, 2) : [];
+      // Session date lists can wrap past 2 lines (Autumn Mon/Wed blocks).
+      const rowDates = line.dates ? wrapPdfLines(line.dates, 55).slice(0, 4) : [];
       const rowHeight = Math.max(
         22,
         rowDesc.length * 10 + rowDetail.length * 9 + rowDates.length * 9 + 6,
@@ -710,6 +713,37 @@ export async function buildPortalTaxInvoicePdf(
     page2.drawText(label, { x: left, y: y2, size: 9, font, color: muted });
     page2.drawText(String(val), { x: left + 120, y: y2, size: 9, font, color: ink });
     y2 -= 16;
+  }
+  const monthRows = (input.paymentAdviceMonths || []).filter(
+    (r) => r && r.label && Number(r.amountGbp) > 0,
+  );
+  if (monthRows.length) {
+    y2 -= 6;
+    page2.drawText("Monthly invoices (sessions in each month):", {
+      x: left,
+      y: y2,
+      size: 8.5,
+      font: fontBold,
+      color: ink,
+    });
+    y2 -= 14;
+    for (const row of monthRows.slice(0, 12)) {
+      page2.drawText(pdfSafeText(row.label), {
+        x: left + 8,
+        y: y2,
+        size: 8,
+        font,
+        color: muted,
+      });
+      page2.drawText(money(row.amountGbp), {
+        x: left + 200,
+        y: y2,
+        size: 8,
+        font,
+        color: ink,
+      });
+      y2 -= 11;
+    }
   }
   page2.drawText("Enter the amount you are paying above", {
     x: left,

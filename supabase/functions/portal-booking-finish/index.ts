@@ -4,8 +4,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   createPortalFamilyInvoice,
+  familyBookingPaymentMethodLabel,
   resolvePortalInvoiceOwnerUserId,
 } from "../_shared/portal_create_family_invoice.ts";
+import { bookingPortalServiceLabel } from "../_shared/booking_portal_term_invoices.ts";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 import {
   suggestedTransferReference,
@@ -31,6 +33,11 @@ import {
   gocardlessCreateBillingRequest,
   gocardlessCreateBillingRequestFlow,
 } from "../_shared/gocardless.ts";
+import {
+  extractBookingRequest,
+  reservationFieldsFromBookingRequest,
+  resolveSessionDateIso,
+} from "../_shared/portal_booking_context.ts";
 import {
   BOOKING_PAY_HOLD_MINUTES,
   bookingPayHoldExpiresAt,
@@ -123,6 +130,12 @@ async function loadContext(
       .maybeSingle();
     reservation = data;
   }
+  if (!reservation && doc?.payload_json) {
+    const br = extractBookingRequest(
+      doc.payload_json as Record<string, unknown>,
+    );
+    if (br) reservation = reservationFieldsFromBookingRequest(br);
+  }
   return { doc, reservation };
 }
 
@@ -176,14 +189,30 @@ async function ensureContact(
   paymentLabel: string,
 ): Promise<{ contactId: string; parentPersonId: string } | { error: string }> {
   if (token.contact_id && token.parent_person_id) {
-    await admin
-      .from("portal_parent_contacts")
-      .update({
-        funding_label: fundingLabel,
-        payment_method_label: paymentLabel,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("contact_id", token.contact_id);
+    const parentDisplay = clean(doc.parent_name, 200);
+    if (parentDisplay) {
+      const parentNames = splitParentName(parentDisplay);
+      await admin
+        .from("portal_parent_contacts")
+        .update({
+          parent_display: parentDisplay,
+          parent_first_name: parentNames.first || null,
+          parent_last_name: parentNames.last || null,
+          funding_label: fundingLabel,
+          payment_method_label: paymentLabel,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("contact_id", token.contact_id);
+    } else {
+      await admin
+        .from("portal_parent_contacts")
+        .update({
+          funding_label: fundingLabel,
+          payment_method_label: paymentLabel,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("contact_id", token.contact_id);
+    }
     return { contactId: token.contact_id, parentPersonId: token.parent_person_id };
   }
 
@@ -372,6 +401,11 @@ Deno.serve(async (req) => {
   const serviceName = clean(reservation?.service_name, 120) || "Aquatic Activity";
   const timeLabel = clean(reservation?.time_label, 80);
   const venue = clean(reservation?.venue, 80);
+  const sessionDateIso = resolveSessionDateIso({
+    dateIso: reservation?.date_iso ? String(reservation.date_iso).slice(0, 10) : null,
+    day,
+    asOfIso: new Date().toISOString().slice(0, 10),
+  });
   const unit = inferUnitPriceGbp({
     serviceName,
     timeLabel,
@@ -417,6 +451,8 @@ Deno.serve(async (req) => {
     serviceLabel: serviceName,
     detail: detailLine,
     day,
+    timeLabel,
+    sessionDateIso,
   });
   if (!("error" in trialQ)) {
     quotes.trial_one_off = trialQuotePayload(trialQ);
@@ -664,6 +700,8 @@ Deno.serve(async (req) => {
           serviceLabel: serviceName,
           detail: detailLine,
           day,
+          timeLabel,
+          sessionDateIso,
         })
         : quoteNewClientMidTermInvoice({
           term,
@@ -675,6 +713,15 @@ Deno.serve(async (req) => {
           detail: detailLine,
         });
     if ("error" in quote) return json(400, { ok: false, error: quote.error });
+
+    const isTrial = scope === "trial_session";
+    const bookingService = bookingPortalServiceLabel(serviceKey, serviceName, { isTrial });
+    const bookingSlot = [day, timeLabel].filter(Boolean).join(" ");
+    const familyPaymentLabel = familyBookingPaymentMethodLabel(
+      quote.paymentMethodHint,
+      quote.paymentSchedule,
+      { isTrial, notes: `Finish booking · ${funding} · ${scope} · ${plan}` },
+    );
 
     const ownerId = await resolvePortalInvoiceOwnerUserId(admin);
     if (!ownerId) return json(500, { ok: false, error: "invoice_owner_missing" });
@@ -688,7 +735,6 @@ Deno.serve(async (req) => {
       vatMode: "vat_20",
       lineDescription: quote.lineDescription,
       reference: quote.reference,
-      service: serviceName,
       notes: `Finish booking · ${funding} · ${scope} · ${plan} · token ${token.id}`,
       quantity: quote.remainingSessions,
       shareStatus: "ready",
@@ -701,6 +747,10 @@ Deno.serve(async (req) => {
       billingTerm: quote.term,
       lineItems: quote.lineItems,
       descriptionComplete: false,
+      bookingService,
+      bookingSlot,
+      bookingVenue: venue || null,
+      familyPaymentLabel,
     });
     if (!created.ok) {
       return json(500, { ok: false, error: created.error || "invoice_failed" });

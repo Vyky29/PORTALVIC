@@ -4018,6 +4018,21 @@
           booking_status: "registration_started",
           registration_status: "started",
           service_viewed: (slot && slot.serviceId) || "",
+          pending_booking: {
+            from: "bookingportal",
+            slot_id: slot.id,
+            service_id: (slot && slot.serviceId) || null,
+            service_name: (svc && svc.name) || null,
+            venue: slot.venue || null,
+            day: slot.day || null,
+            time: slot.timeLabel || null,
+            date_iso: slot.dateIso || null,
+            activity: slot.activityName || slot.crashActivity || null,
+            booking_mode: slot.bookingMode || null,
+            week_id: slot.weekId || null,
+            block_id: slot.blockId || null,
+            booking_kind: bookingKind,
+          },
         });
       }
     } catch (_e2) {

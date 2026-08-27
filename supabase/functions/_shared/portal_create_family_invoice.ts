@@ -67,6 +67,15 @@ export type PortalFamilyInvoiceCreateInput = {
   lineItems?: PortalInvoiceLineItem[];
   /** Skip PO: line on PDF (Ealing year INV-Ps). */
   omitPoLine?: boolean;
+  /** Ealing PDF header block (Service / Slot / Venue). */
+  ealingService?: string | null;
+  ealingSlot?: string | null;
+  ealingVenue?: string | null;
+  /** Finish-booking family invoices: Service / Slot / Venue bullets + payment line. */
+  bookingService?: string | null;
+  bookingSlot?: string | null;
+  bookingVenue?: string | null;
+  familyPaymentLabel?: string | null;
 };
 
 export type PortalFamilyInvoiceCreateResult =
@@ -81,6 +90,182 @@ export type PortalFamilyInvoiceCreateResult =
 
 function clean(v: unknown, max = 500): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+/** Office marker in share.notes: [[ealing:svc=…|slot=…|venue=…]] or [[hf:…]] */
+export function formatEalingPdfHeaderMarker(input: {
+  service?: string | null;
+  slot?: string | null;
+  venue?: string | null;
+}): string {
+  return formatLaPdfHeaderMarker("ealing", input);
+}
+
+export function formatHfPdfHeaderMarker(input: {
+  service?: string | null;
+  slot?: string | null;
+  venue?: string | null;
+}): string {
+  return formatLaPdfHeaderMarker("hf", input);
+}
+
+export function formatBookingPdfHeaderMarker(input: {
+  service?: string | null;
+  slot?: string | null;
+  venue?: string | null;
+  plan?: string | null;
+}): string {
+  const parts = [
+    clean(input.service, 120) ? `svc=${clean(input.service, 120)}` : "",
+    clean(input.slot, 160) ? `slot=${clean(input.slot, 160)}` : "",
+    clean(input.venue, 120) ? `venue=${clean(input.venue, 120)}` : "",
+    clean(input.plan, 80) ? `plan=${clean(input.plan, 80)}` : "",
+  ].filter(Boolean);
+  return parts.length ? `[[booking:${parts.join("|")}]]` : "";
+}
+
+function formatLaPdfHeaderMarker(
+  tag: "ealing" | "hf",
+  input: {
+    service?: string | null;
+    slot?: string | null;
+    venue?: string | null;
+  },
+): string {
+  const parts = [
+    clean(input.service, 120) ? `svc=${clean(input.service, 120)}` : "",
+    clean(input.slot, 160) ? `slot=${clean(input.slot, 160)}` : "",
+    clean(input.venue, 120) ? `venue=${clean(input.venue, 120)}` : "",
+  ].filter(Boolean);
+  return parts.length ? `[[${tag}:${parts.join("|")}]]` : "";
+}
+
+function parseLaPdfHeaderParts(body: string): { service: string; slot: string; venue: string; plan: string } {
+  const out = { service: "", slot: "", venue: "", plan: "" };
+  for (const part of body.split("|")) {
+    const i = part.indexOf("=");
+    if (i < 0) continue;
+    const k = part.slice(0, i).trim().toLowerCase();
+    const v = part.slice(i + 1).trim();
+    if (k === "svc" || k === "service") out.service = clean(v, 120);
+    else if (k === "slot") out.slot = clean(v, 160);
+    else if (k === "venue") out.venue = clean(v, 120);
+    else if (k === "plan") out.plan = clean(v, 80);
+  }
+  return out;
+}
+
+export function parseEalingPdfHeader(
+  notes: unknown,
+): { service: string; slot: string; venue: string } | null {
+  return parseLaPdfHeader(notes);
+}
+
+export function parseLaPdfHeader(
+  notes: unknown,
+): { service: string; slot: string; venue: string } | null {
+  const raw = String(notes == null ? "" : notes);
+  const m = raw.match(/\[\[(?:ealing|hf|la):([^\]]+)\]\]/i);
+  if (!m) return null;
+  const out = parseLaPdfHeaderParts(m[1]);
+  return out.service || out.slot || out.venue ? out : null;
+}
+
+export function parseBookingPdfHeader(
+  notes: unknown,
+): { service: string; slot: string; venue: string; plan: string } | null {
+  const raw = String(notes == null ? "" : notes);
+  const m = raw.match(/\[\[booking:([^\]]+)\]\]/i);
+  if (!m) return null;
+  const out = parseLaPdfHeaderParts(m[1]);
+  return out.service || out.slot || out.venue || out.plan ? out : null;
+}
+
+function usesFamilyBookingHeaderBlock(input: {
+  readyBy?: string | null;
+  notes?: string | null;
+  bookingService?: string | null;
+  isLaFunded?: boolean;
+}): boolean {
+  if (input.isLaFunded) return false;
+  const readyBy = clean(input.readyBy, 160);
+  return (
+    readyBy === "finish_booking" ||
+    /\[\[booking:/i.test(String(input.notes || "")) ||
+    !!clean(input.bookingService, 120)
+  );
+}
+
+function usesLaServiceHeaderBlock(input: {
+  readyBy?: string | null;
+  notes?: string | null;
+  omitPoLine?: boolean;
+  laService?: string | null;
+  laSlot?: string | null;
+  laVenue?: string | null;
+}): boolean {
+  const readyBy = clean(input.readyBy, 160);
+  const notes = clean(input.notes, 800);
+  return (
+    !!input.omitPoLine ||
+    /ealing/i.test(readyBy) ||
+    /ealing/i.test(notes) ||
+    /hf_year_draft/i.test(readyBy) ||
+    /\[\[hf:/i.test(notes) ||
+    !!(clean(input.laService, 120) || clean(input.laSlot, 120) || clean(input.laVenue, 120))
+  );
+}
+
+export function isHfYearDraftInvoice(input: {
+  readyBy?: string | null;
+  notes?: string | null;
+}): boolean {
+  const readyBy = clean(input.readyBy, 160);
+  const notes = clean(input.notes, 800);
+  return /hf_year_draft/i.test(readyBy) || /\[\[hf:/i.test(notes);
+}
+
+/** Office marker: [[hf_months:September 2026=150.00|October 2026=200.00|…]] */
+export function formatHfMonthlyScheduleMarker(
+  months: Array<{ label: string; amountGbp: number }>,
+): string {
+  if (!months.length) return "";
+  const body = months
+    .map((m) => `${clean(m.label, 40)}=${round2(m.amountGbp).toFixed(2)}`)
+    .join("|");
+  return `[[hf_months:${body}]]`;
+}
+
+export function parseHfMonthlySchedule(
+  notes: unknown,
+): Array<{ label: string; amountGbp: number }> | null {
+  const raw = String(notes == null ? "" : notes);
+  const m = raw.match(/\[\[hf_months:([^\]]+)\]\]/i);
+  if (!m) return null;
+  const out: Array<{ label: string; amountGbp: number }> = [];
+  for (const part of m[1].split("|")) {
+    const eq = part.lastIndexOf("=");
+    if (eq < 0) continue;
+    const label = part.slice(0, eq).trim();
+    const amountGbp = round2(parseFloat(part.slice(eq + 1)));
+    if (!label || !Number.isFinite(amountGbp) || amountGbp <= 0) continue;
+    out.push({ label, amountGbp });
+  }
+  return out.length ? out : null;
+}
+
+/** @deprecated Equal-split marker — use formatHfMonthlyScheduleMarker. */
+export function formatHfMonthlyClaimMarker(totalGbp: number, months = 11): string {
+  return formatHfMonthlyScheduleMarker([]);
+}
+
+/** @deprecated Equal-split parse — use parseHfMonthlySchedule. */
+export function parseHfMonthlyClaim(
+  notes: unknown,
+): { months: number; amountGbp: number } | null {
+  const rows = parseHfMonthlySchedule(notes);
+  if (!rows?.length) return null;
+  return { months: rows.length, amountGbp: rows[0].amountGbp };
 }
 
 /** Keep line breaks for invoice description bodies (clean() would collapse them). */
@@ -126,9 +311,18 @@ async function resolveFamilyBillTo(
   const parents = (rows || []) as ParentContactBillRow[];
   const names: string[] = [];
   for (const row of parents) {
-    const display =
+    const first = clean(row.parent_first_name, 80);
+    const last = clean(row.parent_last_name, 80);
+    let display =
       clean(row.parent_display, 120) ||
-      [row.parent_first_name, row.parent_last_name].filter(Boolean).join(" ").trim();
+      [first, last].filter(Boolean).join(" ").trim();
+    if (first && last && first.toLowerCase() === last.toLowerCase()) {
+      display = first;
+    } else if (first && last) {
+      display = `${first} ${last}`.trim();
+    } else if (first) {
+      display = first;
+    }
     if (display && !names.some((n) => n.toLowerCase() === display.toLowerCase())) {
       names.push(display);
     }
@@ -181,6 +375,30 @@ function invoiceModeLabel(
   return plan ? `${channel} · ${plan}` : channel;
 }
 
+/** Finish-booking PDF: Bank transfer (One-off payment) — only the chosen plan. */
+export function familyBookingPaymentMethodLabel(
+  paymentMethodHint: string,
+  schedule?: InvoicePaymentScheduleRow[],
+  opts?: { notes?: string | null; isTrial?: boolean },
+): string {
+  const channel = invoicePaymentChannelLabel(paymentMethodHint);
+  if (opts?.isTrial) return `${channel} (One-off payment)`;
+  const plan = paymentSchedulePlanShortLabel(schedule || [], {
+    notes: opts?.notes,
+    paymentMethodHint,
+  });
+  if (!plan) return channel;
+  if (/one-off/i.test(plan)) return `${channel} (One-off payment)`;
+  if (/flexi/i.test(plan)) return `${channel} (Flexi payment)`;
+  if (/own way/i.test(plan)) return `${channel} (Own way)`;
+  if (/gocardless/i.test(plan)) {
+    return /monthly/i.test(plan)
+      ? `${channel} (Monthly payment)`
+      : `${channel} (One-off payment)`;
+  }
+  return `${channel} (${plan.replace(/\s*\([^)]*\)\s*/g, " ").trim()})`;
+}
+
 function invoiceDescriptionLines(input: {
   lineDescription: string;
   vatMode: PortalInvoiceVatMode;
@@ -195,6 +413,15 @@ function invoiceDescriptionLines(input: {
   hasLineItems: boolean;
   /** Ealing year INV-Ps: Client ID + Reference only (no PO line). */
   omitPoLine?: boolean;
+  hfYearDraft?: boolean;
+  ealingService?: string | null;
+  ealingSlot?: string | null;
+  ealingVenue?: string | null;
+  familyBookingHeader?: boolean;
+  bookingService?: string | null;
+  bookingSlot?: string | null;
+  bookingVenue?: string | null;
+  familyPaymentLabel?: string | null;
 }): string[] {
   const descriptionFromInput = String(input.lineDescription)
     .split("\n")
@@ -208,14 +435,52 @@ function invoiceDescriptionLines(input: {
     ? descriptionFromInput.slice(0, firstBlank >= 0 ? firstBlank : 1)
     : descriptionFromInput.slice(0, 12);
   if (input.isLaFunded) {
+    const ealingHeader =
+      !!input.omitPoLine &&
+      !!(
+        clean(input.ealingService, 120) ||
+        clean(input.ealingSlot, 120) ||
+        clean(input.ealingVenue, 120)
+      );
     /* LA / NHS funder invoices: never print participant or parent names.
-     * Do not print Payment Method (Flexi / bank) — authority invoices are BACS to the LA. */
+     * Ealing year: Client ID + Service/Slot/Venue + Reference (no PO, no Flexi). */
+    if (ealingHeader) {
+      return [
+        `Client ID: ${input.clientIdLabel || "—"}`,
+        input.hfYearDraft ? `PO: ${input.poLabel || "—"}` : null,
+        clean(input.ealingService, 120)
+          ? `Service: ${clean(input.ealingService, 120)}`
+          : null,
+        clean(input.ealingSlot, 160)
+          ? `Slot: ${clean(input.ealingSlot, 160)}`
+          : null,
+        clean(input.ealingVenue, 120)
+          ? `Venue: ${clean(input.ealingVenue, 120)}`
+          : null,
+        // Year already shown in the invoice Reference box — do not repeat here.
+      ].filter((x): x is string => x !== null);
+    }
     return [
       ...descriptionBody,
       "",
       `Client ID: ${input.clientIdLabel || "—"}`,
       input.omitPoLine ? null : `PO: ${input.poLabel || "—"}`,
       input.reference ? `- Reference: ${input.reference}` : null,
+    ].filter((x): x is string => x !== null);
+  }
+  if (input.familyBookingHeader) {
+    return [
+      ...descriptionBody,
+      "",
+      `- Participant's Name: ${input.displayName}`,
+      clean(input.bookingService, 120)
+        ? `- Service: ${clean(input.bookingService, 120)}`
+        : null,
+      clean(input.bookingSlot, 160) ? `- Slot: ${clean(input.bookingSlot, 160)}` : null,
+      clean(input.bookingVenue, 120) ? `- Venue: ${clean(input.bookingVenue, 120)}` : null,
+      clean(input.familyPaymentLabel, 160)
+        ? `- Payment Method: ${clean(input.familyPaymentLabel, 160)}`
+        : null,
     ].filter((x): x is string => x !== null);
   }
   return [
@@ -282,6 +547,24 @@ export async function createPortalFamilyInvoice(
     cleanMultiline(input.lineDescription, 2400) ||
     "Structured activity support delivered for a SEND participant.";
   let notes = clean(input.notes, 800) || null; // Admin-only — never sent to parent portal.
+  const familyPaymentLabel =
+    clean(input.familyPaymentLabel, 160) ||
+    null;
+  const bookingPaymentPlan = familyPaymentLabel
+    ? (familyPaymentLabel.match(/\(([^)]+)\)\s*$/)?.[1] || null)
+    : null;
+  const bookingHdrInput = {
+    service: clean(input.bookingService, 120) || null,
+    slot: clean(input.bookingSlot, 160) || null,
+    venue: clean(input.bookingVenue, 120) || null,
+    plan: bookingPaymentPlan ? clean(bookingPaymentPlan, 80) : null,
+  };
+  const bookingMarker = formatBookingPdfHeaderMarker(bookingHdrInput);
+  if (bookingMarker) {
+    notes = notes && !notes.includes("[[booking:")
+      ? `${notes} ${bookingMarker}`.slice(0, 800)
+      : notes || bookingMarker;
+  }
   const shareStatus = input.shareStatus === "hidden" ? "hidden" : "ready";
   const paymentMethodHint =
     input.paymentMethodHint ||
@@ -339,6 +622,49 @@ export async function createPortalFamilyInvoice(
     dueDateIso: dueDate,
   });
   const isLaFunded = paymentMethodHint === "la_funded";
+  const laHdr =
+    parseLaPdfHeader(input.notes) ||
+    (input.ealingService || input.ealingSlot || input.ealingVenue
+      ? {
+        service: clean(input.ealingService, 120),
+        slot: clean(input.ealingSlot, 160),
+        venue: clean(input.ealingVenue, 120),
+      }
+      : null);
+  const laServiceHeader = usesLaServiceHeaderBlock({
+    readyBy: input.readyBy,
+    notes: input.notes,
+    omitPoLine: input.omitPoLine,
+    laService: laHdr?.service,
+    laSlot: laHdr?.slot,
+    laVenue: laHdr?.venue,
+  });
+  const hfYearDraft = isHfYearDraftInvoice({
+    readyBy: input.readyBy,
+    notes: input.notes,
+  });
+  const hfMonthlySchedule = hfYearDraft ? parseHfMonthlySchedule(input.notes) : null;
+  const bookingHdr =
+    parseBookingPdfHeader(notes) ||
+    (bookingHdrInput.service || bookingHdrInput.slot || bookingHdrInput.venue
+      ? {
+        service: bookingHdrInput.service || "",
+        slot: bookingHdrInput.slot || "",
+        venue: bookingHdrInput.venue || "",
+        plan: bookingHdrInput.plan || "",
+      }
+      : null);
+  const familyBookingHeader = usesFamilyBookingHeaderBlock({
+    readyBy,
+    notes,
+    bookingService: bookingHdr?.service || bookingHdrInput.service,
+    isLaFunded,
+  });
+  const resolvedFamilyPaymentLabel =
+    familyPaymentLabel ||
+    (bookingHdr?.plan
+      ? `${invoicePaymentChannelLabel(paymentMethodHint)} (${bookingHdr.plan})`
+      : null);
   const descriptionLines = invoiceDescriptionLines({
     lineDescription,
     vatMode,
@@ -351,10 +677,16 @@ export async function createPortalFamilyInvoice(
     modeLabel,
     isLaFunded,
     hasLineItems: !!input.lineItems?.length,
-    omitPoLine:
-      !!input.omitPoLine ||
-      /ealing/i.test(clean(input.readyBy, 120)) ||
-      /ealing/i.test(clean(input.notes, 200)),
+    omitPoLine: laServiceHeader,
+    hfYearDraft,
+    ealingService: laHdr?.service || null,
+    ealingSlot: laHdr?.slot || null,
+    ealingVenue: laHdr?.venue || null,
+    familyBookingHeader,
+    bookingService: bookingHdr?.service || bookingHdrInput.service,
+    bookingSlot: bookingHdr?.slot || bookingHdrInput.slot,
+    bookingVenue: bookingHdr?.venue || bookingHdrInput.venue,
+    familyPaymentLabel: resolvedFamilyPaymentLabel,
   });
 
   let pdfBytes: Uint8Array;
@@ -364,7 +696,7 @@ export async function createPortalFamilyInvoice(
       invoiceDateIso: invoiceDate,
       dueDateIso: dueDate,
       reference,
-      service,
+      service: familyBookingHeader ? null : service,
       vatMode,
       totalGbp: amountGbp,
       quantity,
@@ -379,6 +711,7 @@ export async function createPortalFamilyInvoice(
       hidePaymentPlan: isLaFunded,
       paymentSchedule: createSchedule,
       amountPaidGbp: 0,
+      paymentAdviceMonths: hfMonthlySchedule || undefined,
     });
   } catch (err) {
     console.error("[createPortalFamilyInvoice] pdf", err);
@@ -417,7 +750,7 @@ export async function createPortalFamilyInvoice(
       document_type: "client_invoice",
       category: "billing",
       title,
-      related_date: dueDate || invoiceDate,
+      related_date: invoiceDate,
       related_client: displayName,
       file_url: storagePath,
       source_page:
@@ -512,6 +845,7 @@ export async function resolvePortalInvoiceOwnerUserId(
 export async function regeneratePortalInvoiceSharePdf(
   admin: SupabaseClient,
   invoiceShareId: string,
+  opts?: { invoiceDateIso?: string | null },
 ): Promise<{ ok: true; pdfStoragePath: string } | { ok: false; error: string }> {
   const shareId = clean(invoiceShareId, 80);
   if (!shareId) return { ok: false, error: "invoice_id_required" };
@@ -576,7 +910,12 @@ export async function regeneratePortalInvoiceSharePdf(
   const qtyRaw = Number(share.quantity);
   const quantity = Number.isFinite(qtyRaw) && qtyRaw > 0 ? Math.round(qtyRaw * 100) / 100 : 1;
   const dueDate = share.due_date ? String(share.due_date).slice(0, 10) : null;
+  const invoiceDateOverride =
+    opts?.invoiceDateIso && /^\d{4}-\d{2}-\d{2}$/.test(opts.invoiceDateIso)
+      ? opts.invoiceDateIso
+      : null;
   const invoiceDate =
+    invoiceDateOverride ||
     (doc.related_date ? String(doc.related_date).slice(0, 10) : null) ||
     (doc.created_at ? String(doc.created_at).slice(0, 10) : null) ||
     new Date().toISOString().slice(0, 10);
@@ -612,6 +951,38 @@ export async function regeneratePortalInvoiceSharePdf(
   // must not get a second metadata block appended on regeneration.
   const storedDescriptionComplete =
     !lineItems.length && /\bclient'?s?\s+(id|name)\s*:/i.test(lineDescription);
+  const isLaServiceHeader = usesLaServiceHeaderBlock({
+    readyBy: share.ready_by,
+    notes: share.notes,
+    omitPoLine: false,
+  });
+  const hfYearDraft = isHfYearDraftInvoice({
+    readyBy: share.ready_by,
+    notes: share.notes,
+  });
+  const hfMonthlySchedule = hfYearDraft ? parseHfMonthlySchedule(share.notes) : null;
+  const laHdr = isLaServiceHeader ? parseLaPdfHeader(share.notes) : null;
+  const shareNotes = clean(share.notes, 800) || null;
+  const bookingHdr = parseBookingPdfHeader(shareNotes);
+  const isLaFunded = paymentMethodHint === "la_funded";
+  const familyBookingHeader = usesFamilyBookingHeaderBlock({
+    readyBy: share.ready_by,
+    notes: shareNotes,
+    bookingService: bookingHdr?.service,
+    isLaFunded,
+  });
+  const isTrialBooking =
+    /trial session/i.test(reference || "") ||
+    /trial_session/i.test(shareNotes || "");
+  const resolvedFamilyPaymentLabel =
+    bookingHdr?.plan
+      ? `${invoicePaymentChannelLabel(paymentMethodHint)} (${bookingHdr.plan})`
+      : familyBookingHeader
+        ? familyBookingPaymentMethodLabel(paymentMethodHint, paymentSchedule, {
+          notes: shareNotes,
+          isTrial: isTrialBooking,
+        })
+        : null;
   const descriptionLines = invoiceDescriptionLines({
     lineDescription,
     vatMode,
@@ -622,11 +993,18 @@ export async function regeneratePortalInvoiceSharePdf(
     quantity,
     reference,
     modeLabel,
-    isLaFunded: paymentMethodHint === "la_funded",
+    isLaFunded,
     hasLineItems: lineItems.length > 0,
-    omitPoLine:
-      /ealing/i.test(clean(share.ready_by, 160)) ||
-      /ealing/i.test(clean(share.notes, 200)),
+    omitPoLine: isLaServiceHeader,
+    hfYearDraft,
+    ealingService: laHdr?.service || null,
+    ealingSlot: laHdr?.slot || null,
+    ealingVenue: laHdr?.venue || null,
+    familyBookingHeader,
+    bookingService: bookingHdr?.service || null,
+    bookingSlot: bookingHdr?.slot || null,
+    bookingVenue: bookingHdr?.venue || null,
+    familyPaymentLabel: resolvedFamilyPaymentLabel,
   });
 
   let pdfBytes: Uint8Array;
@@ -636,7 +1014,7 @@ export async function regeneratePortalInvoiceSharePdf(
       invoiceDateIso: invoiceDate,
       dueDateIso: dueDate,
       reference,
-      service: null,
+      service: familyBookingHeader ? null : (clean(share.service, 80) || null),
       vatMode,
       totalGbp: amountGbp,
       quantity,
@@ -652,6 +1030,7 @@ export async function regeneratePortalInvoiceSharePdf(
       hidePaymentPlan: paymentMethodHint === "la_funded",
       paymentSchedule,
       amountPaidGbp,
+      paymentAdviceMonths: hfMonthlySchedule || undefined,
     });
   } catch (err) {
     console.error("[regeneratePortalInvoiceSharePdf] pdf", err);
@@ -674,9 +1053,11 @@ export async function regeneratePortalInvoiceSharePdf(
 
   const oldPath = doc.file_url ? String(doc.file_url) : "";
   const now = new Date().toISOString();
+  const docPatch: Record<string, unknown> = { file_url: storagePath };
+  if (invoiceDateOverride) docPatch.related_date = invoiceDateOverride;
   const { error: docErr } = await admin
     .from("documents")
-    .update({ file_url: storagePath })
+    .update(docPatch)
     .eq("id", doc.id);
   if (docErr) {
     console.error("[regeneratePortalInvoiceSharePdf] doc", docErr.message);

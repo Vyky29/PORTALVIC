@@ -5,6 +5,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { syncParentFormPhotoToParticipantAvatar } from "../_shared/participant_avatar.ts";
 import { ensureInterestedClientFromRegistration } from "../_shared/portal_interested_client.ts";
 import { notifyOfficeRegistrationSubmitted } from "../_shared/portal_booking_lead_office_notify.ts";
+import {
+  extractBookingRequest,
+  loadPendingBookingFromLeadSession,
+  loadPendingBookingForEmail,
+  type PortalBookingRequest,
+} from "../_shared/portal_booking_context.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -51,58 +57,7 @@ function parseDob(raw: string): string | null {
 /** Soft hold window while admin reviews the registration form. */
 const SLOT_HOLD_DAYS = 21;
 
-type BookingRequest = {
-  from: string;
-  slot_id: string;
-  service_id: string | null;
-  service_name: string | null;
-  venue: string | null;
-  day: string | null;
-  time: string | null;
-  activity: string | null;
-  booking_mode: string | null;
-  week_id: string | null;
-  block_id: string | null;
-  date_iso: string | null;
-  pack: string | null;
-  booking_kind: "trial" | "term";
-};
-
-function asTrimmed(value: unknown, max = 200): string | null {
-  const s = sanitizePart(String(value ?? ""), max);
-  return s || null;
-}
-
-function extractBookingRequest(payload: Record<string, unknown>): BookingRequest | null {
-  const raw = payload.booking_request;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const br = raw as Record<string, unknown>;
-  const slotId = asTrimmed(br.slot_id, 160);
-  if (!slotId) return null;
-  const dateRaw = asTrimmed(br.date || br.date_iso, 32);
-  const dateIso = dateRaw && /^\d{4}-\d{2}-\d{2}$/.test(dateRaw) ? dateRaw : null;
-  const kindRaw = String(br.booking_kind || "").trim().toLowerCase();
-  const bookingKind =
-    kindRaw === "trial" || kindRaw === "trial_session" || kindRaw === "taster"
-      ? "trial"
-      : "term";
-  return {
-    from: asTrimmed(br.from, 40) || "bookingportal",
-    slot_id: slotId,
-    service_id: asTrimmed(br.service || br.service_id, 80),
-    service_name: asTrimmed(br.service_name, 120),
-    venue: asTrimmed(br.venue, 80),
-    day: asTrimmed(br.day, 40),
-    time: asTrimmed(br.time || br.time_label, 80),
-    activity: asTrimmed(br.activity || br.crash_activity, 120),
-    booking_mode: asTrimmed(br.booking_mode, 40),
-    week_id: asTrimmed(br.week_id, 40),
-    block_id: asTrimmed(br.block_id, 40),
-    date_iso: dateIso,
-    pack: asTrimmed(br.pack || br.pack_label, 80),
-    booking_kind: bookingKind,
-  };
-}
+type BookingRequest = PortalBookingRequest;
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -297,11 +252,6 @@ Deno.serve(async (req) => {
     }
   }
 
-  const bookingRequest = extractBookingRequest(payload);
-  if (bookingRequest) {
-    payload = { ...payload, booking_request: bookingRequest };
-  }
-
   const parentName = sanitizePart(String(form.get("parent_name") || ""), 200) || null;
   const parentEmail = sanitizePart(String(form.get("parent_email") || ""), 200) || null;
   const parentPhone = sanitizePart(String(form.get("parent_phone") || ""), 80) || null;
@@ -315,13 +265,26 @@ Deno.serve(async (req) => {
     200,
   );
 
+  const adminEarly = createClient(baseUrl, serviceRole, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  let bookingRequest = extractBookingRequest(payload);
+  if (!bookingRequest && bookingLeadSessionToken) {
+    bookingRequest = await loadPendingBookingFromLeadSession(adminEarly, bookingLeadSessionToken);
+  }
+  if (!bookingRequest && parentEmail) {
+    bookingRequest = await loadPendingBookingForEmail(adminEarly, parentEmail);
+  }
+  if (bookingRequest) {
+    payload = { ...payload, booking_request: bookingRequest };
+  }
+
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const safeName = sanitizeFilenamePart(participantName);
   const prefix = `${formType}/${stamp}_${safeName}`;
 
-  const admin = createClient(baseUrl, serviceRole, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const admin = adminEarly;
 
   const pdfPath = `${prefix}/form.pdf`;
   const pdfBytes = new Uint8Array(await pdfFile.arrayBuffer());
@@ -492,6 +455,15 @@ Deno.serve(async (req) => {
         console.warn("[portal-parent-form-submit] slot reservation", holdErr.message);
       } else {
         reservationId = holdRow?.id ?? null;
+        if (parentEmail) {
+          await admin
+            .from("portal_booking_leads")
+            .update({
+              pending_booking_request: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("email_norm", parentEmail.toLowerCase());
+        }
       }
     } catch (holdCatch) {
       console.warn("[portal-parent-form-submit] slot reservation", holdCatch);
