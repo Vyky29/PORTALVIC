@@ -19,12 +19,13 @@ export type LaBillToProfile = {
 /** H&F Children's Services — participants under 18. */
 export const HF_CHILDREN_BILL_TO: LaBillToProfile = {
   key: "hf_children",
-  name: "Hammersmith & Fulham Children's Services",
+  name: "Children's Services, Hammersmith and Fulham Council",
   lines: [
-    "Hammersmith & Fulham Council",
-    "145 King Street",
-    "Hammersmith",
-    "W6 9XY",
+    "The Stephen Wiltshire Centre",
+    "Queensmill Road",
+    "Fulham",
+    "London",
+    "SW6 6JR",
     "UNITED KINGDOM",
   ],
   paymentEmail: "VIMenquiries@hants.gov.uk",
@@ -33,16 +34,15 @@ export const HF_CHILDREN_BILL_TO: LaBillToProfile = {
     "Please email pdf copy of invoice/s to VIMenquiries@hants.gov.uk for payment to be processed and cc in sendinvoices@lbhf.gov.uk for our records.",
 };
 
-/** H&F Adult Social Care Payments — participants 18+. */
+/** H&F Adult Social Care — participants 18+ (Learning Disabilities / ASC). */
 export const HF_ADULT_ASC_BILL_TO: LaBillToProfile = {
   key: "hf_adult_asc",
-  name: "ASC Payments team",
+  name: "Learning Disabilities Team (LBHF - ASC)",
   lines: [
-    "Corporate services",
-    "Hammersmith & Fulham Council",
-    "145 King Street",
-    "London",
-    "W6 9XY",
+    "Parkview Centre for Health and Wellbeing",
+    "Cranston Court",
+    "56 Bloemfontein Road",
+    "London W12 7FG",
     "UNITED KINGDOM",
   ],
   paymentEmail: "ASCPayments@lbhf.gov.uk",
@@ -56,6 +56,28 @@ function normalizeNameKey(v: unknown): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+/** Ealing Council — Business Support Team (BST). */
+export const EALING_BST_BILL_TO: LaBillToProfile = {
+  key: "ealing_bst",
+  name: "Business Support Team (BST)",
+  lines: [
+    "2nd Floor South East (Plum)",
+    "Perceval House",
+    "14-16 Uxbridge Road",
+    "W5 2HL",
+    "UNITED KINGDOM",
+  ],
+  paymentEmail: "",
+  paymentCcEmail: "",
+  paymentInstruction: "",
+};
+
+/** True when funding text points at London Borough of Ealing. */
+export function isEalingFunder(text: unknown): boolean {
+  const s = String(text || "").toLowerCase();
+  return /\bealing\b/.test(s) && !isHammersmithFulhamFunder(s);
 }
 
 /** True when funding text points at Hammersmith & Fulham. */
@@ -75,6 +97,7 @@ const HF_BAND_OVERRIDES: Array<{ match: RegExp; band: "child" | "adult" }> = [
   { match: /\byassir\b/, band: "adult" },
   // Children (<18)
   { match: /\belijah\b/, band: "child" },
+  { match: /\bhane+ef\b/, band: "child" },
   { match: /\bfaris\b/, band: "child" },
   { match: /\bstephanie\b/, band: "child" },
   { match: /\babodi\b/, band: "child" },

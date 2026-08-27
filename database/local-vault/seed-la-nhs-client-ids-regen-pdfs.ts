@@ -48,7 +48,7 @@ const SEED: Record<string, { clientId: string; po?: string }> = {
   "aydaan-ah": { clientId: "780469" },
   samer: { clientId: "972515" },
   steven: { clientId: "719915" },
-  tinashe: { clientId: "724579" },
+  tinashe: { clientId: "514985" },
   "amar-rai": { clientId: "626186" },
   "yousef-al": { clientId: "790419" },
   /* NHS */

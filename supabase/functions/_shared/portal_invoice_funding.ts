@@ -10,8 +10,10 @@ import {
 } from "./reenrolment_catalog.ts";
 import type { PortalInvoiceVatMode } from "./portal_tax_invoice_pdf.ts";
 import {
+  isEalingFunder,
   isHammersmithFulhamFunder,
   laBillToAdminNote,
+  EALING_BST_BILL_TO,
   resolveHfBandOverride,
   resolveHfBillToProfile,
   type LaBillToProfile,
@@ -50,8 +52,6 @@ function pickClientId(data: Record<string, unknown>, fallback: string): string {
   ]) {
     const s = clean(data[key], 80);
     if (s && looksLikeAuthorityClientId(s)) return s;
-    /* Accept explicit non-slug values from the sheet even if short. */
-    if (s && !/^[a-z]+(?:-[a-z0-9]+)*$/i.test(s)) return s;
   }
   const fb = clean(fallback, 80);
   return looksLikeAuthorityClientId(fb) ? fb : "";
@@ -318,6 +318,14 @@ export async function resolveLaFunderBillTo(
         dobIso,
       }),
     );
+  }
+
+  if (
+    isEalingFunder(funderBlob) ||
+    isEalingFunder(funder) ||
+    isEalingFunder(fundingLabel)
+  ) {
+    return profileToBillTo(EALING_BST_BILL_TO);
   }
 
   if (funder) {

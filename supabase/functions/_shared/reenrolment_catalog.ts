@@ -679,6 +679,75 @@ export function dayPluralLabel(day: string): string {
   return `${d}s`;
 }
 
+const SLOT_HEADER_WEEKDAY_ORDER = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
+
+function titleCaseDaySingular(day: string): string {
+  const d = String(day || "").trim().toLowerCase().replace(/s$/, "");
+  if (!d) return "";
+  return d.charAt(0).toUpperCase() + d.slice(1);
+}
+
+function formatSlotHeaderDays(days: string[]): string {
+  const ordered = [...days]
+    .map(titleCaseDaySingular)
+    .filter(Boolean)
+    .sort(
+      (a, b) =>
+        SLOT_HEADER_WEEKDAY_ORDER.indexOf(a.toLowerCase()) -
+        SLOT_HEADER_WEEKDAY_ORDER.indexOf(b.toLowerCase()),
+    );
+  const uniq = [...new Set(ordered)];
+  if (uniq.length <= 1) return uniq[0] || "";
+  if (uniq.length === 2) return `${uniq[0]} & ${uniq[1]}`;
+  return `${uniq.slice(0, -1).join(", ")} & ${uniq[uniq.length - 1]}`;
+}
+
+/**
+ * PDF Slot header: group by clock, list day(s) per time.
+ * Same time on two days → "4.30 to 6 (Monday & Wednesday)".
+ * Different times → "6 to 6.30 (Tuesday), 12.30 to 2 (Sunday)".
+ */
+export function buildInvoiceSlotHeader(
+  slots: ParsedSlot[],
+  opts?: { skipDayCentre?: boolean; globalTimeOverride?: string },
+): string {
+  const byTime = new Map<string, string[]>();
+  const globalTime = String(opts?.globalTimeOverride || "").trim();
+  for (const s of slots || []) {
+    if (!s) continue;
+    if (opts?.skipDayCentre && s.isDayCentre) continue;
+    const day = titleCaseDaySingular(String(s.day || ""));
+    const t = String(globalTime || s.timeSlot || "").replace(/\s+/g, " ").trim();
+    if (!day || !t) continue;
+    const list = byTime.get(t) || [];
+    if (!list.some((d) => d.toLowerCase() === day.toLowerCase())) list.push(day);
+    byTime.set(t, list);
+  }
+  const entries = [...byTime.entries()].sort((a, b) => {
+    const order = (days: string[]) =>
+      Math.min(
+        ...days.map((d) => {
+          const i = SLOT_HEADER_WEEKDAY_ORDER.indexOf(d.toLowerCase());
+          return i >= 0 ? i : 99;
+        }),
+      );
+    return order(a[1]) - order(b[1]);
+  });
+  const parts: string[] = [];
+  for (const [time, days] of entries) {
+    parts.push(`${time} (${formatSlotHeaderDays(days)})`);
+  }
+  return parts.join(", ");
+}
+
 /** am/pm for a single clock token (club hours: 9–11 = am, 12 & 1–8 = pm). */
 function clockMeridiem(tok: string): "am" | "pm" | "" {
   const h = parseInt(String(tok || "").trim(), 10);

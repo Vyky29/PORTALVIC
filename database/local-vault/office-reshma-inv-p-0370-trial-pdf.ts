@@ -259,6 +259,18 @@ await admin.from("portal_booking_completion_tokens").update({
 await admin.from("portal_parent_invoice_share").update({
   reference_text: reference,
   notes,
+  line_items: [{
+    service_key: "AQUATIC_30",
+    description: "Aquatic Activity",
+    detail: `${bookingSlot} · Trial (1 session)`,
+    dates: "1 trial session",
+    quantity: 1,
+    unit_price_gbp: 50,
+    amount_gbp: 50,
+    xero_item_code: null,
+  }],
+  line_description:
+    "Structured activity support delivered within an aquatic environment for a SEND participant as part of funded provision.",
   updated_at: new Date().toISOString(),
 }).eq("id", share.id);
 
