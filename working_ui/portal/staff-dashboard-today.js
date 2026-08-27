@@ -2100,11 +2100,12 @@
         anchor = portalParseIsoDateLocal(isoPin);
       }
       if(!anchor || isNaN(anchor.getTime())) anchor = getViewAnchorCalendarDate(viewDay);
-      let sessionDateKey = useIsoPin
+      const viewCalendarIso = useIsoPin
         ? isoPin
         : (typeof portalIsoYmdFromDate === 'function'
           ? portalIsoYmdFromDate(anchor)
           : `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}-${String(anchor.getDate()).padStart(2, '0')}`);
+      const sessionDateKey = viewCalendarIso;
       const anchorDayWord = anchor && !isNaN(anchor.getTime())
         ? anchor.toLocaleDateString('en-GB', { weekday: 'long' })
         : viewDay;
@@ -2159,15 +2160,6 @@
             }catch(_fbShift){}
           }
         }
-        if(!baseModel.some(function(s){
-          return String(s.staffId || '').toLowerCase() === staffId
-            && normaliseIsoDate(s.session_date || s.sessionDate) === sessionDateKey;
-        }) && typeof portalBestStaffRosterIsoForWeekday === 'function'
-          && !portalCalendarIsoUsesSummerDatedRosterOnly(sessionDateKey)){
-          const altIso = portalBestStaffRosterIsoForWeekday(baseModel, staffId, anchorDayWord, anchor);
-          const floor = portalTermSummerRosterFromIso();
-          if(altIso && (!floor || altIso >= floor)) sessionDateKey = altIso;
-        }
       }
       let programmeWidePack = null;
       if(staffId){
@@ -2190,9 +2182,11 @@
       }
       const todaySessionsAfterFilter = baseModel.filter(function(s){
         if(programmeWidePack){
+          if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
+            return portalSessionSpreadsheetRowMatchesCalendarDate(s, viewCalendarIso, anchorDayWord);
+          }
           if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
-          if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
-            && !portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, anchorDayWord)) return false;
+          return true;
           /* ES-module scope check is not ready while classic scripts render — fall back to the inline check. */
           if(typeof window.portalLeadSpreadsheetSessionInScopeForLead === 'function'){
             return window.portalLeadSpreadsheetSessionInScopeForLead(
@@ -2208,9 +2202,11 @@
           return true;
         }
         if(String(s.staffId || '').toLowerCase() !== staffId) return false;
+        if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
+          return portalSessionSpreadsheetRowMatchesCalendarDate(s, viewCalendarIso, anchorDayWord);
+        }
         if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
-        return typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
-          && portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, anchorDayWord);
+        return false;
       }).filter(function(s){
         return !portalStaffDashboardOmitSpreadsheetSession(s, anchorDayWord, sessionDateKey);
       });
@@ -3984,6 +3980,9 @@
       dashboardData.portalTodaySectionHeading = '';
       dashboardData.portalTodaySectionMode = 'today';
       const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+      if(!liveToday){
+        dashboardData.portalTodayNextSessionPreview = null;
+      }
       if(liveToday && typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function' && portalStaffLiveTodayAwaitingInitialSchedule()){
         dashboardData.portalTodayEmptyPanelMode = dashboardData.portalIdentityResolved === false ? 'loading' : 'sync';
         dashboardData.portalTodayNextSessionPreview = null;
@@ -4039,7 +4038,7 @@
           var todaySettledEarly = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__);
           if(!todaySettledEarly) dashboardData.portalTodayEmptyPanelMode = 'sync';
         }
-      }else if(!portalNextSessionPreviewHasParticipants(dashboardData.portalTodayNextSessionPreview)){
+      }else if(liveToday && !portalNextSessionPreviewHasParticipants(dashboardData.portalTodayNextSessionPreview)){
         if(typeof portalStaffTodayScheduleCardsStillExpected === 'function'
           && portalStaffTodayScheduleCardsStillExpected(id)){
           dashboardData.portalTodayNextSessionPreview = null;

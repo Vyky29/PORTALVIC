@@ -83,6 +83,54 @@
   }
 
   /**
+   * Autumn 26/27 standing rows missing from summer MADRE (weekday snap source dates).
+   * Victor Tue 3.30-5 Cyrus was timetable-only until live MADRE catches up.
+   */
+  function applyAutumnStandingParticipantRows(rows) {
+    var out = Array.isArray(rows) ? rows.slice() : [];
+    var extras = [
+      {
+        client_name: "Cyrus",
+        day: "Tuesday",
+        instructors: "VICTOR",
+        service: "Day Centre",
+        area: "Hub Room",
+        time_slot: "3.30 to 5",
+        venue: "SwimFarm",
+        session_date: "2026-07-14",
+      },
+    ];
+    extras.forEach(function (row) {
+      var key = [
+        String(row.session_date || "").trim().slice(0, 10),
+        String(row.day || "").trim(),
+        rosterSlug(row.client_name),
+        String(row.instructors || "").trim().toUpperCase(),
+        String(row.time_slot || "").trim(),
+        rosterSlug(row.service),
+        String(row.area || "").trim(),
+        String(row.venue || "").trim(),
+      ].join("\0");
+      var dup = out.some(function (r) {
+        if (!r) return false;
+        var k = [
+          String(r.session_date || "").trim().slice(0, 10),
+          String(r.day || "").trim(),
+          rosterSlug(r.client_name),
+          String(r.instructors || "").trim().toUpperCase(),
+          String(r.time_slot || "").trim(),
+          rosterSlug(r.service),
+          String(r.area || "").trim(),
+          String(r.venue || "").trim(),
+        ].join("\0");
+        return k === key;
+      });
+      if (!dup) out.push(row);
+    });
+    return out;
+  }
+
+  /**
    * Canonical roster rows for STAFF_DASHBOARD_SOURCE.rows.
    * @param {{ skipDb?: boolean }} [opts]
    */
@@ -90,6 +138,7 @@
     opts = opts || {};
     var base = getBundleBaseRows();
     var merged = opts.skipDb ? base.slice() : applyPortalRosterDbRows(base);
+    merged = applyAutumnStandingParticipantRows(merged);
     return dedupeRosterAdapterRows(merged);
   }
 

@@ -766,7 +766,11 @@
       grid.setAttribute('data-session-count', String(count));
       if(!count){
         applyTodayGridSizing(grid, 0);
-        const preview = dashboardData && dashboardData.portalTodayNextSessionPreview;
+        const preview = (dashboardData && dashboardData.portalTodayNextSessionPreview
+          && typeof portalIsViewingLiveCalendarToday === 'function'
+          && portalIsViewingLiveCalendarToday())
+          ? dashboardData.portalTodayNextSessionPreview
+          : null;
         const loading = !!(dashboardData && dashboardData.portalIdentityResolved === false);
         const sid = String(
           (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
