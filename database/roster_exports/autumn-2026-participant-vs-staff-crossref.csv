@@ -1,17 +1,17 @@
 weekday,service,participant,time_range,venue,summer_instructor,autumn_instructor_planned,staff_pool_on_duty,booking_match,notes
-Monday,Aquatic Activity,Rayden Rana (trial INV-P-0370),4.30 to 5,Northolt,—,Dan,"Dan, Luliya",OK,Trial assigned to Dan (Northolt Mon 4.30-5); Luliya also on pool 4.30-6.30
+Monday,Aquatic Activity,Rayden Rana (trial INV-P-0370),4.30 to 5,Northolt,—,Dan,"Dan, Luliya",OK,Trial 4.30-5 → Dan (open); Luliya has Yunis same band. Gemma/Zayana/Adaam → Luliya not Dan.
 Monday,,CLOSED,4 to 4.30,Acton,YOUSSEF,YOUSSEF,"Roberto, Youssef",CHECK,
 Monday,,Adam Pi,4 to 5.30,Acton,ANGEL,TBC / departed,"Roberto, Youssef",GAP,Instructor left or bespoke block needs reassignment
 Monday,,Eddie,4.30 to 5,Acton,YOUSSEF,YOUSSEF,"Roberto, Youssef",CHECK,
 Monday,,Kirushy,4.30 to 5,Northolt  [removed from term — left programme Jun 2026],DAN,DAN,—,NO_POOL,
-Monday,,Yunis,4.30 to 5,Northolt,ROBERTO,Dan,"Dan, Luliya",OK,
-Monday,,Gemma,5 to 5.30,Northolt,DAN,Dan,"Dan, Luliya",OK,
+Monday,,Yunis,4.30 to 5,Northolt,ROBERTO,Luliya,"Dan, Luliya",OK,
+Monday,,Gemma,5 to 5.30,Northolt,DAN,Luliya,"Dan, Luliya",OK,
 Monday,,Joel,5 to 5.30,Acton,YOUSSEF,YOUSSEF,"Roberto, Youssef",CHECK,
 Monday,,Amar Ra,5 to 6,Northolt,ROBERTO,Dan,"Dan, Luliya",OK,
 Monday,,Steven C,5.30 to 6,Acton,ANGEL,TBC / departed,"Roberto, Youssef",GAP,Instructor left or bespoke block needs reassignment
-Monday,,Zayana,5.30 to 6,Northolt,DAN,Dan,"Dan, Luliya",OK,
+Monday,,Zayana,5.30 to 6,Northolt,DAN,Luliya,"Dan, Luliya",OK,
 Monday,,Abodi P,5.30 to 6.30,Acton,YOUSSEF,YOUSSEF,"Roberto, Youssef",CHECK,
-Monday,,Adaam Ah,6 to 6.30,Northolt,DAN,Dan,"Dan, Luliya",OK,
+Monday,,Adaam Ah,6 to 6.30,Northolt,DAN,Luliya,"Dan, Luliya",OK,
 Monday,,Mario,6 to 6.30,Acton,ANGEL,TBC / departed,"Roberto, Youssef",GAP,Instructor left or bespoke block needs reassignment
 Monday,,Yamik,6 to 6.30,Northolt,ROBERTO,Luliya,"Dan, Luliya",OK,
 Monday,,Tinashe,4.30 to 6,SwimFarm,"BISMARK, GIUSEPPE, JOHN",TBC (was Bismark/Giuseppe/John),—,GAP,Instructor left or bespoke block needs reassignment
@@ -48,14 +48,14 @@ Tuesday,,Richard,6 to 6.30,Acton,ANGEL,TBC / departed,"Aurora, Javier, Luliya, Y
 Tuesday,,Ikram,11 to 4,SwimFarm,"LULIA, MICHELLE","LULIA, MICHELLE","Michelle, Victor",CHECK,
 Tuesday,,Fadi,12.30 to 3,SwimFarm,"ROBERTO, VICTOR","ROBERTO, VICTOR","Michelle, Raul, Roberto, Victor",CHECK,
 Tuesday,,Sam,2 to 3,SwimFarm,TEFLON,TEFLON,—,NO_POOL,
-Wednesday,,Tyson,4.30 to 5,Northolt,DAN,DAN,"Dan, Luliya",CHECK,
-Wednesday,,Vithura,4.30 to 5,Northolt,ROBERTO,ROBERTO,"Dan, Luliya",CHECK,
+Wednesday,,Tyson,4.30 to 5,Northolt,DAN,Dan,"Dan, Luliya",OK,
+Wednesday,,Vithura,4.30 to 5,Northolt,ROBERTO,Luliya,"Dan, Luliya",OK,
 Wednesday,,Cyrus,4 to 4.30,Acton,JAVIER,JAVIER,"Javier, Youssef",CHECK,
 Wednesday,,NO CLIENT,4 to 4.30,Acton,YOUSSEF,YOUSSEF,"Javier, Youssef",CHECK,
-Wednesday,,Ruben,5 to 5.30,Northolt,DAN,DAN,"Dan, Luliya",CHECK,
-Wednesday,,Amar Ra,5 to 6,Northolt,ROBERTO,ROBERTO,"Dan, Luliya",CHECK,
-Wednesday,,Mia,5.30 to 6.30,Northolt,DAN,DAN,"Dan, Luliya",CHECK,
-Wednesday,,Amber,6 to 6.30,Northolt,ROBERTO,ROBERTO,"Dan, Luliya",CHECK,
+Wednesday,,Ruben,5 to 5.30,Northolt,DAN,Dan,"Dan, Luliya",OK,
+Wednesday,,Amar Ra,5 to 6,Northolt,ROBERTO,Dan,"Dan, Luliya",OK,
+Wednesday,,Mia,5.30 to 6.30,Northolt,DAN,Dan,"Dan, Luliya",OK,
+Wednesday,,Amber,6 to 6.30,Northolt,ROBERTO,Luliya,"Dan, Luliya",OK,
 Wednesday,,Kayden,6 to 6.30,Acton,JAVIER,JAVIER,"Javier, Youssef",CHECK,
 Wednesday,,NO CLIENT,6 to 6.30,Acton,YOUSSEF,YOUSSEF,"Javier, Youssef",CHECK,
 Wednesday,,Tinashe,4.30 to 6,SwimFarm,"BISMARK, GIUSEPPE, JOHN",TBC / departed,—,GAP,Instructor left or bespoke block needs reassignment
