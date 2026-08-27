@@ -86,12 +86,13 @@ def monday_template() -> list[tuple[str, str, str]]:
 
 def tuesday_template() -> list[tuple[str, str, str]]:
     return [
-        _pairs("Roberto", "11-3", "SwimFarm"),
-        _pairs("Michelle", "11-4", "SwimFarm"),
-        _pairs("Victor", "11-3", "SwimFarm"),
-        _pairs("Cyrus", "3.30-5", "SwimFarm"),
-        _pairs("Raul", "11-3", "SwimFarm"),
-        _pairs("Michelle", "3-4", "SwimFarm"),
+        # Morning DC — split cohorts (Ikram / Fadi / Cyrus), not one block per worker.
+        _pairs("Roberto", "11-3", "SwimFarm"),  # Ikram
+        _pairs("Michelle", "11-4", "SwimFarm"),  # Ikram
+        _pairs("Victor", "12.30-3", "SwimFarm"),  # Fadi
+        _pairs("Victor", "3.30-5", "SwimFarm"),  # Cyrus (participant)
+        _pairs("Raul", "12.30-3", "SwimFarm"),  # Fadi
+        _pairs("Michelle", "3-4", "SwimFarm"),  # Ikram
         _pairs("Luliya", "4.30-6.30", "Acton"),
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Javier", "4-6.30", "Acton"),

@@ -32,6 +32,8 @@ const INVOICE_NUMBER = "INV-P-0370";
 const DOC_ID = "98856501-f360-4fac-8b4b-d75a045a14ae";
 const TOKEN_ID = "99416c3f-6f15-45f1-944b-2a09c420ea31";
 const SLOT_ID = (Deno.env.get("SLOT_ID") || "").trim();
+/** Northolt Mon 4.30-5 trial: Dan (primary; Luliya also on pool shift). */
+const TRIAL_INSTRUCTOR = clean(Deno.env.get("TRIAL_INSTRUCTOR") || "Dan", 80);
 
 function loadEnv(p: string) {
   if (!existsSync(p)) return;
@@ -190,6 +192,7 @@ console.log({
   bookingSlot,
   venue: bookingRequest.venue,
   parentNameFromDoc,
+  trialInstructor: TRIAL_INSTRUCTOR,
 });
 
 if (!APPLY) {
@@ -243,12 +246,17 @@ if (!reservationId) {
       status: "validated",
       hold_expires_at: holdExpires,
       validated_at: new Date().toISOString(),
-      notes: "office_backfill|booking_kind=trial",
+      notes: `office_backfill|booking_kind=trial|instructor=${TRIAL_INSTRUCTOR}`,
     })
     .select("id")
     .single();
   if (holdErr) throw new Error(holdErr.message);
   reservationId = String(holdRow?.id || "");
+} else {
+  await admin.from("portal_booking_slot_reservations").update({
+    notes: `office_backfill|booking_kind=trial|instructor=${TRIAL_INSTRUCTOR}`,
+    updated_at: new Date().toISOString(),
+  }).eq("id", reservationId);
 }
 
 await admin.from("portal_booking_completion_tokens").update({

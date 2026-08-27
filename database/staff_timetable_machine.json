@@ -4558,14 +4558,6 @@
   {
     "date": "2026-09-01",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-09-01",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -4600,8 +4592,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-09-01",
@@ -4616,8 +4608,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-09-01",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-09-01",
@@ -5094,14 +5094,6 @@
   {
     "date": "2026-09-08",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-09-08",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -5136,8 +5128,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-09-08",
@@ -5152,8 +5144,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-09-08",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-09-08",
@@ -5630,14 +5630,6 @@
   {
     "date": "2026-09-15",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-09-15",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -5672,8 +5664,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-09-15",
@@ -5688,8 +5680,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-09-15",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-09-15",
@@ -6166,14 +6166,6 @@
   {
     "date": "2026-09-22",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-09-22",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -6208,8 +6200,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-09-22",
@@ -6224,8 +6216,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-09-22",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-09-22",
@@ -6702,14 +6702,6 @@
   {
     "date": "2026-09-29",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-09-29",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -6744,8 +6736,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-09-29",
@@ -6760,8 +6752,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-09-29",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-09-29",
@@ -7238,14 +7238,6 @@
   {
     "date": "2026-10-06",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-10-06",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -7280,8 +7272,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-10-06",
@@ -7296,8 +7288,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-10-06",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-10-06",
@@ -7774,14 +7774,6 @@
   {
     "date": "2026-10-13",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-10-13",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -7816,8 +7808,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-10-13",
@@ -7832,8 +7824,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-10-13",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-10-13",
@@ -8310,14 +8310,6 @@
   {
     "date": "2026-10-20",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-10-20",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -8352,8 +8344,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-10-20",
@@ -8368,8 +8360,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-10-20",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-10-20",
@@ -8918,14 +8918,6 @@
   {
     "date": "2026-11-03",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-11-03",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -8960,8 +8952,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-11-03",
@@ -8976,8 +8968,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-11-03",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-11-03",
@@ -9454,14 +9454,6 @@
   {
     "date": "2026-11-10",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-11-10",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -9496,8 +9488,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-11-10",
@@ -9512,8 +9504,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-11-10",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-11-10",
@@ -9990,14 +9990,6 @@
   {
     "date": "2026-11-17",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-11-17",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -10032,8 +10024,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-11-17",
@@ -10048,8 +10040,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-11-17",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-11-17",
@@ -10526,14 +10526,6 @@
   {
     "date": "2026-11-24",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-11-24",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -10568,8 +10560,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-11-24",
@@ -10584,8 +10576,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-11-24",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-11-24",
@@ -11062,14 +11062,6 @@
   {
     "date": "2026-12-01",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-12-01",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -11104,8 +11096,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-12-01",
@@ -11120,8 +11112,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-12-01",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-12-01",
@@ -11598,14 +11598,6 @@
   {
     "date": "2026-12-08",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-12-08",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -11640,8 +11632,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-12-08",
@@ -11656,8 +11648,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-12-08",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-12-08",
@@ -12134,14 +12134,6 @@
   {
     "date": "2026-12-15",
     "day": "Tuesday",
-    "venue": "SwimFarm",
-    "staff_name": "Cyrus",
-    "time_range": "3.30-5",
-    "raw_assignment": "Cyrus 3.30-5"
-  },
-  {
-    "date": "2026-12-15",
-    "day": "Tuesday",
     "venue": "Acton",
     "staff_name": "Javier",
     "time_range": "4-6.30",
@@ -12176,8 +12168,8 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Raul",
-    "time_range": "11-3",
-    "raw_assignment": "Raul 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Raul 12.30-3"
   },
   {
     "date": "2026-12-15",
@@ -12192,8 +12184,16 @@
     "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Victor",
-    "time_range": "11-3",
-    "raw_assignment": "Victor 11-3"
+    "time_range": "12.30-3",
+    "raw_assignment": "Victor 12.30-3"
+  },
+  {
+    "date": "2026-12-15",
+    "day": "Tuesday",
+    "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "3.30-5",
+    "raw_assignment": "Victor 3.30-5"
   },
   {
     "date": "2026-12-15",
