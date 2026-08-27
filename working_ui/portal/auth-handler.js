@@ -27,6 +27,11 @@ import {
   bindPortalRemoteLogoutOnStaleAuthGeneration,
 } from "./supabase-client.js?v=20260707-login-cache";
 import {
+  portalStaffIsDocumentsOnly,
+  portalStaffDocumentsOnlyHomeUrl,
+  portalStaffDocumentsOnlyRedirect,
+} from "./portal_staff_access.js?v=20260827-docs-only";
+import {
   resolveDemoEmail,
   resolveCorporateAuthEmail,
   resolveStaffKeyFromAuthEmail,
@@ -832,6 +837,9 @@ function resolveDashboardRedirect(route) {
 }
 
 function inferDashboardRoute(profile, authEmail) {
+  if (portalStaffIsDocumentsOnly(profile)) {
+    return portalStaffDocumentsOnlyHomeUrl();
+  }
   const effectiveRole = portalInferEffectiveRole(profile, authEmail);
   const fromWorkingUi =
     typeof window !== "undefined" &&
@@ -1745,6 +1753,18 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
 
     let profile = await portalBootstrapLoadStaffProfile(supabase, session, authEmailGate);
+
+    if (profile && typeof window !== "undefined") {
+      const docsOnlyRedirect = portalStaffDocumentsOnlyRedirect(profile);
+      if (docsOnlyRedirect) {
+        try {
+          window.location.replace(docsOnlyRedirect);
+        } catch {
+          window.location.href = docsOnlyRedirect;
+        }
+        return;
+      }
+    }
 
     if (profile && profile.is_active === false) {
       try {
