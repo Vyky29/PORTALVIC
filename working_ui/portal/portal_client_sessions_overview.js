@@ -4,7 +4,7 @@
 (function (global) {
   "use strict";
 
-  var TERM_LABEL = "Summer Term 2026";
+  var TERM_LABEL = "Autumn Term 2026";
 
   function clean(v) {
     return String(v == null ? "" : v)

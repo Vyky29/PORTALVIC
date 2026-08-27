@@ -9,7 +9,7 @@
   var VER = "20260805-cover-half-coalesce";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260724-roberto-off-0730",
+    "/portal/term_from_timetable.js?v=20260827-autumn-2627",
     "/portal/term_calendar_dashboard_shared.js?v=20260702-feedback-jun25",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260712-rayyan-f",

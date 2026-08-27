@@ -4579,7 +4579,7 @@
       portalTodayNextSessionPreview: null,
       week: [],
       /** Term grid: months/range filled from term_from_timetable.js; sample feedback only for demo usernames (see portalApplyTermCalendarForStaff). */
-      termName: 'Summer Term 2026',
+      termName: 'Autumn Term 2026',
       termCalendarYear: 2026,
       termCalendarMonths: [3, 4, 5, 6],
       termCalendarFirstDom: { 3: 13 },
@@ -6486,25 +6486,27 @@
       } else if(t && typeof t === 'object'){
         if(t.termName) dashboardData.termName = t.termName;
         dashboardData.termCalendarYear = 2026;
-        dashboardData.termCalendarMonths = [5, 6];
-        dashboardData.termCalendarFirstDom = {};
-        dashboardData.termDashboardCalendarFrom = '2026-06-01';
+        dashboardData.termCalendarMonths = [7, 8, 9, 10, 11];
+        dashboardData.termCalendarFirstDom = { 7: 31 };
+        dashboardData.termDashboardCalendarFrom = '2026-08-31';
         const dcKeys = Array.isArray(t.termStaffDayCentreCalendarKeys) ? t.termStaffDayCentreCalendarKeys : [];
         const isDc = dcKeys.indexOf(id) >= 0
           || (id === 'lulia' && dcKeys.indexOf('luliya') >= 0)
           || (id === 'luliya' && dcKeys.indexOf('lulia') >= 0);
         dashboardData.termDashboardCalendarTo = isDc
-          ? String(t.termDashboardCalendarToDayCentre || t.lastDate || '2026-07-31').slice(0, 10)
-          : String(t.termDashboardCalendarTo || '2026-07-17').slice(0, 10);
-        dashboardData.termHalfTermWeekStarts = [];
+          ? String(t.termDashboardCalendarToDayCentre || t.lastDate || '2026-12-17').slice(0, 10)
+          : String(t.termDashboardCalendarTo || '2026-12-31').slice(0, 10);
+        dashboardData.termHalfTermWeekStarts = Array.isArray(t.termHalfTermWeekStarts)
+          ? t.termHalfTermWeekStarts.slice()
+          : ['2026-10-26'];
       } else {
-        dashboardData.termName = 'Summer Term 2026';
+        dashboardData.termName = 'Autumn Term 2026';
         dashboardData.termCalendarYear = 2026;
-        dashboardData.termCalendarMonths = [5, 6];
-        dashboardData.termCalendarFirstDom = {};
-        dashboardData.termDashboardCalendarFrom = '2026-06-01';
-        dashboardData.termDashboardCalendarTo = '2026-07-17';
-        dashboardData.termHalfTermWeekStarts = [];
+        dashboardData.termCalendarMonths = [7, 8, 9, 10, 11];
+        dashboardData.termCalendarFirstDom = { 7: 31 };
+        dashboardData.termDashboardCalendarFrom = '2026-08-31';
+        dashboardData.termDashboardCalendarTo = '2026-12-31';
+        dashboardData.termHalfTermWeekStarts = ['2026-10-26'];
       }
       const demoList = window.PORTAL_TERM_UI_DEMO_USERNAMES || [];
       const demo = Array.isArray(demoList) && demoList.indexOf(id) !== -1;

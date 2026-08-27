@@ -3267,7 +3267,7 @@
         wl.innerHTML = (dashboardData.week || []).map(renderWeekRowHtml).join('');
       }
       const termTitle = document.getElementById('termSheetTitle');
-      if(termTitle) termTitle.textContent = dashboardData.termName || 'Summer Term 2026';
+      if(termTitle) termTitle.textContent = dashboardData.termName || 'Autumn Term 2026';
       renderTermCalendarGrid();
       renderQuickMenuSetupVisibility();
       if(typeof portalRefreshDashboardParticipantPhotos === 'function'){
