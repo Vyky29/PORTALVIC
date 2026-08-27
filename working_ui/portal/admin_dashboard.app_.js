@@ -10336,11 +10336,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
     /**
-     * Services roster grid: project recurring sheet rows onto each calendar date in this inclusive range.
-     * Bounds match the term window you specified (no fabricated sessions — only merged `STAFF_DASHBOARD_SOURCE` rows).
+     * Services overview display window = Autumn 26/27.
+     * Occupancy resolves from summer standing template (pre-crash MADRE), same as admin_dashboard.html.
      */
-    var SERVICES_ROSTER_CALENDAR_START_ISO = '2026-04-13';
-    var SERVICES_ROSTER_CALENDAR_END_ISO = '2026-07-18';
+    var SERVICES_STANDING_CRASH_FROM_ISO = '2026-07-20';
+    var SERVICES_STANDING_TEMPLATE_START_ISO = '2026-04-13';
+    var SERVICES_STANDING_TEMPLATE_END_ISO = '2026-07-19';
+    var SERVICES_ROSTER_CALENDAR_START_ISO = '2026-09-05';
+    var SERVICES_ROSTER_CALENDAR_END_ISO = '2026-12-18';
     function adminEnumerateIsosInclusive(startIso, endIso){
       var out = [];
       var ds = bookingParseIsoLocal(String(startIso || '').trim());

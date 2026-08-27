@@ -298,6 +298,8 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
             "termBreakFrom": TERM_BREAK_FROM,
             "termBreakTo": TERM_BREAK_TO,
             "termResumeDate": SESSION_FROM,
+            "termSummerDatedRosterFrom": "2026-06-01",
+            "termSummerDatedRosterThrough": "2026-07-19",
             "termFeedbackReminderFromIso": SESSION_FROM,
             "termClosedDates": TERM_CLOSED_DATES,
             "termStaffAwayDatesByProfileKey": {},

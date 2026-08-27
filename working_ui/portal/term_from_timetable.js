@@ -39,6 +39,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termBreakFrom": "2026-10-26",
   "termBreakTo": "2026-10-30",
   "termResumeDate": "2026-09-01",
+  "termSummerDatedRosterFrom": "2026-06-01",
+  "termSummerDatedRosterThrough": "2026-07-19",
   "termFeedbackReminderFromIso": "2026-09-01",
   "termClosedDates": [
     "2026-08-31",

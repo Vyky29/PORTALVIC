@@ -4163,15 +4163,31 @@
         return true;
       });
     }
-    /** From Summer Term 2 (1 Jun): roster rows must match that calendar date — no May weekday snap. */
-    function portalTermSummerRosterFromIso(){
+    /** Summer Term 2 window where MADRE has one roster row per calendar date (not weekday snap). */
+    function portalTermSummerDatedRosterFromIso(){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
-      return String((t && t.termResumeDate) || (t && t.termDashboardCalendarFrom) || '2026-06-01').trim().slice(0, 10);
+      return String((t && t.termSummerDatedRosterFrom) || '2026-06-01').trim().slice(0, 10);
     }
+    function portalTermSummerDatedRosterThroughIso(){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      return String((t && t.termSummerDatedRosterThrough) || '2026-07-19').trim().slice(0, 10);
+    }
+    /** Floor for summer snapshot queries (same as dated-roster start). */
+    function portalTermSummerRosterFromIso(){
+      return portalTermSummerDatedRosterFromIso();
+    }
+    /** True only inside the summer dated-roster window — Autumn uses weekday standing snap (Services). */
     function portalCalendarIsoUsesSummerDatedRosterOnly(isoYmd){
       const iso = normaliseIsoDate(isoYmd);
-      const floor = portalTermSummerRosterFromIso();
-      return !!(iso && floor && /^\d{4}-\d{2}-\d{2}$/.test(floor) && iso >= floor);
+      const from = portalTermSummerDatedRosterFromIso();
+      const through = portalTermSummerDatedRosterThroughIso();
+      return !!(
+        iso && from && through
+        && /^\d{4}-\d{2}-\d{2}$/.test(from)
+        && /^\d{4}-\d{2}-\d{2}$/.test(through)
+        && iso >= from
+        && iso <= through
+      );
     }
     /** Summer Term 2+: weekdays off pool rota (e.g. Roberto no Saturdays from 1 Jun). */
     function portalTermStaffOffWeekdayOnDate(isoYmd, staffId){

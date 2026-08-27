@@ -36,18 +36,18 @@ VENUE_LABEL = {
     "Westway": "Westway",
 }
 
-# Monday Northolt standing (patch-madre-monday-acton + dan-amar-luliya-gemma + zayana):
-#   Roberto Mon clients → Luliya (Yunis, Yamik, …)
-#   Dan 5–6 Amar Rai only; 4.30–5 open for trials when Luliya has Yunis
-#   Luliya: Gemma 5–5.30, Zayana 5.30–6, Adaam Ah 6–6.30, Yunis 4.30–5
+# Monday Northolt standing — source of truth: admin Services grid (Mon 7 Sep 2026).
+#   Row 1 (4.30–5): Dan open | Luliya open
+#   Row 2: Dan Amar Rai | Luliya Gemma
+#   Row 3: Dan Amar Rai | Luliya Zayana
+#   Row 4: Dan Adaam Ah | Luliya Yamik
 MONDAY_NORTHOLT_STANDING: list[tuple[str, str, str]] = [
-    ("4.30 to 5", "yunis", "Luliya"),
     ("4.30 to 5", "rayden rana (trial inv-p-0370)", "Dan"),
     ("4.30 to 5", "trial_new", "Dan"),
     ("5 to 5.30", "gemma", "Luliya"),
     ("5 to 6", "amar ra", "Dan"),
     ("5.30 to 6", "zayana", "Luliya"),
-    ("6 to 6.30", "adaam ah", "Luliya"),
+    ("6 to 6.30", "adaam ah", "Dan"),
     ("6 to 6.30", "yamik", "Luliya"),
 ]
 
@@ -282,7 +282,7 @@ def export_crossref_csv(
             "autumn_instructor_planned": "Dan",
             "staff_pool_on_duty": ", ".join(mon_northolt_staff),
             "booking_match": "OK" if "Dan" in mon_northolt_staff else "CHECK",
-            "notes": "Trial 4.30-5 → Dan (open); Luliya has Yunis same band. Gemma/Zayana/Adaam → Luliya not Dan.",
+            "notes": "Trial 4.30-5 → Dan (Services: both instructors open that band). Gemma/Zayana → Luliya; Amar/Adaam → Dan.",
         }
     )
     for p in participants:

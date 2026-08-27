@@ -1,19 +1,13 @@
 Monday Northolt aquatic — standing Autumn 26/27
-(source: patch-madre-monday-acton-roberto-youssef-northolt-luliya-dan.mjs,
-         patch-madre-mon-northolt-dan-amar-luliya-gemma.mjs,
-         patch-madre-mon-northolt-luliya-zayana-530.mjs)
+(source: admin Services grid, Mon 7 Sep 2026 — c4k_services / STAFF_DASHBOARD_SOURCE)
 
-Roberto off Northolt Monday. His clients → Luliya.
 Dan + Luliya on pool 4.30–6.30.
 
-| Time       | Participant   | Instructor |
-|------------|---------------|------------|
-| 4.30–5     | Yunis         | Luliya     |
-| 4.30–5     | Trials / new  | Dan (open) |
-| 5–5.30     | Gemma         | Luliya     |
-| 5–6        | Amar Rai      | Dan        |
-| 5.30–6     | Zayana        | Luliya     |
-| 6–6.30     | Adaam Ah      | Luliya     |
-| 6–6.30     | Yamik         | Luliya     |
+| Row | Time (approx) | Dan              | Luliya           |
+|-----|---------------|------------------|------------------|
+| 1   | 4.30–5        | No participant   | No participant   |
+| 2   | 5–5.30        | Amar Rai         | Gemma            |
+| 3   | 5.30–6        | Amar Rai         | Zayana           |
+| 4   | 6–6.30        | Adaam Ah         | Yamik            |
 
-NOT Dan: Gemma, Zayana, Adaam Ah (those are Luliya).
+Instructor rule: Gemma and Zayana → Luliya; Amar Rai and Adaam Ah → Dan.

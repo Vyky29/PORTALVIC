@@ -136,7 +136,9 @@
     try {
       var t = global.PORTAL_TERM_FROM_TIMETABLE;
       if (t) {
-        var v = String(t.termResumeDate || t.termDashboardCalendarFrom || "")
+        var v = String(
+          t.termSummerDatedRosterFrom || t.termResumeDate || t.termDashboardCalendarFrom || ""
+        )
           .trim()
           .slice(0, 10);
         if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
