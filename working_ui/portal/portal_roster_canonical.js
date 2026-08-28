@@ -372,7 +372,8 @@
     var s = String(instructorsRaw || "").trim();
     if (!s) return s;
     return s
-      .replace(/\bBISMARCK?\b/gi, "GODSWAY")
+      .replace(/\bBISMARK\b/gi, "GODSWAY")
+      .replace(/\bBISMARCK\b/gi, "GODSWAY")
       .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
   }
 
