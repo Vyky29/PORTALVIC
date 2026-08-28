@@ -570,7 +570,11 @@
     var base = "";
     if (/^bespoke\b/i.test(s)) base = dur + "Bespoke";
     else if (/multi[- ]?activity/i.test(s)) base = dur + "Multi-Activity";
-    else if (/^aquatic\b/i.test(s)) base = dur + "Aquatic";
+    else if (/^aquatic\b/i.test(s)) {
+      /* Pool sessions are 30' bands unless the source already carried a duration. */
+      if (!dur) dur = "30' ";
+      base = dur + "AQUATIC ACTIVITY";
+    }
     else if (/climb/i.test(s)) base = dur + "Climbing";
     else if (/day\s*centre/i.test(s)) base = dur + "Day centre";
     else
