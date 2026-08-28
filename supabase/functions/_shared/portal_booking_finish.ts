@@ -1,5 +1,6 @@
 /**
- * Finish-booking after Accept: mint magic link, notify parent, complete PIN after pay.
+ * Finish-booking after Accept: mint magic link, notify parent, complete PIN after pay
+ * (bank/Stripe) or after GoCardless mandate setup (billing_requests.fulfilled).
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -896,11 +897,15 @@ export async function createFinishBookingStripeCheckout(
 }
 
 /** After first instalment is paid (bank confirm or GC / Stripe), complete booking + PIN. */
-export async function tryCompleteBookingAfterInvoicePayment(
+async function completeFinishBookingWithPin(
   admin: SupabaseClient,
-  invoiceShareId: string,
+  opts: {
+    invoiceShareId: string;
+    /** When true, PIN is issued on GoCardless mandate setup (before money clears). */
+    requirePaidEvidence: boolean;
+  },
 ): Promise<{ completed: boolean; pinSent?: boolean; reason?: string }> {
-  const invId = clean(invoiceShareId, 80);
+  const invId = clean(opts.invoiceShareId, 80);
   if (!invId) return { completed: false, reason: "no_invoice" };
 
   const token = await findFinishTokenForInvoice(admin, invId);
@@ -916,16 +921,17 @@ export async function tryCompleteBookingAfterInvoicePayment(
     .maybeSingle();
   if (!inv) return { completed: false, reason: "invoice_missing" };
 
-  const status = String(inv.payment_status || "").toLowerCase();
-  const paidAmt = Number(inv.amount_paid_gbp) || 0;
-  const schedule = Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
-  const anyInstalmentPaid =
-    status === "paid" ||
-    status === "partial" ||
-    paidAmt > 0 ||
-    schedule.some((r: { status?: string }) => String(r?.status || "").toLowerCase() === "paid");
-
-  if (!anyInstalmentPaid) return { completed: false, reason: "not_paid_yet" };
+  if (opts.requirePaidEvidence) {
+    const status = String(inv.payment_status || "").toLowerCase();
+    const paidAmt = Number(inv.amount_paid_gbp) || 0;
+    const schedule = Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
+    const anyInstalmentPaid =
+      status === "paid" ||
+      status === "partial" ||
+      paidAmt > 0 ||
+      schedule.some((r: { status?: string }) => String(r?.status || "").toLowerCase() === "paid");
+    if (!anyInstalmentPaid) return { completed: false, reason: "not_paid_yet" };
+  }
 
   const { data: contact } = await admin
     .from("portal_parent_contacts")
@@ -987,6 +993,7 @@ export async function tryCompleteBookingAfterInvoicePayment(
           .eq("id", token.lead_id);
       }
       await activateContactInClassAfterPaidBooking(admin, contactId);
+      await confirmTermSlotAfterGocardlessMandate(admin, token as CompletionTokenRow);
       return { completed: true, pinSent: false, reason: "existing_pin_no_resend" };
     }
   }
@@ -1003,7 +1010,105 @@ export async function tryCompleteBookingAfterInvoicePayment(
   });
   if ("error" in result) return { completed: false, reason: result.error };
   await activateContactInClassAfterPaidBooking(admin, contactId);
+  await confirmTermSlotAfterGocardlessMandate(admin, token as CompletionTokenRow);
   return { completed: true, pinSent: true };
+}
+
+export async function tryCompleteBookingAfterInvoicePayment(
+  admin: SupabaseClient,
+  invoiceShareId: string,
+): Promise<{ completed: boolean; pinSent?: boolean; reason?: string }> {
+  return completeFinishBookingWithPin(admin, {
+    invoiceShareId,
+    requirePaidEvidence: true,
+  });
+}
+
+/**
+ * GoCardless mandate setup finished (billing_requests.fulfilled).
+ * Issue Parent Portal PIN immediately — do not wait for payments.confirmed / paid_out.
+ */
+export async function tryCompleteBookingAfterGocardlessMandateSetup(
+  admin: SupabaseClient,
+  opts: { invoiceShareId?: string | null; contactId?: string | null },
+): Promise<{ completed: boolean; pinSent?: boolean; reason?: string; invoice_id?: string }> {
+  let invId = clean(opts.invoiceShareId, 80);
+  const contactId = clean(opts.contactId, 120);
+
+  if (!invId && contactId) {
+    const { data: toks } = await admin
+      .from("portal_booking_completion_tokens")
+      .select("id, invoice_share_id, pay_plan, status, created_at")
+      .eq("contact_id", contactId)
+      .not("invoice_share_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(8);
+    const openGc = (toks || []).find((t) => {
+      const plan = clean(t.pay_plan, 40).toLowerCase();
+      const st = clean(t.status, 40).toLowerCase();
+      const isGc = plan === "gocardless_monthly" || plan === "gocardless";
+      const open = [
+        "awaiting_payment",
+        "awaiting_office_payment",
+        "choices_saved",
+        "scope_saved",
+        "funding_saved",
+        "pending",
+        "la_office",
+      ].includes(st);
+      return isGc && open && clean(t.invoice_share_id, 80);
+    });
+    if (openGc) invId = clean(openGc.invoice_share_id, 80);
+  }
+
+  if (!invId) return { completed: false, reason: "no_invoice" };
+
+  const result = await completeFinishBookingWithPin(admin, {
+    invoiceShareId: invId,
+    requirePaidEvidence: false,
+  });
+  return { ...result, invoice_id: invId };
+}
+
+/** Keep the Booking Portal seat after GC mandate setup (DD can take days to clear). */
+async function confirmTermSlotAfterGocardlessMandate(
+  admin: SupabaseClient,
+  token: CompletionTokenRow,
+): Promise<void> {
+  const now = new Date().toISOString();
+  const holdFar = new Date(Date.now() + FINISH_TOKEN_TTL_DAYS * 86400000).toISOString();
+  const reservationId = clean(token.reservation_id, 80);
+  const patch = {
+    status: "validated",
+    validated_at: now,
+    hold_expires_at: holdFar,
+    released_at: null,
+    notes: "gocardless_mandate_setup|booking_completed",
+    updated_at: now,
+  };
+  try {
+    if (reservationId) {
+      await admin.from("portal_booking_slot_reservations").update(patch).eq("id", reservationId);
+      try {
+        const fold = await foldValidatedReservationOntoMadre(admin, reservationId);
+        if (!fold.ok) {
+          console.warn("[confirmTermSlotAfterGocardlessMandate] madre fold", fold.note);
+        }
+      } catch (e) {
+        console.warn("[confirmTermSlotAfterGocardlessMandate] madre fold", e);
+      }
+      return;
+    }
+    if (token.document_id) {
+      await admin
+        .from("portal_booking_slot_reservations")
+        .update(patch)
+        .eq("document_id", token.document_id)
+        .in("status", ["awaiting_payment", "pending", "released"]);
+    }
+  } catch (e) {
+    console.warn("[confirmTermSlotAfterGocardlessMandate]", e);
+  }
 }
 
 /** Mark family active in Parent Portal after Stripe/bank confirm (trial or term). */

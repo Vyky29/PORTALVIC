@@ -16,7 +16,10 @@ import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 import { recordInvoiceInstalmentPayment } from "../_shared/portal_create_family_invoice.ts";
-import { tryCompleteBookingAfterInvoicePayment } from "../_shared/portal_booking_finish.ts";
+import {
+  tryCompleteBookingAfterGocardlessMandateSetup,
+  tryCompleteBookingAfterInvoicePayment,
+} from "../_shared/portal_booking_finish.ts";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -233,6 +236,10 @@ async function handleBillingRequestFulfilled(
   const meta = (event.resource_metadata || {}) as Record<string, unknown>;
   let contactId = clean(meta.contact_id, 120);
 
+  const brMetaEarly =
+    br.data.metadata && typeof br.data.metadata === "object" ? br.data.metadata : {};
+  if (!contactId) contactId = clean(brMetaEarly.contact_id, 120);
+
   if (!contactId) {
     const { data: byBr } = await supabase
       .from("portal_parent_gocardless_mandates")
@@ -259,14 +266,27 @@ async function handleBillingRequestFulfilled(
     });
   }
 
+  // Prefer metadata on the billing request itself (event resource_metadata is often empty).
+  const brMeta =
+    br.data.metadata && typeof br.data.metadata === "object" ? br.data.metadata : {};
+  const invoiceShareId =
+    clean(meta.invoice_share_id, 60) || clean(brMeta.invoice_share_id, 60);
+
   // If first payment was part of the billing request, link it.
-  const invoiceShareId = clean(meta.invoice_share_id, 60);
   if (paymentId && invoiceShareId) {
     await supabase
       .from("portal_parent_invoice_share")
       .update({
         gocardless_payment_id: paymentId,
         gocardless_mandate_id: mandateId || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", invoiceShareId);
+  } else if (mandateId && invoiceShareId) {
+    await supabase
+      .from("portal_parent_invoice_share")
+      .update({
+        gocardless_mandate_id: mandateId,
         updated_at: new Date().toISOString(),
       })
       .eq("id", invoiceShareId);
@@ -281,12 +301,34 @@ async function handleBillingRequestFulfilled(
     });
   }
 
+  // PIN + seat as soon as mandate is set up (same moment GC emails "new customer").
+  // Do not wait for payments.confirmed / paid_out (DD clearance can take days).
+  let bookingPin: unknown = null;
+  try {
+    bookingPin = await tryCompleteBookingAfterGocardlessMandateSetup(supabase, {
+      invoiceShareId: invoiceShareId || null,
+      contactId,
+    });
+  } catch (e) {
+    console.error(
+      "[gc-webhook] finish booking on mandate",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+  try {
+    if (contactId) await clearPaymentHoldForContact(supabase, contactId, "gocardless");
+  } catch (e) {
+    console.error("[gc-webhook] mandate hold", e instanceof Error ? e.message : String(e));
+  }
+
   return {
     ok: true,
     contact_id: contactId,
     mandate_id: mandateId,
     payment_id: paymentId || null,
+    invoice_share_id: invoiceShareId || null,
     scheduled: scheduled.scheduled,
+    booking_pin: bookingPin,
   };
 }
 

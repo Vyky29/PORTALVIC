@@ -46,11 +46,50 @@ async function shouldSkipTermPayHoldExpiry(
 
   const { data: invRows } = await admin
     .from("portal_parent_invoice_share")
-    .select("payment_status, parent_reported_paid_at")
+    .select("payment_status, parent_reported_paid_at, payment_method_hint, contact_id")
     .in("id", invIds);
+
+  if (
+    (invRows || []).some((inv) => {
+      const pay = String(inv.payment_status || "").toLowerCase();
+      return pay === "pending_confirmation" || !!inv.parent_reported_paid_at;
+    })
+  ) {
+    return true;
+  }
+
+  /* GoCardless mandate already set up — seat stays until DD clears (PIN already sent). */
+  const { data: completedTok } = await admin
+    .from("portal_booking_completion_tokens")
+    .select("id")
+    .eq("document_id", documentId)
+    .eq("status", "completed")
+    .limit(1)
+    .maybeSingle();
+  if (completedTok?.id) return true;
+
+  const contactIds = [
+    ...new Set(
+      (invRows || [])
+        .map((inv) => String(inv.contact_id || "").trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (contactIds.length) {
+    const { data: mandates } = await admin
+      .from("portal_parent_gocardless_mandates")
+      .select("contact_id, mandate_status")
+      .in("contact_id", contactIds);
+    const active = (mandates || []).some((m) => {
+      const st = String(m.mandate_status || "").toLowerCase();
+      return st === "active" || st === "pending_submission" || st === "submitted";
+    });
+    if (active) return true;
+  }
+
   return (invRows || []).some((inv) => {
-    const pay = String(inv.payment_status || "").toLowerCase();
-    return pay === "pending_confirmation" || !!inv.parent_reported_paid_at;
+    return String(inv.payment_method_hint || "").toLowerCase() === "gocardless" &&
+      String(inv.payment_status || "").toLowerCase() !== "unpaid";
   });
 }
 
