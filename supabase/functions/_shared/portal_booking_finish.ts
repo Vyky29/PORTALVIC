@@ -699,6 +699,37 @@ export async function issueParentPortalPinForCompletion(
   return { pin4 };
 }
 
+/** Prefer the open token for an invoice; ignore expired duplicates (resend mint). */
+async function findFinishTokenForInvoice(
+  admin: SupabaseClient,
+  invoiceShareId: string,
+): Promise<CompletionTokenRow | null> {
+  const invId = clean(invoiceShareId, 80);
+  if (!invId) return null;
+  const { data: rows, error } = await admin
+    .from("portal_booking_completion_tokens")
+    .select("*")
+    .eq("invoice_share_id", invId)
+    .order("created_at", { ascending: false })
+    .limit(8);
+  if (error || !rows?.length) return null;
+  const open = rows.find((r) =>
+    [
+      "awaiting_payment",
+      "awaiting_office_payment",
+      "choices_saved",
+      "scope_saved",
+      "funding_saved",
+      "pending",
+      "la_office",
+    ].includes(String(r.status || "")),
+  );
+  if (open) return open as CompletionTokenRow;
+  const completed = rows.find((r) => String(r.status) === "completed");
+  if (completed) return completed as CompletionTokenRow;
+  return rows[0] as CompletionTokenRow;
+}
+
 /** After Stripe pays a trial invoice, mark the slot validated (booked). */
 export async function confirmTrialSlotAfterStripePayment(
   admin: SupabaseClient,
@@ -707,11 +738,7 @@ export async function confirmTrialSlotAfterStripePayment(
   const invId = clean(invoiceShareId, 80);
   if (!invId) return;
 
-  const { data: token } = await admin
-    .from("portal_booking_completion_tokens")
-    .select("id, document_id, reservation_id, choices_json")
-    .eq("invoice_share_id", invId)
-    .maybeSingle();
+  const token = await findFinishTokenForInvoice(admin, invId);
   if (!token) return;
 
   const choices =
@@ -842,7 +869,7 @@ export async function createFinishBookingStripeCheckout(
   };
 }
 
-/** After first instalment is paid (bank confirm or GC), complete booking + PIN. */
+/** After first instalment is paid (bank confirm or GC / Stripe), complete booking + PIN. */
 export async function tryCompleteBookingAfterInvoicePayment(
   admin: SupabaseClient,
   invoiceShareId: string,
@@ -850,11 +877,7 @@ export async function tryCompleteBookingAfterInvoicePayment(
   const invId = clean(invoiceShareId, 80);
   if (!invId) return { completed: false, reason: "no_invoice" };
 
-  const { data: token } = await admin
-    .from("portal_booking_completion_tokens")
-    .select("*")
-    .eq("invoice_share_id", invId)
-    .maybeSingle();
+  const token = await findFinishTokenForInvoice(admin, invId);
   if (!token) return { completed: false, reason: "no_token" };
   if (String(token.status) === "completed") {
     return { completed: true, pinSent: false, reason: "already_completed" };
@@ -886,6 +909,27 @@ export async function tryCompleteBookingAfterInvoicePayment(
 
   const parentPersonId =
     clean(token.parent_person_id, 80) || clean(contact?.parent_person_id, 80);
+  const contactId = clean(inv.contact_id, 40) || clean(token.contact_id, 40);
+
+  // Office resend / mint can leave contact fields null — backfill before PIN.
+  if (
+    parentPersonId &&
+    (clean(token.parent_person_id, 80) !== parentPersonId ||
+      (contactId && clean(token.contact_id, 40) !== contactId))
+  ) {
+    const nowPatch = new Date().toISOString();
+    await admin
+      .from("portal_booking_completion_tokens")
+      .update({
+        parent_person_id: parentPersonId,
+        contact_id: contactId || token.contact_id,
+        updated_at: nowPatch,
+      })
+      .eq("id", token.id);
+    token.parent_person_id = parentPersonId;
+    if (contactId) token.contact_id = contactId;
+  }
+
   if (parentPersonId) {
     const familyIds = await familyPersonIdsForParent(admin, parentPersonId);
     const { data: existingCreds } = await admin
@@ -918,6 +962,10 @@ export async function tryCompleteBookingAfterInvoicePayment(
       }
       return { completed: true, pinSent: false, reason: "existing_pin_no_resend" };
     }
+  }
+
+  if (!parentPersonId) {
+    return { completed: false, reason: "parent_person_missing" };
   }
 
   const result = await issueParentPortalPinForCompletion(admin, token as CompletionTokenRow, {
