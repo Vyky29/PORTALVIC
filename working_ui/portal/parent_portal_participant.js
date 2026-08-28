@@ -3068,18 +3068,35 @@
     var booked = findBookedReservationSessionRows(data, opts);
     var roster = findRosterPatternNextSessions(data, Math.max(max, 8), opts);
     var combined = crash.concat(booked).concat(roster);
-    /* Prefer explicit booking rows when the same day already has a roster projection. */
+    /*
+     * Same calendar slot can arrive twice: booking row ("Aquatic") + roster
+     * projection ("30' Aquatic"). Collapse by day + start + venue; keep booking first.
+     */
+    var sourceRank = { crash: 0, booking: 1, roster: 2 };
+    combined.sort(function (a, b) {
+      if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
+      var as = a._start != null ? a._start : 0;
+      var bs = b._start != null ? b._start : 0;
+      if (as !== bs) return as - bs;
+      var ar = sourceRank[a.source] != null ? sourceRank[a.source] : 9;
+      var br = sourceRank[b.source] != null ? sourceRank[b.source] : 9;
+      return ar - br;
+    });
     var seen = Object.create(null);
     var deduped = [];
     combined.forEach(function (row) {
-      var key = String(row.iso || "") + "|" + String(row._start || 0) + "|" + String(row.label || "");
+      var start = row._start != null ? row._start : parseServiceStartMinutes(row.time);
+      var key =
+        String(row.iso || "") +
+        "|" +
+        String(start || 0) +
+        "|" +
+        String(row.venue || "")
+          .toLowerCase()
+          .trim();
       if (seen[key]) return;
       seen[key] = true;
       deduped.push(row);
-    });
-    deduped.sort(function (a, b) {
-      if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
-      return (a._start || 0) - (b._start || 0);
     });
     return deduped.slice(0, max);
   }
