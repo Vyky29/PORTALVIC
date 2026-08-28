@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 6;
+    var SOURCE_VERSION = 7;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -130,7 +130,7 @@
 
   /**
    * Autumn 26/27 Hub afternoon Bespoke — same staff shifts as the Autumn rota
-   * (Godsway / John / Emanuel Mon+Wed 4.15–6.15; Fri Emanuel only; Tinashe booked).
+   * (Godsway / John / Emanuel Mon+Wed 4.15–6.15; Fri Emanuel + Victor + Raul; Tinashe booked).
    * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30–5 only).
    */
   var AUTUMN_BESPOKE_HUB_ROWS = [
@@ -198,6 +198,26 @@
       client_name: "Tinashe",
       day: "Friday",
       instructors: "EMANUEL",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.15 to 6.15",
+      venue: "SwimFarm",
+      session_date: "2026-07-17",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Friday",
+      instructors: "VICTOR",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.15 to 6.15",
+      venue: "SwimFarm",
+      session_date: "2026-07-17",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Friday",
+      instructors: "RAUL",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.15 to 6.15",

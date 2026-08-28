@@ -145,8 +145,10 @@ def friday_template() -> list[tuple[str, str, str]]:
         _pairs("Youssef", "12.30-3", "SwimFarm"),
         _pairs("Emanuel", "3-4", "SwimFarm"),
         _pairs("Roberto", "4-6", "Acton"),
-        # Fri Hub: 2x DIRECTOR TBC — only Emanuel confirmed (4.15-6.15).
+        # Fri Hub Bespoke: Emanuel + Victor + Raul with Tinashe (was DIRECTOR ×2).
         _pairs("Emanuel", "4.15-6.15", "SwimFarm"),
+        _pairs("Victor", "4.15-6.15", "SwimFarm"),
+        _pairs("Raul", "4.15-6.15", "SwimFarm"),
     ]
 
 
