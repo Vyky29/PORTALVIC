@@ -218,6 +218,77 @@
     return { start, end };
   }
 
+  function hmStringToMinutes(hm) {
+    const m = String(hm || "")
+      .trim()
+      .match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return 0;
+    return (parseInt(m[1], 10) || 0) * 60 + (parseInt(m[2], 10) || 0);
+  }
+
+  function minutesToHmString(totalMin) {
+    const h = Math.floor(totalMin / 60);
+    const min = totalMin % 60;
+    return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+  }
+
+  /** MADRE-style "5.30" / "6" tokens for staff cards. */
+  function minutesToMadreTimeToken(totalMin) {
+    let h24 = Math.floor(totalMin / 60);
+    const min = totalMin % 60;
+    let h = h24;
+    if (h24 > 12) h = h24 - 12;
+    if (h24 === 0) h = 12;
+    if (min === 0) return String(h);
+    return h + "." + String(min).padStart(2, "0");
+  }
+
+  function isAquaticOpenSlotService(service) {
+    const s = String(service || "")
+      .toLowerCase()
+      .replace(/[\s_-]+/g, " ");
+    return s.indexOf("aquatic") >= 0 || s.indexOf("swim") >= 0;
+  }
+
+  /**
+   * Aquatic bookable units are 30'. A named 60'/90' client keeps one card; when the
+   * seat is empty (NO PARTICIPANT), expand to one open card per 30' so booking /
+   * covers can take each half separately.
+   */
+  function expandOpenAquaticHalfHourSessions(baseSession, activityLabel) {
+    const single = Object.assign({}, baseSession, {
+      clientId: "available",
+      activity: activityLabel,
+      status: "available",
+    });
+    const startM = hmStringToMinutes(baseSession && baseSession.start);
+    const endM = hmStringToMinutes(baseSession && baseSession.end);
+    const dur = endM - startM;
+    if (
+      !(dur > 30) ||
+      !isAquaticOpenSlotService(activityLabel || (baseSession && baseSession.rosterService))
+    ) {
+      return [single];
+    }
+    const out = [];
+    for (let m = startM; m < endM; m += 30) {
+      const e = Math.min(m + 30, endM);
+      if (e <= m) break;
+      out.push(
+        Object.assign({}, baseSession, {
+          start: minutesToHmString(m),
+          end: minutesToHmString(e),
+          timeSlotLabel:
+            minutesToMadreTimeToken(m) + " to " + minutesToMadreTimeToken(e),
+          clientId: "available",
+          activity: activityLabel,
+          status: "available",
+        }),
+      );
+    }
+    return out.length ? out : [single];
+  }
+
   function dayNameToday() {
     return new Date().toLocaleDateString("en-GB", { weekday: "long" });
   }
@@ -891,25 +962,19 @@
 
       if (isOpenSlot) {
         if (!timeSlotLabel) return;
-        sessionsModel.push(
-          Object.assign({}, baseSession, {
-            clientId: "available",
-            activity: rosterService || "Swimming",
-            status: "available",
-          })
-        );
+        const openActivity = rosterService || "Swimming";
+        expandOpenAquaticHalfHourSessions(baseSession, openActivity).forEach(function (sess) {
+          sessionsModel.push(sess);
+        });
         return;
       }
 
       if (!nameRaw) {
         if (!timeSlotLabel) return;
-        sessionsModel.push(
-          Object.assign({}, baseSession, {
-            clientId: "available",
-            activity: rosterService || "Swimming",
-            status: "available",
-          })
-        );
+        const openActivity = rosterService || "Swimming";
+        expandOpenAquaticHalfHourSessions(baseSession, openActivity).forEach(function (sess) {
+          sessionsModel.push(sess);
+        });
         return;
       }
 
