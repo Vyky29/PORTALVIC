@@ -960,6 +960,7 @@ export async function tryCompleteBookingAfterInvoicePayment(
           })
           .eq("id", token.lead_id);
       }
+      await activateContactInClassAfterPaidBooking(admin, contactId);
       return { completed: true, pinSent: false, reason: "existing_pin_no_resend" };
     }
   }
@@ -975,7 +976,26 @@ export async function tryCompleteBookingAfterInvoicePayment(
     participantName: contact?.child_display || "Participant",
   });
   if ("error" in result) return { completed: false, reason: result.error };
+  await activateContactInClassAfterPaidBooking(admin, contactId);
   return { completed: true, pinSent: true };
+}
+
+/** Mark family active in Parent Portal after Stripe/bank confirm (trial or term). */
+async function activateContactInClassAfterPaidBooking(
+  admin: SupabaseClient,
+  contactId: string | null,
+): Promise<void> {
+  const cid = clean(contactId, 40);
+  if (!cid) return;
+  const now = new Date().toISOString();
+  await admin
+    .from("portal_parent_contacts")
+    .update({ in_class: true, on_waiting_list: false, updated_at: now })
+    .eq("contact_id", cid);
+  await admin
+    .from("portal_participants")
+    .update({ in_class: true, on_waiting_list: false, updated_at: now })
+    .eq("contact_id", cid);
 }
 
 export function parseFundingCode(raw: unknown): "privately_funded" | "la_direct_payments" | null {
