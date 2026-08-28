@@ -397,6 +397,19 @@
       .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
   }
 
+  /** Autumn Acton Thu pool: Luliya takes Simon's 4.30–6.30 clients. */
+  function remapAutumnSimonToLuliya(row) {
+    if (!row) return null;
+    if (!isAquaticService(row.service)) return null;
+    if (!isActonVenue(row.venue)) return null;
+    if (normalizeDowKey(row.day) !== "thursday") return null;
+    var raw = String(row.instructors || "").trim();
+    if (!/\bsimon\b/i.test(raw)) return null;
+    var mapped = raw.replace(/\bSIMON\b/gi, "LULIYA");
+    if (mapped === raw) return null;
+    return mapped;
+  }
+
   function isAquaticService(service) {
     return /aquatic/i.test(String(service || ""));
   }
@@ -457,6 +470,7 @@
    * - Replace summer Day Centre who-with-whom with Autumn DC board
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
+   * - Acton Thu aquatic: Simon→Luliya
    * - Acton Mon/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {
@@ -508,6 +522,11 @@
             return;
           }
         }
+      }
+      var simonMapped = remapAutumnSimonToLuliya(r);
+      if (simonMapped) {
+        out.push(Object.assign({}, r, { instructors: simonMapped }));
+        return;
       }
       if (isMultiActivityService(r.service)) {
         var mapped = remapAutumnMultiInstructors(r.instructors);

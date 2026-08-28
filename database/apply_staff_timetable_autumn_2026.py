@@ -129,7 +129,7 @@ def thursday_template() -> list[tuple[str, str, str]]:
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Javier", "4-6.30", "Acton"),
         _pairs("Aurora", "4.30-6.30", "Acton"),
-        _pairs("Simon", "4.30-6.30", "Acton"),
+        _pairs("Luliya", "4.30-6.30", "Acton"),
     ]
 
 
