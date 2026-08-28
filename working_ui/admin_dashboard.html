@@ -146,7 +146,7 @@
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260811-patrick-en-dash"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260828-autumn-dc-board"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260828-bespoke-roster"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260809-staff-map"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -18230,7 +18230,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function adminServiceIsExcludedInstructorName(nm){
       var k = String(nm || '').trim().toLowerCase();
       if(!k) return true;
-      return k === 'teflon' || k === 'no participant' || k === 'closed' || k === 'available' || k === 'demo' || k === 'shadowing';
+      return k === 'teflon' || k === 'no participant' || k === 'closed' || k === 'available' || k === 'demo' || k === 'shadowing' ||
+        k === 'bismark' || k === 'bismarck' || k === 'giuseppe';
+    }
+    /** Bespoke Tue/Thu: no open places for Booking Portal / Services availability (Cyrus Tue booked only). */
+    function adminServicesBespokeNoOpenPlacesDow(dowNorm){
+      var dk = adminServiceNormalizeDowKey(dowNorm);
+      return dk === 'tuesday' || dk === 'thursday';
+    }
+    function adminServicesBespokeNoPlacesBannerHtml(){
+      return (
+        '<p class="c4k-svc-dc-hint muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">'+
+        'No Bespoke places available on Tuesday or Thursday for now (not offered on Booking Portal). '+
+        'Cyrus is booked Tue 3.30–5 with Victor only.</p>'
+      );
     }
     /**
      * Roster-instance aggregates for the Services Overview venue summary:
@@ -19189,6 +19202,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               return adminServicesSwimFarmDowAllowed(dkSl);
             });
           }
+          /* Bespoke Autumn: no Bismark/Giuseppe; Cyrus Tue only (canonical also patches). */
+          if(progNormKey === 'bespoke' && allInst && allInst.length){
+            allInst = allInst.filter(function(sl){
+              var sn = String(sl.staffName || '').trim();
+              if(adminServiceIsExcludedInstructorName(sn)) return false;
+              var pax = String(sl.clientDisplay || sl.clientSlug || '').trim().toLowerCase();
+              var dkSl = adminServiceNormalizeDowKey(sl.sheetDay || portalWeekdayLongFromIsoDate(sl.sessionDate));
+              if(/^cyrus\b/.test(pax) && dkSl !== 'tuesday') return false;
+              return true;
+            });
+          }
           var byDow = adminServiceInstancesByDowNorm(allInst);
           var rowsInVenue = 0;
           // Header Instructors / Participants are counted from the rostered booked
@@ -19205,6 +19229,36 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             // Multi-Activity at SwimFarm is the Sunday rota (9:30–2 bands).
             if(progNormKey === 'multi' && adminServicesIsSwimFarmVenue(vn.venue) && dk !== 'sunday') continue;
             var slotsWd = byDow[dk];
+            if((!slotsWd || !slotsWd.length) && !(progNormKey === 'bespoke' && adminServicesBespokeNoOpenPlacesDow(dk))) continue;
+            /* Bespoke Tue/Thu with no roster lines: still show “no places available”. */
+            if(progNormKey === 'bespoke' && adminServicesBespokeNoOpenPlacesDow(dk) && (!slotsWd || !slotsWd.length)){
+              var displayIsoBpEmpty = adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, termStart, termEnd);
+              if(displayIsoBpEmpty && SERVICES_ROSTER_HALF_TERM_CLOSED &&
+                 displayIsoBpEmpty >= SERVICES_ROSTER_HALF_TERM_CLOSED.start &&
+                 displayIsoBpEmpty <= SERVICES_ROSTER_HALF_TERM_CLOSED.end){
+                displayIsoBpEmpty = adminPickIsoForSheetWeekdayNearAnchor('2026-09-07', dk, termStart, termEnd) || displayIsoBpEmpty;
+              }
+              var dowTitleBpEmpty = adminServiceDowTitleFromNorm(dk);
+              if(displayIsoBpEmpty){
+                dowTitleBpEmpty = dowTitleBpEmpty + ' · ' + adminFormatCalendarDaySummaryLabel(displayIsoBpEmpty);
+              }
+              var didBpEmpty = 'c4k-svc-dow-'+pidx+'-'+vix+'-'+dix;
+              dowParts.push(
+                '<details class="c4k-svc-day-acc" open>'+
+                '<summary class="c4k-svc-day-acc__sum" id="'+esc(didBpEmpty)+'">'+
+                '<span class="c4k-svc-day-acc__lead">'+
+                '<span class="c4k-svc-day-acc__sum-txt">'+adminServiceDowIconHtml(dk)+
+                '<span class="c4k-svc-day-acc__namecol">'+
+                '<span class="c4k-svc-day-acc__name">'+esc(dowTitleBpEmpty)+'</span>'+
+                '</span></span></span>'+
+                '<span class="c4k-svc-day-acc__avail chip chip--urg" title="No open Bespoke seats this weekday">No places available</span>'+
+                '</summary>'+
+                '<div class="c4k-svc-slots" style="min-width:0;overflow:auto">'+
+                adminServicesBespokeNoPlacesBannerHtml()+
+                '</div></details>'
+              );
+              continue;
+            }
             if(!slotsWd || !slotsWd.length) continue;
             /* Multi-Activity @ SwimFarm Sunday: three groups of 6 (swim + support staff). */
             if(progNormKey === 'multi' && adminServicesIsSwimFarmVenue(vn.venue) && dk === 'sunday'){
@@ -19723,7 +19777,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               }
             }
             var availChipHtml = '';
-            if(openSeatN > 0){
+            var bespokeNoOpen = progNormKey === 'bespoke' && adminServicesBespokeNoOpenPlacesDow(dk);
+            if(bespokeNoOpen){
+              availChipHtml =
+                '<span class="c4k-svc-day-acc__avail chip chip--urg" title="No open Bespoke seats this weekday">No places available</span>';
+            } else if(openSeatN > 0){
               var availLbl = openSeatN === 1 ? '1x Slot Available' : (String(openSeatN) + 'x Slots Available');
               var availInstr = openInstrNames.length
                 ? esc(openInstrNames.join(', '))
@@ -19748,7 +19806,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               '<th scope="col" class="c4k-svc-slot-th-wait">Waiting</th>'+
               '</tr></thead><tbody>'+rowChunks.join('')+'</tbody></table>'+
               '<div class="c4k-svc-day-sched-bar">'+schedAddBtn+adminServicesOpenPlacesFilterBtnHtml(block.programme, vn.venue, dk)+'</div>';
-            var body = '<div class="c4k-svc-slots" style="min-width:0;overflow:auto"><div class="novo-sched__list novo-sched__list--svc-table">'+tableHtml+'</div></div>';
+            var bodyPrefix = bespokeNoOpen ? adminServicesBespokeNoPlacesBannerHtml() : '';
+            var body = '<div class="c4k-svc-slots" style="min-width:0;overflow:auto">'+bodyPrefix+'<div class="novo-sched__list novo-sched__list--svc-table">'+tableHtml+'</div></div>';
             dowParts.push(
               '<details class="c4k-svc-day-acc">'+
               '<summary class="c4k-svc-day-acc__sum" id="'+esc(did)+'">'+

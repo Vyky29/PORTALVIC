@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 3;
+    var SOURCE_VERSION = 4;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -278,10 +278,38 @@
     ].join("\0");
   }
 
+  function isBespokeService(service) {
+    return /bespoke/i.test(String(service || ""));
+  }
+
+  function instructorTokenList(raw) {
+    return String(raw || "")
+      .toUpperCase()
+      .split(/[,&\/]|\band\b/i)
+      .map(function (t) {
+        return String(t || "").trim();
+      })
+      .filter(Boolean);
+  }
+
+  /** Bismark + Giuseppe left — drop their Bespoke standing lines. */
+  function isFormerBespokeInstructor(instructorsRaw) {
+    var toks = instructorTokenList(instructorsRaw);
+    for (var i = 0; i < toks.length; i++) {
+      var t = toks[i];
+      if (t === "BISMARK" || t === "BISMARCK" || t === "GIUSEPPE") return true;
+    }
+    return false;
+  }
+
+  function isCyrusName(name) {
+    return /^cyrus\b/i.test(String(name || "").trim());
+  }
+
   /**
    * Autumn 26/27 standing patches on snap dates (13–17 Jul):
    * - Replace summer Day Centre who-with-whom with Autumn DC board
-   * - Ensure Cyrus bespoke with Victor Tue 3.30–5 (first calendar Tue 9 Sep)
+   * - Bespoke: drop Bismark/Giuseppe; Cyrus with Victor Tue 3.30–5 only (not Thu)
    */
   function applyAutumnStandingParticipantRows(rows) {
     var out = (Array.isArray(rows) ? rows : []).filter(function (r) {
@@ -290,16 +318,17 @@
       if (DAY_CENTRE_STANDING_ISO_SET[d] && isDayCentreService(r.service)) {
         return false;
       }
+      if (isBespokeService(r.service)) {
+        if (isFormerBespokeInstructor(r.instructors)) return false;
+        /* Strip all standing Cyrus Bespoke rows — re-add Tue-only canonical below. */
+        if (isCyrusName(r.client_name)) return false;
+      }
       return true;
     });
     autumnDayCentreStandingRows().forEach(function (row) {
       out.push(row);
     });
-    var cyrusKey = rowDedupeKey(CYRUS_BESPOKE_ROW);
-    var hasCyrus = out.some(function (r) {
-      return r && rowDedupeKey(r) === cyrusKey;
-    });
-    if (!hasCyrus) out.push(Object.assign({}, CYRUS_BESPOKE_ROW));
+    out.push(Object.assign({}, CYRUS_BESPOKE_ROW));
     return out;
   }
 
