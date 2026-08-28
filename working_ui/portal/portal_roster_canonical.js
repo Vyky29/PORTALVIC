@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 11;
+    var SOURCE_VERSION = 12;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -41,6 +41,8 @@
    * Autumn 26/27 Day Centre standing (ops truth for Services + staff snap).
    * Order = board column order. Times match MADRE-style "11 to 1" / "12.30 to 3".
    * Cyrus (Victor Tue 3.30-5) is Bespoke — not listed here; see CYRUS_BESPOKE_ROW.
+   * Youssef Day Centre always ends by 15:00 on days he runs Acton/Hub after-school from 16:00
+   * (Mon/Thu Acton; Fri Hub 4.15 — never keep him on DC past 3).
    */
   var AUTUMN_DAY_CENTRE_BOARD = {
     monday: [
@@ -104,16 +106,11 @@
         staff: "Raul",
         clients: [
           { name: "Timi", time: "11 to 1" },
-          { name: "Emanuel", time: "1 to 3" },
+          { name: "Emanuel", time: "1 to 4" },
         ],
       },
-      {
-        staff: "Youssef",
-        clients: [
-          { name: "Fadi", time: "12.30 to 3" },
-          { name: "Emanuel", time: "3 to 4" },
-        ],
-      },
+      /* Youssef ends DC at 15:00 — Acton/Hub after-school from 16:00 (travel buffer). */
+      { staff: "Youssef", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
     ],
   };
 
