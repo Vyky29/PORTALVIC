@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 10;
+    var SOURCE_VERSION = 11;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -397,17 +397,44 @@
       .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
   }
 
-  /** Autumn Acton Thu pool: Luliya takes Simon's 4.30–6.30 clients. */
-  function remapAutumnSimonToLuliya(row) {
+  /** Autumn Acton pool: Simon Thu→Luliya; Tue Angel/Simon lane→Luliya; Rayan Ta + Richard→Javier. */
+  function remapAutumnActonPoolInstructors(row) {
     if (!row) return null;
     if (!isAquaticService(row.service)) return null;
     if (!isActonVenue(row.venue)) return null;
-    if (normalizeDowKey(row.day) !== "thursday") return null;
+    var day = normalizeDowKey(row.day);
     var raw = String(row.instructors || "").trim();
-    if (!/\bsimon\b/i.test(raw)) return null;
-    var mapped = raw.replace(/\bSIMON\b/gi, "LULIYA");
-    if (mapped === raw) return null;
-    return mapped;
+    if (!raw) return null;
+    var client = String(row.client_name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+
+    if (day === "tuesday") {
+      if (/^rayan\s*ta\b/.test(client) || client === "richard") {
+        if (/\bjavier\b/i.test(raw)) return null;
+        return { instructors: "JAVIER" };
+      }
+      if (/\bangel\b/i.test(raw) || /\bsimon\b/i.test(raw)) {
+        var mappedTue = raw
+          .replace(/\bANGEL\b/gi, "LULIYA")
+          .replace(/\bSIMON\b/gi, "LULIYA");
+        var patchTue = { instructors: mappedTue };
+        if (/^closed$/i.test(String(row.client_name || "").trim())) {
+          patchTue.client_name = "No participant";
+        }
+        if (mappedTue !== raw || patchTue.client_name) return patchTue;
+      }
+      return null;
+    }
+
+    if (day === "thursday" && /\bsimon\b/i.test(raw)) {
+      var mappedThu = raw.replace(/\bSIMON\b/gi, "LULIYA");
+      if (mappedThu === raw) return null;
+      return { instructors: mappedThu };
+    }
+
+    return null;
   }
 
   function isAquaticService(service) {
@@ -480,7 +507,8 @@
    * - Replace summer Day Centre who-with-whom with Autumn DC board
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
-   * - Acton Thu aquatic: Simon→Luliya
+   * - Acton Thu aquatic: Simon→Luliya (Simon only works Thu)
+   * - Acton Tue aquatic: Angel/Simon lane→Luliya; Rayan Ta + Richard→Javier
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {
@@ -534,9 +562,9 @@
           }
         }
       }
-      var simonMapped = remapAutumnSimonToLuliya(r);
-      if (simonMapped) {
-        out.push(Object.assign({}, r, { instructors: simonMapped }));
+      var poolPatch = remapAutumnActonPoolInstructors(r);
+      if (poolPatch) {
+        out.push(Object.assign({}, r, poolPatch));
         return;
       }
       if (isMultiActivityService(r.service)) {
