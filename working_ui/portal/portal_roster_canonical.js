@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 15;
+    var SOURCE_VERSION = 16;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -116,12 +116,22 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      { staff: "Victor", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      /* Luliya covers Ikram 11–4; Victor joins Raul’s shift + Ikram 3–4 */
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      {
+        staff: "Victor",
+        clients: [
+          { name: "Timi", time: "11 to 1" },
+          { name: "Emanuel", time: "1 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
       {
         staff: "Raul",
         clients: [
           { name: "Timi", time: "11 to 1" },
           { name: "Emanuel", time: "1 to 3" },
+          { name: "Ikram", time: "3 to 4" },
         ],
       },
       {
