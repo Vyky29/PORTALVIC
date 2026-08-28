@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 14;
+    var SOURCE_VERSION = 15;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -87,7 +87,14 @@
     wednesday: [
       { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 3" }] },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      { staff: "Victor", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      {
+        staff: "Victor",
+        clients: [
+          { name: "Fadi", time: "12.30 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
       {
         staff: "Raul",
         clients: [
