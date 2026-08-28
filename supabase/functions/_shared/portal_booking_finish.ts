@@ -255,7 +255,7 @@ export async function notifyParentFinishBooking(opts: {
   slotSummary: string | null;
   rawToken: string;
   admin?: SupabaseClient | null;
-  /** registration_submitted = pay now, suitability reviewed after payment */
+  /** registration_submitted = pay-now copy after form submit (no suitability wording) */
   variant?: "accepted" | "registration_submitted";
 }): Promise<{ emailOk: boolean; waOk: boolean; waError?: string }> {
   const name = clean(opts.parentName, 120) || "Parent / carer";
@@ -267,8 +267,7 @@ export async function notifyParentFinishBooking(opts: {
   const bodyText = autoPay
     ? `clubSENsational received the registration for ${participant}. ` +
       (slot ? `Place: ${slot}. ` : "") +
-      `Complete booking and payment now: ${link} ` +
-      `The office reviews suitability after payment.`
+      `Complete booking and payment now: ${link}`
     : `clubSENsational accepted the registration for ${participant}. ` +
       (slot ? `Place: ${slot}. ` : "") +
       `Finish booking (funding, payment, first instalment): ${link} ` +
@@ -295,7 +294,7 @@ export async function notifyParentFinishBooking(opts: {
           `Thank you — we received the registration for ${participant}.\n\n` +
           (slot ? `Requested place: ${slot}\n\n` : "") +
           `Please complete booking and payment now:\n${link}\n\n` +
-          `Your place is held for 30 minutes while you pay. After payment, the office checks that the service is suitable for your child. If it is not, we will cancel and refund.\n\n— clubSENsational`
+          `Your place is held for 30 minutes while you pay.\n\n— clubSENsational`
         : `Hi ${name},\n\n` +
           `clubSENsational has accepted the registration for ${participant}.\n\n` +
           (slot ? `Requested place: ${slot}\n\n` : "") +
