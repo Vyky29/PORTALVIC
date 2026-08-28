@@ -518,12 +518,12 @@ function hourTo24(hour: number, day: string): number {
   return hour;
 }
 
-/** Parse a "12.30 to 3" / "4.30-5.15" slot into start/end tokens + day-aware minutes. */
+/** Parse a "12.30 to 3" / "4.30-5.15" / "4.30 – 5.00" slot into start/end tokens + day-aware minutes. */
 function parseSlotTokens(
   raw: unknown,
   day: string,
 ): { startTok: string; endTok: string; start: number | null; end: number | null } | null {
-  const parts = clean(raw, 40).split(/to|-|—/i);
+  const parts = clean(raw, 40).split(/\s*(?:to|[–—−-]|\u2013|\u2014)\s*/i);
   if (parts.length !== 2) return null;
   const startTok = parts[0].trim();
   const endTok = parts[1].trim();
@@ -1673,6 +1673,90 @@ Deno.serve(async (req) => {
     weeklyNotes.length > 0 ||
     !!(weeklyNoteLatest && weeklyNoteLatest.week_start);
 
+  /** Validated / held trial (and similar) dates for hub Next session — not only weekday projection. */
+  let upcomingBookedSessions: Array<{
+    iso: string;
+    day: string;
+    label: string;
+    time: string;
+    venue: string;
+    area: string;
+  }> = [];
+  if (wantGeneral && !isFormerClient) {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const nameCandidates = [
+      clean(displayName, 80),
+      clean(participant.first_name, 80),
+      clean(parentFacingClientName, 80),
+    ].filter(Boolean);
+    const { data: contactMeta } = await supabase
+      .from("portal_parent_contacts")
+      .select("email, mobile, child_display, child_first_name")
+      .eq("contact_id", contactId)
+      .maybeSingle();
+    const parentEmail = clean(contactMeta?.email, 120).toLowerCase();
+    const { data: tokenDocs } = await supabase
+      .from("portal_booking_completion_tokens")
+      .select("document_id")
+      .eq("contact_id", contactId)
+      .not("document_id", "is", null)
+      .limit(20);
+    const docIds = [
+      ...new Set(
+        (tokenDocs || [])
+          .map((t) => clean(t.document_id, 80))
+          .filter(Boolean),
+      ),
+    ];
+
+    let bookedRows: Array<Record<string, unknown>> = [];
+    if (docIds.length) {
+      const { data } = await supabase
+        .from("portal_booking_slot_reservations")
+        .select("date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id")
+        .in("document_id", docIds)
+        .in("status", ["validated", "held", "confirmed", "paid"])
+        .gte("date_iso", todayIso)
+        .order("date_iso", { ascending: true })
+        .limit(12);
+      bookedRows = Array.isArray(data) ? data : [];
+    }
+    if (!bookedRows.length && nameCandidates.length) {
+      const { data } = await supabase
+        .from("portal_booking_slot_reservations")
+        .select("date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id")
+        .in("status", ["validated", "held", "confirmed", "paid"])
+        .gte("date_iso", todayIso)
+        .ilike("participant_name", nameCandidates[0])
+        .order("date_iso", { ascending: true })
+        .limit(12);
+      bookedRows = (data || []).filter((row) => {
+        const pname = clean(row.participant_name, 80).toLowerCase();
+        const nameOk = nameCandidates.some(
+          (n) => pname === n.toLowerCase() || pname.startsWith(n.toLowerCase() + " "),
+        );
+        if (!nameOk) return false;
+        if (!parentEmail) return true;
+        return clean(row.parent_email, 120).toLowerCase() === parentEmail;
+      });
+    }
+
+    upcomingBookedSessions = bookedRows
+      .map((row) => {
+        const iso = clean(row.date_iso, 12).slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+        return {
+          iso,
+          day: clean(row.day_label, 20),
+          label: clean(row.service_name, 80) || "Activity",
+          time: clean(row.time_label, 40),
+          venue: clean(row.venue, 80),
+          area: "",
+        };
+      })
+      .filter(Boolean) as typeof upcomingBookedSessions;
+  }
+
   return new Response(
     JSON.stringify({
       ok: true,
@@ -1691,6 +1775,7 @@ Deno.serve(async (req) => {
       portal_access: isFormerClient ? "former" : "active",
       has_session_feedback: hasSessionFeedback,
       has_achievement_photos: hasAchievementPhotos,
+      upcoming_booked_sessions: isFormerClient ? [] : upcomingBookedSessions,
       participant: {
         contact_id: participant.contact_id,
         display_name: displayName,

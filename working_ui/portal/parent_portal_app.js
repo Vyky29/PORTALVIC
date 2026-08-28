@@ -28,7 +28,14 @@
     if (patch.swim_term_review_available != null) {
       base.swim_term_review_available = !!patch.swim_term_review_available;
     }
-    if (patch.reenrolment) base.reenrolment = patch.reenrolment;
+    if (patch.reenrolment) {
+      var prevRe = base.reenrolment || {};
+      base.reenrolment = Object.assign({}, prevRe, patch.reenrolment);
+      /* Do not let a notes-only patch clear a confirmed 26/27 place flag. */
+      if (prevRe.office_term_invoice === true) {
+        base.reenrolment.office_term_invoice = true;
+      }
+    }
     if (patch.pending_review_count != null) base.pending_review_count = patch.pending_review_count;
     if (patch.attendance_summary) base.attendance_summary = patch.attendance_summary;
     if (Array.isArray(patch.weekly_notes)) base.weekly_notes = patch.weekly_notes;
@@ -43,8 +50,21 @@
     }
     if (patch.feedback_year_default != null) base.feedback_year_default = patch.feedback_year_default;
     if (Array.isArray(patch.club_announcements)) base.club_announcements = patch.club_announcements;
+    if (Array.isArray(patch.upcoming_booked_sessions) && patch.upcoming_booked_sessions.length) {
+      base.upcoming_booked_sessions = patch.upcoming_booked_sessions;
+    }
     if (patch.general && base.general) {
+      var prevDetail = Array.isArray(base.general.services_detail)
+        ? base.general.services_detail
+        : [];
       Object.assign(base.general, patch.general);
+      var nextDetail = Array.isArray(base.general.services_detail)
+        ? base.general.services_detail
+        : [];
+      if (!nextDetail.length && prevDetail.length) {
+        base.general.services_detail = prevDetail;
+        base.general.services_count = prevDetail.length;
+      }
     }
     if (patch.participant && base.participant) {
       Object.assign(base.participant, patch.participant);

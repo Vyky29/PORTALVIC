@@ -2531,6 +2531,7 @@
   function participantNeedsFeedbackYearPicker(data) {
     if (data && data.feedback_year_picker_required === false) return false;
     if (data && data.feedback_year_picker_required === true) return true;
+    if (isNewAutumnStarter(data)) return false;
     var reg = participantSessionStartIso(data);
     var autumnStart = participantAutumnStartIso(data);
     if (!reg) return true;
@@ -2597,7 +2598,8 @@
   }
 
   /** True when this 26/27 date is before the service kind starts.
-   *  Day Centre from 1 Sep; weekend after-school from 5 Sep; weekday after-school from 8 Sep (week 2). */
+   *  Day Centre from 1 Sep; weekend after-school from 5 Sep; weekday after-school from 8 Sep (week 2).
+   *  New Autumn starters (and explicit validated booking dates) may begin week 1 from Mon 7 Sep. */
   function jsDowFromIso(iso) {
     var p = String(iso || "").split("-");
     if (p.length !== 3) return -1;
@@ -2605,15 +2607,36 @@
   }
 
   var NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM = "2026-09-08";
+  var NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM_NEW_STARTER = "2026-09-07";
 
-  function nextYearDateBeforeServiceStart(iso, isDayCentreService) {
+  function hasExplicitBookedIso(data, iso) {
+    var want = String(iso || "").slice(0, 10);
+    if (!want) return false;
+    var list =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    for (var i = 0; i < list.length; i++) {
+      if (String((list[i] && list[i].iso) || "").slice(0, 10) === want) return true;
+    }
+    return false;
+  }
+
+  function isNewAutumnStarter(data) {
+    var reg = participantSessionStartIso(data);
+    return !!(reg && reg > CURRENT_YEAR_TERM_TO_DAY_CENTRE);
+  }
+
+  function nextYearDateBeforeServiceStart(iso, isDayCentreService, data) {
     if (isDayCentreService) return false;
     if (!iso || iso < PARENT_FEEDBACK_DAY_CENTRE_START) return true;
+    if (hasExplicitBookedIso(data, iso)) return false;
     var dow = jsDowFromIso(iso);
     if (dow === 0 || dow === 6) {
       return iso < NEXT_YEAR_AFTERSCHOOL_FROM;
     }
-    return iso < NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM;
+    var weekdayFrom = isNewAutumnStarter(data)
+      ? NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM_NEW_STARTER
+      : NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM;
+    return iso < weekdayFrom;
   }
 
   function currentYearTermToIso(data) {
@@ -2635,6 +2658,29 @@
      * "not confirmed" on the row above.
      */
     if (r.office_term_invoice === true) return true;
+    /* New Autumn 26/27 starters never re-enrol — registration after Summer ends. */
+    if (isNewAutumnStarter(data)) return true;
+    /*
+     * After Summer, an active place with weekly services is already on 26/27
+     * (trial / mid-term booking) even when the re-enrol form was never used.
+     */
+    if (
+      !isFormerClient(data) &&
+      isoDateLocal(new Date()) > CURRENT_YEAR_TERM_TO_DAY_CENTRE &&
+      data &&
+      data.general &&
+      Array.isArray(data.general.services_detail) &&
+      data.general.services_detail.length
+    ) {
+      return true;
+    }
+    if (
+      !isFormerClient(data) &&
+      Array.isArray(data && data.upcoming_booked_sessions) &&
+      data.upcoming_booked_sessions.length
+    ) {
+      return true;
+    }
     /* Legacy payloads without continuing flags: only treat as accepted if submitted and not a full withdraw. */
     if (r.not_continuing === true) return false;
     if (r.continuing === true) return true;
@@ -2890,7 +2936,7 @@
       if (!slots || !slots.length) continue;
       slots.forEach(function (s) {
         if (out.length >= max) return;
-        if (nextYearDateBeforeServiceStart(iso, serviceIsDayCentre(s.label || s.service))) {
+        if (nextYearDateBeforeServiceStart(iso, serviceIsDayCentre(s.label || s.service), data)) {
           return;
         }
         var endM = parseServiceEndMinutes(s.time);
@@ -2919,19 +2965,71 @@
 
   /**
    * Next sessions for the hub: July crash/intensive first when sooner,
-   * then regular roster weekdays (e.g. Autumn Sundays).
+   * then validated booking dates, then regular roster weekdays (e.g. Autumn Mondays).
    */
+  function findBookedReservationSessionRows(data, opts) {
+    opts = opts || {};
+    var list =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    if (!list.length) return [];
+    var today = new Date();
+    var todayIso = isoDateLocal(today);
+    var tomorrowIso = isoDateLocal(addDaysLocal(today, 1));
+    var nowMins = today.getHours() * 60 + today.getMinutes();
+    var out = [];
+    list.forEach(function (raw) {
+      if (!raw || !raw.iso) return;
+      var iso = String(raw.iso).slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+      if (iso < todayIso) return;
+      var endM = parseServiceEndMinutes(raw.time);
+      var completed = iso === todayIso && endM != null && nowMins >= endM;
+      if (completed && !opts.includeCompletedToday) return;
+      out.push({
+        iso: iso,
+        dayLabel: formatHubDateLabel(iso),
+        label: shortServiceChipLabel(raw.label || "Service") || raw.label || "Service",
+        rawLabel: raw.label || "Service",
+        day: raw.day || "",
+        time: raw.time || "",
+        venue: String(raw.venue || "").trim(),
+        area: String(raw.area || "").trim(),
+        isToday: iso === todayIso,
+        isTomorrow: iso === tomorrowIso,
+        source: "booking",
+        completed: completed,
+        _start: parseServiceStartMinutes(raw.time),
+        _end: endM,
+      });
+    });
+    out.sort(function (a, b) {
+      if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
+      return (a._start || 0) - (b._start || 0);
+    });
+    return out;
+  }
+
   function findNextSessions(data, limit, opts) {
     opts = opts || {};
     var max = Math.max(1, limit || 3);
     var crash = findCrashUpcomingSessionRows(data, opts);
+    var booked = findBookedReservationSessionRows(data, opts);
     var roster = findRosterPatternNextSessions(data, Math.max(max, 8), opts);
-    var combined = crash.concat(roster);
-    combined.sort(function (a, b) {
+    var combined = crash.concat(booked).concat(roster);
+    /* Prefer explicit booking rows when the same day already has a roster projection. */
+    var seen = Object.create(null);
+    var deduped = [];
+    combined.forEach(function (row) {
+      var key = String(row.iso || "") + "|" + String(row._start || 0) + "|" + String(row.label || "");
+      if (seen[key]) return;
+      seen[key] = true;
+      deduped.push(row);
+    });
+    deduped.sort(function (a, b) {
       if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
       return (a._start || 0) - (b._start || 0);
     });
-    return combined.slice(0, max);
+    return deduped.slice(0, max);
   }
 
   /** All sessions on a calendar day (incl. finished today) for the hub Today cards. */
@@ -2944,6 +3042,12 @@
       },
     );
     if (crash.length) return crash;
+    var booked = findBookedReservationSessionRows(data, { includeCompletedToday: true }).filter(
+      function (s) {
+        return s.iso === want;
+      },
+    );
+    if (booked.length) return booked;
     return findRosterPatternNextSessions(data, 24, { includeCompletedToday: true }).filter(
       function (s) {
         return s.iso === want;
@@ -3000,7 +3104,7 @@
         var col = jsDow === 0 ? 6 : jsDow - 1;
         // 1–4 Sept 2026: Day Centre only — other services start 5 Sept.
         var runs =
-          cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false));
+          cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false, data));
         if (runs) {
           out.push(
             annotateChipDate(
@@ -3139,7 +3243,7 @@
         var jsDow = cursor.getDay();
         var col = jsDow === 0 ? 6 : jsDow - 1;
         var runs =
-          cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false));
+          cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false, data));
         if (runs) {
           out.push(
             annotateChipDate(
@@ -3484,7 +3588,7 @@
         var jsDow = cursor.getDay();
         var col = jsDow === 0 ? 6 : jsDow - 1;
         // 1–4 Sept 2026: Day Centre only — after-schools start 5 Sept.
-        var runs = cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false));
+        var runs = cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false, data));
         if (runs) {
           out.push(
             annotateChipDate(
@@ -4393,7 +4497,9 @@
       var summerEndedEmpty = isoDateLocal(new Date()) > currentYearTermToIso(data);
       var acceptedNextEmpty = familyAcceptedNextYear(data);
       var emptyMsg = acceptedNextEmpty
-        ? "Your 2026/27 place is on file. Open Booking to see kept services — weekly days appear here once the Autumn roster is published (from early September)."
+        ? isNewAutumnStarter(data)
+          ? "Your Autumn 2026/27 place is confirmed. The next class will show here once the first date is on the calendar (from early September)."
+          : "Your 2026/27 place is on file. Open Booking to see kept services — weekly days appear here once the Autumn roster is published (from early September)."
         : summerEndedEmpty
           ? "Summer term has ended and this place has no current roster days yet. Re-enrol for 2026/27 (or open Crash course July) from Quick access."
           : "No weekly services on the current roster yet — next sessions will show here when days are assigned.";

@@ -76,6 +76,8 @@ export function participantNeedsFeedbackYearPicker(
     : PARENT_FEEDBACK_AFTERSCHOOL_START_ISO;
   const reg = String(registrationDateIso || "").trim().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(reg)) return true;
+  /* Registered after Summer 25/26 ends → Autumn starter; no Summer year to pick. */
+  if (reg > "2026-07-31") return false;
   return reg < autumnStart;
 }
 
