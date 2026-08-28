@@ -12279,26 +12279,6 @@
       "session_date": "2026-07-14"
     },
     {
-      "client_name": "junaid_f",
-      "day": "Tuesday",
-      "instructors": "AURORA",
-      "service": "",
-      "area": "",
-      "time_slot": "17 to 17.30",
-      "venue": "Acton",
-      "session_date": "2026-07-14"
-    },
-    {
-      "client_name": "Karo",
-      "day": "Tuesday",
-      "instructors": "JAVIER",
-      "service": "",
-      "area": "",
-      "time_slot": "18 to 18.30",
-      "venue": "Acton",
-      "session_date": "2026-07-14"
-    },
-    {
       "client_name": "Ayman",
       "day": "Tuesday",
       "instructors": "JAVIER",

@@ -103,10 +103,115 @@
       if (!m) return 0;
       var h = parseInt(m[1], 10) || 0;
       var min = parseInt(m[2] || "0", 10) || 0;
+      /* 1–7 → afternoon (13–19). Keep 8–12 as morning / midday. */
       if (h > 0 && h < 8) h += 12;
       return h * 60 + min;
     }
     return { start: one(parts[0]), end: one(parts[1]) };
+  }
+
+  /** "17 to 17.30" / "16:30 to 18:30" → club labels "5 to 5.30" / "4.30 to 6.30". */
+  function normalizeClubTimeSlot(timeSlot) {
+    var raw = String(timeSlot || "")
+      .replace(/\s*-\s*/g, " to ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!raw) return "";
+    var parts = raw.split(/\s+to\s+/i);
+    if (parts.length < 2) return raw;
+    function fmt(p) {
+      var m = String(p || "")
+        .trim()
+        .match(/^(\d{1,2})(?:[:.](\d{2}))?/);
+      if (!m) return String(p || "").trim();
+      var h = parseInt(m[1], 10) || 0;
+      var min = parseInt(m[2] || "0", 10) || 0;
+      if (h >= 13 && h <= 23) h -= 12;
+      if (min === 0) return String(h);
+      return h + "." + String(min).padStart(2, "0");
+    }
+    return fmt(parts[0]) + " to " + fmt(parts[1]);
+  }
+
+  function normalizeGroupSessionService(service, venue, area) {
+    var svc = String(service || "").trim();
+    if (svc && svc !== "—") return svc;
+    var v = String(venue || "").toLowerCase();
+    var a = String(area || "").toLowerCase();
+    if (/acton|northolt/.test(v) || /lane|pool|teaching/.test(a)) return "Aquatic Activity";
+    if (/westway/.test(v) || /climb/.test(a)) return "Climbing Activity";
+    if (/swimfarm|hub/.test(v) && /bespoke/.test(a)) return "Bespoke Programme";
+    return svc || "Aquatic Activity";
+  }
+
+  function displayClientLabel(name) {
+    var n = String(name || "").trim();
+    if (!n) return "";
+    var low = n.toLowerCase();
+    if (low === "junaid_f" || low === "junaid") return "Junaid";
+    if (low.indexOf("_") >= 0) {
+      return n
+        .split(/_+/)
+        .filter(Boolean)
+        .map(function (w) {
+          return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+        })
+        .join(" ");
+    }
+    return n;
+  }
+
+  function clientLabelRank(name) {
+    var n = String(name || "").trim();
+    if (!n) return 0;
+    if (/_/.test(n)) return 1;
+    if (n === n.toLowerCase()) return 2;
+    return 3;
+  }
+
+  /** Normalize standing rows so empty-service / 24h junk does not split Aurora/Javier columns. */
+  function normalizeGroupSessionRows(rows) {
+    var mapped = (rows || []).map(function (r) {
+      if (!r) return null;
+      var venue = String(r.venue || "").trim();
+      var service = normalizeGroupSessionService(r.service, venue, r.area);
+      var time = normalizeClubTimeSlot(r.time_slot);
+      var client = displayClientLabel(r.client_name);
+      return Object.assign({}, r, {
+        venue: venue || "—",
+        service: service,
+        time_slot: time,
+        client_name: client || String(r.client_name || "").trim(),
+      });
+    }).filter(Boolean);
+
+    var best = Object.create(null);
+    mapped.forEach(function (r) {
+      var instr = String(r.instructors || "").trim().toUpperCase() || "—";
+      var mins = parseSlotMinutes(r.time_slot);
+      var key =
+        instr +
+        "|" +
+        String(r.venue || "") +
+        "|" +
+        String(r.service || "") +
+        "|" +
+        mins.start +
+        "-" +
+        mins.end +
+        "|" +
+        String(r.client_name || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "");
+      var prev = best[key];
+      if (!prev || clientLabelRank(r.client_name) > clientLabelRank(prev.client_name)) {
+        best[key] = r;
+      }
+    });
+    return Object.keys(best).map(function (k) {
+      return best[k];
+    });
   }
 
   function sortTimeSlots(a, b) {
@@ -143,9 +248,11 @@
     var grids = {};
     WEEKDAYS.forEach(function (day) {
       var iso = STANDING_ISO_BY_DAY[day];
-      var dayRows = (rows || []).filter(function (r) {
-        return String((r && r.session_date) || "").slice(0, 10) === iso;
-      });
+      var dayRows = normalizeGroupSessionRows(
+        (rows || []).filter(function (r) {
+          return String((r && r.session_date) || "").slice(0, 10) === iso;
+        })
+      );
       var colMap = Object.create(null);
       var colOrder = [];
       dayRows.forEach(function (r) {
@@ -173,24 +280,32 @@
           String(ca.title).localeCompare(String(cb.title), undefined, { sensitivity: "base" })
         );
       });
-      var timeSet = Object.create(null);
-      var times = [];
+      var timeByKey = Object.create(null);
+      var timeOrder = [];
       dayRows.forEach(function (r) {
         var t = String(r.time_slot || "").trim();
-        if (!t || timeSet[t]) return;
-        timeSet[t] = 1;
-        times.push(t);
+        if (!t) return;
+        var mins = parseSlotMinutes(t);
+        var tk = mins.start + "-" + mins.end;
+        if (!timeByKey[tk]) {
+          timeByKey[tk] = t;
+          timeOrder.push(tk);
+        }
       });
-      times.sort(sortTimeSlots);
-      var outRows = times.map(function (time) {
+      timeOrder.sort(function (a, b) {
+        return sortTimeSlots(timeByKey[a], timeByKey[b]);
+      });
+      var outRows = timeOrder.map(function (tk) {
+        var time = timeByKey[tk];
         var cells = colOrder.map(function (cid) {
           var hits = dayRows.filter(function (r) {
             var instr = String(r.instructors || "").trim().toUpperCase() || "—";
             var venue = String(r.venue || "").trim() || "—";
             var service = String(r.service || "").trim() || "—";
+            var mins = parseSlotMinutes(r.time_slot);
             return (
               instr + "|" + venue + "|" + service === cid &&
-              String(r.time_slot || "").trim() === time
+              mins.start + "-" + mins.end === tk
             );
           });
           if (!hits.length) return { label: "", kind: "empty" };
