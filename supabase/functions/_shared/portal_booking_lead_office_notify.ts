@@ -57,6 +57,21 @@ function registrationReviewUrl(): string {
     : `${base}?view=portal_participant_documents`;
 }
 
+function reenrolmentsReviewUrl(): string {
+  const adminBase = adminPushOpenBase().replace(/\/$/, "");
+  const origin = String(Deno.env.get("PORTAL_PUBLIC_ORIGIN") || "")
+    .trim()
+    .replace(/\/$/, "");
+  const base =
+    adminBase ||
+    (origin ? `${origin}/admin_dashboard.html` : "");
+  if (!base) return "";
+  if (/[?&]view=/.test(base)) return base;
+  return base.includes("?")
+    ? `${base}&view=reenrol_payments`
+    : `${base}?view=reenrol_payments`;
+}
+
 export async function notifyOfficeNewBookingLead(opts: {
   leadId: string;
   parentName: string;
@@ -450,5 +465,102 @@ export async function notifyOfficeWaitlistJoin(opts: {
     }
   } catch (e) {
     console.warn("[waitlist-office-notify] push error", e);
+  }
+}
+
+/** Office alert when a parent pays an invoice via Stripe (card / Apple Pay). */
+export async function notifyOfficeStripePaymentReceived(opts: {
+  invoiceShareId: string;
+  invoiceNumber: string | null;
+  participantName: string | null;
+  parentName: string | null;
+  parentEmail: string | null;
+  amountGbp: number;
+  paymentStatus: string;
+  paidVia?: string | null;
+  sourceLabel?: string | null;
+  stripeSessionId?: string | null;
+}): Promise<void> {
+  const invNo = String(opts.invoiceNumber || "").trim() || opts.invoiceShareId.slice(0, 8);
+  const participant = String(opts.participantName || "").trim() || "Participant";
+  const parent = String(opts.parentName || "").trim() || "Parent / carer";
+  const email = String(opts.parentEmail || "").trim();
+  const amount = Number(opts.amountGbp) || 0;
+  const status = String(opts.paymentStatus || "paid").trim();
+  const source = String(opts.sourceLabel || "Stripe payment link").trim();
+  const sessionId = String(opts.stripeSessionId || "").trim();
+
+  const smtp = readParentNotifySmtpConfig();
+  const tos = officeNotifyEmails();
+  const adminUrl = reenrolmentsReviewUrl();
+  const subject = `Stripe paid · ${invNo} · ${participant}`;
+  const bodyText =
+    `A parent paid via Stripe (card / Apple Pay).\n\n` +
+    `Invoice: ${invNo}\n` +
+    `Participant: ${participant}\n` +
+    `Parent / carer: ${parent}\n` +
+    (email ? `Email: ${email}\n` : "") +
+    `Amount recorded: £${amount.toFixed(2)}\n` +
+    `Invoice status: ${status}\n` +
+    `Source: ${source}\n` +
+    (sessionId ? `Stripe session: ${sessionId}\n` : "") +
+    `\nOpen Admin → Finance → Re-enrolments to review.\n` +
+    (adminUrl ? `${adminUrl}\n\n` : "") +
+    `No need to Mark paid — Stripe already updated the invoice.\n` +
+    `— clubSENsational portal`;
+
+  if (smtp && tos.length) {
+    for (const to of tos) {
+      const mail = await sendParentEmailViaSmtp({
+        config: smtp,
+        to,
+        subject,
+        bodyText,
+      });
+      if (!mail.ok) {
+        console.warn("[stripe-office-notify] email failed", to, mail.error);
+      }
+    }
+  } else {
+    console.log(
+      `[stripe-office-notify] invoice=${invNo} participant=${participant} amount=${amount} status=${status}`,
+    );
+  }
+
+  const baseUrl = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const secret = (Deno.env.get("PORTAL_PUSH_WEBHOOK_SECRET") || "").trim();
+  if (!baseUrl || !secret || !opts.invoiceShareId) return;
+
+  try {
+    const res = await fetch(
+      `${baseUrl}/functions/v1/portal-push-dispatch-admin-alert`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-portal-webhook-secret": secret,
+        },
+        body: JSON.stringify({
+          type: "UPDATE",
+          table: "portal_parent_invoice_share",
+          record: {
+            id: opts.invoiceShareId,
+            invoice_number: invNo,
+            participant_name: participant,
+            parent_name: parent,
+            payment_status: status,
+            amount_paid_gbp: amount,
+            notify_event: "stripe_paid",
+            paid_via: opts.paidVia || "stripe",
+          },
+        }),
+      },
+    );
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      console.warn("[stripe-office-notify] push failed", res.status, t.slice(0, 200));
+    }
+  } catch (e) {
+    console.warn("[stripe-office-notify] push error", e);
   }
 }

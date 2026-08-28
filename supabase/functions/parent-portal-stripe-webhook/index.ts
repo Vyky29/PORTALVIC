@@ -9,6 +9,7 @@ import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 import { recordInvoiceInstalmentPayment } from "../_shared/portal_create_family_invoice.ts";
+import { notifyOfficeStripePaymentReceived } from "../_shared/portal_booking_lead_office_notify.ts";
 import {
   confirmTrialSlotAfterStripePayment,
   tryCompleteBookingAfterInvoicePayment,
@@ -92,11 +93,22 @@ Deno.serve(async (req) => {
 
   const { data: before } = await supabase
     .from("portal_parent_invoice_share")
-    .select("id, amount_gbp, payment_schedule")
+    .select(
+      "id, amount_gbp, amount_paid_gbp, payment_schedule, payment_status, stripe_checkout_session_id, invoice_number, contact_id, ready_by, created_via, reference_text",
+    )
     .eq("id", shareId)
     .maybeSingle();
   if (!before) {
     return json(200, { ok: true, skipped: "invoice_not_found" });
+  }
+
+  const paidBefore = Number(before.amount_paid_gbp) || 0;
+  const sameSessionAlready =
+    sessionId &&
+    String(before.stripe_checkout_session_id || "") === sessionId &&
+    String(before.payment_status || "").toLowerCase() === "paid";
+  if (sameSessionAlready) {
+    return json(200, { ok: true, skipped: "duplicate_session", invoice_id: shareId });
   }
 
   const netPence = Number(meta.invoice_net_pence);
@@ -138,6 +150,51 @@ Deno.serve(async (req) => {
   if (!data) {
     console.warn("[parent-portal-stripe-webhook] invoice not found", shareId, sessionId);
     return json(200, { ok: true, skipped: "invoice_not_found" });
+  }
+
+  const paidAfter = Number(data.amount_paid_gbp) || 0;
+  const newMoneyRecorded = paidAfter > paidBefore + 0.001;
+  if (newMoneyRecorded) {
+    try {
+      let participantName: string | null = null;
+      let parentName: string | null = null;
+      let parentEmail: string | null = null;
+      const contactId = String(before.contact_id || "").trim();
+      if (contactId) {
+        const { data: contact } = await supabase
+          .from("portal_parent_contacts")
+          .select("child_display, parent_display, email")
+          .eq("contact_id", contactId)
+          .maybeSingle();
+        participantName = contact?.child_display
+          ? String(contact.child_display)
+          : null;
+        parentName = contact?.parent_display ? String(contact.parent_display) : null;
+        parentEmail = contact?.email ? String(contact.email) : null;
+      }
+      const finishBooking = String(meta.finish_booking || "") === "1";
+      const readyBy = String(before.ready_by || "").toLowerCase();
+      const sourceLabel = finishBooking || readyBy === "finish_booking"
+        ? "Finish booking · Stripe / Apple Pay"
+        : "Parent Portal invoice · Stripe / Apple Pay";
+      await notifyOfficeStripePaymentReceived({
+        invoiceShareId: String(data.id),
+        invoiceNumber: data.invoice_number ? String(data.invoice_number) : null,
+        participantName,
+        parentName,
+        parentEmail,
+        amountGbp: paidAfter,
+        paymentStatus: String(data.payment_status || "paid"),
+        paidVia: "stripe",
+        sourceLabel,
+        stripeSessionId: sessionId || null,
+      });
+    } catch (e) {
+      console.error(
+        "[parent-portal-stripe-webhook] office notify",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
   }
 
   const xero =
