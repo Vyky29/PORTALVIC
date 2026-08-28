@@ -142,11 +142,10 @@ def friday_template() -> list[tuple[str, str, str]]:
         _pairs("Victor", "11-4", "SwimFarm"),  # Ikram
         _pairs("Raul", "11-1", "SwimFarm"),
         _pairs("Emanuel", "1-3", "SwimFarm"),
-        _pairs("Youssef", "12.30-3", "SwimFarm"),
-        _pairs("Emanuel", "3-4", "SwimFarm"),
+        # Youssef DC 12.30–16:00 (Fadi + Emanuel) then Hub Bespoke 16:15 (same site).
+        _pairs("Youssef", "12.30-4", "SwimFarm"),
         _pairs("Roberto", "4-6", "Acton"),
         # Fri Hub Bespoke: Emanuel + Victor + Youssef with Tinashe.
-        # Youssef: DC to 16:00 then Hub 16:15 (same site).
         _pairs("Emanuel", "4.15-6.15", "SwimFarm"),
         _pairs("Victor", "4.15-6.15", "SwimFarm"),
         _pairs("Youssef", "4.15-6.15", "SwimFarm"),
