@@ -59,11 +59,12 @@ function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+/** Public family site (booking + parent pages). Staff app stays on portalvic.vercel.app. */
 export function portalPublicOrigin(): string {
   return (
     clean(Deno.env.get("PORTAL_PUBLIC_ORIGIN"), 200) ||
     clean(Deno.env.get("PARENT_PORTAL_PUBLIC_ORIGIN"), 200) ||
-    "https://portalvic.vercel.app"
+    "https://www.clubsensational.org"
   ).replace(/\/$/, "");
 }
 

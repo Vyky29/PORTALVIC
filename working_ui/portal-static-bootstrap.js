@@ -22,9 +22,9 @@
   /** Canonical Portal host — induction/My documents 404 on www.clubsensational.org. */
   window.PORTAL_CANONICAL_ORIGIN =
     window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app";
-  /** Family portal (parents) — not the staff app host. */
+  /** Family portal (parents) — public club site (not the staff app host). */
   window.PORTAL_FAMILY_ORIGIN =
-    window.PORTAL_FAMILY_ORIGIN || "https://family.clubsensational.org";
+    window.PORTAL_FAMILY_ORIGIN || "https://www.clubsensational.org";
   window.portalFamilyPortalUrl = function portalFamilyPortalUrl(path) {
     path = String(path || "").replace(/^\//, "");
     if (path === "parents") path = "parent";

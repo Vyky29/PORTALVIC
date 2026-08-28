@@ -844,7 +844,8 @@ Deno.serve(async (req) => {
         if (br.ok) {
           const origin = (
             Deno.env.get("PORTAL_PUBLIC_ORIGIN") ||
-            "https://portalvic.vercel.app"
+            Deno.env.get("PARENT_PORTAL_PUBLIC_ORIGIN") ||
+            "https://www.clubsensational.org"
           ).replace(/\/$/, "");
           const flow = await gocardlessCreateBillingRequestFlow({
             billingRequestId: br.data.id,
