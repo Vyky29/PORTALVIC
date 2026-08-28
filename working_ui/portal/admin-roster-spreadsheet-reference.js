@@ -36,6 +36,7 @@
     sessionDay: "Monday",
     hoursDay: "Monday",
     hoursService: "all",
+    hoursWeekStart: null,
     dirty: Object.create(null),
     dirtyBaseline: Object.create(null),
     saving: false,
@@ -60,6 +61,131 @@
     "Saturday",
     "Sunday",
   ];
+
+  /** Staff hours dated sheet = Autumn 26/27 only (not summer Excel). */
+  var HOURS_TERM_FROM = "2026-09-01";
+  var HOURS_TERM_TO = "2026-12-17";
+
+  function pad2(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  function isoFromDate(d) {
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+
+  function parseIsoLocal(iso) {
+    var s = String(iso || "").slice(0, 10);
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (!m) return null;
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  }
+
+  function addDaysIso(iso, days) {
+    var d = parseIsoLocal(iso);
+    if (!d) return "";
+    d.setDate(d.getDate() + days);
+    return isoFromDate(d);
+  }
+
+  function mondayOfWeek(iso) {
+    var d = parseIsoLocal(iso);
+    if (!d) return "";
+    var wd = d.getDay();
+    var diff = wd === 0 ? -6 : 1 - wd;
+    d.setDate(d.getDate() + diff);
+    return isoFromDate(d);
+  }
+
+  function isoTodayLocal() {
+    var n = new Date();
+    return isoFromDate(n);
+  }
+
+  function formatHoursWeekRangeLabel(weekStart) {
+    var a = parseIsoLocal(weekStart);
+    var b = parseIsoLocal(addDaysIso(weekStart, 6));
+    if (!a || !b) return "";
+    function fmt(d) {
+      return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear();
+    }
+    return fmt(a) + " - " + fmt(b);
+  }
+
+  function defaultHoursWeekStart() {
+    var t = isoTodayLocal();
+    if (t < HOURS_TERM_FROM) t = HOURS_TERM_FROM;
+    if (t > HOURS_TERM_TO) t = HOURS_TERM_TO;
+    return mondayOfWeek(t);
+  }
+
+  function ensureHoursWeekStart() {
+    if (!state.hoursWeekStart) state.hoursWeekStart = defaultHoursWeekStart();
+    return state.hoursWeekStart;
+  }
+
+  function hoursWeekBounds() {
+    var start = ensureHoursWeekStart();
+    return { start: start, end: addDaysIso(start, 6) };
+  }
+
+  function canHoursWeekPrev() {
+    var prevEnd = addDaysIso(addDaysIso(ensureHoursWeekStart(), -7), 6);
+    return prevEnd >= HOURS_TERM_FROM;
+  }
+
+  function canHoursWeekNext() {
+    return addDaysIso(ensureHoursWeekStart(), 7) <= HOURS_TERM_TO;
+  }
+
+  function filterDatesToHoursWeek(dates) {
+    var b = hoursWeekBounds();
+    return (dates || []).filter(function (dr) {
+      var iso = String((dr && dr.date) || "").slice(0, 10);
+      return iso >= b.start && iso <= b.end;
+    });
+  }
+
+  function sheetForHoursWeek(sheet) {
+    if (!sheet) return sheet;
+    var out = {
+      venueGroups: sheet.venueGroups || [],
+      dates: filterDatesToHoursWeek(sheet.dates),
+      placeholder: sheet.placeholder,
+    };
+    if (sheet.blocks && sheet.blocks.length) {
+      out.blocks = sheet.blocks.map(function (block) {
+        return {
+          venueGroups: block.venueGroups || [],
+          dates: filterDatesToHoursWeek(block.dates),
+        };
+      });
+    }
+    return out;
+  }
+
+  function hoursWeekNavHtml() {
+    var start = ensureHoursWeekStart();
+    var canPrev = canHoursWeekPrev();
+    var canNext = canHoursWeekNext();
+    return (
+      '<div class="c4k-hub-weekbar card-pad asr-hours-weekbar" style="margin:0 0 12px;min-width:0">' +
+      '<div class="c4k-hub-weekbar__left" style="min-width:0">' +
+      '<span class="c4k-hub-weekbar__lbl">WEEK (MON-SUN)</span>' +
+      '<span class="c4k-hub-weekbar__range" id="asrHoursWeekRange">' +
+      esc(formatHoursWeekRangeLabel(start)) +
+      "</span></div>" +
+      '<div class="c4k-hub-weekbar__btns">' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-asr-hours-week="prev"' +
+      (canPrev ? "" : " disabled") +
+      ">← Prev week</button>" +
+      '<button type="button" class="btn btn--sec btn--sm" data-asr-hours-week="this">This week</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-asr-hours-week="next"' +
+      (canNext ? "" : " disabled") +
+      ">Next week →</button>" +
+      "</div></div>"
+    );
+  }
 
   function configure(options) {
     if (!options) return;
@@ -453,20 +579,30 @@
     });
     copy._standingHours = buildStandingHoursLines(rosterRows);
     var autumnHours = autumnStaffHoursBase();
-    var autumnMeta = autumnStaffHoursPayload() && autumnStaffHoursPayload().meta;
+    var autumnMeta = (autumnStaffHoursPayload() && autumnStaffHoursPayload().meta) || {};
+    /* Always prefer Autumn blob; fall back to base only if it is already Autumn-dated. */
     if (autumnHours) {
       copy.staffHours = cloneStaffHours(autumnHours);
-      copy.meta = Object.assign({}, copy.meta || {}, {
-        hoursFrom: (autumnMeta && autumnMeta.hoursFrom) || "2026-09-01",
-        hoursTo: (autumnMeta && autumnMeta.hoursTo) || "2026-12-17",
-        termBreakFrom: (autumnMeta && autumnMeta.termBreakFrom) || "2026-10-26",
-        termBreakTo: (autumnMeta && autumnMeta.termBreakTo) || "2026-10-30",
-        hoursLabel: (autumnMeta && autumnMeta.hoursLabel) || "Autumn Term 2026",
-        timetableSource:
-          (autumnMeta && autumnMeta.timetableSource) ||
-          "database/apply_staff_timetable_autumn_2026.py",
-      });
+    } else if (copy.staffHours) {
+      var monDates = (copy.staffHours.Monday && copy.staffHours.Monday.dates) || [];
+      var firstIso = monDates[0] && String(monDates[0].date || "").slice(0, 10);
+      if (!firstIso || firstIso < HOURS_TERM_FROM) {
+        copy.staffHours = { Monday: { venueGroups: [], dates: [], placeholder: true } };
+        WEEKDAYS.forEach(function (wd) {
+          copy.staffHours[wd] = { venueGroups: [], dates: [], placeholder: true };
+        });
+      }
     }
+    copy.meta = Object.assign({}, copy.meta || {}, {
+      hoursFrom: autumnMeta.hoursFrom || HOURS_TERM_FROM,
+      hoursTo: autumnMeta.hoursTo || HOURS_TERM_TO,
+      termBreakFrom: autumnMeta.termBreakFrom || "2026-10-26",
+      termBreakTo: autumnMeta.termBreakTo || "2026-10-30",
+      hoursLabel: autumnMeta.hoursLabel || "Autumn Term 2026 (1 Sep - 17 Dec)",
+      timetableSource:
+        autumnMeta.timetableSource || "database/apply_staff_timetable_autumn_2026.py",
+      hoursSource: "autumn_2026",
+    });
     var client = cfg.getClient();
     if (!client || !global.PortalStaffTimetableMerge) {
       state.mergedData = copy;
@@ -968,10 +1104,12 @@
     if (!d || !d.staffHours) {
       return '<p class="muted">Staff hours data not loaded.</p>';
     }
+    ensureHoursWeekStart();
     var day = state.hoursDay;
     var html =
       renderStandingHoursBlock() +
-      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Below: dated hours sheet (Autumn Term 2026 rota + saved overrides). Edits here sync to dashboards after <strong>Save</strong> - they do not change who is booked in Services.</p>' +
+      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Below: dated hours sheet for <strong>Autumn Term 2026</strong> (1 Sep - 17 Dec) + saved overrides. Use the week bar to step week by week. Edits sync to dashboards after <strong>Save</strong> - they do not change who is booked in Services.</p>' +
+      hoursWeekNavHtml() +
       hoursLegendHtml() +
       weekdaySubtabs(day, "data-asr-hours-day", {
         includeAll: true,
@@ -981,7 +1119,7 @@
       serviceSubtabs(state.hoursService, "data-asr-hours-service");
     if (day === "all") {
       WEEKDAYS.forEach(function (wd) {
-        var sheet = d.staffHours[wd];
+        var sheet = sheetForHoursWeek(d.staffHours[wd]);
         html +=
           '<section class="asr-hours-day-section" aria-labelledby="asr-hours-day-' +
           esc(wd) +
@@ -991,12 +1129,27 @@
           '">' +
           esc(wd) +
           "</h3>";
-        html += renderHoursDaySection(wd, sheet);
+        if (!sheet || !(sheet.dates && sheet.dates.length) && !(sheet.blocks && sheet.blocks.length)) {
+          html +=
+            '<p class="muted" style="margin:0 0 12px">No Autumn shifts this week for ' +
+            esc(wd) +
+            ".</p>";
+        } else {
+          html += renderHoursDaySection(wd, sheet);
+        }
         html += "</section>";
       });
       return html + renderChangeLogHtml();
     }
-    return html + renderHoursDaySection(day, d.staffHours[day]) + renderChangeLogHtml();
+    var one = sheetForHoursWeek(d.staffHours[day]);
+    if (!one || (!(one.dates && one.dates.length) && !(one.blocks && one.blocks.length))) {
+      html +=
+        '<p class="muted" style="margin:12px 0">No Autumn shifts in this week for ' +
+        esc(day) +
+        ". Use Next week to move into term dates.</p>";
+      return html + renderChangeLogHtml();
+    }
+    return html + renderHoursDaySection(day, one) + renderChangeLogHtml();
   }
 
   function updateToolbar() {
@@ -1146,12 +1299,28 @@
         refreshPanel();
       });
     });
+    root.querySelectorAll("[data-asr-hours-week]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var act = btn.getAttribute("data-asr-hours-week") || "";
+        var cur = ensureHoursWeekStart();
+        if (act === "prev") {
+          if (!canHoursWeekPrev()) return;
+          state.hoursWeekStart = addDaysIso(cur, -7);
+        } else if (act === "next") {
+          if (!canHoursWeekNext()) return;
+          state.hoursWeekStart = addDaysIso(cur, 7);
+        } else {
+          state.hoursWeekStart = defaultHoursWeekStart();
+        }
+        refreshPanel();
+      });
+    });
     root.querySelectorAll(".asr-cell-input").forEach(function (inp) {
       inp.addEventListener("input", function () {
         var key = inp.getAttribute("data-asr-edit-key") || "";
         if (!key) return;
         if (!Object.prototype.hasOwnProperty.call(state.dirtyBaseline, key)) {
-          var cell = findCellInStaffHours(data(), key);
+          var cell = findCellInStaffHours(data() && data().staffHours, key);
           state.dirtyBaseline[key] = cell ? String(cell.text || "") : "";
         }
         state.dirty[key] = inp.value;

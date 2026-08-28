@@ -27,7 +27,10 @@
     participants: ["/portal/participants_parents_portal_data.js?v=20260707-emani-dedupe"],
     oldpax: ["/portal/old_participants_portal_data.js?v=20260430-oldpax-export"],
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
-    spreadsheet_ref: ["/portal/spreadsheet_reference_data.js?v=20260602-weekend"],
+    spreadsheet_ref: [
+      "/portal/spreadsheet_reference_data.js?v=20260828-autumn-hours-base",
+      "/portal/autumn_staff_hours_reference.js?v=20260828-hours-weeknav",
+    ],
   };
 
   var inflight = {};
