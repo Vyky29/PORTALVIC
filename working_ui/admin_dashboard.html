@@ -146,7 +146,7 @@
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260811-patrick-en-dash"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260614-madre-dedupe"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260828-autumn-dc-board"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260809-staff-map"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -7659,6 +7659,46 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * Michelle-style Day Centre board: one column per staff, clients stacked
      * with compact time + area (who is with whom).
      */
+    /** Prefer Autumn 26/27 Day Centre board (PortalRosterCanonical); else slot-derived. */
+    function adminServicesDayCentreStaffBoardForDow(dowNorm, slotsForDay, filt){
+      try{
+        if(window.PortalRosterCanonical &&
+           typeof window.PortalRosterCanonical.buildDayCentreStaffBoard === 'function'){
+          var autumn = window.PortalRosterCanonical.buildDayCentreStaffBoard(dowNorm, filt);
+          if(autumn && autumn.staffOrder && autumn.staffOrder.length) return autumn;
+        }
+      }catch(_eAutumn){}
+      return adminServicesDayCentreStaffBoardFromSlots(slotsForDay, filt);
+    }
+    function adminServicesDayCentreBoardHoursLabel(board){
+      if(!board || !board.staffOrder || !board.staffOrder.length) return '';
+      var minM = null;
+      var maxM = null;
+      var i, j, col, cl, parsed, sm, em;
+      for(i = 0; i < board.staffOrder.length; i++){
+        col = board.byStaff[board.staffOrder[i]];
+        for(j = 0; j < ((col && col.clients) || []).length; j++){
+          cl = col.clients[j];
+          parsed = adminRosterParseTimeSlot(cl.time, '');
+          if(!parsed || !parsed.start || !parsed.end) continue;
+          sm = (parseInt(String(parsed.start).split(':')[0], 10) || 0) * 60 +
+            (parseInt(String(parsed.start).split(':')[1], 10) || 0);
+          em = (parseInt(String(parsed.end).split(':')[0], 10) || 0) * 60 +
+            (parseInt(String(parsed.end).split(':')[1], 10) || 0);
+          if(minM == null || sm < minM) minM = sm;
+          if(maxM == null || em > maxM) maxM = em;
+        }
+      }
+      if(minM == null || maxM == null) return '';
+      function fmt(m){
+        var h = Math.floor(m / 60);
+        var mm = m % 60;
+        var ap = h >= 12 ? 'PM' : 'AM';
+        var h12 = h % 12; if(!h12) h12 = 12;
+        return h12 + ':' + (mm < 10 ? '0' : '') + mm + ap;
+      }
+      return fmt(minM) + '–' + fmt(maxM);
+    }
     function adminServicesDayCentreStaffBoardFromSlots(slotsForDay, filt){
       var byStaff = {};
       var staffOrder = [];
@@ -19240,8 +19280,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               );
               continue;
             }
-            /* Day Centre: Michelle-style staff columns (who with whom).
-               Occupancy = standing/reenrol template (13–17 Jul); display = Autumn dates. */
+            /* Day Centre: Autumn 26/27 who-with-whom (PortalRosterCanonical); display = Autumn dates. */
             if(adminServicesIsDayCentreProgramme(block.programme)){
               if(dk === 'saturday' || dk === 'sunday') continue;
               var pickIsoDc = adminServicesDayCentreStandingIsoForDow(dk);
@@ -19262,13 +19301,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 if(String(slotsWd[sdi].sessionDate || '').trim() === pickIsoDc) slotsDc.push(slotsWd[sdi]);
               }
               if(!slotsDc.length) slotsDc = slotsWd;
-              var dcBoard = adminServicesDayCentreStaffBoardFromSlots(slotsDc, filt);
+              var dcBoard = adminServicesDayCentreStaffBoardForDow(dk, slotsDc, filt);
               if(!dcBoard.staffOrder.length) continue;
               var didDc = 'c4k-svc-dow-'+pidx+'-'+vix+'-'+dix;
               var dowTitleDc = adminServiceDowTitleFromNorm(dk) + ' · ' + adminFormatCalendarDaySummaryLabel(displayIsoDc);
-              var dayHoursDc = adminServiceDowSlotHoursLabel(slotsDc);
+              var dayHoursDc = adminServicesDayCentreBoardHoursLabel(dcBoard) || adminServiceDowSlotHoursLabel(slotsDc);
               var hoursHtmlDc = (dayHoursDc && dayHoursDc !== '—')
-                ? '<span class="c4k-svc-day-acc__hours" title="Day Centre hours this weekday (Autumn display; occupancy from standing/reenrol).">'+esc(dayHoursDc)+'</span>'
+                ? '<span class="c4k-svc-day-acc__hours" title="Day Centre hours this weekday (Autumn 26/27 roster).">'+esc(dayHoursDc)+'</span>'
                 : '';
               for(var dci = 0; dci < dcBoard.staffOrder.length; dci++){
                 var dcCol = dcBoard.byStaff[dcBoard.staffOrder[dci]];
@@ -19290,7 +19329,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 '+ Schedule a Class</button>';
               var bodyDc =
                 '<div class="c4k-svc-slots c4k-svc-slots--dc" style="min-width:0;overflow:auto">'+
-                '<p class="c4k-svc-dc-hint muted">Staff board · Autumn 26/27 dates (who is rostered with whom from standing/reenrol — same as afterschool Services).</p>'+
+                '<p class="c4k-svc-dc-hint muted">Staff board · Autumn 26/27 Day Centre (who with whom). Cyrus Tue 3.30–5 with Victor is Bespoke on staff dashboard.</p>'+
                 adminServicesDayCentreStaffBoardHtml(dcBoard)+
                 '<div class="c4k-svc-day-sched-bar">'+schedAddBtnDc+adminServicesOpenPlacesFilterBtnHtml(block.programme, vn.venue, dk)+'</div>'+
                 '</div>';
