@@ -7274,9 +7274,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return String(dowNorm || '').toLowerCase() === 'sunday';
     }
     /**
-     * Day Centre Services board uses one fixed standing week (Michelle-style
-     * staff columns) — not the aquatic 30′ instructor/participant grid.
-     * Week of Mon 13 Jul – Fri 17 Jul 2026 (pre-crash summer template).
+     * Day Centre Services board: occupancy (who with whom) comes from one fixed
+     * standing week — Michelle-style staff columns, not the aquatic 30' grid.
+     * Week of Mon 13 Jul – Fri 17 Jul 2026 (pre-crash / reenrol template).
+     * Display dates on the board are Autumn 26/27 (see DC render below).
      */
     var SERVICES_DAY_CENTRE_STANDING_WEEK = {
       monday: '2026-07-13',
@@ -7732,7 +7733,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function adminServicesDayCentreStaffBoardHtml(model){
       if(!model || !model.staffOrder || !model.staffOrder.length){
-        return '<p class="c4k-svc-dc-empty muted">No Day Centre staff roster for this weekday in the standing week (13–17 Jul).</p>';
+        return '<p class="c4k-svc-dc-empty muted">No Day Centre staff roster for this weekday (standing/reenrol template).</p>';
       }
       var cols = model.staffOrder.map(function(k){
         var col = model.byStaff[k];
@@ -19239,11 +19240,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               );
               continue;
             }
-            /* Day Centre: Michelle-style staff columns (who with whom), week 13–17 Jul. */
+            /* Day Centre: Michelle-style staff columns (who with whom).
+               Occupancy = standing/reenrol template (13–17 Jul); display = Autumn dates. */
             if(adminServicesIsDayCentreProgramme(block.programme)){
               if(dk === 'saturday' || dk === 'sunday') continue;
               var pickIsoDc = adminServicesDayCentreStandingIsoForDow(dk);
               if(!pickIsoDc) continue;
+              var dcTermStart =
+                (typeof SERVICES_ROSTER_DAY_CENTRE_START_ISO === 'string' && SERVICES_ROSTER_DAY_CENTRE_START_ISO)
+                  ? SERVICES_ROSTER_DAY_CENTRE_START_ISO
+                  : '2026-09-01';
+              var displayIsoDc = adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, dcTermStart, termEnd);
+              if(displayIsoDc && SERVICES_ROSTER_HALF_TERM_CLOSED &&
+                 displayIsoDc >= SERVICES_ROSTER_HALF_TERM_CLOSED.start &&
+                 displayIsoDc <= SERVICES_ROSTER_HALF_TERM_CLOSED.end){
+                displayIsoDc = adminPickIsoForSheetWeekdayNearAnchor('2026-09-07', dk, dcTermStart, termEnd) || displayIsoDc;
+              }
+              if(!displayIsoDc) displayIsoDc = pickIsoDc;
               var slotsDc = [];
               for(var sdi = 0; sdi < slotsWd.length; sdi++){
                 if(String(slotsWd[sdi].sessionDate || '').trim() === pickIsoDc) slotsDc.push(slotsWd[sdi]);
@@ -19252,10 +19265,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var dcBoard = adminServicesDayCentreStaffBoardFromSlots(slotsDc, filt);
               if(!dcBoard.staffOrder.length) continue;
               var didDc = 'c4k-svc-dow-'+pidx+'-'+vix+'-'+dix;
-              var dowTitleDc = adminServiceDowTitleFromNorm(dk) + ' · ' + adminFormatCalendarDaySummaryLabel(pickIsoDc);
+              var dowTitleDc = adminServiceDowTitleFromNorm(dk) + ' · ' + adminFormatCalendarDaySummaryLabel(displayIsoDc);
               var dayHoursDc = adminServiceDowSlotHoursLabel(slotsDc);
               var hoursHtmlDc = (dayHoursDc && dayHoursDc !== '—')
-                ? '<span class="c4k-svc-day-acc__hours" title="Day Centre hours this weekday (standing week 13–17 Jul).">'+esc(dayHoursDc)+'</span>'
+                ? '<span class="c4k-svc-day-acc__hours" title="Day Centre hours this weekday (Autumn display; occupancy from standing/reenrol).">'+esc(dayHoursDc)+'</span>'
                 : '';
               for(var dci = 0; dci < dcBoard.staffOrder.length; dci++){
                 var dcCol = dcBoard.byStaff[dcBoard.staffOrder[dci]];
@@ -19272,12 +19285,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               rowsInVenue += dcBoard.staffOrder.length;
               var schedAddBtnDc =
                 '<button type="button" class="btn btn--pri btn--sm c4k-svc-schedule-class-head-btn" data-novo-sched-add-class="1" '+
-                'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(pickIsoDc)+'" '+
+                'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(displayIsoDc)+'" '+
                 'title="Add an open seat band to Booking Portal for this day">'+
                 '+ Schedule a Class</button>';
               var bodyDc =
                 '<div class="c4k-svc-slots c4k-svc-slots--dc" style="min-width:0;overflow:auto">'+
-                '<p class="c4k-svc-dc-hint muted">Staff board · standing week 13–17 Jul (everyone can work with everyone — columns show who is rostered with whom).</p>'+
+                '<p class="c4k-svc-dc-hint muted">Staff board · Autumn 26/27 dates (who is rostered with whom from standing/reenrol — same as afterschool Services).</p>'+
                 adminServicesDayCentreStaffBoardHtml(dcBoard)+
                 '<div class="c4k-svc-day-sched-bar">'+schedAddBtnDc+adminServicesOpenPlacesFilterBtnHtml(block.programme, vn.venue, dk)+'</div>'+
                 '</div>';
