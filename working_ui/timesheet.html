@@ -567,9 +567,9 @@
     };
     /** Fallback when `staff_pay_rates` has no row for this auth user (seed names in DB migration).
      * Afternoon / swimming instructor rates (Autumn 26/27):
-     *   Simon £24 · Roberto £24 · Luliya £22 · Giuseppe £24 · Aurora/Dan/Javier £28
+     *   Simon £24 · Roberto £24 · Luliya £22 · Youssef £24 · Aurora/Dan/Javier £28
      * Morning Day Centre / support rates still TBD for most — leave SW rows as-is.
-     * Giuseppe: morning (incl. pool) stays Support Worker £20; afternoon swim £24. */
+     * Youssef (Josep): morning (incl. piscina) stays Support Worker £20; afternoon swim £24. */
     const PAY_RATE_BY_ROSTER_KEY = {
       youssef: {
         roleRates: { "Support Worker": 20, "Swimming Instructor": 24 },
@@ -600,13 +600,7 @@
       carlos: { hourly_rate: 30, role_label: "Climbing Instructor 3" },
       sandra: { hourly_rate: 28, role_label: "Fitness Instructor 1" },
       godsway: { hourly_rate: 18, role_label: "Support Worker 1" },
-      giuseppe: {
-        roleRates: { "Support Worker": 20, "Swimming Instructor": 24 },
-        roleScales: { "Support Worker": "Scale 2", "Swimming Instructor": "Scale 2" },
-        primaryRole: "Support Worker",
-        hourly_rate: 20,
-        role_label: "Support Worker 2"
-      },
+      giuseppe: { hourly_rate: 20, role_label: "Support Worker 2" },
       bismark: { hourly_rate: 23, role_label: "Support Worker 3" },
       john: { hourly_rate: 30, role_label: "Service Lead" },
       berta: { hourly_rate: 30, role_label: "Service Lead" },
@@ -2111,12 +2105,6 @@
     }
 
     /** Map a roster service string to the pay role (mirror of public.portal_service_to_role). */
-    function isGiuseppeRosterKey(rosterKey) {
-      const k = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
-        .trim()
-        .toLowerCase();
-      return k === "giuseppe" || k === "josep" || k === "stf008";
-    }
     /** Weekday morning band (before after-school): start before 16:00. */
     function sessionIsWeekdayMorningBand(session) {
       const start = hmToMinutes(String((session && session.start) || "").trim());
@@ -2128,18 +2116,19 @@
         (session && (session.rosterService || session.service || session.activity)) || ""
       ).toLowerCase();
       const area = String((session && (session.rosterArea || session.area)) || "").toLowerCase();
-      /*
-       * Giuseppe / Josep (Autumn 26/27): morning hours (incl. piscina) stay Support Worker £20.
-       * Summer used to bump morning pool to SI £24 — that no longer applies. Afternoon swim = SI £24.
-       */
-      if (isGiuseppeRosterKey() && sessionIsWeekdayMorningBand(session)) {
-        return "Support Worker";
-      }
       // Youssef's Acton weekday afternoon shift is paid entirely at the Swimming
       // rate (£24) — including the Room 2 Multi-Activity slot — so it never splits
       // into a Support-rate group.
       if (isYoussefRosterKey() && sessionIsActonAfternoon(session)) {
         return "Swimming Instructor";
+      }
+      /*
+       * Youssef / Josep (Autumn 26/27): morning hours (incl. piscina / midday pool)
+       * stay Support Worker £20. Summer bumped morning pool to SI £24 — that stops.
+       * Afternoon Acton swim remains SI £24 (handled above).
+       */
+      if (isYoussefRosterKey() && sessionIsWeekdayMorningBand(session)) {
+        return "Support Worker";
       }
       if (timesheetIsLuliaSession(session)) {
         if (/hub\s*room|room\s*2/.test(area)) return "Support Worker";
@@ -2236,7 +2225,7 @@
     const YOUSSEF_DAY_CENTRE_DAYS = new Set(["Monday", "Wednesday", "Friday"]);
     /**
      * Youssef SwimFarm Day Centre (Hub): Mon/Wed 11–12 + 1–3 (3h @ SW £20);
-     * Friday 11–12 + 1–4 (4h). Midday Big Pool 12–1 is a separate SI row (£24, no ±15).
+     * Friday 11–12 + 1–4 (4h). Midday Big Pool 12–1 stays SW £20 in Autumn (was SI £24 in summer).
      */
     function youssefSwimfarmDayCentrePaySpec(dayName) {
       if (!YOUSSEF_DAY_CENTRE_DAYS.has(String(dayName || ""))) return null;
@@ -2277,7 +2266,9 @@
     }
     function isYoussefSwimfarmMiddayAquatic(dayName, rosterKey, role, dayRows) {
       if (!isYoussefRosterKey(rosterKey)) return false;
-      if (String(role || "").trim() !== "Swimming Instructor") return false;
+      /* Autumn: midday pool is Support Worker £20 (no longer SI £24). */
+      const r = String(role || "").trim();
+      if (r !== "Support Worker" && r !== "Swimming Instructor") return false;
       if (!dayName || dayName === "Sunday" || dayName === "Saturday") return false;
       const rows = dayRows || [];
       if (!rows.length) return false;
@@ -2289,7 +2280,8 @@
     }
     function entryLooksYoussefMiddayAquatic(entry) {
       if (!entry || entry.dayOff) return false;
-      if (String(entry.role || "").trim() !== "Swimming Instructor") return false;
+      const r = String(entry.role || "").trim();
+      if (r !== "Support Worker" && r !== "Swimming Instructor") return false;
       if (String(entry.venue || "").toLowerCase().indexOf("swimfarm") < 0) return false;
       if (/acton/i.test(String(entry.venue || ""))) return false;
       const tr = String(entry.timeRange || entry.time_range || "").trim();
@@ -2302,7 +2294,7 @@
       /* club clock: 12.xx midday */
       return sh === 12;
     }
-    /** Mon/Wed/Fri SwimFarm Day Centre days always include a paid 12–1 pool hour (SI £24), even if MADRE omits Emanuel. */
+    /** Mon/Wed/Fri SwimFarm Day Centre days: paid 12–1 pool hour at Support £20 (Autumn; was SI £24 in summer). */
     function ensureYoussefMiddayAquaticEntries(entries, dateObj, rosterKey) {
       const dayName = WEEKDAY[dateObj.getDay()];
       if (!youssefSwimfarmDayCentrePaySpec(dayName)) return entries || [];
@@ -2320,7 +2312,7 @@
       const completed =
         list.every((e) => e && e.completed) || timesheetDayMarkedComplete(dateKey, rosterKey);
       const timeRange = clubTimeRangeFromMinutes(12 * 60, 13 * 60);
-      const swimRate = rateForRole("Swimming Instructor");
+      const supportRate = rateForRole("Support Worker");
       let found = false;
       const next = list.map((e) => {
         if (!entryLooksYoussefMiddayAquatic(e)) return e;
@@ -2328,8 +2320,8 @@
         return {
           ...e,
           hours: 1,
-          role: "Swimming Instructor",
-          rate: swimRate,
+          role: "Support Worker",
+          rate: supportRate,
           service: "Aquatic Activity",
           serviceName: "Aquatic Activity",
           serviceLabel: `${timeRange} Aquatic Activity`,
@@ -2349,8 +2341,8 @@
           serviceLabel: `${timeRange} Aquatic Activity`,
           venue: "SwimFarm",
           timeRange,
-          role: "Swimming Instructor",
-          rate: swimRate,
+          role: "Support Worker",
+          rate: supportRate,
           blendedRate: null
         });
       }
@@ -2626,7 +2618,6 @@
         youssef: 1,
         simon: 1,
         roberto: 1,
-        giuseppe: 1,
         lulia: 1,
         aurora: 1,
         dan: 1,
