@@ -1528,6 +1528,7 @@ Deno.serve(async (req) => {
    */
   let hasParentPayExtraShare = false;
   let hasOfficeTermInvoice = false;
+  let hasTrialInvoiceShare = false;
   if (wantGeneral) {
     const { data: parentShares } = await supabase
       .from("portal_parent_invoice_share")
@@ -1547,9 +1548,15 @@ Deno.serve(async (req) => {
         .map((x) => String(x || ""))
         .join(" ");
       const isCrash = /\bcrash\b/i.test(blob);
+      const isTrial = /\btrial\b/i.test(blob);
       const hint = clean(share.payment_method_hint, 40);
       if (isCrash && hint !== "la_funded") hasParentPayExtraShare = true;
       if (isCrash) continue;
+      if (isTrial) {
+        hasTrialInvoiceShare = true;
+        /* Trial INV-P must not count as a full 26/27 term place (Re-enrolled). */
+        continue;
+      }
       const termish =
         !!clean(share.billing_term, 40) || /\b(autumn|spring|summer|re-?enrol)/i.test(blob);
       /* Year guard so a Summer 25/26 row cannot pass as a 26/27 term place. */
@@ -1681,7 +1688,9 @@ Deno.serve(async (req) => {
     time: string;
     venue: string;
     area: string;
+    kind?: string;
   }> = [];
+  let isTrialOnlyPlace = false;
   if (wantGeneral && !isFormerClient) {
     const todayIso = new Date().toISOString().slice(0, 10);
     const nameCandidates = [
@@ -1713,7 +1722,9 @@ Deno.serve(async (req) => {
     if (docIds.length) {
       const { data } = await supabase
         .from("portal_booking_slot_reservations")
-        .select("date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id")
+        .select(
+          "date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id, notes",
+        )
         .in("document_id", docIds)
         .in("status", ["validated", "held", "confirmed", "paid"])
         .gte("date_iso", todayIso)
@@ -1724,7 +1735,9 @@ Deno.serve(async (req) => {
     if (!bookedRows.length && nameCandidates.length) {
       const { data } = await supabase
         .from("portal_booking_slot_reservations")
-        .select("date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id")
+        .select(
+          "date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id, notes",
+        )
         .in("status", ["validated", "held", "confirmed", "paid"])
         .gte("date_iso", todayIso)
         .ilike("participant_name", nameCandidates[0])
@@ -1741,10 +1754,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    const hasTrialReservation = bookedRows.some((row) =>
+      /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(String(row.notes || "")),
+    );
+
     upcomingBookedSessions = bookedRows
       .map((row) => {
         const iso = clean(row.date_iso, 12).slice(0, 10);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+        const trialish = /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(
+          String(row.notes || ""),
+        );
         return {
           iso,
           day: clean(row.day_label, 20),
@@ -1752,9 +1772,20 @@ Deno.serve(async (req) => {
           time: clean(row.time_label, 40),
           venue: clean(row.venue, 80),
           area: "",
+          kind: trialish ? "trial" : "session",
         };
       })
       .filter(Boolean) as typeof upcomingBookedSessions;
+
+    const regIso = String(registrationDateIso || "").slice(0, 10);
+    const registeredAfterSummer = /^\d{4}-\d{2}-\d{2}$/.test(regIso) && regIso > "2026-07-31";
+    /* New trial bookers: not a re-enrolled whole-term place. */
+    isTrialOnlyPlace =
+      !reenrolmentSummary.continuing &&
+      !reenrolmentSummary.submitted &&
+      !hasOfficeTermInvoice &&
+      (hasTrialReservation ||
+        (hasTrialInvoiceShare && (upcomingBookedSessions.length > 0 || registeredAfterSummer)));
   }
 
   return new Response(
@@ -1776,6 +1807,8 @@ Deno.serve(async (req) => {
       has_session_feedback: hasSessionFeedback,
       has_achievement_photos: hasAchievementPhotos,
       upcoming_booked_sessions: isFormerClient ? [] : upcomingBookedSessions,
+      place_kind: isFormerClient ? null : isTrialOnlyPlace ? "trial" : hasOfficeTermInvoice || reenrolmentSummary.continuing ? "term" : null,
+      is_trial_booking: isFormerClient ? false : isTrialOnlyPlace,
       participant: {
         contact_id: participant.contact_id,
         display_name: displayName,

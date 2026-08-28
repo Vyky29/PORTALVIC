@@ -1017,6 +1017,13 @@
         "</span>"
       );
     }
+    if (isTrialOnlyBooking(data)) {
+      return (
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--trial" data-pp-hub-reenrol-chip role="status" title="Trial session booked">' +
+        "<span>Trial booked</span>" +
+        "</span>"
+      );
+    }
     /*
      * Continuing place: submitted keep/change, office auto (LA/Day Centre), an office
      * term invoice, or an unpaid crash.
@@ -1093,6 +1100,7 @@
    * treat show_invoices=false as settled on its own.
    */
   function hubReenrolPayState(data) {
+    if (isTrialOnlyBooking(data)) return "settled";
     if (!familyAcceptedNextYear(data)) return "unconfirmed";
     if (data && data._hubReenrolPay === "settled") return "settled";
     if (data && data._hubReenrolPay === "pending") return "pending";
@@ -1499,6 +1507,7 @@
 
   function needsReenrolCta(data) {
     if (isFormerClient(data)) return false;
+    if (isTrialOnlyBooking(data)) return false;
     if (!isReenrolFormOpen()) return false;
     var booking = bookingSummary(data);
     return !booking.submitted && booking.parent_action !== "auto";
@@ -1507,6 +1516,7 @@
   /** After deadline: active families who did not re-enrol (excludes Former + office-auto). */
   function needsUnconfirmedSlotBanner(data) {
     if (isFormerClient(data)) return false;
+    if (isTrialOnlyBooking(data)) return false;
     if (isReenrolFormOpen()) return false;
     return !familyAcceptedNextYear(data);
   }
@@ -2625,6 +2635,47 @@
     return !!(reg && reg > CURRENT_YEAR_TERM_TO_DAY_CENTRE);
   }
 
+  /**
+   * Paid trial only (not a full Autumn re-enrol / term place).
+   * Hub must not show Re-enrolled or project every weekday for the term.
+   */
+  function isTrialOnlyBooking(data) {
+    if (!data) return false;
+    if (data.is_trial_booking === true || data.place_kind === "trial") return true;
+    var booking = bookingSummary(data);
+    if (booking.continuing || booking.submitted) return false;
+    if (data.reenrolment && data.reenrolment.office_term_invoice === true) return false;
+    var upcoming =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    var hasTrialRow = upcoming.some(function (s) {
+      return String((s && s.kind) || "").toLowerCase() === "trial";
+    });
+    if (hasTrialRow) return true;
+    return !!(isNewAutumnStarter(data) && upcoming.length && !booking.continuing);
+  }
+
+  function trialBookedDateRows(data) {
+    var list =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    return list
+      .map(function (s) {
+        var iso = String((s && s.iso) || "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+        return {
+          iso: iso,
+          dayLabel: formatHubDateLabel(iso),
+          label: shortServiceChipLabel((s && s.label) || "Trial") || "Trial",
+          rawLabel: (s && s.label) || "Trial",
+          day: (s && s.day) || "",
+          time: (s && s.time) || "",
+          venue: String((s && s.venue) || "").trim(),
+          area: String((s && s.area) || "").trim(),
+          source: "booking",
+        };
+      })
+      .filter(Boolean);
+  }
+
   function nextYearDateBeforeServiceStart(iso, isDayCentreService, data) {
     if (isDayCentreService) return false;
     if (!iso || iso < PARENT_FEEDBACK_DAY_CENTRE_START) return true;
@@ -2877,6 +2928,7 @@
   /** Next booked session from roster weekday pattern (services_detail). */
   function findRosterPatternNextSessions(data, limit, opts) {
     opts = opts || {};
+    if (isTrialOnlyBooking(data)) return [];
     var detail =
       data && data.general && Array.isArray(data.general.services_detail)
         ? data.general.services_detail
@@ -3699,6 +3751,7 @@
 
   /** Whole-year (or LA auto) bookings see Spring/Summer under Next session; term-by-term does not. */
   function showLaterTermsOnHub(data) {
+    if (isTrialOnlyBooking(data)) return false;
     // Term-by-term bookings only see the current confirmed block; everyone else
     // can see Later terms (incl. Summer history after term end / unconfirmed 26/27).
     return !isTermByTermBooking(data);
@@ -3713,6 +3766,50 @@
     var feedbackYearKey = String(
       viewOpts.feedbackYear || viewOpts.feedbackYearKey || data.feedback_year || "",
     ).trim();
+
+    if (isTrialOnlyBooking(data)) {
+      var trialDates = trialBookedDateRows(data);
+      if (!trialDates.length) {
+        return {
+          thisTermHtml: "",
+          laterTermsHtml: "",
+          oldTermDatesHtml: "",
+          fullHtml: "",
+        };
+      }
+      var trialChips =
+        '<div class="pp-hub-ops__date-chips" role="list" aria-label="Trial session">' +
+        trialDates
+          .map(function (d) {
+            return dateChipSpanHtml(d, statusByIso);
+          })
+          .join("") +
+        "</div>";
+      var trialBody =
+        '<div class="pp-hub-ops__date-chips-row">' +
+        '<div class="pp-hub-ops__date-chips-label">' +
+        termHalfRowIcon("Trial") +
+        "<span>Trial session</span></div>" +
+        trialChips +
+        "</div>";
+      var trialAccordion =
+        '<details class="pp-hub-ops__term-accordion" open>' +
+        '<summary class="pp-hub-ops__term-summary">' +
+        termHalfRowIcon("Trial") +
+        '<span class="pp-hub-ops__term-summary-title">Trial session</span>' +
+        '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
+        "</summary>" +
+        '<div class="pp-hub-ops__term-body">' +
+        termChipColorLegendHtml() +
+        trialBody +
+        "</div></details>";
+      return {
+        thisTermHtml: trialAccordion,
+        laterTermsHtml: "",
+        oldTermDatesHtml: "",
+        fullHtml: trialAccordion,
+      };
+    }
 
     if (feedbackYearKey === PARENT_FEEDBACK_PRIOR_YEAR) {
       function chipsOnlySummer(list, ariaLabel) {

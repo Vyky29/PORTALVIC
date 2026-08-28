@@ -53,6 +53,8 @@
     if (Array.isArray(patch.upcoming_booked_sessions) && patch.upcoming_booked_sessions.length) {
       base.upcoming_booked_sessions = patch.upcoming_booked_sessions;
     }
+    if (patch.place_kind != null) base.place_kind = patch.place_kind;
+    if (patch.is_trial_booking != null) base.is_trial_booking = !!patch.is_trial_booking;
     if (patch.general && base.general) {
       var prevDetail = Array.isArray(base.general.services_detail)
         ? base.general.services_detail
