@@ -333,6 +333,36 @@
     return grids;
   }
 
+  /** Staff no longer on Autumn 26/27 rota (hide from Staff hours standing summary). */
+  var DEPARTED_OR_BANK_STAFF = {
+    angel: 1,
+    bismark: 1,
+    bismarck: 1,
+    giuseppe: 1,
+    luliya: 1,
+    lulia: 1,
+    aida: 1,
+  };
+
+  function staffNameKey(name) {
+    return String(name || "")
+      .toLowerCase()
+      .replace(/[^a-z]/g, "");
+  }
+
+  function isHiddenFromAutumnHours(name) {
+    return !!DEPARTED_OR_BANK_STAFF[staffNameKey(name)];
+  }
+
+  function autumnStaffHoursPayload() {
+    return global.PORTAL_AUTUMN_STAFF_HOURS || null;
+  }
+
+  function autumnStaffHoursBase() {
+    var payload = autumnStaffHoursPayload();
+    return payload && payload.staffHours ? payload.staffHours : null;
+  }
+
   /** Standing instructor hours summary (read-only) — same roster as Services. */
   function buildStandingHoursLines(rows) {
     var byDay = {};
@@ -346,6 +376,7 @@
       dayRows.forEach(function (r) {
         var instr = String(r.instructors || "").trim();
         if (!instr) return;
+        if (isHiddenFromAutumnHours(instr)) return;
         var key = instr.toUpperCase();
         if (!byStaff[key]) {
           byStaff[key] = {
@@ -421,6 +452,21 @@
       syncedWithServices: true,
     });
     copy._standingHours = buildStandingHoursLines(rosterRows);
+    var autumnHours = autumnStaffHoursBase();
+    var autumnMeta = autumnStaffHoursPayload() && autumnStaffHoursPayload().meta;
+    if (autumnHours) {
+      copy.staffHours = cloneStaffHours(autumnHours);
+      copy.meta = Object.assign({}, copy.meta || {}, {
+        hoursFrom: (autumnMeta && autumnMeta.hoursFrom) || "2026-09-01",
+        hoursTo: (autumnMeta && autumnMeta.hoursTo) || "2026-12-17",
+        termBreakFrom: (autumnMeta && autumnMeta.termBreakFrom) || "2026-10-26",
+        termBreakTo: (autumnMeta && autumnMeta.termBreakTo) || "2026-10-30",
+        hoursLabel: (autumnMeta && autumnMeta.hoursLabel) || "Autumn Term 2026",
+        timetableSource:
+          (autumnMeta && autumnMeta.timetableSource) ||
+          "database/apply_staff_timetable_autumn_2026.py",
+      });
+    }
     var client = cfg.getClient();
     if (!client || !global.PortalStaffTimetableMerge) {
       state.mergedData = copy;
@@ -607,9 +653,9 @@
   }
 
   function getBaseCellText(editKey) {
-    var base = baseData();
-    if (!base || !base.staffHours) return "";
-    var cell = findCellInStaffHours(base.staffHours, editKey);
+    var staffHours = autumnStaffHoursBase() || (baseData() && baseData().staffHours);
+    if (!staffHours) return "";
+    var cell = findCellInStaffHours(staffHours, editKey);
     return cell ? String(cell.text || "").trim() : "";
   }
 
@@ -925,7 +971,7 @@
     var day = state.hoursDay;
     var html =
       renderStandingHoursBlock() +
-      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Below: dated hours sheet (Summer history + saved overrides). Edits here sync to dashboards after <strong>Save</strong> — they do not change who is booked in Services.</p>' +
+      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Below: dated hours sheet (Autumn Term 2026 rota + saved overrides). Edits here sync to dashboards after <strong>Save</strong> - they do not change who is booked in Services.</p>' +
       hoursLegendHtml() +
       weekdaySubtabs(day, "data-asr-hours-day", {
         includeAll: true,

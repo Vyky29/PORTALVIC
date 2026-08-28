@@ -12,7 +12,9 @@ Run:
 from __future__ import annotations
 
 import json
+import re
 import sys
+from collections import defaultdict
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -360,6 +362,218 @@ def copy_term_to_portal_vic() -> None:
         dst.write_text(text, encoding="utf-8")
 
 
+VENUE_ORDER = ["Westway", "Northolt", "Acton", "SwimFarm"]
+HOUR_SHEETS = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+]
+# Reference "today" for completed vs confirmed row status when regenerating.
+HOURS_STATUS_TODAY = "2026-08-28"
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"\s+", " ", (s or "").strip())
+
+
+def _venue_style(venue: str) -> str:
+    v = venue.lower()
+    if v == "westway":
+        return "westway"
+    if v == "northolt":
+        return "northolt"
+    if v == "acton":
+        return "acton"
+    if v in ("swimfarm", "swim farm"):
+        return "swimfarm"
+    return "default"
+
+
+def _hours_band(time_range: str) -> str:
+    tr = _norm(time_range).lower().replace(":", ".")
+    if re.match(r"^(11|12\.30|1\b|9\.30|9:30)", tr):
+        return "day_centre"
+    if re.match(r"^(3\.30|4|8\.|9|10)", tr):
+        return "pool"
+    return "other"
+
+
+def _is_afternoon_pool(time_range: str) -> bool:
+    tr = _norm(time_range).lower().replace(":", ".")
+    return bool(re.match(r"^(3\.30|4)", tr))
+
+
+def _assignment_allowed(iso: str, time_range: str) -> bool:
+    """Skip weekday after-school before Mon 7 Sep; weekend before 5–6 Sep."""
+    d = parse_iso(iso)
+    wd = d.weekday()  # Mon=0 .. Sun=6
+    if wd <= 4 and iso < AFTERSCHOOL_WEEKDAY_FROM and _is_afternoon_pool(time_range):
+        return False
+    if wd >= 5 and iso < AFTERSCHOOL_WEEKEND_FROM:
+        return False
+    return True
+
+
+def _format_date_label(iso: str) -> str:
+    try:
+        return parse_iso(iso).strftime("%d-%b-%Y")
+    except Exception:
+        return iso
+
+
+def _date_row_status(d: str) -> str:
+    if d in set(TERM_CLOSED_DATES) or (TERM_BREAK_FROM <= d <= TERM_BREAK_TO):
+        return "closed"
+    return "completed" if d < HOURS_STATUS_TODAY else "confirmed"
+
+
+def _assignment_tone(raw: str) -> str:
+    t = _norm(raw)
+    if not t:
+        return ""
+    low = t.lower()
+    if "training" in low:
+        return "training"
+    if "(sh)" in low or "aida" in low:
+        return "shadow"
+    if re.search(r"\bjavi\b", low) or re.search(r"\braúl\b|\braul\b", low, re.I):
+        return "cover"
+    if "godsway" in low:
+        return "updated"
+    if low in ("n/a", "na"):
+        return "na"
+    return ""
+
+
+def _hour_cell(text: str, tone: str, date_iso: str, day: str, col_key: str, band: str = "") -> dict:
+    out = {
+        "text": text,
+        "tone": tone,
+        "editKey": f"{date_iso}|{day}|{col_key}",
+    }
+    if band:
+        out["band"] = band
+    return out
+
+
+def build_autumn_staff_hours(records: list[dict]) -> dict:
+    """Dated Staff hours sheets for Autumn 26/27 (no summer Excel / departed staff)."""
+    by_day: dict[str, list[dict]] = defaultdict(list)
+    for r in records:
+        day = _norm(r.get("day", ""))
+        if day not in HOUR_SHEETS:
+            continue
+        staff = _norm(r.get("staff_name", ""))
+        if staff.lower() in DEPARTED_STAFF:
+            continue
+        iso = _norm(r.get("date", ""))[:10]
+        tr = _norm(r.get("time_range", ""))
+        if not iso or not _assignment_allowed(iso, tr):
+            continue
+        by_day[day].append(r)
+
+    sheets: dict[str, dict] = {}
+    for day in HOUR_SHEETS:
+        recs = by_day.get(day, [])
+        if not recs:
+            sheets[day] = {"venueGroups": [], "dates": [], "placeholder": True}
+            continue
+
+        venue_slots: dict[str, int] = defaultdict(int)
+        by_date_venue: dict[str, dict[str, list[dict]]] = defaultdict(lambda: defaultdict(list))
+        for r in recs:
+            d = _norm(r.get("date", ""))[:10]
+            venue = _norm(r.get("venue", "")) or "—"
+            raw = _norm(r.get("raw_assignment", "")) or (
+                f"{_norm(r.get('staff_name', ''))} {_norm(r.get('time_range', ''))}".strip()
+            )
+            if not d or not raw:
+                continue
+            by_date_venue[d][venue].append(
+                {"text": raw, "band": _hours_band(_norm(r.get("time_range", "")))}
+            )
+            venue_slots[venue] = max(venue_slots[venue], len(by_date_venue[d][venue]))
+
+        venue_groups = []
+        for venue in sorted(
+            venue_slots.keys(),
+            key=lambda v: VENUE_ORDER.index(v) if v in VENUE_ORDER else 99,
+        ):
+            n = venue_slots[venue]
+            venue_groups.append(
+                {
+                    "venue": venue,
+                    "style": _venue_style(venue),
+                    "span": n,
+                    "labels": [venue] * n,
+                }
+            )
+
+        dates_sorted = sorted(by_date_venue.keys())
+        date_rows = []
+        for d in dates_sorted:
+            cells = []
+            for g in venue_groups:
+                venue = g["venue"]
+                vals = by_date_venue[d].get(venue, [])
+                for i in range(g["span"]):
+                    entry = vals[i] if i < len(vals) else {}
+                    val = entry.get("text", "") if isinstance(entry, dict) else ""
+                    band = entry.get("band", "") if isinstance(entry, dict) else ""
+                    cells.append(
+                        _hour_cell(val, _assignment_tone(val), d, day, f"{venue}:{i}", band)
+                    )
+            date_rows.append(
+                {
+                    "date": d,
+                    "label": _format_date_label(d),
+                    "status": _date_row_status(d),
+                    "cells": cells,
+                }
+            )
+
+        sheets[day] = {
+            "venueGroups": venue_groups,
+            "dates": date_rows,
+            "placeholder": not date_rows,
+        }
+    return sheets
+
+
+def write_autumn_staff_hours_js(records: list[dict]) -> None:
+    hours = build_autumn_staff_hours(records)
+    payload = {
+        "meta": {
+            "hoursFrom": SESSION_FROM,
+            "hoursTo": SESSION_TO,
+            "termBreakFrom": TERM_BREAK_FROM,
+            "termBreakTo": TERM_BREAK_TO,
+            "timetableSource": "database/apply_staff_timetable_autumn_2026.py",
+            "hoursLabel": "Autumn Term 2026 (1 Sep - 17 Dec)",
+        },
+        "staffHours": hours,
+    }
+    body = (
+        "// Auto-generated by database/apply_staff_timetable_autumn_2026.py\n"
+        "// Re-run: python database/apply_staff_timetable_autumn_2026.py\n"
+        "window.PORTAL_AUTUMN_STAFF_HOURS = "
+        + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+        + ";\n"
+    )
+    for rel in (
+        "portal/autumn_staff_hours_reference.js",
+        "portal-shared-js/autumn_staff_hours_reference.js",
+    ):
+        dst = ROOT / "working_ui" / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(body, encoding="utf-8")
+    print(f"Wrote autumn staff hours reference ({len(body) // 1024} KB)")
+
+
 def main() -> None:
     records = build_autumn_rows()
     json_path = OUT / "staff_timetable_machine.json"
@@ -387,6 +601,7 @@ def main() -> None:
     print(f"Wrote {json_path} ({len(records)} autumn rows, {len(merged)} total)")
 
     write_autumn_term_js(records, roster_rows)
+    write_autumn_staff_hours_js(records)
     copy_term_to_portal_vic()
     print("Copied term_from_timetable.js to working_ui/")
 
