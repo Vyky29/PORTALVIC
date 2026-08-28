@@ -4,7 +4,7 @@
  * Runtime truth:
  *   1. Base rows: `staff_dashboard_spreadsheet_bundle.js` → STAFF_DASHBOARD_SOURCE.rows
  *   2. Overlay: Supabase `portal_roster_rows` (templates + dated exceptions)
- *   3. Autumn 26/27 standing patches (Day Centre who-with-whom + Cyrus/Victor)
+ *   3. Autumn 26/27 standing patches (Day Centre who-with-whom + Hub Bespoke rota + Cyrus)
  *
  * Day-of operational changes (cover, cancel, add) stay in `schedule_overrides` and are
  * applied when building today's session cards — not duplicated here.
@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 4;
+    var SOURCE_VERSION = 5;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -127,6 +127,84 @@
     venue: "SwimFarm",
     session_date: "2026-07-14",
   };
+
+  /**
+   * Autumn 26/27 Hub afternoon Bespoke — same staff shifts as the Autumn rota
+   * (Godsway / John / Emanuel Mon+Wed 4.15–6.15; Fri Emanuel only; Tinashe booked).
+   * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30–5 only).
+   */
+  var AUTUMN_BESPOKE_HUB_ROWS = [
+    {
+      client_name: "Tinashe",
+      day: "Monday",
+      instructors: "GODSWAY",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.15 to 6.15",
+      venue: "SwimFarm",
+      session_date: "2026-07-13",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Monday",
+      instructors: "JOHN",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.15 to 6.15",
+      venue: "SwimFarm",
+      session_date: "2026-07-13",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Monday",
+      instructors: "EMANUEL",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.15 to 6.15",
+      venue: "SwimFarm",
+      session_date: "2026-07-13",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Wednesday",
+      instructors: "GODSWAY",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.15 to 6.15",
+      venue: "SwimFarm",
+      session_date: "2026-07-15",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Wednesday",
+      instructors: "JOHN",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.15 to 6.15",
+      venue: "SwimFarm",
+      session_date: "2026-07-15",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Wednesday",
+      instructors: "EMANUEL",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.15 to 6.15",
+      venue: "SwimFarm",
+      session_date: "2026-07-15",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Friday",
+      instructors: "EMANUEL",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.15 to 6.15",
+      venue: "SwimFarm",
+      session_date: "2026-07-17",
+    },
+  ];
 
   var DOW_TITLE = {
     monday: "Monday",
@@ -282,34 +360,10 @@
     return /bespoke/i.test(String(service || ""));
   }
 
-  function instructorTokenList(raw) {
-    return String(raw || "")
-      .toUpperCase()
-      .split(/[,&\/]|\band\b/i)
-      .map(function (t) {
-        return String(t || "").trim();
-      })
-      .filter(Boolean);
-  }
-
-  /** Bismark + Giuseppe left — drop their Bespoke standing lines. */
-  function isFormerBespokeInstructor(instructorsRaw) {
-    var toks = instructorTokenList(instructorsRaw);
-    for (var i = 0; i < toks.length; i++) {
-      var t = toks[i];
-      if (t === "BISMARK" || t === "BISMARCK" || t === "GIUSEPPE") return true;
-    }
-    return false;
-  }
-
-  function isCyrusName(name) {
-    return /^cyrus\b/i.test(String(name || "").trim());
-  }
-
   /**
    * Autumn 26/27 standing patches on snap dates (13–17 Jul):
    * - Replace summer Day Centre who-with-whom with Autumn DC board
-   * - Bespoke: drop Bismark/Giuseppe; Cyrus with Victor Tue 3.30–5 only (not Thu)
+   * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    */
   function applyAutumnStandingParticipantRows(rows) {
     var out = (Array.isArray(rows) ? rows : []).filter(function (r) {
@@ -318,15 +372,20 @@
       if (DAY_CENTRE_STANDING_ISO_SET[d] && isDayCentreService(r.service)) {
         return false;
       }
-      if (isBespokeService(r.service)) {
-        if (isFormerBespokeInstructor(r.instructors)) return false;
-        /* Strip all standing Cyrus Bespoke rows — re-add Tue-only canonical below. */
-        if (isCyrusName(r.client_name)) return false;
+      /* Drop all standing-week Bespoke — rebuild from Autumn Hub rota below. */
+      if (isBespokeService(r.service) && DAY_CENTRE_STANDING_ISO_SET[d]) {
+        return false;
+      }
+      if (isBespokeService(r.service) && /^cyrus\b/i.test(String(r.client_name || "").trim())) {
+        return false;
       }
       return true;
     });
     autumnDayCentreStandingRows().forEach(function (row) {
       out.push(row);
+    });
+    AUTUMN_BESPOKE_HUB_ROWS.forEach(function (row) {
+      out.push(Object.assign({}, row));
     });
     out.push(Object.assign({}, CYRUS_BESPOKE_ROW));
     return out;
@@ -398,8 +457,8 @@
       rosterSourceVersion: SOURCE_VERSION,
       rosterSourceNote:
         global.PORTAL_MADRE_LIVE && global.PORTAL_MADRE_LIVE.rows
-          ? "Live MADRE (portal_madre_document) + portal_roster_rows + Autumn DC standing"
-          : "Bundle (MADRE snapshot) + portal_roster_rows + Autumn DC standing",
+          ? "Live MADRE (portal_madre_document) + portal_roster_rows + Autumn DC/Hub standing"
+          : "Bundle (MADRE snapshot) + portal_roster_rows + Autumn DC/Hub standing",
     });
   }
 
