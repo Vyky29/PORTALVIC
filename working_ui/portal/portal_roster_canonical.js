@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 13;
+    var SOURCE_VERSION = 14;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -54,7 +54,8 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      { staff: "Victor", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      /* Victor OFF Mon DC — Luliya covers Ikram 11–3 */
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
       {
         staff: "Raul",
         clients: [
@@ -65,11 +66,18 @@
       { staff: "Youssef", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
     ],
     tuesday: [
-      { staff: "Roberto", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      { staff: "Victor", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
       {
-        staff: "Raul",
+        staff: "Roberto",
+        clients: [
+          { name: "Ikram", time: "11 to 12.30" },
+          { name: "Fadi", time: "12.30 to 3" },
+        ],
+      },
+      { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      /* Victor takes Raul's Tue DC; Raul OFF */
+      {
+        staff: "Victor",
         clients: [
           { name: "Fadi", time: "12.30 to 3" },
           { name: "Ikram", time: "3 to 4" },
