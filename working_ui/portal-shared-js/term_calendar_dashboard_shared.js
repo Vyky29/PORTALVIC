@@ -354,7 +354,7 @@
     return true;
   }
 
-  /** Red cell: outside view, vacation, or weekday not on this staff's Summer Term rota. */
+  /** Red cell: outside view, vacation, or weekday not on this staff's term rota. */
   function dayIsRed(iso, weekdayIndex, staffId, worked, extraRed) {
     if (!staffDateInView(iso, staffId)) return true;
     if (staffExtraCalendarDates(staffId).indexOf(iso) >= 0) {
