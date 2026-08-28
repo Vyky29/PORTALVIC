@@ -31,6 +31,8 @@
     recordChunks: [],
     mobileShowThread: false,
     threadRefresh: { sig: "", deferRefresh: false },
+    threadLoadSeq: 0,
+    dirRenderSig: "",
   };
 
   var cfg = {
@@ -410,7 +412,29 @@
     return staffWaLastActivityAt(l);
   }
 
+  function staffUsernameKey(v) {
+    return String(v || "").trim().toLowerCase();
+  }
+
+  function isComposerFocused() {
+    try {
+      var ae = document.activeElement;
+      if (!ae) return false;
+      var id = String(ae.id || "");
+      return id === "portalStaffWaDraft" || id === "portalStaffWaSend";
+    } catch (_e) {
+      return false;
+    }
+  }
+
   function compareStaffWaDirectory(a, b) {
+    /* Keep the open chat pinned so 5s poll re-sort does not jump the selection. */
+    var sel = staffUsernameKey(state.selected);
+    if (sel) {
+      var aSel = staffUsernameKey(a && a.username) === sel ? 0 : 1;
+      var bSel = staffUsernameKey(b && b.username) === sel ? 0 : 1;
+      if (aSel !== bSel) return aSel - bSel;
+    }
     /* Unread inbound first (any date), then most recent received, then any activity. */
     var ua = isLeaderUnread(a) ? 0 : 1;
     var ub = isLeaderUnread(b) ? 0 : 1;
@@ -446,13 +470,32 @@
     if (!host) return;
     if (!state.directory.length) {
       host.innerHTML = '<p class="muted">No staff found.</p>';
+      state.dirRenderSig = "";
       renderCount();
       return;
     }
     var sorted = state.directory.slice().sort(compareStaffWaDirectory);
+    var sig = sorted
+      .map(function (l) {
+        return [
+          staffUsernameKey(l.username),
+          isLeaderUnread(l) ? "1" : "0",
+          staffWaListWhen(l) || "",
+          String(l.lastInboundPreview || ""),
+          staffUsernameKey(state.selected) === staffUsernameKey(l.username) ? "1" : "0",
+        ].join("\x1f");
+      })
+      .join("\n");
+    if (sig === state.dirRenderSig) {
+      renderCount();
+      return;
+    }
+    state.dirRenderSig = sig;
+    var savedScroll = host.scrollTop;
     host.innerHTML = sorted
       .map(function (l) {
-        var active = state.selected === l.username ? " is-active" : "";
+        var active =
+          staffUsernameKey(state.selected) === staffUsernameKey(l.username) ? " is-active" : "";
         var unread = isLeaderUnread(l);
         var name = displayNameForStaff(l);
         var when = staffWaListWhen(l);
@@ -518,6 +561,7 @@
         );
       })
       .join("");
+    host.scrollTop = savedScroll;
     renderCount();
   }
 
@@ -599,9 +643,10 @@
   }
 
   function openStaffThread(username) {
-    var key = String(username || "").trim();
+    var key = staffUsernameKey(username);
     if (!key) return;
     state.threadRefresh.sig = "";
+    state.dirRenderSig = "";
     state.mobileShowThread = true;
     syncMobileLayout();
     void loadThread(key).then(function () {
@@ -701,7 +746,7 @@
     var head = document.getElementById("portalStaffWaHead");
     if (head) {
       var lead = state.directory.find(function (l) {
-        return l.username === state.selected;
+        return staffUsernameKey(l.username) === staffUsernameKey(state.selected);
       });
       if (lead) {
         head.innerHTML =
@@ -733,6 +778,7 @@
       return;
     }
     var savedScroll = host.scrollTop;
+    var nearBottom = host.scrollHeight - host.scrollTop - host.clientHeight < 80;
     var html = state.messages
       .map(function (m) {
         var dir = m.direction === "inbound" ? "in" : "out";
@@ -817,9 +863,13 @@
         }
       });
     }
-    if (updated) host.scrollTop = host.scrollHeight;
-    else host.scrollTop = savedScroll;
-    refreshComposer();
+    if (updated) {
+      if (!fromRefresh || nearBottom) host.scrollTop = host.scrollHeight;
+      else host.scrollTop = savedScroll;
+    } else host.scrollTop = savedScroll;
+    if (!fromRefresh || !isComposerFocused()) {
+      refreshComposer();
+    }
   }
 
   async function loadDirectory(opts) {
@@ -833,9 +883,10 @@
       return;
     }
     state.directory = Array.isArray(res.data.directory) ? res.data.directory : [];
-    if (state.selected) {
+    /* Do not mark-seen on silent poll — that re-sorted the list and jumped the open chat. */
+    if (state.selected && !opts.silent) {
       var open = state.directory.find(function (l) {
-        return l.username === state.selected;
+        return staffUsernameKey(l.username) === staffUsernameKey(state.selected);
       });
       if (open && open.lastInboundAt) {
         markThreadSeen(state.selected, open.lastInboundAt);
@@ -867,7 +918,9 @@
 
   async function loadThread(username, opts) {
     opts = opts || {};
-    state.selected = String(username || "");
+    var want = staffUsernameKey(username);
+    var seq = ++state.threadLoadSeq;
+    state.selected = want;
     // Do not force thread mode on silent poll refresh — that would reopen chat after Back.
     if (state.selected && !opts.silent && !opts.keepLoadingQuiet) {
       state.mobileShowThread = true;
@@ -879,7 +932,10 @@
     } else {
       syncMobileLayout();
     }
-    var res = await api("portal-staff-messages-list", { staffUsername: state.selected });
+    var res = await api("portal-staff-messages-list", { staffUsername: want });
+    if (seq !== state.threadLoadSeq || staffUsernameKey(state.selected) !== want) {
+      return;
+    }
     state.loading = false;
     if (!res.ok) {
       if (!opts.silent) {
@@ -898,9 +954,10 @@
         if (at > lastOut) lastOut = at;
       }
     });
-    if (lastIn) markThreadSeen(state.selected, lastIn);
+    if (lastIn && !opts.silent) markThreadSeen(want, lastIn);
+    else if (lastIn && opts.silent && !isComposerFocused()) markThreadSeen(want, lastIn);
     state.directory = state.directory.map(function (l) {
-      if (l.username !== state.selected) return l;
+      if (staffUsernameKey(l.username) !== want) return l;
       return Object.assign({}, l, {
         lastInboundAt: lastIn || l.lastInboundAt || null,
         lastOutboundAt: lastOut || l.lastOutboundAt || null,
@@ -1064,7 +1121,7 @@
       return;
     }
     var lead = state.directory.find(function (l) {
-      return l.username === state.selected;
+      return staffUsernameKey(l.username) === staffUsernameKey(state.selected);
     });
     if (lead && !lead.hasPhone) {
       cfg.toast("This leader has no phone_e164 on staff_profiles yet");
@@ -1194,12 +1251,18 @@
         return;
       }
       if (document.visibilityState && document.visibilityState !== "visible") return;
+      /* While typing, only refresh the directory quietly — never reload the open thread. */
+      if (isComposerFocused() || state.sending || state.recording) {
+        void loadDirectory({ silent: true, notifyNew: true });
+        return;
+      }
+      var keepSelected = staffUsernameKey(state.selected);
       void loadDirectory({ silent: true, notifyNew: true }).then(function () {
-        if (state.selected) {
-          void loadThread(state.selected, { silent: true, keepLoadingQuiet: true });
+        if (keepSelected && staffUsernameKey(state.selected) === keepSelected) {
+          void loadThread(keepSelected, { silent: true, keepLoadingQuiet: true });
         }
       });
-    }, 5000);
+    }, 12000);
   }
 
   function stopLiveRefresh() {
