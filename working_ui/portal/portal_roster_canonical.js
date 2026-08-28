@@ -130,7 +130,7 @@
 
   /**
    * Autumn 26/27 Hub afternoon Bespoke — same staff shifts as the Autumn rota
-   * (Godsway / John / Emanuel Mon+Wed 4.15–6.15; Fri Emanuel + Victor + Raul; Tinashe booked).
+   * (Godsway / John / Emanuel Mon+Wed 4.15–6.15; Fri Emanuel + Victor + Youssef; Tinashe booked).
    * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30–5 only).
    */
   var AUTUMN_BESPOKE_HUB_ROWS = [
@@ -217,7 +217,7 @@
     {
       client_name: "Tinashe",
       day: "Friday",
-      instructors: "RAUL",
+      instructors: "YOUSSEF",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.15 to 6.15",
