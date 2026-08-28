@@ -3812,8 +3812,34 @@
           trialIsoSet[t.iso] = true;
           if (!trialFirstIso || t.iso < trialFirstIso) trialFirstIso = t.iso;
         });
+        /* Resolve which 26/27 term owns the trial — never dump Spring/Summer under Autumn. */
+        var trialTerm = null;
+        var calTrial = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+        var termsTrial = (calTrial && Array.isArray(calTrial.terms) ? calTrial.terms : []) || [];
+        var trialAnchor = trialFirstIso || "";
+        for (var ti = 0; ti < termsTrial.length; ti++) {
+          var tt = termsTrial[ti];
+          if (!tt || !tt.starts) continue;
+          var ttEnd = tt.mainTermEnds || tt.ends || tt.lastDay || "";
+          if (!ttEnd) continue;
+          if (trialAnchor && trialAnchor >= tt.starts && trialAnchor <= ttEnd) {
+            trialTerm = tt;
+            break;
+          }
+        }
+        if (!trialTerm && termsTrial.length) trialTerm = termsTrial[0];
+        var trialTermFrom = trialTerm && trialTerm.starts ? String(trialTerm.starts).slice(0, 10) : "2026-09-01";
+        var trialTermTo = trialTerm
+          ? String(trialTerm.mainTermEnds || trialTerm.ends || trialTerm.lastDay || "2026-12-18").slice(0, 10)
+          : "2026-12-18";
+        var trialTermLabel =
+          String((trialTerm && (trialTerm.name || trialTerm.id)) || "Autumn Term")
+            .replace(/\s+Term(?:\s+\d{4})?\s*$/i, "")
+            .replace(/\s+\d{4}\s*$/i, "")
+            .trim() || "Autumn";
+
         var termDates = (findUnconfirmedNextYearSessionDates(data) || []).filter(function (d) {
-          return !!(d && d.iso);
+          return !!(d && d.iso && d.iso >= trialTermFrom && d.iso <= trialTermTo);
         });
         /* Always include the booked trial day even if weekday projection skipped it. */
         if (trialFirstIso) {
@@ -3840,6 +3866,7 @@
         termDates = termDates
           .map(function (d) {
             if (!d || !d.iso) return null;
+            if (d.iso < trialTermFrom || d.iso > trialTermTo) return null;
             if (trialIsoSet[d.iso]) {
               return annotateChipDate(
                 {
@@ -3906,8 +3933,8 @@
           );
         }
         var trialRows = [];
-        if (tFirst.length) trialRows.push(trialRowHtml("Autumn · First half term", tFirst));
-        if (tSecond.length) trialRows.push(trialRowHtml("Autumn · Second half term", tSecond));
+        if (tFirst.length) trialRows.push(trialRowHtml(trialTermLabel + " · First half term", tFirst));
+        if (tSecond.length) trialRows.push(trialRowHtml(trialTermLabel + " · Second half term", tSecond));
         if (!trialRows.length) {
           return {
             thisTermHtml: "",
@@ -3919,13 +3946,17 @@
         var trialAccordion =
           '<details class="pp-hub-ops__term-accordion" open>' +
           '<summary class="pp-hub-ops__term-summary">' +
-          termHalfRowIcon("Autumn") +
-          '<span class="pp-hub-ops__term-summary-title">Autumn Term 26/27 · Trial</span>' +
+          termHalfRowIcon(trialTermLabel) +
+          '<span class="pp-hub-ops__term-summary-title">' +
+          esc(trialTermLabel) +
+          " Term 26/27 · Trial</span>" +
           '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
           "</summary>" +
           '<div class="pp-hub-ops__term-body">' +
           termChipColorLegendHtml() +
-          '<p class="pp-muted pp-hub-ops__trial-note" style="margin:0 0 10px;font-size:12px;overflow-wrap:break-word">Blue = your booked trial. Red = other term dates (not booked yet).</p>' +
+          '<p class="pp-muted pp-hub-ops__trial-note" style="margin:0 0 10px;font-size:12px;overflow-wrap:break-word">Blue = your booked trial. Red = other ' +
+          esc(trialTermLabel.toLowerCase()) +
+          " term dates (not booked yet).</p>" +
           trialRows.join("") +
           "</div></details>";
         return {
