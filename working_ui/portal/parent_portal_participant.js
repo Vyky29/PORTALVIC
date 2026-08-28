@@ -5428,6 +5428,41 @@
   }
 
   function myCalendarLegendHtml(data) {
+    if (isTrialOnlyBooking(data)) {
+      var trialRows = trialBookedDateRows(data);
+      var trialTone = PP_CAL_SERVICE_TONES[0];
+      var trialItems = trialRows.map(function (t) {
+        var when = [t.day, t.time].filter(Boolean).join(" · ");
+        var dateBit = t.dayLabel || t.shortLabel || t.iso || "";
+        return (
+          '<li class="pp-cal-legend__item">' +
+          '<span class="pp-cal-legend__swatch" style="background:' +
+          esc(trialTone) +
+          '" aria-hidden="true"></span>' +
+          '<span class="pp-cal-legend__text">Trial' +
+          (dateBit ? " — " + esc(dateBit) : "") +
+          (when ? ' <span class="pp-muted">(' + esc(when) + ")</span>" : "") +
+          "</span></li>"
+        );
+      });
+      if (!trialItems.length) {
+        trialItems.push(
+          '<li class="pp-cal-legend__item">' +
+            '<span class="pp-cal-legend__swatch" style="background:' +
+            esc(trialTone) +
+            '" aria-hidden="true"></span>' +
+            '<span class="pp-cal-legend__text">Your booked trial date</span></li>',
+        );
+      }
+      return (
+        '<ul class="pp-cal-legend" aria-label="Your trial date">' +
+        trialItems.join("") +
+        '<li class="pp-cal-legend__item pp-cal-legend__item--note">' +
+        '<span class="pp-cal-legend__swatch pp-cal-legend__swatch--red" aria-hidden="true"></span>' +
+        '<span class="pp-cal-legend__text">Red = closed / half-term (no sessions)</span></li>' +
+        "</ul>"
+      );
+    }
     var detail =
       data && data.general && Array.isArray(data.general.services_detail)
         ? data.general.services_detail
@@ -5527,15 +5562,23 @@
 
     var calHost = host.querySelector("#ppCalYearHost");
     if (!calHost) return;
-    var built = buildMyCalendarDayColors(data);
-    var dayColors = built.colMap || {};
+    var loadOpts = { circles: true };
+    if (isTrialOnlyBooking(data)) {
+      /* Trial: highlight only booked ISO date(s), not every Monday of the term. */
+      var mineIso = Object.create(null);
+      var trialTone = PP_CAL_SERVICE_TONES[0];
+      trialBookedDateRows(data).forEach(function (t) {
+        if (t && t.iso) mineIso[t.iso] = trialTone;
+      });
+      loadOpts.mineIsoColors = mineIso;
+    } else {
+      var built = buildMyCalendarDayColors(data);
+      loadOpts.dayColors = built.colMap || {};
+    }
     if (typeof global.portalLoadSessionsCalendar202627Into === "function") {
       calHost.innerHTML = '<p class="pp-muted">Loading calendar…</p>';
       void global
-        .portalLoadSessionsCalendar202627Into(calHost, {
-          dayColors: dayColors,
-          circles: true,
-        })
+        .portalLoadSessionsCalendar202627Into(calHost, loadOpts)
         .catch(function () {
           if (calHost.isConnected) {
             calHost.innerHTML =
@@ -5563,14 +5606,21 @@
         '<div id="ppCalCrashHost" class="pp-cal-host pp-cal-host--crash" role="region" aria-label="July Intensive Courses & Camps calendar"></div>' +
         "</div>"
       : "";
+    var calNote = isTrialOnlyBooking(data)
+      ? "ClubSENsational sessions calendar 2026/27. Only " +
+        esc(pName) +
+        "&apos;s booked trial date is highlighted — other open days stay unmarked until a full place is confirmed."
+      : "ClubSENsational sessions calendar 2026/27. Coloured circles are " +
+        esc(pName) +
+        "&apos;s usual session weekdays. Two services on the same day split the circle in half; three services use three slices.";
     var body =
       '<h3 class="pp-pax-subview-title">My Calendar</h3>' +
       crashBlock +
       '<div class="pp-cal-block">' +
       (hasCrash ? '<h4 class="pp-cal-block__title">2026/27 sessions</h4>' : "") +
-      '<p class="pp-muted pp-pax-subview-note">ClubSENsational sessions calendar 2026/27. Coloured circles are ' +
-      esc(pName) +
-      "&apos;s usual session weekdays. Two services on the same day split the circle in half; three services use three slices.</p>" +
+      '<p class="pp-muted pp-pax-subview-note">' +
+      calNote +
+      "</p>" +
       myCalendarLegendHtml(data) +
       '<div id="ppCalYearHost" class="pp-cal-host pp-cal-host--year" role="region" aria-label="Sessions calendar 2026/27"></div>' +
       "</div>";
@@ -5691,7 +5741,59 @@
       booking.parent_action === "auto"
         ? "Your 2026/27 Day Centre place continues with the office / funder."
         : "Your selections for the next academic year.";
-    if (booking.parent_action === "auto" && (!booking.submitted || !booking.items.length)) {
+    if (isTrialOnlyBooking(data)) {
+      note = "Your trial booking for " + (firstNameOf(data) || "your child") + ".";
+      var trialRows = trialBookedDateRows(data);
+      var trialList =
+        trialRows.length > 0
+          ? '<ul class="pp-booking-list">' +
+            trialRows
+              .map(function (t) {
+                var whenBits = [t.dayLabel || t.shortLabel || t.iso, t.time]
+                  .filter(Boolean)
+                  .join(" · ");
+                var venue = t.venue || t.area || "";
+                var meta = "";
+                if (whenBits) {
+                  meta +=
+                    '<span class="pp-booking-item__meta">' +
+                    bookingMetaIcon("when") +
+                    "<span>" +
+                    esc(whenBits) +
+                    "</span></span>";
+                }
+                if (venue) {
+                  meta +=
+                    '<span class="pp-booking-item__meta">' +
+                    bookingMetaIcon("venue") +
+                    "<span>" +
+                    esc(venue) +
+                    "</span></span>";
+                }
+                return (
+                  '<li class="pp-booking-item">' +
+                  '<div class="pp-booking-item__row">' +
+                  '<span class="pp-booking-item__badge" aria-hidden="true">' +
+                  bookingItemIconSvg(t.rawLabel || t.label || "Aquatic") +
+                  "</span>" +
+                  '<div class="pp-booking-item__copy">' +
+                  '<div class="pp-booking-item__label">Trial session</div>' +
+                  (meta ? '<div class="pp-booking-item__metas">' + meta + "</div>" : "") +
+                  '<div class="pp-booking-item__choice">' +
+                  '<span class="pp-booking-item__choice-ico" aria-hidden="true">' +
+                  bookingMetaIcon("ok") +
+                  "</span>" +
+                  "<span>Booked</span></div>" +
+                  "</div></div></li>"
+                );
+              })
+              .join("") +
+            "</ul>"
+          : '<p class="pp-muted">Your trial is on file. Check Hub / Next session for the date and time.</p>';
+      body =
+        '<p class="pp-muted">This is a trial place only — not a full 2026/27 re-enrolment. After the trial, the office can confirm a continuing place if you wish.</p>' +
+        trialList;
+    } else if (booking.parent_action === "auto" && (!booking.submitted || !booking.items.length)) {
       var days = dayCentreWeekdayLabels(data);
       var daysLine = days.length
         ? "Usual days: " + days.join(", ") + "."
@@ -5743,12 +5845,16 @@
             esc(reenrolHref) +
             '">Update booking choices</a>');
     }
-    var invoiceBlock = showInvoicesFor(data)
+    var invoiceBlock = showInvoicesForParticipant(data)
       ? '<div class="pp-card pp-booking-card pp-booking-invoices" style="margin-top:14px">' +
         '<h4 class="pp-pax-subview-title" style="font-size:1.05rem;margin:0 0 6px">Invoice</h4>' +
-        '<p class="pp-muted pp-pax-subview-note" style="margin-top:0">Autumn 2026/27 payment for ' +
-        esc(firstNameOf(data)) +
-        ". Prefer bank transfer or Card / Apple Pay, then message the office after you pay.</p>" +
+        '<p class="pp-muted pp-pax-subview-note" style="margin-top:0">' +
+        (isTrialOnlyBooking(data)
+          ? "Trial payment for " + esc(firstNameOf(data)) + "."
+          : "Autumn 2026/27 payment for " +
+            esc(firstNameOf(data)) +
+            ". Prefer bank transfer or Card / Apple Pay, then message the office after you pay.") +
+        "</p>" +
         '<div id="ppInvoicesNotice" class="pp-notice" hidden></div>' +
         '<div id="ppGocardlessSetupHost" class="pp-invoice-gc-setup" hidden></div>' +
         '<div id="ppInvoicesListHost"><p class="pp-muted">Loading invoice…</p></div>' +
@@ -5767,7 +5873,7 @@
         invoiceBlock,
     );
     bindBack(host, data, opts);
-    if (showInvoicesFor(data)) bindInvoices(host, data, opts);
+    if (showInvoicesForParticipant(data)) bindInvoices(host, data, opts);
   }
 
   function renderSwim(host, data, opts) {
