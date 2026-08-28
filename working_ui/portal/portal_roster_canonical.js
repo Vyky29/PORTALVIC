@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 8;
+    var SOURCE_VERSION = 9;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -409,14 +409,14 @@
     return /acton/i.test(String(venue || ""));
   }
 
-  function isMon430ClosedSlot(row) {
+  function isYoussefActon430ClosedSlot(row) {
     if (!row) return false;
     if (!/^closed$/i.test(String(row.client_name || "").trim())) return false;
     if (!isAquaticService(row.service)) return false;
     if (!isActonVenue(row.venue)) return false;
     if (!isYoussefInstructor(row.instructors)) return false;
     var day = normalizeDowKey(row.day);
-    if (day && day !== "monday") return false;
+    if (day && day !== "monday" && day !== "wednesday") return false;
     var slot = String(row.time_slot || "")
       .replace(/\s+/g, " ")
       .trim()
@@ -429,27 +429,39 @@
     );
   }
 
-  var YOUSSEF_ACTON_MON_OPEN_ROW = {
-    client_name: "No participant",
-    day: "Monday",
-    instructors: "YOUSSEF",
-    service: "Aquatic Activity",
-    area: "Teaching Pool",
-    time_slot: "4 to 4.30",
-    venue: "Acton",
-    session_date: "2026-07-13",
-  };
+  var YOUSSEF_ACTON_OPEN_430_ROWS = [
+    {
+      client_name: "No participant",
+      day: "Monday",
+      instructors: "YOUSSEF",
+      service: "Aquatic Activity",
+      area: "Teaching Pool",
+      time_slot: "4 to 4.30",
+      venue: "Acton",
+      session_date: "2026-07-13",
+    },
+    {
+      client_name: "No participant",
+      day: "Wednesday",
+      instructors: "YOUSSEF",
+      service: "Aquatic Activity",
+      area: "Teaching Pool",
+      time_slot: "4 to 4.30",
+      venue: "Acton",
+      session_date: "2026-07-15",
+    },
+  ];
 
   /**
    * Autumn 26/27 standing patches on snap dates (13–17 Jul):
    * - Replace summer Day Centre who-with-whom with Autumn DC board
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
-   * - Acton Mon 4–4.30 Youssef: CLOSED → open (No participant)
+   * - Acton Mon/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {
     var out = [];
-    var openedYoussefMon430 = false;
+    var opened430 = { monday: false, wednesday: false };
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
       var d = normIso(r.session_date);
@@ -463,14 +475,39 @@
       if (isBespokeService(r.service) && /^cyrus\b/i.test(String(r.client_name || "").trim())) {
         return;
       }
-      if (isMon430ClosedSlot(r)) {
-        openedYoussefMon430 = true;
+      if (isYoussefActon430ClosedSlot(r)) {
+        var dkClosed = normalizeDowKey(r.day) || "monday";
+        if (opened430[dkClosed] !== undefined) opened430[dkClosed] = true;
         out.push(
           Object.assign({}, r, {
             client_name: "No participant",
           })
         );
         return;
+      }
+      /* Standing Wed often omitted Youssef 4–4.30 entirely — treat NO CLIENT as open too. */
+      if (
+        isAquaticService(r.service) &&
+        isActonVenue(r.venue) &&
+        isYoussefInstructor(r.instructors) &&
+        normalizeDowKey(r.day) === "wednesday"
+      ) {
+        var slotW = String(r.time_slot || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+        if (
+          slotW === "4 to 4.30" ||
+          slotW === "4.00 to 4.30" ||
+          slotW.indexOf("4 to 4.30") === 0
+        ) {
+          opened430.wednesday = true;
+          var cnW = String(r.client_name || "").trim();
+          if (/^(closed|no client|noclient|no_client|available)$/i.test(cnW)) {
+            out.push(Object.assign({}, r, { client_name: "No participant" }));
+            return;
+          }
+        }
       }
       if (isMultiActivityService(r.service)) {
         var mapped = remapAutumnMultiInstructors(r.instructors);
@@ -488,9 +525,11 @@
       out.push(Object.assign({}, row));
     });
     out.push(Object.assign({}, CYRUS_BESPOKE_ROW));
-    if (!openedYoussefMon430) {
-      out.push(Object.assign({}, YOUSSEF_ACTON_MON_OPEN_ROW));
-    }
+    YOUSSEF_ACTON_OPEN_430_ROWS.forEach(function (row) {
+      var dk = normalizeDowKey(row.day);
+      if (opened430[dk]) return;
+      out.push(Object.assign({}, row));
+    });
     return out;
   }
 
