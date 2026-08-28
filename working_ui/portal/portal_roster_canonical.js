@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 18;
+  var SOURCE_VERSION = 19;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -422,7 +422,7 @@
       .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
   }
 
-  /** Autumn Acton pool: Tue Rayan Ta + Richard→Javier. (Luliya bank — do not remap Simon/Angel.) */
+  /** Autumn Acton pool remaps for departed / cover staff. */
   function remapAutumnActonPoolInstructors(row) {
     if (!row) return null;
     if (!isAquaticService(row.service)) return null;
@@ -434,6 +434,12 @@
       .trim()
       .toLowerCase()
       .replace(/\s+/g, " ");
+
+    /* Monday: Roberto takes Angel's Acton book (Adam P / Steven / Mario). */
+    if (day === "monday" && /\bangel\b/i.test(raw)) {
+      if (/\broberto\b/i.test(raw)) return null;
+      return { instructors: "ROBERTO" };
+    }
 
     if (day === "tuesday") {
       if (/^rayan\s*ta\b/.test(client) || client === "richard") {
@@ -511,6 +517,61 @@
     },
   ];
 
+  /** Angel's Monday Acton book → Roberto (inject if live MADRE dropped Angel without successor). */
+  var ROBERTO_MONDAY_ACTON_FROM_ANGEL = [
+    {
+      client_name: "Adam P",
+      day: "Monday",
+      instructors: "ROBERTO",
+      service: "Aquatic Activity",
+      area: "Teaching Pool",
+      time_slot: "4 to 5.30",
+      venue: "Acton",
+      session_date: "2026-07-13",
+    },
+    {
+      client_name: "Steven",
+      day: "Monday",
+      instructors: "ROBERTO",
+      service: "Aquatic Activity",
+      area: "Teaching Pool",
+      time_slot: "5.30 to 6",
+      venue: "Acton",
+      session_date: "2026-07-13",
+    },
+    {
+      client_name: "Mario",
+      day: "Monday",
+      instructors: "ROBERTO",
+      service: "Aquatic Activity",
+      area: "Teaching Pool",
+      time_slot: "6 to 6.30",
+      venue: "Acton",
+      session_date: "2026-07-13",
+    },
+  ];
+
+  function mondayActonClientKey(name) {
+    var s = String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    if (/^adam\s*p/.test(s)) return "adam_p";
+    if (/^steven\b/.test(s)) return "steven";
+    if (/^mario\b/.test(s)) return "mario";
+    return s.replace(/[^a-z0-9]+/g, "_");
+  }
+
+  function hasMondayActonClient(rows, clientKey) {
+    var iso = DAY_CENTRE_STANDING_ISO.monday;
+    return (rows || []).some(function (r) {
+      if (!r) return false;
+      if (normIso(r.session_date) !== iso) return false;
+      if (!isActonVenue(r.venue) || !isAquaticService(r.service)) return false;
+      return mondayActonClientKey(r.client_name) === clientKey;
+    });
+  }
+
   /** Summer dated window whose Day Centre who-with-whom is replaced by Autumn board. */
   var AUTUMN_DC_REPLACE_FROM = "2026-06-01";
   var AUTUMN_DC_REPLACE_THROUGH = "2026-07-19";
@@ -522,7 +583,8 @@
    *   not only 13–17 Jul — so June ACAT/Fadi snaps cannot win Autumn projection)
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
-   * - Acton Tue: Rayan Ta + Richard→Javier (Luliya bank — no Simon/Angel remap)
+   * - Acton Mon: Angel → Roberto (Adam P / Steven / Mario)
+   * - Acton Tue: Rayan Ta + Richard→Javier (Luliya bank — no Simon remap)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {
@@ -618,6 +680,11 @@
     YOUSSEF_ACTON_OPEN_430_ROWS.forEach(function (row) {
       var dk = normalizeDowKey(row.day);
       if (opened430[dk]) return;
+      out.push(Object.assign({}, row));
+    });
+    ROBERTO_MONDAY_ACTON_FROM_ANGEL.forEach(function (row) {
+      var key = mondayActonClientKey(row.client_name);
+      if (hasMondayActonClient(out, key)) return;
       out.push(Object.assign({}, row));
     });
     return out;
