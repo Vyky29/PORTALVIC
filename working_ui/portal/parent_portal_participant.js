@@ -2663,6 +2663,7 @@
         if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
         return {
           iso: iso,
+          shortLabel: formatTermChipLabel(iso),
           dayLabel: formatHubDateLabel(iso),
           label: shortServiceChipLabel((s && s.label) || "Trial") || "Trial",
           rawLabel: (s && s.label) || "Trial",
@@ -3445,7 +3446,10 @@
   }
 
   function dateChipSpanHtml(d, statusByIso) {
+    if (!d || !d.iso) return "";
     var meta = termChipToneMeta(d, statusByIso);
+    var label = String(d.shortLabel || formatTermChipLabel(d.iso) || d.iso || "").trim();
+    if (!label) return "";
     return (
       '<span class="pp-hub-ops__date-chip pp-hub-ops__date-chip--' +
       meta.tone +
@@ -3456,7 +3460,7 @@
       '">' +
       meta.icon +
       "<span>" +
-      esc(d.shortLabel) +
+      esc(label) +
       "</span></span>"
     );
   }
@@ -3792,84 +3796,137 @@
     ).trim();
 
     if (isTrialOnlyBooking(data)) {
-      var trialIsoSet = Object.create(null);
-      var trialFirstIso = "";
-      trialBookedDateRows(data).forEach(function (t) {
-        if (!t || !t.iso) return;
-        trialIsoSet[t.iso] = true;
-        if (!trialFirstIso || t.iso < trialFirstIso) trialFirstIso = t.iso;
-      });
-      var termDates = findUnconfirmedNextYearSessionDates(data).map(function (d) {
-        if (!d || !d.iso) return d;
-        if (trialIsoSet[d.iso]) {
-          return annotateChipDate(
-            {
-              iso: d.iso,
-              shortLabel: d.shortLabel || formatTermChipLabel(d.iso),
-              past: !!d.past,
-              isToday: !!d.isToday,
-              isNext: d.iso === trialFirstIso,
-              pendingReenrol: false,
-              trialBooked: true,
-            },
-            data,
+      try {
+        var trialIsoSet = Object.create(null);
+        var trialFirstIso = "";
+        trialBookedDateRows(data).forEach(function (t) {
+          if (!t || !t.iso) return;
+          trialIsoSet[t.iso] = true;
+          if (!trialFirstIso || t.iso < trialFirstIso) trialFirstIso = t.iso;
+        });
+        var termDates = (findUnconfirmedNextYearSessionDates(data) || []).filter(function (d) {
+          return !!(d && d.iso);
+        });
+        /* Always include the booked trial day even if weekday projection skipped it. */
+        if (trialFirstIso) {
+          var haveTrial = termDates.some(function (d) {
+            return d.iso === trialFirstIso;
+          });
+          if (!haveTrial) {
+            termDates.push(
+              annotateChipDate(
+                {
+                  iso: trialFirstIso,
+                  shortLabel: formatTermChipLabel(trialFirstIso),
+                  past: trialFirstIso < isoDateLocal(new Date()),
+                  isToday: trialFirstIso === isoDateLocal(new Date()),
+                  isNext: true,
+                  pendingReenrol: false,
+                  trialBooked: true,
+                },
+                data,
+              ),
+            );
+          }
+        }
+        termDates = termDates
+          .map(function (d) {
+            if (!d || !d.iso) return null;
+            if (trialIsoSet[d.iso]) {
+              return annotateChipDate(
+                {
+                  iso: d.iso,
+                  shortLabel: d.shortLabel || formatTermChipLabel(d.iso),
+                  past: !!d.past,
+                  isToday: !!d.isToday,
+                  isNext: d.iso === trialFirstIso,
+                  pendingReenrol: false,
+                  trialBooked: true,
+                },
+                data,
+              );
+            }
+            return annotateChipDate(
+              {
+                iso: d.iso,
+                shortLabel: d.shortLabel || formatTermChipLabel(d.iso),
+                past: !!d.past,
+                isToday: !!d.isToday,
+                isNext: false,
+                pendingReenrol: true,
+                trialBooked: false,
+              },
+              data,
+            );
+          })
+          .filter(Boolean)
+          .sort(function (a, b) {
+            return a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : 0;
+          });
+        var tFirst = [];
+        var tSecond = [];
+        termDates.forEach(function (d) {
+          if (!d || !d.iso) return;
+          if (isFirstHalfTermDate(d.iso, data, true)) tFirst.push(d);
+          else tSecond.push(d);
+        });
+        function trialChipsOnly(list, ariaLabel) {
+          if (!list.length) return "";
+          return (
+            '<div class="pp-hub-ops__date-chips" role="list" aria-label="' +
+            esc(ariaLabel) +
+            '">' +
+            list
+              .map(function (d) {
+                return dateChipSpanHtml(d, statusByIso);
+              })
+              .join("") +
+            "</div>"
           );
         }
-        return d;
-      });
-      if (!termDates.length && trialFirstIso) {
-        termDates = trialBookedDateRows(data).map(function (t) {
-          return annotateChipDate(
-            {
-              iso: t.iso,
-              shortLabel: formatTermChipLabel(t.iso),
-              past: t.iso < isoDateLocal(new Date()),
-              isToday: t.iso === isoDateLocal(new Date()),
-              isNext: t.iso === trialFirstIso,
-              pendingReenrol: false,
-              trialBooked: true,
-            },
-            data,
+        function trialRowHtml(label, list) {
+          if (!list.length) return "";
+          return (
+            '<div class="pp-hub-ops__date-chips-row">' +
+            '<div class="pp-hub-ops__date-chips-label">' +
+            (termHalfRowIcon(label) || "") +
+            "<span>" +
+            esc(label) +
+            "</span></div>" +
+            trialChipsOnly(list, label) +
+            "</div>"
           );
-        });
-      }
-      var tFirst = [];
-      var tSecond = [];
-      termDates.forEach(function (d) {
-        if (isFirstHalfTermDate(d.iso, data, true)) tFirst.push(d);
-        else tSecond.push(d);
-      });
-      function trialChipsOnly(list, ariaLabel) {
-        if (!list.length) return "";
-        return (
-          '<div class="pp-hub-ops__date-chips" role="list" aria-label="' +
-          esc(ariaLabel) +
-          '">' +
-          list
-            .map(function (d) {
-              return dateChipSpanHtml(d, statusByIso);
-            })
-            .join("") +
-          "</div>"
-        );
-      }
-      function trialRowHtml(label, list) {
-        if (!list.length) return "";
-        return (
-          '<div class="pp-hub-ops__date-chips-row">' +
-          '<div class="pp-hub-ops__date-chips-label">' +
-          (termHalfRowIcon(label) || "") +
-          "<span>" +
-          esc(label) +
-          "</span></div>" +
-          trialChipsOnly(list, label) +
-          "</div>"
-        );
-      }
-      var trialRows = [];
-      if (tFirst.length) trialRows.push(trialRowHtml("Autumn · First half term", tFirst));
-      if (tSecond.length) trialRows.push(trialRowHtml("Autumn · Second half term", tSecond));
-      if (!trialRows.length) {
+        }
+        var trialRows = [];
+        if (tFirst.length) trialRows.push(trialRowHtml("Autumn · First half term", tFirst));
+        if (tSecond.length) trialRows.push(trialRowHtml("Autumn · Second half term", tSecond));
+        if (!trialRows.length) {
+          return {
+            thisTermHtml: "",
+            laterTermsHtml: "",
+            oldTermDatesHtml: "",
+            fullHtml: "",
+          };
+        }
+        var trialAccordion =
+          '<details class="pp-hub-ops__term-accordion" open>' +
+          '<summary class="pp-hub-ops__term-summary">' +
+          termHalfRowIcon("Autumn") +
+          '<span class="pp-hub-ops__term-summary-title">Autumn Term 26/27 · Trial</span>' +
+          '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
+          "</summary>" +
+          '<div class="pp-hub-ops__term-body">' +
+          termChipColorLegendHtml() +
+          '<p class="pp-muted pp-hub-ops__trial-note" style="margin:0 0 10px;font-size:12px;overflow-wrap:break-word">Blue = your booked trial. Red = other term dates (not booked yet).</p>' +
+          trialRows.join("") +
+          "</div></details>";
+        return {
+          thisTermHtml: trialAccordion,
+          laterTermsHtml: "",
+          oldTermDatesHtml: "",
+          fullHtml: trialAccordion,
+        };
+      } catch (_trialErr) {
         return {
           thisTermHtml: "",
           laterTermsHtml: "",
@@ -3877,24 +3934,6 @@
           fullHtml: "",
         };
       }
-      var trialAccordion =
-        '<details class="pp-hub-ops__term-accordion" open>' +
-        '<summary class="pp-hub-ops__term-summary">' +
-        termHalfRowIcon("Autumn") +
-        '<span class="pp-hub-ops__term-summary-title">Autumn Term 26/27 · Trial</span>' +
-        '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
-        "</summary>" +
-        '<div class="pp-hub-ops__term-body">' +
-        termChipColorLegendHtml() +
-        '<p class="pp-muted pp-hub-ops__trial-note" style="margin:0 0 10px;font-size:12px;overflow-wrap:break-word">Blue = your booked trial. Red = other term dates (not booked yet).</p>' +
-        trialRows.join("") +
-        "</div></details>";
-      return {
-        thisTermHtml: trialAccordion,
-        laterTermsHtml: "",
-        oldTermDatesHtml: "",
-        fullHtml: trialAccordion,
-      };
     }
 
     if (feedbackYearKey === PARENT_FEEDBACK_PRIOR_YEAR) {
@@ -4359,11 +4398,16 @@
 
   function applyTermDateChipStatuses(host, data, statusByIso) {
     if (!host) return;
-    var parts = buildTermSessionDateParts(data, statusByIso);
+    var parts;
+    try {
+      parts = buildTermSessionDateParts(data, statusByIso);
+    } catch (_e) {
+      return;
+    }
     try {
       host._ppTermStatusByIso = statusByIso || Object.create(null);
       host._ppTermParts = parts;
-    } catch (_e) {}
+    } catch (_e2) {}
     var thisEl = host.querySelector('[data-pp-term-chips="this"]');
     var laterEl = host.querySelector('[data-pp-term-chips="later"]');
     if (thisEl || laterEl) {

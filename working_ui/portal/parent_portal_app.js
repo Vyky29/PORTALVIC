@@ -1949,18 +1949,29 @@
   }
 
   async function bootstrap() {
-    initBrand();
-    bindEvents();
-    bindChildCards();
-    bindChildPhotoHandlers();
-    if (loadStoredSession()) {
-      var params = readParticipantDeepLink();
-      var deepId = params.get("contact_id") || params.get("contact") || "";
-      var ok = await loadHome(deepId ? { skipAutoHub: true } : {});
-      if (!ok) setStep("identify");
-      else maybeOpenParticipantFromUrl();
-    } else {
-      setStep("identify");
+    try {
+      initBrand();
+      bindEvents();
+      bindChildCards();
+      bindChildPhotoHandlers();
+      if (loadStoredSession()) {
+        var params = readParticipantDeepLink();
+        var deepId = params.get("contact_id") || params.get("contact") || "";
+        var ok = await loadHome(deepId ? { skipAutoHub: true } : {});
+        if (!ok) setStep("identify");
+        else maybeOpenParticipantFromUrl();
+      } else {
+        setStep("identify");
+      }
+    } catch (_bootErr) {
+      try {
+        setStep("identify");
+        showNotice(
+          $("ppNotice"),
+          "error",
+          "Could not open the parent portal. Refresh the page and try again.",
+        );
+      } catch (_e2) {}
     }
   }
 
