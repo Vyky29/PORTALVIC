@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 7;
+    var SOURCE_VERSION = 8;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -397,32 +397,89 @@
       .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
   }
 
+  function isAquaticService(service) {
+    return /aquatic/i.test(String(service || ""));
+  }
+
+  function isYoussefInstructor(instructorsRaw) {
+    return /\byoussef\b/i.test(String(instructorsRaw || ""));
+  }
+
+  function isActonVenue(venue) {
+    return /acton/i.test(String(venue || ""));
+  }
+
+  function isMon430ClosedSlot(row) {
+    if (!row) return false;
+    if (!/^closed$/i.test(String(row.client_name || "").trim())) return false;
+    if (!isAquaticService(row.service)) return false;
+    if (!isActonVenue(row.venue)) return false;
+    if (!isYoussefInstructor(row.instructors)) return false;
+    var day = normalizeDowKey(row.day);
+    if (day && day !== "monday") return false;
+    var slot = String(row.time_slot || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+    return (
+      slot === "4 to 4.30" ||
+      slot === "4.00 to 4.30" ||
+      slot === "4:00 to 4:30" ||
+      slot.indexOf("4 to 4.30") === 0
+    );
+  }
+
+  var YOUSSEF_ACTON_MON_OPEN_ROW = {
+    client_name: "No participant",
+    day: "Monday",
+    instructors: "YOUSSEF",
+    service: "Aquatic Activity",
+    area: "Teaching Pool",
+    time_slot: "4 to 4.30",
+    venue: "Acton",
+    session_date: "2026-07-13",
+  };
+
   /**
    * Autumn 26/27 standing patches on snap dates (13–17 Jul):
    * - Replace summer Day Centre who-with-whom with Autumn DC board
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
+   * - Acton Mon 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {
-    var out = (Array.isArray(rows) ? rows : []).filter(function (r) {
-      if (!r) return false;
+    var out = [];
+    var openedYoussefMon430 = false;
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
       var d = normIso(r.session_date);
       if (DAY_CENTRE_STANDING_ISO_SET[d] && isDayCentreService(r.service)) {
-        return false;
+        return;
       }
       /* Drop all standing-week Bespoke — rebuild from Autumn Hub rota below. */
       if (isBespokeService(r.service) && DAY_CENTRE_STANDING_ISO_SET[d]) {
-        return false;
+        return;
       }
       if (isBespokeService(r.service) && /^cyrus\b/i.test(String(r.client_name || "").trim())) {
-        return false;
+        return;
       }
-      return true;
-    }).map(function (r) {
-      if (!isMultiActivityService(r.service)) return r;
-      var mapped = remapAutumnMultiInstructors(r.instructors);
-      if (mapped === String(r.instructors || "").trim()) return r;
-      return Object.assign({}, r, { instructors: mapped });
+      if (isMon430ClosedSlot(r)) {
+        openedYoussefMon430 = true;
+        out.push(
+          Object.assign({}, r, {
+            client_name: "No participant",
+          })
+        );
+        return;
+      }
+      if (isMultiActivityService(r.service)) {
+        var mapped = remapAutumnMultiInstructors(r.instructors);
+        if (mapped !== String(r.instructors || "").trim()) {
+          out.push(Object.assign({}, r, { instructors: mapped }));
+          return;
+        }
+      }
+      out.push(r);
     });
     autumnDayCentreStandingRows().forEach(function (row) {
       out.push(row);
@@ -431,6 +488,9 @@
       out.push(Object.assign({}, row));
     });
     out.push(Object.assign({}, CYRUS_BESPOKE_ROW));
+    if (!openedYoussefMon430) {
+      out.push(Object.assign({}, YOUSSEF_ACTON_MON_OPEN_ROW));
+    }
     return out;
   }
 

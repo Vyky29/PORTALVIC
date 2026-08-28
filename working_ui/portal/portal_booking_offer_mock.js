@@ -222,7 +222,7 @@
     { id: "aq-act-tue-1730", serviceId: "aquatic", venue: "Acton", day: "Tuesday", timeLabel: "5.30 – 6.00", sortTime: "17:30", capacity: 1, taken: 0 },
     { id: "aq-act-tue-1730-60", serviceId: "aquatic", venue: "Acton", day: "Tuesday", timeLabel: "5.30 – 6.30", sortTime: "17:30", capacity: 1, taken: 0 },
     { id: "aq-act-tue-1800", serviceId: "aquatic", venue: "Acton", day: "Tuesday", timeLabel: "6.00 – 6.30", sortTime: "18:00", capacity: 1, taken: 0 },
-    { id: "aq-act-mon-1600", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "4.00 – 4.30", sortTime: "16:00", capacity: 1, taken: 1 },
+    { id: "aq-act-mon-1600", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "4.00 – 4.30", sortTime: "16:00", capacity: 1, taken: 0 },
     { id: "aq-act-mon-1630", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "4.30 – 5.00", sortTime: "16:30", capacity: 1, taken: 0 },
     { id: "aq-act-mon-1700", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "5.00 – 5.30", sortTime: "17:00", capacity: 1, taken: 0 },
     { id: "aq-act-wed-1600", serviceId: "aquatic", venue: "Acton", day: "Wednesday", timeLabel: "4.00 – 4.30", sortTime: "16:00", capacity: 1, taken: 1 },
