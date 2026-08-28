@@ -667,6 +667,66 @@
     return out;
   }
 
+  /**
+   * Autumn aquatic standing pool (same pairs as roster export) — so trial /
+   * first-session families still see who will be poolside before feedback exists.
+   */
+  function standingPoolKeysForVenueDay(venue, day) {
+    var v = String(venue || "").toLowerCase();
+    var d = String(day || "").toLowerCase();
+    if (/northolt/.test(v) && /mon|wed/.test(d)) return ["dan", "luliya"];
+    if (/acton/.test(v) && /tue|thu/.test(d)) return ["aurora", "luliya"];
+    if (/westway/.test(v)) return ["sandra"];
+    return [];
+  }
+
+  function dayTokenFromIsoOrLabel(iso, dayLabel) {
+    var raw = String(dayLabel || "").trim().toLowerCase();
+    if (/^mon/.test(raw)) return "mon";
+    if (/^tue/.test(raw)) return "tue";
+    if (/^wed/.test(raw)) return "wed";
+    if (/^thu/.test(raw)) return "thu";
+    if (/^fri/.test(raw)) return "fri";
+    if (/^sat/.test(raw)) return "sat";
+    if (/^sun/.test(raw)) return "sun";
+    var s = String(iso || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+    var parts = s.split("-");
+    var dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    if (isNaN(dt.getTime())) return "";
+    return ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][dt.getDay()] || "";
+  }
+
+  function teamFromStandingPool(data) {
+    var seen = {};
+    var keys = [];
+    function pushKeys(list) {
+      (list || []).forEach(function (k) {
+        if (!k || seen[k]) return;
+        seen[k] = true;
+        keys.push(k);
+      });
+    }
+    var upcoming =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    upcoming.forEach(function (s) {
+      if (!s) return;
+      var dayTok = dayTokenFromIsoOrLabel(s.iso, s.day);
+      pushKeys(standingPoolKeysForVenueDay(s.venue, dayTok));
+    });
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    detail.forEach(function (s) {
+      if (!s) return;
+      var label = String(s.label || s.service || "").toLowerCase();
+      if (label && !/aquatic|swim|pool/.test(label)) return;
+      pushKeys(standingPoolKeysForVenueDay(s.venue || s.area, s.day));
+    });
+    return keys.map(catalogMember).filter(Boolean);
+  }
+
   function catalogMember(key) {
     var k = String(key || "").trim().toLowerCase();
     if (k === "javi") k = "javier";
@@ -730,6 +790,10 @@
     }
     if (!out.length) {
       teamFromSessions(data).forEach(addCard);
+    }
+    /* Trial / new place: standing pool instructors before any session feedback. */
+    if (!out.length) {
+      teamFromStandingPool(data).forEach(addCard);
     }
     /* Roster demo map fills gaps (and covers empty live team) for known children */
     demoKeysForParticipant(data).forEach(function (key) {
