@@ -3342,6 +3342,13 @@
         icon: CHIP_X_SVG,
       };
     }
+    if (d.trialBooked) {
+      return {
+        tone: d.isNext || d.isToday ? "next" : "upcoming",
+        title: "Trial session — " + d.iso,
+        icon: "",
+      };
+    }
     if (d.past) {
       return { tone: "done", title: "Completed — " + d.iso, icon: "" };
     }
@@ -3768,8 +3775,84 @@
     ).trim();
 
     if (isTrialOnlyBooking(data)) {
-      var trialDates = trialBookedDateRows(data);
-      if (!trialDates.length) {
+      var trialIsoSet = Object.create(null);
+      var trialFirstIso = "";
+      trialBookedDateRows(data).forEach(function (t) {
+        if (!t || !t.iso) return;
+        trialIsoSet[t.iso] = true;
+        if (!trialFirstIso || t.iso < trialFirstIso) trialFirstIso = t.iso;
+      });
+      var termDates = findUnconfirmedNextYearSessionDates(data).map(function (d) {
+        if (!d || !d.iso) return d;
+        if (trialIsoSet[d.iso]) {
+          return annotateChipDate(
+            {
+              iso: d.iso,
+              shortLabel: d.shortLabel || formatTermChipLabel(d.iso),
+              past: !!d.past,
+              isToday: !!d.isToday,
+              isNext: d.iso === trialFirstIso,
+              pendingReenrol: false,
+              trialBooked: true,
+            },
+            data,
+          );
+        }
+        return d;
+      });
+      if (!termDates.length && trialFirstIso) {
+        termDates = trialBookedDateRows(data).map(function (t) {
+          return annotateChipDate(
+            {
+              iso: t.iso,
+              shortLabel: formatTermChipLabel(t.iso),
+              past: t.iso < isoDateLocal(new Date()),
+              isToday: t.iso === isoDateLocal(new Date()),
+              isNext: t.iso === trialFirstIso,
+              pendingReenrol: false,
+              trialBooked: true,
+            },
+            data,
+          );
+        });
+      }
+      var tFirst = [];
+      var tSecond = [];
+      termDates.forEach(function (d) {
+        if (isFirstHalfTermDate(d.iso, data, true)) tFirst.push(d);
+        else tSecond.push(d);
+      });
+      function trialChipsOnly(list, ariaLabel) {
+        if (!list.length) return "";
+        return (
+          '<div class="pp-hub-ops__date-chips" role="list" aria-label="' +
+          esc(ariaLabel) +
+          '">' +
+          list
+            .map(function (d) {
+              return dateChipSpanHtml(d, statusByIso);
+            })
+            .join("") +
+          "</div>"
+        );
+      }
+      function trialRowHtml(label, list) {
+        if (!list.length) return "";
+        return (
+          '<div class="pp-hub-ops__date-chips-row">' +
+          '<div class="pp-hub-ops__date-chips-label">' +
+          (termHalfRowIcon(label) || "") +
+          "<span>" +
+          esc(label) +
+          "</span></div>" +
+          trialChipsOnly(list, label) +
+          "</div>"
+        );
+      }
+      var trialRows = [];
+      if (tFirst.length) trialRows.push(trialRowHtml("Autumn · First half term", tFirst));
+      if (tSecond.length) trialRows.push(trialRowHtml("Autumn · Second half term", tSecond));
+      if (!trialRows.length) {
         return {
           thisTermHtml: "",
           laterTermsHtml: "",
@@ -3777,31 +3860,17 @@
           fullHtml: "",
         };
       }
-      var trialChips =
-        '<div class="pp-hub-ops__date-chips" role="list" aria-label="Trial session">' +
-        trialDates
-          .map(function (d) {
-            return dateChipSpanHtml(d, statusByIso);
-          })
-          .join("") +
-        "</div>";
-      var trialBody =
-        '<div class="pp-hub-ops__date-chips-row">' +
-        '<div class="pp-hub-ops__date-chips-label">' +
-        termHalfRowIcon("Trial") +
-        "<span>Trial session</span></div>" +
-        trialChips +
-        "</div>";
       var trialAccordion =
         '<details class="pp-hub-ops__term-accordion" open>' +
         '<summary class="pp-hub-ops__term-summary">' +
-        termHalfRowIcon("Trial") +
-        '<span class="pp-hub-ops__term-summary-title">Trial session</span>' +
+        termHalfRowIcon("Autumn") +
+        '<span class="pp-hub-ops__term-summary-title">Autumn Term 26/27 · Trial</span>' +
         '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
         "</summary>" +
         '<div class="pp-hub-ops__term-body">' +
         termChipColorLegendHtml() +
-        trialBody +
+        '<p class="pp-muted pp-hub-ops__trial-note" style="margin:0 0 10px;font-size:12px;overflow-wrap:break-word">Blue = your booked trial. Red = other term dates (not booked yet).</p>' +
+        trialRows.join("") +
         "</div></details>";
       return {
         thisTermHtml: trialAccordion,
