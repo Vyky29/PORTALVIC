@@ -34,8 +34,8 @@ from build_machine_exports import (  # noqa: E402
 CALENDAR_FROM = "2026-08-31"
 CALENDAR_TO = "2026-12-31"
 SESSION_FROM = "2026-09-01"  # Day Centre only Mon 1 Sep
-AFTERSCHOOL_WEEKEND_FROM = "2026-09-05"  # Sat/Sun after-school from club weekend
-AFTERSCHOOL_WEEKDAY_FROM = "2026-09-08"  # Week 2 Mon — weekday after-school (e.g. Cyrus Tue)
+AFTERSCHOOL_WEEKEND_FROM = "2026-09-05"  # Sat/Sun after-school (first club weekend)
+AFTERSCHOOL_WEEKDAY_FROM = "2026-09-07"  # Mon 7 Sep — weekday after-schools / evenings
 SESSION_TO = "2026-12-17"
 TERM_BREAK_FROM = "2026-10-26"
 TERM_BREAK_TO = "2026-10-30"
@@ -78,7 +78,7 @@ def monday_template() -> list[tuple[str, str, str]]:
         _pairs("Roberto", "4-6.30", "Acton"),
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Dan", "4.30-6.30", "Northolt"),
-        _pairs("Luliya", "4.30-6.30", "Northolt"),
+        # Luliya: bank / no Autumn shifts yet — omit from pool until assigned
         _pairs("Sandra", "4-6", "Westway"),
         _pairs("Godsway", "4.15-6.15", "SwimFarm"),
         _pairs("John", "4.15-6.15", "SwimFarm"),
@@ -95,7 +95,6 @@ def tuesday_template() -> list[tuple[str, str, str]]:
         _pairs("Victor", "3.30-5", "SwimFarm"),  # Cyrus bespoke (Thu → Tue)
         _pairs("Raul", "12.30-3", "SwimFarm"),  # Fadi
         _pairs("Michelle", "3-4", "SwimFarm"),  # Ikram
-        _pairs("Luliya", "4.30-6.30", "Acton"),
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Javier", "4-6.30", "Acton"),
         _pairs("Aurora", "4.30-6.30", "Acton"),
@@ -114,7 +113,6 @@ def wednesday_template() -> list[tuple[str, str, str]]:
         _pairs("Javier", "4-6.30", "Acton"),
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Dan", "4.30-6.30", "Northolt"),
-        _pairs("Luliya", "4.30-6.30", "Northolt"),
         _pairs("Godsway", "4.15-6.15", "SwimFarm"),
         _pairs("John", "4.15-6.15", "SwimFarm"),
         _pairs("Emanuel", "4.15-6.15", "SwimFarm"),
@@ -129,7 +127,7 @@ def thursday_template() -> list[tuple[str, str, str]]:
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Javier", "4-6.30", "Acton"),
         _pairs("Aurora", "4.30-6.30", "Acton"),
-        _pairs("Luliya", "4.30-6.30", "Acton"),
+        # Luliya bank — no Acton Thu until assigned
     ]
 
 

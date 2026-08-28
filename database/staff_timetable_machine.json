@@ -4566,14 +4566,6 @@
   {
     "date": "2026-09-01",
     "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-09-01",
-    "day": "Tuesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -4686,14 +4678,6 @@
   {
     "date": "2026-09-02",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-09-02",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -4774,14 +4758,6 @@
   {
     "date": "2026-09-03",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-09-03",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -4810,14 +4786,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-09-04",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-09-04",
@@ -4879,9 +4847,25 @@
     "date": "2026-09-04",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-09-04",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-09-04",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-09-05",
@@ -5014,14 +4998,6 @@
   {
     "date": "2026-09-07",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-09-07",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -5098,14 +5074,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-09-08",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-09-08",
@@ -5222,14 +5190,6 @@
   {
     "date": "2026-09-09",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-09-09",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -5310,14 +5270,6 @@
   {
     "date": "2026-09-10",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-09-10",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -5346,14 +5298,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-09-11",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-09-11",
@@ -5415,9 +5359,25 @@
     "date": "2026-09-11",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-09-11",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-09-11",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-09-12",
@@ -5550,14 +5510,6 @@
   {
     "date": "2026-09-14",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-09-14",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -5634,14 +5586,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-09-15",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-09-15",
@@ -5758,14 +5702,6 @@
   {
     "date": "2026-09-16",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-09-16",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -5846,14 +5782,6 @@
   {
     "date": "2026-09-17",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-09-17",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -5882,14 +5810,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-09-18",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-09-18",
@@ -5951,9 +5871,25 @@
     "date": "2026-09-18",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-09-18",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-09-18",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-09-19",
@@ -6086,14 +6022,6 @@
   {
     "date": "2026-09-21",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-09-21",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -6170,14 +6098,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-09-22",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-09-22",
@@ -6294,14 +6214,6 @@
   {
     "date": "2026-09-23",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-09-23",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -6382,14 +6294,6 @@
   {
     "date": "2026-09-24",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-09-24",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -6418,14 +6322,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-09-25",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-09-25",
@@ -6487,9 +6383,25 @@
     "date": "2026-09-25",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-09-25",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-09-25",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-09-26",
@@ -6622,14 +6534,6 @@
   {
     "date": "2026-09-28",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-09-28",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -6706,14 +6610,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-09-29",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-09-29",
@@ -6830,14 +6726,6 @@
   {
     "date": "2026-09-30",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-09-30",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -6918,14 +6806,6 @@
   {
     "date": "2026-10-01",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-10-01",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -6954,14 +6834,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-10-02",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-10-02",
@@ -7023,9 +6895,25 @@
     "date": "2026-10-02",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-10-02",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-10-02",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-10-03",
@@ -7158,14 +7046,6 @@
   {
     "date": "2026-10-05",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-10-05",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -7242,14 +7122,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-10-06",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-10-06",
@@ -7366,14 +7238,6 @@
   {
     "date": "2026-10-07",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-10-07",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -7454,14 +7318,6 @@
   {
     "date": "2026-10-08",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-10-08",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -7490,14 +7346,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-10-09",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-10-09",
@@ -7559,9 +7407,25 @@
     "date": "2026-10-09",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-10-09",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-10-09",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-10-10",
@@ -7694,14 +7558,6 @@
   {
     "date": "2026-10-12",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-10-12",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -7778,14 +7634,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-10-13",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-10-13",
@@ -7902,14 +7750,6 @@
   {
     "date": "2026-10-14",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-10-14",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -7990,14 +7830,6 @@
   {
     "date": "2026-10-15",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-10-15",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -8026,14 +7858,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-10-16",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-10-16",
@@ -8095,9 +7919,25 @@
     "date": "2026-10-16",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-10-16",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-10-16",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-10-17",
@@ -8230,14 +8070,6 @@
   {
     "date": "2026-10-19",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-10-19",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -8314,14 +8146,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-10-20",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-10-20",
@@ -8438,14 +8262,6 @@
   {
     "date": "2026-10-21",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-10-21",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -8526,14 +8342,6 @@
   {
     "date": "2026-10-22",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-10-22",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -8562,14 +8370,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-10-23",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-10-23",
@@ -8631,9 +8431,25 @@
     "date": "2026-10-23",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-10-23",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-10-23",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-10-24",
@@ -8838,14 +8654,6 @@
   {
     "date": "2026-11-02",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-11-02",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -8922,14 +8730,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-11-03",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-11-03",
@@ -9046,14 +8846,6 @@
   {
     "date": "2026-11-04",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-11-04",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -9134,14 +8926,6 @@
   {
     "date": "2026-11-05",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-11-05",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -9170,14 +8954,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-11-06",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-11-06",
@@ -9239,9 +9015,25 @@
     "date": "2026-11-06",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-11-06",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-11-06",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-11-07",
@@ -9374,14 +9166,6 @@
   {
     "date": "2026-11-09",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-11-09",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -9458,14 +9242,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-11-10",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-11-10",
@@ -9582,14 +9358,6 @@
   {
     "date": "2026-11-11",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-11-11",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -9670,14 +9438,6 @@
   {
     "date": "2026-11-12",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-11-12",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -9706,14 +9466,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-11-13",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-11-13",
@@ -9775,9 +9527,25 @@
     "date": "2026-11-13",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-11-13",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-11-13",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-11-14",
@@ -9910,14 +9678,6 @@
   {
     "date": "2026-11-16",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-11-16",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -9994,14 +9754,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-11-17",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-11-17",
@@ -10118,14 +9870,6 @@
   {
     "date": "2026-11-18",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-11-18",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -10206,14 +9950,6 @@
   {
     "date": "2026-11-19",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-11-19",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -10242,14 +9978,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-11-20",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-11-20",
@@ -10311,9 +10039,25 @@
     "date": "2026-11-20",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-11-20",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-11-20",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-11-21",
@@ -10446,14 +10190,6 @@
   {
     "date": "2026-11-23",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-11-23",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -10530,14 +10266,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-11-24",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-11-24",
@@ -10654,14 +10382,6 @@
   {
     "date": "2026-11-25",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-11-25",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -10742,14 +10462,6 @@
   {
     "date": "2026-11-26",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-11-26",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -10778,14 +10490,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-11-27",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-11-27",
@@ -10847,9 +10551,25 @@
     "date": "2026-11-27",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-11-27",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-11-27",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-11-28",
@@ -10982,14 +10702,6 @@
   {
     "date": "2026-11-30",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-11-30",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -11066,14 +10778,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-12-01",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-12-01",
@@ -11190,14 +10894,6 @@
   {
     "date": "2026-12-02",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-12-02",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -11278,14 +10974,6 @@
   {
     "date": "2026-12-03",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-12-03",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -11314,14 +11002,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-12-04",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-12-04",
@@ -11383,9 +11063,25 @@
     "date": "2026-12-04",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-12-04",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-12-04",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-12-05",
@@ -11518,14 +11214,6 @@
   {
     "date": "2026-12-07",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-12-07",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -11602,14 +11290,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-12-08",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-12-08",
@@ -11726,14 +11406,6 @@
   {
     "date": "2026-12-09",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-12-09",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -11814,14 +11486,6 @@
   {
     "date": "2026-12-10",
     "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
-  },
-  {
-    "date": "2026-12-10",
-    "day": "Thursday",
     "venue": "SwimFarm",
     "staff_name": "Youssef",
     "time_range": "12.30-3",
@@ -11850,14 +11514,6 @@
     "staff_name": "Emanuel",
     "time_range": "11-1",
     "raw_assignment": "Emanuel 11-1"
-  },
-  {
-    "date": "2026-12-11",
-    "day": "Friday",
-    "venue": "SwimFarm",
-    "staff_name": "Emanuel",
-    "time_range": "3-4",
-    "raw_assignment": "Emanuel 3-4"
   },
   {
     "date": "2026-12-11",
@@ -11919,9 +11575,25 @@
     "date": "2026-12-11",
     "day": "Friday",
     "venue": "SwimFarm",
+    "staff_name": "Victor",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Victor 4.15-6.15"
+  },
+  {
+    "date": "2026-12-11",
+    "day": "Friday",
+    "venue": "SwimFarm",
     "staff_name": "Youssef",
-    "time_range": "12.30-3",
-    "raw_assignment": "Youssef 12.30-3"
+    "time_range": "12.30-4",
+    "raw_assignment": "Youssef 12.30-4"
+  },
+  {
+    "date": "2026-12-11",
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "staff_name": "Youssef",
+    "time_range": "4.15-6.15",
+    "raw_assignment": "Youssef 4.15-6.15"
   },
   {
     "date": "2026-12-12",
@@ -12054,14 +11726,6 @@
   {
     "date": "2026-12-14",
     "day": "Monday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-12-14",
-    "day": "Monday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -12138,14 +11802,6 @@
     "staff_name": "Javier",
     "time_range": "4-6.30",
     "raw_assignment": "Javier 4-6.30"
-  },
-  {
-    "date": "2026-12-15",
-    "day": "Tuesday",
-    "venue": "Acton",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
   },
   {
     "date": "2026-12-15",
@@ -12262,14 +11918,6 @@
   {
     "date": "2026-12-16",
     "day": "Wednesday",
-    "venue": "Northolt",
-    "staff_name": "Luliya",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Luliya 4.30-6.30"
-  },
-  {
-    "date": "2026-12-16",
-    "day": "Wednesday",
     "venue": "SwimFarm",
     "staff_name": "Michelle",
     "time_range": "11-4",
@@ -12346,14 +11994,6 @@
     "staff_name": "Roberto",
     "time_range": "4-6.30",
     "raw_assignment": "Roberto 4-6.30"
-  },
-  {
-    "date": "2026-12-17",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Simon",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Simon 4.30-6.30"
   },
   {
     "date": "2026-12-17",

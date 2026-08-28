@@ -320,7 +320,7 @@
     if (!iso || iso < "2026-09-01") return false;
     var t = termCfg();
     var weekendFrom = normIso(t.termAfterSchoolWeekendFrom) || "2026-09-05";
-    var weekdayFrom = normIso(t.termAfterSchoolWeekdayFrom) || "2026-09-08";
+    var weekdayFrom = normIso(t.termAfterSchoolWeekdayFrom) || "2026-09-07";
     var dow = new Date(iso + "T12:00:00").getDay();
     if (dow === 0 || dow === 6) return iso >= weekendFrom;
     return iso >= weekdayFrom;

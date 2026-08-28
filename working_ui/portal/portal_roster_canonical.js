@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 17;
+  var SOURCE_VERSION = 18;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -54,8 +54,7 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      /* Victor OFF Mon DC — Luliya covers Ikram 11–3 */
-      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      /* Luliya bank — no Autumn DC shifts yet */
       {
         staff: "Raul",
         clients: [
@@ -74,7 +73,7 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      /* Luliya bank — no Autumn DC shifts yet */
       /* Victor takes Raul's Tue DC; Raul OFF */
       {
         staff: "Victor",
@@ -87,7 +86,7 @@
     wednesday: [
       { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 3" }] },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      /* Luliya bank — no Autumn DC shifts yet */
       {
         staff: "Victor",
         clients: [
@@ -116,8 +115,7 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      /* Luliya covers Ikram 11–4; Victor joins Raul’s shift + Ikram 3–4 */
-      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      /* Luliya bank — no Autumn DC shifts yet; Victor + Raul cover Ikram 3–4 */
       {
         staff: "Victor",
         clients: [
@@ -424,7 +422,7 @@
       .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
   }
 
-  /** Autumn Acton pool: Simon Thu→Luliya; Tue Angel/Simon lane→Luliya; Rayan Ta + Richard→Javier. */
+  /** Autumn Acton pool: Tue Rayan Ta + Richard→Javier. (Luliya bank — do not remap Simon/Angel.) */
   function remapAutumnActonPoolInstructors(row) {
     if (!row) return null;
     if (!isAquaticService(row.service)) return null;
@@ -442,23 +440,7 @@
         if (/\bjavier\b/i.test(raw)) return null;
         return { instructors: "JAVIER" };
       }
-      if (/\bangel\b/i.test(raw) || /\bsimon\b/i.test(raw)) {
-        var mappedTue = raw
-          .replace(/\bANGEL\b/gi, "LULIYA")
-          .replace(/\bSIMON\b/gi, "LULIYA");
-        var patchTue = { instructors: mappedTue };
-        if (/^closed$/i.test(String(row.client_name || "").trim())) {
-          patchTue.client_name = "No participant";
-        }
-        if (mappedTue !== raw || patchTue.client_name) return patchTue;
-      }
       return null;
-    }
-
-    if (day === "thursday" && /\bsimon\b/i.test(raw)) {
-      var mappedThu = raw.replace(/\bSIMON\b/gi, "LULIYA");
-      if (mappedThu === raw) return null;
-      return { instructors: mappedThu };
     }
 
     return null;
@@ -540,16 +522,25 @@
    *   not only 13–17 Jul — so June ACAT/Fadi snaps cannot win Autumn projection)
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
-   * - Acton Thu aquatic: Simon→Luliya (Simon only works Thu)
-   * - Acton Tue aquatic: Angel/Simon lane→Luliya; Rayan Ta + Richard→Javier
+   * - Acton Tue: Rayan Ta + Richard→Javier (Luliya bank — no Simon/Angel remap)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {
     var out = [];
     var opened430 = { monday: false, tuesday: false, wednesday: false };
+    function isLuliyaBankInstructor(instructorsRaw) {
+      return /\bluliya\b|\blulia\b|\baida\b/i.test(String(instructorsRaw || ""));
+    }
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
       var d = normIso(r.session_date);
+      /* Luliya is bank with no Autumn shifts yet: keep summer dated history only. */
+      if (isLuliyaBankInstructor(r.instructors)) {
+        if (d && d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) {
+          out.push(r);
+        }
+        return;
+      }
       if (isDayCentreService(r.service)) {
         var dkDc = normalizeDowKey(r.day);
         if (
