@@ -208,6 +208,24 @@
       const iso = normaliseIsoDate(isoYmd);
       return !!(iso && dates.indexOf(iso) >= 0);
     }
+    /** Standing weekday snap window (Services / reenrol): exclude crash weeks from 20 Jul. */
+    function portalTermStandingSnapBounds(){
+      const from = typeof portalTermSummerRosterFromIso === 'function'
+        ? portalTermSummerRosterFromIso()
+        : '2026-06-01';
+      const through = typeof portalTermSummerDatedRosterThroughIso === 'function'
+        ? portalTermSummerDatedRosterThroughIso()
+        : '2026-07-19';
+      return { from: String(from || '').slice(0, 10), through: String(through || '').slice(0, 10) };
+    }
+    function portalStaffStandingWeekdaySnapArgs(isoYmd){
+      const bounds = portalTermStandingSnapBounds();
+      if(portalCalendarIsoUsesSummerDatedRosterOnly(isoYmd)){
+        return { floor: bounds.from, through: '' };
+      }
+      // Autumn (and any day outside summer dated window): project Services standing only.
+      return { floor: bounds.from, through: bounds.through };
+    }
     /** Worked day for term colours: clients that day, export done, or dated roster snap (not pool-only). */
     function portalStaffRosterAppliesOnCalendarDate(isoYmd, weekdayLong, staffId){
       const iso = normaliseIsoDate(isoYmd);
@@ -225,8 +243,8 @@
       }
       if(portalStaffHasDatedRowsForIso(iso, sid)) return true;
       if(portalStaffClientSessionsOnCalendarDate(iso, w, sid)) return true;
-      const snapFloor = portalCalendarIsoUsesSummerDatedRosterOnly(iso) ? portalTermSummerRosterFromIso() : '';
-      const hasSnaps = portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor);
+      const snap = portalStaffStandingWeekdaySnapArgs(iso);
+      const hasSnaps = portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through);
       if(!hasSnaps) return true;
       const anchor = new Date(iso + 'T12:00:00');
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
@@ -255,8 +273,8 @@
       if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return iso;
       if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return iso;
       if(portalStaffHasDatedRowsForIso(iso, sid)) return iso;
-      const snapFloor = portalCalendarIsoUsesSummerDatedRosterOnly(iso) ? portalTermSummerRosterFromIso() : '';
-      if(portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor)){
+      const snap = portalStaffStandingWeekdaySnapArgs(iso);
+      if(portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through)){
         const anchor = new Date(iso + 'T12:00:00');
         const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
         return portalBestStaffRosterIsoForWeekday(model, sid, w, anchor) || '';
@@ -291,7 +309,8 @@
       }
       return true;
     }
-    /** Nearest roster YYYY-MM-DD for this staff on a weekday (Summer term dated rows). */
+    /** Nearest / standing roster YYYY-MM-DD for this staff on a weekday.
+     * Autumn days project Services standing (≤ termSummerDatedRosterThrough), never crash weeks. */
     function portalBestStaffRosterIsoForWeekday(model, staffId, weekdayLong, anchorDate){
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
@@ -311,13 +330,28 @@
       const anchorIso = typeof portalIsoYmdFromDate === 'function'
         ? portalIsoYmdFromDate(anchorDate)
         : '';
+      const bounds = portalTermStandingSnapBounds();
+      const summerFloor = bounds.from;
+      const standingThrough = bounds.through;
+      const summerOnly = portalCalendarIsoUsesSummerDatedRosterOnly(anchorIso);
+
+      // Autumn / non-summer-dated view: latest standing ISO for this weekday (Services truth).
+      if(!summerOnly){
+        let bestStanding = '';
+        isos.forEach(function(ri){
+          if(summerFloor && String(ri) < summerFloor) return;
+          if(standingThrough && String(ri) > standingThrough) return;
+          if(!bestStanding || String(ri) > bestStanding) bestStanding = ri;
+        });
+        return bestStanding;
+      }
+
       let best = '';
       let bestDiff = Infinity;
-      const summerFloor = portalTermSummerRosterFromIso();
-      const summerOnly = portalCalendarIsoUsesSummerDatedRosterOnly(anchorIso);
       isos.forEach(function(ri){
         if(anchorIso && String(ri) > anchorIso) return;
-        if(summerOnly && summerFloor && String(ri) < summerFloor) return;
+        if(summerFloor && String(ri) < summerFloor) return;
+        if(standingThrough && String(ri) > standingThrough) return;
         const p = String(ri).split('-');
         const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
         if(isNaN(d.getTime())) return;
@@ -342,8 +376,8 @@
         return !!(iso && matchIso && rowIso === matchIso);
       }
       if(portalStaffHasDatedRowsForIso(iso, sid)) return false;
-      const snapFloor = portalCalendarIsoUsesSummerDatedRosterOnly(iso) ? portalTermSummerRosterFromIso() : '';
-      if(portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor)) return false;
+      const snap = portalStaffStandingWeekdaySnapArgs(iso);
+      if(portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through)) return false;
       return w === String(s.day || '').trim();
     }
     function portalScheduleOverrideFetchIsoList(opts){
@@ -6563,6 +6597,25 @@
         });
         dashboardData.termCalendarMonths = Array.from(months).sort(function(a, b){ return a - b; });
       }
+      // Never show pre-Autumn months once the view starts 31 Aug (stale Summer shell / crash extras).
+      (function clampTermMonthsToView(){
+        const from = String(dashboardData.termDashboardCalendarFrom || '').slice(0, 10);
+        const to = String(dashboardData.termDashboardCalendarTo || '').slice(0, 10);
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) return;
+        const fromM = parseInt(from.slice(5, 7), 10) - 1;
+        const toM = parseInt(to.slice(5, 7), 10) - 1;
+        if(!Number.isFinite(fromM) || !Number.isFinite(toM)) return;
+        let months = Array.isArray(dashboardData.termCalendarMonths)
+          ? dashboardData.termCalendarMonths.map(Number).filter(function(m){
+            return Number.isFinite(m) && m >= fromM && m <= toM;
+          })
+          : [];
+        if(!months.length){
+          months = [];
+          for(let m = fromM; m <= toM; m++) months.push(m);
+        }
+        dashboardData.termCalendarMonths = months.sort(function(a, b){ return a - b; });
+      })();
     };
     if(STAFF_DASHBOARD_ID && typeof window.portalApplyTermCalendarForStaff === 'function'){
       window.portalApplyTermCalendarForStaff(STAFF_DASHBOARD_ID);

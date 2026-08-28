@@ -1,5 +1,5 @@
 /**
- * Staff + lead My Term grid: view window from 1 Jun, blue = work day, red = off day.
+ * Staff + lead My Term grid: Autumn 2026 view (31 Aug–31 Dec), blue = work day, red = off day.
  * Requires window.PORTAL_TERM_FROM_TIMETABLE (term_from_timetable.js).
  */
 (function (global) {
@@ -86,7 +86,7 @@
 
   function fromIso() {
     var t = termCfg();
-    return normIso(t.termDashboardCalendarFrom) || normIso(t.termResumeDate) || "2026-06-01";
+    return normIso(t.termDashboardCalendarFrom) || normIso(t.termResumeDate) || "2026-08-31";
   }
 
   /** Staff whose Term calendar continues through Day Centre end (31 Jul), not Fri 17.
@@ -117,8 +117,8 @@
         if (override) return override;
       }
     }
-    var standard = normIso(t.termDashboardCalendarTo) || "2026-07-17";
-    var dayCentre = normIso(t.termDashboardCalendarToDayCentre) || normIso(t.lastDate) || "2026-07-31";
+    var standard = normIso(t.termDashboardCalendarTo) || "2026-12-31";
+    var dayCentre = normIso(t.termDashboardCalendarToDayCentre) || normIso(t.lastDate) || "2026-12-17";
     if (staffId != null && String(staffId).trim() && staffUsesDayCentreCalendar(staffId)) {
       return dayCentre;
     }
@@ -178,12 +178,12 @@
     if (Array.isArray(t.termDashboardCalendarMonths) && t.termDashboardCalendarMonths.length) {
       dashboardData.termCalendarMonths = t.termDashboardCalendarMonths.map(Number);
     } else {
-      dashboardData.termCalendarMonths = [5, 6];
+      dashboardData.termCalendarMonths = [7, 8, 9, 10, 11];
     }
     dashboardData.termCalendarFirstDom =
       t.termDashboardCalendarFirstDom && typeof t.termDashboardCalendarFirstDom === "object"
         ? t.termDashboardCalendarFirstDom
-        : {};
+        : { 7: 31 };
     dashboardData.termDashboardCalendarFrom = fromIso();
     dashboardData.termDashboardCalendarTo = toIso(staffId);
     if (Array.isArray(t.termHalfTermWeekStarts)) {

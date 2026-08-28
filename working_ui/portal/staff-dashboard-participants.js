@@ -4148,11 +4148,12 @@
           && normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
       });
     }
-    function portalStaffHasDatedWeekdaySnapshots(staffId, weekdayLong, minSessionDateIso){
+    function portalStaffHasDatedWeekdaySnapshots(staffId, weekdayLong, minSessionDateIso, maxSessionDateIso){
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(!sid || !w) return false;
       const floor = minSessionDateIso ? normaliseIsoDate(minSessionDateIso) : '';
+      const ceil = maxSessionDateIso ? normaliseIsoDate(maxSessionDateIso) : '';
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
       return model.some(function(row){
         if(String(row.staffId || '').toLowerCase() !== sid) return false;
@@ -4160,6 +4161,7 @@
         const ri = normaliseIsoDate(row && (row.session_date || row.sessionDate));
         if(!ri) return false;
         if(floor && ri < floor) return false;
+        if(ceil && ri > ceil) return false;
         return true;
       });
     }

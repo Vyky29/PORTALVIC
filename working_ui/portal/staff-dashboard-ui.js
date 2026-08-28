@@ -2171,7 +2171,7 @@
       const sid = String(staffId || '').trim().toLowerCase();
       if(!sid) return out;
       const y = Number(dashboardData.termCalendarYear) || new Date().getFullYear();
-      const months = Array.isArray(dashboardData.termCalendarMonths) ? dashboardData.termCalendarMonths : [5, 6];
+      const months = Array.isArray(dashboardData.termCalendarMonths) ? dashboardData.termCalendarMonths : [7, 8, 9, 10, 11];
       const halfWeeks = dashboardData.termHalfTermWeekStarts || [];
       const firstDomMap = dashboardData.termCalendarFirstDom || {};
       const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
