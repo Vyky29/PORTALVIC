@@ -565,7 +565,11 @@
       "stf021@staff.import.pending": "lulia",
       "stf016@staff.import.pending": "simon"
     };
-    /** Fallback when `staff_pay_rates` has no row for this auth user (seed names in DB migration). */
+    /** Fallback when `staff_pay_rates` has no row for this auth user (seed names in DB migration).
+     * Afternoon / swimming instructor rates (Autumn 26/27):
+     *   Simon £24 · Roberto £24 · Luliya £22 · Giuseppe £24 · Aurora/Dan/Javier £28
+     * Morning Day Centre / support rates still TBD for most — leave SW rows as-is.
+     * Giuseppe: morning (incl. pool) stays Support Worker £20; afternoon swim £24. */
     const PAY_RATE_BY_ROSTER_KEY = {
       youssef: {
         roleRates: { "Support Worker": 20, "Swimming Instructor": 24 },
@@ -574,7 +578,20 @@
         hourly_rate: 20,
         role_label: "Swimming Instructor 2"
       },
-      roberto: { hourly_rate: 24, role_label: "Swimming Instructor 2" },
+      simon: {
+        roleRates: { "Swimming Instructor": 24 },
+        roleScales: { "Swimming Instructor": "Scale 2" },
+        primaryRole: "Swimming Instructor",
+        hourly_rate: 24,
+        role_label: "Swimming Instructor 2"
+      },
+      roberto: {
+        roleRates: { "Support Worker": 20, "Swimming Instructor": 24 },
+        roleScales: { "Support Worker": "Scale 2", "Swimming Instructor": "Scale 2" },
+        primaryRole: "Swimming Instructor",
+        hourly_rate: 24,
+        role_label: "Swimming Instructor 2"
+      },
       aurora: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
       angel: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
       dan: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
@@ -583,12 +600,19 @@
       carlos: { hourly_rate: 30, role_label: "Climbing Instructor 3" },
       sandra: { hourly_rate: 28, role_label: "Fitness Instructor 1" },
       godsway: { hourly_rate: 18, role_label: "Support Worker 1" },
-      giuseppe: { hourly_rate: 20, role_label: "Support Worker 2" },
+      giuseppe: {
+        roleRates: { "Support Worker": 20, "Swimming Instructor": 24 },
+        roleScales: { "Support Worker": "Scale 2", "Swimming Instructor": "Scale 2" },
+        primaryRole: "Support Worker",
+        hourly_rate: 20,
+        role_label: "Support Worker 2"
+      },
       bismark: { hourly_rate: 23, role_label: "Support Worker 3" },
       john: { hourly_rate: 30, role_label: "Service Lead" },
       berta: { hourly_rate: 30, role_label: "Service Lead" },
       lulia: {
         roleRates: { "Support Worker": 18, "Swimming Instructor": 22 },
+        roleScales: { "Support Worker": "Scale 1", "Swimming Instructor": "Scale 1" },
         primaryRole: "Support Worker",
         hourly_rate: 18,
         role_label: "Support Worker"
@@ -2087,11 +2111,30 @@
     }
 
     /** Map a roster service string to the pay role (mirror of public.portal_service_to_role). */
+    function isGiuseppeRosterKey(rosterKey) {
+      const k = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
+        .trim()
+        .toLowerCase();
+      return k === "giuseppe" || k === "josep" || k === "stf008";
+    }
+    /** Weekday morning band (before after-school): start before 16:00. */
+    function sessionIsWeekdayMorningBand(session) {
+      const start = hmToMinutes(String((session && session.start) || "").trim());
+      if (!Number.isFinite(start)) return true;
+      return start < 16 * 60;
+    }
     function sessionPayRole(session){
       const svc = String(
         (session && (session.rosterService || session.service || session.activity)) || ""
       ).toLowerCase();
       const area = String((session && (session.rosterArea || session.area)) || "").toLowerCase();
+      /*
+       * Giuseppe / Josep (Autumn 26/27): morning hours (incl. piscina) stay Support Worker £20.
+       * Summer used to bump morning pool to SI £24 — that no longer applies. Afternoon swim = SI £24.
+       */
+      if (isGiuseppeRosterKey() && sessionIsWeekdayMorningBand(session)) {
+        return "Support Worker";
+      }
       // Youssef's Acton weekday afternoon shift is paid entirely at the Swimming
       // rate (£24) — including the Room 2 Multi-Activity slot — so it never splits
       // into a Support-rate group.
@@ -2578,11 +2621,29 @@
         if (!state.roleScales[canon]) state.roleScales[canon] = `Scale ${fbScale[2]}`;
         if (!state.primaryRole) state.primaryRole = canon;
       }
-      /* Authoritative roster-key rates (e.g. Youssef £24 swim) win over stale DB rows until migration lands. */
-      if (key === "youssef" && fb.roleRates && typeof fb.roleRates === "object") {
+      /* Authoritative roster-key rates win over stale DB rows until migration lands. */
+      const forceKeys = {
+        youssef: 1,
+        simon: 1,
+        roberto: 1,
+        giuseppe: 1,
+        lulia: 1,
+        aurora: 1,
+        dan: 1,
+        javier: 1
+      };
+      if (forceKeys[key] && fb.roleRates && typeof fb.roleRates === "object") {
         Object.keys(fb.roleRates).forEach((role) => {
           state.roleRates[role] = Number(fb.roleRates[role]);
         });
+        if (fb.primaryRole) state.primaryRole = fb.primaryRole;
+        if (fb.primaryRole && fb.roleRates[fb.primaryRole] != null) {
+          state.primaryRate = Number(fb.roleRates[fb.primaryRole]);
+        } else if (fb.hourly_rate != null) {
+          state.primaryRate = Number(fb.hourly_rate);
+        }
+      } else if (forceKeys[key] && fb.hourly_rate != null) {
+        state.primaryRate = Number(fb.hourly_rate);
       }
       if (fb.roleScales && typeof fb.roleScales === "object") {
         Object.keys(fb.roleScales).forEach((role) => {
