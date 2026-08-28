@@ -32,6 +32,7 @@ import {
   stripeCreateCheckoutSession,
   stripeGrossUpFromGbp,
 } from "./stripe_checkout.ts";
+import { foldValidatedReservationOntoMadre } from "./portal_booking_fold_madre.ts";
 
 export const FINISH_TOKEN_TTL_DAYS = 14;
 export const DEFAULT_SESSION_GBP = 50;
@@ -762,6 +763,14 @@ export async function confirmTrialSlotAfterStripePayment(
         updated_at: now,
       })
       .eq("id", reservationId);
+    try {
+      const fold = await foldValidatedReservationOntoMadre(admin, reservationId);
+      if (!fold.ok) {
+        console.warn("[confirmTrialSlotAfterStripePayment] madre fold", fold.note);
+      }
+    } catch (e) {
+      console.warn("[confirmTrialSlotAfterStripePayment] madre fold", e);
+    }
   } else if (token.document_id) {
     await admin
       .from("portal_booking_slot_reservations")
@@ -775,6 +784,23 @@ export async function confirmTrialSlotAfterStripePayment(
       })
       .eq("document_id", token.document_id)
       .in("status", ["awaiting_payment", "pending", "released"]);
+    try {
+      const { data: resRows } = await admin
+        .from("portal_booking_slot_reservations")
+        .select("id")
+        .eq("document_id", token.document_id)
+        .eq("status", "validated")
+        .order("updated_at", { ascending: false })
+        .limit(3);
+      for (const r of resRows || []) {
+        const fold = await foldValidatedReservationOntoMadre(admin, String(r.id || ""));
+        if (!fold.ok) {
+          console.warn("[confirmTrialSlotAfterStripePayment] madre fold", fold.note);
+        }
+      }
+    } catch (e) {
+      console.warn("[confirmTrialSlotAfterStripePayment] madre fold", e);
+    }
   }
 }
 
