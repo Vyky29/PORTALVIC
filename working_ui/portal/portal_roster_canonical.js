@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 9;
+    var SOURCE_VERSION = 10;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -429,7 +429,7 @@
     if (!isActonVenue(row.venue)) return false;
     if (!isYoussefInstructor(row.instructors)) return false;
     var day = normalizeDowKey(row.day);
-    if (day && day !== "monday" && day !== "wednesday") return false;
+    if (day && day !== "monday" && day !== "tuesday" && day !== "wednesday") return false;
     var slot = String(row.time_slot || "")
       .replace(/\s+/g, " ")
       .trim()
@@ -455,6 +455,16 @@
     },
     {
       client_name: "No participant",
+      day: "Tuesday",
+      instructors: "YOUSSEF",
+      service: "Aquatic Activity",
+      area: "Teaching Pool",
+      time_slot: "4 to 4.30",
+      venue: "Acton",
+      session_date: "2026-07-14",
+    },
+    {
+      client_name: "No participant",
       day: "Wednesday",
       instructors: "YOUSSEF",
       service: "Aquatic Activity",
@@ -471,11 +481,11 @@
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
    * - Acton Thu aquatic: Simon→Luliya
-   * - Acton Mon/Wed 4–4.30 Youssef: CLOSED → open (No participant)
+   * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {
     var out = [];
-    var opened430 = { monday: false, wednesday: false };
+    var opened430 = { monday: false, tuesday: false, wednesday: false };
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
       var d = normIso(r.session_date);
@@ -499,12 +509,12 @@
         );
         return;
       }
-      /* Standing Wed often omitted Youssef 4–4.30 entirely — treat NO CLIENT as open too. */
+      /* Standing Tue/Wed often omit Youssef 4–4.30 — treat CLOSED / NO CLIENT as open too. */
       if (
         isAquaticService(r.service) &&
         isActonVenue(r.venue) &&
         isYoussefInstructor(r.instructors) &&
-        normalizeDowKey(r.day) === "wednesday"
+        (normalizeDowKey(r.day) === "tuesday" || normalizeDowKey(r.day) === "wednesday")
       ) {
         var slotW = String(r.time_slot || "")
           .replace(/\s+/g, " ")
@@ -515,7 +525,8 @@
           slotW === "4.00 to 4.30" ||
           slotW.indexOf("4 to 4.30") === 0
         ) {
-          opened430.wednesday = true;
+          var dkOpen = normalizeDowKey(r.day);
+          if (opened430[dkOpen] !== undefined) opened430[dkOpen] = true;
           var cnW = String(r.client_name || "").trim();
           if (/^(closed|no client|noclient|no_client|available)$/i.test(cnW)) {
             out.push(Object.assign({}, r, { client_name: "No participant" }));
