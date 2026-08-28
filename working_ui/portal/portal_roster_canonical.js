@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 5;
+    var SOURCE_VERSION = 6;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -360,10 +360,27 @@
     return /bespoke/i.test(String(service || ""));
   }
 
+  function isMultiActivityService(service) {
+    return /multi[\s-]*activity/i.test(String(service || ""));
+  }
+
+  /**
+   * Autumn Sunday Hub rota: Godsway + Emanuel replace departed Bismark / Giuseppe
+   * on Multi-Activity (same clients / 45′ halves).
+   */
+  function remapAutumnMultiInstructors(instructorsRaw) {
+    var s = String(instructorsRaw || "").trim();
+    if (!s) return s;
+    return s
+      .replace(/\bBISMARCK?\b/gi, "GODSWAY")
+      .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
+  }
+
   /**
    * Autumn 26/27 standing patches on snap dates (13–17 Jul):
    * - Replace summer Day Centre who-with-whom with Autumn DC board
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
+   * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
    */
   function applyAutumnStandingParticipantRows(rows) {
     var out = (Array.isArray(rows) ? rows : []).filter(function (r) {
@@ -380,6 +397,11 @@
         return false;
       }
       return true;
+    }).map(function (r) {
+      if (!isMultiActivityService(r.service)) return r;
+      var mapped = remapAutumnMultiInstructors(r.instructors);
+      if (mapped === String(r.instructors || "").trim()) return r;
+      return Object.assign({}, r, { instructors: mapped });
     });
     autumnDayCentreStandingRows().forEach(function (row) {
       out.push(row);
