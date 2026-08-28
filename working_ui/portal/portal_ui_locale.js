@@ -22,7 +22,7 @@
     operator: "Centro de control",
     scheduling: "Horarios y coberturas",
     term_roster_edit: "Editar franja del término",
-    roster_spreadsheets: "Hojas de referencia",
+    roster_spreadsheets: "Horario instructores",
     absents_refunds: "Ausencias, reembolsos y créditos",
     receptionist: "Recepción",
     leads: "Consultas e ingreso",
@@ -85,7 +85,8 @@
   };
 
   var ADMIN_HUB_ES = {
-    "Roster sheets": "Hojas de roster",
+    "Roster sheets": "Horario",
+    Timetable: "Horario",
     "Refunds & credits": "Reembolsos y créditos",
     Bookings: "Reservas",
     "Ops payments": "Pagos ops",
@@ -196,7 +197,8 @@
     "Schedule & Covers": "Horarios y coberturas",
     "Schedule &amp; Covers": "Horarios y coberturas",
     "Edit term slot": "Editar franja del término",
-    "Spreadsheet reference": "Hojas de referencia",
+    "Spreadsheet reference": "Horario instructores",
+    "Instructor timetable": "Horario instructores",
     "Absents, refunds & credits": "Ausencias, reembolsos y créditos",
     "Absents, refunds &amp; credits": "Ausencias, reembolsos y créditos",
     "Receptionist hub": "Centro de recepción",

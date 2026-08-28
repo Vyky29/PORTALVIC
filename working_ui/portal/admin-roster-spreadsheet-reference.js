@@ -1,5 +1,7 @@
 /**
- * Admin — spreadsheet reference: group sessions + editable staff hours (Jun 2026+).
+ * Admin — Instructor timetable (ex Spreadsheet reference).
+ * Group sessions = same standing roster as Services (canonical).
+ * Staff hours = standing week from that roster + editable dated overrides (Supabase).
  */
 (function (global) {
   "use strict";
@@ -18,8 +20,19 @@
     },
   };
 
+  /** Same snap dates Services uses for standing weekday projection. */
+  var STANDING_ISO_BY_DAY = {
+    Saturday: "2026-07-11",
+    Sunday: "2026-07-12",
+    Monday: "2026-07-13",
+    Tuesday: "2026-07-14",
+    Wednesday: "2026-07-15",
+    Thursday: "2026-07-16",
+    Friday: "2026-07-17",
+  };
+
   var state = {
-    tab: "hours",
+    tab: "sessions",
     sessionDay: "Monday",
     hoursDay: "Monday",
     hoursService: "all",
@@ -63,6 +76,213 @@
     return global.PORTAL_SPREADSHEET_REFERENCE || null;
   }
 
+  function resolveRosterRows() {
+    try {
+      if (
+        global.PortalRosterCanonical &&
+        typeof global.PortalRosterCanonical.resolveCanonicalRosterRows === "function"
+      ) {
+        return global.PortalRosterCanonical.resolveCanonicalRosterRows() || [];
+      }
+    } catch (_e) {}
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    return src && Array.isArray(src.rows) ? src.rows : [];
+  }
+
+  function parseSlotMinutes(timeSlot) {
+    var raw = String(timeSlot || "")
+      .replace(/\s*-\s*/g, " to ")
+      .replace(/\s+/g, " ")
+      .trim();
+    var parts = raw.split(/\s+to\s+/i);
+    if (parts.length < 2) return { start: 0, end: 0 };
+    function one(p) {
+      var m = String(p || "")
+        .trim()
+        .match(/^(\d{1,2})(?:[:.](\d{2}))?/);
+      if (!m) return 0;
+      var h = parseInt(m[1], 10) || 0;
+      var min = parseInt(m[2] || "0", 10) || 0;
+      if (h > 0 && h < 8) h += 12;
+      return h * 60 + min;
+    }
+    return { start: one(parts[0]), end: one(parts[1]) };
+  }
+
+  function sortTimeSlots(a, b) {
+    return parseSlotMinutes(a).start - parseSlotMinutes(b).start || String(a).localeCompare(String(b));
+  }
+
+  function cellKindFromClient(name) {
+    var n = String(name || "").trim();
+    var low = n.toLowerCase().replace(/_/g, " ");
+    if (!n) return { label: "", kind: "empty" };
+    if (low === "closed") return { label: "CLOSED", kind: "closed" };
+    if (
+      low === "no client" ||
+      low === "noclient" ||
+      low === "no participant" ||
+      low === "available" ||
+      low === "home" ||
+      low === "manager" ||
+      low === "shadowing"
+    ) {
+      return { label: low === "home" || low === "manager" ? n : "NO CLIENT", kind: "available" };
+    }
+    return { label: n, kind: "client" };
+  }
+
+  function compactTimeLabel(timeSlot) {
+    return String(timeSlot || "")
+      .replace(/\s+to\s+/gi, "-")
+      .replace(/\s+/g, "");
+  }
+
+  /** Group sessions grid — same standing week / canonical rows as Services. */
+  function buildSessionGridsFromRoster(rows) {
+    var grids = {};
+    WEEKDAYS.forEach(function (day) {
+      var iso = STANDING_ISO_BY_DAY[day];
+      var dayRows = (rows || []).filter(function (r) {
+        return String((r && r.session_date) || "").slice(0, 10) === iso;
+      });
+      var colMap = Object.create(null);
+      var colOrder = [];
+      dayRows.forEach(function (r) {
+        var instr = String(r.instructors || "").trim().toUpperCase() || "—";
+        var venue = String(r.venue || "").trim() || "—";
+        var service = String(r.service || "").trim() || "—";
+        var id = instr + "|" + venue + "|" + service;
+        if (!colMap[id]) {
+          colMap[id] = {
+            id: id,
+            title: instr,
+            subtitle: service + " (" + venue + ")",
+            venue: venue,
+            service: service,
+          };
+          colOrder.push(id);
+        }
+      });
+      colOrder.sort(function (a, b) {
+        var ca = colMap[a];
+        var cb = colMap[b];
+        return (
+          String(ca.venue).localeCompare(String(cb.venue), undefined, { sensitivity: "base" }) ||
+          String(ca.service).localeCompare(String(cb.service), undefined, { sensitivity: "base" }) ||
+          String(ca.title).localeCompare(String(cb.title), undefined, { sensitivity: "base" })
+        );
+      });
+      var timeSet = Object.create(null);
+      var times = [];
+      dayRows.forEach(function (r) {
+        var t = String(r.time_slot || "").trim();
+        if (!t || timeSet[t]) return;
+        timeSet[t] = 1;
+        times.push(t);
+      });
+      times.sort(sortTimeSlots);
+      var outRows = times.map(function (time) {
+        var cells = colOrder.map(function (cid) {
+          var hits = dayRows.filter(function (r) {
+            var instr = String(r.instructors || "").trim().toUpperCase() || "—";
+            var venue = String(r.venue || "").trim() || "—";
+            var service = String(r.service || "").trim() || "—";
+            return (
+              instr + "|" + venue + "|" + service === cid &&
+              String(r.time_slot || "").trim() === time
+            );
+          });
+          if (!hits.length) return { label: "", kind: "empty" };
+          var labels = [];
+          var seen = Object.create(null);
+          hits.forEach(function (h) {
+            var nm = String(h.client_name || "").trim();
+            if (!nm || seen[nm.toLowerCase()]) return;
+            seen[nm.toLowerCase()] = 1;
+            labels.push(nm);
+          });
+          if (!labels.length) return { label: "", kind: "empty" };
+          if (labels.length === 1) return cellKindFromClient(labels[0]);
+          return { label: labels.join(", "), kind: "client" };
+        });
+        return { time: time, cells: cells };
+      });
+      grids[day] = {
+        columns: colOrder.map(function (id) {
+          return colMap[id];
+        }),
+        rows: outRows,
+      };
+    });
+    return grids;
+  }
+
+  /** Standing instructor hours summary (read-only) — same roster as Services. */
+  function buildStandingHoursLines(rows) {
+    var byDay = {};
+    WEEKDAYS.forEach(function (day) {
+      var iso = STANDING_ISO_BY_DAY[day];
+      var dayRows = (rows || []).filter(function (r) {
+        return String((r && r.session_date) || "").slice(0, 10) === iso;
+      });
+      var byStaff = Object.create(null);
+      var order = [];
+      dayRows.forEach(function (r) {
+        var instr = String(r.instructors || "").trim();
+        if (!instr) return;
+        var key = instr.toUpperCase();
+        if (!byStaff[key]) {
+          byStaff[key] = {
+            name: instr,
+            venue: String(r.venue || "").trim(),
+            spans: [],
+            startMin: null,
+            endMin: null,
+          };
+          order.push(key);
+        }
+        var t = String(r.time_slot || "").trim();
+        var p = parseSlotMinutes(t);
+        if (t) byStaff[key].spans.push(compactTimeLabel(t));
+        if (p.start || p.end) {
+          if (byStaff[key].startMin == null || p.start < byStaff[key].startMin) {
+            byStaff[key].startMin = p.start;
+          }
+          if (byStaff[key].endMin == null || p.end > byStaff[key].endMin) {
+            byStaff[key].endMin = p.end;
+          }
+        }
+        if (!byStaff[key].venue && r.venue) byStaff[key].venue = String(r.venue).trim();
+      });
+      order.sort(function (a, b) {
+        return String(byStaff[a].name).localeCompare(String(byStaff[b].name), undefined, {
+          sensitivity: "base",
+        });
+      });
+      byDay[day] = {
+        iso: iso,
+        lines: order.map(function (k) {
+          var s = byStaff[k];
+          var unique = [];
+          var seenT = Object.create(null);
+          (s.spans || []).forEach(function (x) {
+            if (!x || seenT[x]) return;
+            seenT[x] = 1;
+            unique.push(x);
+          });
+          var span = unique.join(", ");
+          return {
+            name: s.name,
+            venue: s.venue,
+            text: s.name + (span ? " " + span : ""),
+          };
+        }),
+      };
+    });
+    return byDay;
+  }
+
   function data() {
     return state.mergedData || baseData();
   }
@@ -78,6 +298,14 @@
       return Promise.resolve();
     }
     var copy = JSON.parse(JSON.stringify(base));
+    var rosterRows = resolveRosterRows();
+    copy.sessionGrids = buildSessionGridsFromRoster(rosterRows);
+    copy.meta = Object.assign({}, copy.meta || {}, {
+      sessionSource: "canonical_roster_standing",
+      sessionWeekLabel: "Standing week (same as Services) · Sat 11–Fri 17 Jul snap",
+      syncedWithServices: true,
+    });
+    copy._standingHours = buildStandingHoursLines(rosterRows);
     var client = cfg.getClient();
     if (!client || !global.PortalStaffTimetableMerge) {
       state.mergedData = copy;
@@ -92,23 +320,22 @@
   }
 
   function viewHtml() {
-    var meta = (baseData() && baseData().meta) || {};
-    var weekLbl = esc(meta.sessionWeekLabel || "");
+    var meta = (data() && data().meta) || (baseData() && baseData().meta) || {};
+    var weekLbl = esc(meta.sessionWeekLabel || "Standing week (same as Services)");
     return (
       '<div class="asr-root" id="adminSpreadsheetRefRoot">' +
-      '<h1 class="page-title">Spreadsheet reference</h1>' +
+      '<h1 class="page-title">Instructor timetable</h1>' +
       '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-      "<strong>Staff hours</strong> (from " +
-      esc(meta.hoursFrom || "2026-06-01") +
-      "): edit cells and <strong>Save</strong> — overrides apply across dashboards via Supabase. " +
-      "<strong>Group sessions</strong> mirror the roster week" +
-      (weekLbl ? " (" + weekLbl + ")" : "") +
-      " (read-only here; use <strong>Edit term slot</strong> or <strong>Schedule &amp; Covers</strong> for participant slots).</p>" +
+      "<strong>Same roster as Services</strong> (re-enrol + machine + new clients + Autumn Day Centre). " +
+      "<strong>Group sessions</strong> = clients under each instructor (" +
+      weekLbl +
+      "). " +
+      "<strong>Staff hours</strong> = instructor timetable for that standing week, plus optional dated overrides for payroll.</p>" +
       '<div class="asr-tabs" role="tablist">' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-asr-tab="sessions">Group sessions</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm is-active" data-asr-tab="hours">Staff hours</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm is-active" data-asr-tab="sessions">Group sessions</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-asr-tab="hours">Staff hours</button>' +
       "</div>" +
-      '<div class="asr-toolbar" id="asrToolbar">' +
+      '<div class="asr-toolbar" id="asrToolbar" hidden>' +
       '<button type="button" class="btn btn--pri btn--sm" id="asrSaveBtn">Save staff hours</button>' +
       '<span class="muted" id="asrSaveStatus" style="font-size:12px;min-width:0;overflow-wrap:break-word"></span>' +
       "</div>" +
@@ -175,7 +402,7 @@
     var day = state.sessionDay;
     var grid = d.sessionGrids[day] || { columns: [], rows: [] };
     var html =
-      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Read-only mirror of the roster week. To change participant slots use <strong>Edit term slot</strong> or <strong>Schedule &amp; Covers</strong>. Staff pool hours are edited under the <strong>Staff hours</strong> tab.</p>' +
+      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Read-only grid from the <strong>same standing roster as Services</strong>. Change who is booked via <strong>Edit term slot</strong> or <strong>Schedule &amp; Covers</strong>. Instructor hours → <strong>Staff hours</strong> tab.</p>' +
       sessionLegendHtml() +
       weekdaySubtabs(day, "data-asr-session-day");
     if (!grid.columns.length) {
@@ -202,6 +429,42 @@
       html += "</tr>";
     });
     html += "</tbody></table></div>";
+    return html;
+  }
+
+  function renderStandingHoursBlock() {
+    var d = data();
+    var stand = (d && d._standingHours) || null;
+    if (!stand) return "";
+    var day = state.hoursDay;
+    var days = day === "all" ? WEEKDAYS : [day];
+    var html =
+      '<div class="asr-standing-hours" style="margin:0 0 16px;padding:12px 14px;border:1px solid var(--border,#d7e2e8);border-radius:12px;background:#f8fafc;min-width:0">' +
+      '<p class="asr-tab-hint" style="margin:0 0 8px;font-weight:600;max-width:52rem;overflow-wrap:break-word">Standing week · instructor timetable (synced with Services)</p>' +
+      '<p class="muted" style="margin:0 0 10px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Who is on when for the ops standing snap. Editable dated overrides for payroll stay in the sheet below.</p>';
+    days.forEach(function (wd) {
+      var block = stand[wd];
+      if (!block || !block.lines || !block.lines.length) {
+        html +=
+          '<p class="muted" style="margin:0 0 8px">' + esc(wd) + ": no standing roster lines.</p>";
+        return;
+      }
+      html +=
+        '<div style="margin:0 0 10px;min-width:0">' +
+        '<div style="font-size:12px;font-weight:700;margin:0 0 4px">' +
+        esc(wd) +
+        (block.iso ? " · " + esc(block.iso) : "") +
+        "</div><ul style=\"margin:0;padding-left:1.1rem;max-width:52rem\">";
+      block.lines.forEach(function (line) {
+        html +=
+          "<li style=\"overflow-wrap:break-word;min-width:0\">" +
+          esc(line.text) +
+          (line.venue ? ' <span class="muted">(' + esc(line.venue) + ")</span>" : "") +
+          "</li>";
+      });
+      html += "</ul></div>";
+    });
+    html += "</div>";
     return html;
   }
 
@@ -546,6 +809,8 @@
     }
     var day = state.hoursDay;
     var html =
+      renderStandingHoursBlock() +
+      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Below: dated hours sheet (Summer history + saved overrides). Edits here sync to dashboards after <strong>Save</strong> — they do not change who is booked in Services.</p>' +
       hoursLegendHtml() +
       weekdaySubtabs(day, "data-asr-hours-day", {
         includeAll: true,
@@ -765,6 +1030,16 @@
       }
       state.mergedData = null;
       Promise.all([applyOverridesToMerged(), loadChangeLog()]).then(refreshPanel);
+    }
+
+    if (!global.__ASR_ROSTER_SYNC_BOUND__) {
+      global.__ASR_ROSTER_SYNC_BOUND__ = true;
+      try {
+        global.addEventListener("portal:staff-dashboard-source-updated", function () {
+          if (!document.getElementById("adminSpreadsheetRefRoot")) return;
+          applyOverridesToMerged().then(refreshPanel);
+        });
+      } catch (_e) {}
     }
 
     mount();
