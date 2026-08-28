@@ -751,7 +751,10 @@
       });
     }
     try{ window.portalStaffKickScheduleOverridesHydrate = portalStaffKickScheduleOverridesHydrate; }catch(_){}
-    /** Fetch overrides for one calendar day if that ISO was not in the last hydrate window. */
+    /**
+     * Fetch overrides for ONE calendar day only.
+     * Never re-runs the wide near-window hydrate (that blocked Term day open for seconds).
+     */
     window.portalEnsureScheduleOverridesForIso = function portalEnsureScheduleOverridesForIso(isoYmd){
       const iso = String(isoYmd || '').trim().slice(0, 10);
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return Promise.resolve();
@@ -759,12 +762,85 @@
         const map = window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__;
         if(map && map[iso] && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
           && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
-          return Promise.resolve();
+          return Promise.resolve({ ok: true, cached: true, iso: iso });
         }
       }catch(_){}
-      const fn = window.portalRefreshScheduleOverridesCache;
-      if(typeof fn !== 'function') return Promise.resolve();
-      return fn({ extraIsos: [iso], force: true });
+      try{
+        const inflightMap = window.__PORTAL_SCHEDULE_OVERRIDE_ISO_INFLIGHT__ || Object.create(null);
+        if(inflightMap[iso]) return inflightMap[iso];
+      }catch(_){}
+      const run = (async function(){
+        try{
+          if(typeof window.portalWaitForSupabaseClientReady === 'function'){
+            await window.portalWaitForSupabaseClientReady(2500);
+          }
+          const box = window.__PORTAL_SUPABASE__;
+          if(!box || !box.client) return { ok: false, reason: 'no_client', iso: iso };
+          let sess = box.session;
+          if((!sess || !sess.user) && box.client.auth){
+            try{
+              const cur = await box.client.auth.getSession();
+              sess = cur && cur.data && cur.data.session;
+              if(sess && sess.user) box.session = sess;
+            }catch(_gs){}
+          }
+          if(!sess || !sess.user) return { ok: false, reason: 'no_session', iso: iso };
+          const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,status';
+          const res = await box.client.from('schedule_overrides')
+            .select(selectCols)
+            .eq('status', 'active')
+            .eq('session_date', iso)
+            .order('created_at', { ascending: false });
+          if(res.error){
+            console.warn('[portal] schedule_overrides single-iso', res.error && (res.error.message || res.error), iso);
+            return { ok: false, reason: 'fetch_error', iso: iso };
+          }
+          const rows = Array.isArray(res.data) ? res.data : [];
+          const prev = Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
+            ? window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
+            : [];
+          const next = [];
+          const seen = Object.create(null);
+          rows.forEach(function(row){
+            if(!row || !row.id) return;
+            seen[String(row.id)] = true;
+            next.push(row);
+          });
+          prev.forEach(function(row){
+            if(!row || !row.id || seen[String(row.id)]) return;
+            const rowIso = typeof normaliseIsoDate === 'function'
+              ? normaliseIsoDate(row.session_date)
+              : String(row.session_date || '').trim().slice(0, 10);
+            if(rowIso === iso) return;
+            next.push(row);
+            seen[String(row.id)] = true;
+          });
+          next.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+          window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = next;
+          try{
+            const fetchedMap = window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__ || Object.create(null);
+            fetchedMap[iso] = true;
+            window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__ = fetchedMap;
+          }catch(_){}
+          try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+          return { ok: true, iso: iso, count: rows.length };
+        }catch(e){
+          console.warn('[portal] schedule_overrides single-iso', e);
+          return { ok: false, reason: 'exception', iso: iso };
+        }finally{
+          try{
+            const m = window.__PORTAL_SCHEDULE_OVERRIDE_ISO_INFLIGHT__;
+            if(m) delete m[iso];
+          }catch(_){}
+        }
+      })();
+      try{
+        if(!window.__PORTAL_SCHEDULE_OVERRIDE_ISO_INFLIGHT__){
+          window.__PORTAL_SCHEDULE_OVERRIDE_ISO_INFLIGHT__ = Object.create(null);
+        }
+        window.__PORTAL_SCHEDULE_OVERRIDE_ISO_INFLIGHT__[iso] = run;
+      }catch(_){}
+      return run;
     };
     /** OS banner when app is backgrounded/closed. Foreground uses quick-menu + header chrome only. */
     function portalStaffNotifyOsWhiteTile(title, body, tag, opts){
