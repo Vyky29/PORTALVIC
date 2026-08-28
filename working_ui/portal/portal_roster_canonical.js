@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-    var SOURCE_VERSION = 16;
+  var SOURCE_VERSION = 17;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -529,9 +529,15 @@
     },
   ];
 
+  /** Summer dated window whose Day Centre who-with-whom is replaced by Autumn board. */
+  var AUTUMN_DC_REPLACE_FROM = "2026-06-01";
+  var AUTUMN_DC_REPLACE_THROUGH = "2026-07-19";
+
   /**
    * Autumn 26/27 standing patches on snap dates (13–17 Jul):
    * - Replace summer Day Centre who-with-whom with Autumn DC board
+   *   (drop all DC rows in the summer dated window for weekdays on the board —
+   *   not only 13–17 Jul — so June ACAT/Fadi snaps cannot win Autumn projection)
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
    * - Acton Thu aquatic: Simon→Luliya (Simon only works Thu)
@@ -544,8 +550,16 @@
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
       var d = normIso(r.session_date);
-      if (DAY_CENTRE_STANDING_ISO_SET[d] && isDayCentreService(r.service)) {
-        return;
+      if (isDayCentreService(r.service)) {
+        var dkDc = normalizeDowKey(r.day);
+        if (
+          AUTUMN_DAY_CENTRE_BOARD[dkDc] &&
+          d &&
+          d >= AUTUMN_DC_REPLACE_FROM &&
+          d <= AUTUMN_DC_REPLACE_THROUGH
+        ) {
+          return;
+        }
       }
       /* Drop all standing-week Bespoke — rebuild from Autumn Hub rota below. */
       if (isBespokeService(r.service) && DAY_CENTRE_STANDING_ISO_SET[d]) {

@@ -2582,6 +2582,23 @@
       const baseRealTerm = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
       const endMap = {};
       const fbMap = {};
+      /* Cache per-day session lists — rebuild used to re-scan sessionsModel + overrides ~N times. */
+      const relCache = Object.create(null);
+      function termRelForDate(dayWord, key, isRealFn){
+        const ck = String(dayWord || '') + '\0' + String(key || '');
+        if(Object.prototype.hasOwnProperty.call(relCache, ck)) return relCache[ck];
+        const rel = typeof portalBaseClientSessionsForCalendarDate === 'function'
+          ? portalBaseClientSessionsForCalendarDate(dayWord, key, staffId, isRealFn)
+          : (sessionsModel || []).filter(s =>
+            String(s.staffId || '').toLowerCase() === staffId &&
+            String(s.day || '').trim() === dayWord &&
+            isRealFn(s) &&
+            (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
+              || portalSessionSpreadsheetRowMatchesCalendarDate(s, key, dayWord))
+          );
+        relCache[ck] = rel;
+        return rel;
+      }
       const viewFrom = dashboardData.termDashboardCalendarFrom
         || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.fromIso())
         || String(t.termResumeDate || '2026-06-01').slice(0, 10);
@@ -2615,15 +2632,7 @@
           const cid = String(s.clientId || '').toLowerCase();
           return Boolean(cid && cid !== 'closed' && cid !== 'available');
         };
-        const relAll = typeof portalBaseClientSessionsForCalendarDate === 'function'
-          ? portalBaseClientSessionsForCalendarDate(dayWord, key, staffId, isReal)
-          : (sessionsModel || []).filter(s =>
-            String(s.staffId || '').toLowerCase() === staffId &&
-            String(s.day || '').trim() === dayWord &&
-            isReal(s) &&
-            (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
-              || portalSessionSpreadsheetRowMatchesCalendarDate(s, key, dayWord))
-          );
+        const relAll = termRelForDate(dayWord, key, isReal);
         const relFb = typeof portalTermFeedbackSessionsForDate === 'function'
           ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
           : relAll;
@@ -2717,15 +2726,7 @@
           const cid = String(s.clientId || '').toLowerCase();
           return Boolean(cid && cid !== 'closed' && cid !== 'available');
         };
-        const relAllExtra = typeof portalBaseClientSessionsForCalendarDate === 'function'
-          ? portalBaseClientSessionsForCalendarDate(dayWord, isoKey, staffId, isRealExtra)
-          : (sessionsModel || []).filter(function(s){
-            return String(s.staffId || '').toLowerCase() === staffId &&
-              String(s.day || '').trim() === dayWord &&
-              isRealExtra(s) &&
-              (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
-                || portalSessionSpreadsheetRowMatchesCalendarDate(s, isoKey, dayWord));
-          });
+        const relAllExtra = termRelForDate(dayWord, isoKey, isRealExtra);
         const relFbExtra = typeof portalTermFeedbackSessionsForDate === 'function'
           ? portalTermFeedbackSessionsForDate(dayWord, isoKey, staffId, isRealExtra)
           : relAllExtra;

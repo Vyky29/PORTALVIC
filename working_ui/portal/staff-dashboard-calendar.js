@@ -133,11 +133,20 @@
         }
         portalFinishWeekDayReviewFlow(day, isoOpt, usedDateLock, termJudgementAllowed);
       };
-      /* Keep rAF short — heavy finish runs on next macrotask (fewer Violation spam). */
-      if(typeof requestAnimationFrame === 'function'){
-        requestAnimationFrame(function(){ setTimeout(finish, 0); });
+      const afterOverrides = function(){
+        /* Keep rAF short — heavy finish runs on next macrotask (fewer Violation spam). */
+        if(typeof requestAnimationFrame === 'function'){
+          requestAnimationFrame(function(){ setTimeout(finish, 0); });
+        } else {
+          setTimeout(finish, 0);
+        }
+      };
+      if(/^\d{4}-\d{2}-\d{2}$/.test(isoOpt) && typeof window.portalEnsureScheduleOverridesForIso === 'function'){
+        Promise.resolve(window.portalEnsureScheduleOverridesForIso(isoOpt))
+          .then(afterOverrides)
+          .catch(afterOverrides);
       } else {
-        setTimeout(finish, 0);
+        afterOverrides();
       }
     }
     try{ window.portalOpenWeekDayReviewFlow = portalOpenWeekDayReviewFlow; }catch(_){}

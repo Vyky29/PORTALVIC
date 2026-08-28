@@ -360,6 +360,26 @@
       });
       return best;
     }
+    /** Autumn Day Centre always snaps to Services standing ISO (13–17 Jul), not "latest" summer week. */
+    function portalDayCentreStandingSnapIso(weekdayLong){
+      try{
+        const PRC = typeof window !== 'undefined' ? window.PortalRosterCanonical : null;
+        const map = PRC && PRC.DAY_CENTRE_STANDING_ISO;
+        if(!map || typeof map !== 'object') return '';
+        const w = String(weekdayLong || '').trim().toLowerCase();
+        let dk = '';
+        if(w.indexOf('mon') === 0) dk = 'monday';
+        else if(w.indexOf('tue') === 0) dk = 'tuesday';
+        else if(w.indexOf('wed') === 0) dk = 'wednesday';
+        else if(w.indexOf('thu') === 0) dk = 'thursday';
+        else if(w.indexOf('fri') === 0) dk = 'friday';
+        return dk ? String(map[dk] || '').trim().slice(0, 10) : '';
+      }catch(_){ return ''; }
+    }
+    function portalSessionIsDayCentreService(s){
+      const svc = String((s && (s.rosterService || s.activity || s.service)) || '').trim().toLowerCase();
+      return svc === 'day centre' || svc.indexOf('day centre') === 0;
+    }
     /** Roster row vs calendar day: dated rows match YYYY-MM-DD; undated rows match weekday (en-GB long). */
     function portalSessionSpreadsheetRowMatchesCalendarDate(s, isoYmd, weekdayLong){
       if(!s) return false;
@@ -372,6 +392,11 @@
       if(rowIso){
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
         if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return rowIso === iso;
+        /* Outside summer dated window: Day Centre → Autumn board snap (not June ACAT weeks). */
+        if(!portalStaffHasDatedRowsForIso(iso, sid) && portalSessionIsDayCentreService(s)){
+          const dcSnap = portalDayCentreStandingSnapIso(w);
+          if(dcSnap) return rowIso === dcSnap;
+        }
         const matchIso = portalStaffRosterMatchIsoForCalendar(iso, w, sid);
         return !!(iso && matchIso && rowIso === matchIso);
       }
@@ -389,11 +414,25 @@
         if(out.indexOf(x) < 0) out.push(x);
       };
       try{
+        /* Near window only — do NOT enumerate the whole Term calendar (Aug–Dec).
+           That used to fire 4×40-date override fetches and left Term day cards on
+           "syncing" for a long time. Past days: ensure term review / late feedback. */
         const now = new Date();
-        for(let i = 0; i <= 14; i++){
+        for(let i = -28; i <= 21; i++){
           const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
           add(portalIsoYmdFromDate(d));
         }
+      }catch(_){}
+      try{
+        const extra = opts.extraIsos;
+        if(Array.isArray(extra)) extra.forEach(add);
+        else if(extra) add(extra);
+      }catch(_){}
+      try{
+        const lockIso = typeof window !== 'undefined'
+          ? String(window.__PORTAL_REVIEW_DATE_URL_LOCK || '').trim().slice(0, 10)
+          : '';
+        if(lockIso) add(lockIso);
       }catch(_){}
       try{
         const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
@@ -451,30 +490,6 @@
         if(ns){
           const d = ns instanceof Date ? ns : new Date(ns);
           if(d && !isNaN(d.getTime())) add(portalIsoYmdFromDate(d));
-        }
-      }catch(_){}
-      try{
-        const y = Number(dashboardData && dashboardData.termCalendarYear);
-        let months = Array.isArray(dashboardData && dashboardData.termCalendarMonths) && dashboardData.termCalendarMonths.length
-          ? dashboardData.termCalendarMonths.map(Number).filter(function(m){ return m >= 0 && m <= 11; })
-          : null;
-        if(!months || !months.length){
-          const single = Number(dashboardData && dashboardData.termCalendarMonth);
-          if(Number.isFinite(single) && single >= 0 && single <= 11) months = [single];
-        }
-        if(Number.isFinite(y) && Array.isArray(months) && months.length){
-          const firstDomMap = dashboardData && dashboardData.termCalendarFirstDom;
-          months.forEach(function(monthIndex){
-            const lastDay = new Date(y, monthIndex + 1, 0).getDate();
-            let firstDom = 1;
-            if(firstDomMap && Object.prototype.hasOwnProperty.call(firstDomMap, monthIndex)){
-              const fd = Math.floor(Number(firstDomMap[monthIndex]));
-              if(Number.isFinite(fd) && fd > 1) firstDom = Math.min(fd, lastDay);
-            }
-            for(let day = firstDom; day <= lastDay; day++){
-              add(portalIsoYmdFromDate(new Date(y, monthIndex, day)));
-            }
-          });
         }
       }catch(_){}
       if(!out.length) add(portalIsoYmdFromDate(new Date()));
@@ -590,6 +605,11 @@
           }
         }catch(_offDates){}
         const isoList = typeof portalScheduleOverrideFetchIsoList === "function" ? portalScheduleOverrideFetchIsoList(opts) : [portalIsoYmdFromDate(new Date())];
+        try{
+          const fetchedMap = window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__ || Object.create(null);
+          isoList.forEach(function(iso){ fetchedMap[String(iso || '').trim()] = true; });
+          window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__ = fetchedMap;
+        }catch(_){}
         const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,status';
         const merged = [];
         const CHUNK = 40;
@@ -652,8 +672,15 @@
       }
       if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();
       try{
+        const termSheetOpen = !!(document.getElementById('termSheet')
+          && document.getElementById('termSheet').classList.contains('open'));
         if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
-        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function') rebuildTermShiftAndFeedbackFromSessionModel();
+        /* Term rebuild scans every worked day × full sessionsModel — only when Term is open. */
+        if(termSheetOpen && typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+          rebuildTermShiftAndFeedbackFromSessionModel();
+        }else{
+          try{ if(typeof window !== 'undefined') delete window.__PORTAL_TERM_REBUILD_LAST_SIG__; }catch(_sig){}
+        }
         if(typeof renderLists === 'function') renderLists();
         if(typeof renderMiniCounts === 'function') renderMiniCounts();
         if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
@@ -662,9 +689,12 @@
           if(grid) grid.removeAttribute('data-today-cards-sig');
           renderToday();
         }
-        if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+        if(typeof renderTermCalendarGrid === 'function'){
+          if(termSheetOpen) renderTermCalendarGrid({ force: true });
+          else renderTermCalendarGrid();
+        }
         if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
-        if(typeof portalRefreshScheduleOverrideDayChrome === 'function') portalRefreshScheduleOverrideDayChrome({ forceTerm: true });
+        if(typeof portalRefreshScheduleOverrideDayChrome === 'function') portalRefreshScheduleOverrideDayChrome({ forceTerm: termSheetOpen });
       }catch(_syncOv){}
       }finally{
         try{ window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__ = null; }catch(_){}
@@ -721,6 +751,21 @@
       });
     }
     try{ window.portalStaffKickScheduleOverridesHydrate = portalStaffKickScheduleOverridesHydrate; }catch(_){}
+    /** Fetch overrides for one calendar day if that ISO was not in the last hydrate window. */
+    window.portalEnsureScheduleOverridesForIso = function portalEnsureScheduleOverridesForIso(isoYmd){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return Promise.resolve();
+      try{
+        const map = window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__;
+        if(map && map[iso] && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+          && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
+          return Promise.resolve();
+        }
+      }catch(_){}
+      const fn = window.portalRefreshScheduleOverridesCache;
+      if(typeof fn !== 'function') return Promise.resolve();
+      return fn({ extraIsos: [iso], force: true });
+    };
     /** OS banner when app is backgrounded/closed. Foreground uses quick-menu + header chrome only. */
     function portalStaffNotifyOsWhiteTile(title, body, tag, opts){
       opts = opts || {};
