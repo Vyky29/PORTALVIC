@@ -13,7 +13,7 @@
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260704-roster-504",
       "/portal/portal_madre_fold.js?v=20260809-staff-map",
-      "/portal/portal_roster_canonical.js?v=20260830-luliya-acton-tue-thu",
+      "/portal/portal_roster_canonical.js?v=20260830-luliya-ikram-pm",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260704-roster-seq",
     ],
     feedback: [
@@ -29,7 +29,7 @@
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: [
       "/portal/spreadsheet_reference_data.js?v=20260828-autumn-hours-base",
-      "/portal/autumn_staff_hours_reference.js?v=20260830-luliya-acton",
+      "/portal/autumn_staff_hours_reference.js?v=20260830-luliya-ikram-pm",
     ],
   };
 

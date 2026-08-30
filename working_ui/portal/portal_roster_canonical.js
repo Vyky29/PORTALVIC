@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 20;
+  var SOURCE_VERSION = 21;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -54,7 +54,7 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      /* Luliya: Acton Tue/Thu only — no Day Centre */
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
       {
         staff: "Raul",
         clients: [
@@ -73,7 +73,7 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      /* Luliya: Acton Tue/Thu only — no Day Centre */
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
       /* Victor takes Raul's Tue DC; Raul OFF */
       {
         staff: "Victor",
@@ -86,7 +86,7 @@
     wednesday: [
       { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 3" }] },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      /* Luliya: Acton Tue/Thu only — no Day Centre */
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
       {
         staff: "Victor",
         clients: [
@@ -115,7 +115,7 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      /* Luliya: Acton Tue/Thu only — Victor + Raul cover Ikram 3–4 */
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
       {
         staff: "Victor",
         clients: [
@@ -635,7 +635,8 @@
    * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
    * - Acton Mon: Angel → Roberto (Adam P / Steven / Mario)
    * - Acton Tue: Rayan Ta + Richard→Javier
-   * - Acton Thu: Simon → Luliya (Yuri / Eiji); Luliya Acton Tue/Thu only (no DC/Ikram)
+   * - Acton Thu: Simon → Luliya (Yuri / Eiji)
+   * - Luliya: DC Ikram Mon/Tue/Wed/Fri; pool Mon/Wed Northolt + Tue/Thu Acton
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {
@@ -644,21 +645,16 @@
     function isLuliyaInstructor(instructorsRaw) {
       return /\bluliya\b|\blulia\b|\baida\b/i.test(String(instructorsRaw || ""));
     }
+    function isShadowingOnlyRow(r) {
+      var cn = String(r.client_name || "").trim().toLowerCase();
+      var svc = String(r.service || "").trim().toLowerCase();
+      return cn === "shadowing" || svc === "shadowing";
+    }
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
       var d = normIso(r.session_date);
-      /* Drop summer Luliya DC/Ikram (incl. Thu 16 Jul snap) — Autumn is Acton Tue/Thu only. */
-      if (isLuliyaInstructor(r.instructors)) {
-        if (isDayCentreService(r.service)) return;
-        if (
-          d &&
-          d >= AUTUMN_DC_REPLACE_FROM &&
-          d <= AUTUMN_DC_REPLACE_THROUGH &&
-          !isActonVenue(r.venue)
-        ) {
-          return;
-        }
-      }
+      /* Drop summer Luliya shadowing-only Northolt rows (not Autumn book). */
+      if (isLuliyaInstructor(r.instructors) && isShadowingOnlyRow(r)) return;
       if (isDayCentreService(r.service)) {
         var dkDc = normalizeDowKey(r.day);
         if (
