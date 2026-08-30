@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 19;
+  var SOURCE_VERSION = 20;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -54,7 +54,7 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      /* Luliya bank — no Autumn DC shifts yet */
+      /* Luliya: Acton Tue/Thu only — no Day Centre */
       {
         staff: "Raul",
         clients: [
@@ -73,7 +73,7 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      /* Luliya bank — no Autumn DC shifts yet */
+      /* Luliya: Acton Tue/Thu only — no Day Centre */
       /* Victor takes Raul's Tue DC; Raul OFF */
       {
         staff: "Victor",
@@ -86,7 +86,7 @@
     wednesday: [
       { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 3" }] },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      /* Luliya bank — no Autumn DC shifts yet */
+      /* Luliya: Acton Tue/Thu only — no Day Centre */
       {
         staff: "Victor",
         clients: [
@@ -115,7 +115,7 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      /* Luliya bank — no Autumn DC shifts yet; Victor + Raul cover Ikram 3–4 */
+      /* Luliya: Acton Tue/Thu only — Victor + Raul cover Ikram 3–4 */
       {
         staff: "Victor",
         clients: [
@@ -449,6 +449,12 @@
       return null;
     }
 
+    /* Thursday: Luliya takes Simon's Acton book (Yuri / Eiji). */
+    if (day === "thursday" && /\bsimon\b/i.test(raw)) {
+      if (/\bluliya\b|\blulia\b|\baida\b/i.test(raw)) return null;
+      return { instructors: "LULIYA" };
+    }
+
     return null;
   }
 
@@ -551,6 +557,30 @@
     },
   ];
 
+  /** Simon's Thursday Acton book → Luliya (inject if live MADRE dropped Simon without successor). */
+  var LULIYA_THURSDAY_ACTON_FROM_SIMON = [
+    {
+      client_name: "Yuri",
+      day: "Thursday",
+      instructors: "LULIYA",
+      service: "Aquatic Activity",
+      area: "Lane (SE)",
+      time_slot: "5 to 5.30",
+      venue: "Acton",
+      session_date: "2026-07-16",
+    },
+    {
+      client_name: "Eiji",
+      day: "Thursday",
+      instructors: "LULIYA",
+      service: "Aquatic Activity",
+      area: "Lane (DE)",
+      time_slot: "5.30 to 6.30",
+      venue: "Acton",
+      session_date: "2026-07-16",
+    },
+  ];
+
   function mondayActonClientKey(name) {
     var s = String(name || "")
       .trim()
@@ -572,6 +602,26 @@
     });
   }
 
+  function thursdayActonClientKey(name) {
+    var s = String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    if (/^yuri\b/.test(s)) return "yuri";
+    if (/^eiji\b/.test(s)) return "eiji";
+    return s.replace(/[^a-z0-9]+/g, "_");
+  }
+
+  function hasThursdayActonClient(rows, clientKey) {
+    var iso = DAY_CENTRE_STANDING_ISO.thursday;
+    return (rows || []).some(function (r) {
+      if (!r) return false;
+      if (normIso(r.session_date) !== iso) return false;
+      if (!isActonVenue(r.venue) || !isAquaticService(r.service)) return false;
+      return thursdayActonClientKey(r.client_name) === clientKey;
+    });
+  }
+
   /** Summer dated window whose Day Centre who-with-whom is replaced by Autumn board. */
   var AUTUMN_DC_REPLACE_FROM = "2026-06-01";
   var AUTUMN_DC_REPLACE_THROUGH = "2026-07-19";
@@ -584,24 +634,30 @@
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
    * - Acton Mon: Angel → Roberto (Adam P / Steven / Mario)
-   * - Acton Tue: Rayan Ta + Richard→Javier (Luliya bank — no Simon remap)
+   * - Acton Tue: Rayan Ta + Richard→Javier
+   * - Acton Thu: Simon → Luliya (Yuri / Eiji); Luliya Acton Tue/Thu only (no DC/Ikram)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {
     var out = [];
     var opened430 = { monday: false, tuesday: false, wednesday: false };
-    function isLuliyaBankInstructor(instructorsRaw) {
+    function isLuliyaInstructor(instructorsRaw) {
       return /\bluliya\b|\blulia\b|\baida\b/i.test(String(instructorsRaw || ""));
     }
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
       var d = normIso(r.session_date);
-      /* Luliya is bank with no Autumn shifts yet: keep summer dated history only. */
-      if (isLuliyaBankInstructor(r.instructors)) {
-        if (d && d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) {
-          out.push(r);
+      /* Drop summer Luliya DC/Ikram (incl. Thu 16 Jul snap) — Autumn is Acton Tue/Thu only. */
+      if (isLuliyaInstructor(r.instructors)) {
+        if (isDayCentreService(r.service)) return;
+        if (
+          d &&
+          d >= AUTUMN_DC_REPLACE_FROM &&
+          d <= AUTUMN_DC_REPLACE_THROUGH &&
+          !isActonVenue(r.venue)
+        ) {
+          return;
         }
-        return;
       }
       if (isDayCentreService(r.service)) {
         var dkDc = normalizeDowKey(r.day);
@@ -685,6 +741,11 @@
     ROBERTO_MONDAY_ACTON_FROM_ANGEL.forEach(function (row) {
       var key = mondayActonClientKey(row.client_name);
       if (hasMondayActonClient(out, key)) return;
+      out.push(Object.assign({}, row));
+    });
+    LULIYA_THURSDAY_ACTON_FROM_SIMON.forEach(function (row) {
+      var key = thursdayActonClientKey(row.client_name);
+      if (hasThursdayActonClient(out, key)) return;
       out.push(Object.assign({}, row));
     });
     return out;

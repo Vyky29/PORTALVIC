@@ -80,7 +80,6 @@ def monday_template() -> list[tuple[str, str, str]]:
         _pairs("Roberto", "4-6.30", "Acton"),
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Dan", "4.30-6.30", "Northolt"),
-        # Luliya: bank / no Autumn shifts yet — omit from pool until assigned
         _pairs("Sandra", "4-6", "Westway"),
         _pairs("Godsway", "4.15-6.15", "SwimFarm"),
         _pairs("John", "4.15-6.15", "SwimFarm"),
@@ -97,6 +96,7 @@ def tuesday_template() -> list[tuple[str, str, str]]:
         _pairs("Victor", "3.30-5", "SwimFarm"),  # Cyrus bespoke (Thu → Tue)
         _pairs("Raul", "12.30-3", "SwimFarm"),  # Fadi
         _pairs("Michelle", "3-4", "SwimFarm"),  # Ikram
+        _pairs("Luliya", "4.30-6.30", "Acton"),
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Javier", "4-6.30", "Acton"),
         _pairs("Aurora", "4.30-6.30", "Acton"),
@@ -129,7 +129,7 @@ def thursday_template() -> list[tuple[str, str, str]]:
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Javier", "4-6.30", "Acton"),
         _pairs("Aurora", "4.30-6.30", "Acton"),
-        # Luliya bank — no Acton Thu until assigned
+        _pairs("Luliya", "4.30-6.30", "Acton"),
     ]
 
 
@@ -212,6 +212,8 @@ def build_autumn_rows() -> list[dict]:
             day_name, fn = WEEKDAY_TEMPLATES[grid]
             iso = iso_from_date(cur)
             for staff, tr, venue in fn():
+                if not _assignment_allowed(iso, tr):
+                    continue
                 rows.append(slot(iso, day_name, staff, tr, venue))
         cur += timedelta(days=1)
     rows.sort(key=lambda r: (r["date"], r["day"], r["staff_name"], r["time_range"]))
