@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 21;
+  var SOURCE_VERSION = 22;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -54,7 +54,7 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
       {
         staff: "Raul",
         clients: [
@@ -73,7 +73,7 @@
         ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
       /* Victor takes Raul's Tue DC; Raul OFF */
       {
         staff: "Victor",
@@ -86,7 +86,7 @@
     wednesday: [
       { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 3" }] },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
-      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
       {
         staff: "Victor",
         clients: [
@@ -636,7 +636,8 @@
    * - Acton Mon: Angel → Roberto (Adam P / Steven / Mario)
    * - Acton Tue: Rayan Ta + Richard→Javier
    * - Acton Thu: Simon → Luliya (Yuri / Eiji)
-   * - Luliya: DC Ikram Mon/Tue/Wed/Fri; pool Mon/Wed Northolt + Tue/Thu Acton
+   * - Luliya: DC Ikram Mon/Tue/Wed 11–3 + Fri 11–4; pool Mon/Wed Northolt 4.30–6.30,
+   *   Tue Acton 4–6.30, Thu Acton 4.30–6.30
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {

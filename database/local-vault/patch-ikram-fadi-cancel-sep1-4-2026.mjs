@@ -104,7 +104,7 @@ function parseSlot(label) {
 const DAYS = {
   "2026-09-01": [
     { staff: "michelle", client: "ikram", name: "Ikram", time: "11 to 4" },
-    { staff: "lulia", client: "ikram", name: "Ikram", time: "11 to 4" },
+    { staff: "lulia", client: "ikram", name: "Ikram", time: "11 to 3" },
     { staff: "victor", client: "ikram", name: "Ikram", time: "11 to 4" },
     { staff: "roberto", client: "fadi", name: "Fadi", time: "1 to 3" },
     { staff: "youssef", client: "fadi", name: "Fadi", time: "12.30 to 3" },
@@ -112,14 +112,14 @@ const DAYS = {
   "2026-09-02": [
     { staff: "roberto", client: "ikram", name: "Ikram", time: "11 to 12.30" },
     { staff: "michelle", client: "ikram", name: "Ikram", time: "11 to 4" },
-    { staff: "lulia", client: "ikram", name: "Ikram", time: "11 to 4" },
+    { staff: "lulia", client: "ikram", name: "Ikram", time: "11 to 3" },
     { staff: "victor", client: "ikram", name: "Ikram", time: "3 to 4" },
     { staff: "roberto", client: "fadi", name: "Fadi", time: "12.30 to 3" },
     { staff: "victor", client: "fadi", name: "Fadi", time: "12.30 to 3" },
   ],
   "2026-09-03": [
     { staff: "michelle", client: "ikram", name: "Ikram", time: "11 to 4" },
-    { staff: "lulia", client: "ikram", name: "Ikram", time: "11 to 4" },
+    { staff: "lulia", client: "ikram", name: "Ikram", time: "11 to 3" },
     { staff: "victor", client: "ikram", name: "Ikram", time: "3 to 4" },
     { staff: "victor", client: "fadi", name: "Fadi", time: "12.30 to 3" },
     { staff: "raul", client: "fadi", name: "Fadi", time: "12.30 to 3" },
