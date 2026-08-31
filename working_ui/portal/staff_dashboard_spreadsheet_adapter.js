@@ -72,21 +72,25 @@
       { time_slot: "12 to 1", area: "Big Pool" },
     ],
   };
-  // Days on which a participant's combined Day Centre block should NOT be split
-  // into the Big Pool segments (it stays a single plain "Day Centre" card).
-  // Ikram special (pool hour) Mon/Wed/Fri; Tue + Sat = plain Day Centre card.
-  var PORTAL_COMBINED_SEGMENTS_SKIP_DAYS = {
+  // Days with no pool hour inside the block: keep SPECIAL card as one Day Centre
+  // segment (not the multi-area pool split). Keyed like combined segments.
+  var PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS = {
     "ikram|11to4": ["tuesday", "saturday", "sunday"],
-    // Fadi: Mon/Wed Small Pool first hour (see day overrides below); Fri Big Pool contiguous.
-    // Tue/Thu often use explicit MADRE segments (gap for Zakariya) — skip synth.
-    "fadi|12.30to3": ["tuesday", "thursday"],
   };
   var PORTAL_COMBINED_SEGMENTS_DAY_OVERRIDE = {
     "fadi|12.30to3|monday": [
       { time_slot: "12.30 to 1", area: "Small Pool" },
       { time_slot: "2 to 3", area: "Day Centre" },
     ],
+    "fadi|12.30to3|tuesday": [
+      { time_slot: "12.30 to 1", area: "Small Pool" },
+      { time_slot: "2 to 3", area: "Day Centre" },
+    ],
     "fadi|12.30to3|wednesday": [
+      { time_slot: "12.30 to 1", area: "Small Pool" },
+      { time_slot: "2 to 3", area: "Day Centre" },
+    ],
+    "fadi|12.30to3|thursday": [
       { time_slot: "12.30 to 1", area: "Small Pool" },
       { time_slot: "2 to 3", area: "Day Centre" },
     ],
@@ -95,19 +99,26 @@
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
   };
-  function portalSynthesizeCombinedSegments(nameLower, service, timeSlot, day) {
+  function portalSynthesizeCombinedSegments(nameLower, service, timeSlot, day, areaHint) {
     const svc = String(service || "").trim().toLowerCase();
     if (svc !== "day centre") return null;
-    const slot = String(timeSlot || "").replace(/\s+/g, "").toLowerCase();
+    const timeLabel = String(timeSlot || "").replace(/\s+/g, " ").trim();
+    if (!timeLabel) return null;
+    const slot = timeLabel.replace(/\s+/g, "").toLowerCase();
     const name = String(nameLower || "").trim().toLowerCase();
     const dayKey = String(day || "").trim().toLowerCase();
     const key = name + "|" + slot;
-    const skipDays = PORTAL_COMBINED_SEGMENTS_SKIP_DAYS[key];
-    if (skipDays && skipDays.indexOf(dayKey) !== -1) return null;
+    const areaFallback = String(areaHint || "").trim() || "Day Centre";
+    const plainDays = PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS[key];
+    if (plainDays && plainDays.indexOf(dayKey) !== -1) {
+      return [{ time_slot: timeLabel, area: areaFallback }];
+    }
     const dayHit = PORTAL_COMBINED_SEGMENTS_DAY_OVERRIDE[key + "|" + dayKey];
     if (dayHit) return dayHit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; });
     const hit = PORTAL_COMBINED_DAY_CENTRE_SEGMENTS[key];
-    return hit ? hit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; }) : null;
+    if (hit) return hit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; });
+    /* Any other Day Centre slot → SPECIAL card (name left, area + time right). */
+    return [{ time_slot: timeLabel, area: areaFallback }];
   }
 
   /**
@@ -875,10 +886,16 @@
         // and then revert to a single block after the live roster refresh.
         // Synthesize the same display-only breakdown so the combined card is stable
         // regardless of source. The slot stays ONE session for feedback / pay.
-        const synthSegments = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel, day);
+        const synthSegments = portalSynthesizeCombinedSegments(
+          nameLower,
+          rosterService,
+          timeSlotLabel,
+          day,
+          rosterArea
+        );
         if (synthSegments) baseSession.segments = synthSegments;
       }
-      /* Prefer current Emanuel Mon/Wed/Fri SPECIAL shape even if an older MADRE/bundle
+      /* Prefer current Emanuel Mon/Fri SPECIAL shape even if an older MADRE/bundle
          row still carries a stale 11–4 contiguous 1–4 Day Centre third segment. */
       if (
         nameLower === "emanuel" &&
@@ -886,10 +903,30 @@
         String(timeSlotLabel || "").replace(/\s+/g, "").toLowerCase() === "11to4"
       ) {
         const dayKey = String(day || "").trim().toLowerCase();
-        if (dayKey === "monday" || dayKey === "wednesday" || dayKey === "friday") {
-          const prefer = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel, day);
+        if (dayKey === "monday" || dayKey === "friday") {
+          const prefer = portalSynthesizeCombinedSegments(
+            nameLower,
+            rosterService,
+            timeSlotLabel,
+            day,
+            rosterArea
+          );
           if (prefer) baseSession.segments = prefer;
         }
+      }
+      /* Day Centre always uses SPECIAL card layout (segments). */
+      if (
+        String(rosterService || "").trim().toLowerCase() === "day centre" &&
+        !(Array.isArray(baseSession.segments) && baseSession.segments.length)
+      ) {
+        const fallback = portalSynthesizeCombinedSegments(
+          nameLower,
+          rosterService,
+          timeSlotLabel,
+          day,
+          rosterArea
+        );
+        if (fallback) baseSession.segments = fallback;
       }
       const instructorsRaw = String(row.instructors || "").trim();
       if (
