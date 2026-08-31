@@ -513,6 +513,39 @@
           });
         });
       },
+      /** Live parent-view PDF (current unpaid/partial/paid) — does not change Xero file. */
+      previewInvoicePdf: function (invoiceId) {
+        return fetch(fn("parent-portal-invoice-preview"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId, invoice_id: invoiceId }),
+        }).then(function (res) {
+          if (!res.ok) {
+            return res.json().then(
+              function (j) {
+                var err = new Error("invoice_preview_failed");
+                err.code = (j && j.error) || "preview_failed";
+                throw err;
+              },
+              function () {
+                throw new Error("invoice_preview_failed");
+              },
+            );
+          }
+          return res.blob().then(function (blob) {
+            return {
+              blobUrl: URL.createObjectURL(blob),
+              paymentStatus: String(res.headers.get("X-Payment-Status") || ""),
+              invoiceNumber: String(res.headers.get("X-Invoice-Number") || ""),
+            };
+          });
+        });
+      },
       reportInvoicePaid: function (invoiceId, payload) {
         payload = payload && typeof payload === "object" ? payload : {};
         return fetch(fn("parent-portal-invoice-report-paid"), {

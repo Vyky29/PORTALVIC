@@ -866,8 +866,12 @@ export async function resolvePortalInvoiceOwnerUserId(
 export async function regeneratePortalInvoiceSharePdf(
   admin: SupabaseClient,
   invoiceShareId: string,
-  opts?: { invoiceDateIso?: string | null },
-): Promise<{ ok: true; pdfStoragePath: string } | { ok: false; error: string }> {
+  opts?: { invoiceDateIso?: string | null; mode?: "persist" | "bytes" },
+): Promise<
+  | { ok: true; pdfStoragePath: string }
+  | { ok: true; pdfBytes: Uint8Array; invoiceNumber: string }
+  | { ok: false; error: string }
+> {
   const shareId = clean(invoiceShareId, 80);
   if (!shareId) return { ok: false, error: "invoice_id_required" };
 
@@ -1061,6 +1065,14 @@ export async function regeneratePortalInvoiceSharePdf(
   } catch (err) {
     console.error("[regeneratePortalInvoiceSharePdf] pdf", err);
     return { ok: false, error: "pdf_failed" };
+  }
+
+  /*
+   * Parent hub preview: live replica from current share payment state.
+   * Does not overwrite the stored document used for Xero / office truth.
+   */
+  if (opts?.mode === "bytes") {
+    return { ok: true, pdfBytes, invoiceNumber };
   }
 
   const ownerId = clean(doc.user_id, 80) || (await resolvePortalInvoiceOwnerUserId(admin));

@@ -8223,20 +8223,32 @@
       status !== "void" &&
       (status === "unpaid" || status === "partial" || status === "pending_confirmation");
     var showBankPanel = !isPaid && !isGcInvoice && !isLaInvoice && payActionNeeded;
+    var previewLabel =
+      status === "partial"
+        ? "Preview partially paid invoice"
+        : status === "pending_confirmation"
+          ? "Preview invoice"
+          : "Preview draft invoice";
+    var previewTitle =
+      status === "partial"
+        ? num
+          ? "Partially paid — " + num
+          : "Partially paid invoice"
+        : num
+          ? "Draft — " + num
+          : "Draft invoice";
     var previewBtnHtml = "";
-    if (showDraftFlow && pdf) {
+    if (showDraftFlow) {
       previewBtnHtml =
         '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-preview-invoice="' +
         esc(inv.id) +
         '" data-pp-pdf-url="' +
-        esc(pdf) +
+        esc(pdf || "") +
         '" data-pp-pdf-title="' +
-        esc(num ? "Draft — " + num : "Draft invoice") +
-        '">' +
-        invoiceBtnLabel("preview", "Preview draft invoice") +
+        esc(previewTitle) +
+        '" data-pp-live-preview="1">' +
+        invoiceBtnLabel("preview", previewLabel) +
         "</button>";
-    } else if (showDraftFlow && !pdf) {
-      previewBtnHtml = '<p class="pp-muted">Draft invoice not available yet.</p>';
     }
     var pdfActs = "";
     if (isPaid && pdf) {
@@ -8686,10 +8698,30 @@
     function wireInvoiceActions() {
       listHost.querySelectorAll("[data-pp-preview-invoice]").forEach(function (btn) {
         btn.addEventListener("click", function () {
-          var url = btn.getAttribute("data-pp-pdf-url") || "";
+          var invoiceId = btn.getAttribute("data-pp-preview-invoice") || "";
+          var fallbackUrl = btn.getAttribute("data-pp-pdf-url") || "";
           var title = btn.getAttribute("data-pp-pdf-title") || "Invoice";
-          if (!url) return;
-          openInvoicePreview(url, title);
+          var useLive = btn.getAttribute("data-pp-live-preview") === "1";
+          if (useLive && invoiceId && typeof opts.previewInvoicePdf === "function") {
+            btn.disabled = true;
+            void opts
+              .previewInvoicePdf(invoiceId)
+              .then(function (out) {
+                var url = out && out.blobUrl ? out.blobUrl : "";
+                if (!url) throw new Error("empty_preview");
+                openInvoicePreview(url, title);
+              })
+              .catch(function () {
+                if (fallbackUrl) openInvoicePreview(fallbackUrl, title);
+                else showNotice("error", "Could not open the invoice preview. Try again.");
+              })
+              .then(function () {
+                btn.disabled = false;
+              });
+            return;
+          }
+          if (!fallbackUrl) return;
+          openInvoicePreview(fallbackUrl, title);
         });
       });
 

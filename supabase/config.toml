@@ -611,6 +611,9 @@ verify_jwt = false
 [functions.parent-portal-invoices-list]
 verify_jwt = false
 
+[functions.parent-portal-invoice-preview]
+verify_jwt = false
+
 [functions.parent-portal-invoice-checkout]
 verify_jwt = false
 
