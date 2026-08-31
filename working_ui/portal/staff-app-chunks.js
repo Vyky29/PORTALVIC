@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260828-luliya-bank-asw7";
+  var VER = "20260901-dc-pax-colors";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260831-autumn-northolt",

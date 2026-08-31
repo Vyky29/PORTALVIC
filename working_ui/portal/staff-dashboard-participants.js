@@ -526,6 +526,30 @@
     function portalTodayItemIsSpecialSegmentedCard(item){
       return !!(item && Array.isArray(item.segments) && item.segments.length);
     }
+    /**
+     * Left-border colour for Day Centre SPECIAL cards — one tint per participant.
+     * Emanuel keeps the original purple; Fadi / Ikram / Timi (and Manager) differ.
+     */
+    function portalDayCentreSpecialCardAccentClass(item){
+      if(!portalTodayItemIsSpecialSegmentedCard(item)) return '';
+      const raw = String(
+        (item && (item.clientId || item.name || item.clientName || item.clientDisplay)) || ''
+      )
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+      if(!raw) return ' session-card--dc-pax-default';
+      if(/\bemanuel\b|\bemmanuel\b/.test(raw) || raw === 'emanuel' || raw === 'emmanuel'){
+        return ' session-card--dc-pax-emanuel';
+      }
+      if(/\bfadi\b/.test(raw) || raw === 'fadi') return ' session-card--dc-pax-fadi';
+      if(/\bikram\b/.test(raw) || raw === 'ikram') return ' session-card--dc-pax-ikram';
+      if(/\btimi\b/.test(raw) || raw === 'timi') return ' session-card--dc-pax-timi';
+      if(/\bmanager\b/.test(raw) || raw === 'manager') return ' session-card--dc-pax-manager';
+      return ' session-card--dc-pax-default';
+    }
+    try{ window.portalDayCentreSpecialCardAccentClass = portalDayCentreSpecialCardAccentClass; }catch(_){}
     function portalTodayItemShowsAdminShiftBadge(item){
       if(portalTodayItemIsSpecialSegmentedCard(item)) return false;
       return !!(item && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge);

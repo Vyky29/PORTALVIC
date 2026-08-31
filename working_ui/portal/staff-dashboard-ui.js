@@ -869,8 +869,12 @@
         const card = document.createElement('button');
         card.type = 'button';
         const reviewCls = sessionReviewRowClass(item);
-        const segCls = (Array.isArray(item.segments) && item.segments.length) ? ' session-card--segments' : '';
-        card.className = 'session-card' + (item.kind === 'available' ? ' session-card--available' : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '') + (reviewCls ? ' ' + reviewCls : '') + segCls;
+        const hasSegs = Array.isArray(item.segments) && item.segments.length;
+        const segCls = hasSegs ? ' session-card--segments' : '';
+        const dcPaxCls = hasSegs && typeof portalDayCentreSpecialCardAccentClass === 'function'
+          ? portalDayCentreSpecialCardAccentClass(item)
+          : '';
+        card.className = 'session-card' + (item.kind === 'available' ? ' session-card--available' : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '') + (reviewCls ? ' ' + reviewCls : '') + segCls + dcPaxCls;
         card.setAttribute('role', 'listitem');
         if(item.sessionKey) card.setAttribute('data-session-key', String(item.sessionKey));
         const poolAria = (item.areaLabel && String(item.areaLabel).trim())

@@ -112,9 +112,14 @@
       border-radius: 12px;
       padding: 8px 10px;
       margin: 0 0 8px;
-      border-left: 4px solid #6b4cff;
+      border-left: 4px solid #6d5ae0;
       min-width: 0;
     }
+    .card--emanuel { border-left-color: #6d5ae0; }
+    .card--fadi { border-left-color: #0f766e; }
+    .card--ikram { border-left-color: #c2410c; }
+    .card--timi { border-left-color: #0369a1; }
+    .card--manager { border-left-color: #64748b; }
     .card__name {
       font-weight: 800;
       font-size: 0.95rem;
@@ -245,6 +250,15 @@
     if (n === "manager") return "Hub · Manager";
     return "Day Centre";
   }
+  function cardAccentClass(name) {
+    var n = String(name || "").trim().toLowerCase();
+    if (n === "emanuel" || n === "emmanuel") return "card--emanuel";
+    if (n === "fadi") return "card--fadi";
+    if (n === "ikram") return "card--ikram";
+    if (n === "timi") return "card--timi";
+    if (n === "manager") return "card--manager";
+    return "";
+  }
   function segmentsFor(name, time, day) {
     var timeLabel = String(time || "").replace(/\s+/g, " ").trim();
     var slot = timeLabel.replace(/\s+/g, "").toLowerCase();
@@ -322,7 +336,9 @@
             })
             .join("");
           col.innerHTML +=
-            '<div class="card"><div class="card__name">' +
+            '<div class="card ' +
+            esc(cardAccentClass(c.name)) +
+            '"><div class="card__name">' +
             esc(c.name) +
             '</div><div>' +
             rows +

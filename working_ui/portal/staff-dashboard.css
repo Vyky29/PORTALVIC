@@ -5482,9 +5482,28 @@
     }
     /* Combined "Day Centre + pool" card: participant name on the far left, then a
        time / note mini-table (e.g. Emanuel — 11 to 12 Day Centre / 12 to 1 Big Pool).
-       Still ONE session (feedback / pay unchanged); this is a display grouping only. */
+       Still ONE session (feedback / pay unchanged); this is a display grouping only.
+       Left border tint = participant (Emanuel purple; Fadi / Ikram / Timi distinct). */
     .section-card--today .session-card.session-card--segments{
       border-left:4px solid #6d5ae0;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-emanuel{
+      border-left-color:#6d5ae0;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-fadi{
+      border-left-color:#0f766e;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-ikram{
+      border-left-color:#c2410c;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-timi{
+      border-left-color:#0369a1;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-manager{
+      border-left-color:#64748b;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-default{
+      border-left-color:#6d5ae0;
     }
     .section-card--today .session-card.session-card--segments .session-card-body.session-card-body--segments,
     .section-card--today .session-card.session-card--segments .session-card-body--segments{
