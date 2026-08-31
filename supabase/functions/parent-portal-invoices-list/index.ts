@@ -363,6 +363,7 @@ Deno.serve(async (req) => {
   }
 
   const anyGcSetup = out.some((inv) => inv.can_setup_gocardless);
+  const anyGcHint = out.some((inv) => inv.payment_method_hint === "gocardless");
   const anyGcHintOpen = out.some(
     (inv) =>
       inv.payment_method_hint === "gocardless" &&
@@ -405,7 +406,11 @@ Deno.serve(async (req) => {
     payments_enabled: cardCheckoutAvailable,
     gocardless: {
       api_available: gcApiAvailable,
-      mandate_active: gcMandateActive,
+      /*
+       * Only expose mandate as relevant when this child has Direct Payment invoices.
+       * Stale family mandates must not drive Flexi / bank_transfer hub UI.
+       */
+      mandate_active: gcMandateActive && anyGcHint,
       mandate_status: gcMandateStatus,
       // Setup lives on the GC invoice card when can_setup_gocardless — avoid duplicate banner.
       setup_available:

@@ -8526,15 +8526,25 @@
         var gcSetupOnCard = invoices.some(function (inv) {
           return !!(inv && inv.can_setup_gocardless);
         });
+        /*
+         * Direct Payment banner only when this child's invoices are GC / Direct Payment.
+         * A leftover family mandate must not appear on Flexi / bank_transfer places
+         * (parents cannot mix half Flexi + half Direct Payment — admin changes only).
+         */
+        var anyGcInvoice = invoices.some(function (inv) {
+          return String((inv && inv.payment_method_hint) || "")
+            .trim()
+            .toLowerCase() === "gocardless";
+        });
         if (gcHost) {
-          if (gcMeta.mandate_active) {
+          if (gcMeta.mandate_active && anyGcInvoice) {
             gcHost.hidden = false;
             gcHost.innerHTML =
               '<button type="button" class="pp-btn pp-btn--gc-setup-done pp-invoice-card__btn-full" disabled aria-disabled="true">' +
               invoiceBtnLabel("gocardless", "Direct Payment set up") +
               "</button>" +
               '<p class="pp-muted pp-invoice-pay__note">Mandate is active. Upcoming invoices are collected automatically.</p>';
-          } else if (gcMeta.setup_available && !gcSetupOnCard) {
+          } else if (gcMeta.setup_available && anyGcInvoice && !gcSetupOnCard) {
             gcHost.hidden = false;
             gcHost.innerHTML =
               '<p class="pp-invoice-pay__title">Direct Payment (GoCardless)</p>' +
