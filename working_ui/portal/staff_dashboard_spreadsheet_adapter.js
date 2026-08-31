@@ -51,7 +51,8 @@
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
-    // Emanuel (Roberto Mon/Wed): Hub 11–12 · swim 12–1 · Hub 2–4 (gap 1–2 = Yaqoub).
+    // Emanuel (Roberto Mon/Fri long block): Hub 11–12 · swim 12–1 · Hub 2–4 (gap 1–2).
+    // Wednesday uses separate 11–12.30 + 3–4 blocks (no 11to4 merge).
     "emanuel|11to4": [
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
@@ -111,22 +112,14 @@
 
   /**
    * Display-only merge of a participant's TWO same-day Day Centre blocks into ONE
-   * segmented card. Emanuel Mon/Wed/Fri: Hub 11–12 · Big Pool 12–1 · Hub 2–4.
+   * segmented card. Emanuel Mon/Fri: Hub 11–12 · Big Pool 12–1 · Hub 2–4.
+   * Wednesday is separate blocks (11–12.30 + 3–4) with Fadi in between — do not merge.
    * Pay is driven by the continuous shift band, so collapsing the two blocks for display
    * does not change hours; the merged slot is one feedback session (like other combined
    * Day Centre cards). Keyed by canonical clientId + weekday.
    */
   var PORTAL_COMBINED_MULTIBLOCK = {
     "emanuel|monday": {
-      blockStarts: ["11:00", "14:00"],
-      merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
-      segments: [
-        { time_slot: "11 to 12", area: "Hub Room" },
-        { time_slot: "12 to 1", area: "Big Pool" },
-        { time_slot: "2 to 4", area: "Hub Room" },
-      ],
-    },
-    "emanuel|wednesday": {
       blockStarts: ["11:00", "14:00"],
       merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
       segments: [
