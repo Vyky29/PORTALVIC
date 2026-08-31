@@ -38,10 +38,14 @@
   }
 
   function datedSlotKey(row) {
+    /* Include instructors: same client+time on one day can be multi-staff
+       (e.g. Roberto + Victor with Fadi). Without this, the last DB row wins
+       and the other instructor loses the card after portal_roster_rows loads. */
     return [
       normIso(row.session_date),
       String(row.client_name || "").toLowerCase(),
       normTimeSlot(row.time_slot),
+      normInstructors(row.instructors),
     ].join("|");
   }
 

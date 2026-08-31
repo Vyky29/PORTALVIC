@@ -15,7 +15,7 @@
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260831-dc-special-card",
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
-    "/portal/portal-roster-rows-merge.js?v=20260827-autumn-roster-snap",
+    "/portal/portal-roster-rows-merge.js?v=20260831-dated-slot-instructor",
     "/portal/portal_roster_canonical.js?v=20260831-roberto-wed-dc",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
     "/portal/portal_madre_fold.js?v=20260713-authoritative-week",

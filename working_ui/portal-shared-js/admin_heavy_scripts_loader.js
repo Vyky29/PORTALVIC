@@ -11,7 +11,7 @@
       "/portal/clients_info_embed.js?v=20260707-social-workers",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260831-dc-special-card",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
-      "/portal/portal-roster-rows-merge.js?v=20260704-roster-504",
+      "/portal/portal-roster-rows-merge.js?v=20260831-dated-slot-instructor",
       "/portal/portal_madre_fold.js?v=20260809-staff-map",
       "/portal/portal_roster_canonical.js?v=20260831-roberto-wed-dc",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260704-roster-seq",
