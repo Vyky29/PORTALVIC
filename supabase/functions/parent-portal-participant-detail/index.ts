@@ -1533,12 +1533,14 @@ Deno.serve(async (req) => {
     const { data: parentShares } = await supabase
       .from("portal_parent_invoice_share")
       .select(
-        "invoice_number, reference_text, line_description, billing_term, due_date, payment_method_hint",
+        "invoice_number, reference_text, line_description, billing_term, due_date, payment_method_hint, payment_status",
       )
       .eq("contact_id", contactId)
       .eq("share_status", "ready")
       .limit(50);
     for (const share of parentShares || []) {
+      /* Void shares must not keep share_status=ready as a fake 26/27 term place. */
+      if (clean(share.payment_status, 40).toLowerCase() === "void") continue;
       const blob = [
         share.invoice_number,
         share.reference_text,

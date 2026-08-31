@@ -7,10 +7,11 @@
 
   var ACADEMIC_YEAR = "2026-27";
   var SESSION_KEY = "clubsens_parent_portal_session_v1";
-  var RE_ENROL_DEADLINE_ISO = "2026-07-22";
-  var RE_ENROL_DEADLINE_LABEL = "Wednesday 22 July 2026";
+  /* Extended for office soft-hold families (e.g. Erik/Agata) through 31 Aug 23:59. */
+  var RE_ENROL_DEADLINE_ISO = "2026-08-31";
+  var RE_ENROL_DEADLINE_LABEL = "Monday 31 August 2026";
   /** Day after deadline: unconfirmed places released to new-client booking. */
-  var RE_ENROL_RELEASE_LABEL = "Thursday 23 July 2026";
+  var RE_ENROL_RELEASE_LABEL = "Tuesday 1 September 2026";
   /** Bank transfer: first Autumn payment due Sat 15 Aug 2026 (inclusive, London end of day).
    *  Unpaid seats auto-release from Sun 16 Aug 2026 00:00 Europe/London onto Booking Portal. */
   var RE_BANK_FIRST_DUE = "by 15 August 2026";

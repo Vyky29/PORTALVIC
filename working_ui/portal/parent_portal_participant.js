@@ -1486,7 +1486,8 @@
   }
 
   /** Keep in sync with portal_reenrolment_2026_27.js — form open through end of this local day. */
-  var RE_ENROL_DEADLINE_ISO = "2026-07-22";
+  /* Keep in sync with portal_reenrolment_2026_27.js — soft-hold window through 31 Aug. */
+  var RE_ENROL_DEADLINE_ISO = "2026-08-31";
   var BOOKING_PORTAL_URL = "https://www.clubsensational.org/bookingportal";
   var OFFICE_CONTACT_MAILTO = "mailto:info@clubsensational.org";
 
@@ -2716,6 +2717,19 @@
     if (booking.parent_action === "auto") return true;
     if (booking.continuing) return true;
     var r = (data && data.reenrolment) || {};
+    /*
+     * While re-enrolment is still open and they never submitted, do not treat a held
+     * seat / stale office invoice flag as "Re-enrolled" — soft-hold families must still
+     * complete the form (e.g. Agata / Erik). Live paid/office places after submit use
+     * booking.continuing / parent_action auto instead.
+     */
+    if (
+      isReenrolFormOpen() &&
+      !booking.submitted &&
+      booking.parent_action !== "auto"
+    ) {
+      return false;
+    }
     /*
      * Office already raised the 26/27 term invoice, so the place exists even without a
      * submitted form. Without this the hub asked for payment and called the same place
