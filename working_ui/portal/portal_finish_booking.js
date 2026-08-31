@@ -406,7 +406,7 @@
         showNotice(
           notice,
           payPlan === "one_off_bank"
-            ? "Trial invoice ready — transfer within 30 minutes, then notify the office."
+            ? "Trial invoice ready — transfer within 30 minutes, then email or WhatsApp the office (photo welcome)."
             : "Trial ready — pay now with card or Apple Pay to confirm your session.",
           "ok",
         );
@@ -445,7 +445,7 @@
                 "—",
             ),
           ) +
-          "</strong> by bank transfer within <strong>30 minutes</strong>. Then tap notify office so we can confirm Tide.";
+          "</strong> by bank transfer within <strong>30 minutes</strong>. Then email or WhatsApp the office (photo/screenshot of the transfer welcome) so they can confirm.";
       }
     }
     if (!stripeLabel) {
@@ -953,26 +953,16 @@
         "</div>" +
         '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
         holdLine +
-        "</p>";
-      if (isTrialBank) {
-        html +=
-          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, tap below to notify the office (or email/WhatsApp with a screenshot). PIN is sent only after they confirm Tide.</p>' +
-          '<button type="button" class="btn btn--pri" id="fbConfirmPaid">I’ve paid — notify office</button>' +
-          '<p class="muted" style="margin:10px 0 0"><a href="mailto:info@clubsensational.org?subject=' +
-          mailSub +
-          "&body=" +
-          mailBody +
-          '">Or email office (info@…)</a></p>';
-      } else {
-        html +=
-          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>email or WhatsApp the office</strong> so they can check Tide and mark you paid. Attach a photo/screenshot if you can.</p>' +
-          '<a class="btn btn--pri" href="mailto:info@clubsensational.org?subject=' +
-          mailSub +
-          "&body=" +
-          mailBody +
-          '">Email office (info@…)</a>' +
-          '<p class="muted" style="margin:10px 0 0">Or WhatsApp the club number you already use — same message + photo is fine. Parent Portal PIN is sent only after the office confirms payment.</p>';
-      }
+        "</p>" +
+        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>email or WhatsApp the office</strong> so they can check Tide and mark you paid. Attach a photo/screenshot of the transfer if you can' +
+        (isTrialBank ? " (reference + amount)." : ".") +
+        "</p>" +
+        '<a class="btn btn--pri" href="mailto:info@clubsensational.org?subject=' +
+        mailSub +
+        "&body=" +
+        mailBody +
+        '">Email office (info@…)</a>' +
+        '<p class="muted" style="margin:10px 0 0">Or WhatsApp the club number you already use — same message + photo is fine. Parent Portal PIN is sent only after the office confirms payment.</p>';
     }
     if (host) host.innerHTML = html;
     var stripeRetry = document.getElementById("fbStripeRetry");
@@ -995,10 +985,10 @@
     var confirmPaid = document.getElementById("fbConfirmPaid");
     if (confirmPaid) {
       confirmPaid.onclick = function () {
-        showNotice(document.getElementById("fbNotice"), "Notifying office…", "");
+        showNotice(document.getElementById("fbNotice"), "Reporting…", "");
         void api("confirm_paid", {
-          booking_scope: data.booking_scope || "trial_session",
-          pay_plan: data.pay_plan || "one_off_bank",
+          booking_scope: data.booking_scope || "",
+          pay_plan: data.pay_plan || "",
           payment_ref: data.transfer_reference || "",
         })
           .then(function (out) {
@@ -1013,7 +1003,7 @@
           .catch(function (err) {
             showNotice(
               document.getElementById("fbNotice"),
-              err.message || "Could not notify office.",
+              err.message || "Could not report payment.",
               "error",
             );
           });
