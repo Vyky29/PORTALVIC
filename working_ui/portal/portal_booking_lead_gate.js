@@ -93,9 +93,28 @@
   function clearStored() {
     state.token = "";
     state.lead = null;
+    state.unlocked = false;
     try {
       global.localStorage.removeItem(STORAGE_KEY);
     } catch (_e) {
+      /* ignore */
+    }
+  }
+
+  /** Sign out of Booking Portal family unlock (and optional parent-portal handoff). */
+  function clearSession(opts) {
+    opts = opts || {};
+    clearStored();
+    if (opts.clearParentPortal !== false) {
+      try {
+        global.localStorage.removeItem(PARENT_SESSION_KEY);
+      } catch (_e) {
+        /* ignore */
+      }
+    }
+    try {
+      global.sessionStorage.setItem("clubsens_booking_force_gate_v1", "1");
+    } catch (_e2) {
       /* ignore */
     }
   }
@@ -783,6 +802,19 @@
     showModal(false);
     adoptTokenFromUrl();
 
+    var forceGate = false;
+    try {
+      forceGate = global.sessionStorage.getItem("clubsens_booking_force_gate_v1") === "1";
+      if (forceGate) global.sessionStorage.removeItem("clubsens_booking_force_gate_v1");
+    } catch (_fg) {
+      forceGate = false;
+    }
+    if (forceGate || opts.forceGate) {
+      clearStored();
+      openGate();
+      return false;
+    }
+
     var ok = await validateSession();
     if (ok) {
       unlock();
@@ -814,6 +846,7 @@
     getSessionToken: getSessionToken,
     isExistingClient: isExistingClient,
     appendSessionToUrl: appendSessionToUrl,
+    clearSession: clearSession,
     isUnlocked: function () {
       return !!state.unlocked;
     },

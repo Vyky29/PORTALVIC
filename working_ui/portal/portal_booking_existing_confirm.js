@@ -24,7 +24,29 @@
   function leadToken() {
     var q = qs();
     var fromQ = String(q.get("lead_session") || "").trim();
-    if (fromQ) return fromQ;
+    if (fromQ) {
+      try {
+        if (global.history && global.history.replaceState) {
+          q.delete("lead_session");
+          var next =
+            global.location.pathname +
+            (q.toString() ? "?" + q.toString() : "") +
+            (global.location.hash || "");
+          global.history.replaceState({}, "", next);
+        }
+      } catch (_strip) {
+        /* ignore */
+      }
+      try {
+        global.localStorage.setItem(
+          "clubsens_booking_lead_session_v1",
+          JSON.stringify({ token: fromQ, expiresAt: Date.now() + 14 * 86400000 })
+        );
+      } catch (_ls) {
+        /* ignore */
+      }
+      return fromQ;
+    }
     try {
       if (global.PortalBookingLeadGate && typeof global.PortalBookingLeadGate.getSessionToken === "function") {
         return String(global.PortalBookingLeadGate.getSessionToken() || "").trim();
@@ -37,6 +59,39 @@
       return String((j && j.token) || "").trim();
     } catch (_e2) {
       return "";
+    }
+  }
+
+  function clearBookingFamilySession() {
+    try {
+      if (global.PortalBookingLeadGate && typeof global.PortalBookingLeadGate.clearSession === "function") {
+        global.PortalBookingLeadGate.clearSession({ clearParentPortal: true });
+        return;
+      }
+    } catch (_e) {}
+    try {
+      global.localStorage.removeItem("clubsens_booking_lead_session_v1");
+      global.localStorage.removeItem("clubsens_parent_portal_session_v1");
+      global.sessionStorage.setItem("clubsens_booking_force_gate_v1", "1");
+    } catch (_e2) {}
+  }
+
+  function showSignedInAs(parentName) {
+    var who = document.getElementById("bcWho");
+    if (!who) return;
+    var name = String(parentName || "").trim() || "an existing family";
+    who.hidden = false;
+    who.innerHTML =
+      "Signed in as <strong>" +
+      esc(name) +
+      "</strong>. " +
+      '<button type="button" id="bcNotYou">Not you? Unlock a different family</button>';
+    var btn = document.getElementById("bcNotYou");
+    if (btn) {
+      btn.addEventListener("click", function () {
+        clearBookingFamilySession();
+        global.location.href = "/bookingportal?gate=1";
+      });
     }
   }
 
@@ -190,6 +245,7 @@
         }
         state.children = out.data.children || [];
         if (!state.children.length) throw new Error("no_children_on_file");
+        showSignedInAs(out.data.parent_name || "");
 
         /* Prefer out-of-class / released child when booking a new place. */
         var prefer =

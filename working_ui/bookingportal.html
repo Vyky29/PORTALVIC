@@ -2702,7 +2702,7 @@
   <script src="/portal/portal_booking_offer.js?v=20260825-halfhour-bands"></script>
   <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260817-exist-confirm"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260831-privacy-not-you"></script>
   <script src="/portal/portal_booking_waitlist.js?v=20260813-waitlist-session"></script>
   <script>
 (function () {
@@ -4575,7 +4575,15 @@
         if (window.PortalBookingLeadGate) {
           window.PortalBookingLeadGate.guardClicks(document.getElementById("timetableHost"));
           window.PortalBookingLeadGate.guardClicks(document.getElementById("serviceCards"));
-          void window.PortalBookingLeadGate.boot();
+          void window.PortalBookingLeadGate.boot({
+            forceGate: (function () {
+              try {
+                return new URLSearchParams(window.location.search || "").get("gate") === "1";
+              } catch (_g) {
+                return false;
+              }
+            })(),
+          });
         }
       } catch (_e2) {
         /* ignore */

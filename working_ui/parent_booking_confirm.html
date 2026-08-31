@@ -65,6 +65,29 @@
       font-size: .95rem;
       overflow-wrap: break-word;
     }
+    .bc-who {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #eef6fb;
+      color: var(--ink);
+      font-size: .92rem;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .bc-who button {
+      display: inline;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--blue);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
+    }
     .card {
       background: var(--white);
       border: 1px solid var(--line);
@@ -167,9 +190,10 @@
     </div>
     <h1>Confirm this place</h1>
     <p class="lead">
-      You’re an existing family — no need to fill the full registration form again.
-      Confirm the session below. Add a photo only if we don’t already have one.
+      You are signed in as an existing family — no need to fill the full registration form again.
+      Confirm the session below. Add a photo only if we do not already have one.
     </p>
+    <p class="bc-who" id="bcWho" hidden></p>
 
     <div class="bc-status bc-status--info" id="bcStatus" hidden></div>
 
@@ -206,6 +230,7 @@
       <a class="btn btn--ghost" href="/parent">Open family portal</a>
     </div>
   </div>
-  <script src="/portal/portal_booking_existing_confirm.js?v=20260817-exist-confirm"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260831-privacy-not-you"></script>
+  <script src="/portal/portal_booking_existing_confirm.js?v=20260831-privacy-not-you"></script>
 </body>
 </html>
