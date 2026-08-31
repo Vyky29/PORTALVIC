@@ -161,7 +161,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260810-closed-red-chip" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260831-sched-staff-chips" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -4995,7 +4995,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var dateEl = $('schedDate');
       if(dateEl) dateEl.value = pick;
-      portalInvalidateAdminSlotsCache();
       void refreshSchedulingModule();
     }
     function adminSchedIsAquaticProgramme(programme){
@@ -5189,8 +5188,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out;
     }
     function schedSessionsUnitCountForIso(iso){
+      var want = String(iso || '').trim().substring(0, 10);
+      if(!want) return 0;
+      if(!sched._unitCountByIso) sched._unitCountByIso = {};
+      if(Object.prototype.hasOwnProperty.call(sched._unitCountByIso, want)){
+        return sched._unitCountByIso[want];
+      }
       try{
-        return adminCollapseSchedSlotsToUnits(slotsForSelectedDate(iso) || []).length;
+        var n = adminCollapseSchedSlotsToUnits(slotsForSelectedDate(want) || []).length;
+        sched._unitCountByIso[want] = n;
+        return n;
       }catch(_e){
         return 0;
       }
@@ -5308,6 +5315,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalInvalidateAdminSlotsCache(){
       slotsForSelectedDate._byIso = null;
+      if(typeof sched !== 'undefined' && sched) sched._unitCountByIso = null;
     }
     function portalNotifyAdminRosterDataChanged(opts){
       opts = opts || {};
@@ -15889,7 +15897,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(tone === 'home') return 'sched-pax-pill--home';
       if(tone === 'manager') return 'sched-pax-pill--manager';
       if(tone === 'admin') return 'sched-pax-pill--admin';
+      if(tone === 'staff') return 'sched-pax-pill--staff';
       return tone === 'out' ? 'sched-pax-pill--out' : (tone === 'in' ? 'sched-pax-pill--in' : 'sched-pax-pill--booked');
+    }
+    /** Stable per-instructor chip colours so the same person matches across the day board. */
+    var SCHED_STAFF_CHIP_PALETTE = [
+      { bg: '#dbeafe', fg: '#1e3a8a', bd: 'rgba(30,58,138,.32)' },
+      { bg: '#fce7f3', fg: '#9d174d', bd: 'rgba(157,23,77,.32)' },
+      { bg: '#fef3c7', fg: '#92400e', bd: 'rgba(146,64,14,.32)' },
+      { bg: '#d1fae5', fg: '#065f46', bd: 'rgba(6,95,70,.32)' },
+      { bg: '#e0e7ff', fg: '#3730a3', bd: 'rgba(55,48,163,.32)' },
+      { bg: '#ffedd5', fg: '#9a3412', bd: 'rgba(154,52,18,.32)' },
+      { bg: '#cffafe', fg: '#155e75', bd: 'rgba(21,94,117,.32)' },
+      { bg: '#f3e8ff', fg: '#6b21a8', bd: 'rgba(107,33,168,.32)' },
+      { bg: '#ecfccb', fg: '#3f6212', bd: 'rgba(63,98,18,.32)' },
+      { bg: '#ffe4e6', fg: '#9f1239', bd: 'rgba(159,18,57,.32)' },
+      { bg: '#e2e8f0', fg: '#334155', bd: 'rgba(51,65,85,.32)' },
+      { bg: '#fae8ff', fg: '#86198f', bd: 'rgba(134,25,143,.32)' },
+      { bg: '#ccfbf1', fg: '#115e59', bd: 'rgba(17,94,89,.32)' },
+      { bg: '#fde68a', fg: '#78350f', bd: 'rgba(120,53,15,.32)' },
+      { bg: '#bfdbfe', fg: '#1e40af', bd: 'rgba(30,64,175,.32)' },
+      { bg: '#fecdd3', fg: '#9f1239', bd: 'rgba(159,18,57,.28)' }
+    ];
+    function schedStaffChipColor(rosterKey){
+      var k = normalizeSchedAnchorStaffId(rosterKey) || String(rosterKey || '').trim().toLowerCase();
+      if(!k) return null;
+      var h = 2166136261;
+      for(var i = 0; i < k.length; i++){
+        h ^= k.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      var idx = Math.abs(h) % SCHED_STAFF_CHIP_PALETTE.length;
+      return SCHED_STAFF_CHIP_PALETTE[idx];
     }
     function schedStaffDisplayName(slug, hint){
       var s = normalizeSchedAnchorStaffId(slug) || String(slug || '').trim().toLowerCase();
@@ -15963,16 +16002,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function schedStaffPillHtml(label, rosterKey, schedIso, tone){
       var lab = esc(String(label || '').trim() || '—');
-      var toneCls = schedNamePillToneClass(tone);
       var key = normalizeSchedAnchorStaffId(rosterKey) || String(rosterKey || '').trim().toLowerCase();
+      var useStaffColor = (!tone || tone === 'booked') && !!key;
+      var color = useStaffColor ? schedStaffChipColor(key) : null;
+      var toneCls = color ? 'sched-pax-pill--staff' : schedNamePillToneClass(tone);
+      var styleAttr = color
+        ? ' style="--sched-staff-bg:' + color.bg + ';--sched-staff-fg:' + color.fg + ';--sched-staff-bd:' + color.bd + '"'
+        : '';
       if(key){
         var disp = esc(String(label || '').trim() || key);
         var attrs = 'data-staff-roster="'+esc(key)+'" data-staff-session-iso="'+esc(schedIso)+'" data-staff-label="'+disp+'"';
         var drawerId = resolveAdminStaffDrawerId(key);
         if(drawerId) attrs += ' data-staff="'+esc(drawerId)+'"';
-        return '<button type="button" class="sched-pax-pill '+toneCls+'" '+attrs+'>'+lab+'</button>';
+        return '<button type="button" class="sched-pax-pill '+toneCls+'" '+attrs+styleAttr+'>'+lab+'</button>';
       }
-      return '<span class="sched-pax-pill '+toneCls+'">'+lab+'</span>';
+      return '<span class="sched-pax-pill '+toneCls+'"'+styleAttr+'>'+lab+'</span>';
     }
     function schedInstructorCellHtml(slot, ov, schedIso){
       if(ov && String(ov.override_type || '').trim() === 'instructor_reassign'){
@@ -16438,7 +16482,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         tr.style.display = rowMatchesStaff(tr) ? '' : 'none';
       });
     }
-    async function refreshSchedulingModule(){
+    async function refreshSchedulingModule(opts){
+      opts = opts || {};
       if(window.portalAdminLoadScriptSet && !adminSpreadsheetAdapterAvailable()){
         try{
           await window.portalAdminLoadScriptSet('roster');
@@ -16461,7 +16506,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(prevBtn) prevBtn.disabled = !schedCanShiftWeek(-1);
       if(nextBtn) nextBtn.disabled = !schedCanShiftWeek(1);
       var stripHost = $('schedWeekDayStrip');
-      if(stripHost) stripHost.innerHTML = schedWeekDayStripHtml(sched.weekAnchorIso, iso);
+      if(stripHost){
+        if(opts.skipStripRebuild && stripHost.querySelector('[data-sched-week-day]')){
+          var stripCards = stripHost.querySelectorAll('[data-sched-week-day]');
+          for(var sci = 0; sci < stripCards.length; sci++){
+            var sIso = stripCards[sci].getAttribute('data-sched-week-day');
+            stripCards[sci].classList.toggle('is-selected', sIso === iso);
+          }
+        }else{
+          stripHost.innerHTML = schedWeekDayStripHtml(sched.weekAnchorIso, iso);
+        }
+      }
       var msg = $('schedConnMsg');
       if(msg){
         msg.textContent = '';
@@ -16495,36 +16550,59 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }, { once: true });
         }
       }else{
-        if(window.PortalRosterRowsMerge && typeof window.PortalRosterRowsMerge.loadAndCache === 'function'){
+        var hasRosterCache = Array.isArray(window.PORTAL_ROSTER_ROWS_CACHE) && window.PORTAL_ROSTER_ROWS_CACHE.length > 0;
+        if(window.PortalRosterRowsMerge && typeof window.PortalRosterRowsMerge.loadAndCache === 'function' &&
+           (opts.forceRosterReload || !hasRosterCache)){
           try{
             await window.PortalRosterRowsMerge.loadAndCache(client);
           }catch(_rosterCache){}
         }
         var wdLong = portalWeekdayLongFromIsoDate(iso);
         var cacheBuckets = schedBuildRosterLogFromCache(iso, window.PORTAL_ROSTER_ROWS_CACHE || []);
-        var res = await client.from('schedule_overrides')
-          .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
-          .eq('session_date', iso)
-          .order('created_at', { ascending: false });
-        var resTerm = await client.from('portal_roster_row_events')
-          .select('id,created_at,actor_id,action,scope,anchor_session_date,before_snapshot,after_snapshot,client_context')
-          .order('created_at', { ascending: false })
-          .limit(300);
-        var resRosterDated = await client.from('portal_roster_rows')
-          .select('id,created_at,updated_at,created_by,updated_by,client_name,day,time_slot,instructors,venue,session_date,status')
-          .eq('status', 'cancelled')
-          .eq('session_date', iso)
-          .order('updated_at', { ascending: false });
-        var resNoClient = await client.from('portal_roster_rows')
-          .select('id,day,time_slot,session_date,created_at,client_name,status')
-          .eq('status', 'active')
-          .eq('client_name', 'No client')
-          .eq('session_date', iso);
-        var resRosterTpl = await client.from('portal_roster_rows')
-          .select('id,created_at,updated_at,created_by,updated_by,client_name,day,time_slot,instructors,venue,session_date,status')
-          .eq('status', 'cancelled')
-          .is('session_date', null)
-          .order('updated_at', { ascending: false });
+        var termCacheFresh = sched._termEventsCache &&
+          (Date.now() - (sched._termEventsCacheAt || 0)) < 90000 &&
+          Array.isArray(sched._termEventsCache);
+        var fetchJobs = [
+          client.from('schedule_overrides')
+            .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,reason,status,payload')
+            .eq('session_date', iso)
+            .order('created_at', { ascending: false }),
+          client.from('portal_roster_rows')
+            .select('id,created_at,updated_at,created_by,updated_by,client_name,day,time_slot,instructors,venue,session_date,status')
+            .eq('status', 'cancelled')
+            .eq('session_date', iso)
+            .order('updated_at', { ascending: false }),
+          client.from('portal_roster_rows')
+            .select('id,day,time_slot,session_date,created_at,client_name,status')
+            .eq('status', 'active')
+            .eq('client_name', 'No client')
+            .eq('session_date', iso),
+          client.from('portal_roster_rows')
+            .select('id,created_at,updated_at,created_by,updated_by,client_name,day,time_slot,instructors,venue,session_date,status')
+            .eq('status', 'cancelled')
+            .is('session_date', null)
+            .order('updated_at', { ascending: false })
+        ];
+        if(!termCacheFresh){
+          fetchJobs.push(
+            client.from('portal_roster_row_events')
+              .select('id,created_at,actor_id,action,scope,anchor_session_date,before_snapshot,after_snapshot,client_context')
+              .order('created_at', { ascending: false })
+              .limit(300)
+          );
+        }
+        var fetched = await Promise.all(fetchJobs);
+        var res = fetched[0];
+        var resRosterDated = fetched[1];
+        var resNoClient = fetched[2];
+        var resRosterTpl = fetched[3];
+        var resTerm = termCacheFresh
+          ? { data: sched._termEventsCache, error: null }
+          : fetched[4];
+        if(!termCacheFresh && !resTerm.error){
+          sched._termEventsCache = resTerm.data || [];
+          sched._termEventsCacheAt = Date.now();
+        }
         if(res.error){
           if(msg){ msg.textContent = 'Could not load overrides: '+String(res.error.message||res.error); msg.style.color = 'var(--danger)'; }
         }
@@ -16588,7 +16666,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var dateEl = $('schedDate');
       var btn = $('schedRefreshBtn');
-      if(btn) btn.onclick = function(){ void refreshSchedulingModule(); };
+      if(btn) btn.onclick = function(){
+        portalInvalidateAdminSlotsCache();
+        sched._termEventsCache = null;
+        sched._termEventsCacheAt = 0;
+        void refreshSchedulingModule({ forceRosterReload: true });
+      };
       if(dateEl) dateEl.onchange = function(){ void refreshSchedulingModule(); };
       bindSchedAddSessionForm();
       if(window.PortalAdminSearchCombo){
@@ -16658,7 +16741,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var t = schedClampIsoToTerm(isoDateLocal(new Date()));
         sched.weekAnchorIso = schedMondayOfWeekIso(t);
         if($('schedDate')) $('schedDate').value = t;
-        portalInvalidateAdminSlotsCache();
         void refreshSchedulingModule();
       };
       function onSchedWeekDayPick(e){
@@ -16668,10 +16750,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var nextIso = col.getAttribute('data-sched-week-day');
         if(!nextIso) return;
         nextIso = schedClampIsoToTerm(nextIso);
+        var prevWeek = sched.weekAnchorIso;
         sched.weekAnchorIso = schedMondayOfWeekIso(nextIso);
         if($('schedDate')) $('schedDate').value = nextIso;
-        portalInvalidateAdminSlotsCache();
-        void refreshSchedulingModule();
+        var sameWeek = String(prevWeek || '') === String(sched.weekAnchorIso || '');
+        void refreshSchedulingModule({ skipStripRebuild: sameWeek });
       }
       var stripEl = $('schedWeekDayStrip');
       if(stripEl){
