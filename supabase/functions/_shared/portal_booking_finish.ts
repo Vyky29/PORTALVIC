@@ -33,8 +33,9 @@ import {
   stripeCreateCheckoutSession,
   stripeGrossUpFromGbp,
 } from "./stripe_checkout.ts";
-import { foldValidatedReservationOntoMadre } from "./portal_booking_fold_madre.ts";
+import { foldValidatedReservationOntoMadre, preferredInstructorForReservation } from "./portal_booking_fold_madre.ts";
 import { unitPriceFor } from "./reenrolment_catalog.ts";
+import { resolvePortalInvoiceOwnerUserId } from "./portal_create_family_invoice.ts";
 
 export const FINISH_TOKEN_TTL_DAYS = 14;
 /** Fallback only when service cannot be classified (legacy aquatic 30'). */
@@ -828,47 +829,222 @@ async function findFinishTokenForInvoice(
   return rows[0] as CompletionTokenRow;
 }
 
-/** After Stripe pays a trial invoice, mark the slot validated (booked). */
-export async function confirmTrialSlotAfterStripePayment(
+function parseClockToSqlTime(raw: string): string | null {
+  const s = String(raw || "").trim().toLowerCase();
+  const m = s.match(/^(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?$/i);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const min = Number(m[2] || 0);
+  const ap = (m[3] || "").toLowerCase();
+  if (!Number.isFinite(h) || !Number.isFinite(min)) return null;
+  if (ap === "pm" && h < 12) h += 12;
+  if (ap === "am" && h === 12) h = 0;
+  if (!ap && h >= 1 && h <= 7) h += 12;
+  if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:00`;
+}
+
+function timeLabelToSqlStartEnd(timeLabel: string): { start: string; end: string } | null {
+  const range = String(timeLabel || "").match(
+    /(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?)\s*(?:to|–|-|—)\s*(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?)/i,
+  );
+  if (!range) return null;
+  const start = parseClockToSqlTime(range[1]);
+  let end = parseClockToSqlTime(range[2]);
+  if (!start || !end) return null;
+  // Wrap afternoon: 12.30 to 2 → end before start
+  const sm = Number(start.slice(0, 2)) * 60 + Number(start.slice(3, 5));
+  let em = Number(end.slice(0, 2)) * 60 + Number(end.slice(3, 5));
+  if (em <= sm) {
+    em += 12 * 60;
+    const h = Math.floor(em / 60) % 24;
+    const mi = em % 60;
+    end = `${String(h).padStart(2, "0")}:${String(mi).padStart(2, "0")}:00`;
+  }
+  return { start, end };
+}
+
+async function upsertServiceLinesForPaidBooking(
   admin: SupabaseClient,
-  invoiceShareId: string,
-): Promise<void> {
-  const invId = clean(invoiceShareId, 80);
-  if (!invId) return;
+  opts: {
+    contactId: string | null;
+    participantName: string;
+    reservation: Record<string, unknown> | null;
+    isTrial: boolean;
+  },
+): Promise<string> {
+  const reservation = opts.reservation;
+  if (!reservation) return "no_reservation";
+  const day = clean(reservation.day_label, 40);
+  const serviceName = inferServiceTypeLabel({
+    serviceName: clean(reservation.service_name, 120),
+    timeLabel: clean(reservation.time_label, 80),
+    activity: clean(reservation.activity, 80),
+    venue: clean(reservation.venue, 80),
+  });
+  const timeSlot = clean(reservation.time_label, 80);
+  const venue = clean(reservation.venue, 80);
+  if (!day || !timeSlot) return "incomplete";
+  const durationMin = inferSessionDurationMin({
+    serviceName,
+    timeLabel: timeSlot,
+    activity: clean(reservation.activity, 80),
+    venue,
+  });
+  const instructor = preferredInstructorForReservation(reservation);
+  const child = clean(opts.participantName, 120) || "Participant";
+  const clientKey = clientKeyFromName(child);
+  const session = {
+    day,
+    service: serviceName,
+    timeSlot,
+    durationMin,
+    venue,
+    instructor: instructor || "",
+    area: /climb/i.test(serviceName) || /westway/i.test(venue) ? "Wall" : "Teaching Pool",
+    weeks: opts.isTrial ? 1 : undefined,
+    isTrial: opts.isTrial || undefined,
+  };
+  const { error } = await admin.from("portal_participant_service_lines").upsert(
+    {
+      client_key: clientKey,
+      client_name: child,
+      client_name_norm: child.toLowerCase(),
+      sessions: [session],
+      services_count: 1,
+      source: opts.isTrial
+        ? `booking_finish_trial_${clean(opts.contactId, 40) || "x"}`
+        : `booking_finish_${clean(opts.contactId, 40) || "x"}`,
+      term_label: "2026/27",
+      validated: true,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "client_key" },
+  );
+  if (error) {
+    console.warn("[syncOpsAfterFinishBookingPaid] service_lines", error.message);
+    return "service_line_failed";
+  }
+  return "service_line_ok";
+}
 
-  const token = await findFinishTokenForInvoice(admin, invId);
-  if (!token) return;
+async function ensureTrialScheduleOverride(
+  admin: SupabaseClient,
+  reservation: Record<string, unknown>,
+  participantName: string,
+): Promise<string> {
+  const iso = clean(reservation.date_iso, 12).slice(0, 10);
+  const venue = clean(reservation.venue, 80) || "Venue";
+  const timeLabel = clean(reservation.time_label, 80);
+  const times = timeLabelToSqlStartEnd(timeLabel);
+  if (!iso || !times) return "override_skip_time";
 
+  let instructor = preferredInstructorForReservation(reservation);
+  if (!instructor) instructor = /westway|climb/i.test(`${venue} ${clean(reservation.service_name, 80)}`)
+    ? "Carlos"
+    : "";
+  if (!instructor) return "override_skip_staff";
+
+  const staffId = instructor.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+  const client = clean(participantName, 80) || "Trial";
+  const clientSlug = clientKeyFromName(client).replace(/-/g, "_");
+  const actorId = await resolvePortalInvoiceOwnerUserId(admin);
+  if (!actorId) return "override_skip_actor";
+
+  const { data: existing } = await admin
+    .from("schedule_overrides")
+    .select("id, payload")
+    .eq("session_date", iso)
+    .eq("status", "active")
+    .ilike("anchor_staff_id", staffId)
+    .eq("anchor_start", times.start)
+    .eq("override_type", "client_replace_in_slot")
+    .limit(8);
+  const already = (existing || []).some((row) => {
+    const p = row.payload && typeof row.payload === "object"
+      ? (row.payload as Record<string, unknown>)
+      : {};
+    return p.is_trial === true || String(p.booking_kind || "").toLowerCase() === "trial";
+  });
+  if (already) return "override_exists";
+
+  const { error } = await admin.from("schedule_overrides").insert({
+    session_date: iso,
+    anchor_staff_id: staffId,
+    anchor_start: times.start,
+    anchor_end: times.end,
+    anchor_venue: venue,
+    anchor_client_id: "available",
+    anchor_time_slot_label: timeLabel,
+    override_type: "client_replace_in_slot",
+    payload: {
+      booking_kind: "trial",
+      is_trial: true,
+      session_kind: "trial",
+      replacement_client_id: clientSlug,
+      replacement_client_name: `${client} (Trial)`,
+      to_client_id: clientSlug,
+      to_client_name: `${client} (Trial)`,
+      finish_booking: true,
+    },
+    reason: `Finish booking trial · ${client} · ${venue} · ${timeLabel}`,
+    status: "active",
+    spreadsheet_revision: "finish_booking_auto",
+    created_by: actorId,
+    updated_by: actorId,
+  });
+  if (error) {
+    console.warn("[syncOpsAfterFinishBookingPaid] schedule_override", error.message);
+    return "override_failed:" + error.message.slice(0, 80);
+  }
+  return "override_ok";
+}
+
+/**
+ * After Stripe / bank Mark paid / Tide: lock seat, fold MADRE+roster,
+ * service lines, trial override for staff dashboard / Scheduling & Cover.
+ */
+export async function syncOpsAfterFinishBookingPaid(
+  admin: SupabaseClient,
+  token: CompletionTokenRow,
+  opts?: { paidVia?: string | null },
+): Promise<{ ok: boolean; notes: string[] }> {
+  const notes: string[] = [];
   const choices =
     token.choices_json && typeof token.choices_json === "object"
       ? (token.choices_json as Record<string, unknown>)
       : {};
-  if (parseBookingScope(choices.booking_scope) !== "trial_session") return;
-
+  const isTrial = parseBookingScope(choices.booking_scope) === "trial_session";
+  const paidVia = clean(opts?.paidVia, 40) || (isTrial ? "trial_paid" : "booking_paid");
   const now = new Date().toISOString();
   const holdFar = new Date(Date.now() + FINISH_TOKEN_TTL_DAYS * 86400000).toISOString();
+
+  let reservation: Record<string, unknown> | null = null;
   const reservationId = clean(token.reservation_id, 80);
   if (reservationId) {
-    await admin
+    const { data } = await admin
       .from("portal_booking_slot_reservations")
-      .update({
-        status: "validated",
-        validated_at: now,
-        hold_expires_at: holdFar,
-        released_at: null,
-        notes: "trial_paid_stripe|booking_kind=trial",
-        updated_at: now,
-      })
-      .eq("id", reservationId);
-    try {
-      const fold = await foldValidatedReservationOntoMadre(admin, reservationId);
-      if (!fold.ok) {
-        console.warn("[confirmTrialSlotAfterStripePayment] madre fold", fold.note);
-      }
-    } catch (e) {
-      console.warn("[confirmTrialSlotAfterStripePayment] madre fold", e);
-    }
+      .select("*")
+      .eq("id", reservationId)
+      .maybeSingle();
+    reservation = data;
   } else if (token.document_id) {
+    const { data } = await admin
+      .from("portal_booking_slot_reservations")
+      .select("*")
+      .eq("document_id", token.document_id)
+      .in("status", ["awaiting_payment", "pending", "validated", "released"])
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    reservation = data;
+  }
+
+  if (reservation?.id) {
+    const prevNotes = String(reservation.notes || "").trim();
+    const noteTag = isTrial
+      ? `trial_paid_${paidVia}|booking_kind=trial|ops_synced`
+      : `booking_paid_${paidVia}|ops_synced`;
     await admin
       .from("portal_booking_slot_reservations")
       .update({
@@ -876,29 +1052,73 @@ export async function confirmTrialSlotAfterStripePayment(
         validated_at: now,
         hold_expires_at: holdFar,
         released_at: null,
-        notes: "trial_paid_stripe|booking_kind=trial",
+        notes: [prevNotes.replace(/\|?pay_hold_30m/gi, ""), noteTag]
+          .filter(Boolean)
+          .join("|")
+          .slice(0, 500),
         updated_at: now,
       })
-      .eq("document_id", token.document_id)
-      .in("status", ["awaiting_payment", "pending", "released"]);
+      .eq("id", String(reservation.id));
+    notes.push("seat_validated");
+
     try {
-      const { data: resRows } = await admin
-        .from("portal_booking_slot_reservations")
-        .select("id")
-        .eq("document_id", token.document_id)
-        .eq("status", "validated")
-        .order("updated_at", { ascending: false })
-        .limit(3);
-      for (const r of resRows || []) {
-        const fold = await foldValidatedReservationOntoMadre(admin, String(r.id || ""));
-        if (!fold.ok) {
-          console.warn("[confirmTrialSlotAfterStripePayment] madre fold", fold.note);
-        }
-      }
+      const fold = await foldValidatedReservationOntoMadre(admin, String(reservation.id));
+      notes.push(fold.ok ? `fold:${fold.note}` : `fold_fail:${fold.note}`);
     } catch (e) {
-      console.warn("[confirmTrialSlotAfterStripePayment] madre fold", e);
+      notes.push("fold_error");
+      console.warn("[syncOpsAfterFinishBookingPaid] fold", e);
     }
+  } else {
+    notes.push("no_reservation");
   }
+
+  let participantName = "";
+  if (token.document_id) {
+    const { data: doc } = await admin
+      .from("portal_participant_documents")
+      .select("participant_name")
+      .eq("id", token.document_id)
+      .maybeSingle();
+    participantName = clean(doc?.participant_name, 120);
+  }
+  if (!participantName && reservation) {
+    participantName = clean(reservation.participant_name, 120);
+  }
+  if (!participantName && token.contact_id) {
+    const { data: c } = await admin
+      .from("portal_parent_contacts")
+      .select("child_display")
+      .eq("contact_id", token.contact_id)
+      .maybeSingle();
+    participantName = clean(c?.child_display, 120);
+  }
+
+  notes.push(
+    await upsertServiceLinesForPaidBooking(admin, {
+      contactId: token.contact_id,
+      participantName: participantName || "Participant",
+      reservation,
+      isTrial,
+    }),
+  );
+
+  if (isTrial && reservation) {
+    notes.push(
+      await ensureTrialScheduleOverride(admin, reservation, participantName || "Participant"),
+    );
+  }
+
+  return { ok: true, notes };
+}
+
+/** After Stripe pays a trial invoice, mark the slot validated + sync ops. */
+export async function confirmTrialSlotAfterStripePayment(
+  admin: SupabaseClient,
+  invoiceShareId: string,
+): Promise<void> {
+  const token = await findFinishTokenForInvoice(admin, invoiceShareId);
+  if (!token) return;
+  await syncOpsAfterFinishBookingPaid(admin, token, { paidVia: "stripe" });
 }
 
 export async function createFinishBookingStripeCheckout(
@@ -1089,7 +1309,10 @@ async function completeFinishBookingWithPin(
           .eq("id", token.lead_id);
       }
       await activateContactInClassAfterPaidBooking(admin, contactId);
-      await confirmTermSlotAfterGocardlessMandate(admin, token as CompletionTokenRow);
+      const sync = await syncOpsAfterFinishBookingPaid(admin, token as CompletionTokenRow, {
+        paidVia: "paid",
+      });
+      console.log("[finish-booking] ops sync", sync.notes.join("|"));
       return { completed: true, pinSent: false, reason: "existing_pin_no_resend" };
     }
   }
@@ -1106,7 +1329,10 @@ async function completeFinishBookingWithPin(
   });
   if ("error" in result) return { completed: false, reason: result.error };
   await activateContactInClassAfterPaidBooking(admin, contactId);
-  await confirmTermSlotAfterGocardlessMandate(admin, token as CompletionTokenRow);
+  const sync = await syncOpsAfterFinishBookingPaid(admin, token as CompletionTokenRow, {
+    paidVia: "paid",
+  });
+  console.log("[finish-booking] ops sync", sync.notes.join("|"));
   return { completed: true, pinSent: true };
 }
 
@@ -1164,47 +1390,6 @@ export async function tryCompleteBookingAfterGocardlessMandateSetup(
     requirePaidEvidence: false,
   });
   return { ...result, invoice_id: invId };
-}
-
-/** Keep the Booking Portal seat after GC mandate setup (DD can take days to clear). */
-async function confirmTermSlotAfterGocardlessMandate(
-  admin: SupabaseClient,
-  token: CompletionTokenRow,
-): Promise<void> {
-  const now = new Date().toISOString();
-  const holdFar = new Date(Date.now() + FINISH_TOKEN_TTL_DAYS * 86400000).toISOString();
-  const reservationId = clean(token.reservation_id, 80);
-  const patch = {
-    status: "validated",
-    validated_at: now,
-    hold_expires_at: holdFar,
-    released_at: null,
-    notes: "gocardless_mandate_setup|booking_completed",
-    updated_at: now,
-  };
-  try {
-    if (reservationId) {
-      await admin.from("portal_booking_slot_reservations").update(patch).eq("id", reservationId);
-      try {
-        const fold = await foldValidatedReservationOntoMadre(admin, reservationId);
-        if (!fold.ok) {
-          console.warn("[confirmTermSlotAfterGocardlessMandate] madre fold", fold.note);
-        }
-      } catch (e) {
-        console.warn("[confirmTermSlotAfterGocardlessMandate] madre fold", e);
-      }
-      return;
-    }
-    if (token.document_id) {
-      await admin
-        .from("portal_booking_slot_reservations")
-        .update(patch)
-        .eq("document_id", token.document_id)
-        .in("status", ["awaiting_payment", "pending", "released"]);
-    }
-  } catch (e) {
-    console.warn("[confirmTermSlotAfterGocardlessMandate]", e);
-  }
 }
 
 /** Mark family active in Parent Portal after Stripe/bank confirm (trial or term). */

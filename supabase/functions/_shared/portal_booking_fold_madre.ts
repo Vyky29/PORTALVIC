@@ -14,12 +14,14 @@ function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
-/** Prefer instructor= from notes; else Northolt Mon 4.30–5 → Dan. */
+/** Prefer instructor= from notes; climbing Westway → Carlos; Northolt Mon 4.30–5 → Dan. */
 export function preferredInstructorForReservation(row: {
   notes?: unknown;
   venue?: unknown;
   day_label?: unknown;
   time_label?: unknown;
+  service_name?: unknown;
+  activity?: unknown;
 }): string {
   const notes = clean(row.notes, 400);
   const fromNotes = notes.match(/\binstructor\s*=\s*([A-Za-z][A-Za-z\s.'-]{0,40})/i);
@@ -27,10 +29,17 @@ export function preferredInstructorForReservation(row: {
 
   const venue = clean(row.venue, 80).toLowerCase();
   const day = clean(row.day_label, 20).toLowerCase();
+  const service = `${clean(row.service_name, 80)} ${clean(row.activity, 80)}`.toLowerCase();
   const time = clean(row.time_label, 40)
     .toLowerCase()
     .replace(/[–—]/g, "-")
     .replace(/\s+/g, " ");
+  if (
+    /westway/.test(venue) ||
+    /climb/.test(service)
+  ) {
+    return "Carlos";
+  }
   if (
     /northolt/.test(venue) &&
     /^mon/.test(day) &&
@@ -172,7 +181,7 @@ export async function foldValidatedReservationOntoMadre(
         time_slot: timeSlot,
         instructors: instructors || null,
         service,
-        area: "Teaching Pool",
+        area: /climb|westway/i.test(`${service} ${venue}`) ? "Wall" : "Teaching Pool",
         venue,
         session_date: iso,
         status: "active",
