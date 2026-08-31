@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>LOCAL · DC staff week compare (from 1 Sep)</title>
+  <style>
+    :root {
+      --ink: #173247;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.14);
+      --blue: #2d84b3;
+      --bg: #eef4f9;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      padding: 12px 12px 40px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.15rem;
+    }
+    .note {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      max-width: 920px;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 16px;
+    }
+    .links a {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #173247;
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .links a.soft {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    .week {
+      display: grid;
+      gap: 14px;
+    }
+    .day {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px 12px;
+      min-width: 0;
+    }
+    .day h2 {
+      margin: 0 0 10px;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--blue);
+    }
+    .cols {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 0;
+    }
+    @media (max-width: 1200px) {
+      .cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 640px) {
+      .cols { grid-template-columns: 1fr; }
+    }
+    .col {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px;
+      background: #f8fbfe;
+    }
+    .col__staff {
+      margin: 0 0 8px;
+      font-size: 0.92rem;
+      font-weight: 800;
+    }
+    .empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    .card {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr);
+      gap: 8px;
+      align-items: start;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px 10px;
+      margin: 0 0 8px;
+      border-left: 4px solid #6b4cff;
+      min-width: 0;
+    }
+    .card__name {
+      font-weight: 800;
+      font-size: 0.95rem;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .seg {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.78rem;
+      margin: 0 0 4px;
+      min-width: 0;
+    }
+    .seg__area {
+      font-weight: 700;
+      color: #314555;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .seg__time {
+      color: var(--muted);
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>LOCAL only · Day Centre week (4 staff)</h1>
+  <p class="note">
+    Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026
+    (bank holiday) — week starts Tue 1 Sep. Mirrors Autumn DC SPECIAL cards; no staff login needed.
+    Real dashboards: each person login or Admin ghost teleport.
+  </p>
+  <div class="links" id="dashLinks"></div>
+  <div class="week" id="week"></div>
+
+  <script src="/portal/portal_roster_canonical.js?v=20260901-michelle-tue-manager"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-michelle-tue-manager"></script>
+  <script>
+(function () {
+  var STAFF = ["Roberto", "Luliya", "Michelle", "Victor", "Raul", "Youssef"];
+  /* Mon 31 Aug 2026 = closed (BH) — first teaching day Tue 1 Sep */
+  var DAYS = ["tuesday", "wednesday", "thursday", "friday"];
+  var DAY_LABEL = {
+    tuesday: "Tuesday",
+    wednesday: "Wednesday",
+    thursday: "Thursday",
+    friday: "Friday",
+  };
+  var ISO = {
+    tuesday: "2026-09-01",
+    wednesday: "2026-09-02",
+    thursday: "2026-09-03",
+    friday: "2026-09-04",
+  };
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  // Mirror staff_dashboard_spreadsheet_adapter.js (display-only SPECIAL segments)
+  var COMBINED = {
+    "fadi|12.30to3": [
+      { time_slot: "12.30 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
+    "ikram|11to4": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 4", area: "Day Centre" },
+    ],
+    "ikram|11to3": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
+    "ikram|12.30to4": [{ time_slot: "12.30 to 4", area: "Day Centre" }],
+    "emanuel|11to4": [
+      { time_slot: "11 to 12", area: "Hub Room" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "2 to 4", area: "Hub Room" },
+    ],
+    "emanuel|11to12.30": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 12.30", area: "Big Pool" },
+    ],
+    "emanuel|11to3": [
+      { time_slot: "11 to 12", area: "Hub Room" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "2 to 3", area: "Hub Room" },
+    ],
+    "emanuel|11to2": [
+      { time_slot: "11 to 12", area: "Hub Room" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+    ],
+    "emanuel|11to1": [
+      { time_slot: "11 to 12", area: "Hub Room" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+    ],
+  };
+  var PLAIN = {
+    "ikram|11to4": ["tuesday", "thursday", "saturday", "sunday"],
+    "ikram|11to3": ["tuesday", "thursday", "saturday", "sunday"],
+    "fadi|12.30to3": ["tuesday", "thursday", "saturday", "sunday"],
+  };
+  var DAY_OVERRIDE = {
+    "fadi|12.30to3|monday": [
+      { time_slot: "12.30 to 1", area: "Small Pool" },
+      { time_slot: "2 to 3", area: "Day Centre" },
+    ],
+    "fadi|12.30to3|wednesday": [
+      { time_slot: "12.30 to 1", area: "Small Pool" },
+      { time_slot: "2 to 3", area: "Day Centre" },
+    ],
+    "fadi|12.30to3|friday": [
+      { time_slot: "12.30 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
+  };
+  function areaHintFor(name) {
+    var n = String(name || "").toLowerCase();
+    if (n === "emanuel") return "Hub Room";
+    if (n === "manager") return "Hub · Manager";
+    return "Day Centre";
+  }
+  function segmentsFor(name, time, day) {
+    var timeLabel = String(time || "").replace(/\s+/g, " ").trim();
+    var slot = timeLabel.replace(/\s+/g, "").toLowerCase();
+    var key = String(name).trim().toLowerCase() + "|" + slot;
+    var dayKey = String(day).toLowerCase();
+    var areaFallback = areaHintFor(name);
+    if (PLAIN[key] && PLAIN[key].indexOf(dayKey) !== -1) {
+      return [{ time_slot: timeLabel, area: areaFallback }];
+    }
+    if (DAY_OVERRIDE[key + "|" + dayKey]) return DAY_OVERRIDE[key + "|" + dayKey];
+    if (COMBINED[key]) return COMBINED[key];
+    return [{ time_slot: timeLabel, area: areaFallback }];
+  }
+
+  function boardClients(dayKey, staffName) {
+    var PRC = window.PortalRosterCanonical;
+    var board = PRC && PRC.AUTUMN_DAY_CENTRE_BOARD;
+    if (!board || !board[dayKey]) return [];
+    var col = (board[dayKey] || []).find(function (c) {
+      return String(c.staff || "").toLowerCase() === staffName.toLowerCase();
+    });
+    return (col && col.clients) || [];
+  }
+
+  var links = document.getElementById("dashLinks");
+  STAFF.forEach(function (s) {
+    var a = document.createElement("a");
+    a.href =
+      "/staff_dashboard.html?portalReviewDate=" +
+      encodeURIComponent(ISO.tuesday) +
+      "&portalReviewDay=Tuesday&portalStayWorker=1#local-" +
+      encodeURIComponent(s.toLowerCase());
+    a.textContent = s + " staff dashboard (login)";
+    a.target = "_blank";
+    a.rel = "noopener";
+    links.appendChild(a);
+  });
+  var a2 = document.createElement("a");
+  a2.className = "soft";
+  a2.href = "/admin_dashboard.html";
+  a2.target = "_blank";
+  a2.textContent = "Admin · ghost teleport (real UI)";
+  links.appendChild(a2);
+
+  var week = document.getElementById("week");
+  DAYS.forEach(function (dk) {
+    var dayEl = document.createElement("section");
+    dayEl.className = "day";
+    dayEl.innerHTML = "<h2>" + esc(DAY_LABEL[dk]) + " " + esc(ISO[dk].slice(8) + "/" + ISO[dk].slice(5, 7) + "/" + ISO[dk].slice(0, 4)) + "</h2>";
+    var cols = document.createElement("div");
+    cols.className = "cols";
+    STAFF.forEach(function (staff) {
+      var col = document.createElement("div");
+      col.className = "col";
+      col.innerHTML = '<p class="col__staff">' + esc(staff) + "</p>";
+      var clients = boardClients(dk, staff);
+      if (!clients.length) {
+        var emptyLabel =
+          dk === "tuesday" && staff === "Raul"
+            ? "OFF (Victor covers DC)"
+            : "No DC clients";
+        col.innerHTML += '<p class="empty">' + esc(emptyLabel) + "</p>";
+      } else {
+        clients.forEach(function (c) {
+          var segs = segmentsFor(c.name, c.time, dk);
+          var rows = (segs || [])
+            .map(function (sg) {
+              return (
+                '<div class="seg"><span class="seg__area">' +
+                esc(sg.area) +
+                '</span><span class="seg__time">' +
+                esc(sg.time_slot) +
+                "</span></div>"
+              );
+            })
+            .join("");
+          col.innerHTML +=
+            '<div class="card"><div class="card__name">' +
+            esc(c.name) +
+            '</div><div>' +
+            rows +
+            "</div></div>";
+        });
+      }
+      cols.appendChild(col);
+    });
+    dayEl.appendChild(cols);
+    week.appendChild(dayEl);
+  });
+})();
+  </script>
+</body>
+</html>

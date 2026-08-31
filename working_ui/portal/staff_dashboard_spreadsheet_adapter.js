@@ -51,6 +51,8 @@
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
+    // Michelle Tue after Manager block: Ikram 12.30–4 (no swim Tue).
+    "ikram|12.30to4": [{ time_slot: "12.30 to 4", area: "Day Centre" }],
     // Emanuel (Roberto Mon/Fri long block): Hub 11–12 · swim 12–1 · Hub 2–4 (gap 1–2).
     // Wednesday morning block 11–12.30: Day Centre 11–12 · Big Pool 12–12.30 (then Fadi).
     "emanuel|11to4": [
@@ -107,7 +109,10 @@
     const name = String(nameLower || "").trim().toLowerCase();
     const dayKey = String(day || "").trim().toLowerCase();
     const key = name + "|" + slot;
-    const areaFallback = String(areaHint || "").trim() || "Day Centre";
+    const areaFallback =
+      name === "manager"
+        ? "Hub · Manager"
+        : String(areaHint || "").trim() || "Day Centre";
     const plainDays = PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS[key];
     if (plainDays && plainDays.indexOf(dayKey) !== -1) {
       return [{ time_slot: timeLabel, area: areaFallback }];

@@ -73,9 +73,16 @@
           { name: "Fadi", time: "12.30 to 3" },
         ],
       },
-      { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      /* Michelle Tue: Manager duty 11–12.30, then Ikram 12.30–4 */
+      {
+        staff: "Michelle",
+        clients: [
+          { name: "Manager", time: "11 to 12.30" },
+          { name: "Ikram", time: "12.30 to 4" },
+        ],
+      },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      /* Victor takes Raul's Tue DC; Raul OFF */
+      /* Victor takes Raul's Tue DC; Raul OFF (column kept for board visibility) */
       {
         staff: "Victor",
         clients: [
@@ -83,6 +90,8 @@
           { name: "Ikram", time: "3 to 4" },
         ],
       },
+      { staff: "Raul", clients: [] },
+      { staff: "Youssef", clients: [] },
     ],
     wednesday: [
       {
@@ -881,7 +890,8 @@
         clients.push({
           client: pax,
           time: String(c.time || "").trim(),
-          area: "Day Centre",
+          area:
+            pax.toLowerCase() === "manager" ? "Hub · Manager" : "Day Centre",
           startMin: parsed.startMin,
           duration: parsed.duration,
         });
