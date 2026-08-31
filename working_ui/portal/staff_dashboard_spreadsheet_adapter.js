@@ -72,25 +72,20 @@
       { time_slot: "12 to 1", area: "Big Pool" },
     ],
   };
-  // Days with no pool hour inside the block: keep SPECIAL card as one Day Centre
-  // segment (not the multi-area pool split). Keyed like combined segments.
+  // Days with no pool hour inside the block: SPECIAL card = one Day Centre /
+  // Hub segment only. Fadi + Ikram swim Mon/Wed/Fri only (like Emanuel);
+  // Tue/Thu = centre only.
   var PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS = {
-    "ikram|11to4": ["tuesday", "saturday", "sunday"],
+    "ikram|11to4": ["tuesday", "thursday", "saturday", "sunday"],
+    "ikram|11to3": ["tuesday", "thursday", "saturday", "sunday"],
+    "fadi|12.30to3": ["tuesday", "thursday", "saturday", "sunday"],
   };
   var PORTAL_COMBINED_SEGMENTS_DAY_OVERRIDE = {
     "fadi|12.30to3|monday": [
       { time_slot: "12.30 to 1", area: "Small Pool" },
       { time_slot: "2 to 3", area: "Day Centre" },
     ],
-    "fadi|12.30to3|tuesday": [
-      { time_slot: "12.30 to 1", area: "Small Pool" },
-      { time_slot: "2 to 3", area: "Day Centre" },
-    ],
     "fadi|12.30to3|wednesday": [
-      { time_slot: "12.30 to 1", area: "Small Pool" },
-      { time_slot: "2 to 3", area: "Day Centre" },
-    ],
-    "fadi|12.30to3|thursday": [
       { time_slot: "12.30 to 1", area: "Small Pool" },
       { time_slot: "2 to 3", area: "Day Centre" },
     ],
