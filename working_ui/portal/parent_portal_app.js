@@ -18,6 +18,10 @@
   function mergeParticipantBody(base, patch) {
     if (!patch) return base;
     if (!base) return patch;
+    var patchSections = Array.isArray(patch.sections_loaded) ? patch.sections_loaded : null;
+    /* weekly_notes (etc.) still return empty default reenrolment / place_kind — do not wipe general. */
+    var patchHasGeneral =
+      !patchSections || patchSections.indexOf("general") >= 0;
     if (Array.isArray(patch.sessions)) base.sessions = patch.sessions;
     if (Array.isArray(patch.achievements)) base.achievements = patch.achievements;
     if (Array.isArray(patch.team)) base.team = patch.team;
@@ -28,12 +32,22 @@
     if (patch.swim_term_review_available != null) {
       base.swim_term_review_available = !!patch.swim_term_review_available;
     }
-    if (patch.reenrolment) {
+    if (patch.reenrolment && patchHasGeneral) {
       var prevRe = base.reenrolment || {};
       base.reenrolment = Object.assign({}, prevRe, patch.reenrolment);
       /* Do not let a notes-only patch clear a confirmed 26/27 place flag. */
       if (prevRe.office_term_invoice === true) {
         base.reenrolment.office_term_invoice = true;
+      }
+      if (prevRe.submitted === true && patch.reenrolment.submitted !== true) {
+        base.reenrolment.submitted = true;
+        if (prevRe.submitted_at) base.reenrolment.submitted_at = prevRe.submitted_at;
+      }
+      if (prevRe.continuing === true && patch.reenrolment.continuing !== true) {
+        base.reenrolment.continuing = true;
+      }
+      if (prevRe.not_continuing === true) {
+        base.reenrolment.not_continuing = true;
       }
     }
     if (patch.pending_review_count != null) base.pending_review_count = patch.pending_review_count;
@@ -53,8 +67,10 @@
     if (Array.isArray(patch.upcoming_booked_sessions) && patch.upcoming_booked_sessions.length) {
       base.upcoming_booked_sessions = patch.upcoming_booked_sessions;
     }
-    if (patch.place_kind != null) base.place_kind = patch.place_kind;
-    if (patch.is_trial_booking != null) base.is_trial_booking = !!patch.is_trial_booking;
+    if (patchHasGeneral && patch.place_kind != null) base.place_kind = patch.place_kind;
+    if (patchHasGeneral && patch.is_trial_booking != null) {
+      base.is_trial_booking = !!patch.is_trial_booking;
+    }
     if (patch.general && base.general) {
       var prevDetail = Array.isArray(base.general.services_detail)
         ? base.general.services_detail

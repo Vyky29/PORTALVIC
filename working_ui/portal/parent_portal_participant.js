@@ -1485,9 +1485,11 @@
       });
   }
 
-  /** Keep in sync with portal_reenrolment_2026_27.js — form open through end of this local day. */
-  /* Keep in sync with portal_reenrolment_2026_27.js — soft-hold window through 31 Aug. */
-  var RE_ENROL_DEADLINE_ISO = "2026-08-31";
+  /** Keep in sync with portal_reenrolment_2026_27.js — general close 22 Jul; soft-hold to 31 Aug. */
+  var RE_ENROL_DEADLINE_ISO = "2026-07-22";
+  /** Office soft-hold only (Erik / Agata contact 176) through 31 Aug 23:59. */
+  var RE_ENROL_SOFT_HOLD_DEADLINE_ISO = "2026-08-31";
+  var RE_ENROL_SOFT_HOLD_CONTACT_IDS = { "176": true };
   var BOOKING_PORTAL_URL = "https://www.clubsensational.org/bookingportal";
   var OFFICE_CONTACT_MAILTO = "mailto:info@clubsensational.org";
 
@@ -1506,14 +1508,28 @@
     );
   }
 
-  function isReenrolFormOpen() {
-    return localIsoToday() <= RE_ENROL_DEADLINE_ISO;
+  function reenrolContactId(data) {
+    var p = (data && data.participant) || {};
+    return String(p.contact_id || "").trim();
+  }
+
+  function isReenrolSoftHoldContact(data) {
+    return !!RE_ENROL_SOFT_HOLD_CONTACT_IDS[reenrolContactId(data)];
+  }
+
+  /** Form still open for this child (general deadline, or Erik soft-hold to 31 Aug). */
+  function isReenrolFormOpen(data) {
+    var today = localIsoToday();
+    if (isReenrolSoftHoldContact(data)) {
+      return today <= RE_ENROL_SOFT_HOLD_DEADLINE_ISO;
+    }
+    return today <= RE_ENROL_DEADLINE_ISO;
   }
 
   function needsReenrolCta(data) {
     if (isFormerClient(data)) return false;
     if (isTrialOnlyBooking(data)) return false;
-    if (!isReenrolFormOpen()) return false;
+    if (!isReenrolFormOpen(data)) return false;
     var booking = bookingSummary(data);
     return !booking.submitted && booking.parent_action !== "auto";
   }
@@ -1522,7 +1538,7 @@
   function needsUnconfirmedSlotBanner(data) {
     if (isFormerClient(data)) return false;
     if (isTrialOnlyBooking(data)) return false;
-    if (isReenrolFormOpen()) return false;
+    if (isReenrolFormOpen(data)) return false;
     return !familyAcceptedNextYear(data);
   }
 
@@ -1639,10 +1655,15 @@
     var startBtn = startReenrolBtnHtml(data);
     var crashBtn = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
     if (!startBtn && !crashBtn) return "";
+    var hint = startBtn
+      ? isReenrolSoftHoldContact(data)
+        ? '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Mon 31 Aug 23:59 · place held until then</p>'
+        : '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Wed 22 Jul · place held until then</p>'
+      : "";
     return (
       '<section class="pp-hub-menu-reenr" aria-label="Re-enrolments and intensive courses">' +
       '<p class="pp-pax-info-section-label">Re-enrolments &amp; Intensive Courses</p>' +
-      '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Mon 31 Aug 23:59 · place held until then</p>' +
+      hint +
       '<div class="pp-hub-menu-reenr__actions">' +
       startBtn +
       crashBtn +
@@ -1685,13 +1706,18 @@
     var acatNotice = booking.acat_confirm_notice
       ? '<p class="pp-muted pp-hub-reenrol__acat">' + esc(booking.acat_confirm_notice) + "</p>"
       : "";
+    var deadlineHint = isReenrolSoftHoldContact(data)
+      ? "Confirm by Mon 31 Aug 23:59 · place held until midnight"
+      : "Confirm by Wed 22 Jul · place held until then";
     el.innerHTML =
       '<button type="button" class="pp-reenrol-popup__backdrop" data-pp-reenrol-popup-close aria-label="Close"></button>' +
       '<div class="pp-reenrol-popup__panel" role="dialog" aria-modal="true" aria-labelledby="ppReenrolPopupTitle">' +
       '<aside class="pp-hub-reenrol pp-hub-reenrol--popup" aria-label="Re-enrolment 2026/27">' +
       '<div class="pp-hub-reenrol__copy">' +
       '<strong id="ppReenrolPopupTitle">Re-enrol 2026/27</strong>' +
-      '<span class="pp-muted">Confirm by Mon 31 Aug 23:59 · place held until midnight</span>' +
+      '<span class="pp-muted">' +
+      esc(deadlineHint) +
+      "</span>" +
       acatNotice +
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
@@ -2718,13 +2744,13 @@
     if (booking.continuing) return true;
     var r = (data && data.reenrolment) || {};
     /*
-     * While re-enrolment is still open and they never submitted, do not treat a held
-     * seat / stale office invoice flag as "Re-enrolled" — soft-hold families must still
-     * complete the form (e.g. Agata / Erik). Live paid/office places after submit use
-     * booking.continuing / parent_action auto instead.
+     * While this child's re-enrolment window is still open and they never submitted,
+     * do not treat a held seat / stale office invoice flag as "Re-enrolled" — soft-hold
+     * families must still complete the form (Erik / Agata 176). Live paid/office places
+     * after submit use booking.continuing / parent_action auto instead.
      */
     if (
-      isReenrolFormOpen() &&
+      isReenrolFormOpen(data) &&
       !booking.submitted &&
       booking.parent_action !== "auto"
     ) {

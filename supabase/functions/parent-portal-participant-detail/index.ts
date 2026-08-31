@@ -1808,9 +1808,6 @@ Deno.serve(async (req) => {
       portal_access: isFormerClient ? "former" : "active",
       has_session_feedback: hasSessionFeedback,
       has_achievement_photos: hasAchievementPhotos,
-      upcoming_booked_sessions: isFormerClient ? [] : upcomingBookedSessions,
-      place_kind: isFormerClient ? null : isTrialOnlyPlace ? "trial" : hasOfficeTermInvoice || reenrolmentSummary.continuing ? "term" : null,
-      is_trial_booking: isFormerClient ? false : isTrialOnlyPlace,
       participant: {
         contact_id: participant.contact_id,
         display_name: displayName,
@@ -1845,42 +1842,62 @@ Deno.serve(async (req) => {
       achievements: isFormerClient && !hasAchievementPhotos ? [] : achievements,
       swim_term_reviews: isFormerClient ? [] : swimTermReviews,
       swim_term_review_available: isFormerClient ? false : swimTermReviewAvailable,
-      reenrolment: {
-        ...reenrolmentSummary,
-        parent_action: isFormerClient ? "none" : parentReenrolUi.mode,
-        parent_action_reasons: isFormerClient ? [] : parentReenrolUi.reasons,
-        parent_action_note: isFormerClient
-          ? "This place is no longer active."
-          : parentReenrolUi.note,
-        acat_confirm_notice: isFormerClient ? "" : parentReenrolUi.acat_confirm_notice || "",
-        can_book_extras: isFormerClient
-          ? true
-          : parentReenrolUi.can_book_extras !== false,
-        /*
-         * Office raised a 26/27 term invoice for this child. The hub treats that as a
-         * confirmed place: asking a family to pay for a place while telling them it is
-         * "not confirmed" contradicts itself.
-         */
-        office_term_invoice: isFormerClient ? false : hasOfficeTermInvoice,
-        // LA/NHS term is office→funder; still show My invoices when a parent-pay
-        // crash (etc.) exists. List endpoint only returns those shares.
-        show_invoices: isFormerClient
-          ? false
-          : !parentReenrolUi.reasons.includes("la_funded") ||
-            hasParentPayExtraShare ||
-            (crashCourse.dates && crashCourse.dates.length > 0),
-      },
-      can_book_extras: isFormerClient
-        ? true
-        : parentReenrolUi.can_book_extras !== false,
-      show_invoices: isFormerClient
-        ? false
-        : !parentReenrolUi.reasons.includes("la_funded") ||
-          hasParentPayExtraShare ||
-          (crashCourse.dates && crashCourse.dates.length > 0),
-      crash_course: isFormerClient
-        ? { dates: [], week_ids: [], awaiting_payment: false, booking_statuses: [] }
-        : crashCourse,
+      /*
+       * Only when general was requested. A weekly_notes-only response used to send an
+       * empty default reenrolment and wipe a confirmed place after merge in the hub
+       * (e.g. Zayana looked "not confirmed" after she had already submitted).
+       */
+      ...(wantGeneral
+        ? {
+            reenrolment: {
+              ...reenrolmentSummary,
+              parent_action: isFormerClient ? "none" : parentReenrolUi.mode,
+              parent_action_reasons: isFormerClient ? [] : parentReenrolUi.reasons,
+              parent_action_note: isFormerClient
+                ? "This place is no longer active."
+                : parentReenrolUi.note,
+              acat_confirm_notice: isFormerClient
+                ? ""
+                : parentReenrolUi.acat_confirm_notice || "",
+              can_book_extras: isFormerClient
+                ? true
+                : parentReenrolUi.can_book_extras !== false,
+              /*
+               * Office raised a 26/27 term invoice for this child. The hub treats that as a
+               * confirmed place: asking a family to pay for a place while telling them it is
+               * "not confirmed" contradicts itself.
+               */
+              office_term_invoice: isFormerClient ? false : hasOfficeTermInvoice,
+              // LA/NHS term is office→funder; still show My invoices when a parent-pay
+              // crash (etc.) exists. List endpoint only returns those shares.
+              show_invoices: isFormerClient
+                ? false
+                : !parentReenrolUi.reasons.includes("la_funded") ||
+                  hasParentPayExtraShare ||
+                  (crashCourse.dates && crashCourse.dates.length > 0),
+            },
+            can_book_extras: isFormerClient
+              ? true
+              : parentReenrolUi.can_book_extras !== false,
+            show_invoices: isFormerClient
+              ? false
+              : !parentReenrolUi.reasons.includes("la_funded") ||
+                hasParentPayExtraShare ||
+                (crashCourse.dates && crashCourse.dates.length > 0),
+            crash_course: isFormerClient
+              ? { dates: [], week_ids: [], awaiting_payment: false, booking_statuses: [] }
+              : crashCourse,
+            place_kind: isFormerClient
+              ? null
+              : isTrialOnlyPlace
+                ? "trial"
+                : hasOfficeTermInvoice || reenrolmentSummary.continuing
+                  ? "term"
+                  : null,
+            is_trial_booking: isFormerClient ? false : isTrialOnlyPlace,
+            upcoming_booked_sessions: isFormerClient ? [] : upcomingBookedSessions,
+          }
+        : {}),
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
       weekly_notes: weeklyNotes,
       weekly_note_latest: weeklyNoteLatest,
