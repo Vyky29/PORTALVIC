@@ -108,14 +108,14 @@ def tuesday_template() -> list[tuple[str, str, str]]:
 
 def wednesday_template() -> list[tuple[str, str, str]]:
     return [
-        _pairs("Roberto", "11-1", "SwimFarm"),
-        _pairs("Emanuel", "11-1", "SwimFarm"),
-        _pairs("Fadi", "1-3", "SwimFarm"),
+        # Roberto no Acton Wed → DC with Emanuel through 4.
+        _pairs("Roberto", "11-4", "SwimFarm"),  # Emanuel
         _pairs("Michelle", "11-4", "SwimFarm"),
         _pairs("Luliya", "11-3", "SwimFarm"),  # Ikram
-        _pairs("Virginia", "11-4", "SwimFarm"),
-        _pairs("Victor", "1-4", "SwimFarm"),  # Emanuel
-        _pairs("Raul", "12.30-3", "SwimFarm"),
+        _pairs("Victor", "12.30-3", "SwimFarm"),  # Fadi
+        _pairs("Victor", "3-4", "SwimFarm"),  # Ikram
+        _pairs("Raul", "12.30-3", "SwimFarm"),  # Fadi
+        _pairs("Raul", "3-4", "SwimFarm"),  # Emanuel
         _pairs("Javier", "4-6.30", "Acton"),
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Dan", "4.30-6.30", "Northolt"),
