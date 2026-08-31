@@ -132,6 +132,7 @@
           { name: "Fadi", time: "1 to 3" },
         ],
       },
+      /* Michelle + Luliya + Youssef stay to 4 with Ikram / Emanuel; Victor + Raul end 3 */
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
       {
@@ -139,7 +140,6 @@
         clients: [
           { name: "Timi", time: "11 to 1" },
           { name: "Emanuel", time: "1 to 3" },
-          { name: "Ikram", time: "3 to 4" },
         ],
       },
       {
@@ -147,7 +147,6 @@
         clients: [
           { name: "Timi", time: "11 to 1" },
           { name: "Emanuel", time: "1 to 3" },
-          { name: "Ikram", time: "3 to 4" },
         ],
       },
       {
@@ -735,6 +734,7 @@
    *   Tue Acton 4–6.30, Thu Acton 4.30–6.30
    * - Roberto Wed DC: Emanuel 11–12.30, Fadi 12.30–3, Emanuel 3–4 (no afternoon Acton)
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
+   * - Fri DC: Victor+Raul end 15:00; Michelle+Luliya Ikram to 16:00; Youssef Emanuel 15–16
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {
