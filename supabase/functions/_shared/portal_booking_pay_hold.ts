@@ -35,7 +35,6 @@ async function shouldSkipTermPayHoldExpiry(
         : {};
     return String(c.booking_scope || "") === "trial_session";
   });
-  if (isTrial) return false;
 
   const invIds = [
     ...new Set(
@@ -49,6 +48,7 @@ async function shouldSkipTermPayHoldExpiry(
     .select("payment_status, parent_reported_paid_at, payment_method_hint, contact_id")
     .in("id", invIds);
 
+  // Parent reported bank payment (trial or term) — keep seat until office confirms.
   if (
     (invRows || []).some((inv) => {
       const pay = String(inv.payment_status || "").toLowerCase();
@@ -57,6 +57,9 @@ async function shouldSkipTermPayHoldExpiry(
   ) {
     return true;
   }
+
+  // Unpaid trials always expire when the 30' window ends.
+  if (isTrial) return false;
 
   /* GoCardless mandate already set up — seat stays until DD clears (PIN already sent). */
   const { data: completedTok } = await admin

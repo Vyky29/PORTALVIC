@@ -362,41 +362,133 @@
     if (input) input.checked = true;
   }
 
-  function startTrialPayNow(data, notice) {
+  function startTrialWithPlan(data, notice, plan) {
     var funding = data.funding_code || "privately_funded";
+    var payPlan = plan === "one_off_bank" ? "one_off_bank" : "stripe_instant";
     data.booking_scope = "trial_session";
-    data.pay_plan = "stripe_instant";
-    showNotice(notice, "Preparing card payment…", "");
+    data.pay_plan = payPlan;
+    showNotice(
+      notice,
+      payPlan === "one_off_bank"
+        ? "Preparing bank transfer details…"
+        : "Preparing card / Apple Pay…",
+      "",
+    );
     return api("save_choices", {
       funding_code: funding,
       booking_scope: "trial_session",
-      pay_plan: "stripe_instant",
+      pay_plan: payPlan,
     })
       .then(function () {
         return api("create_invoice", {
           funding_code: funding,
           booking_scope: "trial_session",
-          pay_plan: "stripe_instant",
+          pay_plan: payPlan,
         });
       })
       .then(function (out) {
         data.invoice = out.invoice || data.invoice;
-        data.checkout_url = out.checkout_url || (out.stripe_checkout && out.stripe_checkout.checkout_url) || null;
+        data.bank = out.bank || data.bank;
+        data.transfer_reference = out.transfer_reference || data.transfer_reference;
+        data.checkout_url =
+          out.checkout_url ||
+          (out.stripe_checkout && out.stripe_checkout.checkout_url) ||
+          null;
         data.stripe_checkout = out.stripe_checkout || null;
         data.pay_hold_minutes = out.pay_hold_minutes;
         data.pay_hold_expires_at = out.pay_hold_expires_at;
         data.status = "awaiting_payment";
         showInvoice(data);
-        if (data.checkout_url && !isDemoMode()) {
+        if (payPlan === "stripe_instant" && data.checkout_url && !isDemoMode()) {
           global.location.href = data.checkout_url;
           return;
         }
         showNotice(
           notice,
-          "Trial ready — pay now with card or Apple Pay to confirm your session.",
+          payPlan === "one_off_bank"
+            ? "Trial invoice ready — transfer within 30 minutes, then notify the office."
+            : "Trial ready — pay now with card or Apple Pay to confirm your session.",
           "ok",
         );
       });
+  }
+
+  function showTrialPayChannel(data) {
+    var channelBox = document.getElementById("fbPayChannelBox");
+    var planBox = document.getElementById("fbPayPlanBox");
+    if (channelBox) channelBox.hidden = false;
+    if (planBox) planBox.hidden = true;
+    var intro = document.querySelector("#fbStepPay > .muted");
+    if (intro) {
+      intro.textContent =
+        "Trial session — choose how to pay. Your place is held for 30 minutes.";
+    }
+    var bank = document.querySelector('input[name="pay_channel"][value="bank_transfer"]');
+    var gc = document.querySelector('input[name="pay_channel"][value="gocardless"]');
+    var own = document.getElementById("fbOwnWayChannel");
+    var stripeLabel = document.getElementById("fbTrialStripeChannel");
+    if (own) own.hidden = true;
+    if (gc) {
+      var gcChoice = gc.closest("label");
+      if (gcChoice) gcChoice.hidden = true;
+    }
+    if (bank) {
+      bank.checked = false;
+      var bankHint = bank.closest("label") && bank.closest("label").querySelector(".hint");
+      if (bankHint) {
+        bankHint.innerHTML =
+          "Pay <strong>£" +
+          esc(
+            String(
+              (data.pricing && data.pricing.trial_session_gbp) ||
+                data.unit_price_gbp ||
+                "—",
+            ),
+          ) +
+          "</strong> by bank transfer within <strong>30 minutes</strong>. Then tap notify office so we can confirm Tide.";
+      }
+    }
+    if (!stripeLabel) {
+      var host = document.getElementById("fbPayChannelBox");
+      if (host && bank) {
+        var lbl = document.createElement("label");
+        lbl.className = "choice";
+        lbl.id = "fbTrialStripeChannel";
+        lbl.innerHTML =
+          '<input type="radio" name="pay_channel" value="stripe_instant" checked />' +
+          "<strong>Card / Apple Pay</strong>" +
+          '<span class="hint">Pay now (small card fee so we receive the session price in full). Confirms the trial when payment succeeds.</span>';
+        host.insertBefore(lbl, bank.closest("label"));
+      }
+    } else {
+      stripeLabel.hidden = false;
+      var stripeInput = stripeLabel.querySelector('input[name="pay_channel"]');
+      if (stripeInput) stripeInput.checked = true;
+    }
+  }
+
+  function restoreTermPayChannel() {
+    var intro = document.querySelector("#fbStepPay > .muted");
+    if (intro) {
+      intro.textContent =
+        "First choose how you pay. Then pick the plan for that method.";
+    }
+    var gc = document.querySelector('input[name="pay_channel"][value="gocardless"]');
+    if (gc) {
+      var gcChoice = gc.closest("label");
+      if (gcChoice) gcChoice.hidden = false;
+    }
+    var stripeLabel = document.getElementById("fbTrialStripeChannel");
+    if (stripeLabel) stripeLabel.hidden = true;
+    var bank = document.querySelector('input[name="pay_channel"][value="bank_transfer"]');
+    if (bank) {
+      bank.checked = true;
+      var bankHint = bank.closest("label") && bank.closest("label").querySelector(".hint");
+      if (bankHint) {
+        bankHint.innerHTML =
+          "You must pay the first amount within <strong>30 minutes</strong> or the place goes live again. After you transfer, email or WhatsApp the office (photo/screenshot welcome) so they can confirm.";
+      }
+    }
   }
 
   function setStep(name) {
@@ -411,6 +503,11 @@
   }
 
   function showPayChannel(data) {
+    if (data.booking_scope === "trial_session") {
+      showTrialPayChannel(data);
+      return;
+    }
+    restoreTermPayChannel();
     var channelBox = document.getElementById("fbPayChannelBox");
     var planBox = document.getElementById("fbPayPlanBox");
     if (channelBox) channelBox.hidden = false;
@@ -535,11 +632,17 @@
       data.booking_scope
     ) {
       if (data.booking_scope === "trial_session") {
-        void startTrialPayNow(data, notice).catch(function (err) {
-          showNotice(notice, err.message || "Could not create trial invoice.", "error");
-          setStep("fbStepScope");
-          preselectScope(data);
-        });
+        if (data.pay_plan === "stripe_instant" || data.pay_plan === "one_off_bank") {
+          if (data.invoice) {
+            showInvoice(data);
+          } else {
+            setStep("fbStepPay");
+            showPayChannel(data);
+          }
+        } else {
+          setStep("fbStepPay");
+          showPayChannel(data);
+        }
       } else {
         setStep("fbStepPay");
         showPayChannel(data);
@@ -589,9 +692,19 @@
         }
         data.booking_scope = scope;
         if (scope === "trial_session") {
-          void startTrialPayNow(data, notice).catch(function (err) {
-            showNotice(notice, err.message || "Could not create trial invoice.", "error");
-          });
+          showNotice(notice, "Saving…", "");
+          void api("save_choices", {
+            funding_code: funding,
+            booking_scope: scope,
+          })
+            .then(function () {
+              setStep("fbStepPay");
+              showPayChannel(data);
+              showNotice(notice, "", "");
+            })
+            .catch(function (err) {
+              showNotice(notice, err.message || "Could not save booking length.", "error");
+            });
           return;
         }
         showNotice(notice, "Saving…", "");
@@ -618,6 +731,16 @@
         ).value;
         if (!channel) {
           showNotice(notice, "Please choose a payment method.", "error");
+          return;
+        }
+        if (data.booking_scope === "trial_session") {
+          var trialPlan =
+            channel === "bank_transfer" || channel === "one_off_bank"
+              ? "one_off_bank"
+              : "stripe_instant";
+          void startTrialWithPlan(data, notice, trialPlan).catch(function (err) {
+            showNotice(notice, err.message || "Could not create trial invoice.", "error");
+          });
           return;
         }
         if (channel === "own_way" && data.funding_code === "la_direct_payments") {
@@ -710,8 +833,14 @@
     var isTrial =
       data.booking_scope === "trial_session" ||
       data.pay_plan === "stripe_instant" ||
-      inv.payment_method_hint === "stripe" ||
       (data.quotes && data.quotes.trial_one_off && data.quotes.trial_one_off.is_trial);
+    var isTrialBank =
+      isTrial &&
+      (data.pay_plan === "one_off_bank" ||
+        inv.payment_method_hint === "bank_transfer" ||
+        (!checkoutUrl && data.bank));
+    var isTrialStripe =
+      isTrial && !isTrialBank && (data.pay_plan === "stripe_instant" || checkoutUrl || inv.payment_method_hint === "stripe");
     var html =
       '<p style="margin:0 0 8px"><strong>Invoice ' +
       esc(inv.invoice_number || "") +
@@ -732,7 +861,7 @@
           '">Set up GoCardless</a>' +
           '<p class="muted" style="margin:10px 0 0">When the first Direct Debit payment clears, the office can confirm and we send your Parent Portal PIN.</p>';
       }
-    } else if (isTrial) {
+    } else if (isTrialStripe) {
       var holdMin =
         Number(data.pay_hold_minutes) ||
         (data.choices_json && Number(data.choices_json.pay_hold_minutes)) ||
@@ -750,7 +879,9 @@
         data.stripe_checkout && data.stripe_checkout.charge_gbp
           ? '<p class="muted" style="margin:0 0 10px">Total charged (incl. card fee): <strong>' +
             esc(money(data.stripe_checkout.charge_gbp)) +
-            "</strong></p>"
+            "</strong> — so we receive " +
+            esc(money(firstAmt)) +
+            " in full.</p>"
           : "";
       if (isDemoMode()) {
         html +=
@@ -771,8 +902,7 @@
           '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
           holdLine +
           "</p>" +
-          '<button type="button" class="btn btn--pri" id="fbStripeRetry">Pay with card / Apple Pay</button>' +
-          '<p class="muted" style="margin:10px 0 0">Bank transfer is not available for trial sessions.</p>';
+          '<button type="button" class="btn btn--pri" id="fbStripeRetry">Pay with card / Apple Pay</button>';
       }
     } else {
       var holdMin =
@@ -823,14 +953,26 @@
         "</div>" +
         '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
         holdLine +
-        "</p>" +
-        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>email or WhatsApp the office</strong> so they can check Tide and mark you paid. Attach a photo/screenshot if you can. There is no "I\'ve paid" button here.</p>' +
-        '<a class="btn btn--pri" href="mailto:info@clubsensational.org?subject=' +
-        mailSub +
-        "&body=" +
-        mailBody +
-        '">Email office (info@…)</a>' +
-        '<p class="muted" style="margin:10px 0 0">Or WhatsApp the club number you already use — same message + photo is fine. Parent Portal PIN is sent only after the office confirms payment.</p>';
+        "</p>";
+      if (isTrialBank) {
+        html +=
+          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, tap below to notify the office (or email/WhatsApp with a screenshot). PIN is sent only after they confirm Tide.</p>' +
+          '<button type="button" class="btn btn--pri" id="fbConfirmPaid">I’ve paid — notify office</button>' +
+          '<p class="muted" style="margin:10px 0 0"><a href="mailto:info@clubsensational.org?subject=' +
+          mailSub +
+          "&body=" +
+          mailBody +
+          '">Or email office (info@…)</a></p>';
+      } else {
+        html +=
+          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>email or WhatsApp the office</strong> so they can check Tide and mark you paid. Attach a photo/screenshot if you can.</p>' +
+          '<a class="btn btn--pri" href="mailto:info@clubsensational.org?subject=' +
+          mailSub +
+          "&body=" +
+          mailBody +
+          '">Email office (info@…)</a>' +
+          '<p class="muted" style="margin:10px 0 0">Or WhatsApp the club number you already use — same message + photo is fine. Parent Portal PIN is sent only after the office confirms payment.</p>';
+      }
     }
     if (host) host.innerHTML = html;
     var stripeRetry = document.getElementById("fbStripeRetry");
@@ -845,6 +987,33 @@
             showNotice(
               document.getElementById("fbNotice"),
               err.message || "Could not start payment.",
+              "error",
+            );
+          });
+      };
+    }
+    var confirmPaid = document.getElementById("fbConfirmPaid");
+    if (confirmPaid) {
+      confirmPaid.onclick = function () {
+        showNotice(document.getElementById("fbNotice"), "Notifying office…", "");
+        void api("confirm_paid", {
+          booking_scope: data.booking_scope || "trial_session",
+          pay_plan: data.pay_plan || "one_off_bank",
+          payment_ref: data.transfer_reference || "",
+        })
+          .then(function (out) {
+            data.status = out.status || "awaiting_office_payment";
+            setStep("fbStepAwaitingOffice");
+            showNotice(
+              document.getElementById("fbNotice"),
+              out.message || "Thanks — office notified.",
+              "ok",
+            );
+          })
+          .catch(function (err) {
+            showNotice(
+              document.getElementById("fbNotice"),
+              err.message || "Could not notify office.",
               "error",
             );
           });

@@ -466,7 +466,7 @@ export function quoteNewClientMidTermInvoice(args: {
   };
 }
 
-/** Single trial session — pay in full now (Booking Portal trial option). */
+/** Single trial session — pay in full now (Stripe / Apple Pay or bank transfer). */
 export function quoteNewClientTrialInvoice(args: {
   unitPriceGbp: number;
   asOfIso?: string | null;
@@ -478,6 +478,8 @@ export function quoteNewClientTrialInvoice(args: {
   sessionDateIso?: string | null;
   vatMode?: PortalInvoiceVatMode;
   productMap?: Map<string, ProductMapRow> | null;
+  /** stripe_instant (default) or one_off_bank */
+  payPlan?: NewClientPayPlan | null;
 }): NewClientProRataQuote | { error: string } {
   const asOf = isoToday(args.asOfIso);
   const unit = round2(Number(args.unitPriceGbp) || 0);
@@ -489,11 +491,18 @@ export function quoteNewClientTrialInvoice(args: {
   const detail = clean(args.detail, 160) || day;
   const vatMode = args.vatMode === "exempt" ? "exempt" : "vat_20";
   const mapRow = args.productMap?.get(serviceKey) || null;
+  const plan: NewClientPayPlan =
+    args.payPlan === "one_off_bank" ? "one_off_bank" : "stripe_instant";
+  const paymentMethodHint = plan === "one_off_bank" ? "bank_transfer" : "stripe";
+  const payLabel =
+    plan === "one_off_bank"
+      ? "Trial session · bank transfer (30 min hold)"
+      : "Trial session · card / Apple Pay";
 
   const schedule: InvoicePaymentScheduleRow[] = [
     {
       seq: 1,
-      label: "Trial session · pay now",
+      label: payLabel,
       due_date: asOf,
       amount_gbp: unit,
       status: "pending",
@@ -510,9 +519,9 @@ export function quoteNewClientTrialInvoice(args: {
     invoiceTotalGbp: unit,
     sessionDatesLabel: "1 trial session",
     remainingDateIsos: [asOf],
-    plan: "stripe_instant",
+    plan,
     paymentSchedule: schedule,
-    paymentMethodHint: "stripe",
+    paymentMethodHint,
     reference: formatTrialSessionReference({
       sessionDateIso: args.sessionDateIso,
       day,

@@ -567,3 +567,96 @@ export async function notifyOfficeStripePaymentReceived(opts: {
     console.warn("[stripe-office-notify] push error", e);
   }
 }
+
+/** Parent reported bank transfer (trial or term finish-booking) — office must confirm Tide. */
+export async function notifyOfficeBankPaymentReported(opts: {
+  invoiceShareId: string;
+  invoiceNumber: string | null;
+  participantName: string;
+  parentName: string | null;
+  parentEmail: string | null;
+  amountGbp: number;
+  isTrial?: boolean;
+  paymentRef?: string | null;
+}): Promise<void> {
+  const invNo = String(opts.invoiceNumber || "").trim() || opts.invoiceShareId.slice(0, 8);
+  const participant = String(opts.participantName || "").trim() || "Participant";
+  const parent = String(opts.parentName || "").trim() || "Parent / carer";
+  const email = String(opts.parentEmail || "").trim();
+  const amount = Number(opts.amountGbp) || 0;
+  const ref = String(opts.paymentRef || "").trim();
+  const kind = opts.isTrial ? "Trial" : "Booking";
+
+  const smtp = readParentNotifySmtpConfig();
+  const tos = officeNotifyEmails();
+  const adminUrl = reenrolmentsReviewUrl();
+  const subject = `${kind} bank payment reported · ${invNo} · ${participant}`;
+  const bodyText =
+    `A parent reported a bank transfer for finish-booking${opts.isTrial ? " (trial)" : ""}.\n\n` +
+    `Invoice: ${invNo}\n` +
+    `Participant: ${participant}\n` +
+    `Parent / carer: ${parent}\n` +
+    (email ? `Email: ${email}\n` : "") +
+    `Amount due: £${amount.toFixed(2)}\n` +
+    (ref ? `Reference noted: ${ref}\n` : "") +
+    `\nPlease check Tide and Mark paid in Admin → Finance → Re-enrolments.\n` +
+    `Parent Portal PIN is sent only after you confirm payment.\n` +
+    (adminUrl ? `${adminUrl}\n\n` : "\n") +
+    `— clubSENsational portal`;
+
+  if (smtp && tos.length) {
+    for (const to of tos) {
+      const mail = await sendParentEmailViaSmtp({
+        config: smtp,
+        to,
+        subject,
+        bodyText,
+      });
+      if (!mail.ok) {
+        console.warn("[bank-report-office-notify] email failed", to, mail.error);
+      }
+    }
+  } else {
+    console.log(
+      `[bank-report-office-notify] invoice=${invNo} participant=${participant} amount=${amount} trial=${!!opts.isTrial}`,
+    );
+  }
+
+  const baseUrl = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const secret = (Deno.env.get("PORTAL_PUSH_WEBHOOK_SECRET") || "").trim();
+  if (!baseUrl || !secret || !opts.invoiceShareId) return;
+
+  try {
+    const res = await fetch(
+      `${baseUrl}/functions/v1/portal-push-dispatch-admin-alert`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-portal-webhook-secret": secret,
+        },
+        body: JSON.stringify({
+          type: "UPDATE",
+          table: "portal_parent_invoice_share",
+          record: {
+            id: opts.invoiceShareId,
+            invoice_number: invNo,
+            participant_name: participant,
+            parent_name: parent,
+            payment_status: "pending_confirmation",
+            amount_gbp: amount,
+            notify_event: "bank_payment_reported",
+            paid_via: "bank_transfer",
+            is_trial: !!opts.isTrial,
+          },
+        }),
+      },
+    );
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      console.warn("[bank-report-office-notify] push failed", res.status, t.slice(0, 200));
+    }
+  } catch (e) {
+    console.warn("[bank-report-office-notify] push error", e);
+  }
+}

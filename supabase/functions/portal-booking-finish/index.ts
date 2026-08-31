@@ -46,6 +46,7 @@ import {
   bookingPayHoldExpiresAt,
   expireUnpaidBookingPayHolds,
 } from "../_shared/portal_booking_pay_hold.ts";
+import { notifyOfficeBankPaymentReported } from "../_shared/portal_booking_lead_office_notify.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -184,14 +185,15 @@ function trialQuotePayload(q: {
   };
 }
 
-/** Short hold while parent completes Stripe Checkout (trial only). */
-const TRIAL_STRIPE_HOLD_MINUTES = BOOKING_PAY_HOLD_MINUTES;
+/** Short hold while parent pays trial (Stripe or bank). */
+const TRIAL_PAY_HOLD_MINUTES = BOOKING_PAY_HOLD_MINUTES;
 
-async function holdTrialSlotForStripeCheckout(
+async function holdTrialSlotForPayment(
   admin: ReturnType<typeof createClient>,
   reservation: Record<string, unknown> | null,
   documentId: string,
   holdExpiresIso: string,
+  payPlan: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const slotId = clean(reservation?.slot_id, 160);
   const reservationId = clean(reservation?.id, 80);
@@ -209,6 +211,7 @@ async function holdTrialSlotForStripeCheckout(
     return { ok: false, error: "slot_unavailable" };
   }
 
+  const planTag = payPlan === "one_off_bank" ? "trial_bank" : "trial_stripe_checkout";
   const { error: updErr } = await admin
     .from("portal_booking_slot_reservations")
     .update({
@@ -216,7 +219,7 @@ async function holdTrialSlotForStripeCheckout(
       hold_expires_at: holdExpiresIso,
       released_at: null,
       updated_at: new Date().toISOString(),
-      notes: "trial_stripe_checkout|booking_kind=trial",
+      notes: `${planTag}|booking_kind=trial|pay_hold_30m`,
     })
     .eq("id", reservationId)
     .eq("document_id", documentId);
@@ -653,15 +656,19 @@ Deno.serve(async (req) => {
     if (!scope) {
       return json(400, { ok: false, error: "booking_scope_required" });
     }
-    if (scope === "trial_session" && planOnly !== "stripe_instant") {
+    if (
+      scope === "trial_session" &&
+      planOnly !== "stripe_instant" &&
+      planOnly !== "one_off_bank"
+    ) {
       return json(400, {
         ok: false,
-        error: "trial_stripe_required",
-        message: "Trial sessions must be paid by card / Apple Pay.",
+        error: "trial_pay_plan_required",
+        message: "Trial sessions: pay by card / Apple Pay or bank transfer.",
       });
     }
 
-    const plan = scope === "trial_session" ? "stripe_instant" : planOnly;
+    const plan = planOnly;
     const now = new Date().toISOString();
     await admin
       .from("portal_booking_completion_tokens")
@@ -685,7 +692,10 @@ Deno.serve(async (req) => {
       funding_code: funding,
       booking_scope: scope,
       pay_plan: plan,
-      quote: quotes[plan] || null,
+      quote:
+        scope === "trial_session"
+          ? quotes.trial_one_off || null
+          : quotes[plan] || null,
     });
   }
 
@@ -703,7 +713,13 @@ Deno.serve(async (req) => {
     const scope = parseBookingScope(body.booking_scope) || savedScope;
     if (!scope) return json(400, { ok: false, error: "booking_scope_required" });
     if (scope === "trial_session") {
-      plan = "stripe_instant";
+      if (plan !== "stripe_instant" && plan !== "one_off_bank") {
+        return json(400, {
+          ok: false,
+          error: "trial_pay_plan_required",
+          message: "Trial sessions: pay by card / Apple Pay or bank transfer.",
+        });
+      }
     }
     if (!plan) return json(400, { ok: false, error: "pay_plan_required" });
     if (plan === "own_way" && funding === "la_direct_payments") {
@@ -736,7 +752,9 @@ Deno.serve(async (req) => {
         : "Using Own money (private family funds)";
     const paymentLabel =
       scope === "trial_session"
-        ? "Trial session · Card / Apple Pay (pay now)"
+        ? plan === "one_off_bank"
+          ? "Trial session · Bank transfer (30 min hold)"
+          : "Trial session · Card / Apple Pay (pay now)"
         : plan === "gocardless_monthly"
           ? "GoCardless (monthly)"
           : plan === "flexi_bank"
@@ -764,6 +782,7 @@ Deno.serve(async (req) => {
           day,
           timeLabel,
           sessionDateIso,
+          payPlan: plan,
         })
         : quoteNewClientMidTermInvoice({
           term,
@@ -777,6 +796,7 @@ Deno.serve(async (req) => {
     if ("error" in quote) return json(400, { ok: false, error: quote.error });
 
     const isTrial = scope === "trial_session";
+    const isTrialStripe = isTrial && plan === "stripe_instant";
     const bookingService = bookingPortalServiceLabel(serviceKey, serviceName, { isTrial });
     const bookingSlot = [day, timeLabel].filter(Boolean).join(" ");
     const familyPaymentLabel = familyBookingPaymentMethodLabel(
@@ -789,16 +809,15 @@ Deno.serve(async (req) => {
     if (!ownerId) return json(500, { ok: false, error: "invoice_owner_missing" });
 
     const asOf = new Date().toISOString().slice(0, 10);
-    const payHoldExpires = isTrial
-      ? bookingPayHoldExpiresAt(Date.now())
-      : bookingPayHoldExpiresAt();
+    const payHoldExpires = bookingPayHoldExpiresAt(Date.now());
 
     if (isTrial && reservation?.id) {
-      const held = await holdTrialSlotForStripeCheckout(
+      const held = await holdTrialSlotForPayment(
         admin,
         reservation as Record<string, unknown>,
         String(doc.id),
         payHoldExpires,
+        plan,
       );
       if (!held.ok) {
         return json(409, {
@@ -903,7 +922,7 @@ Deno.serve(async (req) => {
       })
       .eq("id", token.id);
 
-    // Bank / GC: short pay window. Trial: same window but Stripe only — seat frees if unpaid.
+    // Bank / GC / trial: short 30' pay window. Seat frees if unpaid (unless parent reported).
     if (reservation?.id && !isTrial) {
       const prevNotes = String(reservation.notes || "").trim();
       await admin
@@ -939,7 +958,7 @@ Deno.serve(async (req) => {
     );
 
     let stripeCheckout: Record<string, unknown> | null = null;
-    if (isTrial && invoiceId) {
+    if (isTrialStripe && invoiceId) {
       const stripe = await createFinishBookingStripeCheckout(admin, {
         invoiceShareId: invoiceId,
         contactId: ensured.contactId,
@@ -949,7 +968,7 @@ Deno.serve(async (req) => {
         rawFinishToken: rawToken,
       });
       if (!stripe.ok) {
-        if (isTrial && reservation?.id) {
+        if (reservation?.id) {
           await admin
             .from("portal_booking_slot_reservations")
             .update({
@@ -978,11 +997,11 @@ Deno.serve(async (req) => {
       ok: true,
       invoice: invOut,
       gocardless_url: gocardlessUrl || invOut?.gocardless_url || null,
-      bank: isTrial ? null : bank,
-      transfer_reference: isTrial ? null : transferRef,
+      bank: isTrialStripe ? null : bank,
+      transfer_reference: isTrialStripe ? null : transferRef,
       stripe_checkout: stripeCheckout,
       checkout_url: stripeCheckout?.checkout_url || null,
-      pay_hold_minutes: isTrial ? TRIAL_STRIPE_HOLD_MINUTES : BOOKING_PAY_HOLD_MINUTES,
+      pay_hold_minutes: isTrial ? TRIAL_PAY_HOLD_MINUTES : BOOKING_PAY_HOLD_MINUTES,
       pay_hold_expires_at: payHoldExpires,
       quote: {
         remaining_sessions: quote.remainingSessions,
@@ -1014,11 +1033,12 @@ Deno.serve(async (req) => {
       return json(409, { ok: false, error: "invoice_not_payable" });
     }
     if (reservation?.id) {
-      const held = await holdTrialSlotForStripeCheckout(
+      const held = await holdTrialSlotForPayment(
         admin,
         reservation as Record<string, unknown>,
         String(doc.id),
         bookingPayHoldExpiresAt(),
+        "stripe_instant",
       );
       if (!held.ok) {
         return json(409, { ok: false, error: held.error });
@@ -1044,11 +1064,15 @@ Deno.serve(async (req) => {
 
   if (action === "confirm_paid") {
     const scopePaid = parseBookingScope(body.booking_scope) || savedScope;
-    if (scopePaid === "trial_session") {
+    const planPaid =
+      parseNewClientPayPlan(body.pay_plan) ||
+      parseNewClientPayPlan(token.pay_plan) ||
+      parseNewClientPayPlan(savedChoices.pay_plan);
+    if (scopePaid === "trial_session" && planPaid === "stripe_instant") {
       return json(400, {
         ok: false,
         error: "trial_stripe_required",
-        message: "Trial sessions must be paid by card / Apple Pay.",
+        message: "Card / Apple Pay trials confirm automatically after Stripe payment.",
       });
     }
     if (token.status === "completed") {
@@ -1073,12 +1097,13 @@ Deno.serve(async (req) => {
     }
     const { data: inv } = await admin
       .from("portal_parent_invoice_share")
-      .select("id, payment_status, invoice_number")
+      .select("id, payment_status, invoice_number, amount_gbp")
       .eq("id", token.invoice_share_id)
       .maybeSingle();
     if (!inv) return json(404, { ok: false, error: "invoice_not_found" });
 
     const now = new Date().toISOString();
+    const paymentRef = clean(body.payment_ref, 80) || null;
     // Parent self-report only — do NOT mark invoice paid and do NOT issue PIN.
     // PIN is sent after office validates payment (admin mark paid / Tide / GoCardless).
     await admin
@@ -1087,7 +1112,7 @@ Deno.serve(async (req) => {
         payment_status: "pending_confirmation",
         parent_reported_paid_at: now,
         parent_reported_method: "bank_transfer",
-        parent_reported_ref: clean(body.payment_ref, 80) || null,
+        parent_reported_ref: paymentRef,
         updated_at: now,
       })
       .eq("id", token.invoice_share_id);
@@ -1115,6 +1140,21 @@ Deno.serve(async (req) => {
         updated_at: now,
       })
       .eq("id", token.id);
+
+    try {
+      await notifyOfficeBankPaymentReported({
+        invoiceShareId: String(token.invoice_share_id),
+        invoiceNumber: clean(inv.invoice_number, 40) || null,
+        participantName: String(doc.participant_name || ""),
+        parentName: String(doc.parent_name || ""),
+        parentEmail: String(doc.parent_email || ""),
+        amountGbp: Number(inv.amount_gbp) || 0,
+        isTrial: scopePaid === "trial_session",
+        paymentRef,
+      });
+    } catch (e) {
+      console.warn("[portal-booking-finish] bank report office notify", e);
+    }
 
     return json(200, {
       ok: true,
