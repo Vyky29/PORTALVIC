@@ -13,7 +13,7 @@
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260704-roster-504",
       "/portal/portal_madre_fold.js?v=20260809-staff-map",
-      "/portal/portal_roster_canonical.js?v=20260831-autumn-northolt",
+      "/portal/portal_roster_canonical.js?v=20260831-muhammad-trial",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260704-roster-seq",
     ],
     feedback: [

@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 24;
+  var SOURCE_VERSION = 25;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -895,8 +895,9 @@
   function resolveCanonicalRosterRows(opts) {
     opts = opts || {};
     var base = getBundleBaseRows();
-    var merged = opts.skipDb ? base.slice() : applyPortalRosterDbRows(base);
-    merged = applyAutumnStandingParticipantRows(merged);
+    /* Autumn standing first, then portal_roster_rows so dated trials (e.g. Muhammad Mon Northolt) win. */
+    var withAutumn = applyAutumnStandingParticipantRows(base);
+    var merged = opts.skipDb ? withAutumn.slice() : applyPortalRosterDbRows(withAutumn);
     return dedupeRosterAdapterRows(merged);
   }
 

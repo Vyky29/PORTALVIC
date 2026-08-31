@@ -1,6 +1,8 @@
 /**
- * Cancel Ikram + Fadi Day Centre Mon 1 – Thu 4 Sep 2026.
- * Friday 5 Sep stays normal (no rows written).
+ * Cancel Ikram + Fadi Day Centre Wed 2 – Thu 3 Sep 2026.
+ * Day 1 = Tue 1 Sep WORKS (no cancel). Friday 4 Sep stays normal.
+ *
+ * Deletes any prior Sep 1–4 Ikram/Fadi cancels, then writes Wed–Thu only.
  *
  *   APPLY=1 node database/local-vault/patch-ikram-fadi-cancel-sep1-4-2026.mjs
  */
@@ -11,8 +13,9 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
 const APPLY = process.env.APPLY === "1";
-const REVISION = "ops:2026-08-30-ikram-fadi-cancel-sep1-4";
-const REASON = "Ikram + Fadi cancelled Mon 1 – Thu 4 Sep 2026 (back Fri 5 Sep)";
+const REVISION = "ops:2026-08-31-ikram-fadi-cancel-wed2-thu3";
+const REASON =
+  "Ikram + Fadi cancelled Wed 2 – Thu 3 Sep 2026 (Tue 1 Sep = day 1 works; back Fri 4 Sep)";
 const ADMIN_UID = "a0d439df-3a8f-439d-b427-b3459552eae1"; // Victor
 
 function loadEnv(p) {
@@ -76,13 +79,13 @@ function parseSlot(label) {
   function toTime(tok) {
     const [h, frac] = tok.split(".");
     const hh = String(Number(h)).padStart(2, "0");
-    const mm = frac ? String(Number(frac.padEnd(2, "0").slice(0, 2))).padStart(2, "0") : "00";
-    // 12.30 → 12:30; 3 → 15:00 if afternoon DC (handled by callers using 24h convention)
+    const mm = frac
+      ? String(Number(frac.padEnd(2, "0").slice(0, 2))).padStart(2, "0")
+      : "00";
     return `${hh}:${mm}:00`;
   }
-  function to24(tok, isEnd) {
+  function to24(tok) {
     const n = Number(tok);
-    // Day Centre: 11–12.xx morning; 1–4 afternoon hours written as 1..4 not 13..16 in labels
     if (n >= 1 && n <= 7) {
       const [h, frac] = tok.split(".");
       const hour = Number(h) + 12;
@@ -95,36 +98,27 @@ function parseSlot(label) {
   }
   return {
     label: String(label).trim(),
-    start: to24(m[1], false),
-    end: to24(m[2], true),
+    start: to24(m[1]),
+    end: to24(m[2]),
   };
 }
 
-// Autumn Day Centre board (portal_roster_canonical) — Mon–Thu only.
+/**
+ * Tue 1 Sep (day 1) = WORKS — no cancel rows.
+ * Cancel Ikram+Fadi Wed 2 – Thu 3 Sep only.
+ * Fri 4 Sep = normal.
+ */
 const DAYS = {
-  "2026-09-01": [
-    { staff: "michelle", client: "ikram", name: "Ikram", time: "11 to 4" },
-    { staff: "lulia", client: "ikram", name: "Ikram", time: "11 to 3" },
-    { staff: "victor", client: "ikram", name: "Ikram", time: "11 to 4" },
-    { staff: "roberto", client: "fadi", name: "Fadi", time: "1 to 3" },
-    { staff: "youssef", client: "fadi", name: "Fadi", time: "12.30 to 3" },
-  ],
   "2026-09-02": [
-    { staff: "roberto", client: "ikram", name: "Ikram", time: "11 to 12.30" },
-    { staff: "michelle", client: "ikram", name: "Ikram", time: "11 to 4" },
-    { staff: "lulia", client: "ikram", name: "Ikram", time: "11 to 3" },
-    { staff: "victor", client: "ikram", name: "Ikram", time: "3 to 4" },
-    { staff: "roberto", client: "fadi", name: "Fadi", time: "12.30 to 3" },
-    { staff: "victor", client: "fadi", name: "Fadi", time: "12.30 to 3" },
-  ],
-  "2026-09-03": [
+    // Wednesday
     { staff: "michelle", client: "ikram", name: "Ikram", time: "11 to 4" },
     { staff: "lulia", client: "ikram", name: "Ikram", time: "11 to 3" },
     { staff: "victor", client: "ikram", name: "Ikram", time: "3 to 4" },
     { staff: "victor", client: "fadi", name: "Fadi", time: "12.30 to 3" },
     { staff: "raul", client: "fadi", name: "Fadi", time: "12.30 to 3" },
   ],
-  "2026-09-04": [
+  "2026-09-03": [
+    // Thursday — Fadi only (no Ikram)
     { staff: "roberto", client: "fadi", name: "Fadi", time: "12.30 to 3" },
     { staff: "youssef", client: "fadi", name: "Fadi", time: "12.30 to 3" },
   ],
@@ -204,16 +198,14 @@ for (const [date, slots] of Object.entries(DAYS)) {
 }
 
 console.log(
-  `Plan: ${overrideRows.length} schedule_overrides + ${cancelRows.length} cancellation_reports`
+  `Plan: void prior Sep 1–4 Ikram/Fadi cancels, then ${overrideRows.length} overrides + ${cancelRows.length} reports`
 );
 console.log(
-  "Dates:",
-  Object.keys(DAYS).join(", "),
-  "| Fri 2026-09-05 left normal"
+  "Dates: Wed 2 + Thu 3 Sep cancelled | Tue 1 (day 1) + Fri 4 normal"
 );
 for (const row of overrideRows) {
   console.log(
-    `  ${row.session_date} ${row.anchor_staff_id} · ${row.anchor_client_id} · ${row.anchor_time_slot_label} (${row.anchor_start}-${row.anchor_end})`
+    `  ${row.session_date} ${row.anchor_staff_id} · ${row.anchor_client_id} · ${row.anchor_time_slot_label}`
   );
 }
 
@@ -222,10 +214,39 @@ if (!APPLY) {
   process.exit(0);
 }
 
-// Skip duplicates
+// 1) Delete prior active Ikram/Fadi cancels in Sep 1-4 (wrong weekday mapping).
+ // REST UPDATE hits schedule_overrides_set_updated_trg (auth.uid() null) - DELETE is fine.
+const prior = await sb(
+  "GET",
+  "schedule_overrides?select=id,session_date,anchor_staff_id,anchor_client_id,anchor_time_slot_label,spreadsheet_revision&status=eq.active&session_date=gte.2026-09-01&session_date=lte.2026-09-04&or=(anchor_client_id.eq.ikram,anchor_client_id.eq.fadi)&override_type=eq.slot_clear_client"
+);
+console.log(`Prior active cancels to delete: ${(prior || []).length}`);
+for (const row of prior || []) {
+  await sb("DELETE", `schedule_overrides?id=eq.${row.id}`);
+  console.log(
+    "  deleted",
+    row.session_date,
+    row.anchor_staff_id,
+    row.anchor_client_id,
+    row.anchor_time_slot_label
+  );
+}
+
+// 1b) Drop day-1 (Tue 1 Sep) cancellation_reports — that day works.
+const day1Reports = await sb(
+  "GET",
+  "cancellation_reports?select=id,client_name,submitted_by_name,session_time&session_date=eq.2026-09-01&or=(client_name.ilike.ikram,client_name.ilike.fadi)"
+);
+console.log(`Sep 1 cancellation_reports to delete: ${(day1Reports || []).length}`);
+for (const row of day1Reports || []) {
+  await sb("DELETE", `cancellation_reports?id=eq.${row.id}`);
+  console.log("  deleted report", row.submitted_by_name, row.client_name, row.session_time);
+}
+
+// 2) Insert correct overrides
 const existing = await sb(
   "GET",
-  "schedule_overrides?select=session_date,anchor_staff_id,anchor_client_id,anchor_start,anchor_end,override_type,status&status=eq.active&session_date=gte.2026-09-01&session_date=lte.2026-09-04&or=(anchor_client_id.eq.ikram,anchor_client_id.eq.fadi)&override_type=eq.slot_clear_client"
+  "schedule_overrides?select=session_date,anchor_staff_id,anchor_client_id,anchor_start,anchor_end&status=eq.active&session_date=gte.2026-09-01&session_date=lte.2026-09-03&or=(anchor_client_id.eq.ikram,anchor_client_id.eq.fadi)&override_type=eq.slot_clear_client"
 );
 const existKey = new Set(
   (existing || []).map(
@@ -233,7 +254,6 @@ const existKey = new Set(
       `${r.session_date}|${String(r.anchor_staff_id).toLowerCase()}|${String(r.anchor_client_id).toLowerCase()}|${r.anchor_start}|${r.anchor_end}`
   )
 );
-
 const toInsertOv = overrideRows.filter((r) => {
   const k = `${r.session_date}|${r.anchor_staff_id}|${r.anchor_client_id}|${r.anchor_start}|${r.anchor_end}`;
   if (existKey.has(k)) {
@@ -242,7 +262,6 @@ const toInsertOv = overrideRows.filter((r) => {
   }
   return true;
 });
-
 if (toInsertOv.length) {
   const inserted = await sb("POST", "schedule_overrides", toInsertOv);
   console.log(`Inserted ${inserted.length} schedule_overrides`);
@@ -250,9 +269,10 @@ if (toInsertOv.length) {
   console.log("No new schedule_overrides to insert");
 }
 
+// 3) cancellation_reports for new keys
 const existingCr = await sb(
   "GET",
-  "cancellation_reports?select=session_date,client_name,submitted_by_user_id,portal_session_key&session_date=gte.2026-09-01&session_date=lte.2026-09-04&or=(client_name.ilike.ikram,client_name.ilike.fadi)"
+  "cancellation_reports?select=session_date,client_name,submitted_by_user_id,portal_session_key&session_date=gte.2026-09-01&session_date=lte.2026-09-03&or=(client_name.ilike.ikram,client_name.ilike.fadi)"
 );
 const crKey = new Set(
   (existingCr || []).map(
@@ -268,7 +288,6 @@ const toInsertCr = cancelRows.filter((r) => {
   }
   return true;
 });
-
 if (toInsertCr.length) {
   const inserted = await sb("POST", "cancellation_reports", toInsertCr);
   console.log(`Inserted ${inserted.length} cancellation_reports`);

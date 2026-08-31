@@ -146,7 +146,7 @@
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260811-patrick-en-dash"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260831-autumn-northolt"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260831-muhammad-trial"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260809-staff-map"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -4820,6 +4820,51 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var bucket = idx[days[0]];
       return !!(bucket && bucket[cid]);
     }
+    /** True when calendar day has a named dated booking on the same instructor + venue + time as this open standing seat. */
+    function adminDatedNamedOccupiesOpenSeat(wantIso, openSession){
+      var want = adminNormIsoDate(wantIso);
+      if(!want || !openSession) return false;
+      var cid = String(openSession.clientId || '').trim().toLowerCase();
+      if(bookingIsBookedClientSlug(cid)) return false;
+      if(cid === 'closed') return false;
+      var staff = String(openSession.staffId || '').trim().toLowerCase();
+      var venue = String(openSession.venue || '').trim().toLowerCase();
+      var start = String(openSession.start || '').trim();
+      var end = String(openSession.end || '').trim();
+      if(!staff || !start) return false;
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      var rows = src && Array.isArray(src.rows) ? src.rows : [];
+      for(var i = 0; i < rows.length; i++){
+        var r = rows[i];
+        if(adminNormIsoDate(r.session_date || r.date) !== want) continue;
+        var cn = String(r.client_name || '').trim();
+        if(!cn || !bookingIsBookedClientSlug(adminRosterSlugify(cn))) continue;
+        if(venue && String(r.venue || '').trim().toLowerCase() !== venue) continue;
+        var tokens = [];
+        try{
+          tokens = adminRosterInstructorTokensResolved(r.instructors, (src && src.staffProfiles) || {});
+        }catch(_t){
+          tokens = String(r.instructors || '').toLowerCase().split(/[,+/|]+/);
+        }
+        var staffHit = false;
+        for(var ti = 0; ti < tokens.length; ti++){
+          if(String(tokens[ti] || '').trim().toLowerCase() === staff){ staffHit = true; break; }
+        }
+        if(!staffHit) continue;
+        var t = adminRosterParseTimeSlot(r.time_slot, r.day);
+        if(!t || !t.start) continue;
+        if(String(t.start) === start && (!end || !t.end || String(t.end) === end)) return true;
+        /* Overlap: dated booking covers this standing open half-hour. */
+        try{
+          var a0 = adminServiceMinutesFromAnchor(toPgTime(start));
+          var a1 = adminServiceMinutesFromAnchor(toPgTime(end || start));
+          var b0 = adminServiceMinutesFromAnchor(toPgTime(t.start));
+          var b1 = adminServiceMinutesFromAnchor(toPgTime(t.end || t.start));
+          if(Number.isFinite(a0) && Number.isFinite(b0) && Number.isFinite(b1) && a0 < b1 && (Number.isFinite(a1) ? a1 : a0 + 30) > b0) return true;
+        }catch(_o){}
+      }
+      return false;
+    }
     function adminSchedUsesStandingProjection(iso){
       var s = adminNormIsoDate(iso);
       return !!(s && s >= '2026-09-01');
@@ -4881,6 +4926,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
          */
         if(project && standIso && standIso !== wantIso && rowIso === standIso){
           if(adminClientHasDatedRosterInWeek(wantIso, s.clientId)) return false;
+          /* Dated trial / new booking on this calendar day fills the open standing seat. */
+          if(adminDatedNamedOccupiesOpenSeat(wantIso, s)) return false;
           return true;
         }
         /* Pre-autumn: a fully dated calendar day replaces weekday/standing templates. */
@@ -19664,7 +19711,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 var rs = rowSeats[rsk];
                 var rk = String(rs.staffKey || rs.staffId || '').trim().toLowerCase();
                 if(!rk && rs.staffName) rk = String(rs.staffName).trim().toLowerCase();
-                if(rk) byKey[rk] = rs;
+                if(!rk) continue;
+                var prevSeat = byKey[rk];
+                if(!prevSeat){
+                  byKey[rk] = rs;
+                  continue;
+                }
+                var prevBooked = !prevSeat.open && !prevSeat.closed && !!prevSeat.paxName;
+                var nextBooked = !rs.open && !rs.closed && !!rs.paxName;
+                /* Named dated booking (trial / new client) beats standing "No participant". */
+                if(nextBooked && !prevBooked) byKey[rk] = rs;
+                else if(prevBooked && !nextBooked){ /* keep booked */ }
+                else byKey[rk] = rs;
               }
               var aligned = [];
               var alignedIds = [];
