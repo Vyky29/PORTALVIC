@@ -52,11 +52,15 @@
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
     // Emanuel (Roberto Mon/Fri long block): Hub 11–12 · swim 12–1 · Hub 2–4 (gap 1–2).
-    // Wednesday uses separate 11–12.30 + 3–4 blocks (no 11to4 merge).
+    // Wednesday morning block 11–12.30: Day Centre 11–12 · Big Pool 12–12.30 (then Fadi).
     "emanuel|11to4": [
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "2 to 4", area: "Hub Room" },
+    ],
+    "emanuel|11to12.30": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 12.30", area: "Big Pool" },
     ],
     "emanuel|11to3": [
       { time_slot: "11 to 12", area: "Hub Room" },
