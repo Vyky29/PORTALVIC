@@ -19248,6 +19248,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(filt && filt.venue && String(vn.venue) !== String(filt.venue)) return '';
           var hid = 'c4k-svc-ven-'+pidx+'-'+vix;
           var allInst = adminSlotInstancesForProgrammeVenueRange(block.programme, vn.venue, standStart, standEnd, pack, pack.notes);
+          /* Autumn-term dated overlays (one-off trials / office edits) live on calendar
+           * dates after the summer standing window — merge them so Services can show
+           * e.g. Muhammad Northolt trial Mon 7 Sep without making it permanent standing. */
+          if(termStart && termEnd && (termStart !== standStart || termEnd !== standEnd)){
+            var allInstTerm = adminSlotInstancesForProgrammeVenueRange(block.programme, vn.venue, termStart, termEnd, pack, pack.notes);
+            if(allInstTerm && allInstTerm.length){
+              allInst = (allInst || []).concat(allInstTerm);
+            }
+          }
           var progNormKey = adminServiceProgrammeNormKey(block.programme);
           var isAquaticSwimFarm = adminServicesIsSwimFarmVenue(vn.venue) && progNormKey === 'aquatic';
           // SwimFarm *swimming* rota: Sundays only (Mon/Wed/Fri site days are Day Centre).
@@ -19490,7 +19499,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(pickIso0){
               var sfp = [];
               for(gix = 0; gix < slotsWd.length; gix++){
-                if(String(slotsWd[gix].sessionDate || '').trim() === pickIso0) sfp.push(slotsWd[gix]);
+                var sdSlot = String(slotsWd[gix].sessionDate || '').trim();
+                /* Standing snap + calendar-day dated overlays (trials) for this weekday. */
+                if(sdSlot === pickIso0 || (displayIso && sdSlot === displayIso)) sfp.push(slotsWd[gix]);
               }
               if(sfp.length) slotsForBands = sfp;
             }
@@ -19498,6 +19509,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var resolvedGroups = adminServiceResolvedWeekLineGroups(
               block.programme, vn.venue, dk, groups, pickIso0 || standEnd, standStart, standEnd
             );
+            /* Also resolve groups for the display calendar day so dated trials join the board. */
+            if(displayIso && displayIso !== pickIso0){
+              var datedGroups = adminServiceResolvedWeekLineGroups(
+                block.programme, vn.venue, dk, groups, displayIso, termStart, termEnd
+              );
+              if(datedGroups && datedGroups.length){
+                resolvedGroups = (resolvedGroups || []).concat(datedGroups);
+              }
+            }
             if(!resolvedGroups.length) continue;
             var statsSlots = slotsForBands.slice();
             var bandMap = {};
@@ -19507,9 +19527,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               if(!lineGrp.length) continue;
               // Prefer standing pickIso, but do not drop the whole day if a group
               // resolved to another non-crash Sunday (Multi / multi-date merges).
-              if(pickIso0 && String(rg.pickIso || '').trim() &&
-                 String(rg.pickIso || '').trim() !== pickIso0 &&
-                 !adminServiceIsCrashWeekIso(String(rg.pickIso || '').trim()) &&
+              // Keep calendar-day dated overlays (displayIso) for one-off trials.
+              var rgPick = String(rg.pickIso || '').trim();
+              if(pickIso0 && rgPick &&
+                 rgPick !== pickIso0 &&
+                 !(displayIso && rgPick === displayIso) &&
+                 !adminServiceIsCrashWeekIso(rgPick) &&
                  adminServiceProgrammeNormKey(block.programme) !== 'multi'){
                 continue;
               }
@@ -19545,11 +19568,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               for(gix = 0; gix < resolvedGroups.length; gix++){
                 var rgFlat = resolvedGroups[gix];
                 if(!rgFlat.lineGrp || !rgFlat.lineGrp.length) continue;
-                if(pickIso0 && String(rgFlat.pickIso || '').trim() !== pickIso0) continue;
+                var rgFlatPick = String(rgFlat.pickIso || '').trim();
+                if(pickIso0 && rgFlatPick && rgFlatPick !== pickIso0 && !(displayIso && rgFlatPick === displayIso)) continue;
                 if(!adminServiceLineGroupPassesFilters(rgFlat.lineGrp, filt)) continue;
                 adminServiceBandLinesMergeUnique(flatDayLines, rgFlat.lineGrp);
               }
               var dayBands = adminServiceDayVenueThirtyMinuteBands(flatDayLines);
+              var aquaticBandIso = displayIso || pickIso0;
               for(var dbi = 0; dbi < dayBands.length; dbi++){
                 var dSegA = dayBands[dbi].anchorStart;
                 var dSegB = dayBands[dbi].anchorEnd;
@@ -19562,7 +19587,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 }
                 if(!dSub.length) continue;
                 var dVenue = String((dSub[0] && dSub[0].venue) || vn.venue || '').trim();
-                var dPick = String(pickIso0 || (dSub[0] && dSub[0].sessionDate) || '').trim();
+                var dPick = String(aquaticBandIso || (dSub[0] && dSub[0].sessionDate) || '').trim();
                 var dCanonA = adminServiceAnchorFromMinutes(dam);
                 var dCanonB = adminServiceAnchorFromMinutes(dbm);
                 var dbk = dPick + '|' + dVenue.toLowerCase() + '|aquatic|' + dCanonA + '|' + dCanonB;
