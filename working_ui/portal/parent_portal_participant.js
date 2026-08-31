@@ -1642,7 +1642,7 @@
     return (
       '<section class="pp-hub-menu-reenr" aria-label="Re-enrolments and intensive courses">' +
       '<p class="pp-pax-info-section-label">Re-enrolments &amp; Intensive Courses</p>' +
-      '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Wed 22 July · July crash course fully booked — waiting list available</p>' +
+      '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Mon 31 Aug 23:59 · place held until then</p>' +
       '<div class="pp-hub-menu-reenr__actions">' +
       startBtn +
       crashBtn +
