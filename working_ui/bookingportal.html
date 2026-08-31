@@ -10,7 +10,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta name="theme-color" content="#f4f8fb" />
-  <!-- book-sheet-copy: 20260831-selfserve-v2 -->
+  <!-- book-sheet-copy: 20260831-selfserve-v3 -->
   <meta name="description" content="Browse clubSENsational services and weekly session times. See the full offer — including fully booked slots." />
   <link rel="canonical" href="https://www.clubsensational.org/bookingportal" />
   <title>Booking Portal — clubSENsational</title>
@@ -4079,12 +4079,12 @@
       choices.innerHTML =
         '<button type="button" class="sheet__choice sheet__choice--pri" data-book-kind="term" data-slot-id="' +
         esc(slot.id) +
-        '"><strong>Book term place</strong><span>Standing place for the rest of the term or year. You fill funding, term/year and payment and finish yourself - no admin approval. Office only confirms bank-transfer payments.</span></button>' +
+        '"><strong>Book term place</strong><span>Secure the standing place for the rest of the term or year. After registration, complete funding, term or year choice, and payment in the booking flow. No office approval is required to continue. The office only confirms payment when bank transfer is used.</span></button>' +
         '<button type="button" class="sheet__choice" data-book-kind="trial" data-slot-id="' +
         esc(slot.id) +
-        '"><strong>Book a trial</strong><span>One session — pay by card / Apple Pay or bank transfer (30 min hold) after registration' +
+        '"><strong>Book a trial</strong><span>One session. After registration, pay by card, Apple Pay, or bank transfer (30-minute hold)' +
         (price ? " (" + esc(price) + ")" : "") +
-        ". Great if you want to try first.</span></button>";
+        ". Ideal if you would like to try the session first.</span></button>";
     }
     sheet.hidden = false;
   }
