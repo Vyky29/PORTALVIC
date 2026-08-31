@@ -506,7 +506,12 @@ Deno.serve(async (req) => {
     finish_url: string;
     finish_url_sent: boolean;
   } | null = null;
-  if (bookingRequest && formType === "client_registration") {
+  /* Client + climbing: parent pays via finish-booking without waiting for office Accept.
+   * Office is notified above; suitability / form review is post-payment. */
+  if (
+    bookingRequest &&
+    (formType === "client_registration" || formType === "climbing_registration")
+  ) {
     try {
       const sent = await sendFinishBookingAfterRegistration(admin, {
         id: String(row.id),

@@ -197,7 +197,7 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
       : "Client registration";
   const bookingLine = String(opts.bookingSummary || "").trim();
   const holdLine = opts.slotHeld
-    ? "Selected session place is on a soft hold pending office review."
+    ? "Selected session place is on a soft hold until they finish payment (no office Accept needed)."
     : "";
   const reviewUrl = registrationReviewUrl();
   const pdfName =
@@ -209,7 +209,8 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
   if (smtp && tos.length) {
     const subject = `${formLabel} submitted · ${participant} (${parent})`;
     const lines = [
-      `${formLabel} received — review in Documents and Accept before confirming the place.`,
+      `${formLabel} received — FYI only. The parent can finish payment now; you do not need to Accept before they pay.`,
+      "Review the PDF in Documents when useful. Suitability / form checks are after payment.",
     ];
     if (String(opts.bookingSummary || "").toUpperCase().includes("EXISTING CLIENT")) {
       lines.push(
@@ -229,12 +230,12 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
     if (opts.leadId) lines.push(`Lead id: ${opts.leadId}`);
     lines.push("");
     if (reviewUrl) {
-      lines.push(`Open Registration forms (validate / Accept):`);
+      lines.push(`Open Registration forms (optional review):`);
       lines.push(reviewUrl);
       lines.push("");
     } else {
       lines.push(
-        "Next: Admin → Documents → Registration forms → review PDF → Accept.",
+        "Optional: Admin → Documents → Registration forms to open the PDF.",
       );
       lines.push("");
     }
@@ -247,7 +248,7 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
 
     const html =
       `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0f172a">` +
-      `<p><strong>${escapeHtml(formLabel)}</strong> received — also saved under Documents → Registration forms for Accept / validate.</p>` +
+      `<p><strong>${escapeHtml(formLabel)}</strong> received — <strong>FYI</strong>. Parent can pay now; no Accept gate before payment.</p>` +
       `<p>` +
       `Participant: <strong>${escapeHtml(participant)}</strong><br/>` +
       `Parent: ${escapeHtml(parent)}<br/>` +
@@ -258,7 +259,7 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
       `</p>` +
       (reviewUrl
         ? `<p><a href="${escapeHtml(reviewUrl)}" style="display:inline-block;padding:10px 14px;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:8px;font-weight:700">Open Registration forms</a></p>`
-        : `<p>Admin → Documents → Registration forms → review PDF → Accept.</p>`) +
+        : `<p>Admin → Documents → Registration forms (optional PDF review).</p>`) +
       (opts.pdfBytes && opts.pdfBytes.length
         ? `<p style="color:#64748b;font-size:13px">PDF attached.</p>`
         : "") +

@@ -37,8 +37,8 @@
       title: 'Registration forms',
       intro:
         '<strong>New-client registration</strong> — PDF + photo from Booking Portal leads (not climbing). ' +
-        'Flow: slot → registration → <strong>payment</strong> (finish-booking link sent automatically) → office marks invoice paid → suitability review post-payment → Parent Portal PIN. ' +
-        '<strong>Accept</strong> marks the form reviewed / resends the link if needed. ' +
+        'Flow: slot → registration → <strong>payment</strong> (finish-booking link sent automatically) → office marks invoice paid → review form/PDF after payment → Parent Portal PIN. ' +
+        '<strong>Mark reviewed</strong> tracks that you opened the form; <strong>Resend finish link</strong> if the parent lost it. ' +
         'Climbing forms: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_climbing_registrations">Climbing registrations</button>. ' +
         'Annual consents: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Parent consents</button>.',
       empty: 'No client registration forms yet.',
@@ -55,8 +55,9 @@
       form_type: 'climbing_registration',
       title: 'Climbing registrations',
       intro:
-        '<strong>Climbing registration forms</strong> — PDF + photo from the climbing registration flow. ' +
-        'Client / lead registration forms are under <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_participant_documents">Registration forms</button>. ' +
+        '<strong>Climbing registration forms</strong> — same pay-first flow as client registration: finish-booking link goes out on submit (no Accept gate). ' +
+        'Office gets a FYI email; review the PDF after they pay. ' +
+        'Client / lead forms: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_participant_documents">Registration forms</button>. ' +
         'Annual consents: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Parent consents</button>.',
       empty: 'No climbing registration forms yet.',
       emptyFiltered: 'No climbing registration forms matched this participant yet.',
@@ -226,10 +227,10 @@
         var reviewCell;
         if (!isReg) {
           reviewCell = '<span class="muted" style="font-size:12px">Consents — use Parent consents</span>';
-        } else if (reviewed) {
+        } else         if (reviewed) {
           reviewCell =
             '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:6px">' +
-            '<span class="chip chip--ok">Accepted</span>' +
+            '<span class="chip chip--ok">Reviewed</span>' +
             '<button type="button" class="btn btn--ghost btn--sm portal-pax-doc-resend" data-id="' +
             esc(d.id) +
             '" data-name="' +
@@ -238,11 +239,18 @@
             '</div>';
         } else {
           reviewCell =
+            '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:6px">' +
             '<button type="button" class="btn btn--sec btn--sm portal-pax-doc-accept" data-id="' +
             esc(d.id) +
             '" data-name="' +
             esc(d.participant_name || '') +
-            '">Accept</button>';
+            '">Mark reviewed</button>' +
+            '<button type="button" class="btn btn--ghost btn--sm portal-pax-doc-resend" data-id="' +
+            esc(d.id) +
+            '" data-name="' +
+            esc(d.participant_name || '') +
+            '">Resend finish link</button>' +
+            '</div>';
         }
         return (
           '<tr>' +
@@ -383,9 +391,9 @@
         if (!id) return;
         if (
           !global.confirm(
-            'Accept registration for ' +
+            'Mark registration reviewed for ' +
               name +
-              '?\n\nThis validates the held slot and sends the parent an email/WhatsApp link to choose funding, payment method, and pay the first instalment.'
+              '?\n\nThis only records that you opened the form. Payment finish-booking is already sent on submit — use Resend finish link if they need it again.'
           )
         ) {
           return;
@@ -395,19 +403,19 @@
         void acceptDocument(id, 'accept').then(function (out) {
           if (!out || !out.ok) {
             btn.disabled = false;
-            btn.textContent = 'Accept';
-            global.alert('Could not accept (' + ((out && out.error) || 'failed') + ').');
+            btn.textContent = 'Mark reviewed';
+            global.alert('Could not mark reviewed (' + ((out && out.error) || 'failed') + ').');
             return;
           }
           if (typeof cfg.toast === 'function') {
             cfg.toast(
-              'Accepted · finish link ' +
-                (out.finish_url_sent ? 'sent' : 'queued') +
+              'Reviewed · finish link ' +
+                (out.finish_url_sent ? 'sent/resent' : 'ok') +
                 (out.email_ok ? ' · email' : '') +
                 (out.wa_ok ? ' · WhatsApp' : '')
             );
           } else {
-            global.alert('Accepted. Parent was sent a finish-booking link (email/WhatsApp when configured).');
+            global.alert('Marked reviewed. Finish-booking link resent if needed.');
           }
           void renderHost(hostEl, participantName, { scope: hostEl.getAttribute('data-docs-scope') || 'client' });
         });
