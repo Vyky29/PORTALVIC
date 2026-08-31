@@ -1691,7 +1691,7 @@
       '<aside class="pp-hub-reenrol pp-hub-reenrol--popup" aria-label="Re-enrolment 2026/27">' +
       '<div class="pp-hub-reenrol__copy">' +
       '<strong id="ppReenrolPopupTitle">Re-enrol 2026/27</strong>' +
-      '<span class="pp-muted">Confirm by Wed 22 July · July crash course fully booked</span>' +
+      '<span class="pp-muted">Confirm by Mon 31 Aug 23:59 · place held until midnight</span>' +
       acatNotice +
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
