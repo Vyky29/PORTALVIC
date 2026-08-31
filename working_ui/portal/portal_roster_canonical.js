@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 23;
+  var SOURCE_VERSION = 24;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -365,6 +365,77 @@
     return mergeFn(rows, list);
   }
 
+  /**
+   * Autumn 26/27 Northolt aquatic standing (Services truth — not summer Roberto book).
+   * Source: admin Services Mon 7 Sep / Wed 9 Sep 2026 grids.
+   */
+  var AUTUMN_NORTHOLT_AQUATIC_BOARD = {
+    monday: [
+      {
+        staff: "Dan",
+        clients: [
+          { name: "No participant", time: "4.30 to 5" },
+          { name: "Amar Rai", time: "5 to 5.30" },
+          { name: "Amar Rai", time: "5.30 to 6" },
+          { name: "Adaam Ah", time: "6 to 6.30" },
+        ],
+      },
+      {
+        staff: "Luliya",
+        clients: [
+          { name: "No participant", time: "4.30 to 5" },
+          { name: "Gemma", time: "5 to 5.30" },
+          { name: "Zayana", time: "5.30 to 6" },
+          { name: "Yamik", time: "6 to 6.30" },
+        ],
+      },
+    ],
+    wednesday: [
+      {
+        staff: "Dan",
+        clients: [
+          { name: "Tyson", time: "4.30 to 5" },
+          { name: "Ruben", time: "5 to 5.30" },
+          { name: "Amar Rai", time: "5.30 to 6" },
+          { name: "No participant", time: "6 to 6.30" },
+        ],
+      },
+      {
+        staff: "Luliya",
+        clients: [
+          { name: "Vithura", time: "4.30 to 5" },
+          { name: "Amar Rai", time: "5 to 5.30" },
+          { name: "Amber", time: "5.30 to 6" },
+          { name: "No participant", time: "6 to 6.30" },
+        ],
+      },
+    ],
+  };
+
+  function autumnNortholtAquaticStandingRows() {
+    var out = [];
+    Object.keys(AUTUMN_NORTHOLT_AQUATIC_BOARD).forEach(function (dk) {
+      var iso = DAY_CENTRE_STANDING_ISO[dk];
+      var dayTitle = DOW_TITLE[dk] || dk;
+      var cols = AUTUMN_NORTHOLT_AQUATIC_BOARD[dk] || [];
+      cols.forEach(function (col) {
+        (col.clients || []).forEach(function (c) {
+          out.push({
+            client_name: c.name,
+            day: dayTitle,
+            instructors: String(col.staff || "").toUpperCase(),
+            service: "Aquatic Activity",
+            area: "Teaching Pool",
+            time_slot: c.time,
+            venue: "Northolt",
+            session_date: iso,
+          });
+        });
+      });
+    });
+    return out;
+  }
+
   function autumnDayCentreStandingRows() {
     var out = [];
     Object.keys(AUTUMN_DAY_CENTRE_BOARD).forEach(function (dk) {
@@ -443,6 +514,11 @@
     }
 
     if (day === "tuesday") {
+      /* Angel's remaining Tue Acton (Cayra) → Luliya; Rayan Ta / Richard stay Javier. */
+      if (/\bangel\b/i.test(raw)) {
+        if (/\bluliya\b|\blulia\b|\baida\b/i.test(raw)) return null;
+        return { instructors: "LULIYA" };
+      }
       if (/^rayan\s*ta\b/.test(client) || client === "richard") {
         if (/\bjavier\b/i.test(raw)) return null;
         return { instructors: "JAVIER" };
@@ -635,8 +711,9 @@
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
    * - Acton Mon: Angel → Roberto (Adam P / Steven / Mario)
-   * - Acton Tue: Rayan Ta + Richard→Javier
+   * - Acton Tue: Angel → Luliya (Cayra); Rayan Ta + Richard → Javier
    * - Acton Thu: Simon → Luliya (Yuri / Eiji)
+   * - Northolt Mon/Wed: replace summer (Roberto/Dan) with Services Autumn Dan+Luliya book
    * - Luliya: DC Ikram Mon/Tue/Wed 11–3 + Fri 11–4; pool Mon/Wed Northolt 4.30–6.30,
    *   Tue Acton 4–6.30, Thu Acton 4.30–6.30
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
@@ -651,6 +728,9 @@
       var cn = String(r.client_name || "").trim().toLowerCase();
       var svc = String(r.service || "").trim().toLowerCase();
       return cn === "shadowing" || svc === "shadowing";
+    }
+    function isNortholtVenue(venue) {
+      return /northolt/i.test(String(venue || ""));
     }
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
@@ -667,6 +747,17 @@
         ) {
           return;
         }
+      }
+      /* Drop summer Northolt aquatic Mon/Wed — rebuild from AUTUMN_NORTHOLT_AQUATIC_BOARD. */
+      if (
+        isAquaticService(r.service) &&
+        isNortholtVenue(r.venue) &&
+        d &&
+        d >= AUTUMN_DC_REPLACE_FROM &&
+        d <= AUTUMN_DC_REPLACE_THROUGH
+      ) {
+        var dkNh = normalizeDowKey(r.day);
+        if (AUTUMN_NORTHOLT_AQUATIC_BOARD[dkNh]) return;
       }
       /* Drop all standing-week Bespoke — rebuild from Autumn Hub rota below. */
       if (isBespokeService(r.service) && DAY_CENTRE_STANDING_ISO_SET[d]) {
@@ -725,6 +816,9 @@
       out.push(r);
     });
     autumnDayCentreStandingRows().forEach(function (row) {
+      out.push(row);
+    });
+    autumnNortholtAquaticStandingRows().forEach(function (row) {
       out.push(row);
     });
     AUTUMN_BESPOKE_HUB_ROWS.forEach(function (row) {
@@ -815,8 +909,8 @@
       rosterSourceVersion: SOURCE_VERSION,
       rosterSourceNote:
         global.PORTAL_MADRE_LIVE && global.PORTAL_MADRE_LIVE.rows
-          ? "Live MADRE (portal_madre_document) + portal_roster_rows + Autumn DC/Hub standing"
-          : "Bundle (MADRE snapshot) + portal_roster_rows + Autumn DC/Hub standing",
+          ? "Live MADRE (portal_madre_document) + portal_roster_rows + Autumn standing (DC/Hub/Northolt/Acton)"
+          : "Bundle (MADRE snapshot) + portal_roster_rows + Autumn standing (DC/Hub/Northolt/Acton)",
     });
   }
 
