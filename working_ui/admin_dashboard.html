@@ -146,7 +146,7 @@
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260811-patrick-en-dash"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260831-muhammad-northolt"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260831-roberto-wed-4"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260809-staff-map"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -4827,11 +4827,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var cid = String(openSession.clientId || '').trim().toLowerCase();
       if(bookingIsBookedClientSlug(cid)) return false;
       if(cid === 'closed') return false;
-      var staff = String(openSession.staffId || '').trim().toLowerCase();
+      var staff = String(openSession.staffId || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
       var venue = String(openSession.venue || '').trim().toLowerCase();
-      var start = String(openSession.start || '').trim();
-      var end = String(openSession.end || '').trim();
+      var start = String(openSession.start || '').trim().slice(0, 5);
+      var end = String(openSession.end || '').trim().slice(0, 5);
       if(!staff || !start) return false;
+      function venueLooseMatch(a, b){
+        var x = String(a || '').trim().toLowerCase();
+        var y = String(b || '').trim().toLowerCase();
+        if(!x || !y) return true;
+        return x === y || x.indexOf(y) >= 0 || y.indexOf(x) >= 0;
+      }
       var src = window.STAFF_DASHBOARD_SOURCE;
       var rows = src && Array.isArray(src.rows) ? src.rows : [];
       for(var i = 0; i < rows.length; i++){
@@ -4839,7 +4845,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(adminNormIsoDate(r.session_date || r.date) !== want) continue;
         var cn = String(r.client_name || '').trim();
         if(!cn || !bookingIsBookedClientSlug(adminRosterSlugify(cn))) continue;
-        if(venue && String(r.venue || '').trim().toLowerCase() !== venue) continue;
+        if(!venueLooseMatch(venue, r.venue)) continue;
         var tokens = [];
         try{
           tokens = adminRosterInstructorTokensResolved(r.instructors, (src && src.staffProfiles) || {});
@@ -4848,18 +4854,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         var staffHit = false;
         for(var ti = 0; ti < tokens.length; ti++){
-          if(String(tokens[ti] || '').trim().toLowerCase() === staff){ staffHit = true; break; }
+          var tok = String(tokens[ti] || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+          if(tok === staff){ staffHit = true; break; }
         }
         if(!staffHit) continue;
         var t = adminRosterParseTimeSlot(r.time_slot, r.day);
         if(!t || !t.start) continue;
-        if(String(t.start) === start && (!end || !t.end || String(t.end) === end)) return true;
-        /* Overlap: dated booking covers this standing open half-hour. */
+        var ts = String(t.start).slice(0, 5);
+        var te = String(t.end || '').slice(0, 5);
+        if(ts === start && (!end || !te || te === end)) return true;
         try{
           var a0 = adminServiceMinutesFromAnchor(toPgTime(start));
           var a1 = adminServiceMinutesFromAnchor(toPgTime(end || start));
-          var b0 = adminServiceMinutesFromAnchor(toPgTime(t.start));
-          var b1 = adminServiceMinutesFromAnchor(toPgTime(t.end || t.start));
+          var b0 = adminServiceMinutesFromAnchor(toPgTime(ts));
+          var b1 = adminServiceMinutesFromAnchor(toPgTime(te || ts));
           if(Number.isFinite(a0) && Number.isFinite(b0) && Number.isFinite(b1) && a0 < b1 && (Number.isFinite(a1) ? a1 : a0 + 30) > b0) return true;
         }catch(_o){}
       }
