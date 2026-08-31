@@ -7,7 +7,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
   <meta name="theme-color" content="#f4f8fb" />
+  <!-- book-sheet-copy: 20260831-selfserve-v2 -->
   <meta name="description" content="Browse clubSENsational services and weekly session times. See the full offer — including fully booked slots." />
   <link rel="canonical" href="https://www.clubsensational.org/bookingportal" />
   <title>Booking Portal — clubSENsational</title>
@@ -1579,11 +1582,13 @@
       inset: 0;
       z-index: 40;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
       background: rgba(23, 50, 71, 0.35);
-      padding: 16px;
+      padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      box-sizing: border-box;
     }
+    .sheet[hidden] { display: none !important; }
     .sheet__panel {
       width: min(460px, 100%);
       background: var(--white);
@@ -1591,8 +1596,10 @@
       padding: 18px;
       border: 1px solid var(--line);
       min-width: 0;
-      max-height: min(80dvh, 520px);
+      max-height: min(85dvh, 640px);
       overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      box-shadow: 0 18px 48px rgba(23, 50, 71, 0.22);
     }
     .sheet__panel h3 {
       margin: 0 0 6px;
@@ -4072,7 +4079,7 @@
       choices.innerHTML =
         '<button type="button" class="sheet__choice sheet__choice--pri" data-book-kind="term" data-slot-id="' +
         esc(slot.id) +
-        '"><strong>Book term place</strong><span>Secure the standing place for the rest of the term (or year). You fill in funding, term or year, and payment yourself and finish booking - no admin approval first. Office only confirms payment if you pay by bank transfer.</span></button>' +
+        '"><strong>Book term place</strong><span>Standing place for the rest of the term or year. You fill funding, term/year and payment and finish yourself - no admin approval. Office only confirms bank-transfer payments.</span></button>' +
         '<button type="button" class="sheet__choice" data-book-kind="trial" data-slot-id="' +
         esc(slot.id) +
         '"><strong>Book a trial</strong><span>One session — pay by card / Apple Pay or bank transfer (30 min hold) after registration' +
