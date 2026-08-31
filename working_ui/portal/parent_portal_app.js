@@ -49,6 +49,12 @@
       if (prevRe.not_continuing === true) {
         base.reenrolment.not_continuing = true;
       }
+      if (
+        prevRe.hub_pay_state &&
+        !patch.reenrolment.hub_pay_state
+      ) {
+        base.reenrolment.hub_pay_state = prevRe.hub_pay_state;
+      }
     }
     if (patch.pending_review_count != null) base.pending_review_count = patch.pending_review_count;
     if (patch.attendance_summary) base.attendance_summary = patch.attendance_summary;

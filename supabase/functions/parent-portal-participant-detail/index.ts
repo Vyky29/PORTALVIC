@@ -1529,16 +1529,72 @@ Deno.serve(async (req) => {
   let hasParentPayExtraShare = false;
   let hasOfficeTermInvoice = false;
   let hasTrialInvoiceShare = false;
+  /** Active-term hub chip: unpaid | partial | pending | settled | null (unknown / no parent term). */
+  let hubPayStateFromShares: string | null = null;
   if (wantGeneral) {
     const { data: parentShares } = await supabase
       .from("portal_parent_invoice_share")
       .select(
-        "invoice_number, reference_text, line_description, billing_term, due_date, payment_method_hint, payment_status",
+        "invoice_number, reference_text, line_description, billing_term, due_date, next_instalment_due, payment_method_hint, payment_status, amount_gbp, amount_paid_gbp, payment_schedule, share_status",
       )
       .eq("contact_id", contactId)
       .eq("share_status", "ready")
       .limit(50);
-    for (const share of parentShares || []) {
+
+    const todayIso = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Europe/London",
+    });
+    const activeTerm =
+      todayIso < "2026-11-15" ? "autumn" : todayIso < "2027-02-15" ? "spring" : "summer";
+
+    type SharePayRow = {
+      billing_term?: unknown;
+      payment_status?: unknown;
+      due_date?: unknown;
+      next_instalment_due?: unknown;
+      amount_paid_gbp?: unknown;
+      payment_schedule?: unknown;
+      invoice_number?: unknown;
+      reference_text?: unknown;
+      line_description?: unknown;
+      payment_method_hint?: unknown;
+    };
+
+    const termBucket = (share: SharePayRow): string | null => {
+      const bt = clean(share.billing_term, 40).toLowerCase();
+      if (bt === "autumn" || bt === "spring" || bt === "summer") return bt;
+      const blob = [share.reference_text, share.line_description, share.invoice_number]
+        .map((x) => String(x || ""))
+        .join(" ")
+        .toLowerCase();
+      if (/\bautumn\b/.test(blob)) return "autumn";
+      if (/\bspring\b/.test(blob)) return "spring";
+      if (/\bsummer\b/.test(blob)) return "summer";
+      return null;
+    };
+
+    const effectivePayStatus = (share: SharePayRow): string => {
+      let st = clean(share.payment_status, 40).toLowerCase() || "unpaid";
+      if (st === "paid" || st === "partial" || st === "pending_confirmation" || st === "void") {
+        return st;
+      }
+      const sched = Array.isArray(share.payment_schedule) ? share.payment_schedule : [];
+      if (sched.length >= 2) {
+        let paidN = 0;
+        for (const row of sched) {
+          const rs = clean((row as { status?: unknown })?.status, 40).toLowerCase();
+          if (rs === "paid") paidN += 1;
+        }
+        if (paidN > 0 && paidN < sched.length) return "partial";
+        if (paidN >= sched.length && sched.length > 0) return "paid";
+      }
+      const paidAmt = Number(share.amount_paid_gbp);
+      if (Number.isFinite(paidAmt) && paidAmt > 0) return "partial";
+      return st;
+    };
+
+    const programmeShares: SharePayRow[] = [];
+    for (const share of (parentShares || []) as SharePayRow[]) {
       /* Void shares must not keep share_status=ready as a fake 26/27 term place. */
       if (clean(share.payment_status, 40).toLowerCase() === "void") continue;
       const blob = [
@@ -1564,7 +1620,32 @@ Deno.serve(async (req) => {
       /* Year guard so a Summer 25/26 row cannot pass as a 26/27 term place. */
       const dueIso = share.due_date ? String(share.due_date).slice(0, 10) : "";
       const isNextYear = /26\s*\/\s*27|2026[-/]27|2026\/2027/.test(blob) || dueIso >= "2026-08-01";
-      if (termish && isNextYear) hasOfficeTermInvoice = true;
+      if (termish && isNextYear) {
+        hasOfficeTermInvoice = true;
+        programmeShares.push(share);
+      }
+    }
+
+    const activeShares = programmeShares.filter((s) => termBucket(s) === activeTerm);
+    const overdueEarlier = programmeShares.filter((s) => {
+      const b = termBucket(s);
+      if (!b || b === activeTerm) return false;
+      if (effectivePayStatus(s) === "paid") return false;
+      const due = String(s.next_instalment_due || s.due_date || "").slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(due) && due <= todayIso;
+    });
+    const hubRows = activeShares.length || overdueEarlier.length
+      ? activeShares.concat(overdueEarlier)
+      : programmeShares.filter((s) => termBucket(s) === "autumn");
+
+    if (hubRows.length) {
+      const statuses = hubRows.map(effectivePayStatus);
+      if (statuses.every((st) => st === "paid")) hubPayStateFromShares = "settled";
+      else if (statuses.some((st) => st === "unpaid")) hubPayStateFromShares = "unpaid";
+      else if (statuses.some((st) => st === "pending_confirmation")) {
+        hubPayStateFromShares = "pending";
+      } else if (statuses.some((st) => st === "partial")) hubPayStateFromShares = "partial";
+      else hubPayStateFromShares = "unpaid";
     }
   }
 
@@ -1868,6 +1949,12 @@ Deno.serve(async (req) => {
                * "not confirmed" contradicts itself.
                */
               office_term_invoice: isFormerClient ? false : hasOfficeTermInvoice,
+              /*
+               * Active-term pay chip from the same invoice shares admin marks
+               * (flexi 1st half → partial). Hub uses this on first paint; invoices-list
+               * may refine it after.
+               */
+              hub_pay_state: isFormerClient ? null : hubPayStateFromShares,
               // LA/NHS term is office→funder; still show My invoices when a parent-pay
               // crash (etc.) exists. List endpoint only returns those shares.
               show_invoices: isFormerClient

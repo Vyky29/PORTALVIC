@@ -1164,11 +1164,42 @@
   }
 
   function isInvoiceFullyPaid(inv) {
-    return String((inv && inv.payment_status) || "").toLowerCase() === "paid";
+    return invoiceEffectivePayStatus(inv) === "paid";
   }
 
   function isInvoicePendingConfirmation(inv) {
-    return String((inv && inv.payment_status) || "").toLowerCase() === "pending_confirmation";
+    return invoiceEffectivePayStatus(inv) === "pending_confirmation";
+  }
+
+  /**
+   * Prefer payment_status; if missing/stale, derive flexi partial from schedule /
+   * amount_paid (same truth admin marks on the share).
+   */
+  function invoiceEffectivePayStatus(inv) {
+    var st = String((inv && inv.payment_status) || "")
+      .trim()
+      .toLowerCase();
+    if (
+      st === "paid" ||
+      st === "partial" ||
+      st === "pending_confirmation" ||
+      st === "void" ||
+      st === "cancelled"
+    ) {
+      return st;
+    }
+    var sched = inv && inv.payment_schedule;
+    if (Array.isArray(sched) && sched.length >= 2) {
+      var paidN = 0;
+      for (var i = 0; i < sched.length; i++) {
+        if (String((sched[i] && sched[i].status) || "").toLowerCase() === "paid") paidN += 1;
+      }
+      if (paidN > 0 && paidN < sched.length) return "partial";
+      if (paidN >= sched.length) return "paid";
+    }
+    var paidAmt = Number(inv && inv.amount_paid_gbp);
+    if (Number.isFinite(paidAmt) && paidAmt > 0) return "partial";
+    return st || "unpaid";
   }
 
   /** Hub pay state from term invoices: settled | pending | partial | unpaid | null (no term rows). */
@@ -1179,8 +1210,8 @@
     var hasPartial = false;
     var hasPending = false;
     for (var i = 0; i < term.length; i++) {
-      var st = String((term[i] && term[i].payment_status) || "").toLowerCase();
-      if (st === "paid" || st === "void") continue;
+      var st = invoiceEffectivePayStatus(term[i]);
+      if (st === "paid" || st === "void" || st === "cancelled") continue;
       if (st === "pending_confirmation") hasPending = true;
       else if (st === "partial") hasPartial = true;
       else hasUnpaid = true;
@@ -1409,6 +1440,17 @@
         data.crash_course.dates.length);
     var crashPending = crashCourseAwaitingPayment(data);
     var officeBilled = isOfficeBilledLaOrNhs(data);
+    var sharePayHint = String(
+      (data.reenrolment && data.reenrolment.hub_pay_state) || "",
+    ).toLowerCase();
+    if (
+      sharePayHint !== "settled" &&
+      sharePayHint !== "partial" &&
+      sharePayHint !== "pending" &&
+      sharePayHint !== "unpaid"
+    ) {
+      sharePayHint = "";
+    }
     /*
      * The term place state is decided here; some cases are final. The invoice fetch
      * below still runs for every child, because the Invoices shortcut must turn red
@@ -1431,8 +1473,11 @@
       if (officeBilled) {
         applyHubReenrolPayVisual(host, data, "settled");
       } else if (!crashPending) {
-        /* Private / Direct Payments: orange until invoices prove paid. */
-        applyHubReenrolPayVisual(host, data, "unpaid");
+        /*
+         * Prefer admin invoice-share hint (flexi 1st half → partial) so the hub does
+         * not flash "unpaid" before invoices-list returns.
+         */
+        applyHubReenrolPayVisual(host, data, sharePayHint || "unpaid");
       }
     } else {
       /* Crash dates present but not yet flagged awaiting_payment — resolve via invoices. */
@@ -1467,21 +1512,21 @@
         }
         var term = termInvoicesForHubPay(invoices);
         var booking = bookingSummary(data);
-        var nextState = "unpaid";
+        var nextState = sharePayHint || "unpaid";
         if (term.length) {
-          nextState = termInvoicesHubPayState(term) || "unpaid";
+          nextState = termInvoicesHubPayState(term) || nextState;
         } else if (!booking.show_invoices) {
           /* True office-billed LA/NHS: no parent term invoice to pay. */
           nextState = "settled";
         }
         applyHubReenrolPayVisual(host, data, nextState);
-        if (nextState === "settled") {
+        if (nextState === "settled" || nextState === "partial") {
           /* Refresh day chips so upcoming dates stay blue without attention styling. */
           mountTermDateChipStatuses(host, data, opts, null);
         }
       })
       .catch(function () {
-        /* Keep unpaid orange if invoices cannot load. */
+        /* Keep share hint / unpaid if invoices cannot load. */
       });
   }
 
