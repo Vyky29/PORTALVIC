@@ -34,8 +34,10 @@ import {
   stripeGrossUpFromGbp,
 } from "./stripe_checkout.ts";
 import { foldValidatedReservationOntoMadre } from "./portal_booking_fold_madre.ts";
+import { unitPriceFor } from "./reenrolment_catalog.ts";
 
 export const FINISH_TOKEN_TTL_DAYS = 14;
+/** Fallback only when service cannot be classified (legacy aquatic 30'). */
 export const DEFAULT_SESSION_GBP = 50;
 
 export type CompletionTokenRow = {
@@ -94,23 +96,117 @@ export function inferBillingTerm(asOf = new Date()): BookingTermKey {
   return "spring";
 }
 
+/** Parse clock token like 3, 3.30, 15:00, 3pm → minutes from midnight. */
+function clockTokenToMinutes(raw: string): number | null {
+  const s = String(raw || "").trim().toLowerCase();
+  if (!s) return null;
+  const ampm = s.match(/^(\d{1,2})(?:[.:](\d{2}))?\s*(am|pm)?$/i);
+  if (!ampm) return null;
+  let h = Number(ampm[1]);
+  const m = Number(ampm[2] || 0);
+  const ap = (ampm[3] || "").toLowerCase();
+  if (!Number.isFinite(h) || !Number.isFinite(m) || m < 0 || m > 59) return null;
+  if (ap === "pm" && h < 12) h += 12;
+  if (ap === "am" && h === 12) h = 0;
+  if (h < 0 || h > 23) return null;
+  return h * 60 + m;
+}
+
+/**
+ * Duration for pricing: explicit minutes in labels, else slot window, else service default.
+ * Trials and term quotes must use one session of that service (climbing 60' = £75, not £50).
+ */
+export function inferSessionDurationMin(opts: {
+  serviceName?: string | null;
+  timeLabel?: string | null;
+  activity?: string | null;
+  venue?: string | null;
+  formType?: string | null;
+}): number {
+  const blob = `${opts.serviceName || ""} ${opts.timeLabel || ""} ${opts.activity || ""} ${opts.venue || ""} ${opts.formType || ""}`
+    .toLowerCase();
+  const explicit = blob.match(
+    /\b(\d{2,3})\s*(?:'|′|min(?:ute)?s?)\b|\b(\d{2,3})\s*minutes?\b|\b(\d+)\s*hour(?:s)?\b/,
+  );
+  if (explicit) {
+    if (explicit[3]) return Math.max(30, Number(explicit[3]) * 60);
+    const n = Number(explicit[1] || explicit[2]);
+    if (Number.isFinite(n) && n >= 15 && n <= 300) return n;
+  }
+  const range = String(opts.timeLabel || "").match(
+    /(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?)\s*(?:to|–|-|—)\s*(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?)/i,
+  );
+  if (range) {
+    const a = clockTokenToMinutes(range[1]);
+    let b = clockTokenToMinutes(range[2]);
+    if (a != null && b != null) {
+      if (b <= a) b += 12 * 60; // afternoon wrap: 12.30 to 2 → +12h on end
+      const mins = b - a;
+      if (mins >= 15 && mins <= 300) return mins;
+    }
+  }
+  if (/climb|westway|\bcl\b/.test(blob)) return 60;
+  if (/physical|fitness/.test(blob)) return 60;
+  if (/multi|splash/.test(blob)) return 90;
+  if (/bespoke/.test(blob)) return 60;
+  if (/counsel/.test(blob)) return 45;
+  if (/\b60\b|1\s*hour|60\s*min/.test(blob)) return 60;
+  if (/\b45\b|45\s*min/.test(blob)) return 45;
+  return 30;
+}
+
+export function inferServiceTypeLabel(opts: {
+  serviceName?: string | null;
+  timeLabel?: string | null;
+  activity?: string | null;
+  venue?: string | null;
+  formType?: string | null;
+}): string {
+  const blob = `${opts.serviceName || ""} ${opts.activity || ""} ${opts.venue || ""} ${opts.formType || ""} ${opts.timeLabel || ""}`
+    .toLowerCase();
+  if (/day\s*centre|daycentre/.test(blob)) return "Day Centre";
+  if (/climb|westway|climbing_registration|\bcl\b/.test(blob)) {
+    return "Climbing Activity";
+  }
+  if (/physical|fitness/.test(blob)) return "Physical Activity";
+  if (/multi|splash/.test(blob)) return "Multi-Activity";
+  if (/bespoke/.test(blob)) return "Bespoke Programme";
+  if (/counsel/.test(blob)) return "Counselling";
+  if (/aquatic|swim|\bsw\b/.test(blob)) return "Aquatic Activity";
+  const named = String(opts.serviceName || "").trim();
+  return named || "Aquatic Activity";
+}
+
+/**
+ * One-session private catalogue price for the booked service.
+ * Trial Stripe amount = this unit (climbing £75, aquatic 30' £50, aquatic 60' £100, …).
+ */
 export function inferUnitPriceGbp(opts: {
   serviceName?: string | null;
   timeLabel?: string | null;
   activity?: string | null;
+  venue?: string | null;
+  formType?: string | null;
 }): number {
-  const blob = `${opts.serviceName || ""} ${opts.timeLabel || ""} ${opts.activity || ""}`
-    .toLowerCase();
-  if (/\b60\b|1\s*hour|60\s*min/.test(blob)) return 90;
-  if (/\b45\b|45\s*min/.test(blob)) return 70;
+  const serviceType = inferServiceTypeLabel(opts);
+  const durationMin = inferSessionDurationMin(opts);
+  const priced = unitPriceFor(serviceType, durationMin);
+  if (priced != null && Number.isFinite(priced) && priced > 0) {
+    return Math.round(priced * 100) / 100;
+  }
+  // Day Centre / enquire-only: keep legacy floor so callers still get a number.
   return DEFAULT_SESSION_GBP;
 }
 
 export function inferServiceKey(serviceName?: string | null, timeLabel?: string | null): string {
   const s = `${serviceName || ""} ${timeLabel || ""}`.toLowerCase();
   if (s.includes("day centre") || s.includes("daycentre")) return "DAY_CENTRE";
-  if (s.includes("climb")) return "CLIMBING";
-  if (/\b60\b|60\s*min/.test(s)) return "AQUATIC_60";
+  if (s.includes("climb") || s.includes("westway")) return "CLIMBING";
+  if (s.includes("physical") || s.includes("fitness")) return "PHYSICAL";
+  if (s.includes("multi")) return "MULTI";
+  if (s.includes("bespoke")) return "BESPOKE";
+  const dur = inferSessionDurationMin({ serviceName, timeLabel });
+  if (dur >= 60) return "AQUATIC_60";
   return "AQUATIC_30";
 }
 

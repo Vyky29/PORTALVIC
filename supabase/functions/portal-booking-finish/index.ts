@@ -19,6 +19,7 @@ import {
   createFinishBookingStripeCheckout,
   inferBillingTerm,
   inferServiceKey,
+  inferServiceTypeLabel,
   inferUnitPriceGbp,
   loadCompletionByRawToken,
   parseBookingScope,
@@ -106,7 +107,7 @@ async function loadContext(
     const { data } = await admin
       .from("portal_participant_documents")
       .select(
-        "id, participant_name, participant_dob, parent_name, parent_email, parent_phone, payload_json, status",
+        "id, form_type, participant_name, participant_dob, parent_name, parent_email, parent_phone, payload_json, status",
       )
       .eq("id", token.document_id)
       .maybeSingle();
@@ -440,18 +441,30 @@ Deno.serve(async (req) => {
   if (!doc) return json(404, { ok: false, error: "document_missing" });
 
   const day = clean(reservation?.day_label, 40) || "Wednesday";
-  const serviceName = clean(reservation?.service_name, 120) || "Aquatic Activity";
   const timeLabel = clean(reservation?.time_label, 80);
   const venue = clean(reservation?.venue, 80);
+  const activity = clean(reservation?.activity, 80);
+  const formType = clean(doc.form_type, 80);
+  const serviceName = inferServiceTypeLabel({
+    serviceName: clean(reservation?.service_name, 120),
+    timeLabel,
+    activity,
+    venue,
+    formType,
+  });
   const sessionDateIso = resolveSessionDateIso({
     dateIso: reservation?.date_iso ? String(reservation.date_iso).slice(0, 10) : null,
     day,
     asOfIso: new Date().toISOString().slice(0, 10),
   });
+  // Trial and term quotes: one session at that service's catalogue rate
+  // (climbing £75 / 60', aquatic £50 / 30', …) — never a blind £50 default.
   const unit = inferUnitPriceGbp({
     serviceName,
     timeLabel,
-    activity: clean(reservation?.activity, 80),
+    activity,
+    venue,
+    formType,
   });
   const term = inferBillingTerm();
   const serviceKey = inferServiceKey(serviceName, timeLabel);

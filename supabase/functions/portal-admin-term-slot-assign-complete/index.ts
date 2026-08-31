@@ -22,7 +22,6 @@ import {
 import {
   inferServiceKey,
   inferUnitPriceGbp,
-  DEFAULT_SESSION_GBP,
 } from "../_shared/portal_booking_finish.ts";
 import { normalizeParticipantLookupName } from "../_shared/participant_avatar.ts";
 import { loadProductMap } from "../_shared/portal_xero_product_catalog.ts";
@@ -187,17 +186,11 @@ Deno.serve(async (req) => {
   const unit =
     Number(body.unit_price_gbp) > 0
       ? Number(body.unit_price_gbp)
-      : (() => {
-          const inferred = inferUnitPriceGbp({
-            serviceName: service,
-            timeLabel: timeSlot,
-          });
-          // Climbing 60' band is £75 private (catalog) — time labels rarely include "60".
-          if (/climb/i.test(service) && inferred <= DEFAULT_SESSION_GBP) {
-            return 75;
-          }
-          return inferred;
-        })();
+      : inferUnitPriceGbp({
+          serviceName: service,
+          timeLabel: timeSlot,
+          venue,
+        });
   const serviceKey =
     clean(body.service_key, 40) || inferServiceKey(service, timeSlot);
   const detailLine = [day, timeSlot, venue, instructors].filter(Boolean).join(" · ");
