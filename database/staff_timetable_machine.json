@@ -5136,8 +5136,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-09-10",
@@ -5178,14 +5178,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-09-10",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-09-11",
@@ -5680,8 +5672,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-09-17",
@@ -5722,14 +5714,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-09-17",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-09-18",
@@ -6224,8 +6208,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-09-24",
@@ -6266,14 +6250,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-09-24",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-09-25",
@@ -6768,8 +6744,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-10-01",
@@ -6810,14 +6786,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-10-01",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-10-02",
@@ -7312,8 +7280,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-10-08",
@@ -7354,14 +7322,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-10-08",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-10-09",
@@ -7856,8 +7816,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-10-15",
@@ -7898,14 +7858,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-10-15",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-10-16",
@@ -8400,8 +8352,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-10-22",
@@ -8442,14 +8394,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-10-22",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-10-23",
@@ -9016,8 +8960,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-11-05",
@@ -9058,14 +9002,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-11-05",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-11-06",
@@ -9560,8 +9496,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-11-12",
@@ -9602,14 +9538,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-11-12",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-11-13",
@@ -10104,8 +10032,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-11-19",
@@ -10146,14 +10074,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-11-19",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-11-20",
@@ -10648,8 +10568,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-11-26",
@@ -10690,14 +10610,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-11-26",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-11-27",
@@ -11192,8 +11104,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-12-03",
@@ -11234,14 +11146,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-12-03",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-12-04",
@@ -11736,8 +11640,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-12-10",
@@ -11778,14 +11682,6 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-12-10",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   },
   {
     "date": "2026-12-11",
@@ -12280,8 +12176,8 @@
     "day": "Thursday",
     "venue": "Acton",
     "staff_name": "Aurora",
-    "time_range": "4.30-6.30",
-    "raw_assignment": "Aurora 4.30-6.30"
+    "time_range": "4-6.30",
+    "raw_assignment": "Aurora 4-6.30"
   },
   {
     "date": "2026-12-17",
@@ -12322,13 +12218,5 @@
     "staff_name": "Youssef",
     "time_range": "12.30-3",
     "raw_assignment": "Youssef 12.30-3"
-  },
-  {
-    "date": "2026-12-17",
-    "day": "Thursday",
-    "venue": "Acton",
-    "staff_name": "Youssef",
-    "time_range": "4-6.30",
-    "raw_assignment": "Youssef 4-6.30"
   }
 ]
