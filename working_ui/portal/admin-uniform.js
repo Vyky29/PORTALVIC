@@ -184,11 +184,10 @@
         ' <span style="font-weight:500;color:#62758a;font-size:12px">' +
         esc(it.category) +
         "</span></h3>" +
-        '<table style="width:100%;border-collapse:collapse;font-size:13px;min-width:360px">' +
+        '<table style="width:100%;border-collapse:collapse;font-size:13px;min-width:320px">' +
         "<thead><tr>" +
         '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6ecf4">Size</th>' +
         '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Total stock</th>' +
-        '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Before portal</th>' +
         '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Issued (named)</th>' +
         '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Current</th>' +
         "</tr></thead><tbody>";
@@ -217,9 +216,6 @@
           row.opening_qty +
           "</td>" +
           '<td style="padding:6px;text-align:right;border-bottom:1px solid #f1f5f9">' +
-          row.pre_portal_out_qty +
-          "</td>" +
-          '<td style="padding:6px;text-align:right;border-bottom:1px solid #f1f5f9">' +
           row.issued_open_qty +
           "</td>" +
           '<td style="padding:6px;text-align:right;border-bottom:1px solid #f1f5f9;font-weight:700">' +
@@ -231,10 +227,9 @@
     });
     html +=
       '<p style="margin:0 0 4px;font-size:12px;color:#62758a;overflow-wrap:break-word">' +
-      "<strong>Columns:</strong> Total stock = starting inventory. " +
-      "Before portal = pieces that left <em>before</em> Portal (old sheet, no staff names). " +
-      "Issued (named) = given to a person in Portal (incl. today: Michelle, Roberto, Luliya…). " +
-      "Current = what is left now.</p></div>";
+      "<strong>Columns:</strong> Total stock = starting inventory (130). " +
+      "Issued (named) = given to a person in Portal. " +
+      "Current = Total stock minus named issues (and returns/stock-in if any).</p></div>";
     return html;
   }
 
@@ -405,14 +400,13 @@
     var rows = data.movements || [];
     if (!rows.length) {
       return (
-        '<p style="color:#62758a">No movements for this filter. Pick <strong>All staff</strong> to see stock-in and pre-portal seed rows, or choose a person to see only their issues/returns.</p>'
+        '<p style="color:#62758a">No movements for this filter. Pick <strong>All staff</strong> to see everything, or choose a person to see only their issues/returns.</p>'
       );
     }
     var html =
       '<p style="margin:0 0 10px;font-size:12px;color:#62758a;overflow-wrap:break-word">' +
       "<strong>Staff</strong> = who received / returned the kit. " +
-      "<strong>By</strong> = who recorded the movement (issuer). " +
-      "Seed rows (<code>pre_portal_stock_out</code>) have no staff name — they were stock already out before the portal.</p>" +
+      "<strong>By</strong> = who recorded the movement (issuer).</p>" +
       '<div style="overflow-x:auto;min-width:0"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px">' +
       "<thead><tr>" +
       '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6ecf4">When</th>' +
@@ -519,18 +513,12 @@
     var html =
       '<div class="uniform-admin" style="min-width:0">' +
       '<div style="margin:0 0 12px;padding:10px 12px;border-radius:10px;background:#eef6fb;border:1px solid #c5d9ea;color:#0b2a5b;font-size:13px;overflow-wrap:break-word">' +
-      "<strong>Baseline:</strong> Total stock " +
-      esc(String(banner.opening != null ? banner.opening : 130)) +
-      " / Before portal (no names) " +
-      esc(String(banner.stock_out != null ? banner.stock_out : 17)) +
-      " / then Current " +
-      esc(String(banner.current != null ? banner.current : 113)) +
-      ". Live now — Total stock " +
+      "<strong>Stock:</strong> Total " +
       t.opening +
-      ", Current " +
-      t.current +
-      ", Issued (named) " +
+      " − Issued (named) " +
       t.issued_open +
+      " = Current " +
+      t.current +
       "." +
       (data.allocation_policy
         ? "<br><strong>Allocation:</strong> Day Centre/Bespoke " +
@@ -568,8 +556,7 @@
       '<p style="margin:0 0 12px;font-size:12px;color:#62758a;overflow-wrap:break-word">' +
       "<strong>Tabs:</strong> Matrix = live qty by size. Actions = stock in / issue / return. " +
       "Ledger = every stock movement. Staff issues = per-person issued lines + signatures. " +
-      "<strong>Filter staff</strong> narrows Ledger + Staff issues (+ Actions return list) to that person. " +
-      "Today's named handouts are under <strong>Issued (named)</strong>, not Before portal.</p>" +
+      "<strong>Filter staff</strong> narrows Ledger + Staff issues (+ Actions return list) to that person.</p>" +
       '<div id="ufPanel">';
 
     if (state.tab === "matrix") html += renderMatrix(data);

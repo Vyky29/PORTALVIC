@@ -383,9 +383,9 @@ Deno.serve(async (req) => {
     totals,
     seed_banner: {
       opening: 130,
-      stock_out: 17,
-      current: 113,
-      note: "Baseline from office sheet at go-live (Opening 130 / Out 17 / Current 113).",
+      stock_out: 0,
+      current: 130,
+      note: "Total stock 130. Only named Portal issues reduce current (pre-portal anonymous outs removed — same pieces as named handouts).",
     },
     allocation_policy: {
       day_centre_bespoke: "2 T-shirts + 2 sweatshirts",
