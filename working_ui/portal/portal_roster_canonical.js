@@ -123,7 +123,7 @@
       },
     ],
     thursday: [
-      { staff: "Roberto", clients: [{ name: "Fadi", time: "12.15 to 3.15" }] },
+      { staff: "Roberto", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
       { staff: "Youssef", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
     ],
     friday: [

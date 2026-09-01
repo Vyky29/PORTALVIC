@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901k</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901m</title>
   <style>
     :root {
       --ink: #173247;
@@ -96,6 +96,16 @@
       margin: 0 0 8px;
       font-size: 0.92rem;
       font-weight: 800;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .col__staff-shift {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.02em;
     }
     .empty {
       margin: 0;
@@ -190,7 +200,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901k · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901m · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026 (BH).
     Two blocks: <strong>1-6 Sep</strong> = first week (Tue-Fri Day Centre only; Sat 5 + Sun 6 weekend);
@@ -201,7 +211,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260901-roberto-21h-pt"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260901-roberto-thu-fadi-participant"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-roberto-wed-fadi-only"></script>
   <!-- local board bump: 20260901c-open-slots -->
   <script>
@@ -306,13 +316,13 @@
         { name: "No participant", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic", kind: "open" },
       ],
       Godsway: [
-        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
       John: [
-        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
       Emanuel: [
-        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
     },
     thursday: {
@@ -344,7 +354,7 @@
     friday: {
       /* Acton afternoon = Youssef. Roberto Fri Hub Bespoke (Tinashe) in 21h PT. */
       Roberto: [
-        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
       Youssef: [
         { name: "Adam Pi", time: "4 to 5.30", band: "After school", area: "Acton · Aquatic" },
@@ -461,13 +471,13 @@
         { name: "Abodi Pa", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Godsway: [
-        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
       John: [
-        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
       Emanuel: [
-        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
     },
   };
@@ -492,6 +502,96 @@
   /* Tue Acton AS column order after DC core (Michelle/Victor stay for Day Centre only). */
   var TUESDAY_AS_ORDER = ["Roberto", "Luliya", "Javier", "Aurora"];
   var MONDAY_EXTRA_ORDER = WEEKDAY_EXTRA_ORDER.monday;
+
+  /*
+   * Paid staff shift (shown next to column name). Participant session times stay on cards.
+   * e.g. Roberto Thu shift 12.15-3.15; Fadi card 12.30-3. Bespoke staff 4.15-6.15; Tinashe 4.30-6.
+   */
+  var STAFF_SHIFT = {
+    monday: {
+      Roberto: "11 to 3 · 4 to 6.30",
+      Luliya: "11 to 3 · 4.30 to 6.30",
+      Michelle: "10.45 to 4.15",
+      Raul: "11 to 4",
+      Youssef: "12.30 to 3 · 4 to 6.30",
+      Dan: "4.30 to 6.30",
+      Godsway: "4.15 to 6.15",
+      John: "4.15 to 6.15",
+      Emanuel: "4.15 to 6.15",
+    },
+    tuesday: {
+      Roberto: "11 to 3 · 4 to 6.30",
+      Luliya: "11 to 3 · 4 to 6.30",
+      Michelle: "10.45 to 4.15",
+      Victor: "12.30 to 3 · 3.30 to 5",
+      Javier: "4 to 6.30",
+      Aurora: "4.30 to 6.30",
+    },
+    wednesday: {
+      Roberto: "11 to 3",
+      Luliya: "11 to 3 · 4.30 to 6.30",
+      Michelle: "10.45 to 4.15",
+      Victor: "12.30 to 4",
+      Raul: "12.30 to 4",
+      Youssef: "4 to 6.30",
+      Javier: "4 to 6.30",
+      Berta: "4.30 to 6",
+      Dan: "4.30 to 6.30",
+      Godsway: "4.15 to 6.15",
+      John: "4.15 to 6.15",
+      Emanuel: "4.15 to 6.15",
+    },
+    thursday: {
+      Roberto: "12.15 to 3.15 · 4 to 6.30",
+      Youssef: "12.30 to 3 · 4 to 6.30",
+      Luliya: "4.30 to 6.30",
+      Javier: "4 to 6.30",
+      Aurora: "4.30 to 6.30",
+    },
+    friday: {
+      Roberto: "11 to 3 · 4.15 to 6.15",
+      Luliya: "11 to 4",
+      Michelle: "10.45 to 4.15",
+      Victor: "11 to 3",
+      Raul: "11 to 3",
+      Youssef: "12.30 to 4 · 4 to 6",
+    },
+    saturday: {
+      Youssef: "9.30 to 1",
+    },
+    sunday: {
+      Roberto: "8.45 to 3.45",
+      Berta: "9.15 to 2.15",
+      Aurora: "9 to 3",
+      Javier: "9 to 3",
+      Godsway: "9.15 to 2.15",
+      Emanuel: "9.15 to 2.15",
+      Alex: "10 to 2",
+      Carlos: "10 to 4",
+    },
+  };
+
+  function staffShiftLabel(day, staffName) {
+    var dk = typeof day === "string" ? day : day.dow;
+    var phase = typeof day === "object" ? day.phase : "";
+    var map = STAFF_SHIFT[dk] || {};
+    var label = map[staffName] || "";
+    /* Week 1 weekdays: DC paid band only (strip after-school part after · ). */
+    if (phase === "w1" && dk !== "saturday" && dk !== "sunday" && label.indexOf(" · ") !== -1) {
+      label = label.split(" · ")[0];
+    }
+    /* Thu week 1: Roberto DC only 12.15-3.15 (no Acton yet). */
+    if (phase === "w1" && dk === "thursday" && staffName === "Roberto") {
+      label = "12.15 to 3.15";
+    }
+    if (phase === "w1" && dk === "thursday" && staffName === "Youssef") {
+      label = "12.30 to 3";
+    }
+    if (phase === "w1" && dk === "friday" && staffName === "Roberto") {
+      label = "11 to 3";
+    }
+    return label;
+  }
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -804,7 +904,12 @@
       if ((dk === "saturday" || dk === "sunday") && !clients.length) return;
       var col = document.createElement("div");
       col.className = "col";
-      col.innerHTML = '<p class="col__staff">' + esc(staff) + "</p>";
+      var shift = staffShiftLabel(day, staff);
+      col.innerHTML =
+        '<p class="col__staff">' +
+        esc(staff) +
+        (shift ? " (" + esc(shift) + ")" : "") +
+        "</p>";
       if (!clients.length) {
         var emptyLabel =
           dk === "tuesday" && staff === "Raul"
