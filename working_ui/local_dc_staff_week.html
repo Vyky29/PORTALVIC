@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901e</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901g</title>
   <style>
     :root {
       --ink: #173247;
@@ -129,6 +129,20 @@
     }
     .card--open .card__name { color: #854d0e; }
     .card--open .card__band { color: #a16207; }
+    .card--closed {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      border-left-color: #64748b;
+    }
+    .card--closed .card__name { color: #475569; }
+    .card--closed .card__band { color: #64748b; }
+    .card--trial {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      border-left-color: #2563eb;
+    }
+    .card--trial .card__name { color: #1e40af; }
+    .card--trial .card__band { color: #1d4ed8; }
     .card__band {
       display: block;
       font-size: 0.68rem;
@@ -166,12 +180,12 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901e</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901g · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026
-    (bank holiday). Tue–Fri = Day Centre + after school. Sat = only staff with a book (Matthias off Autumn).
-    Sun = 8 weekend workers. Mon 7 = DC + afternoon Acton/Northolt/Hub (Victor OFF Mondays).
-    Fri Acton afternoon = Youssef (not Roberto); Hub Fri = Emanuel + Victor. No staff login needed.
+    (bank holiday). Autumn Term 2026 standing (not Summer). Tue-Fri = Day Centre + after school.
+    Sat = Youssef Acton 9.30-1. Sun = Multi/aquatic + Westway climbing (Alex 10-2 · Carlos 10-4).
+    Yellow = open (no participant). Grey = closed. Blue = trial. No staff login needed.
   </p>
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
@@ -211,19 +225,19 @@
     monday: "2026-09-07",
   };
   var DAY_HINT = {
-    tuesday: "DC + Acton after school",
-    wednesday: "DC + Acton / Northolt / Hub",
-    thursday: "DC + Acton after school",
-    friday: "DC + Acton (Youssef) + Hub (Victor/Emanuel)",
-    saturday: "Weekend (after school / pool)",
-    sunday: "Weekend (Multi + aquatic)",
+    tuesday: "Autumn DC + Acton after school",
+    wednesday: "Autumn DC + Acton / Northolt / Hub",
+    thursday: "Autumn DC + Acton after school",
+    friday: "Autumn DC + Acton (Youssef) + Hub (Victor/Emanuel)",
+    saturday: "Autumn weekend · Youssef Acton 9.30-1",
+    sunday: "Autumn weekend · Multi / aquatic + Westway climbing",
     monday: "Autumn DC + after school / Hub (Victor OFF)",
   };
 
   /*
    * Standing weekend + weekday after-school (local preview; not DC board).
-   * Saturday: Matthias left (not on Autumn roster) — Youssef keeps Emani + Saaib only.
-   * Sunday: Autumn remap (Bismark→Godsway, Giuseppe→Emanuel); Erik dropped after hard cut.
+   * Saturday: Youssef Acton 9.30-1 (Matthias left → open 11-12).
+   * Sunday: Autumn climbing Alex 10-2 / Carlos 10-4; Multi remap Godsway/Emanuel.
    * Fri Acton: Youssef (Adam Pi / Amaar) — not Roberto. Hub Fri: Emanuel + Victor.
    */
   var EXTRA = {
@@ -235,14 +249,14 @@
         { name: "Eiji", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Youssef: [
-        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
+        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Logan", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Rayyan Fi", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Luliya: [
-        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
+        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Amir", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Javier: [
@@ -255,7 +269,7 @@
         { name: "Richard", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Aurora: [
-        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
         { name: "Bediako", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
         { name: "Junaid", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Aydaan Ah", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
@@ -264,10 +278,10 @@
     },
     wednesday: {
       Youssef: [
-        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Stephanie", time: "4.30 to 5.15", band: "After school", area: "Acton · Aquatic" },
         { name: "Scott", time: "5.15 to 6", band: "After school", area: "Acton · Aquatic" },
-        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
       Javier: [
         { name: "Cyrus", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
@@ -283,13 +297,13 @@
         { name: "Tyson", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic" },
         { name: "Ruben", time: "5 to 5.30", band: "After school", area: "Northolt · Aquatic" },
         { name: "Amar Rai", time: "5.30 to 6", band: "After school", area: "Northolt · Aquatic" },
-        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic" },
+        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic", kind: "open" },
       ],
       Luliya: [
         { name: "Vithura", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic" },
         { name: "Amar Rai", time: "5 to 5.30", band: "After school", area: "Northolt · Aquatic" },
         { name: "Amber", time: "5.30 to 6", band: "After school", area: "Northolt · Aquatic" },
-        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic" },
+        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic", kind: "open" },
       ],
       Godsway: [
         { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
@@ -309,7 +323,7 @@
         { name: "Mohammed", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Luliya: [
-        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Thushyan", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
         { name: "Yuri", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Eiji", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
@@ -341,10 +355,14 @@
       ],
     },
     saturday: {
+      /* Autumn Acton aquatic · paid band 9.30-1. Empty bands = open (Matthias left). */
       Youssef: [
+        { name: "No participant", time: "9.30 to 10", band: "Weekend", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "10 to 10.30", band: "Weekend", area: "Acton · Aquatic", kind: "open" },
         { name: "Emani", time: "10.30 to 11", band: "Weekend", area: "Acton · Aquatic" },
-        { name: "No participant", time: "11 to 12", band: "Weekend", area: "Acton · Aquatic" },
+        { name: "No participant", time: "11 to 12", band: "Weekend", area: "Acton · Aquatic", kind: "open" },
         { name: "Saaib", time: "12 to 12.30", band: "Weekend", area: "Acton · Aquatic" },
+        { name: "No participant", time: "12.30 to 1", band: "Weekend", area: "Acton · Aquatic", kind: "open" },
       ],
     },
     sunday: {
@@ -365,7 +383,7 @@
         { name: "Arthur Ma", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
         { name: "Cyrus", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
         { name: "Aydaan Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
-        { name: "No participant", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "No participant", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool", kind: "open" },
         { name: "Zakariya", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
         { name: "Faris", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
       ],
@@ -374,7 +392,7 @@
         { name: "Adam Ab", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Cyrus", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Arthur Ma", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
-        { name: "No participant", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "No participant", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "open" },
         { name: "Aydaan Ah", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
       ],
       Godsway: [
@@ -404,12 +422,12 @@
         { name: "Max", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
         { name: "Shaan", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
       ],
+      /* Autumn hours: Alex 10-2 · Carlos 10-4 (no Summer Ayden 2-3 on Alex). */
       Alex: [
         { name: "Eiji", time: "10 to 11", band: "Weekend", area: "Westway · Climbing" },
-        { name: "Yusuf Ah", time: "11 to 12", band: "Weekend", area: "Westway · Climbing" },
+        { name: "Yusef", time: "11 to 12", band: "Weekend", area: "Westway · Climbing" },
         { name: "Scott", time: "12 to 1", band: "Weekend", area: "Westway · Climbing" },
         { name: "Rodin", time: "1 to 2", band: "Weekend", area: "Westway · Climbing" },
-        { name: "Ayden W", time: "2 to 3", band: "Weekend", area: "Westway · Climbing" },
       ],
       Carlos: [
         { name: "Hazem", time: "10 to 11", band: "Weekend", area: "Westway · Climbing" },
@@ -417,6 +435,7 @@
         { name: "Serine", time: "12 to 1", band: "Weekend", area: "Westway · Climbing" },
         { name: "Zakariya", time: "1 to 2", band: "Weekend", area: "Westway · Climbing" },
         { name: "Patrick", time: "2 to 3", band: "Weekend", area: "Westway · Climbing" },
+        { name: "Closed", time: "3 to 4", band: "Weekend", area: "Westway · Climbing", kind: "closed" },
       ],
     },
     monday: {
@@ -426,19 +445,19 @@
         { name: "Mario", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Luliya: [
-        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic" },
+        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic", kind: "open" },
         { name: "Gemma", time: "5 to 5.30", band: "After school", area: "Northolt · Aquatic" },
         { name: "Zayana", time: "5.30 to 6", band: "After school", area: "Northolt · Aquatic" },
         { name: "Yamik", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic" },
       ],
       Dan: [
-        { name: "Muhammad", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic" },
+        { name: "Rayden Rana (trial)", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic", kind: "trial" },
         { name: "Amar Rai", time: "5 to 5.30", band: "After school", area: "Northolt · Aquatic" },
         { name: "Amar Rai", time: "5.30 to 6", band: "After school", area: "Northolt · Aquatic" },
         { name: "Adaam Ah", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic" },
       ],
       Youssef: [
-        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
         { name: "Eddie Mc", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
         { name: "Joel", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Abodi Pa", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
@@ -597,6 +616,7 @@
           time: c.time,
           band: c.band || "After school",
           area: c.area || "",
+          kind: c.kind || "",
           dc: false,
         });
       });
@@ -604,12 +624,19 @@
     return out;
   }
 
-  function isOpenSlotName(name) {
-    var n = String(name || "")
+  function slotKind(c) {
+    var k = String((c && c.kind) || "")
+      .trim()
+      .toLowerCase();
+    if (k === "trial" || k === "closed" || k === "open") return k;
+    var n = String((c && c.name) || "")
       .trim()
       .toLowerCase()
       .replace(/\s+/g, " ");
-    return n === "no participant" || n === "closed" || n === "open";
+    if (n === "closed") return "closed";
+    if (n === "no participant" || n === "no client" || n === "open") return "open";
+    if (/\(trial\)|\btrial\b/i.test(String((c && c.name) || ""))) return "trial";
+    return "";
   }
 
   function renderCard(c, dayKey) {
@@ -630,19 +657,28 @@
         );
       })
       .join("");
-    var open = isOpenSlotName(c.name);
-    var tone = open
-      ? "card--open"
-      : c.dc
-        ? cardAccentClass(c.name)
-        : c.band === "Weekend"
-          ? "card--weekend"
-          : "card--as";
+    var kind = slotKind(c);
+    var tone =
+      kind === "trial"
+        ? "card--trial"
+        : kind === "closed"
+          ? "card--closed"
+          : kind === "open"
+            ? "card--open"
+            : c.dc
+              ? cardAccentClass(c.name)
+              : c.band === "Weekend"
+                ? "card--weekend"
+                : "card--as";
+    var bandLabel =
+      kind === "trial"
+        ? (c.band || "After school") + " · Trial"
+        : c.band || "Day Centre";
     return (
       '<div class="card ' +
       esc(tone) +
       '"><div><span class="card__band">' +
-      esc(c.band || "Day Centre") +
+      esc(bandLabel) +
       '</span><div class="card__name">' +
       esc(c.name) +
       "</div></div><div>" +
