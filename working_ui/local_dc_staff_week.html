@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901u</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901v</title>
   <style>
     :root {
       --ink: #173247;
@@ -123,6 +123,10 @@
       padding: 8px 10px;
       margin: 0 0 8px;
       min-width: 0;
+      /* 30' = 1 unit; longer sessions stretch so Sunday 9-3 lines up. */
+      --slot-unit: 54px;
+      min-height: calc(var(--slot-unit) * var(--units, 1) - 8px);
+      box-sizing: border-box;
     }
     /* Coloured left ribete = Day Centre participants only (AS / weekend plain). */
     .card--emanuel { border-left: 4px solid #6d5ae0; }
@@ -195,7 +199,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901u · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901v · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026 (BH).
     Two blocks: <strong>1-6 Sep</strong> = first week (Tue-Fri Day Centre only; Sat 5 + Sun 6 weekend);
@@ -482,12 +486,13 @@
   };
 
   var SUNDAY_STAFF_ORDER = [
+    /* Pool swimming instructors together, then Hub Multi, then Climb. */
     "Roberto",
     "Aurora",
+    "Javier",
     "Berta",
     "Godsway",
     "Emanuel",
-    "Javier",
     "Alex",
     "Carlos",
   ];
@@ -498,6 +503,20 @@
     friday: ["Roberto"],
     monday: ["Dan", "Godsway", "John", "Emanuel"],
   };
+  /* Wed: keep Acton swim (Youssef+Javier) adjacent before wrap. */
+  var WEDNESDAY_COL_ORDER = [
+    "Roberto",
+    "Luliya",
+    "Michelle",
+    "Victor",
+    "Youssef",
+    "Javier",
+    "Raul",
+    "Dan",
+    "Godsway",
+    "John",
+    "Emanuel",
+  ];
   /* Tue Acton AS column order after DC core (Michelle/Victor stay for Day Centre only). */
   var TUESDAY_AS_ORDER = ["Roberto", "Luliya", "Javier", "Aurora"];
   var MONDAY_EXTRA_ORDER = WEEKDAY_EXTRA_ORDER.monday;
@@ -729,6 +748,71 @@
         });
       }
     }
+    return mergeAdjacentSameClient(out);
+  }
+
+  /** "4.30" / "10.15" / "9" → minutes from midnight (1-7 treated as afternoon). */
+  function parseClockPart(part) {
+    var p = String(part || "").trim();
+    var m = p.match(/^(\d{1,2})(?:[.:](\d{2}))?$/);
+    if (!m) return null;
+    var h = Number(m[1]);
+    var min = m[2] != null ? Number(m[2]) : 0;
+    if (h >= 1 && h <= 7) h += 12;
+    return h * 60 + min;
+  }
+
+  function parseTimeRange(label) {
+    var s = String(label || "").replace(/\s+/g, " ").trim();
+    var m = s.match(/^(\d{1,2}(?:[.:]\d{2})?)\s*to\s*(\d{1,2}(?:[.:]\d{2})?)$/i);
+    if (!m) return null;
+    var a = parseClockPart(m[1]);
+    var b = parseClockPart(m[2]);
+    if (a == null || b == null || b <= a) return null;
+    return { start: a, end: b, startLabel: m[1].replace(":", "."), endLabel: m[2].replace(":", ".") };
+  }
+
+  function durationUnits(timeLabel) {
+    var r = parseTimeRange(timeLabel);
+    if (!r) return 1;
+    return Math.max(1, Math.round((r.end - r.start) / 15) / 2); /* 30' = 1, 45' = 1.5, 75' = 2.5 */
+  }
+
+  function formatTimeLabel(startLabel, endLabel) {
+    return String(startLabel).replace(":", ".") + " to " + String(endLabel).replace(":", ".");
+  }
+
+  /** Merge back-to-back same client (e.g. Cyrus 4-4.30 + 4.30-5 → one 4-5 cell). */
+  function mergeAdjacentSameClient(list) {
+    var out = [];
+    (list || []).forEach(function (c) {
+      var cur = {
+        name: c.name,
+        time: c.time,
+        band: c.band,
+        area: c.area,
+        kind: c.kind || "",
+        dc: !!c.dc,
+      };
+      var prev = out[out.length - 1];
+      if (!prev) {
+        out.push(cur);
+        return;
+      }
+      var same =
+        String(prev.name).toLowerCase() === String(cur.name).toLowerCase() &&
+        String(prev.band || "") === String(cur.band || "") &&
+        String(prev.area || "") === String(cur.area || "") &&
+        String(prev.kind || "") === String(cur.kind || "") &&
+        !!prev.dc === !!cur.dc;
+      var pr = parseTimeRange(prev.time);
+      var cr = parseTimeRange(cur.time);
+      if (same && pr && cr && pr.end === cr.start) {
+        prev.time = formatTimeLabel(pr.startLabel, cr.endLabel);
+        return;
+      }
+      out.push(cur);
+    });
     return out;
   }
 
@@ -782,9 +866,12 @@
       kind === "trial"
         ? (c.band || "After school") + " · Trial"
         : c.band || "Day Centre";
+    var units = c.dc ? 1 : durationUnits(c.time);
     return (
       '<div class="card ' +
       esc(tone) +
+      '" style="--units:' +
+      units +
       '"><div><span class="card__band">' +
       esc(bandLabel) +
       '</span><div class="card__name">' +
@@ -848,6 +935,11 @@
         }
       });
       return tueOut;
+    }
+    if (dk === "wednesday") {
+      return WEDNESDAY_COL_ORDER.filter(function (s) {
+        return boardClients(day, s).length > 0;
+      });
     }
     if (WEEKDAY_EXTRA_ORDER[dk]) {
       var mid = STAFF.slice();
