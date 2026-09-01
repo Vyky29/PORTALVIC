@@ -717,20 +717,45 @@
    * each instalment, while the real term invoice already holds the full schedule.
    * Hide from office counts/cards so TERMLY shows 1 invoice, AUTO year shows 1 per term.
    */
+  function isGcInstalmentTrackerInvoice(inv) {
+    if (!inv) return false;
+    var notes = String(inv.notes || '');
+    var line = String(inv.line_description || '');
+    var ref = String(inv.reference_text || inv.reference || '');
+    var title = String(
+      inv.document_title || inv.title || inv.related_client || '',
+    );
+    if (/Consolidated payment tracker:\s*[0-9a-f-]{20,}/i.test(notes)) {
+      return true;
+    }
+    if (/\bGC\s*tracker\b/i.test(line + ' ' + notes + ' ' + ref + ' ' + title)) {
+      return true;
+    }
+    if (/^Tracker\s*[—–-]/i.test(title) || /^Tracker\s*[—–-]/i.test(ref)) {
+      return true;
+    }
+    return false;
+  }
+
   function isScheduleShadowInvoice(inv, siblings) {
     if (!inv || inv.created_via === 'la_office_auto') return false;
     var pay = String(inv.payment_status || '').toLowerCase();
-    if (pay === 'void' || pay === 'paid') return false;
-    if (scheduleRows(inv).length > 0) return false;
+    if (pay === 'void') return false;
+    /* Explicit GC tracker rows (Maiyar/Linda office scripts) — always hide. */
+    if (isGcInstalmentTrackerInvoice(inv)) return true;
+    /* Paid slices are kept for audit but not shown once marked paid either if matched. */
     var due = String(inv.due_date || inv.next_instalment_due || '').slice(0, 10);
     var amt = Number(inv.amount_gbp) || 0;
     if (!due || !(amt > 0.009)) return false;
+    /* Real term invoices have 2+ instalments — never treat as shadow. */
+    if (scheduleRows(inv).length >= 2) return false;
     var key = instalmentMatchKey(due, amt);
     var id = String(inv.id || '');
     var list = siblings || [];
     for (var i = 0; i < list.length; i++) {
       var sib = list[i];
       if (String(sib.id || '') === id) continue;
+      if (isGcInstalmentTrackerInvoice(sib)) continue;
       var sched = scheduleRows(sib);
       if (sched.length < 2) continue;
       for (var j = 0; j < sched.length; j++) {
