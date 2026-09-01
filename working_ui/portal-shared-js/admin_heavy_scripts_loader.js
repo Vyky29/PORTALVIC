@@ -6,7 +6,7 @@
 
   var SETS = {
     roster: [
-      "/portal/term_from_timetable.js?v=20260703-bundle-iife",
+      "/portal/term_from_timetable.js?v=20260901-roberto-pt-zh",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260828-aurora-javier-hours",
       "/portal/clients_info_embed.js?v=20260707-social-workers",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-roberto-wed-fadi-only",
@@ -29,7 +29,7 @@
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: [
       "/portal/spreadsheet_reference_data.js?v=20260828-autumn-hours-base",
-      "/portal/autumn_staff_hours_reference.js?v=20260901-shift-bands",
+      "/portal/autumn_staff_hours_reference.js?v=20260901-roberto-sun-315",
     ],
   };
 

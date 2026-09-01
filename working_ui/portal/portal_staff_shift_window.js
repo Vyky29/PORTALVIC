@@ -145,6 +145,25 @@
     return n === "youssef" || n === "yousef" || n === "yusef";
   }
 
+  function isRobertoBandKey(v) {
+    return normKey(v) === "roberto";
+  }
+
+  /** Roberto Sunday SwimFarm pool lead: 8:45-3:15 (6.5h), not last-client + buffer. */
+  function rowsAreRobertoSundaySwimfarm(rows, iso) {
+    var dayName = dayNameFromIso(iso);
+    if (dayName !== "Sunday") return false;
+    var list = Array.isArray(rows) ? rows : [];
+    if (!list.length) return false;
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      if (!isRobertoBandKey(r && r.anchor_staff_id)) return false;
+      var venue = normKey(r && r.anchor_venue);
+      if (venue && venue.indexOf("swimfarm") < 0 && venue.indexOf("hub") < 0) return false;
+    }
+    return true;
+  }
+
   /** Youssef Acton term last day (inclusive). */
   var YOUSSEF_ACTON_LAST_DATE = "2026-07-15";
 
@@ -230,6 +249,9 @@
     }
     if (rowsAreWeekdayMaBespokeBand(list, isoNorm)) {
       return formatBandLabel("16:15", "18:15");
+    }
+    if (rowsAreRobertoSundaySwimfarm(list, isoNorm)) {
+      return formatBandLabel("08:45", "15:15");
     }
     var dayName = dayNameFromIso(isoNorm);
     var minStart = Infinity;

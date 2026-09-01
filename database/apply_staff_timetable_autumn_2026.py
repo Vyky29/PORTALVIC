@@ -165,7 +165,7 @@ def sunday_template() -> list[tuple[str, str, str]]:
     return [
         _pairs("Aurora", "9-3", "SwimFarm"),
         _pairs("Javier", "9-3", "SwimFarm"),
-        _pairs("Roberto", "8.45-3.45", "SwimFarm"),
+        _pairs("Roberto", "8.45-3.15", "SwimFarm"),
         _pairs("Berta", "9.15-2.15", "SwimFarm"),
         _pairs("Emanuel", "9.15-2.15", "SwimFarm"),
         _pairs("Godsway", "9.15-2.15", "SwimFarm"),
