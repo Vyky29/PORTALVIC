@@ -1927,11 +1927,6 @@
     var textareaMax = "4000";
     var coldTpl = activeColdTemplate();
     if (needsTemplate) {
-      sessionNote =
-        '<div class="portal-pnlog-composer__tpl-banner" role="status">' +
-        "<strong>Needs Meta template</strong> — no open 24h window. " +
-        "Choose a shell, then edit only <code>{{1}}</code>. <strong>Chat history stays above — scroll it to read.</strong>" +
-        "</div>";
       var tplPick =
         '<div class="portal-pnlog-composer__tpl-pick" role="radiogroup" aria-label="WhatsApp template">' +
         WA_COLD_TEMPLATES.map(function (tpl) {
@@ -1952,8 +1947,16 @@
           );
         }).join("") +
         "</div>";
-      templateShell =
+      sessionNote =
+        '<div class="portal-pnlog-composer__tpl-banner" role="status">' +
+        '<span class="portal-pnlog-composer__tpl-banner-txt">' +
+        "<strong>Needs Meta template</strong> — no open 24h window. " +
+        "Choose a shell, then edit only <code>{{1}}</code>. " +
+        "<strong>Chat history stays above — scroll it to read.</strong>" +
+        "</span>" +
         tplPick +
+        "</div>";
+      templateShell =
         '<div class="portal-pnlog-composer__tpl-shell">' +
         '<div class="portal-pnlog-composer__tpl-fixed" id="portalPnlogTplPrefix" aria-hidden="true">' +
         esc(String(coldTpl.prefix || "").trim()) +
