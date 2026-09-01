@@ -208,6 +208,10 @@
       const iso = normaliseIsoDate(isoYmd);
       return !!(iso && dates.indexOf(iso) >= 0);
     }
+    function portalIsoIsAutumnWeek1Dc(isoYmd){
+      const iso = normaliseIsoDate(isoYmd);
+      return !!(iso && iso >= "2026-09-01" && iso <= "2026-09-04");
+    }
     /** Standing weekday snap window (Services / reenrol): exclude crash weeks from 20 Jul. */
     function portalTermStandingSnapBounds(){
       const from = typeof portalTermSummerRosterFromIso === 'function'
@@ -410,6 +414,7 @@
       const w = String(weekdayLong || '').trim();
       if(rowIso){
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
+        if(portalIsoIsAutumnWeek1Dc(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
         if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return rowIso === iso;
         /* Outside summer dated window: Day Centre → Autumn board snap (not June ACAT weeks). */
         if(!portalStaffHasDatedRowsForIso(iso, sid) && portalSessionIsDayCentreService(s)){
