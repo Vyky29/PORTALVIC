@@ -456,10 +456,13 @@ Deno.serve(async (req) => {
   );
 
   const todayIso = new Date().toISOString().slice(0, 10);
-  const weeklySlotsPublic = weekly.slots.map((slot) => ({
-    ...slot,
-    dateIso: resolveSessionDateIso({ day: slot.day, asOfIso: todayIso }),
-  }));
+  const weeklySlotsPublic = weekly.slots.map((slot) => {
+    const { bookedKeys: _bk, ...pub } = slot;
+    return {
+      ...pub,
+      dateIso: resolveSessionDateIso({ day: slot.day, asOfIso: todayIso }),
+    };
+  });
 
   const intensiveService = {
     id: "intensive",

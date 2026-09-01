@@ -402,6 +402,7 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
         capacity: cap,
         taken,
         referenceDate: ref,
+        bookedKeys: [...keys],
         instructors: [
           ...new Set(
             useParts.flatMap((p) =>
