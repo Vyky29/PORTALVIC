@@ -660,3 +660,63 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     rowCount: rows.length,
   };
 }
+
+function bookingClientKey(name: unknown): string {
+  return norm(name)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+/** True when a portal hold name is already counted on the MADRE band (e.g. Rayyan Fida vs Rayyan Fi). */
+export function holdParticipantAlreadyOnOfferSlot(
+  participantName: unknown,
+  bookedKeys: string[] | undefined,
+): boolean {
+  const keys = bookedKeys || [];
+  if (!keys.length) return false;
+  const holdKey = bookingClientKey(participantName);
+  if (!holdKey) return false;
+  const roster = new Set(keys.map((k) => bookingClientKey(k)));
+  if (roster.has(holdKey)) return true;
+  const first = holdKey.split(" ")[0] || "";
+  if (first.length < 3) return false;
+  for (const rk of roster) {
+    if (rk.startsWith(first + " ")) return true;
+  }
+  return false;
+}
+
+/** Apply active booking holds without double-counting roster names already on the band. */
+export function applyBookingSlotHoldsToOffer(
+  weeklySlots: OfferSlot[],
+  intensiveSlots: OfferSlot[],
+  holds: Array<{ slot_id?: unknown; participant_name?: unknown }> | null | undefined,
+): { applied: number; skipped_roster: number } {
+  let applied = 0;
+  let skippedRoster = 0;
+  for (const hold of holds || []) {
+    const sid = String(hold.slot_id || "").trim();
+    if (!sid) continue;
+    const weekly = weeklySlots.find((s) => s.id === sid);
+    const intensive = weekly
+      ? null
+      : intensiveSlots.find((s) => String(s.id || "") === sid);
+    const slot = weekly || intensive;
+    if (!slot) continue;
+    if (
+      holdParticipantAlreadyOnOfferSlot(
+        hold.participant_name,
+        slot.bookedKeys,
+      )
+    ) {
+      skippedRoster += 1;
+      continue;
+    }
+    const cap = Number(slot.capacity) || 0;
+    slot.taken = Math.min(cap, (Number(slot.taken) || 0) + 1);
+    applied += 1;
+  }
+  return { applied, skipped_roster: skippedRoster };
+}

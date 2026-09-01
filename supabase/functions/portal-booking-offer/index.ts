@@ -7,7 +7,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders } from "../_shared/parent_portal_auth.ts";
 import type { MadreDoc } from "../_shared/portal_madre_fold_logic.ts";
-import { buildWeeklyOfferFromMadre } from "../_shared/portal_booking_seat_helper.ts";
+import { buildWeeklyOfferFromMadre, applyBookingSlotHoldsToOffer } from "../_shared/portal_booking_seat_helper.ts";
 import { resolveSessionDateIso } from "../_shared/portal_booking_context.ts";
 import { ensureReenrolUnconfirmedReleasedOnMadre } from "../_shared/portal_reenrol_release_madre.ts";
 import { runUnpaidAug15PlaceRelease } from "../_shared/portal_reenrol_release_unpaid_aug15.ts";
@@ -442,35 +442,18 @@ Deno.serve(async (req) => {
 
   const { data: holds, error: holdsErr } = await supabase
     .from("portal_booking_slot_reservations")
-    .select("slot_id")
+    .select("slot_id, participant_name")
     .in("status", [...BOOKING_SLOT_HOLD_STATUSES]);
 
   if (holdsErr) {
     console.warn("[portal-booking-offer] slot holds", holdsErr.message);
   }
 
-  const holdCounts = new Map<string, number>();
-  for (const h of holds || []) {
-    const sid = String(h.slot_id || "").trim();
-    if (!sid) continue;
-    holdCounts.set(sid, (holdCounts.get(sid) || 0) + 1);
-  }
-
-  if (holdCounts.size) {
-    for (const slot of weekly.slots) {
-      const extra = holdCounts.get(slot.id) || 0;
-      if (!extra) continue;
-      slot.taken = Math.min(slot.capacity, (Number(slot.taken) || 0) + extra);
-    }
-    for (const slot of intensive.slots) {
-      const extra = holdCounts.get(String(slot.id || "")) || 0;
-      if (!extra) continue;
-      slot.taken = Math.min(
-        Number(slot.capacity) || 0,
-        (Number(slot.taken) || 0) + extra,
-      );
-    }
-  }
+  const holdApply = applyBookingSlotHoldsToOffer(
+    weekly.slots,
+    intensive.slots,
+    holds || [],
+  );
 
   const todayIso = new Date().toISOString().slice(0, 10);
   const weeklySlotsPublic = weekly.slots.map((slot) => ({
@@ -526,9 +509,8 @@ Deno.serve(async (req) => {
       intensive_slots: intensive.slots.length,
       madre_meta_from: weekly.termFrom,
       madre_meta_to: weekly.termTo,
-      pending_slot_holds: holdCounts.size
-        ? [...holdCounts.values()].reduce((a, b) => a + b, 0)
-        : 0,
+      pending_slot_holds: holdApply.applied,
+      pending_slot_holds_skipped_roster: holdApply.skipped_roster,
     },
   });
 });
