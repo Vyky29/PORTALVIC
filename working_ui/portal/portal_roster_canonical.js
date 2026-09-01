@@ -55,7 +55,8 @@
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      { staff: "Victor", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      /* Victor OFF Mondays (DC) */
+      { staff: "Victor", clients: [] },
       {
         staff: "Raul",
         clients: [
@@ -735,6 +736,7 @@
    * - Roberto Wed DC: Emanuel 11–12.30 + Fadi 12.30–3 (ends 15:00; no Emanuel 3–4)
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
    * - Fri DC: Victor+Raul end 15:00; Michelle+Luliya Ikram to 16:00; Youssef Emanuel 15–16
+   * - Victor OFF Mondays (DC)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
   function applyAutumnStandingParticipantRows(rows) {
