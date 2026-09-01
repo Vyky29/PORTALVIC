@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901j</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901k</title>
   <style>
     :root {
       --ink: #173247;
@@ -177,15 +177,26 @@
       white-space: nowrap;
       flex: 0 0 auto;
     }
+    .week-banner {
+      margin: 18px 0 8px;
+      padding: 8px 12px;
+      background: #dbeafe;
+      border: 1px solid #93c5fd;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: #1e3a5f;
+    }
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901j · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901k · Autumn 2026</h1>
   <p class="note">
-    Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026
-    (bank holiday). Autumn Term 2026 standing with re-enrol releases (not Summer books).
-    Tue Acton AS = Roberto, Aurora, Javier, Luliya only. Sun climb = Alex 10-2 / Carlos 10-4
-    (Scott open; Patrick 3-4; Kabir trial unpaid = not shown). Yellow = open. Grey = closed. Blue = trial.
+    Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026 (BH).
+    Two blocks: <strong>1-6 Sep</strong> = first week (Tue-Fri Day Centre only; Sat 5 + Sun 6 weekend);
+    <strong>7-13 Sep</strong> = standing week (DC + AS + weekend) = template for the rest of term.
+    Tue Acton AS (from Mon 7) = Roberto / Aurora / Javier / Luliya (Logan → Luliya 5-5.30; Rayyan Fi aquatic withdrawn).
+    Yellow = open. Grey = closed. Blue = trial.
   </p>
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
@@ -196,15 +207,25 @@
   <script>
 (function () {
   var STAFF = ["Roberto", "Luliya", "Michelle", "Victor", "Raul", "Youssef"];
-  /* Mon 31 Aug 2026 = closed (BH). Show Tue–Fri DC, weekend, then Mon DC+AS. */
+  /*
+   * Two calendar blocks (do not merge week-1 DC days with standing AS):
+   *   w1  Tue 1 – Sun 6 Sep  → DC only on weekdays; first weekend
+   *   w2  Mon 7 – Sun 13 Sep → standing week (rest of Autumn term)
+   */
   var DAYS = [
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-    "monday",
+    { dow: "tuesday", iso: "2026-09-01", phase: "w1", hint: "Week 1 · Day Centre only (AS starts Mon 7)" },
+    { dow: "wednesday", iso: "2026-09-02", phase: "w1", hint: "Week 1 · Day Centre only" },
+    { dow: "thursday", iso: "2026-09-03", phase: "w1", hint: "Week 1 · Day Centre only" },
+    { dow: "friday", iso: "2026-09-04", phase: "w1", hint: "Week 1 · Day Centre only" },
+    { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Week 1 · first Saturday" },
+    { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · first Sunday" },
+    { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Standing · DC + AS (template rest of term)" },
+    { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing · Acton AS Roberto/Aurora/Javier/Luliya" },
+    { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Standing · Acton / Northolt / Hub" },
+    { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton after school" },
+    { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Standing · Acton Youssef + Hub Tinashe Roberto" },
+    { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
+    { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Standing · weekend (Scott open · Patrick 3-4)" },
   ];
   var DAY_LABEL = {
     tuesday: "Tuesday",
@@ -215,24 +236,6 @@
     sunday: "Sunday",
     monday: "Monday",
   };
-  var ISO = {
-    tuesday: "2026-09-01",
-    wednesday: "2026-09-02",
-    thursday: "2026-09-03",
-    friday: "2026-09-04",
-    saturday: "2026-09-05",
-    sunday: "2026-09-06",
-    monday: "2026-09-07",
-  };
-  var DAY_HINT = {
-    tuesday: "Autumn DC + Acton AS (Roberto / Aurora / Javier / Luliya)",
-    wednesday: "Autumn DC + Acton / Northolt / Hub",
-    thursday: "Autumn DC + Acton after school",
-    friday: "Autumn DC + Acton (Youssef) + Hub Tinashe (Roberto)",
-    saturday: "Autumn weekend · Youssef Acton 9.30-1",
-    sunday: "Autumn weekend · Multi + climb (Scott open · Patrick 3-4)",
-    monday: "Autumn DC + after school / Hub (Victor OFF)",
-  };
 
   /*
    * Standing weekend + weekday after-school (local preview; not DC board).
@@ -242,8 +245,9 @@
    */
   var EXTRA = {
     tuesday: {
-      /* Autumn Acton AS pool: Roberto, Aurora, Javier, Luliya only (no Youssef).
-       * Releases: Jad/Amir/Adam Me gone; Eiji+Hazem withdrew Acton aquatic; Anas → Aurora 6-6.30. */
+      /* Standing Tue Acton (from Mon 7): Roberto, Aurora, Javier, Luliya only (no Youssef).
+       * Logan was Youssef 5-5.30 → Luliya. Rayyan Fi aquatic withdrawn (Multi Sun only).
+       * Releases: Jad/Amir/Adam Me; Eiji+Hazem Acton aquatic; Anas → Aurora 6-6.30. */
       Roberto: [
         { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Serine", time: "4.30 to 5.30", band: "After school", area: "Acton · Aquatic" },
@@ -253,7 +257,8 @@
       Luliya: [
         { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
         { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
-        { name: "No participant", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        /* Was Youssef Tue 5-5.30 (Youssef not on Tue Acton pool). */
+        { name: "Logan", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Javier: [
         { name: "Ayman", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
@@ -584,11 +589,19 @@
     return [{ time_slot: timeLabel, area: areaFallback }];
   }
 
-  function boardClients(dayKey, staffName) {
+  function dayUsesExtra(day) {
+    if (!day) return false;
+    if (day.dow === "saturday" || day.dow === "sunday") return true;
+    return day.phase === "w2";
+  }
+
+  function boardClients(day, staffName) {
+    var dayKey = typeof day === "string" ? day : day.dow;
     var PRC = window.PortalRosterCanonical;
     var board = PRC && PRC.AUTUMN_DAY_CENTRE_BOARD;
     var out = [];
-    if (board && board[dayKey]) {
+    var isWeekend = dayKey === "saturday" || dayKey === "sunday";
+    if (!isWeekend && board && board[dayKey]) {
       var col = (board[dayKey] || []).find(function (c) {
         return String(c.staff || "").toLowerCase() === staffName.toLowerCase();
       });
@@ -602,19 +615,21 @@
         });
       });
     }
-    var extraDay = EXTRA[dayKey];
-    var extraStaff = extraDay && extraDay[staffName];
-    if (extraStaff && extraStaff.length) {
-      extraStaff.forEach(function (c) {
-        out.push({
-          name: c.name,
-          time: c.time,
-          band: c.band || "After school",
-          area: c.area || "",
-          kind: c.kind || "",
-          dc: false,
+    if (dayUsesExtra(day)) {
+      var extraDay = EXTRA[dayKey];
+      var extraStaff = extraDay && extraDay[staffName];
+      if (extraStaff && extraStaff.length) {
+        extraStaff.forEach(function (c) {
+          out.push({
+            name: c.name,
+            time: c.time,
+            band: c.band || "After school",
+            area: c.area || "",
+            kind: c.kind || "",
+            dc: false,
+          });
         });
-      });
+      }
     }
     return out;
   }
@@ -682,8 +697,8 @@
     );
   }
 
-  function staffColumnsForDay(dk) {
-    /* Sat/Sun: never show DC six — only instructors with weekend cards. */
+  function staffColumnsForDay(day) {
+    var dk = day.dow;
     if (dk === "saturday" || dk === "sunday") {
       var order =
         dk === "sunday"
@@ -693,19 +708,25 @@
       var out = [];
       order.forEach(function (s) {
         if (seen[s]) return;
-        if (boardClients(dk, s).length > 0) {
+        if (boardClients(day, s).length > 0) {
           seen[s] = true;
           out.push(s);
         }
       });
       Object.keys(EXTRA[dk] || {}).forEach(function (s) {
         if (seen[s]) return;
-        if (boardClients(dk, s).length > 0) {
+        if (boardClients(day, s).length > 0) {
           seen[s] = true;
           out.push(s);
         }
       });
       return out;
+    }
+    /* Week 1 weekdays: Day Centre columns only (no AS staff). */
+    if (day.phase === "w1") {
+      return STAFF.filter(function (s) {
+        return boardClients(day, s).length > 0;
+      });
     }
     if (dk === "monday") {
       var mon = STAFF.slice();
@@ -713,18 +734,17 @@
         if (mon.indexOf(s) === -1) mon.push(s);
       });
       return mon.filter(function (s) {
-        if (boardClients(dk, s).length > 0) return true;
-        return s === "Victor"; /* OFF Mondays — keep visible */
+        if (boardClients(day, s).length > 0) return true;
+        return s === "Victor";
       });
     }
     if (dk === "tuesday") {
-      /* DC core first, then Acton AS pool only (Roberto/Luliya/Javier/Aurora). */
       var tue = ["Michelle", "Victor", "Raul"].concat(TUESDAY_AS_ORDER);
       var tueOut = [];
       var tueSeen = {};
       tue.forEach(function (s) {
         if (tueSeen[s]) return;
-        if (boardClients(dk, s).length > 0) {
+        if (boardClients(day, s).length > 0) {
           tueSeen[s] = true;
           tueOut.push(s);
         }
@@ -737,7 +757,7 @@
         if (mid.indexOf(s) === -1) mid.push(s);
       });
       return mid.filter(function (s) {
-        return boardClients(dk, s).length > 0;
+        return boardClients(day, s).length > 0;
       });
     }
     return STAFF.slice();
@@ -754,22 +774,33 @@
   links.appendChild(a2);
 
   var week = document.getElementById("week");
-  DAYS.forEach(function (dk) {
+  var lastPhase = "";
+  DAYS.forEach(function (day) {
+    if (day.phase !== lastPhase) {
+      lastPhase = day.phase;
+      var ban = document.createElement("div");
+      ban.className = "week-banner";
+      ban.textContent =
+        day.phase === "w1"
+          ? "Week 1 · 1-6 Sep 2026 · Day Centre Tue-Fri + first weekend (no weekday after school yet)"
+          : "Standing week · 7-13 Sep 2026 · template for the rest of Autumn term (re-enrolled + new booked)";
+      week.appendChild(ban);
+    }
+    var dk = day.dow;
     var dayEl = document.createElement("section");
     dayEl.className = "day";
-    var hint = DAY_HINT[dk] ? " · " + DAY_HINT[dk] : "";
+    var hint = day.hint ? " · " + day.hint : "";
     dayEl.innerHTML =
       "<h2>" +
       esc(DAY_LABEL[dk]) +
       " " +
-      esc(ISO[dk].slice(8) + "/" + ISO[dk].slice(5, 7) + "/" + ISO[dk].slice(0, 4)) +
+      esc(day.iso.slice(8) + "/" + day.iso.slice(5, 7) + "/" + day.iso.slice(0, 4)) +
       esc(hint) +
       "</h2>";
     var cols = document.createElement("div");
     cols.className = "cols";
-    staffColumnsForDay(dk).forEach(function (staff) {
-      var clients = boardClients(dk, staff);
-      /* Weekend: skip empty columns entirely (no "No weekend book" placeholders). */
+    staffColumnsForDay(day).forEach(function (staff) {
+      var clients = boardClients(day, staff);
       if ((dk === "saturday" || dk === "sunday") && !clients.length) return;
       var col = document.createElement("div");
       col.className = "col";
