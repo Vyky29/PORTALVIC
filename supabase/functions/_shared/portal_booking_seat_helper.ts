@@ -597,8 +597,6 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
   folded = folded.filter(
     (s) => !(s.serviceId === "multi" && s.day === "Wednesday"),
   );
-  // Never expose client keys on the public offer payload.
-  for (const s of folded) delete s.bookedKeys;
 
   folded.sort((a, b) => {
     const dayOrder: Record<string, number> = {
