@@ -96,8 +96,11 @@
     wednesday: [
       {
         staff: "Roberto",
-        /* Wed: Fadi only through 15:00 — no Emanuel (Victor/Raul cover him) */
-        clients: [{ name: "Fadi", time: "12.30 to 3" }],
+        /* Wed: Emanuel morning + Fadi through 15:00; no Emanuel 3–4 */
+        clients: [
+          { name: "Emanuel", time: "11 to 12.30" },
+          { name: "Fadi", time: "12.30 to 3" },
+        ],
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
@@ -729,7 +732,7 @@
    * - Northolt Mon/Wed: replace summer (Roberto/Dan) with Services Autumn Dan+Luliya book
    * - Luliya: DC Ikram Mon/Tue/Wed 11–3 + Fri 11–4; pool Mon/Wed Northolt 4.30–6.30,
    *   Tue Acton 4–6.30, Thu Acton 4.30–6.30
-   * - Roberto Wed DC: Fadi 12.30–3 only (ends 15:00; no Emanuel)
+   * - Roberto Wed DC: Emanuel 11–12.30 + Fadi 12.30–3 (ends 15:00; no Emanuel 3–4)
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
    * - Fri DC: Victor+Raul end 15:00; Michelle+Luliya Ikram to 16:00; Youssef Emanuel 15–16
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
