@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901y</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901z</title>
   <style>
     :root {
       --ink: #173247;
@@ -833,7 +833,8 @@
     return String(startLabel).replace(":", ".") + " to " + String(endLabel).replace(":", ".");
   }
 
-  /** Merge back-to-back same client (e.g. Cyrus 4-4.30 + 4.30-5 → one 4-5 cell). */
+  /** Merge back-to-back same booked client (Cyrus 4-4.30 + 4.30-5 → one tall 4-5).
+   * Do not merge open/closed/empty — those stay as separate 30' slots. */
   function mergeAdjacentSameClient(list) {
     var out = [];
     (list || []).forEach(function (c) {
@@ -845,16 +846,47 @@
         kind: c.kind || "",
         dc: !!c.dc,
       };
+      var kind = String(cur.kind || "")
+        .trim()
+        .toLowerCase();
+      var nm = String(cur.name || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+      var isEmptySlot =
+        kind === "open" ||
+        kind === "closed" ||
+        nm === "no participant" ||
+        nm === "no client" ||
+        nm === "open" ||
+        nm === "closed";
       var prev = out[out.length - 1];
-      if (!prev) {
+      if (!prev || isEmptySlot) {
+        out.push(cur);
+        return;
+      }
+      var prevKind = String(prev.kind || "")
+        .trim()
+        .toLowerCase();
+      var prevNm = String(prev.name || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+      var prevEmpty =
+        prevKind === "open" ||
+        prevKind === "closed" ||
+        prevNm === "no participant" ||
+        prevNm === "no client" ||
+        prevNm === "open" ||
+        prevNm === "closed";
+      if (prevEmpty) {
         out.push(cur);
         return;
       }
       var same =
-        String(prev.name).toLowerCase() === String(cur.name).toLowerCase() &&
+        prevNm === nm &&
         String(prev.band || "") === String(cur.band || "") &&
         String(prev.area || "") === String(cur.area || "") &&
-        String(prev.kind || "") === String(cur.kind || "") &&
         !!prev.dc === !!cur.dc;
       var pr = parseTimeRange(prev.time);
       var cr = parseTimeRange(cur.time);
