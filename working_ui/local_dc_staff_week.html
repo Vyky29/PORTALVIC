@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901d</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901e</title>
   <style>
     :root {
       --ink: #173247;
@@ -166,17 +166,17 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901c</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901e</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026
-    (bank holiday). Tue–Fri = Day Centre six. Sat = only staff with a book (Matthias off Autumn).
+    (bank holiday). Tue–Fri = Day Centre + after school. Sat = only staff with a book (Matthias off Autumn).
     Sun = 8 weekend workers. Mon 7 = DC + afternoon Acton/Northolt/Hub (Victor OFF Mondays).
-    No staff login needed.
+    Fri Acton afternoon = Youssef (not Roberto); Hub Fri = Emanuel + Victor. No staff login needed.
   </p>
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260901-weekend-as-victor-off"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260901-fri-youssef-acton"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-roberto-wed-fadi-only"></script>
   <!-- local board bump: 20260901c-open-slots -->
   <script>
@@ -211,18 +211,135 @@
     monday: "2026-09-07",
   };
   var DAY_HINT = {
+    tuesday: "DC + Acton after school",
+    wednesday: "DC + Acton / Northolt / Hub",
+    thursday: "DC + Acton after school",
+    friday: "DC + Acton (Youssef) + Hub (Victor/Emanuel)",
     saturday: "Weekend (after school / pool)",
     sunday: "Weekend (Multi + aquatic)",
     monday: "Autumn DC + after school / Hub (Victor OFF)",
   };
 
   /*
-   * Standing weekend + Monday after-school (local preview; not DC board).
+   * Standing weekend + weekday after-school (local preview; not DC board).
    * Saturday: Matthias left (not on Autumn roster) — Youssef keeps Emani + Saaib only.
    * Sunday: Autumn remap (Bismark→Godsway, Giuseppe→Emanuel); Erik dropped after hard cut.
-   * Monday afternoon: Acton / Northolt / Hub Bespoke beyond the DC six.
+   * Fri Acton: Youssef (Adam Pi / Amaar) — not Roberto. Hub Fri: Emanuel + Victor.
    */
   var EXTRA = {
+    tuesday: {
+      Roberto: [
+        { name: "Jad", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Serine", time: "4.30 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Hazem", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "Eiji", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Youssef: [
+        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "Logan", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Rayyan Fi", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Luliya: [
+        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "Amir", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Javier: [
+        { name: "Ayman", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Adam Me", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "Linda", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Eiji", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "Rayan Ta", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "Kareena", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Richard", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Aurora: [
+        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Bediako", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "Junaid", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Aydaan Ah", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "Hazem", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+    },
+    wednesday: {
+      Youssef: [
+        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Stephanie", time: "4.30 to 5.15", band: "After school", area: "Acton · Aquatic" },
+        { name: "Scott", time: "5.15 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Javier: [
+        { name: "Cyrus", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Cyrus", time: "4.30 to 5.15", band: "After school", area: "Acton · Aquatic" },
+        { name: "Adam Ab", time: "5.15 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "Kayden", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Berta: [
+        { name: "Scott", time: "4.30 to 5.15", band: "After school", area: "Acton · Aquatic" },
+        { name: "Stephanie", time: "5.15 to 6", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Dan: [
+        { name: "Tyson", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic" },
+        { name: "Ruben", time: "5 to 5.30", band: "After school", area: "Northolt · Aquatic" },
+        { name: "Amar Rai", time: "5.30 to 6", band: "After school", area: "Northolt · Aquatic" },
+        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic" },
+      ],
+      Luliya: [
+        { name: "Vithura", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic" },
+        { name: "Amar Rai", time: "5 to 5.30", band: "After school", area: "Northolt · Aquatic" },
+        { name: "Amber", time: "5.30 to 6", band: "After school", area: "Northolt · Aquatic" },
+        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic" },
+      ],
+      Godsway: [
+        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+      ],
+      John: [
+        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+      ],
+      Emanuel: [
+        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+      ],
+    },
+    thursday: {
+      Roberto: [
+        { name: "Tom", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Yassir", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "Yossi", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Mohammed", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Luliya: [
+        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Thushyan", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "Yuri", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Eiji", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Javier: [
+        { name: "Ayman", time: "4 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "Khalid Ab", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Karo", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "Hazem", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Aurora: [
+        { name: "Elijah", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Aqsa", time: "4.30 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Hazem", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "Maiyar", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+    },
+    friday: {
+      /* Acton afternoon = Youssef (not Roberto). Roberto ends after DC. */
+      Youssef: [
+        { name: "Adam Pi", time: "4 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Amaar Ah", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Victor: [
+        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+      ],
+      Emanuel: [
+        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+      ],
+    },
     saturday: {
       Youssef: [
         { name: "Emani", time: "10.30 to 11", band: "Weekend", area: "Acton · Aquatic" },
@@ -348,7 +465,14 @@
     "Alex",
     "Carlos",
   ];
-  var MONDAY_EXTRA_ORDER = ["Dan", "Godsway", "John", "Emanuel"];
+  var WEEKDAY_EXTRA_ORDER = {
+    tuesday: ["Javier", "Aurora"],
+    wednesday: ["Javier", "Berta", "Dan", "Godsway", "John", "Emanuel"],
+    thursday: ["Javier", "Aurora"],
+    friday: ["Emanuel"],
+    monday: ["Dan", "Godsway", "John", "Emanuel"],
+  };
+  var MONDAY_EXTRA_ORDER = WEEKDAY_EXTRA_ORDER.monday;
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -560,6 +684,15 @@
       return mon.filter(function (s) {
         if (boardClients(dk, s).length > 0) return true;
         return s === "Victor"; /* OFF Mondays — keep visible */
+      });
+    }
+    if (WEEKDAY_EXTRA_ORDER[dk]) {
+      var mid = STAFF.slice();
+      WEEKDAY_EXTRA_ORDER[dk].forEach(function (s) {
+        if (mid.indexOf(s) === -1) mid.push(s);
+      });
+      return mid.filter(function (s) {
+        return boardClients(dk, s).length > 0;
       });
     }
     return STAFF.slice();

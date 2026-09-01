@@ -42,7 +42,8 @@
    * Order = board column order. Times match MADRE-style "11 to 1" / "12.30 to 3".
    * Cyrus (Victor Tue 3.30-5) is Bespoke — not listed here; see CYRUS_BESPOKE_ROW.
    * Youssef Acton days (Mon/Thu): DC ends 15:00 then pool from 16:00.
-   * Friday: DC through 16:00 (Fadi + Emanuel) then Hub Bespoke 16:15–18:15 (same site).
+   * Friday: DC through 16:00 (Fadi + Emanuel); Youssef then Acton aquatic (not Roberto);
+   * Hub Bespoke 16:15–18:15 = Emanuel + Victor.
    */
   var AUTUMN_DAY_CENTRE_BOARD = {
     monday: [
@@ -173,7 +174,7 @@
 
   /**
    * Autumn 26/27 Hub afternoon Bespoke — same staff shifts as the Autumn rota
-   * (Godsway / John / Emanuel Mon+Wed 4.15–6.15; Fri Emanuel + Victor + Youssef; Tinashe booked).
+   * (Godsway / John / Emanuel Mon+Wed 4.15–6.15; Fri Emanuel + Victor; Tinashe booked).
    * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30–5 only).
    */
   var AUTUMN_BESPOKE_HUB_ROWS = [
@@ -251,16 +252,6 @@
       client_name: "Tinashe",
       day: "Friday",
       instructors: "VICTOR",
-      service: "Bespoke Programme",
-      area: "Hub Room",
-      time_slot: "4.15 to 6.15",
-      venue: "SwimFarm",
-      session_date: "2026-07-17",
-    },
-    {
-      client_name: "Tinashe",
-      day: "Friday",
-      instructors: "YOUSSEF",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.15 to 6.15",
@@ -530,6 +521,12 @@
       return { instructors: "ROBERTO" };
     }
 
+    /* Friday: Acton aquatic (Adam Pi / Amaar) → Youssef (not Roberto). */
+    if (day === "friday" && isActonVenue(row.venue) && /\broberto\b/i.test(raw)) {
+      if (/\byoussef\b/i.test(raw)) return null;
+      return { instructors: "YOUSSEF" };
+    }
+
     if (day === "tuesday") {
       /* Angel's remaining Tue Acton (Cayra) → Luliya; Rayan Ta / Richard stay Javier. */
       if (/\bangel\b/i.test(raw)) {
@@ -651,6 +648,30 @@
     },
   ];
 
+  /** Friday Acton aquatic → Youssef (was Roberto). */
+  var YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO = [
+    {
+      client_name: "Adam Pi",
+      day: "Friday",
+      instructors: "YOUSSEF",
+      service: "Aquatic Activity",
+      area: "Teaching Pool",
+      time_slot: "4 to 5.30",
+      venue: "Acton",
+      session_date: "2026-07-17",
+    },
+    {
+      client_name: "Amaar Ah",
+      day: "Friday",
+      instructors: "YOUSSEF",
+      service: "Aquatic Activity",
+      area: "Teaching Pool",
+      time_slot: "5.30 to 6",
+      venue: "Acton",
+      session_date: "2026-07-17",
+    },
+  ];
+
   /** Simon's Thursday Acton book → Luliya (inject if live MADRE dropped Simon without successor). */
   var LULIYA_THURSDAY_ACTON_FROM_SIMON = [
     {
@@ -716,6 +737,26 @@
     });
   }
 
+  function fridayActonClientKey(name) {
+    var s = String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    if (/^adam\s*pi/.test(s) || /^adam\s*p\b/.test(s)) return "adam_pi";
+    if (/^amaar/.test(s)) return "amaar";
+    return s.replace(/[^a-z0-9]+/g, "_");
+  }
+
+  function hasFridayActonClient(rows, clientKey) {
+    var iso = DAY_CENTRE_STANDING_ISO.friday;
+    return (rows || []).some(function (r) {
+      if (!r) return false;
+      if (normIso(r.session_date) !== iso) return false;
+      if (!isActonVenue(r.venue) || !isAquaticService(r.service)) return false;
+      return fridayActonClientKey(r.client_name) === clientKey;
+    });
+  }
+
   /** Summer dated window whose Day Centre who-with-whom is replaced by Autumn board. */
   var AUTUMN_DC_REPLACE_FROM = "2026-06-01";
   var AUTUMN_DC_REPLACE_THROUGH = "2026-07-19";
@@ -736,6 +777,7 @@
    * - Roberto Wed DC: Emanuel 11–12.30 + Fadi 12.30–3 (ends 15:00; no Emanuel 3–4)
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
    * - Fri DC: Victor+Raul end 15:00; Michelle+Luliya Ikram to 16:00; Youssef Emanuel 15–16
+   * - Acton Fri: Roberto → Youssef (Adam Pi / Amaar); Hub Fri: Emanuel + Victor only
    * - Victor OFF Mondays (DC)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
@@ -854,6 +896,11 @@
     ROBERTO_MONDAY_ACTON_FROM_ANGEL.forEach(function (row) {
       var key = mondayActonClientKey(row.client_name);
       if (hasMondayActonClient(out, key)) return;
+      out.push(Object.assign({}, row));
+    });
+    YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO.forEach(function (row) {
+      var key = fridayActonClientKey(row.client_name);
+      if (hasFridayActonClient(out, key)) return;
       out.push(Object.assign({}, row));
     });
     LULIYA_THURSDAY_ACTON_FROM_SIMON.forEach(function (row) {
