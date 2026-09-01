@@ -391,7 +391,7 @@
       {
         staff: "Dan",
         clients: [
-          { name: "No participant", time: "4.30 to 5" },
+          { name: "Muhammad", time: "4.30 to 5" },
           { name: "Amar Rai", time: "5 to 5.30" },
           { name: "Amar Rai", time: "5.30 to 6" },
           { name: "Adaam Ah", time: "6 to 6.30" },
