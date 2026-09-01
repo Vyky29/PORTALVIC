@@ -395,23 +395,41 @@
   function renderLedger(data) {
     var rows = data.movements || [];
     if (!rows.length) {
-      return '<p style="color:#62758a">No movements yet.</p>';
+      return (
+        '<p style="color:#62758a">No movements for this filter. Pick <strong>All staff</strong> to see stock-in and pre-portal seed rows, or choose a person to see only their issues/returns.</p>'
+      );
     }
     var html =
-      '<div style="overflow-x:auto;min-width:0"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:520px">' +
+      '<p style="margin:0 0 10px;font-size:12px;color:#62758a;overflow-wrap:break-word">' +
+      "<strong>Staff</strong> = who received / returned the kit. " +
+      "<strong>By</strong> = who recorded the movement (issuer). " +
+      "Seed rows (<code>pre_portal_stock_out</code>) have no staff name — they were stock already out before the portal.</p>" +
+      '<div style="overflow-x:auto;min-width:0"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px">' +
       "<thead><tr>" +
       '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6ecf4">When</th>' +
+      '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6ecf4">Staff</th>' +
       '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6ecf4">Item</th>' +
       '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6ecf4">Size</th>' +
       '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Delta</th>' +
       '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6ecf4">Reason</th>' +
+      '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6ecf4">By</th>' +
       '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6ecf4">Note</th>' +
       "</tr></thead><tbody>";
     rows.forEach(function (m) {
+      var staffLabel =
+        m.staff_name ||
+        m.staff_username ||
+        (m.reason === "pre_portal_stock_out" || m.reason === "stock_in"
+          ? "—"
+          : "—");
+      var byLabel = m.issuer_name || m.actor_name || "—";
       html +=
         "<tr>" +
         '<td style="padding:6px;border-bottom:1px solid #f1f5f9;white-space:nowrap">' +
         esc(String(m.created_at || "").replace("T", " ").slice(0, 16)) +
+        "</td>" +
+        '<td style="padding:6px;border-bottom:1px solid #f1f5f9;min-width:0;overflow-wrap:break-word;font-weight:600;color:#0b2a5b">' +
+        esc(staffLabel) +
         "</td>" +
         '<td style="padding:6px;border-bottom:1px solid #f1f5f9;min-width:0;overflow-wrap:break-word">' +
         esc(m.item_name || "") +
@@ -425,6 +443,9 @@
         "</td>" +
         '<td style="padding:6px;border-bottom:1px solid #f1f5f9">' +
         esc(m.reason) +
+        "</td>" +
+        '<td style="padding:6px;border-bottom:1px solid #f1f5f9;min-width:0;overflow-wrap:break-word">' +
+        esc(byLabel) +
         "</td>" +
         '<td style="padding:6px;border-bottom:1px solid #f1f5f9;min-width:0;overflow-wrap:break-word">' +
         esc(m.note || "") +
@@ -527,7 +548,8 @@
       '<button type="button" class="btn btn--sm' +
       (state.tab === "issues" ? "" : " btn--sec") +
       '" data-uf-tab="issues">Staff issues</button>' +
-      '<select id="ufStaffFilter" style="min-width:0;max-width:220px;flex:1">' +
+      '<label for="ufStaffFilter" style="font-size:12px;color:#62758a;margin:0">Filter staff</label>' +
+      '<select id="ufStaffFilter" aria-label="Filter by staff" style="min-width:0;max-width:220px;flex:1">' +
       '<option value="">All staff</option>' +
       staffOptionsHtml(data.staff_directory, state.staffFilter).replace(
         '<option value="">Select staff</option>',
@@ -536,6 +558,10 @@
       "</select>" +
       '<button type="button" class="btn btn--sec btn--sm" id="ufRefresh">Refresh</button>' +
       "</div>" +
+      '<p style="margin:0 0 12px;font-size:12px;color:#62758a;overflow-wrap:break-word">' +
+      "<strong>Tabs:</strong> Matrix = live qty by size. Actions = stock in / issue / return. " +
+      "Ledger = every stock movement. Staff issues = per-person issued lines + signatures. " +
+      "<strong>Filter staff</strong> narrows Ledger + Staff issues (+ Actions return list) to that person.</p>" +
       '<div id="ufPanel">';
 
     if (state.tab === "matrix") html += renderMatrix(data);

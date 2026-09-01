@@ -193,12 +193,80 @@ Deno.serve(async (req) => {
       else movQ = movQ.eq("issue_id", "00000000-0000-0000-0000-000000000000");
     }
     const { data: mov } = await movQ;
+    const movIssueIds = Array.from(
+      new Set((mov || []).map((m) => m.issue_id).filter(Boolean)),
+    );
+    const issueMeta: Record<
+      string,
+      { staff_name: string; staff_username: string; issuer_name: string }
+    > = {};
+    if (movIssueIds.length) {
+      const { data: issRows } = await sb
+        .from("uniform_issues")
+        .select(
+          "id, staff_profile_id, issuer_staff_id, issuer_ack_name, staff_ack_name",
+        )
+        .in("id", movIssueIds);
+      const peopleIds = Array.from(
+        new Set(
+          (issRows || [])
+            .flatMap((r) => [r.staff_profile_id, r.issuer_staff_id])
+            .filter(Boolean),
+        ),
+      );
+      const peopleMap: Record<string, { full_name: string; username: string }> =
+        {};
+      if (peopleIds.length) {
+        const { data: people } = await sb
+          .from("staff_profiles")
+          .select("id, full_name, username")
+          .in("id", peopleIds);
+        for (const p of people || []) {
+          peopleMap[p.id] = {
+            full_name: String(p.full_name || ""),
+            username: String(p.username || ""),
+          };
+        }
+      }
+      for (const r of issRows || []) {
+        const st = peopleMap[r.staff_profile_id];
+        const iss = r.issuer_staff_id ? peopleMap[r.issuer_staff_id] : null;
+        issueMeta[r.id] = {
+          staff_name: st?.full_name || String(r.staff_ack_name || ""),
+          staff_username: st?.username || "",
+          issuer_name:
+            String(r.issuer_ack_name || "") ||
+            iss?.full_name ||
+            "",
+        };
+      }
+    }
+
+    const actorIds = Array.from(
+      new Set((mov || []).map((m) => m.actor_user_id).filter(Boolean)),
+    );
+    const actorMap: Record<string, string> = {};
+    if (actorIds.length) {
+      const { data: actors } = await sb
+        .from("staff_profiles")
+        .select("id, full_name, username")
+        .in("id", actorIds);
+      for (const a of actors || []) {
+        actorMap[a.id] = String(a.full_name || a.username || "");
+      }
+    }
+
     movements = (mov || []).map((m) => {
       const item = (items || []).find((i) => i.id === m.item_id);
+      const meta = m.issue_id ? issueMeta[m.issue_id] : null;
       return {
         ...m,
         item_name: item?.name || "",
         sku_code: item?.sku_code || "",
+        staff_name: meta?.staff_name || "",
+        staff_username: meta?.staff_username || "",
+        issuer_name: meta?.issuer_name || "",
+        actor_name: m.actor_user_id ? actorMap[m.actor_user_id] || "" : "",
       };
     });
 
