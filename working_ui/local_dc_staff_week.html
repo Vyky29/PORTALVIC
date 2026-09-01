@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901n</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901o</title>
   <style>
     :root {
       --ink: #173247;
@@ -200,7 +200,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901n · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901o · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026 (BH).
     Two blocks: <strong>1-6 Sep</strong> = first week (Tue-Fri Day Centre only; Sat 5 + Sun 6 weekend);
@@ -232,7 +232,7 @@
     { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · first Sunday" },
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Standing · DC + AS (template rest of term)" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing · Acton AS Roberto/Aurora/Javier/Luliya" },
-    { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Standing · Acton / Northolt / Hub" },
+    { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Standing · Acton/Northolt swimming + Hub Bespoke (no Multi)" },
     { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton after school" },
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Standing · Acton Youssef + Hub Tinashe Roberto" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
@@ -286,21 +286,16 @@
       ],
     },
     wednesday: {
+      /* Wed AS: swimming Acton + Northolt + Hub Bespoke only — no Multi-Activity. */
       Youssef: [
         { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
-        { name: "Stephanie", time: "4.30 to 5.15", band: "After school", area: "Acton · Aquatic" },
-        { name: "No participant", time: "5.15 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "4.30 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
       Javier: [
         { name: "Cyrus", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Cyrus", time: "4.30 to 5.15", band: "After school", area: "Acton · Aquatic" },
-        { name: "Adam Ab", time: "5.15 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "4.30 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Kayden", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
-      ],
-      Berta: [
-        { name: "No participant", time: "4.30 to 5.15", band: "After school", area: "Acton · Aquatic", kind: "open" },
-        { name: "Stephanie", time: "5.15 to 6", band: "After school", area: "Acton · Aquatic" },
       ],
       Dan: [
         { name: "Tyson", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic" },
@@ -493,7 +488,7 @@
   ];
   var WEEKDAY_EXTRA_ORDER = {
     tuesday: ["Javier", "Aurora"],
-    wednesday: ["Javier", "Berta", "Dan", "Godsway", "John", "Emanuel"],
+    wednesday: ["Javier", "Dan", "Godsway", "John", "Emanuel"],
     thursday: ["Javier", "Aurora"],
     friday: ["Roberto"],
     monday: ["Dan", "Godsway", "John", "Emanuel"],
@@ -534,7 +529,6 @@
       Raul: "12.30 to 4",
       Youssef: "4 to 6.30",
       Javier: "4 to 6.30",
-      Berta: "4.30 to 6",
       Dan: "4.30 to 6.30",
       Godsway: "4.15 to 6.15",
       John: "4.15 to 6.15",
@@ -641,16 +635,12 @@
     ],
   };
   var PLAIN = {
-    "ikram|11to4": ["tuesday", "thursday", "saturday", "sunday"],
-    "ikram|11to3": ["tuesday", "thursday", "saturday", "sunday"],
-    "fadi|12.30to3": ["tuesday", "thursday", "saturday", "sunday"],
+    "ikram|11to4": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
+    "ikram|11to3": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
+    "fadi|12.30to3": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
   };
   var DAY_OVERRIDE = {
     "fadi|12.30to3|monday": [
-      { time_slot: "12.30 to 1", area: "Small Pool" },
-      { time_slot: "2 to 3", area: "Day Centre" },
-    ],
-    "fadi|12.30to3|wednesday": [
       { time_slot: "12.30 to 1", area: "Small Pool" },
       { time_slot: "2 to 3", area: "Day Centre" },
     ],
@@ -680,6 +670,10 @@
     var key = String(name).trim().toLowerCase() + "|" + slot;
     var dayKey = String(day).toLowerCase();
     var areaFallback = areaHintFor(name);
+    /* Autumn Wednesdays: Day Centre / Hub only — no Multi-Activity pool splits. */
+    if (dayKey === "wednesday") {
+      return [{ time_slot: timeLabel, area: areaFallback }];
+    }
     if (PLAIN[key] && PLAIN[key].indexOf(dayKey) !== -1) {
       return [{ time_slot: timeLabel, area: areaFallback }];
     }
