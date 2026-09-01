@@ -254,6 +254,52 @@ Deno.serve(async (req) => {
     }
   }
 
+  let requestsOut: unknown[] = [];
+  {
+    let reqQ = sb
+      .from("uniform_requests")
+      .select(
+        "id, staff_profile_id, item_id, size, qty, request_type, reason, " +
+          "charge_applies_expected, status, created_at, resolved_at, resolve_note",
+      )
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (!actor.canIssue || mode !== "admin") {
+      reqQ = reqQ.eq("staff_profile_id", actor.profileId);
+    } else if (staffFilter) {
+      reqQ = reqQ.eq("staff_profile_id", staffFilter);
+    }
+    const { data: reqs } = await reqQ;
+    const reqStaffIds = Array.from(
+      new Set((reqs || []).map((r) => r.staff_profile_id).filter(Boolean)),
+    );
+    let reqStaffMap: Record<string, { full_name: string; username: string }> =
+      {};
+    if (reqStaffIds.length) {
+      const { data: rs } = await sb
+        .from("staff_profiles")
+        .select("id, full_name, username")
+        .in("id", reqStaffIds);
+      for (const s of rs || []) {
+        reqStaffMap[s.id] = {
+          full_name: String(s.full_name || ""),
+          username: String(s.username || ""),
+        };
+      }
+    }
+    requestsOut = (reqs || []).map((r) => {
+      const item = (items || []).find((i) => i.id === r.item_id);
+      const st = reqStaffMap[r.staff_profile_id];
+      return {
+        ...r,
+        item_name: item?.name || "",
+        sku_code: item?.sku_code || "",
+        staff_name: st?.full_name || "",
+        staff_username: st?.username || "",
+      };
+    });
+  }
+
   return uniformJson(200, {
     ok: true,
     actor: {
@@ -263,6 +309,7 @@ Deno.serve(async (req) => {
       can_issue: actor.canIssue,
       is_admin_view: actor.isAdminView,
     },
+    issuers: ["Berta", "Roberto", "Michelle", "John"],
     items: items || [],
     matrix,
     totals,
@@ -275,11 +322,13 @@ Deno.serve(async (req) => {
     allocation_policy: {
       day_centre_bespoke: "2 T-shirts + 2 sweatshirts",
       support_zero_hours: "1 T-shirt + 1 sweatshirt",
-      swimming: "None for now — swimming-specific items to be added to stock later if needed",
+      swimming:
+        "None for now — swimming-specific items to be added to stock later if needed",
     },
     kit_offer: selfKit,
     filter_kit_offer: filterKit,
     issues: issuesOut,
+    requests: requestsOut,
     movements,
     staff_directory: staffDirectory,
     default_initial: {

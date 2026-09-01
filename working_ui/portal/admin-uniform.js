@@ -230,8 +230,44 @@
   }
 
   function renderForms(data) {
-    var actorName = (data.actor && data.actor.full_name) || "";
+    var actor = data.actor || {};
+    if (!actor.can_issue) {
+      return (
+        '<div class="card" style="padding:12px;border:1px solid #e6ecf4;border-radius:12px;min-width:0">' +
+        "<p style=\"margin:0;font-size:13px;color:#62758a;overflow-wrap:break-word\">Stock matrix and ledger stay visible for office. Only <strong>Berta, Roberto, Michelle or John</strong> can stock in, issue or return uniform.</p></div>"
+      );
+    }
+    var actorName = actor.full_name || "";
+    var openReqs = (data.requests || []).filter(function (r) {
+      return r.status === "open";
+    });
+    var reqHtml =
+      openReqs.length === 0
+        ? '<p style="color:#62758a;font-size:13px">No open staff requests.</p>'
+        : openReqs
+            .map(function (r) {
+              return (
+                '<div style="border:1px solid #e6ecf4;border-radius:8px;padding:8px;margin:0 0 6px;min-width:0;font-size:12px;overflow-wrap:break-word">' +
+                "<strong>" +
+                esc(r.staff_name || "Staff") +
+                "</strong> — " +
+                esc(r.request_type) +
+                " · " +
+                esc(r.item_name || "item") +
+                " " +
+                esc(r.size || "?") +
+                " x" +
+                esc(String(r.qty)) +
+                (r.reason ? " · " + esc(r.reason) : "") +
+                "</div>"
+              );
+            })
+            .join("");
     return (
+      '<div class="card" style="padding:12px;border:1px solid #e6ecf4;border-radius:12px;margin:0 0 14px;min-width:0">' +
+      "<h3 style=\"margin:0 0 8px;font-size:14px;color:#0b2a5b\">Open staff requests</h3>" +
+      reqHtml +
+      "</div>" +
       '<div class="uniform-forms" style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));min-width:0">' +
       '<div class="card" style="padding:12px;border:1px solid #e6ecf4;border-radius:12px;min-width:0">' +
       "<h3 style=\"margin:0 0 8px;font-size:14px;color:#0b2a5b\">Stock in</h3>" +

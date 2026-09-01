@@ -177,15 +177,18 @@ export function serviceClient() {
   });
 }
 
-function roleAllowsIssue(appRole: string, staffRole: string): boolean {
-  const app = String(appRole || "").toLowerCase().trim();
-  const staff = String(staffRole || "").toLowerCase().trim().replace(/[_-]+/g, " ");
-  if (app === "admin" || app === "ceo") return true;
-  if (staff === "manager" || staff === "admin") return true;
-  if (staff === "team leader" || staff === "teamleader" || staff === "tl") {
-    return true;
-  }
-  return false;
+/** Only these staff may issue / return / stock-in uniform. */
+export const UNIFORM_ISSUER_USERNAMES = new Set([
+  "berta",
+  "roberto",
+  "michelle",
+  "john",
+]);
+
+export function usernameAllowsUniformIssue(username: string): boolean {
+  return UNIFORM_ISSUER_USERNAMES.has(
+    String(username || "").trim().toLowerCase(),
+  );
 }
 
 export type UniformActor =
@@ -241,27 +244,29 @@ export async function verifyUniformActor(req: Request): Promise<UniformActor> {
       username,
       appRole,
       staffRole,
-      canIssue: true,
+      canIssue: usernameAllowsUniformIssue(username),
       isAdminView: true,
     };
   }
 
   const sb = serviceClient();
   let staffRole = "";
+  let username = staff.username;
   if (sb) {
     const { data } = await sb
       .from("staff_profiles")
-      .select("staff_role, app_role, full_name")
+      .select("staff_role, app_role, full_name, username")
       .eq("id", staff.profileId)
       .maybeSingle();
     if (data) {
       staffRole = String(data.staff_role || "");
       if (data.app_role) staff.appRole = String(data.app_role);
       if (data.full_name) staff.fullName = String(data.full_name);
+      if (data.username) username = String(data.username);
     }
   }
 
-  const canIssue = roleAllowsIssue(staff.appRole, staffRole);
+  const canIssue = usernameAllowsUniformIssue(username);
   const isAdminView =
     canIssue ||
     ["admin", "ceo"].includes(String(staff.appRole || "").toLowerCase());
@@ -271,7 +276,7 @@ export async function verifyUniformActor(req: Request): Promise<UniformActor> {
     userId: staff.userId,
     profileId: staff.profileId,
     fullName: staff.fullName,
-    username: staff.username,
+    username,
     appRole: staff.appRole,
     staffRole,
     canIssue,

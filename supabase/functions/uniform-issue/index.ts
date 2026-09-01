@@ -119,6 +119,50 @@ Deno.serve(async (req) => {
 
   const action = cleanText(body.action, 32).toLowerCase();
 
+  // Any staff may request kit (does not deduct stock). Issuers fulfil separately.
+  if (action === "request" || action === "staff_request") {
+    const itemId = cleanText(body.item_id || body.itemId, 64) || null;
+    const sizeRaw = cleanText(body.size, 8).toUpperCase();
+    const size = sizeRaw && UNIFORM_SIZES.has(sizeRaw) ? sizeRaw : null;
+    const qty = Math.max(1, Math.min(20, Number(body.qty) || 1));
+    const requestType = cleanText(
+      body.request_type || body.requestType || "initial",
+      32,
+    ) || "initial";
+    const reason = cleanText(body.reason, 500) || null;
+    const chargeExpected =
+      body.charge_applies === true || body.chargeApplies === true;
+
+    if (!["initial", "replacement", "size_change", "other"].includes(requestType)) {
+      return uniformJson(400, { ok: false, error: "invalid_request_type" });
+    }
+    if (!reason && requestType === "replacement") {
+      return uniformJson(400, { ok: false, error: "reason_required" });
+    }
+
+    const { data: reqRow, error: reqErr } = await sb
+      .from("uniform_requests")
+      .insert({
+        staff_profile_id: actor.profileId,
+        item_id: itemId,
+        size,
+        qty,
+        request_type: requestType,
+        reason,
+        charge_applies_expected: chargeExpected,
+        status: "open",
+      })
+      .select("*")
+      .maybeSingle();
+    if (reqErr || !reqRow) {
+      return uniformJson(500, {
+        ok: false,
+        error: reqErr?.message || "request_failed",
+      });
+    }
+    return uniformJson(200, { ok: true, request: reqRow });
+  }
+
   // Staff confirms receipt of an existing issue line (typed name + timestamp).
   if (action === "staff_ack" || action === "ack") {
     const issueId = cleanText(body.issue_id || body.issueId, 64);

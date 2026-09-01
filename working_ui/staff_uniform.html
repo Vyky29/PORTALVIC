@@ -73,7 +73,7 @@
   <div class="page">
     <a class="back" href="staff_dashboard.html">Back to dashboard</a>
     <h1>My Uniform</h1>
-    <p class="intro">Your issued uniform record. Confirm receipt with your typed full name. Allocation depends on role: Day Centre / Bespoke = 2 T-shirts + 2 sweatshirts; support (zero hours) = 1 + 1; swimming = none for now.</p>
+    <p class="intro">See what you have been issued and confirm receipt. You can request uniform here — only Berta, Roberto, Michelle or John can issue kit.</p>
     <div id="msg" hidden></div>
     <div id="app"><p class="muted">Loading…</p></div>
   </div>
@@ -184,9 +184,8 @@
       if (!app) return;
       const issues = data.issues || [];
       const actor = data.actor || {};
-      const defaultLabel =
-        (data.default_initial && data.default_initial.label) ||
-        "2 x Grey Mixed Cotton T-Shirts";
+      const open = issues.filter((i) => i.status === "issued");
+      const closed = issues.filter((i) => i.status !== "issued");
 
       let issueManager = "";
       if (actor.can_issue) {
@@ -204,25 +203,31 @@
               }>${esc(it.name)}</option>`,
           )
           .join("");
+        const openReqs = (data.requests || []).filter((r) => r.status === "open");
+        const reqList = openReqs.length
+          ? openReqs
+              .map(
+                (r) =>
+                  `<div class="row"><strong>${esc(r.staff_name || "Staff")}</strong>` +
+                  `<div class="meta">${esc(r.request_type)} · ${esc(r.item_name || "item TBA")} · ${esc(r.size || "?")} x${esc(String(r.qty))}` +
+                  (r.reason ? ` · ${esc(r.reason)}` : "") +
+                  `</div></div>`,
+              )
+              .join("")
+          : `<p class="muted">No open staff requests.</p>`;
         issueManager =
-          `<div class="card">` +
-          `<h2>Issue to staff (manager / TL)</h2>` +
-          `<p class="muted" style="margin:0 0 8px">Uses each person's kit offer (2+2 / 1+1 / none). Swimming has no grey kit yet.</p>` +
+          `<div class="card"><h2>Open requests</h2>${reqList}</div>` +
+          `<div class="card"><h2>Issue uniform (issuer only)</h2>` +
+          `<p class="muted" style="margin:0 0 8px">Issuers: Berta, Roberto, Michelle, John.</p>` +
           `<label>Staff</label><select id="mgrStaff"><option value="">Select</option>${staffOpts}</select>` +
           `<div id="mgrKitHint" class="muted" style="margin:6px 0 8px;overflow-wrap:break-word">Select staff to see kit.</div>` +
           `<div class="grid2"><div><label>T-shirt size</label><select id="mgrSize">` +
           ["S", "M", "L", "XL", "XXL"]
-            .map(
-              (s) =>
-                `<option value="${s}"${s === "M" ? " selected" : ""}>${s}</option>`,
-            )
+            .map((s) => `<option value="${s}"${s === "M" ? " selected" : ""}>${s}</option>`)
             .join("") +
           `</select></div><div><label>Sweat size</label><select id="mgrSizeSweat">` +
           ["S", "M", "L", "XL", "XXL"]
-            .map(
-              (s) =>
-                `<option value="${s}"${s === "M" ? " selected" : ""}>${s}</option>`,
-            )
+            .map((s) => `<option value="${s}"${s === "M" ? " selected" : ""}>${s}</option>`)
             .join("") +
           `</select></div></div>` +
           `<label>Your typed name (issuer)</label>` +
@@ -242,15 +247,57 @@
           `<button type="button" class="btn btn--sec" id="mgrIssueBtn">Issue one line</button></div>`;
       }
 
-      const open = issues.filter((i) => i.status === "issued");
-      const closed = issues.filter((i) => i.status !== "issued");
+      const itemOptsReq = (data.items || [])
+        .map(
+          (it) =>
+            `<option value="${esc(it.id)}" ${
+              it.sku_code === "STAFF_GREY_TSHIRT" ? "selected" : ""
+            }>${esc(it.name)}</option>`,
+        )
+        .join("");
+      const myReqs = (data.requests || []).filter(
+        (r) => String(r.staff_profile_id) === String(actor.profile_id || ""),
+      );
+      const reqHistory = myReqs.length
+        ? myReqs
+            .map(
+              (r) =>
+                `<div class="row"><strong>${esc(r.request_type)} · ${esc(r.status)}</strong>` +
+                `<div class="meta">${esc(r.item_name || "item TBA")} · ${esc(r.size || "?")} x${esc(String(r.qty))}` +
+                (r.reason ? ` · ${esc(r.reason)}` : "") +
+                ` · ${esc(String(r.created_at || "").slice(0, 10))}</div></div>`,
+            )
+            .join("")
+        : `<p class="muted">No requests yet.</p>`;
+
+      const requestCard =
+        `<div class="card"><h2>Request uniform</h2>` +
+        `<p class="muted" style="margin:0 0 8px;overflow-wrap:break-word">Your offer: ${esc(
+          (data.kit_offer && data.kit_offer.summary) || "See allocation above",
+        )}. Only Berta, Roberto, Michelle or John can issue kit.</p>` +
+        `<label>Type</label><select id="reqType">` +
+        `<option value="initial">Initial kit</option>` +
+        `<option value="replacement">Replacement</option>` +
+        `<option value="size_change">Size change</option>` +
+        `<option value="other">Other</option></select>` +
+        `<label>Item</label><select id="reqItem">${itemOptsReq}</select>` +
+        `<div class="grid2"><div><label>Size</label><select id="reqSize">` +
+        ["S", "M", "L", "XL", "XXL"]
+          .map((s) => `<option value="${s}"${s === "M" ? " selected" : ""}>${s}</option>`)
+          .join("") +
+        `</select></div><div><label>Qty</label><input id="reqQty" type="number" min="1" max="20" value="1" /></div></div>` +
+        `<label>Note / reason</label><textarea id="reqReason" placeholder="e.g. lost item, wrong size, first issue"></textarea>` +
+        `<label style="display:flex;align-items:center;gap:8px;margin-top:10px">` +
+        `<input type="checkbox" id="reqCharge" style="width:auto" /> I expect the £5 replacement charge (lost/damaged by me)</label>` +
+        `<button type="button" class="btn" id="reqSubmitBtn">Send request</button>` +
+        `<h2 style="margin-top:16px">My requests</h2>${reqHistory}</div>`;
 
       app.innerHTML =
         `<div class="card"><h2>Your allocation</h2>` +
         `<p class="muted" style="margin:0;overflow-wrap:break-word"><strong>${esc(
           (data.kit_offer && data.kit_offer.label) || "Kit",
         )}</strong> — ${esc(
-          (data.kit_offer && data.kit_offer.summary) || "See Admin for issue.",
+          (data.kit_offer && data.kit_offer.summary) || "See allocation above.",
         )}` +
         (data.kit_offer && data.kit_offer.swimming_note
           ? `<br>${esc(data.kit_offer.swimming_note)}`
@@ -259,20 +306,21 @@
         `<div class="card"><h2>Issued to you</h2>` +
         (open.length
           ? open.map(renderIssue).join("")
-          : `<p class="muted">No open uniform issues yet. When Admin/TL issues your kit, it will appear here for confirmation.</p>`) +
+          : `<p class="muted">Nothing issued yet. Send a request below.</p>`) +
         `</div>` +
+        requestCard +
         (closed.length
           ? `<div class="card"><h2>Returned / history</h2>${closed.map(renderIssue).join("")}</div>`
           : "") +
         `<div class="card"><h2>Replacement note</h2>` +
-        `<p class="muted" style="margin:0">Lost or damaged by you: £5 per item. Damaged on duty: company replaces at no charge. Ask your Team Leader or Manager to issue a replacement — both of you acknowledge on the record.</p></div>` +
+        `<p class="muted" style="margin:0">Lost or damaged by you: £5 per item. Damaged on duty: company replaces at no charge.</p></div>` +
         issueManager;
 
       app.querySelectorAll("[data-ack]").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const id = btn.getAttribute("data-ack");
           const input = document.getElementById("ack-" + id);
-          const name = String(input && input.value || "").trim();
+          const name = String((input && input.value) || "").trim();
           if (!name) {
             showMsg("Type your full name to confirm.", "err");
             return;
@@ -292,6 +340,29 @@
           await refresh(sb);
         });
       });
+
+      const reqBtn = document.getElementById("reqSubmitBtn");
+      if (reqBtn) {
+        reqBtn.addEventListener("click", async () => {
+          reqBtn.disabled = true;
+          const res = await edgePost(sb, "uniform-issue", {
+            action: "request",
+            item_id: (document.getElementById("reqItem") || {}).value,
+            size: (document.getElementById("reqSize") || {}).value,
+            qty: Number((document.getElementById("reqQty") || {}).value || 1),
+            request_type: (document.getElementById("reqType") || {}).value,
+            reason: (document.getElementById("reqReason") || {}).value,
+            charge_applies: !!(document.getElementById("reqCharge") || {}).checked,
+          });
+          reqBtn.disabled = false;
+          if (!res.ok) {
+            showMsg(res.error || "Request failed", "err");
+            return;
+          }
+          showMsg("Request sent. An issuer will fulfil it.", "ok");
+          await refresh(sb);
+        });
+      }
 
       const mgrStaff = document.getElementById("mgrStaff");
       const mgrKitHint = document.getElementById("mgrKitHint");
