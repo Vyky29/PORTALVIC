@@ -1,6 +1,7 @@
 /**
  * Parent says "I've paid" via WhatsApp / Parent Portal Messages / email-shaped text.
- * No in-app "I've paid" button — office gets email + push, then Mark paid → PIN.
+ * Inform office only (email + admin push). Do not mutate invoice payment_status —
+ * Mark paid stays a manual admin action after Tide check.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { notifyOfficeBankPaymentReported } from "./portal_booking_lead_office_notify.ts";
@@ -48,13 +49,13 @@ type SaysPaidOpts = {
 };
 
 /**
- * If the message looks like a payment report, mark the best-matching open invoice
- * as pending_confirmation (when found) and ping office (email + admin push).
+ * If the message looks like a payment report, ping office (email + admin push).
+ * Does not change invoice status or finish-booking tokens — admin Mark paid only.
  */
 export async function handleParentSaysPaidMessage(
   admin: SupabaseClient,
   opts: SaysPaidOpts,
-): Promise<{ matched: boolean; invoiceId?: string }> {
+): Promise<{ matched: boolean; invoiceId?: string; notified?: boolean }> {
   if (!looksLikeParentSaysPaid(opts.bodyText)) {
     return { matched: false };
   }
@@ -80,30 +81,12 @@ export async function handleParentSaysPaidMessage(
     invoice = await findOpenInvoiceForContact(admin, contactId);
   }
 
-  const now = new Date().toISOString();
-  if (invoice?.id) {
-    await admin
-      .from("portal_parent_invoice_share")
-      .update({
-        payment_status: "pending_confirmation",
-        parent_reported_paid_at: now,
-        parent_reported_method: "bank_transfer",
-        parent_reported_notes: `Parent said paid via ${opts.source}`.slice(0, 500),
-        updated_at: now,
-      })
-      .eq("id", invoice.id)
-      .in("payment_status", ["unpaid", "partial"]);
-
-    await markFinishBookingAwaitingOffice(admin, invoice.id, now);
-  } else if (phone) {
-    await markFinishBookingAwaitingOfficeByPhone(admin, phone, now);
-  }
-
   const participant =
     String(opts.participantHint || "").trim() ||
     String(invoice?.participant_display || "").trim() ||
     "Participant";
 
+  let notified = false;
   try {
     await notifyOfficeBankPaymentReported({
       invoiceShareId: String(invoice?.id || `msg-${Date.now()}`),
@@ -116,11 +99,12 @@ export async function handleParentSaysPaidMessage(
       paymentRef: phone || opts.source,
       viaParentMessage: true,
     });
+    notified = true;
   } catch (e) {
     console.warn("[parent-says-paid] office notify failed", e);
   }
 
-  return { matched: true, invoiceId: invoice?.id };
+  return { matched: true, invoiceId: invoice?.id, notified };
 }
 
 async function findContactIdByPhone(
@@ -172,46 +156,4 @@ async function findOpenInvoiceForContact(
     contact_id: string | null;
     participant_display?: string | null;
   } | null;
-}
-
-async function markFinishBookingAwaitingOffice(
-  admin: SupabaseClient,
-  invoiceShareId: string,
-  now: string,
-): Promise<void> {
-  await admin
-    .from("portal_booking_completion_tokens")
-    .update({ status: "awaiting_office_payment", updated_at: now })
-    .eq("invoice_share_id", invoiceShareId)
-    .in("status", ["awaiting_payment", "choices_saved", "awaiting_office_payment"]);
-}
-
-async function markFinishBookingAwaitingOfficeByPhone(
-  admin: SupabaseClient,
-  phone: string,
-  now: string,
-): Promise<void> {
-  const last10 = parentPhoneLast10(phone);
-  if (!last10) return;
-  const { data: tokens } = await admin
-    .from("portal_booking_completion_tokens")
-    .select("id, status, document_id")
-    .in("status", ["awaiting_payment", "choices_saved"])
-    .order("updated_at", { ascending: false })
-    .limit(40);
-  for (const tok of tokens || []) {
-    const docId = String(tok.document_id || "").trim();
-    if (!docId) continue;
-    const { data: doc } = await admin
-      .from("portal_participant_documents")
-      .select("parent_phone")
-      .eq("id", docId)
-      .maybeSingle();
-    if (parentPhoneLast10(String(doc?.parent_phone || "")) !== last10) continue;
-    await admin
-      .from("portal_booking_completion_tokens")
-      .update({ status: "awaiting_office_payment", updated_at: now })
-      .eq("id", tok.id);
-    break;
-  }
 }

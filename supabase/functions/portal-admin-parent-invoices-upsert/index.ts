@@ -155,6 +155,13 @@ Deno.serve(async (req) => {
     action = clean(fields.action, 30).toLowerCase();
   }
 
+  /** Prefer admin email over generic "admin" so Mark paid is attributable. */
+  const paidViaActor = (() => {
+    const via = clean(fields.paid_via, 80).toLowerCase();
+    if (via && via !== "admin") return clean(fields.paid_via, 80);
+    return readyBy || "admin";
+  })();
+
   if (action === "regenerate_pdf") {
     const invoiceId = clean(fields.invoice_id, 80);
     if (!invoiceId) return portalAdminJson(400, { ok: false, error: "invoice_id_required" });
@@ -684,7 +691,7 @@ Deno.serve(async (req) => {
       const applied = applyPaidAmountAcrossSchedule(fresh, {
         amountGbp: paidApply,
         paidAt: now,
-        paidVia: clean(fields.paid_via, 40) || "admin",
+        paidVia: paidViaActor,
       });
       const noteBit = clean(
         ` · Office plan → ${meta.code}` +
@@ -704,7 +711,7 @@ Deno.serve(async (req) => {
       };
       if (applied.payment_status === "paid") {
         invPatch.paid_at = now;
-        invPatch.paid_via = clean(fields.paid_via, 40) || "admin";
+        invPatch.paid_via = paidViaActor;
       } else {
         invPatch.paid_at = null;
         invPatch.paid_via = null;
@@ -1123,7 +1130,7 @@ Deno.serve(async (req) => {
           const applied = applyInstalmentPayment(schedule, {
             amountGbp: markAll ? totalGbp : Number(next?.amount_gbp) || totalGbp,
             paidAt: now,
-            paidVia: clean(fields.paid_via, 40) || "admin",
+            paidVia: paidViaActor,
             markAll,
           });
           patch.payment_schedule = applied.schedule;
@@ -1132,7 +1139,7 @@ Deno.serve(async (req) => {
           patch.next_instalment_due = applied.next_instalment_due;
           if (applied.payment_status === "paid") {
             patch.paid_at = now;
-            patch.paid_via = clean(fields.paid_via, 40) || "admin";
+            patch.paid_via = paidViaActor;
           } else {
             // Partial: keep invoice open for later halves.
             patch.paid_at = null;
@@ -1145,7 +1152,7 @@ Deno.serve(async (req) => {
           patch.parent_reported_notes = null;
         } else {
           patch.paid_at = now;
-          patch.paid_via = clean(fields.paid_via, 40) || "admin";
+          patch.paid_via = paidViaActor;
           patch.amount_paid_gbp = totalGbp;
           patch.next_instalment_due = null;
         }
