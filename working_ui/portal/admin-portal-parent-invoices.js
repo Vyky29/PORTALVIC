@@ -602,6 +602,41 @@
     return 'bank_transfer';
   }
 
+  function paymentScheduleSelectValue(inv) {
+    var code = String((inv && inv.reenrol_payment_schedule_code) || '').toLowerCase();
+    if (
+      code === 'term_3' ||
+      code === 'term_flexi' ||
+      code === 'yearly_1off' ||
+      code === 'monthly_10' ||
+      code === 'monthly_term'
+    ) {
+      return code;
+    }
+    var short = String(schedulePlanShort(inv) || '').toLowerCase();
+    if (/flexi/.test(short)) return 'term_flexi';
+    if (/one-off payment \(year\)/.test(short)) return 'yearly_1off';
+    if (/monthly/.test(short)) return 'monthly_term';
+    if (/one-off payment \(term\)|one per term/.test(short)) return 'term_3';
+    return 'term_flexi';
+  }
+
+  function invoiceRemainingGbp(inv) {
+    var total = Number(inv && inv.amount_gbp);
+    if (!Number.isFinite(total) || total <= 0) return 0;
+    var paid = Number(inv && inv.amount_paid_gbp);
+    if (!Number.isFinite(paid) || paid < 0) {
+      var sched = scheduleRows(inv);
+      paid = 0;
+      for (var i = 0; i < sched.length; i++) {
+        if (String(sched[i].status || '').toLowerCase() === 'paid') {
+          paid += Number(sched[i].amount_gbp) || 0;
+        }
+      }
+    }
+    return Math.max(0, Math.round((total - paid) * 100) / 100);
+  }
+
   function invoicesForMethodFilter(list) {
     var mf = String(state.methodFilter || 'all');
     if (!mf || mf === 'all') return list || [];
@@ -1947,6 +1982,7 @@
           ? 'la_managed'
           : 'private';
     var payVal = paymentMethodSelectValue(invoices[0] || {});
+    var schedVal = paymentScheduleSelectValue(invoices[0] || {});
     return (
       '<details class="pp-inv-acc__item pp-inv-acc__item--pax" data-contact-id="' +
       contactId +
@@ -2016,7 +2052,31 @@
       '<button type="button" class="btn btn--sm btn--sec" data-reenrol-pay-save="' +
       contactId +
       '">Update payment method</button>' +
-      '<span class="muted" style="font-size:11px;min-width:0;overflow-wrap:break-word;flex:1 1 100%">Funding changes VAT on unpaid INV-Ps. Payment method updates the re-enrol choice + unpaid invoice channel (Bank / GC / Own way) — does not rebuild the instalment schedule amounts.</span>' +
+      '<label class="muted" style="font-size:12px;font-weight:700;min-width:0;margin-left:4px" for="ppSched-' +
+      contactId +
+      '">Payment plan</label>' +
+      '<select class="sel" id="ppSched-' +
+      contactId +
+      '" data-reenrol-sched-select="' +
+      contactId +
+      '" style="max-width:18rem;min-width:0">' +
+      '<option value="term_3"' +
+      (schedVal === 'term_3' ? ' selected' : '') +
+      '>One-off per term</option>' +
+      '<option value="term_flexi"' +
+      (schedVal === 'term_flexi' ? ' selected' : '') +
+      '>Flexi (2 per term)</option>' +
+      '<option value="yearly_1off"' +
+      (schedVal === 'yearly_1off' ? ' selected' : '') +
+      '>One-off (year)</option>' +
+      '<option value="monthly_term"' +
+      (schedVal === 'monthly_term' || schedVal === 'monthly_10' ? ' selected' : '') +
+      '>Monthly (GC · term)</option>' +
+      '</select>' +
+      '<button type="button" class="btn btn--sm btn--sec" data-reenrol-sched-save="' +
+      contactId +
+      '">Update payment plan</button>' +
+      '<span class="muted" style="font-size:11px;min-width:0;overflow-wrap:break-word;flex:1 1 100%">Funding changes VAT on unpaid INV-Ps. Method updates Bank / GC / Own way. Payment plan rebuilds unpaid or partial INV-P instalments (keeps amount already paid; enter Tide total in the confirm if they paid more than one half).</span>' +
       '</div>' +
       '<div class="pp-inv-acc__cards">' +
       cards +
@@ -2400,20 +2460,43 @@
         var id = btn.getAttribute('data-inv-id');
         if (!id) return;
         var allowEarlyInstalment = false;
+        var markAllInstalments = false;
         if (act === 'paid') {
           var invEarly = (state.invoices || []).find(function (x) {
             return String(x.id) === String(id);
           });
           var schedEarly = invEarly ? scheduleRows(invEarly) : [];
           var nextEarly = null;
+          var unpaidN = 0;
           for (var ei = 0; ei < schedEarly.length; ei++) {
             if (String(schedEarly[ei].status || 'pending').toLowerCase() !== 'paid') {
-              nextEarly = schedEarly[ei];
-              break;
+              unpaidN += 1;
+              if (!nextEarly) nextEarly = schedEarly[ei];
+            }
+          }
+          var remainingGbp = invEarly ? invoiceRemainingGbp(invEarly) : 0;
+          var nextAmt = nextEarly ? Number(nextEarly.amount_gbp) || 0 : remainingGbp;
+          if (unpaidN > 1 || (remainingGbp > 0 && nextAmt > 0 && remainingGbp > nextAmt + 0.02)) {
+            var settleFull = global.confirm(
+              'Tide / bank total for this invoice?\n\n' +
+                'OK = mark ALL remaining paid (£' +
+                remainingGbp.toFixed(2) +
+                ' left on INV)\n' +
+                'Cancel = mark next instalment only (£' +
+                nextAmt.toFixed(2) +
+                ')',
+            );
+            if (settleFull) {
+              markAllInstalments = true;
+              allowEarlyInstalment = true;
             }
           }
           var nextDueEarly = nextEarly ? instalmentDueIso(nextEarly.due_date) : '';
-          if (nextDueEarly && !instalmentIsCollectingNow(nextDueEarly)) {
+          if (
+            !markAllInstalments &&
+            nextDueEarly &&
+            !instalmentIsCollectingNow(nextDueEarly)
+          ) {
             var whenLab = formatDate(nextDueEarly) || nextDueEarly;
             var amtLab = formatMoney(nextEarly.amount_gbp);
             if (
@@ -2438,6 +2521,7 @@
           body.payment_status = 'paid';
           body.paid_via = 'admin';
           if (allowEarlyInstalment) body.allow_early_instalment = true;
+          if (markAllInstalments) body.mark_all_instalments = true;
         }
         else if (act === 'unpaid') body.payment_status = 'unpaid';
         else {
@@ -2574,6 +2658,67 @@
             return;
           }
           cfg.toast('Payment method updated to ' + label, 'ok');
+          void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+        });
+      });
+    });
+    host.querySelectorAll('[data-reenrol-sched-save]').forEach(function (btn) {
+      btn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var contactId = btn.getAttribute('data-reenrol-sched-save');
+        if (!contactId) return;
+        var sel = host.querySelector(
+          '[data-reenrol-sched-select="' + contactId.replace(/"/g, '') + '"]',
+        );
+        var plan = sel && sel.value ? String(sel.value) : '';
+        if (!plan) return;
+        var label =
+          plan === 'term_flexi'
+            ? 'Flexi (2 per term)'
+            : plan === 'yearly_1off'
+              ? 'One-off (year)'
+              : plan === 'monthly_term' || plan === 'monthly_10'
+                ? 'Monthly (GC · term)'
+                : 'One-off per term';
+        var tideRaw = global.prompt(
+          'Set payment plan to “' +
+            label +
+            '”.\n\nIf Tide shows a total already paid for the open INV-P (e.g. 700 when flexi was 350+350), type that amount in GBP.\nLeave blank to keep the amount already recorded on the invoice.',
+          '',
+        );
+        if (tideRaw === null) return;
+        var body = {
+          action: 'set_reenrol_payment_schedule',
+          contact_id: contactId,
+          payment_schedule_code: plan,
+          paid_via: 'admin',
+        };
+        var tideAmt = Number(String(tideRaw || '').replace(/[^0-9.]/g, ''));
+        if (Number.isFinite(tideAmt) && tideAmt > 0) {
+          body.apply_paid_amount_gbp = Math.round(tideAmt * 100) / 100;
+        }
+        if (
+          !global.confirm(
+            'Apply plan “' +
+              label +
+              '”?' +
+              (body.apply_paid_amount_gbp
+                ? '\nApply paid amount: £' + body.apply_paid_amount_gbp.toFixed(2)
+                : '\nKeep recorded paid amount on each open INV-P.') +
+              '\n\nUnpaid / partial invoices will rebuild their instalment schedule. Fully paid INV-Ps are left as-is.',
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        void api('portal-admin-parent-invoices-upsert', body).then(function (r) {
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Payment plan update failed', 'error');
+            btn.disabled = false;
+            return;
+          }
+          cfg.toast('Payment plan updated to ' + label, 'ok');
           void renderHost(global.document.getElementById('portalParentInvoicesHost'));
         });
       });

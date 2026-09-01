@@ -324,3 +324,194 @@ export function parentFacingSchedule(
     paid_at: r.paid_at || null,
   }));
 }
+
+const FLEXI_DUES: Record<string, { label: string; halves: Array<{ half: string; due: string }> }> = {
+  autumn: {
+    label: "Autumn",
+    halves: [
+      { half: "1st half", due: "2026-08-15" },
+      { half: "2nd half", due: "2026-10-26" },
+    ],
+  },
+  spring: {
+    label: "Spring",
+    halves: [
+      { half: "1st half", due: "2027-01-01" },
+      { half: "2nd half", due: "2027-02-15" },
+    ],
+  },
+  summer: {
+    label: "Summer",
+    halves: [
+      { half: "1st half", due: "2027-04-01" },
+      { half: "2nd half", due: "2027-05-31" },
+    ],
+  },
+};
+
+const TERM_ONE_OFF_DUE: Record<string, { label: string; due: string }> = {
+  autumn: { label: "Autumn", due: "2026-08-15" },
+  spring: { label: "Spring", due: "2027-01-01" },
+  summer: { label: "Summer", due: "2027-04-01" },
+};
+
+function splitEqualAmounts(totalGbp: number, n: number): number[] {
+  const total = round2(totalGbp);
+  if (n <= 1) return [total];
+  const base = round2(Math.floor((total * 100) / n) / 100);
+  const out = Array.from({ length: n }, () => base);
+  const head = round2(base * (n - 1));
+  out[n - 1] = round2(total - head);
+  return out;
+}
+
+/** Short labels for admin plan selector / reenrol payload. */
+export function reenrolPaymentScheduleMeta(
+  code: string,
+): { code: string; label: string } | null {
+  const c = String(code || "").toLowerCase().trim();
+  if (c === "term_3") return { code: "term_3", label: "One-off payment (term)" };
+  if (c === "term_flexi") {
+    return { code: "term_flexi", label: "Per term — two instalments (flexi)" };
+  }
+  if (c === "yearly_1off") {
+    return { code: "yearly_1off", label: "One-off payment (year)" };
+  }
+  if (c === "monthly_10" || c === "monthly_term") {
+    return {
+      code: c,
+      label: "GoCardless monthly (term) · £1.50 / instalment",
+    };
+  }
+  if (c === "own_term") {
+    return { code: "own_term", label: "Own arrangement (prepaid buffer)" };
+  }
+  return null;
+}
+
+/**
+ * Rebuild instalment rows for one billing-term INV-P when office changes plan.
+ * Keeps the invoice total; only reshapes how it is collected.
+ */
+export function rebuildTermPaymentSchedule(opts: {
+  scheduleCode: string;
+  billingTerm: string | null | undefined;
+  totalGbp: number;
+}): InvoicePaymentScheduleRow[] {
+  const code = String(opts.scheduleCode || "").toLowerCase().trim();
+  const term = String(opts.billingTerm || "autumn").toLowerCase().trim();
+  const total = round2(opts.totalGbp);
+  if (!(total > 0)) return [];
+
+  if (code === "term_3" || code === "yearly_1off") {
+    const meta = TERM_ONE_OFF_DUE[term] || TERM_ONE_OFF_DUE.autumn;
+    return [
+      {
+        seq: 1,
+        label: `${meta.label} · full payment`,
+        due_date: meta.due,
+        amount_gbp: total,
+        status: "pending",
+        paid_at: null,
+        paid_via: null,
+      },
+    ];
+  }
+
+  if (code === "term_flexi") {
+    const meta = FLEXI_DUES[term] || FLEXI_DUES.autumn;
+    const amounts = splitEqualAmounts(total, 2);
+    return meta.halves.map((h, i) => ({
+      seq: i + 1,
+      label: `${meta.label} term · ${h.half}`,
+      due_date: h.due,
+      amount_gbp: amounts[i] || 0,
+      status: "pending" as const,
+      paid_at: null,
+      paid_via: null,
+    }));
+  }
+
+  // Monthly plans: keep equal slices using flexi half count as fallback (2),
+  // or 4/3/4 for autumn/spring/summer when monthly.
+  if (code === "monthly_10" || code === "monthly_term") {
+    const n = term === "spring" ? 3 : 4;
+    const amounts = splitEqualAmounts(total, n);
+    const monthLabels =
+      term === "autumn"
+        ? ["September", "October", "November", "December"]
+        : term === "spring"
+          ? ["January", "February", "March"]
+          : ["April", "May", "June", "July"];
+    const year = term === "autumn" ? "2026" : "2027";
+    const dues =
+      term === "autumn"
+        ? ["2026-09-01", "2026-10-01", "2026-11-01", "2026-12-01"]
+        : term === "spring"
+          ? ["2027-01-01", "2027-02-01", "2027-03-01"]
+          : ["2027-04-01", "2027-05-01", "2027-06-01", "2027-07-01"];
+    return amounts.map((amt, i) => ({
+      seq: i + 1,
+      label: `Payment · ${monthLabels[i]} ${year}`,
+      due_date: dues[i] || null,
+      amount_gbp: amt,
+      status: "pending" as const,
+      paid_at: null,
+      paid_via: null,
+    }));
+  }
+
+  return [
+    {
+      seq: 1,
+      label: "Payment",
+      due_date: null,
+      amount_gbp: total,
+      status: "pending",
+      paid_at: null,
+      paid_via: null,
+    },
+  ];
+}
+
+/**
+ * Apply a bank total across a fresh schedule (full rows only).
+ * Use when office changes plan after a Tide payment that may exceed one instalment.
+ */
+export function applyPaidAmountAcrossSchedule(
+  rawSchedule: unknown,
+  opts: { amountGbp: number; paidAt: string; paidVia: string },
+): ApplyInstalmentPaymentResult {
+  const schedule = normalizePaymentSchedule(rawSchedule).map((r) => ({
+    ...r,
+    status: "pending" as const,
+    paid_at: null as string | null,
+    paid_via: null as string | null,
+  }));
+  let remaining = round2(opts.amountGbp);
+  let paidSeq: number | null = null;
+  for (const row of schedule) {
+    if (remaining + 0.01 < row.amount_gbp) break;
+    row.status = "paid";
+    row.paid_at = opts.paidAt;
+    row.paid_via = opts.paidVia;
+    remaining = round2(remaining - row.amount_gbp);
+    paidSeq = row.seq;
+  }
+  const amount_paid_gbp = amountPaidFromSchedule(schedule);
+  const total = round2(schedule.reduce((s, r) => s + r.amount_gbp, 0));
+  const allPaid = schedule.length > 0 && schedule.every((r) => r.status === "paid");
+  let payment_status: "unpaid" | "partial" | "paid" = "unpaid";
+  if (allPaid || (total > 0 && amount_paid_gbp + 0.01 >= total)) {
+    payment_status = "paid";
+  } else if (amount_paid_gbp > 0) {
+    payment_status = "partial";
+  }
+  return {
+    schedule,
+    amount_paid_gbp,
+    payment_status,
+    next_instalment_due: nextInstalmentDueDate(schedule),
+    paid_instalment_seq: paidSeq,
+  };
+}

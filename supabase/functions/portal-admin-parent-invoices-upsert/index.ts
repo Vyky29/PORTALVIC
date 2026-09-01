@@ -17,7 +17,11 @@ import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_co
 import { tryCompleteBookingAfterInvoicePayment } from "../_shared/portal_booking_finish.ts";
 import {
   applyInstalmentPayment,
+  applyPaidAmountAcrossSchedule,
+  amountPaidFromSchedule,
   normalizePaymentSchedule,
+  rebuildTermPaymentSchedule,
+  reenrolPaymentScheduleMeta,
 } from "../_shared/portal_invoice_payment_schedule.ts";
 import {
   parseBookingTermKey,
@@ -548,6 +552,197 @@ Deno.serve(async (req) => {
       participant_name: sub.participant_name,
       submission_id: sub.id,
       invoices_hint_updated: updated,
+    });
+  }
+
+  /**
+   * Change re-enrolment payment plan (term flexi / term one-off / monthly / year).
+   * Updates submission payload and rebuilds unpaid/partial INV-P schedules.
+   * Optional apply_paid_amount_gbp when Tide total differs from recorded instalments
+   * (e.g. paid full term while still on flexi halves).
+   */
+  if (action === "set_reenrol_payment_schedule") {
+    const contactId = clean(fields.contact_id, 120);
+    const schedRaw = clean(
+      fields.payment_schedule_code || fields.schedule_code || fields.plan,
+      40,
+    ).toLowerCase();
+    if (!contactId) return portalAdminJson(400, { ok: false, error: "contact_id_required" });
+    const meta = reenrolPaymentScheduleMeta(schedRaw);
+    if (!meta || meta.code === "own_term") {
+      return portalAdminJson(400, {
+        ok: false,
+        error: "payment_schedule_invalid",
+        message: "Use term_3, term_flexi, yearly_1off, monthly_10, or monthly_term",
+      });
+    }
+    const applyPaidOverride = parseAmount(fields.apply_paid_amount_gbp);
+
+    const { data: sub, error: subErr } = await admin
+      .from("portal_re_enrolment_submissions")
+      .select("id, payload, participant_name")
+      .eq("participant_contact_id", contactId)
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (subErr) {
+      console.error("[portal-admin-parent-invoices-upsert] set_reenrol_payment_schedule sub", subErr);
+      return portalAdminJson(500, { ok: false, error: "submission_lookup_failed" });
+    }
+    if (!sub?.id) {
+      return portalAdminJson(404, { ok: false, error: "reenrol_submission_not_found" });
+    }
+
+    const payload =
+      sub.payload && typeof sub.payload === "object"
+        ? structuredClone(sub.payload as Record<string, unknown>)
+        : {};
+    const fundingRoot =
+      payload.funding && typeof payload.funding === "object"
+        ? (payload.funding as Record<string, unknown>)
+        : {};
+    const choices =
+      fundingRoot.choices_2627 && typeof fundingRoot.choices_2627 === "object"
+        ? { ...(fundingRoot.choices_2627 as Record<string, unknown>) }
+        : {};
+
+    Object.assign(choices, {
+      payment_schedule_code: meta.code,
+      payment_schedule_label: meta.label,
+      billing_schedule: meta.code,
+    });
+    fundingRoot.choices_2627 = choices;
+    payload.funding = fundingRoot;
+    payload.office_note = clean(
+      `Office payment plan → ${meta.code} by ${readyBy} at ${now}`,
+      400,
+    );
+
+    const { error: upSubErr } = await admin
+      .from("portal_re_enrolment_submissions")
+      .update({ payload })
+      .eq("id", sub.id);
+    if (upSubErr) {
+      console.error(
+        "[portal-admin-parent-invoices-upsert] set_reenrol_payment_schedule update",
+        upSubErr,
+      );
+      return portalAdminJson(500, { ok: false, error: "submission_update_failed" });
+    }
+
+    const { data: invRows } = await admin
+      .from("portal_parent_invoice_share")
+      .select(
+        "id, invoice_number, payment_status, amount_gbp, amount_paid_gbp, payment_schedule, billing_term, notes, created_via",
+      )
+      .eq("contact_id", contactId)
+      .neq("payment_status", "void");
+
+    const rebuilt: Array<{
+      id: string;
+      invoice_number?: string | null;
+      ok: boolean;
+      payment_status?: string;
+      amount_paid_gbp?: number;
+      error?: string;
+      skipped?: string;
+    }> = [];
+
+    for (const inv of invRows || []) {
+      const status = String(inv.payment_status || "").toLowerCase();
+      if (status === "paid") {
+        rebuilt.push({
+          id: String(inv.id),
+          invoice_number: inv.invoice_number,
+          ok: true,
+          skipped: "already_paid",
+        });
+        continue;
+      }
+      const total = parseAmount(inv.amount_gbp) || 0;
+      if (!(total > 0)) {
+        rebuilt.push({
+          id: String(inv.id),
+          invoice_number: inv.invoice_number,
+          ok: false,
+          error: "amount_missing",
+        });
+        continue;
+      }
+      const fresh = rebuildTermPaymentSchedule({
+        scheduleCode: meta.code,
+        billingTerm: inv.billing_term,
+        totalGbp: total,
+      });
+      const recordedPaid = amountPaidFromSchedule(inv.payment_schedule);
+      const paidFromField = parseAmount(inv.amount_paid_gbp) || 0;
+      const paidBaseline = Math.max(recordedPaid, paidFromField);
+      const paidApply =
+        applyPaidOverride != null && applyPaidOverride >= 0
+          ? applyPaidOverride
+          : paidBaseline;
+      const applied = applyPaidAmountAcrossSchedule(fresh, {
+        amountGbp: paidApply,
+        paidAt: now,
+        paidVia: clean(fields.paid_via, 40) || "admin",
+      });
+      const noteBit = clean(
+        ` · Office plan → ${meta.code}` +
+          (applyPaidOverride != null
+            ? ` · apply paid £${applyPaidOverride.toFixed(2)}`
+            : ""),
+        200,
+      );
+      const prevNotes = clean(inv.notes, 700);
+      const invPatch: Record<string, unknown> = {
+        payment_schedule: applied.schedule,
+        amount_paid_gbp: applied.amount_paid_gbp,
+        payment_status: applied.payment_status,
+        next_instalment_due: applied.next_instalment_due,
+        updated_at: now,
+        notes: clean(`${prevNotes}${noteBit}`.trim(), 800) || null,
+      };
+      if (applied.payment_status === "paid") {
+        invPatch.paid_at = now;
+        invPatch.paid_via = clean(fields.paid_via, 40) || "admin";
+      } else {
+        invPatch.paid_at = null;
+        invPatch.paid_via = null;
+      }
+      const { error: invErr } = await admin
+        .from("portal_parent_invoice_share")
+        .update(invPatch)
+        .eq("id", inv.id);
+      if (invErr) {
+        rebuilt.push({
+          id: String(inv.id),
+          invoice_number: inv.invoice_number,
+          ok: false,
+          error: invErr.message,
+        });
+        continue;
+      }
+      try {
+        await regeneratePortalInvoiceSharePdf(admin, String(inv.id));
+      } catch {
+        /* PDF regen best-effort */
+      }
+      rebuilt.push({
+        id: String(inv.id),
+        invoice_number: inv.invoice_number,
+        ok: true,
+        payment_status: applied.payment_status,
+        amount_paid_gbp: applied.amount_paid_gbp,
+      });
+    }
+
+    return portalAdminJson(200, {
+      ok: true,
+      payment_schedule_code: meta.code,
+      payment_schedule_label: meta.label,
+      participant_name: sub.participant_name,
+      submission_id: sub.id,
+      invoices_rebuilt: rebuilt,
     });
   }
 
