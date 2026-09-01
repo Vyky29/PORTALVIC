@@ -228,14 +228,14 @@
     { dow: "thursday", iso: "2026-09-03", phase: "w1", hint: "Week 1 · Fadi off · Roberto + Youssef OFF" },
     { dow: "friday", iso: "2026-09-04", phase: "w1", hint: "Week 1 · Fadi off · Victor/Raul Timi 11-1 · Youssef OFF (starts Sat)" },
     { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Week 1 · first Saturday" },
-    { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · first Sunday" },
+    { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · first Sunday · Erik Multi open only" },
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Standing · DC + AS (template rest of term)" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing · Acton AS Roberto/Aurora/Javier/Luliya" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Standing · Acton swim Javier/Youssef 30' + Northolt + Hub Bespoke" },
     { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton AS (no Youssef PM; Yossi on; Hazem/Eiji aquatic withdrawn)" },
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Standing · Acton Youssef + Hub Tinashe Roberto" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
-    { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Standing · weekend (Scott open · Patrick 3-4)" },
+    { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Standing · weekend · Erik Multi open (Berta 12.30-1.15 / Aurora 1.15-2)" },
   ];
   var DAY_LABEL = {
     tuesday: "Tuesday",
@@ -431,6 +431,7 @@
         { name: "Arthur Ma", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
         { name: "Cyrus", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
         { name: "Aydaan Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        /* Erik Ndregjoni Multi 1.15-2 — only Sunday Multi non-renew → open */
         { name: "No participant", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool", kind: "open" },
         { name: "Zakariya", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
         { name: "Faris", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
@@ -440,6 +441,7 @@
         { name: "Adam Ab", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Cyrus", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Arthur Ma", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        /* Erik Ndregjoni Multi Hub 12.30-1.15 — same non-renew as Aurora 1.15-2 */
         { name: "No participant", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "open" },
         { name: "Aydaan Ah", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
       ],
@@ -470,12 +472,12 @@
         { name: "Max", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
         { name: "Shaan", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
       ],
-      /* Autumn climb: Scott not renewing → Alex 12-1 open; Patrick → Carlos 3-4;
-       * Kabir trial unpaid → omit; Ayden off (Alex ends 2). Eiji/Hazem keep Climb. */
+      /* Climb: Scott renewed → back 12-1. Patrick 3-4. Kabir unpaid omit. Ayden off.
+       * Carlos 2-3 open capacity (not a non-renew name). */
       Alex: [
         { name: "Eiji", time: "10 to 11", band: "Weekend", area: "Westway · Climbing" },
         { name: "Yusef", time: "11 to 12", band: "Weekend", area: "Westway · Climbing" },
-        { name: "No participant", time: "12 to 1", band: "Weekend", area: "Westway · Climbing", kind: "open" },
+        { name: "Scott", time: "12 to 1", band: "Weekend", area: "Westway · Climbing" },
         { name: "Rodin", time: "1 to 2", band: "Weekend", area: "Westway · Climbing" },
       ],
       Carlos: [
@@ -788,6 +790,11 @@
         nm === "closed";
       var r = parseTimeRange(c.time);
       if (!isEmpty || !r || r.end - r.start <= 30) {
+        out.push(c);
+        return;
+      }
+      /* Only split clean 30' grids (60/90…). Never carve 45' Multi into 30'+15'. */
+      if ((r.end - r.start) % 30 !== 0) {
         out.push(c);
         return;
       }
