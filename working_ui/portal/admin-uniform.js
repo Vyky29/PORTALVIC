@@ -184,13 +184,12 @@
         ' <span style="font-weight:500;color:#62758a;font-size:12px">' +
         esc(it.category) +
         "</span></h3>" +
-        '<table style="width:100%;border-collapse:collapse;font-size:13px;min-width:420px">' +
+        '<table style="width:100%;border-collapse:collapse;font-size:13px;min-width:360px">' +
         "<thead><tr>" +
         '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6ecf4">Size</th>' +
-        '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Opening</th>' +
-        '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Stock in</th>' +
-        '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Pre-out</th>' +
-        '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Issued (open)</th>' +
+        '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Total stock</th>' +
+        '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Before portal</th>' +
+        '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Issued (named)</th>' +
         '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6ecf4">Current</th>' +
         "</tr></thead><tbody>";
       SIZES.forEach(function (sz) {
@@ -218,9 +217,6 @@
           row.opening_qty +
           "</td>" +
           '<td style="padding:6px;text-align:right;border-bottom:1px solid #f1f5f9">' +
-          row.stock_in_qty +
-          "</td>" +
-          '<td style="padding:6px;text-align:right;border-bottom:1px solid #f1f5f9">' +
           row.pre_portal_out_qty +
           "</td>" +
           '<td style="padding:6px;text-align:right;border-bottom:1px solid #f1f5f9">' +
@@ -233,7 +229,12 @@
       });
       html += "</tbody></table></div>";
     });
-    html += "</div>";
+    html +=
+      '<p style="margin:0 0 4px;font-size:12px;color:#62758a;overflow-wrap:break-word">' +
+      "<strong>Columns:</strong> Total stock = starting inventory. " +
+      "Before portal = pieces that left <em>before</em> Portal (old sheet, no staff names). " +
+      "Issued (named) = given to a person in Portal (incl. today: Michelle, Roberto, Luliya…). " +
+      "Current = what is left now.</p></div>";
     return html;
   }
 
@@ -518,19 +519,17 @@
     var html =
       '<div class="uniform-admin" style="min-width:0">' +
       '<div style="margin:0 0 12px;padding:10px 12px;border-radius:10px;background:#eef6fb;border:1px solid #c5d9ea;color:#0b2a5b;font-size:13px;overflow-wrap:break-word">' +
-      "<strong>Seed baseline:</strong> Opening " +
+      "<strong>Baseline:</strong> Total stock " +
       esc(String(banner.opening != null ? banner.opening : 130)) +
-      " / Out " +
+      " / Before portal (no names) " +
       esc(String(banner.stock_out != null ? banner.stock_out : 17)) +
-      " / Current " +
+      " / then Current " +
       esc(String(banner.current != null ? banner.current : 113)) +
-      ". Live now — Opening " +
+      ". Live now — Total stock " +
       t.opening +
       ", Current " +
       t.current +
-      ", Stock in " +
-      t.stock_in +
-      ", Open issued " +
+      ", Issued (named) " +
       t.issued_open +
       "." +
       (data.allocation_policy
@@ -569,7 +568,8 @@
       '<p style="margin:0 0 12px;font-size:12px;color:#62758a;overflow-wrap:break-word">' +
       "<strong>Tabs:</strong> Matrix = live qty by size. Actions = stock in / issue / return. " +
       "Ledger = every stock movement. Staff issues = per-person issued lines + signatures. " +
-      "<strong>Filter staff</strong> narrows Ledger + Staff issues (+ Actions return list) to that person.</p>" +
+      "<strong>Filter staff</strong> narrows Ledger + Staff issues (+ Actions return list) to that person. " +
+      "Today's named handouts are under <strong>Issued (named)</strong>, not Before portal.</p>" +
       '<div id="ufPanel">';
 
     if (state.tab === "matrix") html += renderMatrix(data);
