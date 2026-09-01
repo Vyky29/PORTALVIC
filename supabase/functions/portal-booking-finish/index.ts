@@ -44,7 +44,7 @@ import {
   BOOKING_PAY_HOLD_MINUTES,
   BOOKING_SLOT_HOLD_STATUSES,
   bookingPayHoldExpiresAt,
-  expireUnpaidBookingPayHolds,
+  runBookingPayHoldMaintenance,
 } from "../_shared/portal_booking_pay_hold.ts";
 import { notifyOfficeBankPaymentReported } from "../_shared/portal_booking_lead_office_notify.ts";
 
@@ -420,9 +420,9 @@ Deno.serve(async (req) => {
   });
 
   try {
-    await expireUnpaidBookingPayHolds(admin);
+    await runBookingPayHoldMaintenance(admin);
   } catch (e) {
-    console.warn("[portal-booking-finish] expire pay holds", e);
+    console.warn("[portal-booking-finish] pay hold maintenance", e);
   }
 
   let body: Record<string, unknown> = {};

@@ -668,6 +668,9 @@ verify_jwt = false
 [functions.portal-cron-reenrol-release-unpaid-aug15]
 verify_jwt = false
 
+[functions.portal-cron-booking-pay-hold]
+verify_jwt = false
+
 # Staff / leader WhatsApp (JWT checked inside function).
 [functions.portal-staff-notify-send]
 verify_jwt = false

@@ -13,7 +13,7 @@ import { ensureReenrolUnconfirmedReleasedOnMadre } from "../_shared/portal_reenr
 import { runUnpaidAug15PlaceRelease } from "../_shared/portal_reenrol_release_unpaid_aug15.ts";
 import {
   BOOKING_SLOT_HOLD_STATUSES,
-  expireUnpaidBookingPayHolds,
+  runBookingPayHoldMaintenance,
 } from "../_shared/portal_booking_pay_hold.ts";
 import {
   CRASH_HOLD_MINUTES,
@@ -426,9 +426,9 @@ Deno.serve(async (req) => {
 
   // Soft holds from new-client registration forms (Booking Portal → registration).
   try {
-    await expireUnpaidBookingPayHolds(supabase);
+    await runBookingPayHoldMaintenance(supabase);
   } catch (e) {
-    console.warn("[portal-booking-offer] expire pay holds", e);
+    console.warn("[portal-booking-offer] pay hold maintenance", e);
   }
 
   await supabase
