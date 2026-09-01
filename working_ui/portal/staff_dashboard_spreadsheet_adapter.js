@@ -79,19 +79,20 @@
     ],
   };
   // Days with no pool hour inside the block: SPECIAL card = one Day Centre /
-  // Hub segment only. Fadi + Ikram swim Mon/Wed/Fri only (like Emanuel);
-  // Tue/Thu = centre only.
+  // Hub segment only. Fadi + Ikram swim Mon/Fri only (like Emanuel);
+  // Tue/Wed/Thu = centre only (Autumn: no Multi-Activity on Wednesdays).
   var PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS = {
-    "ikram|11to4": ["tuesday", "thursday", "saturday", "sunday"],
-    "ikram|11to3": ["tuesday", "thursday", "saturday", "sunday"],
-    "fadi|12.30to3": ["tuesday", "thursday", "saturday", "sunday"],
+    "ikram|11to4": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
+    "ikram|11to3": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
+    "fadi|12.30to3": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
+    "emanuel|11to12.30": ["wednesday"],
+    "emanuel|11to4": ["wednesday"],
+    "emanuel|11to3": ["wednesday"],
+    "emanuel|11to2": ["wednesday"],
+    "emanuel|11to1": ["wednesday"],
   };
   var PORTAL_COMBINED_SEGMENTS_DAY_OVERRIDE = {
     "fadi|12.30to3|monday": [
-      { time_slot: "12.30 to 1", area: "Small Pool" },
-      { time_slot: "2 to 3", area: "Day Centre" },
-    ],
-    "fadi|12.30to3|wednesday": [
       { time_slot: "12.30 to 1", area: "Small Pool" },
       { time_slot: "2 to 3", area: "Day Centre" },
     ],
@@ -113,6 +114,10 @@
       name === "manager"
         ? "Hub · Manager"
         : String(areaHint || "").trim() || "Day Centre";
+    /* Autumn Wednesdays: Day Centre / Hub only — no Multi-Activity pool splits. */
+    if (dayKey === "wednesday") {
+      return [{ time_slot: timeLabel, area: areaFallback }];
+    }
     const plainDays = PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS[key];
     if (plainDays && plainDays.indexOf(dayKey) !== -1) {
       return [{ time_slot: timeLabel, area: areaFallback }];
