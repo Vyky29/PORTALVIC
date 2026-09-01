@@ -226,7 +226,7 @@
     { dow: "tuesday", iso: "2026-09-01", phase: "w1", hint: "Week 1 · Fadi off · Roberto/Michelle/Luliya Ikram" },
     { dow: "wednesday", iso: "2026-09-02", phase: "w1", hint: "Week 1 · Fadi off · Roberto Emanuel 11-4 · Michelle/Luliya Ikram" },
     { dow: "thursday", iso: "2026-09-03", phase: "w1", hint: "Week 1 · Fadi off · Roberto + Youssef OFF" },
-    { dow: "friday", iso: "2026-09-04", phase: "w1", hint: "Week 1 · Fadi off · Roberto Emanuel 11-4 · Michelle/Luliya Ikram" },
+    { dow: "friday", iso: "2026-09-04", phase: "w1", hint: "Week 1 · Fadi off · Roberto Emanuel · Michelle/Luliya Ikram · Victor/Raul Timi 11-1" },
     { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Week 1 · first Saturday" },
     { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · first Sunday" },
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Standing · DC + AS (template rest of term)" },
@@ -277,6 +277,8 @@
       { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 4" }] },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Victor", clients: [{ name: "Timi", time: "11 to 1" }] },
+      { staff: "Raul", clients: [{ name: "Timi", time: "11 to 1" }] },
     ],
   };
 
@@ -647,6 +649,7 @@
       if (staffName === "Roberto") return "11 to 4";
       if (staffName === "Michelle") return "11 to 4";
       if (staffName === "Luliya") return "11 to 4";
+      if (staffName === "Victor" || staffName === "Raul") return "11 to 1";
     }
     return label;
   }
