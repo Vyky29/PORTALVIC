@@ -1960,8 +1960,7 @@
         '<div class="portal-pnlog-composer__tpl-shell">' +
         '<div class="portal-pnlog-composer__tpl-fixed" id="portalPnlogTplPrefix" aria-hidden="true">' +
         esc(String(coldTpl.prefix || "").trim()) +
-        "</div>" +
-        '<label class="portal-pnlog-composer__tpl-mid-lab muted" for="portalPnlogComposerInput">Editable {{1}}</label>';
+        "</div>";
       textareaPlaceholder =
         "Write {{1}} here — use a blank line between paragraphs (Meta flattens real line breaks)…";
       textareaMax = String(WA_TEMPLATE_BODY_MAX);

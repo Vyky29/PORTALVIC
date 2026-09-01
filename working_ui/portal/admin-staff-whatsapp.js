@@ -385,9 +385,8 @@
       '<p class="portal-staff-wa-admin__attach-blocked muted" id="portalStaffWaAttachBlocked" hidden role="status"></p>' +
       '<div class="portal-staff-wa-admin__tpl-shell" id="portalStaffWaTplShell" hidden>' +
       '<div class="portal-staff-wa-admin__tpl-fixed" id="portalStaffWaTplPrefix" aria-hidden="true"></div>' +
-      '<label class="portal-staff-wa-admin__tpl-mid-lab muted" for="portalStaffWaDraft">Editable {{1}}</label>' +
       "</div>" +
-      '<textarea id="portalStaffWaDraft" rows="2" placeholder="Message…" maxlength="4000"></textarea>' +
+      '<textarea id="portalStaffWaDraft" rows="2" placeholder="Message…" maxlength="4000" aria-label="Message"></textarea>' +
       '<div class="portal-staff-wa-admin__tpl-fixed" id="portalStaffWaTplSuffix" hidden aria-hidden="true"></div>' +
       '<p class="portal-staff-wa-admin__tpl-len muted" id="portalStaffWaTplLen" hidden></p>' +
       '<div class="portal-staff-wa-admin__tpl-preview" id="portalStaffWaTplPreview" hidden></div>' +
