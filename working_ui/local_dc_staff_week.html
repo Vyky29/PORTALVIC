@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901r</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901s</title>
   <style>
     :root {
       --ink: #173247;
@@ -228,7 +228,7 @@
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Standing · DC + AS (template rest of term)" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing · Acton AS Roberto/Aurora/Javier/Luliya" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Standing · Acton swim Javier/Youssef 30' + Northolt + Hub Bespoke" },
-    { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton after school" },
+    { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton AS (Mohammed/Yossi/Thushyan open — no renew)" },
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Standing · Acton Youssef + Hub Tinashe Roberto" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
     { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Standing · weekend (Scott open · Patrick 3-4)" },
@@ -322,17 +322,26 @@
       ],
     },
     thursday: {
+      /* Autumn Acton: Mohammed / Yossi / Thushyan did not renew → open. */
       Roberto: [
         { name: "Tom", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Yassir", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
-        { name: "Yossi", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Mohammed", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
       Luliya: [
-        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
-        { name: "Thushyan", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Yuri", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "No participant", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
+      ],
+      Youssef: [
+        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
       Javier: [
         { name: "Ayman", time: "4 to 5", band: "After school", area: "Acton · Aquatic" },
