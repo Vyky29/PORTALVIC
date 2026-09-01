@@ -835,12 +835,12 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   display: none;
 }
 .portal-pnlog-composer--tpl .portal-pnlog-composer__input {
-  min-height: 44px;
-  max-height: 9vh;
+  min-height: 36px;
+  max-height: 7vh;
 }
 .portal-pnlog-composer--tpl .portal-pnlog-composer__tpl-shell {
-  padding: 6px 8px;
-  margin: 0 0 4px;
+  padding: 4px 6px;
+  margin: 0 0 2px;
 }
 
 .portal-pnlog-composer--disabled {
