@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901z</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901aa</title>
   <style>
     :root {
       --ink: #173247;
@@ -199,7 +199,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901y · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901z · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026 (BH).
     Two blocks: <strong>1-6 Sep</strong> = first week (Tue-Fri Day Centre only; Sat 5 + Sun 6 weekend);
@@ -892,6 +892,7 @@
       var cr = parseTimeRange(cur.time);
       if (same && pr && cr && pr.end === cr.start) {
         prev.time = formatTimeLabel(pr.startLabel, cr.endLabel);
+        prev.merged = true;
         return;
       }
       out.push(cur);
@@ -949,7 +950,14 @@
       kind === "trial"
         ? (c.band || "After school") + " · Trial"
         : c.band || "Day Centre";
-    var units = c.dc ? 1 : durationUnits(c.time);
+    /* Tall card only for merged 2×30' (Cyrus/Stephanie) or ~75' (e.g. Yusuf Sun).
+     * Single long books (Adam Pi 90', Tinashe 90') stay normal height. */
+    var units = 1;
+    if (!c.dc) {
+      var u = durationUnits(c.time);
+      if (c.merged && u >= 2) units = Math.min(u, 2.5);
+      else if (!c.merged && u >= 2 && u <= 2.5) units = u;
+    }
     return (
       '<div class="card ' +
       esc(tone) +
