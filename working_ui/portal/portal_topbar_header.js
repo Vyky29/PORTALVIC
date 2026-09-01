@@ -939,7 +939,8 @@
             global.openSheet("clientsSheet");
           }
           if (typeof global.setClientsSheetTab === "function") {
-            global.setClientsSheetTab(opts.isLead ? "all" : "my");
+            /* CEOs/leads still land on My; All participants is available as a second tab. */
+            global.setClientsSheetTab("my");
           }
           return;
         }

@@ -319,9 +319,10 @@ export async function xeroSyncPaidInvoiceShare(
 }
 
 /**
- * Ensure a paid Portal INV-P exists in Xero as an AUTHORISED ACCREC
- * (awaiting payment). Does **not** post a Xero Payment — staff mark Paid
- * and reconcile the bank line in Xero UI.
+ * Ensure a Portal INV-P (paid or partial) exists in Xero as an AUTHORISED ACCREC
+ * for the **full** invoice amount (awaiting payment). Does **not** post a Xero
+ * Payment — staff allocate bank/card lines against that invoice in Xero UI
+ * (full settle or instalment amounts).
  *
  * `opts.paymentDateIso` is accepted for call-site compatibility but ignored.
  */

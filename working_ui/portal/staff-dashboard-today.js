@@ -208,6 +208,24 @@
       const iso = normaliseIsoDate(isoYmd);
       return !!(iso && dates.indexOf(iso) >= 0);
     }
+    /** Standing weekday snap window (Services / reenrol): exclude crash weeks from 20 Jul. */
+    function portalTermStandingSnapBounds(){
+      const from = typeof portalTermSummerRosterFromIso === 'function'
+        ? portalTermSummerRosterFromIso()
+        : '2026-06-01';
+      const through = typeof portalTermSummerDatedRosterThroughIso === 'function'
+        ? portalTermSummerDatedRosterThroughIso()
+        : '2026-07-19';
+      return { from: String(from || '').slice(0, 10), through: String(through || '').slice(0, 10) };
+    }
+    function portalStaffStandingWeekdaySnapArgs(isoYmd){
+      const bounds = portalTermStandingSnapBounds();
+      if(portalCalendarIsoUsesSummerDatedRosterOnly(isoYmd)){
+        return { floor: bounds.from, through: '' };
+      }
+      // Autumn (and any day outside summer dated window): project Services standing only.
+      return { floor: bounds.from, through: bounds.through };
+    }
     /** Worked day for term colours: clients that day, export done, or dated roster snap (not pool-only). */
     function portalStaffRosterAppliesOnCalendarDate(isoYmd, weekdayLong, staffId){
       const iso = normaliseIsoDate(isoYmd);
@@ -225,8 +243,8 @@
       }
       if(portalStaffHasDatedRowsForIso(iso, sid)) return true;
       if(portalStaffClientSessionsOnCalendarDate(iso, w, sid)) return true;
-      const snapFloor = portalCalendarIsoUsesSummerDatedRosterOnly(iso) ? portalTermSummerRosterFromIso() : '';
-      const hasSnaps = portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor);
+      const snap = portalStaffStandingWeekdaySnapArgs(iso);
+      const hasSnaps = portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through);
       if(!hasSnaps) return true;
       const anchor = new Date(iso + 'T12:00:00');
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
@@ -255,8 +273,8 @@
       if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return iso;
       if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return iso;
       if(portalStaffHasDatedRowsForIso(iso, sid)) return iso;
-      const snapFloor = portalCalendarIsoUsesSummerDatedRosterOnly(iso) ? portalTermSummerRosterFromIso() : '';
-      if(portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor)){
+      const snap = portalStaffStandingWeekdaySnapArgs(iso);
+      if(portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through)){
         const anchor = new Date(iso + 'T12:00:00');
         const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
         return portalBestStaffRosterIsoForWeekday(model, sid, w, anchor) || '';
@@ -291,7 +309,8 @@
       }
       return true;
     }
-    /** Nearest roster YYYY-MM-DD for this staff on a weekday (Summer term dated rows). */
+    /** Nearest / standing roster YYYY-MM-DD for this staff on a weekday.
+     * Autumn days project Services standing (≤ termSummerDatedRosterThrough), never crash weeks. */
     function portalBestStaffRosterIsoForWeekday(model, staffId, weekdayLong, anchorDate){
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
@@ -311,13 +330,28 @@
       const anchorIso = typeof portalIsoYmdFromDate === 'function'
         ? portalIsoYmdFromDate(anchorDate)
         : '';
+      const bounds = portalTermStandingSnapBounds();
+      const summerFloor = bounds.from;
+      const standingThrough = bounds.through;
+      const summerOnly = portalCalendarIsoUsesSummerDatedRosterOnly(anchorIso);
+
+      // Autumn / non-summer-dated view: latest standing ISO for this weekday (Services truth).
+      if(!summerOnly){
+        let bestStanding = '';
+        isos.forEach(function(ri){
+          if(summerFloor && String(ri) < summerFloor) return;
+          if(standingThrough && String(ri) > standingThrough) return;
+          if(!bestStanding || String(ri) > bestStanding) bestStanding = ri;
+        });
+        return bestStanding;
+      }
+
       let best = '';
       let bestDiff = Infinity;
-      const summerFloor = portalTermSummerRosterFromIso();
-      const summerOnly = portalCalendarIsoUsesSummerDatedRosterOnly(anchorIso);
       isos.forEach(function(ri){
         if(anchorIso && String(ri) > anchorIso) return;
-        if(summerOnly && summerFloor && String(ri) < summerFloor) return;
+        if(summerFloor && String(ri) < summerFloor) return;
+        if(standingThrough && String(ri) > standingThrough) return;
         const p = String(ri).split('-');
         const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
         if(isNaN(d.getTime())) return;
@@ -325,6 +359,26 @@
         if(diff < bestDiff){ bestDiff = diff; best = ri; }
       });
       return best;
+    }
+    /** Autumn Day Centre always snaps to Services standing ISO (13–17 Jul), not "latest" summer week. */
+    function portalDayCentreStandingSnapIso(weekdayLong){
+      try{
+        const PRC = typeof window !== 'undefined' ? window.PortalRosterCanonical : null;
+        const map = PRC && PRC.DAY_CENTRE_STANDING_ISO;
+        if(!map || typeof map !== 'object') return '';
+        const w = String(weekdayLong || '').trim().toLowerCase();
+        let dk = '';
+        if(w.indexOf('mon') === 0) dk = 'monday';
+        else if(w.indexOf('tue') === 0) dk = 'tuesday';
+        else if(w.indexOf('wed') === 0) dk = 'wednesday';
+        else if(w.indexOf('thu') === 0) dk = 'thursday';
+        else if(w.indexOf('fri') === 0) dk = 'friday';
+        return dk ? String(map[dk] || '').trim().slice(0, 10) : '';
+      }catch(_){ return ''; }
+    }
+    function portalSessionIsDayCentreService(s){
+      const svc = String((s && (s.rosterService || s.activity || s.service)) || '').trim().toLowerCase();
+      return svc === 'day centre' || svc.indexOf('day centre') === 0;
     }
     /** Roster row vs calendar day: dated rows match YYYY-MM-DD; undated rows match weekday (en-GB long). */
     function portalSessionSpreadsheetRowMatchesCalendarDate(s, isoYmd, weekdayLong){
@@ -338,12 +392,17 @@
       if(rowIso){
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
         if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return rowIso === iso;
+        /* Outside summer dated window: Day Centre → Autumn board snap (not June ACAT weeks). */
+        if(!portalStaffHasDatedRowsForIso(iso, sid) && portalSessionIsDayCentreService(s)){
+          const dcSnap = portalDayCentreStandingSnapIso(w);
+          if(dcSnap) return rowIso === dcSnap;
+        }
         const matchIso = portalStaffRosterMatchIsoForCalendar(iso, w, sid);
         return !!(iso && matchIso && rowIso === matchIso);
       }
       if(portalStaffHasDatedRowsForIso(iso, sid)) return false;
-      const snapFloor = portalCalendarIsoUsesSummerDatedRosterOnly(iso) ? portalTermSummerRosterFromIso() : '';
-      if(portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor)) return false;
+      const snap = portalStaffStandingWeekdaySnapArgs(iso);
+      if(portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through)) return false;
       return w === String(s.day || '').trim();
     }
     function portalScheduleOverrideFetchIsoList(opts){
@@ -355,11 +414,25 @@
         if(out.indexOf(x) < 0) out.push(x);
       };
       try{
+        /* Near window only — do NOT enumerate the whole Term calendar (Aug–Dec).
+           That used to fire 4×40-date override fetches and left Term day cards on
+           "syncing" for a long time. Past days: ensure term review / late feedback. */
         const now = new Date();
-        for(let i = 0; i <= 14; i++){
+        for(let i = -28; i <= 21; i++){
           const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
           add(portalIsoYmdFromDate(d));
         }
+      }catch(_){}
+      try{
+        const extra = opts.extraIsos;
+        if(Array.isArray(extra)) extra.forEach(add);
+        else if(extra) add(extra);
+      }catch(_){}
+      try{
+        const lockIso = typeof window !== 'undefined'
+          ? String(window.__PORTAL_REVIEW_DATE_URL_LOCK || '').trim().slice(0, 10)
+          : '';
+        if(lockIso) add(lockIso);
       }catch(_){}
       try{
         const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
@@ -417,30 +490,6 @@
         if(ns){
           const d = ns instanceof Date ? ns : new Date(ns);
           if(d && !isNaN(d.getTime())) add(portalIsoYmdFromDate(d));
-        }
-      }catch(_){}
-      try{
-        const y = Number(dashboardData && dashboardData.termCalendarYear);
-        let months = Array.isArray(dashboardData && dashboardData.termCalendarMonths) && dashboardData.termCalendarMonths.length
-          ? dashboardData.termCalendarMonths.map(Number).filter(function(m){ return m >= 0 && m <= 11; })
-          : null;
-        if(!months || !months.length){
-          const single = Number(dashboardData && dashboardData.termCalendarMonth);
-          if(Number.isFinite(single) && single >= 0 && single <= 11) months = [single];
-        }
-        if(Number.isFinite(y) && Array.isArray(months) && months.length){
-          const firstDomMap = dashboardData && dashboardData.termCalendarFirstDom;
-          months.forEach(function(monthIndex){
-            const lastDay = new Date(y, monthIndex + 1, 0).getDate();
-            let firstDom = 1;
-            if(firstDomMap && Object.prototype.hasOwnProperty.call(firstDomMap, monthIndex)){
-              const fd = Math.floor(Number(firstDomMap[monthIndex]));
-              if(Number.isFinite(fd) && fd > 1) firstDom = Math.min(fd, lastDay);
-            }
-            for(let day = firstDom; day <= lastDay; day++){
-              add(portalIsoYmdFromDate(new Date(y, monthIndex, day)));
-            }
-          });
         }
       }catch(_){}
       if(!out.length) add(portalIsoYmdFromDate(new Date()));
@@ -556,6 +605,11 @@
           }
         }catch(_offDates){}
         const isoList = typeof portalScheduleOverrideFetchIsoList === "function" ? portalScheduleOverrideFetchIsoList(opts) : [portalIsoYmdFromDate(new Date())];
+        try{
+          const fetchedMap = window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__ || Object.create(null);
+          isoList.forEach(function(iso){ fetchedMap[String(iso || '').trim()] = true; });
+          window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__ = fetchedMap;
+        }catch(_){}
         const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,status';
         const merged = [];
         const CHUNK = 40;
@@ -618,8 +672,15 @@
       }
       if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();
       try{
+        const termSheetOpen = !!(document.getElementById('termSheet')
+          && document.getElementById('termSheet').classList.contains('open'));
         if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
-        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function') rebuildTermShiftAndFeedbackFromSessionModel();
+        /* Term rebuild scans every worked day × full sessionsModel — only when Term is open. */
+        if(termSheetOpen && typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+          rebuildTermShiftAndFeedbackFromSessionModel();
+        }else{
+          try{ if(typeof window !== 'undefined') delete window.__PORTAL_TERM_REBUILD_LAST_SIG__; }catch(_sig){}
+        }
         if(typeof renderLists === 'function') renderLists();
         if(typeof renderMiniCounts === 'function') renderMiniCounts();
         if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
@@ -628,9 +689,12 @@
           if(grid) grid.removeAttribute('data-today-cards-sig');
           renderToday();
         }
-        if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+        if(typeof renderTermCalendarGrid === 'function'){
+          if(termSheetOpen) renderTermCalendarGrid({ force: true });
+          else renderTermCalendarGrid();
+        }
         if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
-        if(typeof portalRefreshScheduleOverrideDayChrome === 'function') portalRefreshScheduleOverrideDayChrome({ forceTerm: true });
+        if(typeof portalRefreshScheduleOverrideDayChrome === 'function') portalRefreshScheduleOverrideDayChrome({ forceTerm: termSheetOpen });
       }catch(_syncOv){}
       }finally{
         try{ window.__PORTAL_SCHEDULE_OVERRIDES_INFLIGHT__ = null; }catch(_){}
@@ -687,6 +751,97 @@
       });
     }
     try{ window.portalStaffKickScheduleOverridesHydrate = portalStaffKickScheduleOverridesHydrate; }catch(_){}
+    /**
+     * Fetch overrides for ONE calendar day only.
+     * Never re-runs the wide near-window hydrate (that blocked Term day open for seconds).
+     */
+    window.portalEnsureScheduleOverridesForIso = function portalEnsureScheduleOverridesForIso(isoYmd){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return Promise.resolve();
+      try{
+        const map = window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__;
+        if(map && map[iso] && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
+          && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
+          return Promise.resolve({ ok: true, cached: true, iso: iso });
+        }
+      }catch(_){}
+      try{
+        const inflightMap = window.__PORTAL_SCHEDULE_OVERRIDE_ISO_INFLIGHT__ || Object.create(null);
+        if(inflightMap[iso]) return inflightMap[iso];
+      }catch(_){}
+      const run = (async function(){
+        try{
+          if(typeof window.portalWaitForSupabaseClientReady === 'function'){
+            await window.portalWaitForSupabaseClientReady(2500);
+          }
+          const box = window.__PORTAL_SUPABASE__;
+          if(!box || !box.client) return { ok: false, reason: 'no_client', iso: iso };
+          let sess = box.session;
+          if((!sess || !sess.user) && box.client.auth){
+            try{
+              const cur = await box.client.auth.getSession();
+              sess = cur && cur.data && cur.data.session;
+              if(sess && sess.user) box.session = sess;
+            }catch(_gs){}
+          }
+          if(!sess || !sess.user) return { ok: false, reason: 'no_session', iso: iso };
+          const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,status';
+          const res = await box.client.from('schedule_overrides')
+            .select(selectCols)
+            .eq('status', 'active')
+            .eq('session_date', iso)
+            .order('created_at', { ascending: false });
+          if(res.error){
+            console.warn('[portal] schedule_overrides single-iso', res.error && (res.error.message || res.error), iso);
+            return { ok: false, reason: 'fetch_error', iso: iso };
+          }
+          const rows = Array.isArray(res.data) ? res.data : [];
+          const prev = Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
+            ? window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
+            : [];
+          const next = [];
+          const seen = Object.create(null);
+          rows.forEach(function(row){
+            if(!row || !row.id) return;
+            seen[String(row.id)] = true;
+            next.push(row);
+          });
+          prev.forEach(function(row){
+            if(!row || !row.id || seen[String(row.id)]) return;
+            const rowIso = typeof normaliseIsoDate === 'function'
+              ? normaliseIsoDate(row.session_date)
+              : String(row.session_date || '').trim().slice(0, 10);
+            if(rowIso === iso) return;
+            next.push(row);
+            seen[String(row.id)] = true;
+          });
+          next.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+          window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = next;
+          try{
+            const fetchedMap = window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__ || Object.create(null);
+            fetchedMap[iso] = true;
+            window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__ = fetchedMap;
+          }catch(_){}
+          try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
+          return { ok: true, iso: iso, count: rows.length };
+        }catch(e){
+          console.warn('[portal] schedule_overrides single-iso', e);
+          return { ok: false, reason: 'exception', iso: iso };
+        }finally{
+          try{
+            const m = window.__PORTAL_SCHEDULE_OVERRIDE_ISO_INFLIGHT__;
+            if(m) delete m[iso];
+          }catch(_){}
+        }
+      })();
+      try{
+        if(!window.__PORTAL_SCHEDULE_OVERRIDE_ISO_INFLIGHT__){
+          window.__PORTAL_SCHEDULE_OVERRIDE_ISO_INFLIGHT__ = Object.create(null);
+        }
+        window.__PORTAL_SCHEDULE_OVERRIDE_ISO_INFLIGHT__[iso] = run;
+      }catch(_){}
+      return run;
+    };
     /** OS banner when app is backgrounded/closed. Foreground uses quick-menu + header chrome only. */
     function portalStaffNotifyOsWhiteTile(title, body, tag, opts){
       opts = opts || {};
@@ -1327,7 +1482,7 @@
       const openedClosed = typeof portalSessionHasSlotOpenOverride === 'function' && portalSessionHasSlotOpenOverride(s, iso);
       if(st === 'Closed' && !openedClosed) return false;
       const ov = portalTodayScheduleOverrideForSession(s, iso);
-      if(ov && ov.override_type === 'instructor_reassign' && String(ov.payload && ov.payload.covering_staff_id || '').trim()) return false;
+      if(portalInstructorReassignShouldHideForViewer(ov, sid)) return false;
       if(ov && ov.override_type === 'client_replace_in_slot'){
         const repId = portalOverrideReplacementClientId(ov.payload);
         const anchorId = String(s.clientId || '').trim().toLowerCase();
@@ -1367,8 +1522,18 @@
         const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
         if(!cov || cov !== sid) return;
         const base = typeof portalFindSpreadsheetSessionMatchingOverride === 'function' ? portalFindSpreadsheetSessionMatchingOverride(ov, dayName) : null;
-        if(!base) return;
-        const s = Object.assign({}, base, { staffId: cov });
+        const s = Object.assign({}, base || {
+          day: dayName,
+          start: typeof portalHmFromDbTime === 'function' ? (portalHmFromDbTime(ov.anchor_start) || '09:00') : '09:00',
+          end: typeof portalHmFromDbTime === 'function'
+            ? (portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00')
+            : '10:00',
+          venue: ov.anchor_venue || '',
+          clientId: String(ov.anchor_client_id || '').toLowerCase(),
+          staffId: cov,
+          status: 'Scheduled',
+          activity: 'Swimming'
+        }, { staffId: cov });
         if(typeof window.portalWeekStripSessionCountKey === 'function' && seenCount){
           const countKey = window.portalWeekStripSessionCountKey(s, dayName, sid);
           if(!countKey) return;
@@ -1401,7 +1566,7 @@
           }
         }
         const ov0 = typeof portalTodayScheduleOverrideForSession === 'function' ? portalTodayScheduleOverrideForSession(s, sessionDateIso) : null;
-        if(ov0 && ov0.override_type === 'instructor_reassign' && String(ov0.payload && ov0.payload.covering_staff_id || '').trim()) return;
+        if(portalInstructorReassignShouldHideForViewer(ov0, sid)) return;
         if(typeof portalSessionStaffReassignedOff === 'function' && portalSessionStaffReassignedOff(s, sessionDateIso)) return;
         const eid = typeof portalEffectiveClientIdForReview === 'function' ? portalEffectiveClientIdForReview(s, sessionDateIso) : String(s.clientId || '').trim().toLowerCase();
         const eff = eid !== String(s.clientId || '').trim().toLowerCase()
@@ -1651,6 +1816,32 @@
         : portalNormKeyStr(pl.covering_staff_name);
       return fromName || '';
     }
+    /** True when this instructor_reassign hands the slot to `staffId` (they are the cover). */
+    function portalInstructorReassignCoverIsStaff(ov, staffId){
+      if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign') return false;
+      const cov = portalInstructorCoverStaffKeyFromOverride(ov);
+      if(!cov) return false;
+      const me = typeof portalCanonicalStaffKeyForMatch === 'function'
+        ? portalCanonicalStaffKeyForMatch(staffId)
+        : portalNormKeyStr(staffId);
+      return !!(me && cov === me);
+    }
+    /**
+     * Drop a roster card for instructor_reassign only when someone ELSE is covering.
+     * If we are the cover (sunday replace / dated CSV already lists us on the slot), keep it —
+     * otherwise the last Sunday aquatic cards (e.g. Luliya→Shaan 2.30–3) vanished from Today.
+     */
+    function portalInstructorReassignShouldHideForViewer(ov, staffId){
+      if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign') return false;
+      const cov = portalInstructorCoverStaffKeyFromOverride(ov);
+      if(!cov) return false;
+      return !portalInstructorReassignCoverIsStaff(ov, staffId);
+    }
+    try{
+      window.portalInstructorCoverStaffKeyFromOverride = portalInstructorCoverStaffKeyFromOverride;
+      window.portalInstructorReassignCoverIsStaff = portalInstructorReassignCoverIsStaff;
+      window.portalInstructorReassignShouldHideForViewer = portalInstructorReassignShouldHideForViewer;
+    }catch(_){}
     function portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey){
       const sid = typeof portalCanonicalStaffKeyForMatch === 'function'
         ? portalCanonicalStaffKeyForMatch(staffId)
@@ -1668,7 +1859,71 @@
         const prev = bySlot[slotKey];
         if(!prev || new Date(ov.created_at || 0) > new Date(prev.created_at || 0)) bySlot[slotKey] = ov;
       });
-      return Object.keys(bySlot).map(function(k){ return bySlot[k]; });
+      return portalCoalesceContiguousInstructorCoverOverrides(
+        Object.keys(bySlot).map(function(k){ return bySlot[k]; })
+      );
+    }
+    /**
+     * Admin often stores a 60' aquatic cover as two instructor_reassign halves.
+     * Without coalescing, Today injects two cards (orange+green) for the same client.
+     */
+    function portalCoalesceContiguousInstructorCoverOverrides(ovs){
+      if(!Array.isArray(ovs) || ovs.length < 2) return ovs || [];
+      const hmMin = function(hm){
+        if(typeof portalHmToMinutes === 'function') return portalHmToMinutes(hm);
+        const m = String(hm || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+        if(!m) return NaN;
+        return Number(m[1]) * 60 + Number(m[2]);
+      };
+      const sorted = ovs.slice().sort(function(a, b){
+        const ca = String(a && a.anchor_client_id || '').trim().toLowerCase();
+        const cb = String(b && b.anchor_client_id || '').trim().toLowerCase();
+        if(ca !== cb) return ca < cb ? -1 : 1;
+        const va = portalNormKeyStr(a && a.anchor_venue);
+        const vb = portalNormKeyStr(b && b.anchor_venue);
+        if(va !== vb) return va < vb ? -1 : 1;
+        return hmMin(portalHmFromDbTime(a && a.anchor_start)) - hmMin(portalHmFromDbTime(b && b.anchor_start));
+      });
+      const out = [];
+      let cur = null;
+      sorted.forEach(function(ov){
+        if(!ov) return;
+        const cid = String(ov.anchor_client_id || '').trim().toLowerCase();
+        const venue = portalNormKeyStr(ov.anchor_venue);
+        const cov = portalInstructorCoverStaffKeyFromOverride(ov);
+        const st = portalHmFromDbTime(ov.anchor_start) || '';
+        const en = portalHmFromDbTime(ov.anchor_end) || st;
+        if(!cur){
+          cur = Object.assign({}, ov, {
+            anchor_start: ov.anchor_start,
+            anchor_end: ov.anchor_end,
+            __portalCoalescedCoverStarts: st ? [st] : []
+          });
+          return;
+        }
+        const curCid = String(cur.anchor_client_id || '').trim().toLowerCase();
+        const curVenue = portalNormKeyStr(cur.anchor_venue);
+        const curCov = portalInstructorCoverStaffKeyFromOverride(cur);
+        const curEnd = portalHmFromDbTime(cur.anchor_end) || portalHmFromDbTime(cur.anchor_start) || '';
+        const curEndM = hmMin(curEnd);
+        const stM = hmMin(st);
+        const consecutive = Number.isFinite(curEndM) && Number.isFinite(stM) && curEndM === stM;
+        if(cid && cid === curCid && venue === curVenue && cov && cov === curCov && consecutive){
+          cur = Object.assign({}, cur, {
+            anchor_end: ov.anchor_end,
+            __portalCoalescedCoverStarts: (cur.__portalCoalescedCoverStarts || []).concat(st ? [st] : [])
+          });
+          return;
+        }
+        out.push(cur);
+        cur = Object.assign({}, ov, {
+          anchor_start: ov.anchor_start,
+          anchor_end: ov.anchor_end,
+          __portalCoalescedCoverStarts: st ? [st] : []
+        });
+      });
+      if(cur) out.push(cur);
+      return out;
     }
     /** Luliya Day Centre (Ikram) ends at 15:00 when she covers aquatic sessions that afternoon. */
     function portalStaffKeyIsLulia(staffId){
@@ -2000,11 +2255,12 @@
         anchor = portalParseIsoDateLocal(isoPin);
       }
       if(!anchor || isNaN(anchor.getTime())) anchor = getViewAnchorCalendarDate(viewDay);
-      let sessionDateKey = useIsoPin
+      const viewCalendarIso = useIsoPin
         ? isoPin
         : (typeof portalIsoYmdFromDate === 'function'
           ? portalIsoYmdFromDate(anchor)
           : `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}-${String(anchor.getDate()).padStart(2, '0')}`);
+      const sessionDateKey = viewCalendarIso;
       const anchorDayWord = anchor && !isNaN(anchor.getTime())
         ? anchor.toLocaleDateString('en-GB', { weekday: 'long' })
         : viewDay;
@@ -2059,15 +2315,6 @@
             }catch(_fbShift){}
           }
         }
-        if(!baseModel.some(function(s){
-          return String(s.staffId || '').toLowerCase() === staffId
-            && normaliseIsoDate(s.session_date || s.sessionDate) === sessionDateKey;
-        }) && typeof portalBestStaffRosterIsoForWeekday === 'function'
-          && !portalCalendarIsoUsesSummerDatedRosterOnly(sessionDateKey)){
-          const altIso = portalBestStaffRosterIsoForWeekday(baseModel, staffId, anchorDayWord, anchor);
-          const floor = portalTermSummerRosterFromIso();
-          if(altIso && (!floor || altIso >= floor)) sessionDateKey = altIso;
-        }
       }
       let programmeWidePack = null;
       if(staffId){
@@ -2090,9 +2337,11 @@
       }
       const todaySessionsAfterFilter = baseModel.filter(function(s){
         if(programmeWidePack){
+          if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
+            return portalSessionSpreadsheetRowMatchesCalendarDate(s, viewCalendarIso, anchorDayWord);
+          }
           if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
-          if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
-            && !portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, anchorDayWord)) return false;
+          return true;
           /* ES-module scope check is not ready while classic scripts render — fall back to the inline check. */
           if(typeof window.portalLeadSpreadsheetSessionInScopeForLead === 'function'){
             return window.portalLeadSpreadsheetSessionInScopeForLead(
@@ -2108,9 +2357,11 @@
           return true;
         }
         if(String(s.staffId || '').toLowerCase() !== staffId) return false;
+        if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
+          return portalSessionSpreadsheetRowMatchesCalendarDate(s, viewCalendarIso, anchorDayWord);
+        }
         if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
-        return typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
-          && portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, anchorDayWord);
+        return false;
       }).filter(function(s){
         return !portalStaffDashboardOmitSpreadsheetSession(s, anchorDayWord, sessionDateKey);
       });
@@ -2138,13 +2389,11 @@
             __portalScheduleOverride: replaceNotSameCalendarDay ? null : (ov || null)
           };
           if(portalSpreadsheetSlotClosedLike(s) && !portalSessionHasSlotOpenOverride(s, sessionDateKey) && !portalSessionHasReplaceMakeupOverride(s, sessionDateKey)) return null;
-          if(ov && ov.override_type === 'instructor_reassign'){
-            const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
-            if(cov) return null;
-          }
+          if(portalInstructorReassignShouldHideForViewer(ov, staffId)) return null;
           // The slot was reassigned to a cover instructor — drop it even when a
           // higher-priority override (e.g. a client absence) outranked the reassign
           // in the picker, so the original worker does not see a slot they're off.
+          // (Cover instructor keeps the card — see portalInstructorReassignShouldHideForViewer.)
           if(typeof portalSessionStaffReassignedOff === 'function' && portalSessionStaffReassignedOff(s, sessionDateKey)) return null;
           let st = sessionModelStatus(s);
           const time = rosterSlotTimeLabel(s);
@@ -2612,7 +2861,7 @@
       const extra = [];
       portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey).forEach(function(ov){
         const cov = portalInstructorCoverStaffKeyFromOverride(ov) || portalNormKeyStr(staffId);
-        const base = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord) || {
+        const baseFound = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord) || {
           day: anchorDayWord,
           start: portalHmFromDbTime(ov.anchor_start) || '09:00',
           end: portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00',
@@ -2624,8 +2873,14 @@
           rosterService: String(portalScheduleOverridePayload(ov).service || '').trim(),
           session_date: sessionDateKey
         };
-        const coverWinStart = portalHmFromDbTime(ov.anchor_start) || base.start;
-        const coverWinEnd = portalHmFromDbTime(ov.anchor_end) || base.end || coverWinStart;
+        const coverWinStart = portalHmFromDbTime(ov.anchor_start) || baseFound.start;
+        const coverWinEnd = portalHmFromDbTime(ov.anchor_end) || baseFound.end || coverWinStart;
+        /* Always pin the card to the override window (coalesced halves → one 60' card). */
+        const base = Object.assign({}, baseFound, {
+          start: coverWinStart,
+          end: coverWinEnd,
+          clientId: String(ov.anchor_client_id || baseFound.clientId || '').toLowerCase() || baseFound.clientId
+        });
         const s = Object.assign({}, base, { staffId: cov });
         let st2 = sessionModelStatus(s);
         /* Admin absence / cancellation on a covered slot can be anchored to EITHER the
@@ -2794,6 +3049,17 @@
         const coverTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
         const coverItemProbe = { sessionEndTs: coverTs.sessionEndTs, sessionKey };
         const makeUpPinkCover = !isInstructorCoverOv && !isTrialCoverOv && hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe);
+        const coverMemberKeys = [];
+        if(isInstructorCoverOv && Array.isArray(ov.__portalCoalescedCoverStarts) && ov.__portalCoalescedCoverStarts.length > 1){
+          const seenCk = Object.create(null);
+          ov.__portalCoalescedCoverStarts.forEach(function(stHalf){
+            const hm = typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(stHalf) : String(stHalf || '').trim();
+            if(!hm || seenCk[hm]) return;
+            seenCk[hm] = true;
+            coverMemberKeys.push(sessionDateKey + '|' + hm + '|' + String(effCoverId || '').toLowerCase());
+          });
+          if(sessionKey) coverMemberKeys.push(sessionKey);
+        }
         extra.push({
           time,
           kind: 'client',
@@ -2821,7 +3087,8 @@
           portalOverrideAlertPill: '',
           sessionVenue: String(s.venue || '').trim() || '—',
           __portalBaseSession: base,
-          __portalScheduleOverride: ov
+          __portalScheduleOverride: ov,
+          __portalFeedbackMergeMemberKeys: coverMemberKeys.length ? coverMemberKeys : undefined
         });
       });
       // Admin-added Training / Shadowing sessions (override_type='session_add').
@@ -2917,22 +3184,42 @@
           if(!cid || cid === 'available' || cid === 'closed') return;
           occupied.push({ clientId: cid, win: portalTodayItemSlotWindow(it), dedupeKey: k });
         });
-        return extraItems.filter(function(it){
+        const kept = [];
+        extraItems.forEach(function(it){
           const ov = it && it.__portalScheduleOverride;
-          if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign') return true;
+          if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign'){
+            kept.push(it);
+            return;
+          }
           const k = portalTodayItemClientSlotDedupeKey(it);
-          if(k && seenExact[k]) return false;
+          if(k && seenExact[k]) return;
           const win = portalTodayItemSlotWindow(it);
           const cid = String(it.clientId || '').trim().toLowerCase();
-          if(!cid || cid === 'available' || cid === 'closed') return true;
+          if(!cid || cid === 'available' || cid === 'closed'){
+            kept.push(it);
+            return;
+          }
           for(let i = 0; i < occupied.length; i++){
             const o = occupied[i];
             if(o.clientId !== cid) continue;
-            if(k && o.dedupeKey && k === o.dedupeKey) return false;
-            if(portalTodaySlotWindowsOverlap(o.win, win)) return false;
+            if(k && o.dedupeKey && k === o.dedupeKey) return;
+            if(portalTodaySlotWindowsOverlap(o.win, win)) return;
           }
-          return true;
+          /* Also collapse duplicate cover injects against each other (same client overlap). */
+          for(let j = 0; j < kept.length; j++){
+            const kIt = kept[j];
+            if(!kIt || kIt.kind !== 'client') continue;
+            const kCid = String(kIt.clientId || '').trim().toLowerCase();
+            if(kCid !== cid) continue;
+            const kExact = portalTodayItemClientSlotDedupeKey(kIt);
+            if(k && kExact && k === kExact) return;
+            if(portalTodaySlotWindowsOverlap(portalTodayItemSlotWindow(kIt), win)) return;
+          }
+          if(k) seenExact[k] = true;
+          occupied.push({ clientId: cid, win: win, dedupeKey: k });
+          kept.push(it);
         });
+        return kept;
       }
       function portalSuppressAvailableWhenSlotFilled(items){
         if(!Array.isArray(items) || !items.length) return items || [];
@@ -3009,6 +3296,18 @@
     var buildTodayFromLauraModel = buildSelectedDayViewFromLauraModel;
     try{ window.buildTodayFromLauraModel = buildTodayFromLauraModel; }catch(_){}
     try{ window.buildSelectedDayViewFromLauraModel = buildSelectedDayViewFromLauraModel; }catch(_){}
+    /* Aquatic merge used to load only in deferred chunks (3.5s later on phones) — rebuild Today once ready. */
+    try{
+      if(typeof window !== 'undefined' && !window.__PORTAL_AQUATIC_MERGE_RERENDER_BOUND__){
+        window.__PORTAL_AQUATIC_MERGE_RERENDER_BOUND__ = true;
+        window.addEventListener('portal:staff-deferred-dashboard-ready', function(){
+          try{
+            if(typeof portalMergeStaffLeadTodayAquaticCards !== 'function') return;
+            if(typeof renderToday === 'function') renderToday();
+          }catch(_r){}
+        });
+      }
+    }catch(_b){}
 
     function portalFormatNextSessionSectionHeading(sessionDate){
       const d = sessionDate instanceof Date && !isNaN(sessionDate.getTime()) ? sessionDate : null;
@@ -3836,6 +4135,9 @@
       dashboardData.portalTodaySectionHeading = '';
       dashboardData.portalTodaySectionMode = 'today';
       const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+      if(!liveToday){
+        dashboardData.portalTodayNextSessionPreview = null;
+      }
       if(liveToday && typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function' && portalStaffLiveTodayAwaitingInitialSchedule()){
         dashboardData.portalTodayEmptyPanelMode = dashboardData.portalIdentityResolved === false ? 'loading' : 'sync';
         dashboardData.portalTodayNextSessionPreview = null;
@@ -3891,7 +4193,7 @@
           var todaySettledEarly = !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__);
           if(!todaySettledEarly) dashboardData.portalTodayEmptyPanelMode = 'sync';
         }
-      }else if(!portalNextSessionPreviewHasParticipants(dashboardData.portalTodayNextSessionPreview)){
+      }else if(liveToday && !portalNextSessionPreviewHasParticipants(dashboardData.portalTodayNextSessionPreview)){
         if(typeof portalStaffTodayScheduleCardsStillExpected === 'function'
           && portalStaffTodayScheduleCardsStillExpected(id)){
           dashboardData.portalTodayNextSessionPreview = null;
@@ -4431,11 +4733,13 @@
       portalTodayNextSessionPreview: null,
       week: [],
       /** Term grid: months/range filled from term_from_timetable.js; sample feedback only for demo usernames (see portalApplyTermCalendarForStaff). */
-      termName: 'Summer Term 2026',
+      termName: 'Autumn Term 2026',
       termCalendarYear: 2026,
-      termCalendarMonths: [3, 4, 5, 6],
-      termCalendarFirstDom: { 3: 13 },
-      termCalendarMonth: 4,
+      termCalendarMonths: [7, 8, 9, 10, 11],
+      termCalendarFirstDom: { 7: 31 },
+      termCalendarMonth: 8,
+      termDashboardCalendarFrom: '2026-08-31',
+      termDashboardCalendarTo: '2026-12-31',
       termWorkedWeekdays: [],
       termHalfTermWeekStarts: [],
       termFeedbackByDate: {},
@@ -6338,25 +6642,27 @@
       } else if(t && typeof t === 'object'){
         if(t.termName) dashboardData.termName = t.termName;
         dashboardData.termCalendarYear = 2026;
-        dashboardData.termCalendarMonths = [5, 6];
-        dashboardData.termCalendarFirstDom = {};
-        dashboardData.termDashboardCalendarFrom = '2026-06-01';
+        dashboardData.termCalendarMonths = [7, 8, 9, 10, 11];
+        dashboardData.termCalendarFirstDom = { 7: 31 };
+        dashboardData.termDashboardCalendarFrom = '2026-08-31';
         const dcKeys = Array.isArray(t.termStaffDayCentreCalendarKeys) ? t.termStaffDayCentreCalendarKeys : [];
         const isDc = dcKeys.indexOf(id) >= 0
           || (id === 'lulia' && dcKeys.indexOf('luliya') >= 0)
           || (id === 'luliya' && dcKeys.indexOf('lulia') >= 0);
         dashboardData.termDashboardCalendarTo = isDc
-          ? String(t.termDashboardCalendarToDayCentre || t.lastDate || '2026-07-31').slice(0, 10)
-          : String(t.termDashboardCalendarTo || '2026-07-17').slice(0, 10);
-        dashboardData.termHalfTermWeekStarts = [];
+          ? String(t.termDashboardCalendarToDayCentre || t.lastDate || '2026-12-17').slice(0, 10)
+          : String(t.termDashboardCalendarTo || '2026-12-31').slice(0, 10);
+        dashboardData.termHalfTermWeekStarts = Array.isArray(t.termHalfTermWeekStarts)
+          ? t.termHalfTermWeekStarts.slice()
+          : ['2026-10-26'];
       } else {
-        dashboardData.termName = 'Summer Term 2026';
+        dashboardData.termName = 'Autumn Term 2026';
         dashboardData.termCalendarYear = 2026;
-        dashboardData.termCalendarMonths = [5, 6];
-        dashboardData.termCalendarFirstDom = {};
-        dashboardData.termDashboardCalendarFrom = '2026-06-01';
-        dashboardData.termDashboardCalendarTo = '2026-07-17';
-        dashboardData.termHalfTermWeekStarts = [];
+        dashboardData.termCalendarMonths = [7, 8, 9, 10, 11];
+        dashboardData.termCalendarFirstDom = { 7: 31 };
+        dashboardData.termDashboardCalendarFrom = '2026-08-31';
+        dashboardData.termDashboardCalendarTo = '2026-12-31';
+        dashboardData.termHalfTermWeekStarts = ['2026-10-26'];
       }
       const demoList = window.PORTAL_TERM_UI_DEMO_USERNAMES || [];
       const demo = Array.isArray(demoList) && demoList.indexOf(id) !== -1;
@@ -6412,6 +6718,25 @@
         });
         dashboardData.termCalendarMonths = Array.from(months).sort(function(a, b){ return a - b; });
       }
+      // Never show pre-Autumn months once the view starts 31 Aug (stale Summer shell / crash extras).
+      (function clampTermMonthsToView(){
+        const from = String(dashboardData.termDashboardCalendarFrom || '').slice(0, 10);
+        const to = String(dashboardData.termDashboardCalendarTo || '').slice(0, 10);
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) return;
+        const fromM = parseInt(from.slice(5, 7), 10) - 1;
+        const toM = parseInt(to.slice(5, 7), 10) - 1;
+        if(!Number.isFinite(fromM) || !Number.isFinite(toM)) return;
+        let months = Array.isArray(dashboardData.termCalendarMonths)
+          ? dashboardData.termCalendarMonths.map(Number).filter(function(m){
+            return Number.isFinite(m) && m >= fromM && m <= toM;
+          })
+          : [];
+        if(!months.length){
+          months = [];
+          for(let m = fromM; m <= toM; m++) months.push(m);
+        }
+        dashboardData.termCalendarMonths = months.sort(function(a, b){ return a - b; });
+      })();
     };
     if(STAFF_DASHBOARD_ID && typeof window.portalApplyTermCalendarForStaff === 'function'){
       window.portalApplyTermCalendarForStaff(STAFF_DASHBOARD_ID);

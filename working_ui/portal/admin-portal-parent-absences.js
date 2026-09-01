@@ -17,10 +17,12 @@
     },
     getAnonKey: function () {
       return '';
-    }
+    },
+    openModal: null,
+    closeModal: null
   };
 
-  var state = { filter: 'pending_review', reports: [], meta: {} };
+  var state = { filter: 'pending_review', reports: [], meta: {}, pick: null };
 
   function configure(options) {
     if (!options) return;
@@ -29,6 +31,8 @@
     if (options.getClient) cfg.getClient = options.getClient;
     if (options.getSupabaseUrl) cfg.getSupabaseUrl = options.getSupabaseUrl;
     if (options.getAnonKey) cfg.getAnonKey = options.getAnonKey;
+    if (options.openModal) cfg.openModal = options.openModal;
+    if (options.closeModal) cfg.closeModal = options.closeModal;
   }
 
   function esc(s) {
@@ -103,6 +107,224 @@
       return { error: (j && j.error) || 'request_failed', reports: [] };
     }
     return { reports: j.reports || [], meta: j.meta || {} };
+  }
+
+  async function createAbsence(body) {
+    var token = await portalAuthToken();
+    if (!token) return { error: 'session_expired' };
+    var res = await fetch(supabaseBase() + '/functions/v1/portal-admin-parent-absence-create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+        apikey: cfg.getAnonKey()
+      },
+      body: JSON.stringify(body || {})
+    });
+    var j = null;
+    try {
+      j = await res.json();
+    } catch (_e) {
+      j = null;
+    }
+    if (!res.ok || !j || !j.ok) {
+      return { error: (j && j.error) || 'request_failed', message: (j && j.message) || '' };
+    }
+    return j;
+  }
+
+  async function searchParticipants(q) {
+    var client = cfg.getClient();
+    var hitsEl = global.document.getElementById('ppAbsenceCreateHits');
+    if (!client || !hitsEl) return;
+    var term = String(q || '').trim();
+    if (term.length < 2) {
+      hitsEl.innerHTML = '';
+      hitsEl.hidden = true;
+      return;
+    }
+    var safe = term.replace(/%/g, '').replace(/,/g, '');
+    var { data, error } = await client
+      .from('portal_participants')
+      .select('contact_id, display_name, first_name, last_name, parent_person_id')
+      .or(
+        'display_name.ilike.%' +
+          safe +
+          '%,first_name.ilike.%' +
+          safe +
+          '%,last_name.ilike.%' +
+          safe +
+          '%,contact_id.ilike.%' +
+          safe +
+          '%'
+      )
+      .limit(12);
+    if (error) {
+      hitsEl.innerHTML = '<p class="muted">Search failed.</p>';
+      hitsEl.hidden = false;
+      return;
+    }
+    var hits = data || [];
+    if (!hits.length) {
+      hitsEl.innerHTML = '<p class="muted">No matches.</p>';
+      hitsEl.hidden = false;
+      return;
+    }
+    hitsEl.hidden = false;
+    hitsEl.innerHTML = hits
+      .map(function (p) {
+        var name =
+          String(p.display_name || '').trim() ||
+          [p.first_name, p.last_name].filter(Boolean).join(' ').trim() ||
+          p.contact_id;
+        return (
+          '<button type="button" class="btn btn--ghost btn--sm" style="display:block;width:100%;text-align:left;margin:0 0 4px;min-width:0;overflow-wrap:break-word" data-pp-abs-pick="' +
+          esc(p.contact_id) +
+          '" data-pp-abs-name="' +
+          esc(name) +
+          '" data-pp-abs-parent="' +
+          esc(p.parent_person_id || '') +
+          '">' +
+          esc(name) +
+          ' <span class="muted">' +
+          esc(p.contact_id) +
+          '</span></button>'
+        );
+      })
+      .join('');
+    hitsEl.querySelectorAll('[data-pp-abs-pick]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.pick = {
+          contact_id: btn.getAttribute('data-pp-abs-pick') || '',
+          parent_person_id: btn.getAttribute('data-pp-abs-parent') || '',
+          display_name: btn.getAttribute('data-pp-abs-name') || ''
+        };
+        var label = global.document.getElementById('ppAbsenceCreateSelected');
+        if (label) {
+          label.textContent =
+            state.pick.display_name + ' (' + state.pick.contact_id + ')';
+        }
+        hitsEl.innerHTML = '';
+        hitsEl.hidden = true;
+      });
+    });
+  }
+
+  function openCreateModal() {
+    if (typeof cfg.openModal !== 'function') {
+      cfg.toast('Add absent modal unavailable', 'error');
+      return;
+    }
+    state.pick = null;
+    cfg.openModal(
+      '<div class="modal-h"><h2 id="modalTitle">Add absent (office phone)</h2></div>' +
+        '<div class="modal-b" style="min-width:0">' +
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Record a missed / noted session when a parent calls. Unwell → Missed (can then grant makeup / approve). Other reasons → Noted.</p>' +
+        '<label class="muted">Search participant</label>' +
+        '<input class="inp" id="ppAbsenceCreateSearch" type="search" placeholder="Name or contact id" autocomplete="off" style="max-width:100%;box-sizing:border-box" />' +
+        '<div id="ppAbsenceCreateHits" hidden style="margin:6px 0"></div>' +
+        '<div class="muted" style="font-size:12px;margin-top:4px">Selected</div>' +
+        '<div id="ppAbsenceCreateSelected" style="font-weight:700;overflow-wrap:break-word;min-width:0">No participant selected</div>' +
+        '<label class="muted" style="display:block;margin-top:10px">Session date</label>' +
+        '<input class="inp" id="ppAbsenceCreateDate" type="date" style="max-width:100%;box-sizing:border-box" />' +
+        '<label class="muted" style="display:block;margin-top:10px">Service</label>' +
+        '<input class="inp" id="ppAbsenceCreateService" placeholder="e.g. Aquatic Activity · Acton" style="max-width:100%;box-sizing:border-box" />' +
+        '<label class="muted" style="display:block;margin-top:10px">Time (optional)</label>' +
+        '<input class="inp" id="ppAbsenceCreateTime" placeholder="e.g. 5 to 5.30" style="max-width:100%;box-sizing:border-box" />' +
+        '<label class="muted" style="display:block;margin-top:10px">Reason</label>' +
+        '<select class="inp" id="ppAbsenceCreateReason" style="max-width:100%;box-sizing:border-box">' +
+        '<option value="unwell">Unwell (Missed)</option>' +
+        '<option value="other_commitments">Other commitments (Noted)</option>' +
+        '<option value="party">Party (Noted)</option>' +
+        '<option value="holidays">Holidays (Noted)</option>' +
+        '<option value="travel">Travel (Noted)</option>' +
+        '<option value="birthday">Birthday (Noted)</option>' +
+        '<option value="instructor_cancelled">Instructor cancelled (Noted)</option>' +
+        '<option value="bank_holiday">Bank holiday (Noted)</option>' +
+        '<option value="strike">Strike / disruption (Noted)</option>' +
+        '<option value="office_other">Office note (Noted)</option>' +
+        '</select>' +
+        '<label class="muted" style="display:block;margin-top:10px">Notes (optional)</label>' +
+        '<textarea class="inp" id="ppAbsenceCreateNotes" rows="2" placeholder="What the parent said…" style="max-width:100%;box-sizing:border-box;resize:vertical"></textarea>' +
+        '<p id="ppAbsenceCreateErr" class="muted" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:13px;overflow-wrap:break-word"></p>' +
+        '</div>' +
+        '<div class="modal-f">' +
+        '<button type="button" class="btn btn--ghost" id="ppAbsenceCreateCancel">Cancel</button>' +
+        '<button type="button" class="btn btn--pri" id="ppAbsenceCreateSave">Save absent</button>' +
+        '</div>'
+    );
+
+    var searchTimer = null;
+    var search = global.document.getElementById('ppAbsenceCreateSearch');
+    if (search) {
+      search.addEventListener('input', function () {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(function () {
+          void searchParticipants(search.value);
+        }, 280);
+      });
+    }
+    var cancel = global.document.getElementById('ppAbsenceCreateCancel');
+    if (cancel) {
+      cancel.onclick = function () {
+        if (typeof cfg.closeModal === 'function') cfg.closeModal();
+      };
+    }
+    var save = global.document.getElementById('ppAbsenceCreateSave');
+    if (save) {
+      save.onclick = function () {
+        var errEl = global.document.getElementById('ppAbsenceCreateErr');
+        function showErr(msg) {
+          if (!errEl) return;
+          errEl.style.display = 'block';
+          errEl.textContent = msg;
+        }
+        if (!state.pick || !state.pick.contact_id) {
+          showErr('Pick a participant first.');
+          return;
+        }
+        var dateEl = global.document.getElementById('ppAbsenceCreateDate');
+        var svcEl = global.document.getElementById('ppAbsenceCreateService');
+        var timeEl = global.document.getElementById('ppAbsenceCreateTime');
+        var reasonEl = global.document.getElementById('ppAbsenceCreateReason');
+        var notesEl = global.document.getElementById('ppAbsenceCreateNotes');
+        var sessionDate = dateEl ? String(dateEl.value || '').trim() : '';
+        var serviceLabel = svcEl ? String(svcEl.value || '').trim() : '';
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
+          showErr('Session date is required.');
+          return;
+        }
+        if (!serviceLabel) {
+          showErr('Service is required.');
+          return;
+        }
+        save.disabled = true;
+        void createAbsence({
+          contact_id: state.pick.contact_id,
+          parent_person_id: state.pick.parent_person_id || '',
+          participant_display: state.pick.display_name || '',
+          session_date: sessionDate,
+          service_label: serviceLabel,
+          session_time: timeEl ? String(timeEl.value || '').trim() : '',
+          reason_code: reasonEl ? reasonEl.value : 'unwell',
+          reason_text: notesEl ? String(notesEl.value || '').trim() : ''
+        }).then(function (r) {
+          save.disabled = false;
+          if (r.error) {
+            showErr(r.message || r.error || 'Save failed');
+            return;
+          }
+          if (typeof cfg.closeModal === 'function') cfg.closeModal();
+          cfg.toast(
+            r.already_reported
+              ? 'Absent already on file for that session'
+              : 'Absent recorded from office phone',
+            'ok'
+          );
+          void renderHost(global.document.getElementById('portalParentAbsenceHost'));
+        });
+      };
+    }
   }
 
   async function decide(reportId, action, outcome, notes, preferredVenue, amountGbp) {
@@ -215,7 +437,7 @@
     return (
       '<div class="card" style="margin-top:0"><div class="card-pad" style="overflow:auto;padding:0">' +
       '<table class="tbl tbl--center tbl--dense"><thead><tr>' +
-      '<th>Participant</th><th>Session</th><th>Service</th><th>Note</th><th>Status</th><th>Proof deadline</th><th>Proof</th><th>Validate</th>' +
+      '<th>Participant</th><th>Session</th><th>Service</th><th>Note</th><th>Status</th><th>Proof deadline</th><th>Proof</th><th>Actions</th>' +
       '</tr></thead><tbody>' +
       reports.map(rowHtml).join('') +
       '</tbody></table></div></div>'
@@ -233,6 +455,7 @@
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="excused">Excused</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentAbsenceRefresh">Refresh</button>' +
+      '<button type="button" class="btn btn--primary btn--sm" id="portalParentAbsenceAdd">Add absent</button>' +
       '<span class="chip chip--pend" id="portalParentAbsenceMeta"></span>' +
       '</div>' +
       '<div id="portalParentAbsenceHost"><p class="muted">Loading…</p></div>' +
@@ -356,6 +579,17 @@
     });
   }
 
+  function bindAddButtons() {
+    ['portalParentAbsenceAdd', 'portalParentAbsenceAddEmbed'].forEach(function (id) {
+      var btn = global.document.getElementById(id);
+      if (!btn || btn.getAttribute('data-bound') === '1') return;
+      btn.setAttribute('data-bound', '1');
+      btn.addEventListener('click', function () {
+        openCreateModal();
+      });
+    });
+  }
+
   function bindModule() {
     var host = global.document.getElementById('portalParentAbsenceHost');
     if (host) void renderHost(host);
@@ -365,6 +599,7 @@
         void renderHost(global.document.getElementById('portalParentAbsenceHost'));
       });
     }
+    bindAddButtons();
     global.document.querySelectorAll('[data-absence-filter]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         state.filter = btn.getAttribute('data-absence-filter') || 'all';
@@ -384,13 +619,14 @@
       '<div class="card-h"><h3>Parent portal — proof validation</h3>' +
       '<span class="chip chip--pend" id="portalParentAbsenceMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Missed sessions reported in the parent app. Validate proof within the family&apos;s 2-week window; after that they must contact admin.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Missed sessions from the parent app <strong>or office phone</strong>. Validate proof within the family&apos;s 2-week window; after that they must contact admin. Use <strong>Add absent</strong> when a parent calls.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-absence-filter="pending_review">Pending proof</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="missed">Missed</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="noted">Noted</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentAbsenceRefreshEmbed">Refresh</button>' +
+      '<button type="button" class="btn btn--primary btn--sm" id="portalParentAbsenceAddEmbed">Add absent</button>' +
       '</div>' +
       '<div id="portalParentAbsenceHost"><p class="muted">Loading…</p></div>' +
       '</div></div>'
@@ -400,6 +636,7 @@
   function bindEmbed() {
     state.filter = 'pending_review';
     bindModule();
+    bindAddButtons();
     var meta = global.document.getElementById('portalParentAbsenceMetaEmbed');
     var refresh = global.document.getElementById('portalParentAbsenceRefreshEmbed');
     if (refresh) {
@@ -432,6 +669,7 @@
     embedHtml: embedHtml,
     bindModule: bindModule,
     bindEmbed: bindEmbed,
-    fetchReports: fetchReports
+    fetchReports: fetchReports,
+    openCreateModal: openCreateModal
   };
 })(typeof window !== 'undefined' ? window : globalThis);

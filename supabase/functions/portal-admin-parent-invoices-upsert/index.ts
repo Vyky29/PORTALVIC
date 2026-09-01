@@ -14,10 +14,21 @@ import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { type PortalInvoiceVatMode } from "../_shared/portal_tax_invoice_pdf.ts";
 import { createPortalFamilyInvoice, regeneratePortalInvoiceSharePdf } from "../_shared/portal_create_family_invoice.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
+import { tryCompleteBookingAfterInvoicePayment } from "../_shared/portal_booking_finish.ts";
 import {
   applyInstalmentPayment,
+  applyPaidAmountAcrossSchedule,
+  amountPaidFromSchedule,
   normalizePaymentSchedule,
+  rebuildTermPaymentSchedule,
+  reenrolPaymentScheduleMeta,
 } from "../_shared/portal_invoice_payment_schedule.ts";
+import {
+  parseBookingTermKey,
+  parseNewClientPayPlan,
+  quoteNewClientMidTermInvoice,
+} from "../_shared/booking_portal_term_invoices.ts";
+import { loadProductMap } from "../_shared/portal_xero_product_catalog.ts";
 
 const BUCKET = "documents";
 const MAX_BYTES = 12 * 1024 * 1024;
@@ -144,6 +155,13 @@ Deno.serve(async (req) => {
     action = clean(fields.action, 30).toLowerCase();
   }
 
+  /** Prefer admin email over generic "admin" so Mark paid is attributable. */
+  const paidViaActor = (() => {
+    const via = clean(fields.paid_via, 80).toLowerCase();
+    if (via && via !== "admin") return clean(fields.paid_via, 80);
+    return readyBy || "admin";
+  })();
+
   if (action === "regenerate_pdf") {
     const invoiceId = clean(fields.invoice_id, 80);
     if (!invoiceId) return portalAdminJson(400, { ok: false, error: "invoice_id_required" });
@@ -161,6 +179,676 @@ Deno.serve(async (req) => {
       ok: true,
       invoice,
       pdf_storage_path: regen.pdfStoragePath,
+    });
+  }
+
+  /**
+   * Change re-enrolment funding route for a participant (Private ↔ Direct Payments ↔ LA managed).
+   * Updates latest 2026/27 submission payload, contact labels, and unpaid INV-P VAT + PDF.
+   */
+  if (action === "set_reenrol_funding") {
+    const contactId = clean(fields.contact_id, 120);
+    const fundingRaw = clean(fields.funding, 40).toLowerCase();
+    if (!contactId) return portalAdminJson(400, { ok: false, error: "contact_id_required" });
+
+    type FundingKey = "direct_payments" | "private" | "la_managed";
+    const fundingKey: FundingKey | null =
+      fundingRaw === "direct_payments" || fundingRaw === "dp" || fundingRaw === "parent_direct_payment"
+        ? "direct_payments"
+        : fundingRaw === "private" || fundingRaw === "privately" || fundingRaw === "parent_private"
+          ? "private"
+          : fundingRaw === "la_managed" || fundingRaw === "la" || fundingRaw === "funder_invoice"
+            ? "la_managed"
+            : null;
+    if (!fundingKey) {
+      return portalAdminJson(400, {
+        ok: false,
+        error: "funding_invalid",
+        message: "Use direct_payments, private, or la_managed",
+      });
+    }
+
+    const presets: Record<
+      FundingKey,
+      {
+        billing_mode: string;
+        funding_code: string;
+        funding_label: string;
+        invoice_type_code: string;
+        invoice_type_label: string;
+        contact_funding_label: string;
+        contact_payment_method_label: string;
+        vat_mode: "exempt" | "vat_20";
+        payment_method_hint: string | null;
+        current_funding: string;
+        current_invoice_type: string;
+      }
+    > = {
+      direct_payments: {
+        billing_mode: "direct_payments",
+        funding_code: "la_direct_payments",
+        funding_label: "Using funds from LA (Direct Payments from your EHCP care package)",
+        invoice_type_code: "exempt",
+        invoice_type_label: "EXEMPT VAT",
+        contact_funding_label: "Direct Payments (LA)",
+        contact_payment_method_label: "Parent invoice (EXEMPT)",
+        vat_mode: "exempt",
+        payment_method_hint: null,
+        current_funding: "Funded · Direct Payments",
+        current_invoice_type: "Parent (Exempt invoice)",
+      },
+      private: {
+        billing_mode: "private",
+        funding_code: "privately_funded",
+        funding_label: "Privately",
+        invoice_type_code: "vat_included",
+        invoice_type_label: "Includes 20% VAT (in price)",
+        contact_funding_label: "Private",
+        contact_payment_method_label: "Parent invoice (20% VAT)",
+        vat_mode: "vat_20",
+        payment_method_hint: "bank_transfer",
+        current_funding: "Private",
+        current_invoice_type: "Parent (20% VAT)",
+      },
+      la_managed: {
+        billing_mode: "funder_invoice",
+        funding_code: "la_managed",
+        funding_label: "LA managed (invoice to Local Authority)",
+        invoice_type_code: "exempt",
+        invoice_type_label: "EXEMPT VAT",
+        contact_funding_label: "LA / NHS",
+        contact_payment_method_label: "LA invoice (BACS)",
+        vat_mode: "exempt",
+        payment_method_hint: "la_funded",
+        current_funding: "LA managed",
+        current_invoice_type: "LA invoice (EXEMPT)",
+      },
+    };
+    const preset = presets[fundingKey];
+
+    const { data: sub, error: subErr } = await admin
+      .from("portal_re_enrolment_submissions")
+      .select("id, payload, participant_name")
+      .eq("participant_contact_id", contactId)
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (subErr) {
+      console.error("[portal-admin-parent-invoices-upsert] set_reenrol_funding sub", subErr);
+      return portalAdminJson(500, { ok: false, error: "submission_lookup_failed" });
+    }
+    if (!sub?.id) {
+      return portalAdminJson(404, { ok: false, error: "reenrol_submission_not_found" });
+    }
+
+    const payload =
+      sub.payload && typeof sub.payload === "object"
+        ? structuredClone(sub.payload as Record<string, unknown>)
+        : {};
+    const fundingRoot =
+      payload.funding && typeof payload.funding === "object"
+        ? (payload.funding as Record<string, unknown>)
+        : {};
+    const choices =
+      fundingRoot.choices_2627 && typeof fundingRoot.choices_2627 === "object"
+        ? { ...(fundingRoot.choices_2627 as Record<string, unknown>) }
+        : {};
+
+    Object.assign(choices, {
+      billing_mode: preset.billing_mode,
+      funding_code: preset.funding_code,
+      funding_label: preset.funding_label,
+      invoice_type_code: preset.invoice_type_code,
+      invoice_type_label: preset.invoice_type_label,
+    });
+    if (!choices.payment_method_code) choices.payment_method_code = "bank_transfer";
+    if (!choices.payment_method_label) {
+      choices.payment_method_label = "Bank Transfer / Card / Apple Pay (fixed due dates)";
+    }
+
+    fundingRoot.choices_2627 = choices;
+    const current =
+      fundingRoot.current_2526 && typeof fundingRoot.current_2526 === "object"
+        ? { ...(fundingRoot.current_2526 as Record<string, unknown>) }
+        : {};
+    current.funding = preset.current_funding;
+    current.invoice_type = preset.current_invoice_type;
+    current.invoice_type_code = preset.invoice_type_code;
+    fundingRoot.current_2526 = current;
+    payload.funding = fundingRoot;
+    payload.office_note = clean(
+      `Office funding change → ${fundingKey} by ${readyBy} at ${now}`,
+      400,
+    );
+
+    const { error: upSubErr } = await admin
+      .from("portal_re_enrolment_submissions")
+      .update({ payload })
+      .eq("id", sub.id);
+    if (upSubErr) {
+      console.error("[portal-admin-parent-invoices-upsert] set_reenrol_funding update", upSubErr);
+      return portalAdminJson(500, { ok: false, error: "submission_update_failed" });
+    }
+
+    await admin
+      .from("portal_parent_contacts")
+      .update({
+        funding_label: preset.contact_funding_label,
+        payment_method_label: preset.contact_payment_method_label,
+      })
+      .eq("contact_id", contactId);
+
+    const { data: invRows } = await admin
+      .from("portal_parent_invoice_share")
+      .select("id, payment_status, vat_mode, payment_method_hint")
+      .eq("contact_id", contactId)
+      .neq("payment_status", "void");
+
+    const pdfResults: Array<{ id: string; ok: boolean; error?: string }> = [];
+    for (const inv of invRows || []) {
+      if (String(inv.payment_status || "") === "paid") continue;
+      const invPatch: Record<string, unknown> = {
+        vat_mode: preset.vat_mode,
+        updated_at: now,
+      };
+      if (preset.payment_method_hint) {
+        invPatch.payment_method_hint = preset.payment_method_hint;
+      } else if (fundingKey === "direct_payments") {
+        // DP parents still pay by bank/card from their DP account — keep bank_transfer unless LA-funded.
+        if (String(inv.payment_method_hint || "") === "la_funded") {
+          invPatch.payment_method_hint = "bank_transfer";
+        }
+      }
+      const { error: invErr } = await admin
+        .from("portal_parent_invoice_share")
+        .update(invPatch)
+        .eq("id", inv.id);
+      if (invErr) {
+        pdfResults.push({ id: String(inv.id), ok: false, error: invErr.message });
+        continue;
+      }
+      try {
+        const regen = await regeneratePortalInvoiceSharePdf(admin, String(inv.id));
+        pdfResults.push({
+          id: String(inv.id),
+          ok: regen.ok,
+          error: regen.ok ? undefined : regen.error,
+        });
+      } catch (e) {
+        pdfResults.push({
+          id: String(inv.id),
+          ok: false,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+
+    return portalAdminJson(200, {
+      ok: true,
+      funding: fundingKey,
+      participant_name: sub.participant_name,
+      submission_id: sub.id,
+      invoices_updated: pdfResults,
+    });
+  }
+
+  /**
+   * Change re-enrolment payment method (Bank Transfer / GoCardless / Own way).
+   * Updates latest 2026/27 submission payload, contact label, and unpaid INV-P payment_method_hint.
+   */
+  if (action === "set_reenrol_payment_method") {
+    const contactId = clean(fields.contact_id, 120);
+    const methodRaw = clean(fields.payment_method || fields.method, 40).toLowerCase();
+    if (!contactId) return portalAdminJson(400, { ok: false, error: "contact_id_required" });
+
+    type PayKey = "bank_transfer" | "gocardless" | "own_way_flexible";
+    const payKey: PayKey | null =
+      methodRaw === "bank_transfer" || methodRaw === "bank" || methodRaw === "apple_pay"
+        ? "bank_transfer"
+        : methodRaw === "gocardless" || methodRaw === "gc"
+          ? "gocardless"
+          : methodRaw === "own_way_flexible" || methodRaw === "own_way" || methodRaw === "own"
+            ? "own_way_flexible"
+            : null;
+    if (!payKey) {
+      return portalAdminJson(400, {
+        ok: false,
+        error: "payment_method_invalid",
+        message: "Use bank_transfer, gocardless, or own_way_flexible",
+      });
+    }
+
+    const presets: Record<
+      PayKey,
+      {
+        payment_method_code: string;
+        payment_method_label: string;
+        contact_payment_method_label: string;
+        payment_method_hint: string;
+        default_schedule_code: string;
+        default_schedule_label: string;
+      }
+    > = {
+      bank_transfer: {
+        payment_method_code: "bank_transfer",
+        payment_method_label: "Bank Transfer (Apple Pay also available when paying)",
+        contact_payment_method_label: "Bank Transfer",
+        payment_method_hint: "bank_transfer",
+        default_schedule_code: "term_3",
+        default_schedule_label: "One-off payment (term)",
+      },
+      gocardless: {
+        payment_method_code: "gocardless",
+        payment_method_label: "GoCardless (£1.50 per instalment)",
+        contact_payment_method_label: "GoCardless",
+        payment_method_hint: "gocardless",
+        default_schedule_code: "monthly_10",
+        default_schedule_label: "GoCardless (monthly ×11) · £1.50 / instalment",
+      },
+      own_way_flexible: {
+        payment_method_code: "own_way_flexible",
+        payment_method_label: "Own way — 2 sessions prepaid + £50 / term",
+        contact_payment_method_label: "Own way",
+        payment_method_hint: "bank_transfer",
+        default_schedule_code: "own_term",
+        default_schedule_label: "Own arrangement (prepaid buffer)",
+      },
+    };
+    const preset = presets[payKey];
+
+    const { data: sub, error: subErr } = await admin
+      .from("portal_re_enrolment_submissions")
+      .select("id, payload, participant_name")
+      .eq("participant_contact_id", contactId)
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (subErr) {
+      console.error("[portal-admin-parent-invoices-upsert] set_reenrol_payment_method sub", subErr);
+      return portalAdminJson(500, { ok: false, error: "submission_lookup_failed" });
+    }
+    if (!sub?.id) {
+      return portalAdminJson(404, { ok: false, error: "reenrol_submission_not_found" });
+    }
+
+    const payload =
+      sub.payload && typeof sub.payload === "object"
+        ? structuredClone(sub.payload as Record<string, unknown>)
+        : {};
+    const fundingRoot =
+      payload.funding && typeof payload.funding === "object"
+        ? (payload.funding as Record<string, unknown>)
+        : {};
+    const choices =
+      fundingRoot.choices_2627 && typeof fundingRoot.choices_2627 === "object"
+        ? { ...(fundingRoot.choices_2627 as Record<string, unknown>) }
+        : {};
+
+    const prevSched = clean(choices.payment_schedule_code, 40).toLowerCase();
+    const bankSchedOk = new Set(["yearly_1off", "term_3", "term_flexi"]);
+    const gcSchedOk = new Set(["term_3", "term_flexi", "monthly_10", "monthly_term"]);
+    let nextSched = prevSched;
+    let nextSchedLabel = clean(choices.payment_schedule_label, 120);
+    if (payKey === "own_way_flexible") {
+      nextSched = "own_term";
+      nextSchedLabel = preset.default_schedule_label;
+    } else if (payKey === "gocardless") {
+      if (!gcSchedOk.has(prevSched) || prevSched === "own_term" || prevSched === "yearly_1off") {
+        nextSched = preset.default_schedule_code;
+        nextSchedLabel = preset.default_schedule_label;
+      }
+    } else if (payKey === "bank_transfer") {
+      if (!bankSchedOk.has(prevSched) || prevSched === "own_term" || prevSched === "monthly_10" || prevSched === "monthly_term") {
+        nextSched = preset.default_schedule_code;
+        nextSchedLabel = preset.default_schedule_label;
+      }
+    }
+
+    Object.assign(choices, {
+      payment_method_code: preset.payment_method_code,
+      payment_method_label: preset.payment_method_label,
+      payment_schedule_code: nextSched || preset.default_schedule_code,
+      payment_schedule_label: nextSchedLabel || preset.default_schedule_label,
+    });
+
+    fundingRoot.choices_2627 = choices;
+    payload.funding = fundingRoot;
+    payload.office_note = clean(
+      `Office payment method → ${payKey} by ${readyBy} at ${now}`,
+      400,
+    );
+
+    const { error: upSubErr } = await admin
+      .from("portal_re_enrolment_submissions")
+      .update({ payload })
+      .eq("id", sub.id);
+    if (upSubErr) {
+      console.error("[portal-admin-parent-invoices-upsert] set_reenrol_payment_method update", upSubErr);
+      return portalAdminJson(500, { ok: false, error: "submission_update_failed" });
+    }
+
+    await admin
+      .from("portal_parent_contacts")
+      .update({
+        payment_method_label: preset.contact_payment_method_label,
+      })
+      .eq("contact_id", contactId);
+
+    const { data: invRows } = await admin
+      .from("portal_parent_invoice_share")
+      .select("id, payment_status, payment_method_hint")
+      .eq("contact_id", contactId)
+      .neq("payment_status", "void");
+
+    let updated = 0;
+    for (const inv of invRows || []) {
+      if (String(inv.payment_status || "") === "paid") continue;
+      const { error: invErr } = await admin
+        .from("portal_parent_invoice_share")
+        .update({
+          payment_method_hint: preset.payment_method_hint,
+          updated_at: now,
+        })
+        .eq("id", inv.id);
+      if (!invErr) updated += 1;
+    }
+
+    return portalAdminJson(200, {
+      ok: true,
+      payment_method: payKey,
+      participant_name: sub.participant_name,
+      submission_id: sub.id,
+      invoices_hint_updated: updated,
+    });
+  }
+
+  /**
+   * Change re-enrolment payment plan (term flexi / term one-off / monthly / year).
+   * Updates submission payload and rebuilds unpaid/partial INV-P schedules.
+   * Optional apply_paid_amount_gbp when Tide total differs from recorded instalments
+   * (e.g. paid full term while still on flexi halves).
+   */
+  if (action === "set_reenrol_payment_schedule") {
+    const contactId = clean(fields.contact_id, 120);
+    const schedRaw = clean(
+      fields.payment_schedule_code || fields.schedule_code || fields.plan,
+      40,
+    ).toLowerCase();
+    if (!contactId) return portalAdminJson(400, { ok: false, error: "contact_id_required" });
+    const meta = reenrolPaymentScheduleMeta(schedRaw);
+    if (!meta || meta.code === "own_term") {
+      return portalAdminJson(400, {
+        ok: false,
+        error: "payment_schedule_invalid",
+        message: "Use term_3, term_flexi, yearly_1off, monthly_10, or monthly_term",
+      });
+    }
+    const applyPaidOverride = parseAmount(fields.apply_paid_amount_gbp);
+
+    const { data: sub, error: subErr } = await admin
+      .from("portal_re_enrolment_submissions")
+      .select("id, payload, participant_name")
+      .eq("participant_contact_id", contactId)
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (subErr) {
+      console.error("[portal-admin-parent-invoices-upsert] set_reenrol_payment_schedule sub", subErr);
+      return portalAdminJson(500, { ok: false, error: "submission_lookup_failed" });
+    }
+    if (!sub?.id) {
+      return portalAdminJson(404, { ok: false, error: "reenrol_submission_not_found" });
+    }
+
+    const payload =
+      sub.payload && typeof sub.payload === "object"
+        ? structuredClone(sub.payload as Record<string, unknown>)
+        : {};
+    const fundingRoot =
+      payload.funding && typeof payload.funding === "object"
+        ? (payload.funding as Record<string, unknown>)
+        : {};
+    const choices =
+      fundingRoot.choices_2627 && typeof fundingRoot.choices_2627 === "object"
+        ? { ...(fundingRoot.choices_2627 as Record<string, unknown>) }
+        : {};
+
+    Object.assign(choices, {
+      payment_schedule_code: meta.code,
+      payment_schedule_label: meta.label,
+      billing_schedule: meta.code,
+    });
+    fundingRoot.choices_2627 = choices;
+    payload.funding = fundingRoot;
+    payload.office_note = clean(
+      `Office payment plan → ${meta.code} by ${readyBy} at ${now}`,
+      400,
+    );
+
+    const { error: upSubErr } = await admin
+      .from("portal_re_enrolment_submissions")
+      .update({ payload })
+      .eq("id", sub.id);
+    if (upSubErr) {
+      console.error(
+        "[portal-admin-parent-invoices-upsert] set_reenrol_payment_schedule update",
+        upSubErr,
+      );
+      return portalAdminJson(500, { ok: false, error: "submission_update_failed" });
+    }
+
+    const { data: invRows } = await admin
+      .from("portal_parent_invoice_share")
+      .select(
+        "id, invoice_number, payment_status, amount_gbp, amount_paid_gbp, payment_schedule, billing_term, notes, created_via",
+      )
+      .eq("contact_id", contactId)
+      .neq("payment_status", "void");
+
+    const rebuilt: Array<{
+      id: string;
+      invoice_number?: string | null;
+      ok: boolean;
+      payment_status?: string;
+      amount_paid_gbp?: number;
+      error?: string;
+      skipped?: string;
+    }> = [];
+
+    for (const inv of invRows || []) {
+      const status = String(inv.payment_status || "").toLowerCase();
+      if (status === "paid") {
+        rebuilt.push({
+          id: String(inv.id),
+          invoice_number: inv.invoice_number,
+          ok: true,
+          skipped: "already_paid",
+        });
+        continue;
+      }
+      const total = parseAmount(inv.amount_gbp) || 0;
+      if (!(total > 0)) {
+        rebuilt.push({
+          id: String(inv.id),
+          invoice_number: inv.invoice_number,
+          ok: false,
+          error: "amount_missing",
+        });
+        continue;
+      }
+      const fresh = rebuildTermPaymentSchedule({
+        scheduleCode: meta.code,
+        billingTerm: inv.billing_term,
+        totalGbp: total,
+      });
+      const recordedPaid = amountPaidFromSchedule(inv.payment_schedule);
+      const paidFromField = parseAmount(inv.amount_paid_gbp) || 0;
+      const paidBaseline = Math.max(recordedPaid, paidFromField);
+      const paidApply =
+        applyPaidOverride != null && applyPaidOverride >= 0
+          ? applyPaidOverride
+          : paidBaseline;
+      const applied = applyPaidAmountAcrossSchedule(fresh, {
+        amountGbp: paidApply,
+        paidAt: now,
+        paidVia: paidViaActor,
+      });
+      const noteBit = clean(
+        ` · Office plan → ${meta.code}` +
+          (applyPaidOverride != null
+            ? ` · apply paid £${applyPaidOverride.toFixed(2)}`
+            : ""),
+        200,
+      );
+      const prevNotes = clean(inv.notes, 700);
+      const invPatch: Record<string, unknown> = {
+        payment_schedule: applied.schedule,
+        amount_paid_gbp: applied.amount_paid_gbp,
+        payment_status: applied.payment_status,
+        next_instalment_due: applied.next_instalment_due,
+        updated_at: now,
+        notes: clean(`${prevNotes}${noteBit}`.trim(), 800) || null,
+      };
+      if (applied.payment_status === "paid") {
+        invPatch.paid_at = now;
+        invPatch.paid_via = paidViaActor;
+      } else {
+        invPatch.paid_at = null;
+        invPatch.paid_via = null;
+      }
+      const { error: invErr } = await admin
+        .from("portal_parent_invoice_share")
+        .update(invPatch)
+        .eq("id", inv.id);
+      if (invErr) {
+        rebuilt.push({
+          id: String(inv.id),
+          invoice_number: inv.invoice_number,
+          ok: false,
+          error: invErr.message,
+        });
+        continue;
+      }
+      try {
+        await regeneratePortalInvoiceSharePdf(admin, String(inv.id));
+      } catch {
+        /* PDF regen best-effort */
+      }
+      rebuilt.push({
+        id: String(inv.id),
+        invoice_number: inv.invoice_number,
+        ok: true,
+        payment_status: applied.payment_status,
+        amount_paid_gbp: applied.amount_paid_gbp,
+      });
+    }
+
+    return portalAdminJson(200, {
+      ok: true,
+      payment_schedule_code: meta.code,
+      payment_schedule_label: meta.label,
+      participant_name: sub.participant_name,
+      submission_id: sub.id,
+      invoices_rebuilt: rebuilt,
+    });
+  }
+
+  if (action === "preview_portal_midterm" || action === "create_portal_midterm") {
+    if (!userId) {
+      return portalAdminJson(401, { ok: false, error: "admin_user_required" });
+    }
+    const contactId = clean(fields.contact_id, 120);
+    const term = parseBookingTermKey(fields.billing_term || fields.term);
+    const plan = parseNewClientPayPlan(fields.pay_plan || fields.payment_schedule_code);
+    const day = clean(fields.day || fields.weekday, 40);
+    const unit = parseAmount(fields.unit_price_gbp ?? fields.price_per_session);
+    const asOf = parseDate(fields.as_of || fields.start_date || fields.booking_date) ||
+      new Date().toISOString().slice(0, 10);
+    if (action === "create_portal_midterm" && !contactId) {
+      return portalAdminJson(400, { ok: false, error: "contact_id_required" });
+    }
+    if (!term) return portalAdminJson(400, { ok: false, error: "billing_term_required" });
+    if (!plan) return portalAdminJson(400, { ok: false, error: "pay_plan_required" });
+    if (!day) return portalAdminJson(400, { ok: false, error: "day_required" });
+    if (unit == null || unit <= 0) {
+      return portalAdminJson(400, { ok: false, error: "unit_price_required" });
+    }
+
+    const vatRaw = clean(fields.vat_mode, 20).toLowerCase();
+    const vatMode: PortalInvoiceVatMode = vatRaw === "exempt" ? "exempt" : "vat_20";
+    let productMap = null;
+    try {
+      productMap = await loadProductMap(admin);
+    } catch {
+      productMap = null;
+    }
+    const quote = quoteNewClientMidTermInvoice({
+      term,
+      day,
+      unitPriceGbp: unit,
+      plan,
+      asOfIso: asOf,
+      serviceKey: clean(fields.service_key, 40) || null,
+      serviceLabel: clean(fields.service_label || fields.service, 120) || null,
+      detail: clean(fields.detail, 160) || null,
+      vatMode,
+      productMap,
+    });
+    if ("error" in quote) {
+      return portalAdminJson(400, { ok: false, error: quote.error });
+    }
+
+    if (action === "preview_portal_midterm") {
+      return portalAdminJson(200, { ok: true, quote });
+    }
+
+    const shareStatus =
+      parseShareStatus(fields.share_status) ||
+      (vatMode === "exempt" || quote.paymentMethodHint === "la_funded" ? "hidden" : "ready");
+    const lineDescription =
+      String(fields.line_description == null ? "" : fields.line_description).trim() ||
+      quote.lineDescription;
+    const created = await createPortalFamilyInvoice(admin, {
+      contactId,
+      amountGbp: quote.invoiceTotalGbp,
+      dueDateIso: quote.paymentSchedule[0]?.due_date || asOf,
+      invoiceDateIso: asOf,
+      vatMode,
+      lineDescription,
+      reference: clean(fields.reference, 120) || quote.reference,
+      service: clean(fields.service, 80) || clean(fields.service_label, 80) || null,
+      notes:
+        clean(fields.notes, 800) ||
+        `New Booking Portal · mid-term pro-rata · ${plan} · ${quote.remainingSessions} session(s) from ${asOf}`,
+      title: clean(fields.title, 200) || null,
+      quantity: quote.remainingSessions,
+      shareStatus,
+      paymentMethodHint: quote.paymentMethodHint,
+      createdVia: "portal",
+      ownerUserId: userId,
+      readyBy: readyBy || "office_new_client_midterm",
+      invoiceNumber: clean(fields.invoice_number, 80) || null,
+      clientIdLabel: clean(fields.client_id_label, 80) || contactId,
+      poLabel: clean(fields.po_label, 80) || null,
+      paymentSchedule: quote.paymentSchedule,
+      billingTerm: quote.term,
+      lineItems: quote.lineItems,
+      descriptionComplete: false,
+    });
+    if (!created.ok) {
+      const status =
+        created.error === "participant_not_found"
+          ? 404
+          : created.error === "amount_required" || created.error === "contact_id_required"
+            ? 400
+            : 500;
+      return portalAdminJson(status, { ok: false, error: created.error });
+    }
+    return portalAdminJson(200, {
+      ok: true,
+      invoice: created.invoice,
+      quote,
+      created_via: "portal_midterm",
     });
   }
 
@@ -398,21 +1086,73 @@ Deno.serve(async (req) => {
     if (pay) {
       patch.payment_status = pay;
       if (pay === "paid") {
-        patch.paid_at = now;
-        patch.paid_via = clean(fields.paid_via, 40) || "admin";
         const totalGbp = parseAmount(existing.amount_gbp) || 0;
         const schedule = normalizePaymentSchedule(existing.payment_schedule);
+        const forceAll =
+          fields.mark_all_instalments === true ||
+          fields.mark_all_instalments === "1" ||
+          fields.mark_all_instalments === 1;
+        // Flexi / multi-instalment: Confirm paid / Mark paid clears the NEXT due
+        // instalment only. Full settle requires mark_all_instalments=true.
+        const markAll = forceAll || schedule.length <= 1;
         if (schedule.length) {
+          const next = schedule.find((r) => r.status !== "paid");
+          const allowEarly =
+            fields.allow_early_instalment === true ||
+            fields.allow_early_instalment === "1" ||
+            fields.allow_early_instalment === 1;
+          const confirmingParentReport =
+            String(existing.payment_status || "").toLowerCase() === "pending_confirmation";
+          // Block Mark paid on a far-future half (e.g. Oct while Aug window is live)
+          // unless office explicitly confirms early pay. Parent "I've paid" confirm
+          // always clears the next unpaid half.
+          if (!markAll && next?.due_date && !allowEarly && !confirmingParentReport) {
+            const dueIso = String(next.due_date).slice(0, 10);
+            const today = now.slice(0, 10);
+            const t0 = Date.parse(`${today}T12:00:00Z`);
+            const t1 = Date.parse(`${dueIso}T12:00:00Z`);
+            const days =
+              Number.isFinite(t0) && Number.isFinite(t1)
+                ? Math.round((t1 - t0) / 86400000)
+                : null;
+            if (days != null && days > 7) {
+              return json(409, {
+                ok: false,
+                error: "instalment_not_due_yet",
+                message:
+                  `Next instalment (£${Number(next.amount_gbp).toFixed(2)}) is not due until ${dueIso}. ` +
+                  "Confirm again only if they paid this half early.",
+                next_instalment_due: dueIso,
+                next_amount_gbp: next.amount_gbp,
+              });
+            }
+          }
           const applied = applyInstalmentPayment(schedule, {
-            amountGbp: totalGbp,
+            amountGbp: markAll ? totalGbp : Number(next?.amount_gbp) || totalGbp,
             paidAt: now,
-            paidVia: String(patch.paid_via),
-            markAll: true,
+            paidVia: paidViaActor,
+            markAll,
           });
           patch.payment_schedule = applied.schedule;
           patch.amount_paid_gbp = applied.amount_paid_gbp;
-          patch.next_instalment_due = null;
+          patch.payment_status = applied.payment_status;
+          patch.next_instalment_due = applied.next_instalment_due;
+          if (applied.payment_status === "paid") {
+            patch.paid_at = now;
+            patch.paid_via = paidViaActor;
+          } else {
+            // Partial: keep invoice open for later halves.
+            patch.paid_at = null;
+            patch.paid_via = null;
+          }
+          // Parent "I've paid" confirmed — clear the pending report flags.
+          patch.parent_reported_paid_at = null;
+          patch.parent_reported_ref = null;
+          patch.parent_reported_method = null;
+          patch.parent_reported_notes = null;
         } else {
+          patch.paid_at = now;
+          patch.paid_via = paidViaActor;
           patch.amount_paid_gbp = totalGbp;
           patch.next_instalment_due = null;
         }
@@ -438,6 +1178,11 @@ Deno.serve(async (req) => {
           patch.next_instalment_due = schedule[0]?.due_date || existing.due_date || null;
         }
       }
+      if (pay === "partial") {
+        // Allow office to force partial without wiping already-paid halves.
+        patch.paid_at = null;
+        patch.paid_via = null;
+      }
     }
     const share = parseShareStatus(fields.share_status);
     if (share) {
@@ -462,8 +1207,13 @@ Deno.serve(async (req) => {
     let xero = null;
     let hold = null;
     let pdf = null;
-    if (updated.payment_status === "paid") {
+    let bookingPin = null;
+    const payNow = String(updated.payment_status || "").toLowerCase();
+    // Full ACCREC in Xero on first money (partial) or full Confirm paid — instalments reconcile in Xero.
+    if (payNow === "paid" || payNow === "partial") {
       xero = await xeroEnsurePaidShareInBooks(admin, updated);
+    }
+    if (payNow === "paid") {
       try {
         const cid = clean(updated.contact_id, 120);
         if (cid) hold = await clearPaymentHoldForContact(admin, cid, "admin", verified.userId || null);
@@ -481,11 +1231,19 @@ Deno.serve(async (req) => {
           e instanceof Error ? e.message : String(e),
         );
       }
+      try {
+        bookingPin = await tryCompleteBookingAfterInvoicePayment(admin, String(updated.id));
+      } catch (e) {
+        console.error(
+          "[portal-admin-parent-invoices-upsert] finish-booking pin",
+          e instanceof Error ? e.message : String(e),
+        );
+      }
     }
 
-    // Same PDF as parent hub: red Draft Invoice → green PAID when status flips.
+    // Same PDF as parent hub: red Draft → amber PARTIALLY PAID → green PAID.
     const payChanged = !!pay && pay !== String(existing.payment_status || "").toLowerCase();
-    if (payChanged && (pay === "paid" || pay === "unpaid")) {
+    if (payChanged && (pay === "paid" || pay === "unpaid" || pay === "partial")) {
       try {
         const regen = await regeneratePortalInvoiceSharePdf(admin, invoiceId);
         pdf = regen.ok
@@ -513,7 +1271,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return portalAdminJson(200, { ok: true, invoice: updated, xero, hold, pdf });
+    return portalAdminJson(200, { ok: true, invoice: updated, xero, hold, pdf, booking_pin: bookingPin });
   }
 
   return portalAdminJson(400, { ok: false, error: "action_required" });

@@ -24,18 +24,28 @@
   }
 
   function templateKey(row) {
-    return [
+    var parts = [
       String(row.day || "").toLowerCase(),
       String(row.client_name || "").toLowerCase(),
       normTimeSlot(row.time_slot),
-    ].join("|");
+    ];
+    // Open seats are one row per instructor (+ venue); named clients stay day|client|time.
+    if (isNoClientName(row.client_name)) {
+      parts.push(normInstructors(row.instructors));
+      parts.push(String(row.venue || "").trim().toLowerCase());
+    }
+    return parts.join("|");
   }
 
   function datedSlotKey(row) {
+    /* Include instructors: same client+time on one day can be multi-staff
+       (e.g. Roberto + Victor with Fadi). Without this, the last DB row wins
+       and the other instructor loses the card after portal_roster_rows loads. */
     return [
       normIso(row.session_date),
       String(row.client_name || "").toLowerCase(),
       normTimeSlot(row.time_slot),
+      normInstructors(row.instructors),
     ].join("|");
   }
 
@@ -45,7 +55,10 @@
       .replace(/\s+/g, " ")
       .trim();
     if (!s) return "";
-    return s.replace(/\s*-\s*/g, " to ").replace(/(\d)\.(\d)/g, "$1:$2");
+    return s
+      .replace(/[–—−]/g, "-")
+      .replace(/\s*-\s*/g, " to ")
+      .replace(/(\d)\.(\d)/g, "$1:$2");
   }
 
   function parseHmToken(token) {
@@ -73,6 +86,7 @@
 
   function parseTimeSlotBounds(timeSlot, day) {
     var parts = String(timeSlot || "")
+      .replace(/[–—−]/g, "-")
       .replace(/\s*-\s*/g, " to ")
       .split(/\s+to\s+/i);
     if (parts.length < 2) return { start: "16:30", end: "17:00" };
@@ -126,7 +140,9 @@
     try {
       var t = global.PORTAL_TERM_FROM_TIMETABLE;
       if (t) {
-        var v = String(t.termResumeDate || t.termDashboardCalendarFrom || "")
+        var v = String(
+          t.termSummerDatedRosterFrom || t.termResumeDate || t.termDashboardCalendarFrom || ""
+        )
           .trim()
           .slice(0, 10);
         if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
@@ -198,8 +214,15 @@
     return false;
   }
 
+  function isTeflonDemoInstructorRow(row) {
+    return /teflon/i.test(String((row && row.instructors) || ""));
+  }
+
   function mergePortalRosterRows(baseRows, dbRows) {
-    var base = Array.isArray(baseRows) ? baseRows : [];
+    var base = (Array.isArray(baseRows) ? baseRows : []).filter(function (r) {
+      // Demo / portal-guide account — never merge into live staff roster views.
+      return !isTeflonDemoInstructorRow(r);
+    });
     var db = Array.isArray(dbRows) ? dbRows : [];
     if (!db.length) {
       return base.filter(function (r) {
@@ -218,6 +241,7 @@
       if (String(raw.status || "active") !== "active" && String(raw.status || "") !== "cancelled") return;
       var row = dbToAdapter(raw);
       if (!row.client_name || !row.time_slot) return;
+      if (isTeflonDemoInstructorRow(row)) return;
       if (String(raw.status || "") === "cancelled") {
         if (row.session_date) {
           cancelledDated[datedSlotKey(row)] = true;
@@ -297,7 +321,13 @@
         rememberOpenedSlot(iso, r, dayLabel);
         return;
       }
-      var tk = templateKey({ day: r.day || weekdayLongFromIso(iso), client_name: r.client_name, time_slot: r.time_slot });
+      var tk = templateKey({
+        day: r.day || weekdayLongFromIso(iso),
+        client_name: r.client_name,
+        time_slot: r.time_slot,
+        instructors: r.instructors,
+        venue: r.venue,
+      });
       if (!dated[sk] && cancelledTemplates[tk]) {
         rememberOpenedSlot(iso, r, dayLabel);
         return;
@@ -358,6 +388,55 @@
       seenDated[sk] = true;
     });
 
+    // Standing open-seat templates (session_date null): stamp onto every matching weekday
+    // date present in the base roster so Services / Booking see the new instructor columns.
+    var isosByDay = Object.create(null);
+    function rememberIso(row) {
+      var iso = normIso(row && row.session_date);
+      if (!iso) return;
+      var day = String(row.day || weekdayLongFromIso(iso) || "")
+        .trim()
+        .toLowerCase();
+      if (!day) return;
+      if (!isosByDay[day]) isosByDay[day] = [];
+      if (isosByDay[day].indexOf(iso) < 0) isosByDay[day].push(iso);
+    }
+    base.forEach(rememberIso);
+    out.forEach(rememberIso);
+
+    Object.keys(templates).forEach(function (tk) {
+      var tpl = templates[tk];
+      if (!tpl || !isNoClientName(tpl.client_name)) return;
+      var tplDay = String(tpl.day || "").toLowerCase();
+      var isos = isosByDay[tplDay] || [];
+      for (var ii = 0; ii < isos.length; ii++) {
+        var iso = isos[ii];
+        var probe = {
+          session_date: iso,
+          day: tpl.day || weekdayLongFromIso(iso),
+          time_slot: tpl.time_slot,
+          instructors: tpl.instructors,
+          venue: tpl.venue,
+        };
+        if (occupiedSlots[openedSlotKey(iso, probe)]) continue;
+        var openKey = [
+          iso,
+          slotBoundsKey(tpl.time_slot, probe.day),
+          normInstructors(tpl.instructors),
+          String(tpl.venue || "").trim().toLowerCase(),
+        ].join("|");
+        if (seenDated[openKey]) continue;
+        out.push(
+          Object.assign({}, tpl, {
+            session_date: iso,
+            day: probe.day,
+            client_name: tpl.client_name || "NO PARTICIPANT",
+          }),
+        );
+        seenDated[openKey] = true;
+      }
+    });
+
     Object.keys(templates).forEach(function (tk) {
       var tpl = templates[tk];
       if (!tpl || !isNoClientName(tpl.client_name)) return;
@@ -368,17 +447,23 @@
         if (!slot || !slot.session_date) return;
         if (String(slot.day || "").toLowerCase() !== tplDay) return;
         if (!slotsSameBounds(slot.time_slot, tpl.time_slot, slot.day || tplDay)) return;
-        if (occupiedSlots[openedSlotKey(slot.session_date, slot)]) return;
-        var skNoClient = datedSlotKey({
-          session_date: slot.session_date,
-          client_name: tpl.client_name,
+        if (occupiedSlots[openedSlotKey(slot.session_date, {
           time_slot: slot.time_slot,
-        });
+          instructors: tpl.instructors || slot.instructors,
+          day: slot.day,
+        })]) return;
+        var skNoClient = [
+          normIso(slot.session_date),
+          slotBoundsKey(slot.time_slot, slot.day || tplDay),
+          normInstructors(tpl.instructors || slot.instructors),
+          String(tpl.venue || slot.venue || "").trim().toLowerCase(),
+        ].join("|");
         if (seenDated[skNoClient]) return;
         out.push(
           Object.assign({}, slot, tpl, {
             session_date: slot.session_date,
             day: slot.day,
+            instructors: tpl.instructors || slot.instructors,
           }),
         );
         seenDated[skNoClient] = true;
@@ -426,11 +511,13 @@
     if (!client || typeof client.from !== "function") {
       return Promise.resolve([]);
     }
+    // Include standing templates (session_date IS NULL) — open seats added from Services
+    // are saved as templates and must apply across weekdays. Dated filter alone drops them.
     var q = client
       .from("portal_roster_rows")
       .select("id,client_name,day,time_slot,instructors,service,area,venue,session_date,status,updated_at")
       .in("status", ["active", "cancelled"])
-      .gte("session_date", "2026-04-13");
+      .or("session_date.gte.2026-04-13,session_date.is.null");
     return q.then(function (res) {
       if (res.error) {
         var msg = String(res.error.message || res.error);

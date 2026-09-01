@@ -1,0 +1,1 @@
+/Users/victor/.cursor/projects/Users-victor-cursor-PORTALVIC/canvases/vr-mananas-empresa-sep24.canvas.tsx

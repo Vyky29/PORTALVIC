@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260717-july-fully-booked";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260825-may3-bh-only";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -14,7 +14,7 @@
   var DOC_SESSION_KEY = "calendar-2026-27";
   var ON_ACK_ACTION = "calendar_2026_27";
   /** Bump when calendar content changes — staff must re-ack to see updates. */
-  global.PORTAL_CALENDAR_2026_27_ACK_REVISION = 4;
+  global.PORTAL_CALENDAR_2026_27_ACK_REVISION = 7;
   var CALENDAR_ANNOUNCEMENT_ID = "a0270001-0001-4000-8000-0000000a2701";
   var JSPDF_URL =
     "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260702-html-cal";
@@ -223,6 +223,69 @@
     });
   };
 
+  var CAL_MONTH_NAME_TO_NUM = {
+    january: 1,
+    february: 2,
+    march: 3,
+    april: 4,
+    may: 5,
+    june: 6,
+    july: 7,
+    august: 8,
+    september: 9,
+    october: 10,
+    november: 11,
+    december: 12,
+  };
+
+  /**
+   * Parent My Calendar (trial / specific bookings): paint only the given ISO dates
+   * as "mine". Other open (green) session days stay club-default (not highlighted).
+   * isoColorMap: { "2026-09-07": "#0d9488" } or colour array for pie splits.
+   */
+  global.portalMarkPreviewSessionDaysByIso = function portalMarkPreviewSessionDaysByIso(
+    root,
+    isoColorMap,
+  ) {
+    if (!root || !root.querySelectorAll || !isoColorMap) return;
+    var grids = root.querySelectorAll(".dc-cal-grid");
+    Array.prototype.forEach.call(grids, function (grid) {
+      var label = String(grid.getAttribute("aria-label") || "").trim();
+      var m = label.match(/^([A-Za-z]+)\s+(\d{4})$/);
+      if (!m) return;
+      var monthNum = CAL_MONTH_NAME_TO_NUM[String(m[1] || "").toLowerCase()];
+      var year = Number(m[2]);
+      if (!monthNum || !Number.isFinite(year)) return;
+      var cells = grid.children;
+      for (var i = 0; i < cells.length; i++) {
+        var cell = cells[i];
+        if (!cell || !cell.classList) continue;
+        if (!cell.classList.contains("dc-cal-cell--green")) continue;
+        var dayEl = cell.querySelector(".dc-cal-day");
+        var day = Number(dayEl && String(dayEl.textContent || "").trim());
+        if (!Number.isFinite(day) || day < 1) continue;
+        var iso =
+          String(year) +
+          "-" +
+          (monthNum < 10 ? "0" : "") +
+          monthNum +
+          "-" +
+          (day < 10 ? "0" : "") +
+          day;
+        var bg = isoColorMap[iso];
+        var fill = sessionDayBackground(bg);
+        if (fill) {
+          cell.classList.add("dc-cal-cell--mine");
+          if (Array.isArray(bg) && bg.length > 1) {
+            cell.classList.add("dc-cal-cell--mine-split");
+            cell.classList.add("dc-cal-cell--mine-n" + Math.min(bg.length, 4));
+          }
+          cell.style.background = fill;
+        }
+      }
+    });
+  };
+
   /** Parent My Calendar: Sessions panel only (full year), no Day Centre / crash tabs. */
   global.portalLoadSessionsCalendar202627Into = async function portalLoadSessionsCalendar202627Into(
     host,
@@ -271,7 +334,11 @@
         } catch (_mark) {}
       }
       host.appendChild(node);
-      if (opts.dayColors) {
+      if (opts.mineIsoColors && typeof opts.mineIsoColors === "object") {
+        try {
+          global.portalMarkPreviewSessionDaysByIso(node, opts.mineIsoColors);
+        } catch (_mineIso) {}
+      } else if (opts.dayColors) {
         try {
           global.portalMarkPreviewSessionDays(node, opts.dayColors);
         } catch (_mine) {}

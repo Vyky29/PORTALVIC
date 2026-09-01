@@ -7,13 +7,13 @@
   var SETS = {
     roster: [
       "/portal/term_from_timetable.js?v=20260703-bundle-iife",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260828-aurora-javier-hours",
       "/portal/clients_info_embed.js?v=20260707-social-workers",
-      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260628-eddie-mc-alias",
+      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-roberto-wed-fadi-only",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
-      "/portal/portal-roster-rows-merge.js?v=20260704-roster-504",
-      "/portal/portal_madre_fold.js?v=20260713-authoritative-week",
-      "/portal/portal_roster_canonical.js?v=20260614-madre-dedupe",
+      "/portal/portal-roster-rows-merge.js?v=20260831-dated-slot-instructor",
+      "/portal/portal_madre_fold.js?v=20260809-staff-map",
+      "/portal/portal_roster_canonical.js?v=20260901-weekend-as-victor-off",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260704-roster-seq",
     ],
     feedback: [
@@ -27,7 +27,10 @@
     participants: ["/portal/participants_parents_portal_data.js?v=20260707-emani-dedupe"],
     oldpax: ["/portal/old_participants_portal_data.js?v=20260430-oldpax-export"],
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
-    spreadsheet_ref: ["/portal/spreadsheet_reference_data.js?v=20260602-weekend"],
+    spreadsheet_ref: [
+      "/portal/spreadsheet_reference_data.js?v=20260828-autumn-hours-base",
+      "/portal/autumn_staff_hours_reference.js?v=20260901-shift-bands",
+    ],
   };
 
   var inflight = {};
@@ -37,7 +40,8 @@
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
       s.src = url;
-      s.async = true;
+      // Sequential inserts: keep execution order for roster deps (bundle → adapter → madre).
+      s.async = false;
       s.onload = function () {
         resolve();
       };
@@ -53,6 +57,7 @@
     if (!SETS[key]) return Promise.resolve();
     if (done[key]) return done[key];
     if (inflight[key]) return inflight[key];
+    if (key === "roster") window.__PORTAL_ADMIN_ROSTER_LOAD_FAILED__ = false;
     inflight[key] = (async function () {
       var urls = SETS[key];
       for (var i = 0; i < urls.length; i++) {
@@ -62,11 +67,13 @@
       .then(function () {
         inflight[key] = null;
         done[key] = Promise.resolve();
+        if (key === "roster") window.__PORTAL_ADMIN_ROSTER_LOAD_FAILED__ = false;
         return done[key];
       })
       .catch(function (err) {
         inflight[key] = null;
-        console.debug("[portal] admin script set " + key, err);
+        if (key === "roster") window.__PORTAL_ADMIN_ROSTER_LOAD_FAILED__ = true;
+        console.error("[portal] admin script set " + key + " failed", err);
         return Promise.resolve();
       });
     return inflight[key];

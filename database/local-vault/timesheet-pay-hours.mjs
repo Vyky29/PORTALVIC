@@ -1,7 +1,6 @@
 /** Payroll band hours for roster-derived timesheet rows (PDF distribute + audit). */
 
 export const WEEKDAY_MA_BESPOKE_PAY_HOURS = 2;
-export const WEEKDAY_MA_BESPOKE_STAFF_KEYS = new Set(["john", "giuseppe", "bismark", "godsway"]);
 
 export const SUNDAY_SUPPORT_MA_PAY_HOURS = 5;
 export const SUNDAY_LEAD_MA_PAY_HOURS = 5.5;
@@ -25,10 +24,6 @@ export function isMaOrBespokeService(serviceLower) {
 
 export function isWeekdayMaBespokePayBand(dayName, rosterKey, role, dayRows) {
   if (!dayName || dayName === "Sunday") return false;
-  const key = String(rosterKey || "")
-    .trim()
-    .toLowerCase();
-  if (!WEEKDAY_MA_BESPOKE_STAFF_KEYS.has(key)) return false;
   if (String(role || "").trim() !== "Support Worker") return false;
   const rows = dayRows || [];
   if (!rows.length) return false;

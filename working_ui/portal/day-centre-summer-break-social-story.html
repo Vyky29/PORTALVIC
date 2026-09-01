@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Day Centre · Summer social stories</title>
+  <style>
+    :root {
+      --ink: #142033;
+      --muted: #5b6b7c;
+      --line: #d5dde6;
+      --dc: #1b7a4a;
+      --dc-soft: #ddf5e8;
+      --home: #c62828;
+      --home-soft: #ffe5e5;
+      --paper: #fff;
+      --bg: #e8eef4;
+      --blue: #2f6f8f;
+      --blue-soft: #d7ebf5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
+    }
+    .toolbar {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px; background: #fff; border-bottom: 1px solid var(--line);
+    }
+    .toolbar p { margin: 0; font-size: 13px; color: var(--muted); max-width: 34rem; }
+    .kids { display: flex; flex-wrap: wrap; gap: 8px; }
+    .kids button, .toolbar .print {
+      border: 2px solid var(--line); background: #fff; border-radius: 999px;
+      padding: 8px 14px; font-weight: 800; cursor: pointer; font-size: 14px;
+    }
+    .kids button.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .toolbar .print { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+    .story { display: none; max-width: 920px; margin: 14px auto 40px; padding: 0 10px; }
+    .story.active { display: grid; gap: 14px; }
+
+    .page {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      min-height: 700px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      page-break-after: always;
+      break-after: page;
+    }
+    .page:last-child { page-break-after: auto; break-after: auto; }
+
+    .who {
+      display: flex; align-items: center; gap: 14px; min-width: 0;
+    }
+    .who img.brand {
+      width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;
+      border-radius: 50%;
+    }
+    .who strong {
+      display: block;
+      font-size: clamp(1.35rem, 3vw, 1.75rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .who span { color: var(--muted); font-size: 14px; font-weight: 600; }
+
+    /* PECS strip: visual above word */
+    .pecs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+    .pecs.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .pecs.two { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 560px; margin: 0 auto; }
+    .pecs.one {
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 560px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .pecs.week-lead { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+    .pecs.acts {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .pecs.acts.six {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .pecs.staff {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    .pecs.friends {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .pec.person .vis {
+      aspect-ratio: 1;
+      max-height: 140px;
+      padding: 8px;
+      background: #fff;
+    }
+    .pec.person .vis img {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      object-position: center center;
+    }
+    .pec.person .vis.cover img {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .pec.person .lab {
+      font-size: clamp(0.65rem, 1.6vw, 0.85rem);
+    }
+    .stack { display: grid; gap: 14px; align-items: start; }
+    .with-mum {
+      margin: 16px 0 4px;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      text-align: center;
+      color: var(--blue);
+    }
+    .with-mum.red { color: var(--home); }
+    .friday-box {
+      border: 3px solid var(--dc);
+      border-radius: 14px;
+      background: var(--dc-soft);
+      padding: 12px 10px 14px;
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+    .friday-box .friday-msg {
+      margin: 0;
+      text-align: center;
+      font-weight: 900;
+      font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+      color: var(--ink);
+      line-height: 1.25;
+      overflow-wrap: break-word;
+    }
+    .fri-staff-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      justify-content: center;
+      gap: 12px 28px;
+      max-width: 640px;
+      margin: 0 auto;
+      width: 100%;
+      min-width: 0;
+    }
+    .fri-staff-row .fri-group {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(100px, 140px));
+      gap: 10px;
+      min-width: 0;
+      flex: 0 1 auto;
+    }
+    .fri-staff-row .fri-group.one {
+      grid-template-columns: minmax(100px, 140px);
+    }
+    .fri-staff-row .fri-sep {
+      width: 2px;
+      align-self: stretch;
+      min-height: 80px;
+      background: var(--line);
+      margin: 0 4px;
+      flex-shrink: 0;
+    }
+    .pec.person.holiday {
+      position: relative;
+    }
+    .pec.person.holiday .hol-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 2;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid var(--home);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 3px;
+      box-sizing: border-box;
+    }
+    .pec.person.holiday .hol-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .pec.red .lab { color: var(--home); }
+    .pec {
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      background: #fff;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      text-align: center;
+    }
+    .pec.green { border-color: var(--dc); background: var(--dc-soft); }
+    .pec.red { border-color: var(--home); background: var(--home-soft); }
+    .pec.blue { border-color: var(--blue); background: var(--blue-soft); }
+    .pec .vis {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      max-height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 10px;
+      background: #fff;
+      border: 2px solid var(--line);
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    .pec .vis img {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      object-position: center center;
+      margin: 0 auto;
+    }
+    .pec .vis.cover {
+      padding: 0;
+    }
+    .pec .vis.cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+    }
+    .pec .vis.fill img {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      object-position: center center;
+    }
+    .pec.wide-cal .vis {
+      aspect-ratio: 2.2 / 1;
+      max-height: 240px;
+      overflow: hidden;
+    }
+    .pecs.one .pec.wide-cal .vis {
+      aspect-ratio: 2.4 / 1;
+      max-height: 260px;
+    }
+    .pec.hero {
+      max-width: 340px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .pec.hero .vis {
+      aspect-ratio: 1;
+      max-height: 260px;
+      overflow: hidden;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pec.hero .lab {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      padding: 4px 6px 2px;
+    }
+    .pec .lab {
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: clamp(0.78rem, 2.2vw, 1.05rem);
+      line-height: 1.15;
+      overflow-wrap: break-word;
+      min-width: 0;
+      width: 100%;
+    }
+    .pec.wide .lab { font-size: clamp(0.7rem, 1.8vw, 0.95rem); }
+    .page > .pecs,
+    .page > .cal,
+    .page > .with-mum,
+    .page > .stack,
+    .page > .legend,
+    .page > .friday-box,
+    .page > .week,
+    .friday-box > .fri-staff-row {
+      position: relative;
+      z-index: 0;
+      flex-shrink: 0;
+    }
+
+    /* Mini calendar tile for THIS/NEXT WEEK / months */
+    .cal-tile {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      font-weight: 900;
+    }
+    .cal-tile .top {
+      background: var(--blue);
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 6px 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .cal-tile .mid {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      color: var(--ink);
+      line-height: 1;
+      padding: 8px 4px;
+      text-align: center;
+    }
+    .cal-tile .mid.july {
+      font-size: clamp(1.6rem, 5.5vw, 3.2rem);
+      letter-spacing: 0.02em;
+      padding: 10px 6px;
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
+    .cal-tile .bot {
+      font-size: clamp(1.15rem, 3.5vw, 1.85rem);
+      padding: 8px 4px 10px;
+      color: var(--ink);
+      text-transform: uppercase;
+      border-top: 1px solid var(--line);
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+    .cal-tile.red .top { background: var(--home); }
+    .cal-tile.green .top { background: var(--dc); }
+
+    .week {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .day {
+      border-radius: 14px;
+      padding: 8px 4px 10px;
+      text-align: center;
+      min-width: 0;
+      border: 3px solid transparent;
+      font-weight: 900;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .day .pic {
+      width: 100%;
+      max-width: none;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      border: 2px solid rgba(0,0,0,0.08);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      box-sizing: border-box;
+    }
+    .day .pic img {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      object-position: center center;
+      display: block;
+    }
+    .day .n { font-size: 1.55rem; line-height: 1; }
+    .day .w { font-size: 0.85rem; margin-top: 0; }
+    .day .t {
+      margin-top: 4px; font-size: 0.68rem; text-transform: uppercase;
+      overflow-wrap: anywhere; line-height: 1.05;
+    }
+    .day .st {
+      margin-top: 6px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 5px 4px 6px;
+      border-radius: 10px;
+      border: 2.5px solid currentColor;
+      background: #fff;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      line-height: 1.05;
+      min-width: 0;
+    }
+    .day .st img {
+      width: auto;
+      height: auto;
+      max-width: 44px;
+      max-height: 44px;
+      aspect-ratio: 1;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      margin: 0 auto;
+    }
+    .day.come .st { color: var(--dc); border-color: var(--dc); background: #fff; }
+    .day.home .st { color: var(--home); border-color: var(--home); background: #fff; }
+    .day.come { background: var(--dc-soft); border-color: var(--dc); color: var(--dc); }
+    .day.home { background: var(--home-soft); border-color: var(--home); color: var(--home); }
+    .day.last { outline: 3px solid #f4a261; outline-offset: 1px; }
+
+    .cal { border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
+    .cal-head {
+      padding: 10px 14px; font-weight: 900; font-size: 1.15rem;
+      display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+    }
+    .cal-head.home { background: var(--home-soft); color: var(--home); }
+    .cal-head.sep { background: var(--blue-soft); color: var(--blue); }
+    .dow, .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .dow span {
+      text-align: center; padding: 7px 2px; font-size: 12px; font-weight: 800;
+      color: var(--muted); background: #f5f7fa; border-bottom: 1px solid var(--line);
+    }
+    .cell {
+      min-height: 64px; min-width: 0;
+      border-top: 1px solid var(--line); border-right: 1px solid var(--line);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1px; padding: 4px 1px; font-weight: 900; text-align: center;
+    }
+    .cell:nth-child(7n) { border-right: 0; }
+    .cell.empty { background: #fafbfc; }
+    .cell .n { font-size: 0.95rem; line-height: 1; }
+    .cell .cell-ico {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      display: block;
+      margin: 1px 0;
+      background: #fff;
+      border-radius: 4px;
+    }
+    .cell .tag {
+      font-size: 7px; text-transform: uppercase; line-height: 1.05;
+      max-width: 100%; overflow-wrap: anywhere;
+    }
+    .cell.home-day { background: var(--home); color: #fff; }
+    .cell.come-day { background: var(--dc); color: #fff; }
+    .cell.off-day { background: var(--home-soft); color: var(--home); }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; }
+    .legend span {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #f5f7fa; border-radius: 999px; padding: 7px 11px;
+      font-weight: 800; font-size: 13px;
+    }
+    .sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+    .note {
+      margin-top: auto; font-size: 12px; color: var(--muted);
+      border-top: 1px dashed var(--line); padding-top: 8px;
+    }
+
+    @media (max-width: 700px) {
+      .pecs.three { grid-template-columns: 1fr; }
+      .pecs.week-lead { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
+      .pecs.two, .pecs.acts, .pecs.acts.six { grid-template-columns: 1fr 1fr; }
+      .pecs.staff { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .pecs.friends { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .pecs.one { max-width: 100%; }
+      .week { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .cell { min-height: 42px; }
+      .pec .vis { max-height: 140px; }
+      .pec.person .vis { max-height: 100px; }
+      .pec.wide-cal .vis { max-height: 160px; }
+    }
+    /* Parent portal or deep link ?kid=… — one child only, no switcher */
+    body.parent-view .toolbar .kids,
+    body.individual-kid .toolbar .kids { display: none; }
+    body.parent-view .toolbar p,
+    body.individual-kid .toolbar p {
+      max-width: none;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 8mm;
+    }
+    @media print {
+      body { background: #fff !important; }
+      .toolbar { display: none !important; }
+      .story { display: none !important; margin: 0 !important; max-width: none !important; padding: 0 !important; }
+      .story.active {
+        display: block !important;
+        gap: 0 !important;
+      }
+      .page {
+        border: 0 !important;
+        border-radius: 0 !important;
+        min-height: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        padding: 0 0 4mm !important;
+        margin: 0 !important;
+        page-break-after: always;
+        break-after: page;
+        overflow: visible !important;
+        gap: 8px !important;
+      }
+      .page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+      .pecs, .cal, .week, .friday-box, .stack, .legend {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .pec .vis { max-height: 100px; }
+      .pec.person .vis { max-height: 70px; padding: 4px; }
+      .pec.wide-cal .vis { max-height: 110px; }
+      .pec.hero .vis { max-height: 160px; }
+      .cell { min-height: 34px; }
+      .cell .tag { font-size: 6px; }
+      .week { gap: 4px; }
+      .day { padding: 4px 2px 6px; }
+      .day .st img { max-width: 28px; max-height: 28px; }
+      .friday-box { padding: 8px; gap: 6px; }
+      .with-mum { margin: 6px 0 2px; font-size: 1rem; }
+      .note { margin-top: 6px; padding-top: 4px; font-size: 10px; }
+      .who strong { font-size: 1.25rem; }
+      .who img.brand { width: 48px; height: 48px; }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <p>VisualVic Hub Room · PECS strips · Print / PDF</p>
+    <div class="kids" id="kidButtons"></div>
+    <a class="print" id="btnPdf" href="#" hidden>Download PDF</a>
+    <button type="button" class="print" id="btnPrint">Print / PDF</button>
+  </div>
+  <div id="stories"></div>
+
+  <script>
+    const ASSET = "social-story-assets/";
+    const HUB = ASSET + "hub-room-swimfarm.png";
+    const HOME = ASSET + "home.png";
+    const LOGO = ASSET + "logo-day-centre.png";
+    const BRAND = ASSET + "clubsensational-logo.png";
+    const SUMMER = ASSET + "summer.png";
+    const CLOSED = ASSET + "finished.png";
+    const OPEN_ICO = ASSET + "yes.png";
+    const CLOSED_ICO = ASSET + "finished.png";
+    const PARK = ASSET + "park.png";
+    const CHURCH = ASSET + "church.png";
+    const FOOTBALL = ASSET + "football.png";
+    const BASKETBALL = ASSET + "basketball.png";
+    const BADMINTON = ASSET + "badminton.png";
+    const BEACH = ASSET + "beach.png";
+    const GYM = ASSET + "gym.png";
+    const POOL = ASSET + "pool.png";
+    const POOL_ICON = ASSET + "pool-icon.png";
+    const VOCATIONAL = ASSET + "vocational.png";
+    const RESTAURANT = ASSET + "restaurant.png";
+    const CAFE = ASSET + "cafe.png";
+    const SPORTS = ASSET + "sports.png";
+    const AEROPLANE = ASSET + "aeroplane.png";
+    const BUS = ASSET + "bus.png";
+    const CAB = ASSET + "cab.png";
+    const HOME_MUNCHY = ASSET + "home-with-munchy.png";
+    const KARAOKE = ASSET + "karaoke.png";
+    const TRAIN = ASSET + "train.png";
+    const TUBE = ASSET + "tube.png";
+    const SWING = ASSET + "swing.png";
+
+    const STAFF_SEP = [
+      { id: "michelle", name: "Michelle", img: ASSET + "staff/michelle.png" },
+      { id: "luliya", name: "Luliya", img: ASSET + "staff/luliya.png" },
+      { id: "roberto", name: "Roberto", img: ASSET + "staff/roberto.png" },
+      { id: "youssef", name: "Youssef", img: ASSET + "staff/youssef.png" },
+      { id: "victor", name: "Victor", img: ASSET + "staff/victor.png" },
+      { id: "raul", name: "Raul", img: ASSET + "staff/raul.png" },
+    ];
+
+    const FRIENDS = [
+      { id: "emanuel", name: "Emanuel", img: ASSET + "avatar-emanuel.png" },
+      { id: "timi", name: "Timi", img: ASSET + "avatar-timi.png" },
+      { id: "ikram", name: "Ikram", img: ASSET + "avatar-ikram.png" },
+      { id: "fadi", name: "Fadi", img: ASSET + "avatar-fadi.png" },
+      { id: "tinashe", name: "Tinashe", img: ASSET + "avatar-tinashe.png" },
+    ];
+
+    const AUGUST_I_CAN_DO_DEFAULT = [
+      { label: "Church", img: CHURCH },
+      { label: "Park", img: PARK },
+      { label: "Restaurant", img: RESTAURANT },
+      { label: "Cafe", img: CAFE },
+      { label: "Sports", img: SPORTS },
+      { label: "Beach", img: BEACH },
+      { label: "Aeroplane", img: AEROPLANE },
+      { label: "Pool", img: POOL_ICON },
+    ];
+
+    const AUGUST_I_CAN_DO_IKRAM = [
+      { label: "Home with Munchy", img: HOME_MUNCHY },
+      { label: "Bus", img: BUS },
+      { label: "Restaurant", img: RESTAURANT },
+      { label: "Cafe", img: CAFE },
+      { label: "Park", img: PARK },
+      { label: "Cab", img: CAB },
+    ];
+
+    const SEPTEMBER_I_CAN_DO_DEFAULT = [
+      { label: "Gym", img: GYM },
+      { label: "Pool", img: POOL },
+      { label: "Vocational", img: VOCATIONAL },
+      { label: "Basketball", img: BASKETBALL },
+    ];
+
+    const SEPTEMBER_I_CAN_DO_IKRAM = [
+      { label: "Karaoke", img: KARAOKE },
+      { label: "Tube", img: TUBE },
+      { label: "Bus", img: BUS },
+      { label: "Cab", img: CAB },
+      { label: "Park", img: PARK },
+      { label: "Swing", img: SWING },
+      { label: "Cafe", img: CAFE },
+      { label: "Restaurant", img: RESTAURANT },
+    ];
+
+    const SEPTEMBER_I_CAN_DO_TIMI = [
+      { label: "Motor skills", img: ASSET + "timi/motor-skills.png" },
+      { label: "Sensory room", img: ASSET + "timi/sensory-room.png" },
+      { label: "Puzzles", img: ASSET + "timi/puzzles.png" },
+      { label: "Shower", img: ASSET + "timi/shower.png" },
+      { label: "Pool", img: ASSET + "timi/pool.png" },
+      { label: "Car", img: ASSET + "timi/car.png" },
+    ];
+
+    function pageHeader() {
+      return (
+        '<div class="who">' +
+          '<img class="brand" src="' + BRAND + '" alt="clubSENsational"/>' +
+          '<div><strong>Day Centre</strong>' +
+          "<span>Summer break · pictures</span></div>" +
+        "</div>"
+      );
+    }
+
+    /** Weekdays: 1=Mon … 5=Fri */
+    const KIDS = [
+      {
+        id: "emanuel",
+        name: "Emanuel",
+        avatar: ASSET + "avatar-emanuel.png",
+        weekdays: [1, 3, 5],
+        thisWeekCome: [1, 3, 5],
+        sepFirstCome: 2,
+        note: "Mon / Wed / Fri · first day back Wed 2 September",
+        augustICanDo: AUGUST_I_CAN_DO_DEFAULT,
+        septemberICanDo: SEPTEMBER_I_CAN_DO_DEFAULT,
+        fridayNote: {
+          title: "Friday 31",
+          msg: "Friday · I work with Roberto",
+          staff: ["roberto"],
+        },
+      },
+      {
+        id: "timi",
+        name: "Timi",
+        avatar: ASSET + "avatar-timi.png",
+        weekdays: [1, 5],
+        thisWeekCome: [1, 5],
+        sepFirstCome: 4,
+        note: "Mon + Fri · first day back Fri 4 September",
+        augustICanDo: [],
+        septemberICanDo: SEPTEMBER_I_CAN_DO_TIMI,
+      },
+      {
+        id: "ikram",
+        name: "Ikram",
+        avatar: ASSET + "avatar-ikram.png",
+        weekdays: [1, 2, 3, 5],
+        thisWeekCome: [1, 2, 3, 5],
+        sepFirstCome: 1,
+        note: "Mon / Tue / Wed / Fri · first day back Tue 1 September",
+        augustICanDo: AUGUST_I_CAN_DO_IKRAM,
+        septemberICanDo: SEPTEMBER_I_CAN_DO_IKRAM,
+        fridayNote: {
+          title: "Friday 31 · last session",
+          msg: "On Friday, I will work with Luliya and Youssef.",
+          withStaff: ["luliya", "youssef"],
+          asideStaff: [
+            {
+              id: "michelle",
+              label: "Michelle is on holidays",
+              tone: "red",
+              holiday: true,
+            },
+          ],
+        },
+      },
+      {
+        id: "fadi",
+        name: "Fadi",
+        avatar: ASSET + "avatar-fadi.png",
+        weekdays: [1, 2, 3, 4, 5],
+        thisWeekCome: [1, 2, 3, 4, 5],
+        sepFirstCome: 1,
+        note: "Mon to Fri · first day back Tue 1 September",
+        augustICanDo: AUGUST_I_CAN_DO_DEFAULT,
+        septemberICanDo: SEPTEMBER_I_CAN_DO_DEFAULT,
+      },
+    ];
+
+    const THIS_WEEK = [
+      { n: 27, w: "Mon", dow: 1 },
+      { n: 28, w: "Tue", dow: 2 },
+      { n: 29, w: "Wed", dow: 3 },
+      { n: 30, w: "Thu", dow: 4 },
+      { n: 31, w: "Fri", dow: 5 },
+    ];
+
+    function dayOrdinal(n) {
+      const j = n % 10;
+      const k = n % 100;
+      if (j === 1 && k !== 11) return n + "st";
+      if (j === 2 && k !== 12) return n + "nd";
+      if (j === 3 && k !== 13) return n + "rd";
+      return n + "th";
+    }
+
+    function dateRangeLabel(from, to) {
+      return dayOrdinal(from) + " to " + dayOrdinal(to);
+    }
+
+    function pec(opts) {
+      const cls =
+        "pec" +
+        (opts.tone ? " " + opts.tone : "") +
+        (opts.wide ? " wide" : "") +
+        (opts.wideCal ? " wide-cal" : "") +
+        (opts.hero ? " hero" : "") +
+        (opts.person ? " person" : "") +
+        (opts.holiday ? " holiday" : "");
+      let vis;
+      if (opts.cal) {
+        const midCls = "mid" + (opts.cal.midClass ? " " + opts.cal.midClass : "");
+        vis =
+          '<div class="vis"><div class="cal-tile ' + (opts.cal.tone || "") + '">' +
+          '<div class="top">' + opts.cal.top + "</div>" +
+          '<div class="' + midCls + '">' + opts.cal.mid + "</div>" +
+          (opts.cal.bot ? '<div class="bot">' + opts.cal.bot + "</div>" : "") +
+          "</div></div>";
+      } else {
+        const visMod = opts.person
+          ? ""
+          : opts.cover
+            ? " cover"
+            : opts.fill
+              ? " fill"
+              : "";
+        vis =
+          '<div class="vis' + visMod + '"><img src="' + opts.img + '" alt=""/></div>';
+      }
+      const badge = opts.holiday
+        ? '<span class="hol-badge" aria-hidden="true"><img src="' +
+          SUMMER +
+          '" alt=""/></span>'
+        : "";
+      return (
+        '<div class="' + cls + '">' + badge + vis +
+        '<div class="lab">' + opts.label + "</div></div>"
+      );
+    }
+
+    function fridayStaffPec(entry) {
+      const sid = typeof entry === "string" ? entry : entry.id;
+      const s = STAFF_SEP.find((x) => x.id === sid);
+      if (!s) return "";
+      const label =
+        typeof entry === "string" ? s.name : entry.label || s.name;
+      const tone =
+        typeof entry === "string" ? "green" : entry.tone || "green";
+      const holiday =
+        typeof entry === "string" ? false : !!entry.holiday;
+      return pec({
+        label: label,
+        img: s.img,
+        tone: tone,
+        person: true,
+        holiday: holiday,
+      });
+    }
+
+    function monthCells(year, month, paint) {
+      const first = new Date(year, month - 1, 1);
+      const pad = (first.getDay() + 6) % 7;
+      const days = new Date(year, month, 0).getDate();
+      let html = "";
+      for (let i = 0; i < pad; i++) html += '<div class="cell empty"></div>';
+      for (let d = 1; d <= days; d++) html += paint(d, new Date(year, month - 1, d));
+      let total = pad + days;
+      while (total % 7) {
+        html += '<div class="cell empty"></div>';
+        total++;
+      }
+      return html;
+    }
+
+    function comesOn(kid, date) {
+      const dow = date.getDay();
+      if (dow === 0 || dow === 6) return false;
+      if (!kid.weekdays.includes(dow)) return false;
+      if (date.getFullYear() === 2026 && date.getMonth() === 8) {
+        if (date.getDate() < kid.sepFirstCome) return false;
+      }
+      return true;
+    }
+
+    function renderKid(kid) {
+      const weekHtml = THIS_WEEK.map((d) => {
+        const come = kid.thisWeekCome.includes(d.dow);
+        const last = d.n === 31;
+        const pic = come ? HUB : HOME;
+        const stIco = come ? OPEN_ICO : CLOSED_ICO;
+        const stLab = come ? "Open" : "Closed";
+        return (
+          '<div class="day ' + (come ? "come" : "home") + (last ? " last" : "") + '">' +
+          '<div class="pic"><img src="' + pic + '" alt=""/></div>' +
+          '<div class="n">' + d.n + '</div><div class="w">' + d.w +
+          '</div><div class="t">' + (come ? "Day Centre" : "Home") +
+          '</div><div class="st"><img src="' + stIco + '" alt=""/><span>' + stLab +
+          "</span></div></div>"
+        );
+      }).join("");
+
+      const aug = monthCells(2026, 8, (d) =>
+        '<div class="cell home-day">' +
+        '<span class="n">' + d + "</span>" +
+        '<img class="cell-ico" src="' + SUMMER + '" alt=""/>' +
+        '<span class="tag">Holidays</span></div>'
+      );
+
+      const sep = monthCells(2026, 9, (d, date) => {
+        const weekend = date.getDay() === 0 || date.getDay() === 6;
+        if (weekend) {
+          return '<div class="cell off-day"><span class="n">' + d +
+            '</span><span class="tag">HOME</span></div>';
+        }
+        if (comesOn(kid, date)) {
+          return '<div class="cell come-day"><span class="n">' + d +
+            '</span><span class="tag">Day Centre</span></div>';
+        }
+        return '<div class="cell home-day"><span class="n">' + d +
+          '</span><span class="tag">HOME</span></div>';
+      });
+
+      return (
+        '<section class="story" id="story-' + kid.id + '" data-kid="' + kid.id + '">' +
+
+        /* Page 1: AVATAR · JULY (this week) — no summer break */
+        '<article class="page">' +
+          pageHeader() +
+          '<div class="pecs week-lead">' +
+            pec({ label: kid.name, img: kid.avatar, cover: true, tone: "blue" }) +
+            pec({
+              label: "This week",
+              cal: {
+                top: "2026",
+                mid: "JULY",
+                midClass: "july",
+                bot: "27th to 31st",
+                tone: "green",
+              },
+              tone: "green",
+              wideCal: true,
+            }) +
+          "</div>" +
+          '<div class="week">' + weekHtml + "</div>" +
+          (kid.fridayNote
+            ? '<div class="friday-box">' +
+              '<p class="with-mum" style="margin:0">' +
+              kid.fridayNote.title +
+              "</p>" +
+              '<p class="friday-msg">' +
+              kid.fridayNote.msg +
+              "</p>" +
+              (function () {
+                const withList =
+                  kid.fridayNote.withStaff || kid.fridayNote.staff || [];
+                const asideList = kid.fridayNote.asideStaff || [];
+                const withHtml =
+                  '<div class="fri-group' +
+                  (withList.length === 1 ? " one" : "") +
+                  '">' +
+                  withList.map(fridayStaffPec).join("") +
+                  "</div>";
+                if (!asideList.length) {
+                  return '<div class="fri-staff-row">' + withHtml + "</div>";
+                }
+                return (
+                  '<div class="fri-staff-row">' +
+                  withHtml +
+                  '<div class="fri-sep" aria-hidden="true"></div>' +
+                  '<div class="fri-group one">' +
+                  asideList.map(fridayStaffPec).join("") +
+                  "</div></div>"
+                );
+              })() +
+              "</div>"
+            : "") +
+          '<p class="note">This week · green = Day Centre · red = home</p>' +
+        "</article>" +
+
+        /* Page 2: AUGUST (center) → clubSEN + Hub + Closed */
+        '<article class="page">' +
+          pageHeader() +
+          '<div class="stack">' +
+            '<div class="pecs one">' +
+              pec({
+                label: "August",
+                cal: {
+                  top: "2026",
+                  mid: "AUGUST",
+                  midClass: "july",
+                  bot: "1st to 31st",
+                  tone: "red",
+                },
+                tone: "red",
+                wideCal: true,
+              }) +
+            "</div>" +
+            '<div class="pecs three">' +
+              pec({ label: "clubSENsational", img: BRAND, tone: "red" }) +
+              pec({ label: "Hub Room", img: HUB, tone: "red" }) +
+              pec({ label: "Closed", img: CLOSED_ICO, tone: "red" }) +
+            "</div>" +
+          "</div>" +
+          '<p class="note">August · Hub Room closed</p>' +
+        "</article>" +
+
+        /* Page 3: AVATAR · AUGUST calendar + I can do (all red) */
+        '<article class="page">' +
+          pageHeader() +
+          '<div class="pecs week-lead">' +
+            pec({ label: kid.name, img: kid.avatar, cover: true, tone: "red" }) +
+            pec({
+              label: "August",
+              cal: {
+                top: "2026",
+                mid: "AUGUST",
+                midClass: "july",
+                bot: "1st to 31st",
+                tone: "red",
+              },
+              tone: "red",
+              wideCal: true,
+            }) +
+          "</div>" +
+          '<div class="cal"><div class="cal-head home"><span>August 2026</span><span>Summer holidays</span></div>' +
+          '<div class="dow"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>' +
+          '<div class="grid">' + aug + "</div></div>" +
+          '<div class="pecs one">' +
+            pec({
+              label: "Holidays Summer break",
+              img: SUMMER,
+              tone: "red",
+              hero: true,
+            }) +
+          "</div>" +
+          (kid.augustICanDo && kid.augustICanDo.length
+            ? '<p class="with-mum red">I can do</p>' +
+              '<div class="pecs acts' +
+              (kid.augustICanDo.length === 6 ? " six" : "") +
+              '">' +
+              kid.augustICanDo
+                .map((a) => pec({ label: a.label, img: a.img, tone: "red" }))
+                .join("") +
+              "</div>"
+            : "") +
+        "</article>" +
+
+        /* Page 4: before September — SEPTEMBER + Hub/Open */
+        '<article class="page">' +
+          pageHeader() +
+          '<div class="stack">' +
+            '<div class="pecs one">' +
+              pec({
+                label: "September",
+                cal: {
+                  top: "2026",
+                  mid: "SEPTEMBER",
+                  midClass: "july",
+                  bot: dateRangeLabel(kid.sepFirstCome, 30),
+                  tone: "green",
+                },
+                tone: "green",
+                wideCal: true,
+              }) +
+            "</div>" +
+            '<div class="pecs three">' +
+              pec({ label: "clubSENsational", img: BRAND, tone: "green" }) +
+              pec({ label: "Hub Room", img: HUB, tone: "green" }) +
+              pec({ label: "Open", img: OPEN_ICO, tone: "green" }) +
+            "</div>" +
+          "</div>" +
+          '<p class="note">Before September · Hub Room open again</p>' +
+        "</article>" +
+
+        /* Page 5: AVATAR · SEPTEMBER calendar + I can do */
+        '<article class="page">' +
+          pageHeader() +
+          '<div class="pecs week-lead">' +
+            pec({ label: kid.name, img: kid.avatar, cover: true, tone: "blue" }) +
+            pec({
+              label: "September",
+              cal: {
+                top: "2026",
+                mid: "SEPTEMBER",
+                midClass: "july",
+                bot: dateRangeLabel(kid.sepFirstCome, 30),
+                tone: "green",
+              },
+              tone: "green",
+              wideCal: true,
+            }) +
+          "</div>" +
+          '<div class="legend">' +
+            '<span><i class="sw" style="background:var(--dc)"></i> Green = Day Centre</span>' +
+            '<span><i class="sw" style="background:var(--home)"></i> Red = HOME</span>' +
+          "</div>" +
+          '<div class="cal"><div class="cal-head sep"><span>September 2026</span><span>Autumn term</span></div>' +
+          '<div class="dow"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>' +
+          '<div class="grid">' + sep + "</div></div>" +
+          '<p class="note">' + kid.note + " · VisualVic Hub Room</p>" +
+        "</article>" +
+
+        /* Page 5b: September I can do (own page so Print/PDF does not clip) */
+        '<article class="page">' +
+          pageHeader() +
+          '<div class="pecs week-lead">' +
+            pec({ label: kid.name, img: kid.avatar, cover: true, tone: "blue" }) +
+            pec({
+              label: "September",
+              cal: {
+                top: "2026",
+                mid: "SEPTEMBER",
+                midClass: "july",
+                bot: "I can do",
+                tone: "green",
+              },
+              tone: "green",
+              wideCal: true,
+            }) +
+          "</div>" +
+          '<p class="with-mum">I can do</p>' +
+          '<div class="pecs acts' +
+          (kid.septemberICanDo && kid.septemberICanDo.length === 6
+            ? " six"
+            : "") +
+          '">' +
+          (kid.septemberICanDo || SEPTEMBER_I_CAN_DO_DEFAULT)
+            .map((a) => pec({ label: a.label, img: a.img, tone: "green" }))
+            .join("") +
+          "</div>" +
+          '<p class="note">' + kid.note + " · VisualVic Hub Room</p>" +
+        "</article>" +
+
+        /* Page 6: Staff + Friends (September) */
+        '<article class="page">' +
+          pageHeader() +
+          '<div class="pecs week-lead">' +
+            pec({ label: kid.name, img: kid.avatar, cover: true, tone: "blue" }) +
+            pec({
+              label: "September",
+              cal: {
+                top: "2026",
+                mid: "SEPTEMBER",
+                midClass: "july",
+                bot: "Staff + Friends",
+                tone: "green",
+              },
+              tone: "green",
+              wideCal: true,
+            }) +
+          "</div>" +
+          '<p class="with-mum">Staff</p>' +
+          '<div class="pecs staff">' +
+            STAFF_SEP.map((s) =>
+              pec({ label: s.name, img: s.img, tone: "blue", person: true })
+            ).join("") +
+          "</div>" +
+          '<p class="with-mum">Friends</p>' +
+          '<div class="pecs friends">' +
+            FRIENDS.filter((f) => f.id !== kid.id)
+              .map((f) =>
+                pec({ label: f.name, img: f.img, tone: "green", person: true })
+              )
+              .join("") +
+          "</div>" +
+          '<p class="note">September · Hub Room · staff and friends</p>' +
+        "</article>" +
+
+        "</section>"
+      );
+    }
+
+    const stories = document.getElementById("stories");
+    const buttons = document.getElementById("kidButtons");
+
+    const params = new URLSearchParams(location.search);
+    const kidParam = String(params.get("kid") || "").toLowerCase().trim();
+    const parentMode =
+      params.get("parent") === "1" || params.get("from") === "parent";
+    const printNow = params.get("print") === "1";
+    const kidLocked = KIDS.some((k) => k.id === kidParam);
+    const startKid = kidLocked ? kidParam : KIDS[0].id;
+    const kidsToRender = kidLocked
+      ? KIDS.filter((k) => k.id === kidParam)
+      : KIDS;
+
+    if (parentMode) document.body.classList.add("parent-view");
+    if (kidLocked) document.body.classList.add("individual-kid");
+
+    stories.innerHTML = kidsToRender.map(renderKid).join("");
+    buttons.innerHTML = kidsToRender.map((k, i) =>
+      '<button type="button" data-id="' + k.id + '" class="' + (i === 0 ? "active" : "") + '">' +
+      k.name + "</button>"
+    ).join("");
+
+    function show(id) {
+      document.querySelectorAll(".story").forEach((el) => {
+        el.classList.toggle("active", el.dataset.kid === id);
+      });
+      document.querySelectorAll(".kids button").forEach((b) => {
+        b.classList.toggle("active", b.dataset.id === id);
+      });
+      const pdfBtn = document.getElementById("btnPdf");
+      if (pdfBtn) {
+        pdfBtn.href =
+          ASSET + "pdf/summer-social-story-" + id + ".pdf";
+        pdfBtn.removeAttribute("hidden");
+        pdfBtn.setAttribute("download", "summer-social-story-" + id + ".pdf");
+      }
+    }
+    buttons.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-id]");
+      if (b) show(b.dataset.id);
+    });
+
+    show(startKid);
+    document.getElementById("btnPrint").addEventListener("click", () => {
+      window.print();
+    });
+    if (printNow) {
+      setTimeout(() => window.print(), 400);
+    }
+  </script>
+</body>
+</html>

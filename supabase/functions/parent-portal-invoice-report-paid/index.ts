@@ -6,6 +6,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
+import { assertNoPriorUnconfirmedInvoice } from "../_shared/portal_invoice_pay_sequence.ts";
+import {
+  nextInstalmentDueDate,
+  normalizePaymentSchedule,
+  shareNextInstalmentIsCollectingNow,
+} from "../_shared/portal_invoice_payment_schedule.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -76,7 +82,9 @@ Deno.serve(async (req) => {
 
   const { data: inv, error } = await supabase
     .from("portal_parent_invoice_share")
-    .select("id, contact_id, payment_status, share_status")
+    .select(
+      "id, contact_id, payment_status, share_status, payment_schedule, next_instalment_due, due_date",
+    )
     .eq("id", invoiceId)
     .eq("contact_id", contactId)
     .maybeSingle();
@@ -102,6 +110,41 @@ Deno.serve(async (req) => {
   if (inv.payment_status !== "unpaid" && inv.payment_status !== "partial") {
     return json(409, { ok: false, error: "not_open_for_report" });
   }
+
+  if (!shareNextInstalmentIsCollectingNow(inv)) {
+    const nextDue =
+      nextInstalmentDueDate(normalizePaymentSchedule(inv.payment_schedule)) ||
+      (inv.next_instalment_due ? String(inv.next_instalment_due).slice(0, 10) : null) ||
+      (inv.due_date ? String(inv.due_date).slice(0, 10) : null);
+    return json(409, {
+      ok: false,
+      error: "instalment_not_due_yet",
+      next_instalment_due: nextDue,
+      message:
+        nextDue
+          ? `This instalment is not due until ${nextDue}. Please tap I've paid when that date is near (or contact the office if you paid early).`
+          : "This instalment is not due yet. Please tap I've paid when the due date is near.",
+    });
+  }
+
+  const priorBlock = await assertNoPriorUnconfirmedInvoice(supabase, contactId, invoiceId);
+  if (priorBlock) {
+    return json(409, {
+      ok: false,
+      error: priorBlock.error,
+      message: priorBlock.message,
+      prior_invoice: priorBlock.prior,
+    });
+  }
+
+  // Parents no longer report paid via green button — notify admin after transfer;
+  // office Mark paid after Tide check. Keep endpoint for old clients / crash pages.
+  return json(410, {
+    ok: false,
+    error: "report_paid_disabled",
+    message:
+      "Please message the office (Messages, WhatsApp or email) after you pay. They will confirm when the transfer appears - no I've paid button in the portal.",
+  });
 
   const now = new Date().toISOString();
   const patch = {

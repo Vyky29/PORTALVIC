@@ -16,6 +16,11 @@
     },
     getAnonKey: function () {
       return '';
+    },
+    toast: function (m) {
+      try {
+        console.log('[documents]', m);
+      } catch (_e) {}
     }
   };
 
@@ -28,8 +33,19 @@
     certificate: 'Certificate',
     firstaid: 'First aid',
     safeguarding: 'Safeguarding',
-    other: 'Other'
+    other: 'Other',
+    admin_upload: 'Admin upload'
   };
+
+  /** Types office can attach for a worker (My Documents). Payslips stay on Payslips screen. */
+  var ADMIN_UPLOAD_TYPES = [
+    { key: 'certificate', label: 'Certificate', category: 'training' },
+    { key: 'passport', label: 'Passport', category: 'documents' },
+    { key: 'checklist', label: 'Checklist', category: 'documents' },
+    { key: 'firstaid', label: 'First aid', category: 'training' },
+    { key: 'safeguarding', label: 'Safeguarding', category: 'training' },
+    { key: 'other', label: 'Other document', category: 'documents' }
+  ];
 
   // Stat-card filters for actual file types (Portal PINs is a separate screen).
   var STAT_CARDS = [
@@ -46,7 +62,9 @@
     search: '',
     items: [],
     previewIdx: -1,
-    expenseUnpaidCount: 0
+    expenseUnpaidCount: 0,
+    staff: [],
+    uploading: false
   };
 
   function configure(options) {
@@ -55,6 +73,11 @@
     if (options.getClient) cfg.getClient = options.getClient;
     if (options.getSupabaseUrl) cfg.getSupabaseUrl = options.getSupabaseUrl;
     if (options.getAnonKey) cfg.getAnonKey = options.getAnonKey;
+    if (options.toast) cfg.toast = options.toast;
+  }
+
+  function client() {
+    return cfg.getClient ? cfg.getClient() : null;
   }
 
   function esc(s) {
@@ -184,8 +207,89 @@
     });
   }
 
+  function staffNameById(id) {
+    var want = String(id || '').trim();
+    for (var i = 0; i < state.staff.length; i++) {
+      if (String(state.staff[i].id || '') === want) {
+        return String(state.staff[i].full_name || state.staff[i].username || 'Worker').trim();
+      }
+    }
+    return 'Worker';
+  }
+
+  function sanitizeFilenamePart(s) {
+    return String(s || 'document')
+      .trim()
+      .replace(/[^a-zA-Z0-9._-]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 80) || 'document';
+  }
+
+  function adminUploadTypeMeta(key) {
+    var k = String(key || '').trim().toLowerCase();
+    for (var i = 0; i < ADMIN_UPLOAD_TYPES.length; i++) {
+      if (ADMIN_UPLOAD_TYPES[i].key === k) return ADMIN_UPLOAD_TYPES[i];
+    }
+    return ADMIN_UPLOAD_TYPES[ADMIN_UPLOAD_TYPES.length - 1];
+  }
+
+  function normalizeAdminWorkerDocRows(rows) {
+    return (rows || []).map(function (r) {
+      var type = String(r.document_type || 'other').toLowerCase();
+      if (type === 'training_external_certificate') type = 'certificate';
+      var worker = staffNameById(r.user_id);
+      var title = String(r.title || type || 'Document').trim();
+      return {
+        type: type,
+        id: r.id || '',
+        name: worker + ' — ' + title,
+        path: r.file_url || '',
+        storageBucket: 'documents',
+        size: null,
+        created: r.created_at || null,
+        source: 'portal',
+        adminAttach: true,
+        details: r
+      };
+    });
+  }
+
+  async function loadStaffDirectory() {
+    var sb = client();
+    if (!sb) sb = await waitForClient();
+    var resp = await sb
+      .from('staff_profiles')
+      .select('id, full_name, username')
+      .order('full_name', { ascending: true });
+    if (resp.error) throw resp.error;
+    state.staff = resp.data || [];
+  }
+
+  async function loadAdminWorkerDocs() {
+    var sb = client();
+    if (!sb) sb = await waitForClient();
+    var resp = await sb
+      .from('documents')
+      .select('id, user_id, title, document_type, category, created_at, file_url, source_page')
+      .eq('source_page', 'admin_documents')
+      .order('created_at', { ascending: false })
+      .limit(400);
+    if (resp.error) throw resp.error;
+    return normalizeAdminWorkerDocRows(resp.data || []);
+  }
+
   async function loadAllItems() {
     var out = [];
+    try {
+      await loadStaffDirectory();
+    } catch (staffErr) {
+      console.warn('[documents] staff directory', staffErr);
+    }
+    try {
+      out = out.concat(await loadAdminWorkerDocs());
+    } catch (adminErr) {
+      console.warn('[documents] admin worker docs', adminErr);
+    }
     var ob = await edgePost('portal-admin-onboarding-documents-list', {});
     if (!ob.error) {
       global._portalDocsOnboardingMeta = ob.data.meta || {};
@@ -346,7 +450,20 @@
     }
     if (frame) frame.src = url;
     var openBtn = document.getElementById('portalDocumentsPreviewOpen');
-    if (openBtn) openBtn.onclick = function () { window.open(url, '_blank', 'noopener,noreferrer'); };
+    if (openBtn) openBtn.onclick = function () {
+      try {
+        var a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        if (a.parentNode) a.parentNode.removeChild(a);
+      } catch (_e) {
+        try { window.open(url, '_blank'); } catch (_e2) {}
+      }
+    };
     var dlBtn = document.getElementById('portalDocumentsPreviewDownload');
     if (dlBtn) dlBtn.onclick = function () {
       var a = document.createElement('a');
@@ -546,10 +663,211 @@
     }
   }
 
+  function bindStaffCombo() {
+    var input = document.getElementById('portalDocumentsStaffInput');
+    var hidden = document.getElementById('portalDocumentsStaff');
+    var suggest = document.getElementById('portalDocumentsStaffSuggest');
+    if (!input || !hidden || !suggest) return;
+    if (input.getAttribute('data-docs-staff-bound') === '1') return;
+    input.setAttribute('data-docs-staff-bound', '1');
+
+    function hideSuggest() {
+      suggest.hidden = true;
+      suggest.innerHTML = '';
+    }
+
+    function pickStaff(s) {
+      if (!s) return;
+      hidden.value = String(s.id || '');
+      input.value = String(s.full_name || s.username || '').trim();
+      hideSuggest();
+    }
+
+    function renderSuggest(q) {
+      var needle = String(q || '')
+        .trim()
+        .toLowerCase();
+      var matches = (state.staff || []).filter(function (s) {
+        var label = String(s.full_name || s.username || '')
+          .trim()
+          .toLowerCase();
+        if (!needle) return true;
+        return label.indexOf(needle) >= 0;
+      }).slice(0, 12);
+      if (!matches.length) {
+        hideSuggest();
+        return;
+      }
+      suggest.innerHTML = matches
+        .map(function (s) {
+          var label = String(s.full_name || s.username || 'Worker').trim();
+          return (
+            '<button type="button" class="portal-documents-suggest__btn" role="option" data-staff-id="' +
+            esc(s.id) +
+            '">' +
+            esc(label) +
+            '</button>'
+          );
+        })
+        .join('');
+      suggest.hidden = false;
+      suggest.querySelectorAll('[data-staff-id]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = btn.getAttribute('data-staff-id');
+          var hit = state.staff.find(function (s) {
+            return String(s.id) === String(id);
+          });
+          pickStaff(hit);
+        });
+      });
+    }
+
+    input.addEventListener('focus', function () {
+      renderSuggest(input.value);
+    });
+    input.addEventListener('input', function () {
+      hidden.value = '';
+      renderSuggest(input.value);
+    });
+    input.addEventListener('blur', function () {
+      setTimeout(hideSuggest, 180);
+    });
+  }
+
+  async function handleUpload(ev) {
+    ev.preventDefault();
+    if (state.uploading) return;
+    var staffSel = document.getElementById('portalDocumentsStaff');
+    var staffInput = document.getElementById('portalDocumentsStaffInput');
+    var typeSel = document.getElementById('portalDocumentsType');
+    var titleInput = document.getElementById('portalDocumentsTitle');
+    var fileInput = document.getElementById('portalDocumentsFile');
+    var staffId = staffSel ? String(staffSel.value || '').trim() : '';
+    if (!staffId && staffInput) {
+      var typed = String(staffInput.value || '')
+        .trim()
+        .toLowerCase();
+      if (typed) {
+        var hit = state.staff.find(function (s) {
+          var label = String(s.full_name || s.username || '')
+            .trim()
+            .toLowerCase();
+          return label === typed;
+        });
+        if (hit) staffId = String(hit.id || '').trim();
+      }
+    }
+    var typeKey = typeSel ? String(typeSel.value || '').trim().toLowerCase() : 'other';
+    var meta = adminUploadTypeMeta(typeKey);
+    var title = titleInput ? String(titleInput.value || '').trim() : '';
+    var file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    if (!staffId) {
+      setStatus('<strong>Select a worker</strong> before attaching a file.', true);
+      return;
+    }
+    if (!title) {
+      setStatus('<strong>Enter a title</strong> so the worker can recognise the file.', true);
+      return;
+    }
+    if (!file) {
+      setStatus('<strong>Choose a file</strong> (PDF or image).', true);
+      return;
+    }
+    var mime = String(file.type || '').toLowerCase();
+    var okMime =
+      !mime ||
+      mime === 'application/pdf' ||
+      mime === 'image/jpeg' ||
+      mime === 'image/png';
+    if (!okMime) {
+      setStatus('<strong>PDF or image only</strong> — PDF, JPG or PNG.', true);
+      return;
+    }
+
+    var sb = client();
+    if (!sb) {
+      try {
+        sb = await waitForClient();
+      } catch (_) {
+        sb = null;
+      }
+    }
+    if (!sb) {
+      setStatus('<strong>Not signed in</strong> — refresh and try again.', true);
+      return;
+    }
+
+    var ext = 'pdf';
+    if (mime === 'image/png' || /\.png$/i.test(file.name || '')) ext = 'png';
+    else if (mime === 'image/jpeg' || /\.jpe?g$/i.test(file.name || '')) ext = 'jpg';
+    var stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    var filename = stamp + '_' + sanitizeFilenamePart(title) + '.' + ext;
+    var storagePath = staffId + '/admin_documents/' + meta.key + '/' + filename;
+    var contentType =
+      ext === 'png' ? 'image/png' : ext === 'jpg' ? 'image/jpeg' : 'application/pdf';
+
+    state.uploading = true;
+    var btn = document.getElementById('portalDocumentsUploadSubmit');
+    if (btn) btn.disabled = true;
+    setStatus(
+      '<strong>Uploading…</strong> ' +
+        esc(title) +
+        ' for ' +
+        esc(staffNameById(staffId)) +
+        '.'
+    );
+
+    try {
+      var up = await sb.storage.from('documents').upload(storagePath, file, {
+        contentType: contentType,
+        upsert: false
+      });
+      if (up.error) throw up.error;
+
+      var ins = await sb.from('documents').insert([
+        {
+          user_id: staffId,
+          document_type: meta.key,
+          category: meta.category,
+          title: title,
+          related_date: null,
+          file_url: storagePath,
+          source_page: 'admin_documents'
+        }
+      ]);
+      if (ins.error) throw ins.error;
+
+      if (fileInput) fileInput.value = '';
+      if (titleInput) titleInput.value = '';
+      cfg.toast('Document attached for ' + staffNameById(staffId));
+      setStatus(
+        '<strong>Attached.</strong> ' +
+          esc(title) +
+          ' is now in ' +
+          esc(staffNameById(staffId)) +
+          '’s <em>My Documents</em>.'
+      );
+      await refresh();
+    } catch (err) {
+      console.error(err);
+      setStatus('<strong>Upload failed</strong> ' + esc(err.message || String(err)), true);
+    } finally {
+      state.uploading = false;
+      if (btn) btn.disabled = false;
+    }
+  }
+
   function bindModule() {
     var root = document.getElementById('portalDocumentsRoot');
     if (!root || root.getAttribute('data-portal-documents-bound') === '1') return;
     root.setAttribute('data-portal-documents-bound', '1');
+
+    var form = document.getElementById('portalDocumentsUploadForm');
+    if (form) {
+      form.addEventListener('submit', function (ev) {
+        void handleUpload(ev);
+      });
+    }
 
     var refreshBtn = document.getElementById('portalDocumentsRefresh');
     if (refreshBtn) refreshBtn.addEventListener('click', function () {
@@ -578,6 +896,10 @@
         applyActiveCard();
         closePreview();
         renderTable(filteredItems());
+        var typeSel = document.getElementById('portalDocumentsType');
+        if (typeSel && state.filter !== 'all' && ADMIN_UPLOAD_TYPES.some(function (t) { return t.key === state.filter; })) {
+          typeSel.value = state.filter;
+        }
       });
     });
 
@@ -601,6 +923,13 @@
     global.__portalDocsPresetSearch = '';
     global.__portalDocsAutoOpen = false;
     applyActiveCard();
+
+    var typeSelInit = document.getElementById('portalDocumentsType');
+    if (typeSelInit && state.filter !== 'all' && ADMIN_UPLOAD_TYPES.some(function (t) { return t.key === state.filter; })) {
+      typeSelInit.value = state.filter;
+    }
+
+    bindStaffCombo();
 
     refresh().then(function () {
       if (!autoOpen) return;
@@ -629,6 +958,17 @@
       '#portalDocumentsRoot .portal-documents-statcard.is-active{border-color:var(--brand,#2563eb);box-shadow:0 0 0 2px rgba(37,99,235,.18)}' +
       '#portalDocumentsRoot .portal-documents-statcard-num{font-size:22px;font-weight:800;color:var(--ink,#0f172a);line-height:1.1}' +
       '#portalDocumentsRoot .portal-documents-statcard-label{font-size:12px;color:var(--muted,#64748b);text-transform:uppercase;letter-spacing:.03em}' +
+      '#portalDocumentsRoot .portal-documents-upload-card{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-radius:14px;padding:16px 18px;margin:0 0 16px;min-width:0}' +
+      '#portalDocumentsRoot .portal-documents-upload-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end;min-width:0}' +
+      '#portalDocumentsRoot .portal-documents-upload-card label{display:block;font-size:12px;font-weight:700;color:var(--muted,#64748b);margin:0 0 6px;text-transform:uppercase;letter-spacing:.03em}' +
+      '#portalDocumentsRoot .portal-documents-upload-card .inp,#portalDocumentsRoot .portal-documents-upload-card select,#portalDocumentsRoot .portal-documents-upload-card input[type=file]{width:100%;min-width:0;font:inherit;padding:9px 11px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:#fff;color:var(--ink,#0f172a);box-sizing:border-box}' +
+      '#portalDocumentsRoot .portal-documents-staff-combo{position:relative;min-width:0;max-width:100%}' +
+      '#portalDocumentsRoot .portal-documents-suggest{margin-top:6px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-height:min(240px,42vh);overflow:auto;background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.08);-webkit-overflow-scrolling:touch}' +
+      '#portalDocumentsRoot .portal-documents-suggest[hidden]{display:none!important}' +
+      '#portalDocumentsRoot .portal-documents-suggest__btn{display:block;width:100%;max-width:100%;min-width:0;text-align:left;padding:10px 12px;border:0;border-bottom:1px solid var(--line,#e5e7eb);background:#fff;cursor:pointer;font:inherit;font-size:13px;font-weight:600;color:var(--ink,#0f172a);overflow-wrap:break-word}' +
+      '#portalDocumentsRoot .portal-documents-suggest__btn:last-child{border-bottom:0}' +
+      '#portalDocumentsRoot .portal-documents-suggest__btn:hover,#portalDocumentsRoot .portal-documents-suggest__btn:focus-visible{background:#f0f7ff;outline:none}' +
+      '#portalDocumentsRoot .portal-documents-upload-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}' +
       '#portalDocumentsRoot .portal-documents-main{display:flex;gap:16px;align-items:flex-start;min-width:0}' +
       '#portalDocumentsRoot .portal-documents-listcol{flex:1 1 auto;min-width:0}' +
       '#portalDocumentsRoot .portal-documents-preview{flex:0 0 420px;max-width:46%;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:440px}' +
@@ -650,14 +990,44 @@
     );
   }
 
+  function adminUploadTypeOptionsHtml() {
+    return ADMIN_UPLOAD_TYPES.map(function (t) {
+      return '<option value="' + esc(t.key) + '">' + esc(t.label) + '</option>';
+    }).join('');
+  }
+
   function viewHtml() {
     return (
       '<div id="portalDocumentsRoot" class="portal-documents-embed portal-day-ops-embed" data-portal-documents-bound="0">' +
       styleHtml() +
       '<h1 class="page-title">Documents</h1>' +
-      '<p class="page-intro" id="portalDocumentsMeta">Timesheets, expenses, and onboarding uploads from Portal Supabase.</p>' +
+      '<p class="page-intro" id="portalDocumentsMeta">Attach files for a worker (certificate, passport, checklist, etc.), plus timesheets, expenses and onboarding uploads. Payslips stay under <strong>Payslips</strong>.</p>' +
       '<div id="portalDocumentsExpenseBanner" hidden></div>' +
       '<div id="portalDocumentsStatus" class="portal-forms-status" role="status"></div>' +
+      '<div class="portal-documents-upload-card">' +
+      '<h2 style="margin:0 0 12px;font-size:16px;color:var(--ink,#0f172a)">Attach file for worker</h2>' +
+      '<form id="portalDocumentsUploadForm">' +
+      '<div class="portal-documents-upload-grid">' +
+      '<div><label for="portalDocumentsStaffInput">Worker</label>' +
+      '<div class="portal-documents-staff-combo" id="portalDocumentsStaffCombo">' +
+      '<input type="hidden" id="portalDocumentsStaff" value="" />' +
+      '<input class="inp" id="portalDocumentsStaffInput" type="text" placeholder="Type to search worker…" autocomplete="off" spellcheck="false" aria-autocomplete="list" aria-controls="portalDocumentsStaffSuggest" required />' +
+      '<div id="portalDocumentsStaffSuggest" class="portal-documents-suggest" role="listbox" aria-label="Matching workers" hidden></div>' +
+      '</div></div>' +
+      '<div><label for="portalDocumentsType">Document type</label>' +
+      '<select class="inp" id="portalDocumentsType" required>' +
+      adminUploadTypeOptionsHtml() +
+      '</select></div>' +
+      '<div><label for="portalDocumentsTitle">Title</label>' +
+      '<input class="inp" id="portalDocumentsTitle" type="text" maxlength="120" placeholder="e.g. DBS certificate · First aid expiring 2027" required /></div>' +
+      '<div><label for="portalDocumentsFile">File</label>' +
+      '<input type="file" id="portalDocumentsFile" accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png" required /></div>' +
+      '</div>' +
+      '<div class="portal-documents-upload-actions">' +
+      '<button type="submit" class="btn btn--pri" id="portalDocumentsUploadSubmit">Attach to My Documents</button>' +
+      '<span class="muted" style="font-size:12px;min-width:0;overflow-wrap:break-word">Visible in the worker’s staff app under My Documents.</span>' +
+      '</div>' +
+      '</form></div>' +
       '<div class="portal-documents-toolbar">' +
       '<input type="search" class="inp" id="portalDocumentsSearch" placeholder="Search files, names…" style="max-width:280px;min-width:0" />' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalDocumentsRefresh">Refresh</button>' +

@@ -48,7 +48,7 @@ const FLEXI_TERM: Array<{
     term: "autumn",
     termLabel: "Autumn term",
     halves: [
-      { halfLabel: "1st half", dueIso: "2026-09-01" },
+      { halfLabel: "1st half", dueIso: "2026-08-15" },
       { halfLabel: "2nd half", dueIso: "2026-10-26" },
     ],
   },
@@ -106,6 +106,7 @@ const MONTHLY_TERM_PLAN: Array<{
   },
 ];
 
+/** Whole-year monthly: 11 Direct Payments Sep→Jul (4 / 3 / 4). Code stays `monthly_10` for stored submissions. */
 const MONTHLY_10 = [
   { label: "September 2026", dueIso: "2026-09-01" },
   { label: "October 2026", dueIso: "2026-10-01" },
@@ -117,6 +118,7 @@ const MONTHLY_10 = [
   { label: "April 2027", dueIso: "2027-04-01" },
   { label: "May 2027", dueIso: "2027-05-01" },
   { label: "June 2027", dueIso: "2027-06-01" },
+  { label: "July 2027", dueIso: "2027-07-01" },
 ];
 
 function round2(n: number): number {
@@ -332,11 +334,9 @@ export function reenrolTermDisplayLabel(term: ReenrolTermKey): string {
 }
 
 function monthlyCountForTerm(term: ReenrolTermKey, scheduleCode: string): number {
-  if (scheduleCode === "monthly_term") {
-    return term === "autumn" ? 4 : term === "spring" ? 3 : 4;
-  }
-  /* monthly_10: 4 / 3 / 3 */
-  return term === "autumn" ? 4 : 3;
+  /* monthly_10 + monthly_term: 4 / 3 / 4 (11 across the year) */
+  void scheduleCode;
+  return term === "autumn" ? 4 : term === "spring" ? 3 : 4;
 }
 
 /** Short plan line for parent-facing thank-you / confirmation copy. */
@@ -361,20 +361,22 @@ export function reenrolmentSchedulePlanPhrase(args: {
 
   if (termOnly) {
     if (code === "term_3") {
-      return `1 ${unit} scheduled for ${termLabel} term (term-by-term — later terms when you reconfirm)`;
+      return `1 ${unit} for ${termLabel} term (term-by-term — later terms when you reconfirm)`;
     }
     if (code === "term_flexi") {
-      return `2 ${units} scheduled for ${termLabel} term (term-by-term)`;
+      return `1 ${unit} for ${termLabel} term with 2 instalments (term-by-term)`;
     }
     if (code === "monthly_10" || code === "monthly_term") {
       const months = monthlyCountForTerm(args.billingTerm!, code);
-      return `${n || months} ${units} scheduled for ${termLabel} term (monthly · term-by-term)`;
+      return `1 ${unit} for ${termLabel} term with ${n || months} monthly instalments (term-by-term)`;
     }
     if (code === "own_term") {
       return `${n || 2} ${units} due on re-enrolment for ${termLabel} (minimum 2 session days + admin fee; top-ups as you go)`;
     }
-    if (n === 1) return `1 ${unit} scheduled for ${termLabel} term (term-by-term)`;
-    if (n > 1) return `${n} ${units} scheduled for ${termLabel} term (term-by-term)`;
+    if (n === 1) return `1 ${unit} for ${termLabel} term (term-by-term)`;
+    if (n > 1) {
+      return `1 ${unit} for ${termLabel} term with ${n} instalments (term-by-term)`;
+    }
   }
 
   if (code === "yearly_1off") {
@@ -384,13 +386,13 @@ export function reenrolmentSchedulePlanPhrase(args: {
     return `3 ${units} scheduled (one per term — Autumn, Spring, Summer)`;
   }
   if (code === "term_flexi") {
-    return `6 ${units} scheduled (two per term)`;
+    return `3 ${units} scheduled (one per term, each with 2 instalments)`;
   }
   if (code === "monthly_10") {
-    return `10 ${units} scheduled (monthly Sep–Jun: Autumn 4 · Spring 3 · Summer 3)`;
+    return `3 ${units} scheduled (one per term with monthly instalments: Autumn 4 · Spring 3 · Summer 4)`;
   }
   if (code === "monthly_term") {
-    return `${n || 11} ${units} scheduled (monthly by term)`;
+    return `3 ${units} scheduled (one per term with monthly instalments: Autumn 4 · Spring 3 · Summer 4)`;
   }
   if (code === "own_term") {
     return `${n || 6} ${units} (minimum 2 session days + admin each term on re-enrol / term start; top-ups as you go)`;
@@ -520,7 +522,7 @@ export function buildReenrolmentInstalments(args: {
       paymentMethodHint: "la_funded",
       scheduleCode: "funder_monthly_11",
       schedulePlanPhrase:
-        "11 monthly funder invoices (September–July) — booking total split equally; sessions listed per month",
+        "11 monthly funder invoices (September–July) — each month = sessions × session fee (not equal split)",
       skipReason: termOut.length ? null : "no_instalments",
     };
   }
@@ -683,7 +685,7 @@ export function buildReenrolmentInstalments(args: {
     const plan10 = [
       { term: "autumn" as const, label: "Autumn", months: MONTHLY_10.slice(0, 4) },
       { term: "spring" as const, label: "Spring", months: MONTHLY_10.slice(4, 7) },
-      { term: "summer" as const, label: "Summer", months: MONTHLY_10.slice(7, 10) },
+      { term: "summer" as const, label: "Summer", months: MONTHLY_10.slice(7, 11) },
     ];
     for (const t of plan10) {
       if (!includeTerm(t.term)) continue;

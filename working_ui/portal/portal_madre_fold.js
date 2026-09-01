@@ -105,12 +105,23 @@
     return day >= start && day <= end;
   }
 
+  function madreStaffList(week) {
+    var staff = week && week.staff;
+    if (!staff) return [];
+    if (Array.isArray(staff)) return staff;
+    if (typeof staff === "object") return Object.keys(staff).map(function (k) {
+      return staff[k];
+    });
+    return [];
+  }
+
   function madreToAdapterRows(madre) {
     var rows = [];
     var weeks = (madre && madre.weeks) || [];
     weeks.forEach(function (w) {
-      (w.staff || []).forEach(function (st) {
-        var staffName = String(st.staffName || st.staffKey || "")
+      madreStaffList(w).forEach(function (st) {
+        if (!st) return;
+        var staffName = String(st.staffName || st.staffKey || st.name || "")
           .trim()
           .toUpperCase();
         (st.days || []).forEach(function (d) {
@@ -286,8 +297,105 @@
         service: after.service || opts.service,
         area: after.area || opts.area,
         venue: after.venue || opts.venue,
+        replace_open: opts.replace_open !== false && !cancelled,
       },
     });
+  }
+
+  function weekdayKeyFromIso(iso) {
+    var p = String(iso || "").split("-");
+    if (p.length !== 3) return "";
+    var dt = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+    if (isNaN(dt.getTime())) return "";
+    return ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
+      dt.getDay()
+    ];
+  }
+
+  function collectMadreIsosForDow(dayName, preferredIso) {
+    var out = [];
+    var want = String(dayName || "")
+      .trim()
+      .toLowerCase();
+    var pref = normIso(preferredIso);
+    try {
+      var doc = (global.PORTAL_MADRE_LIVE && global.PORTAL_MADRE_LIVE.document) || null;
+      var weeks = (doc && doc.weeks) || [];
+      for (var wi = 0; wi < weeks.length; wi++) {
+        var staff = (weeks[wi] && weeks[wi].staff) || [];
+        for (var si = 0; si < staff.length; si++) {
+          var days = (staff[si] && staff[si].days) || [];
+          for (var di = 0; di < days.length; di++) {
+            var iso = String(days[di].sessionDate || "").slice(0, 10);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+            var wd = String(days[di].weekday || "")
+              .trim()
+              .toLowerCase();
+            if (wd && want) {
+              if (wd !== want && wd.indexOf(want.slice(0, 3)) < 0) {
+                if (weekdayKeyFromIso(iso) !== want) continue;
+              }
+            } else if (want && weekdayKeyFromIso(iso) !== want) {
+              continue;
+            }
+            if (out.indexOf(iso) < 0) out.push(iso);
+          }
+        }
+      }
+    } catch (_e) {}
+    out.sort();
+    if (pref && out.indexOf(pref) < 0) out.push(pref);
+    if (!out.length && pref) out.push(pref);
+    return out;
+  }
+
+  /**
+   * Assign / rest-of-term: rename open NO PARTICIPANT seats to the named client
+   * across standing MADRE weeks for that weekday (offer reads latest standing).
+   */
+  function queueParticipantAssignConsumeOpen(client, opts) {
+    opts = opts || {};
+    var after = opts.after || {};
+    var day = after.day || opts.day || "";
+    var anchor = normIso(opts.session_date || after.session_date);
+    var scope = String(opts.scope || "").trim();
+    var isos = collectMadreIsosForDow(day, anchor);
+    if (!isos.length && anchor) isos = [anchor];
+    if (scope === "single_day" && anchor) {
+      isos = [anchor];
+    } else if (scope === "pick_sessions" && Array.isArray(opts.selected_session_dates)) {
+      isos = opts.selected_session_dates.map(normIso).filter(Boolean);
+    } else if (scope === "rest_of_term" && anchor) {
+      // Keep standing weeks before the Autumn anchor — offer template is summer MADRE.
+      // Still prefer dates on/after anchor when present, but never drop earlier standing.
+      var standing = isos.slice();
+      var future = standing.filter(function (iso) {
+        return iso >= anchor;
+      });
+      isos = standing.length ? standing : future.length ? future : [anchor];
+    }
+    // Deduplicate, prefer latest first so offer ref date is updated early.
+    isos = isos.slice().sort().reverse();
+    var seen = Object.create(null);
+    var chain = Promise.resolve({ ok: true, notes: [] });
+    isos.forEach(function (iso) {
+      if (seen[iso]) return;
+      seen[iso] = true;
+      chain = chain.then(function (acc) {
+        return queueParticipantSlotChange(client, {
+          after: after,
+          session_date: iso,
+          replace_open: true,
+          term_action: opts.term_action || "update",
+          source_module: opts.source_module || "term_roster_edit",
+        }).then(function (res) {
+          if (res && res.note) acc.notes.push(iso + ": " + res.note);
+          if (res && (res.ok === false || res.folded === false)) acc.ok = false;
+          return acc;
+        });
+      });
+    });
+    return chain;
   }
 
   function queueScheduleOverrideChange(client, opts) {
@@ -339,6 +447,8 @@
     invalidateLiveMadreCache: invalidateLiveMadreCache,
     applyFoldToLiveMadre: applyFoldToLiveMadre,
     queueParticipantSlotChange: queueParticipantSlotChange,
+    queueParticipantAssignConsumeOpen: queueParticipantAssignConsumeOpen,
+    collectMadreIsosForDow: collectMadreIsosForDow,
     queueScheduleOverrideChange: queueScheduleOverrideChange,
     madreToAdapterRows: madreToAdapterRows,
     dedupeRosterAdapterRows: dedupeRosterAdapterRows,

@@ -5,6 +5,7 @@
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 import { CLUBSENSATIONAL_LOGO_PNG_B64 } from "./clubsensational_logo_b64.ts";
 import {
+  ANNOUNCEMENTS_LOGO_AMBER_PNG_B64,
   ANNOUNCEMENTS_LOGO_GREEN_PNG_B64,
   ANNOUNCEMENTS_LOGO_RED_PNG_B64,
 } from "./announcements_stamp_logo_b64.ts";
@@ -31,6 +32,7 @@ export type PortalInvoicePdfInput = {
     quantity: number;
     unit_price_gbp: number;
     amount_gbp: number;
+    service_key?: string | null;
   }>;
   billToName: string;
   billToLines: string[];
@@ -39,13 +41,21 @@ export type PortalInvoicePdfInput = {
   /**
    * Red Draft Invoice stamp (announcements logo). Defaults to unpaid.
    * Paid invoices always get the green PAID stamp instead.
+   * Partially paid (Flexi / GoCardless instalments) get amber PARTIALLY PAID.
    */
   isDraft?: boolean;
+  /** Amber PARTIALLY PAID stamp — instalments in progress (not fully paid). */
+  partiallyPaid?: boolean;
   /**
-   * When false, omit both DRAFT and PAID announcement stamps.
+   * When false, omit DRAFT / PARTIALLY PAID / PAID announcement stamps.
    * Used for LA managed / NHS managed funder invoices.
    */
   showStamp?: boolean;
+  /**
+   * When true, skip the Payment plan block and the "Pay in full by..." one-off line.
+   * Used for LA / NHS funder invoices (no parent instalment plan on the PDF).
+   */
+  hidePaymentPlan?: boolean;
   amountPaidGbp?: number | null;
   creditAppliedGbp?: number | null;
   /** Instalment plan rows (re-enrolment term invoices). */
@@ -57,6 +67,8 @@ export type PortalInvoicePdfInput = {
     status: string;
     paid_at?: string | null;
   }>;
+  /** H&F year draft — per-month claim amounts on payment advice (page 2). */
+  paymentAdviceMonths?: Array<{ label: string; amountGbp: number }> | null;
 };
 
 const VAT_NUMBER = "450697474";
@@ -163,6 +175,19 @@ export function splitVat20(totalIncl: number): { net: number; vat: number; total
   return { net, vat, total };
 }
 
+/** Family / session credits: show full £ removed, not VAT-split. */
+export function isPortalCreditLineItem(line: {
+  description?: string | null;
+  service_key?: string | null;
+  amount_gbp?: number | null;
+}): boolean {
+  const key = String(line.service_key || "").trim().toUpperCase();
+  if (key === "CREDIT" || key === "CREDITS" || key === "FAMILY_CREDIT") return true;
+  const desc = String(line.description || "").trim().toLowerCase();
+  if (/^credits?\b/.test(desc)) return true;
+  return false;
+}
+
 export async function buildPortalTaxInvoicePdf(
   input: PortalInvoicePdfInput,
 ): Promise<Uint8Array> {
@@ -261,7 +286,7 @@ export async function buildPortalTaxInvoicePdf(
   const meta = [
     ["Invoice Date", formatUkDate(input.invoiceDateIso)],
     ["Invoice Number", pdfSafeText(input.invoiceNumber)],
-    ["Reference", pdfSafeText(input.reference || "").slice(0, 40) || "-"],
+    ["Reference", pdfSafeText(input.reference || "").slice(0, 60) || "-"],
     ["VAT Number", VAT_NUMBER],
   ];
   const serviceLabel = pdfSafeText(input.service || "").slice(0, 48);
@@ -322,10 +347,52 @@ export async function buildPortalTaxInvoicePdf(
   const qty = Number(input.quantity) > 0 ? Number(input.quantity) : 1;
   const total = Math.round(Number(input.totalGbp) * 100) / 100;
   const isExempt = input.vatMode === "exempt";
-  const split = isExempt
-    ? { net: total, vat: 0, total }
-    : splitVat20(total);
-  const unitNet = Math.round((split.net / qty) * 10000) / 10000;
+  const vatLabel = isExempt ? "Exempt" : "Incl. 20%";
+  const rawLineItems = (input.lineItems || [])
+    .map((line) => ({
+      description: pdfSafeText(line?.description || "Service"),
+      detail: pdfSafeText(line?.detail || ""),
+      dates: pdfSafeText(line?.dates || ""),
+      quantity: Number(line?.quantity),
+      unit_price_gbp: Number(line?.unit_price_gbp),
+      amount_gbp: Number(line?.amount_gbp),
+      service_key: String(line?.service_key || ""),
+      isCredit: isPortalCreditLineItem(line || {}),
+    }))
+    .filter(
+      (line) =>
+        line.description &&
+        Number.isFinite(line.quantity) &&
+        line.quantity > 0 &&
+        Number.isFinite(line.amount_gbp) &&
+        line.amount_gbp !== 0,
+    );
+
+  let taxableGross = 0;
+  let creditGross = 0;
+  for (const line of rawLineItems) {
+    if (line.isCredit) creditGross = roundMoney(creditGross + line.amount_gbp);
+    else taxableGross = roundMoney(taxableGross + line.amount_gbp);
+  }
+  const splitBase =
+    rawLineItems.length > 0
+      ? isExempt
+        ? taxableGross
+        : taxableGross
+      : total;
+  const taxSplit = isExempt
+    ? { net: roundMoney(splitBase), vat: 0, total: roundMoney(splitBase) }
+    : splitVat20(splitBase);
+  /* Credits stay outside VAT — parent sees the £ taken off the session. */
+  const split = {
+    net: roundMoney(taxSplit.net + creditGross),
+    vat: taxSplit.vat,
+    total: rawLineItems.length > 0
+      ? roundMoney(taxableGross + creditGross)
+      : total,
+  };
+  const unitNet =
+    qty > 0 ? Math.round((taxSplit.net / qty) * 10000) / 10000 : taxSplit.net;
 
   // Air under header line before description body
   y -= 28;
@@ -353,35 +420,27 @@ export async function buildPortalTaxInvoicePdf(
     y -= 12;
   }
   const descEndY = y;
-  const vatLabel = isExempt ? "Exempt" : "Incl. 20%";
-  const rawLineItems = (input.lineItems || [])
-    .map((line) => ({
-      description: pdfSafeText(line?.description || "Service"),
-      detail: pdfSafeText(line?.detail || ""),
-      dates: pdfSafeText(line?.dates || ""),
-      quantity: Number(line?.quantity),
-      unit_price_gbp: Number(line?.unit_price_gbp),
-      amount_gbp: Number(line?.amount_gbp),
-    }))
-    .filter(
-      (line) =>
-        line.description &&
-        Number.isFinite(line.quantity) &&
-        line.quantity > 0 &&
-        Number.isFinite(line.amount_gbp) &&
-        line.amount_gbp !== 0,
-    );
 
   if (rawLineItems.length) {
     y = descEndY - 4;
     for (const line of rawLineItems.slice(0, 12)) {
-      const rowSplit = isExempt
+      const rowIsCredit = !!line.isCredit;
+      const rowSplit = rowIsCredit || isExempt
         ? { net: roundMoney(line.amount_gbp), vat: 0, total: roundMoney(line.amount_gbp) }
         : splitVat20(line.amount_gbp);
-      const rowUnitNet = round4Money(rowSplit.net / line.quantity);
-      const rowDesc = wrapPdfLines(line.description, 34).slice(0, 3);
+      const rowUnit =
+        rowIsCredit || isExempt
+          ? round4Money(
+            Number.isFinite(line.unit_price_gbp) && line.unit_price_gbp !== 0
+              ? line.unit_price_gbp
+              : line.amount_gbp / line.quantity,
+          )
+          : round4Money(rowSplit.net / line.quantity);
+      const rowVatLabel = rowIsCredit ? "No VAT" : vatLabel;
+      const rowDesc = wrapPdfLines(line.description, 46).slice(0, 3);
       const rowDetail = line.detail ? wrapPdfLines(line.detail, 40).slice(0, 2) : [];
-      const rowDates = line.dates ? wrapPdfLines(line.dates, 55).slice(0, 2) : [];
+      // Session date lists can wrap past 2 lines (Autumn Mon/Wed blocks).
+      const rowDates = line.dates ? wrapPdfLines(line.dates, 55).slice(0, 4) : [];
       const rowHeight = Math.max(
         22,
         rowDesc.length * 10 + rowDetail.length * 9 + rowDates.length * 9 + 6,
@@ -402,8 +461,8 @@ export async function buildPortalTaxInvoicePdf(
       // Keep all values on the same baseline as the service name.
       const rowValueY = rowTop;
       drawCentered(money(line.quantity), colQtyX, colQtyW, rowValueY, 8.5, font);
-      drawCentered(money(rowUnitNet), colUnitX, colUnitW, rowValueY, 8.5, font);
-      drawCentered(vatLabel, colVatX, colVatW, rowValueY, 8.5, font);
+      drawCentered(money(rowUnit), colUnitX, colUnitW, rowValueY, 8.5, font);
+      drawCentered(rowVatLabel, colVatX, colVatW, rowValueY, 8.5, font);
       drawCentered(money(rowSplit.net), colAmtX, colAmtW, rowValueY, 8.5, font);
       y = rowTop - rowHeight;
     }
@@ -471,16 +530,23 @@ export async function buildPortalTaxInvoicePdf(
   }
 
   // Announcements round stamp — BELOW totals (never over Subtotal/TOTAL figures).
-  // Paid → green PAID INVOICE; otherwise red DRAFT INVOICE until paid.
+  // Paid → green PAID INVOICE; partial → amber PARTIALLY PAID; else red DRAFT INVOICE.
   // LA / NHS funder invoices: no stamp (showStamp: false).
   const stampsEnabled = input.showStamp !== false;
   const showPaidStamp = stampsEnabled && !!input.paid;
-  const showDraftStamp = stampsEnabled && !showPaidStamp && input.isDraft !== false;
+  const showPartialStamp =
+    stampsEnabled && !showPaidStamp && !!input.partiallyPaid;
+  const showDraftStamp =
+    stampsEnabled && !showPaidStamp && !showPartialStamp && input.isDraft !== false;
   let stampReserveBottom = y;
-  if (showPaidStamp || showDraftStamp) {
+  if (showPaidStamp || showPartialStamp || showDraftStamp) {
     try {
       const stampBytes = b64ToBytes(
-        showPaidStamp ? ANNOUNCEMENTS_LOGO_GREEN_PNG_B64 : ANNOUNCEMENTS_LOGO_RED_PNG_B64,
+        showPaidStamp
+          ? ANNOUNCEMENTS_LOGO_GREEN_PNG_B64
+          : showPartialStamp
+            ? ANNOUNCEMENTS_LOGO_AMBER_PNG_B64
+            : ANNOUNCEMENTS_LOGO_RED_PNG_B64,
       );
       const stampLogo = await pdf.embedPng(stampBytes);
       const stampW = 72;
@@ -512,9 +578,11 @@ export async function buildPortalTaxInvoicePdf(
     y -= 16;
   }
 
-  const schedule = (input.paymentSchedule || []).filter(
-    (r) => r && Number(r.amount_gbp) > 0,
-  );
+  const schedule = input.hidePaymentPlan
+    ? []
+    : (input.paymentSchedule || []).filter(
+      (r) => r && Number(r.amount_gbp) > 0,
+    );
   if (schedule.length) {
     page.drawText("Payment plan", {
       x: left,
@@ -548,7 +616,7 @@ export async function buildPortalTaxInvoicePdf(
       { x: left, y, size: 9, font: fontBold, color: ink },
     );
     y -= 16;
-  } else if (input.dueDateIso && !input.paid) {
+  } else if (input.dueDateIso && !input.paid && !input.hidePaymentPlan) {
     page.drawText(
       pdfSafeText(
         `Pay in full by ${formatUkDate(input.dueDateIso)} (one-off — invoice total above).`,
@@ -563,19 +631,36 @@ export async function buildPortalTaxInvoicePdf(
     y = stampReserveBottom - 8;
   }
 
-  page.drawText("Manual Payment Details", {
-    x: left,
-    y,
-    size: 10,
-    font: fontBold,
-    color: ink,
-  });
-  y -= 14;
-  page.drawText("Bank details:", { x: left, y, size: 9, font, color: ink });
-  y -= 12;
-  for (const line of BANK_LINES) {
-    page.drawText(line, { x: left, y, size: 9, font, color: ink });
-    y -= 12;
+  // Title + "Bank details:" + bank lines (baselines). Must clear Registered Office at y=28.
+  const manualBlockDepth =
+    14 + 12 + Math.max(0, BANK_LINES.length - 1) * 12;
+  const footerClearance = 42;
+  const manualFitsOnPage1 = y - manualBlockDepth >= footerClearance;
+
+  const drawManualPaymentDetails = (
+    target: typeof page,
+    startY: number,
+  ): number => {
+    let yy = startY;
+    target.drawText("Manual Payment Details", {
+      x: left,
+      y: yy,
+      size: 10,
+      font: fontBold,
+      color: ink,
+    });
+    yy -= 14;
+    target.drawText("Bank details:", { x: left, y: yy, size: 9, font, color: ink });
+    yy -= 12;
+    for (const line of BANK_LINES) {
+      target.drawText(line, { x: left, y: yy, size: 9, font, color: ink });
+      yy -= 12;
+    }
+    return yy;
+  };
+
+  if (manualFitsOnPage1) {
+    drawManualPaymentDetails(page, y);
   }
 
   {
@@ -589,16 +674,21 @@ export async function buildPortalTaxInvoicePdf(
     });
   }
 
-  // Payment advice page
+  // Payment advice page (and Manual Payment Details when page 1 has no room)
   const page2 = pdf.addPage([595.28, 841.89]);
+  let y2 = height - 80;
+  if (!manualFitsOnPage1) {
+    y2 = drawManualPaymentDetails(page2, y2);
+    y2 -= 24;
+  }
   page2.drawText("PAYMENT ADVICE", {
     x: left,
-    y: height - 80,
+    y: y2,
     size: 16,
     font: fontBold,
     color: ink,
   });
-  let y2 = height - 120;
+  y2 -= 40;
   page2.drawText("To: ClubSENsational", { x: left, y: y2, size: 9, font, color: ink });
   y2 -= 12;
   for (const line of [
@@ -623,6 +713,37 @@ export async function buildPortalTaxInvoicePdf(
     page2.drawText(label, { x: left, y: y2, size: 9, font, color: muted });
     page2.drawText(String(val), { x: left + 120, y: y2, size: 9, font, color: ink });
     y2 -= 16;
+  }
+  const monthRows = (input.paymentAdviceMonths || []).filter(
+    (r) => r && r.label && Number(r.amountGbp) > 0,
+  );
+  if (monthRows.length) {
+    y2 -= 6;
+    page2.drawText("Monthly invoices (sessions in each month):", {
+      x: left,
+      y: y2,
+      size: 8.5,
+      font: fontBold,
+      color: ink,
+    });
+    y2 -= 14;
+    for (const row of monthRows.slice(0, 12)) {
+      page2.drawText(pdfSafeText(row.label), {
+        x: left + 8,
+        y: y2,
+        size: 8,
+        font,
+        color: muted,
+      });
+      page2.drawText(money(row.amountGbp), {
+        x: left + 200,
+        y: y2,
+        size: 8,
+        font,
+        color: ink,
+      });
+      y2 -= 11;
+    }
   }
   page2.drawText("Enter the amount you are paying above", {
     x: left,

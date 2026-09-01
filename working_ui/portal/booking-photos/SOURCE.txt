@@ -1,0 +1,15 @@
+Photos copied from www.clubsensational.org (same assets as the public website):
+- aquatic.jpg          ← Swimming-8
+- climbing.jpg         ← Climbing-session
+- physical.webp        ← fitness-clubsensational
+- multi.jpg            ← table session photo (DSC_0961, Aug 2026); also Activities pane on Intensive
+- multi-swim.jpg       ← splash Swimming-13 (wp-content/uploads/2024/08/Swimming-13-e1723544978588.jpg) — Multi swimming pane
+- bespoke.jpg          ← ClubSENsational-1to1-session-1
+- daycentre.jpg        ← hub room photo (IMG_9741, Aug 2026)
+- intensive-swim.jpg   ← pool lesson with visuals (IMG_4631, Aug 2026)
+- intensive-climb.jpg  ← splash page climb-03 (wp-content/uploads/2024/08/climb-03-e1723461724172.jpg)
+- counselling.jpg      ← /counselling/ page hero (wp-content/uploads/2024/11/3-e1732384925820.jpg)
+
+Card layouts:
+- Multi-Activity: diagonal split — multi.jpg (Land) + multi-swim.jpg / Swimming-13 (Swimming)
+- Intensive: triple — intensive-swim / intensive-climb / multi.jpg (Activities)

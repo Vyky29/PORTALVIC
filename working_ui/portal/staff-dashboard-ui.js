@@ -766,7 +766,11 @@
       grid.setAttribute('data-session-count', String(count));
       if(!count){
         applyTodayGridSizing(grid, 0);
-        const preview = dashboardData && dashboardData.portalTodayNextSessionPreview;
+        const preview = (dashboardData && dashboardData.portalTodayNextSessionPreview
+          && typeof portalIsViewingLiveCalendarToday === 'function'
+          && portalIsViewingLiveCalendarToday())
+          ? dashboardData.portalTodayNextSessionPreview
+          : null;
         const loading = !!(dashboardData && dashboardData.portalIdentityResolved === false);
         const sid = String(
           (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
@@ -865,8 +869,12 @@
         const card = document.createElement('button');
         card.type = 'button';
         const reviewCls = sessionReviewRowClass(item);
-        const segCls = (Array.isArray(item.segments) && item.segments.length) ? ' session-card--segments' : '';
-        card.className = 'session-card' + (item.kind === 'available' ? ' session-card--available' : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '') + (reviewCls ? ' ' + reviewCls : '') + segCls;
+        const hasSegs = Array.isArray(item.segments) && item.segments.length;
+        const segCls = hasSegs ? ' session-card--segments' : '';
+        const dcPaxCls = hasSegs && typeof portalDayCentreSpecialCardAccentClass === 'function'
+          ? portalDayCentreSpecialCardAccentClass(item)
+          : '';
+        card.className = 'session-card' + (item.kind === 'available' ? ' session-card--available' : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '') + (reviewCls ? ' ' + reviewCls : '') + segCls + dcPaxCls;
         card.setAttribute('role', 'listitem');
         if(item.sessionKey) card.setAttribute('data-session-key', String(item.sessionKey));
         const poolAria = (item.areaLabel && String(item.areaLabel).trim())
@@ -2167,7 +2175,7 @@
       const sid = String(staffId || '').trim().toLowerCase();
       if(!sid) return out;
       const y = Number(dashboardData.termCalendarYear) || new Date().getFullYear();
-      const months = Array.isArray(dashboardData.termCalendarMonths) ? dashboardData.termCalendarMonths : [5, 6];
+      const months = Array.isArray(dashboardData.termCalendarMonths) ? dashboardData.termCalendarMonths : [7, 8, 9, 10, 11];
       const halfWeeks = dashboardData.termHalfTermWeekStarts || [];
       const firstDomMap = dashboardData.termCalendarFirstDom || {};
       const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
@@ -2578,6 +2586,23 @@
       const baseRealTerm = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
       const endMap = {};
       const fbMap = {};
+      /* Cache per-day session lists — rebuild used to re-scan sessionsModel + overrides ~N times. */
+      const relCache = Object.create(null);
+      function termRelForDate(dayWord, key, isRealFn){
+        const ck = String(dayWord || '') + '\0' + String(key || '');
+        if(Object.prototype.hasOwnProperty.call(relCache, ck)) return relCache[ck];
+        const rel = typeof portalBaseClientSessionsForCalendarDate === 'function'
+          ? portalBaseClientSessionsForCalendarDate(dayWord, key, staffId, isRealFn)
+          : (sessionsModel || []).filter(s =>
+            String(s.staffId || '').toLowerCase() === staffId &&
+            String(s.day || '').trim() === dayWord &&
+            isRealFn(s) &&
+            (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
+              || portalSessionSpreadsheetRowMatchesCalendarDate(s, key, dayWord))
+          );
+        relCache[ck] = rel;
+        return rel;
+      }
       const viewFrom = dashboardData.termDashboardCalendarFrom
         || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.fromIso())
         || String(t.termResumeDate || '2026-06-01').slice(0, 10);
@@ -2611,15 +2636,7 @@
           const cid = String(s.clientId || '').toLowerCase();
           return Boolean(cid && cid !== 'closed' && cid !== 'available');
         };
-        const relAll = typeof portalBaseClientSessionsForCalendarDate === 'function'
-          ? portalBaseClientSessionsForCalendarDate(dayWord, key, staffId, isReal)
-          : (sessionsModel || []).filter(s =>
-            String(s.staffId || '').toLowerCase() === staffId &&
-            String(s.day || '').trim() === dayWord &&
-            isReal(s) &&
-            (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
-              || portalSessionSpreadsheetRowMatchesCalendarDate(s, key, dayWord))
-          );
+        const relAll = termRelForDate(dayWord, key, isReal);
         const relFb = typeof portalTermFeedbackSessionsForDate === 'function'
           ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
           : relAll;
@@ -2713,15 +2730,7 @@
           const cid = String(s.clientId || '').toLowerCase();
           return Boolean(cid && cid !== 'closed' && cid !== 'available');
         };
-        const relAllExtra = typeof portalBaseClientSessionsForCalendarDate === 'function'
-          ? portalBaseClientSessionsForCalendarDate(dayWord, isoKey, staffId, isRealExtra)
-          : (sessionsModel || []).filter(function(s){
-            return String(s.staffId || '').toLowerCase() === staffId &&
-              String(s.day || '').trim() === dayWord &&
-              isRealExtra(s) &&
-              (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
-                || portalSessionSpreadsheetRowMatchesCalendarDate(s, isoKey, dayWord));
-          });
+        const relAllExtra = termRelForDate(dayWord, isoKey, isRealExtra);
         const relFbExtra = typeof portalTermFeedbackSessionsForDate === 'function'
           ? portalTermFeedbackSessionsForDate(dayWord, isoKey, staffId, isRealExtra)
           : relAllExtra;
@@ -3267,7 +3276,7 @@
         wl.innerHTML = (dashboardData.week || []).map(renderWeekRowHtml).join('');
       }
       const termTitle = document.getElementById('termSheetTitle');
-      if(termTitle) termTitle.textContent = dashboardData.termName || 'Summer Term 2026';
+      if(termTitle) termTitle.textContent = dashboardData.termName || 'Autumn Term 2026';
       renderTermCalendarGrid();
       renderQuickMenuSetupVisibility();
       if(typeof portalRefreshDashboardParticipantPhotos === 'function'){
@@ -4457,6 +4466,21 @@
       renderClientServiceButtons([]);
       syncClientSwimTermReviewButton(item);
       openSheet('clientSheet');
+      // Handheld used to skip clients_info load — ensure + refresh when embed arrives.
+      try{
+        if(typeof portalStaffEnsureDeferredDashboardScripts === 'function'){
+          void portalStaffEnsureDeferredDashboardScripts().then(function(){
+            if(currentOpenClientItem !== item) return;
+            if(typeof portalApplyClientsInfoToNotes === 'function') portalApplyClientsInfoToNotes();
+            const refreshed = resolveClientGeneralInfoText(item);
+            setClientInfoFormattedBody('clientGeneral', refreshed, 'No general information available.');
+            const genSheet = document.getElementById('clientGeneralSheet');
+            if(genSheet && genSheet.classList.contains('open')){
+              setClientInfoFormattedBody('clientGeneral', refreshed, 'No general information available.');
+            }
+          });
+        }
+      }catch(_){}
       const cs = document.getElementById('clientSheet');
       if(cs) cs.classList.toggle('client-sheet--roster-entry', !!item.directoryProfile);
       const qaDock = document.getElementById('dockClientQuickActions');

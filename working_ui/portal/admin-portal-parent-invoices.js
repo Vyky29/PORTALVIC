@@ -22,7 +22,9 @@
 
   var state = {
     filter: 'all',
+    methodFilter: 'all',
     amountPeriod: 'autumn',
+    clientQuery: '',
     invoices: [],
     meta: {},
     searchHits: [],
@@ -281,29 +283,255 @@
     });
   }
 
-  function statusChip(payment, share) {
+  function paymentStatusLabel(payment) {
+    var pay = String(payment || 'unpaid').toLowerCase();
+    if (pay === 'partial') return 'partially paid';
+    if (pay === 'pending_confirmation') return 'pending confirmation';
+    if (pay === 'awaiting_office_payment') return 'awaiting office confirmation';
+    return pay.replace(/_/g, ' ');
+  }
+
+  function statusChip(payment, share, inv) {
     var pay = String(payment || 'unpaid');
     var sh = String(share || 'hidden');
-    /* Green = paid only; orange = unpaid only. Everything else uses neutral tones. */
+    /* Green = paid; soft green = partial (flexi half paid); orange = unpaid only. */
     var payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other';
     if (pay === 'paid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--paid';
     else if (pay === 'unpaid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--unpaid';
-    else if (pay === 'pending_confirmation') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--pending';
-    else if (pay === 'partial') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--pending';
+    else if (pay === 'pending_confirmation' || pay === 'awaiting_office_payment') {
+      payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--pending';
+    } else if (pay === 'partial') {
+      payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--partial';
+    }
     var shareCls =
       'pp-inv-acc__pay-chip ' +
       (sh === 'ready' ? 'pp-inv-acc__pay-chip--shared' : 'pp-inv-acc__pay-chip--hidden');
+    var tip = paymentStatusLabel(pay);
+    if (pay === 'partial') {
+      var nextTip = nextUnpaidInstalment(inv);
+      var nextTipDue = nextTip ? instalmentDueIso(nextTip.due_date) : '';
+      tip = instalmentIsCollectingNow(nextTipDue)
+        ? 'One or more instalments paid; balance due now'
+        : 'One or more instalments paid; next half scheduled (not due yet)';
+    }
     return (
       '<span class="' +
       payCls +
+      '" title="' +
+      esc(tip) +
       '">' +
-      esc(pay.replace(/_/g, ' ')) +
+      esc(paymentStatusLabel(pay)) +
       '</span> ' +
       '<span class="' +
       shareCls +
       '">' +
       esc(sh) +
       '</span>'
+    );
+  }
+
+  function nextUnpaidInstalment(inv) {
+    var rows = scheduleRows(inv);
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i].status || 'pending').toLowerCase() !== 'paid') return rows[i];
+    }
+    return null;
+  }
+
+  function amountPaidGbp(inv) {
+    var fromField = Number(inv && inv.amount_paid_gbp);
+    if (Number.isFinite(fromField) && fromField > 0) return Math.round(fromField * 100) / 100;
+    var rows = scheduleRows(inv);
+    if (!rows.length) return 0;
+    return (
+      Math.round(
+        rows.reduce(function (s, r) {
+          return s + (String(r.status || '').toLowerCase() === 'paid' ? Number(r.amount_gbp) || 0 : 0);
+        }, 0) * 100,
+      ) / 100
+    );
+  }
+
+  function invoiceAmountBlockHtml(inv) {
+    var total = Number(inv.amount_gbp) || 0;
+    var paid = amountPaidGbp(inv);
+    var pay = String(inv.payment_status || 'unpaid').toLowerCase();
+    var remaining = Math.max(0, Math.round((total - paid) * 100) / 100);
+    var sched = scheduleRows(inv);
+    var nextInst = nextUnpaidInstalment(inv);
+    var nextAmt = nextInst ? Number(nextInst.amount_gbp) || 0 : 0;
+    var nextDueIso = nextInst ? instalmentDueIso(nextInst.due_date) : '';
+    var nextIsDueNow = instalmentIsCollectingNow(nextDueIso);
+    var html =
+      '<div><span class="muted">Amount</span><br><strong>' +
+      esc(formatMoney(total)) +
+      '</strong></div>';
+    if (
+      pay !== 'paid' &&
+      nextAmt > 0.009 &&
+      sched.length >= 2 &&
+      Math.abs(nextAmt - total) > 0.009
+    ) {
+      if (nextIsDueNow) {
+        html +=
+          '<div style="margin-top:6px;font-size:12px;line-height:1.4;min-width:0;overflow-wrap:break-word;color:#9a3412">' +
+          '<strong>Due now</strong> ' +
+          esc(formatMoney(nextAmt)) +
+          '<div class="muted" style="font-size:11px;margin-top:2px;color:#64748b">Later instalments stay hidden until due</div>' +
+          '</div>';
+      } else {
+        html +=
+          '<div style="margin-top:6px;font-size:12px;line-height:1.4;min-width:0;overflow-wrap:break-word;color:#475569">' +
+          '<strong>Next half</strong> ' +
+          esc(formatMoney(nextAmt)) +
+          (nextDueIso ? ' · ' + esc(formatDate(nextDueIso)) : '') +
+          '<div class="muted" style="font-size:11px;margin-top:2px;color:#64748b">Scheduled — not due yet</div>' +
+          '</div>';
+      }
+    }
+    if (pay === 'partial' || (paid > 0 && pay !== 'paid' && remaining > 0.009)) {
+      html +=
+        '<div class="pp-inv-acc__paid-split" style="margin-top:6px;font-size:12px;line-height:1.4;min-width:0;overflow-wrap:break-word">' +
+        '<div style="color:#065f46"><strong>Paid</strong> ' +
+        esc(formatMoney(paid)) +
+        '</div>';
+      if (nextIsDueNow) {
+        html +=
+          '<div style="color:#9a3412"><strong>Still due</strong> ' +
+          esc(formatMoney(remaining)) +
+          '</div>';
+      } else {
+        html +=
+          '<div style="color:#475569"><strong>Balance scheduled</strong> ' +
+          esc(formatMoney(remaining)) +
+          (nextDueIso ? ' · ' + esc(formatDate(nextDueIso)) : '') +
+          '</div>';
+      }
+      html += '</div>';
+    } else if (pay === 'paid') {
+      html +=
+        '<div style="margin-top:4px;font-size:11px;color:#065f46;min-width:0;overflow-wrap:break-word">Fully paid' +
+        (inv.paid_via ? ' · ' + esc(String(inv.paid_via)) : '') +
+        '</div>';
+    }
+    return html;
+  }
+
+  /** YYYY-MM-DD local today for instalment due vs scheduled. */
+  function todayIsoLocal() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+
+  function instalmentDueIso(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return '';
+    var m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+    return m ? m[1] : '';
+  }
+
+  /** Whole days until due (negative = overdue). Null if no date. */
+  function daysUntilDueIso(dueIso) {
+    if (!dueIso) return null;
+    var a = Date.parse(todayIsoLocal() + 'T12:00:00');
+    var b = Date.parse(dueIso + 'T12:00:00');
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+    return Math.round((b - a) / 86400000);
+  }
+
+  /**
+   * Current unpaid half is "due now" for office when overdue, due today, or
+   * within 7 days (same window as parent hub pulse). Far-future halves
+   * (e.g. Oct while collecting Aug) stay scheduled — not Due.
+   */
+  function instalmentIsCollectingNow(dueIso) {
+    if (!dueIso) return true;
+    var days = daysUntilDueIso(dueIso);
+    if (days == null) return true;
+    return days <= 7;
+  }
+
+  function instalmentScheduleHtml(inv) {
+    var rows = scheduleRows(inv);
+    if (!rows.length) return '';
+    var invoicePaid = String(inv.payment_status || '').toLowerCase() === 'paid';
+    var invoicePaidAt = inv.paid_at || null;
+    var invoicePaidVia = inv.paid_via || null;
+    var firstUnpaidIdx = -1;
+    if (!invoicePaid) {
+      for (var fi = 0; fi < rows.length; fi++) {
+        if (String(rows[fi].status || 'pending').toLowerCase() !== 'paid') {
+          firstUnpaidIdx = fi;
+          break;
+        }
+      }
+    }
+    var items = rows
+      .map(function (r, i) {
+        var rowPaid = String(r.status || 'pending').toLowerCase() === 'paid';
+        /* Fully paid invoice → every instalment shows Paid (even if schedule row was left pending). */
+        var st = invoicePaid || rowPaid ? 'paid' : 'pending';
+        var label =
+          String(r.label || '').trim() ||
+          'Instalment ' + String(r.seq || i + 1);
+        var due = formatDate(r.due_date);
+        var dueIso = instalmentDueIso(r.due_date);
+        /* Flexi: next unpaid is "Due" in the collect window (due ≤ +7 days).
+           Far-future next half (e.g. Oct while collecting Aug) stays Scheduled. */
+        var isNextUnpaid = st !== 'paid' && i === firstUnpaidIdx;
+        var isCurrentDue = isNextUnpaid && instalmentIsCollectingNow(dueIso);
+        var isScheduledNext = isNextUnpaid && !isCurrentDue;
+        var isLaterHidden = st !== 'paid' && firstUnpaidIdx >= 0 && i > firstUnpaidIdx;
+        var tone =
+          st === 'paid'
+            ? 'color:#065f46;background:#ecfdf5;border-color:#6ee7b7'
+            : isCurrentDue
+              ? 'color:#9a3412;background:#fff7ed;border-color:#fdba74'
+              : isScheduledNext
+                ? 'color:#334155;background:#f1f5f9;border-color:#94a3b8'
+                : 'color:#475569;background:#e2e8f0;border-color:#94a3b8';
+        var stLab = st === 'paid'
+          ? 'Paid'
+          : isCurrentDue
+            ? 'Due'
+            : isScheduledNext
+              ? 'Scheduled'
+              : 'Hidden';
+        var paidAtShow = r.paid_at || (invoicePaid ? invoicePaidAt : null);
+        var paidViaShow = r.paid_via || (invoicePaid ? invoicePaidVia : null);
+        var meta = [];
+        if (due) meta.push(due);
+        meta.push(formatMoney(r.amount_gbp));
+        if (st === 'paid' && paidAtShow) meta.push(formatDate(paidAtShow));
+        if (st === 'paid' && paidViaShow) meta.push(String(paidViaShow));
+        if (isScheduledNext || isLaterHidden) meta.push('not due yet');
+        return (
+          '<li class="pp-inv-acc__inst-row" style="min-width:0;margin:0 0 4px;padding:6px 8px;border:1px solid;border-radius:8px;' +
+          tone +
+          '">' +
+          '<div style="display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;justify-content:space-between;min-width:0">' +
+          '<span style="font-weight:700;min-width:0;overflow-wrap:break-word">' +
+          esc(label) +
+          '</span>' +
+          '<span style="font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase">' +
+          esc(stLab) +
+          '</span>' +
+          '</div>' +
+          '<div class="muted" style="font-size:11px;margin-top:2px;min-width:0;overflow-wrap:break-word">' +
+          esc(meta.join(' · ')) +
+          '</div>' +
+          '</li>'
+        );
+      })
+      .join('');
+    return (
+      '<div style="margin-top:10px;min-width:0">' +
+      '<div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;margin-bottom:4px">Instalments</div>' +
+      '<ul class="pp-inv-acc__inst-list" style="list-style:none;margin:0;padding:0;min-width:0">' +
+      items +
+      '</ul></div>'
     );
   }
 
@@ -314,6 +542,7 @@
     var reenrolPay = String(inv.reenrol_payment_method_code || '').toLowerCase();
     var hint = String(inv.payment_method_hint || '').toLowerCase();
     var via = String(inv.paid_via || '').toLowerCase();
+    if (reenrolPay === 'own_way_flexible') return 'Own way';
     if (hint === 'la_funded') return 'LA funded';
     if (
       reenrolPay === 'gocardless' ||
@@ -351,10 +580,177 @@
     return 'Bank Transfer';
   }
 
+  /** Filter key for Re-enrolments payment-method chips (Payments-style). */
+  function methodFilterKey(inv) {
+    var payCode = String((inv && inv.reenrol_payment_method_code) || '').toLowerCase();
+    if (payCode === 'own_way_flexible') return 'own_way';
+    var ch = methodChannelLabel(inv);
+    if (ch === 'GoCardless') return 'gc';
+    if (ch === 'Own way') return 'own_way';
+    if (ch === 'LA funded') return 'la';
+    if (ch === 'Payment link' || ch === 'Apple Pay') return 'link';
+    if (ch === 'Admin / Office') return 'admin';
+    return 'bank';
+  }
+
+  function paymentMethodSelectValue(inv) {
+    var code = String((inv && inv.reenrol_payment_method_code) || '').toLowerCase();
+    if (code === 'gocardless' || code === 'own_way_flexible' || code === 'bank_transfer') return code;
+    var key = methodFilterKey(inv);
+    if (key === 'gc') return 'gocardless';
+    if (key === 'own_way') return 'own_way_flexible';
+    return 'bank_transfer';
+  }
+
+  function paymentScheduleSelectValue(inv) {
+    var code = String((inv && inv.reenrol_payment_schedule_code) || '').toLowerCase();
+    if (
+      code === 'term_3' ||
+      code === 'term_flexi' ||
+      code === 'yearly_1off' ||
+      code === 'monthly_10' ||
+      code === 'monthly_term'
+    ) {
+      return code;
+    }
+    var short = String(schedulePlanShort(inv) || '').toLowerCase();
+    if (/flexi/.test(short)) return 'term_flexi';
+    if (/one-off payment \(year\)/.test(short)) return 'yearly_1off';
+    if (/monthly/.test(short)) return 'monthly_term';
+    if (/one-off payment \(term\)|one per term/.test(short)) return 'term_3';
+    return 'term_flexi';
+  }
+
+  function invoiceRemainingGbp(inv) {
+    var total = Number(inv && inv.amount_gbp);
+    if (!Number.isFinite(total) || total <= 0) return 0;
+    var paid = Number(inv && inv.amount_paid_gbp);
+    if (!Number.isFinite(paid) || paid < 0) {
+      var sched = scheduleRows(inv);
+      paid = 0;
+      for (var i = 0; i < sched.length; i++) {
+        if (String(sched[i].status || '').toLowerCase() === 'paid') {
+          paid += Number(sched[i].amount_gbp) || 0;
+        }
+      }
+    }
+    return Math.max(0, Math.round((total - paid) * 100) / 100);
+  }
+
+  function invoicesForMethodFilter(list) {
+    var mf = String(state.methodFilter || 'all');
+    if (!mf || mf === 'all') return list || [];
+    return (list || []).filter(function (inv) {
+      return methodFilterKey(inv) === mf;
+    });
+  }
+
+  function invoicesForClientQuery(list) {
+    var q = String(state.clientQuery || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
+    if (!q) return list || [];
+    return (list || []).filter(function (inv) {
+      var blob = [
+        inv.participant_display,
+        inv.parent_display,
+        inv.related_client,
+        inv.contact_id,
+        inv.invoice_number,
+        inv.client_key,
+      ]
+        .map(function (x) {
+          return String(x || '').toLowerCase();
+        })
+        .join(' ');
+      return blob.indexOf(q) >= 0;
+    });
+  }
+
+  function paintInvoiceList(host, invoices) {
+    var displayInvoices = invoicesForClientQuery(invoicesForMethodFilter(invoices || []));
+    if (!displayInvoices.length) {
+      var emptyMsg = String(state.clientQuery || '').trim()
+        ? 'No invoices match <strong>' +
+          esc(String(state.clientQuery).trim()) +
+          '</strong> with the current filters. Clear the search or switch Year / Method.'
+        : 'No families match this payment method filter. Try <strong>All</strong> or another method chip.';
+      host.innerHTML =
+        accordionListStyles() +
+        '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">' +
+        emptyMsg +
+        '</p>';
+      return;
+    }
+    host.innerHTML =
+      accordionListStyles() +
+      '<div class="pp-inv-acc" role="list">' +
+      groupInvoicesByDayThenParticipant(displayInvoices).map(dayAccordionHtml).join('') +
+      '</div>';
+    bindRowActions(host);
+    /* When searching a client, open day + person so Mark paid is one click away. */
+    if (String(state.clientQuery || '').trim().length >= 2) {
+      host.querySelectorAll('details.pp-inv-acc__item--day, details.pp-inv-acc__item--pax').forEach(
+        function (d) {
+          d.open = true;
+        },
+      );
+    }
+  }
+
   function scheduleRows(inv) {
     var sched = Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
     return sched.filter(function (r) {
       return r && Number(r.amount_gbp) > 0;
+    });
+  }
+
+  function instalmentMatchKey(due, amount) {
+    var d = String(due || '').slice(0, 10);
+    var a = Math.round((Number(amount) || 0) * 100) / 100;
+    return d + '|' + a.toFixed(2);
+  }
+
+  /**
+   * GoCardless monthly “slice” INV-Ps (Oct/Nov/…) that only exist so GC can collect
+   * each instalment, while the real term invoice already holds the full schedule.
+   * Hide from office counts/cards so TERMLY shows 1 invoice, AUTO year shows 1 per term.
+   */
+  function isScheduleShadowInvoice(inv, siblings) {
+    if (!inv || inv.created_via === 'la_office_auto') return false;
+    var pay = String(inv.payment_status || '').toLowerCase();
+    if (pay === 'void' || pay === 'paid') return false;
+    if (scheduleRows(inv).length > 0) return false;
+    var due = String(inv.due_date || inv.next_instalment_due || '').slice(0, 10);
+    var amt = Number(inv.amount_gbp) || 0;
+    if (!due || !(amt > 0.009)) return false;
+    var key = instalmentMatchKey(due, amt);
+    var id = String(inv.id || '');
+    var list = siblings || [];
+    for (var i = 0; i < list.length; i++) {
+      var sib = list[i];
+      if (String(sib.id || '') === id) continue;
+      var sched = scheduleRows(sib);
+      if (sched.length < 2) continue;
+      for (var j = 0; j < sched.length; j++) {
+        if (instalmentMatchKey(sched[j].due_date, sched[j].amount_gbp) === key) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function isHfYearDraftInvoice(inv) {
+    return /hf_year_draft/i.test(String((inv && inv.ready_by) || ''));
+  }
+
+  function canonicalInvoices(invoices) {
+    var list = invoices || [];
+    return list.filter(function (inv) {
+      if (isHfYearDraftInvoice(inv)) return false;
+      return !isScheduleShadowInvoice(inv, list);
     });
   }
 
@@ -364,7 +760,7 @@
   /**
    * Arrangement:
    * One-off payment (year|term) · Flexi: 2 per term · Flexi: 6 per year ·
-   * GoCardless (one per term ×3 / monthly ×10) · £1.50 / instalment · Own way
+   * GoCardless (one per term / monthly ×N · term) · £1.50 / instalment · Own way
    */
   function schedulePlanShort(inv) {
     var code = String(inv.reenrol_payment_schedule_code || '').toLowerCase();
@@ -380,11 +776,11 @@
       return yearCadence ? 'Flexi: 6 per year' : 'Flexi: 2 per term';
     }
     if (code === 'monthly_10' || code === 'monthly_term') {
-      return 'GoCardless (monthly ×10) · £1.50 / instalment';
+      return 'GoCardless (monthly · term) · £1.50 / instalment';
     }
     if (code === 'term_3') {
       return isGc
-        ? 'GoCardless (one per term ×3) · £1.50 / instalment'
+        ? 'GoCardless (one per term) · £1.50 / instalment'
         : 'One-off payment (term)';
     }
 
@@ -396,15 +792,41 @@
       .join(' ')
       .toLowerCase();
     var notes = String(inv.notes || '').toLowerCase();
-    var hay = blob + ' ' + notes;
+    var readyBy = String(inv.ready_by || '').toLowerCase();
+    var ref = String(inv.reference_text || inv.reference || '').toLowerCase();
+    var hay = blob + ' ' + notes + ' ' + readyBy + ' ' + ref;
     var n = rows.length;
+    /* Office-only H&F year PDFs — not canonical billing (excluded from canonicalInvoices). */
+    if (/hf_year_draft/.test(readyBy)) return '';
+    /* Office funder INV-Ps (LA/NHS) tagged in notes / ready_by. */
+    if (/schedule:monthly_11|_hf_month_/.test(hay)) {
+      return 'Monthly ×11 (Sep–Jul)';
+    }
+    if (/schedule:year_1_bacs_12/.test(hay)) {
+      return 'Year · 12 BACS';
+    }
+    if (/schedule:year_1_monthly_11|_nhs_year_|_ealing_year_|ealing.*11|11 instalments/.test(hay)) {
+      return 'Year · 11 instalments (Sep–Jul)';
+    }
+    if (/schedule:year_1/.test(hay)) {
+      return 'One-off payment (year)';
+    }
+    if (/schedule:term_flexi|flexi\s*2\s*\/\s*term|flexi term/.test(hay)) {
+      return yearCadence ? 'Flexi: 6 per year' : 'Flexi: 2 per term';
+    }
+    if (/schedule:monthly_term|gocardless monthly/.test(hay) || (isGc && n >= 3 && /payment\s*·|september|october|november|december/.test(hay))) {
+      return 'GoCardless (monthly ×' + Math.max(n, 1) + ' · term) · £1.50 / instalment';
+    }
+    if (/schedule:term_3|_hf_term_/.test(hay)) {
+      return 'One-off payment (term)';
+    }
     if (/own way|own arrangement|own_term|minimum prepaid|top-?ups? as you go/.test(hay)) {
       return 'Own way';
     }
     if (!n) return '';
     if (
-      /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year/.test(hay) ||
-      (n === 1 && /\b(year|annual|full year)\b/.test(blob))
+      /yearly_1off|one[\s-]?off.*(year|annual)|full academic year|whole year|academic year 2026/.test(hay) ||
+      (n === 1 && /\b(year|annual|full year)\b/.test(blob + ' ' + ref))
     ) {
       return 'One-off payment (year)';
     }
@@ -414,11 +836,11 @@
     if (n >= 2 && /\b(half|1st|2nd|flexi)\b/.test(hay)) {
       return 'Flexi: 2 per term';
     }
-    if (isGc && n >= 3) return 'GoCardless (monthly ×10) · £1.50 / instalment';
-    if (isGc && n === 1) return 'GoCardless (one per term ×3) · £1.50 / instalment';
+    if (isGc && n >= 3) return 'GoCardless (monthly ×' + n + ' · term) · £1.50 / instalment';
+    if (isGc && n === 1) return 'GoCardless (one per term) · £1.50 / instalment';
     if (!isGc && n === 1) return 'One-off payment (term)';
     if (!isGc) return 'Flexi: 2 per term';
-    return 'GoCardless (monthly ×10) · £1.50 / instalment';
+    return 'GoCardless (monthly ×' + n + ' · term) · £1.50 / instalment';
   }
 
   function isAutoReenrolledInv(inv) {
@@ -522,22 +944,39 @@
     if (plan && !(plan === 'TERMLY' && cadence === 'TERMLY')) {
       html += ' ' + arrangementChipHtml(plan);
     }
-    var rows = scheduleRows(inv);
-    if (rows.length) {
-      var dates = rows
-        .map(function (r) {
-          return formatDate(r.due_date);
-        })
-        .filter(Boolean)
-        .join(' · ');
-      if (dates) {
-        html +=
-          '<div class="muted pp-inv-acc__plan-dates" style="font-size:11px;margin-top:4px;line-height:1.35;min-width:0;overflow-wrap:break-word">' +
-          esc(dates) +
-          '</div>';
+    html += programmeSplitChipsHtml(inv);
+    return html;
+  }
+
+  /**
+   * Year 25/26 crash (day centre) vs afterschools/weekends split — e.g. Patrick
+   * merged crash £300 on Autumn INV-P while Sunday climb stays weekends.
+   */
+  function programmeSplitChipsHtml(inv) {
+    var crash = Number(inv && inv.crash_course_gbp);
+    var after = Number(inv && inv.afterschool_weekend_gbp);
+    var standalone = !!(inv && inv.is_standalone_year_2526);
+    var bits = [];
+    if (standalone) {
+      bits.push(
+        '<span class="pp-inv-acc__prog pp-inv-acc__prog--2526" title="Summer crash / intensive — Year 25/26 (day centre)">Year 25/26 crash</span>',
+      );
+    } else if (Number.isFinite(crash) && crash > 0.009) {
+      bits.push(
+        '<span class="pp-inv-acc__prog pp-inv-acc__prog--2526" title="Crash / intensive portion — Year 25/26 day centre (Raul / Victor)">' +
+          esc('Crash ' + formatMoney(crash) + ' · 25/26 day centre') +
+          '</span>',
+      );
+      if (Number.isFinite(after) && after > 0.009) {
+        bits.push(
+          '<span class="pp-inv-acc__prog pp-inv-acc__prog--weekend" title="Afterschools / weekends (e.g. Sunday climbing)">' +
+            esc('Weekends ' + formatMoney(after)) +
+            '</span>',
+        );
       }
     }
-    return html;
+    if (!bits.length) return '';
+    return ' ' + bits.join(' ');
   }
 
   /**
@@ -674,6 +1113,9 @@
 
   function methodToneClass(label) {
     var s = String(label || '').toLowerCase();
+    if (s.indexOf('own way') >= 0) {
+      return 'pp-inv-acc__method--admin';
+    }
     if (s.indexOf('la funded') >= 0 || s === 'la') {
       return 'pp-inv-acc__method--la';
     }
@@ -879,19 +1321,28 @@
   }
 
   /**
-   * Nested: re-enrolment completion date → participants.
-   * Newest re-enrolment days first; undated at the end.
+   * Nested: re-enrolment / invoice day → participants.
+   * Newest days first; undated at the end.
+   * Same contact keeps ALL their invoices together under their latest day
+   * (so Summer crash + Autumn term both show under Patrick, not split across days).
    */
   function groupInvoicesByDayThenParticipant(invoices) {
+    var byContact = groupInvoicesByParticipant(invoices || []);
     var byDay = Object.create(null);
     var dayOrder = [];
-    (invoices || []).forEach(function (inv) {
-      var key = reenrolDateKey(inv) || '_none';
-      if (!byDay[key]) {
-        byDay[key] = [];
-        dayOrder.push(key);
+    byContact.forEach(function (g) {
+      var best = '';
+      (g.invoices || []).forEach(function (inv) {
+        var k = reenrolDateKey(inv);
+        if (!k) return;
+        if (!best || String(k) > String(best)) best = k;
+      });
+      var dayKey = best || '_none';
+      if (!byDay[dayKey]) {
+        byDay[dayKey] = [];
+        dayOrder.push(dayKey);
       }
-      byDay[key].push(inv);
+      byDay[dayKey].push(g);
     });
     dayOrder.sort(function (a, b) {
       if (a === '_none') return 1;
@@ -899,15 +1350,16 @@
       return String(b).localeCompare(String(a));
     });
     return dayOrder.map(function (key) {
-      var list = byDay[key] || [];
-      var participants = groupInvoicesByParticipant(list);
+      var participants = byDay[key] || [];
       var invIds = Object.create(null);
       var invN = 0;
-      list.forEach(function (inv) {
-        var id = String(inv.id || inv.invoice_number || '');
-        if (!id || invIds[id]) return;
-        invIds[id] = 1;
-        invN += 1;
+      participants.forEach(function (g) {
+        canonicalInvoices(g.invoices || []).forEach(function (inv) {
+          var id = String(inv.id || inv.invoice_number || '');
+          if (!id || invIds[id]) return;
+          invIds[id] = 1;
+          invN += 1;
+        });
       });
       return {
         day: key === '_none' ? 'No re-enrolment date' : formatReenrolDayLabel(key),
@@ -932,6 +1384,16 @@
     return labels.length ? labels.join(' · ') : 'Bank transfer';
   }
 
+  function billingTermSortRank(inv) {
+    var t = String((inv && inv.billing_term) || '')
+      .trim()
+      .toLowerCase();
+    if (t === 'autumn') return 0;
+    if (t === 'spring') return 1;
+    if (t === 'summer') return 2;
+    return 5;
+  }
+
   function invoiceSortRank(inv) {
     var pay = String((inv && inv.payment_status) || 'unpaid').toLowerCase();
     if (pay === 'paid') return 0;
@@ -944,18 +1406,25 @@
 
   function sortInvoicesForDisplay(invoices) {
     return (invoices || []).slice().sort(function (a, b) {
+      /* Term order Autumn → Spring → Summer first (not paid-first). */
+      var ta = billingTermSortRank(a);
+      var tb = billingTermSortRank(b);
+      if (ta !== tb) return ta - tb;
+      /* Earliest due first within the same term. */
+      var da = String(a.due_date || a.next_instalment_due || a.created_at || '');
+      var db = String(b.due_date || b.next_instalment_due || b.created_at || '');
+      if (da !== db) return da.localeCompare(db);
       var ra = invoiceSortRank(a);
       var rb = invoiceSortRank(b);
       if (ra !== rb) return ra - rb;
-      var da = String(a.updated_at || a.due_date || '');
-      var db = String(b.updated_at || b.due_date || '');
-      return db.localeCompare(da);
+      return String(a.invoice_number || '').localeCompare(String(b.invoice_number || ''));
     });
   }
 
   function summaryFilterChip(filter, label, payTone) {
     var cls = 'pp-inv-acc__pay-chip pp-inv-acc__filter-chip';
     if (payTone === 'paid') cls += ' pp-inv-acc__pay-chip--paid';
+    else if (payTone === 'partial') cls += ' pp-inv-acc__pay-chip--partial';
     else if (payTone === 'unpaid') cls += ' pp-inv-acc__pay-chip--unpaid';
     else if (payTone === 'pending') cls += ' pp-inv-acc__pay-chip--pending';
     else if (payTone === 'hidden') cls += ' pp-inv-acc__pay-chip--hidden';
@@ -975,22 +1444,37 @@
 
   function groupStatusSummary(invoices) {
     var unpaid = 0;
+    var partial = 0;
     var paid = 0;
     var pending = 0;
     var hidden = 0;
     var xeroFail = 0;
     var xeroMissing = 0;
-    (invoices || []).forEach(function (inv) {
+    (canonicalInvoices(invoices) || []).forEach(function (inv) {
       /* Office autos have no family payment status chip. */
-      if (inv.created_via === 'la_office_auto' || inv.is_la_office_auto) return;
+      if (inv.created_via === 'la_office_auto') return;
       var pay = String(inv.payment_status || 'unpaid');
       if (pay === 'void') return; /* void chips not shown */
+      var isHidden = String(inv.share_status || '') === 'hidden';
+      if (isHidden) {
+        /* Only count Hidden for re-enrolled clients still in class (future instalments). */
+        var inClass = inv.in_class !== false;
+        var hasReenrol = Boolean(inv.reenrolment_submitted_at);
+        if (inClass && hasReenrol) hidden += 1;
+      }
       if (pay === 'paid') paid += 1;
-      else if (pay === 'pending_confirmation') pending += 1;
-      else unpaid += 1;
-      if (String(inv.share_status || '') === 'hidden') hidden += 1;
-      /* Xero chips: paid Portal INV-Ps only */
-      if (pay !== 'paid') return;
+      else if (pay === 'partial') {
+        /* Flexi: at least one half paid — not "unpaid". */
+        if (!isHidden) partial += 1;
+      } else if (pay === 'pending_confirmation') {
+        /* Pending confirmation is always actionable (even if somehow hidden). */
+        pending += 1;
+      } else if (!isHidden) {
+        /* Unpaid chip = ready/shared only — future monthly/flexi halves stay in Hidden. */
+        unpaid += 1;
+      }
+      /* Xero chips: full or first-instalment paid, not yet in Xero */
+      if (pay !== 'paid' && pay !== 'partial') return;
       if (inv.xero_invoice_id) return;
       if (inv.xero_push_status === 'failed') xeroFail += 1;
       else if (inv.created_via === 'portal' || inv.created_via === 'reenrolment') xeroMissing += 1;
@@ -998,6 +1482,15 @@
     var chips = [];
     if (unpaid) {
       chips.push(summaryFilterChip('unpaid', unpaid + ' unpaid', 'unpaid'));
+    }
+    if (partial) {
+      chips.push(
+        summaryFilterChip(
+          'partial',
+          partial === 1 ? '1 partially paid' : partial + ' partially paid',
+          'partial',
+        ),
+      );
     }
     if (pending) {
       chips.push(summaryFilterChip('pending', pending + ' pending', 'pending'));
@@ -1026,6 +1519,7 @@
 
   function amountPeriodLabel(period) {
     var p = String(period || 'autumn').toLowerCase();
+    if (p === 'year_2526' || p === '2526') return 'Year 25/26';
     if (p === 'year' || p === 'annual') return 'Year 26/27';
     if (p === 'spring') return 'Spring 27';
     if (p === 'summer') return 'Summer 27';
@@ -1034,6 +1528,18 @@
 
   function groupAmountForPeriod(group, period) {
     var p = String(period || state.amountPeriod || 'autumn').toLowerCase();
+    if (p === 'year_2526' || p === '2526') {
+      var crashSum = 0;
+      (group.invoices || []).forEach(function (inv) {
+        var c = Number(inv.crash_course_gbp);
+        if (Number.isFinite(c) && c > 0) crashSum += c;
+        else if (inv.is_standalone_year_2526) {
+          var a = Number(inv.amount_gbp);
+          if (Number.isFinite(a)) crashSum += a;
+        }
+      });
+      return crashSum > 0 ? crashSum : null;
+    }
     if (p === 'year' || p === 'annual') return Number(group.booked_annual_gbp);
     if (p === 'spring') return Number(group.booked_spring_gbp);
     if (p === 'summer') return Number(group.booked_summer_gbp);
@@ -1049,7 +1555,20 @@
     var invTotal = groupTotalGbp(group.invoices || []);
     var termLabel = amountPeriodLabel(period);
     var parts = [];
-    if (period === 'year' || period === 'annual') {
+    if (period === 'year_2526' || period === '2526') {
+      var crashAmt = Number(selected);
+      if (!(Number.isFinite(crashAmt) && crashAmt > 0) && invTotal > 0) crashAmt = invTotal;
+      if (Number.isFinite(crashAmt) && crashAmt > 0) {
+        parts.push(
+          '<span class="pp-inv-acc__term">' +
+            esc(termLabel) +
+            '</span><span class="pp-inv-acc__amt">' +
+            esc(formatMoney(crashAmt)) +
+            '</span>' +
+            '<span class="pp-inv-acc__year" title="Summer crash / intensive — day centre pot (Raul / Victor)">Crash / intensive</span>',
+        );
+      }
+    } else if (period === 'year' || period === 'annual') {
       var yearAmt = Number.isFinite(selected) && selected > 0 ? selected : annual;
       if (!(Number.isFinite(yearAmt) && yearAmt > 0) && invTotal > 0) yearAmt = invTotal;
       if (Number.isFinite(yearAmt) && yearAmt > 0) {
@@ -1082,27 +1601,42 @@
     opts = opts || {};
     var showHoldOnce = !!opts.showHoldOnce;
     var id = esc(inv.id);
+    var nextForPay = nextUnpaidInstalment(inv);
+    var nextForPayDue = nextForPay ? instalmentDueIso(nextForPay.due_date) : '';
+    var nextHalfNotDueYet = !!(nextForPayDue && !instalmentIsCollectingNow(nextForPayDue));
+    var payStatus = String(inv.payment_status || '').toLowerCase();
+    var hasGreenReport = !!inv.parent_reported_paid_at;
     var reportBits = [];
     if (inv.parent_reported_paid_at) {
       reportBits.push('Reported ' + formatDate(inv.parent_reported_paid_at));
+      if (nextHalfNotDueYet) reportBits.push('early — not due yet');
     }
     if (inv.parent_reported_ref) reportBits.push('ref ' + inv.parent_reported_ref);
     if (inv.parent_reported_method) reportBits.push(inv.parent_reported_method);
     var linkBits = [];
     if (inv.gocardless_url) linkBits.push('GoCardless');
     if (inv.payment_link_url) linkBits.push('Payment link');
-    var confirmBtn =
-      inv.payment_status === 'pending_confirmation'
-        ? '<button type="button" class="btn btn--sm btn--primary" data-inv-act="paid" data-inv-id="' +
-          id +
-          '">Confirm paid</button> '
-        : inv.payment_status !== 'paid'
-          ? '<button type="button" class="btn btn--sm btn--sec" data-inv-act="paid" data-inv-id="' +
-            id +
-            '">Mark paid</button> '
-          : '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="unpaid" data-inv-id="' +
-            id +
-            '">Mark unpaid</button> ';
+    /* Confirm paid only when parent pressed green AND the next half is in the collect window. */
+    var showConfirmPaid =
+      payStatus === 'pending_confirmation' && hasGreenReport && !nextHalfNotDueYet;
+    var confirmBtn = '';
+    if (payStatus === 'paid') {
+      confirmBtn =
+        '<button type="button" class="btn btn--sm btn--ghost" data-inv-act="unpaid" data-inv-id="' +
+        id +
+        '">Mark unpaid</button> ';
+    } else if (showConfirmPaid) {
+      confirmBtn =
+        '<button type="button" class="btn btn--sm btn--sec" data-inv-act="paid" data-inv-id="' +
+        id +
+        '">Mark paid</button> ';
+    } else {
+      /* Soft-hold due date is place-release timing, not “cannot pay yet” — always Mark paid. */
+      confirmBtn =
+        '<button type="button" class="btn btn--sm btn--sec" data-inv-act="paid" data-inv-id="' +
+        id +
+        '" title="Mark this invoice (or next instalment) as paid — bank / office">Mark paid</button> ';
+    }
     var hold = inv.payment_hold || null;
     var holdChip = '';
     var holdBtns = '';
@@ -1175,20 +1709,27 @@
         '…' +
         (inv.xero_payment_id ? ' · paid in Xero' : '') +
         '</div>'
-      : inv.payment_status === 'paid' && inv.xero_push_status === 'failed'
+      : (inv.payment_status === 'paid' || inv.payment_status === 'partial') &&
+          inv.xero_push_status === 'failed'
         ? '<div class="muted" style="font-size:11px;color:#b91c1c">Xero push failed' +
           (inv.xero_push_error
             ? ': ' + esc(String(inv.xero_push_error).slice(0, 60))
             : '') +
           '</div>'
-        : inv.payment_status === 'paid' &&
+        : (inv.payment_status === 'paid' || inv.payment_status === 'partial') &&
             (inv.created_via === 'portal' || inv.created_via === 'reenrolment')
-          ? '<div class="muted" style="font-size:11px;color:#92400e">Paid · not in Xero yet</div>'
+          ? '<div class="muted" style="font-size:11px;color:#92400e">' +
+            (inv.payment_status === 'partial' ? 'Partial' : 'Paid') +
+            ' · not in Xero yet</div>'
           : '';
 
     return (
       '<article class="pp-inv-acc__card' +
-      (inv.payment_status === 'paid' ? ' pp-inv-acc__card--paid' : '') +
+      (inv.payment_status === 'paid'
+        ? ' pp-inv-acc__card--paid'
+        : inv.payment_status === 'partial'
+          ? ' pp-inv-acc__card--partial'
+          : '') +
       '" data-invoice-id="' +
       id +
       '">' +
@@ -1216,20 +1757,36 @@
         : '') +
       '</div></div>' +
       '<div class="pp-inv-acc__col">' +
-      '<div><span class="muted">Amount</span><br><strong>' +
-      esc(formatMoney(inv.amount_gbp)) +
-      '</strong></div>' +
-      '<div style="margin-top:8px"><span class="muted">Due</span><br>' +
-      esc(formatDate(inv.due_date)) +
-      '</div>' +
+      invoiceAmountBlockHtml(inv) +
+      (function () {
+        var dueIsoShow = instalmentDueIso(inv.next_instalment_due || inv.due_date);
+        var dueCollecting = instalmentIsCollectingNow(dueIsoShow);
+        var dueLabel =
+          String(inv.payment_status || '').toLowerCase() === 'partial' && dueIsoShow && !dueCollecting
+            ? 'Scheduled'
+            : 'Due';
+        return (
+          '<div style="margin-top:8px"><span class="muted">' +
+          dueLabel +
+          '</span><br>' +
+          esc(formatDate(inv.next_instalment_due || inv.due_date)) +
+          (String(inv.payment_status || '').toLowerCase() === 'partial' && inv.next_instalment_due
+            ? '<div class="muted" style="font-size:11px;margin-top:2px">' +
+              (dueCollecting ? 'Next instalment' : 'Next half — not due yet') +
+              '</div>'
+            : '') +
+          '</div>'
+        );
+      })() +
       '<div style="margin-top:8px"><span class="muted">Type · funding · arrangement</span><br>' +
       methodChipsHtml(inv) +
       '</div>' +
+      instalmentScheduleHtml(inv) +
       '<div style="margin-top:8px"><span class="muted">VAT</span><br>' +
       esc(vatDisplayLabel(inv)) +
       '</div>' +
       '<div style="margin-top:8px">' +
-      statusChip(inv.payment_status, inv.share_status) +
+      statusChip(inv.payment_status, inv.share_status, inv) +
       '</div></div>' +
       '<div class="pp-inv-acc__col pp-inv-acc__actions">' +
       (inv.pdf_url
@@ -1372,7 +1929,7 @@
   }
 
   function participantAccordionHtml(group) {
-    var invoices = sortInvoicesForDisplay(group.invoices || []);
+    var invoices = sortInvoicesForDisplay(canonicalInvoices(group.invoices || []));
     var realInvoices = invoices.filter(function (inv) {
       return inv.created_via !== 'la_office_auto';
     });
@@ -1417,6 +1974,15 @@
     var countLabel = group.is_la_office_auto && !n
       ? 'Auto re-enrolled · no INV-P'
       : String(n) + ' invoice' + (n === 1 ? '' : 's');
+    var fundNow = fundingCategoryLabel(invoices[0] || {});
+    var fundVal =
+      fundNow === 'Funds from the LA'
+        ? 'direct_payments'
+        : fundNow === 'LA managed' || fundNow === 'NHS managed'
+          ? 'la_managed'
+          : 'private';
+    var payVal = paymentMethodSelectValue(invoices[0] || {});
+    var schedVal = paymentScheduleSelectValue(invoices[0] || {});
     return (
       '<details class="pp-inv-acc__item pp-inv-acc__item--pax" data-contact-id="' +
       contactId +
@@ -1443,6 +2009,75 @@
       '</span>' +
       '</summary>' +
       '<div class="pp-inv-acc__body">' +
+      '<div class="pp-inv-acc__funding-edit" style="margin:0 0 12px;padding:10px 12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0">' +
+      '<label class="muted" style="font-size:12px;font-weight:700;min-width:0" for="ppFund-' +
+      contactId +
+      '">Re-enrol funding</label>' +
+      '<select class="sel" id="ppFund-' +
+      contactId +
+      '" data-reenrol-funding-select="' +
+      contactId +
+      '" style="max-width:16rem;min-width:0">' +
+      '<option value="private"' +
+      (fundVal === 'private' ? ' selected' : '') +
+      '>Privately (20% VAT)</option>' +
+      '<option value="direct_payments"' +
+      (fundVal === 'direct_payments' ? ' selected' : '') +
+      '>Direct Payments / Funds from the LA (EXEMPT)</option>' +
+      '<option value="la_managed"' +
+      (fundVal === 'la_managed' ? ' selected' : '') +
+      '>LA managed (invoice to LA)</option>' +
+      '</select>' +
+      '<button type="button" class="btn btn--sm btn--sec" data-reenrol-funding-save="' +
+      contactId +
+      '">Update funding</button>' +
+      '<label class="muted" style="font-size:12px;font-weight:700;min-width:0;margin-left:4px" for="ppPay-' +
+      contactId +
+      '">Method of payment</label>' +
+      '<select class="sel" id="ppPay-' +
+      contactId +
+      '" data-reenrol-pay-select="' +
+      contactId +
+      '" style="max-width:18rem;min-width:0">' +
+      '<option value="bank_transfer"' +
+      (payVal === 'bank_transfer' ? ' selected' : '') +
+      '>Bank Transfer / Apple Pay</option>' +
+      '<option value="gocardless"' +
+      (payVal === 'gocardless' ? ' selected' : '') +
+      '>GoCardless</option>' +
+      '<option value="own_way_flexible"' +
+      (payVal === 'own_way_flexible' ? ' selected' : '') +
+      '>Own way (prepaid buffer)</option>' +
+      '</select>' +
+      '<button type="button" class="btn btn--sm btn--sec" data-reenrol-pay-save="' +
+      contactId +
+      '">Update payment method</button>' +
+      '<label class="muted" style="font-size:12px;font-weight:700;min-width:0;margin-left:4px" for="ppSched-' +
+      contactId +
+      '">Payment plan</label>' +
+      '<select class="sel" id="ppSched-' +
+      contactId +
+      '" data-reenrol-sched-select="' +
+      contactId +
+      '" style="max-width:18rem;min-width:0">' +
+      '<option value="term_3"' +
+      (schedVal === 'term_3' ? ' selected' : '') +
+      '>One-off per term</option>' +
+      '<option value="term_flexi"' +
+      (schedVal === 'term_flexi' ? ' selected' : '') +
+      '>Flexi (2 per term)</option>' +
+      '<option value="yearly_1off"' +
+      (schedVal === 'yearly_1off' ? ' selected' : '') +
+      '>One-off (year)</option>' +
+      '<option value="monthly_term"' +
+      (schedVal === 'monthly_term' || schedVal === 'monthly_10' ? ' selected' : '') +
+      '>Monthly (GC · term)</option>' +
+      '</select>' +
+      '<button type="button" class="btn btn--sm btn--sec" data-reenrol-sched-save="' +
+      contactId +
+      '">Update payment plan</button>' +
+      '<span class="muted" style="font-size:11px;min-width:0;overflow-wrap:break-word;flex:1 1 100%">Funding changes VAT on unpaid INV-Ps. Method updates Bank / GC / Own way. Payment plan rebuilds unpaid or partial INV-P instalments (keeps amount already paid; enter Tide total in the confirm if they paid more than one half).</span>' +
+      '</div>' +
       '<div class="pp-inv-acc__cards">' +
       cards +
       '</div></div></details>'
@@ -1454,13 +2089,18 @@
     var dayKey = dayGroup.day_key || '';
     var participants = dayGroup.participants || [];
     var paxN = dayGroup.participant_count != null ? dayGroup.participant_count : participants.length;
-    var invN = dayGroup.invoice_count != null ? dayGroup.invoice_count : 0;
     var allInvs = [];
     participants.forEach(function (g) {
-      (g.invoices || []).forEach(function (inv) {
+      canonicalInvoices(g.invoices || []).forEach(function (inv) {
         allInvs.push(inv);
       });
     });
+    var invN =
+      dayGroup.invoice_count != null
+        ? dayGroup.invoice_count
+        : allInvs.filter(function (inv) {
+            return inv.created_via !== 'la_office_auto';
+          }).length;
     var sub =
       'Re-enrolled · ' +
       String(paxN) +
@@ -1543,10 +2183,15 @@
       '.pp-inv-acc__arrange--gc{color:#9d174d;background:#fce7f3;border-color:#f9a8d4}' +
       '.pp-inv-acc__arrange--own{color:#fff;background:#0f172a;border-color:#020617}' +
       '.pp-inv-acc__arrange--other{color:#5b21b6;background:#ede9fe;border-color:#c4b5fd}' +
+      '.pp-inv-acc__prog{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;display:inline-flex;align-items:center;max-width:100%;overflow-wrap:break-word;border:1px solid transparent}' +
+      '.pp-inv-acc__prog--2526{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
+      '.pp-inv-acc__prog--weekend{color:#1e3a8a;background:#dbeafe;border-color:#93c5fd}' +
       '.pp-inv-acc__plan-dates{max-width:100%}' +
       '.pp-inv-acc__pay-chip{font-size:11px;font-weight:700;letter-spacing:.01em;border-radius:999px;padding:4px 10px;flex:0 0 auto;max-width:100%;overflow-wrap:break-word;border:1px solid transparent;display:inline-flex;align-items:center}' +
       '.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background:#ffedd5;border-color:#fb923c}' +
       '.pp-inv-acc__pay-chip--pending{color:#9a3412;background:#fed7aa;border-color:#fb923c}' +
+      /* Soft green — less saturated than full paid (#bbf7d0 / #047857). */
+      '.pp-inv-acc__pay-chip--partial{color:#15803d;background:#ecfdf5;border-color:#86efac}' +
       '.pp-inv-acc__pay-chip--shared{color:#047857;background:#bbf7d0;border-color:#34d399}' +
       '.pp-inv-acc__pay-chip--hidden{color:#475569;background:#e2e8f0;border-color:#94a3b8}' +
       '.pp-inv-acc__pay-chip--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
@@ -1558,14 +2203,28 @@
       '.pp-inv-acc__cards{display:flex;flex-direction:column;gap:10px;min-width:0}' +
       '.pp-inv-acc__card{border:1px solid #e2eaf0;border-radius:8px;padding:10px;background:#fff;min-width:0}' +
       '.pp-inv-acc__card--paid{border-color:#86efac;background:#f0fdf4}' +
+      '.pp-inv-acc__card--partial{border-color:#a7f3d0;background:#f7fef9}' +
       '.pp-inv-acc__filter-chip{-webkit-appearance:none;appearance:none;margin:0;cursor:pointer;font:inherit;line-height:inherit}' +
       '.pp-inv-acc__filter-chip:hover{filter:brightness(.97)}' +
       'button.pp-inv-acc__pay-chip--paid,.pp-inv-acc__pay-chip--paid{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
       'button.pp-inv-acc__pay-chip--shared,.pp-inv-acc__pay-chip--shared{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
       'button.pp-inv-acc__pay-chip--unpaid,.pp-inv-acc__pay-chip--unpaid{color:#9a3412;background-color:#ffedd5;background:#ffedd5;border:1px solid #fb923c}' +
       'button.pp-inv-acc__pay-chip--pending,.pp-inv-acc__pay-chip--pending{color:#9a3412;background-color:#fed7aa;background:#fed7aa;border:1px solid #fb923c}' +
+      'button.pp-inv-acc__pay-chip--partial,.pp-inv-acc__pay-chip--partial{color:#15803d;background-color:#ecfdf5;background:#ecfdf5;border:1px solid #86efac}' +
       'button.pp-inv-acc__pay-chip--hidden,.pp-inv-acc__pay-chip--hidden{color:#475569;background-color:#e2e8f0;background:#e2e8f0;border:1px solid #94a3b8}' +
       'button.pp-inv-acc__pay-chip--other,.pp-inv-acc__pay-chip--other{color:#4a6578;background-color:#eef2f5;background:#eef2f5;border:1px solid #d5dee6}' +
+      '.pp-inv-method-filters{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;margin:0 0 10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;box-sizing:border-box}' +
+      '.pp-inv-method-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
+      '.pp-inv-method-row__lab{flex:0 0 auto;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b;margin-right:2px}' +
+      '.pp-inv-method-chip{display:inline-flex;align-items:center;justify-content:center;max-width:100%;padding:5px 11px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.25;border:1px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;font:inherit;overflow-wrap:anywhere;text-align:center}' +
+      '.pp-inv-method-chip:hover{border-color:#94a3b8}' +
+      '.pp-inv-method-chip--on,.pp-inv-method-chip[aria-pressed=true]{box-shadow:0 0 0 2px rgba(45,132,179,.25)}' +
+      '.pp-inv-method-chip--bank{background:#f5f3ff;color:#5b21b6;border-color:#c4b5fd}' +
+      '.pp-inv-method-chip--gc{background:#eff6ff;color:#1d4ed8;border-color:#93c5fd}' +
+      '.pp-inv-method-chip--own{background:#0f172a;color:#fff;border-color:#020617}' +
+      '.pp-inv-method-chip--la{background:#ecfdf5;color:#047857;border-color:#a7f3d0}' +
+      '.pp-inv-method-chip--link{background:#fef2f2;color:#b91c1c;border-color:#fecaca}' +
+      '.pp-inv-method-chip--muted{background:#f1f5f9;color:#64748b;border-color:#e2e8f0}' +
       '.pp-inv-acc__grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,.9fr);gap:12px;min-width:0}' +
       '@media (max-width:820px){.pp-inv-acc__grid{grid-template-columns:1fr}}' +
       '.pp-inv-acc__actions{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;min-width:0}' +
@@ -1576,6 +2235,8 @@
       '.pp-inv-acc__svc-name{font-size:13px;font-weight:700;color:#0f172a;overflow-wrap:break-word}' +
       '.pp-inv-acc__svc-meta{margin-top:2px;font-size:12px;color:#475569;overflow-wrap:break-word}' +
       '.pp-inv-acc__svc-dates{margin-top:4px;font-size:11px;color:#64748b;overflow-wrap:break-word}' +
+      '.pp-inv-acc__inst-list{min-width:0}' +
+      '.pp-inv-acc__inst-row{min-width:0}' +
       '</style>'
     );
   }
@@ -1694,6 +2355,10 @@
         body.share_status = 'ready';
         body.payment_status = 'unpaid';
       }
+      if (state.filter === 'partial') {
+        body.share_status = 'ready';
+        body.payment_status = 'partial';
+      }
       if (state.filter === 'paid') {
         body.payment_status = 'paid';
       }
@@ -1732,7 +2397,7 @@
           parts.push(String(state.meta.buffer_low_contacts) + ' buffer low');
         }
         if (state.meta.xero_unsynced) {
-          parts.push(String(state.meta.xero_unsynced) + ' paid not in Xero');
+          parts.push(String(state.meta.xero_unsynced) + ' ready for Xero');
         }
         if (state.meta.la_office_auto) {
           parts.push(String(state.meta.la_office_auto) + ' auto re-enrolled');
@@ -1743,13 +2408,8 @@
         host.innerHTML = '<p class="muted">No invoices yet. Upload a PDF below to share with a family.</p>';
         return;
       }
-      host.innerHTML =
-        accordionListStyles() +
-        '<div class="pp-inv-acc" role="list">' +
-        groupInvoicesByDayThenParticipant(state.invoices).map(dayAccordionHtml).join('') +
-        '</div>';
-      bindRowActions(host);
-      /* Day + participant accordions stay closed until opened. */
+      paintInvoiceList(host, state.invoices);
+      /* Day + participant accordions stay closed until opened (unless client search). */
     } catch (err) {
       host.innerHTML =
         '<p class="muted">Could not load invoices (' +
@@ -1763,6 +2423,15 @@
     global.document.querySelectorAll('.toolbar [data-inv-filter]').forEach(function (b) {
       var on = b.getAttribute('data-inv-filter') === state.filter;
       b.classList.toggle('btn--ghost', !on);
+    });
+  }
+
+  function setMethodFilter(filter) {
+    state.methodFilter = filter || 'all';
+    global.document.querySelectorAll('[data-inv-method]').forEach(function (b) {
+      var on = b.getAttribute('data-inv-method') === state.methodFilter;
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.classList.toggle('pp-inv-method-chip--on', on);
     });
   }
 
@@ -1790,6 +2459,60 @@
         var act = btn.getAttribute('data-inv-act');
         var id = btn.getAttribute('data-inv-id');
         if (!id) return;
+        var allowEarlyInstalment = false;
+        var markAllInstalments = false;
+        if (act === 'paid') {
+          var invEarly = (state.invoices || []).find(function (x) {
+            return String(x.id) === String(id);
+          });
+          var schedEarly = invEarly ? scheduleRows(invEarly) : [];
+          var nextEarly = null;
+          var unpaidN = 0;
+          for (var ei = 0; ei < schedEarly.length; ei++) {
+            if (String(schedEarly[ei].status || 'pending').toLowerCase() !== 'paid') {
+              unpaidN += 1;
+              if (!nextEarly) nextEarly = schedEarly[ei];
+            }
+          }
+          var remainingGbp = invEarly ? invoiceRemainingGbp(invEarly) : 0;
+          var nextAmt = nextEarly ? Number(nextEarly.amount_gbp) || 0 : remainingGbp;
+          if (unpaidN > 1 || (remainingGbp > 0 && nextAmt > 0 && remainingGbp > nextAmt + 0.02)) {
+            var settleFull = global.confirm(
+              'Tide / bank total for this invoice?\n\n' +
+                'OK = mark ALL remaining paid (£' +
+                remainingGbp.toFixed(2) +
+                ' left on INV)\n' +
+                'Cancel = mark next instalment only (£' +
+                nextAmt.toFixed(2) +
+                ')',
+            );
+            if (settleFull) {
+              markAllInstalments = true;
+              allowEarlyInstalment = true;
+            }
+          }
+          var nextDueEarly = nextEarly ? instalmentDueIso(nextEarly.due_date) : '';
+          if (
+            !markAllInstalments &&
+            nextDueEarly &&
+            !instalmentIsCollectingNow(nextDueEarly)
+          ) {
+            var whenLab = formatDate(nextDueEarly) || nextDueEarly;
+            var amtLab = formatMoney(nextEarly.amount_gbp);
+            if (
+              !global.confirm(
+                'Next instalment (' +
+                  amtLab +
+                  ') is not due until ' +
+                  whenLab +
+                  '.\n\nOnly continue if they paid this half early. Cancel if you only meant to confirm the previous payment.',
+              )
+            ) {
+              return;
+            }
+            allowEarlyInstalment = true;
+          }
+        }
         btn.disabled = true;
         var body = { action: 'update', invoice_id: id };
         if (act === 'share') body.share_status = 'ready';
@@ -1797,6 +2520,8 @@
         else if (act === 'paid') {
           body.payment_status = 'paid';
           body.paid_via = 'admin';
+          if (allowEarlyInstalment) body.allow_early_instalment = true;
+          if (markAllInstalments) body.mark_all_instalments = true;
         }
         else if (act === 'unpaid') body.payment_status = 'unpaid';
         else {
@@ -1812,7 +2537,13 @@
           cfg.toast(
             r.hold && r.hold.restored
               ? 'Invoice paid — held session restored'
-              : 'Invoice updated',
+              : act === 'paid'
+                ? r.booking_pin && r.booking_pin.pinSent
+                  ? 'Invoice marked paid — Parent Portal PIN sent (new finish-booking)'
+                  : r.invoice && String(r.invoice.payment_status || '').toLowerCase() === 'partial'
+                    ? 'Instalment confirmed — next half still due later'
+                    : 'Invoice marked paid'
+                : 'Invoice updated',
             'ok',
           );
           void renderHost(global.document.getElementById('portalParentInvoicesHost'));
@@ -1843,6 +2574,151 @@
             return;
           }
           cfg.toast(r.message || 'Hold updated', 'ok');
+          void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+        });
+      });
+    });
+    host.querySelectorAll('[data-reenrol-funding-save]').forEach(function (btn) {
+      btn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var contactId = btn.getAttribute('data-reenrol-funding-save');
+        if (!contactId) return;
+        var sel = host.querySelector(
+          '[data-reenrol-funding-select="' + contactId.replace(/"/g, '') + '"]',
+        );
+        var funding = sel && sel.value ? String(sel.value) : '';
+        if (!funding) return;
+        var label =
+          funding === 'direct_payments'
+            ? 'Direct Payments (Funds from the LA)'
+            : funding === 'la_managed'
+              ? 'LA managed'
+              : 'Privately';
+        if (
+          !global.confirm(
+            'Set re-enrol funding for this family to “' +
+              label +
+              '”? Unpaid invoices will switch VAT label and regenerate PDFs (amounts unchanged).',
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        void api('portal-admin-parent-invoices-upsert', {
+          action: 'set_reenrol_funding',
+          contact_id: contactId,
+          funding: funding,
+        }).then(function (r) {
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Funding update failed', 'error');
+            btn.disabled = false;
+            return;
+          }
+          cfg.toast('Funding updated to ' + label, 'ok');
+          void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+        });
+      });
+    });
+    host.querySelectorAll('[data-reenrol-pay-save]').forEach(function (btn) {
+      btn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var contactId = btn.getAttribute('data-reenrol-pay-save');
+        if (!contactId) return;
+        var sel = host.querySelector(
+          '[data-reenrol-pay-select="' + contactId.replace(/"/g, '') + '"]',
+        );
+        var method = sel && sel.value ? String(sel.value) : '';
+        if (!method) return;
+        var label =
+          method === 'gocardless'
+            ? 'GoCardless'
+            : method === 'own_way_flexible'
+              ? 'Own way'
+              : 'Bank Transfer / Apple Pay';
+        if (
+          !global.confirm(
+            'Set method of payment for this family to “' +
+              label +
+              '”? Updates the re-enrol choice and unpaid invoice payment channel. Instalment amounts stay as they are.',
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        void api('portal-admin-parent-invoices-upsert', {
+          action: 'set_reenrol_payment_method',
+          contact_id: contactId,
+          payment_method: method,
+        }).then(function (r) {
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Payment method update failed', 'error');
+            btn.disabled = false;
+            return;
+          }
+          cfg.toast('Payment method updated to ' + label, 'ok');
+          void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+        });
+      });
+    });
+    host.querySelectorAll('[data-reenrol-sched-save]').forEach(function (btn) {
+      btn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var contactId = btn.getAttribute('data-reenrol-sched-save');
+        if (!contactId) return;
+        var sel = host.querySelector(
+          '[data-reenrol-sched-select="' + contactId.replace(/"/g, '') + '"]',
+        );
+        var plan = sel && sel.value ? String(sel.value) : '';
+        if (!plan) return;
+        var label =
+          plan === 'term_flexi'
+            ? 'Flexi (2 per term)'
+            : plan === 'yearly_1off'
+              ? 'One-off (year)'
+              : plan === 'monthly_term' || plan === 'monthly_10'
+                ? 'Monthly (GC · term)'
+                : 'One-off per term';
+        var tideRaw = global.prompt(
+          'Set payment plan to “' +
+            label +
+            '”.\n\nIf Tide shows a total already paid for the open INV-P (e.g. 700 when flexi was 350+350), type that amount in GBP.\nLeave blank to keep the amount already recorded on the invoice.',
+          '',
+        );
+        if (tideRaw === null) return;
+        var body = {
+          action: 'set_reenrol_payment_schedule',
+          contact_id: contactId,
+          payment_schedule_code: plan,
+          paid_via: 'admin',
+        };
+        var tideAmt = Number(String(tideRaw || '').replace(/[^0-9.]/g, ''));
+        if (Number.isFinite(tideAmt) && tideAmt > 0) {
+          body.apply_paid_amount_gbp = Math.round(tideAmt * 100) / 100;
+        }
+        if (
+          !global.confirm(
+            'Apply plan “' +
+              label +
+              '”?' +
+              (body.apply_paid_amount_gbp
+                ? '\nApply paid amount: £' + body.apply_paid_amount_gbp.toFixed(2)
+                : '\nKeep recorded paid amount on each open INV-P.') +
+              '\n\nUnpaid / partial invoices will rebuild their instalment schedule. Fully paid INV-Ps are left as-is.',
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        void api('portal-admin-parent-invoices-upsert', body).then(function (r) {
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Payment plan update failed', 'error');
+            btn.disabled = false;
+            return;
+          }
+          cfg.toast('Payment plan updated to ' + label, 'ok');
           void renderHost(global.document.getElementById('portalParentInvoicesHost'));
         });
       });
@@ -1983,6 +2859,128 @@
     }
   }
 
+  function midtermBodyFromForm(action) {
+    var contactId = String(
+      (global.document.getElementById('portalParentInvoiceContactId') || {}).value || ''
+    ).trim();
+    var termEl = global.document.getElementById('portalMidtermTerm');
+    var dayEl = global.document.getElementById('portalMidtermDay');
+    var unitEl = global.document.getElementById('portalMidtermUnit');
+    var asOfEl = global.document.getElementById('portalMidtermAsOf');
+    var planEl = global.document.getElementById('portalMidtermPlan');
+    var svcEl = global.document.getElementById('portalMidtermService');
+    var detEl = global.document.getElementById('portalMidtermDetail');
+    var vatEl = global.document.getElementById('portalParentInvoiceVatMode');
+    return {
+      action: action,
+      contact_id: contactId,
+      billing_term: termEl && termEl.value ? termEl.value : 'autumn',
+      day: dayEl && dayEl.value ? dayEl.value : 'Monday',
+      unit_price_gbp: unitEl && unitEl.value ? Number(unitEl.value) : NaN,
+      as_of: asOfEl && asOfEl.value ? asOfEl.value : null,
+      pay_plan: planEl && planEl.value ? planEl.value : 'gocardless_monthly',
+      service_label: svcEl && svcEl.value ? svcEl.value : 'Aquatic Activity',
+      detail: detEl && detEl.value ? detEl.value : '',
+      vat_mode: vatEl && vatEl.value === 'exempt' ? 'exempt' : 'vat_20',
+      share_status: vatEl && vatEl.value === 'exempt' ? 'hidden' : 'ready',
+      payment_method_hint:
+        planEl && planEl.value === 'gocardless_monthly' ? 'gocardless' : 'bank_transfer'
+    };
+  }
+
+  function renderMidtermPreview(quote) {
+    var host = global.document.getElementById('portalMidtermPreview');
+    if (!host) return;
+    if (!quote) {
+      host.textContent = '';
+      return;
+    }
+    var sched = quote.payment_schedule || quote.paymentSchedule || [];
+    var lines = sched
+      .map(function (r) {
+        return (
+          '#' +
+          r.seq +
+          ' ' +
+          (r.label || '') +
+          ' · ' +
+          (r.due_date || '—') +
+          ' · £' +
+          Number(r.amount_gbp || 0).toFixed(2)
+        );
+      })
+      .join('\n');
+    var sessions = quote.remaining_sessions != null ? quote.remaining_sessions : quote.remainingSessions;
+    var prog = Number(quote.programme_total_gbp != null ? quote.programme_total_gbp : quote.programmeTotalGbp || 0);
+    var invTot = Number(quote.invoice_total_gbp != null ? quote.invoice_total_gbp : quote.invoiceTotalGbp || 0);
+    var dates = quote.session_dates_label || quote.sessionDatesLabel || '';
+    host.textContent =
+      String(sessions || '') +
+      ' sessions left · programme £' +
+      prog.toFixed(2) +
+      ' · invoice £' +
+      invTot.toFixed(2) +
+      (dates ? '\n' + dates : '') +
+      (lines ? '\n\n' + lines : '');
+    host.style.whiteSpace = 'pre-wrap';
+  }
+
+  function bindMidtermForm() {
+    var form = global.document.getElementById('portalParentInvoiceMidtermForm');
+    if (!form || form.getAttribute('data-bound') === '1') return;
+    form.setAttribute('data-bound', '1');
+    var asOfEl = global.document.getElementById('portalMidtermAsOf');
+    if (asOfEl && !asOfEl.value) {
+      asOfEl.value = new Date().toISOString().slice(0, 10);
+    }
+    var previewBtn = global.document.getElementById('portalMidtermPreviewBtn');
+    if (previewBtn) {
+      previewBtn.addEventListener('click', function () {
+        var body = midtermBodyFromForm('preview_portal_midterm');
+        if (!isFinite(body.unit_price_gbp) || body.unit_price_gbp <= 0) {
+          cfg.toast('Enter £ / session', 'error');
+          return;
+        }
+        previewBtn.disabled = true;
+        void api('portal-admin-parent-invoices-upsert', body, false).then(function (r) {
+          previewBtn.disabled = false;
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Preview failed', 'error');
+            renderMidtermPreview(null);
+            return;
+          }
+          renderMidtermPreview(r.quote || null);
+        });
+      });
+    }
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var body = midtermBodyFromForm('create_portal_midterm');
+      if (!body.contact_id) {
+        cfg.toast('Pick a participant first', 'error');
+        return;
+      }
+      if (!isFinite(body.unit_price_gbp) || body.unit_price_gbp <= 0) {
+        cfg.toast('Enter £ / session', 'error');
+        return;
+      }
+      var submitBtn = form.querySelector('[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      void api('portal-admin-parent-invoices-upsert', body, false).then(function (r) {
+        if (submitBtn) submitBtn.disabled = false;
+        if (r.error) {
+          cfg.toast(r.message || r.error || 'Create failed', 'error');
+          return;
+        }
+        renderMidtermPreview(r.quote || null);
+        var num =
+          r.invoice && r.invoice.invoice_number ? String(r.invoice.invoice_number) : 'Invoice';
+        cfg.toast(num + ' mid-term created & shared', 'ok');
+        void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+      });
+    });
+  }
+
   function bindUploadForm() {
     var createForm = global.document.getElementById('portalParentInvoiceCreateForm');
     var form = global.document.getElementById('portalParentInvoiceUploadForm');
@@ -2067,6 +3065,7 @@
         });
       });
     }
+    bindMidtermForm();
 
     var search = global.document.getElementById('portalParentInvoiceSearch');
     var searchTimer = null;
@@ -2182,6 +3181,27 @@
       '<label style="min-width:0">Notes (optional)<input class="inp" id="portalParentInvoiceNotes" style="width:100%;max-width:28rem" /></label>' +
       '<div><button type="submit" class="btn btn--primary btn--sm">Create &amp; share</button></div>' +
       '</form>' +
+      '<details style="margin:0 0 18px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
+      '<summary style="cursor:pointer;font-weight:700">New Booking Portal client · mid-term pro-rata</summary>' +
+      '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">For <strong>new</strong> places confirmed from Booking Portal after the term has started (or starting mid-term). Builds <strong>1 invoice</strong> for remaining sessions. GoCardless / one-off: first instalment due <strong>on booking day</strong>. <strong>Flexi</strong>: first half on the fixed term due (Autumn <strong>15 August</strong>), second on the mid-term date. GoCardless continues on the <strong>1st of each remaining month</strong>.</p>' +
+      '<form id="portalParentInvoiceMidtermForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px">' +
+      '<p class="muted" style="margin:0;font-size:12px">Uses the participant selected above.</p>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+      '<label style="flex:1 1 120px;min-width:0">Term<select class="inp" id="portalMidtermTerm" style="width:100%"><option value="autumn">Autumn</option><option value="spring">Spring</option><option value="summer">Summer</option></select></label>' +
+      '<label style="flex:1 1 120px;min-width:0">Weekday<select class="inp" id="portalMidtermDay" style="width:100%"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></label>' +
+      '<label style="flex:1 1 110px;min-width:0">£ / session<input class="inp" id="portalMidtermUnit" type="number" min="0.01" step="0.01" value="50" required style="width:100%" /></label>' +
+      '<label style="flex:1 1 140px;min-width:0">Booking / start date<input class="inp" id="portalMidtermAsOf" type="date" style="width:100%" /></label>' +
+      '</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+      '<label style="flex:1 1 220px;min-width:0">Pay plan<select class="inp" id="portalMidtermPlan" style="width:100%"><option value="gocardless_monthly">GoCardless · monthly (1st due today)</option><option value="flexi_bank">Flexi bank · 2 instalments</option><option value="one_off_bank">Bank · one-off (due today)</option></select></label>' +
+      '<label style="flex:1 1 160px;min-width:0">Service label<input class="inp" id="portalMidtermService" value="Aquatic Activity 30\'" style="width:100%" /></label>' +
+      '<label style="flex:1 1 140px;min-width:0">Detail (time · venue)<input class="inp" id="portalMidtermDetail" placeholder="e.g. Tuesday 6–6.30 · Acton" style="width:100%" /></label>' +
+      '</div>' +
+      '<div id="portalMidtermPreview" class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word;font-size:13px;line-height:1.45"></div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalMidtermPreviewBtn">Preview schedule</button>' +
+      '<button type="submit" class="btn btn--primary btn--sm">Create mid-term invoice &amp; share</button>' +
+      '</div></form></details>' +
       '<details style="margin:0">' +
       '<summary class="muted" style="cursor:pointer;font-weight:600">Or upload a Xero / office PDF</summary>' +
       '<form id="portalParentInvoiceUploadForm" class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-top:10px">' +
@@ -2197,15 +3217,39 @@
     );
   }
 
+  function methodFilterChip(id, label, tone) {
+    var on = String(state.methodFilter || 'all') === id;
+    var cls = 'pp-inv-method-chip';
+    if (tone === 'bank') cls += ' pp-inv-method-chip--bank';
+    else if (tone === 'gc') cls += ' pp-inv-method-chip--gc';
+    else if (tone === 'own') cls += ' pp-inv-method-chip--own';
+    else if (tone === 'la') cls += ' pp-inv-method-chip--la';
+    else if (tone === 'link') cls += ' pp-inv-method-chip--link';
+    else cls += ' pp-inv-method-chip--muted';
+    if (on) cls += ' pp-inv-method-chip--on';
+    return (
+      '<button type="button" class="' +
+      cls +
+      '" data-inv-method="' +
+      esc(id) +
+      '" aria-pressed="' +
+      (on ? 'true' : 'false') +
+      '">' +
+      esc(label) +
+      '</button>'
+    );
+  }
+
   function reenrolmentsEmbedHtml() {
     return (
       '<div class="card" style="margin-bottom:14px">' +
       '<div class="card-h"><h3>Re-enrolments &amp; shared invoices</h3>' +
       '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;width:100%;max-width:none;text-align:left;overflow-wrap:break-word">Track instalments after re-enrolment. Use <strong>Year / Term</strong> filters to switch booked totals. Rows are sorted by re-enrol date. LA sheet clients appear as office auto even without a family invoice. Day Centre places start 1 Sept (no half-term; Christmas closed). <strong>Push paid to Xero</strong> sends only <em>paid</em> Portal INV-Ps (creates the ACCREC <em>awaiting payment</em> — mark Paid + reconcile in Xero). Unpaid drafts stay in Portal until you mark paid. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
+      '<p class="muted" style="margin:0 0 10px;width:100%;max-width:none;text-align:left;overflow-wrap:break-word">Track instalments after re-enrolment. <strong>Year 25/26</strong> = summer crash / intensive (day centre). <strong>Year 26/27 · Autumn / Spring / Summer</strong> = re-enrol terms. Merged crash lines (e.g. Patrick) stay on Autumn for the family bill, but crash £ counts in Year 25/26 for Raul/Victor; Sunday climbing stays afterschools/weekends. Use filters to switch booked totals. <strong>Push to Xero</strong> creates the full ACCREC (<em>awaiting payment</em>) for <em>paid</em> or <em>partial</em> Portal INV-Ps. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
       '<div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;align-items:center">' +
       '<span class="muted" style="font-size:12px;font-weight:700">Amount</span>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year_2526">Year 25/26</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year">Year 26/27</button>' +
       '<button type="button" class="btn btn--sm" data-inv-amount="autumn">Autumn</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="spring">Spring</button>' +
@@ -2216,15 +3260,32 @@
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="la_auto">Auto re-enrolled</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Ready unpaid</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="partial">Partially paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="paid">Paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="pending">Pending confirmation</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="buffer_low">Buffer low</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Paid not in Xero</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Not in Xero yet</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="hidden">Hidden</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentInvoicesRefreshEmbed">Refresh</button>' +
-      '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero" title="Creates ACCREC in Xero for paid Portal invoices (awaiting payment)">Push paid to Xero</button>' +
+      '<button type="button" class="btn btn--sm btn--primary" id="portalParentInvoicesPushXero" title="Creates full ACCREC in Xero for paid or partial Portal invoices (awaiting payment; reconcile halves in Xero)">Push to Xero</button>' +
       '<button type="button" class="btn btn--sm" id="portalParentInvoicesExportXero">Export to Xero CSV</button>' +
       '</div>' +
+      '<div class="pp-inv-client-search" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;min-width:0;margin:0 0 10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;box-sizing:border-box">' +
+      '<label for="portalParentInvoicesClientSearch" class="pp-inv-method-row__lab" style="margin:0">Client</label>' +
+      '<input class="inp" id="portalParentInvoicesClientSearch" type="search" autocomplete="off" placeholder="Search name, parent, invoice #… (then Mark paid)" style="flex:1 1 14rem;min-width:0;max-width:28rem" />' +
+      '<button type="button" class="btn btn--sm btn--ghost" id="portalParentInvoicesClientSearchClear" title="Clear client search">Clear</button>' +
+      '<span class="muted" id="portalParentInvoicesClientSearchHint" style="font-size:12px;min-width:0;overflow-wrap:break-word;flex:1 1 100%">Find a family, open their INV-P, then <strong>Mark paid</strong> when Tide (or WhatsApp/email proof) matches.</span>' +
+      '</div>' +
+      '<div class="pp-inv-method-filters" role="group" aria-label="Payment method filter">' +
+      '<div class="pp-inv-method-row">' +
+      '<span class="pp-inv-method-row__lab">Method</span>' +
+      methodFilterChip('all', 'All', 'muted') +
+      methodFilterChip('bank', 'Bank Transfer', 'bank') +
+      methodFilterChip('gc', 'GoCardless', 'gc') +
+      methodFilterChip('own_way', 'Own way', 'own') +
+      methodFilterChip('la', 'LA funded', 'la') +
+      methodFilterChip('link', 'Payment link', 'link') +
+      '</div></div>' +
       '<details style="margin:0 0 14px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
       '<summary style="cursor:pointer;font-weight:700">Match Tide bank CSV</summary>' +
       '<p class="muted" style="margin:8px 0 10px;max-width:48rem;overflow-wrap:break-word">Export inbound payments from Tide → upload here. Portal suggests INV-P matches by reference + amount. <strong>Confirm</strong> marks paid and creates the Xero ACCREC if missing (awaiting payment). Mark Paid + reconcile the bank line in Xero.</p>' +
@@ -2246,7 +3307,9 @@
 
   function bindListEmbed() {
     state.filter = 'all';
+    state.methodFilter = 'all';
     state.amountPeriod = 'autumn';
+    state.clientQuery = '';
     bindTideMatchPanel();
     var host = global.document.getElementById('portalParentInvoicesHost');
     var refresh = global.document.getElementById('portalParentInvoicesRefreshEmbed');
@@ -2268,9 +3331,55 @@
         void pushUnsyncedToXero();
       });
     }
+    var searchEl = global.document.getElementById('portalParentInvoicesClientSearch');
+    var searchClear = global.document.getElementById('portalParentInvoicesClientSearchClear');
+    var searchTimer = null;
+    function applyClientSearchNow() {
+      state.clientQuery = searchEl ? String(searchEl.value || '') : '';
+      var hint = global.document.getElementById('portalParentInvoicesClientSearchHint');
+      if (hint) {
+        var q = String(state.clientQuery || '').trim();
+        hint.innerHTML = q
+          ? 'Showing matches for <strong>' +
+            esc(q) +
+            '</strong> — open the invoice and use <strong>Mark paid</strong> to validate.'
+          : 'Find a family, open their INV-P, then <strong>Mark paid</strong> when Tide (or WhatsApp/email proof) matches.';
+      }
+      if (host && state.invoices && state.invoices.length) {
+        paintInvoiceList(host, state.invoices);
+      }
+    }
+    if (searchEl && searchEl.getAttribute('data-bound') !== '1') {
+      searchEl.setAttribute('data-bound', '1');
+      searchEl.addEventListener('input', function () {
+        if (searchTimer) global.clearTimeout(searchTimer);
+        searchTimer = global.setTimeout(applyClientSearchNow, 180);
+      });
+      searchEl.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          if (searchTimer) global.clearTimeout(searchTimer);
+          applyClientSearchNow();
+        }
+      });
+    }
+    if (searchClear && searchClear.getAttribute('data-bound') !== '1') {
+      searchClear.setAttribute('data-bound', '1');
+      searchClear.addEventListener('click', function () {
+        if (searchEl) searchEl.value = '';
+        applyClientSearchNow();
+        if (searchEl) searchEl.focus();
+      });
+    }
     global.document.querySelectorAll('.toolbar [data-inv-filter]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         setInvoiceFilter(btn.getAttribute('data-inv-filter') || 'all');
+        void renderHost(global.document.getElementById('portalParentInvoicesHost'));
+      });
+    });
+    global.document.querySelectorAll('[data-inv-method]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setMethodFilter(btn.getAttribute('data-inv-method') || 'all');
         void renderHost(global.document.getElementById('portalParentInvoicesHost'));
       });
     });
@@ -2281,6 +3390,7 @@
       });
     });
     setAmountPeriod(state.amountPeriod);
+    setMethodFilter(state.methodFilter);
     void renderHost(host);
   }
 

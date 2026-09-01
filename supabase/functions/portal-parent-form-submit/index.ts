@@ -3,15 +3,27 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { syncParentFormPhotoToParticipantAvatar } from "../_shared/participant_avatar.ts";
+import { ensureInterestedClientFromRegistration } from "../_shared/portal_interested_client.ts";
+import { notifyOfficeRegistrationSubmitted } from "../_shared/portal_booking_lead_office_notify.ts";
+import { sendFinishBookingAfterRegistration } from "../_shared/portal_booking_finish.ts";
+import {
+  extractBookingRequest,
+  loadPendingBookingFromLeadSession,
+  loadPendingBookingForEmail,
+  type PortalBookingRequest,
+} from "../_shared/portal_booking_context.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  // Custom booking headers must be listed or browsers fail the preflight as "Failed to fetch"
+  // (shown to parents as a generic network error).
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-booking-lead-session, x-booking-service-session",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 const BUCKET = "participant-documents";
-const MAX_PDF_BYTES = 12 * 1024 * 1024;
+const MAX_PDF_BYTES = 18 * 1024 * 1024;
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const ALLOWED_FORM_TYPES = new Set(["climbing_registration", "client_registration"]);
 
@@ -46,56 +58,131 @@ function parseDob(raw: string): string | null {
 /** Soft hold window while admin reviews the registration form. */
 const SLOT_HOLD_DAYS = 21;
 
-type BookingRequest = {
-  from: string;
-  slot_id: string;
-  service_id: string | null;
-  service_name: string | null;
-  venue: string | null;
-  day: string | null;
-  time: string | null;
-  activity: string | null;
-  booking_mode: string | null;
-  week_id: string | null;
-  block_id: string | null;
-  date_iso: string | null;
-  pack: string | null;
-};
-
-function asTrimmed(value: unknown, max = 200): string | null {
-  const s = sanitizePart(String(value ?? ""), max);
-  return s || null;
-}
-
-function extractBookingRequest(payload: Record<string, unknown>): BookingRequest | null {
-  const raw = payload.booking_request;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const br = raw as Record<string, unknown>;
-  const slotId = asTrimmed(br.slot_id, 160);
-  if (!slotId) return null;
-  const dateRaw = asTrimmed(br.date || br.date_iso, 32);
-  const dateIso = dateRaw && /^\d{4}-\d{2}-\d{2}$/.test(dateRaw) ? dateRaw : null;
-  return {
-    from: asTrimmed(br.from, 40) || "bookingportal",
-    slot_id: slotId,
-    service_id: asTrimmed(br.service || br.service_id, 80),
-    service_name: asTrimmed(br.service_name, 120),
-    venue: asTrimmed(br.venue, 80),
-    day: asTrimmed(br.day, 40),
-    time: asTrimmed(br.time || br.time_label, 80),
-    activity: asTrimmed(br.activity || br.crash_activity, 120),
-    booking_mode: asTrimmed(br.booking_mode, 40),
-    week_id: asTrimmed(br.week_id, 40),
-    block_id: asTrimmed(br.block_id, 40),
-    date_iso: dateIso,
-    pack: asTrimmed(br.pack || br.pack_label, 80),
-  };
-}
+type BookingRequest = PortalBookingRequest;
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function phoneLast10(raw: string | null): string {
+  const digits = String(raw || "").replace(/\D/g, "");
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
+function emailNorm(raw: string | null): string {
+  return String(raw || "").trim().toLowerCase();
+}
+
+const BOOKING_STATUS_RANK: Record<string, number> = {
+  new_lead: 0,
+  exploring_services: 1,
+  waiting_list: 2,
+  no_booking: 1,
+  registration_started: 3,
+  booking_started: 3,
+  registration_submitted: 4,
+  booking_completed: 5,
+};
+
+const REG_STATUS_RANK: Record<string, number> = {
+  not_started: 0,
+  started: 1,
+  submitted: 2,
+};
+
+/** Mark matching booking-portal leads as registration submitted (email, phone, or lead session). */
+async function markBookingLeadsSubmitted(
+  admin: ReturnType<typeof createClient>,
+  opts: {
+    parentEmail: string | null;
+    parentPhone: string | null;
+    leadSessionToken: string | null;
+  },
+): Promise<{ updated: number; primaryLeadId: string | null }> {
+  const leadIds = new Set<string>();
+  let sessionLeadId: string | null = null;
+  const token = String(opts.leadSessionToken || "").trim();
+  if (/^[a-f0-9]{32,128}$/i.test(token)) {
+    const tokenHash = await sha256Hex(token);
+    const { data: sess } = await admin
+      .from("portal_booking_lead_sessions")
+      .select("lead_id, expires_at, revoked_at")
+      .eq("token_hash", tokenHash)
+      .maybeSingle();
+    if (
+      sess?.lead_id &&
+      !sess.revoked_at &&
+      new Date(String(sess.expires_at)).getTime() >= Date.now()
+    ) {
+      sessionLeadId = String(sess.lead_id);
+      leadIds.add(sessionLeadId);
+    }
+  }
+
+  const email = emailNorm(opts.parentEmail);
+  if (email) {
+    const { data: byEmail } = await admin
+      .from("portal_booking_leads")
+      .select("id")
+      .eq("email_norm", email)
+      .limit(5);
+    for (const row of byEmail || []) {
+      if (row?.id) leadIds.add(String(row.id));
+    }
+  }
+
+  const phone = phoneLast10(opts.parentPhone);
+  if (phone.length >= 10) {
+    const { data: byPhone } = await admin
+      .from("portal_booking_leads")
+      .select("id")
+      .eq("phone_lookup", phone)
+      .limit(5);
+    for (const row of byPhone || []) {
+      if (row?.id) leadIds.add(String(row.id));
+    }
+  }
+
+  if (!leadIds.size) return { updated: 0, primaryLeadId: null };
+
+  const nowIso = new Date().toISOString();
+  let updated = 0;
+  for (const id of leadIds) {
+    const { data: lead } = await admin
+      .from("portal_booking_leads")
+      .select("id, booking_status, registration_status, client_status")
+      .eq("id", id)
+      .maybeSingle();
+    if (!lead) continue;
+
+    const patch: Record<string, unknown> = {
+      last_activity_at: nowIso,
+      updated_at: nowIso,
+    };
+    const curBook = BOOKING_STATUS_RANK[String(lead.booking_status)] ?? 0;
+    if (curBook < BOOKING_STATUS_RANK.registration_submitted) {
+      patch.booking_status = "registration_submitted";
+    }
+    const curReg = REG_STATUS_RANK[String(lead.registration_status)] ?? 0;
+    if (curReg < REG_STATUS_RANK.submitted) {
+      patch.registration_status = "submitted";
+    }
+    /* Interested in our services — do not overwrite active clients. */
+    const curClient = String(lead.client_status || "");
+    if (curClient !== "active_client" && curClient !== "closed") {
+      patch.client_status = "registered";
+    }
+    const { error } = await admin.from("portal_booking_leads").update(patch).eq("id", id);
+    if (error) {
+      console.warn("[portal-parent-form-submit] lead status", id, error.message);
+    } else {
+      updated += 1;
+    }
+  }
+  const primaryLeadId = sessionLeadId || [...leadIds][0] || null;
+  return { updated, primaryLeadId };
 }
 
 Deno.serve(async (req) => {
@@ -148,6 +235,10 @@ Deno.serve(async (req) => {
     }
     photoBlob = photoFile;
   }
+  /* Client registration must always land in Documents with a participant photo. */
+  if (formType === "client_registration" && !photoBlob) {
+    return json(400, { ok: false, error: "missing_photo" });
+  }
 
   let payload: Record<string, unknown> = {};
   const payloadRaw = String(form.get("payload") || "").trim();
@@ -162,11 +253,6 @@ Deno.serve(async (req) => {
     }
   }
 
-  const bookingRequest = extractBookingRequest(payload);
-  if (bookingRequest) {
-    payload = { ...payload, booking_request: bookingRequest };
-  }
-
   const parentName = sanitizePart(String(form.get("parent_name") || ""), 200) || null;
   const parentEmail = sanitizePart(String(form.get("parent_email") || ""), 200) || null;
   const parentPhone = sanitizePart(String(form.get("parent_phone") || ""), 80) || null;
@@ -175,14 +261,31 @@ Deno.serve(async (req) => {
     String(form.get("booking_service_session") || req.headers.get("x-booking-service-session") || ""),
     200,
   );
+  const bookingLeadSessionToken = sanitizePart(
+    String(form.get("booking_lead_session") || req.headers.get("x-booking-lead-session") || ""),
+    200,
+  );
+
+  const adminEarly = createClient(baseUrl, serviceRole, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  let bookingRequest = extractBookingRequest(payload);
+  if (!bookingRequest && bookingLeadSessionToken) {
+    bookingRequest = await loadPendingBookingFromLeadSession(adminEarly, bookingLeadSessionToken);
+  }
+  if (!bookingRequest && parentEmail) {
+    bookingRequest = await loadPendingBookingForEmail(adminEarly, parentEmail);
+  }
+  if (bookingRequest) {
+    payload = { ...payload, booking_request: bookingRequest };
+  }
 
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const safeName = sanitizeFilenamePart(participantName);
   const prefix = `${formType}/${stamp}_${safeName}`;
 
-  const admin = createClient(baseUrl, serviceRole, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const admin = adminEarly;
 
   const pdfPath = `${prefix}/form.pdf`;
   const pdfBytes = new Uint8Array(await pdfFile.arrayBuffer());
@@ -237,6 +340,35 @@ Deno.serve(async (req) => {
     return json(500, { ok: false, error: "save_failed" });
   }
 
+  /* Every completed Client Registration → Interested client record (not waitlist-only). */
+  if (formType === "client_registration") {
+    try {
+      const parentBits = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
+      await ensureInterestedClientFromRegistration(admin, {
+        participantName,
+        participantDob,
+        parentName,
+        parentEmail,
+        parentPhone,
+        addressLine1: sanitizePart(String(parentBits.parent_address || parentBits.address || ""), 200) || null,
+        postcode: sanitizePart(String(parentBits.parent_postcode || parentBits.postcode || ""), 20) || null,
+        registrationDate: String(row.submitted_at || "").slice(0, 10) || null,
+        generalInfoLines: [
+          bookingRequest
+            ? `Requested booking\t${bookingRequest.service_name} · ${bookingRequest.venue} · ${bookingRequest.day} · ${bookingRequest.time}`
+            : "Requested booking\tNone (registration only — Interested in our services)",
+          parentBits.ehcp ? `EHCP\t${sanitizePart(String(parentBits.ehcp), 40)}` : "",
+          parentBits.ehcp_details ? `EHCP details\t${sanitizePart(String(parentBits.ehcp_details), 400)}` : "",
+          parentBits.motivators ? `Motivators\t${sanitizePart(String(parentBits.motivators), 400)}` : "",
+          parentBits.dislikes ? `Dislikes\t${sanitizePart(String(parentBits.dislikes), 400)}` : "",
+          `Registration document\t${row.id}`,
+        ].filter(Boolean),
+      });
+    } catch (ensureErr) {
+      console.warn("[portal-parent-form-submit] ensure interested client", ensureErr);
+    }
+  }
+
   if (photoBytes && photoBytes.length) {
     try {
       await syncParentFormPhotoToParticipantAvatar(
@@ -249,6 +381,24 @@ Deno.serve(async (req) => {
     } catch (syncErr) {
       console.warn("[portal-parent-form-submit] avatar sync", syncErr);
     }
+  }
+
+  let primaryLeadId: string | null = null;
+  try {
+    const leadMark = await markBookingLeadsSubmitted(admin, {
+      parentEmail,
+      parentPhone,
+      leadSessionToken: bookingLeadSessionToken,
+    });
+    primaryLeadId = leadMark.primaryLeadId;
+    if (leadMark.updated) {
+      console.log(
+        "[portal-parent-form-submit] marked leads submitted",
+        leadMark.updated,
+      );
+    }
+  } catch (leadErr) {
+    console.warn("[portal-parent-form-submit] lead status update", leadErr);
   }
 
   let reservationId: string | null = null;
@@ -294,6 +444,10 @@ Deno.serve(async (req) => {
           booking_session_token_hash: tokenHash,
           status: "pending",
           hold_expires_at: holdExpires,
+          notes:
+            bookingRequest.booking_kind === "trial"
+              ? "booking_kind=trial"
+              : "booking_kind=term",
         })
         .select("id")
         .single();
@@ -302,9 +456,81 @@ Deno.serve(async (req) => {
         console.warn("[portal-parent-form-submit] slot reservation", holdErr.message);
       } else {
         reservationId = holdRow?.id ?? null;
+        if (parentEmail) {
+          await admin
+            .from("portal_booking_leads")
+            .update({
+              pending_booking_request: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("email_norm", parentEmail.toLowerCase());
+        }
       }
     } catch (holdCatch) {
       console.warn("[portal-parent-form-submit] slot reservation", holdCatch);
+    }
+  }
+
+  const bookingSummary = bookingRequest
+    ? [
+        bookingRequest.service_name,
+        bookingRequest.venue,
+        bookingRequest.day,
+        bookingRequest.time,
+        bookingRequest.activity,
+        bookingRequest.booking_kind === "trial" ? "TRIAL" : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
+
+  try {
+    await notifyOfficeRegistrationSubmitted({
+      documentId: String(row.id),
+      formType,
+      participantName,
+      parentName,
+      parentEmail,
+      parentPhone,
+      leadId: primaryLeadId,
+      slotHeld: !!reservationId,
+      bookingSummary,
+      pdfBytes,
+      pdfFilename: `${safeName}_${formType}.pdf`,
+    });
+  } catch (notifyErr) {
+    console.warn("[portal-parent-form-submit] office notify", notifyErr);
+  }
+
+  let finishBooking: {
+    finish_url: string;
+    finish_url_sent: boolean;
+  } | null = null;
+  /* Client + climbing: parent pays via finish-booking without waiting for office Accept.
+   * Office is notified above; suitability / form review is post-payment. */
+  if (
+    bookingRequest &&
+    (formType === "client_registration" || formType === "climbing_registration")
+  ) {
+    try {
+      const sent = await sendFinishBookingAfterRegistration(admin, {
+        id: String(row.id),
+        participant_name: participantName,
+        parent_name: parentName,
+        parent_email: parentEmail,
+        parent_phone: parentPhone,
+        payload_json: payload,
+      }, {
+        reservationId,
+        leadId: primaryLeadId,
+        variant: "registration_submitted",
+      });
+      finishBooking = {
+        finish_url: sent.finish_url,
+        finish_url_sent: sent.finish_url_sent,
+      };
+    } catch (finishErr) {
+      console.warn("[portal-parent-form-submit] finish link", finishErr);
     }
   }
 
@@ -314,5 +540,7 @@ Deno.serve(async (req) => {
     submitted_at: row.submitted_at,
     reservation_id: reservationId,
     slot_held: !!reservationId,
+    finish_url: finishBooking?.finish_url || null,
+    finish_url_sent: finishBooking?.finish_url_sent || false,
   });
 });

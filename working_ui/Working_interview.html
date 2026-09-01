@@ -985,6 +985,37 @@
       display:none !important;
     }
 
+    .auth-status-bar{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:10px 14px;
+      margin:0 0 14px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(185,28,28,.35);
+      background:rgba(185,28,28,.1);
+      color:var(--text);
+      font-size:14px;
+      line-height:1.45;
+      max-width:100%;
+      min-width:0;
+    }
+    .auth-status-bar.is-ok{
+      border-color:rgba(22,163,74,.35);
+      background:rgba(22,163,74,.1);
+    }
+    .auth-status-bar a{
+      color:inherit;
+      font-weight:700;
+      text-decoration:underline;
+    }
+    .auth-status-bar .auth-status-msg{
+      flex:1 1 220px;
+      min-width:0;
+      overflow-wrap:anywhere;
+    }
+
     .phase-block{
       border-radius:18px;
       padding:16px 16px 18px;
@@ -1269,7 +1300,7 @@
       if (typeof w.PORTAL_ONBOARDING_SUPABASE_ANON_KEY !== "string") w.PORTAL_ONBOARDING_SUPABASE_ANON_KEY = "";
     })();
   </script>
-  <script src="onboarding_portal_config.js?v=20260419-99"></script>
+  <script src="/onboarding_portal_config.js?v=20260801-stub"></script>
 </head>
 <body>
   <div id="recordingIndicator" class="recording-indicator" aria-live="polite" aria-atomic="true">
@@ -1279,13 +1310,17 @@
   <div class="page">
 
     <div id="mainPortal">
+    <div id="interviewAuthStatus" class="auth-status-bar" role="status" aria-live="polite">
+      <span class="auth-status-msg" id="interviewAuthStatusMsg">Checking staff login…</span>
+      <a id="interviewAuthLoginLink" class="hidden" href="/admin_dashboard.html#interviews">Back to Admin → Interviews</a>
+    </div>
     <section class="topbar">
       <div class="topbar-grid">
         <div class="brand">
           <h1>Interview and Onboarding Portal</h1>
           <p>Search candidates, create records, continue interview stages, complete onboarding, and review a saved history log from the same page.</p>
           <p id="portalOnboardingSupabaseHint" class="hidden" style="margin-top:10px;font-size:13px;line-height:1.5;color:var(--muted);max-width:720px;">
-            Browser-only mode: sign in with your staff portal account (same site as the dashboards), or add <code style="font-size:12px;color:var(--text);">onboarding_portal_config.js</code> for local Supabase (see <code style="font-size:12px;color:var(--text);">onboarding_portal_config.example.js</code>). Shared data requires login; do not commit config files with real keys.
+            Open this page from <strong>Admin → Interviews → Start a new interview</strong> (same browser). You should not need to sign in again.
           </p>
         </div>
 
@@ -1346,9 +1381,11 @@
       const anonKey = w && typeof w.PORTAL_ONBOARDING_SUPABASE_ANON_KEY === "string" ? w.PORTAL_ONBOARDING_SUPABASE_ANON_KEY.trim() : "";
       return { url, anonKey };
     }
-    /** Same ESM bundle as timesheet / dashboards (Supabase session + staff profile). */
+    /** Absolute /portal/… paths — bare "portal/…" is an invalid module specifier in the browser. */
+    const PORTAL_SUPABASE_CLIENT_MODULE =
+      "/portal/supabase-client.js?v=20260707-login-cache";
     const PORTAL_ONBOARDING_AUTH_MODULE =
-      "portal/auth-handler.js?v=20260506-portal-interactions";
+      "/portal/auth-handler.js?v=20260707-login-cache";
 
     let portalUseSupabase = false;
     let supabaseClient = null;
@@ -1357,44 +1394,308 @@
     let sharedRefreshTimer = null;
     let sharedRealtimeChannel = null;
 
+    function interviewLoginUrl() {
+      // Do NOT return to Working_interview.html — that caused a login loop when the
+      // interview page failed to read the new session. Land on Admin; open Interviews from there.
+      try {
+        return "/login.html?next=" + encodeURIComponent(new URL("/admin_dashboard.html", window.location.href).href);
+      } catch (_e) {
+        return "/login.html?next=/admin_dashboard.html";
+      }
+    }
+
+    function interviewAdminUrl() {
+      try {
+        return new URL("/admin_dashboard.html", window.location.href).href;
+      } catch (_e) {
+        return "/admin_dashboard.html";
+      }
+    }
+
+    function setInterviewAuthStatus(ok, message) {
+      const bar = document.getElementById("interviewAuthStatus");
+      const msg = document.getElementById("interviewAuthStatusMsg");
+      const link = document.getElementById("interviewAuthLoginLink");
+      if (msg) msg.textContent = message || "";
+      if (bar) bar.classList.toggle("is-ok", !!ok);
+      if (link) {
+        if (ok) {
+          link.classList.add("hidden");
+        } else {
+          // Never send to login when the user is already in Admin — that felt like a loop.
+          link.href = interviewAdminUrl() + "#interviews";
+          link.textContent = "Back to Admin → Interviews";
+          link.classList.remove("hidden");
+        }
+      }
+    }
+
     function syncPortalOnboardingHintVisibility() {
       const hint = document.getElementById("portalOnboardingSupabaseHint");
       if (!hint) return;
       if (portalUseSupabase) hint.classList.add("hidden");
       else hint.classList.remove("hidden");
+      if (portalUseSupabase) {
+        setInterviewAuthStatus(true, "Using your Admin login — interviews save to the shared list.");
+      } else if (isInterviewEmbedded()) {
+        setInterviewAuthStatus(false, "Connecting to your Admin login…");
+        const link = document.getElementById("interviewAuthLoginLink");
+        if (link) link.classList.add("hidden");
+      } else {
+        setInterviewAuthStatus(
+          false,
+          "Open Interviews from Admin with Start / Open — stay inside Admin (do not open this page alone)."
+        );
+      }
+    }
+
+    function isInterviewEmbedded() {
+      try {
+        return new URLSearchParams(window.location.search || "").get("embedded") === "1";
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function sleep(ms) {
+      return new Promise(function (resolve) {
+        setTimeout(resolve, ms);
+      });
+    }
+
+    function readInterviewAuthHandoff() {
+      try {
+        const raw = sessionStorage.getItem("portal_interview_auth_handoff_v1");
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (!data || !data.access_token) return null;
+        if (data.at && Date.now() - Number(data.at) > 5 * 60 * 1000) return null;
+        return data;
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    function clearInterviewAuthHandoff() {
+      try {
+        sessionStorage.removeItem("portal_interview_auth_handoff_v1");
+      } catch (_e) {
+        /* ignore */
+      }
+    }
+
+    async function applySessionToClient(client, sess) {
+      if (!client || !client.auth || !sess || !sess.access_token) return null;
+      if (sess.refresh_token) {
+        try {
+          const restored = await client.auth.setSession({
+            access_token: sess.access_token,
+            refresh_token: sess.refresh_token,
+          });
+          if (restored && restored.data && restored.data.session && restored.data.session.user) {
+            return restored.data.session.user;
+          }
+        } catch (_e) {
+          /* ignore */
+        }
+      }
+      try {
+        if (client.rest && client.rest.headers) {
+          client.rest.headers["Authorization"] = "Bearer " + sess.access_token;
+        }
+      } catch (_eHdr) {
+        /* ignore */
+      }
+      if (sess.user && sess.user.id) return sess.user;
+      try {
+        const gu = await client.auth.getUser(sess.access_token);
+        if (gu && gu.data && gu.data.user) return gu.data.user;
+      } catch (_eUser) {
+        /* ignore */
+      }
+      return null;
+    }
+
+    let pendingParentSession = null;
+    let parentAuthWaiters = [];
+
+    function notifyParentAuthWaiters(sess) {
+      const waiters = parentAuthWaiters.slice();
+      parentAuthWaiters = [];
+      waiters.forEach(function (fn) {
+        try {
+          fn(sess);
+        } catch (_e) {
+          /* ignore */
+        }
+      });
+    }
+
+    function waitForParentAuth(timeoutMs) {
+      if (pendingParentSession && pendingParentSession.access_token) {
+        return Promise.resolve(pendingParentSession);
+      }
+      return new Promise(function (resolve) {
+        const timer = setTimeout(function () {
+          resolve(pendingParentSession);
+        }, timeoutMs || 4000);
+        parentAuthWaiters.push(function (sess) {
+          clearTimeout(timer);
+          resolve(sess);
+        });
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: "portal-interview-auth-request" }, window.location.origin);
+          }
+        } catch (_e) {
+          /* ignore */
+        }
+      });
+    }
+
+    window.addEventListener("message", function (ev) {
+      try {
+        if (!ev || ev.origin !== window.location.origin) return;
+        const data = ev.data || {};
+        if (data.type !== "portal-interview-auth" || !data.session || !data.session.access_token) return;
+        pendingParentSession = data.session;
+        notifyParentAuthWaiters(pendingParentSession);
+        if (!portalUseSupabase && supabaseClient) {
+          applySessionToClient(supabaseClient, pendingParentSession).then(function (user) {
+            if (!user) return;
+            portalUseSupabase = true;
+            syncPortalOnboardingHintVisibility();
+            refreshSharedCandidates(true);
+            startSharedRealtimeSync();
+            if (sharedRefreshTimer) clearInterval(sharedRefreshTimer);
+            sharedRefreshTimer = setInterval(function () {
+              refreshSharedCandidates(false);
+            }, 15000);
+          });
+        }
+      } catch (_eMsg) {
+        /* ignore */
+      }
+    });
+
+    async function resolveStaffSession(client, helpers) {
+      if (!client || !client.auth) return null;
+
+      if (isInterviewEmbedded()) {
+        const fromParent = await waitForParentAuth(5000);
+        if (fromParent && fromParent.access_token) {
+          const user = await applySessionToClient(client, fromParent);
+          if (user) return user;
+        }
+      }
+
+      const handoff = readInterviewAuthHandoff();
+      if (handoff) {
+        const fromHandoff = await applySessionToClient(client, handoff);
+        if (fromHandoff) {
+          clearInterviewAuthHandoff();
+          return fromHandoff;
+        }
+      }
+
+      for (let i = 0; i < 8; i++) {
+        try {
+          const sess = await client.auth.getSession();
+          const user = sess && sess.data && sess.data.session && sess.data.session.user;
+          if (user) return user;
+        } catch (_e) {
+          /* ignore */
+        }
+        if (helpers && typeof helpers.portalReadPersistedSupabaseSession === "function") {
+          try {
+            const persisted = helpers.portalReadPersistedSupabaseSession();
+            const fromPersisted = await applySessionToClient(client, persisted);
+            if (fromPersisted) return fromPersisted;
+          } catch (_e2) {
+            /* ignore */
+          }
+        }
+        await sleep(150 + i * 50);
+      }
+      try {
+        const gu = await client.auth.getUser();
+        if (gu && gu.data && gu.data.user) return gu.data.user;
+      } catch (_e3) {
+        /* ignore */
+      }
+      return null;
     }
 
     async function bootstrapPortalOnboardingSupabase() {
       portalUseSupabase = false;
       supabaseClient = null;
+
+      // Prefer the lightweight client module (same storage as Admin / login).
+      try {
+        const mod = await import(PORTAL_SUPABASE_CLIENT_MODULE);
+        if (mod && typeof mod.getSupabaseClient === "function") {
+          const c = mod.getSupabaseClient();
+          const user = await resolveStaffSession(c, mod);
+          if (user) {
+            supabaseClient = c;
+            portalUseSupabase = true;
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("[onboarding portal] supabase-client import failed", e);
+      }
+
       try {
         const mod = await import(PORTAL_ONBOARDING_AUTH_MODULE);
         if (mod && typeof mod.getSupabaseClient === "function") {
           const c = mod.getSupabaseClient();
-          if (c && c.auth) {
-            const { data: authData } = await c.auth.getUser();
-            if (authData && authData.user) {
-              supabaseClient = c;
-              portalUseSupabase = true;
-              return;
-            }
+          const user = await resolveStaffSession(c, mod);
+          if (user) {
+            supabaseClient = c;
+            portalUseSupabase = true;
+            return;
           }
         }
       } catch (e) {
-        console.warn("[onboarding portal] auth-handler not available (open from staff portal host or use local config)", e);
+        console.warn("[onboarding portal] auth-handler not available", e);
       }
+
       const cfg = readPortalOnboardingSupabaseConfig();
       if (cfg.url && cfg.anonKey && window.supabase && typeof window.supabase.createClient === "function") {
-        supabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey, {
+        const c = window.supabase.createClient(cfg.url, cfg.anonKey, {
           auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
         });
-        portalUseSupabase = true;
+        const user = await resolveStaffSession(c, null);
+        if (user) {
+          supabaseClient = c;
+          portalUseSupabase = true;
+          return;
+        }
       }
+      supabaseClient = null;
+      portalUseSupabase = false;
     }
 
     function getSupabase() {
       if (!portalUseSupabase || !supabaseClient) return null;
       return supabaseClient;
+    }
+
+    function notifySaveFailure(err, context) {
+      const raw = String((err && (err.message || err.error_description || err.code)) || err || "unknown").trim();
+      console.error("Save error", context || "", err);
+      const hint =
+        /jwt|auth|row-level|rls|permission|not authenticated/i.test(raw)
+          ? " Open Admin while signed in, then Interviews → Start a new interview."
+          : /payload|too large|413|statement timeout|bytes/i.test(raw)
+            ? " A recording may be too large — record a shorter clip, then Save again."
+            : "";
+      try {
+        alert("Could not save interview to the club database (" + raw + ")." + hint);
+      } catch (_e) {
+        /* ignore */
+      }
     }
 
     function loadCandidatesFromStorage() {
@@ -1519,13 +1820,18 @@
         return;
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
-      if (candidateId) {
-        const target = candidates.find(c => c.id === candidateId);
-        if (target) await saveCandidateToSupabase(target);
-        return;
-      }
-      for (const c of candidates) {
-        await saveCandidateToSupabase(c);
+      try {
+        if (candidateId) {
+          const target = candidates.find(c => c.id === candidateId);
+          if (target) await saveCandidateToSupabase(target);
+          return;
+        }
+        for (const c of candidates) {
+          await saveCandidateToSupabase(c);
+        }
+      } catch (e) {
+        notifySaveFailure(e, candidateId || "all");
+        throw e;
       }
     }
 
@@ -2036,6 +2342,22 @@
     }
 
     function addNewCandidateFromInput() {
+      if (!portalUseSupabase) {
+        if (isInterviewEmbedded()) {
+          alert("Still connecting to your Admin login — wait a second and try again.");
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ type: "portal-interview-auth-request" }, window.location.origin);
+            }
+          } catch (_e) {
+            /* ignore */
+          }
+          return;
+        }
+        alert("Open Admin → Interviews → Start a new interview (stay inside Admin).");
+        window.location.href = interviewAdminUrl() + "#interviews";
+        return;
+      }
       const name = searchInput.value.trim();
 
       if (!name) {
@@ -2057,7 +2379,7 @@
       const candidate = createCandidate(name);
       addHistoryEntry(candidate, "Candidate profile created.");
       candidates.push(candidate);
-      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+      saveCandidates(candidate.id).catch(function () {});
       currentCandidateId = candidate.id;
       renderSearchResults(filterCandidates(searchInput.value.trim()));
       renderCandidateDetail(candidate.id);
@@ -2296,7 +2618,7 @@
 
       candidate.updatedAt = new Date().toISOString();
       if (!silent) addHistoryEntry(candidate, buildHistorySummary(candidate));
-      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+      saveCandidates(candidate.id).catch(function () {});
 
       if (silent) {
         renderSearchResults(filterCandidates(searchInput.value.trim()));
@@ -2478,7 +2800,7 @@
 
       addHistoryEntry(candidate, `Face to Face outcome completed: ${status}`);
       candidate.updatedAt = new Date().toISOString();
-      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+      saveCandidates(candidate.id).catch(function () {});
       renderSearchResults(filterCandidates(searchInput.value.trim()));
       renderCandidateDetail(candidate.id);
       alert("Outcome completed and saved.");
@@ -2777,7 +3099,7 @@
       const candidate = findCandidateById(candidateId);
       if (!candidate) return;
       candidate.updatedAt = new Date().toISOString();
-      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+      saveCandidates(candidate.id).catch(function () {});
       if (currentCandidateId === candidateId) {
         renderSearchResults(filterCandidates(searchInput.value.trim()));
       }
@@ -2810,7 +3132,7 @@
             if (textPreview) textPreview.innerHTML = renderUploadedDocPreview(dataUrl, file.name || "", "text file");
           }
           candidate.updatedAt = new Date().toISOString();
-          saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+          saveCandidates(candidate.id).catch(function () {});
           renderSearchResults(filterCandidates(searchInput.value.trim()));
         };
         reader.readAsDataURL(file);

@@ -1,7 +1,7 @@
 /**
  * CFK — ClassForKids parent-facing application (weekly services, booking surface).
  *
- * `c4k_services` is the primary CFK screen: programme grid, filters, registers.
+ * `c4k_services` is the primary CFK screen: programme grid, filters, places.
  * Admin mounts it today; the same module will power the dedicated parent portal.
  *
  * Heavy roster rendering stays on the admin host until fully decoupled — this file
@@ -14,7 +14,7 @@
   var PRODUCT_NAME = "CFK";
   var PAGE_TITLE = "Services";
   var PAGE_INTRO =
-    "Programmes and time bands for this week — filter, open registers, and spot spare capacity.";
+    "One place for Autumn 26/27: (1) roster — who’s booked and teaching, (2) fill open roster lines with Assign, (3) live Booking Portal seats with Place. Covers stay in Scheduling.";
 
   var deps = {
     $: function (id) {
@@ -47,6 +47,9 @@
     collectCoaches: function () {
       return [];
     },
+    collectParticipants: function () {
+      return [];
+    },
   };
 
   function configure(options) {
@@ -61,6 +64,7 @@
     var classEl = deps.$("c4kSvcFilterClass");
     var venueEl = deps.$("c4kSvcFilterVenue");
     var coachEl = deps.$("c4kSvcFilterInstructor");
+    var paxEl = deps.$("c4kSvcFilterParticipant");
     var spaceEl = deps.$("c4kSvcFilterSpace");
     var waitEl = deps.$("c4kSvcFilterWait");
     return {
@@ -68,6 +72,7 @@
       class: classEl ? String(classEl.value || "").trim() : "",
       venue: venueEl ? String(venueEl.value || "").trim() : "",
       coach: coachEl ? String(coachEl.value || "").trim().toLowerCase() : "",
+      participant: paxEl ? String(paxEl.value || "").trim().toLowerCase() : "",
       spaceOnly: !!(spaceEl && spaceEl.checked),
       waitOnly: !!(waitEl && waitEl.checked),
     };
@@ -77,11 +82,22 @@
     var classEl = deps.$("c4kSvcFilterClass");
     var venueEl = deps.$("c4kSvcFilterVenue");
     var coachEl = deps.$("c4kSvcFilterInstructor");
+    var paxEl = deps.$("c4kSvcFilterParticipant");
     if (!classEl || !venueEl || !coachEl) return;
     if (!deps.spreadsheetAvailable()) {
       classEl.innerHTML = '<option value="">Any class</option>';
       venueEl.innerHTML = '<option value="">Any venue</option>';
       coachEl.innerHTML = '<option value="">Any instructor</option>';
+      if (global.PortalAdminSearchCombo) {
+        global.PortalAdminSearchCombo.ensure({
+          id: "c4kSvcFilterParticipant",
+          placeholder: "Any participant",
+          allLabel: "Any participant",
+        });
+        global.PortalAdminSearchCombo.setOptions("c4kSvcFilterParticipant", [], {
+          keepValue: false,
+        });
+      }
       return;
     }
     var pack = deps.mergeSessions();
@@ -91,6 +107,7 @@
     });
     var venues = deps.collectVenues(pack);
     var coaches = deps.collectCoaches(pack);
+    var participants = deps.collectParticipants(pack);
     var cVal = classEl.value;
     var vVal = venueEl.value;
     var coVal = coachEl.value;
@@ -141,6 +158,58 @@
       })
         ? coVal
         : "";
+    if (global.PortalAdminSearchCombo && paxEl) {
+      var paxCur = String(paxEl.value || "").trim().toLowerCase();
+      global.PortalAdminSearchCombo.ensure({
+        id: "c4kSvcFilterParticipant",
+        placeholder: "Any participant",
+        allLabel: "Any participant",
+        maxVisible: 20,
+      });
+      global.PortalAdminSearchCombo.setOptions(
+        "c4kSvcFilterParticipant",
+        participants.map(function (p) {
+          return { value: p.id, label: p.name };
+        }),
+        { keepValue: true },
+      );
+      if (
+        paxCur &&
+        participants.some(function (p) {
+          return p.id === paxCur;
+        })
+      ) {
+        var hit = participants.filter(function (p) {
+          return p.id === paxCur;
+        })[0];
+        global.PortalAdminSearchCombo.setValue(
+          "c4kSvcFilterParticipant",
+          hit.id,
+          hit.name,
+        );
+      }
+    } else if (paxEl && paxEl.tagName === "SELECT") {
+      var pVal = paxEl.value;
+      paxEl.innerHTML =
+        '<option value="">Any participant</option>' +
+        participants
+          .map(function (p) {
+            return (
+              '<option value="' +
+              deps.esc(p.id) +
+              '">' +
+              deps.esc(p.name) +
+              "</option>"
+            );
+          })
+          .join("");
+      paxEl.value =
+        pVal && participants.some(function (p) {
+          return p.id === pVal;
+        })
+          ? pVal
+          : "";
+    }
   }
 
   function ensureFiltersDelegated() {
@@ -151,6 +220,7 @@
       c4kSvcFilterClass: 1,
       c4kSvcFilterVenue: 1,
       c4kSvcFilterInstructor: 1,
+      c4kSvcFilterParticipant: 1,
       c4kSvcFilterSpace: 1,
       c4kSvcFilterWait: 1,
     };
@@ -158,8 +228,47 @@
       var t = ev.target;
       if (!t || !t.id || !ids[t.id]) return;
       var st = deps.getState();
-      if (st && st.view === VIEW_ID) refreshPartial();
+      if (st && st.view === VIEW_ID) {
+        refreshPartial();
+        syncOpenPlacesFromFilters();
+      }
     });
+  }
+
+  function syncOpenPlacesFromFilters() {
+    var op = global.PortalAdminOpenPlaces2627;
+    if (!op || typeof op.syncFromServicesFilters !== "function") return;
+    var filt = readFiltersFromDom();
+    try {
+      op.syncFromServicesFilters({
+        day: filt.day,
+        venue: filt.venue,
+        class: filt.class,
+        clearService: !filt.class,
+      });
+    } catch (_e) {}
+  }
+
+  function capacityEmbedHtml() {
+    if (typeof deps.renderCapacityEmbedHtml === "function") {
+      try {
+        return deps.renderCapacityEmbedHtml() || "";
+      } catch (_e) {
+        return "";
+      }
+    }
+    return "";
+  }
+
+  function openPlacesEmbedHtml() {
+    var op = global.PortalAdminOpenPlaces2627;
+    if (op && typeof op.viewHtml === "function") {
+      return op.viewHtml({ embedded: true });
+    }
+    return (
+      '<div id="op2627Anchor" class="op2627-embed" style="margin-top:28px;min-width:0">' +
+      '<p class="muted">Open places module failed to load.</p></div>'
+    );
   }
 
   function refreshPartial() {
@@ -167,6 +276,23 @@
     var root = deps.$("c4kServicesRosterRoot");
     var filt = readFiltersFromDom();
     if (root) root.innerHTML = deps.renderRosterHtml(a, a, filt);
+    var capHost = deps.$("c4kServicesCapacityEmbed");
+    if (capHost && typeof deps.renderCapacityEmbedHtml === "function") {
+      try {
+        var capHtml = deps.renderCapacityEmbedHtml() || "";
+        if (capHtml) {
+          var wrap = document.createElement("div");
+          wrap.innerHTML = capHtml;
+          var next = wrap.firstElementChild;
+          if (next) capHost.replaceWith(next);
+        }
+      } catch (_e) {}
+    }
+    if (typeof deps.afterRosterRefresh === "function") {
+      try {
+        deps.afterRosterRefresh(root || null);
+      } catch (_e2) {}
+    }
   }
 
   function viewHtml() {
@@ -181,14 +307,18 @@
       deps.esc(PAGE_INTRO) +
       ' <span class="chip chip--info" style="vertical-align:middle;margin-left:4px">' +
       deps.esc(PRODUCT_NAME) +
-      "</span></p>" +
-      '<div class="c4k-svc-jumpbar" style="margin:0 0 12px">' +
-      '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to the Services &amp; capacity board lower on this page">' +
-      '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path fill="currentColor" d="M12 16l-6-6 1.41-1.41L12 13.17l4.59-4.58L18 10z"/></svg>' +
-      "Go to Services &amp; capacity</button></div>" +
+      "</span>" +
+      ' <span class="chip" style="vertical-align:middle;margin-left:4px">Autumn 26/27</span></p>' +
+      '<div class="c4k-svc-jumpbar" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;min-width:0" role="navigation" aria-label="Jump on this page">' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="c4kServicesJumpRoster" title="Jump to the roster">' +
+      "1 · Roster</button>" +
+      '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to Assign on open roster lines">' +
+      "2 · Fill seats</button>" +
+      '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to live Booking Portal seats">' +
+      "3 · Live open places</button></div>" +
       '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>' +
       '<details class="c4k-svc-filters" id="c4kServicesFiltersPanel" open>' +
-      '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class or instructor</summary>' +
+      '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class, instructor or participant</summary>' +
       '<div class="c4k-svc-filters__body">' +
       '<div class="c4k-svc-filters__grid">' +
       '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterDay">Day</label>' +
@@ -203,15 +333,29 @@
       '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterVenue" aria-label="Filter by venue"><option value="">Any venue</option></select></div>' +
       '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterInstructor">Instructor</label>' +
       '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterInstructor" aria-label="Filter by instructor"><option value="">Any instructor</option></select></div>' +
+      '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterParticipant">Participant</label>' +
+      (global.PortalAdminSearchCombo && global.PortalAdminSearchCombo.comboHtml
+        ? global.PortalAdminSearchCombo.comboHtml(
+            "c4kSvcFilterParticipant",
+            "Any participant",
+            "100%",
+          )
+        : '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterParticipant" aria-label="Filter by participant"><option value="">Any participant</option></select>') +
+      "</div>" +
       "</div>" +
       '<div class="c4k-svc-filters__row2">' +
       '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesRefreshBtn">Refresh</button>' +
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterSpace"><span>Space available</span> <input type="checkbox" id="c4kSvcFilterSpace" /></label>' +
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterWait"><span>Participants on waiting list</span> <input type="checkbox" id="c4kSvcFilterWait" /></label>' +
       "</div></div></details>" +
-      '<div id="c4kServicesRosterRoot" style="min-width:0;margin-top:4px">' +
+      '<section id="c4kServicesRosterAnchor" aria-label="Roster" style="min-width:0;scroll-margin-top:14px">' +
+      '<h2 class="page-title" style="font-size:1.15rem;margin:14px 0 6px;min-width:0;overflow-wrap:break-word">1 · Roster</h2>' +
+      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who is booked, instructors, and open lines on each band. Use <strong>Open places ↓</strong> on a day to filter live seats below.</p>' +
+      '<div id="c4kServicesRosterRoot" style="min-width:0">' +
       rosterPart +
-      "</div>"
+      "</div></section>" +
+      capacityEmbedHtml() +
+      openPlacesEmbedHtml()
     );
   }
 

@@ -7,7 +7,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
   <meta name="theme-color" content="#f4f8fb" />
+  <!-- book-sheet-copy: 20260831-selfserve-v4 -->
   <meta name="description" content="Browse clubSENsational services and weekly session times. See the full offer — including fully booked slots." />
   <link rel="canonical" href="https://www.clubsensational.org/bookingportal" />
   <title>Booking Portal — clubSENsational</title>
@@ -137,11 +140,19 @@
     }
     .brand .lede {
       margin: 0;
-      max-width: 42rem;
+      max-width: min(56rem, 100%);
       width: 100%;
       color: var(--muted);
-      font-size: clamp(0.95rem, 2vw, 1.05rem);
+      font-size: clamp(0.9rem, 1.7vw, 1.05rem);
       overflow-wrap: break-word;
+      min-width: 0;
+    }
+    /* Keep the lede on one line when the viewport is wide enough. */
+    @media (min-width: 860px) {
+      .brand .lede {
+        white-space: nowrap;
+        overflow-wrap: normal;
+      }
     }
 
     .offer-banner {
@@ -314,6 +325,8 @@
       margin: 0 0 22px;
       width: 100%;
       min-width: 0;
+      container-type: inline-size;
+      container-name: services;
     }
     .services__group { min-width: 0; width: 100%; }
     .services__label {
@@ -333,37 +346,69 @@
     }
     @media (min-width: 640px) {
       .services__grid--core { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .services__grid--more { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      /* Same card width as core (2 of 3 columns), centred in the row. */
+      .services__grid--pair {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        max-width: calc((2 * (100% - 28px) / 3) + 14px);
+        margin-inline: auto;
+      }
+      /* Full row width. Crash a bit wider for triple photos. */
+      .services__grid--crash-pair {
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+        width: 100%;
+        max-width: 100%;
+        margin-inline: auto;
+        align-items: stretch;
+      }
+      /*
+        Same absolute photo height as a core / Day-support card (1/3 row × 16/10).
+        Crash & Counselling cards are wider, so without this their bands look flatter.
+      */
+      .services__grid--core .svc-card__media,
+      .services__grid--crash-pair .svc-card__media {
+        aspect-ratio: auto;
+        height: calc((100cqw - 28px) / 3 * 10 / 16);
+        flex-shrink: 0;
+      }
     }
-    @media (min-width: 960px) {
-      .services__grid--more { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .services__grid--solo {
+      display: grid;
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+    .services__grid--solo .svc-card {
+      width: 100%;
+      /* Match pair width (2 of 3 core columns). */
+      max-width: min(100%, calc((2 * (100% - 28px) / 3) + 14px));
+    }
+    @media (max-width: 639px) {
+      .services__grid--solo .svc-card {
+        max-width: 100%;
+      }
     }
     .svc-card {
       background: var(--white);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 20px 14px 16px;
+      padding: 0 0 16px;
       min-width: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 10px;
+      align-items: stretch;
+      gap: 0;
       box-shadow: 0 6px 18px rgba(23, 50, 71, 0.04);
       width: 100%;
       text-align: center;
-      cursor: pointer;
-      font: inherit;
-      color: inherit;
+      overflow: hidden;
       transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
     }
-    .svc-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 14px 28px rgba(23, 50, 71, 0.1);
-      border-color: rgba(45, 132, 179, 0.35);
-    }
-    .svc-card:focus-visible {
-      outline: 2px solid var(--blue);
-      outline-offset: 2px;
+    @media (hover: hover) {
+      .svc-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 28px rgba(23, 50, 71, 0.1);
+        border-color: rgba(45, 132, 179, 0.35);
+      }
     }
     .svc-card.is-active {
       border-color: rgba(45, 132, 179, 0.55);
@@ -373,28 +418,188 @@
       .svc-card { transition: none; }
       .svc-card:hover { transform: none; }
     }
+    .svc-card__media {
+      position: relative;
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      min-height: 0;
+      flex-shrink: 0;
+      overflow: hidden;
+      background: linear-gradient(145deg, #d7ebf5, #eef4f8 55%, #f7fafc);
+    }
+    .svc-card__media img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    .svc-card__media--split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    .svc-card__media--split .svc-card__media-pane {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .svc-card__media--split .svc-card__media-pane + .svc-card__media-pane {
+      border-left: 2px solid #fff;
+    }
+    .svc-card__media--split img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    /* Two photos with a diagonal cut (Multi-Activity).
+       Each photo only fills ~half the card (not full-bleed + clip), so subjects
+       are not overly zoomed. */
+    .svc-card__media--diagonal {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr;
+      aspect-ratio: 16 / 10;
+      gap: 0;
+    }
+    .svc-card__media--diagonal .svc-card__media-pane {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background: linear-gradient(145deg, #d7ebf5, #eef4f8 55%, #f7fafc);
+    }
+    .svc-card__media--diagonal .svc-card__media-pane:first-child {
+      clip-path: polygon(0 0, 100% 0, 78% 100%, 0 100%);
+      z-index: 1;
+    }
+    .svc-card__media--diagonal .svc-card__media-pane:last-child {
+      margin-left: -22%;
+      width: calc(100% + 22%);
+      clip-path: polygon(22% 0, 100% 0, 100% 100%, 0 100%);
+      z-index: 0;
+      border-left: 3px solid #fff;
+    }
+    .svc-card__media--diagonal img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    .svc-card__media--diagonal .svc-card__media-pane:first-child img {
+      object-position: 35% center;
+    }
+    .svc-card__media--diagonal .svc-card__media-pane:last-child img {
+      object-position: 55% center;
+    }
+    .svc-card__media--diagonal .svc-card__media-pane:first-child .svc-card__media-label {
+      left: 8px;
+      right: auto;
+    }
+    .svc-card__media--diagonal .svc-card__media-pane:last-child .svc-card__media-label {
+      left: auto;
+      right: 8px;
+    }
+    /* Three equal panes (Intensive: swim / climb / activities). */
+    .svc-card__media--triple {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: minmax(0, 1fr);
+      gap: 0;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      align-items: stretch;
+    }
+    .svc-card__media--triple .svc-card__media-pane {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    .svc-card__media--triple .svc-card__media-pane + .svc-card__media-pane {
+      border-left: 2px solid #fff;
+    }
+    .svc-card__media--triple img {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    /* Activities pane (multi.jpg): favour the child on the left; crop the adult on the right. */
+    .svc-card__media--triple .svc-card__media-pane:nth-child(3) img,
+    .svc-card__media-img--activities-focus {
+      object-position: 4% 42%;
+    }
+    .svc-card__media--triple .svc-card__media-label {
+      left: 4px;
+      bottom: 6px;
+      padding: 2px 6px;
+      font-size: 0.62rem;
+      max-width: calc(100% - 8px);
+    }
+    .svc-card__media-label {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      z-index: 1;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15, 35, 52, 0.72);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+      max-width: calc(100% - 16px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .svc-card__body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 14px 4px;
+      min-width: 0;
+    }
     .svc__icon {
       flex: 0 0 auto;
-      width: 56px;
-      height: 56px;
+      width: 44px;
+      height: 44px;
+      margin-top: -30px;
+      border: 2px solid #fff;
+      box-shadow: 0 6px 14px rgba(23, 50, 71, 0.12);
+      position: relative;
+      z-index: 1;
       border-radius: 16px;
       display: grid;
       place-items: center;
-      margin: 0 auto;
       background: var(--blueSoft);
       color: var(--blueDeep);
     }
     .svc__icon svg {
-      width: 28px !important;
-      height: 28px !important;
-      max-width: 28px !important;
-      max-height: 28px !important;
+      width: 22px !important;
+      height: 22px !important;
+      max-width: 22px !important;
+      max-height: 22px !important;
     }
     .svc__icon--climb { background: #fff6e5; color: #b7791f; }
     .svc__icon--physical { background: #f3e8ff; color: #7c3aed; }
     .svc__icon--multi { background: #e8f0fe; color: #1d4ed8; }
     .svc__icon--bespoke { background: #fff1e8; color: #c2410c; }
     .svc__icon--dc { background: #eef6f2; color: #1f6b4a; }
+    .svc__icon--counsel { background: #eef2ff; color: #4338ca; }
     .svc__icon--intensive { background: #fce7f3; color: #be185d; }
     .svc-card h3 {
       margin: 0;
@@ -428,12 +633,28 @@
     }
     .svc-meta {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
       gap: 8px;
       margin: 0;
       min-width: 0;
       width: 100%;
+    }
+    .svc-meta__row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      min-width: 0;
+      width: 100%;
+    }
+    .svc-meta__venues {
+      width: 100%;
+    }
+    .svc-meta__venues .chip {
+      max-width: 100%;
+      justify-content: center;
+      text-align: center;
     }
     .chip {
       display: inline-flex;
@@ -451,12 +672,20 @@
       overflow-wrap: anywhere;
     }
     .chip svg { width: 13px; height: 13px; flex: 0 0 auto; color: var(--blue); }
+    .svc-card__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 2px;
+      padding: 0 14px;
+      min-width: 0;
+      width: 100%;
+    }
     .svc-card__cta {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      margin-top: 2px;
       padding: 11px 14px;
       border-radius: 12px;
       background: var(--blue);
@@ -464,9 +693,211 @@
       font-weight: 800;
       font-size: 0.9rem;
       width: 100%;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      min-width: 0;
+      overflow-wrap: break-word;
     }
-    .svc-card__cta svg { width: 16px; height: 16px; }
-    .svc-card.is-active .svc-card__cta { background: var(--blueDeep); }
+    .svc-card__cta--info {
+      background: var(--white);
+      color: var(--blueDeep);
+      border: 1px solid rgba(45, 132, 179, 0.35);
+    }
+    .svc-card__cta svg { width: 16px; height: 16px; flex: 0 0 auto; }
+    .svc-card.is-active .svc-card__cta:not(.svc-card__cta--info) { background: var(--blueDeep); }
+    .svc-card__cta:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
+    /* Service info — inline panel on the page (not a blocking modal) */
+    .svc-info-inline {
+      margin: 0 0 24px;
+      scroll-margin-top: 100px;
+      min-width: 0;
+      width: 100%;
+    }
+    .svc-info-panel {
+      width: 100%;
+      padding: 0;
+      overflow: hidden;
+      display: block;
+      border-radius: var(--radius);
+      box-shadow: 0 12px 32px rgba(23, 50, 71, 0.1);
+      background: var(--white);
+      border: 1px solid rgba(45, 132, 179, 0.35);
+      min-width: 0;
+      position: relative;
+    }
+    .svc-card.is-info-open {
+      border-color: rgba(45, 132, 179, 0.55);
+      box-shadow: 0 0 0 3px rgba(45, 132, 179, 0.18);
+    }
+    .svc-info-panel__close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 3;
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--ink);
+      font: inherit;
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(23, 50, 71, 0.18);
+    }
+    .svc-info-panel__close:hover { background: #fff; }
+    .svc-info-panel__close:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
+    .svc-info-panel__body {
+      min-width: 0;
+    }
+    .svc-info-hero {
+      position: relative;
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      min-width: 0;
+    }
+    .svc-info-hero .svc-card__media {
+      border-radius: 0;
+      aspect-ratio: 16 / 6;
+      max-height: 380px;
+    }
+    .svc-info-hero .svc-card__media img {
+      object-position: center 35%;
+    }
+    .svc-info-hero .svc__icon {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translate(-50%, 50%);
+      margin: 0;
+      width: 56px;
+      height: 56px;
+      z-index: 2;
+    }
+    .svc-info-hero .svc__icon svg {
+      width: 26px !important;
+      height: 26px !important;
+    }
+    .svc-info-body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 34px clamp(20px, 4vw, 32px) 22px;
+      text-align: center;
+      min-width: 0;
+    }
+    .svc-info-body h3 {
+      margin: 0;
+      color: var(--ink);
+      font-size: clamp(1.28rem, 3.6vw, 1.75rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      overflow-wrap: break-word;
+      width: 100%;
+      min-width: 0;
+    }
+    .svc-info-sheet__lead {
+      margin: 0;
+      font-size: clamp(0.96rem, 2vw, 1.05rem);
+      color: var(--text);
+      line-height: 1.55;
+      overflow-wrap: break-word;
+      width: 100%;
+      max-width: 52rem;
+      text-align: left;
+    }
+    .svc-info-sheet__meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin: 0;
+      min-width: 0;
+      width: 100%;
+    }
+    .svc-info-sheet__label {
+      margin: 4px 0 0;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      width: 100%;
+      text-align: left;
+    }
+    .svc-info-sheet__list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+    }
+    .svc-info-sheet__list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #f3f7fb;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-size: clamp(0.9rem, 1.8vw, 0.98rem);
+      line-height: 1.45;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .svc-info-sheet__list li svg {
+      flex: 0 0 auto;
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      color: var(--ok);
+    }
+    .svc-info-sheet__list li span {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .svc-info-panel__footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 16px clamp(20px, 4vw, 32px) 20px;
+      border-top: 1px solid var(--line);
+      background: linear-gradient(180deg, #fafcfe 0%, #fff 100%);
+      min-width: 0;
+    }
+    .svc-info-panel__footer .btn {
+      width: 100%;
+      min-width: 0;
+      padding: 13px 16px;
+      font-size: 0.95rem;
+    }
+    @media (min-width: 900px) {
+      .svc-info-sheet__list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+    }
 
     .offer-block {
       scroll-margin-top: 96px;
@@ -503,7 +934,8 @@
       min-width: 0;
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
+      align-items: center;
+      text-align: center;
       gap: 10px;
     }
     .term-badge {
@@ -592,6 +1024,7 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
       gap: 10px 12px;
       min-width: 0;
       margin: 0;
@@ -600,9 +1033,92 @@
     .timetable__title-main {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 10px;
       min-width: 0;
+      max-width: 100%;
+    }
+    .timetable__photo {
       width: 100%;
+      max-width: 200px;
+      aspect-ratio: 16 / 10;
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 0 auto;
+      background: #e8eef3;
+      border: 1px solid var(--line);
+      flex: 0 0 auto;
+    }
+    .timetable__photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .timetable__photo--split {
+      max-width: 260px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+    }
+    .timetable__photo--split img {
+      min-width: 0;
+      min-height: 0;
+    }
+    .timetable__photo--triple {
+      max-width: 300px;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: minmax(0, 1fr);
+      gap: 2px;
+      align-items: stretch;
+    }
+    .timetable__photo--triple img {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+    .timetable__photo--triple img:nth-child(3),
+    .timetable__photo--triple .svc-card__media-img--activities-focus {
+      object-position: 4% 42%;
+    }
+    .timetable__photo--diagonal {
+      max-width: 260px;
+      aspect-ratio: 16 / 10;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      position: relative;
+      background: linear-gradient(145deg, #d7ebf5, #eef4f8 55%, #f7fafc);
+      overflow: hidden;
+    }
+    .timetable__photo--diagonal img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      min-width: 0;
+      min-height: 0;
+      display: block;
+    }
+    .timetable__photo--diagonal img:first-child {
+      clip-path: polygon(0 0, 100% 0, 78% 100%, 0 100%);
+      z-index: 1;
+      object-position: 35% center;
+    }
+    .timetable__photo--diagonal img:last-child {
+      margin-left: -22%;
+      width: calc(100% + 22%);
+      clip-path: polygon(22% 0, 100% 0, 100% 100%, 0 100%);
+      border-left: 2px solid #fff;
+      object-position: 55% center;
     }
     .timetable__icon {
       flex: 0 0 auto;
@@ -625,6 +1141,7 @@
     .timetable__icon.svc__icon--multi { background: #e8f0fe; color: #1d4ed8; }
     .timetable__icon.svc__icon--bespoke { background: #fff1e8; color: #c2410c; }
     .timetable__icon.svc__icon--dc { background: #eef6f2; color: #1f6b4a; }
+    .timetable__icon.svc__icon--counsel { background: #eef2ff; color: #4338ca; }
     .timetable__icon.svc__icon--intensive { background: #fce7f3; color: #be185d; }
     .timetable__head h3 {
       margin: 0;
@@ -633,6 +1150,7 @@
       font-weight: 800;
       overflow-wrap: break-word;
       min-width: 0;
+      text-align: center;
     }
     .timetable__range {
       margin: 0;
@@ -640,10 +1158,26 @@
       color: var(--muted);
       font-weight: 600;
       overflow-wrap: break-word;
-      padding-left: 54px;
+      padding-left: 0;
+      text-align: center;
+      max-width: 36rem;
+      width: 100%;
     }
-    @media (max-width: 480px) {
-      .timetable__range { padding-left: 0; }
+    .timetable__about {
+      margin: 8px 0 0;
+      min-width: 0;
+      width: 100%;
+      text-align: center;
+    }
+    .timetable__about-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      min-width: 0;
+      max-width: 100%;
     }
     .venue-block {
       margin: 18px 0 0;
@@ -660,13 +1194,17 @@
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 8px 10px;
       margin: 0 0 10px;
       font-size: clamp(1.15rem, 2.4vw, 1.35rem);
       font-weight: 800;
       color: var(--ink);
       min-width: 0;
       overflow-wrap: break-word;
+    }
+    .venue-block__title .term-badge {
+      font-size: 0.68rem;
+      padding: 4px 10px;
     }
     .venue-block__title svg { width: 22px; height: 22px; max-width: 22px; max-height: 22px; color: var(--blue); flex: 0 0 auto; }
     .venue-block__activity {
@@ -1044,11 +1582,13 @@
       inset: 0;
       z-index: 40;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
       background: rgba(23, 50, 71, 0.35);
-      padding: 16px;
+      padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      box-sizing: border-box;
     }
+    .sheet[hidden] { display: none !important; }
     .sheet__panel {
       width: min(460px, 100%);
       background: var(--white);
@@ -1056,8 +1596,10 @@
       padding: 18px;
       border: 1px solid var(--line);
       min-width: 0;
-      max-height: min(80dvh, 520px);
+      max-height: min(85dvh, 640px);
       overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      box-shadow: 0 18px 48px rgba(23, 50, 71, 0.22);
     }
     .sheet__panel h3 {
       margin: 0 0 6px;
@@ -1072,8 +1614,69 @@
     }
     .sheet__actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .sheet__actions .btn { flex: 1 1 140px; }
+    .sheet__choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 14px 0 4px;
+      min-width: 0;
+    }
+    .sheet__choice {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line, #d7e0e8);
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      min-width: 0;
+    }
+    .sheet__choice:hover { border-color: var(--blue, #2d84b3); }
+    .sheet__choice--pri {
+      background: #0f7a4a;
+      border-color: #0f7a4a;
+      color: #fff;
+    }
+    .sheet__choice--pri:hover { background: #0f5c38; border-color: #0f5c38; }
+    .sheet__choice strong {
+      display: block;
+      font-size: 15px;
+      overflow-wrap: break-word;
+    }
+    .sheet__choice span {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.4;
+      opacity: 0.88;
+      overflow-wrap: break-word;
+    }
+    .sheet__choice--pri span { opacity: 0.92; }
+    .wl-join { min-width: 0; }
+    .wl-join__label {
+      display: block;
+      margin: 10px 0 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft, #3a4a58);
+    }
+    .wl-join__input {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
+      border: 1px solid var(--line, #d7e0e8);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 15px;
+      background: #fff;
+    }
+    .wl-join__textarea { resize: vertical; min-height: 64px; }
+    .wl-join__submit { border: none; cursor: pointer; font: inherit; font-weight: 600; padding: 12px 14px; border-radius: 12px; }
 
-    /* —— Access gate: preview OK, seats / prices / book locked until verified —— */
+    /* —— Access gate: 5s clear preview, then blur + register modal (page stays scrollable) —— */
     html.booking-gated,
     body.booking-gated {
       cursor: default;
@@ -1082,10 +1685,12 @@
     body.booking-gated .slot-col--action .btn,
     body.booking-gated .svc-meta,
     body.booking-gated .svc-card__hint,
-    body.booking-gated .day-acc__remaining {
+    body.booking-gated .day-acc__remaining,
+    body.booking-gated .svc-card__body,
+    body.booking-gated .slot-row,
+    body.booking-gated .timetable-wrap {
       filter: blur(5px);
       user-select: none;
-      pointer-events: none;
     }
     body.booking-gated .slot-col--action .btn,
     body.booking-gated [data-book],
@@ -1093,20 +1698,21 @@
     body.booking-gated [data-dc-enquire] {
       pointer-events: none !important;
     }
-    body.booking-gate-open {
-      overflow: hidden !important;
-    }
+    /* Modal open: keep scroll; clicks on dimmed area pass through to the page */
     .booking-gate {
       position: fixed;
       inset: 0;
       z-index: 80;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
-      background: rgba(23, 50, 71, 0.48);
-      backdrop-filter: blur(2px);
-      -webkit-backdrop-filter: blur(2px);
+      padding-top: max(48px, env(safe-area-inset-top));
+      background: rgba(23, 50, 71, 0.28);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      pointer-events: none;
+      overflow: auto;
     }
     .booking-gate[hidden] { display: none !important; }
     .booking-gate__panel {
@@ -1119,6 +1725,8 @@
       box-shadow: 0 24px 60px rgba(23, 50, 71, 0.22);
       padding: 18px 20px 18px;
       min-width: 0;
+      pointer-events: auto;
+      margin: 0 auto 24px;
     }
     .booking-gate__brand {
       margin: 0 0 8px;
@@ -1228,7 +1836,8 @@
     }
     .booking-gate__field input[type="text"],
     .booking-gate__field input[type="email"],
-    .booking-gate__field input[type="tel"] {
+    .booking-gate__field input[type="tel"],
+    .booking-gate__field input[type="password"] {
       width: 100%;
       min-width: 0;
       border: 1px solid var(--line);
@@ -1238,6 +1847,10 @@
       font-size: 1rem;
       color: var(--ink);
       background: #fbfdff;
+    }
+    .booking-gate__field input.booking-gate__pin {
+      letter-spacing: 0.35em;
+      font-variant-numeric: tabular-nums;
     }
     .booking-gate__field input:focus {
       outline: 2px solid rgba(45, 132, 179, 0.35);
@@ -1315,6 +1928,316 @@
       cursor: pointer;
       text-decoration: underline;
     }
+
+    /* Service rows layout (default). Opt out: ?layout=cards */
+    body.booking-svc-rows .services__preview-note {
+      display: none;
+    }
+    body.booking-svc-rows .services__label:not(.services__label--rows) { display: none; }
+    body.booking-svc-rows .services__rows-band {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: stretch;
+      min-width: 0;
+      width: 100%;
+    }
+    body.booking-svc-rows .services__rows-band + .services__rows-band {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+    body.booking-svc-rows .services__label--rows {
+      display: block;
+      margin: 0 0 4px;
+      padding: 0;
+      font-size: 0.78rem;
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
+    body.booking-svc-rows .page {
+      display: flex;
+      flex-direction: column;
+    }
+    body.booking-svc-rows .brand { order: 1; }
+    body.booking-svc-rows .offer-banner { order: 2; }
+    body.booking-svc-rows .filters { order: 3; }
+    body.booking-svc-rows #serviceCards { order: 4; }
+    body.booking-svc-rows #offerTimes { order: 6; }
+    body.booking-svc-rows .foot { order: 99; }
+    body.booking-svc-rows.booking-svc-rows--has-context #serviceCards { order: 3; }
+    body.booking-svc-rows.booking-svc-rows--has-context .filters { order: 5; }
+    body.booking-svc-rows .services__grid--rows {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    body.booking-svc-rows .svc-card--row {
+      flex-direction: row;
+      align-items: stretch;
+      text-align: left;
+      padding: 0;
+      gap: 0;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__body {
+      flex: 1 1 auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 12px 14px;
+      gap: 10px 14px;
+      min-width: 0;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__row-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 8px;
+      flex: 0 1 132px;
+      min-width: min(100%, 112px);
+      padding: 6px 8px;
+      min-height: 0;
+    }
+    body.booking-svc-rows .svc-card--row .svc__icon {
+      margin-top: 0;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 46px;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__row-title {
+      min-width: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    body.booking-svc-rows .svc-card--row h3 {
+      text-align: center;
+      font-size: 0.98rem;
+      width: 100%;
+      overflow-wrap: break-word;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__actions {
+      flex: 0 0 auto;
+      width: auto;
+      min-width: 0;
+      margin-left: auto;
+      align-self: center;
+      padding-right: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__avail {
+      margin: 0;
+      width: 100%;
+      min-width: 0;
+      display: flex;
+      justify-content: center;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__avail .chip {
+      max-width: 100%;
+    }
+    body.booking-svc-rows .svc-card--row .chip--open {
+      background: var(--okSoft);
+      border-color: rgba(34, 139, 87, 0.25);
+      color: var(--ok);
+    }
+    body.booking-svc-rows .svc-card--row .chip--open svg { color: var(--ok); }
+    body.booking-svc-rows .svc-card--row .chip--full {
+      background: var(--dangerSoft);
+      border-color: rgba(198, 62, 62, 0.25);
+      color: var(--danger);
+    }
+    body.booking-svc-rows .svc-card--row .chip--full svg { color: var(--danger); }
+    body.booking-svc-rows .svc-card--row .svc-card__row-main {
+      flex: 1 1 280px;
+      min-width: min(100%, 240px);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__blurb {
+      text-align: left;
+      font-size: 0.84rem;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+    }
+    body.booking-svc-rows .svc-card--row .svc-meta {
+      align-items: flex-start;
+    }
+    body.booking-svc-rows .svc-card--row .svc-meta__row {
+      justify-content: flex-start;
+    }
+    body.booking-svc-rows .svc-card--row .svc-card__cta {
+      width: auto;
+      min-width: 148px;
+      white-space: nowrap;
+    }
+    @media (max-width: 720px) {
+      body.booking-svc-rows .svc-card--row .svc-card__body {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      body.booking-svc-rows .svc-card--row .svc-card__row-head,
+      body.booking-svc-rows .svc-card--row .svc-card__row-main {
+        flex: 1 1 auto;
+        width: 100%;
+      }
+      body.booking-svc-rows .svc-card--row .svc-card__row-head {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 8px;
+        padding: 0;
+      }
+      body.booking-svc-rows .svc-card--row .svc-card__row-title {
+        align-items: center;
+      }
+      body.booking-svc-rows .svc-card--row h3 {
+        text-align: center;
+      }
+      body.booking-svc-rows .svc-card--row .svc-card__actions {
+        margin-left: 0;
+        width: 100%;
+      }
+      body.booking-svc-rows .svc-card--row .svc-card__cta {
+        width: 100%;
+      }
+    }
+    body.booking-svc-rows .svc-info-inline,
+    body.booking-svc-rows .offer-block__title,
+    body.booking-svc-rows .timetable__head {
+      display: none !important;
+    }
+    body.booking-svc-rows .svc-context-bar {
+      scroll-margin-top: 96px;
+      min-width: 0;
+      width: 100%;
+    }
+    body.booking-svc-rows .svc-context-bar--inline {
+      grid-column: 1 / -1;
+      margin: 2px 0 12px;
+    }
+    body.booking-svc-rows .svc-rows-detail-stack {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-width: 0;
+      width: 100%;
+      margin: 0 0 8px;
+    }
+    body.booking-svc-rows .svc-rows-detail-stack .filters {
+      margin: 0;
+    }
+    body.booking-svc-rows .svc-rows-detail-stack .offer-block {
+      margin: 0;
+    }
+    body.booking-svc-rows .svc-context-bar__inner {
+      background: var(--white);
+      border: 1px solid rgba(45, 132, 179, 0.35);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(23, 50, 71, 0.08);
+      overflow: hidden;
+      min-width: 0;
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-hero .svc-card__media {
+      aspect-ratio: 16 / 6;
+      max-height: none;
+      min-height: min(44vw, 360px);
+      border-radius: 0;
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-hero .svc-card__media img {
+      object-position: center 35%;
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-hero .svc__icon {
+      position: static;
+      transform: none;
+      width: 56px;
+      height: 56px;
+      margin: -30px auto 0;
+      flex-shrink: 0;
+      border: 2px solid #fff;
+      box-shadow: 0 6px 14px rgba(23, 50, 71, 0.12);
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px 10px;
+      width: 100%;
+      min-width: 0;
+      text-align: center;
+    }
+    body.booking-svc-rows .svc-context-bar__inner--full .svc-info-body h3 {
+      margin-top: 4px;
+    }
+    body.booking-svc-rows .timetable {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 0;
+      margin: 0;
+    }
+    body.booking-svc-rows .timetable + .timetable {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+    body.booking-svc-rows .timetable__rows-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin: 0 0 10px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      min-width: 0;
+    }
+    body.booking-svc-rows .timetable__rows-head-icon {
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: #e8f4fa;
+      color: var(--blueDeep);
+    }
+    body.booking-svc-rows .timetable__rows-head-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+    body.booking-svc-rows .timetable__rows-head-title {
+      margin: 0;
+      min-width: 0;
+      flex: 1 1 auto;
+      font-size: 1rem;
+      line-height: 1.3;
+      color: var(--blueDeep);
+      overflow-wrap: break-word;
+    }
+    body.booking-svc-rows .filters {
+      margin-bottom: 16px;
+    }
   </style>
 </head>
 <body>
@@ -1372,6 +2295,16 @@
     </p>
 
     <section class="services" id="serviceCards" aria-label="Our services"></section>
+
+    <div id="serviceInfoInline" class="svc-info-inline" hidden>
+      <article class="svc-info-panel" role="region" aria-labelledby="svcInfoTitle">
+        <button type="button" class="svc-info-panel__close" id="svcInfoClose" aria-label="Close">×</button>
+        <div id="svcInfoBody" class="svc-info-panel__body"></div>
+        <div class="svc-info-panel__footer">
+          <button type="button" class="btn" id="svcInfoBook">See weekly times</button>
+        </div>
+      </article>
+    </div>
 
     <section class="filters" aria-label="Filters">
       <h2 class="filters__title">
@@ -1439,6 +2372,7 @@
     <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
       <h3 id="sheetTitle">Enquire</h3>
       <p id="sheetBody"></p>
+      <div class="sheet__choices" id="sheetChoices" hidden></div>
       <div class="sheet__actions">
         <a class="btn" id="sheetMail" href="mailto:info@clubsensational.org">Email the office</a>
         <button type="button" class="btn btn--soft" id="sheetClose">Close</button>
@@ -1505,49 +2439,115 @@
         </div>
       </header>
       <div id="bookingLeadStepDetails">
-        <p class="booking-gate__eyebrow">Parent / guardian</p>
-        <div class="booking-gate__tabs" role="tablist" aria-label="Access type">
-          <button
-            type="button"
-            class="booking-gate__tab is-active"
-            id="bookingLeadTabReturning"
-            role="tab"
-            aria-selected="true"
-            data-booking-gate-flow="returning"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            <span>Already with us</span>
-          </button>
-          <button
-            type="button"
-            class="booking-gate__tab"
-            id="bookingLeadTabNew"
-            role="tab"
-            aria-selected="false"
-            data-booking-gate-flow="new"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <line x1="19" y1="8" x2="19" y2="14"/>
-              <line x1="22" y1="11" x2="16" y2="11"/>
-            </svg>
-            <span>New visitor</span>
-          </button>
+        <div id="bookingLeadChoiceBlock">
+          <p class="booking-gate__eyebrow">Parent / guardian</p>
+          <h2 class="booking-gate__title" id="bookingLeadTitle">Welcome</h2>
+          <p class="booking-gate__lede" id="bookingLeadLede">
+            Choose how you’d like to continue. Existing families unlock with parent/carer name, participant name and family PIN.
+          </p>
+          <div class="booking-gate__tabs" role="tablist" aria-label="Access type">
+            <button
+              type="button"
+              class="booking-gate__tab"
+              id="bookingLeadTabReturning"
+              role="tab"
+              aria-selected="false"
+              data-booking-gate-flow="pin"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <span>Already with us</span>
+            </button>
+            <button
+              type="button"
+              class="booking-gate__tab"
+              id="bookingLeadTabNew"
+              role="tab"
+              aria-selected="false"
+              data-booking-gate-flow="new"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <line x1="19" y1="8" x2="19" y2="14"/>
+                <line x1="22" y1="11" x2="16" y2="11"/>
+              </svg>
+              <span>New visitor</span>
+            </button>
+          </div>
         </div>
 
-        <div id="bookingLeadReturningBlock">
-          <h2 class="booking-gate__title" id="bookingLeadTitle">Welcome back</h2>
-          <p class="booking-gate__lede" id="bookingLeadLede">
-            Existing club families and anyone who has already registered on this booking portal can enter with email
-            and a one-time code — no need to request access again.
-            Active family portal users can also
-            <a href="/parent" style="color:var(--blueDeep);font-weight:700">open the family portal</a>.
+        <div id="bookingLeadPinBlock" hidden>
+          <p class="booking-gate__eyebrow">Already with us</p>
+          <h2 class="booking-gate__title">Family PIN</h2>
+          <p class="booking-gate__lede">
+            Enter the parent/carer name, the participant’s name and your 4-digit family PIN. Access unlocks only when they match our records — no email code needed.
+          </p>
+          <form id="bookingLeadPinForm" novalidate>
+            <div class="booking-gate__field">
+              <label for="bookingLeadPinParentName">Parent / carer name <span aria-hidden="true">*</span></label>
+              <input
+                id="bookingLeadPinParentName"
+                name="parent_name"
+                type="text"
+                autocomplete="name"
+                required
+                maxlength="120"
+                placeholder="Parent / carer name on file"
+              />
+            </div>
+            <div class="booking-gate__field">
+              <label for="bookingLeadChildName">Participant name <span aria-hidden="true">*</span></label>
+              <input
+                id="bookingLeadChildName"
+                name="participant_first_name"
+                type="text"
+                autocomplete="given-name"
+                required
+                maxlength="80"
+                placeholder="Participant’s first name on file"
+              />
+            </div>
+            <div class="booking-gate__field">
+              <label for="bookingLeadFamilyPin">Family PIN <span aria-hidden="true">*</span></label>
+              <input
+                id="bookingLeadFamilyPin"
+                name="login_pin"
+                class="booking-gate__pin"
+                type="password"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                required
+                maxlength="6"
+                pattern="[0-9]*"
+                placeholder="4 digits"
+              />
+            </div>
+            <p class="booking-gate__msg" id="bookingLeadPinMsg" hidden></p>
+            <div class="booking-gate__actions">
+              <button type="submit" class="btn btn--book booking-gate__cta" id="bookingLeadPinUnlock">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <span class="booking-gate__btn-label">Unlock booking</span>
+              </button>
+            </div>
+            <div class="booking-gate__secondary">
+              <button type="button" class="booking-gate__linkbtn" id="bookingLeadPinBack">Back</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="bookingLeadReturningBlock" hidden>
+          <p class="booking-gate__eyebrow">Email access</p>
+          <h2 class="booking-gate__title">Email on file</h2>
+          <p class="booking-gate__lede">
+            Enter the email on file and we’ll send a one-time access code.
           </p>
           <form id="bookingLeadReturningForm" novalidate>
             <div class="booking-gate__field">
@@ -1581,17 +2581,21 @@
                 <span class="booking-gate__btn-label">Send access code</span>
               </button>
             </div>
+            <div class="booking-gate__secondary">
+              <button type="button" class="booking-gate__linkbtn" id="bookingLeadReturningBack">Back</button>
+            </div>
           </form>
         </div>
 
         <div id="bookingLeadNewBlock" hidden>
+          <p class="booking-gate__eyebrow">New visitor</p>
           <h2 class="booking-gate__title">Tell us who is looking</h2>
           <p class="booking-gate__lede">
-            New to ClubSENsational? Enter parent/carer details to request access, explore availability, and begin a booking.
+            Enter the parent/carer name, email and phone. We’ll send a one-time access code to continue.
           </p>
           <form id="bookingLeadDetailsForm" novalidate>
             <div class="booking-gate__field">
-              <label for="bookingLeadParentName">Name <span aria-hidden="true">*</span></label>
+              <label for="bookingLeadParentName">Parent / carer name <span aria-hidden="true">*</span></label>
               <input
                 id="bookingLeadParentName"
                 name="parent_name"
@@ -1646,8 +2650,11 @@
                   <rect x="2" y="4" width="20" height="16" rx="2"/>
                   <path d="m22 7-10 7L2 7"/>
                 </svg>
-                <span class="booking-gate__btn-label">Request access code</span>
+                <span class="booking-gate__btn-label">Send access code</span>
               </button>
+            </div>
+            <div class="booking-gate__secondary">
+              <button type="button" class="booking-gate__linkbtn" id="bookingLeadRegisterBack">Back</button>
             </div>
           </form>
         </div>
@@ -1692,14 +2699,28 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260716-daycentre-info"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260825-halfhour-bands"></script>
+  <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
-  <script src="/portal/portal_booking_lead_gate.js?v=20260724-returning-no-privacy"></script>
+  <script src="/portal/portal_booking_lead_gate.js?v=20260831-privacy-not-you"></script>
+  <script src="/portal/portal_booking_waitlist.js?v=20260813-waitlist-session"></script>
   <script>
 (function () {
   "use strict";
   var mock = window.PortalBookingOffer;
   if (!mock) return;
+
+  var SVC_ROWS_LAYOUT = (function () {
+    var q = new URLSearchParams(window.location.search || "");
+    var layout = String(q.get("layout") || "").trim().toLowerCase();
+    if (layout === "cards" || layout === "classic" || layout === "grid") return false;
+    if (layout === "rows" || q.get("compact") === "1") return true;
+    /* Default: rows layout on /bookingportal and /bookingservice */
+    return true;
+  })();
+  if (SVC_ROWS_LAYOUT) {
+    document.body.classList.add("booking-svc-rows");
+  }
 
   var logo = document.getElementById("bookingBrandLogo");
   if (logo && typeof window.portalBrandApplyLogoImg === "function") {
@@ -1721,6 +2742,8 @@
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
     bespoke:
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    counsel:
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg>',
     intensive:
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
     clock:
@@ -1763,8 +2786,112 @@
     if (id === "multi") return { svg: ICONS.multi, cls: "svc__icon--multi" };
     if (id === "bespoke") return { svg: ICONS.bespoke, cls: "svc__icon--bespoke" };
     if (id === "day_centre") return { svg: ICONS.dc, cls: "svc__icon--dc" };
+    if (id === "counselling") return { svg: ICONS.counsel, cls: "svc__icon--counsel" };
     if (id === "intensive") return { svg: ICONS.intensive, cls: "svc__icon--intensive" };
     return { svg: ICONS.swim, cls: "" };
+  }
+
+  function servicePhoto(id) {
+    var base = "/portal/booking-photos/";
+    if (id === "climbing") return base + "climbing.jpg";
+    if (id === "physical") return base + "physical.webp";
+    if (id === "multi") return base + "multi.jpg?v=20260812-table";
+    if (id === "bespoke") return base + "bespoke.jpg";
+    if (id === "day_centre") return base + "daycentre.jpg?v=20260812-hub";
+    if (id === "counselling") return base + "counselling.jpg?v=20260814-web";
+    return base + "aquatic.jpg";
+  }
+
+  function serviceMediaHtml(id) {
+    var base = "/portal/booking-photos/";
+    if (id === "intensive") {
+      return (
+        '<span class="svc-card__media svc-card__media--triple" aria-hidden="true">' +
+        '<span class="svc-card__media-pane">' +
+        '<img src="' +
+        esc(base + "intensive-swim.jpg?v=20260812-pool") +
+        '" alt="" loading="lazy" decoding="async" width="240" height="400" />' +
+        '<span class="svc-card__media-label">Swimming</span>' +
+        "</span>" +
+        '<span class="svc-card__media-pane">' +
+        '<img src="' +
+        esc(base + "intensive-climb.jpg?v=20260814-climb03") +
+        '" alt="" loading="lazy" decoding="async" width="240" height="400" />' +
+        '<span class="svc-card__media-label">Climbing</span>' +
+        "</span>" +
+        '<span class="svc-card__media-pane">' +
+        '<img class="svc-card__media-img--activities-focus" src="' +
+        esc(base + "multi.jpg?v=20260815-act-left") +
+        '" alt="" loading="lazy" decoding="async" width="240" height="400" />' +
+        '<span class="svc-card__media-label">Activities</span>' +
+        "</span>" +
+        "</span>"
+      );
+    }
+    if (id === "multi") {
+      return (
+        '<span class="svc-card__media svc-card__media--diagonal" aria-hidden="true">' +
+        '<span class="svc-card__media-pane">' +
+        '<img src="' +
+        esc(base + "multi.jpg?v=20260812-table") +
+        '" alt="" loading="lazy" decoding="async" width="640" height="400" />' +
+        '<span class="svc-card__media-label">Land</span>' +
+        "</span>" +
+        '<span class="svc-card__media-pane">' +
+        '<img src="' +
+        esc(base + "multi-swim.jpg?v=20260814-sw13") +
+        '" alt="" loading="lazy" decoding="async" width="640" height="400" />' +
+        '<span class="svc-card__media-label">Swimming</span>' +
+        "</span>" +
+        "</span>"
+      );
+    }
+    return (
+      '<span class="svc-card__media" aria-hidden="true">' +
+      '<img src="' +
+      esc(servicePhoto(id)) +
+      '" alt="" loading="lazy" decoding="async" width="640" height="400" />' +
+      "</span>"
+    );
+  }
+
+  /** Compact service photo under timetable title (same assets as service cards). */
+  function timetablePhotoHtml(id) {
+    var base = "/portal/booking-photos/";
+    if (id === "intensive") {
+      return (
+        '<div class="timetable__photo timetable__photo--triple" aria-hidden="true">' +
+        '<img src="' +
+        esc(base + "intensive-swim.jpg?v=20260812-pool") +
+        '" alt="" loading="lazy" decoding="async" width="160" height="125" />' +
+        '<img src="' +
+        esc(base + "intensive-climb.jpg?v=20260814-climb03") +
+        '" alt="" loading="lazy" decoding="async" width="160" height="125" />' +
+        '<img class="svc-card__media-img--activities-focus" src="' +
+        esc(base + "multi.jpg?v=20260815-act-left") +
+        '" alt="" loading="lazy" decoding="async" width="160" height="125" />' +
+        "</div>"
+      );
+    }
+    if (id === "multi") {
+      return (
+        '<div class="timetable__photo timetable__photo--diagonal" aria-hidden="true">' +
+        '<img src="' +
+        esc(base + "multi.jpg?v=20260812-table") +
+        '" alt="" loading="lazy" decoding="async" width="400" height="250" />' +
+        '<img src="' +
+        esc(base + "multi-swim.jpg?v=20260814-sw13") +
+        '" alt="" loading="lazy" decoding="async" width="400" height="250" />' +
+        "</div>"
+      );
+    }
+    return (
+      '<div class="timetable__photo" aria-hidden="true">' +
+      '<img src="' +
+      esc(servicePhoto(id)) +
+      '" alt="" loading="lazy" decoding="async" width="400" height="250" />' +
+      "</div>"
+    );
   }
 
   function fillSelect(sel, values, allLabel) {
@@ -1787,6 +2914,7 @@
   var offerBanner = document.getElementById("offerBanner");
   var offerBannerText = document.getElementById("offerBannerText");
 
+  // Clear browse first; OTP gate blurs + modal after PREVIEW_MS (see portal_booking_lead_gate.js).
   function fillFilterSelects() {
     var opts = mock.filterOptions();
     fillSelect(fService, opts.services, "All services");
@@ -1830,55 +2958,400 @@
     return map[day] || day;
   }
 
-  function serviceCardHtml(s, active) {
+  function isOfficeEnquireService(s) {
+    if (!s) return false;
+    if (s.id === "day_centre" || s.id === "bespoke" || s.id === "counselling") return true;
+    return !!s.enquireOnly && !(s.intensiveBlocks || s.tier === "core");
+  }
+
+  function serviceVisibleInFilters(s, filters) {
+    filters = filters || {};
+    if (filters.serviceId && s.id !== filters.serviceId) return false;
+    if (isOfficeEnquireService(s)) {
+      if (filters.venue && s.venues && s.venues.length && s.venues.indexOf(filters.venue) < 0) {
+        return false;
+      }
+      if (filters.day || filters.timeLabel) return false;
+      return true;
+    }
+    var slots = mock.filterSlots({
+      serviceId: s.id,
+      venue: filters.venue || "",
+      day: filters.day || "",
+      timeLabel: filters.timeLabel || "",
+      hideFull: !!filters.hideFull,
+    });
+    return slots.length > 0;
+  }
+
+  function rowsSlotFiltersActive(filters) {
+    filters = filters || {};
+    return !!(filters.venue || filters.day || filters.timeLabel || filters.hideFull);
+  }
+
+  function rowsTimesBlockVisible(filters) {
+    if (!SVC_ROWS_LAYOUT) return true;
+    if (activeInfoServiceId) return true;
+    if (filters && filters.serviceId) return true;
+    return rowsSlotFiltersActive(filters);
+  }
+
+  function serviceInfoPack(s) {
+    if (window.PortalBookingServiceInfo && typeof window.PortalBookingServiceInfo.pack === "function") {
+      return window.PortalBookingServiceInfo.pack(s);
+    }
+    return {
+      lead: String((s && s.blurb) || "").trim(),
+      bullets: [],
+      url: "",
+    };
+  }
+
+  function serviceInfoBodyHtml(s) {
+    var info = serviceInfoPack(s);
     var pack = serviceIconPack(s.id);
-    var allSlots = mock.filterSlots({ serviceId: s.id, hideFull: false });
-    var openN = allSlots.filter(function (slot) {
+    var chips =
+      '<div class="svc-info-sheet__meta">' +
+      '<span class="chip">' +
+      ICONS.clock +
+      esc(s.durationHint) +
+      "</span>" +
+      (s.priceHint
+        ? '<span class="chip">' + ICONS.pound + esc(s.priceHint) + "</span>"
+        : "") +
+      (s.ageHint
+        ? '<span class="chip">' + ICONS.users + esc(s.ageHint) + "</span>"
+        : "") +
+      "</div>";
+    var venues =
+      s.venues && s.venues.length
+        ? '<div class="svc-info-sheet__meta"><span class="chip">' +
+          ICONS.pin +
+          esc(s.venues.map(mock.venueLabel).join(", ")) +
+          "</span></div>"
+        : "";
+    var bullets =
+      info.bullets && info.bullets.length
+        ? '<p class="svc-info-sheet__label">What to expect</p><ul class="svc-info-sheet__list">' +
+          info.bullets
+            .map(function (b) {
+              return (
+                "<li>" +
+                ICONS.check +
+                "<span>" +
+                esc(b) +
+                "</span></li>"
+              );
+            })
+            .join("") +
+          "</ul>"
+        : "";
+    return (
+      '<div class="svc-info-hero">' +
+      serviceMediaHtml(s.id) +
+      '<div class="svc__icon ' +
+      pack.cls +
+      '" aria-hidden="true">' +
+      pack.svg +
+      "</div></div>" +
+      '<div class="svc-info-body">' +
+      '<h3 id="svcInfoTitle">' +
+      esc(s.name) +
+      "</h3>" +
+      chips +
+      venues +
+      '<p class="svc-info-sheet__lead">' +
+      esc(info.lead) +
+      "</p>" +
+      bullets +
+      "</div>"
+    );
+  }
+
+  function serviceInfoBookLabel(s) {
+    if (!s) return "See weekly times";
+    if (isOfficeEnquireService(s)) return "See how it works";
+    if (s.enquireOnly) return "See details";
+    if (s.intensiveBlocks) return "See course times";
+    return "See weekly times & book";
+  }
+
+  var activeInfoServiceId = "";
+
+  function markInfoServiceCard(serviceId) {
+    document.querySelectorAll(".svc-card[data-service-id]").forEach(function (card) {
+      card.classList.toggle("is-info-open", !!serviceId && card.getAttribute("data-service-id") === serviceId);
+    });
+  }
+
+  function serviceContextBarHtml(s) {
+    return (
+      '<article class="svc-context-bar__inner svc-context-bar__inner--full">' +
+      serviceInfoBodyHtml(s).replace(' id="svcInfoTitle"', ' id="svcContextTitle"') +
+      "</article>"
+    );
+  }
+
+  function restoreRowsPageSections() {
+    if (!SVC_ROWS_LAYOUT) return;
+    var cards = document.getElementById("serviceCards");
+    var filters = document.querySelector(".filters");
+    var times = document.getElementById("offerTimes");
+    var inline = document.getElementById("serviceInfoInline");
+    if (!cards || !filters || !times) return;
+    if (inline && inline.parentNode === cards.parentNode) {
+      inline.after(filters);
+    } else {
+      cards.after(filters);
+    }
+    filters.after(times);
+  }
+
+  function mountRowsDetailStack() {
+    if (!SVC_ROWS_LAYOUT) {
+      restoreRowsPageSections();
+      return;
+    }
+    var stack = document.getElementById("serviceRowsDetailStack");
+    var filters = document.querySelector(".filters");
+    var times = document.getElementById("offerTimes");
+    if (!activeInfoServiceId || !stack || !filters || !times) {
+      restoreRowsPageSections();
+      return;
+    }
+    stack.appendChild(filters);
+    stack.appendChild(times);
+  }
+
+  function updateServiceContextBar() {
+    /* Rows layout: context panel is rendered inline in renderServiceCards(). */
+  }
+
+  function openServiceInfo(serviceId, opts) {
+    var s = mock.serviceById(serviceId);
+    if (!s) return;
+    if (SVC_ROWS_LAYOUT) {
+      activeInfoServiceId = s.id || "";
+      fService.value = s.id || "";
+      refresh();
+      var bar = document.getElementById("serviceContextBar");
+      if ((!opts || opts.scroll !== false) && bar) {
+        bar.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if ((!opts || opts.scroll !== false) && document.querySelector(".filters")) {
+        document.querySelector(".filters").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      try {
+        if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.isUnlocked()) {
+          void window.PortalBookingLeadGate.pingActivity({
+            booking_status: "exploring_services",
+            service_viewed: s.id || "",
+          });
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+      return;
+    }
+    var inline = document.getElementById("serviceInfoInline");
+    var body = document.getElementById("svcInfoBody");
+    var bookBtn = document.getElementById("svcInfoBook");
+    activeInfoServiceId = s.id || "";
+    if (body) body.innerHTML = serviceInfoBodyHtml(s);
+    if (bookBtn) {
+      bookBtn.innerHTML = ICONS.arrow + " " + esc(serviceInfoBookLabel(s));
+      bookBtn.setAttribute("data-svc-info-book", s.id);
+    }
+    if (inline) inline.hidden = false;
+    markInfoServiceCard(s.id);
+    if ((!opts || opts.scroll !== false) && inline && typeof inline.scrollIntoView === "function") {
+      inline.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    try {
+      if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.isUnlocked()) {
+        void window.PortalBookingLeadGate.pingActivity({
+          booking_status: "exploring_services",
+          service_viewed: s.id || "",
+        });
+      }
+    } catch (_e) {
+      /* ignore */
+    }
+  }
+
+  function closeServiceInfo() {
+    activeInfoServiceId = "";
+    var inline = document.getElementById("serviceInfoInline");
+    if (inline) inline.hidden = true;
+    markInfoServiceCard("");
+  }
+
+  function timetableAboutBtnHtml(s) {
+    return (
+      '<p class="timetable__about">' +
+      '<button type="button" class="btn btn--soft timetable__about-btn" data-svc-info="' +
+      esc(s.id) +
+      '">' +
+      ICONS.info +
+      " About this service</button></p>"
+    );
+  }
+
+  function timetableHeadHtml(s, filters, pack, intensiveNote) {
+    if (SVC_ROWS_LAYOUT) return "";
+    var venueSuffix =
+      filters.venue && !isOfficeEnquireService(s)
+        ? " (" + esc(mock.venueLabel(filters.venue)) + ")"
+        : "";
+    var range =
+      intensiveNote ||
+      (s.id === "day_centre"
+        ? "Tue 1 September 2026 – Fri 18 December 2026 · Mon–Fri 11am–4pm"
+        : s.id === "bespoke"
+          ? "Contact the office to enquire"
+          : mock.TERM_RANGE || "Sat 5 September 2026 – Fri 18 December 2026 · Mon after-school from 7 September · Tue–Fri from 8 September");
+    return (
+      '<div class="timetable__head">' +
+      timetablePhotoHtml(s.id) +
+      '<div class="timetable__title-row">' +
+      '<div class="timetable__title-main">' +
+      '<div class="timetable__icon ' +
+      pack.cls +
+      '" aria-hidden="true">' +
+      pack.svg +
+      "</div>" +
+      "<h3>" +
+      esc(s.name) +
+      venueSuffix +
+      "</h3>" +
+      "</div></div>" +
+      '<p class="timetable__range">' +
+      esc(range) +
+      "</p>" +
+      timetableAboutBtnHtml(s) +
+      "</div>"
+    );
+  }
+
+  function timetableRowsHeadHtml(s, pack) {
+    return (
+      '<div class="timetable__rows-head">' +
+      '<div class="timetable__rows-head-icon ' +
+      pack.cls +
+      '" aria-hidden="true">' +
+      pack.svg +
+      "</div>" +
+      '<h3 class="timetable__rows-head-title">' +
+      esc(s.name) +
+      "</h3>" +
+      "</div>"
+    );
+  }
+
+  function serviceRowsAvailabilityChipHtml(s, allSlots, openN) {
+    if (isOfficeEnquireService(s) || s.enquireOnly || !allSlots.length) return "";
+    var chip =
+      openN > 0
+        ? '<span class="chip chip--open">' + ICONS.check + " Places available</span>"
+        : '<span class="chip chip--full">' + ICONS.x + " Fully booked</span>";
+    return '<p class="svc-card__avail">' + chip + "</p>";
+  }
+
+  function serviceCardHtml(s, active, filters) {
+    filters = filters || {};
+    var pack = serviceIconPack(s.id);
+    var slotsForAvail = mock.filterSlots({
+      serviceId: s.id,
+      venue: filters.venue || "",
+      day: filters.day || "",
+      timeLabel: filters.timeLabel || "",
+      hideFull: false,
+    });
+    var openN = slotsForAvail.filter(function (slot) {
       return !mock.isFull(slot);
     }).length;
+    var officeEnquire = isOfficeEnquireService(s);
     var enquireOnly = !!s.enquireOnly;
     var hint;
     var ctaLabel;
-    if (s.id === "day_centre" || (enquireOnly && !allSlots.length)) {
-      hint = "Places arranged with the office · Mon–Fri 11am–4pm";
+    if (officeEnquire) {
+      hint =
+        s.id === "day_centre"
+          ? "Places arranged with the office · Mon–Fri 11am–4pm"
+          : s.id === "counselling"
+            ? "Enquire with the office · Chiswick or Zoom"
+            : "Enquire with the office · assessment before any offer";
       ctaLabel = "How it works";
     } else if (enquireOnly) {
       hint = "Enquire with the office · no online booking";
       ctaLabel = "See details";
     } else {
       hint =
-        allSlots.length +
+        slotsForAvail.length +
         " weekly time" +
-        (allSlots.length === 1 ? "" : "s") +
+        (slotsForAvail.length === 1 ? "" : "s") +
         " · " +
         openN +
         " with places" +
-        (openN < allSlots.length ? " · fully booked shown below" : "");
+        (openN < slotsForAvail.length ? " · fully booked shown below" : "");
       ctaLabel = "See weekly times";
     }
     var chips =
+      '<div class="svc-meta__row">' +
       '<span class="chip">' +
       ICONS.clock +
       esc(s.durationHint) +
       "</span>" +
-      '<span class="chip">' +
-      ICONS.pound +
-      esc(s.priceHint) +
-      "</span>" +
+      (s.priceHint
+        ? '<span class="chip">' + ICONS.pound + esc(s.priceHint) + "</span>"
+        : "") +
+      "</div>" +
       (s.venues && s.venues.length
-        ? '<span class="chip">' +
+        ? '<div class="svc-meta__row svc-meta__venues"><span class="chip">' +
           ICONS.pin +
           esc(s.venues.map(mock.venueLabel).join(", ")) +
-          "</span>"
+          "</span></div>"
         : "");
+    if (SVC_ROWS_LAYOUT) {
+      return (
+        '<article class="svc-card svc-card--row' +
+        (active === s.id ? " is-active" : "") +
+        '" data-service-id="' +
+        esc(s.id) +
+        '">' +
+        '<div class="svc-card__body">' +
+        '<div class="svc-card__row-head">' +
+        '<div class="svc__icon ' +
+        pack.cls +
+        '">' +
+        pack.svg +
+        "</div>" +
+        '<div class="svc-card__row-title">' +
+        "<h3>" +
+        esc(s.name) +
+        "</h3>" +
+        "</div></div>" +
+        '<div class="svc-card__row-main">' +
+        '<p class="svc-card__blurb">' +
+        esc(s.blurb) +
+        "</p></div>" +
+        '<div class="svc-card__actions">' +
+        '<button type="button" class="svc-card__cta svc-card__cta--info" data-svc-info="' +
+        esc(s.id) +
+        '">' +
+        ICONS.info +
+        " About this service</button>" +
+        serviceRowsAvailabilityChipHtml(s, slotsForAvail, openN) +
+        "</div></div></article>"
+      );
+    }
     return (
-      '<button type="button" class="svc-card' +
+      '<article class="svc-card' +
       (active === s.id ? " is-active" : "") +
-      '" data-jump-service="' +
-      esc(s.id) +
-      '" aria-controls="timetable-' +
+      '" data-service-id="' +
       esc(s.id) +
       '">' +
+      serviceMediaHtml(s.id) +
+      '<div class="svc-card__body">' +
       '<div class="svc__icon ' +
       pack.cls +
       '">' +
@@ -1896,30 +3369,73 @@
       '<div class="svc-meta">' +
       chips +
       "</div>" +
-      '<span class="svc-card__cta">' +
+      '<div class="svc-card__actions">' +
+      '<button type="button" class="svc-card__cta svc-card__cta--info" data-svc-info="' +
+      esc(s.id) +
+      '">' +
+      ICONS.info +
+      " About this service</button>" +
+      '<button type="button" class="svc-card__cta" data-jump-service="' +
+      esc(s.id) +
+      '" aria-controls="timetable-' +
+      esc(s.id) +
+      '">' +
       esc(ctaLabel) +
       " " +
       ICONS.arrow +
-      "</span>" +
-      "</button>"
+      "</button>" +
+      "</div>" +
+      "</div>" +
+      "</article>"
     );
   }
 
-  function dayCentreInfoHtml(s) {
-    var hours =
-      String(s.infoHours || "").trim() ||
-      "Open Monday to Friday, 11am – 4pm at SwimFarm.";
+  function officeEnquireInfoHtml(s) {
+    var isDc = s && s.id === "day_centre";
+    var isCounsel = s && s.id === "counselling";
+    if (isCounsel) {
+      return (
+        '<div class="dc-info">' +
+        '<p class="dc-info__lead">' +
+        "Counselling for young people and adults with autism and their families. Person-centred sessions — face to face in Chiswick or online via Zoom — short-term (4–6 weeks) or longer. Starts with a short assessment phone call." +
+        "</p>" +
+        '<div class="dc-info__actions">' +
+        '<button type="button" class="btn btn--wait" data-dc-enquire="' +
+        esc(s.id) +
+        '">' +
+        ICONS.mail +
+        " Enquire with the office</button>" +
+        "</div></div>"
+      );
+    }
+    /* Bespoke: short parent copy only — no internal “meet your child / what happens next” notes. */
+    if (!isDc) {
+      return (
+        '<div class="dc-info">' +
+        '<p class="dc-info__lead">' +
+        "An individualised 1:1 programme around the participant’s goals — social communication, independence, and well-being. Arranged with the office; we do not publish Bespoke slots for online booking." +
+        "</p>" +
+        '<div class="dc-info__actions">' +
+        '<button type="button" class="btn btn--wait" data-dc-enquire="' +
+        esc(s.id) +
+        '">' +
+        ICONS.mail +
+        " Enquire with the office</button>" +
+        "</div></div>"
+      );
+    }
+    var hours = String(s.infoHours || "").trim() || "Open Monday to Friday, 11am – 4pm at SwimFarm.";
     var acts = Array.isArray(s.infoActivities) ? s.infoActivities : [];
     if (!acts.length) {
       acts = [
-        "Table work (maths, puzzles, handwriting)",
-        "Sensory room and quiet regulation",
-        "Gym and trampoline",
-        "Swimming / pool time",
-        "Lunch and life skills",
-        "Relaxation",
-        "Music and karaoke",
-        "Community trips (cafe, park, shops) when staffing allows",
+        "Circle time and shared Hub activities with peers",
+        "Vocational tasks (packing, matching, envelopes) plus maths and handwriting",
+        "Gym circuits, basketball, and structured physical activity",
+        "Swimming / aquatic within the day",
+        "Lunch, life skills, and group snack",
+        "Sensory room and regulation time",
+        "Karaoke, film, and end-of-day photo résumé",
+        "Community trips (shops, local outings) with 2:1 when planned",
       ];
     }
     return (
@@ -1930,7 +3446,7 @@
       esc(hours) +
       "</p>" +
       '<p class="dc-info__lead">' +
-      "We do not offer online slots for Day Centre. Places are arranged with the office so we can talk through the day, funding, and the support your child needs." +
+      "The Day Centre is a structured weekday at SwimFarm — circle time, classroom or vocational work, gym, swimming, life skills, and peer activities. Support is usually 1:1 on site (2:1 for transitions, personal care, or community trips). We agree hours, familiarisation, and funding with the office before offering a place — not through online booking." +
       "</p>" +
       '<p class="dc-info__label">A typical day may include</p>' +
       '<ul class="dc-info__list">' +
@@ -1952,27 +3468,107 @@
 
   function renderServiceCards() {
     var host = document.getElementById("serviceCards");
+    var filters = currentFilters();
     var active = fService.value || "";
-    var core = mock.SERVICES.filter(function (s) {
-      return s.tier !== "more";
+    var byId = {};
+    (mock.SERVICES || []).forEach(function (s) {
+      byId[s.id] = s;
     });
-    var more = mock.SERVICES.filter(function (s) {
-      return s.tier === "more";
-    });
+    if (
+      activeInfoServiceId &&
+      (!byId[activeInfoServiceId] || !serviceVisibleInFilters(byId[activeInfoServiceId], filters))
+    ) {
+      activeInfoServiceId = "";
+    }
+    function visibleIds(ids) {
+      return ids.filter(function (id) {
+        return byId[id] && serviceVisibleInFilters(byId[id], filters);
+      });
+    }
+    /* About open: keep sibling cards under the selected service (filters apply to times only). */
+    function rowsCardIds(ids) {
+      var ctxId = String(activeInfoServiceId || "").trim();
+      if (ctxId) {
+        return ids.filter(function (id) {
+          return !!byId[id];
+        });
+      }
+      return visibleIds(ids);
+    }
+    function row(ids) {
+      return visibleIds(ids)
+        .map(function (id) {
+          return serviceCardHtml(byId[id], active, filters);
+        })
+        .join("");
+    }
+    function rowWithInlineContext(ids) {
+      var ctxId = String(activeInfoServiceId || "").trim();
+      return rowsCardIds(ids)
+        .map(function (id) {
+          if (!byId[id]) return "";
+          var html = serviceCardHtml(byId[id], active, filters);
+          if (ctxId && id === ctxId) {
+            html +=
+              '<div id="serviceContextBar" class="svc-context-bar svc-context-bar--inline" aria-live="polite">' +
+              serviceContextBarHtml(byId[id]) +
+              "</div>" +
+              '<div class="svc-rows-detail-stack" id="serviceRowsDetailStack"></div>';
+          }
+          return html;
+        })
+        .join("");
+    }
+    function rowsBandHtml(label, ids) {
+      var visible = rowsCardIds(ids);
+      if (!visible.length) return "";
+      return (
+        '<div class="services__rows-band">' +
+        '<p class="services__label services__label--rows">' +
+        esc(label) +
+        "</p>" +
+        '<div class="services__grid services__grid--rows">' +
+        rowWithInlineContext(visible) +
+        "</div></div>"
+      );
+    }
+    if (SVC_ROWS_LAYOUT) {
+      var ctxId = String(activeInfoServiceId || "").trim();
+      document.body.classList.toggle("booking-svc-rows--has-context", !!ctxId);
+      markInfoServiceCard(ctxId || "");
+      /* Filters/times live in #serviceRowsDetailStack while context is open; pull them
+         back onto .page before replacing #serviceCards HTML or those nodes are lost. */
+      restoreRowsPageSections();
+      host.innerHTML =
+        '<div class="services__group">' +
+        rowsBandHtml("Core services", ["aquatic", "climbing", "physical"]) +
+        rowsBandHtml("Other services", [
+          "multi",
+          "day_centre",
+          "bespoke",
+          "intensive",
+          "counselling",
+        ]) +
+        "</div>";
+      mountRowsDetailStack();
+      return;
+    }
+    restoreRowsPageSections();
     host.innerHTML =
       '<div class="services__group">' +
       '<p class="services__label">Core services</p>' +
       '<div class="services__grid services__grid--core">' +
-      core.map(function (s) {
-        return serviceCardHtml(s, active);
-      }).join("") +
+      row(["aquatic", "climbing", "physical"]) +
       "</div></div>" +
       '<div class="services__group">' +
-      '<p class="services__label">Programmes &amp; extras</p>' +
-      '<div class="services__grid services__grid--more">' +
-      more.map(function (s) {
-        return serviceCardHtml(s, active);
-      }).join("") +
+      '<p class="services__label">Day support &amp; programmes</p>' +
+      '<div class="services__grid services__grid--core">' +
+      row(["multi", "day_centre", "bespoke"]) +
+      "</div></div>" +
+      '<div class="services__group">' +
+      '<p class="services__label">Crash courses &amp; counselling</p>' +
+      '<div class="services__grid services__grid--crash-pair">' +
+      row(["intensive", "counselling"]) +
       "</div></div>";
   }
 
@@ -2162,6 +3758,17 @@
           ICONS.pin +
           esc(vg.venueLabel) +
           (function () {
+            var badge = String((mock && mock.TERM_BADGE) || "AUTUMN TERM 2026").trim();
+            if (!badge || (s && s.intensiveBlocks)) return "";
+            return (
+              '<span class="term-badge term-badge--leaf">' +
+              ICONS.leaf +
+              " " +
+              esc(badge) +
+              "</span>"
+            );
+          })() +
+          (function () {
             var act = "";
             (vg.days || []).some(function (dg) {
               return (dg.slots || []).some(function (slot) {
@@ -2184,7 +3791,7 @@
       .join("");
   }
 
-  function renderIntensiveTimetable(s, filters, pack) {
+  function renderIntensiveTimetable(s, filters, pack, showRowsHead) {
     var slots = mock.filterSlots({
       serviceId: s.id,
       venue: filters.venue,
@@ -2245,24 +3852,13 @@
         })
         .join("");
     }
+    var rowsHead = showRowsHead ? timetableRowsHeadHtml(s, pack) : "";
     return (
       '<article class="timetable" id="timetable-' +
       esc(s.id) +
       '">' +
-      '<div class="timetable__head">' +
-      '<div class="timetable__title-row">' +
-      '<div class="timetable__title-main">' +
-      '<div class="timetable__icon ' +
-      pack.cls +
-      '" aria-hidden="true">' +
-      pack.svg +
-      "</div>" +
-      "<h3>" +
-      esc(s.name) +
-      "</h3>" +
-      "</div></div>" +
-      '<p class="timetable__range">July weeks open first, then each half term.</p>' +
-      "</div>" +
+      rowsHead +
+      timetableHeadHtml(s, filters, pack, "July weeks open first, then each half term.") +
       body +
       "</article>"
     );
@@ -2270,9 +3866,19 @@
 
   function renderTimetables() {
     var host = document.getElementById("timetableHost");
+    var timesBlock = document.getElementById("offerTimes");
     var filters = currentFilters();
+    if (SVC_ROWS_LAYOUT && timesBlock) {
+      timesBlock.hidden = !rowsTimesBlockVisible(filters);
+      if (timesBlock.hidden) {
+        host.innerHTML = "";
+        return;
+      }
+    }
     var services = mock.SERVICES.filter(function (s) {
-      return !filters.serviceId || s.id === filters.serviceId;
+      if (filters.serviceId && s.id !== filters.serviceId) return false;
+      if (SVC_ROWS_LAYOUT && !serviceVisibleInFilters(s, filters)) return false;
+      return true;
     });
 
     if (!services.length) {
@@ -2280,15 +3886,17 @@
       return;
     }
 
+    var showRowsHead = SVC_ROWS_LAYOUT && !activeInfoServiceId && services.length > 0;
+
     var html = services
       .map(function (s) {
         var pack = serviceIconPack(s.id);
         if (s.intensiveBlocks) {
-          return renderIntensiveTimetable(s, filters, pack);
+          return renderIntensiveTimetable(s, filters, pack, showRowsHead);
         }
         var body;
-        if (s.id === "day_centre") {
-          body = dayCentreInfoHtml(s);
+        if (isOfficeEnquireService(s)) {
+          body = officeEnquireInfoHtml(s);
         } else {
           var slots = mock.filterSlots({
             serviceId: s.id,
@@ -2302,38 +3910,13 @@
             ? venuesAccordionHtml(s, venues, true)
             : '<p class="empty">No times match the filters for this service. Clear filters to see the full offer (including fully booked).</p>';
         }
+        var rowsHead = showRowsHead ? timetableRowsHeadHtml(s, pack) : "";
         return (
           '<article class="timetable" id="timetable-' +
           esc(s.id) +
           '">' +
-          '<div class="timetable__head">' +
-          '<span class="term-badge term-badge--leaf">' +
-          ICONS.leaf +
-          " " +
-          esc(mock.TERM_BADGE || "AUTUMN TERM 2026") +
-          "</span>" +
-          '<div class="timetable__title-row">' +
-          '<div class="timetable__title-main">' +
-          '<div class="timetable__icon ' +
-          pack.cls +
-          '" aria-hidden="true">' +
-          pack.svg +
-          "</div>" +
-          "<h3>" +
-          esc(s.name) +
-          (filters.venue && s.id !== "day_centre"
-            ? " (" + esc(mock.venueLabel(filters.venue)) + ")"
-            : "") +
-          "</h3>" +
-          "</div>" +
-          "</div>" +
-          '<p class="timetable__range">' +
-          esc(
-            s.id === "day_centre"
-              ? "Tue 1 September 2026 – Fri 18 December 2026 · Mon–Fri 11am–4pm"
-              : mock.TERM_RANGE || "Sat 5 September 2026 – Fri 18 December 2026"
-          ) +
-          "</p></div>" +
+          rowsHead +
+          timetableHeadHtml(s, filters, pack, "") +
           body +
           "</article>"
         );
@@ -2343,7 +3926,22 @@
     host.innerHTML = html;
   }
 
-  function registrationUrlForSlot(slot) {
+  function isExistingClientBookingSession() {
+    try {
+      if (
+        window.PortalBookingLeadGate &&
+        typeof window.PortalBookingLeadGate.isExistingClient === "function"
+      ) {
+        return !!window.PortalBookingLeadGate.isExistingClient();
+      }
+    } catch (_e) {}
+    return false;
+  }
+
+  function registrationUrlForSlot(slot, opts) {
+    opts = opts || {};
+    var bookingKind = String(opts.bookingKind || "term").trim().toLowerCase();
+    if (bookingKind !== "trial") bookingKind = "term";
     var svc = mock.serviceById(slot.serviceId);
     var q = new URLSearchParams();
     q.set("from", "bookingportal");
@@ -2360,6 +3958,7 @@
     if (slot.weekId) q.set("week_id", slot.weekId);
     if (slot.blockId) q.set("block_id", slot.blockId);
     if (slot.dateIso) q.set("date", slot.dateIso);
+    q.set("booking_kind", bookingKind);
     try {
       if (window.PortalBookingLeadGate) {
         var tok = window.PortalBookingLeadGate.getSessionToken();
@@ -2368,9 +3967,10 @@
     } catch (_tok) {
       /* ignore */
     }
-    // Prefer same-origin registration so lead session + branding stay aligned with
-    // /parent (family portal) routes on www.clubsensational.org.
-    var path = "/parent/registration?" + q.toString();
+    /* Existing families: confirm place (+ photo if missing). New families: full form. */
+    var existing = isExistingClientBookingSession();
+    var pathBase = existing ? "/parent/booking-confirm" : "/parent/registration";
+    var path = pathBase + "?" + q.toString();
     try {
       var host = String(window.location.hostname || "").toLowerCase();
       if (/clubsensational\.org$/i.test(host) || /portalvic\.vercel\.app$/i.test(host)) {
@@ -2381,7 +3981,7 @@
     }
     if (typeof window.portalFamilyPortalUrl === "function") {
       try {
-        var abs = window.portalFamilyPortalUrl("registration");
+        var abs = window.portalFamilyPortalUrl(existing ? "booking-confirm" : "registration");
         if (abs) {
           var withQ = abs + (abs.indexOf("?") >= 0 ? "&" : "?") + q.toString();
           if (window.PortalBookingLeadGate && window.PortalBookingLeadGate.appendSessionToUrl) {
@@ -2394,14 +3994,23 @@
     return path;
   }
 
-  function goToRegistration(slot) {
+  function goToRegistration(slot, opts) {
     if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
       window.PortalBookingLeadGate.openGate();
       return;
     }
+    opts = opts || {};
+    var bookingKind = String(opts.bookingKind || "term").trim().toLowerCase();
+    if (bookingKind !== "trial") bookingKind = "term";
     try {
       if (window.PortalBookingServicePresence) {
-        var bits = [slot && slot.id, slot && slot.serviceId, slot && slot.day, slot && slot.timeLabel]
+        var bits = [
+          slot && slot.id,
+          slot && slot.serviceId,
+          slot && slot.day,
+          slot && slot.timeLabel,
+          bookingKind,
+        ]
           .filter(Boolean)
           .join(" · ")
           .slice(0, 160);
@@ -2416,15 +4025,204 @@
           booking_status: "registration_started",
           registration_status: "started",
           service_viewed: (slot && slot.serviceId) || "",
+          pending_booking: {
+            from: "bookingportal",
+            slot_id: slot.id,
+            service_id: (slot && slot.serviceId) || null,
+            service_name: (svc && svc.name) || null,
+            venue: slot.venue || null,
+            day: slot.day || null,
+            time: slot.timeLabel || null,
+            date_iso: slot.dateIso || null,
+            activity: slot.activityName || slot.crashActivity || null,
+            booking_mode: slot.bookingMode || null,
+            week_id: slot.weekId || null,
+            block_id: slot.blockId || null,
+            booking_kind: bookingKind,
+          },
         });
       }
     } catch (_e2) {
       /* ignore */
     }
-    window.location.href = registrationUrlForSlot(slot);
+    window.location.href = registrationUrlForSlot(slot, { bookingKind: bookingKind });
   }
 
-  function openDayCentreEnquire(svc) {
+  function openBookChoiceSheet(slot) {
+    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
+      window.PortalBookingLeadGate.openGate();
+      return;
+    }
+    var svc = mock.serviceById(slot.serviceId);
+    var sheet = document.getElementById("actionSheet");
+    var title = document.getElementById("sheetTitle");
+    var body = document.getElementById("sheetBody");
+    var mail = document.getElementById("sheetMail");
+    var choices = document.getElementById("sheetChoices");
+    var price =
+      svc && mock.formatPounds
+        ? mock.formatPounds(svc.pricePerSession)
+        : "";
+    title.textContent = "How would you like to book?";
+    body.textContent =
+      (svc ? svc.name : "Session") +
+      " · " +
+      slot.day +
+      " · " +
+      slot.timeLabel +
+      " · " +
+      mock.venueLabel(slot.venue) +
+      (price ? " · " + price + " / session" : "");
+    if (mail) mail.hidden = true;
+    if (choices) {
+      choices.hidden = false;
+      choices.innerHTML =
+        '<button type="button" class="sheet__choice sheet__choice--pri" data-book-kind="term" data-slot-id="' +
+        esc(slot.id) +
+        '"><strong>Book term place</strong><span>Secure the standing place for the rest of the term or year. After registration, complete funding, term or year choice, and payment in the booking flow.</span></button>' +
+        '<button type="button" class="sheet__choice" data-book-kind="trial" data-slot-id="' +
+        esc(slot.id) +
+        '"><strong>Book a trial</strong><span>One session. After registration, pay by card, Apple Pay, or bank transfer (30-minute hold)' +
+        (price ? " (" + esc(price) + ")" : "") +
+        ". Ideal if you would like to try the session first.</span></button>";
+    }
+    sheet.hidden = false;
+  }
+
+  function resetActionSheetChrome() {
+    var mail = document.getElementById("sheetMail");
+    var choices = document.getElementById("sheetChoices");
+    if (mail) {
+      mail.hidden = false;
+      mail.removeAttribute("aria-disabled");
+    }
+    if (choices) {
+      choices.hidden = true;
+      choices.innerHTML = "";
+    }
+  }
+
+  function showWaitlistSuccess(slot, svc, already) {
+    var sheet = document.getElementById("actionSheet");
+    var title = document.getElementById("sheetTitle");
+    var body = document.getElementById("sheetBody");
+    var mail = document.getElementById("sheetMail");
+    var choices = document.getElementById("sheetChoices");
+    var label = (svc && svc.name) || "this session";
+    var when = [slot && slot.day, slot && slot.timeLabel].filter(Boolean).join(" ");
+    title.textContent = already ? "You’re already on the list" : "You’re on the waiting list";
+    body.textContent =
+      "You’re on the waiting list for " +
+      label +
+      (when ? " · " + when : "") +
+      ". We’ll contact you if a place opens.";
+    if (choices) {
+      choices.hidden = true;
+      choices.innerHTML = "";
+    }
+    if (mail) mail.hidden = true;
+    if (sheet) sheet.hidden = false;
+  }
+
+  async function submitWaitlistJoin(slot) {
+    var errEl = document.getElementById("wlJoinErr");
+    var btn = document.getElementById("wlJoinSubmit");
+    var nameEl = document.getElementById("wlParticipantName");
+    var noteEl = document.getElementById("wlNote");
+    var participant = nameEl ? String(nameEl.value || "").trim() : "";
+    var note = noteEl ? String(noteEl.value || "").trim() : "";
+    if (errEl) {
+      errEl.hidden = true;
+      errEl.textContent = "";
+    }
+    if (!participant || participant.length < 2) {
+      if (errEl) {
+        errEl.textContent = "Please enter the participant’s full name.";
+        errEl.hidden = false;
+      }
+      if (nameEl) nameEl.focus();
+      return;
+    }
+    if (!requireBookingLeadSession()) {
+      if (errEl) {
+        errEl.textContent = "Please unlock with your email code first, then join the waiting list.";
+        errEl.hidden = false;
+      }
+      return;
+    }
+    if (!window.PortalBookingWaitlist || typeof window.PortalBookingWaitlist.join !== "function") {
+      if (errEl) {
+        errEl.textContent = "Waiting list isn’t available right now. Please email the office.";
+        errEl.hidden = false;
+      }
+      return;
+    }
+    if (!slot || !slot.id) {
+      if (errEl) {
+        errEl.textContent = "Missing slot — close and try again from the timetable.";
+        errEl.hidden = false;
+      }
+      return;
+    }
+    var svc = mock.serviceById(slot.serviceId);
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Joining…";
+    }
+    try {
+      var out = await window.PortalBookingWaitlist.join({
+        slot_id: slot.id,
+        service_key: (slot && slot.serviceId) || "",
+        service_label: (svc && svc.name) || "",
+        venue: mock.venueLabel(slot.venue),
+        day_name: slot.day || "",
+        time_label: slot.timeLabel || "",
+        participant_name: participant,
+        note: note,
+      });
+      if (!out || !out.data || !out.data.ok) {
+        var code = (out && out.data && out.data.error) || "join_failed";
+        if (errEl) {
+          errEl.textContent =
+            code === "unauthorized"
+              ? "Please unlock with your email code first, then join again."
+              : code === "network_error" || code === "missing_config"
+                ? "Connection problem — check your network and try again."
+                : code === "participant_name_required"
+                  ? "Please enter the participant’s full name."
+                  : "Couldn’t join just now. Please try again or email the office.";
+          errEl.hidden = false;
+        }
+        if (code === "unauthorized" && window.PortalBookingLeadGate) {
+          window.PortalBookingLeadGate.openGate();
+        }
+        return;
+      }
+      try {
+        if (window.PortalBookingLeadGate) {
+          void window.PortalBookingLeadGate.pingActivity({
+            booking_status: "waiting_list",
+            service_viewed: (slot && slot.serviceId) || "",
+          });
+        }
+      } catch (_ePing) {
+        /* ignore */
+      }
+      showWaitlistSuccess(slot, svc, !!out.data.already_joined);
+    } catch (_eJoin) {
+      if (errEl) {
+        errEl.textContent = "Couldn’t join just now. Please try again or email the office.";
+        errEl.hidden = false;
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Join waiting list";
+      }
+    }
+  }
+
+  function openOfficeEnquire(svc) {
     if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
       window.PortalBookingLeadGate.openGate();
       return;
@@ -2433,12 +4231,31 @@
     var title = document.getElementById("sheetTitle");
     var body = document.getElementById("sheetBody");
     var mail = document.getElementById("sheetMail");
-    title.textContent = "Enquire about Day Centre";
-    body.textContent =
-      "Day Centre at SwimFarm · Monday to Friday, 11am – 4pm. Places are arranged with the office (not booked online) so we can explain the day, funding, and support needs.";
-    var subject = encodeURIComponent("Day Centre enquiry — SwimFarm · Mon–Fri 11am–4pm");
+    var sid = svc && svc.id;
+    var isDc = !svc || sid === "day_centre";
+    var isCounsel = sid === "counselling";
+    var name =
+      (svc && svc.name) ||
+      (isDc ? "Day Centre" : isCounsel ? "Counselling" : "Bespoke Programme");
+    title.textContent = "Enquire about " + name;
+    body.textContent = isDc
+      ? "Day Centre at SwimFarm · Mon–Fri, 11am–4pm. A structured day with circle time, vocational work, gym, swimming, and peer activities — usually 1:1 on site, 2:1 when needed for transitions or community trips. Places are agreed with the office (not booked online), including familiarisation and funding."
+      : isCounsel
+        ? "Counselling for young people and adults with autism and their families. Person-centred sessions in Chiswick or online via Zoom. We start with a short assessment phone call to match time and commitment."
+        : "Bespoke Programme — no online slots. After you enquire, the office reviews the participant and then agrees what we can offer and which available time fits.";
+    var subject = encodeURIComponent(
+      isDc
+        ? "Day Centre enquiry — SwimFarm · Mon–Fri 11am–4pm"
+        : isCounsel
+          ? "Counselling enquiry — assessment call"
+          : "Bespoke Programme enquiry — assessment / office"
+    );
     var text = encodeURIComponent(
-      "Hello,\n\nI’d like to enquire about a Day Centre place at SwimFarm (Monday–Friday, 11am–4pm).\n\nChild name:\nParent name:\nPhone:\nFunding / notes:\n\nThanks"
+      isDc
+        ? "Hello,\n\nI’d like to enquire about a Day Centre place at SwimFarm (Monday–Friday, 11am–4pm).\n\nParticipant name:\nParent / carer name:\nPhone:\nFunding / notes:\n\nThanks"
+        : isCounsel
+          ? "Hello,\n\nI’d like to enquire about counselling (young people / adults / families).\n\nName:\nPhone:\nPrefer face to face (Chiswick) or Zoom:\nWhat you’d like support with:\n\nThanks"
+          : "Hello,\n\nI’d like to enquire about a Bespoke Programme place for a participant.\n\nParticipant name:\nParent / carer name:\nPhone:\nGoals / support needs / notes:\n\nThanks"
     );
     mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
     mail.innerHTML = ICONS.mail + " Email the office";
@@ -2455,14 +4272,26 @@
     }
   }
 
-  function openSheet(slot) {
-    if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
+  function requireBookingLeadSession() {
+    if (!window.PortalBookingLeadGate) return false;
+    var tok =
+      typeof window.PortalBookingLeadGate.getSessionToken === "function"
+        ? String(window.PortalBookingLeadGate.getSessionToken() || "").trim()
+        : "";
+    /* Preview mode sets unlocked=true without OTP — waitlist needs a real session. */
+    if (!tok) {
       window.PortalBookingLeadGate.openGate();
-      return;
+      return false;
     }
+    return true;
+  }
+
+  function openSheet(slot) {
+    if (!requireBookingLeadSession()) return;
+    resetActionSheetChrome();
     var svc = mock.serviceById(slot.serviceId);
-    if (svc && svc.id === "day_centre") {
-      openDayCentreEnquire(svc);
+    if (isOfficeEnquireService(svc)) {
+      openOfficeEnquire(svc);
       return;
     }
     var enquireOnly = !!(slot.enquireOnly || (svc && svc.enquireOnly));
@@ -2470,30 +4299,89 @@
     var title = document.getElementById("sheetTitle");
     var body = document.getElementById("sheetBody");
     var mail = document.getElementById("sheetMail");
-    title.textContent = enquireOnly
-      ? "Enquire about this course"
-      : "Join waiting list / enquire";
-    try {
-      if (window.PortalBookingLeadGate) {
-        void window.PortalBookingLeadGate.pingActivity({
-          booking_status: enquireOnly ? "exploring_services" : "waiting_list",
-          service_viewed: (slot && slot.serviceId) || "",
-        });
-      }
-    } catch (_e) {
-      /* ignore */
-    }
-    body.textContent =
+    var choices = document.getElementById("sheetChoices");
+    var slotLine =
       (svc ? svc.name : "Session") +
       " · " +
       slot.day +
       " · " +
       slot.timeLabel +
       " · " +
-      mock.venueLabel(slot.venue) +
-      (enquireOnly
-        ? " — email the office to register interest. Times open closer to the dates."
-        : " — currently fully booked. Tell us you’d like to join the waiting list.");
+      mock.venueLabel(slot.venue);
+
+    /* Capacity-full bookable slots → real waitlist join (not mailto). */
+    if (!enquireOnly) {
+      title.textContent = "Join waiting list";
+      body.textContent = slotLine + " — currently fully booked.";
+      try {
+        if (window.PortalBookingLeadGate) {
+          void window.PortalBookingLeadGate.pingActivity({
+            booking_status: "waiting_list",
+            service_viewed: (slot && slot.serviceId) || "",
+          });
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+      if (mail) mail.hidden = true;
+      if (choices && window.PortalBookingWaitlist && window.PortalBookingWaitlist.formHtml) {
+        choices.hidden = false;
+        choices.innerHTML = window.PortalBookingWaitlist.formHtml({
+          lede: "Add the participant’s name. We’ll use the parent contact from your Booking Portal unlock.",
+        });
+        choices.setAttribute("data-wl-slot-id", slot.id);
+        var submitBtn = document.getElementById("wlJoinSubmit");
+        if (submitBtn) {
+          submitBtn.onclick = function () {
+            void submitWaitlistJoin(slot);
+          };
+        }
+      } else if (choices) {
+        choices.hidden = false;
+        choices.innerHTML =
+          '<p class="muted" style="margin:0;font-size:13px">Waiting list form didn’t load. Please email the office.</p>';
+        if (mail) {
+          mail.hidden = false;
+          var subjectFb = encodeURIComponent(
+            "Waiting list enquiry — " +
+              (svc ? svc.name : "session") +
+              " · " +
+              slot.day +
+              " " +
+              slot.timeLabel
+          );
+          mail.href =
+            "mailto:info@clubsensational.org?subject=" +
+            subjectFb +
+            "&body=" +
+            encodeURIComponent(
+              "Hello,\n\nI’d like to join the waiting list for:\n" +
+                slotLine +
+                "\nSlot ref: " +
+                slot.id +
+                "\n\nParticipant name:\n\nThanks"
+            );
+          mail.innerHTML = ICONS.mail + " Email the office";
+        }
+      }
+      sheet.hidden = false;
+      return;
+    }
+
+    /* enquireOnly (half-term / office interest) — keep mailto. */
+    title.textContent = "Enquire about this course";
+    try {
+      if (window.PortalBookingLeadGate) {
+        void window.PortalBookingLeadGate.pingActivity({
+          booking_status: "exploring_services",
+          service_viewed: (slot && slot.serviceId) || "",
+        });
+      }
+    } catch (_e2) {
+      /* ignore */
+    }
+    body.textContent =
+      slotLine + " — email the office to register interest. Times open closer to the dates.";
     var subject = encodeURIComponent(
       "Waiting list enquiry — " +
         (svc ? svc.name : "session") +
@@ -2505,7 +4393,7 @@
         mock.venueLabel(slot.venue)
     );
     var text = encodeURIComponent(
-      "Hello,\n\nI’d like to join the waiting list / enquire about:\n" +
+      "Hello,\n\nI’d like to enquire about:\n" +
         (svc ? svc.name : "Session") +
         "\n" +
         slot.day +
@@ -2515,18 +4403,25 @@
         mock.venueLabel(slot.venue) +
         "\nSlot ref: " +
         slot.id +
-        "\nStatus: " +
-        (enquireOnly ? "Enquire / half-term interest" : "Fully booked / waiting list") +
-        "\n\nChild name:\nParent name:\nPhone:\n\nThanks"
+        "\nStatus: Enquire / half-term interest\n\nParticipant name:\nParent / carer name:\nPhone:\n\nThanks"
     );
-    mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
-    mail.innerHTML = ICONS.mail + " Email the office";
+    if (mail) {
+      mail.hidden = false;
+      mail.href = "mailto:info@clubsensational.org?subject=" + subject + "&body=" + text;
+      mail.innerHTML = ICONS.mail + " Email the office";
+    }
     sheet.hidden = false;
   }
 
   function refresh() {
     renderServiceCards();
+    if (SVC_ROWS_LAYOUT) {
+      mountRowsDetailStack();
+    }
     renderTimetables();
+    if (activeInfoServiceId && !SVC_ROWS_LAYOUT) {
+      openServiceInfo(activeInfoServiceId, { scroll: false });
+    }
   }
 
   function jumpToService(serviceId) {
@@ -2541,6 +4436,12 @@
   }
 
   document.getElementById("serviceCards").addEventListener("click", function (e) {
+    var infoBtn = e.target && e.target.closest && e.target.closest("[data-svc-info]");
+    if (infoBtn) {
+      e.preventDefault();
+      openServiceInfo(infoBtn.getAttribute("data-svc-info"));
+      return;
+    }
     var card = e.target && e.target.closest && e.target.closest("[data-jump-service]");
     if (!card) return;
     var sid = card.getAttribute("data-jump-service");
@@ -2557,11 +4458,24 @@
     jumpToService(sid);
   });
 
+  document.getElementById("svcInfoClose").addEventListener("click", closeServiceInfo);
+  document.getElementById("svcInfoBook").addEventListener("click", function () {
+    var sid = this.getAttribute("data-svc-info-book") || "";
+    closeServiceInfo();
+    if (sid) jumpToService(sid);
+  });
+
   document.getElementById("timetableHost").addEventListener("click", function (e) {
+    var infoBtn = e.target && e.target.closest && e.target.closest("[data-svc-info]");
+    if (infoBtn) {
+      e.preventDefault();
+      openServiceInfo(infoBtn.getAttribute("data-svc-info"));
+      return;
+    }
     var dcBtn = e.target && e.target.closest && e.target.closest("[data-dc-enquire]");
     if (dcBtn) {
       var dcId = dcBtn.getAttribute("data-dc-enquire") || "day_centre";
-      openDayCentreEnquire(mock.serviceById(dcId) || { id: "day_centre", name: "Day Centre" });
+      openOfficeEnquire(mock.serviceById(dcId) || { id: "day_centre", name: "Day Centre" });
       return;
     }
     var bookBtn = e.target && e.target.closest && e.target.closest("[data-book]");
@@ -2570,7 +4484,13 @@
       var bookSlot = mock.MOCK_SLOTS.find(function (s) {
         return s.id === bookId;
       });
-      if (bookSlot) goToRegistration(bookSlot);
+      if (!bookSlot) return;
+      // Crash / week packs stay direct; standing weekly places offer Term vs Trial.
+      if (bookSlot.bookingMode === "weekly_pack" || bookSlot.blockId || bookSlot.weekId) {
+        goToRegistration(bookSlot, { bookingKind: "term" });
+      } else {
+        openBookChoiceSheet(bookSlot);
+      }
       return;
     }
     var btn = e.target && e.target.closest && e.target.closest("[data-enquire]");
@@ -2583,10 +4503,26 @@
   });
 
   document.getElementById("sheetClose").addEventListener("click", function () {
+    resetActionSheetChrome();
     document.getElementById("actionSheet").hidden = true;
   });
   document.getElementById("actionSheet").addEventListener("click", function (e) {
-    if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+    var kindBtn = e.target && e.target.closest && e.target.closest("[data-book-kind]");
+    if (kindBtn) {
+      var kind = kindBtn.getAttribute("data-book-kind") || "term";
+      var sid = kindBtn.getAttribute("data-slot-id");
+      var slot = mock.MOCK_SLOTS.find(function (s) {
+        return s.id === sid;
+      });
+      resetActionSheetChrome();
+      document.getElementById("actionSheet").hidden = true;
+      if (slot) goToRegistration(slot, { bookingKind: kind });
+      return;
+    }
+    if (e.target === e.currentTarget) {
+      resetActionSheetChrome();
+      e.currentTarget.hidden = true;
+    }
   });
 
   document.getElementById("btnClearFilters").addEventListener("click", function () {
@@ -2595,11 +4531,17 @@
     fDay.value = "";
     fTime.value = "";
     fHideFull.checked = false;
+    activeInfoServiceId = "";
     refresh();
   });
 
   [fService, fVenue, fDay, fTime, fHideFull].forEach(function (el) {
-    el.addEventListener("change", refresh);
+    el.addEventListener("change", function (e) {
+      if (SVC_ROWS_LAYOUT && el === fService && e && e.isTrusted) {
+        activeInfoServiceId = "";
+      }
+      refresh();
+    });
   });
 
   mock
@@ -2614,7 +4556,7 @@
         "Live places from the club roster" +
           (weekly != null ? " · " + weekly + " weekly times" : n ? " · " + n + " times" : "") +
           (mock.TERM_LABEL ? " · " + mock.TERM_LABEL : "") +
-          ". Book opens the registration questionnaire; full slots can join a waiting list by email."
+          ". Book opens the registration questionnaire; full slots can join the waiting list online."
       );
     })
     .catch(function () {
@@ -2625,19 +4567,31 @@
         "error",
         "Couldn’t load live availability. Refresh to try again, or contact the office."
       );
+    })
+    .finally(function () {
+      // Start the access-gate preview clock only once the roster (or error) is on screen,
+      // so the first seconds actually show weekly times instead of a blank/error flash.
+      try {
+        if (window.PortalBookingLeadGate) {
+          window.PortalBookingLeadGate.guardClicks(document.getElementById("timetableHost"));
+          window.PortalBookingLeadGate.guardClicks(document.getElementById("serviceCards"));
+          void window.PortalBookingLeadGate.boot({
+            forceGate: (function () {
+              try {
+                return new URLSearchParams(window.location.search || "").get("gate") === "1";
+              } catch (_g) {
+                return false;
+              }
+            })(),
+          });
+        }
+      } catch (_e2) {
+        /* ignore */
+      }
     });
   try {
     if (window.PortalBookingServicePresence) window.PortalBookingServicePresence.bootOffer();
   } catch (_e) {
-    /* ignore */
-  }
-  try {
-    if (window.PortalBookingLeadGate) {
-      window.PortalBookingLeadGate.guardClicks(document.getElementById("timetableHost"));
-      window.PortalBookingLeadGate.guardClicks(document.getElementById("serviceCards"));
-      void window.PortalBookingLeadGate.boot();
-    }
-  } catch (_e2) {
     /* ignore */
   }
 })();

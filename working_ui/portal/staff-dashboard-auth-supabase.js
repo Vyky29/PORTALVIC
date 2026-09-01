@@ -1,5 +1,5 @@
 import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalStaffDisplayName, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20260713-javier-topbar";
-import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260711-lead-same-window";
+import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260818-es-exec";
 import {
   portalEnforceStaffAppPilotGate,
   portalSyncStaffAppPilotBanner,
@@ -40,6 +40,12 @@ const authEmail = session && session.user ? String(session.user.email || "").tri
 
 await portalEnforceStaffAppPilotGate({ profile, authEmail });
 portalSyncStaffAppPilotBanner({ profile, authEmail });
+
+try {
+  if (window.PortalUiLocale && typeof window.PortalUiLocale.boot === "function") {
+    window.PortalUiLocale.boot("staff");
+  }
+} catch (_loc) {}
 
 if (typeof window.portalStaffResolveIdentityEarlyFromSession === "function") {
   try {
@@ -130,6 +136,11 @@ if (typeof window.portalEnsureStaffDashboardDockBindings === "function") {
   window.addEventListener("portal:supabase-ready", portalEnsureStaffDashboardDockBindingsFallback);
 }
 window.addEventListener("portal:staff-identity-resolved", function () {
+  try {
+    if (window.PortalUiLocale && typeof window.PortalUiLocale.boot === "function") {
+      window.PortalUiLocale.boot("staff");
+    }
+  } catch (_loc) {}
   if (typeof window.portalEnsureStaffDashboardDockBindings === "function") {
     window.portalEnsureStaffDashboardDockBindings();
   }

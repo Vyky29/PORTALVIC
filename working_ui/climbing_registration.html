@@ -692,7 +692,7 @@
     </div>
 
     <div class="notice" id="formNotice">
-      Fill in at home, then submit to download a PDF for clubSENsational. Structure, headings, and colour styling have been kept closely aligned to the paper version for easier completion and forwarding.
+      Fill in at home, then tap <strong>Submit form</strong> and wait for the green <strong>Thank you</strong> screen — that is the only confirmation the club received your form. A PDF download alone does <strong>not</strong> mean it was sent.
     </div>
 
     <form id="juniorForm" method="post">
@@ -999,7 +999,7 @@
 
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="/portal/parent_form_submit.js"></script>
+  <script src="/portal/parent_form_submit.js?v=20260812-no-fake-submit"></script>
   <script>
     (function(){
       var form = document.getElementById('juniorForm');
@@ -1607,7 +1607,6 @@
           row2_p2(doc, 'Signature of Parent/Legal Guardian (Junior Test):', data.junior_test_signature);
           row2_p2(doc, 'Date (Junior Test):', fmtDate(data.junior_test_date));
 
-          doc.save(filename);
           var pdfBlob = doc.output('blob');
           var participantName = [data.junior_first_name, data.junior_surname].filter(Boolean).join(' ').trim();
           var parentName = [data.guardian_first_name, data.guardian_surname].filter(Boolean).join(' ').trim();
@@ -1630,12 +1629,19 @@
             pdf_filename: filename,
             payload: data
           }).then(function(){
+            try {
+              doc.save(filename);
+            } catch (_saveErr) {
+              console.warn(_saveErr);
+            }
             if (window.portalFinishParentSubmit) {
               window.portalFinishParentSubmit({
                 formEl: form,
                 successEl: document.getElementById('parentSubmitDone'),
                 noticeEl: document.getElementById('formNotice'),
-                submitBtn: submitBtn
+                submitBtn: submitBtn,
+                message:
+                  'Your climbing form was sent to clubSENsational for review. A PDF copy was also saved on your device.'
               });
             }
           }).catch(function(err){
@@ -1644,7 +1650,24 @@
               submitBtn.disabled = false;
               submitBtn.textContent = 'Submit form';
             }
-            alert('Could not send your form to clubSENsational. Please check your connection and try again, or email the downloaded PDF to the club.');
+            /* Do NOT auto-download on failure — parents treat a PDF as “submitted”. */
+            var friendly = window.portalParentFormFriendlyError
+              ? window.portalParentFormFriendlyError(err)
+              : null;
+            alert(
+              (friendly || 'Could not send your form to clubSENsational.') +
+                '\n\nThis was NOT sent. Please tap Submit form again and wait for the green Thank you screen. Only download a draft if you need to email info@clubsensational.org.'
+            );
+            var wantDraft = window.confirm(
+              'Download a DRAFT PDF to email the office?\n\n(Only if Submit keeps failing — say in the email that it was NOT uploaded.)'
+            );
+            if (wantDraft) {
+              try {
+                doc.save(String(filename || 'climbing').replace(/\.pdf$/i, '_DRAFT_NOT_SENT.pdf'));
+              } catch (_dlErr) {
+                console.warn(_dlErr);
+              }
+            }
           });
         } catch (pdfErr) {
           console.error(pdfErr);

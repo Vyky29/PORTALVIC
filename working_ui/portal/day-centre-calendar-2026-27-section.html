@@ -281,11 +281,11 @@
       align-items: center;
       justify-content: center;
     }
-    #dcCalDayCentrePanel .dc-cal-cell--bank-hol {
+    .dc-cal-cell--bank-hol {
       flex-direction: column;
       padding: 2px 1px;
     }
-    #dcCalDayCentrePanel .dc-cal-cell__stack {
+    .dc-cal-cell__stack {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -295,7 +295,7 @@
       width: 100%;
       text-align: center;
     }
-    #dcCalDayCentrePanel .dc-cal-bh-label {
+    .dc-cal-bh-label {
       font-size: clamp(0.34rem, 1.3vw, 0.45rem);
       font-weight: 700;
       line-height: 1.05;
@@ -487,8 +487,8 @@
     <span>Day Centre open <strong>43</strong> weeks/year · <strong>216</strong> days</span>
   </div>
   <div class="dc-cal__summary" id="dcCalSummarySessions" data-dc-cal-summary="dcCalSessionsPanel" aria-label="Sessions weeks summary">
-    <span><strong>39</strong> week sessions</span>
-    <span><strong>34</strong> weekend sessions</span>
+    <span><strong>38</strong> week sessions (Mon <strong>37</strong> with Early May BH)</span>
+    <span><strong>33</strong> weekend sessions</span>
   </div>
   <div class="dc-cal__summary" id="dcCalSummaryCrash" data-dc-cal-summary="dcCalCrashPanel" aria-label="Crash courses summary" hidden>
     <span><strong>8</strong> summer days (Jul 2026) · <strong>12</strong> half-term days</span>
@@ -1201,11 +1201,12 @@
         <ul class="dc-cal-term__info">
           <li>Term starts: Monday 12 April 2027</li>
           <li>Term ends: Thursday 22 July 2027</li>
+          <li>Early May bank holiday (closed): Monday 3 May 2027</li>
           <li>Half Term: Monday 31 May – Friday 4 June 2027</li>
           <li>Weekend closures: 29–30 May and 5–6 June</li>
         </ul>
         <div class="dc-cal-term__weeks">
-          <p><strong>School Services:</strong> 14 weeks</p>
+          <p><strong>School Services:</strong> 13 weeks</p>
         </div>
       </header>
       <div class="dc-cal-term__months">
@@ -1259,7 +1260,7 @@
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
-            <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">3</span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">3</span></span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>

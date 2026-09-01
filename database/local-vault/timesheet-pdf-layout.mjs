@@ -87,13 +87,29 @@ function entryServiceLine(entry) {
 }
 
 function entryRoleLabel(entry) {
-  const r = String(
+  const raw = String(
     (entry && (entry.displayRole || entry.roleLabel || entry.role)) || "",
   ).trim();
-  if (!r) return "";
+  if (!raw) return "";
+  if (/^(SW|SI|CL|FI)\d+$/i.test(raw) || /^lead$/i.test(raw)) return raw;
+  if (/^(lead|service\s*lead)$/i.test(raw)) return "Lead";
+  const numbered = raw.match(
+    /^(support\s*worker|swimming\s*instructor|climbing\s*instructor|fitness\s*instructor)\s*(\d+)\s*$/i,
+  );
+  let base = numbered ? numbered[1] : raw;
+  let num = numbered ? numbered[2] : "";
   const scale = String((entry && entry.roleScale) || "").trim();
-  const m = scale.match(/Scale\s*(\d+)/i) || (scale && /^\d+$/.test(scale) ? [scale, scale] : null);
-  return m ? `${r} ${m[1]}` : r;
+  const sm = scale.match(/Scale\s*(\d+)/i) || (scale && /^\d+$/.test(scale) ? [scale, scale] : null);
+  if (sm) num = sm[1];
+  const bl = String(base || "").toLowerCase();
+  let abbr = "";
+  if (/support\s*worker/.test(bl)) abbr = "SW";
+  else if (/swimming\s*instructor/.test(bl)) abbr = "SI";
+  else if (/climbing\s*instructor/.test(bl)) abbr = "CL";
+  else if (/fitness\s*instructor/.test(bl)) abbr = "FI";
+  if (abbr && num) return abbr + num;
+  if (abbr) return abbr;
+  return raw;
 }
 
 function entryColorRole(entry) {
@@ -130,14 +146,18 @@ function drawPdfServiceCell(doc, entry, cx, y, cellBaseline, S, manual, thisRowH
     return;
   }
   if (entry && (entry.dayOff || /day off/i.test(String(entry.service || entry.role || "")))) {
+    const raw = String(entryServiceLabel(entry) || "").trim();
+    const title =
+      !raw || /time\s*off/i.test(raw) || /^day\s*off/i.test(raw)
+        ? "Time off requested"
+        : raw.replace(/^Day off\s*[—\-–]\s*/i, "").trim() || "Time off requested";
     doc.setFontSize(8 * S);
-    doc.setTextColor(16, 34, 56);
-    doc.text(String(entryServiceLabel(entry) || "Day off").slice(0, 28), cx, midY - 1.2 * S, {
-      align: "center",
-    });
+    doc.setTextColor(153, 27, 27);
+    doc.text(title.slice(0, 28), cx, midY - 1.2 * S, { align: "center" });
     doc.setFont("helvetica", "bold");
-    doc.text("Day off", cx, midY + 2.2 * S, { align: "center" });
+    doc.text("DAY OFF", cx, midY + 2.2 * S, { align: "center" });
     doc.setFont("helvetica", "normal");
+    doc.setTextColor(16, 34, 56);
     return;
   }
   const serviceLine = entryServiceLine(entry).slice(0, 32);

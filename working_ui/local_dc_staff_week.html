@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901d</title>
+  <style>
+    :root {
+      --ink: #173247;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.14);
+      --blue: #2d84b3;
+      --bg: #eef4f9;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      padding: 12px 12px 40px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.15rem;
+    }
+    .note {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      max-width: 920px;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 16px;
+    }
+    .links a {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #173247;
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .links a.soft {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    .week {
+      display: grid;
+      gap: 14px;
+    }
+    .day {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px 12px;
+      min-width: 0;
+    }
+    .day h2 {
+      margin: 0 0 10px;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--blue);
+    }
+    .cols {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 0;
+    }
+    @media (max-width: 1200px) {
+      .cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 640px) {
+      .cols { grid-template-columns: 1fr; }
+    }
+    .col {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px;
+      background: #f8fbfe;
+    }
+    .col__staff {
+      margin: 0 0 8px;
+      font-size: 0.92rem;
+      font-weight: 800;
+    }
+    .empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    .card {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr);
+      gap: 8px;
+      align-items: start;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px 10px;
+      margin: 0 0 8px;
+      border-left: 4px solid #6d5ae0;
+      min-width: 0;
+    }
+    .card--emanuel { border-left-color: #6d5ae0; }
+    .card--fadi { border-left-color: #0f766e; }
+    .card--ikram { border-left-color: #c2410c; }
+    .card--timi { border-left-color: #0369a1; }
+    .card--manager { border-left-color: #64748b; }
+    .card--as { border-left-color: #0369a1; }
+    .card--weekend { border-left-color: #7c3aed; }
+    .card--open {
+      background: #fef9c3;
+      border-color: #fde68a;
+      border-left-color: #ca8a04;
+    }
+    .card--open .card__name { color: #854d0e; }
+    .card--open .card__band { color: #a16207; }
+    .card__band {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 2px;
+    }
+    .card__name {
+      font-weight: 800;
+      font-size: 0.95rem;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .seg {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.78rem;
+      margin: 0 0 4px;
+      min-width: 0;
+    }
+    .seg__area {
+      font-weight: 700;
+      color: #314555;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .seg__time {
+      color: var(--muted);
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901c</h1>
+  <p class="note">
+    Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026
+    (bank holiday). Tue–Fri = Day Centre six. Sat = only staff with a book (Matthias off Autumn).
+    Sun = 8 weekend workers. Mon 7 = DC + afternoon Acton/Northolt/Hub (Victor OFF Mondays).
+    No staff login needed.
+  </p>
+  <div class="links" id="dashLinks"></div>
+  <div class="week" id="week"></div>
+
+  <script src="/portal/portal_roster_canonical.js?v=20260901-weekend-as-victor-off"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-roberto-wed-fadi-only"></script>
+  <!-- local board bump: 20260901c-open-slots -->
+  <script>
+(function () {
+  var STAFF = ["Roberto", "Luliya", "Michelle", "Victor", "Raul", "Youssef"];
+  /* Mon 31 Aug 2026 = closed (BH). Show Tue–Fri DC, weekend, then Mon DC+AS. */
+  var DAYS = [
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+    "monday",
+  ];
+  var DAY_LABEL = {
+    tuesday: "Tuesday",
+    wednesday: "Wednesday",
+    thursday: "Thursday",
+    friday: "Friday",
+    saturday: "Saturday",
+    sunday: "Sunday",
+    monday: "Monday",
+  };
+  var ISO = {
+    tuesday: "2026-09-01",
+    wednesday: "2026-09-02",
+    thursday: "2026-09-03",
+    friday: "2026-09-04",
+    saturday: "2026-09-05",
+    sunday: "2026-09-06",
+    monday: "2026-09-07",
+  };
+  var DAY_HINT = {
+    saturday: "Weekend (after school / pool)",
+    sunday: "Weekend (Multi + aquatic)",
+    monday: "Autumn DC + after school / Hub (Victor OFF)",
+  };
+
+  /*
+   * Standing weekend + Monday after-school (local preview; not DC board).
+   * Saturday: Matthias left (not on Autumn roster) — Youssef keeps Emani + Saaib only.
+   * Sunday: Autumn remap (Bismark→Godsway, Giuseppe→Emanuel); Erik dropped after hard cut.
+   * Monday afternoon: Acton / Northolt / Hub Bespoke beyond the DC six.
+   */
+  var EXTRA = {
+    saturday: {
+      Youssef: [
+        { name: "Emani", time: "10.30 to 11", band: "Weekend", area: "Acton · Aquatic" },
+        { name: "No participant", time: "11 to 12", band: "Weekend", area: "Acton · Aquatic" },
+        { name: "Saaib", time: "12 to 12.30", band: "Weekend", area: "Acton · Aquatic" },
+      ],
+    },
+    sunday: {
+      Roberto: [
+        { name: "Yusuf Ah", time: "9 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Jack S", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Gabriel", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Arthur Mo", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Amaar Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Adaam Ah", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Rodin", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
+        { name: "Yoan", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
+      ],
+      Aurora: [
+        { name: "Simon", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool" },
+        { name: "Adam Ab", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
+        { name: "Jack W", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Arthur Ma", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
+        { name: "Cyrus", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
+        { name: "Aydaan Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "No participant", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Zakariya", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
+        { name: "Faris", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
+      ],
+      Berta: [
+        { name: "Jack W", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Adam Ab", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Cyrus", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Arthur Ma", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "No participant", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Aydaan Ah", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+      ],
+      Godsway: [
+        { name: "Jack S", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Yusuf Ah", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Arthur Mo", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Gabriel", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Adaam Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Amaar Ah", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+      ],
+      Emanuel: [
+        { name: "Zaid", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Samer", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Eiji", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Hazem", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Haneef", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Rayyan F", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+      ],
+      Javier: [
+        { name: "Shire", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool" },
+        { name: "Samer", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Zaid", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
+        { name: "Hazem", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Eiji", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Rayyan F", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
+        { name: "Haneef", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
+        { name: "Max", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
+        { name: "Shaan", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
+      ],
+      Alex: [
+        { name: "Eiji", time: "10 to 11", band: "Weekend", area: "Westway · Climbing" },
+        { name: "Yusuf Ah", time: "11 to 12", band: "Weekend", area: "Westway · Climbing" },
+        { name: "Scott", time: "12 to 1", band: "Weekend", area: "Westway · Climbing" },
+        { name: "Rodin", time: "1 to 2", band: "Weekend", area: "Westway · Climbing" },
+        { name: "Ayden W", time: "2 to 3", band: "Weekend", area: "Westway · Climbing" },
+      ],
+      Carlos: [
+        { name: "Hazem", time: "10 to 11", band: "Weekend", area: "Westway · Climbing" },
+        { name: "Zaid", time: "11 to 12", band: "Weekend", area: "Westway · Climbing" },
+        { name: "Serine", time: "12 to 1", band: "Weekend", area: "Westway · Climbing" },
+        { name: "Zakariya", time: "1 to 2", band: "Weekend", area: "Westway · Climbing" },
+        { name: "Patrick", time: "2 to 3", band: "Weekend", area: "Westway · Climbing" },
+      ],
+    },
+    monday: {
+      Roberto: [
+        { name: "Adam P", time: "4 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Steven", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "Mario", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Luliya: [
+        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic" },
+        { name: "Gemma", time: "5 to 5.30", band: "After school", area: "Northolt · Aquatic" },
+        { name: "Zayana", time: "5.30 to 6", band: "After school", area: "Northolt · Aquatic" },
+        { name: "Yamik", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic" },
+      ],
+      Dan: [
+        { name: "Muhammad", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic" },
+        { name: "Amar Rai", time: "5 to 5.30", band: "After school", area: "Northolt · Aquatic" },
+        { name: "Amar Rai", time: "5.30 to 6", band: "After school", area: "Northolt · Aquatic" },
+        { name: "Adaam Ah", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic" },
+      ],
+      Youssef: [
+        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Eddie Mc", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "Joel", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Abodi Pa", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      Godsway: [
+        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+      ],
+      John: [
+        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+      ],
+      Emanuel: [
+        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+      ],
+    },
+  };
+
+  var SUNDAY_STAFF_ORDER = [
+    "Roberto",
+    "Aurora",
+    "Berta",
+    "Godsway",
+    "Emanuel",
+    "Javier",
+    "Alex",
+    "Carlos",
+  ];
+  var MONDAY_EXTRA_ORDER = ["Dan", "Godsway", "John", "Emanuel"];
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  // Mirror staff_dashboard_spreadsheet_adapter.js (display-only SPECIAL segments)
+  var COMBINED = {
+    "fadi|12.30to3": [
+      { time_slot: "12.30 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
+    "ikram|11to4": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 4", area: "Day Centre" },
+    ],
+    "ikram|11to3": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
+    "ikram|12.30to4": [{ time_slot: "12.30 to 4", area: "Day Centre" }],
+    "emanuel|11to4": [
+      { time_slot: "11 to 12", area: "Hub Room" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "2 to 4", area: "Hub Room" },
+    ],
+    "emanuel|11to12.30": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 12.30", area: "Big Pool" },
+    ],
+    "emanuel|11to3": [
+      { time_slot: "11 to 12", area: "Hub Room" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+      { time_slot: "2 to 3", area: "Hub Room" },
+    ],
+    "emanuel|11to2": [
+      { time_slot: "11 to 12", area: "Hub Room" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+    ],
+    "emanuel|11to1": [
+      { time_slot: "11 to 12", area: "Hub Room" },
+      { time_slot: "12 to 1", area: "Big Pool" },
+    ],
+  };
+  var PLAIN = {
+    "ikram|11to4": ["tuesday", "thursday", "saturday", "sunday"],
+    "ikram|11to3": ["tuesday", "thursday", "saturday", "sunday"],
+    "fadi|12.30to3": ["tuesday", "thursday", "saturday", "sunday"],
+  };
+  var DAY_OVERRIDE = {
+    "fadi|12.30to3|monday": [
+      { time_slot: "12.30 to 1", area: "Small Pool" },
+      { time_slot: "2 to 3", area: "Day Centre" },
+    ],
+    "fadi|12.30to3|wednesday": [
+      { time_slot: "12.30 to 1", area: "Small Pool" },
+      { time_slot: "2 to 3", area: "Day Centre" },
+    ],
+    "fadi|12.30to3|friday": [
+      { time_slot: "12.30 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Day Centre" },
+    ],
+  };
+  function areaHintFor(name) {
+    var n = String(name || "").toLowerCase();
+    if (n === "emanuel") return "Hub Room";
+    if (n === "manager") return "Hub · Manager";
+    return "Day Centre";
+  }
+  function cardAccentClass(name) {
+    var n = String(name || "").trim().toLowerCase();
+    if (n === "emanuel" || n === "emmanuel") return "card--emanuel";
+    if (n === "fadi") return "card--fadi";
+    if (n === "ikram") return "card--ikram";
+    if (n === "timi") return "card--timi";
+    if (n === "manager") return "card--manager";
+    return "";
+  }
+  function segmentsFor(name, time, day) {
+    var timeLabel = String(time || "").replace(/\s+/g, " ").trim();
+    var slot = timeLabel.replace(/\s+/g, "").toLowerCase();
+    var key = String(name).trim().toLowerCase() + "|" + slot;
+    var dayKey = String(day).toLowerCase();
+    var areaFallback = areaHintFor(name);
+    if (PLAIN[key] && PLAIN[key].indexOf(dayKey) !== -1) {
+      return [{ time_slot: timeLabel, area: areaFallback }];
+    }
+    if (DAY_OVERRIDE[key + "|" + dayKey]) return DAY_OVERRIDE[key + "|" + dayKey];
+    if (COMBINED[key]) return COMBINED[key];
+    return [{ time_slot: timeLabel, area: areaFallback }];
+  }
+
+  function boardClients(dayKey, staffName) {
+    var PRC = window.PortalRosterCanonical;
+    var board = PRC && PRC.AUTUMN_DAY_CENTRE_BOARD;
+    var out = [];
+    if (board && board[dayKey]) {
+      var col = (board[dayKey] || []).find(function (c) {
+        return String(c.staff || "").toLowerCase() === staffName.toLowerCase();
+      });
+      (col && col.clients ? col.clients : []).forEach(function (c) {
+        out.push({
+          name: c.name,
+          time: c.time,
+          band: "Day Centre",
+          area: null,
+          dc: true,
+        });
+      });
+    }
+    var extraDay = EXTRA[dayKey];
+    var extraStaff = extraDay && extraDay[staffName];
+    if (extraStaff && extraStaff.length) {
+      extraStaff.forEach(function (c) {
+        out.push({
+          name: c.name,
+          time: c.time,
+          band: c.band || "After school",
+          area: c.area || "",
+          dc: false,
+        });
+      });
+    }
+    return out;
+  }
+
+  function isOpenSlotName(name) {
+    var n = String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    return n === "no participant" || n === "closed" || n === "open";
+  }
+
+  function renderCard(c, dayKey) {
+    var segs;
+    if (c.dc) {
+      segs = segmentsFor(c.name, c.time, dayKey);
+    } else {
+      segs = [{ time_slot: c.time, area: c.area || c.band || "" }];
+    }
+    var rows = (segs || [])
+      .map(function (sg) {
+        return (
+          '<div class="seg"><span class="seg__area">' +
+          esc(sg.area) +
+          '</span><span class="seg__time">' +
+          esc(sg.time_slot) +
+          "</span></div>"
+        );
+      })
+      .join("");
+    var open = isOpenSlotName(c.name);
+    var tone = open
+      ? "card--open"
+      : c.dc
+        ? cardAccentClass(c.name)
+        : c.band === "Weekend"
+          ? "card--weekend"
+          : "card--as";
+    return (
+      '<div class="card ' +
+      esc(tone) +
+      '"><div><span class="card__band">' +
+      esc(c.band || "Day Centre") +
+      '</span><div class="card__name">' +
+      esc(c.name) +
+      "</div></div><div>" +
+      rows +
+      "</div></div>"
+    );
+  }
+
+  function staffColumnsForDay(dk) {
+    /* Sat/Sun: never show DC six — only instructors with weekend cards. */
+    if (dk === "saturday" || dk === "sunday") {
+      var order =
+        dk === "sunday"
+          ? SUNDAY_STAFF_ORDER.slice()
+          : Object.keys(EXTRA.saturday || {});
+      var seen = {};
+      var out = [];
+      order.forEach(function (s) {
+        if (seen[s]) return;
+        if (boardClients(dk, s).length > 0) {
+          seen[s] = true;
+          out.push(s);
+        }
+      });
+      Object.keys(EXTRA[dk] || {}).forEach(function (s) {
+        if (seen[s]) return;
+        if (boardClients(dk, s).length > 0) {
+          seen[s] = true;
+          out.push(s);
+        }
+      });
+      return out;
+    }
+    if (dk === "monday") {
+      var mon = STAFF.slice();
+      MONDAY_EXTRA_ORDER.forEach(function (s) {
+        if (mon.indexOf(s) === -1) mon.push(s);
+      });
+      return mon.filter(function (s) {
+        if (boardClients(dk, s).length > 0) return true;
+        return s === "Victor"; /* OFF Mondays — keep visible */
+      });
+    }
+    return STAFF.slice();
+  }
+
+  var links = document.getElementById("dashLinks");
+  STAFF.forEach(function (s) {
+    var a = document.createElement("a");
+    a.href =
+      "/staff_dashboard.html?portalReviewDate=" +
+      encodeURIComponent(ISO.tuesday) +
+      "&portalReviewDay=Tuesday&portalStayWorker=1#local-" +
+      encodeURIComponent(s.toLowerCase());
+    a.textContent = s + " staff dashboard (login)";
+    a.target = "_blank";
+    a.rel = "noopener";
+    links.appendChild(a);
+  });
+  var a2 = document.createElement("a");
+  a2.className = "soft";
+  a2.href = "/admin_dashboard.html";
+  a2.target = "_blank";
+  a2.textContent = "Admin · ghost teleport (real UI)";
+  links.appendChild(a2);
+
+  var week = document.getElementById("week");
+  DAYS.forEach(function (dk) {
+    var dayEl = document.createElement("section");
+    dayEl.className = "day";
+    var hint = DAY_HINT[dk] ? " · " + DAY_HINT[dk] : "";
+    dayEl.innerHTML =
+      "<h2>" +
+      esc(DAY_LABEL[dk]) +
+      " " +
+      esc(ISO[dk].slice(8) + "/" + ISO[dk].slice(5, 7) + "/" + ISO[dk].slice(0, 4)) +
+      esc(hint) +
+      "</h2>";
+    var cols = document.createElement("div");
+    cols.className = "cols";
+    staffColumnsForDay(dk).forEach(function (staff) {
+      var clients = boardClients(dk, staff);
+      /* Weekend: skip empty columns entirely (no "No weekend book" placeholders). */
+      if ((dk === "saturday" || dk === "sunday") && !clients.length) return;
+      var col = document.createElement("div");
+      col.className = "col";
+      col.innerHTML = '<p class="col__staff">' + esc(staff) + "</p>";
+      if (!clients.length) {
+        var emptyLabel =
+          dk === "tuesday" && staff === "Raul"
+            ? "OFF (Victor covers DC)"
+            : dk === "monday" && staff === "Victor"
+              ? "OFF (Mondays)"
+              : "No sessions";
+        col.innerHTML += '<p class="empty">' + esc(emptyLabel) + "</p>";
+      } else {
+        clients.forEach(function (c) {
+          col.innerHTML += renderCard(c, dk);
+        });
+      }
+      cols.appendChild(col);
+    });
+    dayEl.appendChild(cols);
+    week.appendChild(dayEl);
+  });
+})();
+  </script>
+</body>
+</html>

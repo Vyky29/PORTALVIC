@@ -828,6 +828,8 @@
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
     paidFilterByTerm: {}, // termBucketId -> Paid value ("" = all)
+    payStatusByTerm: {}, // termBucketId -> "" | "paid" | "outstanding" | "partial"
+    payPlanByTerm: {}, // termBucketId -> "" | "flexi" | "gc" (combinable with status)
     serviceKindByTerm: {}, // termBucketId -> "afterschool" | "day_centre"
     termOpenById: {}, // termBucketId -> boolean (persist accordion open across re-renders)
     focusTermId: "", // after Paid chip click, keep this term open + in view
@@ -909,6 +911,13 @@
     return Number.isFinite(n) && n > 0 ? n : 0;
   }
 
+  /** Ealing LA — surplus still on file after Summer was cleared (e.g. Tinashe overpay). */
+  function ealingCreditBalanceGbp(r) {
+    var d = (r && r.data) || {};
+    var n = Number(d["Ealing credit balance (25/26)"]);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }
+
   /**
    * Day Centre Summer — separate April / May NHS invoices (e.g. Timi £500 + £500)
    * folded into the term Total. Stored as explicit data keys or Extras text.
@@ -926,12 +935,31 @@
     };
   }
 
+  /** Aggregate NHS inflation uplift lines (INV-0389–0392) for Summer Total stack. */
+  function summerNhsUpliftInvoicesGbp(r) {
+    if (!isNhsInflationUpliftRow(r)) return null;
+    var d = (r && r.data) || {};
+    var io = Number(d["INV-0390 (Ikram Omar)"]);
+    var fa = Number(d["INV-0389 (Fadi)"]);
+    var ed = Number(d["INV-0391 (Emanuel Dodson)"]);
+    var td = Number(d["INV-0392 (Timi Dairo)"]);
+    if (!(io > 0) && !(fa > 0) && !(ed > 0) && !(td > 0)) return null;
+    return {
+      io: io > 0 ? io : 0,
+      fa: fa > 0 ? fa : 0,
+      ed: ed > 0 ? ed : 0,
+      td: td > 0 ? td : 0,
+      total: (io > 0 ? io : 0) + (fa > 0 ? fa : 0) + (ed > 0 ? ed : 0) + (td > 0 ? td : 0),
+    };
+  }
+
   function summerAprMayInvoicesGbp(r) {
     var d = (r && r.data) || {};
     var apr = Number(d["April invoice (25/26)"]);
     var may = Number(d["May invoice (25/26)"]);
+    var mayPaid = Number(d["May paid (25/26)"]);
     var tot = Number(d["April–May invoices (25/26)"]);
-    if (!(apr > 0) && !(may > 0) && !(tot > 0)) {
+    if (!(apr > 0) && !(may > 0) && !(tot > 0) && !(mayPaid > 0)) {
       var blob = [d.Extras, d["Summer basis"], d.Next, d.Sessions].join(" ");
       var mApr = blob.match(/\bapr(?:il|\.)?\b[^\d£]{0,12}£?\s*([\d,]+(?:\.\d+)?)/i);
       var mMay = blob.match(/\bmay\b[^\d£]{0,12}£?\s*([\d,]+(?:\.\d+)?)/i);
@@ -947,10 +975,114 @@
       }
     }
     if (!(apr > 0)) apr = 0;
-    if (!(may > 0)) may = 0;
+    if (!(may > 0)) may = mayPaid > 0 ? mayPaid : 0;
     if (!(tot > 0)) tot = apr + may;
     if (!(tot > 0)) return null;
-    return { april: apr, may: may, total: tot };
+    return {
+      april: apr,
+      may: may,
+      total: tot,
+      mayPaid: mayPaid > 0 || /may[^\n]{0,40}\bpaid\b/i.test(
+        [d["Summer basis"], d["NHS due months"], d.Next].join(" "),
+      ),
+    };
+  }
+
+  /**
+   * True when this calendar month’s NHS £ is marked paid in office notes.
+   * Stops at + / · so “Jun unpaid + Jul PAID” and “Jul … (May … paid)” stay correct.
+   */
+  function nhsMonthMarkedPaid(blob, monthStem) {
+    var text = String(blob || "");
+    var stem = String(monthStem || "").toLowerCase();
+    if (!stem) return false;
+    var re = new RegExp(
+      "\\b" + stem + "(?:e|y)?\\b\\s*£\\s*[\\d,]+(?:\\.\\d+)?([^|+·\\n]{0,60})",
+      "ig",
+    );
+    var m;
+    while ((m = re.exec(text))) {
+      var tail = String(m[1] || "");
+      if (/\bunpaid\b/i.test(tail)) return false;
+      var paidAt = tail.search(/\bpaid\b/i);
+      if (paidAt < 0) continue;
+      var beforePaid = tail.slice(0, paidAt);
+      /* “Jul £x (May £y paid)” — paid belongs to May, not July. */
+      if (/\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i.test(beforePaid)) {
+        continue;
+      }
+      if (/\bdue\b/i.test(beforePaid)) continue;
+      return true;
+    }
+    return false;
+  }
+
+  function summerNhsPaidOutFromData(r) {
+    var d = (r && r.data) || {};
+    var face = Number(r && r.amount) || 0;
+    var jun = Number(d["June invoice (25/26)"]) || 0;
+    var jul = Number(d["July invoice (25/26)"]) || 0;
+    var blob = [d["NHS due months"], d["Summer basis"], d.Next].join(" ");
+    var paid = 0;
+    if (jun > 0 && nhsMonthMarkedPaid(blob, "jun")) paid += jun;
+    if (jul > 0 && nhsMonthMarkedPaid(blob, "jul")) paid += jul;
+    /*
+     * Year received is safe when it fits this term face (Emanuel £7,500 of £11k).
+     * Skip when it is a full-year figure (Fadi £97k vs summer £29k).
+     */
+    if (!(paid > 0)) {
+      var yr = parseMoneyField(d["Year received (25/26)"]);
+      if (yr > 0 && face > 0 && yr <= face + 0.05) paid = yr;
+    }
+    var outHint = parseMoneyField(d["Year outstanding"]);
+    var out = 0;
+    if (paid > 0 && face > 0) {
+      out = Math.max(0, Math.round((face - paid) * 100) / 100);
+      if (outHint > 0 && outHint <= face + 0.05) {
+        out = outHint;
+        paid = Math.max(0, Math.round((face - out) * 100) / 100);
+      }
+    } else if (
+      String((r && r.payment_status) || "").toLowerCase().indexOf("partial") === 0
+      && outHint > 0
+      && face > 0
+      && outHint < face
+    ) {
+      out = outHint;
+      paid = Math.max(0, Math.round((face - out) * 100) / 100);
+    }
+    return { paid: paid, out: out };
+  }
+
+  function hydrateClientPaymentRow(r) {
+    if (!r || r._synthetic) return r;
+    var d = r.data || {};
+    var face = Number(r.amount) || 0;
+    var summerPaid = summerNhsPaidOutFromData(r);
+    if (summerPaid.paid > 0) {
+      r._amountPaid = summerPaid.paid;
+      r.amount_out = summerPaid.out;
+      if (
+        summerPaid.out > 0.009
+        && String(r.payment_status || "").toLowerCase().indexOf("paid") !== 0
+      ) {
+        r.payment_status = "Partial";
+      } else if (summerPaid.out <= 0.009 && face > 0) {
+        r.payment_status = "Paid";
+        r.amount_out = 0;
+      }
+    } else {
+      var outOnly = parseMoneyField(d["Year outstanding"]);
+      if (
+        String(r.payment_status || "").toLowerCase().indexOf("partial") === 0
+        && outOnly > 0
+        && face > outOnly
+      ) {
+        r.amount_out = outOnly;
+        r._amountPaid = Math.max(0, Math.round((face - outOnly) * 100) / 100);
+      }
+    }
+    return r;
   }
 
   function resolveYearProgrammeGbp(r) {
@@ -969,7 +1101,7 @@
   /**
    * Autumn 26/27 season totals for the Total column.
    * Prefer catalogue booked_* once; never invent Spring/Summer from an inflated
-   * instalment sum. Weekday programme weights: 14 / 11 / 13 (annual 38).
+   * instalment sum. Weekday programme weights: 14 / 11 / 13 (annual 38; Mon 37 with Early May BH).
    * ACAT Mon aquatic (Day Centre): 15 / 12 / 16 (annual 43) × £50.
    */
   function autumnCatalogSeasonTotals(r) {
@@ -1065,17 +1197,50 @@
 
   function amountCellHtml(r) {
     var julyPay = ealingJulyPaymentGbp(r);
+    var ealingCreditBal = ealingCreditBalanceGbp(r);
     var termAmt = Number(r.amount) || 0;
     var main = money(r.amount);
     var yearAmt = resolveYearProgrammeGbp(r);
     var bucket = typeof termBucketFor === "function" ? termBucketFor(r) : "";
+    var payCat = category(r);
+    var paidSoFar = Number(r._amountPaid != null ? r._amountPaid : r.amount_paid_gbp) || 0;
 
-    /* Autumn 26/27 Total column: Autumn (bold) → Spring → Summer → Year. */
+    /* Autumn 26/27 Total column: Autumn (bold) → Spring → Summer → Year.
+       Paid → green Autumn total; Flexi/GC partial → green paid / orange face (£x/£Autumn). */
     if (bucket === "autumn_2627") {
       var split = autumnCatalogSeasonTotals(r);
       if (split.year > 0 || split.autumn > 0) {
+        var autumnFace = Number(split.autumn) || termAmt || 0;
+        var autumnMain;
+        if (payCat === "partial" && paidSoFar > 0 && autumnFace > 0) {
+          var plan = partialPlanKind(r);
+          var ratioTitle = plan === "gc"
+            ? "GoCardless: paid so far / Autumn invoice total (monthly instalments)"
+            : plan === "oneoff"
+              ? "Paid so far / Autumn invoice total"
+              : "Flexi (bank): paid so far / Autumn invoice total (2 payments)";
+          autumnMain =
+            '<span class="pay-amt-term pay-amt-term--flexi" title="' + esc(ratioTitle) + '">'
+            + "Autumn "
+            + '<span class="pay-amt-paid">' + money(paidSoFar) + "</span>"
+            + '<span class="pay-amt-slash">/</span>'
+            + '<span class="pay-amt-face">' + money(autumnFace) + "</span>"
+            + "</span>";
+        } else if (payCat === "paid") {
+          autumnMain =
+            '<span class="pay-amt-term pay-amt-term--paid" title="Autumn paid in full">'
+            + "Autumn "
+            + money(autumnFace)
+            + "</span>";
+        } else {
+          autumnMain =
+            '<span class="pay-amt-term" title="Autumn total">'
+            + "Autumn "
+            + money(autumnFace)
+            + "</span>";
+        }
         return '<span class="pay-amt-stack" title="Catalogue Autumn / Spring / Summer / Year">'
-          + '<span class="pay-amt-term">' + money(split.autumn) + "</span>"
+          + autumnMain
           + '<span class="pay-amt-season">Spring ' + money(split.spring) + "</span>"
           + '<span class="pay-amt-season">Summer ' + money(split.summer) + "</span>"
           + '<span class="pay-amt-year">Year ' + money(split.year > 0 ? split.year : (split.autumn + split.spring + split.summer)) + "</span>"
@@ -1087,38 +1252,96 @@
     if (bucket === "summer_2526") {
       var aprMay = summerAprMayInvoicesGbp(r);
       var junJul = summerJunJulInvoicesGbp(r);
-      var sessOnly = aprMay && termAmt > aprMay.total
-        ? Math.round((termAmt - aprMay.total) * 100) / 100
-        : 0;
-      if (!julyPay && !aprMay && !junJul) return main;
+      var uplift = summerNhsUpliftInvoicesGbp(r);
+      /*
+       * "Sessions" was the leftover after Apr/May invoices (Timi-style).
+       * When Jun/Jul NHS invoices are also listed, that leftover is just Jun+Jul —
+       * do not show a redundant Sessions line (Fadi/Ikram looked like double billing).
+       */
+      var sessOnly = 0;
+      if (aprMay && !junJul && termAmt > aprMay.total) {
+        sessOnly = Math.round((termAmt - aprMay.total) * 100) / 100;
+      }
+      var summerMain =
+        '<span class="pay-amt-term">' + main + "</span>";
+      if (payCat === "partial" && paidSoFar > 0 && termAmt > 0) {
+        summerMain =
+          '<span class="pay-amt-term pay-amt-term--flexi" title="Paid so far / Summer term total">'
+          + '<span class="pay-amt-paid">' + money(paidSoFar) + "</span>"
+          + '<span class="pay-amt-slash">/</span>'
+          + '<span class="pay-amt-face">' + money(termAmt) + "</span>"
+          + "</span>";
+      } else if (payCat === "paid") {
+        summerMain =
+          '<span class="pay-amt-term pay-amt-term--paid" title="Summer paid in full">'
+          + money(termAmt)
+          + "</span>";
+      }
+      var monthBits = "";
+      if (aprMay && aprMay.april > 0) {
+        monthBits +=
+          '<span class="pay-amt-season" title="NHS April invoice">Apr '
+          + money(aprMay.april)
+          + "</span>";
+      }
+      if (aprMay && aprMay.may > 0) {
+        monthBits +=
+          '<span class="pay-amt-season" title="'
+          + (aprMay.mayPaid ? "May invoice already paid (not in Outstanding)" : "NHS May invoice")
+          + '">May '
+          + money(aprMay.may)
+          + (aprMay.mayPaid ? " paid" : "")
+          + "</span>";
+      }
+      if (junJul) {
+        var junBlob = [((r && r.data) || {})["NHS due months"], ((r && r.data) || {})["Summer basis"]].join(" ");
+        var junPaid = junJul.june > 0 && nhsMonthMarkedPaid(junBlob, "jun");
+        var julPaid = junJul.july > 0 && nhsMonthMarkedPaid(junBlob, "jul");
+        monthBits +=
+          '<span class="pay-amt-season" title="NHS invoices June &amp; July">Jun '
+          + money(junJul.june)
+          + (junPaid ? " paid" : "")
+          + " · Jul "
+          + money(junJul.july)
+          + (julPaid ? " paid" : "")
+          + "</span>";
+      }
+      if (!julyPay && !ealingCreditBal && !aprMay && !junJul && !uplift && payCat !== "partial") {
+        return summerMain;
+      }
       return '<span class="pay-amt-stack" title="'
-        + (aprMay
-          ? "Jun–Jul sessions + April/May invoices"
+        + (uplift
+          ? "NHS inflation uplift invoices (2.03%)"
           : junJul
             ? "June + July NHS invoices"
-            : "Summer term total")
+            : aprMay
+              ? "Sessions + April/May invoices"
+              : "Summer term total")
         + '">'
-        + '<span class="pay-amt-term">' + main + "</span>"
-        + (aprMay && sessOnly > 0
+        + summerMain
+        + (sessOnly > 0
           ? '<span class="pay-amt-season">Sessions ' + money(sessOnly) + "</span>"
           : "")
-        + (aprMay
-          ? '<span class="pay-amt-season" title="NHS invoices April &amp; May">Apr '
-            + money(aprMay.april || aprMay.total / 2)
-            + " · May "
-            + money(aprMay.may || aprMay.total / 2)
+        + monthBits
+        + (uplift
+          ? '<span class="pay-amt-season" title="INV-0390 Ikram · INV-0389 Fadi">IO '
+            + money(uplift.io)
+            + " · FA "
+            + money(uplift.fa)
             + "</span>"
-          : "")
-        + (junJul
-          ? '<span class="pay-amt-season" title="NHS invoices June &amp; July">Jun '
-            + money(junJul.june)
-            + " · Jul "
-            + money(junJul.july)
+            + '<span class="pay-amt-season" title="INV-0391 Emanuel · INV-0392 Timi">ED '
+            + money(uplift.ed)
+            + " · TD "
+            + money(uplift.td)
             + "</span>"
           : "")
         + (julyPay
-          ? '<span class="pay-amt-july" title="Last payment received in July (Ealing LA)">−'
-            + money(julyPay) + " July paid</span>"
+          ? '<span class="pay-amt-july" title="Ealing LA payments applied against Summer">−'
+            + money(julyPay) + " Ealing paid</span>"
+          : "")
+        + (ealingCreditBal
+          ? '<span class="pay-amt-credit" title="Ealing surplus still on file after Summer cleared">+'
+            + money(ealingCreditBal) + " Ealing credit</span>"
           : "")
         + "</span>";
     }
@@ -1128,12 +1351,16 @@
       yearNote = '<span class="pay-amt-year" title="Full-year programme (not this term alone)">Year '
         + money(yearAmt) + "</span>";
     }
-    if (!julyPay && !yearNote) return main;
+    if (!julyPay && !ealingCreditBal && !yearNote) return main;
     return '<span class="pay-amt-stack">'
       + "<span>" + main + "</span>"
       + (julyPay
-        ? '<span class="pay-amt-july" title="Last payment received in July (Ealing LA)">−'
-          + money(julyPay) + " July paid</span>"
+        ? '<span class="pay-amt-july" title="Ealing LA payments applied against Summer">−'
+          + money(julyPay) + " Ealing paid</span>"
+        : "")
+      + (ealingCreditBal
+        ? '<span class="pay-amt-credit" title="Ealing surplus still on file after Summer cleared">+'
+          + money(ealingCreditBal) + " Ealing credit</span>"
         : "")
       + yearNote
       + "</span>";
@@ -1146,8 +1373,84 @@
   function category(r) {
     var s = String(r.payment_status || "").toLowerCase();
     if (s.indexOf("re-enrol") >= 0 || s.indexOf("reenrol") >= 0) return "notreenrolled";
+    /* Partial = money on invoice, balance still due (Flexi 2-pay or GC monthly). */
+    if (s.indexOf("partial") === 0 || s.indexOf("flexi") === 0 || s.indexOf("instalment") === 0) {
+      var paidAmt = Number(r._amountPaid != null ? r._amountPaid : r.amount_paid_gbp) || 0;
+      if (paidAmt > 0) return "partial";
+      return "outstanding";
+    }
     if (s.indexOf("paid") === 0) return "paid"; // "Paid"
     return "outstanding"; // Outstanding / Not paid / Pending / blank
+  }
+
+  /**
+   * Payment plan on the Autumn term invoice (not the same as Paid/Out):
+   * - flexi: bank transfer, 2 payments on one term invoice
+   * - gc: GoCardless, one term invoice + monthly instalments (e.g. Autumn Sep–Dec)
+   * - oneoff: bank one-off (single payment on the invoice)
+   */
+  function instalmentCountFor(r) {
+    if (!r) return 0;
+    if (Number(r._instalmentCount) > 0) return Math.floor(Number(r._instalmentCount));
+    var sched = r._paymentSchedule;
+    return Array.isArray(sched) ? sched.length : 0;
+  }
+
+  function isGoCardlessPaymentRow(r) {
+    if (!r) return false;
+    var hint = String(r._paymentMethodHint || "").toLowerCase();
+    if (hint === "gocardless") return true;
+    if (typeof rowHasGoCardlessFee === "function" && rowHasGoCardlessFee(r)) return true;
+    /* Unpaid GC packs often only show the fee line in Services. */
+    try {
+      var lines = typeof serviceOneLinersFor === "function" ? serviceOneLinersFor(r) : [];
+      if (lines.some(function (s) { return typeof isGoCardlessFeeLabel === "function" && isGoCardlessFeeLabel(s); })) {
+        return true;
+      }
+    } catch (_e) { /* ignore */ }
+    return false;
+  }
+
+  function payPlanKind(r) {
+    if (!r) return "";
+    /* NHS month invoices (Jun/Jul / May paid) — Part, not Flexi bank. */
+    if (
+      summerJunJulInvoicesGbp(r)
+      || Number(((r.data) || {})["May paid (25/26)"]) > 0
+      || Number(((r.data) || {})["April invoice (25/26)"]) > 0
+    ) {
+      if (category(r) === "partial") return "oneoff";
+    }
+    var n = instalmentCountFor(r);
+    if (isGoCardlessPaymentRow(r)) return "gc";
+    /*
+     * 3+ instalments used to imply GC, but bank flexi / soft-hold rows can
+     * carry long schedules (Tom) — only treat as GC when method says so.
+     */
+    var hint = String(r._paymentMethodHint || "").toLowerCase();
+    if (
+      n >= 3
+      && hint !== "bank_transfer"
+      && hint !== "bank"
+      && hint !== "tide"
+      && hint !== "payment_link"
+    ) {
+      return "gc";
+    }
+    if (n === 2) return "flexi";
+    if (n === 1) return "oneoff";
+    if (hint === "bank_transfer" || hint === "bank" || hint === "tide") {
+      /* No schedule yet: part-paid bank ⇒ flexi; otherwise unknown one-off. */
+      if (category(r) === "partial") return "flexi";
+      return "oneoff";
+    }
+    if (category(r) === "partial") return "flexi";
+    return "";
+  }
+
+  /** @deprecated alias — prefer payPlanKind */
+  function partialPlanKind(r) {
+    return payPlanKind(r) || "flexi";
   }
 
   function injectStyleOnce() {
@@ -1171,6 +1474,9 @@
       ".pay-kpi--out .pay-kpi__ico{background:#fee2e2;color:#b91c1c}",
       ".pay-kpi--out span{color:#b91c1c}",
       ".pay-kpi--out b{color:#991b1b}",
+      "button.pay-kpi{font:inherit;cursor:pointer;text-align:center;width:100%}",
+      "button.pay-kpi:hover{filter:brightness(0.98)}",
+      "button.pay-kpi.pay-kpi--active{box-shadow:0 0 0 2px rgba(45,132,179,.35)}",
       "@media(max-width:520px){.pay-kpi--billed{width:100%}.pay-kpi b{font-size:18px}}",
       ".pay-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:0 0 14px}",
       ".pay-grp{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;min-width:0}",
@@ -1214,6 +1520,10 @@
       ".pay-chip--private{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}",
       ".pay-chip--funded-la{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}",
       ".pay-chip--funded-nhs{background:#ecfeff;color:#0e7490;border-color:#a5f3fc}",
+      ".pay-chip--out{background:#fef2f2;color:#b91c1c;border-color:#fecaca}",
+      ".pay-chip--paid-ok{background:#ecfdf5;color:#047857;border-color:#a7f3d0}",
+      ".pay-chip--flexi{background:#fff7ed;color:#c2410c;border-color:#fdba74}",
+      ".pay-chip--gc{background:#eff6ff;color:#1d4ed8;border-color:#93c5fd}",
       ".pay-chip--inv-parent-ex{background:#f0fdf4;color:#166534;border-color:#bbf7d0}",
       ".pay-chip--inv-parent-20{background:#fff7ed;color:#c2410c;border-color:#fed7aa}",
       ".pay-chip--inv-la{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff}",
@@ -1245,12 +1555,19 @@
       ".pay-tbl th.pay-col-term,.pay-tbl td.pay-col-term{width:5.5rem;text-align:center}",
       ".pay-term-pill{display:inline-block;max-width:100%;padding:3px 7px;border-radius:999px;background:#eef6fb;color:#1e5a7a;border:1px solid rgba(45,132,179,.28);font-size:10px;font-weight:700;line-height:1.2;overflow-wrap:break-word}",
       ".pay-amt-year{display:block;font-size:10px;font-weight:600;color:#64748b;line-height:1.2;overflow-wrap:break-word}",
-      ".pay-amt-term{display:block;font-size:13px;font-weight:800;color:#173247;line-height:1.2}",
+      ".pay-amt-term{display:block;font-size:13px;font-weight:800;color:#173247;line-height:1.25;overflow-wrap:break-word;min-width:0}",
+      ".pay-amt-term--paid{color:#047857}",
+      ".pay-amt-term--flexi{color:#173247}",
+      ".pay-amt-paid{color:#047857;font-weight:800}",
+      ".pay-amt-face{color:#c2410c;font-weight:800}",
+      ".pay-amt-slash{color:#94a3b8;font-weight:700;margin:0 1px}",
       ".pay-amt-season{display:block;font-size:10px;font-weight:600;color:#64748b;line-height:1.2;overflow-wrap:break-word}",
       ".pay-tbl th.pay-col-total,.pay-tbl td.pay-col-total{width:5.75rem;min-width:5.25rem;text-align:center;white-space:normal;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700}",
-      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:3rem;max-width:3rem;padding-left:2px;padding-right:2px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
+      ".pay-tbl th.pay-col-status,.pay-tbl td.pay-col-status{width:3.6rem;max-width:3.6rem;padding-left:2px;padding-right:2px;text-align:center;overflow:hidden;overflow-wrap:normal;word-break:normal}",
       ".pay-tbl th.pay-col-status{font-size:9px;line-height:1.05}",
-      ".pay-tbl td.pay-col-status .pay-pill{font-size:9px;padding:3px 4px;white-space:nowrap}",
+      ".pay-tbl td.pay-col-status .pay-pill{display:inline-block;font-size:9px;padding:3px 4px;white-space:nowrap}",
+      ".pay-pdf-link{display:block;margin:4px auto 0;width:fit-content;max-width:100%;font-size:9px;font-weight:800;letter-spacing:.02em;color:#1d4ed8;text-decoration:none;padding:2px 5px;border-radius:6px;background:#eff6ff;border:1px solid #bfdbfe;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}",
+      ".pay-pdf-link:hover{background:#dbeafe;color:#1e40af}",
       ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:10px;text-transform:uppercase;letter-spacing:.03em;white-space:normal;line-height:1.2;padding:8px 6px}",
       ".pay-tbl thead tr.pay-tbl__filter-row th{background:#fff;text-transform:none;letter-spacing:0;white-space:normal;font-weight:400;padding:10px 12px;vertical-align:middle}",
       ".pay-tbl tbody tr{cursor:pointer}",
@@ -1261,9 +1578,12 @@
       ".pay-name-parent{font-size:11px;font-weight:600;color:#64748b;overflow-wrap:anywhere;word-break:break-word;min-width:0;max-width:100%;text-align:center;line-height:1.2}",
       ".pay-amt-stack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0;margin:0 auto}",
       ".pay-amt-july{font-size:10px;font-weight:700;color:#047857;white-space:nowrap}",
+      ".pay-amt-credit{font-size:10px;font-weight:800;color:#047857;white-space:nowrap}",
       ".pay-tbl .pay-pill{margin:0 auto;font-size:10px;padding:3px 8px}",
       ".pay-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}",
       ".pay-pill--paid{background:#e7f6ee;color:#15803d}",
+      ".pay-pill--partial{background:#fff7ed;color:#c2410c}",
+      ".pay-pill--gc{background:#eff6ff;color:#1d4ed8}",
       ".pay-pill--out{background:#fef2f2;color:#b91c1c}",
       ".pay-pill--na{background:#eef2f7;color:#475569}",
       ".pay-empty{color:#64748b;padding:18px;text-align:center;font-size:14px}",
@@ -1342,11 +1662,43 @@
 
   function pillFor(r) {
     var c = category(r);
-    var cls = c === "paid" ? "pay-pill--paid" : (c === "notreenrolled" ? "pay-pill--na" : "pay-pill--out");
+    var plan = c === "partial" ? partialPlanKind(r) : "";
+    var cls =
+      c === "paid"
+        ? "pay-pill--paid"
+        : c === "partial"
+          ? (plan === "gc" ? "pay-pill--gc" : "pay-pill--partial")
+          : c === "notreenrolled"
+            ? "pay-pill--na"
+            : "pay-pill--out";
     /* Compact table labels so Status column stays tiny. */
-    var label = c === "paid" ? "Paid" : (c === "notreenrolled" ? "N/A" : "Out");
-    var full = r.payment_status || (c === "paid" ? "Paid" : "Outstanding");
-    return '<span class="pay-pill ' + cls + '" title="' + esc(full) + '">' + esc(label) + "</span>";
+    var label =
+      c === "paid"
+        ? "Paid"
+        : c === "partial"
+          ? (plan === "gc" ? "GC" : plan === "oneoff" ? "Part" : "Flexi")
+          : c === "notreenrolled"
+            ? "N/A"
+            : "Out";
+    var full =
+      c === "paid"
+        ? "Paid"
+        : c === "partial"
+          ? (plan === "gc"
+            ? "GoCardless — monthly instalments paid toward Autumn invoice"
+            : plan === "oneoff"
+              ? "Part paid toward term invoice"
+              : "Flexi (bank) — first of two payments on term invoice")
+          : c === "notreenrolled"
+            ? "Not re-enrolled"
+            : "Outstanding";
+    var html = '<span class="pay-pill ' + cls + '" title="' + esc(full) + '">' + esc(label) + "</span>";
+    /* Admin-only PDF for funder / crash INV-Ps (parent hub stays invoice-free). */
+    if (r && r._pdfUrl) {
+      html += '<a class="pay-pdf-link" href="' + esc(r._pdfUrl) + '" target="_blank" rel="noopener" '
+        + 'data-pay-pdf="1" title="' + esc(r._invoiceNumber || "Invoice PDF") + '">PDF</a>';
+    }
+    return html;
   }
 
   function paidChipClass(label) {
@@ -1358,11 +1710,68 @@
   }
 
   function invoiceChipClass(label) {
-    if (label === INVOICE_TYPE.PARENT_EXEMPT) return "pay-chip--inv-parent-ex";
-    if (label === INVOICE_TYPE.PARENT_20) return "pay-chip--inv-parent-20";
-    if (label === INVOICE_TYPE.LA_EXEMPT) return "pay-chip--inv-la";
-    if (label === INVOICE_TYPE.NHS_EXEMPT) return "pay-chip--inv-nhs";
+    var s = String(label || "").trim();
+    if (label === INVOICE_TYPE.PARENT_EXEMPT || /^Parent\s*\(Exempt/i.test(s)) {
+      return "pay-chip--inv-parent-ex";
+    }
+    if (label === INVOICE_TYPE.PARENT_20 || /^Parent\s*\(20%/i.test(s)) {
+      return "pay-chip--inv-parent-20";
+    }
+    if (label === INVOICE_TYPE.NHS_EXEMPT || /^NHS\s*\(/i.test(s)) {
+      return "pay-chip--inv-nhs";
+    }
+    /* Generic LA or named council: "Ealing (Exempt invoice)", "H&F (Exempt invoice)". */
+    if (label === INVOICE_TYPE.LA_EXEMPT || /\(Exempt invoice\)\s*$/i.test(s)) {
+      return "pay-chip--inv-la";
+    }
     return "pay-chip--muted";
+  }
+
+  /**
+   * Named Local Authority for Exempt invoice chips (Ealing, H&F, Westminster…).
+   * Reads Funder / Funding / parent "LA · …" prefix — not the generic umbrella label.
+   */
+  function laCouncilShortFor(r) {
+    if (!r) return "";
+    if (r._laCouncilShort) return String(r._laCouncilShort);
+    var d = r.data || {};
+    var blob = [
+      d.Funder,
+      d.Funding,
+      d["Local Authority"],
+      d.LA,
+      d.Council,
+      d.Authority,
+      d["Funding origin"],
+      r._fundingLabel,
+      r.parent_name,
+      /* Named invoice types already resolved (never the generic umbrella). */
+      /local\s*authority\s*\(/i.test(String(d["Invoice type"] || ""))
+        ? ""
+        : d["Invoice type"],
+    ]
+      .map(function (x) { return String(x || ""); })
+      .join(" ");
+    var low = blob.toLowerCase();
+    if (/westminster/.test(low)) return "Westminster";
+    if (/kensington|chelsea|\brbkc\b/.test(low)) return "Kensington & Chelsea";
+    if (/h\s*&\s*f|hammersmith|fulham|\blbhf\b/.test(low)) return "H&F";
+    if (/\bealing\b/.test(low)) return "Ealing";
+    if (/\bbrent\b/.test(low)) return "Brent";
+    if (/\bharrow\b/.test(low)) return "Harrow";
+    if (/\bhounslow\b/.test(low)) return "Hounslow";
+    if (/\bbarnet\b/.test(low)) return "Barnet";
+    if (/\bcroydon\b/.test(low)) return "Croydon";
+    if (/richmond/.test(low)) return "Richmond";
+    if (/wandsworth/.test(low)) return "Wandsworth";
+    if (/lambeth/.test(low)) return "Lambeth";
+    if (/southwark/.test(low)) return "Southwark";
+    if (/islington/.test(low)) return "Islington";
+    if (/hackney/.test(low)) return "Hackney";
+    if (/camden/.test(low)) return "Camden";
+    if (/newham/.test(low)) return "Newham";
+    if (/tower\s*hamlets/.test(low)) return "Tower Hamlets";
+    return "";
   }
 
   function paidChipHtml(label) {
@@ -1401,6 +1810,26 @@
   function paidFilterForTerm(termId) {
     var map = state.paidFilterByTerm || {};
     return map[termId] || "";
+  }
+
+  function payStatusFilterForTerm(termId) {
+    var map = state.payStatusByTerm || {};
+    var v = map[termId] || "";
+    /* Migrate legacy Status/plan chips: Flexi/GC used to live in payStatusByTerm. */
+    if (v === "flexi" || v === "gc") {
+      if (!state.payPlanByTerm) state.payPlanByTerm = {};
+      if (!state.payPlanByTerm[termId]) state.payPlanByTerm[termId] = v;
+      map[termId] = "";
+      return "";
+    }
+    return v === "paid" || v === "outstanding" || v === "partial" ? v : "";
+  }
+
+  function payPlanFilterForTerm(termId) {
+    if (!fundingAllowsFamilyPlanFilter(paidFilterForTerm(termId))) return "";
+    var map = state.payPlanByTerm || {};
+    var v = map[termId] || "";
+    return v === "flexi" || v === "gc" ? v : "";
   }
 
   function captureTermOpenState(root) {
@@ -1572,12 +2001,13 @@
   function cyrusPackageSeasonTotals() {
     var thuRate = 90;
     var multiRate = 120;
-    var aqRate = 50;
+    /* Wed Multi removed; Wed Aquatic is 60' (£100), Sun Multi kept. */
+    var aqRate = 100;
     var wd = { autumn: 14, spring: 11, summer: 13, annual: 38 };
     var we = { autumn: 13, spring: 9, summer: 11, annual: 33 };
     function term(period) {
       var dc = thuRate * wd[period];
-      var as = multiRate * wd[period] + multiRate * we[period] + aqRate * wd[period];
+      var as = multiRate * we[period] + aqRate * wd[period];
       return { dc: dc, as: as, total: dc + as };
     }
     return {
@@ -1638,11 +2068,10 @@
     if (bucket === "summer_2526" && !hasOther) return null;
 
     var pack = cyrusPackageSeasonTotals();
-    var thuSvcLabel = "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm";
+    var thuSvcLabel = "90' Bespoke Programme - 3.30 pm to 5 pm - Thursday";
     var afterSvcLines = [
-      "90' Multi-Activity - 4.30 pm to 6 pm",
-      "90' Multi-Activity - 11 am to 12.30 pm",
-      "30' Aquatic Activity, Wednesday - 4 pm to 4.30 pm",
+      "90' Multi-Activity - 11 am to 12.30 pm - Sunday",
+      "60' Aquatic Activity - 4 pm to 5 pm - Wednesday",
     ];
 
     function clonePart(part, idSuffix, amount, services, sessions, cost, seasons) {
@@ -1714,7 +2143,7 @@
           pack.autumn.as,
           afterSvcLines.join("\n"),
           "weekday 14/11/13 · weekend 13/9/11",
-          d.Cost || "Catalogue Multi £120 · Aquatic 30' £50",
+          d.Cost || "Catalogue Multi £120 · Aquatic 60' £100",
           {
             autumn: pack.autumn.as,
             spring: pack.spring.as,
@@ -1771,6 +2200,10 @@
       return null;
     }
     if (termBucketFor(r) !== "autumn_2627") return null;
+    /* Jack S: Multi paid on main INV-P — no separate ACAT Outstanding line in this table. */
+    if (slug === "jacks" && r._officeSplitPaidOnly) {
+      return null;
+    }
     var blob = rowServiceBlob(r);
     var hasAquaticMon =
       /aquatic|swim/i.test(blob)
@@ -1801,8 +2234,8 @@
       asSeasons.autumn = billed;
     }
 
-    var dcSvc = "60' Aquatic Activity, Monday - 11 am to 12 pm";
-    var asSvc = "90' Multi-Activity, Sunday - 9.30 am to 11 am";
+    var dcSvc = "60' Aquatic Activity - 11 am to 12 pm - Monday";
+    var asSvc = "90' Multi-Activity - 9.30 am to 11 am - Sunday";
     var dcName = String(r.client_name || "").trim() || "Jack W";
     if (!/\(\s*acat\s*\)/i.test(dcName)) dcName = dcName.replace(/\s*\*$/, "").trim() + " (ACAT)";
 
@@ -1816,8 +2249,28 @@
       out.client_name = displayName;
       out.amount = amount;
       out.amount_billed = amount;
-      out.amount_out = amount;
-      out.payment_status = amount > 0 ? "Outstanding" : "Paid";
+      /*
+       * Inherit Paid/Partial from the combined INV-P. Forcing Outstanding here
+       * made Jack Walker look unpaid after INV-P-0342 was marked paid (£2260).
+       */
+      var srcSt = String(r.payment_status || "").toLowerCase();
+      var srcPaidAmt = Number(r._amountPaid != null ? r._amountPaid : r.amount_paid_gbp) || 0;
+      var srcFace = Number(r.amount_billed) || Number(r.amount) || Number(r._amountAutumn) || 0;
+      if (srcSt.indexOf("paid") === 0 && srcSt.indexOf("partial") < 0) {
+        out.amount_out = 0;
+        out.payment_status = "Paid";
+        out._amountPaid = amount;
+      } else if (srcSt.indexOf("partial") === 0 || (srcPaidAmt > 0 && srcFace > srcPaidAmt)) {
+        var ratio = srcFace > 0 ? amount / srcFace : 0;
+        var partPaid = Math.round(srcPaidAmt * ratio * 100) / 100;
+        var remain = Math.max(0, Math.round((amount - partPaid) * 100) / 100);
+        out._amountPaid = partPaid;
+        out.amount_out = remain;
+        out.payment_status = remain > 0.009 ? "Partial" : "Paid";
+      } else {
+        out.amount_out = amount;
+        out.payment_status = amount > 0 ? "Outstanding" : "Paid";
+      }
       if (seasons) {
         out._amountAutumn = seasons.autumn;
         out._amountSpring = seasons.spring;
@@ -1916,9 +2369,21 @@
     return /11\s*(?:to|-|–|:)\s*12/.test(s) && !/multi/i.test(s);
   }
 
+  function isNhsInflationUpliftRow(r) {
+    var key = String((r && r.client_key) || "").toLowerCase();
+    if (key.indexOf("nhs-inflation") === 0 || key.indexOf("nhs_inflation") === 0) return true;
+    var name = String((r && r.client_name) || "").toLowerCase();
+    return /inflationary\s*uplift|nhs\s*[·•\-]\s*inflation/.test(name);
+  }
+
   function isDayCentreRow(r) {
     var slug = paymentParticipantSlug(r);
     var s = rowServiceBlob(r);
+    var d = (r && r.data) || {};
+
+    /* Aggregate NHS Day Centre uplift invoices (INV-0389–0392) — not per child. */
+    if (isNhsInflationUpliftRow(r)) return true;
+    if (/day\s*centre/i.test(String(d.Stream || ""))) return true;
 
     /*
      * Tinashe: weekday 90' Bespoke stays Afterschool & Weekends.
@@ -1990,19 +2455,49 @@
       + "</div>";
   }
 
+  function fundingAllowsFamilyPlanFilter(paidLabel) {
+    return (
+      paidLabel === PAID_BY.PRIVATE_FUNDS
+      || paidLabel === PAID_BY.FUNDS_FROM_LA
+    );
+  }
+
   function paidFilterChipsHtml(termId) {
     var cur = paidFilterForTerm(termId);
+    var statusCur = payStatusFilterForTerm(termId);
+    var planCur = payPlanFilterForTerm(termId);
     var stream = serviceKindForTerm(termId);
-    var html = '<div class="pay-chip-filters pay-chip-filters--tbl" role="group" aria-label="Paid filter for this term">'
+    var showPlan = fundingAllowsFamilyPlanFilter(cur);
+    /*
+     * Hierarchy:
+     *  1) Status — Paid / Outstanding
+     *  2) Funding — All / Private / Funds from LA / Funded by LA / NHS
+     *  3) Flexi / GC — only under Using Private Funds or Using Funds from LA
+     */
+    var html = '<div class="pay-chip-filters pay-chip-filters--tbl" role="group" aria-label="Filters for this term">'
       + '<div class="pay-chip-row">'
-      + '<span class="pay-chip-row__lab">Paid</span>'
+      + '<span class="pay-chip-row__lab">Status</span>'
+      + filterChipBtn("paystatus", "paid", "Paid", statusCur === "paid", "pay-chip--paid-ok", termId)
+      + filterChipBtn("paystatus", "outstanding", "Outstanding", statusCur === "outstanding", "pay-chip--out", termId)
+      + "</div>"
+      + '<div class="pay-chip-row" role="group" aria-label="Funding filter">'
+      + '<span class="pay-chip-row__lab">Funding</span>'
       + filterChipBtn("paid", "", "All", !cur, "pay-chip--muted", termId);
     PAID_BY_OPTIONS.forEach(function (l) {
       /* Afterschool: no NHS chip — NHS Day Centre is on the other stream. */
       if (stream === "afterschool" && l === PAID_BY.FUNDED_BY_NHS) return;
       html += filterChipBtn("paid", l, l, cur === l, paidChipClass(l), termId);
     });
-    html += "</div></div>";
+    html += "</div>";
+    if (showPlan) {
+      html +=
+        '<div class="pay-chip-row" role="group" aria-label="Payment plan within this funding">'
+        + '<span class="pay-chip-row__lab">Plan</span>'
+        + filterChipBtn("payplan", "flexi", "Flexi", planCur === "flexi", "pay-chip--flexi", termId)
+        + filterChipBtn("payplan", "gc", "GC", planCur === "gc", "pay-chip--gc", termId)
+        + "</div>";
+    }
+    html += "</div>";
     return html;
   }
 
@@ -2029,8 +2524,41 @@
     return (rows || []).filter(function (r) { return paidByFor(r) === paid; });
   }
 
+  function applyPayStatusFilter(rows, termId) {
+    var st = payStatusFilterForTerm(termId);
+    if (!st) return rows || [];
+    return (rows || []).filter(function (r) {
+      var c = category(r);
+      if (c === "notreenrolled") return false;
+      if (st === "paid") return c === "paid" || c === "partial";
+      /* Legacy "partial" chip → any part-paid (Flexi or GC). */
+      if (st === "partial") return c === "partial";
+      if (st === "outstanding") return c === "outstanding";
+      return c === st;
+    });
+  }
+
+  function applyPayPlanFilter(rows, termId) {
+    var plan = payPlanFilterForTerm(termId);
+    if (!plan) return rows || [];
+    var funded = paidFilterForTerm(termId);
+    /* Flexi/GC only refine Private Funds / Funds from LA — ignore otherwise. */
+    if (!fundingAllowsFamilyPlanFilter(funded)) return rows || [];
+    return (rows || []).filter(function (r) {
+      if (category(r) === "notreenrolled") return false;
+      if (paidByFor(r) !== funded) return false;
+      return payPlanKind(r) === plan;
+    });
+  }
+
   function applyTermTableFilters(rows, termId) {
-    return applyPaidFilter(applyServiceKindFilter(rows || [], termId), termId);
+    return applyPayPlanFilter(
+      applyPayStatusFilter(
+        applyPaidFilter(applyServiceKindFilter(rows || [], termId), termId),
+        termId,
+      ),
+      termId,
+    );
   }
 
   function allRows() {
@@ -2050,6 +2578,9 @@
       reenrolByTermSlug[term][slug] = true;
     });
     var filteredPayments = payments.filter(function (r) {
+      /* Archived / cancelled workbook rows must not appear as live Outstanding. */
+      if (/^ARCHIVED/i.test(String(r.sheet || ""))) return false;
+      if (/^cancelled$/i.test(String(r.payment_status || "").trim())) return false;
       var term = termBucketFor(r);
       var slug = paymentParticipantSlug(r);
       if (slug && reenrolByTermSlug[term] && reenrolByTermSlug[term][slug]) return false;
@@ -2268,10 +2799,12 @@
     return html;
   }
 
-  /** Support ratio chip: default 1to1; Ikram/Fadi/Timi = 2to1; Tinashe = 3to1. */
+  /** Support ratio chip: default 1to1; Ikram/Fadi/Timi = 2to1; Tinashe term = 3to1. */
   function supportRatioFor(r) {
+    if (isNhsInflationUpliftRow(r)) return "—";
     var name = String((r && r.client_name) || "").toLowerCase();
-    if (/\btinashe\b/.test(name)) return "3to1";
+    /* July crash aquatic is 1to1; weekday term support for Tinashe stays 3to1. */
+    if (/\btinashe\b/.test(name) && !(r && r._crash)) return "3to1";
     if (
       /\bikram\b/.test(name) ||
       /\bfadi\b/.test(name) ||
@@ -2284,7 +2817,9 @@
   }
 
   function supportCellHtml(r) {
-    return '<span class="pay-chip pay-chip--muted">' + esc(supportRatioFor(r)) + "</span>";
+    var ratio = supportRatioFor(r);
+    if (ratio === "—") return '<span class="pay-chip pay-chip--muted">NHS</span>';
+    return '<span class="pay-chip pay-chip--muted">' + esc(ratio) + "</span>";
   }
 
   function paymentsTableHeadHtml(termId, colClient) {
@@ -2320,9 +2855,14 @@
       + paymentsTableHeadHtml(termId, colClient)
       + "<tbody>";
     rows.forEach(function (r, i) {
-      var attr = r._synthetic
-        ? ' data-pay-reenrol="' + esc(r._contactId || r.id) + '"'
-        : ' data-pay-id="' + esc(r._sourcePaymentId || r.id) + '"';
+      var attr = "";
+      if (r._pdfUrl) {
+        attr = ' data-pay-crash-pdf="' + esc(r._pdfUrl) + '"';
+      } else if (r._synthetic) {
+        attr = ' data-pay-reenrol="' + esc(r._contactId || r.id) + '"';
+      } else {
+        attr = ' data-pay-id="' + esc(r._sourcePaymentId || r.id) + '"';
+      }
       html += "<tr" + attr + ">"
         + '<td class="num pay-tbl__idx">' + (i + 1) + "</td>"
         + '<td class="pay-col-client">' + clientCellHtml(r) + "</td>"
@@ -2377,16 +2917,28 @@
     };
     (rows || []).forEach(function (r) {
       var a = Number(r.amount) || 0;
+      var paidPart = Number(r._amountPaid);
+      if (!(paidPart > 0)) paidPart = 0;
+      var outPart = Number(r.amount_out);
+      if (!(outPart >= 0)) outPart = a;
       var c = category(r);
       if (c !== "notreenrolled") billed += a;
       if (c === "paid") { paid += a; paidN++; }
-      else if (c === "outstanding") { outstanding += a; outN++; }
+      else if (c === "partial") {
+        paid += paidPart > 0 ? paidPart : Math.max(0, a - outPart);
+        paidN++;
+        outstanding += outPart > 0 ? outPart : 0;
+      } else if (c === "outstanding") { outstanding += a; outN++; }
       else if (c === "notreenrolled") naN++;
       var key = fundGroupKey(r, streamKind);
       var g = grp[key];
       if (g && c !== "notreenrolled") {
         g.billed += a; g.n++;
-        if (c === "paid") g.paid += a; else g.out += a;
+        if (c === "paid") g.paid += a;
+        else if (c === "partial") {
+          g.paid += paidPart > 0 ? paidPart : Math.max(0, a - outPart);
+          g.out += outPart > 0 ? outPart : 0;
+        } else g.out += a;
       }
     });
     return { billed: billed, paid: paid, outstanding: outstanding, paidN: paidN, outN: outN, naN: naN, grp: grp };
@@ -2394,13 +2946,15 @@
 
   function termSummaryBlockHtml(scopedRows, visibleRows, termId) {
     var stream = serviceKindForTerm(termId);
+    /* KPIs / group cards follow the same filtered set as the table caption. */
     var t = tallyRows(scopedRows, stream);
+    var statusCur = payStatusFilterForTerm(termId);
     var html = '<div class="pay-term-acc__body">';
     html += serviceKindToggleHtml(termId);
     html += '<div class="pay-kpis">'
-      + kpiCard("billed", "pay-kpi--billed", "Billed", money(t.billed))
-      + kpiCard("paid", "pay-kpi--paid", "Paid", money(t.paid))
-      + kpiCard("out", "pay-kpi--out", "Outstanding", money(t.outstanding))
+      + kpiCard("billed", "pay-kpi--billed", "Billed", money(t.billed), null, termId, !statusCur)
+      + kpiCard("paid", "pay-kpi--paid", "Paid", money(t.paid), "paid", termId, statusCur === "paid")
+      + kpiCard("out", "pay-kpi--out", "Outstanding", money(t.outstanding), "outstanding", termId, statusCur === "outstanding")
       + "</div>";
     if (state.mode === "payments") {
       html += '<div class="pay-groups">'
@@ -2417,7 +2971,7 @@
     html += '<div class="pay-card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;flex-wrap:wrap">'
       + '<h3 style="margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px;min-width:0">'
       + icon("clients", 17) + "Participants</h3>"
-      + tableOrdersCaptionHtml(scopedRows)
+      + tableOrdersCaptionHtml(visibleRows)
       + "</div>";
     html += paymentsTableBodyHtml(visibleRows.slice().sort(sortPaymentRows), termId);
     html += "</div>";
@@ -2437,17 +2991,22 @@
        * mid KPIs/groups and the Participants table for the active stream.
        */
       var headerRows = sg.rows;
+      /* Stream + funding chips scope the base set. */
       var scoped = applyServiceKindFilter(applyPaidFilter(sg.rows, termId), termId);
+      /* Status + Flexi/GC refine both KPIs/caption and the Participants table. */
+      var filtered = applyTermTableFilters(scoped, termId).filter(statusMatch);
+      var hasRefine =
+        !!payStatusFilterForTerm(termId) || !!payPlanFilterForTerm(termId);
+      var kpiRows = hasRefine ? filtered : scoped;
       /* Always keep the term openable so stream / Paid filters stay reachable. */
       any = true;
-      var vis = scoped.filter(statusMatch);
       html += '<details class="pay-term-acc"' + termDetailsOpenAttr(termId) + ' data-pay-term="' + esc(termId) + '">'
         + '<summary class="pay-term-acc__sum">'
         + '<span><span class="pay-term-acc__title">' + esc(sg.bucket.title) + "</span>"
         + '<span class="pay-term-acc__sub">' + esc(sg.bucket.subtitle) + "</span></span>"
         + termAccordionMetaHtml({ rows: headerRows, termId: termId })
         + "</summary>"
-        + termSummaryBlockHtml(scoped, vis, termId)
+        + termSummaryBlockHtml(kpiRows, filtered, termId)
         + "</details>";
     });
     if (!any) {
@@ -2475,6 +3034,10 @@
     if (state.statusFilter === "all") return true;
     // "Active" = currently re-enrolled (everyone except the Not re-enrolled list).
     if (state.statusFilter === "active") return category(r) !== "notreenrolled";
+    if (state.statusFilter === "paid") {
+      var cPaid = category(r);
+      return cPaid === "paid" || cPaid === "partial";
+    }
     return category(r) === state.statusFilter;
   }
 
@@ -2484,7 +3047,10 @@
     return /re-?enrolment\s*2026|booked place 2026|la office auto/i.test(t);
   }
 
-  /** "2h30 DAY CENTRE" + "MON to FRI" + "12.30 pm to 3 pm" → one display line. */
+  /** "2h30 DAY CENTRE" + "MON to FRI" + "12.30 pm to 3 pm" → one display line.
+   *  Norm: {dur}' {Service} - {slot} - {day}
+   *  e.g. 90' Multi-Activity - 9.30 am to 11 am - Sunday
+   */
   function formatServiceOneLiner(parts) {
     if (!parts || !parts.line1 || parts.line1 === "—" || isPlaceholderServiceLabel(parts.line1)) {
       return "";
@@ -2492,17 +3058,24 @@
     var title = String(parts.line1).trim();
     var days = String(parts.line2 || "").trim();
     var hours = String(parts.line3 || "").trim();
-    if (days && hours) return title + ", " + days + " - " + hours;
-    if (days) return title + ", " + days;
+    if (hours && days) return title + " - " + hours + " - " + days;
     if (hours) return title + " - " + hours;
+    if (days) return title + " - " + days;
     return title;
   }
 
   /** Day Centre summer crash for Zakariya (Mon–Thu week of 20 Jul). */
   function zakariyaCrashServiceLines() {
     return [
-      "60' Climbing Activity, July 20th to 23rd - 12 pm to 1 pm",
-      "60' Aquatic Activity, July 20th to 23rd - 1 pm to 2 pm",
+      "60' Climbing Activity - 12 pm to 1 pm - July 20th to 23rd",
+      "60' Aquatic Activity - 1 pm to 2 pm - July 20th to 23rd",
+    ];
+  }
+
+  /** Day Centre summer crash for Tinashe (3× 30' SwimFarm, Jul 27/29/31). */
+  function tinasheCrashServiceLines() {
+    return [
+      "30' AQUATIC ACTIVITY (JULY) - 1 pm to 1.30 pm",
     ];
   }
 
@@ -2590,8 +3163,9 @@
     var hm = text.match(/[-–]\s*(\d+\s*['′']?[^\n]*?(?:Climbing|Aquatic|Swimming|Multi)[^\n]*)/i);
     if (hm) head = hm[1].trim();
     if (!head) {
-      if (/climb/i.test(text)) head = "60' Climbing Activity";
-      else if (/aquatic|swim/i.test(text)) head = "60' Aquatic Activity";
+      var durGuess = (text.match(/(\d+)\s*['′']/) || [])[1] || "";
+      if (/climb/i.test(text)) head = (durGuess || "60") + "' Climbing Activity";
+      else if (/aquatic|swim/i.test(text)) head = (durGuess || "60") + "' Aquatic Activity";
       else return [];
     }
     var dateM = text.match(
@@ -2647,6 +3221,7 @@
   }
 
   function rowHasGoCardlessFee(r) {
+    if (String((r && r._paymentMethodHint) || "").toLowerCase() === "gocardless") return true;
     var d = (r && r.data) || {};
     var blob = [
       d.Services,
@@ -2654,9 +3229,7 @@
       r && r._paymentMethodHint,
       Object.keys((r && r._serviceParts) || {}).join(" "),
     ].join(" ");
-    if (isGoCardlessFeeLabel(blob)) return true;
-    return String((r && r._paymentMethodHint) || "").toLowerCase() === "gocardless"
-      && /admin\s*fee|direct\s*payment/i.test(blob);
+    return isGoCardlessFeeLabel(blob);
   }
 
   function serviceOneLinersFor(r) {
@@ -2678,6 +3251,14 @@
       out.push(t);
     }
 
+    /** Every GoCardless row must show the collection fee line. */
+    function finish() {
+      if (rowHasGoCardlessFee(r) || (r && r._serviceParts && r._serviceParts["Admin Fee (GoCardless)"])) {
+        push("Admin Fee (GoCardless)");
+      }
+      return dedupeCanonServiceOneLiners(out);
+    }
+
     /*
      * Cyrus: always list the full package (paid together), but stream rows
      * and Day Centre / Afterschool emphasis decide which lines are bold.
@@ -2685,7 +3266,7 @@
     if (r && (r._cyrusPart || paymentParticipantSlug(r) === "cyrus")) {
       if (termBucketFor(r) === "autumn_2627" || termBucketFor(r) === "summer_2526") {
         cyrusPackageServiceLines().forEach(push);
-        if (out.length) return out;
+        if (out.length) return finish();
       }
     }
 
@@ -2693,7 +3274,23 @@
     if (r && r._crash) {
       if (paymentParticipantSlug(r) === "zakariya") {
         zakariyaCrashServiceLines().forEach(push);
-        if (out.length) return out;
+        if (out.length) return finish();
+      }
+      if (paymentParticipantSlug(r) === "patrick") {
+        push(
+          String((r.data && r.data.Services) || "").trim()
+          || "60' Climbing — July crash course · Westway · 11 am to 12 pm · Mon 20th to Thu 23rd July",
+        );
+        if (out.length) return finish();
+      }
+      var crashPreset = String((r.data && r.data.Services) || "").trim();
+      if (
+        crashPreset
+        && /july\s*crash|summer\s*crash|crash\s*course/i.test(crashPreset)
+        && !/\bsunday\b/i.test(crashPreset)
+      ) {
+        stitchServiceFragments(splitServiceList(crashPreset)).forEach(push);
+        if (out.length) return finish();
       }
       if (r._crashLineDesc) {
         parseBulletCrashOneLiners(r._crashLineDesc).forEach(push);
@@ -2702,7 +3299,7 @@
         while ((m = inlineRe.exec(String(r._crashLineDesc || "")))) {
           push(formatCrashParenBundle(m[1], m[2]));
         }
-        if (out.length) return out;
+        if (out.length) return finish();
       }
     }
 
@@ -2721,36 +3318,51 @@
       sessList.forEach(function (sess) {
         push(labelFromParticipantSession(sess));
       });
-      if (rowHasGoCardlessFee(r) || (r._serviceParts && r._serviceParts["Admin Fee (GoCardless)"])) {
-        push("Admin Fee (GoCardless)");
-      }
-      if (out.length) return out;
+      if (out.length) return finish();
     }
 
     var raw = String(d.Services || d.Service || "").trim();
     if (!raw || isPlaceholderServiceLabel(raw)) {
       push(formatServiceOneLiner(serviceDisplayParts(r)));
-      return out;
+      return finish();
     }
 
     if (/day\s*centre/i.test(raw)) {
       var dcWhole = formatServicePieceOneLiner(raw.replace(/\s*·\s*/g, " "), sessions)
         || formatServiceOneLiner(normalizeServiceParts(raw, sessions));
       if (dcWhole && looksLikeDayCentreLine(dcWhole) && !isBogusDayCentreLine(dcWhole)) {
-        return [dcWhole];
+        push(dcWhole);
+        return finish();
       }
     }
 
-    stitchServiceFragments(splitServiceList(raw)).forEach(push);
-    if (out.length) return out;
+    /* Always expand with Sessions so "Aquatic Activity 60'" picks up day/time. */
+    stitchServiceFragments(splitServiceList(raw)).forEach(function (piece) {
+      var rich = typeof parseRichServiceFragment === "function"
+        ? parseRichServiceFragment(piece)
+        : "";
+      if (rich) {
+        push(rich);
+        return;
+      }
+      var expanded = expandRawServiceToCanonLines(piece, sessions);
+      if (expanded.length) {
+        expanded.forEach(push);
+        return;
+      }
+      var one = formatServicePieceOneLiner(piece, sessions);
+      if (one) push(one);
+      else push(piece);
+    });
+    if (out.length) return finish();
 
     splitServiceList(raw).forEach(function (piece) {
       expandRawServiceToCanonLines(piece, sessions).forEach(push);
     });
-    if (out.length) return out;
+    if (out.length) return finish();
 
     push(formatServiceOneLiner(serviceDisplayParts(r)));
-    return out;
+    return finish();
   }
 
   function isCyrusBespokeServiceLine(line) {
@@ -2761,10 +3373,9 @@
   /** Cyrus package lines (paid together) — emphasis follows Day Centre vs Afterschool stream. */
   function cyrusPackageServiceLines() {
     return [
-      "90' Multi-Activity - 4.30 pm to 6 pm",
-      "90' Multi-Activity - 11 am to 12.30 pm",
-      "90' Bespoke Programme, Thursday - 3.30 pm to 5 pm",
-      "30' Aquatic Activity, Wednesday - 4 pm to 4.30 pm",
+      "90' Multi-Activity - 11 am to 12.30 pm - Sunday",
+      "90' Bespoke Programme - 3.30 pm to 5 pm - Thursday",
+      "60' Aquatic Activity - 4 pm to 5 pm - Wednesday",
       "Admin Fee (GoCardless)",
     ];
   }
@@ -2821,6 +3432,27 @@
     if (/^credits?$/i.test(s)) return "";
     if (/^structured activity support/i.test(s)) return "";
     if (/^demo\b/i.test(s) && !/\d+\s*['′']/.test(s)) return "";
+    /* Invoice noise mistaken for services */
+    if (/^(january|february|march|april|may|june|july|august|september|october|november|december)\s*$/i.test(s)) {
+      return "";
+    }
+    /* "October 2026" / "December 2026" from GC tracker line_description fragments */
+    if (/^(january|february|march|april|may|june|july|august|september|october|november|december)\s+20\d{2}\s*$/i.test(s)) {
+      return "";
+    }
+    /* Bare term labels from GC tracker text — not a service */
+    if (/^(autumn|spring|summer)(\s*term)?(\s*26\/27|\s*25\/26)?\s*$/i.test(s)) {
+      return "";
+    }
+    if (/^\d{4}\s*['′']?\s*payment/i.test(s)) return "";
+    if (/^payment\b/i.test(s) && !/aquatic|climb|multi|bespoke|physical|day\s*centre/i.test(s)) {
+      return "";
+    }
+    if (/^gocardless\s*$/i.test(s)) return "";
+    if (/^(gc\s*)?tracker\s*$/i.test(s)) return "Admin Fee (GoCardless)";
+    if (/\bgc\s*tracker\b/i.test(s) || /\bgocardless\s*tracker\b/i.test(s)) {
+      return "Admin Fee (GoCardless)";
+    }
     s = s.replace(/\s*[—–-]\s*GBP\s*[\d,.]+.*$/i, "").trim();
     s = s.replace(/\s*·\s*demo\b.*$/i, "").trim();
     return s;
@@ -2852,7 +3484,155 @@
     var rm = s.match(/\b(\d)\s*[:to]+\s*(\d)\b/i);
     if (rm) ratio = rm[1] + "to" + rm[2];
     var mult = (s.match(/\b(\d)\s*x\b/i) || [])[1] || "";
-    return [dur, kind, days.join("+"), ratio, mult].join("|");
+    var timeKey = "";
+    var tm = normalizeSessionTimeRange(s);
+    if (tm) timeKey = tm.toLowerCase().replace(/\s+/g, "");
+    return [dur, kind, days.join("+"), ratio, mult, timeKey].join("|");
+  }
+
+  /**
+   * Collapse duplicate service lines (e.g. Multi with no day + Multi Sunday)
+   * and reformat ALL to: 90' Multi-Activity - 9.30 am to 11 am - Sunday
+   */
+  function forceCanonServiceLine(raw) {
+    var cleaned = cleanServiceLabelJunk(raw);
+    if (!cleaned) return "";
+    if (isGoCardlessFeeLabel(cleaned) || /^admin\s*fee/i.test(cleaned)) {
+      return "Admin Fee (GoCardless)";
+    }
+    if (isPlaceholderServiceLabel(cleaned) || isVenueOnlyLabel(cleaned)) return "";
+    if (isBogusDayCentreLine(cleaned)) return "";
+
+    var s = normalizeServiceDisplay(cleaned).replace(/\s+/g, " ").trim();
+
+    /* Flip "Aquatic Activity 60'" → duration first */
+    var endDur = s.match(/^(.*?)[\s,]+(\d{1,3})\s*['′']\s*$/i);
+    if (endDur && !/^\d+\s*['′']/i.test(s)) {
+      var maybeDur = parseInt(endDur[2], 10);
+      if (maybeDur >= 15 && maybeDur <= 480) {
+        s = maybeDur + "' " + endDur[1].trim();
+      }
+    }
+
+    /* Reject year-looking durations (2026' Payment already cleaned; belt+braces) */
+    var durHead = s.match(/^(\d+)\s*['′']/);
+    if (durHead) {
+      var d0 = parseInt(durHead[1], 10);
+      if (d0 > 480 || d0 < 15) {
+        /* Keep Day Centre hour labels like 2h30 via other paths; drop year junk */
+        if (d0 >= 1900) return "";
+      }
+    }
+
+    var dur = 0;
+    var dm = s.match(/(\d+)\s*['′']/);
+    if (dm) dur = parseInt(dm[1], 10) || 0;
+    if (dur > 0 && dur < 15) return "";
+    if (dur >= 1900) return "";
+
+    var title = kindTitleFromText(s);
+    if (!title) {
+      var stripped = s
+        .replace(/^\d+\s*['′']?\s*/, "")
+        .replace(/\s+\d+\s*['′']\s*$/, "")
+        .replace(/\([^)]*\)/g, "")
+        .replace(/\s*-\s*\d{1,2}(?:[.:]\d{2})?\s*(am|pm)?\s*(?:[–\-—]|to)\s*\d{1,2}.*/i, "")
+        .replace(/\s*-\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday).*$/i, "")
+        .replace(/,\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday).*$/i, "")
+        .trim();
+      title = normalizeServiceDisplay(stripped) || stripped;
+    }
+    if (!title || /^admin\b/i.test(title)) return "";
+
+    var days = collectDayTokensFromText(s);
+    var time = normalizeSessionTimeRange(s) || extractTimeFromText(s) || "";
+    time = normalizeSessionTimeRange(time) || time;
+
+    /* Prefer known programme titles */
+    var known = kindTitleFromText(title) || title;
+    if (!kindTitleFromText(known) && !/day\s*centre/i.test(known)) {
+      /* Still show flipped duration + name if it looks like a programme */
+      if (!dur && !time && !days.length) {
+        return known;
+      }
+    }
+
+    /* Flip trailing duration that survived earlier (e.g. "Multi-Activity 90'") */
+    if (!dur) {
+      var endOnly = known.match(/^(.*?)[\s,]+(\d{1,3})\s*['′']\s*$/i);
+      if (endOnly) {
+        var dEnd = parseInt(endOnly[2], 10) || 0;
+        if (dEnd >= 15 && dEnd <= 480) {
+          dur = dEnd;
+          known = kindTitleFromText(endOnly[1]) || endOnly[1].trim();
+        }
+      }
+    }
+
+    return formatCanonServiceLine({
+      durMin: dur,
+      service: known,
+      day: days[0] || "",
+      time: time,
+    });
+  }
+
+  function dedupeCanonServiceOneLiners(lines) {
+    var groups = Object.create(null);
+    var order = [];
+    (lines || []).forEach(function (raw) {
+      var line = forceCanonServiceLine(raw);
+      if (!line) return;
+      if (line === "Admin Fee (GoCardless)") {
+        var feeKey = "fee";
+        if (!groups[feeKey]) {
+          groups[feeKey] = { line: line, fee: true, score: 1 };
+          order.push(feeKey);
+        }
+        return;
+      }
+      var dur = (line.match(/^(\d+)\s*['′']/) || [])[1] || "";
+      var kind = "";
+      if (/day\s*centre/i.test(line)) kind = "daycentre";
+      else if (/aquatic|swim/i.test(line)) kind = "aquatic";
+      else if (/climb/i.test(line)) kind = "climb";
+      else if (/multi/i.test(line)) kind = "multi";
+      else if (/bespoke|\bff\b/i.test(line)) kind = "bespoke";
+      else if (/physical|fitness|\bft\b/i.test(line)) kind = "physical";
+      var days = collectDayTokensFromText(line);
+      var time = normalizeSessionTimeRange(line) || extractTimeFromText(line) || "";
+      time = normalizeSessionTimeRange(time) || time;
+      var key = kind && dur
+        ? (dur + "|" + kind + "|" + (time || "").toLowerCase().replace(/\s+/g, ""))
+        : ("raw:" + line.toLowerCase().replace(/\s+/g, " "));
+      var score = (days.length ? 4 : 0) + (time ? 2 : 0) + Math.min(line.length, 80) * 0.01;
+      if (!groups[key]) {
+        groups[key] = { line: line, dur: dur, kind: kind, days: days, time: time, score: score };
+        order.push(key);
+      } else if (score > groups[key].score) {
+        groups[key] = { line: line, dur: dur, kind: kind, days: days, time: time, score: score };
+      } else if (days.length && !groups[key].days.length) {
+        groups[key].days = days;
+        groups[key].line = line;
+        groups[key].score = score;
+      }
+    });
+    return order.map(function (k) {
+      var g = groups[k];
+      if (g.fee) return g.line;
+      if (g.kind && g.dur) {
+        var title = serviceKindTitle(g.kind);
+        if (title) {
+          return formatCanonServiceLine({
+            durMin: parseInt(g.dur, 10) || 0,
+            service: title,
+            day: g.days[0] || "",
+            time: g.time || "",
+          }) || g.line;
+        }
+      }
+      return g.line;
+    }).filter(Boolean);
   }
 
   function preferServiceLabel(a, b) {
@@ -2861,7 +3641,9 @@
       var n = 0;
       if (/\([^)]*\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(s)) n += 4;
       if (/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s*&\s*(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(s)) n += 5;
+      if (/-\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*$/i.test(s)) n += 6;
       if (/,\s*(Mondays?|Tuesdays?|Wednesdays?|Thursdays?|Fridays?|Saturdays?|Sundays?)\b/i.test(s)) n += 1;
+      if (/\d{1,2}(?:[.:]\d{2})?\s*(am|pm)\s+to\s+\d{1,2}/i.test(s)) n += 3;
       if (/\bdemo\b/i.test(s)) n -= 8;
       if (/client'?s\s*name/i.test(s)) n -= 12;
       if (/^[-–]/.test(s.trim())) n -= 4;
@@ -2897,7 +3679,7 @@
     return map[tok] || String(d || "").trim();
   }
 
-  /** Canonical: 60' Climbing Activity, Sunday - 11 am to 12 pm */
+  /** Canonical: 90' Multi-Activity - 9.30 am to 11 am - Sunday */
   function formatCanonServiceLine(opts) {
     opts = opts || {};
     var dur = Number(opts.durMin) || 0;
@@ -2910,9 +3692,9 @@
     head = head.replace(/\s+/g, " ").trim();
     var day = opts.day ? dayTitleFull(opts.day) : "";
     var time = normalizeSessionTimeRange(opts.time);
-    if (day && time) return head + ", " + day + " - " + time;
-    if (day) return head + ", " + day;
+    if (time && day) return head + " - " + time + " - " + day;
     if (time) return head + " - " + time;
+    if (day) return head + " - " + day;
     return head;
   }
 
@@ -2927,7 +3709,11 @@
     return /admin\s*fee/i.test(t)
       || /direct\s*payment.*fee/i.test(t)
       || /gocardless.*fee/i.test(t)
-      || /^direct\s*payment\s*\(gocardless\)/i.test(t);
+      || /^direct\s*payment\s*\(gocardless\)/i.test(t)
+      /* Office GC instalment trackers (Maiyar/Linda scripts) — show as fee, not "GC tracker". */
+      || /\bgc\s*tracker\b/i.test(t)
+      || /\bgocardless\s*tracker\b/i.test(t)
+      || /^gc\s*fee\b/i.test(t);
   }
 
   /** "4.30 to 5 pm" / "12.30 to 2" / "5 to 6" → "4.30 pm to 5 pm". */
@@ -2997,13 +3783,21 @@
       var dur2 = parseInt(std[1], 10) || 0;
       var title2 = std[2].trim();
       var inside = String(std[3] || "").trim();
-      /* Also support ", Sunday - 12.30 pm to 2 pm" after the title. */
+      /* Also support ", Sunday - 12.30 pm to 2 pm" and
+       * " - 9.30 am to 11 am - Sunday" after the title. */
       var dayFromTitle = "";
       var timeFromTitle = "";
+      var newCanon = title2.match(
+        /^(.*?)\s*-\s*(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?\s*(?:[–\-—]|to)\s*\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?)\s*(?:-\s*)?((?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*)?\s*$/i
+      );
       var tail = title2.match(
         /^(.*?)(?:,\s*)?((?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*)\s*(?:-\s*)?(.+)$/i
       );
-      if (!inside && tail) {
+      if (!inside && newCanon) {
+        title2 = newCanon[1].trim().replace(/[,\s\-]+$/, "");
+        timeFromTitle = newCanon[2];
+        dayFromTitle = newCanon[3] || "";
+      } else if (!inside && tail) {
         title2 = tail[1].trim().replace(/,\s*$/, "");
         dayFromTitle = tail[2];
         timeFromTitle = tail[3];
@@ -3114,18 +3908,45 @@
     return m ? h + "." + (m < 10 ? "0" + m : String(m)) : String(h);
   }
 
+  /**
+   * Roster sometimes stores day inside timeSlot, e.g.
+   * day="" time="Activity, Sunday - 11 to 12.30" → day=Sunday, time="11 to 12.30".
+   */
+  function normalizeParticipantSessionFields(s) {
+    var day = String((s && s.day) || "").trim();
+    var timeSlot = String((s && (s.timeSlot || s.time)) || "").trim();
+    var service = String((s && s.service) || "").trim();
+    if (!day) {
+      var fromTime = collectDayTokensFromText(timeSlot);
+      var fromSvc = collectDayTokensFromText(service);
+      day = dayTitleFull(fromTime[0] || fromSvc[0] || "") || "";
+    }
+    if (timeSlot) {
+      /* Strip "Activity, Sunday - " / repeated "Activity -" junk before the clock range. */
+      timeSlot = timeSlot
+        .replace(/^(?:activity\s*[–,|-]\s*)+/ig, "")
+        .replace(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*[–,|-]\s*/i, "")
+        .replace(/,\s*(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*[–,|-]\s*/i, " ")
+        .replace(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*[–,|-]\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      var norm = normalizeSessionTimeRange(timeSlot);
+      if (norm) timeSlot = norm;
+    }
+    return {
+      day: day,
+      service: service,
+      timeSlot: timeSlot,
+      durationMin: Number((s && s.durationMin) || 0) || 0,
+      venue: s && s.venue,
+      instructor: s && s.instructor,
+    };
+  }
+
   /** Merge consecutive same-day same-service slots (e.g. 5.30–6 + 6–6.30 → 60'). */
   function coalesceParticipantSessions(sessions) {
-    var list = (sessions || []).map(function (s) {
-      return {
-        day: String(s.day || "").trim(),
-        service: String(s.service || "").trim(),
-        timeSlot: String(s.timeSlot || s.time || "").trim(),
-        durationMin: Number(s.durationMin) || 0,
-        venue: s.venue,
-        instructor: s.instructor,
-      };
-    }).filter(function (s) { return s.service; });
+    var list = (sessions || []).map(normalizeParticipantSessionFields)
+      .filter(function (s) { return s.service; });
 
     list.sort(function (a, b) {
       var da = dayShortToken(a.day);
@@ -3205,7 +4026,13 @@
       title = normalizeServiceDisplay(stripped) || stripped;
     }
     var days = collectDayTokensFromText(s);
-    var time = extractTimeFromSessions(sessionsHint) || extractTimeFromText(s);
+    var hintDays = collectDayTokensFromText(sessionsHint);
+    /* Only borrow Sessions day when unambiguous (one day) — avoid tagging Aquatic with every weekday. */
+    if (!days.length && hintDays.length === 1) days = hintDays;
+    var time = normalizeSessionTimeRange(s) || extractTimeFromText(s);
+    if (!time && hintDays.length <= 1) {
+      time = extractTimeFromSessions(sessionsHint);
+    }
     if (!days.length) {
       var line = formatCanonServiceLine({ durMin: dur, service: title, day: "", time: time });
       return line ? [line] : [];
@@ -3352,7 +4179,9 @@
     var list = stitchServiceFragments(Object.keys(row._serviceParts));
     /* Keep a single GoCardless fee line even if invoice had Admin + Direct Payment. */
     var fee = "Admin Fee (GoCardless)";
-    var hasFee = list.some(function (s) { return s === fee || isGoCardlessFeeLabel(s); });
+    var hint = String((inv && inv.payment_method_hint) || row._paymentMethodHint || "").toLowerCase();
+    var hasFee = hint === "gocardless"
+      || list.some(function (s) { return s === fee || isGoCardlessFeeLabel(s); });
     list = list.filter(function (s) { return s !== fee && !isGoCardlessFeeLabel(s); });
     if (hasFee) list.push(fee);
     row._serviceParts = Object.create(null);
@@ -3701,8 +4530,24 @@
     if (curated === "NHS_INVOICE") return "NHS_INVOICE";
 
     /*
-     * Family Direct Payments before LA invoice labels.
-     * Summer workbook often tags DP families as sheet LA / "Funded by LA", but
+     * Explicit LA invoice (club bills LA/H&F) before Parent-Exempt DP.
+     * Summer crash INV-Ps for Adam/Saaib are la_funded + vat exempt — Invoice type
+     * used to be Parent (Exempt) and wrongly became "Using Funds from LA".
+     */
+    if (
+      paidRaw === PAID_BY.FUNDED_BY_LA ||
+      raw === INVOICE_TYPE.LA_EXEMPT ||
+      raw === PAYER_ROUTE.LA_INVOICE ||
+      raw === "Local Authority (invoice)" ||
+      hint === "la_funded" ||
+      (r && r._crash && hint === "la_funded")
+    ) {
+      return "LA_INVOICE";
+    }
+
+    /*
+     * Family Direct Payments before remaining LA sheet defaults.
+     * Summer workbook often tags DP families as sheet LA, but
      * re-enrol Parent (Exempt) + Using Funds from LA means the family still pays us.
      */
     if (
@@ -3720,10 +4565,6 @@
       if (!isExplicitNhsFunder(blob) && !/local authority \(exempt|local authority \(invoice/i.test(blob)) {
         return "FAMILY_DP";
       }
-    }
-
-    if (paidRaw === PAID_BY.FUNDED_BY_LA || raw === INVOICE_TYPE.LA_EXEMPT || raw === PAYER_ROUTE.LA_INVOICE || raw === "Local Authority (invoice)") {
-      return "LA_INVOICE";
     }
 
     if (curated) return curated;
@@ -3790,7 +4631,14 @@
     var route = payerRouteFor(r);
     if (route === "FAMILY_DP") return INVOICE_TYPE.PARENT_EXEMPT;
     if (route === "FAMILY_PRIVATE") return INVOICE_TYPE.PARENT_20;
-    if (route === "LA_INVOICE") return INVOICE_TYPE.LA_EXEMPT;
+    if (route === "LA_INVOICE") {
+      var la = laCouncilShortFor(r);
+      if (la) {
+        r._laCouncilShort = la;
+        return la + " (Exempt invoice)";
+      }
+      return INVOICE_TYPE.LA_EXEMPT;
+    }
     if (route === "NHS_INVOICE" || route === "NEN") return INVOICE_TYPE.NHS_EXEMPT;
     return "";
   }
@@ -3892,6 +4740,9 @@
           orders: [],
           total: 0,
           anyOut: false,
+          anyPartial: false,
+          anyFlexi: false,
+          anyGc: false,
         };
         order.push(key);
       }
@@ -3899,7 +4750,14 @@
       g.orders.push(r);
       serviceOneLinersFor(r).forEach(function (line) { g.services[line] = 1; });
       g.total += Number(r.amount) || 0;
-      if (category(r) === "outstanding") g.anyOut = true;
+      var cat = category(r);
+      if (cat === "outstanding") g.anyOut = true;
+      if (cat === "partial") {
+        g.anyPartial = true;
+        var plan = partialPlanKind(r);
+        if (plan === "gc") g.anyGc = true;
+        else g.anyFlexi = true;
+      }
     });
     var people = order.map(function (k) { return byName[k]; }).sort(function (a, b) {
       return String(a.name).localeCompare(String(b.name));
@@ -3916,7 +4774,7 @@
       + "<tbody>";
     people.forEach(function (g, i) {
       var first = g.orders[0];
-      var svcLines = Object.keys(g.services).filter(Boolean);
+      var svcLines = dedupeCanonServiceOneLiners(Object.keys(g.services).filter(Boolean));
       var svcHtml = svcLines.length
         ? ('<span class="pay-svc-lines">'
           + svcLines.map(function (line) {
@@ -3929,7 +4787,11 @@
         : "—";
       var pill = g.anyOut
         ? '<span class="pay-pill pay-pill--out">Outstanding</span>'
-        : '<span class="pay-pill pay-pill--paid">Paid</span>';
+        : g.anyGc
+          ? '<span class="pay-pill pay-pill--gc" title="GoCardless — monthly instalments toward term invoice">GC</span>'
+          : g.anyFlexi
+            ? '<span class="pay-pill pay-pill--partial" title="Flexi (bank) — first of two payments on term invoice">Flexi</span>'
+            : '<span class="pay-pill pay-pill--paid">Paid</span>';
       var rowAttr;
       if (first && first._synthetic) {
         rowAttr = 'data-pay-reenrol="' + esc(first._contactId || first.id) + '"';
@@ -3964,7 +4826,7 @@
       /* Header chips stay full-term; Paid/stream filters only scope the table. */
       var headerRows = g.rows;
       var paidScoped = applyServiceKindFilter(applyPaidFilter(g.rows, termId), termId);
-      var scoped = paidScoped.filter(statusMatch);
+      var scoped = applyPayStatusFilter(paidScoped, termId).filter(statusMatch);
       var keys = {};
       scoped.forEach(function (r) {
         var k = String(r.client_name || "").toLowerCase().trim() || ("id:" + r.id);
@@ -3995,11 +4857,23 @@
     return html;
   }
 
-  function kpiCard(ico, cls, label, value) {
-    return '<div class="pay-kpi ' + cls + '">'
+  function kpiCard(ico, cls, label, value, statusValue, termId, active) {
+    var filterable = statusValue === "paid" || statusValue === "outstanding" || statusValue === null;
+    if (!filterable || !termId) {
+      return '<div class="pay-kpi ' + cls + '">'
+        + '<span class="pay-kpi__ico">' + icon(ico, 20) + '</span>'
+        + '<span class="pay-kpi__txt"><span>' + esc(label) + '</span><b>' + value + '</b></span>'
+        + '</div>';
+    }
+    var pressed = active ? "true" : "false";
+    var val = statusValue == null ? "" : statusValue;
+    return '<button type="button" class="pay-kpi ' + cls + (active ? " pay-kpi--active" : "") + '"'
+      + ' data-pay-chip-kind="paystatus" data-pay-chip-value="' + esc(val) + '"'
+      + ' data-pay-chip-term="' + esc(termId) + '" aria-pressed="' + pressed + '"'
+      + ' title="Filter table: ' + esc(label) + '">'
       + '<span class="pay-kpi__ico">' + icon(ico, 20) + '</span>'
       + '<span class="pay-kpi__txt"><span>' + esc(label) + '</span><b>' + value + '</b></span>'
-      + '</div>';
+      + '</button>';
   }
 
   function grpCard(ico, cls, title, g) {
@@ -4032,8 +4906,38 @@
         var termId = b.getAttribute("data-pay-chip-term") || "";
         if (kind === "paid") {
           if (!state.paidFilterByTerm) state.paidFilterByTerm = {};
-          if (termId) state.paidFilterByTerm[termId] = val;
-          if (termId) state.focusTermId = termId;
+          if (termId) {
+            state.paidFilterByTerm[termId] = val;
+            /* Flexi/GC only exist under Private / Funds from LA — clear when leaving those. */
+            if (!fundingAllowsFamilyPlanFilter(val)) {
+              if (!state.payPlanByTerm) state.payPlanByTerm = {};
+              state.payPlanByTerm[termId] = "";
+            }
+            state.focusTermId = termId;
+          }
+        } else if (kind === "paystatus") {
+          if (!state.payStatusByTerm) state.payStatusByTerm = {};
+          if (termId) {
+            var curSt = payStatusFilterForTerm(termId);
+            /* Toggle off if clicking the same status chip again. */
+            state.payStatusByTerm[termId] =
+              val && curSt === val
+                ? ""
+                : (val === "paid" || val === "outstanding" || val === "partial" ? val : "");
+            state.focusTermId = termId;
+          }
+        } else if (kind === "payplan") {
+          if (!state.payPlanByTerm) state.payPlanByTerm = {};
+          if (termId) {
+            if (!fundingAllowsFamilyPlanFilter(paidFilterForTerm(termId))) {
+              state.payPlanByTerm[termId] = "";
+            } else {
+              var curPlan = payPlanFilterForTerm(termId);
+              state.payPlanByTerm[termId] =
+                val && curPlan === val ? "" : (val === "flexi" || val === "gc" ? val : "");
+            }
+            state.focusTermId = termId;
+          }
         }
         render();
       });
@@ -4075,6 +4979,16 @@
     }
     root.querySelectorAll("[data-pay-id]").forEach(function (tr) {
       tr.addEventListener("click", function () { openDetail(tr.getAttribute("data-pay-id")); });
+    });
+    root.querySelectorAll("[data-pay-crash-pdf]").forEach(function (tr) {
+      tr.addEventListener("click", function (ev) {
+        if (ev.target && ev.target.closest && ev.target.closest("[data-pay-pdf]")) return;
+        var url = tr.getAttribute("data-pay-crash-pdf");
+        if (url) window.open(url, "_blank", "noopener");
+      });
+    });
+    root.querySelectorAll("[data-pay-pdf]").forEach(function (a) {
+      a.addEventListener("click", function (ev) { ev.stopPropagation(); });
     });
     root.querySelectorAll("[data-pay-reenrol]").forEach(function (tr) {
       tr.addEventListener("click", function () {
@@ -4551,15 +5465,42 @@
     });
 
     function enrichFromPayments(r) {
-      if (r.data && (r.data.Funder || r.data.Paid || r.data["Invoice type"])) return;
+      if (!r.data) r.data = {};
+      var existingFunder = String(r.data.Funder || "").trim();
+      var funderIsNamed =
+        existingFunder
+        && !/^local\s*authority(\s*\(|$)/i.test(existingFunder)
+        && !isGenericLaNhsUmbrella(existingFunder);
+      /* Always fill a missing / generic Funder — Paid / umbrella Invoice type alone must not block. */
+      if (funderIsNamed) {
+        r._fundingLabel = r._fundingLabel || existingFunder;
+        var already = laCouncilShortFor(r);
+        if (already) r._laCouncilShort = already;
+        return;
+      }
       var nk = normClientNameKey(r.client_name);
       if (!nk) return;
       var hits = payFunderByNorm[nk];
       if (!hits) {
         var first = nk.split(" ")[0];
+        var wantLast = nk.split(" ").filter(Boolean);
+        wantLast = wantLast.length > 1 ? wantLast[wantLast.length - 1] : "";
         Object.keys(payFunderByNorm).forEach(function (k) {
-          if (hits) return;
-          if (k === nk || k.indexOf(first) === 0 || nk.indexOf(k) === 0) hits = payFunderByNorm[k];
+          if (hits && hits._score >= 500) return;
+          var kTok = k.split(" ").filter(Boolean);
+          var candLast = kTok.length > 1 ? kTok[kTok.length - 1] : (kTok[0] || "");
+          var score = 0;
+          if (k === nk) score = 1000;
+          else if (first && first.length >= 3 && (k === first || k.indexOf(first + " ") === 0 || first.indexOf(k) === 0)) {
+            score = 200;
+            if (wantLast && candLast && wantLast.charAt(0) === candLast.charAt(0) && (wantLast === candLast || candLast.length === 1 || wantLast.indexOf(candLast) === 0)) {
+              score += 400;
+            }
+          }
+          if (score > 0 && (!hits || score > (hits._score || 0))) {
+            hits = payFunderByNorm[k];
+            if (hits) hits._score = score;
+          }
         });
       }
       if (!hits || !hits.length) return;
@@ -4575,15 +5516,58 @@
         }
       }
       r._fundingLabel = pick.fund;
-      if (!r.data) r.data = {};
-      if (!r.data.Funder) r.data.Funder = pick.fund;
+      if (!r.data.Funder || !funderIsNamed) r.data.Funder = pick.fund;
       var src = pick.row && pick.row.data;
       if (src) {
         if (src.Paid && !r.data.Paid) r.data.Paid = src.Paid;
-        if (src["Invoice type"] && !r.data["Invoice type"]) r.data["Invoice type"] = src["Invoice type"];
+        if (src.Funding && (!r.data.Funding || /local\s*authority/i.test(String(r.data.Funding)))) {
+          r.data.Funding = src.Funding;
+        }
+        if (src["Invoice type"] && /local\s*authority/i.test(String(r.data["Invoice type"] || ""))) {
+          r.data["Invoice type"] = src["Invoice type"];
+        }
         if (src.Services && !r.data.Services) r.data.Services = src.Services;
         if (pick.row.parent_name && !r.parent_name) r.parent_name = pick.row.parent_name;
       }
+      var resolved = laCouncilShortFor(r);
+      if (resolved) {
+        r._laCouncilShort = resolved;
+        r.data["Invoice type"] = resolved + " (Exempt invoice)";
+      }
+    }
+
+    function stampLaCouncilOnRow(r) {
+      if (!r || String(r.sheet || "").toUpperCase() !== "LA") return;
+      var fundBlob = [
+        r.data && r.data.Funder,
+        r.data && r.data.Funding,
+        r._fundingLabel,
+        r.parent_name,
+      ].map(function (x) { return String(x || ""); }).join(" ");
+      if (/nhs|sbs|\bila\b/i.test(fundBlob) && !/ealing|h\s*&\s*f|hammer|fulham/i.test(fundBlob)) {
+        return;
+      }
+      if (!r.data) r.data = {};
+      if (!r.data.Funder || /^local\s*authority/i.test(String(r.data.Funder)) || isGenericLaNhsUmbrella(r.data.Funder)) {
+        enrichFromPayments(r);
+      }
+      var summer = findSummerRow(r);
+      if (summer && summer.data) {
+        if (!r.data.Funder || /^local\s*authority/i.test(String(r.data.Funder))) {
+          if (summer.data.Funder) r.data.Funder = summer.data.Funder;
+          if (summer.data.Funding) r.data.Funding = summer.data.Funding;
+        }
+      }
+      var stamped = laCouncilShortFor(r) || (summer ? laCouncilShortFor(summer) : "");
+      if (!stamped) return;
+      r._laCouncilShort = stamped;
+      if (!r.data.Funder || /^local\s*authority/i.test(String(r.data.Funder))) {
+        r.data.Funder = stamped === "H&F" ? "H&F (Hammersmith & Fulham)" : stamped;
+      }
+      if (!r._fundingLabel || /^local\s*authority/i.test(String(r._fundingLabel)) || isGenericLaNhsUmbrella(r._fundingLabel)) {
+        r._fundingLabel = r.data.Funder;
+      }
+      r.data["Invoice type"] = stamped + " (Exempt invoice)";
     }
 
     (reenrol || []).forEach(function (r) {
@@ -4642,8 +5626,44 @@
               r.sheet = "LA";
               r._vatMode = "exempt";
               r.data.Paid = PAID_BY.FUNDED_BY_LA;
-              r.data["Invoice type"] = INVOICE_TYPE.LA_EXEMPT;
+              /* Keep named council (Ealing / H&F) — never leave only the generic umbrella. */
+              if (sData.Funder) r.data.Funder = sData.Funder;
+              if (sData.Funding) r.data.Funding = sData.Funding;
+              if (sData["Funding origin"] && !r.data["Funding origin"]) {
+                r.data["Funding origin"] = sData["Funding origin"];
+              }
+              var laShort = laCouncilShortFor({
+                data: r.data,
+                parent_name: summer.parent_name || r.parent_name,
+                _fundingLabel: sData.Funder || r._fundingLabel,
+              });
+              if (laShort) {
+                r._laCouncilShort = laShort;
+                r._fundingLabel = sData.Funder || r._fundingLabel || laShort;
+                r.data["Invoice type"] = laShort + " (Exempt invoice)";
+              } else {
+                r.data["Invoice type"] = INVOICE_TYPE.LA_EXEMPT;
+              }
             }
+          }
+        }
+      } else if (summer && r._laOfficeAuto && String(summer.sheet || "").toUpperCase() === "LA") {
+        /* LA office-auto keeps Autumn sheet/route, but still inherits named council from Summer. */
+        if (!r.data) r.data = {};
+        var autoData = summer.data || {};
+        if (autoData.Funder) r.data.Funder = autoData.Funder;
+        if (autoData.Funding) r.data.Funding = autoData.Funding;
+        var autoLa = laCouncilShortFor({
+          data: r.data,
+          parent_name: summer.parent_name || r.parent_name,
+          _fundingLabel: autoData.Funder || r._fundingLabel,
+        });
+        if (autoLa) {
+          r._laCouncilShort = autoLa;
+          r._fundingLabel = autoData.Funder || r._fundingLabel || autoLa;
+          r.data["Invoice type"] = autoLa + " (Exempt invoice)";
+          if (String(r.data.Paid || "") !== PAID_BY.FUNDED_BY_NHS) {
+            r.data.Paid = PAID_BY.FUNDED_BY_LA;
           }
         }
       }
@@ -4664,12 +5684,18 @@
       var fromRow = String(r._fundingLabel || "").trim();
       var fromContact = String((info && info.funding_label) || "").trim();
       var label = fromRow;
-      if (!label || isGenericLaNhsUmbrella(label)) {
-        if (fromContact && !isGenericLaNhsUmbrella(fromContact)) label = fromContact;
-        else if (fromRow) label = fromRow;
-        else label = fromContact;
+      if (!label || isGenericLaNhsUmbrella(label) || /^local\s*authority/i.test(label)) {
+        if (fromContact && !isGenericLaNhsUmbrella(fromContact) && !/^local\s*authority/i.test(fromContact)) {
+          label = fromContact;
+        } else if (fromRow && !/^local\s*authority/i.test(fromRow) && !isGenericLaNhsUmbrella(fromRow)) {
+          label = fromRow;
+        } else if (r.data && r.data.Funder && !/^local\s*authority/i.test(String(r.data.Funder))) {
+          label = String(r.data.Funder);
+        } else {
+          label = fromContact;
+        }
       }
-      if (isGenericLaNhsUmbrella(label)) label = "";
+      if (isGenericLaNhsUmbrella(label) || /^local\s*authority(\s*\(|$)/i.test(String(label || ""))) label = "";
       if (String(r.sheet || "").toUpperCase() === "PARENTS") {
         label = label && !isLaInvoiceFundingLabel(label) ? label : "Private";
       }
@@ -4684,6 +5710,7 @@
         invoice_type: r.data && r.data["Invoice type"],
         _reenrol: true,
       });
+      stampLaCouncilOnRow(r);
     });
 
     (payments || []).forEach(function (r) {
@@ -4709,17 +5736,31 @@
           _reenrol: false,
         });
       }
+      /* Stamp named council on LA rows so chips never fall back to bare "Local Authority". */
+      if (sheetUp === "LA") stampLaCouncilOnRow(r);
     });
 
     /* Replace workbook funder/stream labels (Day Centre / Prasher) with real parents. */
     (reenrol || []).forEach(applyPortalParent);
     (payments || []).forEach(applyPortalParent);
+    /* After portal parent overwrite (strips "Ealing ·" / "H&F ·"), re-stamp Autumn LA chips. */
+    (reenrol || []).forEach(stampLaCouncilOnRow);
+    (payments || []).forEach(stampLaCouncilOnRow);
   }
 
   function isAutumnReenrolInvoice(inv) {
     var via = String((inv && inv.created_via) || "");
     // Family re-enrol INV-Ps + LA office-auto booked places (no family INV-P yet).
-    return via === "reenrolment" || via === "la_office_auto";
+    if (via === "reenrolment" || via === "la_office_auto") return true;
+    /*
+     * Office/manual autumn INV-Ps sometimes keep created_via=portal
+     * (e.g. Anas INV-P-0340 after share edits). Still show under Autumn Payments.
+     */
+    if (via === "portal") {
+      var term = String((inv && inv.billing_term) || "").toLowerCase();
+      return term === "autumn" || term === "year";
+    }
+    return false;
   }
 
   function isLaManagedAutumnCandidate(inv) {
@@ -4748,8 +5789,13 @@
     }
     /* Prefer catalogue Autumn once — never use raw amount_gbp (instalments stack). */
     var autumn = Number(inv && inv.booked_autumn_gbp) || 0;
+    var crash = crashCourseGbpFromInvoice(inv);
     if (autumn > 0) {
       var face = Number(inv && inv.amount_gbp) || 0;
+      /* Merged crash on Autumn INV-P: Autumn Payments = face − crash (Patrick £975). */
+      if (crash > 0.009 && face > crash) {
+        face = Math.round((face - crash) * 100) / 100;
+      }
       var annual = Number(inv && inv.booked_annual_gbp) || 0;
       /* Face amount matching year is not Autumn. */
       if (face > 0 && annual > 0 && Math.abs(face - annual) < 0.05) return autumn;
@@ -4759,9 +5805,17 @@
     if (via === "reenrolment") {
       autumn = autumnTermAmountFromInvoice(inv);
       if (autumn > 0) return autumn;
-      return Number(inv && inv.amount_gbp) || 0;
+      var raw = Number(inv && inv.amount_gbp) || 0;
+      if (crash > 0.009 && raw > crash) return Math.round((raw - crash) * 100) / 100;
+      return raw;
     }
-    return autumnTermAmountFromInvoice(inv);
+    var fromSlots = autumnTermAmountFromInvoice(inv);
+    if (fromSlots > 0) return fromSlots;
+    var faceOnly = Number(inv && inv.amount_gbp) || 0;
+    if (crash > 0.009 && faceOnly > crash) {
+      return Math.round((faceOnly - crash) * 100) / 100;
+    }
+    return faceOnly;
   }
 
   /**
@@ -4807,6 +5861,11 @@
     if (!row || !inv) return;
     var season = reenrolInvoiceSeason(inv);
     var face = Number(inv.amount_gbp) || 0;
+    var crash = crashCourseGbpFromInvoice(inv);
+    /* Merged crash on Autumn INV-P must not inflate Autumn billed (Patrick £1275 → £975). */
+    if (crash > 0.009 && face > crash) {
+      face = Math.round((face - crash) * 100) / 100;
+    }
     var autumn = Number(inv.booked_autumn_gbp) || 0;
     var spring = Number(inv.booked_spring_gbp) || 0;
     var summer = Number(inv.booked_summer_gbp) || 0;
@@ -5025,6 +6084,13 @@
     });
   }
 
+  /** Office follow-up Autumn INV-P on a separate service (e.g. Jack S ACAT £700) — not the main re-enrol row. */
+  function isOfficeSplitAutumnSibling(inv) {
+    var rb = String((inv && inv.ready_by) || "").toLowerCase();
+    if (!rb || rb.indexOf("office_") !== 0) return false;
+    return /acat|aquatic|split|_2627/.test(rb);
+  }
+
   function buildReenrolRowsFromInvoices(allInvs) {
     allInvs = allInvs || [];
     var invs = allInvs.filter(isAutumnReenrolInvoice);
@@ -5065,6 +6131,20 @@
       var vat = String(inv.vat_mode || "").toLowerCase();
       if (isLaAuto || (hint === "la_funded" && String(row.sheet || "").toUpperCase() === "LA")) {
         row._paymentMethodHint = "la_funded";
+      } else if (hint === "gocardless" || hint === "bank_transfer" || hint === "payment_link") {
+        row._paymentMethodHint = hint;
+      }
+      if (season === "autumn" || season === "year") {
+        var sched = Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
+        if (sched.length) {
+          row._paymentSchedule = sched;
+          row._instalmentCount = sched.length;
+        }
+      }
+      var pdf = String(inv.pdf_url || "").trim();
+      if (pdf && (hint === "la_funded" || isLaAuto) && !row._pdfUrl) {
+        row._pdfUrl = pdf;
+        row._invoiceNumber = String(inv.invoice_number || "").trim();
       }
       if (
         vat === "exempt"
@@ -5087,15 +6167,55 @@
         row.amount_billed = Math.max(Number(row.amount_billed) || 0, amt);
       }
       if (st === "paid") {
+        var paidOnInv = Number(inv.amount_paid_gbp) || amt;
+        if (paidOnInv > 0) {
+          row._amountPaid = Math.max(Number(row._amountPaid) || 0, paidOnInv);
+        }
         /* Paid Autumn INV-P — clear outstanding unless a later autumn sibling is open. */
-        if (!(Number(row.amount_out) > 0)) {
+        if (!(Number(row.amount_out) > 0) && String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
           row.amount_out = 0;
           row.payment_status = "Paid";
         }
+      } else if (st === "partial") {
+        /* Flexi (2 bank) or GC monthly: only when amount_paid > 0 (ignore false GC partials). */
+        var paidAmt = Number(inv.amount_paid_gbp) || 0;
+        var crashPaid = crashCourseGbpFromInvoice(inv);
+        /* Paid £ that belongs to crash line is Summer 25/26 — not Autumn outstanding. */
+        if (crashPaid > 0.009 && paidAmt > 0) {
+          paidAmt = Math.max(0, Math.round((paidAmt - crashPaid) * 100) / 100);
+        }
+        if (!(paidAmt > 0) && !(Number(inv.amount_paid_gbp) > 0)) {
+          row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
+          if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+            row.payment_status = "Outstanding";
+          }
+        } else if (!(paidAmt > 0) && Number(inv.amount_paid_gbp) > 0 && crashPaid > 0.009) {
+          /* Only crash portion paid so far — Autumn flexi still fully outstanding. */
+          row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
+          if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+            row.payment_status = "Outstanding";
+          }
+        } else {
+          var face = amt > 0 ? amt : Number(row.amount_billed) || 0;
+          var remain = Math.max(0, Math.round((face - paidAmt) * 100) / 100);
+          row._amountPaid = Math.max(Number(row._amountPaid) || 0, paidAmt);
+          row.amount_out = remain;
+          row.payment_status = "Partial";
+        }
       } else if (st !== "void") {
+        /*
+         * Office split sibling (Jack S ACAT aquatic on its own INV-P) — keep main
+         * re-enrol row Paid on the Multi invoice; do not show Partial / £2260.
+         */
+        if (isOfficeSplitAutumnSibling(inv)) {
+          row._officeSplitSiblingUnpaid = true;
+          return;
+        }
         /* Outstanding: catalogue autumn still unpaid (don't stack instalment GBP). */
-        row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
-        row.payment_status = "Outstanding";
+        if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+          row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
+          row.payment_status = "Outstanding";
+        }
       }
     });
 
@@ -5148,12 +6268,68 @@
       if (Number(row._amountAutumn) > 0) {
         row.amount = row._amountAutumn;
         row.amount_billed = Math.max(Number(row.amount_billed) || 0, row._amountAutumn);
-        if (Number(row.amount_out) > 0) row.amount_out = row._amountAutumn;
+        if (
+          String(row.payment_status || "").toLowerCase().indexOf("partial") === 0
+          && Number(row._amountPaid) > 0
+        ) {
+          row.amount_out = Math.max(
+            0,
+            Math.round((row._amountAutumn - Number(row._amountPaid)) * 100) / 100,
+          );
+        } else if (Number(row.amount_out) > 0) {
+          /* Keep split balance when one Autumn INV-P is paid and another is open. */
+          if (!(Number(row._amountPaid) > 0)) {
+            row.amount_out = row._amountAutumn;
+          }
+        }
       } else {
         row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
       }
-      if (row.amount_out <= 0 && row.amount_billed > 0) row.payment_status = "Paid";
-      else if (row.amount_out > 0) row.payment_status = "Outstanding";
+      var autumnFaceFix = Number(row._amountAutumn) || 0;
+      var paidFix = Number(row._amountPaid) || 0;
+      if (
+        autumnFaceFix > 0
+        && paidFix > 0
+        && paidFix + 0.009 < autumnFaceFix
+        && Number(row.amount_out) > 0.009
+      ) {
+        row.payment_status = "Partial";
+        row.amount_out = Math.max(
+          0,
+          Math.round((autumnFaceFix - paidFix) * 100) / 100,
+        );
+      } else if (
+        String(row.payment_status || "").toLowerCase().indexOf("paid") === 0
+        && autumnFaceFix > 0
+        && paidFix + 0.009 < autumnFaceFix
+      ) {
+        row._amountPaid = paidFix || Number(row.amount_billed) || 0;
+        row.amount_out = Math.max(
+          0,
+          Math.round((autumnFaceFix - row._amountPaid) * 100) / 100,
+        );
+        row.payment_status = "Partial";
+      }
+      if (String(row.payment_status || "").toLowerCase().indexOf("partial") === 0) {
+        /* Keep Flexi / GoCardless partial — do not collapse to Paid/Outstanding. */
+      } else if (row.amount_out <= 0 && row.amount_billed > 0) {
+        row.payment_status = "Paid";
+      } else if (row.amount_out > 0) {
+        row.payment_status = "Outstanding";
+      }
+      /*
+       * Paid Multi-only re-enrol when ACAT aquatic lives on a separate office INV-P
+       * (Jack Stratton INV-P-0115 £1560 paid; INV-P-0445 £700 tracked separately).
+       */
+      if (row._officeSplitSiblingUnpaid && Number(row._amountPaid) > 0) {
+        var paidOnly = Math.round(Number(row._amountPaid) * 100) / 100;
+        row.payment_status = "Paid";
+        row.amount_out = 0;
+        row._amountAutumn = paidOnly;
+        row.amount = paidOnly;
+        row.amount_billed = paidOnly;
+        row._officeSplitPaidOnly = true;
+      }
       row.sheet = classifyPayGroup({
         sheet: row.sheet,
         payment_method_hint: row._paymentMethodHint,
@@ -5193,7 +6369,41 @@
             client_name: line.client_name,
           });
           if (!slug) return;
-          bySlug[slug] = line;
+          var sessions = Array.isArray(line.sessions) ? line.sessions.slice() : [];
+          if (!bySlug[slug]) {
+            bySlug[slug] = {
+              client_key: line.client_key,
+              client_name: line.client_name,
+              sessions: sessions,
+            };
+            return;
+          }
+          /*
+           * Same participant can appear as jack_s + jacks / Jack Stratton.
+           * Never let a short Aquatic-only row overwrite Aquatic+Multi.
+           */
+          var prev = bySlug[slug].sessions || [];
+          var seen = Object.create(null);
+          var merged = [];
+          function pushSess(s) {
+            if (!s || typeof s !== "object") return;
+            var key = [
+              String(s.service || "").toLowerCase(),
+              String(s.day || "").toLowerCase(),
+              String(s.timeSlot || s.time || "").toLowerCase(),
+              String(s.durationMin || ""),
+            ].join("|");
+            if (seen[key]) return;
+            seen[key] = 1;
+            merged.push(s);
+          }
+          prev.forEach(pushSess);
+          sessions.forEach(pushSess);
+          bySlug[slug].sessions = merged;
+          if (sessions.length > prev.length) {
+            bySlug[slug].client_key = line.client_key;
+            bySlug[slug].client_name = line.client_name;
+          }
         });
         rows.forEach(function (r) {
           if (!r) return;
@@ -5257,6 +6467,7 @@
     if (st === "void") return false;
     var num = String(inv.invoice_number || "");
     if (/crash/i.test(num)) return true;
+    if (crashCourseGbpFromInvoice(inv) > 0.009) return true;
     var blob = [
       inv.line_description,
       inv.reference_text,
@@ -5268,46 +6479,190 @@
     return /summer\s*crash|crash\s*course/.test(blob);
   }
 
-  function crashServicesLabel(inv) {
-    var desc = String((inv && inv.line_description) || "");
-    var tmp = { _crash: true, _crashLineDesc: desc, data: { Services: "" } };
-    var ones = serviceOneLinersFor(tmp);
-    if (ones.length) return ones.join(" · ");
-    var labels = serviceLabelsFromInvoice(inv).filter(function (s) {
-      return s && !/^summer\s*crash|^westway|^dates?:?$|^week\s*\d|^summer\s*term|\bsessions?\b$/i.test(s);
+  /**
+   * Crash / intensive £ on an INV-P (Year 25/26 day centre).
+   * Used when crash was merged into an Autumn family invoice (Patrick £300).
+   */
+  function crashCourseGbpFromInvoice(inv) {
+    if (!inv) return 0;
+    var api = Number(inv.crash_course_gbp);
+    if (api > 0.009) return Math.round(api * 100) / 100;
+    var items = Array.isArray(inv.line_items) ? inv.line_items : [];
+    var sum = 0;
+    items.forEach(function (it) {
+      if (!it || typeof it !== "object") return;
+      var blob = [it.description, it.service_key, it.detail, it.label]
+        .map(function (x) { return String(x || "").toLowerCase(); })
+        .join(" ");
+      if (/crash|climbing_crash|summer\s*crash/.test(blob)) {
+        sum += Number(it.amount_gbp) || 0;
+      }
     });
-    if (labels.length) return labels.join(" · ");
-    if (/aquatic|swimming|swim/i.test(desc)) return "60' Aquatic Activity (July crash)";
-    if (/climb/i.test(desc)) return "60' Climbing Intensive Course (July)";
-    return "Summer crash course";
+    if (sum > 0.009) return Math.round(sum * 100) / 100;
+    /* Standalone crash INV-P with no structured lines — whole face amount. */
+    var num = String(inv.invoice_number || "");
+    if (/crash/i.test(num)) return Math.round((Number(inv.amount_gbp) || 0) * 100) / 100;
+    return 0;
+  }
+
+  function afterschoolWeekendGbpFromInvoice(inv) {
+    var total = Math.round((Number(inv && inv.amount_gbp) || 0) * 100) / 100;
+    var crash = crashCourseGbpFromInvoice(inv);
+    if (!(crash > 0.009)) return total;
+    return Math.round(Math.max(0, total - crash) * 100) / 100;
+  }
+
+  function crashServicesLabel(inv) {
+    /* Prefer crash line item only (merged Autumn+crash INV-Ps like Patrick). */
+    var crashBits = [];
+    (Array.isArray(inv && inv.line_items) ? inv.line_items : []).forEach(function (it) {
+      if (!it || typeof it !== "object") return;
+      var blob = [it.description, it.service_key, it.detail, it.label, it.dates]
+        .map(function (x) { return String(x || "").toLowerCase(); })
+        .join(" ");
+      if (!/crash|climbing_crash|summer\s*crash/.test(blob)) return;
+      var formatted = formatCrashLineItemOneLiner(it);
+      if (formatted) crashBits.push(formatted);
+    });
+    if (crashBits.length) return crashBits.join(" · ");
+    var desc = String((inv && inv.line_description) || "");
+    /* Never feed the full merged invoice (Sunday flexi + crash) into parsers. */
+    var crashOnly = desc
+      .split(/\n+/)
+      .filter(function (line) {
+        return /crash|summer\s*crash/i.test(line) && !/\bsunday\b/i.test(line);
+      })
+      .join("\n");
+    if (crashOnly) {
+      var tmp = { _crash: true, _crashLineDesc: crashOnly, data: { Services: "" } };
+      var ones = serviceOneLinersFor(tmp);
+      if (ones.length) return ones.join(" · ");
+    }
+    if (/aquatic|swimming|swim/i.test(desc) && /crash/i.test(desc)) {
+      return "60' Aquatic Activity — July crash course";
+    }
+    if (/climb/i.test(desc) && /crash/i.test(desc)) {
+      return "60' Climbing — July crash course";
+    }
+    return "July crash course";
+  }
+
+  /** One clean Summer line from a crash line_item (morning Westway, not Sunday term). */
+  function formatCrashLineItemOneLiner(it) {
+    if (!it || typeof it !== "object") return "";
+    var desc = String(it.description || it.label || "").trim();
+    var detail = String(it.detail || "").trim();
+    var dates = String(it.dates || "").trim();
+    var blob = [desc, detail, dates].join(" · ");
+    var dur = (blob.match(/(\d+)\s*['′']/) || [])[1] || "60";
+    var kind = /aquatic|swim/i.test(blob)
+      ? "Aquatic"
+      : /climb/i.test(blob)
+        ? "Climbing"
+        : "Activity";
+    var timeBit = "";
+    var tm = blob.match(/(\d{1,2})[:.](\d{2})\s*[–\-—]\s*(\d{1,2})[:.](\d{2})/);
+    if (tm) {
+      timeBit = formatServiceTimeLine(tm[1] + ":" + tm[2], tm[3] + ":" + tm[4]);
+    } else {
+      timeBit = extractTimeFromText(detail) || "";
+    }
+    /* 11:00–12:00 must stay morning — never “3 am” from Sunday flexi. */
+    var dateBit = "";
+    var weekM = blob.match(/Week\s*\d[^·]*?\((\d{1,2})\s*[–\-]\s*(\d{1,2})\s+Jul[^)]*\)/i)
+      || blob.match(/(\d{1,2})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})\s+Jul/i)
+      || blob.match(/Dates:\s*([^·\n]+)/i);
+    if (weekM) {
+      if (weekM[2] && /Jul/i.test(blob)) {
+        dateBit = formatCrashDateDays(weekM[1] + " to " + weekM[2] + " July");
+      } else if (weekM[1] && /Jul|Dates/i.test(String(weekM[0]))) {
+        dateBit = String(weekM[1]).replace(/^Dates:\s*/i, "").trim();
+        if (/^\d/.test(dateBit) && /Jul/i.test(blob) && !/Jul/i.test(dateBit)) {
+          dateBit = dateBit + " July";
+        }
+      }
+    }
+    var venue = /westway/i.test(blob) ? "Westway" : "";
+    var parts = [
+      dur + "' " + kind + " — July crash course",
+      venue,
+      timeBit,
+      dateBit,
+    ].filter(Boolean);
+    return parts.join(" · ");
+  }
+
+  function crashLineDescFromInvoice(inv) {
+    var bits = [];
+    (Array.isArray(inv && inv.line_items) ? inv.line_items : []).forEach(function (it) {
+      if (!it || typeof it !== "object") return;
+      var blob = [it.description, it.service_key, it.detail, it.label]
+        .map(function (x) { return String(x || "").toLowerCase(); })
+        .join(" ");
+      if (!/crash|climbing_crash|summer\s*crash/.test(blob)) return;
+      bits.push(
+        [it.description, it.detail, it.dates].filter(Boolean).join(" — "),
+      );
+    });
+    if (bits.length) return bits.join("\n");
+    var desc = String((inv && inv.line_description) || "");
+    var crashLines = desc.split(/\n+/).filter(function (line) {
+      return /crash|summer\s*crash/i.test(line) && !/\bsunday\b/i.test(line);
+    });
+    if (crashLines.length) return crashLines.join("\n");
+    return desc;
   }
 
   function buildCrashPaymentRow(inv) {
     var cid = String(inv.contact_id || "").trim();
     var fullName = String(inv.participant_display || inv.related_client || cid).trim();
-    var shortName = fullName.split(/\s+/)[0] || fullName;
-    var amt = Number(inv.amount_gbp) || 0;
+    /* Keep surname when present so Adam Pilcher ≠ Adam A in the table. */
+    var displayName = fullName || cid;
+    var crashAmt = crashCourseGbpFromInvoice(inv);
+    var face = Number(inv.amount_gbp) || 0;
+    /* Merged Autumn+crash INV-P (Patrick): Summer 25/26 only counts the crash line. */
+    var amt = crashAmt > 0.009 ? crashAmt : face;
     var st = String(inv.payment_status || "").toLowerCase();
-    var paid = st === "paid";
+    var paidTotal = Number(inv.amount_paid_gbp) || 0;
+    var paid =
+      st === "paid" ||
+      (crashAmt > 0.009 && paidTotal + 0.009 >= crashAmt) ||
+      (crashAmt <= 0 && st === "paid");
     var vat = String(inv.vat_mode || "").toLowerCase();
     var hint = String(inv.payment_method_hint || "").toLowerCase();
     var invType = vat === "exempt" ? INVOICE_TYPE.PARENT_EXEMPT : INVOICE_TYPE.PARENT_20;
     var paidBy = PAID_BY.PRIVATE_FUNDS;
-    if (hint === "la_funded") paidBy = PAID_BY.FUNDED_BY_LA;
-    else if (vat === "exempt") paidBy = PAID_BY.FUNDS_FROM_LA;
-    var crashDesc = String(inv.line_description || inv.notes || "");
+    var sheet = "PARENTS";
+    /* H&F / LA bill-to crash (Adam · Saaib · …): Funded by LA, not family DP. */
+    var crashFunder = "";
+    if (hint === "la_funded") {
+      paidBy = PAID_BY.FUNDED_BY_LA;
+      invType = INVOICE_TYPE.LA_EXEMPT;
+      sheet = "LA";
+      /* Adam Pilcher / Saaib crash bill-to H&F — name the council on the chip. */
+      if (cid === "354" || cid === "gap-saaib-abdullah") {
+        crashFunder = "H&F (Hammersmith & Fulham)";
+      }
+    } else if (vat === "exempt") {
+      paidBy = PAID_BY.FUNDS_FROM_LA;
+    }
+    var crashDesc = crashLineDescFromInvoice(inv);
+    var crashSvc = crashServicesLabel(inv);
     var row = {
       id: "crash-" + (inv.id || cid),
       _contactId: cid,
+      client_key: cid === "354" ? "adam-p" : (cid === "gap-saaib-abdullah" ? "saaib" : ""),
       _synthetic: true,
       _crash: true,
       _crashLineDesc: crashDesc,
       _termBucket: "summer_2526",
       _invoiceIds: inv.id ? [inv.id] : [],
+      _invoiceNumber: String(inv.invoice_number || "").trim(),
+      _pdfUrl: String(inv.pdf_url || "").trim() || null,
       _paymentMethodHint: hint,
       _vatMode: vat || "vat_20",
-      sheet: "PARENTS",
-      client_name: shortName,
+      sheet: sheet,
+      client_name: displayName,
       parent_name: String(inv.parent_display || "").trim(),
       payment_status: paid ? "Paid" : "Outstanding",
       amount: amt,
@@ -5315,23 +6670,51 @@
       amount_out: paid ? 0 : amt,
       data: {
         Term: "Summer 25/26",
-        Services: crashServicesLabel(inv),
+        Services: crashSvc,
         Paid: paidBy,
         "Invoice type": invType,
         Invoice: String(inv.invoice_number || "").trim(),
+        Funder: crashFunder || undefined,
+        Funding: crashFunder ? "Local authority · H&F" : undefined,
       },
       _serviceParts: Object.create(null),
     };
-    /* Prefer structured crash one-liners over raw invoice bullet junk. */
-    var crashLines = serviceOneLinersFor(row);
-    if (crashLines.length) {
-      row.data.Services = crashLines.join(" · ");
-    } else {
-      mergeServiceLabelsIntoRow(row, inv);
-      if (!row.data.Services) row.data.Services = crashServicesLabel(inv);
+    /*
+     * Keep crashServicesLabel when it already names the July crash.
+     * serviceOneLinersFor used to re-parse the merged INV-P and show Sunday 3–4.
+     */
+    if (!/crash|july/i.test(String(row.data.Services || ""))) {
+      var crashLines = serviceOneLinersFor(row);
+      if (crashLines.length) {
+        row.data.Services = crashLines.join(" · ");
+      } else {
+        mergeServiceLabelsIntoRow(row, inv);
+        if (!row.data.Services) row.data.Services = crashSvc || "July crash course";
+      }
     }
-    if (paymentParticipantSlug(row) === "zakariya") {
+    var crashSlug = paymentParticipantSlug(row);
+    if (crashSlug === "zakariya") {
       row.data.Services = zakariyaCrashServiceLines().join("\n");
+    } else if (crashSlug === "tinashe") {
+      row.data.Services = tinasheCrashServiceLines().join("\n");
+    } else if (crashSlug === "adam_p") {
+      row.data.Services = "90' Aquatic Activity (July crash) · Tue/Wed 5–6.30pm Acton";
+    } else if (crashSlug === "saaib") {
+      row.data.Services = "30' Aquatic Activity (July crash) · Tue/Wed 4.30–5pm Acton";
+    } else if (crashSlug === "patrick") {
+      row.data.Services =
+        "60' Climbing — July crash course · Westway · 11 am to 12 pm · Mon 20th to Thu 23rd July";
+    }
+    /* Day Centre stream cohort for Payments (Adam/Saaib/Tinashe/Zakariya/…). */
+    if (
+      crashSlug === "zakariya"
+      || crashSlug === "patrick"
+      || crashSlug === "tinashe"
+      || crashSlug === "yaqoub"
+      || crashSlug === "adam_p"
+      || crashSlug === "saaib"
+    ) {
+      row.data.Stream = "Day Centre";
     }
     return row;
   }
@@ -5437,7 +6820,9 @@
           if (res.error) throw res.error;
           var data = res.data || [];
           all = all.concat(data);
-          if (data.length < pageSize) return all;
+          if (data.length < pageSize) {
+            return all.map(hydrateClientPaymentRow);
+          }
           return page(from + pageSize);
         });
     }

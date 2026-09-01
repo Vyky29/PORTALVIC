@@ -14,7 +14,8 @@ export type PublicServiceId =
   | "physical"
   | "multi"
   | "bespoke"
-  | "day_centre";
+  | "day_centre"
+  | "counselling";
 
 export type OfferSlot = {
   id: string;
@@ -26,6 +27,8 @@ export type OfferSlot = {
   capacity: number;
   taken: number;
   referenceDate: string | null;
+  /** Instructor keys on the reference open/booked band (office Assign prefill). */
+  instructors?: string[];
   /** Internal: booked client keys for band merge (stripped before public JSON). */
   bookedKeys?: string[];
 };
@@ -80,7 +83,7 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
     priceHint: "From £50 / 30 min session",
     pricePerSession: 50,
     blurb:
-      "1:1 or small-group swimming sessions with sensory-aware instructors. We work at the child’s pace — water confidence, regulation, and independence.",
+      "Swimming and hydrotherapy with autism specialists — more than a standard pool lesson. Person-centred sessions with visual supports, focused on water confidence, communication, emotional regulation, and independence at the participant’s pace.",
   },
   climbing: {
     id: "climbing",
@@ -91,7 +94,7 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
     priceHint: "From £75 / 60 min session",
     pricePerSession: 75,
     blurb:
-      "Supported climbing sessions that build strength, focus, and confidence. Routes and support levels are matched to each child.",
+      "Structured climbing led by autism specialists. Builds agility, balance, coordination, and confidence, with 1:1 support, clear routines, and visual aids so each participant can progress safely.",
   },
   physical: {
     id: "physical",
@@ -102,7 +105,7 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
     priceHint: "From £75 / 60 min session",
     pricePerSession: 75,
     blurb:
-      "Active sessions focused on movement, coordination, and stamina — adapted so every child can take part safely and with clear structure.",
+      "Fitness with personal trainers from our autism specialists team — strength, cardio, and movement circuits. Improves motor skills, energy regulation, and confidence in a structured session every participant can succeed in.",
   },
   multi: {
     id: "multi",
@@ -113,7 +116,7 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
     priceHint: "From £120 / 90 min session",
     pricePerSession: 120,
     blurb:
-      "Longer blocks that combine activities in one visit (for example pool plus land-based work). Ideal when families want variety in a single session.",
+      "Splash & Connect: a 90-minute multidisciplinary block at SwimFarm on Sundays — land-based learning (communication, social skills, independence) plus swimming. One visit that supports mind and body for the participant.",
   },
   bespoke: {
     id: "bespoke",
@@ -123,8 +126,9 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
     durationHint: "Agreed with the office",
     priceHint: "From £125 / 60 min session",
     pricePerSession: 125,
+    enquireOnly: true,
     blurb:
-      "A tailored programme built around your child’s goals, support needs, and schedule. Planned with the family and delivery team — enquire to start.",
+      "An individualised 1:1 programme around the participant’s goals — social communication, independence, and emotional and physical well-being. Arranged with the office after enquiry; we do not publish bookable Bespoke slots online.",
   },
   day_centre: {
     id: "day_centre",
@@ -137,17 +141,29 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
     enquireOnly: true,
     infoHours: "Open Monday to Friday, 11am – 4pm at SwimFarm.",
     infoActivities: [
-      "Table work (maths, puzzles, handwriting)",
-      "Sensory room and quiet regulation",
-      "Gym and trampoline",
-      "Swimming / pool time",
-      "Lunch and life skills",
-      "Relaxation",
-      "Music and karaoke",
-      "Community trips (cafe, park, shops) when staffing allows",
+      "Circle time and shared Hub activities with peers",
+      "Vocational tasks (packing, matching, envelopes) plus maths and handwriting",
+      "Gym circuits, basketball, and structured physical activity",
+      "Swimming / aquatic within the day",
+      "Lunch, life skills, and group snack",
+      "Sensory room and regulation time",
+      "Karaoke, film, and end-of-day photo résumé",
+      "Community trips (shops, local outings) with 2:1 when planned",
     ],
     blurb:
-      "A weekday daytime programme at SwimFarm. We do not publish bookable slots online — places are arranged with families through the office so we can explain the day, funding, and support needs properly.",
+      "A structured weekday at SwimFarm (Mon–Fri, 11am–4pm): circle time, vocational and classroom work, gym, swimming, life skills, and peer activities — with 1:1 on site (2:1 when transitions, personal care, or community trips need it). Places are agreed with the office first.",
+  },
+  counselling: {
+    id: "counselling",
+    name: "Counselling",
+    tier: "more",
+    ageHint: "Young people & adults",
+    durationHint: "Face to face or Zoom",
+    priceHint: "Enquire with the office",
+    pricePerSession: null,
+    enquireOnly: true,
+    blurb:
+      "Counselling for young people and adults with autism and their families. Person-centred sessions to explore what concerns you — face to face in Chiswick or online via Zoom. Short-term (4–6 weeks) or longer; starts with a short assessment call.",
   },
 };
 
@@ -169,6 +185,7 @@ export function mapServiceId(raw: unknown): PublicServiceId | null {
   if (canon.includes("PHYSICAL") || canon.includes("FITNESS")) return "physical";
   if (canon.includes("MULTI") || canon.includes("S&C")) return "multi";
   if (canon.includes("BESPOKE")) return "bespoke";
+  if (canon.includes("COUNSEL")) return "counselling";
   return null;
 }
 
@@ -318,15 +335,14 @@ function slotMidMinutes(slot: OfferSlot): number {
 /**
  * Collapse Multi raw MADRE fragments into operator timetable rows
  * (same rules as admin Services register):
- * - Wed Acton → withheld from public booking until opening is confirmed
+ * - Wed Multi (all venues) → not offered publicly (Aug 2026)
  * - Sun SwimFarm → three 90′ bands 9.30–11 / 11–12.30 / 12.30–2, cap 6
  */
 function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
   const rest: OfferSlot[] = [];
   const sunSwim: OfferSlot[] = [];
   for (const s of slots) {
-    if (s.serviceId === "multi" && s.venue === "Acton" && s.day === "Wednesday") {
-      /* Hide Wed Acton Multi from booking portal — opening not confirmed. */
+    if (s.serviceId === "multi" && s.day === "Wednesday") {
       continue;
     } else if (
       s.serviceId === "multi" &&
@@ -386,6 +402,13 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
         capacity: cap,
         taken,
         referenceDate: ref,
+        instructors: [
+          ...new Set(
+            useParts.flatMap((p) =>
+              Array.isArray(p.instructors) ? p.instructors : [],
+            ),
+          ),
+        ].sort(),
       });
     }
   }
@@ -560,18 +583,18 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       capacity: cap,
       taken,
       referenceDate: ref,
+      instructors: [...bucket.instructors].sort(),
       bookedKeys: [...bucket.bookedKeys],
     });
   }
 
   let folded = foldMultiActivityOfferSlots(slots);
   folded = ensureClimbingSundayOpenBand(folded);
-  /* Day Centre is office-arranged only — never expose MADRE capacity as bookable slots. */
-  folded = folded.filter((s) => s.serviceId !== "day_centre");
-  /* Defence in depth: Wed Acton Multi stays off the public offer. */
+  /* Day Centre + Bespoke are office-arranged only — never expose MADRE capacity as bookable slots. */
+  folded = folded.filter((s) => s.serviceId !== "day_centre" && s.serviceId !== "bespoke");
+  /* Defence in depth: Wed Multi stays off the public offer. */
   folded = folded.filter(
-    (s) =>
-      !(s.serviceId === "multi" && s.venue === "Acton" && s.day === "Wednesday"),
+    (s) => !(s.serviceId === "multi" && s.day === "Wednesday"),
   );
   // Never expose client keys on the public offer payload.
   for (const s of folded) delete s.bookedKeys;
@@ -600,6 +623,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     multi: ["SwimFarm", "Northolt"],
     bespoke: ["SwimFarm", "Acton", "Westway"],
     day_centre: ["SwimFarm"],
+    counselling: ["Chiswick"],
   };
   const always: PublicServiceId[] = [
     "aquatic",
@@ -608,11 +632,19 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     "multi",
     "bespoke",
     "day_centre",
+    "counselling",
   ];
   const fullServices: OfferService[] = always.map((id) => {
     let fromMadre = [...(venueSets.get(id) || [])].sort();
     if (id === "multi") {
       fromMadre = fromMadre.filter((v) => v !== "Acton");
+    }
+    // Counselling is office-arranged (Chiswick / Zoom) — never MADRE venues.
+    if (id === "counselling") {
+      return {
+        ...SERVICE_META[id],
+        venues: defaults.counselling,
+      };
     }
     return {
       ...SERVICE_META[id],

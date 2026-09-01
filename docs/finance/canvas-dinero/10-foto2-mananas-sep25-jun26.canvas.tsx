@@ -1,0 +1,1 @@
+/Users/victor/.cursor/projects/Users-victor-cursor-PORTALVIC/canvases/foto2-mananas-sep25-jun26.canvas.tsx

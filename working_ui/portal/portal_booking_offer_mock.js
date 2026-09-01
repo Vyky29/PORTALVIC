@@ -39,7 +39,8 @@
     Acton: "Acton Centre",
     Northolt: "Northolt Centre",
     SwimFarm: "SwimFarm Centre",
-    Westway: "Westway",
+    Westway: "Westway Centre",
+    Chiswick: "Chiswick / Zoom",
   };
 
   var SERVICES = [
@@ -52,7 +53,7 @@
       priceHint: "From £50 / 30 min session",
       pricePerSession: 50,
       blurb:
-        "1:1 or small-group swimming sessions with sensory-aware instructors. We work at the child’s pace — water confidence, regulation, and independence.",
+        "Swimming and hydrotherapy with autism specialists — more than a standard pool lesson. Person-centred sessions with visual supports, focused on water confidence, communication, emotional regulation, and independence at the participant’s pace.",
       venues: ["Acton", "Northolt", "SwimFarm"],
     },
     {
@@ -64,7 +65,7 @@
       priceHint: "From £75 / 60 min session",
       pricePerSession: 75,
       blurb:
-        "Supported climbing sessions that build strength, focus, and confidence. Routes and support levels are matched to each child.",
+        "Structured climbing led by autism specialists. Builds agility, balance, coordination, and confidence, with 1:1 support, clear routines, and visual aids so each participant can progress safely.",
       venues: ["Westway"],
     },
     {
@@ -76,7 +77,7 @@
       priceHint: "From £75 / 60 min session",
       pricePerSession: 75,
       blurb:
-        "Active sessions focused on movement, coordination, and stamina — adapted so every child can take part safely and with clear structure.",
+        "Fitness with personal trainers from our autism specialists team — strength, cardio, and movement circuits. Improves motor skills, energy regulation, and confidence in a structured session every participant can succeed in.",
       venues: ["SwimFarm", "Acton"],
     },
     {
@@ -88,8 +89,8 @@
       priceHint: "From £120 / 90 min session",
       pricePerSession: 120,
       blurb:
-        "Longer blocks that combine activities in one visit (for example pool plus land-based work). Ideal when families want variety in a single session.",
-      venues: ["SwimFarm", "Northolt"],
+        "Splash & Connect: a 90-minute multidisciplinary block at SwimFarm on Sundays — land-based learning (communication, social skills, independence) plus swimming. One visit that supports mind and body for the participant.",
+      venues: ["SwimFarm"],
     },
     {
       id: "bespoke",
@@ -100,7 +101,7 @@
       priceHint: "From £125 / 60 min session",
       pricePerSession: 125,
       blurb:
-        "A tailored programme built around your child’s goals, support needs, and schedule. Planned with the family and delivery team — enquire to start.",
+        "An individualised 1:1 programme around the participant’s goals — social communication, independence, and emotional and physical well-being. Arranged with the office after enquiry; we do not publish bookable Bespoke slots online.",
       venues: ["SwimFarm", "Acton", "Westway"],
       enquireOnly: true,
     },
@@ -112,30 +113,41 @@
       durationHint: "Mon–Fri · 11am – 4pm",
       priceHint: "Funding / bespoke quote",
       blurb:
-        "A weekday daytime programme at SwimFarm. We do not publish bookable slots online — places are arranged with families through the office so we can explain the day, funding, and support needs properly.",
+        "A structured weekday at SwimFarm (Mon–Fri, 11am–4pm): circle time, vocational and classroom work, gym, swimming, life skills, and peer activities — with 1:1 on site (2:1 when transitions, personal care, or community trips need it). Places are agreed with the office first.",
       venues: ["SwimFarm"],
       enquireOnly: true,
       infoHours: "Open Monday to Friday, 11am – 4pm at SwimFarm.",
       infoActivities: [
-        "Table work (maths, puzzles, handwriting)",
-        "Sensory room and quiet regulation",
-        "Gym and trampoline",
-        "Swimming / pool time",
-        "Lunch and life skills",
-        "Relaxation",
-        "Music and karaoke",
-        "Community trips (cafe, park, shops) when staffing allows",
+        "Circle time and shared Hub activities with peers",
+        "Vocational tasks (packing, matching, envelopes) plus maths and handwriting",
+        "Gym circuits, basketball, and structured physical activity",
+        "Swimming / aquatic within the day",
+        "Lunch, life skills, and group snack",
+        "Sensory room and regulation time",
+        "Karaoke, film, and end-of-day photo résumé",
+        "Community trips (shops, local outings) with 2:1 when planned",
       ],
+    },
+    {
+      id: "counselling",
+      name: "Counselling",
+      tier: "more",
+      ageHint: "Young people & adults",
+      durationHint: "Face to face or Zoom",
+      priceHint: "Enquire with the office",
+      blurb:
+        "Counselling for young people and adults with autism and their families. Person-centred sessions to explore what concerns you — face to face in Chiswick or online via Zoom. Short-term (4–6 weeks) or longer; starts with a short assessment call.",
+      venues: ["Chiswick"],
+      enquireOnly: true,
     },
     {
       id: "intensive",
       name: "Intensive Courses & Camps",
       tier: "more",
       ageHint: "From 3 years+",
-      durationHint: "Summer + half-term blocks",
-      priceHint: "Course packs — ask the office",
+      durationHint: "Summer crash + half-term blocks",
       blurb:
-        "Holiday intensives and camps: summer crash weeks in July, then October, February and May half terms. Limited daily places — weekly packs often have priority.",
+        "Holiday crash courses and camps for continuity outside term time — swimming, climbing, and more in short intensive blocks (summer and half terms). Predictable routines, specialist staff, and limited daily places for participants.",
       venues: ["Westway", "Acton"],
       intensiveBlocks: true,
     },
@@ -207,10 +219,14 @@
 
   /** Illustrative weekly / holiday template — shapes match real MADRE-style slots. */
   var MOCK_SLOTS = [
-    { id: "aq-act-mon-1600", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "4.00 – 4.30", sortTime: "16:00", capacity: 1, taken: 1 },
+    { id: "aq-act-tue-1600", serviceId: "aquatic", venue: "Acton", day: "Tuesday", timeLabel: "4.00 – 4.30", sortTime: "16:00", capacity: 1, taken: 0 },
+    { id: "aq-act-tue-1730", serviceId: "aquatic", venue: "Acton", day: "Tuesday", timeLabel: "5.30 – 6.00", sortTime: "17:30", capacity: 1, taken: 0 },
+    { id: "aq-act-tue-1730-60", serviceId: "aquatic", venue: "Acton", day: "Tuesday", timeLabel: "5.30 – 6.30", sortTime: "17:30", capacity: 1, taken: 0 },
+    { id: "aq-act-tue-1800", serviceId: "aquatic", venue: "Acton", day: "Tuesday", timeLabel: "6.00 – 6.30", sortTime: "18:00", capacity: 1, taken: 0 },
+    { id: "aq-act-mon-1600", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "4.00 – 4.30", sortTime: "16:00", capacity: 1, taken: 0 },
     { id: "aq-act-mon-1630", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "4.30 – 5.00", sortTime: "16:30", capacity: 1, taken: 0 },
     { id: "aq-act-mon-1700", serviceId: "aquatic", venue: "Acton", day: "Monday", timeLabel: "5.00 – 5.30", sortTime: "17:00", capacity: 1, taken: 0 },
-    { id: "aq-act-wed-1600", serviceId: "aquatic", venue: "Acton", day: "Wednesday", timeLabel: "4.00 – 4.30", sortTime: "16:00", capacity: 1, taken: 1 },
+    { id: "aq-act-wed-1600", serviceId: "aquatic", venue: "Acton", day: "Wednesday", timeLabel: "4.00 – 4.30", sortTime: "16:00", capacity: 1, taken: 0 },
     { id: "aq-act-wed-1630", serviceId: "aquatic", venue: "Acton", day: "Wednesday", timeLabel: "4.30 – 5.15", sortTime: "16:30", capacity: 1, taken: 0 },
     { id: "aq-act-fri-1600", serviceId: "aquatic", venue: "Acton", day: "Friday", timeLabel: "4.00 – 4.30", sortTime: "16:00", capacity: 1, taken: 0 },
     { id: "aq-nor-wed-1700", serviceId: "aquatic", venue: "Northolt", day: "Wednesday", timeLabel: "5.00 – 6.00", sortTime: "17:00", capacity: 1, taken: 1 },
@@ -233,13 +249,10 @@
     { id: "ph-act-sat-1200", serviceId: "physical", venue: "Acton", day: "Saturday", timeLabel: "12.00 – 1.00", sortTime: "12:00", capacity: 2, taken: 1 },
 
     { id: "ma-sf-mon-1600", serviceId: "multi", venue: "SwimFarm", day: "Monday", timeLabel: "4.00 – 5.30", sortTime: "16:00", capacity: 2, taken: 2 },
-    { id: "ma-sf-wed-1600", serviceId: "multi", venue: "SwimFarm", day: "Wednesday", timeLabel: "4.00 – 5.30", sortTime: "16:00", capacity: 2, taken: 1 },
     { id: "ma-nor-sat-0930", serviceId: "multi", venue: "Northolt", day: "Saturday", timeLabel: "9.30 – 11.00", sortTime: "09:30", capacity: 2, taken: 0 },
     { id: "ma-nor-sat-1130", serviceId: "multi", venue: "Northolt", day: "Saturday", timeLabel: "11.30 – 1.00", sortTime: "11:30", capacity: 2, taken: 2 },
 
-    { id: "bs-sf-tue-1000", serviceId: "bespoke", venue: "SwimFarm", day: "Tuesday", timeLabel: "10.00 – 11.00", sortTime: "10:00", capacity: 1, taken: 1 },
-    { id: "bs-act-thu-1500", serviceId: "bespoke", venue: "Acton", day: "Thursday", timeLabel: "3.00 – 4.00", sortTime: "15:00", capacity: 1, taken: 0 },
-    { id: "bs-ww-fri-1100", serviceId: "bespoke", venue: "Westway", day: "Friday", timeLabel: "11.00 – 12.00", sortTime: "11:00", capacity: 1, taken: 1 },
+    /* Bespoke + Day Centre: no public slots (office enquire / assess first). */
 
     /* Summer crash · Week 1 (Tue–Fri 21–24 July) */
     { id: "in-s1-ww-tue", serviceId: "intensive", blockId: "summer_july", venue: "Westway", day: "Week 1 · Tue 21 Jul", timeLabel: "10.00 – 12.00 · Climbing", sortTime: "10:00", capacity: 2, taken: 2 },
@@ -295,6 +308,9 @@
   };
 
   function seatsLeft(slot) {
+    if (slot && slot.bandLeft != null) {
+      return Math.max(0, Number(slot.bandLeft));
+    }
     return Math.max(0, Number(slot.capacity || 0) - Number(slot.taken || 0));
   }
 
@@ -444,6 +460,113 @@
     });
   }
 
+  function formatClubHalfHour(mins) {
+    var h24 = Math.floor(mins / 60);
+    var m = mins % 60;
+    var h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    return h12 + "." + pad2(m);
+  }
+
+  function slotRangeMinutes(slot) {
+    var start = slotStartMinutes(slot);
+    if (start == null) return null;
+    var label = String((slot && slot.timeLabel) || "");
+    var m = label.match(
+      /(\d{1,2})(?:[:.](\d{2}))?\s*[–\-]\s*(\d{1,2})(?:[:.](\d{2}))?/i
+    );
+    if (!m) return { start: start, end: start + 30 };
+    var endH = parseInt(m[3], 10);
+    var endM = parseInt(m[4] || "0", 10);
+    var startH = Math.floor(start / 60);
+    if (endH < startH) {
+      if (start < 12 * 60 && endH <= 8) endH += 12;
+      else if (start >= 12 * 60 && endH < 12) endH += 12;
+    }
+    var end = endH * 60 + endM;
+    if (end <= start) end = start + 30;
+    return { start: start, end: end };
+  }
+
+  function shouldAggregateDaySlots(slots) {
+    if (!slots || !slots.length) return false;
+    /* Half-hour place bands are Aquatic only (swimming). Climbing stays 60', Multi 90'. */
+    if (
+      slots.some(function (s) {
+        return String(s.serviceId || "") !== "aquatic";
+      })
+    ) {
+      return false;
+    }
+    if (
+      slots.some(function (s) {
+        return s.blockId || s.bookingMode === "weekly_pack" || s.enquireOnly;
+      })
+    ) {
+      return false;
+    }
+    return /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/.test(
+      String(slots[0].day || "")
+    );
+  }
+
+  function aggregateSlotsToHalfHourBands(slots) {
+    if (!shouldAggregateDaySlots(slots)) return slots;
+    var bands = Object.create(null);
+    (slots || []).forEach(function (slot) {
+      var range = slotRangeMinutes(slot);
+      if (!range) return;
+      var bandStart = Math.floor(range.start / 30) * 30;
+      for (var b = bandStart; b < range.end; b += 30) {
+        var bandEnd = b + 30;
+        if (bandEnd > range.end) continue;
+        var key = pad2(Math.floor(b / 60)) + ":" + pad2(b % 60);
+        if (!bands[key]) {
+          bands[key] = { start: b, end: bandEnd, parts: [] };
+        }
+        var seen = bands[key].parts.some(function (p) {
+          return p.id === slot.id;
+        });
+        if (!seen) bands[key].parts.push(slot);
+      }
+    });
+    return Object.keys(bands)
+      .sort()
+      .map(function (key) {
+        var band = bands[key];
+        var ref = band.parts[0];
+        var left = band.parts.reduce(function (n, p) {
+          return n + seatsLeft(p);
+        }, 0);
+        var capacity = band.parts.reduce(function (n, p) {
+          return n + (Number(p.capacity) || 0);
+        }, 0);
+        var taken = band.parts.reduce(function (n, p) {
+          return n + (Number(p.taken) || 0);
+        }, 0);
+        var openIds = band.parts
+          .filter(function (p) {
+            return !isFull(p);
+          })
+          .map(function (p) {
+            return p.id;
+          });
+        return {
+          id: openIds[0] || ref.id,
+          serviceId: ref.serviceId,
+          venue: ref.venue,
+          day: ref.day,
+          sortTime: key,
+          timeLabel: formatClubHalfHour(band.start) + " – " + formatClubHalfHour(band.end),
+          capacity: capacity,
+          taken: taken,
+          activityName: ref.activityName,
+          bandPickIds: openIds.join(","),
+          bandLeft: left,
+        };
+      });
+  }
+
   /** Group slots: venue → day → slots[] (preserves day/time sort of filterSlots). */
   function groupSlotsByVenueThenDay(slots) {
     var byVenue = Object.create(null);
@@ -471,10 +594,69 @@
         venue: venue,
         venueLabel: venueLabel(venue),
         days: dayKeys.map(function (day) {
-          return { day: day, slots: daysMap[day] };
+          return {
+            day: day,
+            slots: aggregateSlotsToHalfHourBands(daysMap[day]),
+          };
         }),
       };
     });
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function slotStartMinutes(slot) {
+    var label = String((slot && slot.timeLabel) || "").trim();
+    if (!label || /tbc/i.test(label)) return null;
+    var sort = String((slot && slot.sortTime) || "").trim();
+    var colon = sort.match(/^(\d{1,2}):(\d{2})/);
+    if (colon) return parseInt(colon[1], 10) * 60 + parseInt(colon[2], 10);
+    var start = label.split(/\s*[–\-]\s*/)[0].trim().split(/\s+/)[0];
+    var dot = start.match(/^(\d{1,2})\.(\d{2})$/);
+    if (dot) return parseInt(dot[1], 10) * 60 + parseInt(dot[2], 10);
+    var c2 = start.match(/^(\d{1,2}):(\d{2})$/);
+    if (c2) return parseInt(c2[1], 10) * 60 + parseInt(c2[2], 10);
+    var hr = start.match(/^(\d{1,2})$/);
+    if (hr) return parseInt(hr[1], 10) * 60;
+    return null;
+  }
+
+  function slotStartKey(slot) {
+    var mins = slotStartMinutes(slot);
+    if (mins == null) return "";
+    return pad2(Math.floor(mins / 60)) + ":" + pad2(mins % 60);
+  }
+
+  function formatFilterStartTime(totalMinutes) {
+    var h24 = Math.floor(totalMinutes / 60);
+    var m = totalMinutes % 60;
+    var h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    var ampm = h24 < 12 ? "am" : "pm";
+    var sep = ampm === "am" && h12 < 11 ? "." : ":";
+    var minsPart = m === 0 ? "00" : pad2(m);
+    return h12 + sep + minsPart + " " + ampm;
+  }
+
+  function filterStartTimeOptions(slots) {
+    var map = Object.create(null);
+    (slots || []).forEach(function (slot) {
+      var mins = slotStartMinutes(slot);
+      if (mins == null) return;
+      var key = pad2(Math.floor(mins / 60)) + ":" + pad2(mins % 60);
+      if (!map[key]) {
+        map[key] = { id: key, name: formatFilterStartTime(mins), sort: mins };
+      }
+    });
+    return Object.keys(map)
+      .map(function (k) {
+        return map[k];
+      })
+      .sort(function (a, b) {
+        return a.sort - b.sort;
+      });
   }
 
   function uniqueSorted(values) {
@@ -504,19 +686,7 @@
       days: uniqueSorted(MOCK_SLOTS.map(function (s) {
         return s.day;
       })),
-      times: uniqueSorted(
-        MOCK_SLOTS.map(function (s) {
-          return s.timeLabel;
-        }).sort(function (a, b) {
-          var sa = MOCK_SLOTS.find(function (x) {
-            return x.timeLabel === a;
-          });
-          var sb = MOCK_SLOTS.find(function (x) {
-            return x.timeLabel === b;
-          });
-          return String((sa && sa.sortTime) || "").localeCompare(String((sb && sb.sortTime) || ""));
-        })
-      ),
+      times: filterStartTimeOptions(MOCK_SLOTS),
     };
   }
 
@@ -529,7 +699,7 @@
       if (filters.serviceId && slot.serviceId !== filters.serviceId) return false;
       if (filters.venue && slot.venue !== filters.venue) return false;
       if (filters.day && slot.day !== filters.day) return false;
-      if (filters.timeLabel && slot.timeLabel !== filters.timeLabel) return false;
+      if (filters.timeLabel && slotStartKey(slot) !== filters.timeLabel) return false;
       if (filters.hideFull && isFull(slot)) return false;
       return true;
     }).sort(function (a, b) {

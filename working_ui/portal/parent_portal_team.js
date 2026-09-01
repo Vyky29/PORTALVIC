@@ -667,6 +667,134 @@
     return out;
   }
 
+  /**
+   * One instructor for a booked aquatic slot (not the whole pool pair).
+   * Northolt Mon 4.30–5 trials / open band → Dan (ops standing).
+   */
+  function normalizeSlotTimeToken(time) {
+    return String(time || "")
+      .toLowerCase()
+      .replace(/[:.]/g, ".")
+      .replace(/\s*-\s*/g, " to ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function standingInstructorKeyForBookedSlot(slot, data) {
+    if (!slot) return "";
+    var venue = String(slot.venue || slot.area || "").toLowerCase();
+    var dayTok = dayTokenFromIsoOrLabel(slot.iso, slot.day);
+    var time = normalizeSlotTimeToken(slot.time || slot.time_label || "");
+    var kind = String(slot.kind || "").toLowerCase();
+    var isTrial =
+      kind === "trial" ||
+      (data && (data.is_trial_booking === true || data.place_kind === "trial"));
+
+    if (/northolt/.test(venue) && dayTok === "mon") {
+      /* Trial / first band 4.30–5 → Dan (see autumn crossref). */
+      if (isTrial || /^4\.?30\s+to\s+5(\.00)?$/.test(time) || time === "4.30 to 5") {
+        return "dan";
+      }
+      if (/^5\s+to\s+5\.?30$/.test(time)) return "luliya";
+      if (/^5\.?30\s+to\s+6(\.00)?$/.test(time)) return "luliya";
+      if (/^5\s+to\s+6(\.00)?$/.test(time)) return "dan";
+      if (/^6\s+to\s+6\.?30$/.test(time)) {
+        var pax = String(
+          (data && data.participant && (data.participant.display_name || data.participant.first_name)) ||
+            "",
+        )
+          .toLowerCase()
+          .trim();
+        if (/yamik/.test(pax)) return "luliya";
+        return "dan";
+      }
+      return "dan";
+    }
+
+    if (/northolt/.test(venue) && dayTok === "wed") {
+      if (/^4\.?30\s+to\s+5/.test(time)) {
+        var paxW = String(
+          (data && data.participant && (data.participant.display_name || data.participant.first_name)) ||
+            "",
+        )
+          .toLowerCase()
+          .trim();
+        if (/vithura/.test(paxW)) return "luliya";
+        return "dan";
+      }
+      if (/^5\s+to\s+5\.?30$/.test(time)) return "dan";
+      if (/^5\s+to\s+6/.test(time)) return "dan";
+      if (/^5\.?30\s+to\s+6/.test(time)) return "dan";
+      if (/^6\s+to\s+6\.?30$/.test(time)) return "luliya";
+      return "dan";
+    }
+
+    if (/acton/.test(venue) && (dayTok === "tue" || dayTok === "thu")) {
+      /* Prefer named instructor when API sends it; else do not invent the full pool. */
+      var named = staffKeyFromFeedbackName(slot.instructor || slot.staff || "");
+      if (named && STAFF_CATALOG[named]) return named;
+      return "";
+    }
+
+    if (/westway/.test(venue)) return "sandra";
+    return "";
+  }
+
+  function dayTokenFromIsoOrLabel(iso, dayLabel) {
+    var raw = String(dayLabel || "").trim().toLowerCase();
+    if (/^mon/.test(raw)) return "mon";
+    if (/^tue/.test(raw)) return "tue";
+    if (/^wed/.test(raw)) return "wed";
+    if (/^thu/.test(raw)) return "thu";
+    if (/^fri/.test(raw)) return "fri";
+    if (/^sat/.test(raw)) return "sat";
+    if (/^sun/.test(raw)) return "sun";
+    var s = String(iso || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+    var parts = s.split("-");
+    var dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    if (isNaN(dt.getTime())) return "";
+    return ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][dt.getDay()] || "";
+  }
+
+  function teamFromStandingPool(data) {
+    var seen = {};
+    var keys = [];
+    function pushKey(k) {
+      if (!k || seen[k]) return;
+      seen[k] = true;
+      keys.push(k);
+    }
+    var upcoming =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    upcoming.forEach(function (s) {
+      pushKey(standingInstructorKeyForBookedSlot(s, data));
+    });
+    if (!keys.length) {
+      var detail =
+        data && data.general && Array.isArray(data.general.services_detail)
+          ? data.general.services_detail
+          : [];
+      detail.forEach(function (s) {
+        if (!s) return;
+        var label = String(s.label || s.service || "").toLowerCase();
+        if (label && !/aquatic|swim|pool/.test(label)) return;
+        pushKey(
+          standingInstructorKeyForBookedSlot(
+            {
+              venue: s.venue || s.area,
+              day: s.day,
+              time: s.time || s.time_slot || s.slot,
+              kind: data && data.place_kind === "trial" ? "trial" : "",
+            },
+            data,
+          ),
+        );
+      });
+    }
+    return keys.map(catalogMember).filter(Boolean);
+  }
+
   function catalogMember(key) {
     var k = String(key || "").trim().toLowerCase();
     if (k === "javi") k = "javier";
@@ -730,6 +858,10 @@
     }
     if (!out.length) {
       teamFromSessions(data).forEach(addCard);
+    }
+    /* Trial / new place: standing pool instructors before any session feedback. */
+    if (!out.length) {
+      teamFromStandingPool(data).forEach(addCard);
     }
     /* Roster demo map fills gaps (and covers empty live team) for known children */
     demoKeysForParticipant(data).forEach(function (key) {

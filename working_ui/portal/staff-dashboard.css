@@ -433,7 +433,7 @@
       --avatar-core-size:82px;
       --avatar-orbit-outset:0px;
     }
-    .topbar-center--halo:has(.avatar-wrap:not(.avatar-wrap--portal-orbit-idle)) .topbar-name--under-halo{
+    .topbar-center--halo:has(.avatar-wrap:not(.avatar-wrap--portal-orbit-idle)) .topbar-staff-photo__edit--above-name{
       margin-top:calc(var(--avatar-orbit-outset, 16px) + 2px);
     }
     .avatar-wrap:hover{
@@ -515,12 +515,13 @@
     .avatar-wrap[data-gender="f"] .topbar-staff-photo--halo .topbar-staff-photo__initials{
       color:var(--topbar-profile-female-ink,#9c2756);
     }
-    .topbar-staff-photo--halo .topbar-staff-photo__edit{
-      top:4px;
-      right:4px;
-      width:24px;
-      height:24px;
-      z-index:4;
+    .topbar-center--halo .topbar-staff-photo__edit--above-name{
+      width:26px;
+      height:26px;
+      margin:3px auto 1px;
+    }
+    .topbar-center--halo .topbar-name--under-halo{
+      margin-top:0;
     }
     .topbar-staff-photo--halo .topbar-staff-photo__share-note{
       display:none;
@@ -5481,9 +5482,28 @@
     }
     /* Combined "Day Centre + pool" card: participant name on the far left, then a
        time / note mini-table (e.g. Emanuel — 11 to 12 Day Centre / 12 to 1 Big Pool).
-       Still ONE session (feedback / pay unchanged); this is a display grouping only. */
+       Still ONE session (feedback / pay unchanged); this is a display grouping only.
+       Left border tint = participant (Emanuel purple; Fadi / Ikram / Timi distinct). */
     .section-card--today .session-card.session-card--segments{
       border-left:4px solid #6d5ae0;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-emanuel{
+      border-left-color:#6d5ae0;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-fadi{
+      border-left-color:#0f766e;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-ikram{
+      border-left-color:#c2410c;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-timi{
+      border-left-color:#0369a1;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-manager{
+      border-left-color:#64748b;
+    }
+    .section-card--today .session-card.session-card--segments.session-card--dc-pax-default{
+      border-left-color:#6d5ae0;
     }
     .section-card--today .session-card.session-card--segments .session-card-body.session-card-body--segments,
     .section-card--today .session-card.session-card--segments .session-card-body--segments{
@@ -10409,34 +10429,34 @@
       background:rgba(23,50,71,.14);
       color:var(--ink);
     }
-    /* My participants — corporate navy (logo “C” / --ink); soft blue when selected */
+    /* My participants — muted when outside; navy only while Participants sheet is open */
     .dock-nav-item--participants{
       position:relative;
       gap:4px;
       padding:5px 3px 6px;
-      background:linear-gradient(180deg,var(--ink) 0%,var(--policy-navy-deep,#122838) 100%);
-      border-color:rgba(23,50,71,.45);
-      color:#fff;
-      box-shadow:0 2px 12px rgba(23,50,71,.24);
+      background:linear-gradient(180deg,#eef2f6 0%,#e0e8ef 100%);
+      border-color:rgba(23,50,71,.24);
+      color:var(--ink);
+      box-shadow:0 2px 10px rgba(23,50,71,.1);
     }
     .dock-nav-item--participants:hover{
-      border-color:rgba(255,255,255,.35);
-      background:linear-gradient(180deg,#1e3d54 0%,var(--ink) 100%);
-      box-shadow:0 6px 20px rgba(23,50,71,.32);
+      background:linear-gradient(180deg,#e8eef3 0%,#d8e2ea 100%);
+      border-color:rgba(23,50,71,.32);
+      box-shadow:0 5px 16px rgba(23,50,71,.14);
     }
     .dock-nav-item--participants .dock-nav-item__icon{
       position:static;
       transform:none;
       margin:0;
-      background:rgba(255,255,255,.22);
-      color:#fff;
-      border:1px solid rgba(255,255,255,.35);
+      background:rgba(23,50,71,.12);
+      color:var(--ink);
+      border:1px solid rgba(23,50,71,.22);
     }
     .dock-nav-item--participants .dock-nav-item__label{
       position:static;
       transform:none;
       margin:0;
-      color:#fff;
+      color:var(--ink);
       opacity:1;
       visibility:visible;
       white-space:nowrap;
@@ -10446,31 +10466,31 @@
       line-height:1.05;
     }
     .dock-nav-item.dock-nav-item--participants:focus-visible{
-      outline:2px solid rgba(255,255,255,.95);
+      outline:2px solid rgba(23,50,71,.35);
       outline-offset:2px;
     }
-    /* Participants list/sheet open (selected): soft corporate blue */
+    /* Participants list/sheet open (selected): corporate navy */
     body.dock-context-clients .dock-nav-item--participants{
-      background:linear-gradient(180deg,#eef2f6 0%,#e0e8ef 100%);
-      border-color:rgba(23,50,71,.24);
-      color:var(--ink);
-      box-shadow:0 2px 10px rgba(23,50,71,.1);
+      background:linear-gradient(180deg,var(--ink) 0%,var(--policy-navy-deep,#122838) 100%);
+      border-color:rgba(23,50,71,.45);
+      color:#fff;
+      box-shadow:0 2px 12px rgba(23,50,71,.24);
     }
     body.dock-context-clients .dock-nav-item--participants:hover{
-      background:linear-gradient(180deg,#e8eef3 0%,#d8e2ea 100%);
-      border-color:rgba(23,50,71,.32);
-      box-shadow:0 5px 16px rgba(23,50,71,.14);
+      border-color:rgba(255,255,255,.35);
+      background:linear-gradient(180deg,#1e3d54 0%,var(--ink) 100%);
+      box-shadow:0 6px 20px rgba(23,50,71,.32);
     }
     body.dock-context-clients .dock-nav-item--participants .dock-nav-item__icon{
-      background:rgba(23,50,71,.12);
-      border-color:rgba(23,50,71,.22);
-      color:var(--ink);
+      background:rgba(255,255,255,.22);
+      border-color:rgba(255,255,255,.35);
+      color:#fff;
     }
     body.dock-context-clients .dock-nav-item--participants .dock-nav-item__label{
-      color:var(--ink);
+      color:#fff;
     }
     body.dock-context-clients .dock-nav-item.dock-nav-item--participants:focus-visible{
-      outline:2px solid rgba(23,50,71,.35);
+      outline:2px solid rgba(255,255,255,.95);
       outline-offset:2px;
     }
     .dock-nav-item__icon svg{width:14px;height:14px;display:block}

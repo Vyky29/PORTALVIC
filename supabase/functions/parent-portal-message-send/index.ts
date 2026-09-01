@@ -11,6 +11,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
+import { handleParentSaysPaidMessage } from "../_shared/portal_parent_says_paid.ts";
 
 function clean(v: unknown, max = 2000): string {
   return String(v ?? "").trim().slice(0, max);
@@ -116,6 +117,18 @@ Deno.serve(async (req) => {
   if (error) {
     console.error("[parent-portal-message-send] insert failed", error);
     return parentPortalJsonInvalid(500);
+  }
+
+  try {
+    await handleParentSaysPaidMessage(supabase, {
+      phone,
+      contactId: contactId || null,
+      bodyText: message,
+      source: "parent_app",
+      participantHint: participantDisplay,
+    });
+  } catch (e) {
+    console.warn("[parent-portal-message-send] says-paid check", e);
   }
 
   return new Response(

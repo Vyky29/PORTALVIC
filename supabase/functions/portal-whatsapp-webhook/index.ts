@@ -18,6 +18,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 import { findStaffLeaderByPhone } from "../_shared/portal_staff_whatsapp.ts";
 import { notifyAdminsStaffWhatsappReply } from "../_shared/portal_staff_whatsapp_admin_push.ts";
+import { handleParentSaysPaidMessage } from "../_shared/portal_parent_says_paid.ts";
 
 type MetaWebhookBody = {
   object?: string;
@@ -367,6 +368,17 @@ async function storeInboundMessages(
       continue;
     }
     inserted += 1;
+
+    try {
+      await handleParentSaysPaidMessage(admin, {
+        phone,
+        bodyText: bodyText || "",
+        source: "whatsapp",
+        participantHint: contactName,
+      });
+    } catch (e) {
+      console.warn("[portal-whatsapp-webhook] says-paid check", e);
+    }
   }
   return inserted;
 }

@@ -5,6 +5,27 @@
 (function (global) {
   "use strict";
 
+  var TERM_WINDOWS = {
+    summer2026: {
+      firstDate: "2026-04-13",
+      lastDate: "2026-07-31",
+      termBreakFrom: "2026-05-23",
+      termBreakTo: "2026-05-31",
+    },
+    autumn2026: {
+      firstDate: "2026-09-05",
+      lastDate: "2026-12-18",
+      termBreakFrom: "2026-10-26",
+      termBreakTo: "2026-10-30",
+    },
+  };
+
+  function termKeyForIso(iso) {
+    var s = normIso(iso);
+    if (s && s >= "2026-09-01") return "autumn2026";
+    return "summer2026";
+  }
+
   var deps = {
     getClient: function () { return null; },
     toast: function (m) { try { console.log("[term-slot]", m); } catch (_) {} },
@@ -14,16 +35,24 @@
       });
     },
     setView: function () { return null; },
-    getTermBounds: function () {
-      var t = global.PORTAL_TERM_FROM_TIMETABLE || {};
-      return {
-        firstDate: String(t.firstDate || "2026-04-13").slice(0, 10),
-        lastDate: String(t.lastDate || "2026-07-17").slice(0, 10),
-        termBreakFrom: String(t.termBreakFrom || "").slice(0, 10),
-        termBreakTo: String(t.termBreakTo || "").slice(0, 10),
-      };
+    getTermBounds: function (anchorIso) {
+      return activeTermBounds(anchorIso);
     },
   };
+
+  function activeTermBounds(anchorIso) {
+    var key = termKeyForIso(anchorIso);
+    if (key === "autumn2026") {
+      return Object.assign({}, TERM_WINDOWS.autumn2026);
+    }
+    var t = global.PORTAL_TERM_FROM_TIMETABLE || {};
+    return {
+      firstDate: String(t.firstDate || TERM_WINDOWS.summer2026.firstDate).slice(0, 10),
+      lastDate: String(t.lastDate || TERM_WINDOWS.summer2026.lastDate).slice(0, 10),
+      termBreakFrom: String(t.termBreakFrom || TERM_WINDOWS.summer2026.termBreakFrom).slice(0, 10),
+      termBreakTo: String(t.termBreakTo || TERM_WINDOWS.summer2026.termBreakTo).slice(0, 10),
+    };
+  }
 
   var state = {
     rootEl: null,
@@ -119,7 +148,7 @@
 
   function buildTermSessionDatesForSlot(p) {
     if (!p.anchorDate || !p.day) return [];
-    var bounds = deps.getTermBounds();
+    var bounds = activeTermBounds(p.anchorDate);
     var dates = weekdaysMatchingFromThrough(p.day, p.anchorDate, bounds.lastDate, bounds);
     if (!p.client_name || !p.time_slot) return dates;
     var timeNorm = normSlotTime(p.time_slot);
@@ -304,9 +333,17 @@
     return src && Array.isArray(src.rows) ? src.rows : [];
   }
 
+  function rowInSameTermWindow(rowIso, anchorIso) {
+    var a = normIso(anchorIso);
+    var r = normIso(rowIso);
+    if (!a || !r) return true;
+    return termKeyForIso(a) === termKeyForIso(r);
+  }
+
   function rowMatchesAnchorWeekday(row, anchorIso, weekday) {
     var rowIso = normIso(row.session_date);
     if (rowIso) {
+      if (!rowInSameTermWindow(rowIso, anchorIso)) return false;
       if (anchorIso && rowIso === anchorIso) return true;
       return !!(weekday && weekdayLongFromIso(rowIso) === weekday);
     }
@@ -345,6 +382,26 @@
     });
   }
 
+  function preferRosterMatch(matches, anchorIso) {
+    if (!matches || !matches.length) return null;
+    var exact = matches.filter(function (r) {
+      return normIso(r.session_date) === anchorIso;
+    });
+    if (exact.length) return exact[0];
+    var undated = matches.filter(function (r) {
+      return !normIso(r.session_date);
+    });
+    if (undated.length) return undated[0];
+    var sameTerm = matches.filter(function (r) {
+      return rowInSameTermWindow(r.session_date, anchorIso);
+    });
+    var pool = sameTerm.length ? sameTerm : matches;
+    pool.sort(function (a, b) {
+      return String(normIso(b.session_date) || "").localeCompare(String(normIso(a.session_date) || ""));
+    });
+    return pool[0] || null;
+  }
+
   function findBundleSlotByParticipantService(anchorIso, clientName, service) {
     var wantSvc = normName(service);
     if (!wantSvc) return null;
@@ -353,16 +410,13 @@
     });
     if (!matches.length) {
       var wantClient = normName(resolveClientName(clientName) || clientName);
+      var weekday = weekdayLongFromIso(anchorIso);
       matches = rosterRows().filter(function (r) {
-        return normName(r.client_name) === wantClient && normName(r.service) === wantSvc;
+        if (normName(r.client_name) !== wantClient || normName(r.service) !== wantSvc) return false;
+        return rowMatchesAnchorWeekday(r, anchorIso, weekday);
       });
     }
-    if (!matches.length) return null;
-    var exact = matches.filter(function (r) {
-      return normIso(r.session_date) === anchorIso;
-    });
-    if (exact.length) return exact[0];
-    return matches[0];
+    return preferRosterMatch(matches, anchorIso);
   }
 
   function findBundleSlot(anchorIso, client, timeSlot) {
@@ -376,7 +430,13 @@
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
       if (normName(r.client_name) !== cLow) continue;
-      if (anchorIso && normIso(r.session_date) && normIso(r.session_date) !== anchorIso) continue;
+      var rowIso = normIso(r.session_date);
+      if (rowIso) {
+        if (!rowInSameTermWindow(rowIso, anchorIso)) continue;
+        if (anchorIso && rowIso !== anchorIso) continue;
+      } else if (wd && String(r.day || "").trim() && String(r.day || "").trim() !== wd) {
+        continue;
+      }
       if (normSlotTime(r.time_slot) === tLow) {
         exact = r;
         break;
@@ -440,19 +500,25 @@
   function applyBundleSlotToForm(root, slot, opts) {
     opts = opts || {};
     if (!slot) return false;
+    var preserve = !!opts.preserveExisting;
     var day = String(slot.day || "").trim();
+    var existingTime = String((root.querySelector("#trsTimeSlot") || {}).value || "").trim();
+    var existingInst = String((root.querySelector("#trsInstructors") || {}).value || "").trim();
+    var existingVenue = String((root.querySelector("#trsVenue") || {}).value || "").trim();
+    var existingArea = String((root.querySelector("#trsArea") || {}).value || "").trim();
+    var preferTime = String(opts.timeSlot || "").trim() || (preserve ? existingTime : "");
     var bands =
-      opts.timeSlot && String(opts.timeSlot).trim()
-        ? [String(opts.timeSlot).trim()]
+      preferTime
+        ? [preferTime]
         : isAquaticServiceName(slot.service)
           ? aquaticHalfHourBands(slot.time_slot, day)
           : [String(slot.time_slot || "").trim()];
-    var chosen = bands.length === 1 ? bands[0] : String((root.querySelector("#trsTimeSlot") || {}).value || "").trim();
+    var chosen = bands.length === 1 ? bands[0] : existingTime;
     if (bands.length > 1 && (!chosen || bands.indexOf(chosen) < 0)) chosen = bands[0];
     setFormField(root, "#trsTimeSlot", chosen || slot.time_slot);
-    setFormField(root, "#trsInstructors", slot.instructors);
-    setFormField(root, "#trsVenue", slot.venue);
-    setFormField(root, "#trsArea", slot.area);
+    setFormField(root, "#trsInstructors", preserve && existingInst ? existingInst : slot.instructors);
+    setFormField(root, "#trsVenue", preserve && existingVenue ? existingVenue : slot.venue);
+    setFormField(root, "#trsArea", preserve && existingArea ? existingArea : slot.area);
     refreshTermSlotTimeBandPicker(root, slot, bands, chosen);
     return true;
   }
@@ -533,6 +599,7 @@
 
   function refreshTermSlotAutofill(root, opts) {
     opts = opts || {};
+    var forceFromRoster = !!opts.forceFromRoster;
     var clientEl = root.querySelector("#trsClient");
     var svcEl = root.querySelector("#trsService");
     var anchorEl = root.querySelector("#trsAnchorDate");
@@ -541,15 +608,20 @@
     var resolved = resolveClientName(clientEl.value);
     if (resolved && resolved !== String(clientEl.value || "").trim()) clientEl.value = resolved;
     var part = resolved || String(clientEl.value || "").trim();
+    var keepTime = String((root.querySelector("#trsTimeSlot") || {}).value || "").trim();
+    var keepInst = String((root.querySelector("#trsInstructors") || {}).value || "").trim();
+    var keepVenue = String((root.querySelector("#trsVenue") || {}).value || "").trim();
+    var keepArea = String((root.querySelector("#trsArea") || {}).value || "").trim();
+    var hasAssignPrefill = !!(keepTime || keepInst || keepVenue || keepArea);
     if (!part) {
       rebuildTermSlotServiceSelect(root, "", "", anchor);
-      clearAutofilledSlotFields(root);
+      if (forceFromRoster || !hasAssignPrefill) clearAutofilledSlotFields(root);
       refreshTermSlotSessionPicker(root);
       return false;
     }
     var chosenSvc = rebuildTermSlotServiceSelect(root, part, svcEl.value, anchor);
     if (!chosenSvc) {
-      clearAutofilledSlotFields(root);
+      if (forceFromRoster || !hasAssignPrefill) clearAutofilledSlotFields(root);
       if (opts.toastIfMissing && part) {
         var wd = weekdayLongFromIso(anchor);
         deps.toast("Pick a service for " + part + (wd ? " on " + wd : "") + ".");
@@ -559,12 +631,20 @@
     }
     var slot = findBundleSlotByParticipantService(anchor, part, chosenSvc);
     if (!slot) {
+      // Assign / capacity already filled time+staff — keep them for a new Autumn placement.
+      if (!forceFromRoster && hasAssignPrefill) {
+        refreshTermSlotSessionPicker(root);
+        return true;
+      }
       clearAutofilledSlotFields(root);
       if (opts.toastIfMissing) deps.toast("No roster row for that participante and service on this date.");
       refreshTermSlotSessionPicker(root);
       return false;
     }
-    applyBundleSlotToForm(root, slot);
+    applyBundleSlotToForm(root, slot, {
+      preserveExisting: !forceFromRoster && hasAssignPrefill,
+      timeSlot: !forceFromRoster && keepTime ? keepTime : "",
+    });
     if (opts.toastOnSuccess) deps.toast("Loaded from roster — check fields then Save.");
     refreshTermSlotSessionPicker(root);
     return true;
@@ -576,7 +656,7 @@
       deps.toast("Pick anchor date and participante first.");
       return;
     }
-    refreshTermSlotAutofill(root, { toastIfMissing: true, toastOnSuccess: true });
+    refreshTermSlotAutofill(root, { toastIfMissing: true, toastOnSuccess: true, forceFromRoster: true });
   }
 
   function snapshotRow(p) {
@@ -721,7 +801,7 @@
   }
 
   function affectedDatesForPayload(p) {
-    var bounds = deps.getTermBounds();
+    var bounds = activeTermBounds(p && p.anchorDate);
     if (p.scope === "pick_sessions") {
       return Array.isArray(p.selectedSessionDates) ? p.selectedSessionDates.slice().sort() : [];
     }
@@ -731,6 +811,30 @@
   }
 
   var NO_CLIENT_PARTICIPANT = "No client";
+  var OPEN_SEAT_NAMES = [
+    "NO PARTICIPANT",
+    "No client",
+    "NO CLIENT",
+    "OPEN",
+    "AVAILABLE",
+    "FREE",
+  ];
+
+  function isOpenSeatParticipantName(name) {
+    var up = String(name || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[_\s-]+/g, " ");
+    if (!up) return true;
+    return (
+      up === "NO PARTICIPANT" ||
+      up === "NO CLIENT" ||
+      up === "NOPARTICIPANT" ||
+      up === "OPEN" ||
+      up === "AVAILABLE" ||
+      up === "FREE"
+    );
+  }
 
   function normSlotTime(v) {
     var s = String(v || "")
@@ -803,8 +907,20 @@
   function noClientRowInScope(row, p) {
     if (normSlotTime(row.time_slot) !== normSlotTime(p.time_slot)) return false;
     if (!slotInstructorsMatch(row.instructors, p.instructors)) return false;
+    if (p.venue) {
+      var rv = String(row.venue || "").toLowerCase();
+      var pv = String(p.venue || "").toLowerCase();
+      if (rv && pv && rv.indexOf(pv) < 0 && pv.indexOf(rv) < 0) return false;
+    }
     var sd = normIso(row.session_date);
-    if (!sd) return p.scope === "weekday_term";
+    // Standing template (null session_date) is the Autumn offer source — always clear for term scopes.
+    if (!sd) {
+      return (
+        p.scope === "weekday_term" ||
+        p.scope === "rest_of_term" ||
+        !p.scope
+      );
+    }
     if (p.scope === "single_day") return sd === p.anchorDate;
     if (p.scope === "pick_sessions") {
       var picked = Object.create(null);
@@ -820,14 +936,14 @@
   function cancelNoClientRowsForScope(client, p) {
     return client
       .from("portal_roster_rows")
-      .select("id, client_name, day, time_slot, instructors, session_date, status")
+      .select("id, client_name, day, time_slot, instructors, session_date, venue, status")
       .eq("status", "active")
-      .eq("client_name", NO_CLIENT_PARTICIPANT)
       .eq("day", p.day)
+      .in("client_name", OPEN_SEAT_NAMES)
       .then(function (res) {
         if (res.error) throw res.error;
         var rows = (res.data || []).filter(function (row) {
-          return noClientRowInScope(row, p);
+          return isOpenSeatParticipantName(row.client_name) && noClientRowInScope(row, p);
         });
         if (!rows.length) return;
         return client
@@ -908,7 +1024,7 @@
     var beforeName = before ? String(before.client_name || "").trim() : "";
     var isNewTermParticipant =
       !beforeName ||
-      /^no[\s_-]*client$/i.test(beforeName) ||
+      isOpenSeatParticipantName(beforeName) ||
       rosterSlug(beforeName) === rosterSlug(NO_CLIENT_PARTICIPANT);
     var scope = String(p.scope || "").trim();
     var notifyDates = dates;
@@ -1155,7 +1271,7 @@
       var canonC = global.portalResolveParticipantCanonicalName(p.client_name);
       if (canonC) p.client_name = canonC;
     }
-    var bounds = deps.getTermBounds();
+    var bounds = activeTermBounds(p.anchorDate);
     var before = findBundleSlot(p.anchorDate, p.client_name, p.time_slot);
     var cancelRow = bundleCancelRow(p, p.anchorDate);
     var snap = snapshotRow(Object.assign({}, p, { time_slot: cancelRow.time_slot }));
@@ -1216,7 +1332,7 @@
       var canonN = global.portalResolveParticipantCanonicalName(p.client_name);
       if (canonN) p.client_name = canonN;
     }
-    var bounds = deps.getTermBounds();
+    var bounds = activeTermBounds(p.anchorDate);
     var before = findBundleSlot(p.anchorDate, p.client_name, p.time_slot);
     var snap = snapshotRow(p);
     snap.action = "no_participant";
@@ -1267,6 +1383,28 @@
   }
 
   function finishTermSlotSave(chain, root, p, before, afterSnap, eventAction, client, toastMsg) {
+    var assignNamed =
+      eventAction === "update" || eventAction === "create" || String(p.action || "").trim() === "update";
+    var isCancelish =
+      eventAction === "cancel" ||
+      String(afterSnap.action || "") === "cancel_service" ||
+      String(afterSnap.action || "") === "no_participant" ||
+      isOpenSeatParticipantName(afterSnap.client_name || p.client_name);
+    var beforeName = before ? String(before.client_name || "").trim() : "";
+    var pre = state.prefill || {};
+    var fromAssignPrefill =
+      !String(pre.client_name || "").trim() &&
+      !!(String(pre.time_slot || "").trim() || String(pre.instructors || "").trim());
+    // Unpaid INV-P only when placing someone onto a vacant/open band (Assign / new),
+    // not when tweaking an already-named standing slot.
+    var shouldBill =
+      assignNamed &&
+      !isCancelish &&
+      !!String(p.client_name || "").trim() &&
+      (fromAssignPrefill || !beforeName || isOpenSeatParticipantName(beforeName));
+    // Always try to consume open MADRE seats when saving a named client.
+    var shouldConsumeOpen = assignNamed && !isCancelish && !!String(p.client_name || "").trim();
+
     chain
       .then(function (rowRef) {
         return writeScheduleOverridesForTermEdit(client, p, before, afterSnap, eventAction).then(function () {
@@ -1308,9 +1446,9 @@
         if (typeof global.portalNotifyAdminRosterDataChanged === "function") {
           global.portalNotifyAdminRosterDataChanged({ refreshScheduling: true });
         }
-        deps.toast(toastMsg || "Term slot saved.");
-        if (global.PortalMadreFold && typeof global.PortalMadreFold.queueParticipantSlotChange === "function") {
-          global.PortalMadreFold.queueParticipantSlotChange(client, {
+        var foldPromise = Promise.resolve(null);
+        if (global.PortalMadreFold) {
+          var foldOpts = {
             after: afterSnap,
             before: before,
             session_date: p.anchorDate,
@@ -1318,12 +1456,63 @@
             term_action: p.action,
             roster_row_id: rowRef && rowRef.id ? rowRef.id : null,
             source_module: "term_roster_edit",
-          }).then(function () {
+            replace_open: shouldConsumeOpen,
+          };
+          if (
+            shouldConsumeOpen &&
+            typeof global.PortalMadreFold.queueParticipantAssignConsumeOpen === "function"
+          ) {
+            foldPromise = global.PortalMadreFold.queueParticipantAssignConsumeOpen(client, foldOpts);
+          } else if (typeof global.PortalMadreFold.queueParticipantSlotChange === "function") {
+            foldPromise = global.PortalMadreFold.queueParticipantSlotChange(client, foldOpts);
+          }
+        }
+        return foldPromise
+          .then(function () {
             if (typeof global.portalRefreshStaffDashboardSourceFromPortal === "function") {
               global.portalRefreshStaffDashboardSourceFromPortal();
             }
+            return rowRef;
+          })
+          .catch(function (err) {
+            console.warn("[term-slot] MADRE fold", err);
+            return rowRef;
           });
+      })
+      .then(function (rowRef) {
+        if (!shouldBill) {
+          deps.toast(toastMsg || "Term slot saved.");
+          return rowRef;
         }
+        return ensureAssignUnpaidInvoice(client, p).then(function (invRes) {
+          var base = "Slot filled · offer seat consumed";
+          if (invRes && invRes.skipped === "existing") {
+            deps.toast(
+              base +
+                " · invoice already unpaid (" +
+                String(invRes.invoice_number || "INV-P") +
+                ")",
+            );
+          } else if (invRes && invRes.ok) {
+            deps.toast(
+              base +
+                " · invoice unpaid ready (" +
+                String(invRes.invoice_number || "INV-P") +
+                ")",
+            );
+          } else if (invRes && invRes.error) {
+            deps.toast(
+              (toastMsg || "Term slot saved.") +
+                " · invoice not created: " +
+                String(invRes.error),
+            );
+          } else {
+            deps.toast(base + " · " + (toastMsg || "Term slot saved."));
+          }
+          return rowRef;
+        });
+      })
+      .then(function () {
         if (global.PortalChangeLog && typeof global.PortalChangeLog.record === "function") {
           var logAction = eventAction === "cancel" ? "cancel" : before ? "update" : "create";
           global.PortalChangeLog.record({
@@ -1359,8 +1548,67 @@
       })
       .finally(function () {
         state.saving = false;
+        state.prefill = null;
         render(root);
       });
+  }
+
+  function ensureAssignUnpaidInvoice(client, p) {
+    var base = String(
+      (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.url) ||
+        global.SUPABASE_URL ||
+        "",
+    ).replace(/\/$/, "");
+    var anon =
+      (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.anonKey) ||
+      global.SUPABASE_ANON_KEY ||
+      "";
+    if (!base || !anon) {
+      return Promise.resolve({ ok: false, error: "supabase_not_configured" });
+    }
+    var headers = {
+      apikey: anon,
+      "Content-Type": "application/json",
+    };
+    var sessionPromise =
+      client && client.auth && typeof client.auth.getSession === "function"
+        ? client.auth.getSession()
+        : Promise.resolve({ data: { session: null } });
+    return sessionPromise.then(function (sessRes) {
+      var tok =
+        sessRes &&
+        sessRes.data &&
+        sessRes.data.session &&
+        sessRes.data.session.access_token;
+      if (tok) headers.Authorization = "Bearer " + tok;
+      return fetch(base + "/functions/v1/portal-admin-term-slot-assign-complete", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+          client_name: p.client_name,
+          day: p.day,
+          time_slot: p.time_slot,
+          venue: p.venue,
+          instructors: p.instructors,
+          service: p.service,
+          anchor_date: p.anchorDate,
+          scope: p.scope,
+          pay_plan: "flexi_bank",
+        }),
+      }).then(function (res) {
+        return res.json().catch(function () {
+          return { ok: false, error: "bad_json" };
+        }).then(function (data) {
+          if (!res.ok) {
+            return {
+              ok: false,
+              error: (data && data.error) || "http_" + res.status,
+            };
+          }
+          return data || { ok: false, error: "empty" };
+        });
+      });
+    });
   }
 
   function saveTermSlot(root) {
@@ -1408,7 +1656,7 @@
       var canon = global.portalResolveParticipantCanonicalName(p.client_name);
       if (canon) p.client_name = canon;
     }
-    var bounds = deps.getTermBounds();
+    var bounds = activeTermBounds(p.anchorDate);
     state.saving = true;
     render(root);
 
@@ -1592,9 +1840,9 @@
 
   function render(root) {
     if (!root) return;
-    var bounds = deps.getTermBounds();
     var pre = state.prefill || {};
     var anchor = normIso(pre.anchorDate) || normIso(new Date().toISOString().slice(0, 10));
+    var bounds = activeTermBounds(anchor);
     var weekday = weekdayLongFromIso(anchor);
     var preAction = String(pre.action || "update");
     var preScope = String(pre.scope || "single_day");
@@ -1698,12 +1946,12 @@
       if (svcEl0 && pre.service) {
         rebuildTermSlotServiceSelect(root, pre.client_name || "", pre.service, anchor);
       }
-      refreshTermSlotAutofill(root);
-      if (pre.time_slot) {
-        var slotPre = findBundleSlotByParticipantService(anchor, pre.client_name || "", pre.service || (svcEl0 && svcEl0.value) || "");
-        if (slotPre) applyBundleSlotToForm(root, slotPre, { timeSlot: pre.time_slot });
-        else setFormField(root, "#trsTimeSlot", pre.time_slot);
-      }
+      // Keep Assign/capacity time + instructors unless Reload from roster.
+      refreshTermSlotAutofill(root, { forceFromRoster: false });
+      if (pre.time_slot) setFormField(root, "#trsTimeSlot", pre.time_slot);
+      if (pre.instructors) setFormField(root, "#trsInstructors", pre.instructors);
+      if (pre.venue) setFormField(root, "#trsVenue", pre.venue);
+      if (pre.area) setFormField(root, "#trsArea", pre.area);
     }
     refreshTermSlotSessionPicker(root);
   }

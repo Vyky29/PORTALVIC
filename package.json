@@ -37,11 +37,13 @@
     "apply:payroll-secrets": "node database/local-vault/apply-payroll-secrets.mjs",
     "apply:achievement-shared-pool": "node database/local-vault/apply-achievement-shared-pool.mjs",
     "verify:sevitha-office-portal": "node database/local-vault/verify-sevitha-office-portal.mjs",
+    "test:parent-hub": "node tests/parent_hub_invoices.test.mjs",
     "build:staff-app": "node scripts/build-clubsensational-staff.mjs",
     "build:vercel": "node scripts/vercel-build.mjs",
     "deploy:sevitha-document-hub": "supabase functions deploy portal-admin-hr-files-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-expenses-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-onboarding-documents-list --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-admin-hr-file-signed-url --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb"
   },
   "devDependencies": {
+    "jsdom": "^29.1.1",
     "supabase": "^2.67.2"
   },
   "engines": {

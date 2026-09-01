@@ -12,6 +12,11 @@ import {
   clientIp,
   sha256Hex,
 } from "../_shared/booking_lead_auth.ts";
+import { normalizePendingBookingRequest } from "../_shared/portal_booking_context.ts";
+
+function clean(v: unknown, max = 200): string {
+  return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
 
 const STATUS_RANK: Record<string, number> = {
   new_lead: 0,
@@ -117,7 +122,12 @@ Deno.serve(async (req) => {
     if (next >= cur) patch.registration_status = wantedReg;
   }
 
-  if (Object.keys(patch).length > 2 || serviceViewed || wantedStatus || wantedReg) {
+  const pendingBooking = normalizePendingBookingRequest(body.pending_booking);
+  if (pendingBooking) {
+    patch.pending_booking_request = pendingBooking;
+  }
+
+  if (Object.keys(patch).length > 2 || serviceViewed || wantedStatus || wantedReg || pendingBooking) {
     await supabase.from("portal_booking_leads").update(patch).eq("id", lead.id);
   }
 

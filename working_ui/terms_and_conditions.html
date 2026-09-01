@@ -44,45 +44,15 @@
       margin: 0 0 18px;
       min-width: 0;
     }
-    .tc-logo-stage {
-      position: relative;
-      width: min(168px, 46vw);
+    .tc-logo-shell {
+      width: min(132px, 42vw);
       aspect-ratio: 1;
       margin: 0 auto 10px;
-      display: grid;
-      place-items: center;
-    }
-    .tc-orbit-svg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 0;
-      overflow: visible;
-    }
-    .tc-orbit-cw { transform-origin: 0 0; animation: tc-cw 18s linear infinite; }
-    .tc-orbit-ccw { transform-origin: 0 0; animation: tc-ccw 14s linear infinite; }
-    .tc-orbit-slow { transform-origin: 0 0; animation: tc-ccw 26s linear infinite; }
-    @keyframes tc-cw { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @keyframes tc-ccw { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
-    @media (prefers-reduced-motion: reduce) {
-      .tc-orbit-cw, .tc-orbit-ccw, .tc-orbit-slow { animation: none; }
-    }
-    .tc-logo-shell {
-      position: relative;
-      z-index: 1;
-      width: 70%;
-      aspect-ratio: 1;
       border-radius: 50%;
       overflow: hidden;
       background: var(--white);
-      display: grid;
-      place-items: center;
-      box-shadow:
-        0 0 0 2px rgba(249,191,46,.45),
-        0 0 16px rgba(249,191,46,.35),
-        0 0 32px rgba(45,132,179,.12);
+      border: 1px solid rgba(244, 183, 64, 0.45);
+      box-shadow: 0 2px 10px rgba(23, 50, 71, 0.08);
     }
     .tc-logo-shell img {
       width: 100%;
@@ -99,7 +69,7 @@
       min-width: 0;
       overflow-wrap: break-word;
     }
-    .tc-brand-name span { color: var(--blue); }
+    .tc-brand-name span { color: var(--sen-gold); }
     article.tc > h1 {
       margin: 8px 0 4px;
       font-size: clamp(1.35rem, 3.5vw, 1.65rem);
@@ -188,7 +158,43 @@
     @media print {
       body { background: #fff; }
       article.tc { border: 0; }
-      .tc-orbit-cw, .tc-orbit-ccw, .tc-orbit-slow { animation: none; }
+      .tc-logo-shell { box-shadow: none; }
+      /* Do not force hard page jumps — keep blocks together so Chrome
+         only breaks between sections, not mid-heading / mid-paragraph. */
+      h2, h3 {
+        break-after: avoid;
+        page-break-after: avoid;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .tc-keep,
+      .note,
+      address {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      /* Tall contact table may exceed one page — allow row-level breaks only. */
+      .tc-keep:has(table) {
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+      .tc-keep:has(table) > h3 {
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+      table {
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+      thead { display: table-header-group; }
+      tr, li {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      p {
+        orphans: 3;
+        widows: 3;
+      }
     }
 
   </style>
@@ -197,54 +203,15 @@
   <div class="wrap">
     <article class="tc">
       <header class="tc-brand">
-        <div class="tc-logo-stage" aria-hidden="true">
-          <svg class="tc-orbit-svg" viewBox="0 0 200 200" focusable="false">
-            <defs>
-              <filter id="tc-orb-soft" x="-40%" y="-40%" width="180%" height="180%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b"/>
-                <feMerge>
-                  <feMergeNode in="b"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
-            <g transform="translate(100,100)">
-              <g class="tc-orbit-cw" filter="url(#tc-orb-soft)">
-                <circle cx="0" cy="-92" r="7" fill="var(--blue)"/>
-                <circle cx="79.67" cy="-46" r="6" fill="var(--sen-gold)"/>
-                <circle cx="79.67" cy="46" r="6" fill="var(--ink)"/>
-                <circle cx="0" cy="92" r="7" fill="var(--gold)"/>
-                <circle cx="-79.67" cy="46" r="6" fill="var(--blue)"/>
-                <circle cx="-79.67" cy="-46" r="6" fill="#5a9fc4"/>
-              </g>
-              <g class="tc-orbit-ccw" filter="url(#tc-orb-soft)">
-                <circle cx="0" cy="-82" r="5" fill="var(--sen-gold)"/>
-                <circle cx="71.01" cy="-41" r="5" fill="var(--blue)"/>
-                <circle cx="71.01" cy="41" r="5" fill="var(--gold)"/>
-                <circle cx="0" cy="82" r="5" fill="var(--ink)"/>
-                <circle cx="-71.01" cy="41" r="5" fill="#8ebfe0"/>
-                <circle cx="-71.01" cy="-41" r="5" fill="var(--sen-gold)"/>
-              </g>
-              <g class="tc-orbit-slow" filter="url(#tc-orb-soft)">
-                <circle cx="37.27" cy="-64" r="4" fill="var(--gold)"/>
-                <circle cx="74" cy="-8" r="4" fill="var(--blue)"/>
-                <circle cx="37.27" cy="64" r="4" fill="var(--sen-gold)"/>
-                <circle cx="-37.27" cy="64" r="4" fill="var(--ink)"/>
-                <circle cx="-74" cy="-8" r="4" fill="var(--blue)"/>
-                <circle cx="-37.27" cy="-64" r="4" fill="#f4d78a"/>
-              </g>
-            </g>
-          </svg>
-          <div class="tc-logo-shell">
-            <img
-              src="/portal/F-02-1.png"
-              width="120"
-              height="120"
-              alt="clubSENsational"
-              decoding="async"
-              onerror="typeof portalBrandLogoOnError==='function'&&portalBrandLogoOnError(this)"
-            />
-          </div>
+        <div class="tc-logo-shell">
+          <img
+            src="/portal/F-02-1.png"
+            width="132"
+            height="132"
+            alt="clubSENsational"
+            decoding="async"
+            onerror="typeof portalBrandLogoOnError==='function'&&portalBrandLogoOnError(this)"
+          />
         </div>
         <p class="tc-brand-name">club<span>SEN</span>sational</p>
       </header>
@@ -643,5 +610,39 @@
       </p>
     </article>
   </div>
+  <script>
+    /* Wrap each heading + its following content so print/PDF does not split mid-section. */
+    (function () {
+      var article = document.querySelector("article.tc");
+      if (!article) return;
+      var kids = Array.prototype.slice.call(article.children);
+      var i = 0;
+      while (i < kids.length) {
+        var el = kids[i];
+        var tag = el && el.tagName ? el.tagName.toLowerCase() : "";
+        if (tag !== "h2" && tag !== "h3") {
+          i += 1;
+          continue;
+        }
+        if (el.parentNode && el.parentNode.classList && el.parentNode.classList.contains("tc-keep")) {
+          i += 1;
+          continue;
+        }
+        var wrap = document.createElement("div");
+        wrap.className = "tc-keep";
+        article.insertBefore(wrap, el);
+        wrap.appendChild(el);
+        i += 1;
+        while (i < kids.length) {
+          var next = kids[i];
+          var nt = next && next.tagName ? next.tagName.toLowerCase() : "";
+          if (nt === "h2" || nt === "h3") break;
+          wrap.appendChild(next);
+          i += 1;
+        }
+        kids = Array.prototype.slice.call(article.children);
+      }
+    })();
+  </script>
 </body>
 </html>

@@ -10,8 +10,10 @@ import {
 } from "./reenrolment_catalog.ts";
 import type { PortalInvoiceVatMode } from "./portal_tax_invoice_pdf.ts";
 import {
+  isEalingFunder,
   isHammersmithFulhamFunder,
   laBillToAdminNote,
+  EALING_BST_BILL_TO,
   resolveHfBandOverride,
   resolveHfBillToProfile,
   type LaBillToProfile,
@@ -29,6 +31,16 @@ function pickPo(data: Record<string, unknown>): string {
   return "";
 }
 
+/** True when value looks like an authority Client ID (digits), not a sheet slug. */
+function looksLikeAuthorityClientId(v: string): boolean {
+  const s = clean(v, 80);
+  if (!s) return false;
+  /* H&F / Ealing / NHS IDs are numeric (sometimes with letters). Reject pure slugs. */
+  if (/^\d{4,}$/.test(s)) return true;
+  if (/\d{4,}/.test(s) && !/^[a-z]+(?:-[a-z0-9]+)*$/i.test(s)) return true;
+  return false;
+}
+
 function pickClientId(data: Record<string, unknown>, fallback: string): string {
   for (const key of [
     "Client Id",
@@ -39,9 +51,10 @@ function pickClientId(data: Record<string, unknown>, fallback: string): string {
     "cfk_id",
   ]) {
     const s = clean(data[key], 80);
-    if (s) return s;
+    if (s && looksLikeAuthorityClientId(s)) return s;
   }
-  return fallback;
+  const fb = clean(fallback, 80);
+  return looksLikeAuthorityClientId(fb) ? fb : "";
 }
 
 export type ParticipantInvoiceFunding = {
@@ -305,6 +318,14 @@ export async function resolveLaFunderBillTo(
         dobIso,
       }),
     );
+  }
+
+  if (
+    isEalingFunder(funderBlob) ||
+    isEalingFunder(funder) ||
+    isEalingFunder(fundingLabel)
+  ) {
+    return profileToBillTo(EALING_BST_BILL_TO);
   }
 
   if (funder) {

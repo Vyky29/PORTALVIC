@@ -8,6 +8,24 @@
   }
 
   /**
+   * Office hold seats (e.g. Climbing Westway Tue/Thu 4–6 waitlist probe).
+   * Count as booked in Admin Services / Booking Portal, but must not appear on
+   * instructor Today/Week dashboards until replaced with a real client name.
+   */
+  function isOfficeHoldWaitlistClient(name) {
+    const k = String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[–—]/g, "-")
+      .replace(/\s+/g, " ");
+    if (!k) return false;
+    if (/^hold(\s|-)*(waitlist|office|seat)?$/.test(k)) return true;
+    if (/^(waitlist|office)\s*hold$/.test(k)) return true;
+    if (/^hold waitlist$/.test(k)) return true;
+    return false;
+  }
+
+  /**
    * Display-only breakdown for combined Day Centre slots (pool hour + centre),
    * e.g. Fadi: Big Pool 12.30–1 + Day Centre 1–3; Ikram: Day Centre + Big Pool +
    * Day Centre across 11–4. The static bundle carries `segments`, but the live
@@ -33,11 +51,18 @@
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
-    // Emanuel (Roberto Mon/Wed): Hub 11–12 · swim 12–1 · Hub 2–4 (gap 1–2 = Yaqoub).
+    // Michelle Tue after Manager block: Ikram 12.30–4 (no swim Tue).
+    "ikram|12.30to4": [{ time_slot: "12.30 to 4", area: "Day Centre" }],
+    // Emanuel (Roberto Mon/Fri long block): Hub 11–12 · swim 12–1 · Hub 2–4 (gap 1–2).
+    // Wednesday morning block 11–12.30: Day Centre 11–12 · Big Pool 12–12.30 (then Fadi).
     "emanuel|11to4": [
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
       { time_slot: "2 to 4", area: "Hub Room" },
+    ],
+    "emanuel|11to12.30": [
+      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "12 to 12.30", area: "Big Pool" },
     ],
     "emanuel|11to3": [
       { time_slot: "11 to 12", area: "Hub Room" },
@@ -53,14 +78,13 @@
       { time_slot: "12 to 1", area: "Big Pool" },
     ],
   };
-  // Days on which a participant's combined Day Centre block should NOT be split
-  // into the Big Pool segments (it stays a single plain "Day Centre" card).
-  // Ikram special (pool hour) Mon/Wed/Fri; Tue + Sat = plain Day Centre card.
-  var PORTAL_COMBINED_SEGMENTS_SKIP_DAYS = {
-    "ikram|11to4": ["tuesday", "saturday", "sunday"],
-    // Fadi: Mon/Wed Small Pool first hour (see day overrides below); Fri Big Pool contiguous.
-    // Tue/Thu often use explicit MADRE segments (gap for Zakariya) — skip synth.
-    "fadi|12.30to3": ["tuesday", "thursday"],
+  // Days with no pool hour inside the block: SPECIAL card = one Day Centre /
+  // Hub segment only. Fadi + Ikram swim Mon/Wed/Fri only (like Emanuel);
+  // Tue/Thu = centre only.
+  var PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS = {
+    "ikram|11to4": ["tuesday", "thursday", "saturday", "sunday"],
+    "ikram|11to3": ["tuesday", "thursday", "saturday", "sunday"],
+    "fadi|12.30to3": ["tuesday", "thursday", "saturday", "sunday"],
   };
   var PORTAL_COMBINED_SEGMENTS_DAY_OVERRIDE = {
     "fadi|12.30to3|monday": [
@@ -76,39 +100,41 @@
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
   };
-  function portalSynthesizeCombinedSegments(nameLower, service, timeSlot, day) {
+  function portalSynthesizeCombinedSegments(nameLower, service, timeSlot, day, areaHint) {
     const svc = String(service || "").trim().toLowerCase();
     if (svc !== "day centre") return null;
-    const slot = String(timeSlot || "").replace(/\s+/g, "").toLowerCase();
+    const timeLabel = String(timeSlot || "").replace(/\s+/g, " ").trim();
+    if (!timeLabel) return null;
+    const slot = timeLabel.replace(/\s+/g, "").toLowerCase();
     const name = String(nameLower || "").trim().toLowerCase();
     const dayKey = String(day || "").trim().toLowerCase();
     const key = name + "|" + slot;
-    const skipDays = PORTAL_COMBINED_SEGMENTS_SKIP_DAYS[key];
-    if (skipDays && skipDays.indexOf(dayKey) !== -1) return null;
+    const areaFallback =
+      name === "manager"
+        ? "Hub · Manager"
+        : String(areaHint || "").trim() || "Day Centre";
+    const plainDays = PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS[key];
+    if (plainDays && plainDays.indexOf(dayKey) !== -1) {
+      return [{ time_slot: timeLabel, area: areaFallback }];
+    }
     const dayHit = PORTAL_COMBINED_SEGMENTS_DAY_OVERRIDE[key + "|" + dayKey];
     if (dayHit) return dayHit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; });
     const hit = PORTAL_COMBINED_DAY_CENTRE_SEGMENTS[key];
-    return hit ? hit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; }) : null;
+    if (hit) return hit.map(function (s) { return { time_slot: s.time_slot, area: s.area }; });
+    /* Any other Day Centre slot → SPECIAL card (name left, area + time right). */
+    return [{ time_slot: timeLabel, area: areaFallback }];
   }
 
   /**
    * Display-only merge of a participant's TWO same-day Day Centre blocks into ONE
-   * segmented card. Emanuel Mon/Wed/Fri: Hub 11–12 · Big Pool 12–1 · Hub 2–4.
+   * segmented card. Emanuel Mon/Fri: Hub 11–12 · Big Pool 12–1 · Hub 2–4.
+   * Wednesday is separate blocks (11–12.30 + 3–4) with Fadi in between — do not merge.
    * Pay is driven by the continuous shift band, so collapsing the two blocks for display
    * does not change hours; the merged slot is one feedback session (like other combined
    * Day Centre cards). Keyed by canonical clientId + weekday.
    */
   var PORTAL_COMBINED_MULTIBLOCK = {
     "emanuel|monday": {
-      blockStarts: ["11:00", "14:00"],
-      merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
-      segments: [
-        { time_slot: "11 to 12", area: "Hub Room" },
-        { time_slot: "12 to 1", area: "Big Pool" },
-        { time_slot: "2 to 4", area: "Hub Room" },
-      ],
-    },
-    "emanuel|wednesday": {
       blockStarts: ["11:00", "14:00"],
       merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
       segments: [
@@ -198,6 +224,77 @@
     const start = `${String(ah).padStart(2, "0")}:${String(a.m).padStart(2, "0")}`;
     const end = `${String(bh).padStart(2, "0")}:${String(b.m).padStart(2, "0")}`;
     return { start, end };
+  }
+
+  function hmStringToMinutes(hm) {
+    const m = String(hm || "")
+      .trim()
+      .match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return 0;
+    return (parseInt(m[1], 10) || 0) * 60 + (parseInt(m[2], 10) || 0);
+  }
+
+  function minutesToHmString(totalMin) {
+    const h = Math.floor(totalMin / 60);
+    const min = totalMin % 60;
+    return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+  }
+
+  /** MADRE-style "5.30" / "6" tokens for staff cards. */
+  function minutesToMadreTimeToken(totalMin) {
+    let h24 = Math.floor(totalMin / 60);
+    const min = totalMin % 60;
+    let h = h24;
+    if (h24 > 12) h = h24 - 12;
+    if (h24 === 0) h = 12;
+    if (min === 0) return String(h);
+    return h + "." + String(min).padStart(2, "0");
+  }
+
+  function isAquaticOpenSlotService(service) {
+    const s = String(service || "")
+      .toLowerCase()
+      .replace(/[\s_-]+/g, " ");
+    return s.indexOf("aquatic") >= 0 || s.indexOf("swim") >= 0;
+  }
+
+  /**
+   * Aquatic bookable units are 30'. A named 60'/90' client keeps one card; when the
+   * seat is empty (NO PARTICIPANT), expand to one open card per 30' so booking /
+   * covers can take each half separately.
+   */
+  function expandOpenAquaticHalfHourSessions(baseSession, activityLabel) {
+    const single = Object.assign({}, baseSession, {
+      clientId: "available",
+      activity: activityLabel,
+      status: "available",
+    });
+    const startM = hmStringToMinutes(baseSession && baseSession.start);
+    const endM = hmStringToMinutes(baseSession && baseSession.end);
+    const dur = endM - startM;
+    if (
+      !(dur > 30) ||
+      !isAquaticOpenSlotService(activityLabel || (baseSession && baseSession.rosterService))
+    ) {
+      return [single];
+    }
+    const out = [];
+    for (let m = startM; m < endM; m += 30) {
+      const e = Math.min(m + 30, endM);
+      if (e <= m) break;
+      out.push(
+        Object.assign({}, baseSession, {
+          start: minutesToHmString(m),
+          end: minutesToHmString(e),
+          timeSlotLabel:
+            minutesToMadreTimeToken(m) + " to " + minutesToMadreTimeToken(e),
+          clientId: "available",
+          activity: activityLabel,
+          status: "available",
+        }),
+      );
+    }
+    return out.length ? out : [single];
   }
 
   function dayNameToday() {
@@ -704,6 +801,8 @@
         nameLower === "no participant" ||
         nameLower === "noclient" ||
         nameLower === "no_participant";
+      // Fictitious office holds stay off the worker dashboard (waitlist probe seats).
+      if (isOfficeHoldWaitlistClient(nameRaw)) return;
       const timeSlotLabel = String(row.time_slot || "").trim();
       const rosterService = String(row.service || "").trim();
       const rosterArea =
@@ -745,13 +844,21 @@
         String(staffIdForMatch || "").trim().toLowerCase();
       const staffKeyOut = stored || String(selfKey).toLowerCase();
 
-      if (
+      // Only enforce service/date gates for rows inside this term's calendar view.
+      // Summer MADRE dated rows (Jun–Jul) stay in the model as weekday standing
+      // templates for Autumn days (same projection as admin Services).
+      const ptd =
+        typeof window !== "undefined" ? window.PortalTermCalendarDashboard : null;
+      const rowInTermView =
         sessionDate &&
         /^\d{4}-\d{2}-\d{2}$/.test(sessionDate) &&
-        typeof window !== "undefined" &&
-        window.PortalTermCalendarDashboard &&
-        typeof window.PortalTermCalendarDashboard.staffSessionServiceActiveOnDate === "function" &&
-        !window.PortalTermCalendarDashboard.staffSessionServiceActiveOnDate(
+        ptd &&
+        typeof ptd.staffDateInView === "function" &&
+        ptd.staffDateInView(sessionDate, staffKeyOut);
+      if (
+        rowInTermView &&
+        typeof ptd.staffSessionServiceActiveOnDate === "function" &&
+        !ptd.staffSessionServiceActiveOnDate(
           staffKeyOut,
           { rosterService, service: rosterService },
           sessionDate
@@ -783,10 +890,16 @@
         // and then revert to a single block after the live roster refresh.
         // Synthesize the same display-only breakdown so the combined card is stable
         // regardless of source. The slot stays ONE session for feedback / pay.
-        const synthSegments = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel, day);
+        const synthSegments = portalSynthesizeCombinedSegments(
+          nameLower,
+          rosterService,
+          timeSlotLabel,
+          day,
+          rosterArea
+        );
         if (synthSegments) baseSession.segments = synthSegments;
       }
-      /* Prefer current Emanuel Mon/Wed/Fri SPECIAL shape even if an older MADRE/bundle
+      /* Prefer current Emanuel Mon/Fri SPECIAL shape even if an older MADRE/bundle
          row still carries a stale 11–4 contiguous 1–4 Day Centre third segment. */
       if (
         nameLower === "emanuel" &&
@@ -794,10 +907,30 @@
         String(timeSlotLabel || "").replace(/\s+/g, "").toLowerCase() === "11to4"
       ) {
         const dayKey = String(day || "").trim().toLowerCase();
-        if (dayKey === "monday" || dayKey === "wednesday" || dayKey === "friday") {
-          const prefer = portalSynthesizeCombinedSegments(nameLower, rosterService, timeSlotLabel, day);
+        if (dayKey === "monday" || dayKey === "friday") {
+          const prefer = portalSynthesizeCombinedSegments(
+            nameLower,
+            rosterService,
+            timeSlotLabel,
+            day,
+            rosterArea
+          );
           if (prefer) baseSession.segments = prefer;
         }
+      }
+      /* Day Centre always uses SPECIAL card layout (segments). */
+      if (
+        String(rosterService || "").trim().toLowerCase() === "day centre" &&
+        !(Array.isArray(baseSession.segments) && baseSession.segments.length)
+      ) {
+        const fallback = portalSynthesizeCombinedSegments(
+          nameLower,
+          rosterService,
+          timeSlotLabel,
+          day,
+          rosterArea
+        );
+        if (fallback) baseSession.segments = fallback;
       }
       const instructorsRaw = String(row.instructors || "").trim();
       if (
@@ -863,25 +996,19 @@
 
       if (isOpenSlot) {
         if (!timeSlotLabel) return;
-        sessionsModel.push(
-          Object.assign({}, baseSession, {
-            clientId: "available",
-            activity: rosterService || "Swimming",
-            status: "available",
-          })
-        );
+        const openActivity = rosterService || "Swimming";
+        expandOpenAquaticHalfHourSessions(baseSession, openActivity).forEach(function (sess) {
+          sessionsModel.push(sess);
+        });
         return;
       }
 
       if (!nameRaw) {
         if (!timeSlotLabel) return;
-        sessionsModel.push(
-          Object.assign({}, baseSession, {
-            clientId: "available",
-            activity: rosterService || "Swimming",
-            status: "available",
-          })
-        );
+        const openActivity = rosterService || "Swimming";
+        expandOpenAquaticHalfHourSessions(baseSession, openActivity).forEach(function (sess) {
+          sessionsModel.push(sess);
+        });
         return;
       }
 
@@ -958,10 +1085,12 @@
     mergeCompanyClientsFromRosterRows(built.clientNotesById, allRows);
 
     let clientsInfo = (source && source.clientsInfo) || [];
+    // Bundle ships a tiny Teflon demo clientsInfo (4 rows). Prefer the full
+    // Clients Info embed whenever it is richer so real participants are not blank.
     if (
-      (!clientsInfo || !clientsInfo.length) &&
       typeof window !== "undefined" &&
-      Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)
+      Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS) &&
+      window.PORTAL_CLIENTS_INFO_ROWS.length > (clientsInfo.length || 0)
     ) {
       clientsInfo = window.PORTAL_CLIENTS_INFO_ROWS;
     }

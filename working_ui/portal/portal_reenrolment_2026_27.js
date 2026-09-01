@@ -7,11 +7,17 @@
 
   var ACADEMIC_YEAR = "2026-27";
   var SESSION_KEY = "clubsens_parent_portal_session_v1";
+  /* General re-enrolment closed 22 Jul. Soft-hold (Erik/Agata 176) open through 31 Aug 23:59. */
   var RE_ENROL_DEADLINE_ISO = "2026-07-22";
   var RE_ENROL_DEADLINE_LABEL = "Wednesday 22 July 2026";
-  /** Day after deadline: unconfirmed places released to new-client booking. */
-  var RE_ENROL_RELEASE_LABEL = "Thursday 23 July 2026";
-  /** Bank transfer: the first Autumn payment must reach us before term starts. */
+  var RE_ENROL_SOFT_HOLD_DEADLINE_ISO = "2026-08-31";
+  var RE_ENROL_SOFT_HOLD_DEADLINE_LABEL = "Monday 31 August 2026";
+  var RE_ENROL_SOFT_HOLD_CONTACT_IDS = { "176": true };
+  /** Day after soft-hold deadline: unconfirmed soft-hold places released. */
+  var RE_ENROL_RELEASE_LABEL = "Tuesday 1 September 2026";
+  var RE_ENROL_GENERAL_RELEASE_LABEL = "Thursday 23 July 2026";
+  /** Bank transfer: first Autumn payment due Sat 15 Aug 2026 (inclusive, London end of day).
+   *  Unpaid seats auto-release from Sun 16 Aug 2026 00:00 Europe/London onto Booking Portal. */
   var RE_BANK_FIRST_DUE = "by 15 August 2026";
   var RE_BANK_FIRST_DUE_SHORT = "15 August 2026";
   /** Direct Payment (GoCardless): always on the 1st — Autumn starts 1 September. */
@@ -735,20 +741,49 @@
     );
   }
 
-  function isReEnrolSubmissionOpen() {
-    var end = new Date(RE_ENROL_DEADLINE_ISO + "T23:59:59");
+  function isReEnrolSoftHoldContact(contactId) {
+    return !!RE_ENROL_SOFT_HOLD_CONTACT_IDS[String(contactId || "").trim()];
+  }
+
+  function reEnrolDeadlineIsoFor(contactId) {
+    return isReEnrolSoftHoldContact(contactId)
+      ? RE_ENROL_SOFT_HOLD_DEADLINE_ISO
+      : RE_ENROL_DEADLINE_ISO;
+  }
+
+  function reEnrolDeadlineLabelFor(contactId) {
+    return isReEnrolSoftHoldContact(contactId)
+      ? RE_ENROL_SOFT_HOLD_DEADLINE_LABEL
+      : RE_ENROL_DEADLINE_LABEL;
+  }
+
+  function reEnrolReleaseLabelFor(contactId) {
+    return isReEnrolSoftHoldContact(contactId)
+      ? RE_ENROL_RELEASE_LABEL
+      : RE_ENROL_GENERAL_RELEASE_LABEL;
+  }
+
+  function isReEnrolSubmissionOpen(contactId) {
+    var cid =
+      contactId != null && String(contactId).trim()
+        ? String(contactId).trim()
+        : String((state && state.contactId) || "").trim();
+    var end = new Date(reEnrolDeadlineIsoFor(cid) + "T23:59:59");
     return Date.now() <= end.getTime();
   }
 
   function renderReEnrolDeadlineBanner() {
-    if (isReEnrolSubmissionOpen()) {
+    var cid = String((state && state.contactId) || "").trim();
+    var deadlineLabel = reEnrolDeadlineLabelFor(cid);
+    var releaseLabel = reEnrolReleaseLabelFor(cid);
+    if (isReEnrolSubmissionOpen(cid)) {
       return (
         '<div class="re-banner re-banner--deadline">' +
         "Review your current programme and confirm for September 2026. " +
         "<strong>Submit by " +
-        esc(RE_ENROL_DEADLINE_LABEL) +
+        esc(deadlineLabel) +
         "</strong> — the last day to respond. From " +
-        esc(RE_ENROL_RELEASE_LABEL) +
+        esc(releaseLabel) +
         ", places not confirmed will be released and unconfirmed slots may be offered to new clients on our booking website. " +
         "Payments follow from mid-August (bank transfer) or September (Direct Payment)." +
         "</div>"
@@ -757,9 +792,9 @@
     return (
       '<div class="re-banner re-banner--warn">' +
       "<strong>Re-enrolment closed on " +
-      esc(RE_ENROL_DEADLINE_LABEL) +
+      esc(deadlineLabel) +
       ".</strong> From " +
-      esc(RE_ENROL_RELEASE_LABEL) +
+      esc(releaseLabel) +
       ", unconfirmed places may be offered to new clients. Contact info@clubsensational.org if you still need to confirm 2026/27." +
       "</div>"
     );
@@ -814,7 +849,7 @@
               " monthly Direct Payments for " +
               termLabel +
               " only. Later terms when you reconfirm. First collection 1 September when billing Autumn."
-          : "Same programme total — ten Direct Payments (Autumn 4, Spring 3, Summer 3). First collection 1 September 2026; then on the 1st of each month through June.";
+          : "Same programme total — eleven Direct Payments (Autumn 4, Spring 3, Summer 4). First collection 1 September 2026; then on the 1st of each month through July.";
       }
       if (schedCode === "monthly_term") {
         return termOnly
@@ -1547,8 +1582,9 @@
     }
     if (scheduleCode === "monthly_10") {
       if (term === "autumn") return 4;
-      if (term === "spring" || term === "summer") return 3;
-      return 10;
+      if (term === "spring") return 3;
+      if (term === "summer") return 4;
+      return 11;
     }
     if (scheduleCode === "term_flexi") return termOnly ? 2 : 6;
     if (scheduleCode === "term_3") return termOnly ? 1 : 3;
@@ -1650,7 +1686,7 @@
           if (o.code !== "monthly_10") return o;
           return {
             code: o.code,
-            label: "GoCardless (monthly ×10) · £1.50 / instalment",
+            label: "GoCardless (monthly ×11) · £1.50 / instalment",
           };
         })
         .sort(function (a, b) {
@@ -2058,10 +2094,10 @@
       renderRelevantInfoHtml(payCode, editing) +
       "</div></div>" +
       '<p class="re-muted re-funding-foot">Re-enrolment closes ' +
-      esc(RE_ENROL_DEADLINE_LABEL) +
+      esc(reEnrolDeadlineLabelFor(String((state && state.contactId) || ""))) +
       " (last day to respond). From " +
-      esc(RE_ENROL_RELEASE_LABEL) +
-      ", unconfirmed places may be released to new clients on our booking website. First Bank Transfer / Apple Pay due dates from mid-August (first Autumn payment by 15 August); GoCardless collections on the 1st from 1 September — see schedule above.</p>" +
+      esc(reEnrolReleaseLabelFor(String((state && state.contactId) || ""))) +
+      ", unconfirmed places may be released to new clients on our booking website. First Bank Transfer / Apple Pay due dates from mid-August (first Autumn payment by Saturday 15 August inclusive — places unpaid after that night are released from Sunday 16 August 00:00 onto Booking Portal); GoCardless collections on the 1st from 1 September — see schedule above.</p>" +
       "</div></div>" +
       renderReenrolFarewellHtml(data) +
       "</div>"
@@ -2118,7 +2154,7 @@
       { code: "term_flexi", label: "Flexi: 2 per term" },
       {
         code: "monthly_10",
-        label: "GoCardless (monthly ×10) · £1.50 / instalment",
+        label: "GoCardless (monthly ×11) · £1.50 / instalment",
       },
     ],
     own_way_flexible: [
@@ -2161,8 +2197,8 @@
               " only. First due by 15 August 2026 when billing Autumn. Later terms when you reconfirm.";
       }
       return isGc
-        ? "Regular plan: ten Direct Payments — Autumn 4, Spring 3, Summer 3. First collection 1 September 2026; then on the 1st of each month through June. Same programme total; £1.50 fee per instalment."
-        : "Regular plan: ten invoices — Autumn 4, Spring 3, Summer 3 (September–June). First due by 15 August 2026; then on the 1st. Pay each month from the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee). Same programme total; no admin fee if you pay on time.";
+        ? "Regular plan: eleven Direct Payments — Autumn 4, Spring 3, Summer 4. First collection 1 September 2026; then on the 1st of each month through July. Same programme total; £1.50 fee per instalment."
+        : "Regular plan: eleven invoices — Autumn 4, Spring 3, Summer 4 (September–July). First due by 15 August 2026; then on the 1st. Pay each month from the parent portal by bank transfer (no fee) or Card / Apple Pay (small fee). Same programme total; no admin fee if you pay on time.";
     }
     if (code === "monthly_term") {
       return isGc
@@ -3706,9 +3742,9 @@
         $("reFormNotice"),
         "error",
         "Re-enrolment closed on " +
-          RE_ENROL_DEADLINE_LABEL +
+          reEnrolDeadlineLabelFor(String((state && state.contactId) || "")) +
           ". From " +
-          RE_ENROL_RELEASE_LABEL +
+          reEnrolReleaseLabelFor(String((state && state.contactId) || "")) +
           ", unconfirmed places may be offered to new clients. Email info@clubsensational.org for help.",
       );
       return;

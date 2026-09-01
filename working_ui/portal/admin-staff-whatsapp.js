@@ -9,6 +9,13 @@
 
   var SEEN_STORE_KEY = "portalStaffWaAdminSeenV1";
   var MAX_ATTACH_BYTES = 4 * 1024 * 1024;
+  var WA_TEMPLATE_BODY_MAX = 700;
+  /** Same Meta Utility shell as Family cold outbound (portal_parent_update / staff template). */
+  var STAFF_COLD_TPL = {
+    prefix: "Hello,\n",
+    suffix: "\nThank you.",
+    label: "Hello…",
+  };
 
   var state = {
     directory: [],
@@ -24,6 +31,8 @@
     recordChunks: [],
     mobileShowThread: false,
     threadRefresh: { sig: "", deferRefresh: false },
+    threadLoadSeq: 0,
+    dirRenderSig: "",
   };
 
   var cfg = {
@@ -364,7 +373,8 @@
       '<div class="portal-staff-wa-admin__chat-head" id="portalStaffWaHead">Select a staff member</div>' +
       '<div class="portal-staff-wa-admin__thread" id="portalStaffWaMsgs"></div>' +
       '<form class="portal-staff-wa-admin__composer" id="portalStaffWaForm">' +
-      '<div class="portal-staff-wa-admin__tools">' +
+      '<div id="portalStaffWaTplBanner" class="portal-staff-wa-admin__tpl-banner" hidden></div>' +
+      '<div class="portal-staff-wa-admin__tools" id="portalStaffWaTools">' +
       '<input type="file" id="portalStaffWaFile" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" hidden />' +
       toolBtnHtml("portalStaffWaAttachPhoto", "Photo", ICO_PHOTO, false) +
       toolBtnHtml("portalStaffWaAttachDoc", "File", ICO_FILE, false) +
@@ -372,7 +382,15 @@
       toolBtnHtml("portalStaffWaClearAttach", "Clear", ICO_CLEAR, true) +
       '<span class="portal-staff-wa-admin__attach-preview muted" id="portalStaffWaAttachPreview"></span>' +
       "</div>" +
+      '<p class="portal-staff-wa-admin__attach-blocked muted" id="portalStaffWaAttachBlocked" hidden role="status"></p>' +
+      '<div class="portal-staff-wa-admin__tpl-shell" id="portalStaffWaTplShell" hidden>' +
+      '<div class="portal-staff-wa-admin__tpl-fixed" id="portalStaffWaTplPrefix" aria-hidden="true"></div>' +
+      '<label class="portal-staff-wa-admin__tpl-mid-lab muted" for="portalStaffWaDraft">Editable {{1}}</label>' +
+      "</div>" +
       '<textarea id="portalStaffWaDraft" rows="2" placeholder="Message…" maxlength="4000"></textarea>' +
+      '<div class="portal-staff-wa-admin__tpl-fixed" id="portalStaffWaTplSuffix" hidden aria-hidden="true"></div>' +
+      '<p class="portal-staff-wa-admin__tpl-len muted" id="portalStaffWaTplLen" hidden></p>' +
+      '<div class="portal-staff-wa-admin__tpl-preview" id="portalStaffWaTplPreview" hidden></div>' +
       '<button type="submit" class="btn" id="portalStaffWaSend">Send WhatsApp</button>' +
       "</form>" +
       "</section>" +
@@ -394,7 +412,29 @@
     return staffWaLastActivityAt(l);
   }
 
+  function staffUsernameKey(v) {
+    return String(v || "").trim().toLowerCase();
+  }
+
+  function isComposerFocused() {
+    try {
+      var ae = document.activeElement;
+      if (!ae) return false;
+      var id = String(ae.id || "");
+      return id === "portalStaffWaDraft" || id === "portalStaffWaSend";
+    } catch (_e) {
+      return false;
+    }
+  }
+
   function compareStaffWaDirectory(a, b) {
+    /* Keep the open chat pinned so 5s poll re-sort does not jump the selection. */
+    var sel = staffUsernameKey(state.selected);
+    if (sel) {
+      var aSel = staffUsernameKey(a && a.username) === sel ? 0 : 1;
+      var bSel = staffUsernameKey(b && b.username) === sel ? 0 : 1;
+      if (aSel !== bSel) return aSel - bSel;
+    }
     /* Unread inbound first (any date), then most recent received, then any activity. */
     var ua = isLeaderUnread(a) ? 0 : 1;
     var ub = isLeaderUnread(b) ? 0 : 1;
@@ -430,13 +470,32 @@
     if (!host) return;
     if (!state.directory.length) {
       host.innerHTML = '<p class="muted">No staff found.</p>';
+      state.dirRenderSig = "";
       renderCount();
       return;
     }
     var sorted = state.directory.slice().sort(compareStaffWaDirectory);
+    var sig = sorted
+      .map(function (l) {
+        return [
+          staffUsernameKey(l.username),
+          isLeaderUnread(l) ? "1" : "0",
+          staffWaListWhen(l) || "",
+          String(l.lastInboundPreview || ""),
+          staffUsernameKey(state.selected) === staffUsernameKey(l.username) ? "1" : "0",
+        ].join("\x1f");
+      })
+      .join("\n");
+    if (sig === state.dirRenderSig) {
+      renderCount();
+      return;
+    }
+    state.dirRenderSig = sig;
+    var savedScroll = host.scrollTop;
     host.innerHTML = sorted
       .map(function (l) {
-        var active = state.selected === l.username ? " is-active" : "";
+        var active =
+          staffUsernameKey(state.selected) === staffUsernameKey(l.username) ? " is-active" : "";
         var unread = isLeaderUnread(l);
         var name = displayNameForStaff(l);
         var when = staffWaListWhen(l);
@@ -502,6 +561,7 @@
         );
       })
       .join("");
+    host.scrollTop = savedScroll;
     renderCount();
   }
 
@@ -583,9 +643,10 @@
   }
 
   function openStaffThread(username) {
-    var key = String(username || "").trim();
+    var key = staffUsernameKey(username);
     if (!key) return;
     state.threadRefresh.sig = "";
+    state.dirRenderSig = "";
     state.mobileShowThread = true;
     syncMobileLayout();
     void loadThread(key).then(function () {
@@ -685,7 +746,7 @@
     var head = document.getElementById("portalStaffWaHead");
     if (head) {
       var lead = state.directory.find(function (l) {
-        return l.username === state.selected;
+        return staffUsernameKey(l.username) === staffUsernameKey(state.selected);
       });
       if (lead) {
         head.innerHTML =
@@ -703,6 +764,7 @@
     if (!host) return;
     if (!state.selected) {
       host.innerHTML = '<p class="muted">Choose a staff member on the left.</p>';
+      refreshComposer();
       return;
     }
     if (state.loading) {
@@ -712,9 +774,11 @@
     if (!state.messages.length) {
       host.innerHTML = '<p class="muted">No messages yet.</p>';
       state.threadRefresh.sig = "";
+      refreshComposer();
       return;
     }
     var savedScroll = host.scrollTop;
+    var nearBottom = host.scrollHeight - host.scrollTop - host.clientHeight < 80;
     var html = state.messages
       .map(function (m) {
         var dir = m.direction === "inbound" ? "in" : "out";
@@ -799,8 +863,13 @@
         }
       });
     }
-    if (updated) host.scrollTop = host.scrollHeight;
-    else host.scrollTop = savedScroll;
+    if (updated) {
+      if (!fromRefresh || nearBottom) host.scrollTop = host.scrollHeight;
+      else host.scrollTop = savedScroll;
+    } else host.scrollTop = savedScroll;
+    if (!fromRefresh || !isComposerFocused()) {
+      refreshComposer();
+    }
   }
 
   async function loadDirectory(opts) {
@@ -814,9 +883,10 @@
       return;
     }
     state.directory = Array.isArray(res.data.directory) ? res.data.directory : [];
-    if (state.selected) {
+    /* Do not mark-seen on silent poll — that re-sorted the list and jumped the open chat. */
+    if (state.selected && !opts.silent) {
       var open = state.directory.find(function (l) {
-        return l.username === state.selected;
+        return staffUsernameKey(l.username) === staffUsernameKey(state.selected);
       });
       if (open && open.lastInboundAt) {
         markThreadSeen(state.selected, open.lastInboundAt);
@@ -848,7 +918,9 @@
 
   async function loadThread(username, opts) {
     opts = opts || {};
-    state.selected = String(username || "");
+    var want = staffUsernameKey(username);
+    var seq = ++state.threadLoadSeq;
+    state.selected = want;
     // Do not force thread mode on silent poll refresh — that would reopen chat after Back.
     if (state.selected && !opts.silent && !opts.keepLoadingQuiet) {
       state.mobileShowThread = true;
@@ -860,7 +932,10 @@
     } else {
       syncMobileLayout();
     }
-    var res = await api("portal-staff-messages-list", { staffUsername: state.selected });
+    var res = await api("portal-staff-messages-list", { staffUsername: want });
+    if (seq !== state.threadLoadSeq || staffUsernameKey(state.selected) !== want) {
+      return;
+    }
     state.loading = false;
     if (!res.ok) {
       if (!opts.silent) {
@@ -879,9 +954,10 @@
         if (at > lastOut) lastOut = at;
       }
     });
-    if (lastIn) markThreadSeen(state.selected, lastIn);
+    if (lastIn && !opts.silent) markThreadSeen(want, lastIn);
+    else if (lastIn && opts.silent && !isComposerFocused()) markThreadSeen(want, lastIn);
     state.directory = state.directory.map(function (l) {
-      if (l.username !== state.selected) return l;
+      if (staffUsernameKey(l.username) !== want) return l;
       return Object.assign({}, l, {
         lastInboundAt: lastIn || l.lastInboundAt || null,
         lastOutboundAt: lastOut || l.lastOutboundAt || null,
@@ -923,6 +999,105 @@
     return false;
   }
 
+  function staffTplPreviewHtml(mid) {
+    var body = String(mid || "").trim() || "…";
+    return (
+      '<div class="portal-staff-wa-admin__tpl-preview-lab">WhatsApp will send · ' +
+      esc(STAFF_COLD_TPL.label) +
+      "</div>" +
+      '<div class="portal-staff-wa-admin__tpl-preview-body">' +
+      esc(String(STAFF_COLD_TPL.prefix || "").trim()) +
+      '<span class="portal-staff-wa-admin__tpl-var">' +
+      esc(body).replace(/\r\n/g, "\n").replace(/\n/g, "<br>") +
+      "</span>" +
+      esc(String(STAFF_COLD_TPL.suffix || "").trim()) +
+      "</div>"
+    );
+  }
+
+  function updateStaffTplPreview() {
+    var draftEl = document.getElementById("portalStaffWaDraft");
+    var prev = document.getElementById("portalStaffWaTplPreview");
+    var lenEl = document.getElementById("portalStaffWaTplLen");
+    if (!prev || prev.hidden) return;
+    var mid = draftEl ? String(draftEl.value || "") : "";
+    prev.innerHTML = staffTplPreviewHtml(mid);
+    if (lenEl && !lenEl.hidden) {
+      var n = mid.trim().length;
+      lenEl.textContent = n + " / " + WA_TEMPLATE_BODY_MAX + " characters in {{1}}";
+      lenEl.classList.toggle("is-over", n > WA_TEMPLATE_BODY_MAX);
+    }
+  }
+
+  function refreshComposer() {
+    var needsTpl = !!state.selected && !threadHasOpenWhatsappSession();
+    var form = document.getElementById("portalStaffWaForm");
+    var banner = document.getElementById("portalStaffWaTplBanner");
+    var shell = document.getElementById("portalStaffWaTplShell");
+    var prefix = document.getElementById("portalStaffWaTplPrefix");
+    var suffix = document.getElementById("portalStaffWaTplSuffix");
+    var lenEl = document.getElementById("portalStaffWaTplLen");
+    var prev = document.getElementById("portalStaffWaTplPreview");
+    var draftEl = document.getElementById("portalStaffWaDraft");
+    var sendBtn = document.getElementById("portalStaffWaSend");
+    var tools = document.getElementById("portalStaffWaTools");
+    var attachBlocked = document.getElementById("portalStaffWaAttachBlocked");
+    if (form) form.classList.toggle("portal-staff-wa-admin__composer--tpl", needsTpl);
+    if (banner) {
+      banner.hidden = !needsTpl;
+      if (needsTpl) {
+        banner.innerHTML =
+          "<strong>Needs Meta template</strong> — no open 24h WhatsApp window. " +
+          "Edit only <code>{{1}}</code> below; Hello / Thank you are fixed. " +
+          "<strong>PDF / photo / voice cannot be attached on a cold template</strong> — Meta only allows free attachments after they reply (or send the file by email).";
+      }
+    }
+    if (shell) shell.hidden = !needsTpl;
+    if (prefix) {
+      prefix.hidden = !needsTpl;
+      prefix.textContent = String(STAFF_COLD_TPL.prefix || "").trim();
+    }
+    if (suffix) {
+      suffix.hidden = !needsTpl;
+      suffix.textContent = String(STAFF_COLD_TPL.suffix || "").trim();
+    }
+    if (lenEl) lenEl.hidden = !needsTpl;
+    if (prev) {
+      prev.hidden = !needsTpl;
+      if (needsTpl) updateStaffTplPreview();
+    }
+    if (draftEl) {
+      draftEl.maxLength = needsTpl ? WA_TEMPLATE_BODY_MAX : 4000;
+      draftEl.placeholder = needsTpl
+        ? "Write {{1}} here — blank line between paragraphs…"
+        : "Message…";
+      draftEl.rows = needsTpl ? 4 : 2;
+    }
+    if (sendBtn) {
+      sendBtn.textContent = needsTpl ? "Send template" : "Send WhatsApp";
+    }
+    if (needsTpl && state.attach) {
+      clearAttach();
+      syncClearAttachBtn();
+    }
+    if (tools) {
+      tools.hidden = !!needsTpl;
+      tools.querySelectorAll("button").forEach(function (b) {
+        if (b.id === "portalStaffWaClearAttach") return;
+        b.disabled = !!state.sending;
+        b.title = "";
+      });
+    }
+    if (attachBlocked) {
+      attachBlocked.hidden = !needsTpl;
+      if (needsTpl) {
+        attachBlocked.innerHTML =
+          "No Photo / File / Voice here until they message you back (opens the 24h window). " +
+          "To send a <strong>PDF now</strong>: email it, or ask them to reply “Hi” on WhatsApp first, then attach.";
+      }
+    }
+  }
+
   function latestInboundContextWaId() {
     for (var i = state.messages.length - 1; i >= 0; i--) {
       var m = state.messages[i];
@@ -946,7 +1121,7 @@
       return;
     }
     var lead = state.directory.find(function (l) {
-      return l.username === state.selected;
+      return staffUsernameKey(l.username) === staffUsernameKey(state.selected);
     });
     if (lead && !lead.hasPhone) {
       cfg.toast("This leader has no phone_e164 on staff_profiles yet");
@@ -959,6 +1134,14 @@
       sendBody = "[media]";
     }
     if (!openSession) {
+      if (sendBody.trim().length > WA_TEMPLATE_BODY_MAX) {
+        cfg.toast(
+          "Message too long for WhatsApp template — keep {{1}} under " +
+            WA_TEMPLATE_BODY_MAX +
+            " characters",
+        );
+        return;
+      }
       cfg.toast("No open WhatsApp session — sending via approved template…");
     }
     state.sending = true;
@@ -1068,12 +1251,18 @@
         return;
       }
       if (document.visibilityState && document.visibilityState !== "visible") return;
+      /* While typing, only refresh the directory quietly — never reload the open thread. */
+      if (isComposerFocused() || state.sending || state.recording) {
+        void loadDirectory({ silent: true, notifyNew: true });
+        return;
+      }
+      var keepSelected = staffUsernameKey(state.selected);
       void loadDirectory({ silent: true, notifyNew: true }).then(function () {
-        if (state.selected) {
-          void loadThread(state.selected, { silent: true, keepLoadingQuiet: true });
+        if (keepSelected && staffUsernameKey(state.selected) === keepSelected) {
+          void loadThread(keepSelected, { silent: true, keepLoadingQuiet: true });
         }
       });
-    }, 5000);
+    }, 12000);
   }
 
   function stopLiveRefresh() {
@@ -1101,6 +1290,30 @@
     });
     var form = document.getElementById("portalStaffWaForm");
     if (form) form.addEventListener("submit", sendMessage);
+
+    var draftEl = document.getElementById("portalStaffWaDraft");
+    if (draftEl && draftEl.getAttribute("data-enter-bound") !== "1") {
+      draftEl.setAttribute("data-enter-bound", "1");
+      draftEl.setAttribute("enterkeyhint", "send");
+      draftEl.addEventListener("input", function () {
+        updateStaffTplPreview();
+      });
+      draftEl.addEventListener("keydown", function (ev) {
+        if (ev.key === " " || ev.code === "Space" || ev.key === "Spacebar") return;
+        if (ev.isComposing || ev.keyCode === 229) return;
+        if (
+          (ev.key === "Enter" || ev.key === "NumpadEnter") &&
+          !ev.shiftKey &&
+          !ev.altKey &&
+          !ev.ctrlKey &&
+          !ev.metaKey
+        ) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          sendMessage(ev);
+        }
+      });
+    }
 
     var fileInput = document.getElementById("portalStaffWaFile");
     var photoBtn = document.getElementById("portalStaffWaAttachPhoto");

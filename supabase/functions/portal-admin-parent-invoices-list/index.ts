@@ -15,6 +15,7 @@ import {
   invoiceFundingCategoryLabel,
   resolveParticipantInvoiceFunding,
 } from "../_shared/portal_invoice_funding.ts";
+import { isHfYearDraftInvoice } from "../_shared/portal_create_family_invoice.ts";
 import {
   namesMatch,
   paymentRowToContext,
@@ -39,6 +40,7 @@ function round2(n: number): number {
 
 function termLabel(term: string): string {
   const t = clean(term, 20).toLowerCase();
+  if (t === "year_2526" || t === "2526" || t === "summer_2526") return "Year 25/26";
   if (t === "year" || t === "annual") return "Year 26/27";
   if (t === "autumn") return "Autumn 26/27";
   if (t === "spring") return "Spring 27";
@@ -46,12 +48,90 @@ function termLabel(term: string): string {
   return t || "Term";
 }
 
-function normalizeBillingAmountKey(raw: unknown): "year" | "autumn" | "spring" | "summer" {
+function normalizeBillingAmountKey(
+  raw: unknown,
+): "year" | "year_2526" | "autumn" | "spring" | "summer" {
   const t = clean(raw, 20).toLowerCase();
+  if (t === "year_2526" || t === "2526" || t === "summer_2526" || t === "year2526") {
+    return "year_2526";
+  }
   if (t === "year" || t === "annual") return "year";
   if (t === "spring") return "spring";
   if (t === "summer") return "summer";
   return "autumn";
+}
+
+/** Sum line amounts tagged as summer crash / intensive (Year 25/26 day-centre pot). */
+function crashCourseGbpFromShare(share: Record<string, unknown>): number {
+  const items = Array.isArray(share.line_items) ? share.line_items : [];
+  let sum = 0;
+  for (const raw of items) {
+    if (!raw || typeof raw !== "object") continue;
+    const it = raw as Record<string, unknown>;
+    const blob = `${clean(it.description, 200)} ${clean(it.service_key, 80)} ${clean(it.detail, 200)}`.toLowerCase();
+    if (
+      /crash/.test(blob) ||
+      /climbing_crash/.test(blob) ||
+      /summer crash/.test(blob)
+    ) {
+      sum += num(it.amount_gbp);
+    }
+  }
+  return round2(sum);
+}
+
+/**
+ * Standalone Jul 2026 crash / intensive invoices (Adam, Saaib, Tinashe, Yaqoub, INV-P-CRASH-*).
+ * Not Autumn/Spring/Summer re-enrol 26/27 term rows.
+ */
+function isStandaloneYear2526Invoice(
+  share: Record<string, unknown>,
+  doc: Record<string, unknown> | null,
+): boolean {
+  const numStr = clean(share.invoice_number, 80);
+  if (/crash/i.test(numStr)) return true;
+  const term = clean(share.billing_term, 20).toLowerCase();
+  if (term === "autumn" || term === "spring" || term === "summer" || term === "year") {
+    return false;
+  }
+  const blob = [
+    clean(doc?.title, 200),
+    clean(share.line_description, 800),
+    clean(share.notes, 800),
+    clean(share.reference_text, 200),
+    numStr,
+  ]
+    .join(" ")
+    .toLowerCase();
+  if (/summer crash|crash course|inv-p-crash/.test(blob)) return true;
+  // Office summer intensive 1:1 rows (null billing_term) e.g. Adam/Saaib/Tinashe/Yaqoub.
+  if (!term && /(1\s*to\s*1|1to1)/i.test(blob) && /aquatic|climbing|multi/i.test(blob)) {
+    return true;
+  }
+  return false;
+}
+
+function programmeSplitForShare(
+  share: Record<string, unknown>,
+  doc: Record<string, unknown> | null,
+): {
+  programme_year: "2526" | "2627";
+  crash_course_gbp: number;
+  afterschool_weekend_gbp: number;
+  is_standalone_year_2526: boolean;
+} {
+  const standalone = isStandaloneYear2526Invoice(share, doc);
+  const crash = standalone
+    ? round2(num(share.amount_gbp)) || crashCourseGbpFromShare(share)
+    : crashCourseGbpFromShare(share);
+  const total = round2(num(share.amount_gbp));
+  const afterschool = standalone ? 0 : round2(Math.max(0, total - crash));
+  return {
+    programme_year: standalone ? "2526" : "2627",
+    crash_course_gbp: crash,
+    afterschool_weekend_gbp: afterschool,
+    is_standalone_year_2526: standalone,
+  };
 }
 
 function payloadTermTotals(payload: unknown): {
@@ -106,14 +186,14 @@ function termTotalsFromPaymentContext(ctx: ReturnType<typeof paymentRowToContext
 
 function bookedFieldsFromTotals(
   totals: { autumn: number; spring: number; summer: number; annual: number } | null | undefined,
-  amountKey: "year" | "autumn" | "spring" | "summer",
+  amountKey: "year" | "year_2526" | "autumn" | "spring" | "summer",
 ) {
   const autumn = totals?.autumn || 0;
   const spring = totals?.spring || 0;
   const summer = totals?.summer || 0;
   const annual = totals?.annual || 0;
   const selected =
-    amountKey === "year"
+    amountKey === "year" || amountKey === "year_2526"
       ? annual
       : amountKey === "spring"
         ? spring
@@ -125,9 +205,13 @@ function bookedFieldsFromTotals(
     booked_autumn_gbp: autumn || null,
     booked_spring_gbp: spring || null,
     booked_summer_gbp: summer || null,
-    booked_term_gbp: amountKey === "year" ? annual || null : selected || null,
-    billing_term: amountKey === "year" ? "year" : amountKey,
-    billing_term_label: termLabel(amountKey === "year" ? "year" : amountKey),
+    booked_term_gbp:
+      amountKey === "year" || amountKey === "year_2526" ? annual || null : selected || null,
+    billing_term:
+      amountKey === "year" ? "year" : amountKey === "year_2526" ? "year_2526" : amountKey,
+    billing_term_label: termLabel(
+      amountKey === "year" ? "year" : amountKey === "year_2526" ? "year_2526" : amountKey,
+    ),
     amount_selected_gbp: selected || null,
   };
 }
@@ -146,9 +230,10 @@ type BookedSlotSummary = {
 
 function bookedSlotsFromPaymentContext(
   ctx: ReturnType<typeof paymentRowToContext>,
-  amountKey: "year" | "autumn" | "spring" | "summer",
+  amountKey: "year" | "year_2526" | "autumn" | "spring" | "summer",
 ): BookedSlotSummary[] {
-  const termKey = amountKey === "year" ? "annual" : amountKey;
+  const termKey =
+    amountKey === "year" || amountKey === "year_2526" ? "annual" : amountKey;
   const out: BookedSlotSummary[] = [];
   const all = [...(ctx.weeklySlots || []), ...(ctx.dayCentreSlots || [])];
   for (const slot of all) {
@@ -267,7 +352,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     q = q
       .is("xero_invoice_id", null)
       .in("created_via", ["portal", "reenrolment"])
-      .eq("payment_status", "paid");
+      .in("payment_status", ["paid", "partial"]);
   }
 
   const { data: shares, error } = await q;
@@ -291,10 +376,11 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
   const contactIds = [...new Set((shares || []).map((s) => clean(s.contact_id, 120)).filter(Boolean))];
   const nameByContact = new Map<string, string>();
   const parentByContact = new Map<string, string>();
+  const inClassByContact = new Map<string, boolean>();
   if (contactIds.length) {
     const { data: pax } = await admin
       .from("portal_participants")
-      .select("contact_id, display_name, first_name, last_name")
+      .select("contact_id, display_name, first_name, last_name, in_class")
       .in("contact_id", contactIds);
     for (const p of pax || []) {
       const id = clean(p.contact_id, 120);
@@ -302,6 +388,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         clean(p.display_name, 120) ||
         [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
       if (id && name) nameByContact.set(id, name);
+      if (id) inClassByContact.set(id, p.in_class === true);
     }
     const { data: parents } = await admin
       .from("portal_parent_contacts")
@@ -551,6 +638,8 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
           : shareTerm
         : "";
 
+    const programme = programmeSplitForShare(share as Record<string, unknown>, doc);
+
     invoices.push({
       ...share,
       title: clean(doc.title, 200) || "Invoice",
@@ -577,8 +666,13 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       booked_slots: mergedSlots,
       booked_service_raw: mergedServiceRaw || null,
       reenrolment_submitted_at: reenrol?.submitted_at || null,
-      is_la_office_auto:
-        (fundingCategory === "la_managed" || fundingCategory === "nhs_managed") && !reenrol,
+      in_class: cid ? inClassByContact.get(cid) === true : false,
+      programme_year: programme.programme_year,
+      crash_course_gbp: programme.crash_course_gbp,
+      afterschool_weekend_gbp: programme.afterschool_weekend_gbp,
+      is_standalone_year_2526: programme.is_standalone_year_2526,
+      /* Only true synthetics — never real INV-P rows (crash / Day Centre LA PDFs). */
+      is_la_office_auto: clean(share.created_via, 40) === "la_office_auto",
     });
   }
 
@@ -594,11 +688,73 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     invoices = invoices.filter((inv) => {
       const cid = clean(inv.contact_id, 120);
       if (!cid || !multiLaPackContacts.has(cid)) return true;
-      // Drop family shares for multi-pack contacts; synthetics replace them in this list.
-      return inv.created_via === "la_office_auto";
+      // Keep office synthetics for multi-pack LA/NHS contacts.
+      if (inv.created_via === "la_office_auto") return true;
+      // Keep real funder INV-Ps (PDF download / Mark paid) for LA + NHS packs.
+      if (clean(inv.payment_method_hint, 40) === "la_funded") return true;
+      /*
+       * Also keep Summer crash family INV-Ps (e.g. Tinashe INV-P-0119 £187.50).
+       * Multi-pack filter used to drop them so Payments → Day Centre → Using Funds
+       * from LA never showed the July crash row.
+       */
+      const invNum = String(inv.invoice_number || "");
+      if (/crash/i.test(invNum)) return true;
+      const crashBlob = [
+        inv.line_description,
+        inv.reference_text,
+        inv.notes,
+        JSON.stringify(inv.line_items || []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (/summer\s*crash|crash\s*course/.test(crashBlob)) return true;
+      // Drop other family shares for multi-pack contacts; synthetics replace them.
+      return false;
     });
   }
   const OFFICE_AUTO_SORT_TS = "2026-06-01T12:00:00.000Z";
+  /** Real funder INV-Ps already covering a payment pack (by ready_by / notes marker). */
+  const funderCoveredPackKeys = new Set<string>();
+  for (const inv of invoices) {
+    if (isHfYearDraftInvoice({ readyBy: inv.ready_by, notes: inv.notes })) continue;
+    if (clean(inv.payment_method_hint, 40) !== "la_funded") continue;
+    if (clean(inv.created_via, 40) === "la_office_auto") continue;
+    const cid = clean(inv.contact_id, 120);
+    if (!cid) continue;
+    const markerBlob = `${clean(inv.ready_by, 160)} ${clean(inv.notes, 800)} ${clean(inv.reference_text, 160)}`;
+    const packs = laPayByContact.get(cid) || [];
+    for (const pack of packs) {
+      const clientKey = clean(pack.row.client_key, 80) || "row";
+      if (markerBlob.includes(`office_la_nhs_autumn_2627_${clientKey}`)) {
+        funderCoveredPackKeys.add(`${cid}::${clientKey}`);
+      }
+      if (
+        markerBlob.includes(`_${clientKey}`) &&
+        /office_funder_2627_nhs_(month|year)_/.test(markerBlob)
+      ) {
+        funderCoveredPackKeys.add(`${cid}::${clientKey}`);
+      }
+      if (
+        markerBlob.includes(`_${clientKey}`) &&
+        /office_funder_2627_hf_month_/.test(markerBlob)
+      ) {
+        funderCoveredPackKeys.add(`${cid}::${clientKey}`);
+      }
+    }
+    // Single-pack contacts: any real autumn la_funded share covers the only pack.
+    if (packs.length === 1 && clean(inv.billing_term, 20) === "autumn") {
+      const clientKey = clean(packs[0].row.client_key, 80) || "row";
+      funderCoveredPackKeys.add(`${cid}::${clientKey}`);
+    }
+    // Monthly/year NHS funder schedule already issued: cover every pack for this
+    // contact so AUTO synthetic annual cards do not duplicate (e.g. Timi).
+    if (/office_funder_2627_nhs_(month|year)_/.test(markerBlob)) {
+      for (const pack of packs) {
+        const clientKey = clean(pack.row.client_key, 80) || "row";
+        funderCoveredPackKeys.add(`${cid}::${clientKey}`);
+      }
+    }
+  }
   for (const [cid, packs] of laPayByContact) {
     const multiPack = packs.length > 1;
     if (invoiceContactIds.has(cid) && !multiPack) continue;
@@ -616,6 +772,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       fundingByContact.set(cid, funding);
     }
     const reenrol = reenrolByContact.get(cid) || null;
+    let emittedSynthetic = false;
     for (const pack of packs) {
       const data = (pack.row.data || {}) as Record<string, unknown>;
       const payFunding =
@@ -625,6 +782,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         funding.fundingLabel ||
         "Local Authority";
       const clientKey = clean(pack.row.client_key, 80) || "row";
+      if (funderCoveredPackKeys.has(`${cid}::${clientKey}`)) continue;
       const fundingCategory = invoiceFundingCategory({
         vatMode: "exempt",
         paymentMethodHint: "la_funded",
@@ -677,14 +835,37 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         booked_slots: pack.slots || [],
         booked_service_raw: pack.service_raw || null,
         reenrolment_submitted_at: reenrol?.submitted_at || OFFICE_AUTO_SORT_TS,
+        in_class: true,
         is_la_office_auto: true,
         xero_invoice_id: null,
         xero_push_status: null,
         payment_client_key: clientKey,
       });
+      emittedSynthetic = true;
     }
-    invoiceContactIds.add(cid);
+    if (emittedSynthetic) invoiceContactIds.add(cid);
   }
+
+  /*
+   * Hidden chip / list: only future instalments (and LA office autos) for clients who
+   * still hold a re-enrolled place. Place-released / out-of-class shares stay in DB
+   * for audit but must not appear in admin Finance.
+   */
+  invoices = invoices.filter((inv) => {
+    if (isHfYearDraftInvoice({ readyBy: inv.ready_by, notes: inv.notes })) return false;
+    const share = clean(inv.share_status, 20).toLowerCase();
+    if (share !== "hidden") return true;
+    if (inv.is_la_office_auto === true || clean(inv.created_via, 40) === "la_office_auto") {
+      return true;
+    }
+    const cid = clean(inv.contact_id, 120);
+    const inClass = cid ? inClassByContact.get(cid) === true : inv.in_class === true;
+    if (!inClass) return false;
+    const hasReenrol =
+      Boolean(inv.reenrolment_submitted_at) ||
+      (cid ? reenrolByContact.has(cid) : false);
+    return hasReenrol;
+  });
 
   if (listFilter === "buffer_low") {
     invoices = invoices.filter((inv) => inv.buffer_status && (inv.buffer_status as { is_low?: boolean }).is_low);
@@ -697,6 +878,24 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         inv.funding_category === "la_managed" ||
         inv.funding_category === "nhs_managed",
     );
+  }
+
+  /*
+   * Amount filter buckets:
+   * - year_2526: summer crash / intensive (Adam, Saaib, …) + any invoice that still
+   *   carries a crash line (Patrick merged crash stays visible here for day-centre £).
+   * - year / autumn / spring / summer 26/27: hide standalone Year 25/26 crash INV-Ps
+   *   so re-enrol lists stay clean; Patrick autumn keeps showing (full invoice).
+   */
+  if (amountKey === "year_2526") {
+    invoices = invoices.filter(
+      (inv) =>
+        inv.is_la_office_auto !== true &&
+        (inv.is_standalone_year_2526 === true ||
+          (Number(inv.crash_course_gbp) || 0) > 0.009),
+    );
+  } else {
+    invoices = invoices.filter((inv) => inv.is_standalone_year_2526 !== true);
   }
 
   // Newest re-enrol first (LA office autos share a cohort timestamp).
@@ -728,7 +927,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     .from("portal_parent_invoice_share")
     .select("id", { count: "exact", head: true })
     .is("xero_invoice_id", null)
-    .eq("payment_status", "paid")
+    .in("payment_status", ["paid", "partial"])
     .in("created_via", ["portal", "reenrolment"]);
 
   const bufferLowContacts = [...bufferByContact.values()].filter((b) => b.is_low).length;
@@ -747,7 +946,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       billing_term: amountKey === "year" ? "year" : amountKey,
       billing_term_label: termLabel(amountKey === "year" ? "year" : amountKey),
       billing_amount: amountKey,
-      academic_year: REENROL_ACADEMIC_YEAR,
+      academic_year: amountKey === "year_2526" ? "2025-26" : REENROL_ACADEMIC_YEAR,
     },
   });
 }

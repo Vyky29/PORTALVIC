@@ -12,6 +12,7 @@ import {
   amountDueNow,
   normalizePaymentSchedule,
   parentFacingSchedule,
+  shareNextInstalmentIsCollectingNow,
 } from "../_shared/portal_invoice_payment_schedule.ts";
 import { gocardlessConfigured } from "../_shared/gocardless.ts";
 import { mandateIsActive } from "../_shared/gocardless_portal.ts";
@@ -21,6 +22,10 @@ import {
 } from "../_shared/tide_bank_details.ts";
 import { resolveParticipantInvoiceFunding } from "../_shared/portal_invoice_funding.ts";
 import { fundingLabelIsClubInvoicedFunder } from "../_shared/parent_reenrol_ui.ts";
+import {
+  findPriorUnconfirmedInvoice,
+  type PaySequenceShare,
+} from "../_shared/portal_invoice_pay_sequence.ts";
 
 const BUCKET = "documents";
 
@@ -217,6 +222,18 @@ Deno.serve(async (req) => {
     })
     .filter(Boolean);
 
+  const sequenceShares: PaySequenceShare[] = (shares || []).map((s) => ({
+    id: s.id,
+    invoice_number: s.invoice_number,
+    billing_term: s.billing_term,
+    due_date: s.due_date,
+    next_instalment_due: s.next_instalment_due,
+    payment_status: s.payment_status,
+    share_status: s.share_status,
+    payment_method_hint: s.payment_method_hint,
+    created_at: s.created_at,
+  }));
+
   const out = [];
   for (const share of shares || []) {
     const doc = docsById.get(String(share.document_id));
@@ -244,10 +261,13 @@ Deno.serve(async (req) => {
     const status = share.payment_status || "unpaid";
     const openForPay = status === "unpaid" || status === "partial";
     const suggestedRef = suggestedTransferReference(share.invoice_number, displayName);
+    const priorBlock = findPriorUnconfirmedInvoice(sequenceShares, String(share.id));
+    const sequenceLocked = !!priorBlock;
     const canPayCard =
       cardCheckoutAvailable &&
       openForPay &&
-      dueNow > 0;
+      dueNow > 0 &&
+      !sequenceLocked;
     const cardPricing =
       canPayCard ? stripeGrossUpFromGbp(dueNow) : null;
     const hint = hintEarly;
@@ -258,13 +278,14 @@ Deno.serve(async (req) => {
       gcApiAvailable &&
       isGcHint &&
       openForPay &&
-      !gcMandateActive;
+      !gcMandateActive &&
+      !sequenceLocked;
     const gcPendingCollection =
       isGcHint && openForPay && (gcMandateActive || hasGcPayment);
     // Mandated Direct Payment + LA funded invoices are not paid by parent card/bank UI.
     const hideManualPay = isGcHint || isLaFunded;
     const applicableCredits =
-      openForPay && amount != null && Number.isFinite(amount) && amount > 0
+      openForPay && amount != null && Number.isFinite(amount) && amount > 0 && !sequenceLocked
         ? usableCredits
         : [];
     out.push({
@@ -289,10 +310,10 @@ Deno.serve(async (req) => {
       gocardless_payment_id: clean(share.gocardless_payment_id, 80) || null,
       can_setup_gocardless: canSetupGc,
       gocardless_pending_collection: gcPendingCollection && !canSetupGc,
-      payment_link_url: hideManualPay
+      payment_link_url: hideManualPay || sequenceLocked
         ? null
         : clean(share.payment_link_url, 500) || null,
-      payment_link_surcharge_note: hideManualPay
+      payment_link_surcharge_note: hideManualPay || sequenceLocked
         ? null
         : clean(share.payment_link_surcharge_note, 200) || null,
       parent_reported_paid_at: share.parent_reported_paid_at || null,
@@ -301,7 +322,7 @@ Deno.serve(async (req) => {
       paid_via: share.paid_via || null,
       suggested_reference: suggestedRef,
       bank_transfer:
-        hideManualPay || !(openForPay || status === "pending_confirmation")
+        hideManualPay || sequenceLocked || !(openForPay || status === "pending_confirmation")
           ? null
           : {
               available: tide.available,
@@ -314,8 +335,16 @@ Deno.serve(async (req) => {
                 ? null
                 : "Contact the office for bank transfer details.",
             },
-      can_report_paid: hideManualPay ? false : openForPay,
-      can_pay: hideManualPay ? false : canPayCard,
+      can_report_paid: false,
+      can_pay: hideManualPay || sequenceLocked ? false : canPayCard,
+      pay_blocked_by_prior: priorBlock
+        ? {
+            invoice_number: priorBlock.prior.invoice_number,
+            billing_term: priorBlock.prior.billing_term,
+            payment_status: priorBlock.prior.payment_status,
+            message: priorBlock.message,
+          }
+        : null,
       card_checkout:
         hideManualPay || !cardPricing
           ? null
@@ -334,22 +363,54 @@ Deno.serve(async (req) => {
   }
 
   const anyGcSetup = out.some((inv) => inv.can_setup_gocardless);
+  const anyGcHint = out.some((inv) => inv.payment_method_hint === "gocardless");
   const anyGcHintOpen = out.some(
     (inv) =>
       inv.payment_method_hint === "gocardless" &&
       (inv.payment_status === "unpaid" || inv.payment_status === "partial"),
   );
 
+  // Payment receipts (bank/card PDFs shared by office) — path encodes contact_id.
+  const receiptsOut: Array<Record<string, unknown>> = [];
+  const receiptPathNeedle = `/billing/receipts/${contactId}/`;
+  const { data: receiptDocs } = await supabase
+    .from("documents")
+    .select("id, title, file_url, related_date, created_at, source_page")
+    .eq("document_type", "payment_receipt")
+    .ilike("file_url", `%${receiptPathNeedle}%`)
+    .order("created_at", { ascending: true })
+    .limit(20);
+  for (const doc of receiptDocs || []) {
+    if (!doc?.file_url) continue;
+    const { data: signed } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(String(doc.file_url), 3600);
+    if (!signed?.signedUrl) continue;
+    const pathName = String(doc.file_url).split("/").pop() || "receipt.pdf";
+    receiptsOut.push({
+      id: doc.id,
+      title: clean(doc.title, 120) || "Payment receipt",
+      filename: pathName,
+      related_date: doc.related_date || null,
+      pdf_url: signed.signedUrl,
+    });
+  }
+
   return json(200, {
     ok: true,
     invoices: out,
+    receipts: receiptsOut,
     /** Funder-billed kids: true only when a parent-pay crash (etc.) exists. */
-    show_invoices: funderBilled ? out.length > 0 : true,
+    show_invoices: funderBilled ? out.length > 0 || receiptsOut.length > 0 : true,
     bank_transfer_available: tide.available,
     payments_enabled: cardCheckoutAvailable,
     gocardless: {
       api_available: gcApiAvailable,
-      mandate_active: gcMandateActive,
+      /*
+       * Only expose mandate as relevant when this child has Direct Payment invoices.
+       * Stale family mandates must not drive Flexi / bank_transfer hub UI.
+       */
+      mandate_active: gcMandateActive && anyGcHint,
       mandate_status: gcMandateStatus,
       // Setup lives on the GC invoice card when can_setup_gocardless — avoid duplicate banner.
       setup_available:

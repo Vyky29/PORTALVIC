@@ -18,6 +18,10 @@
   function mergeParticipantBody(base, patch) {
     if (!patch) return base;
     if (!base) return patch;
+    var patchSections = Array.isArray(patch.sections_loaded) ? patch.sections_loaded : null;
+    /* weekly_notes (etc.) still return empty default reenrolment / place_kind — do not wipe general. */
+    var patchHasGeneral =
+      !patchSections || patchSections.indexOf("general") >= 0;
     if (Array.isArray(patch.sessions)) base.sessions = patch.sessions;
     if (Array.isArray(patch.achievements)) base.achievements = patch.achievements;
     if (Array.isArray(patch.team)) base.team = patch.team;
@@ -28,14 +32,63 @@
     if (patch.swim_term_review_available != null) {
       base.swim_term_review_available = !!patch.swim_term_review_available;
     }
-    if (patch.reenrolment) base.reenrolment = patch.reenrolment;
+    if (patch.reenrolment && patchHasGeneral) {
+      var prevRe = base.reenrolment || {};
+      base.reenrolment = Object.assign({}, prevRe, patch.reenrolment);
+      /* Do not let a notes-only patch clear a confirmed 26/27 place flag. */
+      if (prevRe.office_term_invoice === true) {
+        base.reenrolment.office_term_invoice = true;
+      }
+      if (prevRe.submitted === true && patch.reenrolment.submitted !== true) {
+        base.reenrolment.submitted = true;
+        if (prevRe.submitted_at) base.reenrolment.submitted_at = prevRe.submitted_at;
+      }
+      if (prevRe.continuing === true && patch.reenrolment.continuing !== true) {
+        base.reenrolment.continuing = true;
+      }
+      if (prevRe.not_continuing === true) {
+        base.reenrolment.not_continuing = true;
+      }
+      if (
+        prevRe.hub_pay_state &&
+        !patch.reenrolment.hub_pay_state
+      ) {
+        base.reenrolment.hub_pay_state = prevRe.hub_pay_state;
+      }
+    }
     if (patch.pending_review_count != null) base.pending_review_count = patch.pending_review_count;
     if (patch.attendance_summary) base.attendance_summary = patch.attendance_summary;
     if (Array.isArray(patch.weekly_notes)) base.weekly_notes = patch.weekly_notes;
     if (patch.weekly_note_latest !== undefined) base.weekly_note_latest = patch.weekly_note_latest;
+    if (patch.feedback_year != null) base.feedback_year = patch.feedback_year;
+    if (patch.feedback_year_label != null) base.feedback_year_label = patch.feedback_year_label;
+    if (patch.feedback_year_picker_required != null) {
+      base.feedback_year_picker_required = !!patch.feedback_year_picker_required;
+    }
+    if (Array.isArray(patch.feedback_years_available)) {
+      base.feedback_years_available = patch.feedback_years_available;
+    }
+    if (patch.feedback_year_default != null) base.feedback_year_default = patch.feedback_year_default;
     if (Array.isArray(patch.club_announcements)) base.club_announcements = patch.club_announcements;
+    if (Array.isArray(patch.upcoming_booked_sessions) && patch.upcoming_booked_sessions.length) {
+      base.upcoming_booked_sessions = patch.upcoming_booked_sessions;
+    }
+    if (patchHasGeneral && patch.place_kind != null) base.place_kind = patch.place_kind;
+    if (patchHasGeneral && patch.is_trial_booking != null) {
+      base.is_trial_booking = !!patch.is_trial_booking;
+    }
     if (patch.general && base.general) {
+      var prevDetail = Array.isArray(base.general.services_detail)
+        ? base.general.services_detail
+        : [];
       Object.assign(base.general, patch.general);
+      var nextDetail = Array.isArray(base.general.services_detail)
+        ? base.general.services_detail
+        : [];
+      if (!nextDetail.length && prevDetail.length) {
+        base.general.services_detail = prevDetail;
+        base.general.services_count = prevDetail.length;
+      }
     }
     if (patch.participant && base.participant) {
       Object.assign(base.participant, patch.participant);
@@ -43,7 +96,10 @@
     return base;
   }
 
-  async function fetchParticipantSections(contactId, sections) {
+  async function fetchParticipantSections(contactId, sections, opts) {
+    opts = opts && typeof opts === "object" ? opts : {};
+    var payload = { contact_id: contactId, sections: sections };
+    if (opts.feedbackYear) payload.feedback_year = String(opts.feedbackYear);
     var res = await fetch(fn("parent-portal-participant-detail"), {
       method: "POST",
       headers: {
@@ -52,7 +108,7 @@
         Authorization: "Bearer " + anonKey(),
         "x-parent-portal-session": state.session.token,
       },
-      body: JSON.stringify({ contact_id: contactId, sections: sections }),
+      body: JSON.stringify(payload),
     });
     var body = await res.json().catch(function () {
       return {};
@@ -170,16 +226,22 @@
           });
         });
       },
-      isSectionLoaded: function (section) {
-        return !!state.participant.loaded[section];
+      isSectionLoaded: function (section, loadOpts) {
+        loadOpts = loadOpts && typeof loadOpts === "object" ? loadOpts : {};
+        var key = section;
+        if (loadOpts.feedbackYear) key = section + ":" + String(loadOpts.feedbackYear);
+        return !!state.participant.loaded[key];
       },
-      loadSection: function (section) {
-        if (state.participant.loaded[section]) {
+      loadSection: function (section, force, loadOpts) {
+        loadOpts = loadOpts && typeof loadOpts === "object" ? loadOpts : {};
+        var cacheKey = section;
+        if (loadOpts.feedbackYear) cacheKey = section + ":" + String(loadOpts.feedbackYear);
+        if (!force && state.participant.loaded[cacheKey]) {
           return Promise.resolve(state.participant.data);
         }
-        return fetchParticipantSections(contactId, [section]).then(function (patch) {
+        return fetchParticipantSections(contactId, [section], loadOpts).then(function (patch) {
           state.participant.data = mergeParticipantBody(state.participant.data, patch);
-          state.participant.loaded[section] = true;
+          state.participant.loaded[cacheKey] = true;
           if (section === "sessions" && patch.pending_review_count > 0) {
             showNotice(
               $("ppParticipantNotice"),
@@ -448,6 +510,39 @@
           return res.json().then(function (j) {
             if (!res.ok || !j.ok) throw new Error("invoices_list_failed");
             return j;
+          });
+        });
+      },
+      /** Live parent-view PDF (current unpaid/partial/paid) — does not change Xero file. */
+      previewInvoicePdf: function (invoiceId) {
+        return fetch(fn("parent-portal-invoice-preview"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey(),
+            Authorization: "Bearer " + anonKey(),
+            "x-parent-portal-session": state.session.token,
+          },
+          body: JSON.stringify({ contact_id: contactId, invoice_id: invoiceId }),
+        }).then(function (res) {
+          if (!res.ok) {
+            return res.json().then(
+              function (j) {
+                var err = new Error("invoice_preview_failed");
+                err.code = (j && j.error) || "preview_failed";
+                throw err;
+              },
+              function () {
+                throw new Error("invoice_preview_failed");
+              },
+            );
+          }
+          return res.blob().then(function (blob) {
+            return {
+              blobUrl: URL.createObjectURL(blob),
+              paymentStatus: String(res.headers.get("X-Payment-Status") || ""),
+              invoiceNumber: String(res.headers.get("X-Invoice-Number") || ""),
+            };
           });
         });
       },
@@ -1046,11 +1141,29 @@
   function childReenrolBtnHtml(c) {
     var cid = String(c.contact_id || "");
     var href = "/parent/re-enrolment?from=portal&contact_id=" + encodeURIComponent(cid);
-    var submitted = !!(c.reenrolment && c.reenrolment.submitted);
-    var label = submitted ? "Re-enrol 2026/27 · Saved" : "Re-enrol 2026/27";
+    var re = (c && c.reenrolment) || {};
+    var submitted = !!re.submitted;
+    var notContinuing = re.not_continuing === true;
+    var continuing = re.continuing === true;
+    var label = "Re-enrol 2026/27";
+    var sub = "";
+    var savedClass = "";
+    if (submitted && notContinuing) {
+      label = "Not continuing 2026/27";
+      sub = "Form saved — place not renewed";
+      savedClass = " pp-child-reenrol-btn--saved pp-child-reenrol-btn--not-continuing";
+    } else if (submitted && continuing) {
+      label = "Re-enrol 2026/27 · Saved";
+      sub = "Tap to edit — office notified";
+      savedClass = " pp-child-reenrol-btn--saved";
+    } else if (submitted) {
+      label = "Re-enrol 2026/27 · Saved";
+      sub = "Tap to edit — office notified";
+      savedClass = " pp-child-reenrol-btn--saved";
+    }
     return (
       '<a class="pp-child-action-btn pp-child-reenrol-btn' +
-      (submitted ? " pp-child-reenrol-btn--saved" : "") +
+      savedClass +
       '" href="' +
       esc(href) +
       '">' +
@@ -1060,8 +1173,8 @@
       '<span class="pp-child-action-label">' +
       esc(label) +
       "</span>" +
-      (submitted
-        ? '<span class="pp-child-action-sub">Tap to edit — office notified</span>'
+      (sub
+        ? '<span class="pp-child-action-sub">' + esc(sub) + "</span>"
         : "") +
       "</a>"
     );
@@ -1187,10 +1300,17 @@
     state.participant = { contactId: contactId, data: null, loaded: {} };
 
     try {
-      var body = await fetchParticipantSections(contactId, ["general", "weekly_notes"]);
-      state.participant.data = body;
+      var body = await fetchParticipantSections(contactId, ["general"]);
       state.participant.loaded.general = true;
-      state.participant.loaded.weekly_notes = true;
+      if (!body.feedback_year_picker_required) {
+        var fbYear = body.feedback_year_default || "2026-27";
+        var notesPatch = await fetchParticipantSections(contactId, ["weekly_notes"], {
+          feedbackYear: fbYear,
+        });
+        body = mergeParticipantBody(body, notesPatch);
+        state.participant.loaded["weekly_notes:" + fbYear] = true;
+      }
+      state.participant.data = body;
       rememberContactId(contactId);
 
       var p = body.participant || {};
@@ -1884,18 +2004,29 @@
   }
 
   async function bootstrap() {
-    initBrand();
-    bindEvents();
-    bindChildCards();
-    bindChildPhotoHandlers();
-    if (loadStoredSession()) {
-      var params = readParticipantDeepLink();
-      var deepId = params.get("contact_id") || params.get("contact") || "";
-      var ok = await loadHome(deepId ? { skipAutoHub: true } : {});
-      if (!ok) setStep("identify");
-      else maybeOpenParticipantFromUrl();
-    } else {
-      setStep("identify");
+    try {
+      initBrand();
+      bindEvents();
+      bindChildCards();
+      bindChildPhotoHandlers();
+      if (loadStoredSession()) {
+        var params = readParticipantDeepLink();
+        var deepId = params.get("contact_id") || params.get("contact") || "";
+        var ok = await loadHome(deepId ? { skipAutoHub: true } : {});
+        if (!ok) setStep("identify");
+        else maybeOpenParticipantFromUrl();
+      } else {
+        setStep("identify");
+      }
+    } catch (_bootErr) {
+      try {
+        setStep("identify");
+        showNotice(
+          $("ppNotice"),
+          "error",
+          "Could not open the parent portal. Refresh the page and try again.",
+        );
+      } catch (_e2) {}
     }
   }
 

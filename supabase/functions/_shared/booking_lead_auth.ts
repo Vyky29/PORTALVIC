@@ -23,7 +23,7 @@ export {
 export const bookingLeadCorsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-booking-lead-session",
+    "authorization, x-client-info, apikey, content-type, x-booking-lead-session, x-parent-portal-session",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 

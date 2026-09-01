@@ -8,6 +8,7 @@ import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/par
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
 import { stripeConfigured, stripeCreateCheckoutSession, stripeGrossUpFromGbp } from "../_shared/stripe_checkout.ts";
 import { amountDueNow } from "../_shared/portal_invoice_payment_schedule.ts";
+import { assertNoPriorUnconfirmedInvoice } from "../_shared/portal_invoice_pay_sequence.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -149,6 +150,16 @@ Deno.serve(async (req) => {
       ok: false,
       error: "pending_confirmation",
       message: "You already reported this payment. Please wait for the office to confirm.",
+    });
+  }
+
+  const priorBlock = await assertNoPriorUnconfirmedInvoice(supabase, contactId, invoiceId);
+  if (priorBlock) {
+    return json(409, {
+      ok: false,
+      error: priorBlock.error,
+      message: priorBlock.message,
+      prior_invoice: priorBlock.prior,
     });
   }
 

@@ -1394,6 +1394,19 @@
     .pp-hub-term-block--this.pp-hub-term-block--unpaid .pp-hub-ops__term-accordion:not(.pp-hub-ops__term-accordion--completed) .pp-hub-ops__term-chevron {
       color: #ea580c;
     }
+    /* Parent tapped I've paid — waiting for office to mark paid (amber, no blink). */
+    .pp-hub-term-block--this.pp-hub-term-block--pending .pp-hub-ops__term-accordion:not(.pp-hub-ops__term-accordion--completed) {
+      background: rgba(254, 243, 199, 0.9);
+      border-color: rgba(217, 119, 6, 0.4);
+      animation: none;
+      box-shadow: none;
+    }
+    .pp-hub-term-block--this.pp-hub-term-block--pending .pp-hub-ops__term-accordion:not(.pp-hub-ops__term-accordion--completed) > .pp-hub-ops__term-summary {
+      color: #92400e;
+    }
+    .pp-hub-term-block--this.pp-hub-term-block--pending .pp-hub-ops__term-accordion:not(.pp-hub-ops__term-accordion--completed) .pp-hub-ops__term-chevron {
+      color: #d97706;
+    }
     @media (prefers-reduced-motion: reduce) {
       .pp-hub-term-block--this.pp-hub-term-block--unconfirmed .pp-hub-ops__term-accordion:not(.pp-hub-ops__term-accordion--completed) {
         animation: none;
@@ -1920,6 +1933,20 @@
       background: #fff;
       min-width: 0;
     }
+    .pp-invoice-receipts {
+      margin: 0 0 18px;
+      min-width: 0;
+    }
+    .pp-invoice-receipts__list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-width: 0;
+    }
+    .pp-invoice-card--receipt {
+      border-color: rgba(5, 150, 105, 0.28);
+      background: linear-gradient(135deg, rgba(5, 150, 105, 0.06), #fff 55%);
+    }
     .pp-invoice-card__head {
       display: flex;
       align-items: flex-start;
@@ -1953,7 +1980,7 @@
       letter-spacing: 0.04em;
       box-shadow: 0 1px 0 rgba(4, 120, 87, 0.25);
     }
-    .pp-invoice-chip--partial { background: #eff6ff; color: #1d4ed8; }
+    .pp-invoice-chip--partial { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
     .pp-invoice-chip--void { background: #f1f5f9; color: #475569; }
     .pp-invoice-chip--pending_confirmation { background: #fef3c7; color: #92400e; }
     .pp-invoice-card--paid .pp-invoice-card__head {
@@ -1962,12 +1989,42 @@
     .pp-invoice-card--paid .pp-invoice-card__amount {
       color: #047857;
     }
+    .pp-invoice-card--partial .pp-invoice-card__amount {
+      color: #c2410c;
+    }
     .pp-invoice-card__amount {
       margin: 8px 0 0;
       font-size: 22px;
       font-weight: 800;
       color: #92400e;
       overflow-wrap: break-word;
+    }
+    .pp-invoice-card__schedule {
+      list-style: none;
+      margin: 6px 0 0;
+      padding: 0;
+      font-size: 12px;
+      min-width: 0;
+      color: var(--muted, #64748b);
+    }
+    .pp-invoice-card__sched-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 6px;
+      margin: 0 0 4px;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-invoice-card__sched-copy {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .pp-invoice-card__sched-paid {
+      color: #16a34a !important;
+      font-weight: 800;
+      flex: 0 0 auto;
+      line-height: 1;
     }
     .pp-invoice-card__meta { margin: 6px 0 0; font-size: 12px; overflow-wrap: break-word; }
     .pp-invoice-card__acts {
@@ -2192,9 +2249,54 @@
       padding: 10px 12px;
       font-size: 14px;
     }
+    /* Green "I've paid / validate" — pulse like unpaid Invoices hub shortcut */
     .pp-btn--paid-report {
       background: linear-gradient(135deg, #15803d, #166534);
       color: #fff;
+      box-shadow: 0 0 0 0 rgba(21, 128, 61, 0.45);
+      animation: pp-paid-report-pulse-green 1.15s ease-in-out infinite;
+    }
+    .pp-btn--paid-report:hover,
+    .pp-btn--paid-report:focus-visible {
+      filter: brightness(1.05);
+    }
+    .pp-invoice-paid-report__main {
+      display: block;
+      font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
+    .pp-invoice-paid-report__hint {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-top: 3px;
+      opacity: 0.95;
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
+    .pp-invoice-pay-pair__btn.pp-btn--paid-report {
+      flex: 1 1 100%;
+    }
+    @keyframes pp-paid-report-pulse-green {
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(21, 128, 61, 0.55);
+        filter: brightness(1);
+      }
+      50% {
+        box-shadow: 0 0 0 7px rgba(21, 128, 61, 0);
+        filter: brightness(1.08);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .pp-btn--paid-report {
+        animation: none;
+        outline: 2px solid #86efac;
+        outline-offset: 2px;
+      }
     }
     .pp-invoice-pay__notify {
       margin-top: 8px;
@@ -2548,9 +2650,46 @@
       text-overflow: unset;
       overflow: visible;
     }
-    /* Tick stays green even on the orange unpaid chip. */
+    .pp-hub-reenrolled--chip.pp-hub-reenrolled--trial {
+      background: rgba(37, 99, 235, 0.1);
+      color: #1d4ed8;
+      border-color: rgba(37, 99, 235, 0.28);
+    }
+    .pp-hub-reenrolled--partial {
+      background: #ffedd5;
+      color: #c2410c;
+      border: 1px solid #fdba74;
+    }
+    .pp-hub-reenrolled--chip.pp-hub-reenrolled--partial {
+      background: #ffedd5;
+      color: #c2410c;
+      border-color: #fdba74;
+      white-space: normal;
+      overflow-wrap: break-word;
+      text-overflow: unset;
+      overflow: visible;
+    }
+    .pp-hub-reenrolled--pending {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #f59e0b;
+    }
+    .pp-hub-reenrolled--chip.pp-hub-reenrolled--pending {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #f59e0b;
+      white-space: normal;
+      overflow-wrap: break-word;
+      text-overflow: unset;
+      overflow: visible;
+    }
+    /* Tick stays green even on the orange unpaid / partial / amber pending chip. */
     .pp-hub-reenrolled--unpaid .pp-hub-reenrolled__mark,
-    .pp-hub-reenrolled--chip.pp-hub-reenrolled--unpaid .pp-hub-reenrolled__mark {
+    .pp-hub-reenrolled--chip.pp-hub-reenrolled--unpaid .pp-hub-reenrolled__mark,
+    .pp-hub-reenrolled--partial .pp-hub-reenrolled__mark,
+    .pp-hub-reenrolled--chip.pp-hub-reenrolled--partial .pp-hub-reenrolled__mark,
+    .pp-hub-reenrolled--pending .pp-hub-reenrolled__mark,
+    .pp-hub-reenrolled--chip.pp-hub-reenrolled--pending .pp-hub-reenrolled__mark {
       background: #16a34a;
       color: #fff;
     }
@@ -3493,6 +3632,7 @@
     .pp-hub-shortcut--calendar .pp-hub-shortcut__ico { background: #e8f0fe; color: #1d4ed8; }
     .pp-hub-shortcut--booking .pp-hub-shortcut__ico { background: #eef2ff; color: #4338ca; }
     .pp-hub-shortcut--absence .pp-hub-shortcut__ico { background: #fff1e8; color: #c2410c; }
+    .pp-hub-shortcut--team .pp-hub-shortcut__ico { background: #fff6e5; color: #b7791f; }
     .pp-hub-shortcut--consents .pp-hub-shortcut__ico { background: #f3e8ff; color: #7c3aed; }
     .pp-hub-shortcut--invoices .pp-hub-shortcut__ico { background: #fff4e6; color: #b45309; }
     .pp-hub-shortcut--invoices-unpaid {
@@ -3530,11 +3670,13 @@
     .pp-hub-shortcut--crash .pp-hub-shortcut__ico { background: #fff1e8; color: #c2410c; }
     .pp-hub-shortcut--book-portal .pp-hub-shortcut__ico { background: #ecfdf5; color: #047857; }
     .pp-hub-shortcut--reenr .pp-hub-shortcut__ico { background: #fff8e6; color: #a16207; }
+    .pp-hub-shortcut--summer-story .pp-hub-shortcut__ico { background: #e0f2fe; color: #0369a1; }
     .pp-hub-shortcut--messages .pp-hub-shortcut__label { color: #1f6a94; }
     .pp-hub-shortcut--sessions .pp-hub-shortcut__label { color: #0f766e; }
     .pp-hub-shortcut--calendar .pp-hub-shortcut__label { color: #1d4ed8; }
     .pp-hub-shortcut--booking .pp-hub-shortcut__label { color: #4338ca; }
     .pp-hub-shortcut--absence .pp-hub-shortcut__label { color: #c2410c; }
+    .pp-hub-shortcut--team .pp-hub-shortcut__label { color: #b7791f; }
     .pp-hub-shortcut--consents .pp-hub-shortcut__label { color: #7c3aed; }
     .pp-hub-shortcut--invoices .pp-hub-shortcut__label { color: #b45309; }
     .pp-hub-shortcut--notes .pp-hub-shortcut__label { color: #b7791f; }
@@ -3542,6 +3684,7 @@
     .pp-hub-shortcut--crash .pp-hub-shortcut__label { color: #c2410c; }
     .pp-hub-shortcut--book-portal .pp-hub-shortcut__label { color: #047857; }
     .pp-hub-shortcut--reenr .pp-hub-shortcut__label { color: #a16207; }
+    .pp-hub-shortcut--summer-story .pp-hub-shortcut__label { color: #0369a1; }
     a.pp-hub-shortcut { text-decoration: none; color: inherit; }
     .pp-hub-shortcut__label {
       font-size: 11px;
@@ -4673,6 +4816,56 @@
     }
     .pp-pax-subview-title { margin: 0 0 6px; font-size: 17px; font-weight: 800; color: var(--ink); overflow-wrap: break-word; }
     .pp-pax-subview-note { margin: 0 0 12px; font-size: 12px; }
+    .pp-feedback-year-badge {
+      display: inline-block;
+      margin: 0 0 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--blue);
+      background: rgba(37, 99, 235, 0.08);
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .pp-feedback-year-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+      min-width: 0;
+    }
+    .pp-feedback-year-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      width: 100%;
+      min-width: 0;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      text-align: left;
+      cursor: pointer;
+    }
+    .pp-feedback-year-btn:hover,
+    .pp-feedback-year-btn:focus-visible {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
+    .pp-feedback-year-btn__label {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--ink);
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
+    .pp-feedback-year-btn__hint {
+      font-size: 12px;
+      color: var(--muted);
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
     .pp-gen-card { padding: 14px; margin-bottom: 12px; }
     .pp-gen-list { display: grid; gap: 10px; min-width: 0; }
     .pp-gen-profile {
@@ -5090,8 +5283,7 @@
     </section>
 
     <p class="pp-legal">
-      Staff and instructors use a separate app.
-      <a href="https://www.clubsensational.org/parent/registration">New client registration</a>
+      <a href="/bookingportal">Booking Portal</a>
     </p>
   </main>
 
@@ -5101,10 +5293,10 @@
   <script src="/portal/portal_participant_photos.js?v=20260720-zakariya-photo"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260723-date-svc-stack"></script>
-  <script src="/portal/parent_portal_team.js?v=20260710-eiji-hazem-photos"></script>
-  <script src="/portal/portal_calendar_2026_27.js?v=20260715-crash-cal-first"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260723-inv-actionable"></script>
-  <script src="/portal/parent_portal_app.js?v=20260722-former-no-login"></script>
+  <script src="/portal/parent_portal_team.js?v=20260828-team-one-instructor"></script>
+  <script src="/portal/portal_calendar_2026_27.js?v=20260828-trial-iso-cal"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260901-message-paid-no-btn"></script>
+  <script src="/portal/parent_portal_app.js?v=20260831-partial-pdf-view"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

@@ -143,7 +143,7 @@
   var STAFF_DEFERRED_HEAVY = [
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
-      "/portal/portal_staff_lead_aquatic_slots.js?v=20260724-yusuf-merge",
+      "/portal/portal_staff_lead_aquatic_slots.js?v=20260805-cover-half-merge",
     "/portal/portal_participant_general_hydrate.js?v=20260711-next-med",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
     "/portal/portal_staff_photos.js?v=20260624-rt-debug",
@@ -180,7 +180,8 @@
 
     if (isHandheld) {
       var kick = function () {
-        global.setTimeout(start, 3500);
+        // Short defer so first paint stays light; still must run (was skipped entirely before).
+        global.setTimeout(start, 800);
       };
       if (document.readyState === "complete") kick();
       else global.addEventListener("load", kick, { once: true });
@@ -269,7 +270,9 @@
   }
 
   function onDomReady() {
-    if (!isHandheld) portalStaffStartDeferredDashboardScripts();
+    // Handheld must load clients_info + general-info hydrate too — otherwise
+    // General Info stays empty for almost every participant on phones/tablets.
+    portalStaffStartDeferredDashboardScripts();
     portalStaffDeferHeadExtras();
     if (isStaffApp && typeof global.portalStaffDeferWebPush === "function") {
       global.portalStaffDeferWebPush();

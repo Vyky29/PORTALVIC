@@ -890,14 +890,58 @@
     return false;
   }
 
+  /** Summer standing template window (same as admin Services / Schedule projection). */
+  var HUB_STANDING_TEMPLATE_START = "2026-04-13";
+  var HUB_STANDING_TEMPLATE_END = "2026-07-19";
+  var HUB_STANDING_CRASH_FROM = "2026-07-20";
+  var HUB_AUTUMN_PROJECT_FROM = "2026-09-01";
+
+  function hubUsesAutumnStandingProjection(isoDate) {
+    var iso = String(isoDate || "").trim().substring(0, 10);
+    return !!(iso && iso >= HUB_AUTUMN_PROJECT_FROM);
+  }
+
+  function hubIsCrashWeekIso(iso) {
+    var s = String(iso || "").trim().substring(0, 10);
+    return !!(s && s >= HUB_STANDING_CRASH_FROM);
+  }
+
+  /** Latest pre-crash summer ISO for this weekday in the roster (standing truth). */
+  function hubLatestStandingIsoForDow(rosterRows, wd) {
+    var want = clean(wd);
+    if (!want || !rosterRows || !rosterRows.length) return "";
+    var best = "";
+    for (var i = 0; i < rosterRows.length; i++) {
+      var r = rosterRows[i];
+      var iso = rosterRowSessionDate(r);
+      if (!iso) continue;
+      if (iso < HUB_STANDING_TEMPLATE_START || iso > HUB_STANDING_TEMPLATE_END) continue;
+      if (hubIsCrashWeekIso(iso)) continue;
+      var d = clean(r.day) || weekdayLongFromIso(iso);
+      if (d !== want) continue;
+      if (!best || iso > best) best = iso;
+    }
+    return best;
+  }
+
   /**
-   * Dated week rows only on their calendar day; undated templates only when this client has
-   * no dated rows that week and no dated row on this weekday (matches roster week CSV import).
+   * Dated week rows on their calendar day; autumn also projects summer standing onto the
+   * calendar date and merges sparse portal_roster_rows overlays (new bookings). Undated
+   * templates only when this client has no dated rows that week.
    */
   function rosterRowAppliesOnDate(rosterRows, r, isoDate, wd) {
     if (clean(r.day) !== wd) return false;
     var sd = rosterRowSessionDate(r);
-    if (sd) return sd === isoDate;
+    var project = hubUsesAutumnStandingProjection(isoDate);
+    var standIso = project ? hubLatestStandingIsoForDow(rosterRows, wd) : "";
+    if (sd) {
+      if (sd === isoDate) return true;
+      if (project && standIso && standIso !== isoDate && sd === standIso) {
+        if (clientHasDatedRosterInWeek(rosterRows, r.client_name, isoDate)) return false;
+        return true;
+      }
+      return false;
+    }
     var cid = canonicalClientSlug(r.client_name);
     if (!cid) return true;
     if (clientHasDatedRosterInWeek(rosterRows, r.client_name, isoDate)) return false;
@@ -2386,6 +2430,15 @@
     return k.indexOf("day centre") !== -1 || k.indexOf("day_centre") !== -1 || k.indexOf("daycentre") !== -1;
   }
 
+  /** 2026/27: 1–4 Sep Day Centre only; ASW/Climb/Multi from Sat 5 Sep. */
+  var AUTUMN_DC_ONLY_FROM = "2026-09-01";
+  var AUTUMN_ASW_FROM = "2026-09-05";
+  function rosterServiceAllowedOnAutumnDate(service, isoDate) {
+    var iso = String(isoDate || "").trim().substring(0, 10);
+    if (!iso || iso < AUTUMN_DC_ONLY_FROM || iso >= AUTUMN_ASW_FROM) return true;
+    return isDayCentreService(service);
+  }
+
   function slotInstructorCount(slot) {
     return slotInstructors(slot).length;
   }
@@ -2705,6 +2758,7 @@
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
       if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
+      if (!rosterServiceAllowedOnAutumnDate(r.service, iso)) continue;
       if (!isRosterClient(r.client_name)) continue;
       out.push(rosterRowToSlotLite(iso, wd, r));
     }
@@ -5477,6 +5531,7 @@
     for (var i = 0; i < this.rosterRows.length; i++) {
       var r = this.rosterRows[i];
       if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
+      if (!rosterServiceAllowedOnAutumnDate(r.service, isoDate)) continue;
       if (!isRosterClient(r.client_name) && !isOpenRosterSlot(r.client_name)) continue;
       if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
       if (!clientAllowedOnDate(r.client_name, isoDate)) continue;

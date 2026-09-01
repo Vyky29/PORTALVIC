@@ -3,6 +3,7 @@
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import type { PortalInvoiceVatMode } from "./portal_tax_invoice_pdf.ts";
+import { isPortalCreditLineItem } from "./portal_tax_invoice_pdf.ts";
 import {
   formatServiceTypeLabel,
   formatTimeSlotLabel,
@@ -185,7 +186,10 @@ const TERM_DATE_WINDOWS: Record<
     weekday: {
       start: "2027-04-17",
       end: "2027-07-22",
-      closures: [["2027-05-31", "2027-06-03"]],
+      closures: [
+        ["2027-05-03", "2027-05-03"], // Early May bank holiday — after-schools closed
+        ["2027-05-31", "2027-06-03"],
+      ],
     },
     weekend: {
       start: "2027-04-17",
@@ -202,7 +206,7 @@ function isoDateUtc(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function collectTermSessionDates(
+export function collectTermSessionDates(
   term: ReenrolTerm,
   day: string,
   expectedCount?: number,
@@ -222,6 +226,20 @@ function collectTermSessionDates(
   }
   const count = Math.max(0, Math.round(Number(expectedCount) || 0));
   return count > 0 ? dates.slice(0, count) : dates;
+}
+
+/** Session dates still due on/after asOf (booking / start day) for mid-term joiners. */
+export function remainingTermSessionDates(
+  term: ReenrolTerm,
+  day: string,
+  asOfIso: string,
+  expectedCount?: number,
+): Date[] {
+  const asOf = String(asOfIso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(asOf)) return [];
+  return collectTermSessionDates(term, day, expectedCount).filter(
+    (d) => isoDateUtc(d) >= asOf,
+  );
 }
 
 export function formatGroupedSessionDates(dates: Date[]): string | null {
@@ -265,15 +283,19 @@ export type ReenrolMonthlyLineBuildInput = {
   weeklyChoices?: Record<string, { choice?: string }> | null;
   /** Calendar month YYYY-MM (Sep 2026 → Jul 2027). */
   monthYm: string;
-  /** Invoice total for this month (booking ÷ 11 share). */
-  monthAmountGbp: number;
+  /**
+   * @deprecated Equal-split monthly share. Ignored — months bill sessions × unit fee
+   * so 3-session and 4-session months differ (e.g. Aboodi £100/session).
+   */
+  monthAmountGbp?: number;
   vatMode: PortalInvoiceVatMode;
   productMap: Map<string, ProductMapRow>;
 };
 
 /**
  * Per-service lines for one LA/NHS monthly funder invoice (sessions in that month only).
- * Amounts are scaled so lines sum to monthAmountGbp.
+ * Amount = session count × unit fee (from annual ÷ annual sessions). Months with more
+ * sessions cost more — do not equal-split the year across 11 invoices.
  */
 export function buildReenrolMonthlyLineItems(
   input: ReenrolMonthlyLineBuildInput,
@@ -340,23 +362,12 @@ export function buildReenrolMonthlyLineItems(
   });
   if (!aggs.length) return [];
 
-  const target = round2(Number(input.monthAmountGbp) || 0);
-  const naturalSum = round2(aggs.reduce((s, a) => s + a.naturalGbp, 0));
   const lines: PortalInvoiceLineItem[] = [];
-  let allocated = 0;
-  for (let i = 0; i < aggs.length; i++) {
-    const agg = aggs[i];
+  for (const agg of aggs) {
     const mapRow = input.productMap.get(agg.service_key);
     const label = mapRow?.label || agg.description.split("—")[0].trim();
     const qty = Math.max(1, agg.dates.length);
-    let amount =
-      i === aggs.length - 1
-        ? round2(target - allocated)
-        : naturalSum > 0
-          ? round2((target * agg.naturalGbp) / naturalSum)
-          : round2(target / aggs.length);
-    if (i < aggs.length - 1) allocated = round2(allocated + amount);
-    if (amount < 0) amount = 0;
+    const amount = round2(agg.naturalGbp);
     lines.push({
       service_key: agg.service_key,
       description: label || agg.description,
@@ -416,6 +427,7 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
       service_key: string;
       description: string;
       details: string[];
+      timeLabel: string;
       sessions: number;
       termTotal: number;
     }
@@ -434,6 +446,7 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
     const service_key = serviceKeyFromSlot(slot);
     const description = lineDescriptionForSlot(slot);
     const detail = slotSessionDetail(slot);
+    const timeLabel = formatTimeSlotLabel(String(slot.timeSlot || ""));
     const sessions = Number(slot.sessions?.[input.term] || 0);
     const aggregateKey = `${service_key}\u0000${detail}`;
     const prev = byKey.get(aggregateKey);
@@ -442,11 +455,13 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
       prev.termTotal = round2(prev.termTotal + termTotal);
       if (description.length > prev.description.length) prev.description = description;
       if (detail && !prev.details.includes(detail)) prev.details.push(detail);
+      if (timeLabel && !prev.timeLabel) prev.timeLabel = timeLabel;
     } else {
       byKey.set(aggregateKey, {
         service_key,
         description,
         details: detail ? [detail] : [],
+        timeLabel,
         sessions: sessions > 0 ? sessions : 1,
         termTotal: round2(termTotal),
       });
@@ -456,21 +471,49 @@ export function buildReenrolTermLineItems(input: ReenrolLineBuildInput): PortalI
   const lines: PortalInvoiceLineItem[] = [];
   for (const agg of byKey.values()) {
     const mapRow = input.productMap.get(agg.service_key);
-    const label = mapRow?.label || agg.description.split("—")[0].trim();
-    const qty = Math.max(1, agg.sessions);
-    const unit = round4(agg.termTotal / qty);
     const day =
       weekdayFromText(agg.details[0] || "") ||
+      weekdayFromText(agg.description || "") ||
       String(agg.details[0] || "").split(/\s+/)[0] ||
       "";
+    const catalogQty = Math.max(1, agg.sessions);
+    const unit = round4(agg.termTotal / catalogQty);
+    // Prefer real calendar dates (includes Early May BH closures) over catalogue weights.
+    const actualDates = day ? collectTermSessionDates(input.term, day) : [];
+    const qty = actualDates.length > 0 ? actualDates.length : catalogQty;
+    const amount = round2(unit * qty);
+    const dayLabel = day
+      ? day.charAt(0).toUpperCase() + day.slice(1).toLowerCase()
+      : "";
+    // Clean service title only — never keep clocks from display labels / product map.
+    const serviceTitle = String(mapRow?.label || agg.description || "Programme")
+      .replace(
+        /\s*[-–—,]?\s*\d{1,2}(?:[.:]\d{1,2})?\s*(?:am|pm)?\s*(?:to|-)\s*\d{1,2}(?:[.:]\d{1,2})?\s*(?:am|pm)?/gi,
+        "",
+      )
+      .replace(
+        /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)s?\b/gi,
+        "",
+      )
+      .replace(/\s*[-–—,]\s*$/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    const dayBit = dayLabel
+      ? `${dayLabel}s${agg.timeLabel ? ` ${agg.timeLabel}` : ""}`
+      : agg.timeLabel || "";
+    const descriptionOut = [serviceTitle, dayBit].filter(Boolean).join(", ");
+    // Time already sits next to the weekday in description — do not repeat in detail.
+    const detailOut = null;
     lines.push({
       service_key: agg.service_key,
-      description: label || agg.description,
-      detail: agg.details.join(" · ") || null,
-      dates: slotTermSessionDates(input.term, day, qty),
+      description: descriptionOut,
+      detail: detailOut,
+      dates: actualDates.length
+        ? formatGroupedSessionDates(actualDates)
+        : slotTermSessionDates(input.term, day, qty),
       quantity: qty,
       unit_price_gbp: unit,
-      amount_gbp: agg.termTotal,
+      amount_gbp: amount,
       xero_item_code: xeroItemCodeForService(mapRow, input.vatMode),
     });
   }
@@ -536,4 +579,129 @@ export function lineItemsToDescription(
       })
       .join("\n")
   );
+}
+
+function cleanLine(v: unknown, max = 500): string {
+  return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function paymentChannelLabel(hint: string): string {
+  const h = hint.toLowerCase();
+  if (h === "gocardless") return "Direct Payment (GoCardless)";
+  if (h === "la_funded") return "LA funded";
+  if (h === "payment_link") return "Card / Apple Pay";
+  if (h === "other") return "Other";
+  return "Bank transfer";
+}
+
+/**
+ * Xero ACCREC line Description — same narrative shape as the parent Portal PDF:
+ * lead paragraph, participant / reference / payment method, then product + session + dates.
+ * Keeps ItemCode (SW2 etc.) separate; only the Description text is rewritten.
+ */
+export function buildXeroPushLines(input: {
+  lineItems: unknown;
+  lineDescription?: string | null;
+  vatMode?: string | null;
+  participantName?: string | null;
+  reference?: string | null;
+  paymentMethodHint?: string | null;
+  paymentMethodLabel?: string | null;
+}): Array<{
+  description: string;
+  quantity: number;
+  unitAmount: number;
+  itemCode: string | null;
+  /** Credits: no VAT so parents / Xero see the session £ removed. */
+  taxExempt?: boolean;
+}> {
+  const vatMode = cleanLine(input.vatMode, 20).toLowerCase() || "vat_20";
+  const funded = vatMode === "exempt";
+  const raw = Array.isArray(input.lineItems) ? input.lineItems : [];
+  const parsed: PortalInvoiceLineItem[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const ln = row as Record<string, unknown>;
+    const qty = Number(ln.quantity) > 0 ? Number(ln.quantity) : 1;
+    const amt = Number(ln.amount_gbp);
+    const unit = Number(ln.unit_price_gbp);
+    const unitAmount =
+      Number.isFinite(unit) && unit !== 0
+        ? unit
+        : Number.isFinite(amt) && amt !== 0
+          ? amt / qty
+          : 0;
+    if (!Number.isFinite(unitAmount) || unitAmount === 0) continue;
+    parsed.push({
+      service_key: cleanLine(ln.service_key, 80),
+      description: cleanLine(ln.description, 800),
+      detail: cleanLine(ln.detail, 240) || null,
+      dates: cleanLine(ln.dates, 500) || null,
+      quantity: qty,
+      unit_price_gbp: unitAmount,
+      amount_gbp: Number.isFinite(amt) && amt !== 0 ? amt : unitAmount * qty,
+      xero_item_code: cleanLine(ln.xero_item_code, 80) || null,
+    });
+  }
+
+  const lead =
+    (parsed.length
+      ? funded
+        ? fundedProvisionDescriptionLead(parsed)
+        : "Structured activity support delivered for a SEND participant."
+      : "") ||
+    String(input.lineDescription || "")
+      .split(/\n/)
+      .map((s) => s.trim())
+      .find(Boolean) ||
+    (funded
+      ? "Structured activity support delivered within a structured activity environment for a SEND participant as part of funded provision."
+      : "Structured activity support delivered for a SEND participant.");
+
+  const participant = cleanLine(input.participantName, 120);
+  const reference = cleanLine(input.reference, 120);
+  const method =
+    cleanLine(input.paymentMethodLabel, 160) ||
+    paymentChannelLabel(cleanLine(input.paymentMethodHint, 40));
+  const hint = cleanLine(input.paymentMethodHint, 40).toLowerCase();
+  /* LA / NHS funder invoices: Client ID + PO only (no participant name). */
+  const funderInvoice = hint === "la_funded";
+
+  const metaBlock = (
+    funderInvoice
+      ? [
+        reference ? `- Reference: ${reference}` : "",
+        method ? `- Payment Method: ${method}` : "",
+      ]
+      : [
+        participant ? `Participant's Name: ${participant}` : "",
+        reference ? `- Reference: ${reference}` : "",
+        method ? `- Payment Method: ${method}` : "",
+      ]
+  )
+    .filter(Boolean)
+    .join("\n");
+
+  if (!parsed.length) return [];
+
+  return parsed.map((ln, idx) => {
+    const productBlock = [ln.description, ln.detail || "", ln.dates || ""]
+      .filter(Boolean)
+      .join("\n");
+    /*
+     * Lead on every Xero line (multi-product invoices). Meta (participant /
+     * reference / payment) only on the first line to avoid repeating PII.
+     */
+    const description =
+      idx === 0
+        ? [lead, metaBlock, productBlock].filter(Boolean).join("\n\n").slice(0, 4000)
+        : [lead, productBlock].filter(Boolean).join("\n\n").slice(0, 4000);
+    return {
+      description,
+      quantity: ln.quantity,
+      unitAmount: ln.unit_price_gbp,
+      itemCode: ln.xero_item_code,
+      taxExempt: isPortalCreditLineItem(ln),
+    };
+  });
 }

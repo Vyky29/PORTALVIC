@@ -1,0 +1,12 @@
+---
+description: Finish-booking / pay-link parent messaging (no suitability copy)
+alwaysApply: true
+---
+
+# Finish-booking payment messages
+
+When minting or resending parent finish-booking / pay links (WhatsApp, email, or office scripts):
+
+- Do **not** include suitability wording such as "The office reviews suitability after payment" or "the office checks that the service is suitable".
+- Keep copy to registration received/accepted + place + pay/finish link (+ PIN after payment confirm when using the accepted variant).
+- For already-reviewed docs that only need to pay, prefer the default **accepted** finish-booking wording (or pay-now without suitability), not extra office-review language.

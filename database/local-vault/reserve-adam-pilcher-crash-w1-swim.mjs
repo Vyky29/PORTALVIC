@@ -1,5 +1,5 @@
 /**
- * One-shot admin reserve: Adam Pilcher · Crash swim Week 1 (21–24 Jul) · 16:30–18:00.
+ * One-shot admin reserve: Adam Pilcher · Crash swim Week 1 (21–24 Jul) · 17:00–18:30.
  *
  *   node database/local-vault/reserve-adam-pilcher-crash-w1-swim.mjs
  */
@@ -13,11 +13,11 @@ const CONTACT_ID = "354";
 const PARENT_PERSON_ID = "7166746";
 const WEEK_ID = "w1";
 const DATES = ["2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"];
-/** 16:30–18:00 = three consecutive 30′ bands (Instructor A). */
+/** 17:00–18:30 = three consecutive 30′ bands (Instructor A). Corrected per Roberto. */
 const SLOTS = [
-  { id: "s1", label: "16:30–17:00 · Instructor A" },
   { id: "s3", label: "17:00–17:30 · Instructor A" },
   { id: "s5", label: "17:30–18:00 · Instructor A" },
+  { id: "s7", label: "18:00–18:30 · Instructor A" },
 ];
 const WEEKLY_PACK_UNIT = 200; // £200 per 30′ band for 4-day pack
 const AMOUNT = WEEKLY_PACK_UNIT * SLOTS.length; // £600
@@ -78,7 +78,7 @@ const { data: booking, error: bookErr } = await admin
     status: "confirmed",
     hold_expires_at: null,
     notes:
-      "Admin reserved · Adam Pilcher · Swim crash Week 1 · 16:30–18:00 (Instructor A) · Tue 21–Fri 24 Jul 2026",
+      "Admin reserved · Adam Pilcher · Swim crash Week 1 · 17:00–18:30 (Instructor A) · Tue 21–Fri 24 Jul 2026",
     updated_at: now,
   })
   .select("id")
@@ -137,7 +137,7 @@ if (!ownerId) {
 
 const ref = `CRASH-SUM26-${String(booking.id).slice(0, 8).toUpperCase()}`;
 const desc =
-  "Summer crash course Jul 2026 — Swimming weekly pack (Week 1 · Tue 21 – Fri 24 July 2026) · 16:30–18:00 · 90′ · Instructor A. Admin reserved place for Adam Pilcher.";
+  "Summer crash course Jul 2026 — Swimming weekly pack (Week 1 · Tue 21 – Fri 24 July 2026) · 17:00–18:30 · 90′ · Instructor A. Admin reserved place for Adam Pilcher.";
 
 const { data: alloc, error: allocErr } = await admin.rpc(
   "portal_allocate_family_invoice_number",
@@ -154,7 +154,7 @@ const pdf = Buffer.from(
 2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj
 3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 420 300] /Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj
 4 0 obj<< /Length 120 >>stream
-BT /F1 12 Tf 40 240 Td (${invoiceNumber}) Tj 0 -20 Td (Adam Pilcher crash swim W1) Tj 0 -20 Td (16:30-18:00 Tue-Fri 21-24 Jul) Tj 0 -20 Td (Amount GBP ${AMOUNT}) Tj ET
+BT /F1 12 Tf 40 240 Td (${invoiceNumber}) Tj 0 -20 Td (Adam Pilcher crash swim W1) Tj 0 -20 Td (17:00-18:30 Tue-Fri 21-24 Jul) Tj 0 -20 Td (Amount GBP ${AMOUNT}) Tj ET
 endstream endobj
 5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj
 xref
@@ -249,7 +249,7 @@ console.log(
       parent: "Juliette Fenton",
       week: "Week 1 · Tue 21 – Fri 24 July 2026",
       activity: "swimming",
-      time: "16:30–18:00 Instructor A",
+      time: "17:00–18:30 Instructor A",
       slots: SLOTS.map((s) => s.id),
       amount_gbp: AMOUNT,
       invoice_id: share.id,

@@ -337,6 +337,45 @@
       color:var(--ink);
       font-size:1.25rem;
     }
+    .parent-submit-fail{
+      display:none;
+      margin:16px 0 0;
+      padding:16px 14px;
+      border-radius:var(--radius);
+      background:#fff5f5;
+      border:1px solid #fecaca;
+      color:#7f1d1d;
+      max-width:560px;
+      margin-left:auto;
+      margin-right:auto;
+      text-align:left;
+      overflow-wrap:break-word;
+    }
+    .parent-submit-fail:not([hidden]){display:block;}
+    .parent-submit-fail h2{
+      margin:0 0 8px;
+      font-size:1.05rem;
+      color:#991b1b;
+    }
+    .parent-submit-fail p{margin:0 0 12px;font-size:14px;line-height:1.45;color:#7f1d1d;}
+    .parent-submit-fail__actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      min-width:0;
+    }
+    .parent-submit-fail__actions button{
+      appearance:none;
+      border:0;
+      border-radius:10px;
+      padding:10px 14px;
+      font:inherit;
+      font-weight:700;
+      cursor:pointer;
+      min-width:0;
+    }
+    .parent-submit-fail__retry{background:var(--blue);color:#fff;}
+    .parent-submit-fail__draft{background:#fff;color:#991b1b;border:1px solid #fecaca !important;}
     .parent-submit-done p{
       margin:0;
       color:var(--text);
@@ -363,8 +402,8 @@
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="/portal/parent_form_submit.js?v=20260716-slot-hold"></script>
-  <script src="/portal/parent_registration_portal.js?v=20260715-prefill-review"></script>
+  <script src="/portal/parent_form_submit.js?v=20260817-pdf-thumb"></script>
+  <script src="/portal/parent_registration_portal.js?v=20260817-pdf-thumb"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-bookingportal"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260724-returning-no-privacy"></script>
   <script>
@@ -417,7 +456,7 @@
     <div class="topbar">
       <div class="title-block">
         <h1>Client details &amp; support form</h1>
-        <p>Complete at home, then submit to download a PDF for clubSENsational.</p>
+        <p>Choose a session on the Booking Portal, then complete this form. When you submit successfully, clubSENsational receives it for review before your place is confirmed.</p>
       </div>
       <div class="brand-logo">
         <div class="brand-logo-stage">
@@ -454,7 +493,7 @@
 
     <div class="notice" id="formNotice">
       Fill in <strong>all</strong> sections below (every question is required). You must add a <strong>photo of the participant</strong> (face or ID document).
-      Tap <strong>Submit form</strong> — your answers are sent to clubSENsational automatically and a PDF is saved on your device.
+      Tap <strong>Submit form</strong> once: the club receives the form <strong>and photo</strong> in Documents, and a PDF copy downloads to your phone at the same time. Wait for the green <strong>Thank you</strong> screen — that confirms both happened.
     </div>
 
     <form id="regForm" novalidate>
@@ -528,7 +567,7 @@
 
           <div class="field" data-icon="camera">
             <label class="field-label" for="participant_photo"><span class="field-label__text">Participant photo (face or ID) <span class="required-mark">*</span></span></label>
-            <p class="hint">Upload a clear photo of the participant&apos;s face, or a photo of their ID document. Used for identification on trips and sessions.</p>
+            <p class="hint">Upload a clear photo of the participant&apos;s face, or a photo of their ID document. JPEG/PNG work best (on iPhone prefer &ldquo;Most Compatible&rdquo;). Photos are compressed automatically; the full photo is stored separately from the PDF so large camera files should still submit.</p>
             <div class="photo-box" id="photoBox">
               <input type="file" id="participant_photo" name="participant_photo" accept="image/jpeg,image/png,image/webp,image/heic,image/*" capture="user" required />
               <img id="photoPreview" class="photo-preview" alt="Participant photo preview" />
@@ -759,6 +798,14 @@
       <h2>Thank you — you&apos;re all set</h2>
       <p data-parent-submit-msg></p>
     </div>
+    <div id="parentSubmitFail" class="parent-submit-fail" hidden role="alert" aria-live="assertive">
+      <h2>Not sent to the club yet</h2>
+      <p data-parent-submit-fail-msg>Your answers are still only on this phone. Please tap Try again and keep this page open until you see the green Thank you screen.</p>
+      <div class="parent-submit-fail__actions">
+        <button type="button" class="parent-submit-fail__retry" id="parentSubmitFailRetry">Try again</button>
+        <button type="button" class="parent-submit-fail__draft" id="parentSubmitFailDraft" hidden>Download draft PDF to email the office</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -767,7 +814,10 @@
     var photoInput = document.getElementById('participant_photo');
     var photoPreview = document.getElementById('photoPreview');
     var photoBox = document.getElementById('photoBox');
-    var photoDataUrl = null;
+    var photoDataUrl = null; /* preview + small PDF thumbnail only */
+    var photoPdfDataUrl = null; /* tiny JPEG for jsPDF embed (full photo uploads separately) */
+    var photoUploadBlob = null;
+    var PDF_UPLOAD_MAX_BYTES = 10 * 1024 * 1024; /* stay under server 12MB limit */
 
     var FIELD_ICONS = {
       user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
@@ -856,32 +906,137 @@
     decorateFieldIcons();
     setupYesNoFollowups();
 
+    function isLikelyImageFile(file) {
+      if (!file) return false;
+      var t = String(file.type || '').toLowerCase();
+      if (t.indexOf('image/') === 0) return true;
+      var n = String(file.name || '').toLowerCase();
+      return /\.(jpe?g|png|webp|heic|heif|gif)$/.test(n);
+    }
+
+    function canvasToJpegBlob(canvas, quality) {
+      return new Promise(function (resolve, reject) {
+        canvas.toBlob(
+          function (blob) {
+            if (!blob) reject(new Error('photo_decode_failed'));
+            else resolve(blob);
+          },
+          'image/jpeg',
+          quality,
+        );
+      });
+    }
+
+    function drawScaledCanvas(img, maxSide) {
+      var w = img.naturalWidth || img.width || 1;
+      var h = img.naturalHeight || img.height || 1;
+      var scale = Math.min(1, maxSide / Math.max(w, h));
+      var cw = Math.max(1, Math.round(w * scale));
+      var ch = Math.max(1, Math.round(h * scale));
+      var canvas = document.createElement('canvas');
+      canvas.width = cw;
+      canvas.height = ch;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.drawImage(img, 0, 0, cw, ch);
+      return canvas;
+    }
+
+    /**
+     * Full-res photos must NOT go into the PDF — that blows past the 12MB upload
+     * limit. Upload blob stays sharp enough for Documents; PDF gets a tiny thumb.
+     */
+    function compressParticipantPhoto(file) {
+      return new Promise(function (resolve, reject) {
+        if (!file) {
+          reject(new Error('photo_missing'));
+          return;
+        }
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+          URL.revokeObjectURL(url);
+          var uploadCanvas = drawScaledCanvas(img, 1200);
+          var thumbCanvas = drawScaledCanvas(img, 420);
+          if (!uploadCanvas || !thumbCanvas) {
+            reject(new Error('photo_decode_failed'));
+            return;
+          }
+          var qualities = [0.72, 0.62, 0.52, 0.42];
+          var targetUploadBytes = 900 * 1024;
+          function tryUpload(qi) {
+            var q = qualities[Math.min(qi, qualities.length - 1)];
+            return canvasToJpegBlob(uploadCanvas, q).then(function (blob) {
+              if (blob.size > targetUploadBytes && qi < qualities.length - 1) {
+                return tryUpload(qi + 1);
+              }
+              if (blob.size > 7.5 * 1024 * 1024) {
+                throw new Error('photo_too_large');
+              }
+              var pdfDataUrl = thumbCanvas.toDataURL('image/jpeg', 0.55);
+              var previewDataUrl = uploadCanvas.toDataURL('image/jpeg', 0.7);
+              return {
+                blob: blob,
+                dataUrl: previewDataUrl,
+                pdfDataUrl: pdfDataUrl,
+              };
+            });
+          }
+          tryUpload(0).then(resolve).catch(reject);
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(url);
+          reject(new Error('photo_decode_failed'));
+        };
+        img.src = url;
+      });
+    }
+
     photoInput.addEventListener('change', function(){
       var file = photoInput.files && photoInput.files[0];
       photoDataUrl = null;
+      photoPdfDataUrl = null;
+      photoUploadBlob = null;
       if (!file) {
         photoPreview.classList.remove('visible');
         photoBox.classList.remove('has-photo');
         return;
       }
-      if (!file.type.match(/^image\//)) {
-        alert('Please choose an image file (JPEG, PNG, etc.).');
+      if (!isLikelyImageFile(file)) {
+        alert('Please choose an image file (JPEG or PNG).');
         photoInput.value = '';
         return;
       }
-      if (file.size > 8 * 1024 * 1024) {
-        alert('Photo is too large. Please use an image under 8 MB.');
+      if (file.size > 20 * 1024 * 1024) {
+        alert('Photo is too large. Please use an image under 20 MB (we compress before upload).');
         photoInput.value = '';
         return;
       }
-      var reader = new FileReader();
-      reader.onload = function(ev){
-        photoDataUrl = ev.target.result;
-        photoPreview.src = photoDataUrl;
-        photoPreview.classList.add('visible');
-        photoBox.classList.add('has-photo');
-      };
-      reader.readAsDataURL(file);
+      compressParticipantPhoto(file)
+        .then(function (out) {
+          photoUploadBlob = out.blob;
+          photoDataUrl = out.dataUrl;
+          photoPdfDataUrl = out.pdfDataUrl || out.dataUrl;
+          photoPreview.src = photoDataUrl;
+          photoPreview.classList.add('visible');
+          photoBox.classList.add('has-photo');
+        })
+        .catch(function (err) {
+          console.error(err);
+          var code = String((err && err.message) || '');
+          if (code === 'photo_decode_failed') {
+            alert('Could not read that photo. On iPhone, choose “Most Compatible” / JPEG, or take a new photo and try again.');
+          } else if (code === 'photo_too_large') {
+            alert('Photo is still too large after compression. Please take a new, smaller photo.');
+          } else {
+            alert('Could not prepare the photo. Please try a JPEG or PNG.');
+          }
+          photoInput.value = '';
+          photoPreview.classList.remove('visible');
+          photoBox.classList.remove('has-photo');
+        });
     });
 
     function val(name){ var el = form.elements[name]; return el ? (el.value || '').trim() : ''; }
@@ -924,14 +1079,37 @@
           booking_mode: String(q.get('booking_mode') || '').trim() || null,
           week_id: String(q.get('week_id') || '').trim() || null,
           block_id: String(q.get('block_id') || '').trim() || null,
-          date: String(q.get('date') || '').trim() || null
+          date: String(q.get('date') || '').trim() || null,
+          booking_kind: (function () {
+            var k = String(q.get('booking_kind') || '').trim().toLowerCase();
+            return k === 'trial' || k === 'trial_session' || k === 'taster' ? 'trial' : 'term';
+          })()
         };
       } catch (_e) {
         return null;
       }
     }
 
-    var bookingRequest = bookingRequestFromUrl();
+    var BOOKING_REQ_KEY = 'clubsens_pending_booking_request_v1';
+    function persistBookingRequest(br) {
+      if (!br || !br.slot_id) return;
+      try {
+        sessionStorage.setItem(BOOKING_REQ_KEY, JSON.stringify(br));
+      } catch (_e) {}
+    }
+    function restoreBookingRequest() {
+      try {
+        var raw = sessionStorage.getItem(BOOKING_REQ_KEY);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        return parsed && parsed.slot_id ? parsed : null;
+      } catch (_e2) {
+        return null;
+      }
+    }
+
+    var bookingRequest = bookingRequestFromUrl() || restoreBookingRequest();
+    if (bookingRequest && bookingRequest.slot_id) persistBookingRequest(bookingRequest);
 
     (function applyBookingLeadPrefill() {
       var gate = window.PortalBookingLeadGate;
@@ -1022,7 +1200,11 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
         }).join(' · ') +
-        '</strong>. When you submit this form, that place is held for you while clubSENsational reviews your details. After approval you will get Parent Portal access (booking, invoice, calendar).';
+        '</strong>' +
+        (bookingRequest.booking_kind === 'trial'
+          ? ' · <strong>Trial (pay 1 session after approval)</strong>'
+          : ' · term place') +
+        '. When you submit this form, that place is held for you while clubSENsational reviews your details. After approval you will get Parent Portal access (booking, invoice, calendar).';
       el.removeAttribute('hidden');
     })();
 
@@ -1033,72 +1215,131 @@
       return p[2]+'/'+p[1]+'/'+p[0];
     }
 
-    function addSection(doc, y, title, lines, pageW, M, maxY){
-      if (y > maxY - 20) { doc.addPage(); y = 18; }
-      doc.setFontSize(11);
-      doc.setFont(undefined, 'bold');
-      doc.setTextColor(45, 132, 179);
-      doc.text(title, M, y);
-      y += 6;
-      doc.setFont(undefined, 'normal');
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(9);
-      lines.forEach(function(row){
-        if (!row[1]) return;
-        var label = row[0] + ': ';
-        var text = doc.splitTextToSize(label + row[1], pageW - M * 2);
-        if (y + text.length * 4 > maxY) { doc.addPage(); y = 18; doc.setFontSize(9); }
-        doc.text(text, M, y);
-        y += text.length * 4 + 2;
-      });
-      return y + 4;
+    /* PDF helpers — keep text/photo fully on-page (no clipping / below-the-fold loss). */
+    var PDF_LINE = 5;
+    function pdfEnsureSpace(doc, y, need, M, maxY) {
+      if (y + need <= maxY) return y;
+      doc.addPage();
+      return 18;
     }
-
-    function addParticipantSection(doc, y, lines, photoDataUrl, pageW, M, maxY){
-      var photoSize = 46;
-      var gap = 10;
-      var textW = pageW - M * 2 - photoSize - gap;
-      var photoX = pageW - M - photoSize;
-      if (y > maxY - 30) { doc.addPage(); y = 18; }
-
+    function pdfDrawWrapped(doc, text, x, y, maxWidth, lineH, M, maxY) {
+      var lines = doc.splitTextToSize(String(text || ''), Math.max(20, maxWidth));
+      if (!lines.length) return y;
+      for (var i = 0; i < lines.length; i++) {
+        y = pdfEnsureSpace(doc, y, lineH + 1, M, maxY);
+        doc.text(lines[i], x, y);
+        y += lineH;
+      }
+      return y;
+    }
+    function pdfFitImageInBox(doc, dataUrl, boxX, boxY, boxW, boxH) {
+      if (!dataUrl) return;
+      try {
+        var props = doc.getImageProperties(dataUrl);
+        var iw = Number(props.width) || 1;
+        var ih = Number(props.height) || 1;
+        var scale = Math.min(boxW / iw, boxH / ih);
+        var dw = Math.max(1, iw * scale);
+        var dh = Math.max(1, ih * scale);
+        var dx = boxX + (boxW - dw) / 2;
+        var dy = boxY + (boxH - dh) / 2;
+        var imgFmt = dataUrl.indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
+        doc.addImage(dataUrl, imgFmt, dx, dy, dw, dh);
+      } catch (imgErr) {
+        console.warn(imgErr);
+      }
+    }
+    function addSection(doc, y, title, lines, pageW, M, maxY) {
+      var contentW = pageW - M * 2;
+      y = pdfEnsureSpace(doc, y, 16, M, maxY);
+      doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
-      doc.setFont(undefined, 'bold');
+      doc.setTextColor(45, 132, 179);
+      y = pdfDrawWrapped(doc, title, M, y, contentW, 5.5, M, maxY);
+      y += 2;
+      doc.setTextColor(0, 0, 0);
+      lines.forEach(function (row) {
+        var value = row[1] == null ? '' : String(row[1]).trim();
+        if (!value) return;
+        var label = String(row[0] || '').trim();
+        y = pdfEnsureSpace(doc, y, PDF_LINE * 2 + 2, M, maxY);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        y = pdfDrawWrapped(doc, label, M, y, contentW, PDF_LINE, M, maxY);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        y = pdfDrawWrapped(doc, value, M, y, contentW, PDF_LINE, M, maxY);
+        y += 2.5;
+      });
+      return y + 3;
+    }
+    function addParticipantSection(doc, y, lines, photoDataUrl, pageW, M, maxY) {
+      var photoSize = 46;
+      var gap = 8;
+      var hasPhoto = !!photoDataUrl;
+      var textW = hasPhoto ? pageW - M * 2 - photoSize - gap : pageW - M * 2;
+      var photoX = pageW - M - photoSize;
+      y = pdfEnsureSpace(doc, y, (hasPhoto ? photoSize : 8) + 14, M, maxY);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
       doc.setTextColor(45, 132, 179);
       doc.text('Participant', M, y);
       y += 7;
 
       var boxY = y - 1;
-      doc.setDrawColor(45, 132, 179);
-      doc.setLineWidth(0.35);
-      doc.setFillColor(255, 255, 255);
-      doc.rect(photoX, boxY, photoSize, photoSize, 'FD');
-      if (photoDataUrl) {
-        try {
-          var imgFmt = photoDataUrl.indexOf('image/png') >= 0 ? 'PNG' : 'JPEG';
-          doc.addImage(photoDataUrl, imgFmt, photoX + 1.5, boxY + 1.5, photoSize - 3, photoSize - 3);
-        } catch (imgErr) {
-          console.warn(imgErr);
-        }
+      if (hasPhoto) {
+        doc.setDrawColor(45, 132, 179);
+        doc.setLineWidth(0.35);
+        doc.setFillColor(255, 255, 255);
+        doc.rect(photoX, boxY, photoSize, photoSize, 'FD');
+        pdfFitImageInBox(doc, photoDataUrl, photoX + 1.5, boxY + 1.5, photoSize - 3, photoSize - 3);
       }
 
-      doc.setFont(undefined, 'normal');
       doc.setTextColor(0, 0, 0);
-      doc.setFontSize(9);
       var lineY = y;
-      lines.forEach(function(row){
-        if (!row[1]) return;
-        var label = row[0] + ': ';
-        var text = doc.splitTextToSize(label + row[1], textW);
-        if (lineY + text.length * 4 > maxY) {
-          doc.addPage();
-          lineY = 18;
-          doc.setFontSize(9);
+      var pageBefore = doc.internal.getNumberOfPages();
+      lines.forEach(function (row) {
+        var value = row[1] == null ? '' : String(row[1]).trim();
+        if (!value) return;
+        var label = String(row[0] || '').trim();
+        /* Keep name/DOB beside photo while still on the first participant page. */
+        var besidePhoto =
+          hasPhoto &&
+          doc.internal.getNumberOfPages() === pageBefore &&
+          lineY < boxY + photoSize - 2;
+        var x = M;
+        var w = besidePhoto ? textW : pageW - M * 2;
+        lineY = pdfEnsureSpace(doc, lineY, PDF_LINE * 2 + 2, M, maxY);
+        if (doc.internal.getNumberOfPages() !== pageBefore) {
+          w = pageW - M * 2;
         }
-        doc.text(text, M, lineY);
-        lineY += text.length * 4 + 2;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        lineY = pdfDrawWrapped(doc, label, x, lineY, w, PDF_LINE, M, maxY);
+        doc.setFont('helvetica', 'normal');
+        lineY = pdfDrawWrapped(doc, value, x, lineY, w, PDF_LINE, M, maxY);
+        lineY += 2.5;
       });
 
-      return Math.max(lineY, boxY + photoSize) + 6;
+      var endY = lineY;
+      if (hasPhoto && doc.internal.getNumberOfPages() === pageBefore) {
+        endY = Math.max(lineY, boxY + photoSize + 4);
+      }
+      return endY + 4;
+    }
+    function pdfStampPageNumbers(doc, M) {
+      var total = doc.internal.getNumberOfPages();
+      var pageH = doc.internal.pageSize.getHeight();
+      var pageW = doc.internal.pageSize.getWidth();
+      for (var p = 1; p <= total; p++) {
+        doc.setPage(p);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text('Page ' + p + ' of ' + total, pageW - M, pageH - 8, { align: 'right' });
+      }
+      doc.setTextColor(0, 0, 0);
     }
 
     var pdfBrandLogoDataUrl = null;
@@ -1107,11 +1348,16 @@
       function cacheFromImage(img){
         if (!img || !img.naturalWidth) return;
         try {
+          /* Tiny logo for PDF only — full PNG was bloating uploads. */
+          var maxSide = 96;
+          var w = img.naturalWidth;
+          var h = img.naturalHeight;
+          var scale = Math.min(1, maxSide / Math.max(w, h));
           var c = document.createElement('canvas');
-          c.width = img.naturalWidth;
-          c.height = img.naturalHeight;
-          c.getContext('2d').drawImage(img, 0, 0);
-          pdfBrandLogoDataUrl = c.toDataURL('image/png');
+          c.width = Math.max(1, Math.round(w * scale));
+          c.height = Math.max(1, Math.round(h * scale));
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          pdfBrandLogoDataUrl = c.toDataURL('image/jpeg', 0.75);
         } catch (_e) {}
       }
       if (logoEl) {
@@ -1172,7 +1418,7 @@
         var logoSize = 24;
         if (pdfBrandLogoDataUrl) {
           try {
-            doc.addImage(pdfBrandLogoDataUrl, 'PNG', M, y, logoSize, logoSize);
+            doc.addImage(pdfBrandLogoDataUrl, pdfBrandLogoDataUrl.indexOf('image/png') >= 0 ? 'PNG' : 'JPEG', M, y, logoSize, logoSize);
             y += logoSize + 5;
           } catch (logoErr) {
             console.warn(logoErr);
@@ -1180,14 +1426,24 @@
         }
 
         doc.setFontSize(16);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(45, 132, 179);
-        doc.text('ClubSENsational — Client Registration', M, y);
-        y += 10;
+        y = pdfDrawWrapped(doc, 'ClubSENsational — Client Registration', M, y, pageW - M * 2, 7, M, maxY);
+        y += 4;
         doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
         doc.setTextColor(80, 80, 80);
-        doc.text('Submitted: ' + new Date().toLocaleString('en-GB'), M, y);
-        y += 10;
+        y = pdfDrawWrapped(
+          doc,
+          'Prepared (send only after club confirms): ' + new Date().toLocaleString('en-GB'),
+          M,
+          y,
+          pageW - M * 2,
+          5,
+          M,
+          maxY
+        );
+        y += 6;
 
         doc.setTextColor(0, 0, 0);
         if (bookingRequest) {
@@ -1215,7 +1471,7 @@
           ['Date of birth', fmtDate(val('participant_dob'))],
           ['Gender', val('participant_gender')],
           ['School / college / residential', val('participant_school')]
-        ], photoDataUrl, pageW, M, maxY);
+        ], photoPdfDataUrl || photoDataUrl, pageW, M, maxY);
 
         y = addSection(doc, y, 'Medical & support plans', [
           ['EHCP', radio('ehcp')],
@@ -1254,15 +1510,25 @@
           ['Anything else', val('anything_else')]
         ], pageW, M, maxY);
 
+        pdfStampPageNumbers(doc, M);
+
         var safeName = (val('participant_name') || 'Participant').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
         var filename = 'ClubSENsational_Registration_' + safeName + '.pdf';
         var pdfBlob = doc.output('blob');
-        doc.save(filename);
+        // Do NOT download until the club server confirms save — otherwise parents
+        // keep a local PDF while Enquiries never receives the form.
 
         if (!window.portalSubmitParentForm) {
           throw new Error('Portal upload is not configured.');
         }
-        var photoFile = photoInput.files && photoInput.files[0];
+        var photoFile = photoUploadBlob || (photoInput.files && photoInput.files[0]) || null;
+        if (!photoFile) {
+          alert('Please add a participant photo (face or ID) before submitting.');
+          btn.disabled = false;
+          btn.textContent = 'Submit form';
+          photoInput.focus();
+          return;
+        }
         var submitPayload = window.ParentRegistrationPortal
           ? ParentRegistrationPortal.collectFullPayload(form, formHelpers)
           : {
@@ -1275,6 +1541,31 @@
         if (bookingRequest) {
           submitPayload.booking_request = bookingRequest;
         }
+        function downloadParentPdfCopy() {
+          try {
+            doc.save(filename);
+            return;
+          } catch (_saveErr) {
+            console.warn(_saveErr);
+          }
+          try {
+            var url = URL.createObjectURL(pdfBlob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(function () {
+              try {
+                URL.revokeObjectURL(url);
+              } catch (_rev) {}
+            }, 2000);
+          } catch (_aErr) {
+            console.warn(_aErr);
+          }
+        }
         window.portalSubmitParentForm({
           form_type: 'client_registration',
           participant_name: val('participant_name'),
@@ -1284,19 +1575,121 @@
           parent_phone: val('parent_phone'),
           pdf: pdfBlob,
           pdf_filename: filename,
-          photo: photoFile || null,
-          photo_filename: photoFile ? photoFile.name : undefined,
+          photo: photoFile,
+          photo_filename: 'participant-photo.jpg',
           payload: submitPayload
+        }).catch(function (uploadErr) {
+          /* Auto-retry once with a text-only PDF if the first PDF was still too large.
+             Full participant photo is still uploaded as a separate file. */
+          var code = String((uploadErr && uploadErr.message) || '').toLowerCase();
+          if (code !== 'pdf_too_large') throw uploadErr;
+          console.warn('[registration] pdf_too_large — rebuilding PDF without embedded photo');
+          var lean = new JsPDF({ unit: 'mm', format: 'a4' });
+          var Lm = 14;
+          var Lw = lean.internal.pageSize.getWidth();
+          var Lmax = lean.internal.pageSize.getHeight() - 14;
+          var Ly = 18;
+          lean.setFont('helvetica', 'bold');
+          lean.setFontSize(14);
+          lean.setTextColor(45, 132, 179);
+          Ly = pdfDrawWrapped(lean, 'ClubSENsational — Client Registration', Lm, Ly, Lw - Lm * 2, 7, Lm, Lmax);
+          Ly += 4;
+          lean.setFont('helvetica', 'normal');
+          lean.setFontSize(9);
+          lean.setTextColor(80, 80, 80);
+          Ly = pdfDrawWrapped(
+            lean,
+            'Photo attached separately (not embedded — kept PDF under upload limit). ' +
+              new Date().toLocaleString('en-GB'),
+            Lm,
+            Ly,
+            Lw - Lm * 2,
+            5,
+            Lm,
+            Lmax
+          );
+          Ly += 6;
+          lean.setTextColor(0, 0, 0);
+          Ly = addSection(lean, Ly, 'Parent / guardian', [
+            ['Name', val('parent_name')],
+            ['Relationship', radio('relationship')],
+            ['Phone', val('parent_phone')],
+            ['Email', val('parent_email')],
+            ['Address', val('parent_address')],
+            ['Postcode', val('parent_postcode')]
+          ], Lw, Lm, Lmax);
+          Ly = addParticipantSection(lean, Ly, [
+            ['Name', val('participant_name')],
+            ['Date of birth', fmtDate(val('participant_dob'))],
+            ['Gender', val('participant_gender')],
+            ['School / college / residential', val('participant_school')]
+          ], null, Lw, Lm, Lmax);
+          Ly = addSection(lean, Ly, 'Medical & support plans', [
+            ['EHCP', radio('ehcp')],
+            ['EHCP details', val('ehcp_details')],
+            ['Social worker', radio('social_worker')],
+            ['Social worker contact', val('social_worker_contact')],
+            ['Motivators', val('motivators')],
+            ['Dislikes', val('dislikes')],
+            ['Medication', val('medication')],
+            ['Allergies', val('allergies')],
+            ['Medical conditions', val('medical_conditions')],
+            ['Health / emergency plan', radio('health_plan')],
+            ['Health plan details', val('health_plan_details')]
+          ], Lw, Lm, Lmax);
+          Ly = addSection(lean, Ly, 'Behaviour', [
+            ['Triggers', checks('triggers')],
+            ['Regulation strategies', checks('strategies')],
+            ['Additional notes', val('behaviour_notes')],
+            ['Support when regulated', radio('support_regulated')],
+            ['Support when dysregulated', radio('support_dysregulated')]
+          ], Lw, Lm, Lmax);
+          Ly = addSection(lean, Ly, 'Communication', [
+            ['Expressive communication', checks('expressive_comm')],
+            ['Understands instructions', radio('understand_instructions')],
+            ['Preferred strategies', val('comm_strategies')]
+          ], Lw, Lm, Lmax);
+          Ly = addSection(lean, Ly, 'Independence', [
+            ['Mobility', radio('mobility')],
+            ['Personal care', radio('personal_care')],
+            ['Task engagement', radio('task_engagement')],
+            ['Transitions', radio('transitions')],
+            ['Risk awareness', radio('risk_awareness')],
+            ['Anything else', val('anything_else')]
+          ], Lw, Lm, Lmax);
+          pdfStampPageNumbers(lean, Lm);
+          doc = lean;
+          pdfBlob = lean.output('blob');
+          return window.portalSubmitParentForm({
+            form_type: 'client_registration',
+            participant_name: val('participant_name'),
+            participant_dob: val('participant_dob'),
+            parent_name: val('parent_name'),
+            parent_email: val('parent_email'),
+            parent_phone: val('parent_phone'),
+            pdf: pdfBlob,
+            pdf_filename: filename,
+            photo: photoFile,
+            photo_filename: 'participant-photo.jpg',
+            payload: submitPayload
+          });
         }).then(function(res){
+          var failEl = document.getElementById('parentSubmitFail');
+          if (failEl) failEl.hidden = true;
+          /* Same moment: club already has PDF+photo in Documents; parent gets their copy now. */
+          downloadParentPdfCopy();
           if (portalMode && typeof portalMode.afterSubmitSuccess === 'function') {
             return portalMode.afterSubmitSuccess();
           }
           if (window.portalFinishParentSubmit) {
-            var holdMsg = (res && res.slot_held)
-              ? ' Your selected session place is held for review — the office will confirm Parent Portal access next.'
-              : (bookingRequest
-                ? ' Your selected session was sent with this form for the office to review.'
-                : '');
+            var finishUrl = res && res.finish_url ? String(res.finish_url) : "";
+            var holdMsg = finishUrl
+              ? " Continue to payment now — your place is held for 30 minutes while you pay."
+              : (res && res.slot_held
+                ? " Your selected session is held. Check your email or WhatsApp for the payment link."
+                : (bookingRequest
+                  ? " Your selected session was sent with this form."
+                  : ""));
             try {
               if (window.PortalBookingLeadGate) {
                 void window.PortalBookingLeadGate.pingActivity({
@@ -1305,24 +1698,83 @@
                 });
               }
             } catch (_leadPing) {}
-            window.portalFinishParentSubmit({
-              formEl: form,
-              successEl: document.getElementById('parentSubmitDone'),
-              noticeEl: document.getElementById('formNotice'),
-              submitBtn: btn,
-              message:
-                'Your form was sent to clubSENsational. A PDF copy was saved on your device.' +
-                holdMsg +
-                ' You do not need to email us — you can close this page.'
-            });
+            if (finishUrl) {
+              window.portalFinishParentSubmit({
+                formEl: form,
+                successEl: document.getElementById('parentSubmitDone'),
+                noticeEl: document.getElementById('formNotice'),
+                submitBtn: btn,
+                message:
+                  'Form sent. Taking you to payment now…' +
+                  holdMsg
+              });
+              setTimeout(function () {
+                global.location.href = finishUrl;
+              }, 1200);
+            } else {
+              window.portalFinishParentSubmit({
+                formEl: form,
+                successEl: document.getElementById('parentSubmitDone'),
+                noticeEl: document.getElementById('formNotice'),
+                submitBtn: btn,
+                message:
+                  'Form and photo were sent to clubSENsational Documents. A PDF copy also downloaded to your device.' +
+                  holdMsg +
+                  ' You do not need to email us — you can close this page.'
+              });
+            }
           }
         }).catch(function(err){
           console.error(err);
           btn.disabled = false;
           btn.textContent = portalMode ? 'Save updates' : 'Submit form';
-          alert(portalMode
-            ? 'Could not save your updates. Please check your connection and try again.'
-            : 'Could not send your form to clubSENsational. Please check your connection and try again, or email the downloaded PDF to the club.');
+          var friendly = window.portalParentFormFriendlyError
+            ? window.portalParentFormFriendlyError(err)
+            : null;
+          if (!portalMode) {
+            /* Do NOT auto-download on failure — parents treat a PDF as “submitted”. */
+            var failPanel = document.getElementById('parentSubmitFail');
+            var failMsg = failPanel && failPanel.querySelector('[data-parent-submit-fail-msg]');
+            var draftBtn = document.getElementById('parentSubmitFailDraft');
+            var retryBtn = document.getElementById('parentSubmitFailRetry');
+            if (failMsg) {
+              failMsg.textContent =
+                (friendly || 'Could not send your form to clubSENsational.') +
+                ' Keep this page open, stay on Wi‑Fi or strong mobile data, and tap Try again. Only the green Thank you screen means the club received it.';
+            }
+            if (failPanel) {
+              failPanel.hidden = false;
+              try {
+                failPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              } catch (_scrollErr) {}
+            }
+            if (draftBtn) {
+              draftBtn.hidden = false;
+              draftBtn.onclick = function () {
+                try {
+                  doc.save(filename.replace(/\.pdf$/i, '_DRAFT_NOT_SENT.pdf'));
+                } catch (_dlErr) {
+                  console.warn(_dlErr);
+                }
+              };
+            }
+            if (retryBtn) {
+              retryBtn.onclick = function () {
+                if (failPanel) failPanel.hidden = true;
+                try {
+                  btn.click();
+                } catch (_retryErr) {
+                  form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                }
+              };
+            }
+            alert(
+              (friendly || 'Could not send your form to clubSENsational.') +
+                '\n\nThis was NOT sent. Please tap Try again and wait for the green Thank you screen.'
+            );
+            return;
+          }
+          alert(friendly || 'Could not save your updates. Please check your connection and try again.');
         });
       } catch (err) {
         console.error(err);

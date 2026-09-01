@@ -364,8 +364,8 @@
   align-items:center;
   justify-content:center;
   margin:0;
-  /* Idle halo: no orbit dots — keep name tight under the photo (no grey gap). */
-  margin-top:2px;
+  /* Photo-edit control sits above this name; keep gap tight. */
+  margin-top:0;
   padding:0 4px;
   max-width:min(140px,36vw);
   min-width:0;
@@ -581,7 +581,46 @@ header.topbar .topbar{
   align-self:stretch;
   margin:0;
 }
-.topbar-staff-photo--editable .topbar-staff-photo__edit{
+/* Change-photo control: sit above the staff name (not overlaid on the avatar). */
+.topbar-center--halo .topbar-staff-photo__edit--above-name,
+.topbar-staff-photo__edit--above-name{
+  position:relative;
+  top:auto;
+  right:auto;
+  z-index:4;
+  width:28px;
+  height:28px;
+  min-width:0;
+  padding:0;
+  margin:4px auto 2px;
+  border:1px solid rgba(15,41,66,.18);
+  border-radius:999px;
+  background:#fff;
+  color:#0f2942;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 1px 4px rgba(15,41,66,.14);
+  -webkit-tap-highlight-color:transparent;
+  flex:0 0 auto;
+}
+.topbar-center--halo .topbar-staff-photo__edit--above-name:hover,
+.topbar-center--halo .topbar-staff-photo__edit--above-name:focus-visible,
+.topbar-staff-photo__edit--above-name:hover,
+.topbar-staff-photo__edit--above-name:focus-visible{
+  background:#f0f7fb;
+  border-color:#2d84b3;
+  color:#0f2942;
+  outline:none;
+}
+.topbar-center--halo .topbar-staff-photo__edit--above-name.is-busy,
+.topbar-staff-photo__edit--above-name.is-busy{
+  opacity:.72;
+  pointer-events:none;
+}
+/* Legacy: photo-corner edit (profile card layouts that still nest the button). */
+.topbar-staff-photo--editable .topbar-staff-photo__edit:not(.topbar-staff-photo__edit--above-name){
   position:absolute;
   top:5px;
   right:5px;
@@ -602,13 +641,13 @@ header.topbar .topbar{
   box-shadow:0 1px 4px rgba(0,0,0,.22);
   -webkit-tap-highlight-color:transparent;
 }
-.topbar-staff-photo--editable .topbar-staff-photo__edit:hover,
-.topbar-staff-photo--editable .topbar-staff-photo__edit:focus-visible{
+.topbar-staff-photo--editable .topbar-staff-photo__edit:not(.topbar-staff-photo__edit--above-name):hover,
+.topbar-staff-photo--editable .topbar-staff-photo__edit:not(.topbar-staff-photo__edit--above-name):focus-visible{
   background:rgba(15,41,66,.78);
   border-color:#fff;
   outline:none;
 }
-.topbar-staff-photo--editable .topbar-staff-photo__edit.is-busy{
+.topbar-staff-photo--editable .topbar-staff-photo__edit:not(.topbar-staff-photo__edit--above-name).is-busy{
   opacity:.72;
   pointer-events:none;
 }

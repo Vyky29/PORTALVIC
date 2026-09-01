@@ -39,6 +39,15 @@ import {
   expandAbsentDatesFromLeave,
   PARENT_SESSION_TERM_START_ISO,
 } from "../_shared/parent_attendance_summary.ts";
+import {
+  feedbackYearSessionFromIso,
+  feedbackYearsForParticipant,
+  PARENT_FEEDBACK_CURRENT_YEAR,
+  participantNeedsFeedbackYearPicker,
+  resolveParentFeedbackYear,
+  sessionDateInFeedbackYear,
+  weekStartInFeedbackYear,
+} from "../_shared/parent_feedback_academic_year.ts";
 import { REENROL_ACADEMIC_YEAR } from "../_shared/reenrolment_catalog.ts";
 import { buildReenrolmentParentSummary } from "../_shared/reenrolment_parent_summary.ts";
 import { resolveParticipantInvoiceFunding } from "../_shared/portal_invoice_funding.ts";
@@ -56,7 +65,7 @@ const LEAD_INBOX_CLIENT_ID = "_inbox";
 const PARENT_ACH_QUERY_LIMIT = 500;
 /** Max feedback rows returned per parent page load. */
 const PARENT_FEEDBACK_LIMIT = 60;
-const TERM_LABEL = "Summer Term 2026";
+const TERM_LABEL = "Autumn Term 2026/27";
 
 type DetailSection = "general" | "sessions" | "achievements" | "swim" | "weekly_notes";
 
@@ -509,12 +518,12 @@ function hourTo24(hour: number, day: string): number {
   return hour;
 }
 
-/** Parse a "12.30 to 3" / "4.30-5.15" slot into start/end tokens + day-aware minutes. */
+/** Parse a "12.30 to 3" / "4.30-5.15" / "4.30 – 5.00" slot into start/end tokens + day-aware minutes. */
 function parseSlotTokens(
   raw: unknown,
   day: string,
 ): { startTok: string; endTok: string; start: number | null; end: number | null } | null {
-  const parts = clean(raw, 40).split(/to|-|—/i);
+  const parts = clean(raw, 40).split(/\s*(?:to|[–—−-]|\u2013|\u2014)\s*/i);
   if (parts.length !== 2) return null;
   const startTok = parts[0].trim();
   const endTok = parts[1].trim();
@@ -535,6 +544,52 @@ function parseSlotTokens(
  * see the same service once per day, spanning the outer time bounds
  * (e.g. "150' Day Centre · Monday · 12.30 to 3"). Instructor omitted; venue/area kept for the hub card.
  */
+/**
+ * When summer roster rows are gone but the family kept 2026/27 places, seed
+ * hub Calendar / Next session from the re-enrolment weekly snapshot.
+ */
+function sessionsFromReenrolKeptSlots(
+  payload: Record<string, unknown> | null | undefined,
+): Array<Record<string, unknown>> {
+  if (!payload || typeof payload !== "object") return [];
+  const choices = (payload.choices && typeof payload.choices === "object"
+    ? payload.choices
+    : {}) as Record<string, unknown>;
+  const weeklyChoices = (choices.weekly && typeof choices.weekly === "object"
+    ? choices.weekly
+    : {}) as Record<string, { choice?: unknown }>;
+  const slotsRaw = payload.weekly_slots_snapshot;
+  const slots = Array.isArray(slotsRaw) ? slotsRaw : [];
+  const byId = new Map<string, Record<string, unknown>>();
+  for (const raw of slots) {
+    if (!raw || typeof raw !== "object") continue;
+    const s = raw as Record<string, unknown>;
+    const id = clean(s.id, 80);
+    if (id) byId.set(id, s);
+  }
+  const out: Array<Record<string, unknown>> = [];
+  for (const [slotId, choice] of Object.entries(weeklyChoices)) {
+    const key = clean(choice?.choice, 40).toLowerCase();
+    if (key !== "keep" && key !== "change") continue;
+    const slot = byId.get(slotId);
+    if (!slot) continue;
+    const svc =
+      canonicalProgrammeName(slot.serviceType) ||
+      clean(slot.serviceType, 80) ||
+      "Aquatic Activity";
+    out.push({
+      day: clean(slot.day, 20),
+      service: svc,
+      timeSlot: clean(slot.timeSlot, 40),
+      durationMin: Number(slot.durationMin) || undefined,
+      venue: clean(slot.venue, 80),
+      instructor: clean(slot.instructor, 40),
+      area: clean(slot.area, 80),
+    });
+  }
+  return out;
+}
+
 function buildServicesDetail(
   sessions: unknown,
 ): Array<{ label: string; day: string; time: string; venue: string; area: string }> {
@@ -781,7 +836,7 @@ Deno.serve(async (req) => {
   const session = await resolveParentPortalSession(req, supabase);
   if (!session) return parentPortalJsonInvalid();
 
-  let body: { contact_id?: string; sections?: string[] } = {};
+  let body: { contact_id?: string; sections?: string[]; feedback_year?: string } = {};
   try {
     body = await req.json();
   } catch (_) {
@@ -927,6 +982,32 @@ Deno.serve(async (req) => {
 
   const generalFields = wantGeneral ? parseGeneralInfoSheet(generalInfoSheet) : [];
 
+  const wantFeedbackSections = (wantSessions || wantWeeklyNotes) && !suppressSessionProgress;
+  let rosterForFeedback: Awaited<ReturnType<typeof fetchRosterServiceLines>> = null;
+  let hasDayCentreForFeedback = false;
+  if (wantFeedbackSections || wantGeneral) {
+    rosterForFeedback = await fetchRosterServiceLines(supabase, identityInput);
+    hasDayCentreForFeedback = servicesDetailHasDayCentre(rosterForFeedback?.detail || []);
+  }
+
+  const feedbackYearPickerRequired = participantNeedsFeedbackYearPicker(
+    registrationDateIso,
+    hasDayCentreForFeedback,
+  );
+  const feedbackYearsAvailable = feedbackYearsForParticipant(
+    registrationDateIso,
+    hasDayCentreForFeedback,
+  );
+  const feedbackYearRequested = clean(body.feedback_year, 20);
+  const feedbackYearResolved =
+    feedbackYearPickerRequired && wantFeedbackSections && !feedbackYearRequested
+      ? null
+      : resolveParentFeedbackYear(feedbackYearRequested || PARENT_FEEDBACK_CURRENT_YEAR);
+  const feedbackTermStartIso = feedbackYearResolved
+    ? feedbackYearSessionFromIso(feedbackYearResolved, hasDayCentreForFeedback)
+    : PARENT_SESSION_TERM_START_ISO;
+  const feedbackTermEndIso = feedbackYearResolved?.toIso || "2027-08-31";
+
   let rawFeedback: Record<string, unknown>[] = [];
   let sessionsOut: Record<string, unknown>[] = [];
   let rosterServicesCount = 0;
@@ -937,8 +1018,12 @@ Deno.serve(async (req) => {
     venue: string;
     area: string;
   }> = [];
+  if (rosterForFeedback) {
+    rosterServicesCount = rosterForFeedback.count;
+    rosterServicesDetail = rosterForFeedback.detail;
+  }
 
-  if (wantSessions && !suppressSessionProgress) {
+  if (wantSessions && !suppressSessionProgress && feedbackYearResolved) {
     const fbSel =
       "id, session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, created_at";
 
@@ -949,7 +1034,8 @@ Deno.serve(async (req) => {
           .from("session_feedback")
           .select(fbSel)
           .in("client_id", clientSlugs)
-          .gte("session_date", PARENT_SESSION_TERM_START_ISO),
+          .gte("session_date", feedbackYearResolved.fromIso)
+          .lte("session_date", feedbackTermEndIso),
       );
     }
     for (const nm of lookupNames.slice(0, 4)) {
@@ -958,7 +1044,8 @@ Deno.serve(async (req) => {
           .from("session_feedback")
           .select(fbSel)
           .ilike("client_name", nm)
-          .gte("session_date", PARENT_SESSION_TERM_START_ISO),
+          .gte("session_date", feedbackYearResolved.fromIso)
+          .lte("session_date", feedbackTermEndIso),
       );
     }
 
@@ -976,7 +1063,8 @@ Deno.serve(async (req) => {
         const id = String(row.id || "");
         if (!id || seenIds.has(id)) continue;
         const sessionDate = isoFromAny(row.session_date);
-        if (sessionDate && sessionDate < PARENT_SESSION_TERM_START_ISO) continue;
+        if (!sessionDate || !sessionDateInFeedbackYear(sessionDate, feedbackYearResolved)) continue;
+        if (sessionDate < feedbackTermStartIso) continue;
         seenIds.add(id);
         rawFeedback.push(row);
       }
@@ -992,9 +1080,9 @@ Deno.serve(async (req) => {
     const feedbackIds = rawFeedback.map((r) => String(r.id)).filter(Boolean);
     const cacheById = new Map<string, Record<string, unknown>>();
     const venueByService = await loadParticipantVenueByService(supabase, identityInput, lookupNames);
-    const rosterForSessions = await fetchRosterServiceLines(supabase, identityInput);
+    const rosterForSessions = rosterForFeedback || await fetchRosterServiceLines(supabase, identityInput);
     const dayCentreBookedByDay = dayCentreBookedTimeByWeekday(rosterForSessions?.detail || []);
-    if (rosterForSessions) {
+    if (rosterForSessions && !rosterServicesCount) {
       rosterServicesCount = rosterForSessions.count;
       rosterServicesDetail = rosterForSessions.detail;
     }
@@ -1071,7 +1159,7 @@ Deno.serve(async (req) => {
   };
   /** Earliest slot_clear_client date (left mid-term) — used to paint later missed chips red. */
   let placeLeftFromIso = "";
-  const wantAttendanceChips = (wantSessions || wantGeneral) && !suppressSessionProgress;
+  const wantAttendanceChips = (wantSessions || wantGeneral) && !suppressSessionProgress && !!feedbackYearResolved;
   if (wantAttendanceChips && clientSlugs.length) {
     const { data: overrideRows, error: ovErr } = await supabase
       .from("schedule_overrides")
@@ -1082,7 +1170,8 @@ Deno.serve(async (req) => {
         "client_absence_announced",
         "slot_clear_client",
       ])
-      .gte("session_date", PARENT_SESSION_TERM_START_ISO)
+      .gte("session_date", feedbackTermStartIso)
+      .lte("session_date", feedbackTermEndIso)
       .in("anchor_client_id", clientSlugs);
     if (ovErr) {
       console.error("[parent-portal-participant-detail] schedule_overrides error", ovErr);
@@ -1100,14 +1189,14 @@ Deno.serve(async (req) => {
       rawFeedback,
       overrideRows || [],
       clientSlugs,
-      PARENT_SESSION_TERM_START_ISO,
+      feedbackTermStartIso,
     );
   } else if (wantAttendanceChips && rawFeedback.length) {
     attendanceSummary = buildParentAttendanceSummary(
       rawFeedback,
       [],
       clientSlugs,
-      PARENT_SESSION_TERM_START_ISO,
+      feedbackTermStartIso,
     );
   }
 
@@ -1314,6 +1403,16 @@ Deno.serve(async (req) => {
       : null;
     reenrolmentSummary = buildReenrolmentParentSummary(payload, submittedAt);
 
+    // Re-enrolled families with no summer/payment-sheet roster yet still need
+    // weekday chips (Next session / Calendar) from kept 2026/27 slots.
+    if (!rosterServicesDetail.length && reenrolmentSummary.continuing) {
+      const fromReenrol = buildServicesDetail(sessionsFromReenrolKeptSlots(payload));
+      if (fromReenrol.length) {
+        rosterServicesDetail = fromReenrol;
+        rosterServicesCount = fromReenrol.length;
+      }
+    }
+
     const hasDayCentre = servicesDetailHasDayCentre(
       rosterServicesDetail as Array<{ label?: string; service?: string }>,
     );
@@ -1415,6 +1514,141 @@ Deno.serve(async (req) => {
     }
   }
 
+  /*
+   * Two things the hub cannot learn from re-enrolment submissions alone. Both are read
+   * from the family's own invoice shares:
+   *
+   *  - A parent-pay extra on a funder-billed place (LA / NHS), e.g. a summer crash
+   *    course. Crash *bookings* are not a reliable signal: for no-extra-booking clients
+   *    (Tinashe, Ikram, Fadi, Timi) the office raises the invoice by hand and no booking
+   *    row exists, so My invoices stayed hidden while money was owed.
+   *  - A 2026/27 term invoice the office raised without the parent submitting the form.
+   *    The place exists — the family is being asked to pay for it — so the hub must not
+   *    keep calling it "not confirmed" and quoting a confirm-by date that has passed.
+   */
+  let hasParentPayExtraShare = false;
+  let hasOfficeTermInvoice = false;
+  let hasTrialInvoiceShare = false;
+  /** Active-term hub chip: unpaid | partial | pending | settled | null (unknown / no parent term). */
+  let hubPayStateFromShares: string | null = null;
+  if (wantGeneral) {
+    const { data: parentShares } = await supabase
+      .from("portal_parent_invoice_share")
+      .select(
+        "invoice_number, reference_text, line_description, billing_term, due_date, next_instalment_due, payment_method_hint, payment_status, amount_gbp, amount_paid_gbp, payment_schedule, share_status",
+      )
+      .eq("contact_id", contactId)
+      .eq("share_status", "ready")
+      .limit(50);
+
+    const todayIso = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Europe/London",
+    });
+    const activeTerm =
+      todayIso < "2026-11-15" ? "autumn" : todayIso < "2027-02-15" ? "spring" : "summer";
+
+    type SharePayRow = {
+      billing_term?: unknown;
+      payment_status?: unknown;
+      due_date?: unknown;
+      next_instalment_due?: unknown;
+      amount_paid_gbp?: unknown;
+      payment_schedule?: unknown;
+      invoice_number?: unknown;
+      reference_text?: unknown;
+      line_description?: unknown;
+      payment_method_hint?: unknown;
+    };
+
+    const termBucket = (share: SharePayRow): string | null => {
+      const bt = clean(share.billing_term, 40).toLowerCase();
+      if (bt === "autumn" || bt === "spring" || bt === "summer") return bt;
+      const blob = [share.reference_text, share.line_description, share.invoice_number]
+        .map((x) => String(x || ""))
+        .join(" ")
+        .toLowerCase();
+      if (/\bautumn\b/.test(blob)) return "autumn";
+      if (/\bspring\b/.test(blob)) return "spring";
+      if (/\bsummer\b/.test(blob)) return "summer";
+      return null;
+    };
+
+    const effectivePayStatus = (share: SharePayRow): string => {
+      let st = clean(share.payment_status, 40).toLowerCase() || "unpaid";
+      if (st === "paid" || st === "partial" || st === "pending_confirmation" || st === "void") {
+        return st;
+      }
+      const sched = Array.isArray(share.payment_schedule) ? share.payment_schedule : [];
+      if (sched.length >= 2) {
+        let paidN = 0;
+        for (const row of sched) {
+          const rs = clean((row as { status?: unknown })?.status, 40).toLowerCase();
+          if (rs === "paid") paidN += 1;
+        }
+        if (paidN > 0 && paidN < sched.length) return "partial";
+        if (paidN >= sched.length && sched.length > 0) return "paid";
+      }
+      const paidAmt = Number(share.amount_paid_gbp);
+      if (Number.isFinite(paidAmt) && paidAmt > 0) return "partial";
+      return st;
+    };
+
+    const programmeShares: SharePayRow[] = [];
+    for (const share of (parentShares || []) as SharePayRow[]) {
+      /* Void shares must not keep share_status=ready as a fake 26/27 term place. */
+      if (clean(share.payment_status, 40).toLowerCase() === "void") continue;
+      const blob = [
+        share.invoice_number,
+        share.reference_text,
+        share.line_description,
+        share.billing_term,
+      ]
+        .map((x) => String(x || ""))
+        .join(" ");
+      const isCrash = /\bcrash\b/i.test(blob);
+      const isTrial = /\btrial\b/i.test(blob);
+      const hint = clean(share.payment_method_hint, 40);
+      if (isCrash && hint !== "la_funded") hasParentPayExtraShare = true;
+      if (isCrash) continue;
+      if (isTrial) {
+        hasTrialInvoiceShare = true;
+        /* Trial INV-P must not count as a full 26/27 term place (Re-enrolled). */
+        continue;
+      }
+      const termish =
+        !!clean(share.billing_term, 40) || /\b(autumn|spring|summer|re-?enrol)/i.test(blob);
+      /* Year guard so a Summer 25/26 row cannot pass as a 26/27 term place. */
+      const dueIso = share.due_date ? String(share.due_date).slice(0, 10) : "";
+      const isNextYear = /26\s*\/\s*27|2026[-/]27|2026\/2027/.test(blob) || dueIso >= "2026-08-01";
+      if (termish && isNextYear) {
+        hasOfficeTermInvoice = true;
+        programmeShares.push(share);
+      }
+    }
+
+    const activeShares = programmeShares.filter((s) => termBucket(s) === activeTerm);
+    const overdueEarlier = programmeShares.filter((s) => {
+      const b = termBucket(s);
+      if (!b || b === activeTerm) return false;
+      if (effectivePayStatus(s) === "paid") return false;
+      const due = String(s.next_instalment_due || s.due_date || "").slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(due) && due <= todayIso;
+    });
+    const hubRows = activeShares.length || overdueEarlier.length
+      ? activeShares.concat(overdueEarlier)
+      : programmeShares.filter((s) => termBucket(s) === "autumn");
+
+    if (hubRows.length) {
+      const statuses = hubRows.map(effectivePayStatus);
+      if (statuses.every((st) => st === "paid")) hubPayStateFromShares = "settled";
+      else if (statuses.some((st) => st === "unpaid")) hubPayStateFromShares = "unpaid";
+      else if (statuses.some((st) => st === "pending_confirmation")) {
+        hubPayStateFromShares = "pending";
+      } else if (statuses.some((st) => st === "partial")) hubPayStateFromShares = "partial";
+      else hubPayStateFromShares = "unpaid";
+    }
+  }
+
   let swimTermReviewAvailable = false;
   if (wantGeneral) {
     const { count: swimShareCount } = await supabase
@@ -1485,7 +1719,7 @@ Deno.serve(async (req) => {
 
   let weeklyNotes: Record<string, unknown>[] = [];
   let weeklyNoteLatest: Record<string, unknown> | null = null;
-  if (wantWeeklyNotes && !suppressSessionProgress) {
+  if (wantWeeklyNotes && !suppressSessionProgress && feedbackYearResolved) {
     const { data: noteRows, error: noteErr } = await supabase
       .from("portal_parent_weekly_notes")
       .select(
@@ -1493,19 +1727,23 @@ Deno.serve(async (req) => {
       )
       .eq("contact_id", contactId)
       .eq("share_status", "ready")
+      .gte("week_start", feedbackYearResolved.fromIso)
+      .lte("week_start", feedbackTermEndIso)
       .order("week_start", { ascending: false })
       .limit(52);
     if (noteErr) {
       console.error("[parent-portal-participant-detail] weekly_notes", noteErr);
     } else {
-      weeklyNotes = (noteRows || []).map((n) => ({
-        id: n.id,
-        week_start: n.week_start,
-        week_end: n.week_end,
-        body: clean(n.body, 4000),
-        generated_at: n.generated_at || null,
-        generated_early: !!n.generated_early,
-      }));
+      weeklyNotes = (noteRows || [])
+        .map((n) => ({
+          id: n.id,
+          week_start: n.week_start,
+          week_end: n.week_end,
+          body: clean(n.body, 4000),
+          generated_at: n.generated_at || null,
+          generated_early: !!n.generated_early,
+        }))
+        .filter((n) => weekStartInFeedbackYear(String(n.week_start || ""), feedbackYearResolved));
       // One note per week (newest wins) — defensive if rows ever race.
       const byWeek = new Map<string, Record<string, unknown>>();
       for (const n of weeklyNotes) {
@@ -1525,10 +1763,128 @@ Deno.serve(async (req) => {
     weeklyNotes.length > 0 ||
     !!(weeklyNoteLatest && weeklyNoteLatest.week_start);
 
+  /** Validated / held trial (and similar) dates for hub Next session — not only weekday projection. */
+  let upcomingBookedSessions: Array<{
+    iso: string;
+    day: string;
+    label: string;
+    time: string;
+    venue: string;
+    area: string;
+    kind?: string;
+  }> = [];
+  let isTrialOnlyPlace = false;
+  if (wantGeneral && !isFormerClient) {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const nameCandidates = [
+      clean(displayName, 80),
+      clean(participant.first_name, 80),
+      clean(parentFacingClientName, 80),
+    ].filter(Boolean);
+    const { data: contactMeta } = await supabase
+      .from("portal_parent_contacts")
+      .select("email, mobile, child_display, child_first_name")
+      .eq("contact_id", contactId)
+      .maybeSingle();
+    const parentEmail = clean(contactMeta?.email, 120).toLowerCase();
+    const { data: tokenDocs } = await supabase
+      .from("portal_booking_completion_tokens")
+      .select("document_id")
+      .eq("contact_id", contactId)
+      .not("document_id", "is", null)
+      .limit(20);
+    const docIds = [
+      ...new Set(
+        (tokenDocs || [])
+          .map((t) => clean(t.document_id, 80))
+          .filter(Boolean),
+      ),
+    ];
+
+    let bookedRows: Array<Record<string, unknown>> = [];
+    if (docIds.length) {
+      const { data } = await supabase
+        .from("portal_booking_slot_reservations")
+        .select(
+          "date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id, notes",
+        )
+        .in("document_id", docIds)
+        .in("status", ["validated", "held", "confirmed", "paid"])
+        .gte("date_iso", todayIso)
+        .order("date_iso", { ascending: true })
+        .limit(12);
+      bookedRows = Array.isArray(data) ? data : [];
+    }
+    if (!bookedRows.length && nameCandidates.length) {
+      const { data } = await supabase
+        .from("portal_booking_slot_reservations")
+        .select(
+          "date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id, notes",
+        )
+        .in("status", ["validated", "held", "confirmed", "paid"])
+        .gte("date_iso", todayIso)
+        .ilike("participant_name", nameCandidates[0])
+        .order("date_iso", { ascending: true })
+        .limit(12);
+      bookedRows = (data || []).filter((row) => {
+        const pname = clean(row.participant_name, 80).toLowerCase();
+        const nameOk = nameCandidates.some(
+          (n) => pname === n.toLowerCase() || pname.startsWith(n.toLowerCase() + " "),
+        );
+        if (!nameOk) return false;
+        if (!parentEmail) return true;
+        return clean(row.parent_email, 120).toLowerCase() === parentEmail;
+      });
+    }
+
+    const hasTrialReservation = bookedRows.some((row) =>
+      /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(String(row.notes || "")),
+    );
+
+    upcomingBookedSessions = bookedRows
+      .map((row) => {
+        const iso = clean(row.date_iso, 12).slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+        const trialish = /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(
+          String(row.notes || ""),
+        );
+        return {
+          iso,
+          day: clean(row.day_label, 20),
+          label: clean(row.service_name, 80) || "Activity",
+          time: clean(row.time_label, 40),
+          venue: clean(row.venue, 80),
+          area: "",
+          kind: trialish ? "trial" : "session",
+        };
+      })
+      .filter(Boolean) as typeof upcomingBookedSessions;
+
+    const regIso = String(registrationDateIso || "").slice(0, 10);
+    const registeredAfterSummer = /^\d{4}-\d{2}-\d{2}$/.test(regIso) && regIso > "2026-07-31";
+    /* New trial bookers: not a re-enrolled whole-term place. */
+    isTrialOnlyPlace =
+      !reenrolmentSummary.continuing &&
+      !reenrolmentSummary.submitted &&
+      !hasOfficeTermInvoice &&
+      (hasTrialReservation ||
+        (hasTrialInvoiceShare && (upcomingBookedSessions.length > 0 || registeredAfterSummer)));
+  }
+
   return new Response(
     JSON.stringify({
       ok: true,
-      term_label: TERM_LABEL,
+      term_label: feedbackYearResolved?.label || TERM_LABEL,
+      feedback_year: feedbackYearResolved?.key || null,
+      feedback_year_label: feedbackYearResolved?.label || null,
+      feedback_year_picker_required:
+        feedbackYearPickerRequired && wantFeedbackSections && !feedbackYearRequested,
+      feedback_years_available: feedbackYearsAvailable.map((y) => ({
+        key: y.key,
+        label: y.label,
+        is_current: y.isCurrent,
+      })),
+      feedback_year_default: PARENT_FEEDBACK_CURRENT_YEAR,
       sections_loaded: Array.from(sections),
       portal_access: isFormerClient ? "former" : "active",
       has_session_feedback: hasSessionFeedback,
@@ -1567,34 +1923,68 @@ Deno.serve(async (req) => {
       achievements: isFormerClient && !hasAchievementPhotos ? [] : achievements,
       swim_term_reviews: isFormerClient ? [] : swimTermReviews,
       swim_term_review_available: isFormerClient ? false : swimTermReviewAvailable,
-      reenrolment: {
-        ...reenrolmentSummary,
-        parent_action: isFormerClient ? "none" : parentReenrolUi.mode,
-        parent_action_reasons: isFormerClient ? [] : parentReenrolUi.reasons,
-        parent_action_note: isFormerClient
-          ? "This place is no longer active."
-          : parentReenrolUi.note,
-        acat_confirm_notice: isFormerClient ? "" : parentReenrolUi.acat_confirm_notice || "",
-        can_book_extras: isFormerClient
-          ? true
-          : parentReenrolUi.can_book_extras !== false,
-        // LA/NHS term is office→funder; still show My invoices when a parent-pay
-        // crash (etc.) exists. List endpoint only returns those shares.
-        show_invoices: isFormerClient
-          ? false
-          : !parentReenrolUi.reasons.includes("la_funded") ||
-            (crashCourse.dates && crashCourse.dates.length > 0),
-      },
-      can_book_extras: isFormerClient
-        ? true
-        : parentReenrolUi.can_book_extras !== false,
-      show_invoices: isFormerClient
-        ? false
-        : !parentReenrolUi.reasons.includes("la_funded") ||
-          (crashCourse.dates && crashCourse.dates.length > 0),
-      crash_course: isFormerClient
-        ? { dates: [], week_ids: [], awaiting_payment: false, booking_statuses: [] }
-        : crashCourse,
+      /*
+       * Only when general was requested. A weekly_notes-only response used to send an
+       * empty default reenrolment and wipe a confirmed place after merge in the hub
+       * (e.g. Zayana looked "not confirmed" after she had already submitted).
+       */
+      ...(wantGeneral
+        ? {
+            reenrolment: {
+              ...reenrolmentSummary,
+              parent_action: isFormerClient ? "none" : parentReenrolUi.mode,
+              parent_action_reasons: isFormerClient ? [] : parentReenrolUi.reasons,
+              parent_action_note: isFormerClient
+                ? "This place is no longer active."
+                : parentReenrolUi.note,
+              acat_confirm_notice: isFormerClient
+                ? ""
+                : parentReenrolUi.acat_confirm_notice || "",
+              can_book_extras: isFormerClient
+                ? true
+                : parentReenrolUi.can_book_extras !== false,
+              /*
+               * Office raised a 26/27 term invoice for this child. The hub treats that as a
+               * confirmed place: asking a family to pay for a place while telling them it is
+               * "not confirmed" contradicts itself.
+               */
+              office_term_invoice: isFormerClient ? false : hasOfficeTermInvoice,
+              /*
+               * Active-term pay chip from the same invoice shares admin marks
+               * (flexi 1st half → partial). Hub uses this on first paint; invoices-list
+               * may refine it after.
+               */
+              hub_pay_state: isFormerClient ? null : hubPayStateFromShares,
+              // LA/NHS term is office→funder; still show My invoices when a parent-pay
+              // crash (etc.) exists. List endpoint only returns those shares.
+              show_invoices: isFormerClient
+                ? false
+                : !parentReenrolUi.reasons.includes("la_funded") ||
+                  hasParentPayExtraShare ||
+                  (crashCourse.dates && crashCourse.dates.length > 0),
+            },
+            can_book_extras: isFormerClient
+              ? true
+              : parentReenrolUi.can_book_extras !== false,
+            show_invoices: isFormerClient
+              ? false
+              : !parentReenrolUi.reasons.includes("la_funded") ||
+                hasParentPayExtraShare ||
+                (crashCourse.dates && crashCourse.dates.length > 0),
+            crash_course: isFormerClient
+              ? { dates: [], week_ids: [], awaiting_payment: false, booking_statuses: [] }
+              : crashCourse,
+            place_kind: isFormerClient
+              ? null
+              : isTrialOnlyPlace
+                ? "trial"
+                : hasOfficeTermInvoice || reenrolmentSummary.continuing
+                  ? "term"
+                  : null,
+            is_trial_booking: isFormerClient ? false : isTrialOnlyPlace,
+            upcoming_booked_sessions: isFormerClient ? [] : upcomingBookedSessions,
+          }
+        : {}),
       pending_review_count: sessionsOut.filter((s) => s.message_pending).length,
       weekly_notes: weeklyNotes,
       weekly_note_latest: weeklyNoteLatest,

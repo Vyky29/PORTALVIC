@@ -501,6 +501,12 @@ verify_jwt = false
 [functions.portal-admin-participant-documents-list]
 verify_jwt = false
 
+[functions.portal-admin-participant-document-review]
+verify_jwt = false
+
+[functions.portal-booking-finish]
+verify_jwt = false
+
 [functions.portal-admin-session-feedback-list]
 verify_jwt = false
 
@@ -528,6 +534,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.portal-admin-makeup-offer]
+verify_jwt = false
+
+# After Assign (Edit term slot): ensure unpaid INV-P for parent pay button.
+[functions.portal-admin-term-slot-assign-complete]
 verify_jwt = false
 
 [functions.parent-portal-makeup-list]
@@ -601,6 +611,9 @@ verify_jwt = false
 [functions.parent-portal-invoices-list]
 verify_jwt = false
 
+[functions.parent-portal-invoice-preview]
+verify_jwt = false
+
 [functions.parent-portal-invoice-checkout]
 verify_jwt = false
 
@@ -652,6 +665,12 @@ verify_jwt = false
 [functions.portal-cron-own-arrangement-buffer-check]
 verify_jwt = false
 
+[functions.portal-cron-reenrol-release-unpaid-aug15]
+verify_jwt = false
+
+[functions.portal-cron-booking-pay-hold]
+verify_jwt = false
+
 # Staff / leader WhatsApp (JWT checked inside function).
 [functions.portal-staff-notify-send]
 verify_jwt = false
@@ -682,7 +701,13 @@ verify_jwt = false
 [functions.portal-booking-lead-session]
 verify_jwt = false
 
+[functions.portal-booking-lead-from-parent-session]
+verify_jwt = false
+
 [functions.portal-admin-booking-leads-list]
+verify_jwt = false
+
+[functions.portal-admin-booking-leads-upsert]
 verify_jwt = false
 
 # LA / commissioning Terms (JWT checked inside admin fn; accept uses hashed token).

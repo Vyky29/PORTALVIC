@@ -112,8 +112,13 @@
     { "source": "/commissioning/terms-accept", "destination": "/commissioning_terms_accept.html" },
     { "source": "/la/terms-accept", "destination": "/commissioning_terms_accept.html" },
     { "source": "/parent/registration", "destination": "/parent_registration.html" },
+    { "source": "/parent/booking-confirm", "destination": "/parent_booking_confirm.html" },
+    { "source": "/parent/finish-booking", "destination": "/parent_finish_booking.html" },
+    { "source": "/finish-booking", "destination": "/parent_finish_booking.html" },
     { "source": "/bookingportal", "destination": "/bookingportal.html" },
     { "source": "/bookingportal/", "destination": "/bookingportal.html" },
+    { "source": "/splash", "destination": "/splash.html" },
+    { "source": "/splash/", "destination": "/splash.html" },
     { "source": "/booking-portal", "destination": "/bookingportal.html" },
     { "source": "/bookingservice", "destination": "/bookingportal.html" },
     { "source": "/bookingservice/", "destination": "/bookingportal.html" },
@@ -177,6 +182,24 @@
     },
     {
       "source": "/admin_dashboard.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/bookingportal.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/bookingportal",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/bookingservice",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]

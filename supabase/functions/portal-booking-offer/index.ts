@@ -8,7 +8,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders } from "../_shared/parent_portal_auth.ts";
 import type { MadreDoc } from "../_shared/portal_madre_fold_logic.ts";
 import { buildWeeklyOfferFromMadre } from "../_shared/portal_booking_seat_helper.ts";
+import { resolveSessionDateIso } from "../_shared/portal_booking_context.ts";
 import { ensureReenrolUnconfirmedReleasedOnMadre } from "../_shared/portal_reenrol_release_madre.ts";
+import { runUnpaidAug15PlaceRelease } from "../_shared/portal_reenrol_release_unpaid_aug15.ts";
+import {
+  BOOKING_SLOT_HOLD_STATUSES,
+  runBookingPayHoldMaintenance,
+} from "../_shared/portal_booking_pay_hold.ts";
 import {
   CRASH_HOLD_MINUTES,
   CRASH_INDIVIDUAL_WINDOWS,
@@ -52,7 +58,7 @@ const AUTUMN_TERM = {
   dayCentreStart: "2026-09-01",
   closedRanges: [{ start: "2026-10-26", end: "2026-10-30" }],
   range:
-    "Sat 5 September 2026 – Fri 18 December 2026 · Day Centre from Tue 1 September",
+    "Sat 5 September 2026 – Fri 18 December 2026 · Day Centre from Tue 1 September · Mon after-school from 7 September · Tue–Fri from 8 September",
 };
 
 async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
@@ -384,6 +390,23 @@ Deno.serve(async (req) => {
     console.error("[portal-booking-offer] reenrol MADRE release", err);
   }
 
+  // Sun 16 Aug 2026 00:00 London+: unpaid first Autumn bank payment → free seats.
+  try {
+    const unpaid = await runUnpaidAug15PlaceRelease(supabase, {});
+    if (unpaid.ok && !unpaid.skipped && unpaid.madre_changed > 0) {
+      console.log(
+        "[portal-booking-offer] unpaid Aug15 MADRE release",
+        unpaid.madre_changed,
+        "contacts",
+        unpaid.release_contacts?.length || 0,
+      );
+    } else if (!unpaid.ok) {
+      console.error("[portal-booking-offer] unpaid Aug15 MADRE release", unpaid.error);
+    }
+  } catch (err) {
+    console.error("[portal-booking-offer] unpaid Aug15 MADRE release", err);
+  }
+
   const { data: madreRow, error: madreErr } = await supabase
     .from("portal_madre_document")
     .select("document, revision, updated_at, term_key")
@@ -402,6 +425,12 @@ Deno.serve(async (req) => {
   const intensive = await loadCrashIntensive(supabase);
 
   // Soft holds from new-client registration forms (Booking Portal → registration).
+  try {
+    await runBookingPayHoldMaintenance(supabase);
+  } catch (e) {
+    console.warn("[portal-booking-offer] pay hold maintenance", e);
+  }
+
   await supabase
     .from("portal_booking_slot_reservations")
     .update({
@@ -414,7 +443,7 @@ Deno.serve(async (req) => {
   const { data: holds, error: holdsErr } = await supabase
     .from("portal_booking_slot_reservations")
     .select("slot_id")
-    .eq("status", "pending");
+    .in("status", [...BOOKING_SLOT_HOLD_STATUSES]);
 
   if (holdsErr) {
     console.warn("[portal-booking-offer] slot holds", holdsErr.message);
@@ -443,16 +472,21 @@ Deno.serve(async (req) => {
     }
   }
 
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const weeklySlotsPublic = weekly.slots.map((slot) => ({
+    ...slot,
+    dateIso: resolveSessionDateIso({ day: slot.day, asOfIso: todayIso }),
+  }));
+
   const intensiveService = {
     id: "intensive",
     name: "Intensive Courses & Camps",
     tier: "more",
     ageHint: "From 3 years+",
     durationHint: "Summer crash + half-term blocks",
-    priceHint: "Course packs — ask the office",
     pricePerSession: null,
     blurb:
-      "Holiday intensives and camps: summer crash weeks in July (live seats), then October, February and May half terms. Limited daily places — weekly packs often have priority.",
+      "Holiday crash courses and camps for continuity outside term time — swimming, climbing, and more in short intensive blocks (summer and half terms). Predictable routines, specialist staff, and limited daily places for participants.",
     venues: ["Westway", "Acton"],
     intensiveBlocks: true,
   };
@@ -484,7 +518,7 @@ Deno.serve(async (req) => {
       closedRanges: AUTUMN_TERM.closedRanges,
     },
     SERVICES: [...weekly.services, intensiveService],
-    MOCK_SLOTS: [...weekly.slots, ...intensive.slots],
+    MOCK_SLOTS: [...weeklySlotsPublic, ...intensive.slots],
     INTENSIVE_BLOCKS: intensive.blocks,
     stats: {
       madre_rows: weekly.rowCount,

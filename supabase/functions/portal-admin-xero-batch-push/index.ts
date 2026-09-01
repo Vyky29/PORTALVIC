@@ -1,9 +1,10 @@
 // @ts-nocheck — Edge Function (Deno).
 //
 // portal-admin-xero-batch-push
-// Push PAID Portal-created family invoices (INV-P) into Xero as AUTHORISED
-// ACCREC invoices (awaiting payment). Unpaid drafts stay Portal-only.
-// Does **not** post Xero Payments — staff mark Paid + reconcile in Xero UI.
+// Push PAID or PARTIAL Portal-created family invoices (INV-P) into Xero as
+// AUTHORISED ACCREC invoices for the **full** amount (awaiting payment).
+// Unpaid drafts stay Portal-only. Does **not** post Xero Payments — staff
+// allocate bank/card lines (full or instalment) against that invoice in Xero.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -21,9 +22,22 @@ import {
   resolveLaFunderBillTo,
   resolveParticipantInvoiceFunding,
 } from "../_shared/portal_invoice_funding.ts";
+import { buildXeroPushLines } from "../_shared/portal_xero_product_catalog.ts";
+import {
+  normalizePaymentSchedule,
+  paymentSchedulePlanShortLabel,
+} from "../_shared/portal_invoice_payment_schedule.ts";
 
 function clean(v: unknown, max = 200): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function paymentChannelLabel(hint: string): string {
+  if (hint === "gocardless") return "Direct Payment (GoCardless)";
+  if (hint === "la_funded") return "LA funded";
+  if (hint === "payment_link") return "Card / Apple Pay";
+  if (hint === "other") return "Other";
+  return "Bank transfer";
 }
 
 Deno.serve(async (req) => {
@@ -73,12 +87,12 @@ Deno.serve(async (req) => {
   let q = admin
     .from("portal_parent_invoice_share")
     .select(
-      "id, contact_id, invoice_number, amount_gbp, due_date, payment_status, paid_via, xero_invoice_id, xero_payment_id, created_via, vat_mode, line_description, line_items, quantity, unit_price_gbp, reference_text, created_at, document_id, payment_method_hint",
+      "id, contact_id, invoice_number, amount_gbp, due_date, payment_status, paid_via, xero_invoice_id, xero_payment_id, created_via, vat_mode, line_description, line_items, quantity, unit_price_gbp, reference_text, created_at, document_id, payment_method_hint, payment_schedule, notes",
     )
     .is("xero_invoice_id", null)
     .in("created_via", ["portal", "reenrolment"])
     .eq("share_status", "ready")
-    .eq("payment_status", "paid")
+    .in("payment_status", ["paid", "partial"])
     .order("created_at", { ascending: true })
     .limit(limit);
 
@@ -211,29 +225,24 @@ Deno.serve(async (req) => {
       vatMode = funding.vatMode;
     }
 
-    const rawLineItems = Array.isArray(share.line_items) ? share.line_items : [];
-    const xeroLines = rawLineItems
-      .map((ln: Record<string, unknown>) => {
-        const qty = Number(ln.quantity) > 0 ? Number(ln.quantity) : 1;
-        const amt = Number(ln.amount_gbp);
-        const unit = Number(ln.unit_price_gbp);
-        const unitAmount = Number.isFinite(unit) && unit !== 0
-          ? unit
-          : Number.isFinite(amt) && amt !== 0
-            ? amt / qty
-            : 0;
-        const detail = clean(ln.detail, 200);
-        const dates = clean(ln.dates, 500);
-        const baseDesc = clean(ln.description, 800) || clean(share.line_description, 800);
-        const description = [baseDesc, detail, dates].filter(Boolean).join("\n");
-        return {
-          description,
-          quantity: qty,
-          unitAmount,
-          itemCode: clean(ln.xero_item_code, 80) || null,
-        };
-      })
-      .filter((ln) => ln.unitAmount !== 0);
+    const hint = clean(share.payment_method_hint, 40);
+    const schedule = normalizePaymentSchedule(share.payment_schedule);
+    const plan = paymentSchedulePlanShortLabel(schedule, {
+      notes: share.notes != null ? String(share.notes) : null,
+      dueDateIso: share.due_date ? String(share.due_date).slice(0, 10) : null,
+      paymentMethodHint: hint,
+    });
+    const channel = paymentChannelLabel(hint);
+    const paymentMethodLabel = plan ? `${channel} - ${plan}` : channel;
+    const xeroLines = buildXeroPushLines({
+      lineItems: share.line_items,
+      lineDescription: share.line_description != null ? String(share.line_description) : null,
+      vatMode,
+      participantName: participantByContact.get(cid) || "",
+      reference: share.reference_text != null ? String(share.reference_text) : null,
+      paymentMethodHint: hint,
+      paymentMethodLabel,
+    });
 
     const created = await xeroCreateAccrecInvoice(
       {
@@ -254,7 +263,7 @@ Deno.serve(async (req) => {
         city: addressCity,
         postcode: addressPostcode,
         existingXeroContactId,
-        lines: xeroLines,
+        lines: xeroLines.length ? xeroLines : undefined,
       },
       admin,
     );

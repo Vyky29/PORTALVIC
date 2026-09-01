@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260628-physical-activity-per-instructor';
+  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260813-autumn-merge-standing';
 
   function esc(s) {
     if (cfg.esc) return cfg.esc(s);

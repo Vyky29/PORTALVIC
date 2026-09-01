@@ -168,15 +168,29 @@ export async function gocardlessGetBillingRequest(id: string): Promise<
     id: string;
     status?: string;
     links?: Record<string, string>;
+    metadata?: Record<string, string>;
   }>
 > {
   const res = await gocardlessRequest<{
-    billing_requests?: { id?: string; status?: string; links?: Record<string, string> };
+    billing_requests?: {
+      id?: string;
+      status?: string;
+      links?: Record<string, string>;
+      metadata?: Record<string, string>;
+    };
   }>("GET", `/billing_requests/${encodeURIComponent(id)}`);
   if (!res.ok) return res;
   const br = res.data.billing_requests;
   if (!br?.id) return { ok: false, error: "gocardless_billing_request_missing" };
-  return { ok: true, data: { id: String(br.id), status: br.status, links: br.links || {} } };
+  return {
+    ok: true,
+    data: {
+      id: String(br.id),
+      status: br.status,
+      links: br.links || {},
+      metadata: br.metadata && typeof br.metadata === "object" ? br.metadata : {},
+    },
+  };
 }
 
 /** Earliest valid charge date (YYYY-MM-DD) — today or later. */

@@ -1,0 +1,75 @@
+weekday,venue_label,venue_code,time_range,staff_name,co_staff_same_slot,cohort_note
+Monday,Acton,Acton,4-6.30,Roberto,Youssef,
+Monday,Acton,Acton,4-6.30,Youssef,Roberto,
+Monday,Northolt,Northolt,4.30-6.30,Dan,Luliya,Northolt aquatic pool
+Monday,Northolt,Northolt,4.30-6.30,Luliya,Dan,Northolt aquatic pool
+Monday,Hub / Day Centre,SwimFarm,1-3,Fadi,—,
+Monday,Hub / Day Centre,SwimFarm,1-4,Emanuel,—,
+Monday,Hub / Day Centre,SwimFarm,11-1,Emanuel,"Raul, Roberto",
+Monday,Hub / Day Centre,SwimFarm,11-1,Raul,"Emanuel, Roberto",
+Monday,Hub / Day Centre,SwimFarm,11-1,Roberto,"Emanuel, Raul",
+Monday,Hub / Day Centre,SwimFarm,11-3,Luliya,—,Day Centre · Ikram (Victor OFF)
+Monday,Hub / Day Centre,SwimFarm,11-4,Michelle,—,Day Centre · Ikram
+Monday,Hub / Day Centre,SwimFarm,12.30-3,Youssef,—,
+Monday,Hub / Day Centre,SwimFarm,4.15-6.15,Emanuel,"Godsway, John",
+Monday,Hub / Day Centre,SwimFarm,4.15-6.15,Godsway,"Emanuel, John",
+Monday,Hub / Day Centre,SwimFarm,4.15-6.15,John,"Emanuel, Godsway",
+Monday,Westway,Westway,4-6,Sandra,—,
+Tuesday,Acton,Acton,4-6.30,Javier,Youssef,
+Tuesday,Acton,Acton,4-6.30,Youssef,Javier,
+Tuesday,Acton,Acton,4.30-6.30,Aurora,Luliya,
+Tuesday,Acton,Acton,4.30-6.30,Luliya,Aurora,
+Tuesday,Hub / Day Centre,SwimFarm,11-12.30,Roberto,—,Day Centre · Ikram
+Tuesday,Hub / Day Centre,SwimFarm,11-3,Luliya,—,Day Centre · Ikram
+Tuesday,Hub / Day Centre,SwimFarm,11-4,Michelle,—,Day Centre · Ikram
+Tuesday,Hub / Day Centre,SwimFarm,12.30-3,Roberto,Victor,Day Centre · Fadi
+Tuesday,Hub / Day Centre,SwimFarm,12.30-3,Victor,Roberto,Day Centre · Fadi
+Tuesday,Hub / Day Centre,SwimFarm,3-4,Victor,—,Day Centre · Ikram (was Raul; Raul OFF)
+Tuesday,Hub / Day Centre,SwimFarm,3-4,Michelle,—,Day Centre · Ikram
+Tuesday,Hub / Day Centre,SwimFarm,3.30-5,Victor,—,"Bespoke · Cyrus (Tue, was Thu)"
+Wednesday,Acton,Acton,4-6.30,Javier,Youssef,
+Wednesday,Acton,Acton,4-6.30,Youssef,Javier,
+Wednesday,Northolt,Northolt,4.30-6.30,Dan,Luliya,
+Wednesday,Northolt,Northolt,4.30-6.30,Luliya,Dan,
+Wednesday,Hub / Day Centre,SwimFarm,1-3,Fadi,—,
+Wednesday,Hub / Day Centre,SwimFarm,11-1,Emanuel,Roberto,
+Wednesday,Hub / Day Centre,SwimFarm,11-1,Roberto,Emanuel,
+Wednesday,Hub / Day Centre,SwimFarm,11-3,Luliya,—,Day Centre · Ikram
+Wednesday,Hub / Day Centre,SwimFarm,11-4,Michelle,—,Day Centre · Ikram
+Wednesday,Hub / Day Centre,SwimFarm,12.30-3,Raul,Victor,Day Centre · Fadi
+Wednesday,Hub / Day Centre,SwimFarm,12.30-3,Victor,Raul,Day Centre · Fadi
+Wednesday,Hub / Day Centre,SwimFarm,3-4,Victor,—,Day Centre · Ikram
+Wednesday,Hub / Day Centre,SwimFarm,3-4,Raul,—,Day Centre · Emanuel
+Wednesday,Hub / Day Centre,SwimFarm,4.15-6.15,Emanuel,"Godsway, John",
+Wednesday,Hub / Day Centre,SwimFarm,4.15-6.15,Godsway,"Emanuel, John",
+Wednesday,Hub / Day Centre,SwimFarm,4.15-6.15,John,"Emanuel, Godsway",
+Thursday,Acton,Acton,4-6.30,Javier,"Roberto, Youssef",
+Thursday,Acton,Acton,4-6.30,Roberto,"Javier, Youssef",
+Thursday,Acton,Acton,4-6.30,Youssef,"Javier, Roberto",
+Thursday,Acton,Acton,4.30-6.30,Aurora,Luliya,
+Thursday,Acton,Acton,4.30-6.30,Luliya,Aurora,
+Thursday,Hub / Day Centre,SwimFarm,12.30-3,Roberto,Youssef,
+Thursday,Hub / Day Centre,SwimFarm,12.30-3,Youssef,Roberto,
+Friday,Acton,Acton,4-6,Roberto,—,
+Friday,Hub / Day Centre,SwimFarm,1-3,Emanuel,"Fadi, Raul, Victor",
+Friday,Hub / Day Centre,SwimFarm,1-3,Fadi,Emanuel,
+Friday,Hub / Day Centre,SwimFarm,11-1,Emanuel,Roberto,
+Friday,Hub / Day Centre,SwimFarm,11-1,Raul,Victor,Day Centre · Timi
+Friday,Hub / Day Centre,SwimFarm,11-1,Victor,Raul,Day Centre · Timi
+Friday,Hub / Day Centre,SwimFarm,11-1,Roberto,Emanuel,
+Friday,Hub / Day Centre,SwimFarm,11-4,Michelle,Luliya,Day Centre · Ikram
+Friday,Hub / Day Centre,SwimFarm,11-4,Luliya,Michelle,Day Centre · Ikram
+Friday,Hub / Day Centre,SwimFarm,12.30-3,Youssef,—,Day Centre · Fadi
+Friday,Hub / Day Centre,SwimFarm,3-4,Raul,Victor,Day Centre · Ikram
+Friday,Hub / Day Centre,SwimFarm,3-4,Victor,Raul,Day Centre · Ikram
+Friday,Hub / Day Centre,SwimFarm,3-4,Youssef,—,Day Centre · Emanuel
+Friday,Hub / Day Centre,SwimFarm,4.15-6.15,Emanuel,—,
+Saturday,Hub / Day Centre,SwimFarm,9.30-1.30,Youssef,—,
+Sunday,Hub / Day Centre,SwimFarm,8.45-3.15,Roberto,—,
+Sunday,Hub / Day Centre,SwimFarm,9-2.30,Berta,—,
+Sunday,Hub / Day Centre,SwimFarm,9-3,Aurora,Javier,
+Sunday,Hub / Day Centre,SwimFarm,9-3,Javier,Aurora,
+Sunday,Hub / Day Centre,SwimFarm,9.15-2.15,Emanuel,Godsway,
+Sunday,Hub / Day Centre,SwimFarm,9.15-2.15,Godsway,Emanuel,
+Sunday,Westway,Westway,10-2,Alex,—,
+Sunday,Westway,Westway,10-4,Carlos,—,

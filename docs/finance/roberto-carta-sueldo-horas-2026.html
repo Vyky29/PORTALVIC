@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roberto Reali - sueldo y horas</title>
+  <style>
+    :root {
+      --ink: #1a2332;
+      --muted: #5a6574;
+      --line: #d0d7e0;
+      --soft: #f6f8fa;
+      --accent: #0f3d2e;
+      --accent-soft: #eef7f2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
+      background: #fff;
+      line-height: 1.5;
+      font-size: 15px;
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 24px 40px;
+    }
+    h1 {
+      font-size: 1.45rem;
+      margin: 0 0 4px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0 0 22px;
+    }
+    h2 {
+      font-size: 1.05rem;
+      margin: 26px 0 10px;
+      color: var(--accent);
+    }
+    p { margin: 0 0 12px; }
+    ul, ol {
+      margin: 8px 0 14px;
+      padding-left: 1.25rem;
+    }
+    li { margin: 6px 0; }
+    .highlight {
+      background: var(--accent-soft);
+      border: 1px solid #c5e0d2;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 16px 0;
+    }
+    .highlight strong { color: var(--accent); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0 8px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: var(--soft);
+      min-width: 0;
+    }
+    .card b {
+      display: block;
+      font-size: 1.2rem;
+      margin-bottom: 2px;
+      overflow-wrap: break-word;
+    }
+    .card span {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin: 8px 0 4px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      padding: 8px 6px;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    td.num, th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .note {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin: 8px 0 12px;
+    }
+    .foot {
+      margin-top: 28px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--line);
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    @media print {
+      body { font-size: 12.5pt; }
+      .wrap { padding: 0; max-width: none; }
+      .highlight, .card { break-inside: avoid; }
+      h2 { break-after: avoid; }
+    }
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Roberto Reali - sueldo y horas</h1>
+    <p class="sub">
+      Documento para explicar el contrato, los pagos y las horas ·
+      septiembre 2025 a agosto 2026
+    </p>
+
+    <p>
+      Roberto: este papel resume como ha funcionado tu sueldo, que horas cubre
+      el contrato, y como quedan julio y agosto.
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <b>£26,000</b>
+        <span>Contrato fijo / ano (desde ene)</span>
+      </div>
+      <div class="card">
+        <b>£2,166.67</b>
+        <span>Salario fijo al mes</span>
+      </div>
+      <div class="card">
+        <b>~32 h / sem</b>
+        <span>Horas del paquete desde ene</span>
+      </div>
+    </div>
+
+    <h2>1. Tu contrato (historial)</h2>
+    <ul>
+      <li>
+        Empezaste en <strong>septiembre 2025</strong> con un acuerdo de
+        <strong>£19,000 al ano</strong> y unas <strong>~24 h/semana</strong>.
+      </li>
+      <li>
+        Desde <strong>enero 2026</strong> pasaste a sueldo fijo
+        <strong>£26,000 al ano</strong> (<strong>£2,166.67 al mes</strong>)
+        y unas <strong>~32 h/semana</strong> (manana + tarde + domingo).
+      </li>
+      <li>
+        Ese contrato es <strong>fijo propio</strong>.
+        <strong>No</strong> se te paga por la escala Scala / Scale (£/hora)
+        del resto del staff.
+      </li>
+      <li>
+        El sueldo se ha tratado en <strong>pro-rata de 12 meses</strong>
+        (anualizado). Por eso <strong>agosto tambien te corresponde</strong>
+        aunque el Day Centre este cerrado para los ninos.
+      </li>
+    </ul>
+
+    <h2>1b. Horas que cubre el £26k (desde enero)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Bloque</th>
+          <th>Detalle</th>
+          <th class="num">h / sem</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Manana (L-V)</td>
+          <td>Lunes 3.5 h · martes a viernes 2.5 h</td>
+          <td class="num">13.5</td>
+        </tr>
+        <tr>
+          <td>Tarde (L-V)</td>
+          <td>Lun y mie 2 h · mar y jue 2.5 h · vie 2 h</td>
+          <td class="num">11.0</td>
+        </tr>
+        <tr>
+          <td>Domingo</td>
+          <td>6 h (desde junio 6.5 h)</td>
+          <td class="num">6.0-6.5</td>
+        </tr>
+        <tr>
+          <td><strong>Total</strong></td>
+          <td>Acuerdo orientativo ~32 h/sem</td>
+          <td class="num"><strong>~30.5-32</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2. Lo que has cobrado (banco)</h2>
+    <p>
+      Entre septiembre 2025 y julio 2026, por transferencia, has recibido
+      <strong>£16,116.03</strong> (nominas + £22.25 de gastos de junio).
+      El ultimo salario en banco es <strong>junio</strong> (£2,147.14 neto).
+      Julio y agosto estan pendientes de transferencia.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Periodo</th>
+          <th class="num">Importe</th>
+          <th>Nota</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Mayo (pagado 1 jun)</td>
+          <td class="num">£1,853.58</td>
+          <td>Neto banco</td>
+        </tr>
+        <tr>
+          <td>Junio (pagado 30 jun)</td>
+          <td class="num">£2,147.14</td>
+          <td>Neto banco</td>
+        </tr>
+        <tr>
+          <td>Gastos junio (7 jul)</td>
+          <td class="num">£22.25</td>
+          <td>Reembolso, no es salario</td>
+        </tr>
+        <tr>
+          <td>Nomina de julio</td>
+          <td class="num">Pendiente</td>
+          <td>Base £2,166.67 bruto</td>
+        </tr>
+        <tr>
+          <td>Nomina de agosto</td>
+          <td class="num">Pendiente</td>
+          <td>Si: te corresponde (anualizado)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Regla de las horas del fijo</h2>
+    <div class="highlight">
+      <p style="margin:0 0 8px;">
+        <strong>Como funciona (durante el contrato):</strong> el sueldo de
+        <strong>£2,166.67 / mes</strong> ya paga el paquete de unas
+        <strong>~32 h/sem</strong>.
+      </p>
+      <ul style="margin-bottom:0;">
+        <li>
+          Si un mes haces <strong>menos</strong>, recuperas esas horas en
+          otros meses <strong>dentro del mismo fijo</strong> — no como
+          &quot;extra&quot; aparte.
+        </li>
+        <li>
+          Un plus de horas extra solo cuando se acuerda trabajo
+          <strong>por encima</strong> del paquete (ej. Tinashe feb £40).
+        </li>
+        <li>
+          <strong>Desde el 20 de julio:</strong> las horas en Day Centre se
+          pagan a <strong>£18/h</strong> y el swimming en Acton a
+          <strong>£24/h</strong>. El fijo de julio y agosto sigue aparte
+          (meses 11 y 12 del anualizado).
+        </li>
+      </ul>
+    </div>
+
+    <h2>4. Revision de extras (mar / abr / jun)</h2>
+    <p>
+      En algunos meses el bruto del payslip mezclo salario + extras.
+      Revision del 24-25 julio con tus fotos de timesheet:
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Mes</th>
+          <th class="num">Plus pagado</th>
+          <th class="num">De mas acordado</th>
+          <th>Nota breve</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Mar</td><td class="num">+£186</td><td class="num">+£144</td><td>Sabados no iban como extra</td></tr>
+        <tr><td>Abr</td><td class="num">+£108</td><td class="num">+£36</td><td>Fire drill mie OK; vie 24 no</td></tr>
+        <tr><td>May</td><td class="num">£0</td><td class="num">£0</td><td>Payslip = solo fijo</td></tr>
+        <tr><td>Jun</td><td class="num">+£408</td><td class="num">+£408</td><td>Solo debia el fijo</td></tr>
+        <tr><td><strong>Total</strong></td><td class="num"></td><td class="num"><strong>£588</strong></td><td>Sobrerreclamo (no un pago a tu favor)</td></tr>
+      </tbody>
+    </table>
+    <p class="note">
+      Mayo: pediste extras en el timesheet, pero la nomina de mayo fue solo el
+      fijo. Si hiciste horas de mas (p. ej. Q6 miercoles 11-12), eso se mira
+      aparte frente a recuperacion del paquete — no como dinero pendiente
+      automatico.
+    </p>
+
+    <h2>5. Julio (fin contrato 17) y agosto</h2>
+    <ul>
+      <li>
+        El contrato de ~32 h/sem <strong>terminaba el 17 de julio</strong>.
+        Aun asi te corresponden el fijo de <strong>julio (mes 11)</strong>
+        y de <strong>agosto (mes 12)</strong> del anualizado £26k:
+        <strong>£2,166.67</strong> cada uno.
+      </li>
+      <li>
+        Los programas de tarde / afterschool del termino acaban el 17 jul;
+        Day Centre y crash siguen hasta el <strong>31 de julio</strong>.
+        Tu seguiste en rota esos dias.
+      </li>
+      <li>
+        <strong>Desde el 20 jul hasta el 31 jul:</strong> Day Centre @
+        <strong>£18/h</strong> y swimming Acton @ <strong>£24/h</strong>
+        (no recuperacion del paquete 32h). Rota MADRE 20-31:
+        DC <strong>28.5 h = £513</strong> + Acton <strong>4 h = £96</strong>
+        → extras <strong>£609</strong>.
+      </li>
+      <li>
+        <strong>Desde septiembre:</strong> plan nuevo part-time Day Centre
+        y cero horas de tarde (cifra nueva por acordar).
+      </li>
+    </ul>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          <th class="num">Bruto</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Julio fijo (mes 11)</td><td class="num">£2,166.67</td></tr>
+        <tr><td>Agosto fijo (mes 12)</td><td class="num">£2,166.67</td></tr>
+        <tr><td>Dto 15h neto (21 de menos - 6 de mas) @ £24</td><td class="num">-£360.00</td></tr>
+        <tr><td>DC 20-31 (28.5h @ £18)</td><td class="num">£513.00</td></tr>
+        <tr><td>Acton swim 20-31 (4h @ £24)</td><td class="num">£96.00</td></tr>
+        <tr><td><strong>A) Con dto 15h only</strong></td><td class="num"><strong>£4,582.34</strong></td></tr>
+        <tr><td><strong>B) Con dto 15h + overclaim £588</strong></td><td class="num"><strong>£3,994.34</strong></td></tr>
+      </tbody>
+    </table>
+    <p class="note">
+      El £588 (mar/abr/jun) es una revision de extras cobrados de mas.
+      Escenario A = £4,582.34; escenario B aplica tambien ese overclaim
+      (= £3,994.34). Se elige segun acuerdo final.
+    </p>
+
+    <h2>6. En pocas palabras</h2>
+    <ol>
+      <li>Sep-Dic: ~£19k / ~24h. Desde enero: £26k / ~32h (fijo, no Scala).</li>
+      <li>Durante el contrato: si un mes haces menos, recuperas dentro del fijo — no como extra.</li>
+      <li>Pagado por banco Sep-Jul: £16,116.03; junio ya cobrado.</li>
+      <li>Contrato al 17 jul; fijo Jul + Ago SI; desde el 20 jul: DC @ £18 y Acton swim @ £24 (extras £609).</li>
+      <li>Pendiente: A) £4,582.34 (dto 15h) o B) £3,994.34 (dto 15h + overclaim £588).</li>
+      <li>Septiembre: modelo nuevo PT Day Centre, sin tardes.</li>
+    </ol>
+
+    <p class="foot">
+      Documento informativo. No es nomina oficial ni carta legal.
+      Calculo extras mar-jun: payslips + timesheet 24-25 jul 2026.
+      Horas 20-31 jul: MADRE (DC @ £18 | Acton @ £24).
+      Actualizado 29 jul 2026 (desde 20 jul @ £18 / £24; agosto mes 12).
+    </p>
+  </div>
+</body>
+</html>

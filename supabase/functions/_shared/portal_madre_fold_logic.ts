@@ -53,6 +53,41 @@ function norm(s: unknown): string {
   return String(s ?? "").replace(/\s+/g, " ").trim();
 }
 
+/** Parse sheet-style "4.30 to 5" / "16.30 to 17.00" / "12.00 – 1.00" into start/end minutes (0–24h). */
+function parseTimeSlotMinutes(raw: string): { start: number; end: number } | null {
+  const normalized = norm(raw)
+    .replace(/[–—−]/g, "-")
+    .replace(/\s*-\s*/g, " to ")
+    .toLowerCase();
+  const parts = normalized.split(/\s+to\s+/i);
+  if (parts.length < 2) return null;
+  function tok(p: string): number | null {
+    const m = String(p || "").trim().match(/^(\d{1,2})(?:[.:](\d{2}))?$/);
+    if (!m) return null;
+    let h = parseInt(m[1], 10);
+    const min = m[2] != null ? parseInt(m[2], 10) : 0;
+    if (!Number.isFinite(h) || !Number.isFinite(min)) return null;
+    // Sheet afternoon hours are often 1–9 meaning 13–21.
+    if (h >= 1 && h <= 9) h += 12;
+    return h * 60 + min;
+  }
+  const a = tok(parts[0]);
+  const b = tok(parts[1]);
+  if (a == null || b == null) return null;
+  return { start: a, end: b };
+}
+
+function timeSlotsEquivalent(a: string, b: string): boolean {
+  const na = norm(a).toLowerCase();
+  const nb = norm(b).toLowerCase();
+  if (!na || !nb) return !na && !nb;
+  if (na === nb) return true;
+  const ma = parseTimeSlotMinutes(na);
+  const mb = parseTimeSlotMinutes(nb);
+  if (!ma || !mb) return false;
+  return ma.start === mb.start && ma.end === mb.end;
+}
+
 function staffSlug(name: string): string {
   return norm(name).toLowerCase().replace(/\s+/g, "_");
 }
@@ -61,6 +96,7 @@ function findStaffColumn(week: MadreWeek, instructors: string): MadreStaffCol | 
   const key = norm(instructors).split(",")[0]?.toLowerCase() ?? "";
   if (!key) return null;
   for (const st of week.staff ?? []) {
+    if (!st) continue;
     const sk = String(st.staffKey ?? "").toLowerCase();
     const sn = String(st.staffName ?? "").toLowerCase();
     if (key === sk || key === sn || sk.includes(key) || sn.includes(key)) return st;
@@ -77,11 +113,73 @@ function findDay(st: MadreStaffCol, iso: string): MadreDay | null {
 
 function slotMatch(slots: MadreSlot[], client: string, timeSlot: string): MadreSlot | null {
   const c = norm(client).toLowerCase();
-  const t = norm(timeSlot).toLowerCase();
+  const t = norm(timeSlot);
   for (const s of slots) {
-    if (norm(s.client_name).toLowerCase() === c && norm(s.time_slot).toLowerCase() === t) {
+    if (norm(s.client_name).toLowerCase() === c && timeSlotsEquivalent(String(s.time_slot ?? ""), t)) {
       return s;
     }
+  }
+  return null;
+}
+
+/** Open / bookable placeholders — Assign must rename these, not stack a named client beside them. */
+export function isOpenMadreClientName(name: unknown): boolean {
+  const up = norm(name)
+    .toUpperCase()
+    .replace(/[_\s-]+/g, " ")
+    .trim();
+  return (
+    !up ||
+    up === "NO PARTICIPANT" ||
+    up === "NO CLIENT" ||
+    up === "NOPARTICIPANT" ||
+    up === "OPEN" ||
+    up === "AVAILABLE" ||
+    up === "FREE"
+  );
+}
+
+function venuesCompatible(a: unknown, b: unknown): boolean {
+  const va = norm(a).toLowerCase();
+  const vb = norm(b).toLowerCase();
+  if (!va || !vb) return true;
+  return va === vb || va.includes(vb) || vb.includes(va);
+}
+
+function findOpenSeatOnBand(
+  slots: MadreSlot[],
+  timeSlot: string,
+  venue: string,
+): MadreSlot | null {
+  for (const s of slots) {
+    if (!isOpenMadreClientName(s.client_name)) continue;
+    if (!timeSlotsEquivalent(String(s.time_slot ?? ""), timeSlot)) continue;
+    if (!venuesCompatible(s.venue, venue)) continue;
+    return s;
+  }
+  return null;
+}
+
+/** Prefer named instructor; else staff column that already has this open/named band. */
+function resolveStaffForUpsert(
+  week: MadreWeek,
+  iso: string,
+  payload: Record<string, unknown>,
+  replaceOpen: boolean,
+): MadreStaffCol | null {
+  const named = findStaffColumn(week, String(payload.instructors ?? ""));
+  if (named) return named;
+  const timeSlot = norm(payload.time_slot);
+  const venue = String(payload.venue ?? "");
+  const client = norm(payload.client_name).toLowerCase();
+  for (const st of week.staff ?? []) {
+    if (!st) continue;
+    const day = findDay(st, iso);
+    if (!day?.slots?.length) continue;
+    if (slotMatch(day.slots, String(payload.client_name ?? ""), timeSlot)) return st;
+    if (replaceOpen && findOpenSeatOnBand(day.slots, timeSlot, venue)) return st;
+    // Same client any time on that day (normalize label later).
+    if (client && day.slots.some((s) => norm(s.client_name).toLowerCase() === client)) return st;
   }
   return null;
 }
@@ -91,12 +189,17 @@ function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<str
   const timeSlot = norm(payload.time_slot);
   if (!client || !timeSlot || !iso) return false;
 
+  // Named Assign: consume an open seat on this band (do not leave NO PARTICIPANT + named).
+  const replaceOpen =
+    payload.replace_open !== false &&
+    !isOpenMadreClientName(client);
+
   for (const week of madre.weeks ?? []) {
     const start = String(week.start ?? "").slice(0, 10);
     const end = String(week.end ?? "").slice(0, 10);
     if (iso < start || iso > end) continue;
 
-    const st = findStaffColumn(week, String(payload.instructors ?? ""));
+    const st = resolveStaffForUpsert(week, iso, payload, replaceOpen);
     if (!st) continue;
 
     let day = findDay(st, iso);
@@ -109,9 +212,26 @@ function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<str
     day.slots = slots;
 
     let slot = slotMatch(slots, client, timeSlot);
+    if (!slot && replaceOpen) {
+      slot = findOpenSeatOnBand(slots, timeSlot, String(payload.venue ?? ""));
+      if (slot) {
+        slot.client_name = client;
+        // Prefer the open seat's existing sheet time label so Services capacity matches.
+        if (slot.time_slot) {
+          /* keep open band label */
+        } else {
+          slot.time_slot = timeSlot;
+        }
+      }
+    }
     if (!slot) {
       slot = { client_name: client, time_slot: timeSlot };
       slots.push(slot);
+    } else if (timeSlotsEquivalent(String(slot.time_slot ?? ""), timeSlot)) {
+      // Keep sheet-style label when already equivalent (e.g. "12 to 1" vs "12.00 – 1.00").
+      if (!slot.time_slot) slot.time_slot = timeSlot;
+    } else {
+      slot.time_slot = timeSlot;
     }
     if (payload.service) slot.service = norm(payload.service);
     if (payload.venue) slot.venue = norm(payload.venue);
@@ -128,15 +248,20 @@ function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<str
 
 function foldParticipantCancel(madre: MadreDoc, iso: string, payload: Record<string, unknown>): boolean {
   const client = norm(payload.client_name).toLowerCase();
-  const timeSlot = norm(payload.time_slot).toLowerCase();
+  const timeSlot = norm(payload.time_slot);
   if (!client || !iso) return false;
+
+  const instrRaw = norm(payload.instructors);
 
   for (const week of madre.weeks ?? []) {
     const start = String(week.start ?? "").slice(0, 10);
     const end = String(week.end ?? "").slice(0, 10);
     if (iso < start || iso > end) continue;
 
-    for (const st of week.staff ?? []) {
+    const scoped = instrRaw ? findStaffColumn(week, instrRaw) : null;
+    const staffList = scoped ? [scoped] : (week.staff ?? []);
+
+    for (const st of staffList) {
       const day = findDay(st, iso);
       if (!day?.slots) continue;
       const before = day.slots.length;
@@ -144,7 +269,7 @@ function foldParticipantCancel(madre: MadreDoc, iso: string, payload: Record<str
         (s) =>
           !(
             norm(s.client_name).toLowerCase() === client &&
-            (!timeSlot || norm(s.time_slot).toLowerCase() === timeSlot)
+            (!timeSlot || timeSlotsEquivalent(String(s.time_slot ?? ""), timeSlot))
           ),
       );
       if (day.slots.length < before) return true;
@@ -291,6 +416,7 @@ export function madreToAdapterRows(madre: MadreDoc): Record<string, unknown>[] {
     const weekStart = norm(w.start).slice(0, 10);
     const weekEnd = norm(w.end).slice(0, 10);
     for (const st of w.staff ?? []) {
+      if (!st) continue;
       const staffName = norm(st.staffName ?? st.staffKey).toUpperCase();
       for (const d of st.days ?? []) {
         const iso = norm(d.sessionDate).slice(0, 10);

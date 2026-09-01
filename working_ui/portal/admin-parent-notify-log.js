@@ -148,6 +148,46 @@
     return WA_COLD_TEMPLATES[0];
   }
 
+  function coldTemplateForKind(kind) {
+    var k = String(kind || "").trim().toLowerCase();
+    for (var i = 0; i < WA_COLD_TEMPLATES.length; i++) {
+      if (WA_COLD_TEMPLATES[i].kind === k) return WA_COLD_TEMPLATES[i];
+    }
+    return null;
+  }
+
+  /**
+   * What the parent sees on WhatsApp: Meta shell (Hello… / Urgent…) + {{1}} body.
+   * Log rows store only the editable {{1}}; reconstruct for thread display.
+   */
+  function clientFacingOutboundBody(ev) {
+    var body = String((ev && ev.body) || "");
+    if (!(ev && ev.dir === "out")) return body;
+    var meta = (ev.row && ev.row.meta) || (ev.meta) || null;
+    if (meta && typeof meta === "object" && meta.wa_client_body) {
+      return String(meta.wa_client_body);
+    }
+    var tpl =
+      coldTemplateForKind(ev.kind) ||
+      (meta && meta.wa_template_kind
+        ? coldTemplateForKind(meta.wa_template_kind)
+        : null);
+    if (!tpl) return body;
+    var mid = body.trim();
+    if (!mid) return body;
+    // Already wrapped (legacy full-body rows) — do not double-prefix.
+    var pref = String(tpl.prefix || "");
+    var suf = String(tpl.suffix || "");
+    if (
+      (pref && body.indexOf(pref.trim()) === 0) ||
+      /^Hello,\s*\n/i.test(body) ||
+      /^Urgent information:\s*\n/i.test(body)
+    ) {
+      return body;
+    }
+    return pref + mid + suf;
+  }
+
   function fileToBase64(file) {
     return new Promise(function (resolve, reject) {
       var reader = new FileReader();
@@ -222,10 +262,15 @@
     } catch (_e) {}
   }
 
+  function waOutboundCountsAsReply(status) {
+    var st = String(status || "").toLowerCase();
+    return st === "sent" || st === "delivered" || st === "read";
+  }
+
   function isThreadUnread(t) {
     if (!t || t.channel !== "whatsapp" || !t.hasInbound || !t.lastInboundAt) return false;
-    // Staff already messaged after the parent's last reply — not waiting on you.
-    if (t.lastOutboundAt && String(t.lastOutboundAt) >= String(t.lastInboundAt)) return false;
+    // Only a successful club WhatsApp reply clears unread — failed API sends must not.
+    if (t.lastOutboundOkAt && String(t.lastOutboundOkAt) >= String(t.lastInboundAt)) return false;
     var seen = readSeenMap()[t.key] || "";
     return String(t.lastInboundAt) > seen;
   }
@@ -1067,6 +1112,7 @@
           lastInboundId: "",
           lastInboundAt: "",
           lastOutboundAt: "",
+          lastOutboundOkAt: "",
           lastInboundWaId: "",
         };
       }
@@ -1134,6 +1180,9 @@
       });
       var outAt = String(row.created_at || "");
       if (outAt > wt.lastOutboundAt) wt.lastOutboundAt = outAt;
+      if (waOutboundCountsAsReply(row.whatsapp_status) && outAt > wt.lastOutboundOkAt) {
+        wt.lastOutboundOkAt = outAt;
+      }
       var pname = String(row.parent_name || "").trim();
       var cname = String(row.client_display || "").trim();
       var ovOut = knownWaThreadOverride(wkey);
@@ -1410,7 +1459,7 @@
   }
 
   function replyPreviewForEvent(ev) {
-    var bodyStr = String((ev && ev.body) || "").trim();
+    var bodyStr = String(clientFacingOutboundBody(ev) || (ev && ev.body) || "").trim();
     var type = String((ev && ev.messageType) || "").toLowerCase();
     if (/^\[(sticker|image|video|audio|document)\]$/i.test(bodyStr)) {
       return bodyStr.replace(/^\[|\]$/g, "").replace(/^\w/, function (c) {
@@ -1444,14 +1493,16 @@
     }
     metaBits.push('<span class="portal-pnlog-bubble__time">' + esc(formatLondon(ev.when)) + "</span>");
     var mediaHtml = renderMedia(ev);
-    var bodyStr = String(ev.body || "");
+    var rawBody = String(ev.body || "");
+    var bodyStr =
+      ev.dir === "out" ? String(clientFacingOutboundBody(ev) || rawBody) : rawBody;
     var isReaction = ev.messageType === "reaction";
     var type = String(ev.messageType || "").toLowerCase();
     var isMediaPlaceholder =
-      /^\[(sticker|image|video|audio|document)\]$/i.test(bodyStr.trim());
+      /^\[(sticker|image|video|audio|document)\]$/i.test(rawBody.trim());
     var contentHtml = "";
     if (isReaction) {
-      contentHtml = '<div class="portal-pnlog-bubble__reaction">' + esc(bodyStr) + "</div>";
+      contentHtml = '<div class="portal-pnlog-bubble__reaction">' + esc(rawBody) + "</div>";
     } else if (mediaHtml && isMediaPlaceholder) {
       contentHtml = "";
     } else if (!mediaHtml && isMediaPlaceholder) {
@@ -1459,7 +1510,7 @@
         '<div class="portal-pnlog-bubble__text portal-pnlog-bubble__text--muted">' +
         (type === "sticker"
           ? "Sticker (file not saved)"
-          : bodyStr.replace(/^\[|\]$/g, "").replace(/^\w/, function (c) {
+          : rawBody.replace(/^\[|\]$/g, "").replace(/^\w/, function (c) {
               return c.toUpperCase();
             }) + " (file not saved)") +
         "</div>";
@@ -1492,7 +1543,7 @@
     }
     if (
       ev.dir === "out" &&
-      bodyStr &&
+      rawBody &&
       !isMediaPlaceholder &&
       !isReaction &&
       !mediaHtml &&
@@ -1801,7 +1852,7 @@
     var unread = isThreadUnread(t);
     var sel = t.key === state.selectedKey ? " is-selected" : "";
     var sub = t.events.length
-      ? bodyPreview(t.events[t.events.length - 1].body)
+      ? bodyPreview(clientFacingOutboundBody(t.events[t.events.length - 1]))
       : t.fromDirectory
         ? "No WhatsApp history yet — open to send a first message"
         : "";
@@ -1967,7 +2018,7 @@
       esc(textareaPlaceholder) +
       '" maxlength="' +
       textareaMax +
-      '" autocomplete="off" spellcheck="true"' +
+      '" autocomplete="off" spellcheck="true" enterkeyhint="send"' +
       disabled +
       ">" +
       esc(draft) +
@@ -2028,6 +2079,9 @@
         " · latest first";
       countEl.classList.toggle("portal-pnlog-count--has-unread", unreadCount > 0);
     }
+    try {
+      global.dispatchEvent(new CustomEvent("portal:family-msg-seen"));
+    } catch (_badgeEv) {}
 
     if (state.selectedKey && !findThread(state.selectedKey)) {
       // Keep selection if filtered out of list but still in full threads.
@@ -2625,6 +2679,13 @@
       }
     });
 
+    /* Keep focus in the textarea when tapping Send (Space must never activate Send). */
+    host.addEventListener("mousedown", function (e) {
+      var sendBtn = e.target && e.target.closest && e.target.closest("#portalPnlogComposerSend");
+      if (!sendBtn) return;
+      e.preventDefault();
+    });
+
     host.addEventListener("input", function (e) {
       if (e.target && e.target.id === "portalPnlogComposerInput" && state.selectedKey) {
         state.draftByKey[state.selectedKey] = e.target.value;
@@ -2643,7 +2704,17 @@
         state.coldTemplateId = String(e.target.value);
         captureComposerDraft();
         var thr = findThread(state.selectedKey);
-        if (thr) mountComposer(thr, true);
+        if (thr) {
+          mountComposer(thr, true);
+          global.requestAnimationFrame(function () {
+            var ta = document.getElementById("portalPnlogComposerInput");
+            if (ta) {
+              try {
+                ta.focus();
+              } catch (_f) {}
+            }
+          });
+        }
         return;
       }
       if (!e.target || e.target.id !== "portalPnlogComposerFile") return;
@@ -2654,9 +2725,21 @@
     });
 
     host.addEventListener("keydown", function (e) {
+      /* If focus somehow lands on Send, Space must not fire the button (legacy browser behaviour). */
+      if (e.target && e.target.id === "portalPnlogComposerSend") {
+        if (e.key === " " || e.code === "Space" || e.key === "Spacebar") {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+      }
       if (!e.target || e.target.id !== "portalPnlogComposerInput") return;
-      if (e.key === "Enter" && !e.shiftKey) {
+      /* Space must insert a space — never send (same as Staff WhatsApp). */
+      if (e.key === " " || e.code === "Space" || e.key === "Spacebar") return;
+      if (e.isComposing || e.keyCode === 229) return;
+      if ((e.key === "Enter" || e.key === "NumpadEnter") && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
+        e.stopPropagation();
         sendComposerReply();
       }
     });
@@ -2882,6 +2965,14 @@
     client = client || (cfg.getClient && cfg.getClient());
     if (!client || typeof client.from !== "function") return 0;
     try {
+      /* Prefer the same thread model as the inbox once it has loaded. */
+      if (state.threads && state.threads.length) {
+        var fromThreads = 0;
+        state.threads.forEach(function (t) {
+          if (isThreadUnread(t)) fromThreads += 1;
+        });
+        return fromThreads;
+      }
       var res = await client
         .from("portal_parent_whatsapp_inbound")
         .select("id, from_phone, created_at")
@@ -2905,6 +2996,7 @@
         (outRes.data || []).forEach(function (r) {
           var ch = String((r && r.channel) || "").toLowerCase();
           if (ch !== "whatsapp" && ch !== "both") return;
+          if (!waOutboundCountsAsReply(r && r.whatsapp_status)) return;
           var pk = phoneMatchKey(r && r.parent_phone) || phoneDigits(r && r.parent_phone);
           if (!pk) return;
           var at = String((r && r.created_at) || "");

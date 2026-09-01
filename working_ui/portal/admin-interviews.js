@@ -149,6 +149,159 @@
     return "/Working_interview.html" + q;
   }
 
+  async function readAdminSessionForHandoff() {
+    // Prefer the live Admin client session first (this is what already loads the Interviews list).
+    var sb = client();
+    if (sb && sb.auth && typeof sb.auth.getSession === "function") {
+      try {
+        var res = await sb.auth.getSession();
+        if (res && res.data && res.data.session && res.data.session.access_token) {
+          return res.data.session;
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+    }
+    var box = global.__PORTAL_SUPABASE__ || {};
+    if (box.session && box.session.access_token) {
+      return box.session;
+    }
+    if (typeof global.portalAdminReadStoredAuthSession === "function") {
+      var stored = global.portalAdminReadStoredAuthSession();
+      if (stored && stored.access_token) return stored;
+    }
+    if (typeof global.portalAdminResolveAccessToken === "function") {
+      var tok = global.portalAdminResolveAccessToken();
+      if (tok) return { access_token: tok, refresh_token: "" };
+    }
+    return null;
+  }
+
+  function closeInterviewOverlay() {
+    var ov = document.getElementById("aiInterviewOverlay");
+    if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+    try {
+      document.documentElement.classList.remove("ai-interview-overlay-open");
+      document.body.classList.remove("ai-interview-overlay-open");
+    } catch (_e) {
+      /* ignore */
+    }
+    if (global.__aiInterviewAuthListener) {
+      try {
+        global.removeEventListener("message", global.__aiInterviewAuthListener);
+      } catch (_e2) {
+        /* ignore */
+      }
+      global.__aiInterviewAuthListener = null;
+    }
+    load();
+  }
+
+  async function openInterviewInApp(url) {
+    var target = String(url || "/Working_interview.html");
+    var sess = null;
+    try {
+      sess = await readAdminSessionForHandoff();
+    } catch (_e) {
+      sess = null;
+    }
+    if (!sess || !sess.access_token) {
+      if (deps.toast) {
+        deps.toast("Admin session not ready — wait a second and try Start again.", "err");
+      }
+      return;
+    }
+
+    closeInterviewOverlay();
+
+    var sep = target.indexOf("?") >= 0 ? "&" : "?";
+    var src = target + sep + "embedded=1&v=20260801-auth-fix";
+
+    var ov = document.createElement("div");
+    ov.id = "aiInterviewOverlay";
+    ov.setAttribute("role", "dialog");
+    ov.setAttribute("aria-label", "Interview portal");
+    ov.innerHTML =
+      '<div class="ai-interview-overlay__bar">' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="aiInterviewOverlayClose">← Back to Interviews</button>' +
+      '<span class="ai-interview-overlay__title">Interview (same Admin login)</span>' +
+      "</div>" +
+      '<iframe class="ai-interview-overlay__frame" id="aiInterviewOverlayFrame" title="Interview and onboarding"></iframe>';
+
+    if (!document.getElementById("aiInterviewOverlayStyle")) {
+      var st = document.createElement("style");
+      st.id = "aiInterviewOverlayStyle";
+      st.textContent =
+        "html.ai-interview-overlay-open,body.ai-interview-overlay-open{overflow:hidden!important}" +
+        "#aiInterviewOverlay{position:fixed;inset:0;z-index:12000;display:flex;flex-direction:column;background:#0b1220}" +
+        "#aiInterviewOverlay .ai-interview-overlay__bar{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:10px 14px;background:#0f2747;color:#fff;min-width:0}" +
+        "#aiInterviewOverlay .ai-interview-overlay__title{font-size:13px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+        "#aiInterviewOverlay .ai-interview-overlay__frame{flex:1 1 auto;width:100%;border:0;background:#fff;min-height:0}";
+      document.head.appendChild(st);
+    }
+
+    document.body.appendChild(ov);
+    try {
+      document.documentElement.classList.add("ai-interview-overlay-open");
+      document.body.classList.add("ai-interview-overlay-open");
+    } catch (_eCls) {
+      /* ignore */
+    }
+
+    var closeBtn = document.getElementById("aiInterviewOverlayClose");
+    if (closeBtn) closeBtn.addEventListener("click", closeInterviewOverlay);
+
+    var iframe = document.getElementById("aiInterviewOverlayFrame");
+    var payload = {
+      type: "portal-interview-auth",
+      session: {
+        access_token: sess.access_token,
+        refresh_token: sess.refresh_token || "",
+        expires_at: sess.expires_at || null,
+        user: sess.user || null
+      }
+    };
+
+    function sendAuth() {
+      try {
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage(payload, global.location.origin);
+        }
+      } catch (_eSend) {
+        /* ignore */
+      }
+    }
+
+    function onMsg(ev) {
+      if (!ev || ev.origin !== global.location.origin) return;
+      var data = ev.data || {};
+      if (data.type === "portal-interview-auth-request") sendAuth();
+      if (data.type === "portal-interview-close") closeInterviewOverlay();
+    }
+    global.__aiInterviewAuthListener = onMsg;
+    global.addEventListener("message", onMsg);
+
+    if (iframe) {
+      iframe.addEventListener("load", function () {
+        sendAuth();
+        setTimeout(sendAuth, 400);
+        setTimeout(sendAuth, 1200);
+      });
+      iframe.src = src;
+    }
+  }
+
+  function bindInterviewOpenLinks() {
+    if (!root) return;
+    root.querySelectorAll("[data-interview-open]").forEach(function (el) {
+      el.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        var href = el.getAttribute("data-interview-open") || openHref("");
+        openInterviewInApp(href);
+      });
+    });
+  }
+
   function tableFor(list) {
     if (!list.length) {
       return '<div class="ai-empty">None in this bucket yet.</div>';
@@ -184,7 +337,9 @@
           "</td>" +
           '<td class="toolbar"><a class="btn btn--pri btn--sm" href="' +
           esc(openHref(c.name || "")) +
-          '" target="_blank" rel="noopener">Open</a></td>' +
+          '" data-interview-open="' +
+          esc(openHref(c.name || "")) +
+          '">Open</a></td>' +
           "</tr>"
         );
       })
@@ -235,7 +390,7 @@
     root.innerHTML =
       '<div class="ai-wrap">' +
       '<div class="ai-toolbar">' +
-      '<a class="btn btn--pri" href="/Working_interview.html" target="_blank" rel="noopener">' +
+      '<a class="btn btn--pri" href="/Working_interview.html" data-interview-open="/Working_interview.html">' +
       playIco +
       "Start a new interview</a>" +
       '<button type="button" class="ai-refresh" id="aiRefreshBtn">' +
@@ -265,6 +420,7 @@
         load();
       });
     }
+    bindInterviewOpenLinks();
   }
 
   async function load() {

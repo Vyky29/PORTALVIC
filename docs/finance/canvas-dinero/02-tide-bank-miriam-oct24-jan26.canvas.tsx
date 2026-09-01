@@ -1,0 +1,1 @@
+/Users/victor/.cursor/projects/Users-victor-cursor-PORTALVIC/canvases/tide-bank-miriam-oct24-jan26.canvas.tsx

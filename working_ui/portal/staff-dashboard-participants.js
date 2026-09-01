@@ -1,6 +1,21 @@
+    /** CEOs + programme leads: My participants and All participants. Instructors: My (+ New) only. */
     function portalStaffCanBrowseAllParticipants(){
+      try{
+        if(typeof portalStaffIsCeoTopbarFullAccess === 'function' && portalStaffIsCeoTopbarFullAccess()) return true;
+        if(typeof portalStaffIsProgrammeLeadTopbar === 'function' && portalStaffIsProgrammeLeadTopbar()) return true;
+        if(typeof portalStaffHasLeadFieldToolsOnStaffShell === 'function' && portalStaffHasLeadFieldToolsOnStaffShell()) return true;
+        const box = window.__PORTAL_SUPABASE__ || {};
+        const prof = box.staff_profile;
+        const em = String((box.session && box.session.user && box.session.user.email) || '').trim();
+        if(typeof portalCanAccessCeoDashboard === 'function' && portalCanAccessCeoDashboard(prof, em)) return true;
+        if(typeof portalIsProgrammeLeadUser === 'function' && portalIsProgrammeLeadUser(prof, em)) return true;
+        if(typeof portalIsStaffHomeProgrammeLead === 'function' && portalIsStaffHomeProgrammeLead(prof, em)) return true;
+        const app = String((prof && prof.app_role) || '').trim().toLowerCase();
+        if(app === 'ceo' || app === 'lead') return true;
+      }catch(_){}
       return false;
     }
+    try{ window.portalStaffCanBrowseAllParticipants = portalStaffCanBrowseAllParticipants; }catch(_){}
     function portalNewParticipantsPack(){
       const P = window.PortalParticipantsSheet;
       if(!P || typeof P.collectNewParticipantIds !== 'function'){
@@ -14,24 +29,32 @@
       const pack = P.applyTabVisibility();
       const newBtn = document.getElementById('clientsTabNew');
       const myBtn = document.getElementById('clientsTabMy');
-      if(newBtn && newBtn.classList.contains('is-active')) renderClientsSheetList('new');
+      const allBtn = document.getElementById('clientsTabAll');
+      if(allBtn && !allBtn.hidden && allBtn.classList.contains('is-active')) refreshClientsAllTabUI();
+      else if(newBtn && newBtn.classList.contains('is-active')) renderClientsSheetList('new');
       else if(myBtn && myBtn.classList.contains('is-active')) renderClientsSheetList('my');
       return pack;
     }
     function portalApplyClientsDirectoryAccess(){
+      window.portalParticipantsSheetStaffOnly = !portalStaffCanBrowseAllParticipants();
       portalParticipantsSheetRefreshTabs();
+      const allBtn = document.getElementById('clientsTabAll');
+      const allActive = !!(allBtn && !allBtn.hidden && allBtn.classList.contains('is-active'));
       const tools = document.getElementById('clientsAllToolsWrap');
       if(tools){
-        tools.hidden = true;
-        const si = document.getElementById('clientsDirectorySearch');
-        if(si) si.value = '';
-        const sug = document.getElementById('clientsDirectorySuggest');
-        if(sug){
-          sug.hidden = true;
-          sug.innerHTML = '';
+        tools.hidden = !allActive;
+        if(!allActive){
+          const si = document.getElementById('clientsDirectorySearch');
+          if(si) si.value = '';
+          const sug = document.getElementById('clientsDirectorySuggest');
+          if(sug){
+            sug.hidden = true;
+            sug.innerHTML = '';
+          }
         }
       }
     }
+    try{ window.portalApplyClientsDirectoryAccess = portalApplyClientsDirectoryAccess; }catch(_){}
     function portalClientNoteForParticipantsSheet(clientId){
       const P = window.PortalParticipantsSheet;
       if(P && typeof P.clientNoteForSheet === 'function'){
@@ -157,7 +180,7 @@
           return n.toLowerCase().startsWith(q);
         });
       }
-      grid.setAttribute('aria-labelledby', isNew ? 'clientsTabNew' : 'clientsTabMy');
+      grid.setAttribute('aria-labelledby', isAll ? 'clientsTabAll' : isNew ? 'clientsTabNew' : 'clientsTabMy');
       if(!ids.length){
         grid.style.removeProperty('display');
         let emptyMsg;
@@ -251,19 +274,27 @@
       const myBtn = document.getElementById('clientsTabMy');
       const newBtn = document.getElementById('clientsTabNew');
       const allBtn = document.getElementById('clientsTabAll');
-      if(mode === 'all') mode = 'my';
+      const canAll = portalStaffCanBrowseAllParticipants();
+      if(mode === 'all' && (!canAll || (allBtn && allBtn.hidden))) mode = 'my';
       let isMy = mode === 'my';
       let isNew = mode === 'new';
+      let isAll = mode === 'all';
       if(isNew && newBtn && newBtn.hidden){ isNew = false; isMy = true; }
+      if(isAll && allBtn && allBtn.hidden){ isAll = false; isMy = true; }
+      if(isAll){ isMy = false; isNew = false; }
+      else if(isNew){ isMy = false; isAll = false; }
+      else { isMy = true; isNew = false; isAll = false; }
       const tools = document.getElementById('clientsAllToolsWrap');
       if(tools){
-        tools.hidden = true;
-        const si = document.getElementById('clientsDirectorySearch');
-        if(si) si.value = '';
-        const sug = document.getElementById('clientsDirectorySuggest');
-        if(sug){
-          sug.hidden = true;
-          sug.innerHTML = '';
+        tools.hidden = !isAll;
+        if(!isAll){
+          const si = document.getElementById('clientsDirectorySearch');
+          if(si) si.value = '';
+          const sug = document.getElementById('clientsDirectorySuggest');
+          if(sug){
+            sug.hidden = true;
+            sug.innerHTML = '';
+          }
         }
       }
       if(myBtn){
@@ -275,15 +306,16 @@
         newBtn.setAttribute('aria-selected', isNew ? 'true' : 'false');
       }
       if(allBtn){
-        allBtn.classList.remove('is-active');
-        allBtn.setAttribute('aria-selected', 'false');
+        allBtn.classList.toggle('is-active', isAll);
+        allBtn.setAttribute('aria-selected', isAll ? 'true' : 'false');
       }
       const grid = document.getElementById('clientsListGrid');
-      if(grid) grid.setAttribute('aria-labelledby', isNew ? 'clientsTabNew' : 'clientsTabMy');
+      if(grid) grid.setAttribute('aria-labelledby', isAll ? 'clientsTabAll' : isNew ? 'clientsTabNew' : 'clientsTabMy');
       if(isMy) renderClientsSheetList('my');
       else if(isNew) renderClientsSheetList('new');
       else refreshClientsAllTabUI();
     }
+    try{ window.setClientsSheetTab = setClientsSheetTab; }catch(_){}
 
     const POOL_TIER_META = {
       fish: {
@@ -494,6 +526,30 @@
     function portalTodayItemIsSpecialSegmentedCard(item){
       return !!(item && Array.isArray(item.segments) && item.segments.length);
     }
+    /**
+     * Left-border colour for Day Centre SPECIAL cards — one tint per participant.
+     * Emanuel keeps the original purple; Fadi / Ikram / Timi (and Manager) differ.
+     */
+    function portalDayCentreSpecialCardAccentClass(item){
+      if(!portalTodayItemIsSpecialSegmentedCard(item)) return '';
+      const raw = String(
+        (item && (item.clientId || item.name || item.clientName || item.clientDisplay)) || ''
+      )
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+      if(!raw) return ' session-card--dc-pax-default';
+      if(/\bemanuel\b|\bemmanuel\b/.test(raw) || raw === 'emanuel' || raw === 'emmanuel'){
+        return ' session-card--dc-pax-emanuel';
+      }
+      if(/\bfadi\b/.test(raw) || raw === 'fadi') return ' session-card--dc-pax-fadi';
+      if(/\bikram\b/.test(raw) || raw === 'ikram') return ' session-card--dc-pax-ikram';
+      if(/\btimi\b/.test(raw) || raw === 'timi') return ' session-card--dc-pax-timi';
+      if(/\bmanager\b/.test(raw) || raw === 'manager') return ' session-card--dc-pax-manager';
+      return ' session-card--dc-pax-default';
+    }
+    try{ window.portalDayCentreSpecialCardAccentClass = portalDayCentreSpecialCardAccentClass; }catch(_){}
     function portalTodayItemShowsAdminShiftBadge(item){
       if(portalTodayItemIsSpecialSegmentedCard(item)) return false;
       return !!(item && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge);
@@ -3971,26 +4027,46 @@
     function portalFindSpreadsheetSessionMatchingOverride(ov, viewDay){
       const list = Array.isArray(sessionsModel) ? sessionsModel : [];
       const aid = portalNormKeyStr(ov && ov.anchor_staff_id);
+      const coverId = (typeof portalInstructorCoverStaffKeyFromOverride === 'function'
+        ? portalInstructorCoverStaffKeyFromOverride(ov)
+        : (typeof window !== 'undefined' && typeof window.portalInstructorCoverStaffKeyFromOverride === 'function'
+          ? window.portalInstructorCoverStaffKeyFromOverride(ov)
+          : '')) || portalNormKeyStr(ov && ov.payload && (ov.payload.covering_staff_id || ov.payload.covering_staff_name));
       const vw = String(viewDay || '').trim();
       const iso = normaliseIsoDate(ov && ov.session_date);
+      function rowMatchesOverrideWindow(s){
+        if(!s) return false;
+        if(String(s.day || '').trim() !== vw) return false;
+        if(!portalSpreadsheetSessionMatchesOverrideIso(s, iso)) return false;
+        if(portalNormKeyStr(s.venue) !== portalNormKeyStr(ov.anchor_venue)) return false;
+        if(!portalRosterClientIdsMatch(s.clientId, ov.anchor_client_id)) return false;
+        if(!portalTimeAnchorsMatch(ov.anchor_start, s.start)) return false;
+        if(!portalTimeAnchorsMatch(ov.anchor_end, s.end)) return false;
+        if(!portalOverrideSlotLabelMatchesRow(ov, s)) return false;
+        return true;
+      }
       for(let i = 0; i < list.length; i++){
         const s = list[i];
-        if(!s) continue;
         if(!portalOverrideAnchorStaffKeysMatch(aid, s.staffId)) continue;
-        if(String(s.day || '').trim() !== vw) continue;
-        if(!portalSpreadsheetSessionMatchesOverrideIso(s, iso)) continue;
-        if(portalNormKeyStr(s.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
-        if(!portalRosterClientIdsMatch(s.clientId, ov.anchor_client_id)) continue;
-        if(!portalTimeAnchorsMatch(ov.anchor_start, s.start)) continue;
-        if(!portalTimeAnchorsMatch(ov.anchor_end, s.end)) continue;
-        if(!portalOverrideSlotLabelMatchesRow(ov, s)) continue;
+        if(!rowMatchesOverrideWindow(s)) continue;
         return s;
+      }
+      /* Sunday replace / dated CSV often already lists the COVER as staffId. Match that
+         too so inject/find still works after JAVIER→LULIYA (etc.) rewrites the roster. */
+      if(coverId){
+        for(let ic = 0; ic < list.length; ic++){
+          const sc = list[ic];
+          if(!portalStaffKeysMatch(coverId, sc.staffId)) continue;
+          if(!rowMatchesOverrideWindow(sc)) continue;
+          return sc;
+        }
       }
       if(portalScheduleOverrideAnchorIsOpenSlot(ov && ov.anchor_client_id)){
         for(let k = 0; k < list.length; k++){
           const s2 = list[k];
           if(!s2) continue;
-          if(!portalOverrideAnchorStaffKeysMatch(aid, s2.staffId)) continue;
+          if(!portalOverrideAnchorStaffKeysMatch(aid, s2.staffId)
+            && !(coverId && portalStaffKeysMatch(coverId, s2.staffId))) continue;
           if(String(s2.day || '').trim() !== vw) continue;
           if(!portalSpreadsheetSessionMatchesOverrideIso(s2, iso)) continue;
           if(portalNormKeyStr(s2.venue) !== portalNormKeyStr(ov.anchor_venue)) continue;
@@ -4096,11 +4172,12 @@
           && normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
       });
     }
-    function portalStaffHasDatedWeekdaySnapshots(staffId, weekdayLong, minSessionDateIso){
+    function portalStaffHasDatedWeekdaySnapshots(staffId, weekdayLong, minSessionDateIso, maxSessionDateIso){
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(!sid || !w) return false;
       const floor = minSessionDateIso ? normaliseIsoDate(minSessionDateIso) : '';
+      const ceil = maxSessionDateIso ? normaliseIsoDate(maxSessionDateIso) : '';
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
       return model.some(function(row){
         if(String(row.staffId || '').toLowerCase() !== sid) return false;
@@ -4108,18 +4185,35 @@
         const ri = normaliseIsoDate(row && (row.session_date || row.sessionDate));
         if(!ri) return false;
         if(floor && ri < floor) return false;
+        if(ceil && ri > ceil) return false;
         return true;
       });
     }
-    /** From Summer Term 2 (1 Jun): roster rows must match that calendar date — no May weekday snap. */
-    function portalTermSummerRosterFromIso(){
+    /** Summer Term 2 window where MADRE has one roster row per calendar date (not weekday snap). */
+    function portalTermSummerDatedRosterFromIso(){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
-      return String((t && t.termResumeDate) || (t && t.termDashboardCalendarFrom) || '2026-06-01').trim().slice(0, 10);
+      return String((t && t.termSummerDatedRosterFrom) || '2026-06-01').trim().slice(0, 10);
     }
+    function portalTermSummerDatedRosterThroughIso(){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      return String((t && t.termSummerDatedRosterThrough) || '2026-07-19').trim().slice(0, 10);
+    }
+    /** Floor for summer snapshot queries (same as dated-roster start). */
+    function portalTermSummerRosterFromIso(){
+      return portalTermSummerDatedRosterFromIso();
+    }
+    /** True only inside the summer dated-roster window — Autumn uses weekday standing snap (Services). */
     function portalCalendarIsoUsesSummerDatedRosterOnly(isoYmd){
       const iso = normaliseIsoDate(isoYmd);
-      const floor = portalTermSummerRosterFromIso();
-      return !!(iso && floor && /^\d{4}-\d{2}-\d{2}$/.test(floor) && iso >= floor);
+      const from = portalTermSummerDatedRosterFromIso();
+      const through = portalTermSummerDatedRosterThroughIso();
+      return !!(
+        iso && from && through
+        && /^\d{4}-\d{2}-\d{2}$/.test(from)
+        && /^\d{4}-\d{2}-\d{2}$/.test(through)
+        && iso >= from
+        && iso <= through
+      );
     }
     /** Summer Term 2+: weekdays off pool rota (e.g. Roberto no Saturdays from 1 Jun). */
     function portalTermStaffOffWeekdayOnDate(isoYmd, staffId){

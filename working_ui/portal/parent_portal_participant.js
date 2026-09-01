@@ -570,7 +570,11 @@
     var base = "";
     if (/^bespoke\b/i.test(s)) base = dur + "Bespoke";
     else if (/multi[- ]?activity/i.test(s)) base = dur + "Multi-Activity";
-    else if (/^aquatic\b/i.test(s)) base = dur + "Aquatic";
+    else if (/^aquatic\b/i.test(s)) {
+      /* Pool sessions are 30' bands unless the source already carried a duration. */
+      if (!dur) dur = "30' ";
+      base = dur + "AQUATIC ACTIVITY";
+    }
     else if (/climb/i.test(s)) base = dur + "Climbing";
     else if (/day\s*centre/i.test(s)) base = dur + "Day centre";
     else
@@ -759,25 +763,40 @@
 
   function formerClientNoticeHtml(data) {
     var hasFb = formerHasFeedback(data);
+    var unpaidRelease = isUnpaidAug15Released(data);
+    var title = unpaidRelease ? "Place released" : "Former client";
+    var body = unpaidRelease
+      ? "Your Autumn place was released because the first payment was not received by 15 August. You do not need to register again — use Booking services below to book a new place, or contact the office."
+      : hasFb
+        ? "Family portal access for this place has ended. You can still open past session notes below. To book again, use Booking services, or contact admin."
+        : "Family portal access for this place has ended. To book again, use Booking services, or contact admin.";
     return (
-      '<aside class="pp-hub-reenrol pp-hub-reenrol--former" role="status" aria-label="Former client">' +
+      '<aside class="pp-hub-reenrol pp-hub-reenrol--former" role="status" aria-label="' +
+      esc(title) +
+      '">' +
       '<div class="pp-hub-reenrol__copy">' +
-      "<strong>Former client</strong>" +
+      "<strong>" +
+      esc(title) +
+      "</strong>" +
       '<span class="pp-muted">' +
-      (hasFb
-        ? "Family portal access for this place has ended. You can still open past session notes below. To book again, use the booking portal, or contact admin."
-        : "Family portal access for this place has ended. To book again, use the booking portal, or contact admin.") +
+      esc(body) +
       "</span>" +
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
       '<a class="pp-btn pp-btn--primary" href="' +
       esc(BOOKING_PORTAL_URL) +
-      '" target="_blank" rel="noopener noreferrer">Book online</a>' +
+      '" target="_blank" rel="noopener noreferrer">Booking services</a>' +
       '<a class="pp-btn pp-btn--ghost" href="' +
       esc(OFFICE_CONTACT_MAILTO) +
-      '">Contact admin</a>' +
+      '">Contact the office</a>' +
       "</div></aside>"
     );
+  }
+
+  function isUnpaidAug15Released(data) {
+    if (!isFormerClient(data)) return false;
+    /* Re-enrolled for 26/27 but seat cleared for unpaid Aug-15 first payment. */
+    return familyAcceptedNextYear(data);
   }
 
   function hubHeroHtml(data, opts) {
@@ -798,7 +817,9 @@
       "</h3>" +
       reenrolChip +
       (isFormerClient(data)
-        ? '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--former" role="status">Former</span>'
+        ? '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--former" role="status">' +
+          (isUnpaidAug15Released(data) ? "Place released" : "Former") +
+          "</span>"
         : "") +
       "</div>" +
       hubIdentityMetaInlineHtml(p) +
@@ -898,6 +919,8 @@
     return {
       submitted: !!r.submitted,
       submitted_at: r.submitted_at || null,
+      continuing: r.continuing === true,
+      not_continuing: r.not_continuing === true,
       hint: String(r.summary_hint || "").trim() || "Not submitted yet",
       items: Array.isArray(r.items) ? r.items : [],
       parent_action: action,
@@ -991,8 +1014,27 @@
     var booking = bookingSummary(data);
     var officeAuto = booking.parent_action === "auto";
     var crashUnpaid = hasUnpaidCrashForHub(data);
-    /* Submitted, office auto (LA/Day Centre), or unpaid crash place. */
-    if (!booking.submitted && !officeAuto && !crashUnpaid) return "";
+    if (booking.not_continuing) {
+      return (
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--former" data-pp-hub-reenrol-chip role="status" title="Not continuing for 2026/27">' +
+        "<span>Not continuing</span>" +
+        "</span>"
+      );
+    }
+    if (isTrialOnlyBooking(data)) {
+      return (
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--trial" data-pp-hub-reenrol-chip role="status" title="Trial session booked">' +
+        "<span>Trial booked</span>" +
+        "</span>"
+      );
+    }
+    /*
+     * Continuing place: submitted keep/change, office auto (LA/Day Centre), an office
+     * term invoice, or an unpaid crash.
+     */
+    if (!booking.continuing && !officeAuto && !crashUnpaid && !familyAcceptedNextYear(data)) {
+      return "";
+    }
 
     if (isOutstandingSummerAhmedSibling(data)) {
       return (
@@ -1003,8 +1045,12 @@
       );
     }
 
-    /* LA / NHS office-billed term: plain Re-enrolled — unless parent-pay crash is unpaid. */
-    if (isOfficeBilledLaOrNhs(data) && !crashUnpaid) {
+    /*
+     * LA / NHS office-billed term: plain Re-enrolled. An unpaid parent-pay extra
+     * (e.g. a crash course billed to the family in the child's name) is chased on
+     * the Invoices shortcut — it must not make the term place look unpaid.
+     */
+    if (isOfficeBilledLaOrNhs(data)) {
       return (
         '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
@@ -1022,6 +1068,22 @@
         "</span>"
       );
     }
+    if (pay === "partial") {
+      return (
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--partial" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — first instalment paid; later half still due">' +
+        '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
+        "<span>Re-enrolled (partially paid)</span>" +
+        "</span>"
+      );
+    }
+    if (pay === "pending") {
+      return (
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--pending" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — waiting for the office to confirm payment">' +
+        '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
+        "<span>Re-enrolled (awaiting admin confirmation)</span>" +
+        "</span>"
+      );
+    }
     return (
       '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27">' +
       '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
@@ -1033,15 +1095,20 @@
   /**
    * Hub visual for 2026/27 place:
    *  unconfirmed — not re-enrolled (red blink)
-   *  unpaid — re-enrolled, term invoice not fully paid (orange blink)
+   *  unpaid — re-enrolled, term invoice not paid yet (orange)
+   *  partial — flexi / instalments: at least one half paid, balance later (amber)
+   *  pending — parent tapped I've paid; office has not confirmed (amber)
    *  settled — term invoice(s) paid, or true office-billed LA/NHS with no parent term invoice
    *
    * Direct Payments / "Using Funds from LA" must stay orange until paid — do not
    * treat show_invoices=false as settled on its own.
    */
   function hubReenrolPayState(data) {
+    if (isTrialOnlyBooking(data)) return "settled";
     if (!familyAcceptedNextYear(data)) return "unconfirmed";
     if (data && data._hubReenrolPay === "settled") return "settled";
+    if (data && data._hubReenrolPay === "pending") return "pending";
+    if (data && data._hubReenrolPay === "partial") return "partial";
     if (data && data._hubReenrolPay === "unpaid") return "unpaid";
     /* Until invoices resolve, assume unpaid so orange shows immediately. */
     return "unpaid";
@@ -1051,6 +1118,8 @@
     var pay = hubReenrolPayState(data);
     if (pay === "unconfirmed") return " pp-hub-term-block--unconfirmed";
     if (pay === "unpaid") return " pp-hub-term-block--unpaid";
+    if (pay === "pending") return " pp-hub-term-block--pending";
+    /* partial (1st flexi paid) uses the same calm block look as fully paid. */
     return " pp-hub-term-block--settled";
   }
 
@@ -1095,7 +1164,63 @@
   }
 
   function isInvoiceFullyPaid(inv) {
-    return String((inv && inv.payment_status) || "").toLowerCase() === "paid";
+    return invoiceEffectivePayStatus(inv) === "paid";
+  }
+
+  function isInvoicePendingConfirmation(inv) {
+    return invoiceEffectivePayStatus(inv) === "pending_confirmation";
+  }
+
+  /**
+   * Prefer payment_status; if missing/stale, derive flexi partial from schedule /
+   * amount_paid (same truth admin marks on the share).
+   */
+  function invoiceEffectivePayStatus(inv) {
+    var st = String((inv && inv.payment_status) || "")
+      .trim()
+      .toLowerCase();
+    if (
+      st === "paid" ||
+      st === "partial" ||
+      st === "pending_confirmation" ||
+      st === "void" ||
+      st === "cancelled"
+    ) {
+      return st;
+    }
+    var sched = inv && inv.payment_schedule;
+    if (Array.isArray(sched) && sched.length >= 2) {
+      var paidN = 0;
+      for (var i = 0; i < sched.length; i++) {
+        if (String((sched[i] && sched[i].status) || "").toLowerCase() === "paid") paidN += 1;
+      }
+      if (paidN > 0 && paidN < sched.length) return "partial";
+      if (paidN >= sched.length) return "paid";
+    }
+    var paidAmt = Number(inv && inv.amount_paid_gbp);
+    if (Number.isFinite(paidAmt) && paidAmt > 0) return "partial";
+    return st || "unpaid";
+  }
+
+  /** Hub pay state from term invoices: settled | pending | partial | unpaid | null (no term rows). */
+  function termInvoicesHubPayState(term) {
+    if (!term || !term.length) return null;
+    if (term.every(isInvoiceFullyPaid)) return "settled";
+    var hasUnpaid = false;
+    var hasPartial = false;
+    var hasPending = false;
+    for (var i = 0; i < term.length; i++) {
+      var st = invoiceEffectivePayStatus(term[i]);
+      if (st === "paid" || st === "void" || st === "cancelled") continue;
+      if (st === "pending_confirmation") hasPending = true;
+      else if (st === "partial") hasPartial = true;
+      else hasUnpaid = true;
+    }
+    /* Worst open status wins: unpaid > pending confirm > partial. */
+    if (hasUnpaid) return "unpaid";
+    if (hasPending) return "pending";
+    if (hasPartial) return "partial";
+    return "unpaid";
   }
 
   function invoiceBlobText(inv) {
@@ -1176,9 +1301,9 @@
   }
 
   /**
-   * Hub red pulse + pay CTAs: only when the parent must act on the current
-   * month/term ask (or flexi instalment within 7 days of due). Future Spring/Summer
-   * term invoices and GoCardless auto-collection do not count.
+   * Hub red pulse: only when the parent must act soon (or flexi instalment
+   * within 7 days of due). Future Spring/Summer terms and GoCardless
+   * auto-collection do not pulse.
    */
   function invoiceNeedsParentPay(inv) {
     if (!inv) return false;
@@ -1214,6 +1339,21 @@
     // Monthly / other: remind in the week before due (GC already excluded above).
     if (days == null) return true;
     return withinFlexiRemind;
+  }
+
+  /**
+   * Pay / "I've paid" CTAs: allow early bank/card for unpaid invoices even
+   * before the hub remind window (parents often pay ahead of Aug/Oct halves).
+   * LA / GoCardless auto-collect still gated in invoiceCardHtml.
+   */
+  function invoiceShowsPayActions(inv) {
+    if (!inv) return false;
+    var st = String(inv.payment_status || "").toLowerCase();
+    if (st === "paid" || st === "void" || st === "cancelled") return false;
+    if (st === "pending_confirmation") return false;
+    if (inv.can_setup_gocardless) return true;
+    if (isGoCardlessAutoCollect(inv)) return false;
+    return st === "unpaid" || st === "partial";
   }
 
   function applyHubInvoicesShortcutVisual(host, hasUnpaid) {
@@ -1268,6 +1408,8 @@
       block.classList.remove(
         "pp-hub-term-block--unconfirmed",
         "pp-hub-term-block--unpaid",
+        "pp-hub-term-block--partial",
+        "pp-hub-term-block--pending",
         "pp-hub-term-block--settled",
       );
       block.classList.add(
@@ -1275,12 +1417,17 @@
           ? "pp-hub-term-block--unconfirmed"
           : state === "unpaid"
             ? "pp-hub-term-block--unpaid"
-            : "pp-hub-term-block--settled",
+            : state === "pending"
+              ? "pp-hub-term-block--pending"
+              : "pp-hub-term-block--settled",
       );
       var acc = block.querySelector(".pp-hub-ops__term-accordion");
       if (acc) {
-        if (state === "settled") acc.classList.add("pp-hub-ops__term-accordion--completed");
-        else acc.classList.remove("pp-hub-ops__term-accordion--completed");
+        if (state === "settled" || state === "partial") {
+          acc.classList.add("pp-hub-ops__term-accordion--completed");
+        } else {
+          acc.classList.remove("pp-hub-ops__term-accordion--completed");
+        }
       }
     }
   }
@@ -1292,26 +1439,45 @@
         Array.isArray(data.crash_course.dates) &&
         data.crash_course.dates.length);
     var crashPending = crashCourseAwaitingPayment(data);
+    var officeBilled = isOfficeBilledLaOrNhs(data);
+    var sharePayHint = String(
+      (data.reenrolment && data.reenrolment.hub_pay_state) || "",
+    ).toLowerCase();
+    if (
+      sharePayHint !== "settled" &&
+      sharePayHint !== "partial" &&
+      sharePayHint !== "pending" &&
+      sharePayHint !== "unpaid"
+    ) {
+      sharePayHint = "";
+    }
+    /*
+     * The term place state is decided here; some cases are final. The invoice fetch
+     * below still runs for every child, because the Invoices shortcut must turn red
+     * whenever something is owed — including places that are not re-enrolled yet.
+     */
+    var payStateFinal = false;
     if (crashPending) {
       data._hubCrashUnpaid = true;
-      applyHubReenrolPayVisual(host, data, "unpaid");
+      /* LA / NHS term stays plain Re-enrolled; the crash is chased on Invoices. */
+      if (!officeBilled) applyHubReenrolPayVisual(host, data, "unpaid");
     }
     if (!familyAcceptedNextYear(data) && !crashPending && !hasCrashDates) {
       applyHubReenrolPayVisual(host, data, "unconfirmed");
-      return;
-    }
-    /* Adaam / Aydaan / Amaar: keep Summer 2026 outstanding chip. */
-    if (isOutstandingSummerAhmedSibling(data)) {
+      payStateFinal = true;
+    } else if (isOutstandingSummerAhmedSibling(data)) {
+      /* Adaam / Aydaan / Amaar: keep Summer 2026 outstanding chip. */
       applyHubReenrolPayVisual(host, data, "unpaid");
-      return;
-    }
-    if (familyAcceptedNextYear(data) || crashPending) {
-      /* True office-billed LA / NHS: plain Re-enrolled — unless crash still unpaid. */
-      if (isOfficeBilledLaOrNhs(data) && !crashPending) {
+      payStateFinal = true;
+    } else if (familyAcceptedNextYear(data) || crashPending) {
+      if (officeBilled) {
         applyHubReenrolPayVisual(host, data, "settled");
       } else if (!crashPending) {
-        /* Private / Direct Payments: orange until invoices prove paid. */
-        applyHubReenrolPayVisual(host, data, "unpaid");
+        /*
+         * Prefer admin invoice-share hint (flexi 1st half → partial) so the hub does
+         * not flash "unpaid" before invoices-list returns.
+         */
+        applyHubReenrolPayVisual(host, data, sharePayHint || "unpaid");
       }
     } else {
       /* Crash dates present but not yet flagged awaiting_payment — resolve via invoices. */
@@ -1330,7 +1496,9 @@
           return isCrashInvoice(inv) && !isInvoiceFullyPaid(inv);
         });
         data._hubCrashUnpaid = crashUnpaidInv || crashCourseAwaitingPayment(data);
-        if (data._hubCrashUnpaid) {
+        /* Term place already decided above (not confirmed / Summer outstanding). */
+        if (payStateFinal) return;
+        if (data._hubCrashUnpaid && !isOfficeBilledLaOrNhs(data)) {
           applyHubReenrolPayVisual(host, data, "unpaid");
           return;
         }
@@ -1344,26 +1512,29 @@
         }
         var term = termInvoicesForHubPay(invoices);
         var booking = bookingSummary(data);
-        var nextState = "unpaid";
+        var nextState = sharePayHint || "unpaid";
         if (term.length) {
-          nextState = term.every(isInvoiceFullyPaid) ? "settled" : "unpaid";
+          nextState = termInvoicesHubPayState(term) || nextState;
         } else if (!booking.show_invoices) {
           /* True office-billed LA/NHS: no parent term invoice to pay. */
           nextState = "settled";
         }
         applyHubReenrolPayVisual(host, data, nextState);
-        if (nextState === "settled") {
+        if (nextState === "settled" || nextState === "partial") {
           /* Refresh day chips so upcoming dates stay blue without attention styling. */
           mountTermDateChipStatuses(host, data, opts, null);
         }
       })
       .catch(function () {
-        /* Keep unpaid orange if invoices cannot load. */
+        /* Keep share hint / unpaid if invoices cannot load. */
       });
   }
 
-  /** Keep in sync with portal_reenrolment_2026_27.js — form open through end of this local day. */
+  /** Keep in sync with portal_reenrolment_2026_27.js — general close 22 Jul; soft-hold to 31 Aug. */
   var RE_ENROL_DEADLINE_ISO = "2026-07-22";
+  /** Office soft-hold only (Erik / Agata contact 176) through 31 Aug 23:59. */
+  var RE_ENROL_SOFT_HOLD_DEADLINE_ISO = "2026-08-31";
+  var RE_ENROL_SOFT_HOLD_CONTACT_IDS = { "176": true };
   var BOOKING_PORTAL_URL = "https://www.clubsensational.org/bookingportal";
   var OFFICE_CONTACT_MAILTO = "mailto:info@clubsensational.org";
 
@@ -1382,13 +1553,28 @@
     );
   }
 
-  function isReenrolFormOpen() {
-    return localIsoToday() <= RE_ENROL_DEADLINE_ISO;
+  function reenrolContactId(data) {
+    var p = (data && data.participant) || {};
+    return String(p.contact_id || "").trim();
+  }
+
+  function isReenrolSoftHoldContact(data) {
+    return !!RE_ENROL_SOFT_HOLD_CONTACT_IDS[reenrolContactId(data)];
+  }
+
+  /** Form still open for this child (general deadline, or Erik soft-hold to 31 Aug). */
+  function isReenrolFormOpen(data) {
+    var today = localIsoToday();
+    if (isReenrolSoftHoldContact(data)) {
+      return today <= RE_ENROL_SOFT_HOLD_DEADLINE_ISO;
+    }
+    return today <= RE_ENROL_DEADLINE_ISO;
   }
 
   function needsReenrolCta(data) {
     if (isFormerClient(data)) return false;
-    if (!isReenrolFormOpen()) return false;
+    if (isTrialOnlyBooking(data)) return false;
+    if (!isReenrolFormOpen(data)) return false;
     var booking = bookingSummary(data);
     return !booking.submitted && booking.parent_action !== "auto";
   }
@@ -1396,7 +1582,8 @@
   /** After deadline: active families who did not re-enrol (excludes Former + office-auto). */
   function needsUnconfirmedSlotBanner(data) {
     if (isFormerClient(data)) return false;
-    if (isReenrolFormOpen()) return false;
+    if (isTrialOnlyBooking(data)) return false;
+    if (isReenrolFormOpen(data)) return false;
     return !familyAcceptedNextYear(data);
   }
 
@@ -1441,13 +1628,48 @@
     return (
       '<a class="pp-hub-shortcut pp-hub-shortcut--book-portal" href="' +
       esc(BOOKING_PORTAL_URL) +
-      '" target="_blank" rel="noopener noreferrer" aria-label="Book online">' +
+      '" target="_blank" rel="noopener noreferrer" aria-label="Book more services">' +
       '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
       icoFn(
         '<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8l4 4-4 4"/>',
       ) +
       "</span>" +
-      '<span class="pp-hub-shortcut__label">Book online</span></a>'
+      '<span class="pp-hub-shortcut__label">Booking services</span></a>'
+    );
+  }
+
+  /** Day Centre summer social story — Emanuel, Timi, Ikram, Fadi. */
+  function summerSocialStoryKidSlug(data) {
+    var p = (data && data.participant) || {};
+    var blob = [p.contact_id, p.display_name, p.first_name, p.last_name, p.name]
+      .map(function (x) {
+        return String(x || "").toLowerCase();
+      })
+      .join(" ");
+    if (/\bemanuel\b/.test(blob) || /\bemmanuel\b/.test(blob)) return "emanuel";
+    if (/\btimi\b/.test(blob) || /oluwatimilehin/.test(blob)) return "timi";
+    if (/\bikram\b/.test(blob)) return "ikram";
+    if (/\bfadi\b/.test(blob)) return "fadi";
+    return "";
+  }
+
+  function summerSocialStoryQuickAccessBtnHtml(data, icoFn) {
+    var slug = summerSocialStoryKidSlug(data);
+    if (!slug) return "";
+    var href =
+      "/portal/day-centre-summer-break-social-story.html?kid=" +
+      encodeURIComponent(slug) +
+      "&parent=1";
+    return (
+      '<a class="pp-hub-shortcut pp-hub-shortcut--summer-story" href="' +
+      esc(href) +
+      '" target="_blank" rel="noopener noreferrer" aria-label="Summer holidays social story">' +
+      '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
+      icoFn(
+        '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+      ) +
+      "</span>" +
+      '<span class="pp-hub-shortcut__label">Summer holidays social story</span></a>'
     );
   }
 
@@ -1478,10 +1700,15 @@
     var startBtn = startReenrolBtnHtml(data);
     var crashBtn = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
     if (!startBtn && !crashBtn) return "";
+    var hint = startBtn
+      ? isReenrolSoftHoldContact(data)
+        ? '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Mon 31 Aug 23:59 · place held until then</p>'
+        : '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Wed 22 Jul · place held until then</p>'
+      : "";
     return (
       '<section class="pp-hub-menu-reenr" aria-label="Re-enrolments and intensive courses">' +
       '<p class="pp-pax-info-section-label">Re-enrolments &amp; Intensive Courses</p>' +
-      '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Wed 22 July · July crash course fully booked — waiting list available</p>' +
+      hint +
       '<div class="pp-hub-menu-reenr__actions">' +
       startBtn +
       crashBtn +
@@ -1524,13 +1751,18 @@
     var acatNotice = booking.acat_confirm_notice
       ? '<p class="pp-muted pp-hub-reenrol__acat">' + esc(booking.acat_confirm_notice) + "</p>"
       : "";
+    var deadlineHint = isReenrolSoftHoldContact(data)
+      ? "Confirm by Mon 31 Aug 23:59 · place held until midnight"
+      : "Confirm by Wed 22 Jul · place held until then";
     el.innerHTML =
       '<button type="button" class="pp-reenrol-popup__backdrop" data-pp-reenrol-popup-close aria-label="Close"></button>' +
       '<div class="pp-reenrol-popup__panel" role="dialog" aria-modal="true" aria-labelledby="ppReenrolPopupTitle">' +
       '<aside class="pp-hub-reenrol pp-hub-reenrol--popup" aria-label="Re-enrolment 2026/27">' +
       '<div class="pp-hub-reenrol__copy">' +
       '<strong id="ppReenrolPopupTitle">Re-enrol 2026/27</strong>' +
-      '<span class="pp-muted">Confirm by Wed 22 July · July crash course fully booked</span>' +
+      '<span class="pp-muted">' +
+      esc(deadlineHint) +
+      "</span>" +
       acatNotice +
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
@@ -1850,6 +2082,14 @@
         { disabled: !hasServices, extraClass: " pp-hub-shortcut--absence" },
       ) +
       hubShortcutBtn(
+        "team",
+        firstNameOf(data) + "'s Team",
+        ico(
+          '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+        ),
+        { extraClass: " pp-hub-shortcut--team" },
+      ) +
+      hubShortcutBtn(
         "consents",
         "Consents",
         ico('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>'),
@@ -1877,7 +2117,7 @@
         : "") +
       reenrolQuickAccessBtnHtml(data, ico) +
       bookingPortalQuickAccessBtnHtml(data, ico) +
-      (canBookExtrasFor(data) ? crashQuickAccessBtnHtml(data, ico) : "") +
+      summerSocialStoryQuickAccessBtnHtml(data, ico) +
       "</div></section>"
     );
   }
@@ -2310,7 +2550,7 @@
       var jsDow = day.getDay();
       var col = jsDow === 0 ? 6 : jsDow - 1;
       detail.forEach(function (s) {
-        if (dayNameToCalCol(s && s.day) !== col) return;
+        if (serviceDetailCalCol(s) !== col) return;
         var end = parseServiceEndMinutes(s.time);
         if (end != null) ends.push(end);
       });
@@ -2370,6 +2610,54 @@
     return from;
   }
 
+  var PARENT_FEEDBACK_CURRENT_YEAR = "2026-27";
+  var PARENT_FEEDBACK_PRIOR_YEAR = "2025-26";
+  var PARENT_FEEDBACK_DAY_CENTRE_START = "2026-09-01";
+  var PARENT_FEEDBACK_AFTERSCHOOL_START = "2026-09-05";
+
+  function participantAutumnStartIso(data) {
+    return participantHasDayCentre(data)
+      ? PARENT_FEEDBACK_DAY_CENTRE_START
+      : PARENT_FEEDBACK_AFTERSCHOOL_START;
+  }
+
+  /** Returning families pick a year first; new Autumn 26/27 starters go straight in. */
+  function participantNeedsFeedbackYearPicker(data) {
+    if (data && data.feedback_year_picker_required === false) return false;
+    if (data && data.feedback_year_picker_required === true) return true;
+    if (isNewAutumnStarter(data)) return false;
+    var reg = participantSessionStartIso(data);
+    var autumnStart = participantAutumnStartIso(data);
+    if (!reg) return true;
+    return reg < autumnStart;
+  }
+
+  function defaultFeedbackYearKey(data) {
+    return (data && data.feedback_year_default) || PARENT_FEEDBACK_CURRENT_YEAR;
+  }
+
+  function feedbackYearsAvailable(data) {
+    if (Array.isArray(data && data.feedback_years_available) && data.feedback_years_available.length) {
+      return data.feedback_years_available;
+    }
+    if (participantNeedsFeedbackYearPicker(data)) {
+      return [
+        { key: PARENT_FEEDBACK_PRIOR_YEAR, label: "Summer 2025/26", is_current: false },
+        { key: PARENT_FEEDBACK_CURRENT_YEAR, label: "2026/27", is_current: true },
+      ];
+    }
+    return [{ key: PARENT_FEEDBACK_CURRENT_YEAR, label: "2026/27", is_current: true }];
+  }
+
+  function feedbackYearLabel(data, yearKey) {
+    var key = String(yearKey || data.feedback_year || "").trim();
+    var list = feedbackYearsAvailable(data);
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].key === key) return list[i].label || key;
+    }
+    return (data && data.feedback_year_label) || key;
+  }
+
   function isoInRange(iso, from, to) {
     if (!iso || !from || !to) return false;
     return iso >= from && iso <= to;
@@ -2403,10 +2691,88 @@
     return false;
   }
 
-  /** True when this 26/27 date is before the service kind starts (non-Day-Centre → 5 Sept). */
-  function nextYearDateBeforeServiceStart(iso, isDayCentreService) {
+  /** True when this 26/27 date is before the service kind starts.
+   *  Day Centre from 1 Sep; weekend after-school from 5 Sep; weekday after-school from 8 Sep (week 2).
+   *  New Autumn starters (and explicit validated booking dates) may begin week 1 from Mon 7 Sep. */
+  function jsDowFromIso(iso) {
+    var p = String(iso || "").split("-");
+    if (p.length !== 3) return -1;
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay();
+  }
+
+  var NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM = "2026-09-08";
+  var NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM_NEW_STARTER = "2026-09-07";
+
+  function hasExplicitBookedIso(data, iso) {
+    var want = String(iso || "").slice(0, 10);
+    if (!want) return false;
+    var list =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    for (var i = 0; i < list.length; i++) {
+      if (String((list[i] && list[i].iso) || "").slice(0, 10) === want) return true;
+    }
+    return false;
+  }
+
+  function isNewAutumnStarter(data) {
+    var reg = participantSessionStartIso(data);
+    return !!(reg && reg > CURRENT_YEAR_TERM_TO_DAY_CENTRE);
+  }
+
+  /**
+   * Paid trial only (not a full Autumn re-enrol / term place).
+   * Hub must not show Re-enrolled or project every weekday for the term.
+   */
+  function isTrialOnlyBooking(data) {
+    if (!data) return false;
+    if (data.is_trial_booking === true || data.place_kind === "trial") return true;
+    var booking = bookingSummary(data);
+    if (booking.continuing || booking.submitted) return false;
+    if (data.reenrolment && data.reenrolment.office_term_invoice === true) return false;
+    var upcoming =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    var hasTrialRow = upcoming.some(function (s) {
+      return String((s && s.kind) || "").toLowerCase() === "trial";
+    });
+    if (hasTrialRow) return true;
+    return !!(isNewAutumnStarter(data) && upcoming.length && !booking.continuing);
+  }
+
+  function trialBookedDateRows(data) {
+    var list =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    return list
+      .map(function (s) {
+        var iso = String((s && s.iso) || "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+        return {
+          iso: iso,
+          shortLabel: formatTermChipLabel(iso),
+          dayLabel: formatHubDateLabel(iso),
+          label: shortServiceChipLabel((s && s.label) || "Trial") || "Trial",
+          rawLabel: (s && s.label) || "Trial",
+          day: (s && s.day) || "",
+          time: (s && s.time) || "",
+          venue: String((s && s.venue) || "").trim(),
+          area: String((s && s.area) || "").trim(),
+          source: "booking",
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function nextYearDateBeforeServiceStart(iso, isDayCentreService, data) {
     if (isDayCentreService) return false;
-    return iso >= "2026-09-01" && iso < NEXT_YEAR_AFTERSCHOOL_FROM;
+    if (!iso || iso < PARENT_FEEDBACK_DAY_CENTRE_START) return true;
+    if (hasExplicitBookedIso(data, iso)) return false;
+    var dow = jsDowFromIso(iso);
+    if (dow === 0 || dow === 6) {
+      return iso < NEXT_YEAR_AFTERSCHOOL_FROM;
+    }
+    var weekdayFrom = isNewAutumnStarter(data)
+      ? NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM_NEW_STARTER
+      : NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM;
+    return iso < weekdayFrom;
   }
 
   function currentYearTermToIso(data) {
@@ -2415,12 +2781,62 @@
       : CURRENT_YEAR_TERM_TO;
   }
 
-  /** Hub / Absent use 2026/27 closed dates after Booking submit or office-auto (LA / Day Centre). */
+  /** Hub / Absent use 2026/27 closed dates after a continuing Booking submit or office-auto (LA / Day Centre). */
   function familyAcceptedNextYear(data) {
     var booking = bookingSummary(data);
+    if (booking.not_continuing) return false;
     if (booking.parent_action === "auto") return true;
+    if (booking.continuing) return true;
     var r = (data && data.reenrolment) || {};
-    return !!r.submitted;
+    /*
+     * While this child's re-enrolment window is still open and they never submitted,
+     * do not treat a held seat / stale office invoice flag as "Re-enrolled" — soft-hold
+     * families must still complete the form (Erik / Agata 176). Live paid/office places
+     * after submit use booking.continuing / parent_action auto instead.
+     */
+    if (
+      isReenrolFormOpen(data) &&
+      !booking.submitted &&
+      booking.parent_action !== "auto"
+    ) {
+      return false;
+    }
+    /*
+     * Office already raised the 26/27 term invoice, so the place exists even without a
+     * submitted form. Without this the hub asked for payment and called the same place
+     * "not confirmed" on the row above.
+     */
+    if (r.office_term_invoice === true) return true;
+    /* New Autumn 26/27 starters never re-enrol — registration after Summer ends. */
+    if (isNewAutumnStarter(data)) return true;
+    /*
+     * After Summer, an active place with weekly services is already on 26/27
+     * (trial / mid-term booking) even when the re-enrol form was never used.
+     */
+    if (
+      !isFormerClient(data) &&
+      isoDateLocal(new Date()) > CURRENT_YEAR_TERM_TO_DAY_CENTRE &&
+      data &&
+      data.general &&
+      Array.isArray(data.general.services_detail) &&
+      data.general.services_detail.length
+    ) {
+      return true;
+    }
+    if (
+      !isFormerClient(data) &&
+      Array.isArray(data && data.upcoming_booked_sessions) &&
+      data.upcoming_booked_sessions.length
+    ) {
+      return true;
+    }
+    /* Legacy payloads without continuing flags: only treat as accepted if submitted and not a full withdraw. */
+    if (r.not_continuing === true) return false;
+    if (r.continuing === true) return true;
+    if (!r.submitted) return false;
+    var hint = String(r.summary_hint || "").toLowerCase();
+    if (/not continuing|withdrawn/.test(hint) && !/kept|change/.test(hint)) return false;
+    return true;
   }
 
   function isNextYearClubClosedIso(iso) {
@@ -2610,6 +3026,7 @@
   /** Next booked session from roster weekday pattern (services_detail). */
   function findRosterPatternNextSessions(data, limit, opts) {
     opts = opts || {};
+    if (isTrialOnlyBooking(data)) return [];
     var detail =
       data && data.general && Array.isArray(data.general.services_detail)
         ? data.general.services_detail
@@ -2617,7 +3034,7 @@
     if (!detail.length) return [];
     var byCol = Object.create(null);
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col == null) return;
       if (!byCol[col]) byCol[col] = [];
       byCol[col].push(s);
@@ -2669,7 +3086,7 @@
       if (!slots || !slots.length) continue;
       slots.forEach(function (s) {
         if (out.length >= max) return;
-        if (nextYearDateBeforeServiceStart(iso, serviceIsDayCentre(s.label || s.service))) {
+        if (nextYearDateBeforeServiceStart(iso, serviceIsDayCentre(s.label || s.service), data)) {
           return;
         }
         var endM = parseServiceEndMinutes(s.time);
@@ -2698,19 +3115,88 @@
 
   /**
    * Next sessions for the hub: July crash/intensive first when sooner,
-   * then regular roster weekdays (e.g. Autumn Sundays).
+   * then validated booking dates, then regular roster weekdays (e.g. Autumn Mondays).
    */
+  function findBookedReservationSessionRows(data, opts) {
+    opts = opts || {};
+    var list =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    if (!list.length) return [];
+    var today = new Date();
+    var todayIso = isoDateLocal(today);
+    var tomorrowIso = isoDateLocal(addDaysLocal(today, 1));
+    var nowMins = today.getHours() * 60 + today.getMinutes();
+    var out = [];
+    list.forEach(function (raw) {
+      if (!raw || !raw.iso) return;
+      var iso = String(raw.iso).slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+      if (iso < todayIso) return;
+      var endM = parseServiceEndMinutes(raw.time);
+      var completed = iso === todayIso && endM != null && nowMins >= endM;
+      if (completed && !opts.includeCompletedToday) return;
+      out.push({
+        iso: iso,
+        dayLabel: formatHubDateLabel(iso),
+        label: shortServiceChipLabel(raw.label || "Service") || raw.label || "Service",
+        rawLabel: raw.label || "Service",
+        day: raw.day || "",
+        time: raw.time || "",
+        venue: String(raw.venue || "").trim(),
+        area: String(raw.area || "").trim(),
+        isToday: iso === todayIso,
+        isTomorrow: iso === tomorrowIso,
+        source: "booking",
+        completed: completed,
+        _start: parseServiceStartMinutes(raw.time),
+        _end: endM,
+      });
+    });
+    out.sort(function (a, b) {
+      if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
+      return (a._start || 0) - (b._start || 0);
+    });
+    return out;
+  }
+
   function findNextSessions(data, limit, opts) {
     opts = opts || {};
     var max = Math.max(1, limit || 3);
     var crash = findCrashUpcomingSessionRows(data, opts);
+    var booked = findBookedReservationSessionRows(data, opts);
     var roster = findRosterPatternNextSessions(data, Math.max(max, 8), opts);
-    var combined = crash.concat(roster);
+    var combined = crash.concat(booked).concat(roster);
+    /*
+     * Same calendar slot can arrive twice: booking row ("Aquatic") + roster
+     * projection ("30' Aquatic"). Collapse by day + start + venue; keep booking first.
+     */
+    var sourceRank = { crash: 0, booking: 1, roster: 2 };
     combined.sort(function (a, b) {
       if (a.iso !== b.iso) return a.iso < b.iso ? -1 : 1;
-      return (a._start || 0) - (b._start || 0);
+      var as = a._start != null ? a._start : 0;
+      var bs = b._start != null ? b._start : 0;
+      if (as !== bs) return as - bs;
+      var ar = sourceRank[a.source] != null ? sourceRank[a.source] : 9;
+      var br = sourceRank[b.source] != null ? sourceRank[b.source] : 9;
+      return ar - br;
     });
-    return combined.slice(0, max);
+    var seen = Object.create(null);
+    var deduped = [];
+    combined.forEach(function (row) {
+      var start = row._start != null ? row._start : parseServiceStartMinutes(row.time);
+      var key =
+        String(row.iso || "") +
+        "|" +
+        String(start || 0) +
+        "|" +
+        String(row.venue || "")
+          .toLowerCase()
+          .trim();
+      if (seen[key]) return;
+      seen[key] = true;
+      deduped.push(row);
+    });
+    return deduped.slice(0, max);
   }
 
   /** All sessions on a calendar day (incl. finished today) for the hub Today cards. */
@@ -2723,6 +3209,12 @@
       },
     );
     if (crash.length) return crash;
+    var booked = findBookedReservationSessionRows(data, { includeCompletedToday: true }).filter(
+      function (s) {
+        return s.iso === want;
+      },
+    );
+    if (booked.length) return booked;
     return findRosterPatternNextSessions(data, 24, { includeCompletedToday: true }).filter(
       function (s) {
         return s.iso === want;
@@ -2748,7 +3240,7 @@
     var cols = Object.create(null);
     var dcCols = Object.create(null);
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col == null) return;
       cols[col] = true;
       if (serviceIsDayCentre((s && (s.label || s.service)) || "")) dcCols[col] = true;
@@ -2779,7 +3271,7 @@
         var col = jsDow === 0 ? 6 : jsDow - 1;
         // 1–4 Sept 2026: Day Centre only — other services start 5 Sept.
         var runs =
-          cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false));
+          cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false, data));
         if (runs) {
           out.push(
             annotateChipDate(
@@ -2812,7 +3304,7 @@
     if (!detail.length) return [];
     var cols = Object.create(null);
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col != null) cols[col] = true;
     });
     if (!Object.keys(cols).length) return [];
@@ -2890,7 +3382,7 @@
     var cols = Object.create(null);
     var dcCols = Object.create(null);
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col == null) return;
       cols[col] = true;
       if (serviceIsDayCentre((s && (s.label || s.service)) || "")) dcCols[col] = true;
@@ -2918,7 +3410,7 @@
         var jsDow = cursor.getDay();
         var col = jsDow === 0 ? 6 : jsDow - 1;
         var runs =
-          cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false));
+          cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false, data));
         if (runs) {
           out.push(
             annotateChipDate(
@@ -2963,6 +3455,13 @@
         tone: "unconfirmed",
         title: "Not confirmed for 2026/27 — re-enrol to keep this place — " + d.iso,
         icon: CHIP_X_SVG,
+      };
+    }
+    if (d.trialBooked) {
+      return {
+        tone: d.isNext || d.isToday ? "next" : "upcoming",
+        title: "Trial session — " + d.iso,
+        icon: "",
       };
     }
     if (d.past) {
@@ -3044,7 +3543,10 @@
   }
 
   function dateChipSpanHtml(d, statusByIso) {
+    if (!d || !d.iso) return "";
     var meta = termChipToneMeta(d, statusByIso);
+    var label = String(d.shortLabel || formatTermChipLabel(d.iso) || d.iso || "").trim();
+    if (!label) return "";
     return (
       '<span class="pp-hub-ops__date-chip pp-hub-ops__date-chip--' +
       meta.tone +
@@ -3055,7 +3557,7 @@
       '">' +
       meta.icon +
       "<span>" +
-      esc(d.shortLabel) +
+      esc(label) +
       "</span></span>"
     );
   }
@@ -3226,7 +3728,7 @@
         : [];
     var cols = Object.create(null);
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col != null) cols[col] = true;
     });
     return cols;
@@ -3263,7 +3765,7 @@
         var jsDow = cursor.getDay();
         var col = jsDow === 0 ? 6 : jsDow - 1;
         // 1–4 Sept 2026: Day Centre only — after-schools start 5 Sept.
-        var runs = cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false));
+        var runs = cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false, data));
         if (runs) {
           out.push(
             annotateChipDate(
@@ -3374,6 +3876,7 @@
 
   /** Whole-year (or LA auto) bookings see Spring/Summer under Next session; term-by-term does not. */
   function showLaterTermsOnHub(data) {
+    if (isTrialOnlyBooking(data)) return false;
     // Term-by-term bookings only see the current confirmed block; everyone else
     // can see Later terms (incl. Summer history after term end / unconfirmed 26/27).
     return !isTermByTermBooking(data);
@@ -3383,7 +3886,236 @@
    * Split term date chips: current/first term vs later terms.
    * Used on the hub (This term / Later terms) and Sessions Overview.
    */
-  function buildTermSessionDateParts(data, statusByIso) {
+  function buildTermSessionDateParts(data, statusByIso, viewOpts) {
+    viewOpts = viewOpts || {};
+    var feedbackYearKey = String(
+      viewOpts.feedbackYear || viewOpts.feedbackYearKey || data.feedback_year || "",
+    ).trim();
+
+    if (isTrialOnlyBooking(data)) {
+      try {
+        var trialIsoSet = Object.create(null);
+        var trialFirstIso = "";
+        trialBookedDateRows(data).forEach(function (t) {
+          if (!t || !t.iso) return;
+          trialIsoSet[t.iso] = true;
+          if (!trialFirstIso || t.iso < trialFirstIso) trialFirstIso = t.iso;
+        });
+        /* Resolve which 26/27 term owns the trial — never dump Spring/Summer under Autumn. */
+        var trialTerm = null;
+        var calTrial = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+        var termsTrial = (calTrial && Array.isArray(calTrial.terms) ? calTrial.terms : []) || [];
+        var trialAnchor = trialFirstIso || "";
+        for (var ti = 0; ti < termsTrial.length; ti++) {
+          var tt = termsTrial[ti];
+          if (!tt || !tt.starts) continue;
+          var ttEnd = tt.mainTermEnds || tt.ends || tt.lastDay || "";
+          if (!ttEnd) continue;
+          if (trialAnchor && trialAnchor >= tt.starts && trialAnchor <= ttEnd) {
+            trialTerm = tt;
+            break;
+          }
+        }
+        if (!trialTerm && termsTrial.length) trialTerm = termsTrial[0];
+        var trialTermFrom = trialTerm && trialTerm.starts ? String(trialTerm.starts).slice(0, 10) : "2026-09-01";
+        var trialTermTo = trialTerm
+          ? String(trialTerm.mainTermEnds || trialTerm.ends || trialTerm.lastDay || "2026-12-18").slice(0, 10)
+          : "2026-12-18";
+        var trialTermLabel =
+          String((trialTerm && (trialTerm.name || trialTerm.id)) || "Autumn Term")
+            .replace(/\s+Term(?:\s+\d{4})?\s*$/i, "")
+            .replace(/\s+\d{4}\s*$/i, "")
+            .trim() || "Autumn";
+
+        var termDates = (findUnconfirmedNextYearSessionDates(data) || []).filter(function (d) {
+          return !!(d && d.iso && d.iso >= trialTermFrom && d.iso <= trialTermTo);
+        });
+        /* Always include the booked trial day even if weekday projection skipped it. */
+        if (trialFirstIso) {
+          var haveTrial = termDates.some(function (d) {
+            return d.iso === trialFirstIso;
+          });
+          if (!haveTrial) {
+            termDates.push(
+              annotateChipDate(
+                {
+                  iso: trialFirstIso,
+                  shortLabel: formatTermChipLabel(trialFirstIso),
+                  past: trialFirstIso < isoDateLocal(new Date()),
+                  isToday: trialFirstIso === isoDateLocal(new Date()),
+                  isNext: true,
+                  pendingReenrol: false,
+                  trialBooked: true,
+                },
+                data,
+              ),
+            );
+          }
+        }
+        termDates = termDates
+          .map(function (d) {
+            if (!d || !d.iso) return null;
+            if (d.iso < trialTermFrom || d.iso > trialTermTo) return null;
+            if (trialIsoSet[d.iso]) {
+              return annotateChipDate(
+                {
+                  iso: d.iso,
+                  shortLabel: d.shortLabel || formatTermChipLabel(d.iso),
+                  past: !!d.past,
+                  isToday: !!d.isToday,
+                  isNext: d.iso === trialFirstIso,
+                  pendingReenrol: false,
+                  trialBooked: true,
+                },
+                data,
+              );
+            }
+            return annotateChipDate(
+              {
+                iso: d.iso,
+                shortLabel: d.shortLabel || formatTermChipLabel(d.iso),
+                past: !!d.past,
+                isToday: !!d.isToday,
+                isNext: false,
+                pendingReenrol: true,
+                trialBooked: false,
+              },
+              data,
+            );
+          })
+          .filter(Boolean)
+          .sort(function (a, b) {
+            return a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : 0;
+          });
+        var tFirst = [];
+        var tSecond = [];
+        termDates.forEach(function (d) {
+          if (!d || !d.iso) return;
+          if (isFirstHalfTermDate(d.iso, data, true)) tFirst.push(d);
+          else tSecond.push(d);
+        });
+        function trialChipsOnly(list, ariaLabel) {
+          if (!list.length) return "";
+          return (
+            '<div class="pp-hub-ops__date-chips" role="list" aria-label="' +
+            esc(ariaLabel) +
+            '">' +
+            list
+              .map(function (d) {
+                return dateChipSpanHtml(d, statusByIso);
+              })
+              .join("") +
+            "</div>"
+          );
+        }
+        function trialRowHtml(label, list) {
+          if (!list.length) return "";
+          return (
+            '<div class="pp-hub-ops__date-chips-row">' +
+            '<div class="pp-hub-ops__date-chips-label">' +
+            (termHalfRowIcon(label) || "") +
+            "<span>" +
+            esc(label) +
+            "</span></div>" +
+            trialChipsOnly(list, label) +
+            "</div>"
+          );
+        }
+        var trialRows = [];
+        if (tFirst.length) trialRows.push(trialRowHtml(trialTermLabel + " · First half term", tFirst));
+        if (tSecond.length) trialRows.push(trialRowHtml(trialTermLabel + " · Second half term", tSecond));
+        if (!trialRows.length) {
+          return {
+            thisTermHtml: "",
+            laterTermsHtml: "",
+            oldTermDatesHtml: "",
+            fullHtml: "",
+          };
+        }
+        var trialAccordion =
+          '<details class="pp-hub-ops__term-accordion" open>' +
+          '<summary class="pp-hub-ops__term-summary">' +
+          termHalfRowIcon(trialTermLabel) +
+          '<span class="pp-hub-ops__term-summary-title">' +
+          esc(trialTermLabel) +
+          " Term 26/27 · Trial</span>" +
+          '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
+          "</summary>" +
+          '<div class="pp-hub-ops__term-body">' +
+          termChipColorLegendHtml() +
+          '<p class="pp-muted pp-hub-ops__trial-note" style="margin:0 0 10px;font-size:12px;overflow-wrap:break-word">Blue = your booked trial. Red = other ' +
+          esc(trialTermLabel.toLowerCase()) +
+          " term dates (not booked yet).</p>" +
+          trialRows.join("") +
+          "</div></details>";
+        return {
+          thisTermHtml: trialAccordion,
+          laterTermsHtml: "",
+          oldTermDatesHtml: "",
+          fullHtml: trialAccordion,
+        };
+      } catch (_trialErr) {
+        return {
+          thisTermHtml: "",
+          laterTermsHtml: "",
+          oldTermDatesHtml: "",
+          fullHtml: "",
+        };
+      }
+    }
+
+    if (feedbackYearKey === PARENT_FEEDBACK_PRIOR_YEAR) {
+      function chipsOnlySummer(list, ariaLabel) {
+        if (!list.length) return "";
+        return (
+          '<div class="pp-hub-ops__date-chips" role="list" aria-label="' +
+          esc(ariaLabel) +
+          '">' +
+          list
+            .map(function (d) {
+              return dateChipSpanHtml(d, statusByIso);
+            })
+            .join("") +
+          "</div>"
+        );
+      }
+      function rowHtmlSummer(label, list) {
+        if (!list.length) return "";
+        return (
+          '<div class="pp-hub-ops__date-chips-row">' +
+          '<div class="pp-hub-ops__date-chips-label">' +
+          (termHalfRowIcon(label) || "") +
+          "<span>" +
+          esc(label) +
+          "</span></div>" +
+          chipsOnlySummer(list, label) +
+          "</div>"
+        );
+      }
+      var summerDatesOnly = findCurrentSummerSessionDates(data);
+      var sFirst = [];
+      var sSecond = [];
+      summerDatesOnly.forEach(function (d) {
+        if (isFirstHalfTermDate(d.iso, data, false)) sFirst.push(d);
+        else sSecond.push(d);
+      });
+      var rows = [];
+      if (sFirst.length) rows.push(rowHtmlSummer("Summer · First half term", sFirst));
+      if (sSecond.length) rows.push(rowHtmlSummer("Summer · Second half term", sSecond));
+      var inner =
+        rows.length ?
+          '<div class="pp-hub-ops__date-chips-stack" aria-label="Summer 2025/26 session dates">' +
+          termChipColorLegendHtml() +
+          rows.join("") +
+          "</div>"
+        : "";
+      return {
+        thisTermHtml: "",
+        laterTermsHtml: "",
+        oldTermDatesHtml: "",
+        fullHtml: inner,
+      };
+    }
     function chipsOnly(list, ariaLabel) {
       if (!list.length) return "";
       return (
@@ -3476,6 +4208,10 @@
       }
     }
 
+    if (feedbackYearKey === PARENT_FEEDBACK_CURRENT_YEAR) {
+      completedTermHtml = "";
+    }
+
     if (crashDates.length) {
       var crashGroups = groupCrashDatesByActivity(crashDates);
       var activityRows = [];
@@ -3487,7 +4223,7 @@
           rowHtml(g.label, visible, g.icon || "", "pp-hub-ops__date-chips-label--activity"),
         );
       });
-      if (activityRows.length) {
+      if (activityRows.length && feedbackYearKey !== PARENT_FEEDBACK_CURRENT_YEAR) {
         crashHtml =
           '<div class="pp-hub-ops__date-chips-section" aria-label="July Intensive Courses & Camps">' +
           '<div class="pp-hub-ops__date-chips-section-head">' +
@@ -3556,6 +4292,12 @@
       var nextDates = findTermSessionDates(data).filter(function (d) {
         return d.iso > summerTo;
       });
+      /*
+       * A place confirmed by an office invoice has no kept-slot payload, so the roster
+       * lookup finds nothing. Fall back to the usual weekday dates so those families
+       * still get their term days instead of an empty accordion.
+       */
+      if (!nextDates.length) nextDates = findUnconfirmedNextYearSessionDates(data);
       pushTermAccordionsFromDates(nextDates, true, " Term 26/27 · Re-enrolled");
     } else if (todayIso > summerTo) {
       // Summer 25/26 finished and still not confirmed → 26/27 chips in red.
@@ -3582,7 +4324,7 @@
           thisChunks.push(completedTermHtml);
         }
       }
-    } else {
+    } else if (feedbackYearKey !== PARENT_FEEDBACK_CURRENT_YEAR) {
       // Through Fri 17 Jul, not re-enrolled: Summer only (green past / blue upcoming).
       // No 26/27 red preview until the term has ended.
       var summerDatesOnly = findCurrentSummerSessionDates(data);
@@ -3625,8 +4367,8 @@
     };
   }
 
-  function termSessionDateChipsHtml(data, statusByIso) {
-    return buildTermSessionDateParts(data, statusByIso).fullHtml;
+  function termSessionDateChipsHtml(data, statusByIso, viewOpts) {
+    return buildTermSessionDateParts(data, statusByIso, viewOpts).fullHtml;
   }
 
   /** Weekday columns for Day Centre services only (My booking 2026/27). */
@@ -3639,7 +4381,7 @@
     detail.forEach(function (s) {
       var lab = String((s && (s.label || s.service)) || "");
       if (!/day\s*centre/i.test(lab)) return;
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col != null) cols[col] = true;
     });
     return cols;
@@ -3784,11 +4526,16 @@
 
   function applyTermDateChipStatuses(host, data, statusByIso) {
     if (!host) return;
-    var parts = buildTermSessionDateParts(data, statusByIso);
+    var parts;
+    try {
+      parts = buildTermSessionDateParts(data, statusByIso);
+    } catch (_e) {
+      return;
+    }
     try {
       host._ppTermStatusByIso = statusByIso || Object.create(null);
       host._ppTermParts = parts;
-    } catch (_e) {}
+    } catch (_e2) {}
     var thisEl = host.querySelector('[data-pp-term-chips="this"]');
     var laterEl = host.querySelector('[data-pp-term-chips="later"]');
     if (thisEl || laterEl) {
@@ -4103,9 +4850,14 @@
     var nextBody;
     if (!hasServices && !hasCrash) {
       var summerEndedEmpty = isoDateLocal(new Date()) > currentYearTermToIso(data);
-      var emptyMsg = summerEndedEmpty
-        ? "Summer term has ended and this place has no current roster days yet. Re-enrol for 2026/27 (or open Crash course July) from Quick access."
-        : "No weekly services on the current roster yet — next sessions will show here when days are assigned.";
+      var acceptedNextEmpty = familyAcceptedNextYear(data);
+      var emptyMsg = acceptedNextEmpty
+        ? isNewAutumnStarter(data)
+          ? "Your Autumn 2026/27 place is confirmed. The next class will show here once the first date is on the calendar (from early September)."
+          : "Your 2026/27 place is on file. Open Booking to see kept services — weekly days appear here once the Autumn roster is published (from early September)."
+        : summerEndedEmpty
+          ? "Summer term has ended and this place has no current roster days yet. Re-enrol for 2026/27 (or open Crash course July) from Quick access."
+          : "No weekly services on the current roster yet — next sessions will show here when days are assigned.";
       nextBody =
         '<div class="pp-hub-ops__empty-wrap">' +
         calIco +
@@ -4455,7 +5207,97 @@
     return !(data && data.session_progress) || data.session_progress.enabled !== false;
   }
 
-  function renderSessions(host, data, opts) {
+  function renderFeedbackYearPicker(host, data, opts, targetView) {
+    var years = feedbackYearsAvailable(data);
+    var title = targetView === "weekly_notes" ? "Weekly notes" : "Sessions Overview";
+    var body =
+      '<h3 class="pp-pax-subview-title">' +
+      esc(title) +
+      "</h3>" +
+      '<p class="pp-muted pp-pax-subview-note">Choose the year to open. If your child started in Autumn 2026/27, you go straight to this year with no extra step.</p>' +
+      '<div class="pp-feedback-year-grid" role="list" aria-label="Session feedback years">';
+    years.forEach(function (y) {
+      body +=
+        '<button type="button" class="pp-feedback-year-btn" role="listitem" data-pp-feedback-year="' +
+        esc(y.key) +
+        '" data-pp-target-view="' +
+        esc(targetView) +
+        '">' +
+        '<span class="pp-feedback-year-btn__label">' +
+        esc(y.label) +
+        "</span>" +
+        '<span class="pp-feedback-year-btn__hint">' +
+        esc(y.is_current ? "Current year" : "Past sessions") +
+        "</span></button>";
+    });
+    body += "</div>";
+    host.innerHTML = subviewShell(data, "feedback_year", body);
+    bindBack(host, data, opts);
+    host.querySelectorAll("[data-pp-feedback-year]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (btn.disabled) return;
+        var yearKey = btn.getAttribute("data-pp-feedback-year") || "";
+        var view = btn.getAttribute("data-pp-target-view") || "sessions";
+        if (!yearKey) return;
+        btn.disabled = true;
+        btn.setAttribute("aria-busy", "true");
+        var section = view === "weekly_notes" ? "weekly_notes" : "sessions";
+        void opts
+          .loadSection(section, false, { feedbackYear: yearKey })
+          .then(function (fresh) {
+            openSubview(host, fresh || data, opts, view, {
+              feedbackYear: yearKey,
+              skipYearPicker: true,
+            });
+          })
+          .catch(function () {
+            if (typeof opts.onSectionError === "function") opts.onSectionError(section);
+          })
+          .finally(function () {
+            btn.disabled = false;
+            btn.removeAttribute("aria-busy");
+          });
+      });
+    });
+  }
+
+  function openSessionFeedbackEntry(host, data, opts, view, viewOpts) {
+    viewOpts = viewOpts || {};
+    var section = view === "weekly_notes" ? "weekly_notes" : "sessions";
+    var yearKey =
+      viewOpts.feedbackYear ||
+      data.feedback_year ||
+      defaultFeedbackYearKey(data);
+    if (participantNeedsFeedbackYearPicker(data) && !viewOpts.skipYearPicker && !viewOpts.feedbackYear) {
+      renderFeedbackYearPicker(host, data, opts, view);
+      return Promise.resolve();
+    }
+    var loadOpts = { feedbackYear: yearKey };
+    if (
+      opts &&
+      typeof opts.isSectionLoaded === "function" &&
+      opts.isSectionLoaded(section, loadOpts)
+    ) {
+      openSubview(host, data, opts, view, Object.assign({}, viewOpts, { feedbackYear: yearKey, skipYearPicker: true }));
+      return Promise.resolve();
+    }
+    if (opts && typeof opts.loadSection === "function") {
+      host.innerHTML = '<p class="pcso-loading" role="status">Loading…</p>';
+      return opts
+        .loadSection(section, false, loadOpts)
+        .then(function (fresh) {
+          openSubview(host, fresh || data, opts, view, {
+            feedbackYear: yearKey,
+            skipYearPicker: true,
+          });
+        });
+    }
+    openSubview(host, data, opts, view, Object.assign({}, viewOpts, { feedbackYear: yearKey, skipYearPicker: true }));
+    return Promise.resolve();
+  }
+
+  function renderSessions(host, data, opts, viewOpts) {
+    viewOpts = viewOpts || {};
     if (!sessionProgressEnabled(data)) {
       host.innerHTML = subviewShell(
         data,
@@ -4466,11 +5308,17 @@
       bindBack(host, data, opts);
       return;
     }
-    var termChips = termSessionDateChipsHtml(data);
+    var termChips = termSessionDateChipsHtml(data, null, viewOpts);
+    var yearBadge = viewOpts.feedbackYear
+      ? '<p class="pp-feedback-year-badge" aria-label="Selected year">' +
+        esc(feedbackYearLabel(data, viewOpts.feedbackYear)) +
+        "</p>"
+      : "";
     host.innerHTML = subviewShell(
       data,
       "sessions",
       '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
+        yearBadge +
         '<p class="pp-muted pp-pax-subview-note">Term dates below, then date, service, instructor, engagement, regulation and independence — absents are listed as Absent. Shown separately for each activity when your child does more than one.</p>' +
         (termChips
           ? '<section class="pp-sessions-term-dates" aria-label="Term session dates">' +
@@ -4628,7 +5476,7 @@
     if (/aquatic|swim/.test(s)) return "#0d9488"; // teal
     if (/climb/.test(s)) return "#2d84b3"; // steel blue
     if (/physical/.test(s)) return "#4f46e5"; // indigo — not the same as climb
-    if (/multi/.test(s)) return "#15803d";
+    if (/multi/.test(s)) return "#2563eb"; // blue — matches My Calendar legend expectation
     if (/bespoke/.test(s)) return "#7c4dbf";
     if (/day\s*centre|daycentre/.test(s)) return "#b45309";
     return PP_CAL_SERVICE_TONES[fallbackIdx % PP_CAL_SERVICE_TONES.length];
@@ -4637,10 +5485,40 @@
   function dayNameToCalCol(day) {
     var s = String(day || "")
       .trim()
-      .toLowerCase()
-      .slice(0, 3);
-    var map = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 };
-    return Object.prototype.hasOwnProperty.call(map, s) ? map[s] : null;
+      .toLowerCase();
+    if (!s) return null;
+    // Match weekday anywhere (roster often stores "Activity, Sunday - 12.30 to 2").
+    var pairs = [
+      ["sunday", 6],
+      ["monday", 0],
+      ["tuesday", 1],
+      ["wednesday", 2],
+      ["thursday", 3],
+      ["friday", 4],
+      ["saturday", 5],
+      ["sun", 6],
+      ["mon", 0],
+      ["tue", 1],
+      ["wed", 2],
+      ["thu", 3],
+      ["fri", 4],
+      ["sat", 5],
+    ];
+    for (var i = 0; i < pairs.length; i++) {
+      var word = pairs[i][0];
+      var re = new RegExp("\\b" + word + "\\b", "i");
+      if (re.test(s)) return pairs[i][1];
+    }
+    return null;
+  }
+
+  function serviceDetailCalCol(s) {
+    if (!s) return null;
+    var col = dayNameToCalCol(s.day);
+    if (col != null) return col;
+    col = dayNameToCalCol(s.time);
+    if (col != null) return col;
+    return dayNameToCalCol([s.day, s.time, s.label].filter(Boolean).join(" "));
   }
 
   /**
@@ -4656,7 +5534,7 @@
     var serviceTone = Object.create(null);
     var toneIdx = 0;
     detail.forEach(function (s) {
-      var col = dayNameToCalCol(s && s.day);
+      var col = serviceDetailCalCol(s);
       if (col == null) return;
       var label = String((s && s.label) || "Service").trim() || "Service";
       var toneKey = label.toLowerCase();
@@ -4678,6 +5556,41 @@
   }
 
   function myCalendarLegendHtml(data) {
+    if (isTrialOnlyBooking(data)) {
+      var trialRows = trialBookedDateRows(data);
+      var trialTone = PP_CAL_SERVICE_TONES[0];
+      var trialItems = trialRows.map(function (t) {
+        var when = [t.day, t.time].filter(Boolean).join(" · ");
+        var dateBit = t.dayLabel || t.shortLabel || t.iso || "";
+        return (
+          '<li class="pp-cal-legend__item">' +
+          '<span class="pp-cal-legend__swatch" style="background:' +
+          esc(trialTone) +
+          '" aria-hidden="true"></span>' +
+          '<span class="pp-cal-legend__text">Trial' +
+          (dateBit ? " — " + esc(dateBit) : "") +
+          (when ? ' <span class="pp-muted">(' + esc(when) + ")</span>" : "") +
+          "</span></li>"
+        );
+      });
+      if (!trialItems.length) {
+        trialItems.push(
+          '<li class="pp-cal-legend__item">' +
+            '<span class="pp-cal-legend__swatch" style="background:' +
+            esc(trialTone) +
+            '" aria-hidden="true"></span>' +
+            '<span class="pp-cal-legend__text">Your booked trial date</span></li>',
+        );
+      }
+      return (
+        '<ul class="pp-cal-legend" aria-label="Your trial date">' +
+        trialItems.join("") +
+        '<li class="pp-cal-legend__item pp-cal-legend__item--note">' +
+        '<span class="pp-cal-legend__swatch pp-cal-legend__swatch--red" aria-hidden="true"></span>' +
+        '<span class="pp-cal-legend__text">Red = closed / half-term (no sessions)</span></li>' +
+        "</ul>"
+      );
+    }
     var detail =
       data && data.general && Array.isArray(data.general.services_detail)
         ? data.general.services_detail
@@ -4777,15 +5690,23 @@
 
     var calHost = host.querySelector("#ppCalYearHost");
     if (!calHost) return;
-    var built = buildMyCalendarDayColors(data);
-    var dayColors = built.colMap || {};
+    var loadOpts = { circles: true };
+    if (isTrialOnlyBooking(data)) {
+      /* Trial: highlight only booked ISO date(s), not every Monday of the term. */
+      var mineIso = Object.create(null);
+      var trialTone = PP_CAL_SERVICE_TONES[0];
+      trialBookedDateRows(data).forEach(function (t) {
+        if (t && t.iso) mineIso[t.iso] = trialTone;
+      });
+      loadOpts.mineIsoColors = mineIso;
+    } else {
+      var built = buildMyCalendarDayColors(data);
+      loadOpts.dayColors = built.colMap || {};
+    }
     if (typeof global.portalLoadSessionsCalendar202627Into === "function") {
       calHost.innerHTML = '<p class="pp-muted">Loading calendar…</p>';
       void global
-        .portalLoadSessionsCalendar202627Into(calHost, {
-          dayColors: dayColors,
-          circles: true,
-        })
+        .portalLoadSessionsCalendar202627Into(calHost, loadOpts)
         .catch(function () {
           if (calHost.isConnected) {
             calHost.innerHTML =
@@ -4813,14 +5734,21 @@
         '<div id="ppCalCrashHost" class="pp-cal-host pp-cal-host--crash" role="region" aria-label="July Intensive Courses & Camps calendar"></div>' +
         "</div>"
       : "";
+    var calNote = isTrialOnlyBooking(data)
+      ? "ClubSENsational sessions calendar 2026/27. Only " +
+        esc(pName) +
+        "&apos;s booked trial date is highlighted — other open days stay unmarked until a full place is confirmed."
+      : "ClubSENsational sessions calendar 2026/27. Coloured circles are " +
+        esc(pName) +
+        "&apos;s usual session weekdays. Two services on the same day split the circle in half; three services use three slices.";
     var body =
       '<h3 class="pp-pax-subview-title">My Calendar</h3>' +
       crashBlock +
       '<div class="pp-cal-block">' +
       (hasCrash ? '<h4 class="pp-cal-block__title">2026/27 sessions</h4>' : "") +
-      '<p class="pp-muted pp-pax-subview-note">ClubSENsational sessions calendar 2026/27. Coloured circles are ' +
-      esc(pName) +
-      "&apos;s usual session weekdays. Two services on the same day split the circle in half; three services use three slices.</p>" +
+      '<p class="pp-muted pp-pax-subview-note">' +
+      calNote +
+      "</p>" +
       myCalendarLegendHtml(data) +
       '<div id="ppCalYearHost" class="pp-cal-host pp-cal-host--year" role="region" aria-label="Sessions calendar 2026/27"></div>' +
       "</div>";
@@ -4941,7 +5869,59 @@
       booking.parent_action === "auto"
         ? "Your 2026/27 Day Centre place continues with the office / funder."
         : "Your selections for the next academic year.";
-    if (booking.parent_action === "auto" && (!booking.submitted || !booking.items.length)) {
+    if (isTrialOnlyBooking(data)) {
+      note = "Your trial booking for " + (firstNameOf(data) || "your child") + ".";
+      var trialRows = trialBookedDateRows(data);
+      var trialList =
+        trialRows.length > 0
+          ? '<ul class="pp-booking-list">' +
+            trialRows
+              .map(function (t) {
+                var whenBits = [t.dayLabel || t.shortLabel || t.iso, t.time]
+                  .filter(Boolean)
+                  .join(" · ");
+                var venue = t.venue || t.area || "";
+                var meta = "";
+                if (whenBits) {
+                  meta +=
+                    '<span class="pp-booking-item__meta">' +
+                    bookingMetaIcon("when") +
+                    "<span>" +
+                    esc(whenBits) +
+                    "</span></span>";
+                }
+                if (venue) {
+                  meta +=
+                    '<span class="pp-booking-item__meta">' +
+                    bookingMetaIcon("venue") +
+                    "<span>" +
+                    esc(venue) +
+                    "</span></span>";
+                }
+                return (
+                  '<li class="pp-booking-item">' +
+                  '<div class="pp-booking-item__row">' +
+                  '<span class="pp-booking-item__badge" aria-hidden="true">' +
+                  bookingItemIconSvg(t.rawLabel || t.label || "Aquatic") +
+                  "</span>" +
+                  '<div class="pp-booking-item__copy">' +
+                  '<div class="pp-booking-item__label">Trial session</div>' +
+                  (meta ? '<div class="pp-booking-item__metas">' + meta + "</div>" : "") +
+                  '<div class="pp-booking-item__choice">' +
+                  '<span class="pp-booking-item__choice-ico" aria-hidden="true">' +
+                  bookingMetaIcon("ok") +
+                  "</span>" +
+                  "<span>Booked</span></div>" +
+                  "</div></div></li>"
+                );
+              })
+              .join("") +
+            "</ul>"
+          : '<p class="pp-muted">Your trial is on file. Check Hub / Next session for the date and time.</p>';
+      body =
+        '<p class="pp-muted">This is a trial place only — not a full 2026/27 re-enrolment. After the trial, the office can confirm a continuing place if you wish.</p>' +
+        trialList;
+    } else if (booking.parent_action === "auto" && (!booking.submitted || !booking.items.length)) {
       var days = dayCentreWeekdayLabels(data);
       var daysLine = days.length
         ? "Usual days: " + days.join(", ") + "."
@@ -4981,7 +5961,7 @@
       body =
         '<p class="pp-muted">Submitted ' +
         esc(formatDate(booking.submitted_at)) +
-        ". The office will review your choices.</p>" +
+        ". Your 2026/27 place is on file.</p>" +
         (activityItems.length
           ? '<ul class="pp-booking-list">' +
             activityItems.map(bookingActivityItemHtml).join("") +
@@ -4993,6 +5973,21 @@
             esc(reenrolHref) +
             '">Update booking choices</a>');
     }
+    var invoiceBlock = showInvoicesForParticipant(data)
+      ? '<div class="pp-card pp-booking-card pp-booking-invoices" style="margin-top:14px">' +
+        '<h4 class="pp-pax-subview-title" style="font-size:1.05rem;margin:0 0 6px">Invoice</h4>' +
+        '<p class="pp-muted pp-pax-subview-note" style="margin-top:0">' +
+        (isTrialOnlyBooking(data)
+          ? "Trial payment for " + esc(firstNameOf(data)) + "."
+          : "Autumn 2026/27 payment for " +
+            esc(firstNameOf(data)) +
+            ". Prefer bank transfer or Card / Apple Pay, then message the office after you pay.") +
+        "</p>" +
+        '<div id="ppInvoicesNotice" class="pp-notice" hidden></div>' +
+        '<div id="ppGocardlessSetupHost" class="pp-invoice-gc-setup" hidden></div>' +
+        '<div id="ppInvoicesListHost"><p class="pp-muted">Loading invoice…</p></div>' +
+        "</div>"
+      : "";
     host.innerHTML = subviewShell(
       data,
       "booking",
@@ -5002,9 +5997,11 @@
         "</p>" +
         '<div class="pp-card pp-booking-card">' +
         body +
-        "</div>",
+        "</div>" +
+        invoiceBlock,
     );
     bindBack(host, data, opts);
+    if (showInvoicesForParticipant(data)) bindInvoices(host, data, opts);
   }
 
   function renderSwim(host, data, opts) {
@@ -5036,7 +6033,8 @@
     bindBack(host, data, opts);
   }
 
-  function renderWeeklyNotes(host, data, opts) {
+  function renderWeeklyNotes(host, data, opts, viewOpts) {
+    viewOpts = viewOpts || {};
     if (!sessionProgressEnabled(data)) {
       host.innerHTML = subviewShell(
         data,
@@ -5101,6 +6099,11 @@
       data,
       "weekly_notes",
       '<h3 class="pp-pax-subview-title">Weekly notes</h3>' +
+        (viewOpts.feedbackYear
+          ? '<p class="pp-feedback-year-badge" aria-label="Selected year">' +
+            esc(feedbackYearLabel(data, viewOpts.feedbackYear)) +
+            "</p>"
+          : "") +
         '<p class="pp-muted pp-pax-subview-note">One short note per week. Open a week to read it — older notes stay collapsed so the list stays easy to scroll.</p>' +
         body,
     );
@@ -6905,7 +7908,7 @@
   function invoiceStatusLabel(status) {
     var s = String(status || "unpaid").toLowerCase();
     if (s === "paid") return "Paid";
-    if (s === "partial") return "Partial";
+    if (s === "partial") return "Partially paid";
     if (s === "void") return "Void";
     if (s === "pending_confirmation") return "Pending confirmation";
     return "Unpaid";
@@ -6954,6 +7957,74 @@
 
   function invoiceBtnLabel(kind, text) {
     return invoiceActIco(kind) + '<span class="pp-invoice-act-label">' + text + "</span>";
+  }
+
+  /**
+   * Green "I've paid" label from the next unpaid flexi/monthly row.
+   * 2-half flexi: first vs second-and-last. Else generic bank-transfer copy.
+   */
+  function invoicePaidReportBtnLabel(inv) {
+    var schedule = (inv && inv.payment_schedule) || [];
+    if (!Array.isArray(schedule) || schedule.length < 2) {
+      return "I&apos;ve paid by bank transfer";
+    }
+    var nextIdx = -1;
+    for (var i = 0; i < schedule.length; i++) {
+      if (String(schedule[i].status || "pending").toLowerCase() !== "paid") {
+        nextIdx = i;
+        break;
+      }
+    }
+    if (nextIdx < 0) return "I&apos;ve paid by bank transfer";
+    var n = schedule.length;
+    if (n === 2) {
+      if (nextIdx === 0) {
+        return "I&apos;ve paid the first installment towards my booking";
+      }
+      return "I&apos;ve paid the second and last installment towards my booking";
+    }
+    if (nextIdx === 0) {
+      return "I&apos;ve paid the first installment towards my booking";
+    }
+    if (nextIdx === n - 1) {
+      return "I&apos;ve paid the last installment towards my booking";
+    }
+    return (
+      "I&apos;ve paid installment " +
+      String(nextIdx + 1) +
+      " of " +
+      String(n) +
+      " towards my booking"
+    );
+  }
+
+  var PAID_REPORT_VALIDATE_HINT =
+    "First complete the payment, then validate the payment";
+
+  /** Plain-text form of the green button (for helper notes / aria). */
+  function invoicePaidReportBtnPlain(inv) {
+    return (
+      invoicePaidReportBtnLabel(inv)
+        .replace(/&apos;/g, "'")
+        .replace(/&amp;/g, "&") +
+      " — " +
+      PAID_REPORT_VALIDATE_HINT
+    );
+  }
+
+  /** Icon + two-line label (action + pay-then-validate hint). */
+  function invoicePaidReportBtnHtml(inv) {
+    return (
+      invoiceActIco("bank") +
+      '<span class="pp-invoice-act-label">' +
+      '<span class="pp-invoice-paid-report__main">' +
+      invoicePaidReportBtnLabel(inv) +
+      "</span>" +
+      '<span class="pp-invoice-paid-report__hint">' +
+      esc(PAID_REPORT_VALIDATE_HINT) +
+      "</span>" +
+      "</span>"
+    );
   }
 
   function invoiceBankPanelHtml(inv, previewBtnHtml) {
@@ -7046,7 +8117,7 @@
     var due = formatDocWhen(inv && inv.due_date);
     var status = String((inv && inv.payment_status) || "unpaid").toLowerCase();
     var pdf = (inv && inv.pdf_url) || "";
-    var canReport = !!(inv && inv.can_report_paid);
+    var canReport = false; /* Green button removed — parents notify admin after paying. */
     var canPay = !!(inv && inv.can_pay);
     var card = inv && inv.card_checkout;
     var cardCharge = card ? formatInvoiceMoney(card.charge_gbp) : "";
@@ -7064,13 +8135,15 @@
       : String((inv && inv.payment_link_url) || "").trim();
     var surcharge = String((inv && inv.payment_link_surcharge_note) || "").trim();
     var suggestedRef = String((inv && inv.suggested_reference) || "").trim();
-    // Direct Payment (mandate) / LA funded: no Tide / card / "I've paid by bank transfer".
+    // Direct Payment (mandate) / LA funded: no Tide / card pay CTAs.
     if (isGcInvoice || isLaInvoice) {
       canReport = false;
       canPay = false;
     }
-    // Future terms / auto-collect: keep the PDF, do not prompt to pay.
-    var payActionNeeded = invoiceNeedsParentPay(inv);
+    // Future terms / auto-collect: keep the PDF; pay CTAs still allowed early
+    // for flexi halves (hub pulse stays on the 7-day window via invoiceNeedsParentPay).
+    var payRemindNow = invoiceNeedsParentPay(inv);
+    var payActionNeeded = invoiceShowsPayActions(inv);
     if (!payActionNeeded) {
       canPay = false;
       canReport = false;
@@ -7083,6 +8156,11 @@
             ? " (ref " + esc(inv.parent_reported_ref) + ")"
             : "") +
           ".</p>"
+        : "";
+    var priorBlock = inv && inv.pay_blocked_by_prior;
+    var sequenceNote =
+      priorBlock && priorBlock.message
+        ? '<p class="pp-invoice-card__meta">' + esc(String(priorBlock.message)) + "</p>"
         : "";
     var paidNote =
       status === "paid"
@@ -7145,20 +8223,32 @@
       status !== "void" &&
       (status === "unpaid" || status === "partial" || status === "pending_confirmation");
     var showBankPanel = !isPaid && !isGcInvoice && !isLaInvoice && payActionNeeded;
+    var previewLabel =
+      status === "partial"
+        ? "Preview partially paid invoice"
+        : status === "pending_confirmation"
+          ? "Preview invoice"
+          : "Preview draft invoice";
+    var previewTitle =
+      status === "partial"
+        ? num
+          ? "Partially paid — " + num
+          : "Partially paid invoice"
+        : num
+          ? "Draft — " + num
+          : "Draft invoice";
     var previewBtnHtml = "";
-    if (showDraftFlow && pdf) {
+    if (showDraftFlow) {
       previewBtnHtml =
         '<button type="button" class="pp-btn pp-btn--primary pp-invoice-card__btn-full" data-pp-preview-invoice="' +
         esc(inv.id) +
         '" data-pp-pdf-url="' +
-        esc(pdf) +
+        esc(pdf || "") +
         '" data-pp-pdf-title="' +
-        esc(num ? "Draft — " + num : "Draft invoice") +
-        '">' +
-        invoiceBtnLabel("preview", "Preview draft invoice") +
+        esc(previewTitle) +
+        '" data-pp-live-preview="1">' +
+        invoiceBtnLabel("preview", previewLabel) +
         "</button>";
-    } else if (showDraftFlow && !pdf) {
-      previewBtnHtml = '<p class="pp-muted">Draft invoice not available yet.</p>';
     }
     var pdfActs = "";
     if (isPaid && pdf) {
@@ -7215,7 +8305,7 @@
       pdfActs = '<p class="pp-muted">PDF not available yet.</p>';
     }
     var payPairHtml = "";
-    if (showDraftFlow && (canPay || canReport)) {
+    if (showDraftFlow && (canPay || showBankPanel)) {
       var payBtn = canPay
         ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-pay-pair__btn" data-pp-pay-invoice="' +
           esc(inv.id) +
@@ -7226,23 +8316,11 @@
           ) +
           "</button>"
         : "";
-      var reportBtn = canReport
-        ? '<button type="button" class="pp-btn pp-btn--paid-report pp-invoice-pay-pair__btn" data-pp-report-paid="' +
-          esc(inv.id) +
-          '" data-pp-pay-ref-default="' +
-          esc(suggestedRef) +
-          '">' +
-          invoiceBtnLabel("bank", "I&apos;ve paid by bank transfer") +
-          "</button>"
-        : "";
       payPairHtml =
-        '<div class="pp-invoice-pay-pair">' +
-        payBtn +
-        reportBtn +
-        "</div>" +
-        (canReport
-          ? '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">Tap <strong>I&apos;ve paid by bank transfer</strong> after you send the Tide transfer <em>or</em> pay with Card / Apple Pay — this alerts the office to validate the payment and release the slot.</p>'
-          : "");
+        (payBtn ? '<div class="pp-invoice-pay-pair">' + payBtn + "</div>" : "") +
+        '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">After you pay by bank transfer, open <strong>Messages</strong> (or WhatsApp / email <a href="' +
+        esc(OFFICE_CONTACT_MAILTO) +
+        '">info@clubsensational.org</a>) and tell us you have paid. A photo is optional. There is no "I\'ve paid" button - the office checks Tide and marks the invoice paid.</p>';
     }
     return (
       '<article class="pp-invoice-card pp-invoice-card--' +
@@ -7267,7 +8345,7 @@
           (schedule.length ? "Total " : "") +
           esc(amount) +
           (dueNow &&
-          payActionNeeded &&
+          payRemindNow &&
           (status === "partial" || status === "unpaid") &&
           schedule.length
             ? " · Due now " + esc(dueNow)
@@ -7276,19 +8354,26 @@
           "</p>"
         : "") +
       (schedule.length && !isPaid
-        ? '<ul class="pp-invoice-card__schedule pp-muted" style="margin:6px 0 0;padding-left:18px;font-size:12px">' +
+        ? '<ul class="pp-invoice-card__schedule">' +
           schedule
             .map(function (row) {
-              var st = String(row.status || "").toLowerCase();
-              var mark = st === "paid" ? "✓ " : "";
+              var st = String(row.status || "").toLowerCase() === "paid";
+              var label = String(row.label || "Payment").replace(/^[\s✓✔︎✔]+/, "").trim();
+              var amt = formatInvoiceMoney(row.amount_gbp);
               return (
-                "<li>" +
-                mark +
-                esc(row.label || "Payment") +
+                '<li class="pp-invoice-card__sched-row' +
+                (st ? " pp-invoice-card__sched-row--paid" : "") +
+                '">' +
+                '<span class="pp-invoice-card__sched-copy">' +
+                esc(label) +
                 " · " +
                 esc(formatDocWhen(row.due_date)) +
                 " · " +
-                esc(formatInvoiceMoney(row.amount_gbp)) +
+                esc(amt) +
+                "</span>" +
+                (st
+                  ? '<span class="pp-invoice-card__sched-paid" aria-label="Paid" style="color:#16a34a;font-weight:800">✓</span>'
+                  : "") +
                 "</li>"
               );
             })
@@ -7297,7 +8382,17 @@
         : "") +
       (due ? '<p class="pp-invoice-card__meta muted">Due ' + esc(due) + "</p>" : "") +
       pendingNote +
+      sequenceNote +
       paidNote +
+      (!isPaid &&
+      !payRemindNow &&
+      payActionNeeded &&
+      !gcPending &&
+      !isLaInvoice &&
+      !canSetupGc &&
+      (status === "unpaid" || status === "partial")
+        ? '<p class="pp-muted pp-invoice-pay__note">Next instalment is due later — you can still pay early. After paying, WhatsApp or email the office (photo/screenshot welcome) so they can confirm.</p>'
+        : "") +
       (!isPaid &&
       !payActionNeeded &&
       !gcPending &&
@@ -7369,23 +8464,99 @@
       return;
     }
 
+    function receiptCardsHtml(receipts) {
+      if (!receipts || !receipts.length) return "";
+      var hasRefund = receipts.some(function (r) {
+        return /refund/i.test(String((r && r.title) || ""));
+      });
+      var hasPayment = receipts.some(function (r) {
+        return !/refund/i.test(String((r && r.title) || ""));
+      });
+      var sectionTitle =
+        hasRefund && hasPayment
+          ? "Receipts & refunds"
+          : hasRefund
+            ? "Refunds"
+            : "Receipts";
+      var note =
+        hasRefund && hasPayment
+          ? "Payment receipts and refunds for "
+          : hasRefund
+            ? "Refunds for "
+            : "Payment receipts for ";
+      return (
+        '<section class="pp-invoice-receipts" aria-label="' +
+        esc(sectionTitle) +
+        '">' +
+        '<h4 class="pp-invoice-pay__title">' +
+        esc(sectionTitle) +
+        "</h4>" +
+        '<p class="pp-muted pp-invoice-pay__note">' +
+        note +
+        esc(firstNameOf(data)) +
+        " — download like paid invoices.</p>" +
+        '<div class="pp-invoice-receipts__list">' +
+        receipts
+          .map(function (r) {
+            var title = String((r && r.title) || "Payment receipt");
+            var pdf = String((r && r.pdf_url) || "");
+            var fname = String((r && r.filename) || "receipt.pdf").replace(
+              /[^\w.-]+/g,
+              "_",
+            );
+            if (!pdf) return "";
+            return (
+              '<article class="pp-invoice-card pp-invoice-card--receipt">' +
+              '<div class="pp-invoice-card__head">' +
+              "<strong>" +
+              esc(title) +
+              "</strong>" +
+              "</div>" +
+              '<div class="pp-invoice-card__acts pp-invoice-card__acts--stack pp-invoice-card__acts--paid-only">' +
+              '<a class="pp-btn pp-btn--primary pp-invoice-card__btn-full" href="' +
+              esc(pdf) +
+              '" download="' +
+              esc(fname) +
+              '" target="_blank" rel="noopener noreferrer">' +
+              invoiceBtnLabel("download", "Download PDF") +
+              "</a>" +
+              "</div>" +
+              "</article>"
+            );
+          })
+          .join("") +
+        "</div></section>"
+      );
+    }
+
     function refreshList() {
       return opts.listInvoices().then(function (j) {
         var invoices = (j && j.invoices) || [];
+        var receipts = (j && j.receipts) || [];
         var gcMeta = (j && j.gocardless) || {};
         var gcHost = host.querySelector("#ppGocardlessSetupHost");
         var gcSetupOnCard = invoices.some(function (inv) {
           return !!(inv && inv.can_setup_gocardless);
         });
+        /*
+         * Direct Payment banner only when this child's invoices are GC / Direct Payment.
+         * A leftover family mandate must not appear on Flexi / bank_transfer places
+         * (parents cannot mix half Flexi + half Direct Payment — admin changes only).
+         */
+        var anyGcInvoice = invoices.some(function (inv) {
+          return String((inv && inv.payment_method_hint) || "")
+            .trim()
+            .toLowerCase() === "gocardless";
+        });
         if (gcHost) {
-          if (gcMeta.mandate_active) {
+          if (gcMeta.mandate_active && anyGcInvoice) {
             gcHost.hidden = false;
             gcHost.innerHTML =
               '<button type="button" class="pp-btn pp-btn--gc-setup-done pp-invoice-card__btn-full" disabled aria-disabled="true">' +
               invoiceBtnLabel("gocardless", "Direct Payment set up") +
               "</button>" +
               '<p class="pp-muted pp-invoice-pay__note">Mandate is active. Upcoming invoices are collected automatically.</p>';
-          } else if (gcMeta.setup_available && !gcSetupOnCard) {
+          } else if (gcMeta.setup_available && anyGcInvoice && !gcSetupOnCard) {
             gcHost.hidden = false;
             gcHost.innerHTML =
               '<p class="pp-invoice-pay__title">Direct Payment (GoCardless)</p>' +
@@ -7398,13 +8569,15 @@
             gcHost.innerHTML = "";
           }
         }
-        if (!invoices.length) {
+        var receiptsHtml = receiptCardsHtml(receipts);
+        if (!invoices.length && !receipts.length) {
           listHost.innerHTML =
             '<p class="pp-muted">No invoices shared yet for this participant.</p>';
           wireInvoiceActions();
           return;
         }
-        listHost.innerHTML = invoices.map(invoiceCardHtml).join("");
+        listHost.innerHTML =
+          receiptsHtml + (invoices.length ? invoices.map(invoiceCardHtml).join("") : "");
         wireInvoiceActions();
         try {
           var pendingReturn = sessionStorage.getItem("pp_invoice_return_pending");
@@ -7525,10 +8698,30 @@
     function wireInvoiceActions() {
       listHost.querySelectorAll("[data-pp-preview-invoice]").forEach(function (btn) {
         btn.addEventListener("click", function () {
-          var url = btn.getAttribute("data-pp-pdf-url") || "";
+          var invoiceId = btn.getAttribute("data-pp-preview-invoice") || "";
+          var fallbackUrl = btn.getAttribute("data-pp-pdf-url") || "";
           var title = btn.getAttribute("data-pp-pdf-title") || "Invoice";
-          if (!url) return;
-          openInvoicePreview(url, title);
+          var useLive = btn.getAttribute("data-pp-live-preview") === "1";
+          if (useLive && invoiceId && typeof opts.previewInvoicePdf === "function") {
+            btn.disabled = true;
+            void opts
+              .previewInvoicePdf(invoiceId)
+              .then(function (out) {
+                var url = out && out.blobUrl ? out.blobUrl : "";
+                if (!url) throw new Error("empty_preview");
+                openInvoicePreview(url, title);
+              })
+              .catch(function () {
+                if (fallbackUrl) openInvoicePreview(fallbackUrl, title);
+                else showNotice("error", "Could not open the invoice preview. Try again.");
+              })
+              .then(function () {
+                btn.disabled = false;
+              });
+            return;
+          }
+          if (!fallbackUrl) return;
+          openInvoicePreview(fallbackUrl, title);
         });
       });
 
@@ -7556,9 +8749,11 @@
                   ? "Card checkout is not available. Use bank transfer or contact the office."
                   : code === "already_paid"
                     ? "This invoice is already marked paid."
-                    : code === "amount_required"
-                      ? "This invoice has no amount for card payment. Contact the office."
-                      : "Could not start card payment — please try bank transfer or contact the office.");
+                    : code === "prior_invoice_unconfirmed"
+                      ? "Please wait for the office to confirm your earlier invoice before paying this one."
+                      : code === "amount_required"
+                        ? "This invoice has no amount for card payment. Contact the office."
+                        : "Could not start card payment — please try bank transfer or contact the office.");
               showNotice("error", msg);
             });
         });
@@ -7708,7 +8903,13 @@
                 (j && j.message) ||
                   "Thanks — the office will confirm when the payment appears.",
               );
-              return refreshList();
+              return refreshList().then(function () {
+                /* Hub chip: unpaid → awaiting admin confirmation for everyone. */
+                try {
+                  var shell = host.closest(".pp-pax-shell") || document;
+                  mountHubReenrolPaymentState(shell, data, opts);
+                } catch (_hub) {}
+              });
             })
             .catch(function (err) {
               btn.disabled = false;
@@ -7719,7 +8920,9 @@
                 (err && err.messageText) ||
                   (code === "already_paid"
                     ? "This invoice is already marked paid."
-                    : "Could not save — please try again."),
+                    : code === "prior_invoice_unconfirmed"
+                      ? "Please wait for the office to confirm your earlier invoice before reporting this one."
+                      : "Could not save — please try again."),
               );
             });
         });
@@ -8161,6 +9364,28 @@
   function openSubview(host, data, opts, view, viewOpts) {
     viewOpts = viewOpts || {};
     closeHubMenuSheet();
+    if (view === "sessions" || view === "weekly_notes") {
+      if (!viewOpts.skipYearPicker) {
+        var section = view === "weekly_notes" ? "weekly_notes" : "sessions";
+        var yearKey =
+          viewOpts.feedbackYear || data.feedback_year || defaultFeedbackYearKey(data);
+        var loadOpts = { feedbackYear: yearKey };
+        var needsPicker =
+          participantNeedsFeedbackYearPicker(data) && !viewOpts.feedbackYear;
+        var needsLoad =
+          opts &&
+          typeof opts.isSectionLoaded === "function" &&
+          !opts.isSectionLoaded(section, loadOpts);
+        if (needsPicker || needsLoad) {
+          void openSessionFeedbackEntry(host, data, opts, view, viewOpts);
+          return;
+        }
+        viewOpts = Object.assign({}, viewOpts, {
+          feedbackYear: yearKey,
+          skipYearPicker: true,
+        });
+      }
+    }
     if (view !== "hub") hideReenrolPopup();
     if (isFormerClient(data)) {
       var allowed = { hub: true };
@@ -8187,10 +9412,10 @@
       void ensureGeneralFieldsAsync(data).then(function () {
         renderGeneral(host, data, opts);
       });
-    }     else if (view === "sessions") renderSessions(host, data, opts);
+    }     else if (view === "sessions") renderSessions(host, data, opts, viewOpts);
     else if (view === "achievements") renderAchievements(host, data, opts);
     else if (view === "swim") renderSwim(host, data, opts);
-    else if (view === "weekly_notes") renderWeeklyNotes(host, data, opts);
+    else if (view === "weekly_notes") renderWeeklyNotes(host, data, opts, viewOpts);
     else if (view === "announcements") renderAnnouncements(host, data, opts);
     else if (view === "team") renderTeam(host, data, opts);
     else if (view === "booking") renderBooking(host, data, opts);
@@ -8232,6 +9457,26 @@
         var view = btn.getAttribute("data-pp-open");
         var section = sectionByView[view];
         closeHubMenuSheet();
+        if (view === "sessions" || view === "weekly_notes") {
+          btn.disabled = true;
+          btn.setAttribute("aria-busy", "true");
+          void openSessionFeedbackEntry(host, data, opts, view)
+            .catch(function () {
+              if (typeof opts.onSectionError === "function") {
+                opts.onSectionError(view === "weekly_notes" ? "weekly_notes" : "sessions");
+              }
+            })
+            .finally(function () {
+              btn.disabled = false;
+              btn.removeAttribute("aria-busy");
+            });
+          return;
+        }
+        /* Booking + invoices need fresh reenrolment / pay flags from the server. */
+        var refreshGeneral =
+          (view === "booking" || view === "invoices") &&
+          opts &&
+          typeof opts.loadSection === "function";
         if (
           section &&
           opts &&
@@ -8248,6 +9493,23 @@
             })
             .catch(function () {
               if (typeof opts.onSectionError === "function") opts.onSectionError(section);
+            })
+            .finally(function () {
+              btn.disabled = false;
+              btn.removeAttribute("aria-busy");
+            });
+          return;
+        }
+        if (refreshGeneral) {
+          btn.disabled = true;
+          btn.setAttribute("aria-busy", "true");
+          void opts
+            .loadSection("general", true)
+            .then(function (fresh) {
+              openSubview(host, fresh || data, opts, view);
+            })
+            .catch(function () {
+              openSubview(host, data, opts, view);
             })
             .finally(function () {
               btn.disabled = false;

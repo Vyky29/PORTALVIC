@@ -63,6 +63,7 @@
     openModal: null,
     closeModal: null,
     onSaved: null,
+    onCreated: null,
   };
 
   function configure(options) {
@@ -328,15 +329,332 @@
     var cid = String(contactId || "").trim();
     if (!cid || !live) return;
     var src = global.PARTICIPANTS_PARENTS_PORTAL_SOURCE;
-    var rows = src && Array.isArray(src.rows) ? src.rows : [];
+    if (!src || !Array.isArray(src.rows)) {
+      global.PARTICIPANTS_PARENTS_PORTAL_SOURCE = { rows: [] };
+      src = global.PARTICIPANTS_PARENTS_PORTAL_SOURCE;
+    }
+    var rows = src.rows;
     for (var i = 0; i < rows.length; i++) {
       if (String(rows[i].contactId || "").trim() === cid) {
         var merged = mergeLiveContactIntoPortalRow(rows[i], live);
         Object.keys(merged).forEach(function (k) {
           rows[i][k] = merged[k];
         });
-        break;
+        return;
       }
+    }
+  }
+
+  /** Build a participants-parents export-shaped row from a live portal_parent_contacts row. */
+  function portalRowFromLiveContact(live) {
+    if (!live) return null;
+    var cid = String(live.contact_id || "").trim();
+    if (!cid) return null;
+    var child = String(live.child_display || "").trim();
+    var parent = String(live.parent_display || "").trim();
+    var inClass = live.in_class === true;
+    var wl = live.on_waiting_list === true;
+    var dobIso = live.dob_iso ? String(live.dob_iso).slice(0, 10) : "";
+    var regIso = live.registration_date ? String(live.registration_date).slice(0, 10) : "";
+    return {
+      contactId: cid,
+      childDisplay: child,
+      childFirstName: String(live.child_first_name || "").trim() || undefined,
+      childLastName: String(live.child_last_name || "").trim() || undefined,
+      parentDisplay: parent,
+      parentFirstName: String(live.parent_first_name || "").trim() || undefined,
+      parentLastName: String(live.parent_last_name || "").trim() || undefined,
+      mobile: String(live.mobile || "").trim(),
+      username: String(live.email || "").trim(),
+      addressLine1: String(live.address_line1 || "").trim(),
+      addressLine2: String(live.address_line2 || "").trim(),
+      city: String(live.city || "").trim(),
+      postcode: String(live.postcode || "").trim(),
+      dobIso: dobIso,
+      dobDisplay: isoToUk(dobIso) || "",
+      inClass: inClass ? "Yes" : "No",
+      onWaitingList: wl,
+      createdIso: regIso,
+      createdDisplay: isoToUk(regIso) || "",
+      fundingLabel: String(live.funding_label || "").trim(),
+      paymentMethodLabel: String(live.payment_method_label || "").trim(),
+      _adminFundingLabel: String(live.funding_label || "").trim(),
+      _adminPaymentMethodLabel: String(live.payment_method_label || "").trim(),
+      _livePortalCreated: true,
+    };
+  }
+
+  /** Insert or update a live contact into the in-memory parents export used by Participants. */
+  function upsertLiveContactIntoParentsSource(live) {
+    var row = portalRowFromLiveContact(live);
+    if (!row) return null;
+    var src = global.PARTICIPANTS_PARENTS_PORTAL_SOURCE;
+    if (!src || !Array.isArray(src.rows)) {
+      global.PARTICIPANTS_PARENTS_PORTAL_SOURCE = { rows: [] };
+      src = global.PARTICIPANTS_PARENTS_PORTAL_SOURCE;
+    }
+    var rows = src.rows;
+    var cid = row.contactId;
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i].contactId || "").trim() === cid) {
+        var merged = Object.assign({}, rows[i], row);
+        Object.keys(merged).forEach(function (k) {
+          rows[i][k] = merged[k];
+        });
+        return rows[i];
+      }
+    }
+    rows.push(row);
+    return row;
+  }
+
+  async function createRemote(fields) {
+    var token = await portalAuthToken();
+    if (!token) return { ok: false, error: "session_expired" };
+    var base = String(cfg.getSupabaseUrl() || "").replace(/\/$/, "");
+    var anon = String(cfg.getAnonKey() || "");
+    if (!base || !anon) return { ok: false, error: "missing_config" };
+    var res = await fetch(base + "/functions/v1/portal-admin-parent-contact-update", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+        apikey: anon,
+      },
+      body: JSON.stringify({
+        action: "create",
+        child_display: fields.childDisplay,
+        parent_display: fields.parentDisplay,
+        mobile: fields.mobile,
+        email: fields.email,
+        dob: fields.dobDisplay,
+        address_line1: fields.addressLine1,
+        address_line2: fields.addressLine2,
+        city: fields.city,
+        postcode: fields.postcode,
+        registration_date: fields.registrationDisplay,
+        funding_label: fields.fundingLabel,
+        payment_method_label: fields.paymentMethodLabel,
+        booking_status: fields.bookingStatus,
+      }),
+    });
+    var j = null;
+    try {
+      j = await res.json();
+    } catch (_e) {
+      j = null;
+    }
+    if (!res.ok || !j || !j.ok) {
+      return {
+        ok: false,
+        error: (j && j.error) || "create_failed",
+        message: (j && j.message) || "",
+        status: res.status,
+        existing_contact_id: j && j.existing_contact_id,
+      };
+    }
+    return { ok: true, contact: j.contact, contact_id: j.contact_id };
+  }
+
+  function openCreateModal() {
+    if (typeof cfg.openModal !== "function") {
+      cfg.toast("Add contact modal unavailable", "warn");
+      return;
+    }
+    var todayUk = (function () {
+      var d = new Date();
+      var dd = String(d.getDate()).padStart(2, "0");
+      var mm = String(d.getMonth() + 1).padStart(2, "0");
+      return dd + "/" + mm + "/" + d.getFullYear();
+    })();
+
+    cfg.openModal(
+      '<div class="modal-h"><h2 id="modalTitle">Add new contact</h2></div>' +
+        '<div class="modal-b" style="min-width:0">' +
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Creates the family in Portal (parent login + participant). Assign the weekly time slot afterwards in Scheduling / roster.</p>' +
+        '<label class="muted">Participant full name</label>' +
+        '<input class="inp" id="paxCreateChild" style="max-width:100%;box-sizing:border-box" placeholder="First Last" autocomplete="off" />' +
+        '<label class="muted" style="display:block;margin-top:10px">Participant D.O.B. <span class="muted" style="font-weight:400">(DD/MM/YYYY)</span></label>' +
+        '<input class="inp" id="paxCreateDob" style="max-width:100%;box-sizing:border-box" placeholder="17/04/2012" autocomplete="off" />' +
+        '<label class="muted" style="display:block;margin-top:10px">Carer / parent</label>' +
+        '<input class="inp" id="paxCreateCarer" style="max-width:100%;box-sizing:border-box" placeholder="Parent full name" autocomplete="name" />' +
+        '<label class="muted" style="display:block;margin-top:10px">Mobile</label>' +
+        '<input class="inp" id="paxCreatePhone" style="max-width:100%;box-sizing:border-box" placeholder="+447…" autocomplete="tel" />' +
+        '<label class="muted" style="display:block;margin-top:10px">Email</label>' +
+        '<input class="inp" id="paxCreateEmail" style="max-width:100%;box-sizing:border-box" placeholder="optional" autocomplete="email" />' +
+        '<label class="muted" style="display:block;margin-top:10px">Address line 1</label>' +
+        '<input class="inp" id="paxCreateAddr1" style="max-width:100%;box-sizing:border-box" />' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;min-width:0">' +
+        '<div style="min-width:0"><label class="muted">City</label><input class="inp" id="paxCreateCity" style="max-width:100%;box-sizing:border-box" /></div>' +
+        '<div style="min-width:0"><label class="muted">Postcode</label><input class="inp" id="paxCreatePostcode" style="max-width:100%;box-sizing:border-box" /></div></div>' +
+        '<label class="muted" style="display:block;margin-top:10px">Registration date</label>' +
+        '<input class="inp" id="paxCreateRegDate" style="max-width:100%;box-sizing:border-box" value="' +
+        esc(todayUk) +
+        '" />' +
+        '<label class="muted" style="display:block;margin-top:10px">List as</label>' +
+        '<select class="inp" id="paxCreateStatus" style="max-width:100%;box-sizing:border-box">' +
+        '<option value="programme_in" selected>In sessions (slot still to assign)</option>' +
+        '<option value="waiting_list">Waiting list</option>' +
+        "</select>" +
+        '<label class="muted" style="display:block;margin-top:10px">Funding</label>' +
+        '<select class="inp" id="paxCreateFundingSource" style="max-width:100%;box-sizing:border-box">' +
+        selectOptsHtml(FUNDING_SOURCE_OPTS, "", "— Private or LA —") +
+        "</select>" +
+        '<div id="paxCreateFunderWrap" style="margin-top:10px;display:none;min-width:0">' +
+        '<label class="muted">LA / NHS funder</label>' +
+        '<select class="inp" id="paxCreateFunderDetail" style="max-width:100%;box-sizing:border-box">' +
+        selectOptsHtml(FUNDER_DETAIL_OPTS, "", "— Ealing / H&amp;F / RBKC / … —") +
+        "</select></div>" +
+        '<label class="muted" style="display:block;margin-top:10px">Payment method</label>' +
+        '<select class="inp" id="paxCreatePay" style="max-width:100%;box-sizing:border-box">' +
+        selectOptsHtml(PAY_PRIVATE_OPTS, "", "— Select payment method —") +
+        "</select>" +
+        '<p id="paxCreateErr" class="muted" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:13px"></p>' +
+        "</div>" +
+        '<div class="modal-f">' +
+        '<button type="button" class="btn btn--ghost" id="paxCreateCancel">Cancel</button>' +
+        '<button type="button" class="btn btn--pri" id="paxCreateSave">Create contact</button>' +
+        "</div>"
+    );
+
+    function refreshCreateFundingUi() {
+      var srcEl = global.document.getElementById("paxCreateFundingSource");
+      var detWrap = global.document.getElementById("paxCreateFunderWrap");
+      var detEl = global.document.getElementById("paxCreateFunderDetail");
+      var payEl = global.document.getElementById("paxCreatePay");
+      if (!srcEl || !payEl) return;
+      var source = String(srcEl.value || "").trim();
+      var detail = detEl ? String(detEl.value || "").trim() : "";
+      if (detWrap) detWrap.style.display = source === "la_nhs" ? "block" : "none";
+      var curPay = String(payEl.value || "").trim();
+      payEl.innerHTML = selectOptsHtml(payOptsFor(source, detail), curPay, "— Select payment method —");
+    }
+
+    var cancel = global.document.getElementById("paxCreateCancel");
+    var save = global.document.getElementById("paxCreateSave");
+    var srcEl = global.document.getElementById("paxCreateFundingSource");
+    var detEl = global.document.getElementById("paxCreateFunderDetail");
+    if (srcEl) srcEl.onchange = refreshCreateFundingUi;
+    if (detEl) detEl.onchange = refreshCreateFundingUi;
+    if (cancel) {
+      cancel.onclick = function () {
+        if (typeof cfg.closeModal === "function") cfg.closeModal();
+      };
+    }
+    if (save) {
+      save.onclick = async function () {
+        var errEl = global.document.getElementById("paxCreateErr");
+        function showErr(msg) {
+          if (!errEl) return;
+          errEl.style.display = "block";
+          errEl.textContent = msg;
+        }
+        var childDisplay = String(
+          (global.document.getElementById("paxCreateChild") || {}).value || ""
+        ).trim();
+        var parentDisplay = String(
+          (global.document.getElementById("paxCreateCarer") || {}).value || ""
+        ).trim();
+        var mobile = String(
+          (global.document.getElementById("paxCreatePhone") || {}).value || ""
+        ).trim();
+        var dobDisplay = String(
+          (global.document.getElementById("paxCreateDob") || {}).value || ""
+        ).trim();
+        if (!childDisplay) {
+          showErr("Participant name is required.");
+          return;
+        }
+        if (!parentDisplay) {
+          showErr("Carer / parent is required.");
+          return;
+        }
+        if (!mobile) {
+          showErr("Mobile is required (parent portal login).");
+          return;
+        }
+        if (dobDisplay && !ukToIso(dobDisplay) && !/^\d{4}-\d{2}-\d{2}$/.test(dobDisplay)) {
+          showErr("D.O.B. must be DD/MM/YYYY.");
+          return;
+        }
+        var regDisp = String(
+          (global.document.getElementById("paxCreateRegDate") || {}).value || ""
+        ).trim();
+        if (regDisp && !ukToIso(regDisp) && !/^\d{4}-\d{2}-\d{2}$/.test(regDisp)) {
+          showErr("Registration date must be DD/MM/YYYY.");
+          return;
+        }
+        var fundSrc = String(
+          (global.document.getElementById("paxCreateFundingSource") || {}).value || ""
+        ).trim();
+        var fundDet = String(
+          (global.document.getElementById("paxCreateFunderDetail") || {}).value || ""
+        ).trim();
+        if (fundSrc === "la_nhs" && !fundDet) {
+          showErr("Select the LA / NHS funder.");
+          return;
+        }
+        var fields = {
+          childDisplay: childDisplay,
+          parentDisplay: parentDisplay,
+          mobile: mobile,
+          email: String((global.document.getElementById("paxCreateEmail") || {}).value || "").trim(),
+          dobDisplay: dobDisplay,
+          addressLine1: String((global.document.getElementById("paxCreateAddr1") || {}).value || "").trim(),
+          addressLine2: "",
+          city: String((global.document.getElementById("paxCreateCity") || {}).value || "").trim(),
+          postcode: String((global.document.getElementById("paxCreatePostcode") || {}).value || "").trim(),
+          registrationDisplay: regDisp || todayUk,
+          fundingLabel: composeFundingLabel(fundSrc, fundDet),
+          paymentMethodLabel: String(
+            (global.document.getElementById("paxCreatePay") || {}).value || ""
+          ).trim(),
+          bookingStatus: String(
+            (global.document.getElementById("paxCreateStatus") || {}).value || "programme_in"
+          ).trim(),
+        };
+        save.disabled = true;
+        var remote = await createRemote(fields);
+        if (!remote.ok) {
+          save.disabled = false;
+          if (remote.error === "child_exists") {
+            showErr(remote.message || "That participant already exists.");
+          } else {
+            showErr(
+              "Could not create: " + (remote.message || remote.error || "unknown")
+            );
+          }
+          return;
+        }
+        upsertLiveContactIntoParentsSource(remote.contact);
+        setOverride(String(remote.contact_id || ""), {
+          parentDisplay: fields.parentDisplay,
+          mobile: fields.mobile,
+          email: fields.email,
+          addressLine1: fields.addressLine1,
+          city: fields.city,
+          postcode: fields.postcode,
+          registrationDisplay: fields.registrationDisplay,
+          fundingLabel: fields.fundingLabel,
+          paymentMethodLabel: fields.paymentMethodLabel,
+        });
+        if (typeof cfg.closeModal === "function") cfg.closeModal();
+        cfg.toast(
+          "Contact created · #" +
+            (remote.contact_id || "") +
+            ". Assign a weekly slot in Scheduling when ready.",
+          "ok"
+        );
+        if (typeof cfg.onCreated === "function") {
+          try {
+            cfg.onCreated(remote.contact_id, remote.contact, fields);
+          } catch (_cb) {}
+        } else if (typeof cfg.onSaved === "function") {
+          try {
+            cfg.onSaved(remote.contact_id, fields, { contact: remote.contact });
+          } catch (_cb2) {}
+        }
+      };
     }
   }
 
@@ -635,10 +953,13 @@
   global.AdminParentContactEdit = {
     configure: configure,
     openEditModal: openEditModal,
+    openCreateModal: openCreateModal,
     applyOverrideToPortalRow: applyOverrideToPortalRow,
     applyOverrideToPax: applyOverrideToPax,
     mergeLiveContactIntoPortalRow: mergeLiveContactIntoPortalRow,
     applyLiveContactToParentsSource: applyLiveContactToParentsSource,
+    upsertLiveContactIntoParentsSource: upsertLiveContactIntoParentsSource,
+    portalRowFromLiveContact: portalRowFromLiveContact,
     getOverride: getOverride,
     contactIdFromPax: contactIdFromPax,
   };

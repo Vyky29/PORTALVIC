@@ -298,6 +298,19 @@ function buildAlert(
     const event = String(record.notify_event ?? "created").toLowerCase();
     const phone = String(record.mobile ?? "").trim();
     const mail = String(record.email ?? "").trim();
+    const participant = String(record.participant_name ?? "").trim();
+    if (event === "registration_submitted") {
+      return {
+        sourceId: `${id}-registration-submitted`,
+        title: participant
+          ? `Registration form · ${participant}`
+          : `Registration form · ${name}`,
+        body: clampPushBody(
+          [name, mail, phone].filter(Boolean).join(" · ") ||
+            "New client form ready to review",
+        ),
+      };
+    }
     const verified = event === "verified";
     return {
       sourceId: id + (verified ? "-verified" : "-created"),
