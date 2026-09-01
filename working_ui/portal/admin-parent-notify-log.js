@@ -1960,7 +1960,7 @@
         "</div>" +
         '<label class="portal-pnlog-composer__tpl-mid-lab muted" for="portalPnlogComposerInput">Editable {{1}}</label>';
       textareaPlaceholder =
-        "Write {{1}} here — use a blank line between paragraphs (Meta cannot keep real line breaks; preview shows them as separate lines)…";
+        "Write {{1}} here — use a blank line between paragraphs (Meta flattens real line breaks)…";
       textareaMax = String(WA_TEMPLATE_BODY_MAX);
     } else if (openSession && !state.editing) {
       sessionNote =
@@ -1970,8 +1970,7 @@
       ? '<div class="portal-pnlog-composer__tpl-fixed" id="portalPnlogTplSuffix" aria-hidden="true">' +
         esc(String(coldTpl.suffix || "").trim()) +
         "</div></div>" +
-        '<p id="portalPnlogTplLen" class="portal-pnlog-composer__tpl-len muted"></p>' +
-        coldTemplatePreviewHtml(draft)
+        '<p id="portalPnlogTplLen" class="portal-pnlog-composer__tpl-len muted"></p>'
       : "";
     return (
       '<div class="portal-pnlog-composer' +
@@ -2210,7 +2209,6 @@
   /**
    * Meta rejects newlines/tabs in template {{1}}.
    * Blank line (paragraph) → " — " · single line break → " · "
-   * Preview re-expands those markers to real line breaks for the admin.
    */
   function flattenForWhatsappTemplate(text) {
     return String(text || "")
@@ -2227,63 +2225,24 @@
       .slice(0, WA_TEMPLATE_BODY_MAX);
   }
 
-  /** Admin preview only: show Meta-safe markers as paragraphs/lines. */
-  function coldTemplateVarHtml(flat) {
-    return esc(flat || "…")
-      .replace(/ — /g, "<br><br>")
-      .replace(/ · /g, "<br>");
-  }
-
-  function coldTemplatePreviewHtml(body) {
-    var tpl = activeColdTemplate();
-    var mid = flattenForWhatsappTemplate(body);
-    return (
-      '<div class="portal-pnlog-composer__tpl-preview" id="portalPnlogTplPreview" aria-live="polite">' +
-      '<div class="portal-pnlog-composer__tpl-preview-lab">WhatsApp will send · ' +
-      esc(tpl.label) +
-      "</div>" +
-      '<div class="portal-pnlog-composer__tpl-preview-body">' +
-      esc(tpl.prefix) +
-      '<span class="portal-pnlog-composer__tpl-var">' +
-      coldTemplateVarHtml(mid) +
-      "</span>" +
-      esc(tpl.suffix) +
-      "</div></div>"
-    );
-  }
-
   function syncColdTemplatePreview() {
     var ta = document.getElementById("portalPnlogComposerInput");
-    var prev = document.getElementById("portalPnlogTplPreview");
     var lenEl = document.getElementById("portalPnlogTplLen");
     var tpl = activeColdTemplate();
     var prefixEl = document.getElementById("portalPnlogTplPrefix");
     var suffixEl = document.getElementById("portalPnlogTplSuffix");
     if (prefixEl) prefixEl.textContent = String(tpl.prefix || "").trim();
     if (suffixEl) suffixEl.textContent = String(tpl.suffix || "").trim();
-    if (!ta || !prev) return;
+    if (!ta || !lenEl) return;
     var flat = flattenForWhatsappTemplate(ta.value);
-    var lab = prev.querySelector(".portal-pnlog-composer__tpl-preview-lab");
-    if (lab) lab.textContent = "WhatsApp will send · " + tpl.label;
-    var bodyEl = prev.querySelector(".portal-pnlog-composer__tpl-preview-body");
-    if (bodyEl) {
-      bodyEl.innerHTML =
-        esc(tpl.prefix) +
-        '<span class="portal-pnlog-composer__tpl-var">' +
-        coldTemplateVarHtml(flat) +
-        "</span>" +
-        esc(tpl.suffix);
-    }
-    if (lenEl) {
-      var n = flat.length;
-      lenEl.textContent =
-        n +
-        " / " +
-        WA_TEMPLATE_BODY_MAX +
-        " characters in {{1}}" +
-        (n >= WA_TEMPLATE_BODY_MAX ? " — at limit" : "");
-      lenEl.classList.toggle("is-over", n >= WA_TEMPLATE_BODY_MAX);
-    }
+    var n = flat.length;
+    lenEl.textContent =
+      n +
+      " / " +
+      WA_TEMPLATE_BODY_MAX +
+      " characters in {{1}}" +
+      (n >= WA_TEMPLATE_BODY_MAX ? " — at limit" : "");
+    lenEl.classList.toggle("is-over", n >= WA_TEMPLATE_BODY_MAX);
   }
 
   function syncAudioButton() {
@@ -2867,16 +2826,8 @@
   }
 
   function viewHtml() {
-    // No page-intro in the admin head (that column stays narrow/right). Full-width info lives in-body.
     return (
       '<div id="portalParentNotifyLogRoot" class="portal-day-ops-embed portal-pnlog-root">' +
-      '<p class="portal-pnlog-info" role="note">' +
-      "WhatsApp conversations via the Business API — pick a family on the left, read the thread, and reply in the box below (no email on this screen). " +
-      "Use <strong>Reply</strong> on a bubble to quote that message (like swipe-to-reply). " +
-      "Search also finds families from Contacts even if there is no WhatsApp history yet. " +
-      "Delivery ticks: Sent → Delivered → Read. Refreshes every 15s. " +
-      "When you see <em>Needs Meta template</em>, scroll the chat above the purple box to read earlier messages." +
-      "</p>" +
       '<div class="portal-pnlog-toolbar">' +
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search parent, participant, phone…" autocomplete="off" />' +
       '<select id="portalParentNotifyLogOutcome" class="sel portal-pnlog-toolbar__sel" aria-label="Filter">' +

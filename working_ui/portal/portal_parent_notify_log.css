@@ -44,25 +44,6 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   display: none !important;
 }
 
-/* Full-width help under the title (left-aligned, wraps across the page) */
-.portal-pnlog-info {
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  width: 100%;
-  max-width: none;
-  box-sizing: border-box;
-  text-align: left;
-  font-size: 13px;
-  line-height: 1.45;
-  color: #334155;
-  border-radius: 12px;
-  border: 1px solid rgba(45, 132, 179, 0.22);
-  background: #f4f9fc;
-  min-width: 0;
-  overflow-wrap: break-word;
-  flex: 0 0 auto;
-}
-
 .portal-pnlog-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -675,53 +656,6 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   font-weight: 700;
 }
 
-.portal-pnlog-composer__tpl-preview {
-  margin: 0 0 6px;
-  padding: 6px 9px;
-  border-radius: 10px;
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  min-width: 0;
-  max-height: 5.5rem;
-  overflow: auto;
-}
-
-.portal-pnlog-composer__tpl-preview-lab {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #64748b;
-  margin: 0 0 4px;
-}
-
-.portal-pnlog-composer__tpl-preview-body {
-  font-size: 13px;
-  line-height: 1.45;
-  color: #0f172a;
-  overflow-wrap: anywhere;
-  min-width: 0;
-}
-
-.portal-pnlog-composer__tpl-var {
-  display: inline-block;
-  font-weight: 700;
-  color: #6d28d9;
-  background: #ede9fe;
-  border-radius: 4px;
-  padding: 2px 4px;
-  max-width: 100%;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-
-.portal-pnlog-composer__tpl-var br {
-  display: block;
-  content: "";
-  margin: 0;
-}
-
 .portal-pnlog-composer__reply-banner {
   display: flex;
   flex-wrap: wrap;
@@ -891,9 +825,6 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   min-height: 44px;
   max-height: 9vh;
 }
-.portal-pnlog-composer--tpl .portal-pnlog-composer__tpl-preview {
-  max-height: 3.6rem;
-}
 .portal-pnlog-composer--tpl .portal-pnlog-composer__tpl-shell {
   padding: 6px 8px;
   margin: 0 0 4px;
@@ -996,10 +927,6 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 @media (max-width: 780px) {
   body:has(#portalParentNotifyLogRoot) .admin-workspace {
     padding: 8px 10px 6px !important;
-  }
-
-  .portal-pnlog-info {
-    display: none; /* reclaim vertical space on phone — desktop keeps the help banner */
   }
 
   .portal-pnlog-toolbar {
