@@ -2,7 +2,7 @@
 /**
  * Plugin Name: clubSENsational Family Portal Proxy
  * Description: Serves /parent and /bookingportal on www.clubsensational.org via reverse proxy (URL stays on your domain).
- * Version: 1.6.0
+ * Version: 1.7.0
  * Author: clubSENsational
  *
  * Proxies family portal pages and static assets from family.clubsensational.org (Vercel).
@@ -19,11 +19,12 @@ if (!defined('ABSPATH')) {
 function cs_family_portal_services_catalog(): array
 {
     return [
+        ['label' => 'Timetable 2026/27', 'path' => '/timetable/'],
         ['label' => 'Aquatic Activity', 'path' => '/swimming/'],
         ['label' => 'Climbing Activity', 'path' => '/climbing/'],
         ['label' => 'Physical Activity', 'path' => '/fitness/'],
         ['label' => 'Multi-Activity', 'path' => '/splash/'],
-        ['label' => 'Day Centre', 'path' => '/bookingportal#timetable-day_centre'],
+        ['label' => 'Day Centre', 'path' => '/timetable#dc'],
         ['label' => 'Bespoke Programme', 'path' => '/be-spoke/'],
         ['label' => 'Counselling', 'path' => '/counselling/'],
         ['label' => 'Intensive Courses & Camps', 'path' => '/holidays/'],
@@ -111,6 +112,7 @@ function cs_family_portal_should_proxy(string $path): bool
         '#^/bookingportal(?:/|$)#',
         '#^/booking-portal(?:/|$)#',
         '#^/splash(?:/|$)#',
+        '#^/timetable(?:/|$)#',
         '#^/bookingservice(?:/|$)#',
         '#^/booking-service(?:/|$)#',
         '#^/portal/#',
@@ -152,7 +154,23 @@ function cs_family_portal_map_path(string $path): string
         return $rest === '' ? '/bookingportal' : '/bookingportal/' . $rest;
     }
 
+    if (preg_match('#^/timetable(?:/(.*))?$#', $path, $m)) {
+        $rest = isset($m[1]) ? trim((string) $m[1], '/') : '';
+        return $rest === '' ? '/timetable' : '/timetable/' . $rest;
+    }
+
     return $path === '/' ? '/parent' : $path;
+}
+
+add_action('wp_footer', 'cs_family_portal_term_calendar_script', 99);
+
+function cs_family_portal_term_calendar_script(): void
+{
+    if (is_admin()) {
+        return;
+    }
+    $src = home_url('/portal/cs-wp-term-calendars.js?v=20260901-tt');
+    echo '<script src="' . esc_url($src) . '" defer></script>' . "\n";
 }
 
 function cs_family_portal_early_proxy(): void

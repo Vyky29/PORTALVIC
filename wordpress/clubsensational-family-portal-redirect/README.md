@@ -6,13 +6,14 @@ Proxies desde `family.clubsensational.org` (Vercel):
 
 - `/parent`, `/parents`, `/parent/*`
 - `/bookingportal`, `/booking-portal` (oferta pública de clases; legacy `/bookingservice` still redirects)
+- `/timetable` (horario público 2026/27: weekly sessions, Day Centre, term dates)
 - `/portal/*` (JS, CSS, imágenes)
 - `/portal-static-bootstrap.js`, manifest PWA, service worker (`clubsensational-family-sw.js`), etc.
 
 ## Instalación / actualización
 
 1. Sube la carpeta a `wp-content/plugins/clubsensational-family-portal-redirect/` (o ZIP → Plugins → Add New)
-2. Activa / actualiza **clubSENsational Family Portal Proxy** (v1.6+)
+2. Activa / actualiza **clubSENsational Family Portal Proxy** (v1.7+)
 3. Prueba:
    - https://www.clubsensational.org/parent
    - https://www.clubsensational.org/bookingportal
@@ -24,11 +25,12 @@ Si el header usa un menú de WordPress (Appearance → Menus), el plugin **susti
 
 | Servicio | Enlace |
 |----------|--------|
+| Timetable 2026/27 | `/timetable/` |
 | Aquatic Activity | `/swimming/` |
 | Climbing Activity | `/climbing/` |
 | Physical Activity | `/fitness/` |
 | Multi-Activity | `/splash/` |
-| Day Centre | `/bookingportal#timetable-day_centre` |
+| Day Centre | `/timetable#dc` |
 | Bespoke Programme | `/be-spoke/` |
 | Counselling | `/counselling/` |
 | Intensive Courses & Camps | `/holidays/` |
@@ -36,6 +38,23 @@ Si el header usa un menú de WordPress (Appearance → Menus), el plugin **susti
 **Quitados:** Active Play & Movement, Emotional Support (sustituido por Counselling).
 
 Si el menú está **solo** en Elementor (enlaces manuales, sin menú WP), edita el header en Elementor y copia la tabla de arriba.
+
+## Timetable 2026/27 /timetable/ (v1.7+)
+
+Replaces the 2025/26 **Our Terms** calendars (HTML widget `.cs-calendar` on home, swimming, climbing, fitness, splash) and publishes weekly sessions + Day Centre.
+
+- Page: `working_ui/timetable.html`
+- Calendars: `working_ui/portal/public-term-calendars-2026-27.html` (`node scripts/build-public-term-calendars.mjs`)
+- The plugin prints `/portal/cs-wp-term-calendars.js` in the WordPress footer so old calendars swap to 2026/27.
+
+Without plugin v1.7:
+
+- https://family.clubsensational.org/timetable
+
+With plugin v1.7:
+
+- https://www.clubsensational.org/timetable
+- Homepage **Our Terms** shows 2026/27
 
 ## Splash & Connect /splash/ (v1.6+)
 
@@ -65,6 +84,7 @@ node scripts/build-splash-page.mjs
 Usa directo:
 
 - https://family.clubsensational.org/bookingportal
+- https://family.clubsensational.org/timetable
 - o https://portalvic.vercel.app/bookingportal
 
 ## Cambiar upstream

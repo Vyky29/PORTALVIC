@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="clubSENsational timetable 2026/27 - weekly sessions, Day Centre, and term dates." />
+  <link rel="canonical" href="https://www.clubsensational.org/timetable" />
+  <title>Timetable 2026/27 - clubSENsational</title>
+  <script src="/portal-static-bootstrap.js"></script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueDeep: #1f6a94;
+      --blueSoft: #eaf5fb;
+      --gold: #f4b740;
+      --ink: #173247;
+      --text: #314555;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.12);
+      --white: #ffffff;
+      --ok: #157347;
+      --okSoft: #e8f7ef;
+      --radius: 18px;
+      --pad-x: clamp(16px, 3.5vw, 40px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+    html, body {
+      margin: 0;
+      min-height: 100dvh;
+      max-width: 100%;
+      overflow-x: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+      line-height: 1.45;
+    }
+    .page {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) var(--pad-x) max(48px, env(safe-area-inset-bottom));
+      min-width: 0;
+    }
+    .brand { text-align: center; margin: 0 0 22px; min-width: 0; }
+    .brand img {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 8px;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 3vw, 1.8rem);
+      color: var(--ink);
+    }
+    .lede {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-weight: 600;
+      overflow-wrap: break-word;
+    }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 18px;
+      min-width: 0;
+    }
+    .tab {
+      flex: 1 1 auto;
+      min-width: 0;
+      border: 2px solid var(--ink);
+      background: var(--white);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 800;
+      font-size: 0.9rem;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      overflow-wrap: break-word;
+    }
+    .tab[aria-selected="true"] {
+      background: var(--ink);
+      color: var(--white);
+    }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px 16px 18px;
+      margin: 0 0 16px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .card h2 {
+      margin: 0 0 8px;
+      color: var(--ink);
+      font-size: 1.15rem;
+    }
+    .card p, .card li {
+      margin: 0 0 8px;
+      overflow-wrap: break-word;
+    }
+    .note {
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    table.grid {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 0.88rem;
+    }
+    table.grid th, table.grid td {
+      border: 1px solid var(--line);
+      padding: 8px 7px;
+      text-align: left;
+      vertical-align: top;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    table.grid th {
+      background: var(--blueSoft);
+      color: var(--ink);
+      font-weight: 800;
+    }
+    .svc {
+      display: block;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .time { color: var(--text); }
+    .venue { color: var(--muted); font-weight: 600; }
+    .chip {
+      display: inline-block;
+      background: var(--okSoft);
+      color: var(--ok);
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin: 0 6px 6px 0;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 0 0;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 800;
+      text-decoration: none;
+      overflow-wrap: break-word;
+    }
+    .btn--ghost {
+      background: var(--white);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    .dc-list { margin: 0; padding-left: 1.15rem; }
+    .live-status { font-size: 0.85rem; font-weight: 700; color: var(--muted); margin: 0 0 10px; }
+    .venue-block { margin: 0 0 14px; min-width: 0; }
+    .venue-block h3 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: var(--ink);
+    }
+    .slot-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line);
+      min-width: 0;
+    }
+    .slot-line span { min-width: 0; overflow-wrap: break-word; }
+    #calHost { min-width: 0; overflow: auto; }
+    @media (max-width: 720px) {
+      .grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table.grid { min-width: 640px; table-layout: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="brand">
+      <img src="/portal/F-02-1.png" width="96" height="96" alt="clubSENsational" />
+      <h1>Timetable 2026/27</h1>
+      <p class="lede">Weekly sessions, Day Centre, and term dates for the new academic year - not the 2025/26 calendar.</p>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="Timetable sections">
+      <button type="button" class="tab" role="tab" id="tab-weekly" aria-selected="true" aria-controls="panel-weekly" data-tab="weekly">Weekly sessions</button>
+      <button type="button" class="tab" role="tab" id="tab-dc" aria-selected="false" aria-controls="panel-dc" data-tab="dc">Day Centre</button>
+      <button type="button" class="tab" role="tab" id="tab-dates" aria-selected="false" aria-controls="panel-dates" data-tab="dates">Term dates</button>
+    </div>
+
+    <section id="panel-weekly" class="card" role="tabpanel" aria-labelledby="tab-weekly">
+      <h2>Weekly sessions</h2>
+      <p>Standing after-school, weekend, and Hub times for Autumn 2026. Places are 1:1 or small group - see the booking portal for live availability.</p>
+      <p><span class="chip">After-school from Mon 7 Sep</span><span class="chip">Weekends from Sat 5 Sep</span><span class="chip">After-school closed 26-30 Oct</span></p>
+      <div class="grid-wrap">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>SwimFarm</th>
+              <th>Acton</th>
+              <th>Northolt</th>
+              <th>Westway</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Monday</th>
+              <td><span class="svc">Day Centre</span><span class="time">11am - 4pm</span><br /><span class="svc">Physical / Hub</span><span class="time">4.15 - 6.15pm</span></td>
+              <td><span class="svc">Aquatic</span><span class="time">4.00 - 6.30pm</span></td>
+              <td><span class="svc">Aquatic</span><span class="time">4.30 - 6.30pm</span></td>
+              <td><span class="svc">Climbing</span><span class="time">4.00 - 6.00pm</span></td>
+            </tr>
+            <tr>
+              <th>Tuesday</th>
+              <td><span class="svc">Day Centre</span><span class="time">11am - 4pm</span></td>
+              <td><span class="svc">Aquatic</span><span class="time">4.00 - 6.30pm</span></td>
+              <td><span class="venue">-</span></td>
+              <td><span class="venue">-</span></td>
+            </tr>
+            <tr>
+              <th>Wednesday</th>
+              <td><span class="svc">Day Centre</span><span class="time">11am - 4pm</span><br /><span class="svc">Physical / Hub</span><span class="time">4.15 - 6.15pm</span></td>
+              <td><span class="svc">Aquatic</span><span class="time">4.00 - 6.30pm</span></td>
+              <td><span class="svc">Aquatic</span><span class="time">4.30 - 6.30pm</span></td>
+              <td><span class="venue">-</span></td>
+            </tr>
+            <tr>
+              <th>Thursday</th>
+              <td><span class="svc">Day Centre</span><span class="time">11am - 4pm</span></td>
+              <td><span class="svc">Aquatic</span><span class="time">4.00 - 6.30pm</span></td>
+              <td><span class="venue">-</span></td>
+              <td><span class="venue">-</span></td>
+            </tr>
+            <tr>
+              <th>Friday</th>
+              <td><span class="svc">Day Centre</span><span class="time">11am - 4pm</span><br /><span class="svc">Hub / Bespoke</span><span class="time">4.15 - 6.15pm</span></td>
+              <td><span class="svc">Aquatic</span><span class="time">4.00 - 6.00pm</span></td>
+              <td><span class="venue">-</span></td>
+              <td><span class="venue">-</span></td>
+            </tr>
+            <tr>
+              <th>Saturday</th>
+              <td><span class="svc">Sessions</span><span class="time">9.30am - 1.30pm</span></td>
+              <td><span class="venue">-</span></td>
+              <td><span class="venue">-</span></td>
+              <td><span class="venue">-</span></td>
+            </tr>
+            <tr>
+              <th>Sunday</th>
+              <td><span class="svc">Multi-Activity</span><span class="time">9.30am - 2.00pm</span><span class="note"> (90 min bands: 9.30-11, 11-12.30, 12.30-2)</span></td>
+              <td><span class="venue">-</span></td>
+              <td><span class="venue">-</span></td>
+              <td><span class="svc">Climbing</span><span class="time">10.00am - 4.00pm</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" id="liveStatus">Loading live bookable times…</p>
+      <div id="liveOffer"></div>
+      <div class="actions">
+        <a class="btn" href="/bookingportal">Book or see places</a>
+        <a class="btn btn--ghost" href="mailto:info@clubsensational.org">Email the office</a>
+      </div>
+    </section>
+
+    <section id="panel-dc" class="card" role="tabpanel" aria-labelledby="tab-dc" hidden>
+      <h2>Day Centre</h2>
+      <p>Structured weekday at SwimFarm - peers, visual schedules, and a full day rather than a single activity slot.</p>
+      <p><span class="chip">Tue 1 Sep 2026 - Fri 18 Dec 2026</span><span class="chip">Mon-Fri 11am - 4pm</span><span class="chip">Open in half term</span></p>
+      <div class="grid-wrap">
+        <table class="grid">
+          <thead>
+            <tr><th>Day</th><th>Hours</th><th>Venue</th></tr>
+          </thead>
+          <tbody>
+            <tr><th>Monday</th><td>11am - 4pm</td><td>SwimFarm</td></tr>
+            <tr><th>Tuesday</th><td>11am - 4pm</td><td>SwimFarm</td></tr>
+            <tr><th>Wednesday</th><td>11am - 4pm</td><td>SwimFarm</td></tr>
+            <tr><th>Thursday</th><td>11am - 4pm</td><td>SwimFarm</td></tr>
+            <tr><th>Friday</th><td>11am - 4pm</td><td>SwimFarm</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Shorter blocks while settling in. Support is usually 1:1 on site (2:1 for pool transitions, personal care, or planned community trips). Places, hours, and funding are agreed with the office - not through online booking.</p>
+      <p><strong>A typical day may include</strong></p>
+      <ul class="dc-list">
+        <li>Circle time and shared Hub activities with peers</li>
+        <li>Vocational tasks, maths, and handwriting</li>
+        <li>Gym circuits, basketball, and structured physical activity</li>
+        <li>Swimming / aquatic within the day</li>
+        <li>Lunch, life skills, and group snack</li>
+        <li>Sensory room and regulation time</li>
+        <li>Community trips when 2:1 cover is planned</li>
+      </ul>
+      <div class="actions">
+        <a class="btn" href="/bookingportal#timetable-day_centre">Enquire about a place</a>
+        <a class="btn btn--ghost" href="/portal/day-centre-calendar-2026-27-section.html">Full Day Centre calendar</a>
+      </div>
+    </section>
+
+    <section id="panel-dates" class="card" role="tabpanel" aria-labelledby="tab-dates" hidden>
+      <h2>Term dates 2026/27</h2>
+      <p class="note">Replaces the old September 2025 calendars on the website. Numbers shown are open days (Day Centre and/or after-school).</p>
+      <div id="calHost">Loading calendars…</div>
+    </section>
+  </main>
+  <script src="/portal/portal_booking_offer.js?v=20260901-tt"></script>
+  <script>
+    (function () {
+      var DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      var SKIP = { day_centre: 1, bespoke: 1, counselling: 1, intensive: 1 };
+
+      function showTab(id) {
+        document.querySelectorAll("[role='tab']").forEach(function (btn) {
+          var on = btn.getAttribute("data-tab") === id;
+          btn.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        document.querySelectorAll("[role='tabpanel']").forEach(function (panel) {
+          panel.hidden = panel.id !== "panel-" + id;
+        });
+        if (id === "dates") loadCalendars();
+      }
+
+      document.querySelector(".tabs").addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-tab]");
+        if (btn) showTab(btn.getAttribute("data-tab"));
+      });
+
+      var calLoaded = false;
+      function loadCalendars() {
+        if (calLoaded) return;
+        var host = document.getElementById("calHost");
+        fetch("/portal/public-term-calendars-2026-27.html?v=20260901-tt")
+          .then(function (r) { return r.text(); })
+          .then(function (html) {
+            var doc = new DOMParser().parseFromString(html, "text/html");
+            var cal = doc.querySelector(".cs-calendar");
+            host.innerHTML = "";
+            if (cal) host.appendChild(cal);
+            calLoaded = true;
+          })
+          .catch(function () {
+            host.textContent = "Could not load term calendars. Email info@clubsensational.org.";
+          });
+      }
+
+      function esc(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function renderLive(api) {
+        var status = document.getElementById("liveStatus");
+        var host = document.getElementById("liveOffer");
+        var slots = (api.MOCK_SLOTS || []).filter(function (s) {
+          return s && !SKIP[s.serviceId] && DAYS.indexOf(s.day) >= 0;
+        });
+        if (!slots.length) {
+          status.textContent = "Standing weekly grid above. Bookable times load from the live offer when available.";
+          return;
+        }
+        status.textContent = "Live bookable times (including fully booked):";
+        var byVenue = {};
+        slots.forEach(function (s) {
+          var v = s.venue || "Venue";
+          if (!byVenue[v]) byVenue[v] = [];
+          byVenue[v].push(s);
+        });
+        var html = Object.keys(byVenue)
+          .sort()
+          .map(function (venue) {
+            var rows = byVenue[venue]
+              .slice()
+              .sort(function (a, b) {
+                var da = DAYS.indexOf(a.day) - DAYS.indexOf(b.day);
+                if (da) return da;
+                return String(a.sortTime || "").localeCompare(String(b.sortTime || ""));
+              })
+              .map(function (s) {
+                var name = (api.serviceById(s.serviceId) || {}).name || s.serviceId;
+                return (
+                  '<div class="slot-line"><span>' +
+                  esc(s.day) +
+                  "</span><span>" +
+                  esc(s.timeLabel) +
+                  "</span><span>" +
+                  esc(name) +
+                  "</span></div>"
+                );
+              })
+              .join("");
+            return (
+              '<div class="venue-block"><h3>' +
+              esc(api.venueLabel ? api.venueLabel(venue) : venue) +
+              "</h3>" +
+              rows +
+              "</div>"
+            );
+          })
+          .join("");
+        host.innerHTML = html;
+      }
+
+      var offer = window.PortalBookingOffer;
+      if (offer && typeof offer.load === "function") {
+        offer
+          .load()
+          .then(function () { renderLive(offer); })
+          .catch(function () {
+            document.getElementById("liveStatus").textContent =
+              "Standing weekly grid above. Open the booking portal for live places.";
+          });
+      } else {
+        document.getElementById("liveStatus").textContent =
+          "Standing weekly grid above. Open the booking portal for live places.";
+      }
+
+      if (location.hash === "#day-centre" || location.hash === "#dc") showTab("dc");
+      if (location.hash === "#dates" || location.hash === "#term") showTab("dates");
+    })();
+  </script>
+</body>
+</html>

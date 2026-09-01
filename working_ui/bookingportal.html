@@ -2287,6 +2287,7 @@
       </div>
       <h1>clubSENsational</h1>
       <p class="lede">Browse every service we offer — including fully booked times — then open weekly slots by venue and day.</p>
+      <p class="lede" style="margin-top:8px;white-space:normal"><a href="/timetable">2026/27 timetable</a> - weekly sessions, Day Centre, and term dates.</p>
     </header>
 
     <p class="offer-banner" id="offerBanner" role="status">
@@ -3445,8 +3446,24 @@
       " " +
       esc(hours) +
       "</p>" +
+      '<div class="grid-wrap" style="margin:0 0 12px;overflow-x:auto;min-width:0">' +
+      '<table class="grid" style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:0.88rem">' +
+      "<thead><tr><th style=\"text-align:left;padding:8px 7px;border:1px solid rgba(23,50,71,.12);background:#eaf5fb\">Day</th><th style=\"text-align:left;padding:8px 7px;border:1px solid rgba(23,50,71,.12);background:#eaf5fb\">Hours</th><th style=\"text-align:left;padding:8px 7px;border:1px solid rgba(23,50,71,.12);background:#eaf5fb\">Venue</th></tr></thead>" +
+      "<tbody>" +
+      [["Monday","11am – 4pm"],["Tuesday","11am – 4pm"],["Wednesday","11am – 4pm"],["Thursday","11am – 4pm"],["Friday","11am – 4pm"]]
+        .map(function (row) {
+          return (
+            "<tr><th style=\"text-align:left;padding:8px 7px;border:1px solid rgba(23,50,71,.12);min-width:0;overflow-wrap:break-word\">" +
+            esc(row[0]) +
+            "</th><td style=\"padding:8px 7px;border:1px solid rgba(23,50,71,.12);min-width:0;overflow-wrap:break-word\">" +
+            esc(row[1]) +
+            "</td><td style=\"padding:8px 7px;border:1px solid rgba(23,50,71,.12);min-width:0;overflow-wrap:break-word\">SwimFarm</td></tr>"
+          );
+        })
+        .join("") +
+      "</tbody></table></div>" +
       '<p class="dc-info__lead">' +
-      "The Day Centre is a structured weekday at SwimFarm — circle time, classroom or vocational work, gym, swimming, life skills, and peer activities. Support is usually 1:1 on site (2:1 for transitions, personal care, or community trips). We agree hours, familiarisation, and funding with the office before offering a place — not through online booking." +
+      "The Day Centre is a structured weekday at SwimFarm — circle time, classroom or vocational work, gym, swimming, life skills, and peer activities. Support is usually 1:1 on site (2:1 for transitions, personal care, or community trips). We agree hours, familiarisation, and funding with the office before offering a place — not through online booking. <a href=\"/timetable#dc\">Full Day Centre timetable 2026/27</a>." +
       "</p>" +
       '<p class="dc-info__label">A typical day may include</p>' +
       '<ul class="dc-info__list">' +

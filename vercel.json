@@ -119,6 +119,8 @@
     { "source": "/bookingportal/", "destination": "/bookingportal.html" },
     { "source": "/splash", "destination": "/splash.html" },
     { "source": "/splash/", "destination": "/splash.html" },
+    { "source": "/timetable", "destination": "/timetable.html" },
+    { "source": "/timetable/", "destination": "/timetable.html" },
     { "source": "/booking-portal", "destination": "/bookingportal.html" },
     { "source": "/bookingservice", "destination": "/bookingportal.html" },
     { "source": "/bookingservice/", "destination": "/bookingportal.html" },
