@@ -226,6 +226,19 @@
       // Autumn (and any day outside summer dated window): project Services standing only.
       return { floor: bounds.from, through: bounds.through };
     }
+    function portalTermStaffHasShiftDateMapEntry(staffId){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      if(!t || !t.termStaffShiftDatesByProfileKey || typeof t.termStaffShiftDatesByProfileKey !== 'object'){
+        return false;
+      }
+      const map = t.termStaffShiftDatesByProfileKey;
+      const keys = typeof portalTermStaffProfileLookupKeys === 'function'
+        ? portalTermStaffProfileLookupKeys(staffId)
+        : [String(staffId || '').trim().toLowerCase()];
+      return keys.some(function(k){
+        return Object.prototype.hasOwnProperty.call(map, k);
+      });
+    }
     /** Worked day for term colours: clients that day, export done, or dated roster snap (not pool-only). */
     function portalStaffRosterAppliesOnCalendarDate(isoYmd, weekdayLong, staffId){
       const iso = normaliseIsoDate(isoYmd);
@@ -240,6 +253,12 @@
       if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)){
         const onShift = portalStaffHasShiftOnCalendarDate(iso, sid);
         if(onShift !== null) return onShift;
+      }
+      /* Autumn published hours: trust Staff Timetable dates over summer weekday snaps.
+       * Example: Luliya Thu 3 Sep — only Acton AS that day, and weekday AS starts Mon 7 Sep. */
+      if(portalTermStaffHasShiftDateMapEntry(sid)){
+        if(portalStaffHasDatedRowsForIso(iso, sid)) return true;
+        return portalStaffHasShiftOnCalendarDate(iso, sid) === true;
       }
       if(portalStaffHasDatedRowsForIso(iso, sid)) return true;
       if(portalStaffClientSessionsOnCalendarDate(iso, w, sid)) return true;
