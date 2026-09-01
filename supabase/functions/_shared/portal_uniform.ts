@@ -16,6 +16,143 @@ export const ISSUE_TYPES = new Set([
   "correction",
 ]);
 
+/** Day Centre + Bespoke Programme → 2 T-shirts + 2 sweatshirts. */
+const KIT_2X2_USERNAMES = new Set([
+  "john",
+  "godsway",
+  "emanuel",
+  "emmanuel",
+  "michelle",
+]);
+
+/** Zero-hours support examples → 1 T-shirt + 1 sweatshirt. */
+const KIT_1X1_USERNAMES = new Set([
+  "carlos",
+  "alex",
+  "berta",
+  "bismark",
+  "giuseppe",
+]);
+
+export type UniformKitLine = {
+  sku_code: string;
+  qty: number;
+  label: string;
+};
+
+export type UniformKitOffer = {
+  tier: "kit_2x2" | "kit_1x1" | "kit_none" | "kit_manager";
+  label: string;
+  summary: string;
+  lines: UniformKitLine[];
+  swimming_note?: string;
+};
+
+export function resolveUniformKitTier(
+  username: string,
+  staffRole: string,
+  appRole: string,
+  storedTier: string | null | undefined,
+): UniformKitOffer["tier"] {
+  const stored = String(storedTier || "").trim().toLowerCase();
+  if (
+    stored === "kit_2x2" ||
+    stored === "kit_1x1" ||
+    stored === "kit_none" ||
+    stored === "kit_manager"
+  ) {
+    return stored;
+  }
+
+  const u = String(username || "").trim().toLowerCase();
+  const staff = String(staffRole || "").trim().toLowerCase();
+  const app = String(appRole || "").trim().toLowerCase();
+
+  if (staff === "swimming") return "kit_none";
+  if (KIT_2X2_USERNAMES.has(u)) return "kit_2x2";
+  if (KIT_1X1_USERNAMES.has(u)) return "kit_1x1";
+  if (app === "admin" || app === "ceo" || staff === "manager" || staff === "admin") {
+    return "kit_manager";
+  }
+  if (staff === "support") return "kit_1x1";
+  return "kit_none";
+}
+
+export function uniformKitOfferForTier(
+  tier: UniformKitOffer["tier"],
+): UniformKitOffer {
+  if (tier === "kit_2x2") {
+    return {
+      tier,
+      label: "Day Centre / Bespoke (2 + 2)",
+      summary: "2 x Grey Mixed Cotton T-Shirts + 2 x Grey Knitted Sweatshirts",
+      lines: [
+        {
+          sku_code: "STAFF_GREY_TSHIRT",
+          qty: 2,
+          label: "Grey Mixed Cotton T-Shirts",
+        },
+        {
+          sku_code: "STAFF_GREY_SWEAT",
+          qty: 2,
+          label: "Grey Knitted Sweatshirts",
+        },
+      ],
+    };
+  }
+  if (tier === "kit_1x1") {
+    return {
+      tier,
+      label: "Support (zero hours) (1 + 1)",
+      summary: "1 x Grey Mixed Cotton T-Shirt + 1 x Grey Knitted Sweatshirt",
+      lines: [
+        {
+          sku_code: "STAFF_GREY_TSHIRT",
+          qty: 1,
+          label: "Grey Mixed Cotton T-Shirts",
+        },
+        {
+          sku_code: "STAFF_GREY_SWEAT",
+          qty: 1,
+          label: "Grey Knitted Sweatshirts",
+        },
+      ],
+    };
+  }
+  if (tier === "kit_manager") {
+    return {
+      tier,
+      label: "Manager / admin",
+      summary:
+        "No auto grey kit. Issue manager polos from stock when needed.",
+      lines: [],
+    };
+  }
+  return {
+    tier: "kit_none",
+    label: "Swimming / no grey kit",
+    summary: "No grey T-shirt or sweatshirt allocation.",
+    lines: [],
+    swimming_note:
+      "If swimming staff receive kit later, add swimming-specific items to uniform stock first.",
+  };
+}
+
+export function resolveUniformKitOffer(profile: {
+  username?: string | null;
+  staff_role?: string | null;
+  app_role?: string | null;
+  uniform_kit_tier?: string | null;
+}): UniformKitOffer {
+  const tier = resolveUniformKitTier(
+    String(profile.username || ""),
+    String(profile.staff_role || ""),
+    String(profile.app_role || ""),
+    profile.uniform_kit_tier,
+  );
+  return uniformKitOfferForTier(tier);
+}
+
 export function uniformCorsHeaders(): Record<string, string> {
   return portalAdminCorsHeaders();
 }

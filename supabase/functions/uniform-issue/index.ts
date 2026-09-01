@@ -10,11 +10,87 @@ import {
   UNIFORM_SIZES,
   adjustStockLevel,
   cleanText,
+  resolveUniformKitOffer,
   serviceClient,
   uniformCorsHeaders,
   uniformJson,
   verifyUniformActor,
 } from "../_shared/portal_uniform.ts";
+
+async function createOneIssue(
+  sb: ReturnType<NonNullable<typeof serviceClient>>,
+  opts: {
+    actor: { profileId: string; userId: string };
+    staffProfileId: string;
+    staffName: string;
+    itemId: string;
+    itemName: string;
+    size: string;
+    qty: number;
+    issueType: string;
+    reason: string | null;
+    chargeApplies: boolean;
+    chargeGbp: number;
+    issuerAckName: string;
+    staffAckName: string;
+    staffAckNow: boolean;
+  },
+) {
+  const now = new Date().toISOString();
+  const stock = await adjustStockLevel(
+    sb,
+    opts.itemId,
+    opts.size,
+    -opts.qty,
+  );
+  if (!stock.ok) return { ok: false as const, error: stock.error };
+
+  const insertRow: Record<string, unknown> = {
+    staff_profile_id: opts.staffProfileId,
+    item_id: opts.itemId,
+    size: opts.size,
+    qty: opts.qty,
+    issue_type: opts.issueType,
+    issued_at: now,
+    reason: opts.reason,
+    charge_applies: opts.chargeApplies,
+    charge_gbp: opts.chargeGbp,
+    issuer_staff_id: opts.actor.profileId,
+    issuer_ack_name: opts.issuerAckName,
+    issuer_ack_at: now,
+    status: "issued",
+  };
+  if (opts.staffAckNow && opts.staffAckName) {
+    insertRow.staff_ack_name = opts.staffAckName;
+    insertRow.staff_ack_at = now;
+  }
+
+  const { data: issue, error: insErr } = await sb
+    .from("uniform_issues")
+    .insert(insertRow)
+    .select("*")
+    .maybeSingle();
+
+  if (insErr || !issue) {
+    await adjustStockLevel(sb, opts.itemId, opts.size, opts.qty);
+    return {
+      ok: false as const,
+      error: insErr?.message || "issue_insert_failed",
+    };
+  }
+
+  await sb.from("uniform_stock_movements").insert({
+    item_id: opts.itemId,
+    size: opts.size,
+    delta: -opts.qty,
+    reason: "issue",
+    issue_id: issue.id,
+    actor_user_id: opts.actor.userId,
+    note: `${opts.issueType}: ${opts.itemName} ${opts.size} x${opts.qty} → ${opts.staffName}`,
+  });
+
+  return { ok: true as const, issue, current_qty: stock.current };
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -94,6 +170,107 @@ Deno.serve(async (req) => {
     return uniformJson(403, { ok: false, error: "issuer_role_required" });
   }
 
+  // Issue full recommended kit (2+2 or 1+1) for a staff member in one go.
+  if (action === "issue_recommended_kit" || action === "recommended_kit") {
+    const staffProfileId = cleanText(body.staff_profile_id || body.staffId, 64);
+    const size = cleanText(body.size, 8).toUpperCase();
+    const sizeSweat =
+      cleanText(body.size_sweat || body.sweat_size || body.size, 8).toUpperCase() ||
+      size;
+    const issuerAckName =
+      cleanText(body.issuer_ack_name || body.issuerAckName, 120) ||
+      cleanText(actor.fullName, 120);
+    const staffAckName = cleanText(body.staff_ack_name || body.staffAckName, 120);
+    const staffAckNow =
+      body.staff_ack_now === true ||
+      body.staffAckNow === true ||
+      Boolean(staffAckName);
+
+    if (!staffProfileId || !issuerAckName) {
+      return uniformJson(400, {
+        ok: false,
+        error: "staff_and_issuer_ack_required",
+      });
+    }
+    if (!UNIFORM_SIZES.has(size) || !UNIFORM_SIZES.has(sizeSweat)) {
+      return uniformJson(400, { ok: false, error: "invalid_size" });
+    }
+
+    const { data: staffRow } = await sb
+      .from("staff_profiles")
+      .select(
+        "id, full_name, username, staff_role, app_role, is_active, uniform_kit_tier",
+      )
+      .eq("id", staffProfileId)
+      .maybeSingle();
+    if (!staffRow || staffRow.is_active === false) {
+      return uniformJson(404, { ok: false, error: "staff_not_found" });
+    }
+
+    const kit = resolveUniformKitOffer(staffRow);
+    if (!kit.lines.length) {
+      return uniformJson(400, {
+        ok: false,
+        error: "no_recommended_kit",
+        kit,
+      });
+    }
+
+    const { data: catalog } = await sb
+      .from("uniform_items")
+      .select("id, name, sku_code, active")
+      .eq("active", true);
+    const bySku = new Map(
+      (catalog || []).map((i) => [String(i.sku_code), i]),
+    );
+
+    const created = [];
+    for (const line of kit.lines) {
+      const item = bySku.get(line.sku_code);
+      if (!item) {
+        return uniformJson(404, {
+          ok: false,
+          error: "item_not_found",
+          sku_code: line.sku_code,
+        });
+      }
+      const lineSize =
+        line.sku_code === "STAFF_GREY_SWEAT" ? sizeSweat : size;
+      const one = await createOneIssue(sb, {
+        actor,
+        staffProfileId,
+        staffName: String(staffRow.full_name || staffProfileId),
+        itemId: String(item.id),
+        itemName: String(item.name),
+        size: lineSize,
+        qty: line.qty,
+        issueType: "initial",
+        reason: `Recommended kit (${kit.label})`,
+        chargeApplies: false,
+        chargeGbp: 0,
+        issuerAckName,
+        staffAckName,
+        staffAckNow,
+      });
+      if (!one.ok) {
+        return uniformJson(409, {
+          ok: false,
+          error: one.error,
+          partial_issues: created,
+          kit,
+        });
+      }
+      created.push(one.issue);
+    }
+
+    return uniformJson(200, {
+      ok: true,
+      kit,
+      issues: created,
+      count: created.length,
+    });
+  }
+
   const staffProfileId = cleanText(body.staff_profile_id || body.staffId, 64);
   const itemId = cleanText(body.item_id || body.itemId, 64);
   const size = cleanText(body.size, 8).toUpperCase();
@@ -145,64 +322,30 @@ Deno.serve(async (req) => {
     return uniformJson(404, { ok: false, error: "item_not_found" });
   }
 
-  const now = new Date().toISOString();
-  const stock = await adjustStockLevel(sb, itemId, size, -qty);
-  if (!stock.ok) {
-    return uniformJson(409, { ok: false, error: stock.error });
-  }
-
-  const insertRow: Record<string, unknown> = {
-    staff_profile_id: staffProfileId,
-    item_id: itemId,
+  const one = await createOneIssue(sb, {
+    actor,
+    staffProfileId,
+    staffName: String(staffRow.full_name || staffProfileId),
+    itemId,
+    itemName: String(item.name),
     size,
     qty,
-    issue_type: issueType,
-    issued_at: now,
+    issueType,
     reason,
-    charge_applies: chargeApplies,
-    charge_gbp: chargeGbp,
-    issuer_staff_id: actor.profileId,
-    issuer_ack_name: issuerAckName,
-    issuer_ack_at: now,
-    status: "issued",
-  };
-  if (staffAckNow && staffAckName) {
-    insertRow.staff_ack_name = staffAckName;
-    insertRow.staff_ack_at = now;
-  }
-
-  const { data: issue, error: insErr } = await sb
-    .from("uniform_issues")
-    .insert(insertRow)
-    .select("*")
-    .maybeSingle();
-
-  if (insErr || !issue) {
-    // Best-effort rollback stock
-    await adjustStockLevel(sb, itemId, size, qty);
-    return uniformJson(500, {
-      ok: false,
-      error: insErr?.message || "issue_insert_failed",
-    });
-  }
-
-  const { error: movErr } = await sb.from("uniform_stock_movements").insert({
-    item_id: itemId,
-    size,
-    delta: -qty,
-    reason: "issue",
-    issue_id: issue.id,
-    actor_user_id: actor.userId,
-    note: `${issueType}: ${item.name} ${size} x${qty} → ${staffRow.full_name || staffProfileId}`,
+    chargeApplies,
+    chargeGbp,
+    issuerAckName,
+    staffAckName,
+    staffAckNow,
   });
-  if (movErr) {
-    console.error("[uniform-issue] movement insert failed", movErr);
+  if (!one.ok) {
+    return uniformJson(409, { ok: false, error: one.error });
   }
 
   return uniformJson(200, {
     ok: true,
-    issue,
-    current_qty: stock.current,
+    issue: one.issue,
+    current_qty: one.current_qty,
     item: { id: item.id, name: item.name, sku_code: item.sku_code },
   });
 });

@@ -8,6 +8,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   cleanText,
+  resolveUniformKitOffer,
   serviceClient,
   uniformCorsHeaders,
   uniformJson,
@@ -203,11 +204,54 @@ Deno.serve(async (req) => {
 
     const { data: dir } = await sb
       .from("staff_profiles")
-      .select("id, full_name, username, staff_role, app_role, is_active")
+      .select(
+        "id, full_name, username, staff_role, app_role, is_active, uniform_kit_tier",
+      )
       .eq("is_active", true)
       .order("full_name", { ascending: true })
       .limit(500);
-    staffDirectory = dir || [];
+    staffDirectory = (dir || []).map((s) => {
+      const kit = resolveUniformKitOffer(s);
+      return {
+        ...s,
+        kit_tier: kit.tier,
+        kit_label: kit.label,
+        kit_summary: kit.summary,
+        kit_lines: kit.lines,
+        kit_swimming_note: kit.swimming_note || null,
+      };
+    });
+  }
+
+  const { data: selfRow } = await sb
+    .from("staff_profiles")
+    .select("id, username, staff_role, app_role, uniform_kit_tier")
+    .eq("id", actor.profileId)
+    .maybeSingle();
+  const selfKit = resolveUniformKitOffer(
+    selfRow || {
+      username: actor.username,
+      staff_role: actor.staffRole,
+      app_role: actor.appRole,
+    },
+  );
+
+  // Optional: kit for a filtered staff member (admin selecting someone)
+  let filterKit = null;
+  if (staffFilter) {
+    const { data: filt } = await sb
+      .from("staff_profiles")
+      .select("id, username, staff_role, app_role, uniform_kit_tier, full_name")
+      .eq("id", staffFilter)
+      .maybeSingle();
+    if (filt) {
+      const k = resolveUniformKitOffer(filt);
+      filterKit = {
+        staff_profile_id: filt.id,
+        staff_name: filt.full_name,
+        ...k,
+      };
+    }
   }
 
   return uniformJson(200, {
@@ -228,13 +272,21 @@ Deno.serve(async (req) => {
       current: 113,
       note: "Baseline from office sheet at go-live (Opening 130 / Out 17 / Current 113).",
     },
+    allocation_policy: {
+      day_centre_bespoke: "2 T-shirts + 2 sweatshirts",
+      support_zero_hours: "1 T-shirt + 1 sweatshirt",
+      swimming: "None for now — swimming-specific items to be added to stock later if needed",
+    },
+    kit_offer: selfKit,
+    filter_kit_offer: filterKit,
     issues: issuesOut,
     movements,
     staff_directory: staffDirectory,
     default_initial: {
       sku_code: "STAFF_GREY_TSHIRT",
-      qty: 2,
-      label: "2 x Grey Mixed Cotton T-Shirts (size chosen at issue)",
+      qty: selfKit.lines[0]?.qty || 0,
+      label: selfKit.summary,
+      tier: selfKit.tier,
     },
   });
 });

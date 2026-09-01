@@ -251,25 +251,38 @@
       "</div>" +
       '<div class="card" style="padding:12px;border:1px solid #e6ecf4;border-radius:12px;min-width:0">' +
       "<h3 style=\"margin:0 0 8px;font-size:14px;color:#0b2a5b\">Issue to employee</h3>" +
-      '<p style="margin:0 0 8px;font-size:12px;color:#62758a;overflow-wrap:break-word">' +
+      '<p style="margin:0 0 8px;font-size:12px;color:#62758a;overflow-wrap:break-word" id="ufKitHint">' +
       esc(
-        (data.default_initial && data.default_initial.label) ||
-          "Default initial offer: 2 x grey T-shirts",
+        (data.allocation_policy &&
+          "Day Centre/Bespoke: " +
+            data.allocation_policy.day_centre_bespoke +
+            ". Support zero-hours: " +
+            data.allocation_policy.support_zero_hours +
+            ". Swimming: " +
+            data.allocation_policy.swimming) ||
+          "Select staff to see recommended kit.",
       ) +
       "</p>" +
       '<label style="display:block;font-size:12px;color:#62758a;margin-bottom:4px">Staff</label>' +
       '<select id="ufIssueStaff" style="width:100%;margin-bottom:8px;min-width:0">' +
       staffOptionsHtml(data.staff_directory) +
       "</select>" +
-      '<label style="display:block;font-size:12px;color:#62758a;margin-bottom:4px">Item</label>' +
+      '<div id="ufStaffKitBox" style="margin:0 0 10px;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e6ecf4;font-size:12px;color:#0b2a5b;overflow-wrap:break-word">Select a staff member to see their kit offer.</div>' +
+      '<button type="button" class="btn btn--sec" id="ufIssueKitBtn" style="margin-bottom:10px;width:100%">Issue recommended kit (same size)</button>' +
+      '<div class="grid2" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' +
+      '<div style="flex:1;min-width:80px"><label style="display:block;font-size:12px;color:#62758a;margin-bottom:4px">T-shirt size</label>' +
+      '<select id="ufIssueSize" style="width:100%">' +
+      sizeOptionsHtml("M") +
+      "</select></div>" +
+      '<div style="flex:1;min-width:80px"><label style="display:block;font-size:12px;color:#62758a;margin-bottom:4px">Sweat size</label>' +
+      '<select id="ufIssueSizeSweat" style="width:100%">' +
+      sizeOptionsHtml("M") +
+      "</select></div></div>" +
+      '<label style="display:block;font-size:12px;color:#62758a;margin-bottom:4px">Or single-line issue — Item</label>' +
       '<select id="ufIssueItem" style="width:100%;margin-bottom:8px;min-width:0">' +
       itemOptionsHtml(data.items, tshirtId(data.items)) +
       "</select>" +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' +
-      '<div style="flex:1;min-width:80px"><label style="display:block;font-size:12px;color:#62758a;margin-bottom:4px">Size</label>' +
-      '<select id="ufIssueSize" style="width:100%">' +
-      sizeOptionsHtml("M") +
-      "</select></div>" +
       '<div style="flex:1;min-width:80px"><label style="display:block;font-size:12px;color:#62758a;margin-bottom:4px">Qty</label>' +
       '<input id="ufIssueQty" type="number" min="1" max="20" value="2" style="width:100%;box-sizing:border-box" /></div></div>' +
       '<label style="display:block;font-size:12px;color:#62758a;margin-bottom:4px">Type</label>' +
@@ -455,6 +468,15 @@
       ", Open issued " +
       t.issued_open +
       "." +
+      (data.allocation_policy
+        ? "<br><strong>Allocation:</strong> Day Centre/Bespoke " +
+          esc(data.allocation_policy.day_centre_bespoke) +
+          "; support zero-hours " +
+          esc(data.allocation_policy.support_zero_hours) +
+          "; swimming " +
+          esc(data.allocation_policy.swimming) +
+          "."
+        : "") +
       "</div>" +
       '<div class="toolbar" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center">' +
       '<button type="button" class="btn btn--sm' +
@@ -557,6 +579,69 @@
             return;
           }
           toast("Issued. Stock now " + res.current_qty, "ok");
+          load(root);
+        });
+      });
+    }
+
+    function refreshStaffKitHint() {
+      var sel = root.querySelector("#ufIssueStaff");
+      var box = root.querySelector("#ufStaffKitBox");
+      var kitBtn = root.querySelector("#ufIssueKitBtn");
+      if (!sel || !box || !state.data) return;
+      var id = sel.value || "";
+      var hit = (state.data.staff_directory || []).find(function (s) {
+        return String(s.id) === String(id);
+      });
+      if (!hit) {
+        box.textContent = "Select a staff member to see their kit offer.";
+        if (kitBtn) kitBtn.disabled = true;
+        return;
+      }
+      box.textContent =
+        (hit.full_name || hit.username || "Staff") +
+        ": " +
+        (hit.kit_label || "—") +
+        " — " +
+        (hit.kit_summary || "No auto kit") +
+        (hit.kit_swimming_note ? " (" + hit.kit_swimming_note + ")" : "");
+      if (kitBtn) {
+        kitBtn.disabled = !(hit.kit_lines && hit.kit_lines.length);
+      }
+      var qtyEl = root.querySelector("#ufIssueQty");
+      if (qtyEl && hit.kit_lines && hit.kit_lines[0]) {
+        qtyEl.value = String(hit.kit_lines[0].qty || 1);
+      }
+    }
+
+    var staffSel = root.querySelector("#ufIssueStaff");
+    if (staffSel) {
+      staffSel.addEventListener("change", refreshStaffKitHint);
+      refreshStaffKitHint();
+    }
+
+    var kitBtn = root.querySelector("#ufIssueKitBtn");
+    if (kitBtn) {
+      kitBtn.addEventListener("click", function () {
+        var staffAck = String(
+          (root.querySelector("#ufStaffAck") || {}).value || "",
+        ).trim();
+        kitBtn.disabled = true;
+        edgePost("uniform-issue", {
+          action: "issue_recommended_kit",
+          staff_profile_id: (root.querySelector("#ufIssueStaff") || {}).value,
+          size: (root.querySelector("#ufIssueSize") || {}).value,
+          size_sweat: (root.querySelector("#ufIssueSizeSweat") || {}).value,
+          issuer_ack_name: (root.querySelector("#ufIssuerAck") || {}).value,
+          staff_ack_name: staffAck || undefined,
+          staff_ack_now: !!staffAck,
+        }).then(function (res) {
+          kitBtn.disabled = false;
+          if (!res.ok) {
+            toast(res.error || "Recommended kit issue failed", "err");
+            return;
+          }
+          toast("Recommended kit issued (" + (res.count || 0) + " lines).", "ok");
           load(root);
         });
       });

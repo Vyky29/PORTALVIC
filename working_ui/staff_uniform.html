@@ -73,7 +73,7 @@
   <div class="page">
     <a class="back" href="staff_dashboard.html">Back to dashboard</a>
     <h1>My Uniform</h1>
-    <p class="intro">Your issued uniform record. Confirm receipt with your typed full name. Initial allocation is normally 2 grey T-shirts (size chosen when issued).</p>
+    <p class="intro">Your issued uniform record. Confirm receipt with your typed full name. Allocation depends on role: Day Centre / Bespoke = 2 T-shirts + 2 sweatshirts; support (zero hours) = 1 + 1; swimming = none for now.</p>
     <div id="msg" hidden></div>
     <div id="app"><p class="muted">Loading…</p></div>
   </div>
@@ -207,17 +207,31 @@
         issueManager =
           `<div class="card">` +
           `<h2>Issue to staff (manager / TL)</h2>` +
-          `<p class="muted" style="margin:0 0 8px">Default offer: ${esc(defaultLabel)}</p>` +
+          `<p class="muted" style="margin:0 0 8px">Uses each person's kit offer (2+2 / 1+1 / none). Swimming has no grey kit yet.</p>` +
           `<label>Staff</label><select id="mgrStaff"><option value="">Select</option>${staffOpts}</select>` +
-          `<label>Item</label><select id="mgrItem">${itemOpts}</select>` +
-          `<div class="grid2"><div><label>Size</label><select id="mgrSize">` +
+          `<div id="mgrKitHint" class="muted" style="margin:6px 0 8px;overflow-wrap:break-word">Select staff to see kit.</div>` +
+          `<div class="grid2"><div><label>T-shirt size</label><select id="mgrSize">` +
           ["S", "M", "L", "XL", "XXL"]
             .map(
               (s) =>
                 `<option value="${s}"${s === "M" ? " selected" : ""}>${s}</option>`,
             )
             .join("") +
-          `</select></div><div><label>Qty</label><input id="mgrQty" type="number" min="1" max="20" value="2" /></div></div>` +
+          `</select></div><div><label>Sweat size</label><select id="mgrSizeSweat">` +
+          ["S", "M", "L", "XL", "XXL"]
+            .map(
+              (s) =>
+                `<option value="${s}"${s === "M" ? " selected" : ""}>${s}</option>`,
+            )
+            .join("") +
+          `</select></div></div>` +
+          `<label>Your typed name (issuer)</label>` +
+          `<input id="mgrIssuerAck" type="text" value="${esc(actor.full_name || "")}" />` +
+          `<button type="button" class="btn" id="mgrIssueKitBtn">Issue recommended kit</button>` +
+          `<hr style="border:0;border-top:1px solid #e6ecf4;margin:14px 0" />` +
+          `<p class="muted" style="margin:0 0 8px">Or single-line issue:</p>` +
+          `<label>Item</label><select id="mgrItem">${itemOpts}</select>` +
+          `<div class="grid2"><div><label>Qty</label><input id="mgrQty" type="number" min="1" max="20" value="2" /></div></div>` +
           `<label>Type</label><select id="mgrType">` +
           `<option value="initial">Initial</option><option value="replacement">Replacement</option>` +
           `<option value="size_change">Size change</option><option value="correction">Correction</option></select>` +
@@ -225,15 +239,23 @@
           `<label style="display:flex;align-items:center;gap:8px;margin-top:10px">` +
           `<input type="checkbox" id="mgrCharge" style="width:auto" /> £5 charge applies (employee lost/damaged)</label>` +
           `<p class="charge-note">Work-duty damage: leave charge unchecked (company replaces).</p>` +
-          `<label>Your typed name (issuer)</label>` +
-          `<input id="mgrIssuerAck" type="text" value="${esc(actor.full_name || "")}" />` +
-          `<button type="button" class="btn" id="mgrIssueBtn">Issue</button></div>`;
+          `<button type="button" class="btn btn--sec" id="mgrIssueBtn">Issue one line</button></div>`;
       }
 
       const open = issues.filter((i) => i.status === "issued");
       const closed = issues.filter((i) => i.status !== "issued");
 
       app.innerHTML =
+        `<div class="card"><h2>Your allocation</h2>` +
+        `<p class="muted" style="margin:0;overflow-wrap:break-word"><strong>${esc(
+          (data.kit_offer && data.kit_offer.label) || "Kit",
+        )}</strong> — ${esc(
+          (data.kit_offer && data.kit_offer.summary) || "See Admin for issue.",
+        )}` +
+        (data.kit_offer && data.kit_offer.swimming_note
+          ? `<br>${esc(data.kit_offer.swimming_note)}`
+          : "") +
+        `</p></div>` +
         `<div class="card"><h2>Issued to you</h2>` +
         (open.length
           ? open.map(renderIssue).join("")
@@ -270,6 +292,48 @@
           await refresh(sb);
         });
       });
+
+      const mgrStaff = document.getElementById("mgrStaff");
+      const mgrKitHint = document.getElementById("mgrKitHint");
+      const mgrIssueKitBtn = document.getElementById("mgrIssueKitBtn");
+      function refreshMgrKit() {
+        if (!mgrStaff || !mgrKitHint) return;
+        const hit = (data.staff_directory || []).find(
+          (s) => String(s.id) === String(mgrStaff.value || ""),
+        );
+        if (!hit) {
+          mgrKitHint.textContent = "Select staff to see kit.";
+          if (mgrIssueKitBtn) mgrIssueKitBtn.disabled = true;
+          return;
+        }
+        mgrKitHint.textContent = `${hit.kit_label || "—"} — ${hit.kit_summary || "No auto kit"}`;
+        if (mgrIssueKitBtn) {
+          mgrIssueKitBtn.disabled = !(hit.kit_lines && hit.kit_lines.length);
+        }
+      }
+      if (mgrStaff) {
+        mgrStaff.addEventListener("change", refreshMgrKit);
+        refreshMgrKit();
+      }
+      if (mgrIssueKitBtn) {
+        mgrIssueKitBtn.addEventListener("click", async () => {
+          mgrIssueKitBtn.disabled = true;
+          const res = await edgePost(sb, "uniform-issue", {
+            action: "issue_recommended_kit",
+            staff_profile_id: (document.getElementById("mgrStaff") || {}).value,
+            size: (document.getElementById("mgrSize") || {}).value,
+            size_sweat: (document.getElementById("mgrSizeSweat") || {}).value,
+            issuer_ack_name: (document.getElementById("mgrIssuerAck") || {}).value,
+          });
+          mgrIssueKitBtn.disabled = false;
+          if (!res.ok) {
+            showMsg(res.error || "Kit issue failed", "err");
+            return;
+          }
+          showMsg("Recommended kit issued.", "ok");
+          await refresh(sb);
+        });
+      }
 
       const mgrBtn = document.getElementById("mgrIssueBtn");
       if (mgrBtn) {
