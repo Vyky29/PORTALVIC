@@ -660,8 +660,31 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 }
 
 .portal-pnlog-composer__tpl-len {
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 11px;
+  line-height: 1.2;
+}
+
+.portal-pnlog-composer__bar--tpl {
+  align-items: center;
+  gap: 6px;
+  margin-top: 0;
+}
+
+.portal-pnlog-composer__bar--tpl .portal-pnlog-composer__tpl-len {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.portal-pnlog-composer__bar--tpl .portal-pnlog-composer__status:empty {
+  display: none;
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+.portal-pnlog-composer__bar--tpl .portal-pnlog-composer__status:not(:empty) {
+  flex: 1 1 100%;
+  order: -1;
 }
 
 .portal-pnlog-composer__tpl-len.is-over {
@@ -828,8 +851,8 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 }
 
 .portal-pnlog-composer--tpl {
-  gap: 4px;
-  padding: 8px 10px 10px;
+  gap: 2px;
+  padding: 8px 10px 8px;
 }
 .portal-pnlog-composer--tpl .portal-pnlog-composer__to {
   display: none;

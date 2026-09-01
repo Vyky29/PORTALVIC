@@ -1971,8 +1971,10 @@
     var afterTextarea = needsTemplate
       ? '<div class="portal-pnlog-composer__tpl-fixed" id="portalPnlogTplSuffix" aria-hidden="true">' +
         esc(String(coldTpl.suffix || "").trim()) +
-        "</div></div>" +
-        '<p id="portalPnlogTplLen" class="portal-pnlog-composer__tpl-len muted"></p>'
+        "</div></div>"
+      : "";
+    var tplLenHtml = needsTemplate
+      ? '<p id="portalPnlogTplLen" class="portal-pnlog-composer__tpl-len muted"></p>'
       : "";
     return (
       '<div class="portal-pnlog-composer' +
@@ -2025,7 +2027,10 @@
       esc(draft) +
       "</textarea>" +
       afterTextarea +
-      '<div class="portal-pnlog-composer__bar">' +
+      '<div class="portal-pnlog-composer__bar' +
+      (needsTemplate ? " portal-pnlog-composer__bar--tpl" : "") +
+      '">' +
+      tplLenHtml +
       '<p id="portalPnlogComposerStatus" class="portal-pnlog-composer__status muted" role="status"></p>' +
       '<button type="button" class="btn btn--pri portal-pnlog-composer__send" id="portalPnlogComposerSend"' +
       disabled +
