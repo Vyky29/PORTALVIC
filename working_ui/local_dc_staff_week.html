@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901b</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901c</title>
   <style>
     :root {
       --ink: #173247;
@@ -122,6 +122,13 @@
     .card--manager { border-left-color: #64748b; }
     .card--as { border-left-color: #0369a1; }
     .card--weekend { border-left-color: #7c3aed; }
+    .card--open {
+      background: #fef9c3;
+      border-color: #fde68a;
+      border-left-color: #ca8a04;
+    }
+    .card--open .card__name { color: #854d0e; }
+    .card--open .card__band { color: #a16207; }
     .card__band {
       display: block;
       font-size: 0.68rem;
@@ -159,7 +166,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901b</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901c</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026
     (bank holiday). Tue–Fri = Day Centre six. Sat = only staff with a book (Matthias off Autumn).
@@ -171,7 +178,7 @@
 
   <script src="/portal/portal_roster_canonical.js?v=20260901-weekend-as-victor-off"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-roberto-wed-fadi-only"></script>
-  <!-- local board bump: 20260901-sat-sun-mon-staff -->
+  <!-- local board bump: 20260901c-open-slots -->
   <script>
 (function () {
   var STAFF = ["Roberto", "Luliya", "Michelle", "Victor", "Raul", "Youssef"];
@@ -219,12 +226,13 @@
     saturday: {
       Youssef: [
         { name: "Emani", time: "10.30 to 11", band: "Weekend", area: "Acton · Aquatic" },
+        { name: "No participant", time: "11 to 12", band: "Weekend", area: "Acton · Aquatic" },
         { name: "Saaib", time: "12 to 12.30", band: "Weekend", area: "Acton · Aquatic" },
       ],
     },
     sunday: {
       Roberto: [
-        { name: "Yusuf Ah", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "Yusuf Ah", time: "9 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Jack S", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Gabriel", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Arthur Mo", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
@@ -240,6 +248,7 @@
         { name: "Arthur Ma", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
         { name: "Cyrus", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
         { name: "Aydaan Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
+        { name: "No participant", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Zakariya", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
         { name: "Faris", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
       ],
@@ -248,6 +257,7 @@
         { name: "Adam Ab", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Cyrus", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Arthur Ma", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "No participant", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Aydaan Ah", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
       ],
       Godsway: [
@@ -470,6 +480,14 @@
     return out;
   }
 
+  function isOpenSlotName(name) {
+    var n = String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    return n === "no participant" || n === "closed" || n === "open";
+  }
+
   function renderCard(c, dayKey) {
     var segs;
     if (c.dc) {
@@ -488,11 +506,14 @@
         );
       })
       .join("");
-    var tone = c.dc
-      ? cardAccentClass(c.name)
-      : c.band === "Weekend"
-        ? "card--weekend"
-        : "card--as";
+    var open = isOpenSlotName(c.name);
+    var tone = open
+      ? "card--open"
+      : c.dc
+        ? cardAccentClass(c.name)
+        : c.band === "Weekend"
+          ? "card--weekend"
+          : "card--as";
     return (
       '<div class="card ' +
       esc(tone) +
