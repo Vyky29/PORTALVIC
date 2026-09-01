@@ -2800,14 +2800,14 @@
       state.contactDirectory = mergeContactDirectories(liveDir, localDir);
       state.threads = enrichThreadsWithProfilePhones(buildWhatsAppThreads(state.timeline));
       if (statusEl) {
-        var note = state.timeline.length >= FETCH_LIMIT ? "Showing latest " + FETCH_LIMIT + " messages." : "";
         if (!state.inboundAvailable) {
-          note =
-            (note ? note + " " : "") +
+          statusEl.textContent =
             "Inbound replies not available yet — apply DB migration and connect Meta webhook.";
+          statusEl.className = "portal-forms-status";
+        } else {
+          statusEl.textContent = "";
+          statusEl.className = "portal-forms-status";
         }
-        statusEl.textContent = note;
-        statusEl.className = "portal-forms-status";
       }
       renderChat(true);
     } catch (e) {
