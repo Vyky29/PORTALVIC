@@ -69,7 +69,8 @@ def _pairs(staff: str, time_range: str, venue: str) -> tuple[str, str, str]:
 
 def monday_template() -> list[tuple[str, str, str]]:
     return [
-        _pairs("Roberto", "11-1", "SwimFarm"),
+        # Roberto DC part-time 21h band: Mon–Wed 11-3, Thu 12.15-3.15, Fri 11-3 + Fri Hub 4.15-6.15.
+        _pairs("Roberto", "11-3", "SwimFarm"),
         _pairs("Emanuel", "11-1", "SwimFarm"),
         _pairs("Fadi", "1-3", "SwimFarm"),
         _pairs("Michelle", "10.45-4.15", "SwimFarm"),
@@ -98,6 +99,7 @@ def tuesday_template() -> list[tuple[str, str, str]]:
         _pairs("Victor", "12.30-3", "SwimFarm"),  # Fadi
         _pairs("Victor", "3.30-5", "SwimFarm"),  # Cyrus bespoke (Thu → Tue)
         _pairs("Raul", "12.30-3", "SwimFarm"),  # Fadi
+        _pairs("Roberto", "4-6.30", "Acton"),
         _pairs("Luliya", "4-6.30", "Acton"),
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Javier", "4-6.30", "Acton"),
@@ -107,8 +109,8 @@ def tuesday_template() -> list[tuple[str, str, str]]:
 
 def wednesday_template() -> list[tuple[str, str, str]]:
     return [
-        # Roberto no Acton Wed → DC with Emanuel through 4.
-        _pairs("Roberto", "11-4", "SwimFarm"),  # Emanuel
+        # Roberto DC 11-3 (no Wed Acton).
+        _pairs("Roberto", "11-3", "SwimFarm"),
         _pairs("Michelle", "10.45-4.15", "SwimFarm"),
         _pairs("Luliya", "11-3", "SwimFarm"),  # Ikram
         _pairs("Victor", "12.30-3", "SwimFarm"),  # Fadi
@@ -139,7 +141,7 @@ def thursday_template() -> list[tuple[str, str, str]]:
 
 def friday_template() -> list[tuple[str, str, str]]:
     return [
-        _pairs("Roberto", "11-1", "SwimFarm"),
+        _pairs("Roberto", "11-3", "SwimFarm"),
         _pairs("Emanuel", "11-1", "SwimFarm"),
         _pairs("Fadi", "1-3", "SwimFarm"),
         _pairs("Michelle", "10.45-4.15", "SwimFarm"),
@@ -150,9 +152,8 @@ def friday_template() -> list[tuple[str, str, str]]:
         # Youssef DC 12.30–16:00 (Fadi + Emanuel) then Acton aquatic (not Roberto).
         _pairs("Youssef", "12.30-4", "SwimFarm"),
         _pairs("Youssef", "4-6", "Acton"),
-        # Fri Hub Bespoke: Emanuel + Victor with Tinashe (Youssef is at Acton).
-        _pairs("Emanuel", "4.15-6.15", "SwimFarm"),
-        _pairs("Victor", "4.15-6.15", "SwimFarm"),
+        # Fri Hub Bespoke in Roberto's 21h DC contract (Tinashe).
+        _pairs("Roberto", "4.15-6.15", "SwimFarm"),
     ]
 
 
@@ -164,7 +165,7 @@ def sunday_template() -> list[tuple[str, str, str]]:
     return [
         _pairs("Aurora", "9-3", "SwimFarm"),
         _pairs("Javier", "9-3", "SwimFarm"),
-        _pairs("Roberto", "8.45-3.15", "SwimFarm"),
+        _pairs("Roberto", "8.45-3.45", "SwimFarm"),
         _pairs("Berta", "9.15-2.15", "SwimFarm"),
         _pairs("Emanuel", "9.15-2.15", "SwimFarm"),
         _pairs("Godsway", "9.15-2.15", "SwimFarm"),

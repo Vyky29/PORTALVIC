@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901h</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901i</title>
   <style>
     :root {
       --ink: #173247;
@@ -180,17 +180,18 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901h · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901i · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026
     (bank holiday). Autumn Term 2026 standing (not Summer). Tue-Fri = Day Centre + after school.
-    Sat = Youssef Acton 9.30-1. Sun = Multi/aquatic + Westway climbing (Alex 10-2 · Carlos 10-4).
+    Roberto DC PT 21h: Mon-Wed 11-3, Thu 12.15-3.15, Fri 11-3 + Fri Hub Tinashe 4.15-6.15.
+    Roberto AS: Mon/Tue/Thu Acton 4-6.30; Sun Multi 8.45-3.45. Sat = Youssef Acton 9.30-1.
     Yellow = open (no participant). Grey = closed. Blue = trial. No staff login needed.
   </p>
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260901-fri-youssef-acton"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260901-roberto-21h-pt"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-roberto-wed-fadi-only"></script>
   <!-- local board bump: 20260901c-open-slots -->
   <script>
@@ -228,9 +229,9 @@
     tuesday: "Autumn DC + Acton after school",
     wednesday: "Autumn DC + Acton / Northolt / Hub",
     thursday: "Autumn DC + Acton after school",
-    friday: "Autumn DC + Acton (Youssef) + Hub (Victor/Emanuel)",
+    friday: "Autumn DC + Acton (Youssef) + Hub Tinashe (Roberto)",
     saturday: "Autumn weekend · Youssef Acton 9.30-1",
-    sunday: "Autumn weekend · Multi / aquatic + Westway climbing",
+    sunday: "Autumn weekend · Multi 8.45-3.45 (Roberto) + climbing",
     monday: "Autumn DC + after school / Hub (Victor OFF)",
   };
 
@@ -238,7 +239,7 @@
    * Standing weekend + weekday after-school (local preview; not DC board).
    * Saturday: Youssef Acton 9.30-1 (Matthias left → open 11-12).
    * Sunday: Autumn climbing Alex 10-2 / Carlos 10-4; Multi remap Godsway/Emanuel.
-   * Fri Acton: Youssef (Adam Pi / Amaar) — not Roberto. Hub Fri: Emanuel + Victor.
+   * Fri Acton: Youssef (Adam Pi / Amaar). Fri Hub Tinashe: Roberto (21h PT).
    */
   var EXTRA = {
     tuesday: {
@@ -342,16 +343,13 @@
       ],
     },
     friday: {
-      /* Acton afternoon = Youssef (not Roberto). Roberto ends after DC. */
+      /* Acton afternoon = Youssef. Roberto Fri Hub Bespoke (Tinashe) in 21h PT. */
+      Roberto: [
+        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+      ],
       Youssef: [
         { name: "Adam Pi", time: "4 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Amaar Ah", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
-      ],
-      Victor: [
-        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
-      ],
-      Emanuel: [
-        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
     },
     saturday: {
@@ -488,7 +486,7 @@
     tuesday: ["Javier", "Aurora"],
     wednesday: ["Javier", "Berta", "Dan", "Godsway", "John", "Emanuel"],
     thursday: ["Javier", "Aurora"],
-    friday: ["Emanuel"],
+    friday: ["Roberto"],
     monday: ["Dan", "Godsway", "John", "Emanuel"],
   };
   var MONDAY_EXTRA_ORDER = WEEKDAY_EXTRA_ORDER.monday;

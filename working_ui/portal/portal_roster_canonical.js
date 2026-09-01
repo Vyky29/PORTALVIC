@@ -42,8 +42,8 @@
    * Order = board column order. Times match MADRE-style "11 to 1" / "12.30 to 3".
    * Cyrus (Victor Tue 3.30-5) is Bespoke — not listed here; see CYRUS_BESPOKE_ROW.
    * Youssef Acton days (Mon/Thu): DC ends 15:00 then pool from 16:00.
-   * Friday: DC through 16:00 (Fadi + Emanuel); Youssef then Acton aquatic (not Roberto);
-   * Hub Bespoke 16:15–18:15 = Emanuel + Victor.
+   * Friday: Roberto DC 11-3 then Hub Bespoke Tinashe 4.15-6.15 (in his 21h PT band);
+   * Youssef DC through 16:00 then Acton aquatic.
    */
   var AUTUMN_DAY_CENTRE_BOARD = {
     monday: [
@@ -123,7 +123,7 @@
       },
     ],
     thursday: [
-      { staff: "Roberto", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
+      { staff: "Roberto", clients: [{ name: "Fadi", time: "12.15 to 3.15" }] },
       { staff: "Youssef", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
     ],
     friday: [
@@ -174,8 +174,8 @@
 
   /**
    * Autumn 26/27 Hub afternoon Bespoke — same staff shifts as the Autumn rota
-   * (Godsway / John / Emanuel Mon+Wed 4.15–6.15; Fri Emanuel + Victor; Tinashe booked).
-   * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30–5 only).
+   * (Godsway / John / Emanuel Mon+Wed 4.15-6.15; Fri Roberto; Tinashe booked).
+   * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30-5 only).
    */
   var AUTUMN_BESPOKE_HUB_ROWS = [
     {
@@ -241,17 +241,7 @@
     {
       client_name: "Tinashe",
       day: "Friday",
-      instructors: "EMANUEL",
-      service: "Bespoke Programme",
-      area: "Hub Room",
-      time_slot: "4.15 to 6.15",
-      venue: "SwimFarm",
-      session_date: "2026-07-17",
-    },
-    {
-      client_name: "Tinashe",
-      day: "Friday",
-      instructors: "VICTOR",
+      instructors: "ROBERTO",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.15 to 6.15",
@@ -777,7 +767,7 @@
    * - Roberto Wed DC: Emanuel 11–12.30 + Fadi 12.30–3 (ends 15:00; no Emanuel 3–4)
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
    * - Fri DC: Victor+Raul end 15:00; Michelle+Luliya Ikram to 16:00; Youssef Emanuel 15–16
-   * - Acton Fri: Roberto → Youssef (Adam Pi / Amaar); Hub Fri: Emanuel + Victor only
+   * - Acton Fri: Roberto → Youssef (Adam Pi / Amaar); Hub Fri Tinashe: Roberto (21h PT band)
    * - Victor OFF Mondays (DC)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    */
