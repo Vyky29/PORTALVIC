@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     ok: false,
     error: "report_paid_disabled",
     message:
-      "Please message the office after you pay. They will confirm when the transfer appears — no need to tap I've paid in the portal.",
+      "Please message the office (Messages, WhatsApp or email) after you pay. They will confirm when the transfer appears - no I've paid button in the portal.",
   });
 
   const now = new Date().toISOString();

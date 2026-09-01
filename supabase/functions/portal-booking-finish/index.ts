@@ -1,5 +1,6 @@
 // portal-booking-finish — public finish-booking after Accept (magic token).
-// Actions: load | save_choices | create_invoice | create_stripe_checkout | confirm_paid
+// Actions: load | save_choices | create_invoice | create_stripe_checkout
+// (confirm_paid disabled — parent messages/emails office after bank transfer)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -46,7 +47,6 @@ import {
   bookingPayHoldExpiresAt,
   runBookingPayHoldMaintenance,
 } from "../_shared/portal_booking_pay_hold.ts";
-import { notifyOfficeBankPaymentReported } from "../_shared/portal_booking_lead_office_notify.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -1063,106 +1063,12 @@ Deno.serve(async (req) => {
   }
 
   if (action === "confirm_paid") {
-    const scopePaid = parseBookingScope(body.booking_scope) || savedScope;
-    const planPaid =
-      parseNewClientPayPlan(body.pay_plan) ||
-      parseNewClientPayPlan(token.pay_plan) ||
-      parseNewClientPayPlan(savedChoices.pay_plan);
-    if (scopePaid === "trial_session" && planPaid === "stripe_instant") {
-      return json(400, {
-        ok: false,
-        error: "trial_stripe_required",
-        message: "Card / Apple Pay trials confirm automatically after Stripe payment.",
-      });
-    }
-    if (token.status === "completed") {
-      return json(200, {
-        ok: true,
-        completed: true,
-        message: "Already completed. Check email / WhatsApp for your PIN.",
-      });
-    }
-    if (token.status === "awaiting_office_payment") {
-      return json(200, {
-        ok: true,
-        completed: false,
-        awaiting_office: true,
-        status: "awaiting_office_payment",
-        message:
-          "Thanks — we already have your payment report. The office will confirm it and then send your Parent Portal PIN.",
-      });
-    }
-    if (!token.invoice_share_id) {
-      return json(400, { ok: false, error: "invoice_required" });
-    }
-    const { data: inv } = await admin
-      .from("portal_parent_invoice_share")
-      .select("id, payment_status, invoice_number, amount_gbp")
-      .eq("id", token.invoice_share_id)
-      .maybeSingle();
-    if (!inv) return json(404, { ok: false, error: "invoice_not_found" });
-
-    const now = new Date().toISOString();
-    const paymentRef = clean(body.payment_ref, 80) || null;
-    // Parent self-report only — do NOT mark invoice paid and do NOT issue PIN.
-    // PIN is sent after office validates payment (admin mark paid / Tide / GoCardless).
-    await admin
-      .from("portal_parent_invoice_share")
-      .update({
-        payment_status: "pending_confirmation",
-        parent_reported_paid_at: now,
-        parent_reported_method: "bank_transfer",
-        parent_reported_ref: paymentRef,
-        updated_at: now,
-      })
-      .eq("id", token.invoice_share_id);
-
-    if (reservation?.id) {
-      const holdExtended = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
-      await admin
-        .from("portal_booking_slot_reservations")
-        .update({
-          status: "awaiting_payment",
-          hold_expires_at: holdExtended,
-          updated_at: now,
-          notes: String(reservation.notes || "")
-            .replace(/\|?pay_hold_30m/gi, "")
-            .concat("|parent_reported_pending_admin")
-            .slice(0, 500),
-        })
-        .eq("id", String(reservation.id));
-    }
-
-    await admin
-      .from("portal_booking_completion_tokens")
-      .update({
-        status: "awaiting_office_payment",
-        updated_at: now,
-      })
-      .eq("id", token.id);
-
-    try {
-      await notifyOfficeBankPaymentReported({
-        invoiceShareId: String(token.invoice_share_id),
-        invoiceNumber: clean(inv.invoice_number, 40) || null,
-        participantName: String(doc.participant_name || ""),
-        parentName: String(doc.parent_name || ""),
-        parentEmail: String(doc.parent_email || ""),
-        amountGbp: Number(inv.amount_gbp) || 0,
-        isTrial: scopePaid === "trial_session",
-        paymentRef,
-      });
-    } catch (e) {
-      console.warn("[portal-booking-finish] bank report office notify", e);
-    }
-
-    return json(200, {
-      ok: true,
-      completed: false,
-      awaiting_office: true,
-      status: "awaiting_office_payment",
+    // No in-app "I've paid" button — parent WhatsApps / emails / Messages the office.
+    return json(410, {
+      ok: false,
+      error: "confirm_paid_disabled",
       message:
-        "Thanks — payment reported. The office will confirm it and then send your Parent Portal PIN by email / WhatsApp.",
+        "After you transfer, WhatsApp or email the office that you have paid (photo optional). The office will confirm and then send your Parent Portal PIN.",
     });
   }
 

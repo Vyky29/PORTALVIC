@@ -578,6 +578,8 @@ export async function notifyOfficeBankPaymentReported(opts: {
   amountGbp: number;
   isTrial?: boolean;
   paymentRef?: string | null;
+  /** When true, parent messaged (WhatsApp / Messages / email) instead of an in-app button. */
+  viaParentMessage?: boolean;
 }): Promise<void> {
   const invNo = String(opts.invoiceNumber || "").trim() || opts.invoiceShareId.slice(0, 8);
   const participant = String(opts.participantName || "").trim() || "Participant";
@@ -586,19 +588,24 @@ export async function notifyOfficeBankPaymentReported(opts: {
   const amount = Number(opts.amountGbp) || 0;
   const ref = String(opts.paymentRef || "").trim();
   const kind = opts.isTrial ? "Trial" : "Booking";
+  const viaMsg = !!opts.viaParentMessage;
 
   const smtp = readParentNotifySmtpConfig();
   const tos = officeNotifyEmails();
   const adminUrl = reenrolmentsReviewUrl();
-  const subject = `${kind} bank payment reported · ${invNo} · ${participant}`;
+  const subject = viaMsg
+    ? `${kind} parent says paid · ${invNo} · ${participant}`
+    : `${kind} bank payment reported · ${invNo} · ${participant}`;
   const bodyText =
-    `A parent reported a bank transfer for finish-booking${opts.isTrial ? " (trial)" : ""}.\n\n` +
+    (viaMsg
+      ? `A parent messaged that they have paid (WhatsApp / Messages / email).\n\n`
+      : `A parent reported a bank transfer for finish-booking${opts.isTrial ? " (trial)" : ""}.\n\n`) +
     `Invoice: ${invNo}\n` +
     `Participant: ${participant}\n` +
     `Parent / carer: ${parent}\n` +
     (email ? `Email: ${email}\n` : "") +
     `Amount due: £${amount.toFixed(2)}\n` +
-    (ref ? `Reference noted: ${ref}\n` : "") +
+    (ref ? `Reference / phone noted: ${ref}\n` : "") +
     `\nPlease check Tide and Mark paid in Admin → Finance → Re-enrolments.\n` +
     `Parent Portal PIN is sent only after you confirm payment.\n` +
     (adminUrl ? `${adminUrl}\n\n` : "\n") +

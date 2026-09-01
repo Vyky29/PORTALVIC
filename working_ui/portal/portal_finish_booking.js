@@ -616,7 +616,7 @@
       setStep("fbStepAwaitingOffice");
       showNotice(
         notice,
-        "Payment reported — waiting for the office to confirm before your PIN is sent.",
+        "Thanks — once the office confirms your transfer, your Parent Portal PIN is sent by email / WhatsApp.",
         "ok",
       );
       return;
@@ -922,6 +922,16 @@
         : "Place held for <strong>" +
           esc(String(holdMin)) +
           " minutes</strong> only. If unpaid by then, the seat returns to the Booking Portal.";
+      var paidMsg =
+        "Hi, I have paid for " +
+        (data.participant_name || "my child") +
+        " (" +
+        (inv.invoice_number || "") +
+        "). Amount: £" +
+        (firstAmt != null ? firstAmt : "") +
+        ". Reference: " +
+        (data.transfer_reference || data.participant_name || "") +
+        ". Thank you.";
       var mailSub = encodeURIComponent(
         "Payment made — " + (data.participant_name || inv.invoice_number || "booking"),
       );
@@ -934,8 +944,10 @@
           (firstAmt != null ? firstAmt : "") +
           "\nReference: " +
           (data.transfer_reference || data.participant_name || "") +
-          "\n\nI can attach a photo/screenshot of the transfer if helpful.\n\nThanks",
+          "\n\n(I can attach a photo/screenshot of the transfer if helpful.)\n\nThanks",
       );
+      var waHref =
+        "https://wa.me/447592558671?text=" + encodeURIComponent(paidMsg);
       html +=
         '<div class="card-inner" style="margin:0 0 12px">' +
         "<div><strong>Payee</strong> " +
@@ -954,15 +966,20 @@
         '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
         holdLine +
         "</p>" +
-        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>email or WhatsApp the office</strong> so they can check Tide and mark you paid. Attach a photo/screenshot of the transfer if you can' +
-        (isTrialBank ? " (reference + amount)." : ".") +
-        "</p>" +
-        '<a class="btn btn--pri" href="mailto:info@clubsensational.org?subject=' +
+        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>send us a WhatsApp or email</strong> saying you have paid' +
+        (isTrialBank ? " (include reference + amount)" : "") +
+        ". A photo/screenshot is helpful but optional. There is no \"I've paid\" button here - the office checks Tide, marks you paid, then sends your Parent Portal PIN.</p>" +
+        '<p style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px">' +
+        '<a class="btn btn--pri" href="' +
+        esc(waHref) +
+        '" target="_blank" rel="noopener noreferrer">WhatsApp the office</a>' +
+        '<a class="btn" href="mailto:info@clubsensational.org?subject=' +
         mailSub +
         "&body=" +
         mailBody +
-        '">Email office (info@…)</a>' +
-        '<p class="muted" style="margin:10px 0 0">Or WhatsApp the club number you already use — same message + photo is fine. Parent Portal PIN is sent only after the office confirms payment.</p>';
+        '">Email info@...</a>' +
+        "</p>" +
+        '<p class="muted" style="margin:0">Use the club WhatsApp you already chat on if you prefer - same \"I\'ve paid\" message is fine.</p>';
     }
     if (host) host.innerHTML = html;
     var stripeRetry = document.getElementById("fbStripeRetry");
@@ -982,31 +999,17 @@
           });
       };
     }
+    // Demo-only: confirm_paid is disabled in production API.
     var confirmPaid = document.getElementById("fbConfirmPaid");
-    if (confirmPaid) {
+    if (confirmPaid && isDemoMode()) {
       confirmPaid.onclick = function () {
-        showNotice(document.getElementById("fbNotice"), "Reporting…", "");
-        void api("confirm_paid", {
-          booking_scope: data.booking_scope || "",
-          pay_plan: data.pay_plan || "",
-          payment_ref: data.transfer_reference || "",
-        })
-          .then(function (out) {
-            data.status = out.status || "awaiting_office_payment";
-            setStep("fbStepAwaitingOffice");
-            showNotice(
-              document.getElementById("fbNotice"),
-              out.message || "Thanks — office notified.",
-              "ok",
-            );
-          })
-          .catch(function (err) {
-            showNotice(
-              document.getElementById("fbNotice"),
-              err.message || "Could not report payment.",
-              "error",
-            );
-          });
+        demoState.status = "awaiting_office_payment";
+        setStep("fbStepAwaitingOffice");
+        showNotice(
+          document.getElementById("fbNotice"),
+          "Demo — pretend message sent. Office would confirm, then PIN.",
+          "ok",
+        );
       };
     }
   }

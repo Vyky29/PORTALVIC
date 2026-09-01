@@ -8318,9 +8318,9 @@
         : "";
       payPairHtml =
         (payBtn ? '<div class="pp-invoice-pay-pair">' + payBtn + "</div>" : "") +
-        '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">After you pay by bank transfer (or card), please <strong>message the office on WhatsApp or email</strong> (<a href="' +
+        '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">After you pay by bank transfer, open <strong>Messages</strong> (or WhatsApp / email <a href="' +
         esc(OFFICE_CONTACT_MAILTO) +
-        '">info@clubsensational.org</a>) so they can check Tide and mark the invoice paid. Attach a photo or screenshot of the payment if you can. There is no “I’ve paid” button in the portal.</p>';
+        '">info@clubsensational.org</a>) and tell us you have paid. A photo is optional. There is no "I\'ve paid" button - the office checks Tide and marks the invoice paid.</p>';
     }
     return (
       '<article class="pp-invoice-card pp-invoice-card--' +
