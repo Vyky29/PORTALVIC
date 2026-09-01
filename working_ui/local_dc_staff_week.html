@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901m</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901n</title>
   <style>
     :root {
       --ink: #173247;
@@ -200,13 +200,14 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901m · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901n · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026 (BH).
     Two blocks: <strong>1-6 Sep</strong> = first week (Tue-Fri Day Centre only; Sat 5 + Sun 6 weekend);
     <strong>7-13 Sep</strong> = standing week (DC + AS + weekend) = template for the rest of term.
-    Tue Acton AS (from Mon 7) = Roberto / Aurora / Javier / Luliya (Logan → Luliya 5-5.30; Rayyan Fi aquatic withdrawn).
-    Yellow = open. Grey = closed. Blue = trial.
+    Tue Acton AS (from Mon 7) = Roberto / Aurora / Javier / Luliya
+    (Serine → Luliya 1h; Logan + Richard → Roberto; Javier keeps Kareena only at 6).
+    Rayyan Fi = Multi only (no swimming). Yellow = open. Grey = closed. Blue = trial.
   </p>
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
@@ -256,19 +257,18 @@
   var EXTRA = {
     tuesday: {
       /* Standing Tue Acton (from Mon 7): Roberto, Aurora, Javier, Luliya only (no Youssef).
-       * Logan was Youssef 5-5.30 → Luliya. Rayyan Fi aquatic withdrawn (Multi Sun only).
-       * Releases: Jad/Amir/Adam Me; Eiji+Hazem Acton aquatic; Anas → Aurora 6-6.30. */
+       * Rebalance: Serine 1h → Luliya; Logan + Richard → Roberto (Javier cannot double-book 6-6.30).
+       * Rayyan Fi aquatic withdrawn (Multi Sun only). Anas → Aurora 6-6.30. */
       Roberto: [
         { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
-        { name: "Serine", time: "4.30 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "Logan", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "No participant", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
-        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "Richard", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Luliya: [
         { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
-        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
-        /* Was Youssef Tue 5-5.30 (Youssef not on Tue Acton pool). */
-        { name: "Logan", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Serine", time: "4.30 to 5.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Javier: [
         { name: "Ayman", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
@@ -276,7 +276,6 @@
         { name: "Linda", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Rayan Ta", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
         { name: "Kareena", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Richard", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Aurora: [
         { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
