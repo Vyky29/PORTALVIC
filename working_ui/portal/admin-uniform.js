@@ -201,6 +201,14 @@
           issued_open_qty: 0,
           current_qty: 0,
         };
+        /* Hide empty sizes (e.g. manager polo S/XXL with no stock ever). */
+        var allZero =
+          Number(row.opening_qty || 0) === 0 &&
+          Number(row.stock_in_qty || 0) === 0 &&
+          Number(row.pre_portal_out_qty || 0) === 0 &&
+          Number(row.issued_open_qty || 0) === 0 &&
+          Number(row.current_qty || 0) === 0;
+        if (allZero) return;
         html +=
           "<tr>" +
           '<td style="padding:6px;border-bottom:1px solid #f1f5f9">' +
