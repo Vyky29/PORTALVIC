@@ -1,18 +1,18 @@
-# Employment contracts ó Portal Vic + HR portal
+# Employment contracts ù Portal Vic + HR portal
 
 Integrated flow using the same Supabase project as [PORTALVIC](https://github.com/Vyky29/PORTALVIC) (`cklpnwhlqsulpmkipmqb`).
 
-**Contract engine version:** `2.0` (`contract-core.js`)
+**Contract engine version:** `2.8` (`contract-core.js`)
 
 ## Contract kinds (v2.0)
 
 | Kind ID | UI label | Pay | Hours | Notice | Typical profile |
 |---------|----------|-----|-------|--------|-----------------|
-| `zero_hours` | Zero Hours ó Activity Services | Hourly + scale; rolled-up holiday **12.07%** itemised | No minimum | **2 weeks** | School-main job; evening/weekend activity sessions |
-| `day_centre_part_time` | Part-Time ó Day Centre | **Annual salary** | Selected weekdays **11:00ñ16:00** (5 paid h/day); short comfort break if possible | **1 month** | Day Centre only, or morning half of hybrid staff |
+| `zero_hours` | Zero Hours ù Activity Services | Hourly + scale; rolled-up holiday **12.07%** itemised | No minimum | **2 weeks** | School-main job; evening/weekend activity sessions |
+| `day_centre_part_time` | Part-Time ù Day Centre | **Annual salary** | Selected weekdays **11:00ù16:00** (5 paid h/day); short comfort break if possible | **1 month** | Day Centre only, or morning half of hybrid staff |
 | `full_time` | Permanent Full-Time | **Annual salary** (manual) | **40 h/week** default | **1 month** | Business Development |
 | `fixed_term` | Fixed-Term | Annual salary | As set | **1 month** / End Date | Cover / pilot |
-| `permanent_part_time` | *(deprecated)* | ó | ó | ó | Legacy term-time swimming only; hidden in UI |
+| `permanent_part_time` | *(deprecated)* | ù | ù | ù | Legacy term-time swimming only; hidden in UI |
 
 ### Hybrid staff (Day Centre + evenings)
 
@@ -25,18 +25,19 @@ Tick **runs alongside another active contract** on both and add the other refere
 
 ## Policy lock (Fase 0)
 
-- Day Centre: 5 paid hours 11ñ16; comfort break 10ñ15 min if possible (does not reduce pay)
+- Day Centre: 5 paid hours 11ù16; comfort break 10ù15 min if possible (does not reduce pay)
 - Zero Hours holiday: rolled-up **12.07%** itemised on payslips
-- Full-time / Day Centre holiday: **28 days + bank holidays** (pro-rata for part-time vs 40h FTE)
+- Day Centre part-time: annual salary **inclusive of statutory holiday pay**, paid in **12 equal monthly instalments**; holiday taken during **published Day Centre closures** (typically 43 open weeks); not 12.07% on top
+- Full-time holiday: **28 days + bank holidays**
 - Term-time swimming permanent PT: **removed** from new-issue UI
 
 ## Flow
 
-1. **HR** ó Portal Vic `hr_contract.html` / admin embed, or [hr-contract-portal.vercel.app](https://hr-contract-portal.vercel.app): prepare contract, director signs, **Send to employee**.
-2. **Supabase** ó row in `employment_contracts` + targeted row in `portal_staff_announcements` (`message_type = contract_signing`, `delivery_scope = single_user`).
-3. **Staff dashboard** ó notice like an announcement ? **Open contract to sign**.
-4. **Staff** ó `contract_sign.html` (logged in) ? sign ? PDF to **`documents`** (My Documents).
-5. **Dashboard** ó notice cleared via local ack (same store as announcements).
+1. **HR** ù Portal Vic `hr_contract.html` / admin embed, or [hr-contract-portal.vercel.app](https://hr-contract-portal.vercel.app): prepare contract, director signs, **Send to employee**.
+2. **Supabase** ù row in `employment_contracts` + targeted row in `portal_staff_announcements` (`message_type = contract_signing`, `delivery_scope = single_user`).
+3. **Staff dashboard** ù notice like an announcement ? **Open contract to sign**.
+4. **Staff** ù `contract_sign.html` (logged in) ? sign ? PDF to **`documents`** (My Documents).
+5. **Dashboard** ù notice cleared via local ack (same store as announcements).
 
 ## Apply migration
 

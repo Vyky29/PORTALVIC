@@ -1,4 +1,4 @@
-/* contract-core.js v2.0 — clubSENsational HR Contract Portal
+/* contract-core.js v2.8 — clubSENsational HR Contract Portal
  * Complete UK employment-contract template engine.
  * IIFE exporting global.ContractCore.
  */
@@ -9,7 +9,7 @@
    *  CONSTANTS
    * ================================================================ */
 
-  var CONTRACT_VERSION = '2.7';
+  var CONTRACT_VERSION = '2.8';
   var ADMIN_RATE = '13';
   var GBP = '\u00A3';
   var EM  = '\u2014';
@@ -1097,8 +1097,10 @@
       [
         'EMPLOYEE REMUNERATION',
         'Remuneration paid to the Employee for the services rendered by the Employee under this Agreement will consist of a salary of:', '',
-        '{{ANNUAL_SALARY}} per year (gross), paid monthly in arrears via payroll on or around the last working day of the month. Statutory deductions will be made.',
-        BULLET + 'The monthly salary is payable while this Agreement remains in force and is not reduced by individual session cancellations within the agreed Normal Hours of Work, provided the Employee remains available for work in accordance with this Agreement.',
+        '{{ANNUAL_SALARY}} per year (gross), inclusive of statutory holiday pay, paid in 12 equal monthly instalments in arrears via payroll on or around the last working day of the month. Statutory deductions will be made.',
+        BULLET + 'The annual salary is the full pay for this role for the year. No additional holiday pay is payable on top of this annual salary, and holiday pay is not added as a 12.07% supplement to an hourly rate.',
+        BULLET + 'The monthly instalment is the same each month while this Agreement remains in force. It is not recalculated according to the number of hours or sessions delivered in that month.',
+        BULLET + 'The monthly salary is not reduced by individual session cancellations within the agreed Normal Hours of Work, provided the Employee remains available for work in accordance with this Agreement.',
         BULLET + 'Session feedback and daily records form part of the Employee\'s duties under this Agreement. Where such records are completed during Normal Hours of Work, they are covered by the salary. Where the Employer requires reasonable post-session or end-of-day feedback/records outside Normal Hours of Work, that time is included within the overall remuneration for the role (typically up to about ten minutes per session or working day) unless the Employer authorises additional paid time in writing.',
         BULLET + 'This remuneration will be payable once per month while this Agreement is in force.',
         BULLET + "The Employer is entitled to deduct from the Employee's remuneration, or from any other remuneration in whatever form, any applicable deductions and remittances as required by law.",
@@ -1116,6 +1118,7 @@
         'The Employee\'s normal hours of work ("Normal Hours of Work") are as follows:',
         '{{WEEKLY_HOURS}} hours per week.',
         '{{NORMAL_HOURS_OF_WORK}}',
+        BULLET + 'Normal Hours of Work apply during weeks when the Day Centre is open, as published by the Employer each year (typically 43 weeks). Weeks when the Day Centre is closed are not Normal Hours of Work; those weeks are when holiday is taken (see Holiday Entitlement).',
         BULLET + 'Each working day runs from 11:00 to 16:00, totalling 5 paid hours per day. A short comfort break of 10 to 15 minutes may be taken when operationally possible; this does not reduce the paid hours.',
         BULLET + "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's Normal Hours of Work as deemed necessary by the Employer to meet business needs, as permitted by law."
       ], [''],
@@ -1133,9 +1136,12 @@
       [
         'HOLIDAY ENTITLEMENT',
         BULLET + "The Employer's holiday year runs between 1 January and 31 December.",
-        BULLET + "The Employee is entitled to paid annual leave calculated on a pro-rata basis against a full-time entitlement of 28 days plus the usual eight public holidays (bank holidays) in England and Wales (based on a 40-hour, five-day working week).",
-        BULLET + "Holiday entitlement is pro-rated according to the Employee's contracted weekly hours and is taken as paid leave (it is not rolled up into salary). Holiday pay will be calculated in accordance with the Working Time Regulations 1998 and the Employer's lawful payroll practice.",
-        BULLET + 'Requests for annual leave must be submitted in writing and are subject to the approval of the Employer. The Employer may require the Employee to take holiday on specified dates, giving reasonable notice.'
+        BULLET + 'This is a term-time Day Centre role. Normal Hours of Work apply during weeks when the Day Centre is open, as published by the Employer each year (typically 43 weeks).',
+        BULLET + 'The Employee\'s statutory paid holiday is included within the annual salary stated under Employee Remuneration. It is not paid as an extra amount, and it is not added as a 12.07% supplement to an hourly rate.',
+        BULLET + 'Holiday is taken during the published Day Centre closure periods (when the service is not open). Those closures are the Employee\'s paid annual leave. The Employee continues to receive the same monthly salary during those periods because holiday pay is already included in the annual salary and paid across 12 equal monthly instalments.',
+        BULLET + 'Leave is not normally approved during weeks when the Day Centre is open, except in exceptional circumstances agreed in writing by the Employer (for example bereavement). Statutory family leave (including maternity, paternity, adoption, shared parental and parental bereavement leave) is not affected by this paragraph.',
+        BULLET + 'The Employer requires the Employee to take holiday on the specified closure dates and will give reasonable notice of the closure calendar each year.',
+        BULLET + 'The Employee remains entitled to take no less than the statutory minimum amount of time off under the Working Time Regulations 1998 (as amended). That time off falls in the closure periods. If in any holiday year the published closures do not provide at least the statutory minimum, the Employer will grant additional paid time off as required by law.'
       ], [''],
       clauseWorkingTime(), [''],
       clauseOtherPaidLeave(), [''],
@@ -1163,10 +1169,10 @@
         BULLET + 'Job Title: {{JOB_TITLE}}',
         BULLET + 'Start Date: {{COMMENCEMENT_DATE}} (permanent part-time; no fixed end date)',
         BULLET + 'Continuous Employment: {{CONTINUOUS_EMPLOYMENT_SHORT}}',
-        BULLET + 'Salary: {{ANNUAL_SALARY}} per annum (gross)',
-        BULLET + 'Hours: {{WEEKLY_HOURS}} hours per week; {{WORK_DAYS}}, 11:00' + EM + '16:00.',
+        BULLET + 'Salary: {{ANNUAL_SALARY}} per annum (gross), inclusive of statutory holiday pay, paid in 12 equal monthly instalments.',
+        BULLET + 'Hours: {{WEEKLY_HOURS}} hours per week during weeks when the Day Centre is open (typically 43 weeks per year); {{WORK_DAYS}}, 11:00' + EM + '16:00.',
         BULLET + 'Place of Work: {{PLACE_OF_WORK}}',
-        BULLET + 'Holiday: Pro-rata of 28 days plus bank holidays against 40-hour FTE (see Holiday Entitlement).',
+        BULLET + 'Holiday: statutory entitlement included in the annual salary; taken during published Day Centre closure periods; not paid in addition (see Holiday Entitlement).',
         BULLET + 'Pension: ' + PENSION_SCHEME_NAME + ' (or other qualifying scheme nominated by the Employer); auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
         BULLET + 'Notice: Not less than one month, or statutory minimum if greater.',
         BULLET + 'Probation: Six months from commencement.',
@@ -1641,7 +1647,7 @@
       }
       var dcWorkDaysStr = formatWorkDaysList(workDays) || EM;
       return Object.assign(shared, {
-        CONTRACT_TYPE: 'Permanent Part-Time (Day Centre) ' + EM + ' ' + dcWorkDaysStr + ', 11:00' + EM + '16:00.',
+        CONTRACT_TYPE: 'Permanent Part-Time Term-Time Only (Day Centre) ' + EM + ' ' + dcWorkDaysStr + ', 11:00' + EM + '16:00, during weeks when the Day Centre is open (typically 43 weeks per year).',
         ANNUAL_SALARY: formatSalary(o.annualSalary),
         WEEKLY_HOURS: dcWeeklyHours != null && dcWeeklyHours !== '' ? String(dcWeeklyHours) : EM,
         WORK_DAYS: dcWorkDaysStr,
