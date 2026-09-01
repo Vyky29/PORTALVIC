@@ -61,6 +61,8 @@
     .note--warn{background:var(--warnSoft);border:1px solid #fde68a;color:var(--warn)}
     .note--ok{background:var(--successSoft);border:1px solid #bbf7d0;color:var(--success)}
     .note--err{background:var(--dangerSoft);border:1px solid #fecaca;color:#991b1b}
+    .pt-hours p.lead{margin:0 0 10px;font-size:13px;color:var(--muted);max-width:52rem;overflow-wrap:break-word}
+    .pt-hours .ptbl th:last-child,.pt-hours .ptbl td:last-child{text-align:left}
     .gate{max-width:480px;margin:40px auto;text-align:center}
     .hidden{display:none!important}
     .spin{display:inline-block;width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--blue);
@@ -155,6 +157,20 @@
         </div>
       </div>
 
+      <div class="card hidden" id="ptHoursCard">
+        <div class="card-pad pt-hours">
+          <p class="sec-title">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Day Centre PT hours (admin only)
+          </p>
+          <p class="lead">
+            Internal ledger vs the 21 h week. Pay the monthly PT salary in full - do not deduct.
+            Do not put this on the staff timesheet or the accountant PDF.
+          </p>
+          <div class="tbl-wrap"><table class="ptbl" id="ptHoursTable"></table></div>
+        </div>
+      </div>
+
       <div class="card hidden" id="grandCard">
         <div class="card-pad" style="display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:wrap;text-align:center">
           <div>
@@ -183,6 +199,7 @@
       getSupabaseFunctionUrl,
       getSupabaseAnonKey,
     } from "/portal/supabase-client.js?v=20260605-payroll";
+    import { adminPtHoursForPayMonth } from "/portal/admin_pt_hours_ledger.js?v=20260901-roberto-w1";
 
     const gate = document.getElementById("gate");
     const app = document.getElementById("app");
@@ -202,6 +219,8 @@
     const contractsWrap = document.getElementById("contractsWrap");
     const contractsTable = document.getElementById("contractsTable");
     const pdfFrame = document.getElementById("pdfFrame");
+    const ptHoursCard = document.getElementById("ptHoursCard");
+    const ptHoursTable = document.getElementById("ptHoursTable");
 
     const fnUrl = getSupabaseFunctionUrl("payroll-monthly-report");
     const anon = getSupabaseAnonKey();
@@ -289,6 +308,7 @@
       }
 
       renderSubmittedTable(out);
+      renderPtHoursLedger(monthInput.value);
 
       const grand = (Number(t.gross) || 0) + (Number(s.contractTotal) || 0);
       grandTotalEl.textContent = "£" + money(grand);
@@ -308,6 +328,36 @@
         missingWrap.classList.add("hidden");
         missingCard.classList.add("hidden");
       }
+    }
+
+    function renderPtHoursLedger(ym) {
+      const rows = adminPtHoursForPayMonth(ym);
+      if (!rows.length) {
+        ptHoursCard.classList.add("hidden");
+        ptHoursTable.innerHTML = "";
+        return;
+      }
+      ptHoursTable.innerHTML =
+        "<thead><tr>" +
+        "<th>Staff</th><th>Week</th><th class=\"num\">Worked</th><th class=\"num\">Tue-Fri of 21 h</th>" +
+        "<th class=\"num\">Short</th><th>Pay</th><th>Note</th>" +
+        "</tr></thead><tbody>" +
+        rows
+          .map(
+            (r) =>
+              "<tr>" +
+              `<td>${esc(r.staffName)}</td>` +
+              `<td>${esc(r.label)}</td>` +
+              `<td class="num">${esc(r.workedH)} h</td>` +
+              `<td class="num">${esc(r.contractedTueFriH)} h</td>` +
+              `<td class="num">${esc(r.shortfallH)} h</td>` +
+              `<td>${r.deductPay ? "Deduct" : "Pay in full"}</td>` +
+              `<td>${esc(r.note)}</td>` +
+              "</tr>"
+          )
+          .join("") +
+        "</tbody>";
+      ptHoursCard.classList.remove("hidden");
     }
 
     function renderSubmittedTable(out) {
@@ -388,6 +438,7 @@
 
     async function loadPreview() {
       clearNote();
+      renderPtHoursLedger(monthInput.value);
       refreshBtn.disabled = true;
       downloadBtn.disabled = true;
       sendBtn.disabled = true;
