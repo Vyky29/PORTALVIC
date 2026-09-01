@@ -2158,12 +2158,13 @@
     /** Weekday Multi-Activity / Bespoke: Support Workers paid 4:15–6:15 (2h) even when client slots are 4:30–6:00. */
     const WEEKDAY_MA_BESPOKE_PAY_HOURS = 2;
 
-    /** Sunday SwimFarm support: 9:15–2:15 (5h); programme leads 9:00–2:30 (5.5h). */
+    /** Sunday SwimFarm support: 9:15–2:15 (5h). John/Michelle leads: 9:00–2:30 (5.5h). Berta Sundays: 9:15–2:15 (5h). */
     const SUNDAY_SUPPORT_MA_PAY_HOURS = 5;
     const SUNDAY_LEAD_MA_PAY_HOURS = 5.5;
-    const SUNDAY_MA_LEAD_KEYS = new Set(["berta", "john", "michelle"]);
+    const SUNDAY_MA_LEAD_KEYS = new Set(["john", "michelle"]);
+    const SUNDAY_BERTA_SUPPORT_KEYS = new Set(["berta"]);
 
-    /** Michelle day-centre closing Mon–Wed + Fri: 10:45–16:15 (5.5h). */
+    /** Michelle day-centre Mon–Wed + Fri: 10:45–16:15 (5.5h) even when clients are 11–4. */
     const MICHELLE_DAY_CENTRE_PAY_HOURS = 5.5;
     const MICHELLE_DAY_CENTRE_DOWS = new Set([1, 2, 3, 5]);
 
@@ -2173,7 +2174,7 @@
       const key = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
         .trim()
         .toLowerCase();
-      if (!SUNDAY_MA_LEAD_KEYS.has(key)) return pay;
+      if (!SUNDAY_MA_LEAD_KEYS.has(key) && !SUNDAY_BERTA_SUPPORT_KEYS.has(key)) return pay;
       if (/^support\s*worker$/i.test(pay)) return "Lead";
       return pay;
     }
@@ -2480,6 +2481,7 @@
       const svc = String(service || "").toLowerCase();
       const isLeadRole =
         SUNDAY_MA_LEAD_KEYS.has(key) ||
+        SUNDAY_BERTA_SUPPORT_KEYS.has(key) ||
         /^service\s*lead$/i.test(r) ||
         /^lead$/i.test(r);
       if (
@@ -2509,6 +2511,7 @@
     function sundayMaSupportPayableHours(dayName, rosterKey, role, service, computedHours, dayRows) {
       if (!isSundayMaSupportPayBand(dayName, role, service, dayRows, rosterKey)) return computedHours;
       const key = String(rosterKey || "").trim().toLowerCase();
+      if (SUNDAY_BERTA_SUPPORT_KEYS.has(key)) return SUNDAY_SUPPORT_MA_PAY_HOURS;
       return SUNDAY_MA_LEAD_KEYS.has(key) ? SUNDAY_LEAD_MA_PAY_HOURS : SUNDAY_SUPPORT_MA_PAY_HOURS;
     }
 

@@ -72,7 +72,7 @@ def monday_template() -> list[tuple[str, str, str]]:
         _pairs("Roberto", "11-1", "SwimFarm"),
         _pairs("Emanuel", "11-1", "SwimFarm"),
         _pairs("Fadi", "1-3", "SwimFarm"),
-        _pairs("Michelle", "11-4", "SwimFarm"),
+        _pairs("Michelle", "10.45-4.15", "SwimFarm"),
         _pairs("Luliya", "11-3", "SwimFarm"),  # Ikram
         _pairs("Victor", "11-4", "SwimFarm"),  # Ikram
         _pairs("Raul", "11-1", "SwimFarm"),
@@ -93,12 +93,11 @@ def tuesday_template() -> list[tuple[str, str, str]]:
     return [
         # Morning DC — split cohorts (Ikram / Fadi / Cyrus), not one block per worker.
         _pairs("Roberto", "11-3", "SwimFarm"),  # Ikram
-        _pairs("Michelle", "11-4", "SwimFarm"),  # Ikram
+        _pairs("Michelle", "10.45-4.15", "SwimFarm"),  # paid band (clients 11-4)
         _pairs("Luliya", "11-3", "SwimFarm"),  # Ikram
         _pairs("Victor", "12.30-3", "SwimFarm"),  # Fadi
         _pairs("Victor", "3.30-5", "SwimFarm"),  # Cyrus bespoke (Thu → Tue)
         _pairs("Raul", "12.30-3", "SwimFarm"),  # Fadi
-        _pairs("Michelle", "3-4", "SwimFarm"),  # Ikram
         _pairs("Luliya", "4-6.30", "Acton"),
         _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Javier", "4-6.30", "Acton"),
@@ -110,7 +109,7 @@ def wednesday_template() -> list[tuple[str, str, str]]:
     return [
         # Roberto no Acton Wed → DC with Emanuel through 4.
         _pairs("Roberto", "11-4", "SwimFarm"),  # Emanuel
-        _pairs("Michelle", "11-4", "SwimFarm"),
+        _pairs("Michelle", "10.45-4.15", "SwimFarm"),
         _pairs("Luliya", "11-3", "SwimFarm"),  # Ikram
         _pairs("Victor", "12.30-3", "SwimFarm"),  # Fadi
         _pairs("Victor", "3-4", "SwimFarm"),  # Ikram
@@ -128,7 +127,7 @@ def wednesday_template() -> list[tuple[str, str, str]]:
 
 def thursday_template() -> list[tuple[str, str, str]]:
     return [
-        _pairs("Roberto", "12.30-3", "SwimFarm"),
+        _pairs("Roberto", "12.15-3.15", "SwimFarm"),
         _pairs("Youssef", "12.30-3", "SwimFarm"),
         _pairs("Roberto", "4-6.30", "Acton"),
         _pairs("Youssef", "4-6.30", "Acton"),
@@ -143,7 +142,7 @@ def friday_template() -> list[tuple[str, str, str]]:
         _pairs("Roberto", "11-1", "SwimFarm"),
         _pairs("Emanuel", "11-1", "SwimFarm"),
         _pairs("Fadi", "1-3", "SwimFarm"),
-        _pairs("Michelle", "11-4", "SwimFarm"),
+        _pairs("Michelle", "10.45-4.15", "SwimFarm"),
         _pairs("Luliya", "11-4", "SwimFarm"),  # Ikram
         _pairs("Victor", "11-4", "SwimFarm"),  # Ikram
         _pairs("Raul", "11-1", "SwimFarm"),
@@ -167,7 +166,7 @@ def sunday_template() -> list[tuple[str, str, str]]:
         _pairs("Aurora", "9-3", "SwimFarm"),
         _pairs("Javier", "9-3", "SwimFarm"),
         _pairs("Roberto", "8.45-3.15", "SwimFarm"),
-        _pairs("Berta", "9-2.30", "SwimFarm"),
+        _pairs("Berta", "9.15-2.15", "SwimFarm"),
         _pairs("Emanuel", "9.15-2.15", "SwimFarm"),
         _pairs("Godsway", "9.15-2.15", "SwimFarm"),
         _pairs("Alex", "10-2", "Westway"),
