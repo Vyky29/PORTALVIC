@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901g</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901h</title>
   <style>
     :root {
       --ink: #173247;
@@ -180,7 +180,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901g · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901h · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026
     (bank holiday). Autumn Term 2026 standing (not Summer). Tue-Fri = Day Centre + after school.
@@ -734,23 +734,13 @@
     return STAFF.slice();
   }
 
+  /* Staff views: use Admin ghost teleport (same real UI / roster as this board). */
   var links = document.getElementById("dashLinks");
-  STAFF.forEach(function (s) {
-    var a = document.createElement("a");
-    a.href =
-      "/staff_dashboard.html?portalReviewDate=" +
-      encodeURIComponent(ISO.tuesday) +
-      "&portalReviewDay=Tuesday&portalStayWorker=1#local-" +
-      encodeURIComponent(s.toLowerCase());
-    a.textContent = s + " staff dashboard (login)";
-    a.target = "_blank";
-    a.rel = "noopener";
-    links.appendChild(a);
-  });
   var a2 = document.createElement("a");
   a2.className = "soft";
   a2.href = "/admin_dashboard.html";
   a2.target = "_blank";
+  a2.rel = "noopener";
   a2.textContent = "Admin · ghost teleport (real UI)";
   links.appendChild(a2);
 
