@@ -6,7 +6,7 @@
 const DOCUMENTS_ONLY_USERNAMES = new Set(["giuseppe", "andres", "bismark"]);
 
 const ALLOWED_PATH_RE =
-  /(?:^|\/)(my_documents|staff_profile_update|contract_sign|training_record_sign|login)(?:\.html)?(?:$|[?#])/i;
+  /(?:^|\/)(my_documents|staff_profile_update|staff_uniform|contract_sign|training_record_sign|login)(?:\.html)?(?:$|[?#])/i;
 
 function clean(v) {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim();

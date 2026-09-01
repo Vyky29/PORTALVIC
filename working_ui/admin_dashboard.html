@@ -113,6 +113,7 @@
   <script src="/portal/portal_ld_funding_letters.js?v=20260714-ld-pdf-logo"></script>
   <script src="/portal/admin_ld_funding_review.js?v=20260714-ld-docs-rls"></script>
   <script src="/portal/admin-training-records.js?v=20260714-tr-p3"></script>
+  <script src="/portal/admin-uniform.js?v=20260901-uniform-stock"></script>
   <script src="/portal/admin-hr.js?v=20260722-days-off-history"></script>
   <script src="/portal/policy-signoff-scope.js?v=20260728-home-office"></script>
   <script src="/portal/admin-policy-signoffs.js?v=20260728-home-office"></script>
@@ -441,6 +442,7 @@
       { id:'onboarding', label:'Onboarding' },
       { id:'staffhr_contracts', label:'Employment contracts', hubLabel:'CONTRACTS' },
       { id:'staffhr_training_records', label:'Training records', hubLabel:'TRAINING RECORDS' },
+      { id:'staffhr_uniform', label:'Uniform stock', hubLabel:'UNIFORM STOCK' },
       { id:'recruitment', label:'Recruitment' },
       { id:'interviews', label:'Interviews' },
       { id:'portal_documents', label:'Documents', hubLabel:'Documents' },
@@ -477,7 +479,7 @@
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator','office_calendar','__h:Intake','leads','receptionist'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
-      { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','staffhr_training_records','interviews'] },
+      { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','staffhr_training_records','staffhr_uniform','interviews'] },
       { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Day Centre','day_centre_documents','__h:Participants','portal_participant_documents','portal_climbing_registrations','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance', children:['reenrol_payments','commissioning_terms'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
@@ -522,6 +524,7 @@
       onboarding:'<path d="M2 3h6a4 4 0 014 4v14a4 4 0 00-4-4H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a4 4 0 014-4h6z"/>',
       staffhr_contracts:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>',
       staffhr_training_records:'<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/>',
+      staffhr_uniform:'<path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>',
       invoices:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
       logs:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
       recruitment:'<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 11v6"/><path d="M9 14h6"/>',
@@ -23032,6 +23035,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='staffhr_contracts') html = viewStaffHRContracts();
       else if(id==='day_centre_documents') html = viewDayCentreDocuments();
       else if(id==='staffhr_training_records') html = viewStaffHRTrainingRecords();
+      else if(id==='staffhr_uniform') html = viewStaffHRUniform();
       else if(id==='bookings' || id==='orders_all') html = viewBookings();
       else if(id==='scheduling') html = viewScheduling();
       else if(id==='term_roster_edit') html = viewTermRosterEdit();
@@ -23777,6 +23781,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
         staffhr_contracts:'Employment contracts — create & send, plus Issue plan (checklist + NEST notices).',
         staffhr_training_records:'Training records — events, signatures, expiry watch, and certificate PDFs in My Documents.',
+        staffhr_uniform:'Uniform stock — live matrix by size, stock in, issue/return linked to each staff Uniform record.',
         portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
         day_centre_documents:'Day Centre rota and career framework for 2026-27.',
         portal_payslips:'Upload monthly payslip PDFs for each worker — visible in My Documents on the staff app.',
@@ -23867,7 +23872,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'Staff roster and HR — view each worker, onboarding, contracts, recruitment and interviews.',
         preview:['Staff roster','Onboarding progress','Contracts','Recruitment and interviews','Staff readiness'],
         status:'Use this area to browse staff, update profiles and run employment workflows.',
-        primary:['staffhr','onboarding',{ id:'staffhr_contracts', label:'Employment contracts / CONTRACTS' },{ id:'staffhr_training_records', label:'Training records' },'recruitment','interviews'],
+        primary:['staffhr','onboarding',{ id:'staffhr_contracts', label:'Employment contracts / CONTRACTS' },{ id:'staffhr_training_records', label:'Training records' },{ id:'staffhr_uniform', label:'Uniform stock' },'recruitment','interviews'],
         secondary:['comms_bookings']
       },
       {
@@ -24199,6 +24204,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('staffhr', '', 'staffhr', 'Staff roster', 'All staff — tap for full profile &amp; HR', false, 'sessions')+
         portalDashTileHtml('staffhr_contracts', '', 'staffhr_contracts', 'Contracts', 'Employment contracts &amp; signatures', false, 'reviews')+
         portalDashTileHtml('staffhr_training_records', '', 'staffhr_training_records', 'Training records', 'Evacuation, induction, shadowing &amp; briefings', false, 'feedback')+
+        portalDashTileHtml('staffhr_uniform', '', 'staffhr_uniform', 'Uniform stock', 'Issue, return &amp; live stock by size', false, 'scheduling')+
         portalDashTileHtml('portal_documents', '', 'portal_documents', 'Documents', 'Timesheets, expenses &amp; uploads', false, 'scheduling')+
         portalDashTileHtml('portal_payslips', '', 'portal_payslips', 'Payslips', 'Upload worker payslip PDFs', false, 'payments')+
         portalDashTileHtml('office_calendar', '', 'office_calendar', 'Office calendar', 'Meetings, notes &amp; events', false, 'scheduling')+
@@ -25169,6 +25175,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_training_records">Training records</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_uniform">Uniform stock</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="onboarding">Onboarding</button></div>'+
         '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Employment contracts">'+hrContractsHubTabsHtml(tab)+'</div>'+
         '<div id="hrContractsPanelCreate" class="hr-contracts-hub-panel"'+hide('create')+'>'+embed+'</div>'+
@@ -25209,8 +25216,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_contracts">Contracts</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_uniform">Uniform stock</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-view-target="portal_training_progress">Training &amp; readiness</button></div>'+
         '<div id="trModuleRoot"></div>'
+      );
+    }
+
+    function viewStaffHRUniform(){
+      return (
+        '<h1 class="page-title">Uniform stock</h1>'+
+        '<p class="page-intro">Live stock by item and size. Issuing uniform updates the employee Uniform record and deducts stock automatically. Returns can restock or scrap.</p>'+
+        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_contracts">Contracts</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr_training_records">Training records</button></div>'+
+        '<div id="uniformModuleRoot"></div>'
       );
     }
 
@@ -26807,7 +26827,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='office_calendar'||v==='open_places_2627'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='staffhr_training_records'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='reenrol_payments'||v==='commissioning_terms'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='day_centre_documents'||v==='portal_participant_documents'||v==='portal_climbing_registrations'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='office_calendar'||v==='open_places_2627'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='staffhr_training_records'||v==='staffhr_uniform'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='reenrol_payments'||v==='commissioning_terms'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='day_centre_documents'||v==='portal_participant_documents'||v==='portal_climbing_registrations'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -27160,6 +27180,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             esc: esc
           });
           window.AdminTrainingRecords.mount($('trModuleRoot'));
+        }
+      }
+      if(id==='staffhr_uniform'){
+        if(window.AdminUniform && $('uniformModuleRoot')){
+          window.AdminUniform.configure({
+            getClient: getSchedSupabaseClient,
+            getProfile: function(){ var b=window.__PORTAL_SUPABASE__; return (b && b.staff_profile) || null; },
+            getSupabaseUrl: function(){
+              var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+              return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+            },
+            getAnonKey: function(){
+              return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+            },
+            toast: portalAdminToast,
+            esc: esc
+          });
+          window.AdminUniform.mount($('uniformModuleRoot'));
         }
       }
       if(id==='c4k_waitlist'){
