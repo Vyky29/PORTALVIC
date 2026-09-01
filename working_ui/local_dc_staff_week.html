@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901i</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901j</title>
   <style>
     :root {
       --ink: #173247;
@@ -180,13 +180,12 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901i · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901j · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026
-    (bank holiday). Autumn Term 2026 standing (not Summer). Tue-Fri = Day Centre + after school.
-    Roberto DC PT 21h: Mon-Wed 11-3, Thu 12.15-3.15, Fri 11-3 + Fri Hub Tinashe 4.15-6.15.
-    Roberto AS: Mon/Tue/Thu Acton 4-6.30; Sun Multi 8.45-3.45. Sat = Youssef Acton 9.30-1.
-    Yellow = open (no participant). Grey = closed. Blue = trial. No staff login needed.
+    (bank holiday). Autumn Term 2026 standing with re-enrol releases (not Summer books).
+    Tue Acton AS = Roberto, Aurora, Javier, Luliya only. Sun climb = Alex 10-2 / Carlos 10-4
+    (Scott open; Patrick 3-4; Kabir trial unpaid = not shown). Yellow = open. Grey = closed. Blue = trial.
   </p>
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
@@ -226,12 +225,12 @@
     monday: "2026-09-07",
   };
   var DAY_HINT = {
-    tuesday: "Autumn DC + Acton after school",
+    tuesday: "Autumn DC + Acton AS (Roberto / Aurora / Javier / Luliya)",
     wednesday: "Autumn DC + Acton / Northolt / Hub",
     thursday: "Autumn DC + Acton after school",
     friday: "Autumn DC + Acton (Youssef) + Hub Tinashe (Roberto)",
     saturday: "Autumn weekend · Youssef Acton 9.30-1",
-    sunday: "Autumn weekend · Multi 8.45-3.45 (Roberto) + climbing",
+    sunday: "Autumn weekend · Multi + climb (Scott open · Patrick 3-4)",
     monday: "Autumn DC + after school / Hub (Victor OFF)",
   };
 
@@ -243,28 +242,23 @@
    */
   var EXTRA = {
     tuesday: {
+      /* Autumn Acton AS pool: Roberto, Aurora, Javier, Luliya only (no Youssef).
+       * Releases: Jad/Amir/Adam Me gone; Eiji+Hazem withdrew Acton aquatic; Anas → Aurora 6-6.30. */
       Roberto: [
-        { name: "Jad", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Serine", time: "4.30 to 5.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Hazem", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
-        { name: "Eiji", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
-      ],
-      Youssef: [
-        { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
-        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
-        { name: "Logan", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Rayyan Fi", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
       Luliya: [
         { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
         { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
-        { name: "Amir", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
       Javier: [
         { name: "Ayman", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Adam Me", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Linda", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Eiji", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
         { name: "Rayan Ta", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
         { name: "Kareena", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Richard", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
@@ -274,14 +268,14 @@
         { name: "Bediako", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
         { name: "Junaid", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Aydaan Ah", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
-        { name: "Hazem", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Anas", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
     },
     wednesday: {
       Youssef: [
         { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Stephanie", time: "4.30 to 5.15", band: "After school", area: "Acton · Aquatic" },
-        { name: "Scott", time: "5.15 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "5.15 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
       Javier: [
@@ -291,7 +285,7 @@
         { name: "Kayden", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Berta: [
-        { name: "Scott", time: "4.30 to 5.15", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "4.30 to 5.15", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Stephanie", time: "5.15 to 6", band: "After school", area: "Acton · Aquatic" },
       ],
       Dan: [
@@ -327,18 +321,18 @@
         { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Thushyan", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
         { name: "Yuri", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Eiji", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
       Javier: [
         { name: "Ayman", time: "4 to 5", band: "After school", area: "Acton · Aquatic" },
         { name: "Khalid Ab", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Karo", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
-        { name: "Hazem", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
       Aurora: [
         { name: "Elijah", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Aqsa", time: "4.30 to 5.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Hazem", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Maiyar", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
     },
@@ -420,11 +414,12 @@
         { name: "Max", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
         { name: "Shaan", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
       ],
-      /* Autumn hours: Alex 10-2 · Carlos 10-4 (no Summer Ayden 2-3 on Alex). */
+      /* Autumn climb: Scott not renewing → Alex 12-1 open; Patrick → Carlos 3-4;
+       * Kabir trial unpaid → omit; Ayden off (Alex ends 2). Eiji/Hazem keep Climb. */
       Alex: [
         { name: "Eiji", time: "10 to 11", band: "Weekend", area: "Westway · Climbing" },
         { name: "Yusef", time: "11 to 12", band: "Weekend", area: "Westway · Climbing" },
-        { name: "Scott", time: "12 to 1", band: "Weekend", area: "Westway · Climbing" },
+        { name: "No participant", time: "12 to 1", band: "Weekend", area: "Westway · Climbing", kind: "open" },
         { name: "Rodin", time: "1 to 2", band: "Weekend", area: "Westway · Climbing" },
       ],
       Carlos: [
@@ -432,8 +427,8 @@
         { name: "Zaid", time: "11 to 12", band: "Weekend", area: "Westway · Climbing" },
         { name: "Serine", time: "12 to 1", band: "Weekend", area: "Westway · Climbing" },
         { name: "Zakariya", time: "1 to 2", band: "Weekend", area: "Westway · Climbing" },
-        { name: "Patrick", time: "2 to 3", band: "Weekend", area: "Westway · Climbing" },
-        { name: "Closed", time: "3 to 4", band: "Weekend", area: "Westway · Climbing", kind: "closed" },
+        { name: "No participant", time: "2 to 3", band: "Weekend", area: "Westway · Climbing", kind: "open" },
+        { name: "Patrick", time: "3 to 4", band: "Weekend", area: "Westway · Climbing" },
       ],
     },
     monday: {
@@ -457,7 +452,7 @@
       Youssef: [
         { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
         { name: "Eddie Mc", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
-        { name: "Joel", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "No participant", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Abodi Pa", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Godsway: [
@@ -489,6 +484,8 @@
     friday: ["Roberto"],
     monday: ["Dan", "Godsway", "John", "Emanuel"],
   };
+  /* Tue Acton AS column order after DC core (Michelle/Victor stay for Day Centre only). */
+  var TUESDAY_AS_ORDER = ["Roberto", "Luliya", "Javier", "Aurora"];
   var MONDAY_EXTRA_ORDER = WEEKDAY_EXTRA_ORDER.monday;
 
   function esc(s) {
@@ -719,6 +716,20 @@
         if (boardClients(dk, s).length > 0) return true;
         return s === "Victor"; /* OFF Mondays — keep visible */
       });
+    }
+    if (dk === "tuesday") {
+      /* DC core first, then Acton AS pool only (Roberto/Luliya/Javier/Aurora). */
+      var tue = ["Michelle", "Victor", "Raul"].concat(TUESDAY_AS_ORDER);
+      var tueOut = [];
+      var tueSeen = {};
+      tue.forEach(function (s) {
+        if (tueSeen[s]) return;
+        if (boardClients(dk, s).length > 0) {
+          tueSeen[s] = true;
+          tueOut.push(s);
+        }
+      });
+      return tueOut;
     }
     if (WEEKDAY_EXTRA_ORDER[dk]) {
       var mid = STAFF.slice();

@@ -99,9 +99,9 @@ def tuesday_template() -> list[tuple[str, str, str]]:
         _pairs("Victor", "12.30-3", "SwimFarm"),  # Fadi
         _pairs("Victor", "3.30-5", "SwimFarm"),  # Cyrus bespoke (Thu → Tue)
         _pairs("Raul", "12.30-3", "SwimFarm"),  # Fadi
+        # Tue Acton AS pool: Roberto, Luliya, Javier, Aurora (no Youssef).
         _pairs("Roberto", "4-6.30", "Acton"),
         _pairs("Luliya", "4-6.30", "Acton"),
-        _pairs("Youssef", "4-6.30", "Acton"),
         _pairs("Javier", "4-6.30", "Acton"),
         _pairs("Aurora", "4.30-6.30", "Acton"),
     ]
