@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep)</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901b</title>
   <style>
     :root {
       --ink: #173247;
@@ -159,7 +159,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school)</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901b</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026
     (bank holiday). Tue–Fri = Day Centre six. Sat = only staff with a book (Matthias off Autumn).
@@ -507,15 +507,29 @@
   }
 
   function staffColumnsForDay(dk) {
-    if (dk === "saturday") {
-      return Object.keys(EXTRA.saturday || {}).filter(function (s) {
-        return boardClients(dk, s).length > 0;
+    /* Sat/Sun: never show DC six — only instructors with weekend cards. */
+    if (dk === "saturday" || dk === "sunday") {
+      var order =
+        dk === "sunday"
+          ? SUNDAY_STAFF_ORDER.slice()
+          : Object.keys(EXTRA.saturday || {});
+      var seen = {};
+      var out = [];
+      order.forEach(function (s) {
+        if (seen[s]) return;
+        if (boardClients(dk, s).length > 0) {
+          seen[s] = true;
+          out.push(s);
+        }
       });
-    }
-    if (dk === "sunday") {
-      return SUNDAY_STAFF_ORDER.filter(function (s) {
-        return boardClients(dk, s).length > 0;
+      Object.keys(EXTRA[dk] || {}).forEach(function (s) {
+        if (seen[s]) return;
+        if (boardClients(dk, s).length > 0) {
+          seen[s] = true;
+          out.push(s);
+        }
       });
+      return out;
     }
     if (dk === "monday") {
       var mon = STAFF.slice();
@@ -565,10 +579,12 @@
     var cols = document.createElement("div");
     cols.className = "cols";
     staffColumnsForDay(dk).forEach(function (staff) {
+      var clients = boardClients(dk, staff);
+      /* Weekend: skip empty columns entirely (no "No weekend book" placeholders). */
+      if ((dk === "saturday" || dk === "sunday") && !clients.length) return;
       var col = document.createElement("div");
       col.className = "col";
       col.innerHTML = '<p class="col__staff">' + esc(staff) + "</p>";
-      var clients = boardClients(dk, staff);
       if (!clients.length) {
         var emptyLabel =
           dk === "tuesday" && staff === "Raul"
