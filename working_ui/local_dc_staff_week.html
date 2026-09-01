@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901aa</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260901ab</title>
   <style>
     :root {
       --ink: #173247;
@@ -199,7 +199,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901z · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260901ab · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026 (BH).
     Two blocks: <strong>1-6 Sep</strong> = first week (Tue-Fri Day Centre only; Sat 5 + Sun 6 weekend);
@@ -402,12 +402,13 @@
       ],
     },
     saturday: {
-      /* Autumn Acton aquatic · paid band 9.30-1. Empty bands = open (Matthias left). */
+      /* Autumn Acton aquatic · paid band 9.30-1 · always 30' open slots. */
       Youssef: [
         { name: "No participant", time: "9.30 to 10", band: "Weekend", area: "Acton · Aquatic", kind: "open" },
         { name: "No participant", time: "10 to 10.30", band: "Weekend", area: "Acton · Aquatic", kind: "open" },
         { name: "Emani", time: "10.30 to 11", band: "Weekend", area: "Acton · Aquatic" },
-        { name: "No participant", time: "11 to 12", band: "Weekend", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "11 to 11.30", band: "Weekend", area: "Acton · Aquatic", kind: "open" },
+        { name: "No participant", time: "11.30 to 12", band: "Weekend", area: "Acton · Aquatic", kind: "open" },
         { name: "Saaib", time: "12 to 12.30", band: "Weekend", area: "Acton · Aquatic" },
         { name: "No participant", time: "12.30 to 1", band: "Weekend", area: "Acton · Aquatic", kind: "open" },
       ],
@@ -759,6 +760,52 @@
     return day.phase === "w2";
   }
 
+  function formatMinutesLabel(mins) {
+    var h = Math.floor(mins / 60);
+    var m = mins % 60;
+    if (h > 12) h -= 12;
+    if (h === 0) h = 12;
+    return m ? h + "." + (m < 10 ? "0" + m : m) : String(h);
+  }
+
+  /** Split open/closed bands longer than 30' into 30' cards (Acton swim structure). */
+  function expandEmptySlotsTo30(list) {
+    var out = [];
+    (list || []).forEach(function (c) {
+      var kind = String(c.kind || "")
+        .trim()
+        .toLowerCase();
+      var nm = String(c.name || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+      var isEmpty =
+        kind === "open" ||
+        kind === "closed" ||
+        nm === "no participant" ||
+        nm === "no client" ||
+        nm === "open" ||
+        nm === "closed";
+      var r = parseTimeRange(c.time);
+      if (!isEmpty || !r || r.end - r.start <= 30) {
+        out.push(c);
+        return;
+      }
+      for (var t = r.start; t < r.end; t += 30) {
+        var end = Math.min(t + 30, r.end);
+        out.push({
+          name: c.name,
+          time: formatMinutesLabel(t) + " to " + formatMinutesLabel(end),
+          band: c.band,
+          area: c.area,
+          kind: c.kind || (nm === "closed" ? "closed" : "open"),
+          dc: !!c.dc,
+        });
+      }
+    });
+    return out;
+  }
+
   function boardClients(day, staffName) {
     var dayKey = typeof day === "string" ? day : day.dow;
     var phase = typeof day === "object" ? day.phase : "";
@@ -799,7 +846,7 @@
         });
       }
     }
-    return mergeAdjacentSameClient(out);
+    return mergeAdjacentSameClient(expandEmptySlotsTo30(out));
   }
 
   /** "4.30" / "10.15" / "9" → minutes from midnight (1-7 treated as afternoon). */
