@@ -1359,9 +1359,11 @@
             + " · FA "
             + money(uplift.fa)
             + "</span>"
-            + '<span class="pay-amt-season" title="INV-0391 Emanuel · INV-0392 Timi">ED '
-            + money(uplift.ed)
-            + " · TD "
+            + '<span class="pay-amt-season" title="'
+            + (uplift.ed > 0 ? "INV-0391 Emanuel · INV-0392 Timi" : "INV-0392 Timi")
+            + '">'
+            + (uplift.ed > 0 ? ("ED " + money(uplift.ed) + " · ") : "")
+            + "TD "
             + money(uplift.td)
             + "</span>"
           : "")
