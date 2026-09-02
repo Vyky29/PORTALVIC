@@ -879,6 +879,60 @@
     });
   }
 
+  /**
+   * Autumn Sunday Westway climbing (60' books).
+   * Scott de Wolff not renewing — 12–1 open. Alex 2–3 open. Patrick 3–4 Carlos.
+   */
+  var WEEKEND_STANDING_ISO = {
+    saturday: "2026-07-11",
+    sunday: "2026-07-12",
+  };
+
+  var AUTUMN_SUNDAY_CLIMBING_BOARD = [
+    { staff: "ALEX", name: "Eiji", time: "10 to 11" },
+    { staff: "ALEX", name: "Yusef", time: "11 to 12" },
+    { staff: "ALEX", name: "No participant", time: "12 to 1" },
+    { staff: "ALEX", name: "Rodin", time: "1 to 2" },
+    { staff: "ALEX", name: "No participant", time: "2 to 3" },
+    { staff: "CARLOS", name: "Hazem", time: "10 to 11" },
+    { staff: "CARLOS", name: "Zaid", time: "11 to 12" },
+    { staff: "CARLOS", name: "Serine", time: "12 to 1" },
+    { staff: "CARLOS", name: "Zakariya", time: "1 to 2" },
+    { staff: "CARLOS", name: "No participant", time: "2 to 3" },
+    { staff: "CARLOS", name: "Patrick", time: "3 to 4" },
+  ];
+
+  function isClimbingService(service) {
+    return /climb/i.test(String(service || ""));
+  }
+
+  function isWestwayVenue(venue) {
+    return /westway/i.test(String(venue || ""));
+  }
+
+  function autumnSundayClimbingStandingRows() {
+    var iso = WEEKEND_STANDING_ISO.sunday;
+    return AUTUMN_SUNDAY_CLIMBING_BOARD.map(function (slot) {
+      return {
+        client_name: slot.name,
+        day: "Sunday",
+        instructors: slot.staff,
+        service: "Climbing Activity",
+        area: "Wall",
+        time_slot: slot.time,
+        venue: "Westway",
+        session_date: iso,
+      };
+    });
+  }
+
+  function isSundayWestwayClimbingStandingRow(row) {
+    if (!row) return false;
+    if (!isClimbingService(row.service) || !isWestwayVenue(row.venue)) return false;
+    if (normalizeDowKey(row.day) !== "sunday") return false;
+    return true;
+  }
+
   function isThursdayActonAquaticStandingRow(row) {
     if (!row) return false;
     if (!isAquaticService(row.service) || !isActonVenue(row.venue)) return false;
@@ -998,6 +1052,8 @@
       if (isTuesdayActonAquaticStandingRow(r)) return;
       /* Drop summer/live Thu Acton aquatic — rebuild from AUTUMN_ACTON_THURSDAY_BOARD. */
       if (isThursdayActonAquaticStandingRow(r)) return;
+      /* Drop summer/live Sun Westway climbing — rebuild from AUTUMN_SUNDAY_CLIMBING_BOARD. */
+      if (isSundayWestwayClimbingStandingRow(r)) return;
       if (isDayCentreService(r.service)) {
         var dkDc = normalizeDowKey(r.day);
         if (
@@ -1110,6 +1166,9 @@
       out.push(Object.assign({}, row));
     });
     autumnActonThursdayStandingRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    autumnSundayClimbingStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     return out;

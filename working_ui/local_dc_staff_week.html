@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260902-erik</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260902-climb</title>
   <style>
     :root {
       --ink: #173247;
@@ -199,7 +199,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260902-erik · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260902-climb · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026 (BH).
     Two blocks: <strong>1-6 Sep</strong> = first week (Tue-Fri Day Centre only; Sat 5 + Sun 6 weekend);
@@ -211,7 +211,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260902-erik-multi"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260902-climb-60"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260902-emanuel-fadi-1230"></script>
   <!-- local board bump: 20260901c-open-slots -->
   <script>
@@ -473,13 +473,14 @@
         { name: "Max", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
         { name: "Shaan", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
       ],
-      /* Climb: Scott renewed → back 12-1. Patrick 3-4. Kabir unpaid omit. Ayden off.
-       * Carlos 2-3 open capacity (not a non-renew name). */
+      /* Climb: Scott not renewing 2026/27 — 12-1 open. Alex 2-3 open. Patrick 3-4.
+       * Kabir unpaid omit. Ayden off. Climbing bookable units = 60' (not 30'). */
       Alex: [
         { name: "Eiji", time: "10 to 11", band: "Weekend", area: "Westway · Climbing" },
         { name: "Yusef", time: "11 to 12", band: "Weekend", area: "Westway · Climbing" },
-        { name: "Scott", time: "12 to 1", band: "Weekend", area: "Westway · Climbing" },
+        { name: "No participant", time: "12 to 1", band: "Weekend", area: "Westway · Climbing", kind: "open" },
         { name: "Rodin", time: "1 to 2", band: "Weekend", area: "Westway · Climbing" },
+        { name: "No participant", time: "2 to 3", band: "Weekend", area: "Westway · Climbing", kind: "open" },
       ],
       Carlos: [
         { name: "Hazem", time: "10 to 11", band: "Weekend", area: "Westway · Climbing" },
@@ -624,7 +625,7 @@
       Javier: "9 to 3",
       Godsway: "9.15 to 2.15",
       Emanuel: "9.15 to 2.15",
-      Alex: "10 to 2",
+      Alex: "10 to 3",
       Carlos: "10 to 4",
     },
   };
@@ -775,7 +776,8 @@
     return m ? h + "." + (m < 10 ? "0" + m : m) : String(h);
   }
 
-  /** Split open/closed bands longer than 30' into 30' cards (Acton swim structure). */
+  /** Split open/closed aquatic bands longer than 30' into 30' cards.
+   * Climbing stays 60' (do not carve into half-hours). Multi 45' already skipped. */
   function expandEmptySlotsTo30(list) {
     var out = [];
     (list || []).forEach(function (c) {
@@ -786,6 +788,8 @@
         .trim()
         .toLowerCase()
         .replace(/\s+/g, " ");
+      var area = String(c.area || "").toLowerCase();
+      var isClimb = /climb/.test(area);
       var isEmpty =
         kind === "open" ||
         kind === "closed" ||
@@ -794,7 +798,7 @@
         nm === "open" ||
         nm === "closed";
       var r = parseTimeRange(c.time);
-      if (!isEmpty || !r || r.end - r.start <= 30) {
+      if (!isEmpty || !r || r.end - r.start <= 30 || isClimb) {
         out.push(c);
         return;
       }
@@ -1009,13 +1013,17 @@
       kind === "trial"
         ? (c.band || "After school") + " · Trial"
         : c.band || "Day Centre";
-    /* Tall card only for merged 2×30' (Cyrus/Stephanie) or ~75' (e.g. Yusuf Sun).
-     * Single long books (Adam Pi 90', Tinashe 90') stay normal height. */
+    /* Tall card only for merged 2×30' swim (Cyrus/Stephanie) or ~75' Multi.
+     * Climbing is always 60' bookable — keep normal (1 unit) height, not 2×30'. */
     var units = 1;
     if (!c.dc) {
+      var areaLow = String(c.area || "").toLowerCase();
+      var isClimb = /climb/.test(areaLow);
       var u = durationUnits(c.time);
-      if (c.merged && u >= 2) units = Math.min(u, 2.5);
-      else if (!c.merged && u >= 2 && u <= 2.5) units = u;
+      if (!isClimb) {
+        if (c.merged && u >= 2) units = Math.min(u, 2.5);
+        else if (!c.merged && u >= 2 && u <= 2.5) units = u;
+      }
     }
     return (
       '<div class="card ' +
