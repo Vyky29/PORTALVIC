@@ -9,7 +9,7 @@
       "/portal/term_from_timetable.js?v=20260901-roberto-pt-zh",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260828-aurora-javier-hours",
       "/portal/clients_info_embed.js?v=20260707-social-workers",
-      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260902-dc-hub-pool-mwf",
+      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260902-emanuel-fadi-1230",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260831-dated-slot-instructor",
       "/portal/portal_madre_fold.js?v=20260809-staff-map",

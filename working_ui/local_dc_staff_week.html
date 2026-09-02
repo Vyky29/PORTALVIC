@@ -212,7 +212,7 @@
   <div class="week" id="week"></div>
 
   <script src="/portal/portal_roster_canonical.js?v=20260901-tue-acton-roberto"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260902-dc-hub-pool-mwf"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260902-emanuel-fadi-1230"></script>
   <!-- local board bump: 20260901c-open-slots -->
   <script>
 (function () {
@@ -672,7 +672,7 @@
   var COMBINED = {
     "fadi|12.30to3": [
       { time_slot: "12.30 to 1", area: "Big Pool" },
-      { time_slot: "1 to 3", area: "Day Centre" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
     "ikram|11to4": [
       { time_slot: "11 to 12", area: "Hub Room" },
@@ -694,6 +694,10 @@
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 12.30", area: "Big Pool" },
     ],
+    "emanuel|12.30to3": [
+      { time_slot: "12.30 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Hub Room" },
+    ],
     "emanuel|11to3": [
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
@@ -711,21 +715,25 @@
   var PLAIN = {
     "ikram|11to4": ["tuesday", "thursday", "saturday", "sunday"],
     "ikram|11to3": ["tuesday", "thursday", "saturday", "sunday"],
-    "fadi|12.30to3": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
+    "fadi|12.30to3": ["tuesday", "thursday", "saturday", "sunday"],
   };
   var DAY_OVERRIDE = {
     "fadi|12.30to3|monday": [
       { time_slot: "12.30 to 1", area: "Small Pool" },
-      { time_slot: "2 to 3", area: "Day Centre" },
+      { time_slot: "2 to 3", area: "Hub Room" },
+    ],
+    "fadi|12.30to3|wednesday": [
+      { time_slot: "12.30 to 1", area: "Small Pool" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
     "fadi|12.30to3|friday": [
       { time_slot: "12.30 to 1", area: "Big Pool" },
-      { time_slot: "1 to 3", area: "Day Centre" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
   };
   function areaHintFor(name) {
     var n = String(name || "").toLowerCase();
-    if (n === "emanuel" || n === "emmanuel" || n === "ikram") return "Hub Room";
+    if (n === "emanuel" || n === "emmanuel" || n === "ikram" || n === "fadi") return "Hub Room";
     if (n === "manager") return "Hub · Manager";
     return "Day Centre";
   }

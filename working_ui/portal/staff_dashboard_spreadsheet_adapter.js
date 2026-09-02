@@ -38,7 +38,7 @@
   var PORTAL_COMBINED_DAY_CENTRE_SEGMENTS = {
     "fadi|12.30to3": [
       { time_slot: "12.30 to 1", area: "Big Pool" },
-      { time_slot: "1 to 3", area: "Day Centre" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
     // Ikram Mon/Wed/Fri: Hub 11–12 · swim 12–1 · Hub 1–4 (same as Emanuel).
     "ikram|11to4": [
@@ -64,6 +64,11 @@
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 12.30", area: "Big Pool" },
     ],
+    // Victor Wed mid-block with Emanuel: swim 12.30–1 · Hub 1–3.
+    "emanuel|12.30to3": [
+      { time_slot: "12.30 to 1", area: "Big Pool" },
+      { time_slot: "1 to 3", area: "Hub Room" },
+    ],
     "emanuel|11to3": [
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
@@ -80,20 +85,24 @@
   };
   // Days with no pool hour inside the block: SPECIAL card = one Hub / centre
   // segment only. Ikram + Emanuel swim Mon/Wed/Fri; Tue/Thu stay land-only.
-  // Fadi swim Mon/Fri only (Wed DC may still be centre-only when he is in).
+  // Fadi: Mon Small Pool · Wed Small Pool · Fri Big Pool (Tue/Thu land-only).
   var PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS = {
     "ikram|11to4": ["tuesday", "thursday", "saturday", "sunday"],
     "ikram|11to3": ["tuesday", "thursday", "saturday", "sunday"],
-    "fadi|12.30to3": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
+    "fadi|12.30to3": ["tuesday", "thursday", "saturday", "sunday"],
   };
   var PORTAL_COMBINED_SEGMENTS_DAY_OVERRIDE = {
     "fadi|12.30to3|monday": [
       { time_slot: "12.30 to 1", area: "Small Pool" },
-      { time_slot: "2 to 3", area: "Day Centre" },
+      { time_slot: "2 to 3", area: "Hub Room" },
+    ],
+    "fadi|12.30to3|wednesday": [
+      { time_slot: "12.30 to 1", area: "Small Pool" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
     "fadi|12.30to3|friday": [
       { time_slot: "12.30 to 1", area: "Big Pool" },
-      { time_slot: "1 to 3", area: "Day Centre" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
   };
   function portalSynthesizeCombinedSegments(nameLower, service, timeSlot, day, areaHint) {
@@ -108,7 +117,7 @@
     const areaFallback =
       name === "manager"
         ? "Hub · Manager"
-        : name === "emanuel" || name === "emmanuel" || name === "ikram"
+        : name === "emanuel" || name === "emmanuel" || name === "ikram" || name === "fadi"
           ? "Hub Room"
           : String(areaHint || "").trim() || "Day Centre";
     const plainDays = PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS[key];
