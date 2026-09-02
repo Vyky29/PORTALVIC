@@ -1230,10 +1230,13 @@ Deno.serve(async (req) => {
         );
       }
     }
-    if (payNow === "paid") {
+    // First money (paid OR partial/flexi 1st half) must restore seat + in_class.
+    // Previously only payNow==="paid" ran finish-booking — flexi partial left
+    // families like Mia paid-on-invoice but place released / not on rota.
+    if (payNow === "paid" || payNow === "partial") {
       try {
         const cid = clean(updated.contact_id, 120);
-        if (cid && !(hold && hold.cleared)) {
+        if (cid && payNow === "paid" && !(hold && hold.cleared)) {
           hold = await clearPaymentHoldForContact(
             admin,
             cid,
