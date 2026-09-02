@@ -2521,6 +2521,17 @@
       display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;
       background:#f59e0b;color:#fff;border:1px solid rgba(15,23,42,.08);line-height:1.2;max-width:100%;margin:0 auto;
     }
+    button.c4k-svc-wait-lbl--btn{
+      cursor:pointer;font:inherit;appearance:none;-webkit-appearance:none;
+    }
+    button.c4k-svc-wait-lbl--btn:hover{filter:brightness(1.06)}
+    button.c4k-svc-wait-lbl--btn:focus-visible{outline:2px solid #0f172a;outline-offset:2px}
+    button.c4k-svc-wait-venue-btn{
+      cursor:pointer;font:inherit;appearance:none;-webkit-appearance:none;border:0;background:inherit;color:inherit;padding:inherit;
+      max-width:100%;min-width:0;overflow-wrap:break-word;text-align:left;
+    }
+    button.c4k-svc-wait-venue-btn:hover{filter:brightness(0.97)}
+    button.c4k-svc-wait-venue-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
     .c4k-svc-wait-ico{font-size:11px;opacity:.95}
     .c4k-svc-wait-empty{font-size:12px;display:block;text-align:center}
     .card.c4k-svc-card--aquatic .c4k-svc-slot-table tbody .c4k-svc-slot-tr:hover,

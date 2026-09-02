@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260902-luliya-tue-open" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260902-wait-click" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -162,7 +162,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260831-sched-staff-chips" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260902-wait-click" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -8631,6 +8631,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!root || root.__novoSchedSlotDeleg) return;
       root.__novoSchedSlotDeleg = true;
       root.addEventListener('click', function(e){
+        var waitOpenEarly = e.target.closest && e.target.closest('[data-c4k-svc-wait-open]');
+        if(waitOpenEarly && root.contains(waitOpenEarly)){
+          e.preventDefault();
+          e.stopPropagation();
+          var wProg = waitOpenEarly.getAttribute('data-c4k-svc-programme') || '';
+          var wVen = waitOpenEarly.getAttribute('data-venue') || '';
+          var wDay = waitOpenEarly.getAttribute('data-day') || '';
+          var wSegA = waitOpenEarly.getAttribute('data-c4k-svc-seg-start') || '';
+          var wSegB = waitOpenEarly.getAttribute('data-c4k-svc-seg-end') || '';
+          var wN = parseInt(String(waitOpenEarly.getAttribute('data-c4k-svc-wait-n') || ''), 10);
+          adminOpenWaitlistForProgVenue(wProg, wVen, {
+            day: wDay,
+            segA: wSegA,
+            segB: wSegB,
+            matchedN: Number.isFinite(wN) ? wN : undefined
+          });
+          return;
+        }
+      }, true);
+      root.addEventListener('click', function(e){
         var paxPill = e.target.closest('.c4k-svc-pax-pill');
         if(paxPill && root.contains(paxPill)){
           e.preventDefault();
@@ -8655,6 +8675,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           e.preventDefault();
           e.stopPropagation();
           portalAdminFilterOpenPlacesFromServicesBand(opBandBtn);
+          return;
+        }
+        var waitOpenBtn = e.target.closest('[data-c4k-svc-wait-open]');
+        if(waitOpenBtn && root.contains(waitOpenBtn)){
+          e.preventDefault();
+          e.stopPropagation();
           return;
         }
         var editBtn = e.target.closest('[data-novo-edit-sched-slot]');
@@ -18781,15 +18807,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       band = band || {};
       var matches = adminCapacityWaitMatchRowsForProgVenue(band.prog, band.venue);
       state.scrollToCapacityEmbed = false;
-      setView('c4k_waitlist');
-      if(typeof portalAdminToast === 'function'){
-        portalAdminToast(
-          matches.length
-            ? (matches.length + ' waiting-list match(es) for '+String(band.prog || '')+' · '+String(band.venue || '')+' — review and then Assign from capacity / Open places.')
-            : ('Opened Waiting list. No heuristic matches for '+String(band.prog || '')+' · '+String(band.venue || '')+'.'),
-          matches.length ? 'ok' : ''
-        );
-      }
+      adminOpenWaitlistForProgVenue(band.prog, band.venue, { matchedN: matches.length });
     }
     function adminCapacityHandleQuickAction(act, band){
       act = String(act || '').toLowerCase();
@@ -18817,25 +18835,109 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
     }
-    /** One-line hint from the waiting list (portal export or `MOCK.c4kWaitlist`) — heuristic match on service/venue text. */
+    /** Venue bag on a waitlist row (live loc / workbook address). */
+    function adminWaitlistRowVenueBag(w){
+      return (String((w && w.loc) || '') + ' ' + String((w && w.match) || '')).toLowerCase();
+    }
+    /** True when waitlist location matches Services venue (Acton ≠ SwimFarm). */
+    function adminWaitlistVenueMatches(venue, w){
+      var ven = String(venue || '').trim().toLowerCase();
+      if(!ven || ven === '—' || ven === '-') return true;
+      var bag = adminWaitlistRowVenueBag(w);
+      var bagEmpty = !bag.trim() || bag === '—' || bag === '-';
+      if(/acton/.test(ven)){
+        if(/swimfarm|swim farm|northolt|westway/.test(bag) && !/acton/.test(bag)) return false;
+        return /acton/.test(bag) || /\bw3\b/.test(bag);
+      }
+      if(/northolt/.test(ven)){
+        if(/acton|swimfarm|swim farm|westway/.test(bag) && !/northolt/.test(bag)) return false;
+        return /northolt/.test(bag) || /\bub5\b/.test(bag);
+      }
+      if((typeof adminServicesIsSwimFarmVenue === 'function' && adminServicesIsSwimFarmVenue(ven)) || /swimfarm|swim farm/.test(ven)){
+        if(/acton|northolt/.test(bag) && !/swimfarm|swim farm|westway/.test(bag)) return false;
+        return /swimfarm|swim farm|westway/.test(bag) || bagEmpty;
+      }
+      if(w && w._live && !bagEmpty){
+        return bag.indexOf(ven) >= 0 || ven.indexOf(String(bag.split(/[·|,]/)[0] || '').trim()) >= 0;
+      }
+      /* Workbook rows without a clear venue must not inflate venue badges. */
+      if(!w || !w._live){
+        if(bagEmpty || /^london\b/.test(bag.trim())) return false;
+        return bag.indexOf(ven) >= 0;
+      }
+      return true;
+    }
+    function adminWaitlistServiceMatches(prog, w){
+      var pv = String(prog || '').toLowerCase();
+      var bag = (String((w && w.service) || '') + ' ' + String((w && w.match) || '') + ' ' + String((w && w.slotTime) || '') + ' ' + String((w && w.pref) || '')).toLowerCase();
+      if(!pv) return true;
+      if((pv.indexOf('day centre') >= 0 || pv.indexOf('daycentre') >= 0 || /\bdc\b/.test(pv)) && (bag.indexOf('dc') >= 0 || bag.indexOf('complex') >= 0 || bag.indexOf('day centre') >= 0)) return true;
+      if(pv.indexOf('aquatic') >= 0 || (pv.indexOf('swim') >= 0 && pv.indexOf('multi') < 0)){
+        return bag.indexOf('swim') >= 0 || bag.indexOf('pool') >= 0 || bag.indexOf('water') >= 0 || bag.indexOf('aquatic') >= 0;
+      }
+      if(pv.indexOf('climb') >= 0) return bag.indexOf('climb') >= 0;
+      if(pv.indexOf('therapy') >= 0 || pv.indexOf('mdt') >= 0) return bag.indexOf('ot') >= 0 || bag.indexOf('mdt') >= 0;
+      if(pv.indexOf('outreach') >= 0) return bag.indexOf('outreach') >= 0;
+      if(pv.indexOf('multi') >= 0) return bag.indexOf('multi') >= 0 || bag.indexOf('splash') >= 0;
+      if(pv.indexOf('physical') >= 0 || pv.indexOf('fitness') >= 0) return bag.indexOf('fitness') >= 0 || bag.indexOf('physical') >= 0;
+      return false;
+    }
+    /** Waiting-list rows matched to programme + venue (no capacity-overflow fiction). */
     function adminCapacityWaitMatchRowsForProgVenue(prog, venue){
-      var pv = (String(prog || '') + ' ' + String(venue || '')).toLowerCase();
       var out = [];
       (adminC4kWaitlistRows() || []).forEach(function(w){
-        var bag = (String(w.service || '') + ' ' + String(w.loc || '') + ' ' + String(w.match || '') + ' ' + String(w.slotTime || '') + ' ' + String(w.pref || '')).toLowerCase();
-        var hit = false;
-        // Day Centre @ SwimFarm contains "swim" — match DC waiters first, not aquatic.
-        if((pv.indexOf('day centre') >= 0 || pv.indexOf('daycentre') >= 0 || /\bdc\b/.test(pv)) && (bag.indexOf('dc') >= 0 || bag.indexOf('complex') >= 0 || bag.indexOf('day centre') >= 0)) hit = true;
-        else if(pv.indexOf('swim') >= 0 && (bag.indexOf('swim') >= 0 || bag.indexOf('pool') >= 0 || bag.indexOf('water') >= 0 || bag.indexOf('aquatic') >= 0)) hit = true;
-        else if(pv.indexOf('aquatic') >= 0 && (bag.indexOf('swim') >= 0 || bag.indexOf('pool') >= 0 || bag.indexOf('water') >= 0 || bag.indexOf('aquatic') >= 0)) hit = true;
-        else if(pv.indexOf('climb') >= 0 && bag.indexOf('climb') >= 0) hit = true;
-        else if((pv.indexOf('therapy') >= 0 || pv.indexOf('mdt') >= 0) && (bag.indexOf('ot') >= 0 || bag.indexOf('mdt') >= 0)) hit = true;
-        else if(pv.indexOf('outreach') >= 0 && bag.indexOf('outreach') >= 0) hit = true;
-        else if(pv.indexOf('multi') >= 0 && (bag.indexOf('multi') >= 0 || bag.indexOf('splash') >= 0)) hit = true;
-        else if(pv.indexOf('physical') >= 0 && (bag.indexOf('fitness') >= 0 || bag.indexOf('physical') >= 0)) hit = true;
-        if(hit) out.push(w);
+        if(!adminWaitlistServiceMatches(prog, w)) return;
+        if(!adminWaitlistVenueMatches(venue, w)) return;
+        out.push(w);
       });
       return out;
+    }
+    /** Optional day / time band filter on top of prog+venue (Services Waiting column). */
+    function adminServiceBandWaitlistRows(prog, venue, dowNorm, segA, segB){
+      var base = adminCapacityWaitMatchRowsForProgVenue(prog, venue);
+      var dayWant = adminServiceNormalizeDowKey(dowNorm);
+      var a0 = adminServiceMinutesFromAnchor(segA);
+      var b0 = adminServiceMinutesFromAnchor(segB);
+      if(!base.length) return base;
+      var withDayOrTime = false;
+      var bi;
+      for(bi = 0; bi < base.length; bi++){
+        var slot0 = String((base[bi] && base[bi].slotTime) || '').trim();
+        if(slot0 && slot0 !== '—'){ withDayOrTime = true; break; }
+      }
+      if(!withDayOrTime) return base;
+      return base.filter(function(w){
+        var slot = String((w && w.slotTime) || '').toLowerCase();
+        if(!slot || slot === '—') return true;
+        if(dayWant){
+          var dayHit =
+            (dayWant === 'monday' && /\bmon/.test(slot)) ||
+            (dayWant === 'tuesday' && /\btue/.test(slot)) ||
+            (dayWant === 'wednesday' && /\bwed/.test(slot)) ||
+            (dayWant === 'thursday' && /\bthu/.test(slot)) ||
+            (dayWant === 'friday' && /\bfri/.test(slot)) ||
+            (dayWant === 'saturday' && /\bsat/.test(slot)) ||
+            (dayWant === 'sunday' && /\bsun/.test(slot));
+          var hasDayToken = /\b(mon|tue|wed|thu|fri|sat|sun)/.test(slot);
+          if(hasDayToken && !dayHit) return false;
+        }
+        if(!Number.isFinite(a0) || !Number.isFinite(b0)) return true;
+        var nums = slot.match(/(\d{1,2})(?:[.:](\d{2}))?/g);
+        if(!nums || nums.length < 1) return true;
+        function toMin(tok){
+          var m = String(tok || '').match(/^(\d{1,2})(?:[.:](\d{2}))?$/);
+          if(!m) return NaN;
+          var h = parseInt(m[1], 10) || 0;
+          var mi = parseInt(m[2] || '0', 10) || 0;
+          if(h < 8) h += 12;
+          return h * 60 + mi;
+        }
+        var wa = toMin(nums[0]);
+        var wb = nums.length > 1 ? toMin(nums[1]) : wa + 30;
+        if(!Number.isFinite(wa)) return true;
+        if(!Number.isFinite(wb) || wb <= wa) wb = wa + 30;
+        return wa < b0 && wb > a0;
+      });
     }
     function adminCapacityWaitCountForProgVenue(prog, venue){
       return adminCapacityWaitMatchRowsForProgVenue(prog, venue).length;
@@ -18848,6 +18950,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(out.length) return out.slice(0, 2).join(' · ');
       var n = (adminC4kWaitlistRows() || []).length;
       return n ? (String(n) + ' on list · see Waiting list') : '—';
+    }
+    /** Open Waiting list focused on programme + venue (and optional band). */
+    function adminOpenWaitlistForProgVenue(prog, venue, opts){
+      opts = opts || {};
+      state.waitlistFocus = {
+        prog: String(prog || '').trim(),
+        venue: String(venue || '').trim(),
+        day: String(opts.day || '').trim(),
+        time: String(opts.time || '').trim(),
+        segA: String(opts.segA || '').trim(),
+        segB: String(opts.segB || '').trim()
+      };
+      setView('c4k_waitlist');
+      var n = opts.matchedN != null
+        ? opts.matchedN
+        : (opts.segA
+          ? adminServiceBandWaitlistRows(prog, venue, opts.day, opts.segA, opts.segB).length
+          : adminCapacityWaitCountForProgVenue(prog, venue));
+      if(typeof portalAdminToast === 'function'){
+        portalAdminToast(
+          n > 0
+            ? (String(n) + ' waiting-list match(es) for ' + String(prog || '') + ' · ' + String(venue || '') + ' — names below.')
+            : ('Waiting list opened. No live matches for ' + String(prog || '') + ' · ' + String(venue || '') + '.'),
+          n > 0 ? 'ok' : ''
+        );
+      }
     }
     /** Per-calendar-date roster slot counts (same projection as Services / Bookings). */
     function adminCapacitySlotCountsForIso(iso){
@@ -19758,18 +19886,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 ' data-c4k-svc-seg-start="' + esc(B.segA) + '" data-c4k-svc-seg-end="' + esc(B.segB) + '"' +
                 ' data-c4k-svc-staff-ids="' + esc(staffIdList.join('|')) + '"';
               var cnt = adminServiceSlotRegisterCounts(mergedLines, B.programme, B.venue, B.dk);
-              var waitN = cnt.waitOverflow || 0;
-              for(var wi = 0; wi < mergedLines.length; wi++){
-                var wv = adminServiceSlotWaitListDisplayCount(mergedLines[wi]);
-                if(wv > waitN) waitN = wv;
-              }
-              var fbRows = adminSessionFeedbackPortalRows();
-              var waitTitle = fbRows.length
-                ? 'Waiting list: roster waitListCount when set; plus participants beyond instructor capacity for this block (if any). Otherwise 0 while portal feedback is loaded.'
-                : 'People on the waiting list for this service slot (reminders). Demo count until waitListCount is supplied on roster rows; plus overflow beyond instructor capacity.';
+              /* Waiting column = real Booking Portal / workbook matches only — never capacity overflow. */
+              var waitMatches = adminServiceBandWaitlistRows(B.programme, B.venue, B.dk, B.segA, B.segB);
+              var waitN = waitMatches.length;
+              var waitTitle = waitN > 0
+                ? ('Open Waiting list — ' + String(waitN) + ' match(es) for ' + String(B.programme || '') + ' · ' + String(B.venue || '') + (B.dk ? (' · ' + String(B.dk)) : ''))
+                : 'No waiting-list matches for this programme and venue (New wait uses the same queue). Capacity overflow is not shown here.';
               var waitInner = waitN > 0
-                ? '<span class="c4k-svc-wait-lbl" title="' + esc(waitTitle) + '"><span class="c4k-svc-wait-ico" aria-hidden="true">⏱</span> ' + esc(String(waitN)) + '</span>'
-                : '<span class="c4k-svc-wait-empty" aria-hidden="true"></span>';
+                ? ('<button type="button" class="c4k-svc-wait-lbl c4k-svc-wait-lbl--btn" data-c4k-svc-wait-open="1"' +
+                  ' data-c4k-svc-programme="' + esc(B.programme) + '" data-venue="' + esc(B.venue) + '"' +
+                  ' data-day="' + esc(B.dk) + '" data-c4k-svc-seg-start="' + esc(B.segA) + '" data-c4k-svc-seg-end="' + esc(B.segB) + '"' +
+                  ' data-c4k-svc-wait-n="' + esc(String(waitN)) + '"' +
+                  ' title="' + esc(waitTitle) + '">' +
+                  '<span class="c4k-svc-wait-ico" aria-hidden="true">⏱</span> ' + esc(String(waitN)) +
+                  '</button>')
+                : '<span class="c4k-svc-wait-empty" title="' + esc(waitTitle) + '" aria-hidden="true"></span>';
               var pseudoSeg = { anchorStart: B.segA, anchorEnd: B.segB, sessionDate: B.pickIso, venue: B.venue, programme: String(slot0.programme || B.programme || '') };
               var timeRange = novoSchedSlotTimeRangeOnly(pseudoSeg);
               dayBandRows.push({
@@ -20032,6 +20163,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var venueAgg = adminServiceVenueAggFromInstances(allInst);
           var venueInstrCount = Object.keys(venueInstrSet).length;
           var venuePaxCount = Object.keys(venuePaxSet).length;
+          var venueWaitN = adminCapacityWaitCountForProgVenue(block.programme, vn.venue);
           var venueMetrics =
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-total">'+
             '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Participant places booked across the whole summer term at this venue — every dated session on the roster added up.">'+
@@ -20049,10 +20181,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueSt.open))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-new">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="People on the Waiting list matched to this programme and venue (new demand — same queue as Wait match on the capacity board).">'+
+            '<button type="button" class="c4k-svc-venue-acc__pill chip chip--info c4k-svc-wait-venue-btn" data-c4k-svc-wait-open="1"' +
+            ' data-c4k-svc-programme="' + esc(block.programme) + '" data-venue="' + esc(vn.venue) + '"' +
+            ' data-c4k-svc-wait-n="' + esc(String(venueWaitN)) + '"' +
+            ' title="Open Waiting list for this programme and venue (live Booking Portal joins).">'+
             '<span class="c4k-svc-venue-acc__pill-lbl">New (wait): </span>'+
-            '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(adminCapacityWaitCountForProgVenue(block.programme, vn.venue)))+'</strong>'+
-            '</span></span>'+
+            '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueWaitN))+'</strong>'+
+            '</button></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-inst">'+
             '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct instructors working this service at this venue across the term.">'+
             '<span class="c4k-svc-venue-acc__pill-lbl">Instructors: </span>'+
@@ -22388,6 +22523,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var live = adminLiveWaitlistRows();
       var wlPortal = adminWaitingListPortalRows();
       var list = adminC4kWaitlistRows();
+      var focus = state.waitlistFocus || null;
+      var focusBanner = '';
+      if(focus && (focus.prog || focus.venue)){
+        var focused = focus.segA
+          ? adminServiceBandWaitlistRows(focus.prog, focus.venue, focus.day, focus.segA, focus.segB)
+          : adminCapacityWaitMatchRowsForProgVenue(focus.prog, focus.venue);
+        var focusIds = {};
+        focused.forEach(function(w){
+          var id = String((w && (w.id || w.liveId || w.pax)) || '');
+          if(id) focusIds[id] = true;
+        });
+        list = list.filter(function(w){
+          var id = String((w && (w.id || w.liveId || w.pax)) || '');
+          return id && focusIds[id];
+        });
+        focusBanner =
+          '<div class="card card-pad" style="margin:0 0 12px;border-color:#fbbf24;background:#fffbeb;min-width:0">'+
+          '<p style="margin:0;font-size:13px;line-height:1.45;overflow-wrap:break-word"><strong>Filtered from Services</strong> — '+
+          esc(String(focus.prog || '—'))+' · '+esc(String(focus.venue || '—'))+
+          (focus.day ? (' · '+esc(String(focus.day))) : '')+
+          (focus.time || focus.segA ? (' · '+esc(String(focus.time || (focus.segA + (focus.segB ? ('–'+focus.segB) : ''))))) : '')+
+          ' · '+esc(String(list.length))+' shown.'+
+          ' <button type="button" class="btn btn--ghost btn--sm" id="c4kWaitlistClearFocus" style="vertical-align:baseline">Show all</button>'+
+          ' <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services" style="vertical-align:baseline">Back to Services</button></p></div>';
+      }
       var meta = wlPortal.length && window.WAITING_LIST_PORTAL_SOURCE && window.WAITING_LIST_PORTAL_SOURCE.meta;
       var liveMeta = window.__PORTAL_WAITLIST_LIVE_META__ || {};
       var chips = [];
@@ -22431,12 +22591,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td class="toolbar"><button type="button" class="btn btn--pri btn--sm c4k-mock-act" data-c4k-mock="woffer">Offer</button> <button type="button" class="btn btn--sec btn--sm c4k-mock-act" data-c4k-mock="wkeep">Keep</button> <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Match</button></td></tr>';
       }).join('');
       if(!rows){
-        rows = '<tr><td colspan="11" class="muted" style="padding:16px;overflow-wrap:break-word">No waiting list rows yet. Joins from Booking Portal full slots appear here automatically; older workbook rows stay tagged as Workbook.</td></tr>';
+        rows = '<tr><td colspan="11" class="muted" style="padding:16px;overflow-wrap:break-word">'+(
+          focus
+            ? 'No waiting-list matches for this Services filter. Use <strong>Show all</strong> or join from Booking Portal full slots.'
+            : 'No waiting list rows yet. Joins from Booking Portal full slots appear here automatically; older workbook rows stay tagged as Workbook.'
+        )+'</td></tr>';
       }
       var foot = '<p class="muted" style="margin:10px 0 0;font-size:12px;max-width:52rem;min-width:0;overflow-wrap:break-word">Live rows come from Booking Portal <strong>Join waiting list</strong>. Workbook history loads from <code>waiting_list_portal_data.js</code>.</p>';
       return (
         '<h1 class="page-title">Waiting list</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Families waiting for a place — triage, match, and progress offers. '+metaLine+' Day context: <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services</button>.</p>'+optHint+
+        focusBanner+
         '<div class="section"><div class="section-h"><h2>Waiting list (pipeline)</h2><p>Live Booking Portal joins first; workbook history kept below.</p></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" id="bookingWaitlistTable"><thead><tr><th>Participant</th><th>Source</th><th>Stage</th><th>Since</th></tr></thead><tbody></tbody></table></div></div></div>'+
         '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Service matching queue</h2><p>Desired service, slot time, and preferences when present.</p></div>'+
@@ -27213,6 +27378,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='c4k_waitlist'){
         refreshBookingWaitlistPipelineTable();
         bindPortalAdminWaitlistModule();
+        var clearFocus = $('c4kWaitlistClearFocus');
+        if(clearFocus && !clearFocus.__bound){
+          clearFocus.__bound = true;
+          clearFocus.addEventListener('click', function(ev){
+            ev.preventDefault();
+            state.waitlistFocus = null;
+            setView('c4k_waitlist');
+          });
+        }
       }
       if(id==='office_calendar') bindOfficeCalendarModule();
       if(id==='bookings' || id==='orders_all' || id==='c4k_payments'){
