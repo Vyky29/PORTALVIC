@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 31;
+  var SOURCE_VERSION = 32;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -321,6 +321,7 @@
     { staff: "ROBERTO", name: "Logan", time: "5 to 5.30" },
     { staff: "ROBERTO", name: "No participant", time: "5.30 to 6" },
     { staff: "ROBERTO", name: "Richard", time: "6 to 6.30" },
+    /* On shift from 4 — empty seat is open (No participant), never Closed. */
     { staff: "LULIYA", name: "No participant", time: "4 to 4.30" },
     { staff: "LULIYA", name: "Serine", time: "4.30 to 5.30" },
     { staff: "LULIYA", name: "No participant", time: "5.30 to 6" },
@@ -1118,6 +1119,29 @@
           if (opened430[dkOpen] !== undefined) opened430[dkOpen] = true;
           var cnW = String(r.client_name || "").trim();
           if (/^(closed|no client|noclient|no_client|available)$/i.test(cnW)) {
+            out.push(Object.assign({}, r, { client_name: "No participant" }));
+            return;
+          }
+        }
+      }
+      /* Luliya Tue Acton 4–4.30: on shift — never leave stale Closed from summer snaps. */
+      if (
+        isAquaticService(r.service) &&
+        isActonVenue(r.venue) &&
+        normalizeDowKey(r.day) === "tuesday" &&
+        /\bluliya\b|\blulia\b|\baida\b/i.test(String(r.instructors || ""))
+      ) {
+        var slotL = String(r.time_slot || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+        if (
+          slotL === "4 to 4.30" ||
+          slotL === "4.00 to 4.30" ||
+          slotL.indexOf("4 to 4.30") === 0
+        ) {
+          var cnL = String(r.client_name || "").trim();
+          if (/^(closed|no client|noclient|no_client|available)?$/i.test(cnL) || !cnL) {
             out.push(Object.assign({}, r, { client_name: "No participant" }));
             return;
           }

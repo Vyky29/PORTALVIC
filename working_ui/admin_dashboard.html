@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260716-finance-tab-icos" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260902-luliya-tue-open" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -147,7 +147,7 @@
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260831-dated-slot-instructor"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260902-climb-60"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260902-luliya-tue-open"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260809-staff-map"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -19841,6 +19841,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 /* Named dated booking (trial / new client) beats standing "No participant". */
                 if(nextBooked && !prevBooked) byKey[rk] = rs;
                 else if(prevBooked && !nextBooked){ /* keep booked */ }
+                /* On-shift open seat beats stale Closed (e.g. Luliya Tue 4). */
+                else if(prevSeat.closed && rs.open && !rs.closed) byKey[rk] = rs;
+                else if(prevSeat.open && !prevSeat.closed && rs.closed){ /* keep open */ }
                 else byKey[rk] = rs;
               }
               var aligned = [];
@@ -19887,11 +19890,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               for(var si = 0; si < maxSeats; si++){
                 var seat = DR.seats[si];
                 if(!seat || seat.emptyCol){
+                  /* Instructor on the day board but missing this 30′ band → open gap, not Closed. */
                   seatCells +=
                     '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">'+
                     '<div class="c4k-svc-seat">'+
+                    '<div class="c4k-svc-seat__instr">'+
+                    (seat && seat.staffName
+                      ? ('<button type="button" class="c4k-svc-slot-instr-btn" data-novo-edit-sched-slot="1" ' + DR.dataSlot +
+                        ' title="Change instructor(s) for this class band">' + esc(seat.staffName) + '</button>')
+                      : '')+
+                    '</div>'+
                     '<div class="c4k-svc-seat__pax">'+
-                    adminServicesClosedChipHtml('No roster line for this instructor at this time')+
+                    '<span class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" title="On shift — no participant on this band">No participant</span>'+
                     '</div></div></td>';
                   continue;
                 }
