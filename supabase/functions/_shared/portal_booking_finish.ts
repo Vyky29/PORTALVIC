@@ -1308,6 +1308,8 @@ export async function createFinishBookingStripeCheckout(
     participantName: string;
     amountGbp: number;
     rawFinishToken: string;
+    /** Product line label; defaults to finish-booking payment. */
+    productLabel?: string | null;
   },
 ): Promise<
   | { ok: true; checkout_url: string; session_id: string; charge_gbp: number; fee_gbp: number }
@@ -1331,9 +1333,10 @@ export async function createFinishBookingStripeCheckout(
 
   const invNo = clean(opts.invoiceNumber, 40);
   const displayName = clean(opts.participantName, 80) || "participant";
+  const baseLabel = clean(opts.productLabel, 80) || "Finish booking";
   const productName = invNo
-    ? `Trial session · Invoice ${invNo} · ${displayName}`
-    : `Trial session · ${displayName}`;
+    ? `${baseLabel} · Invoice ${invNo} · ${displayName}`
+    : `${baseLabel} · ${displayName}`;
   const productNameWithFee =
     gross.fee_pence > 0
       ? `${productName} (incl. £${gross.fee_gbp.toFixed(2)} card fee)`

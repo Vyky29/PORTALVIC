@@ -1138,18 +1138,38 @@ Deno.serve(async (req) => {
       return json(400, { ok: false, error: "invoice_required" });
     }
     const scope = parseBookingScope(body.booking_scope) || savedScope;
-    if (scope !== "trial_session") {
-      return json(400, { ok: false, error: "trial_stripe_only" });
-    }
     const { data: invRow } = await admin
       .from("portal_parent_invoice_share")
-      .select("id, invoice_number, amount_gbp, payment_status, contact_id")
+      .select(
+        "id, invoice_number, amount_gbp, payment_status, payment_schedule, contact_id",
+      )
       .eq("id", token.invoice_share_id)
       .maybeSingle();
     if (!invRow || invRow.payment_status === "paid") {
       return json(409, { ok: false, error: "invoice_not_payable" });
     }
-    if (reservation?.id) {
+    const schedule = Array.isArray(invRow.payment_schedule)
+      ? invRow.payment_schedule as Array<Record<string, unknown>>
+      : [];
+    const firstOpen = schedule.find((r) =>
+      String(r?.status || "pending").toLowerCase() !== "paid"
+    ) || schedule[0] || null;
+    const firstVia = String(firstOpen?.collect_via || "").toLowerCase();
+    // Apple Pay / card only for bank-due (or unmarked) first instalments — not GC-only rows.
+    if (firstVia === "gocardless" || firstVia === "gc") {
+      return json(400, {
+        ok: false,
+        error: "stripe_not_for_gocardless_row",
+        message: "This instalment is collected by GoCardless. Use Set up GoCardless.",
+      });
+    }
+    const firstAmt = Number(firstOpen?.amount_gbp);
+    const chargeGbp =
+      Number.isFinite(firstAmt) && firstAmt > 0
+        ? firstAmt
+        : Number(invRow.amount_gbp) || 0;
+
+    if (scope === "trial_session" && reservation?.id) {
       const held = await holdTrialSlotForPayment(
         admin,
         reservation as Record<string, unknown>,
@@ -1166,8 +1186,11 @@ Deno.serve(async (req) => {
       contactId: String(invRow.contact_id || token.contact_id || ""),
       invoiceNumber: clean(invRow.invoice_number, 40),
       participantName: String(doc.participant_name || ""),
-      amountGbp: Number(invRow.amount_gbp) || 0,
+      amountGbp: chargeGbp,
       rawFinishToken: rawToken,
+      productLabel: scope === "trial_session"
+        ? "Trial session"
+        : "First instalment",
     });
     if (!stripe.ok) {
       return json(502, { ok: false, error: stripe.error, message: stripe.message });

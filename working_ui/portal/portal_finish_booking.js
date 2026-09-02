@@ -423,6 +423,17 @@
         status: demoState.status,
       });
     }
+    if (action === "create_stripe_checkout") {
+      return Promise.resolve({
+        ok: true,
+        checkout_url: "https://example.com/stripe-checkout-demo",
+        stripe_checkout: {
+          checkout_url: "https://example.com/stripe-checkout-demo",
+          charge_gbp: 1,
+          fee_gbp: 0.05,
+        },
+      });
+    }
     if (action === "confirm_paid") {
       demoState.status = "awaiting_office_payment";
       return Promise.resolve({
@@ -745,6 +756,15 @@
       '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">' +
       '<rect x="3" y="5" width="18" height="14" rx="2"/>' +
       '<path d="M3 7l9 6 9-6"/>' +
+      "</svg>"
+    );
+  }
+
+  function iconCard() {
+    return (
+      '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">' +
+      '<rect x="2" y="5" width="20" height="14" rx="2"/>' +
+      '<path d="M2 10h20"/>' +
       "</svg>"
     );
   }
@@ -1255,8 +1275,10 @@
       var waHref =
         "https://wa.me/447592558671?text=" + encodeURIComponent(paidMsg);
       html +=
-        '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 1 — Pay by bank transfer</p>' +
+        '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 1 — Pay</p>' +
+        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">Pay the amount above by bank transfer <strong>or</strong> card / Apple Pay.</p>' +
         '<div class="card-inner" style="margin:0 0 12px">' +
+        '<div style="font-weight:700;margin:0 0 6px;color:var(--ink)">Bank transfer</div>' +
         "<div><strong>Payee</strong> " +
         esc(bank.payee_name || "clubSENsational") +
         "</div>" +
@@ -1270,14 +1292,21 @@
         esc(data.transfer_reference || data.participant_name || "") +
         "</div>" +
         "</div>" +
+        '<p style="margin:0 0 8px;text-align:center;color:var(--muted);font-size:.82rem;font-weight:700">or</p>' +
+        '<button type="button" class="btn btn--pri" id="fbBankStripePay" style="gap:8px;margin:0 0 8px">' +
+        iconCard() +
+        " Pay with card / Apple Pay</button>" +
+        '<p class="muted" style="margin:0 0 12px;overflow-wrap:break-word">Card / Apple Pay includes a small fee so we receive <strong>' +
+        esc(money(firstAmt)) +
+        "</strong> in full. Confirms automatically — no Step 2.</p>" +
         '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
         holdLine +
         "</p>" +
         '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
         '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 2 — Tell the office</p>' +
-        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, WhatsApp or email saying you have paid' +
+        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word"><strong>Only if you paid by bank transfer.</strong> WhatsApp or email saying you have paid' +
         (isTrialBank ? " (include reference + amount)" : "") +
-        ". A photo/screenshot is helpful but optional.</p>" +
+        ". Skip this if you used card / Apple Pay — we are notified automatically.</p>" +
         '<p style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px">' +
         '<a class="btn btn--pri" id="fbNotifyWa" href="' +
         esc(waHref) +
@@ -1323,6 +1352,39 @@
       }
     }
     if (host) host.innerHTML = html;
+    var bankStripePay = document.getElementById("fbBankStripePay");
+    if (bankStripePay) {
+      bankStripePay.onclick = function () {
+        showNotice(
+          document.getElementById("fbNotice"),
+          "Opening card / Apple Pay…",
+          "",
+        );
+        void api("create_stripe_checkout", {
+          booking_scope: data.booking_scope || null,
+        })
+          .then(function (out) {
+            if (out.checkout_url) {
+              if (isDemoMode()) {
+                showNotice(
+                  document.getElementById("fbNotice"),
+                  "Demo — card / Apple Pay would open here. No Step 2 needed; office is notified automatically.",
+                  "ok",
+                );
+                return;
+              }
+              global.location.href = out.checkout_url;
+            }
+          })
+          .catch(function (err) {
+            showNotice(
+              document.getElementById("fbNotice"),
+              err.message || "Could not start card / Apple Pay.",
+              "error",
+            );
+          });
+      };
+    }
     if (gcBankFirst) {
       function unlockGcStep2(url) {
         data.gc_step2_unlocked = true;
@@ -1390,7 +1452,9 @@
     if (stripeRetry) {
       stripeRetry.onclick = function () {
         showNotice(document.getElementById("fbNotice"), "Opening payment…", "");
-        void api("create_stripe_checkout", { booking_scope: "trial_session" })
+        void api("create_stripe_checkout", {
+          booking_scope: data.booking_scope || "trial_session",
+        })
           .then(function (out) {
             if (out.checkout_url) global.location.href = out.checkout_url;
           })
@@ -1479,13 +1543,13 @@
         if (qs("stripe") === "1" && data.status === "awaiting_payment") {
           showNotice(
             notice,
-            "Payment received — confirming your trial. If your PIN is not here in a minute, refresh this page.",
+            "Payment received — confirming your booking. If your PIN is not here in a minute, refresh this page.",
             "ok",
           );
         } else if (qs("stripe_cancel") === "1") {
           showNotice(
             notice,
-            "Payment was not completed. Your slot is not booked until you pay with card / Apple Pay.",
+            "Payment was not completed. You can try card / Apple Pay again, or pay by bank transfer and tell the office.",
             "error",
           );
         } else if (qs("gc") === "1" && data.status === "awaiting_payment") {
