@@ -1488,6 +1488,20 @@
     );
   }
 
+  /** True when office should chase payment now (due window), not future AUTO terms. */
+  function invoiceCollectingNow(inv) {
+    var pay = String((inv && inv.payment_status) || 'unpaid').toLowerCase();
+    if (pay === 'paid' || pay === 'void') return false;
+    if (pay === 'pending_confirmation') return true;
+    var next = nextUnpaidInstalment(inv);
+    if (next) {
+      return instalmentIsCollectingNow(instalmentDueIso(next.due_date));
+    }
+    return instalmentIsCollectingNow(
+      instalmentDueIso((inv && (inv.next_instalment_due || inv.due_date)) || ''),
+    );
+  }
+
   function groupStatusSummary(invoices) {
     var unpaid = 0;
     var partial = 0;
@@ -1502,11 +1516,20 @@
       var pay = String(inv.payment_status || 'unpaid');
       if (pay === 'void') return; /* void chips not shown */
       var isHidden = String(inv.share_status || '') === 'hidden';
+      var notDueYet = !invoiceCollectingNow(inv);
       if (isHidden) {
         /* Only count Hidden for re-enrolled clients still in class (future instalments). */
         var inClass = inv.in_class !== false;
         var hasReenrol = Boolean(inv.reenrolment_submitted_at);
         if (inClass && hasReenrol) hidden += 1;
+      } else if (
+        pay !== 'paid' &&
+        pay !== 'partial' &&
+        pay !== 'pending_confirmation' &&
+        notDueYet
+      ) {
+        /* AUTO year: spring/summer INV-Ps exist but are not due yet → Hidden, not Unpaid. */
+        hidden += 1;
       }
       if (pay === 'paid') paid += 1;
       else if (pay === 'partial') {
@@ -1515,8 +1538,8 @@
       } else if (pay === 'pending_confirmation') {
         /* Pending confirmation is always actionable (even if somehow hidden). */
         pending += 1;
-      } else if (!isHidden) {
-        /* Unpaid chip = ready/shared only — future monthly/flexi halves stay in Hidden. */
+      } else if (!isHidden && !notDueYet) {
+        /* Unpaid chip = ready + collecting now only. */
         unpaid += 1;
       }
       /* Xero chips: full or first-instalment paid, not yet in Xero */
