@@ -86,6 +86,7 @@
     funding_code: null,
     booking_scope: null,
     pay_plan: null,
+    choices_json: {},
   };
 
   function demoPayload() {
@@ -223,6 +224,22 @@
       demoState.pay_plan && quote(demoState.pay_plan)
         ? quote(demoState.pay_plan)
         : null;
+    var gcBankFirstDemo =
+      demoState.pay_plan === "gocardless_monthly" &&
+      activeQuote &&
+      activeQuote.schedule &&
+      activeQuote.schedule[0] &&
+      String(activeQuote.schedule[0].collect_via || "").toLowerCase() ===
+        "bank_transfer";
+    var gcUnlockedDemo = Boolean(
+      demoState.choices_json && demoState.choices_json.office_paid_notified_at,
+    );
+    var gcUrlDemo =
+      demoState.pay_plan === "gocardless_monthly"
+        ? gcBankFirstDemo && !gcUnlockedDemo
+          ? null
+          : "https://example.com/gocardless-demo"
+        : null;
     return {
       ok: true,
       status: demoState.status,
@@ -305,10 +322,7 @@
                   : demoState.pay_plan === "stripe_instant"
                     ? "stripe"
                     : "bank_transfer",
-              gocardless_url:
-                demoState.pay_plan === "gocardless_monthly"
-                  ? "https://example.com/gocardless-demo"
-                  : null,
+              gocardless_url: gcUrlDemo,
               due_date: today,
             }
           : null,
@@ -322,8 +336,9 @@
             },
       transfer_reference:
         demoState.pay_plan === "stripe_instant" ? null : "MALAZ-DEMO",
-      gocardless_url:
-        demoState.pay_plan === "gocardless_monthly" ? "https://example.com/gocardless-demo" : null,
+      gocardless_url: gcUrlDemo,
+      gc_step2_unlocked: gcUnlockedDemo,
+      choices_json: demoState.choices_json || {},
       checkout_url:
         demoState.pay_plan === "stripe_instant"
           ? "https://example.com/stripe-checkout-demo"
@@ -370,6 +385,12 @@
       demoState.booking_scope = extra.booking_scope || demoState.booking_scope;
       demoState.pay_plan = extra.pay_plan || demoState.pay_plan;
       demoState.status = "awaiting_payment";
+      demoState.choices_json = Object.assign({}, demoState.choices_json || {}, {
+        pay_plan: demoState.pay_plan,
+        booking_scope: demoState.booking_scope,
+        funding_code: demoState.funding_code,
+        gc_requires_office_notify: demoState.pay_plan === "gocardless_monthly",
+      });
       var p = demoPayload();
       var stripeTrial = demoState.pay_plan === "stripe_instant";
       return Promise.resolve({
@@ -378,10 +399,28 @@
         bank: stripeTrial ? null : p.bank,
         transfer_reference: stripeTrial ? null : p.transfer_reference,
         gocardless_url: p.gocardless_url,
+        gc_step2_unlocked: Boolean(p.gc_step2_unlocked),
+        choices_json: p.choices_json,
         checkout_url: p.checkout_url || null,
         stripe_checkout: p.stripe_checkout || null,
         pay_hold_minutes: 30,
         pay_hold_expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      });
+    }
+    if (action === "notify_office_paid") {
+      var notifiedAt = new Date().toISOString();
+      demoState.choices_json = Object.assign({}, demoState.choices_json || {}, {
+        office_paid_notified_at: notifiedAt,
+        office_paid_notify_channel: extra.channel || "unknown",
+        office_paid_notify_at: notifiedAt,
+      });
+      return Promise.resolve({
+        ok: true,
+        gocardless_url: "https://example.com/gocardless-demo",
+        office_paid_notified_at: notifiedAt,
+        gc_step2_unlocked: true,
+        choices_json: demoState.choices_json,
+        status: demoState.status,
       });
     }
     if (action === "confirm_paid") {
@@ -1028,6 +1067,8 @@
             data.pay_hold_expires_at = out.pay_hold_expires_at;
             data.status = "awaiting_payment";
             data.pay_plan = plan;
+            if (out.choices_json) data.choices_json = out.choices_json;
+            data.gc_step2_unlocked = Boolean(out.gc_step2_unlocked);
             showInvoice(data);
             showNotice(notice, "", "");
           })
@@ -1239,12 +1280,12 @@
         (isTrialBank ? " (include reference + amount)" : "") +
         ". A photo/screenshot is helpful but optional.</p>" +
         '<p style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px">' +
-        '<a class="btn btn--pri" href="' +
+        '<a class="btn btn--pri" id="fbNotifyWa" href="' +
         esc(waHref) +
         '" target="_blank" rel="noopener noreferrer" style="width:auto;flex:1 1 140px;gap:8px">' +
         iconWa() +
         " WhatsApp the office</a>" +
-        '<a class="btn btn--pri" href="mailto:info@clubsensational.org?subject=' +
+        '<a class="btn btn--pri" id="fbNotifyEmail" href="mailto:info@clubsensational.org?subject=' +
         mailSub +
         "&body=" +
         mailBody +
@@ -1252,22 +1293,99 @@
         iconMail() +
         " Email the office</a>" +
         "</p>";
-      if (gcBankFirst && gcUrl) {
+      if (gcBankFirst) {
+        var gcUnlocked =
+          data.gc_step2_unlocked === true ||
+          Boolean(
+            data.choices_json && data.choices_json.office_paid_notified_at,
+          );
+        var gcHref = gcUnlocked && gcUrl ? gcUrl : "";
         html +=
           '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
           '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 2 — Set up GoCardless</p>' +
-          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After Step 1, set up Direct Debit so later months collect on the <strong>1st</strong> with every family.</p>' +
-          '<a class="btn btn--pri" href="' +
-          esc(gcUrl) +
-          '"' +
-          (isDemoMode() ? ' target="_blank" rel="noopener noreferrer"' : "") +
-          ' style="gap:8px">' +
-          iconGc() +
-          " Set up GoCardless</a>" +
+          '<p class="muted" id="fbGcStep2Hint" style="margin:0 0 10px;overflow-wrap:break-word">' +
+          (gcUnlocked
+            ? "After Step 1, set up Direct Debit so later months collect on the <strong>1st</strong> with every family."
+            : "Locked until you tap <strong>WhatsApp the office</strong> or <strong>Email the office</strong> above (after your bank transfer).") +
+          "</p>" +
+          (gcHref
+            ? '<a class="btn btn--pri" id="fbGcStep2" href="' +
+              esc(gcHref) +
+              '"' +
+              (isDemoMode() ? ' target="_blank" rel="noopener noreferrer"' : "") +
+              ' style="gap:8px">' +
+              iconGc() +
+              " Set up GoCardless</a>"
+            : '<button type="button" class="btn btn--pri" id="fbGcStep2" disabled style="gap:8px;opacity:.55;cursor:not-allowed">' +
+              iconGc() +
+              " Set up GoCardless</button>") +
           "</div>";
       }
     }
     if (host) host.innerHTML = html;
+    if (gcBankFirst) {
+      function unlockGcStep2(url) {
+        data.gc_step2_unlocked = true;
+        data.gocardless_url = url || data.gocardless_url || "";
+        if (data.invoice) data.invoice.gocardless_url = data.gocardless_url;
+        var btn = document.getElementById("fbGcStep2");
+        var hint = document.getElementById("fbGcStep2Hint");
+        if (hint) {
+          hint.innerHTML =
+            "After Step 1, set up Direct Debit so later months collect on the <strong>1st</strong> with every family.";
+        }
+        if (btn && data.gocardless_url) {
+          var a = document.createElement("a");
+          a.className = "btn btn--pri";
+          a.id = "fbGcStep2";
+          a.href = data.gocardless_url;
+          a.style.cssText = "gap:8px";
+          if (isDemoMode()) {
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+          }
+          a.innerHTML = iconGc() + " Set up GoCardless";
+          btn.replaceWith(a);
+        }
+      }
+      function onOfficeNotify(channel) {
+        void api("notify_office_paid", { channel: channel })
+          .then(function (out) {
+            if (out.choices_json) data.choices_json = out.choices_json;
+            else {
+              data.choices_json = data.choices_json || {};
+              data.choices_json.office_paid_notified_at =
+                out.office_paid_notified_at || new Date().toISOString();
+            }
+            unlockGcStep2(out.gocardless_url);
+            showNotice(
+              document.getElementById("fbNotice"),
+              "Step 2 unlocked — set up GoCardless when ready.",
+              "ok",
+            );
+          })
+          .catch(function (err) {
+            showNotice(
+              document.getElementById("fbNotice"),
+              err.message ||
+                "Could not unlock GoCardless yet. Message the office, then try again.",
+              "error",
+            );
+          });
+      }
+      var waBtn = document.getElementById("fbNotifyWa");
+      var emailBtn = document.getElementById("fbNotifyEmail");
+      if (waBtn) {
+        waBtn.addEventListener("click", function () {
+          onOfficeNotify("whatsapp");
+        });
+      }
+      if (emailBtn) {
+        emailBtn.addEventListener("click", function () {
+          onOfficeNotify("email");
+        });
+      }
+    }
     var stripeRetry = document.getElementById("fbStripeRetry");
     if (stripeRetry) {
       stripeRetry.onclick = function () {

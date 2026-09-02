@@ -1,5 +1,6 @@
 // portal-booking-finish — public finish-booking after Accept (magic token).
-// Actions: load | save_choices | create_invoice | create_stripe_checkout
+// Actions: load | save_choices | create_invoice | create_stripe_checkout |
+// notify_office_paid (unlocks GoCardless after WhatsApp/email Step 1)
 // (confirm_paid disabled — parent messages/emails office after bank transfer)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -64,6 +65,96 @@ function json(status: number, body: Record<string, unknown>) {
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+/** First instalment collected by bank (mid-month GoCardless join). */
+function paymentScheduleBankFirst(schedule: unknown): boolean {
+  const rows = Array.isArray(schedule) ? schedule : [];
+  const first = rows[0] as Record<string, unknown> | undefined;
+  if (!first) return false;
+  const via = String(first.collect_via || "").toLowerCase();
+  if (via === "bank_transfer" || via === "bank") return true;
+  return /bank transfer/i.test(String(first.label || ""));
+}
+
+function officePaidNotified(choices: Record<string, unknown>): boolean {
+  return Boolean(String(choices.office_paid_notified_at || "").trim());
+}
+
+/** Hide GC authorisation URL until parent taps WhatsApp/Email (Step 1). */
+function redactGcUntilOfficeNotify(
+  invoice: Record<string, unknown> | null,
+  choices: Record<string, unknown>,
+): Record<string, unknown> | null {
+  if (!invoice) return null;
+  if (
+    paymentScheduleBankFirst(invoice.payment_schedule) &&
+    !officePaidNotified(choices)
+  ) {
+    return { ...invoice, gocardless_url: null };
+  }
+  return invoice;
+}
+
+async function mintFinishBookingGocardlessUrl(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  opts: {
+    contactId: string;
+    parentPersonId: string | null;
+    participantName: string;
+    invoiceId: string;
+    invoiceNumber: string | null;
+    rawToken: string;
+    paymentSchedule: unknown;
+  },
+): Promise<string | null> {
+  if (!gocardlessConfigured() || !opts.invoiceId) return null;
+  const rows = Array.isArray(opts.paymentSchedule) ? opts.paymentSchedule : [];
+  const firstRow = rows[0] as Record<string, unknown> | undefined;
+  const bankFirst = paymentScheduleBankFirst(opts.paymentSchedule);
+  const firstGbp = Number(firstRow?.amount_gbp) || 0;
+  const firstDue = String(firstRow?.due_date || "").slice(0, 10);
+  const asOf = new Date().toISOString().slice(0, 10);
+  // Charge via Billing Request only when first GC instalment is due today (the shared 1st).
+  const chargeGcNow =
+    !bankFirst &&
+    String(firstRow?.collect_via || "").toLowerCase() === "gocardless" &&
+    firstDue === asOf &&
+    firstGbp > 0;
+  const br = await gocardlessCreateBillingRequest({
+    contactId: opts.contactId,
+    parentPersonId: opts.parentPersonId,
+    description: `clubSENsational · ${clean(opts.participantName, 80)}`,
+    paymentAmountPence: chargeGcNow ? Math.round(firstGbp * 100) : null,
+    paymentDescription: chargeGcNow
+      ? `Payment due ${firstDue} · ${clean(opts.invoiceNumber, 40) || opts.invoiceId}`
+      : `Monthly on the 1st · ${clean(opts.invoiceNumber, 40) || opts.invoiceId}`,
+    invoiceShareId: opts.invoiceId,
+    invoiceNumber: clean(opts.invoiceNumber, 40) || null,
+  });
+  if (!br.ok) {
+    console.warn("[portal-booking-finish] gocardless br", br.error, br.detail);
+    return null;
+  }
+  const origin = (
+    Deno.env.get("PORTAL_PUBLIC_ORIGIN") ||
+    Deno.env.get("PARENT_PORTAL_PUBLIC_ORIGIN") ||
+    "https://www.clubsensational.org"
+  ).replace(/\/$/, "");
+  const flow = await gocardlessCreateBillingRequestFlow({
+    billingRequestId: br.data.id,
+    redirectUri:
+      `${origin}/parent/finish-booking?t=${encodeURIComponent(opts.rawToken)}&gc=1`,
+    exitUri: `${origin}/parent/finish-booking?t=${encodeURIComponent(opts.rawToken)}`,
+  });
+  if (!flow.ok || !flow.data.authorisation_url) return null;
+  const url = flow.data.authorisation_url;
+  await admin
+    .from("portal_parent_invoice_share")
+    .update({ gocardless_url: url, updated_at: new Date().toISOString() })
+    .eq("id", opts.invoiceId);
+  return url;
 }
 
 function parseUkDateToIso(v: unknown): string | null {
@@ -555,6 +646,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       invoice = inv;
     }
+    invoice = redactGcUntilOfficeNotify(invoice, savedChoices);
     return json(200, {
       ok: true,
       status: token.status,
@@ -588,6 +680,7 @@ Deno.serve(async (req) => {
       },
       quotes,
       invoice,
+      gocardless_url: invoice?.gocardless_url || null,
       bank: tideBankDetailsFromEnv(),
       pay_hold_minutes: Number(savedChoices.pay_hold_minutes) || BOOKING_PAY_HOLD_MINUTES,
       pay_hold_expires_at:
@@ -595,6 +688,7 @@ Deno.serve(async (req) => {
         reservation?.hold_expires_at ||
         null,
       choices_json: savedChoices,
+      gc_step2_unlocked: officePaidNotified(savedChoices),
       completed: token.status === "completed",
       place_released:
         token.status === "expired_unpaid" ||
@@ -741,11 +835,18 @@ Deno.serve(async (req) => {
         )
         .eq("id", token.invoice_share_id)
         .maybeSingle();
+      const invSafe = redactGcUntilOfficeNotify(
+        existing as Record<string, unknown> | null,
+        savedChoices,
+      );
       return json(200, {
         ok: true,
         already: true,
-        invoice: existing,
+        invoice: invSafe,
+        gocardless_url: invSafe?.gocardless_url || null,
         bank: tideBankDetailsFromEnv(),
+        gc_step2_unlocked: officePaidNotified(savedChoices),
+        choices_json: savedChoices,
         quote:
           scope === "trial_session"
             ? quotes.trial_one_off || null
@@ -876,51 +977,25 @@ Deno.serve(async (req) => {
 
     const invoiceId = String(created.invoice?.id || "");
     let gocardlessUrl: string | null = null;
-    if (plan === "gocardless_monthly" && gocardlessConfigured() && invoiceId) {
+    const firstRow = quote.paymentSchedule[0];
+    const bankFirst = firstRow?.collect_via === "bank_transfer";
+    // Mid-month GC: mandate only after parent taps WhatsApp/Email (Step 1).
+    if (
+      plan === "gocardless_monthly" &&
+      gocardlessConfigured() &&
+      invoiceId &&
+      !bankFirst
+    ) {
       try {
-        const firstRow = quote.paymentSchedule[0];
-        const bankFirst = firstRow?.collect_via === "bank_transfer";
-        const firstGbp = Number(firstRow?.amount_gbp) || 0;
-        const firstDue = String(firstRow?.due_date || "").slice(0, 10);
-        // Charge via Billing Request only when first GC instalment is due today (the shared 1st).
-        // Otherwise mandate-only — later months collect on the 1st with everyone else.
-        const chargeGcNow =
-          !bankFirst &&
-          firstRow?.collect_via === "gocardless" &&
-          firstDue === asOf &&
-          firstGbp > 0;
-        const br = await gocardlessCreateBillingRequest({
+        gocardlessUrl = await mintFinishBookingGocardlessUrl(admin, {
           contactId: ensured.contactId,
           parentPersonId: ensured.parentPersonId,
-          description: `clubSENsational · ${clean(doc.participant_name, 80)}`,
-          paymentAmountPence: chargeGcNow ? Math.round(firstGbp * 100) : null,
-          paymentDescription: chargeGcNow
-            ? `Payment due ${firstDue} · ${clean(created.invoice?.invoice_number, 40) || invoiceId}`
-            : `Monthly on the 1st · ${clean(created.invoice?.invoice_number, 40) || invoiceId}`,
-          invoiceShareId: invoiceId,
+          participantName: String(doc.participant_name || ""),
+          invoiceId,
           invoiceNumber: clean(created.invoice?.invoice_number, 40) || null,
+          rawToken,
+          paymentSchedule: quote.paymentSchedule,
         });
-        if (br.ok) {
-          const origin = (
-            Deno.env.get("PORTAL_PUBLIC_ORIGIN") ||
-            Deno.env.get("PARENT_PORTAL_PUBLIC_ORIGIN") ||
-            "https://www.clubsensational.org"
-          ).replace(/\/$/, "");
-          const flow = await gocardlessCreateBillingRequestFlow({
-            billingRequestId: br.data.id,
-            redirectUri: `${origin}/parent/finish-booking?t=${encodeURIComponent(rawToken)}&gc=1`,
-            exitUri: `${origin}/parent/finish-booking?t=${encodeURIComponent(rawToken)}`,
-          });
-          if (flow.ok && flow.data.authorisation_url) {
-            gocardlessUrl = flow.data.authorisation_url;
-            await admin
-              .from("portal_parent_invoice_share")
-              .update({ gocardless_url: gocardlessUrl, updated_at: new Date().toISOString() })
-              .eq("id", invoiceId);
-          }
-        } else {
-          console.warn("[portal-booking-finish] gocardless br", br.error, br.detail);
-        }
       } catch (e) {
         console.warn("[portal-booking-finish] gocardless", e);
       }
@@ -944,6 +1019,7 @@ Deno.serve(async (req) => {
           saved_at: now,
           pay_hold_minutes: BOOKING_PAY_HOLD_MINUTES,
           pay_hold_expires_at: payHoldExpires,
+          gc_requires_office_notify: plan === "gocardless_monthly" && bankFirst,
         },
         updated_at: now,
       })
@@ -1022,14 +1098,28 @@ Deno.serve(async (req) => {
 
     return json(200, {
       ok: true,
-      invoice: invOut,
-      gocardless_url: gocardlessUrl || invOut?.gocardless_url || null,
+      invoice:
+        bankFirst && invOut
+          ? { ...invOut, gocardless_url: null }
+          : invOut,
+      gocardless_url: bankFirst ? null : (gocardlessUrl || invOut?.gocardless_url || null),
       bank: isTrialStripe ? null : bank,
       transfer_reference: isTrialStripe ? null : transferRef,
       stripe_checkout: stripeCheckout,
       checkout_url: stripeCheckout?.checkout_url || null,
       pay_hold_minutes: isTrial ? TRIAL_PAY_HOLD_MINUTES : BOOKING_PAY_HOLD_MINUTES,
       pay_hold_expires_at: payHoldExpires,
+      gc_step2_unlocked: false,
+      choices_json: {
+        funding_code: funding,
+        booking_scope: scope,
+        pay_plan: plan,
+        scope_label: scopeLabel,
+        saved_at: now,
+        pay_hold_minutes: BOOKING_PAY_HOLD_MINUTES,
+        pay_hold_expires_at: payHoldExpires,
+        gc_requires_office_notify: plan === "gocardless_monthly" && bankFirst,
+      },
       quote: {
         remaining_sessions: quote.remainingSessions,
         first_due_gbp: quote.paymentSchedule[0]?.amount_gbp ?? null,
@@ -1086,6 +1176,95 @@ Deno.serve(async (req) => {
       ok: true,
       checkout_url: stripe.checkout_url,
       stripe_checkout: stripe,
+    });
+  }
+
+  if (action === "notify_office_paid") {
+    // Step 1 gate: parent tapped WhatsApp or Email → unlock Step 2 GoCardless.
+    if (token.status === "completed") {
+      return json(200, { ok: true, status: "completed", completed: true });
+    }
+    if (!token.invoice_share_id) {
+      return json(400, { ok: false, error: "invoice_required" });
+    }
+    const { data: inv } = await admin
+      .from("portal_parent_invoice_share")
+      .select(
+        "id, invoice_number, amount_gbp, amount_paid_gbp, payment_status, payment_schedule, payment_method_hint, gocardless_url, due_date",
+      )
+      .eq("id", token.invoice_share_id)
+      .maybeSingle();
+    if (!inv) return json(404, { ok: false, error: "invoice_not_found" });
+
+    const bankFirst = paymentScheduleBankFirst(inv.payment_schedule);
+    if (!bankFirst) {
+      return json(400, {
+        ok: false,
+        error: "notify_not_required",
+        message: "This payment plan does not require the bank-notify step.",
+      });
+    }
+
+    const channelRaw = clean(body.channel, 20).toLowerCase();
+    const channel =
+      channelRaw === "whatsapp" || channelRaw === "email" ? channelRaw : "unknown";
+    const now = new Date().toISOString();
+    const nextChoices = {
+      ...savedChoices,
+      office_paid_notified_at:
+        String(savedChoices.office_paid_notified_at || "").trim() || now,
+      office_paid_notify_channel: channel,
+      office_paid_notify_at: now,
+      gc_requires_office_notify: true,
+    };
+
+    await admin
+      .from("portal_booking_completion_tokens")
+      .update({
+        choices_json: nextChoices,
+        updated_at: now,
+      })
+      .eq("id", token.id);
+
+    let gocardlessUrl = clean(inv.gocardless_url, 2000) || null;
+    if (!gocardlessUrl) {
+      const contactId = clean(token.contact_id, 80);
+      if (!contactId) {
+        return json(400, { ok: false, error: "contact_required" });
+      }
+      try {
+        gocardlessUrl = await mintFinishBookingGocardlessUrl(admin, {
+          contactId,
+          parentPersonId: clean(token.parent_person_id, 80) || null,
+          participantName: String(doc.participant_name || ""),
+          invoiceId: String(inv.id),
+          invoiceNumber: clean(inv.invoice_number, 40) || null,
+          rawToken,
+          paymentSchedule: inv.payment_schedule,
+        });
+      } catch (e) {
+        console.warn("[portal-booking-finish] notify_office_paid gc", e);
+      }
+    }
+
+    if (!gocardlessUrl) {
+      return json(502, {
+        ok: false,
+        error: "gocardless_unavailable",
+        message:
+          "Thanks — we recorded that you contacted the office. GoCardless setup is not ready yet; try again in a moment or ask the office.",
+        office_paid_notified_at: nextChoices.office_paid_notified_at,
+        gc_step2_unlocked: true,
+      });
+    }
+
+    return json(200, {
+      ok: true,
+      gocardless_url: gocardlessUrl,
+      office_paid_notified_at: nextChoices.office_paid_notified_at,
+      gc_step2_unlocked: true,
+      choices_json: nextChoices,
+      status: token.status,
     });
   }
 
