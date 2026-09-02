@@ -36,10 +36,10 @@
       form_type: 'client_registration',
       title: 'Registration forms',
       intro:
-        '<strong>New-client registration</strong> — PDF + photo from Booking Portal leads (not climbing). ' +
-        '<strong>Place</strong> is live status (In class / Trial / Pay hold / Did not finish / Waiting list / Slot requested / Registered only) — not only what the form asked for. ' +
-        'Flow: slot → registration → <strong>payment</strong> (finish-booking link sent automatically) → office marks invoice paid → review form/PDF after payment → Parent Portal PIN. ' +
-        '<strong>Mark reviewed</strong> tracks that you opened the form; <strong>Resend finish link</strong> if the parent lost it. ' +
+        '<strong>New-client registration</strong> — PDF + photo (FYI). No Accept gate; parents finish funding/payment later via the finish-booking link. ' +
+        '<strong>Place</strong> is live only (Registered only / Waiting list / Pay hold / Awaiting Tide / In class / Did not finish). Chosen slot is not listed here - it arrives in the pay-hold / I\'ve paid office alerts. ' +
+        'After bank transfer, parent WhatsApps/emails office → check Tide → <strong>Mark paid</strong> in Re-enrolments → PIN. ' +
+        '<strong>Mark reviewed</strong> = you opened the PDF; <strong>Resend finish link</strong> if they lost it. ' +
         'Climbing forms: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_climbing_registrations">Climbing registrations</button>. ' +
         'Annual consents: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Parent consents</button>.',
       empty: 'No client registration forms yet.',
@@ -183,7 +183,7 @@
     return (
       '<div class="card" style="margin-top:0"><div class="card-pad" style="overflow:auto;padding:0">' +
       '<table class="tbl tbl--center tbl--dense"><thead><tr>' +
-      '<th>Submitted</th><th>Form</th><th>Place</th><th>Participant</th><th>Parent</th><th>Requested slot</th><th>Office review</th><th>PDF</th><th>Photo</th><th>Review</th>' +
+      '<th>Submitted</th><th>Form</th><th>Place</th><th>Participant</th><th>Parent</th><th>Office review</th><th>PDF</th><th>Photo</th><th>Review</th>' +
       '</tr></thead><tbody>' +
       docs.map(function (d) {
         var formType = String(d.form_type || '').toLowerCase();
@@ -210,7 +210,7 @@
         var placeDetail = String(d.place_detail || '').trim();
         var placeTitle = placeDetail
           ? placeLab + ' — ' + placeDetail
-          : 'Live place / booking status (not only the form snapshot)';
+          : 'Live place status (slot comes from finish-booking / pay alerts, not this form)';
         var parentLine = [d.parent_name, d.parent_email].filter(Boolean).join(' · ') || '—';
         var pdfLink = d.pdf_signed_url
           ? '<button type="button" class="btn btn--pri btn--sm portal-pax-doc-open" data-url="' +
@@ -222,26 +222,11 @@
             esc(d.photo_signed_url) +
             '">View photo</button>'
           : '<span class="muted">No photo</span>';
-        var slotLine = '—';
-        try {
-          var br = d.payload_json && d.payload_json.booking_request;
-          if (br && typeof br === 'object') {
-            var bits = [
-              br.service_name || br.service || br.service_id,
-              br.venue,
-              br.day || br.day_label,
-              br.time || br.time_label
-            ].filter(Boolean);
-            slotLine = bits.length ? bits.join(' · ') : br.slot_id || '—';
-          }
-        } catch (_e) {
-          slotLine = '—';
-        }
         var reviewed = String(d.status || '').toLowerCase() === 'reviewed';
         var reviewCell;
         if (!isReg) {
           reviewCell = '<span class="muted" style="font-size:12px">Consents — use Parent consents</span>';
-        } else         if (reviewed) {
+        } else if (reviewed) {
           reviewCell =
             '<div class="toolbar" style="margin:0;flex-wrap:wrap;gap:6px">' +
             '<span class="chip chip--ok">Reviewed</span>' +
@@ -294,9 +279,6 @@
           '</strong></td>' +
           '<td class="muted" style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
           esc(parentLine) +
-          '</td>' +
-          '<td class="muted" style="min-width:0;max-width:16rem;overflow-wrap:break-word">' +
-          esc(slotLine) +
           '</td>' +
           '<td><span class="chip chip--' +
           (reviewed ? 'ok' : 'pend') +

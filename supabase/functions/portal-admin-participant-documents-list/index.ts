@@ -80,20 +80,6 @@ function namesMatch(a: string, b: string): boolean {
   return ap[0] === bp[0] && (!!ap[1] || !!bp[1]) && (ap[1] || "") === (bp[1] || "");
 }
 
-function slotDetailFromPayload(payload: Record<string, unknown> | null): string | null {
-  const br = asRecord(payload?.booking_request);
-  if (!br) return null;
-  const bits = [
-    br.service_name || br.service || br.service_id,
-    br.venue,
-    br.day || br.day_label || br.day_name,
-    br.time || br.time_label,
-  ]
-    .map((x) => String(x || "").trim())
-    .filter(Boolean);
-  return bits.length ? bits.join(" · ") : null;
-}
-
 function slotDetailFromReservation(r: ReservationLite | null): string | null {
   if (!r) return null;
   const bits = [r.service_name, r.venue, r.day_label, r.time_label]
@@ -117,7 +103,8 @@ function holdStillOpen(holdExpiresAt: string | null | undefined): boolean {
 }
 
 /**
- * Live place status for office triage — reservation / contact first, form snapshot last.
+ * Live place status only — Registration forms do not show form snapshot slots.
+ * Slot detail comes from the live reservation (finish-booking / pay hold).
  */
 function derivePlace(row: {
   payload_json: Record<string, unknown> | null;
@@ -133,9 +120,7 @@ function derivePlace(row: {
   const clientStatus = String(row.client_status || "").toLowerCase();
   const res = row.reservation;
   const resStatus = String(res?.status || "").toLowerCase();
-  const detailLive = slotDetailFromReservation(res);
-  const detailForm = slotDetailFromPayload(payload);
-  const detail = detailLive || detailForm;
+  const detail = slotDetailFromReservation(res);
 
   const waitFromPayload =
     truthyFlag(payload.waiting_list) ||
@@ -150,18 +135,6 @@ function derivePlace(row: {
     bookingStatus === "waiting_list" ||
     clientStatus === "waiting_list" ||
     waitFromPayload;
-
-  const hasFormSlot =
-    !!br &&
-    !!(
-      br.slot_id ||
-      br.service_name ||
-      br.service ||
-      br.service_id ||
-      br.venue ||
-      br.day ||
-      br.time
-    );
 
   // 1) Live seat / class membership wins over stale waiting-list lead flags.
   if (row.in_class === true) {
@@ -195,9 +168,16 @@ function derivePlace(row: {
   }
 
   if (resStatus === "pending" || resStatus === "awaiting_payment") {
+    const officeConfirm = /office_confirm_hold/i.test(String(res?.notes || ""));
     return {
-      kind: "awaiting_payment",
-      label: isTrialNotes(res?.notes) ? "Awaiting payment · trial" : "Awaiting payment",
+      kind: officeConfirm ? "awaiting_tide" : "awaiting_payment",
+      label: officeConfirm
+        ? isTrialNotes(res?.notes)
+          ? "Awaiting Tide · trial"
+          : "Awaiting Tide (Mark paid)"
+        : isTrialNotes(res?.notes)
+          ? "Pay hold · trial"
+          : "Pay hold (30 min)",
       tone: "pend",
       detail,
     };
@@ -232,16 +212,7 @@ function derivePlace(row: {
     return { kind: "formal", label: "Formal place", tone: "ok", detail };
   }
 
-  // 3) Form asked for a slot but nothing live now.
-  if (hasFormSlot || payload.existing_client_confirm === true) {
-    return {
-      kind: "slot_requested",
-      label: "Slot requested (not booked)",
-      tone: "pend",
-      detail: detailForm,
-    };
-  }
-
+  // 3) Registered form only — no live seat. Slot appears later via finish-booking avisos.
   return { kind: "registered_only", label: "Registered only", tone: "pend", detail: null };
 }
 

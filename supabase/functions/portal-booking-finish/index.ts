@@ -50,7 +50,10 @@ import {
   bookingOfficeConfirmHoldExpiresAt,
   runBookingPayHoldMaintenance,
 } from "../_shared/portal_booking_pay_hold.ts";
-import { notifyOfficeBankPaymentReported } from "../_shared/portal_booking_lead_office_notify.ts";
+import {
+  notifyOfficeBankPaymentReported,
+  notifyOfficePayHoldStarted,
+} from "../_shared/portal_booking_lead_office_notify.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -58,6 +61,21 @@ const corsHeaders: Record<string, string> = {
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+function slotSummaryFromReservation(
+  reservation: Record<string, unknown> | null | undefined,
+): string {
+  if (!reservation) return "";
+  const bits = [
+    reservation.service_name,
+    reservation.venue,
+    reservation.day_label,
+    reservation.time_label,
+  ]
+    .map((x) => clean(x, 120))
+    .filter(Boolean);
+  return bits.join(" · ");
+}
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -1049,6 +1067,31 @@ Deno.serve(async (req) => {
       reservation,
     );
 
+    // Office FYI: funding/payment chosen + live 30' hold (not registration form).
+    // Skip Stripe-instant trial — card checkout / Stripe-paid alerts cover that path.
+    if (invoiceId && !isTrialStripe && (reservation?.id || bookingSlot)) {
+      try {
+        await notifyOfficePayHoldStarted({
+          invoiceShareId: invoiceId,
+          invoiceNumber: clean(created.invoice?.invoice_number, 40) || null,
+          participantName: String(doc.participant_name || ""),
+          parentName: String(doc.parent_name || "") || null,
+          parentEmail: String(doc.parent_email || "") || null,
+          amountGbp: quote.invoiceTotalGbp,
+          isTrial,
+          slotSummary:
+            slotSummaryFromReservation(reservation as Record<string, unknown>) ||
+            [bookingService, venue, bookingSlot].filter(Boolean).join(" · ") ||
+            null,
+          holdExpiresAt: payHoldExpires,
+          fundingLabel,
+          payPlanLabel: paymentLabel,
+        });
+      } catch (e) {
+        console.warn("[portal-booking-finish] pay-hold office notify", e);
+      }
+    }
+
     const { data: invOut } = await admin
       .from("portal_parent_invoice_share")
       .select(
@@ -1308,6 +1351,12 @@ Deno.serve(async (req) => {
             String(doc.participant_name || ""),
           ),
           viaParentMessage: true,
+          slotSummary: slotSummaryFromReservation(
+            reservation as Record<string, unknown> | null,
+          ) || null,
+          holdExpiresAt: officeHoldExpires,
+          fundingLabel: clean(savedChoices.funding_code, 80) || null,
+          payPlanLabel: clean(savedChoices.pay_plan, 80) || null,
         });
       } catch (e) {
         console.warn("[portal-booking-finish] office bank report notify", e);
