@@ -288,12 +288,30 @@
     if (pay === 'partial') return 'partially paid';
     if (pay === 'pending_confirmation') return 'pending confirmation';
     if (pay === 'awaiting_office_payment') return 'awaiting office confirmation';
+    if (pay === 'void') return 'void';
     return pay.replace(/_/g, ' ');
+  }
+
+  function isLostSlotInvoice(inv) {
+    if (!inv) return false;
+    if (inv.lost_slot === true) return true;
+    var pay = String(inv.payment_status || '').toLowerCase();
+    if (pay !== 'void') return false;
+    var notes = String(inv.notes || '');
+    return /place released|never paid|aug\s*15|unpaid_autumn_first|auto-released/i.test(notes);
   }
 
   function statusChip(payment, share, inv) {
     var pay = String(payment || 'unpaid');
     var sh = String(share || 'hidden');
+    if (isLostSlotInvoice(inv)) {
+      return (
+        '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--lost" title="Re-enrolled but did not pay — place released to booking portal">lost slot</span> ' +
+        '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--hidden">' +
+        esc(sh) +
+        '</span>'
+      );
+    }
     /* Green = paid; soft green = partial (flexi half paid); orange = unpaid only. */
     var payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other';
     if (pay === 'paid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--paid';
@@ -1473,6 +1491,7 @@
     else if (payTone === 'partial') cls += ' pp-inv-acc__pay-chip--partial';
     else if (payTone === 'unpaid') cls += ' pp-inv-acc__pay-chip--unpaid';
     else if (payTone === 'pending') cls += ' pp-inv-acc__pay-chip--pending';
+    else if (payTone === 'lost') cls += ' pp-inv-acc__pay-chip--lost';
     else if (payTone === 'hidden') cls += ' pp-inv-acc__pay-chip--hidden';
     else cls += ' pp-inv-acc__pay-chip--other';
     return (
@@ -1508,13 +1527,18 @@
     var paid = 0;
     var pending = 0;
     var hidden = 0;
+    var lost = 0;
     var xeroFail = 0;
     var xeroMissing = 0;
     (canonicalInvoices(invoices) || []).forEach(function (inv) {
       /* Office autos have no family payment status chip. */
       if (inv.created_via === 'la_office_auto') return;
       var pay = String(inv.payment_status || 'unpaid');
-      if (pay === 'void') return; /* void chips not shown */
+      if (isLostSlotInvoice(inv)) {
+        lost += 1;
+        return;
+      }
+      if (pay === 'void') return; /* other voids not shown */
       var isHidden = String(inv.share_status || '') === 'hidden';
       var notDueYet = !invoiceCollectingNow(inv);
       if (isHidden) {
@@ -1566,6 +1590,15 @@
     }
     if (paid) {
       chips.push(summaryFilterChip('paid', paid + ' paid', 'paid'));
+    }
+    if (lost) {
+      chips.push(
+        summaryFilterChip(
+          'lost_slot',
+          lost === 1 ? '1 lost slot' : lost + ' lost slots',
+          'lost',
+        ),
+      );
     }
     if (hidden) {
       chips.push(summaryFilterChip('hidden', hidden + ' hidden', 'hidden'));
@@ -1822,11 +1855,13 @@
 
     return (
       '<article class="pp-inv-acc__card' +
-      (inv.payment_status === 'paid'
-        ? ' pp-inv-acc__card--paid'
-        : inv.payment_status === 'partial'
-          ? ' pp-inv-acc__card--partial'
-          : '') +
+      (isLostSlotInvoice(inv)
+        ? ' pp-inv-acc__card--lost'
+        : inv.payment_status === 'paid'
+          ? ' pp-inv-acc__card--paid'
+          : inv.payment_status === 'partial'
+            ? ' pp-inv-acc__card--partial'
+            : '') +
       '" data-invoice-id="' +
       id +
       '">' +
@@ -2080,8 +2115,17 @@
           : 'private';
     var payVal = paymentMethodSelectValue(invoices[0] || {});
     var schedVal = paymentScheduleSelectValue(invoices[0] || {});
+    var lostAll =
+      (invoices || []).length > 0 && (invoices || []).every(function (inv) {
+        return isLostSlotInvoice(inv) || inv.created_via === 'la_office_auto';
+      }) &&
+      (invoices || []).some(function (inv) {
+        return isLostSlotInvoice(inv);
+      });
     return (
-      '<details class="pp-inv-acc__item pp-inv-acc__item--pax" data-contact-id="' +
+      '<details class="pp-inv-acc__item pp-inv-acc__item--pax' +
+      (lostAll ? ' pp-inv-acc__item--lost' : '') +
+      '" data-contact-id="' +
       contactId +
       '">' +
       '<summary class="pp-inv-acc__sum">' +
@@ -2092,6 +2136,7 @@
       '</strong>' +
       '<span class="pp-inv-acc__num">' +
       esc(countLabel) +
+      (lostAll ? ' · LOST SLOT' : '') +
       (contactId ? ' · ' + contactId : '') +
       '</span>' +
       '</span>' +
@@ -2291,7 +2336,11 @@
       '.pp-inv-acc__pay-chip--partial{color:#15803d;background:#ecfdf5;border-color:#86efac}' +
       '.pp-inv-acc__pay-chip--shared{color:#047857;background:#bbf7d0;border-color:#34d399}' +
       '.pp-inv-acc__pay-chip--hidden{color:#475569;background:#e2e8f0;border-color:#94a3b8}' +
+      '.pp-inv-acc__pay-chip--lost{color:#fff;background:#b91c1c;border-color:#991b1b}' +
       '.pp-inv-acc__pay-chip--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
+      '.pp-inv-acc__item--lost>summary{background:#fef2f2;border-color:#fecaca}' +
+      '.pp-inv-acc__item--lost .pp-inv-acc__name{color:#991b1b}' +
+      '.pp-inv-acc__card--lost{border-color:#fca5a5;background:#fef2f2}' +
       '.pp-inv-acc__status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
       '.pp-inv-acc__xero{font-size:11px;color:#64748b}' +
       '.pp-inv-acc__xero--ok{color:#1e40af}' +
@@ -2309,6 +2358,7 @@
       'button.pp-inv-acc__pay-chip--pending,.pp-inv-acc__pay-chip--pending{color:#9a3412;background-color:#fed7aa;background:#fed7aa;border:1px solid #fb923c}' +
       'button.pp-inv-acc__pay-chip--partial,.pp-inv-acc__pay-chip--partial{color:#15803d;background-color:#ecfdf5;background:#ecfdf5;border:1px solid #86efac}' +
       'button.pp-inv-acc__pay-chip--hidden,.pp-inv-acc__pay-chip--hidden{color:#475569;background-color:#e2e8f0;background:#e2e8f0;border:1px solid #94a3b8}' +
+      'button.pp-inv-acc__pay-chip--lost,.pp-inv-acc__pay-chip--lost{color:#fff;background-color:#b91c1c;background:#b91c1c;border:1px solid #991b1b}' +
       'button.pp-inv-acc__pay-chip--other,.pp-inv-acc__pay-chip--other{color:#4a6578;background-color:#eef2f5;background:#eef2f5;border:1px solid #d5dee6}' +
       '.pp-inv-method-filters{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;margin:0 0 10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;box-sizing:border-box}' +
       '.pp-inv-method-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
@@ -2466,7 +2516,7 @@
         body.share_status = 'ready';
         body.payment_status = 'pending_confirmation';
       }
-      if (state.filter === 'buffer_low' || state.filter === 'xero_unsynced' || state.filter === 'la_auto') {
+      if (state.filter === 'buffer_low' || state.filter === 'xero_unsynced' || state.filter === 'la_auto' || state.filter === 'lost_slot') {
         body.filter = state.filter;
       }
       body.billing_amount = state.amountPeriod || 'autumn';
@@ -2498,6 +2548,9 @@
         }
         if (state.meta.la_office_auto) {
           parts.push(String(state.meta.la_office_auto) + ' auto re-enrolled');
+        }
+        if (state.meta.lost_slot) {
+          parts.push(String(state.meta.lost_slot) + ' lost slot');
         }
         metaEl.textContent = parts.join(' · ');
       }
@@ -3360,6 +3413,7 @@
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="partial">Partially paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="paid">Paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="pending">Pending confirmation</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="lost_slot" title="Re-enrolled but never paid — place released">Lost slot</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="buffer_low">Buffer low</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="xero_unsynced">Not in Xero yet</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="hidden">Hidden</button>' +

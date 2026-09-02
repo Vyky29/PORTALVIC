@@ -29,6 +29,14 @@ function clean(v: unknown, max = 200): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+/** Voided after re-enrol when first payment missed (Aug 15 release etc.). */
+function isLostSlotInvoice(inv: { payment_status?: unknown; notes?: unknown }): boolean {
+  const pay = clean(inv.payment_status, 20).toLowerCase();
+  if (pay !== "void") return false;
+  const notes = String(inv.notes || "");
+  return /place released|never paid|aug\s*15|unpaid_autumn_first|auto-released/i.test(notes);
+}
+
 function num(v: unknown): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -341,7 +349,10 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     .limit(limit);
 
   if (shareFilter === "ready" || shareFilter === "hidden") q = q.eq("share_status", shareFilter);
-  if (["unpaid", "paid", "partial", "void", "pending_confirmation"].includes(payFilter)) {
+  if (listFilter === "lost_slot") {
+    /* Re-enrolled but never paid / place released (Aug 15 etc.) — void INV-Ps for office follow-up. */
+    q = q.eq("payment_status", "void");
+  } else if (["unpaid", "paid", "partial", "void", "pending_confirmation"].includes(payFilter)) {
     q = q.eq("payment_status", payFilter);
   } else {
     // Default list: hide voided orphan / cancelled INV-Ps (e.g. old monthly trackers).
@@ -355,10 +366,41 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       .in("payment_status", ["paid", "partial"]);
   }
 
-  const { data: shares, error } = await q;
+  const { data: sharesMain, error } = await q;
   if (error) {
     console.error("[portal-admin-parent-invoices-list]", error.message);
     return portalAdminJson(500, { ok: false, error: "list_failed" });
+  }
+
+  let shares = sharesMain || [];
+  /* Default All: also surface lost-slot void INV-Ps (re-enrolled, never paid, place released). */
+  if (
+    listFilter !== "lost_slot" &&
+    !["unpaid", "paid", "partial", "void", "pending_confirmation"].includes(payFilter)
+  ) {
+    let qLost = admin
+      .from("portal_parent_invoice_share")
+      .select(
+        "id, document_id, contact_id, invoice_number, amount_gbp, due_date, payment_status, share_status, ready_at, ready_by, notes, created_at, updated_at, payment_method_hint, gocardless_url, payment_link_url, payment_link_surcharge_note, parent_reported_paid_at, parent_reported_ref, parent_reported_method, parent_reported_notes, paid_at, paid_via, xero_invoice_id, xero_payment_id, xero_synced_at, xero_push_status, xero_push_error, created_via, vat_mode, line_description, line_items, quantity, unit_price_gbp, reference_text, billing_term, payment_schedule, amount_paid_gbp, next_instalment_due",
+      )
+      .eq("payment_status", "void")
+      .or(
+        "notes.ilike.%place released%,notes.ilike.%never paid%,notes.ilike.%Aug15%,notes.ilike.%aug 15%",
+      )
+      .order("updated_at", { ascending: false })
+      .limit(80);
+    if (contactId) qLost = qLost.eq("contact_id", contactId);
+    const { data: lostShares } = await qLost;
+    const seen = new Set(shares.map((s) => String(s.id || "")));
+    for (const row of lostShares || []) {
+      if (!isLostSlotInvoice(row)) continue;
+      const id = String(row.id || "");
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      shares.push(row);
+    }
+  } else if (listFilter === "lost_slot") {
+    shares = (shares || []).filter((s) => isLostSlotInvoice(s));
   }
 
   const docIds = (shares || []).map((s) => String(s.document_id || "")).filter(Boolean);
@@ -848,11 +890,16 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
 
   /*
    * Hidden chip / list: only future instalments (and LA office autos) for clients who
-   * still hold a re-enrolled place. Place-released / out-of-class shares stay in DB
-   * for audit but must not appear in admin Finance.
+   * still hold a re-enrolled place. Place-released / out-of-class shares stay hidden
+   * unless they are lost-slot voids (shown in red for office follow-up).
    */
   invoices = invoices.filter((inv) => {
     if (isHfYearDraftInvoice({ readyBy: inv.ready_by, notes: inv.notes })) return false;
+    const lost = isLostSlotInvoice(inv);
+    if (lost) {
+      inv.lost_slot = true;
+      return true;
+    }
     const share = clean(inv.share_status, 20).toLowerCase();
     if (share !== "hidden") return true;
     if (inv.is_la_office_auto === true || clean(inv.created_via, 40) === "la_office_auto") {
@@ -866,6 +913,10 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       (cid ? reenrolByContact.has(cid) : false);
     return hasReenrol;
   });
+
+  if (listFilter === "lost_slot") {
+    invoices = invoices.filter((inv) => inv.lost_slot === true);
+  }
 
   if (listFilter === "buffer_low") {
     invoices = invoices.filter((inv) => inv.buffer_status && (inv.buffer_status as { is_low?: boolean }).is_low);
@@ -932,6 +983,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
 
   const bufferLowContacts = [...bufferByContact.values()].filter((b) => b.is_low).length;
   const laAutoCount = invoices.filter((inv) => inv.created_via === "la_office_auto").length;
+  const lostSlotCount = invoices.filter((inv) => inv.lost_slot === true).length;
 
   return portalAdminJson(200, {
     ok: true,
@@ -943,6 +995,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       buffer_low_contacts: bufferLowContacts,
       xero_unsynced: xeroUnsynced || 0,
       la_office_auto: laAutoCount,
+      lost_slot: lostSlotCount,
       billing_term: amountKey === "year" ? "year" : amountKey,
       billing_term_label: termLabel(amountKey === "year" ? "year" : amountKey),
       billing_amount: amountKey,
