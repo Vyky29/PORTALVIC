@@ -1919,7 +1919,7 @@ Deno.serve(async (req) => {
       },
       team: isFormerClient ? [] : teamOut,
       sessions: sessionsOut,
-      attendance_summary: isFormerClient ? null : attendanceSummary,
+      attendance_summary: attendanceSummary,
       achievements: isFormerClient && !hasAchievementPhotos ? [] : achievements,
       swim_term_reviews: isFormerClient ? [] : swimTermReviews,
       swim_term_review_available: isFormerClient ? false : swimTermReviewAvailable,

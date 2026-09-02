@@ -737,6 +737,26 @@
     }, 1000);
   }
 
+  function historyPdfApi() {
+    return global.PortalParentHistoryPdf || null;
+  }
+
+  function setDownloadBusy(btn, busy, labelWhenDone) {
+    if (!btn) return;
+    if (busy) {
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+      btn.setAttribute("data-pp-dl-label", btn.textContent || "");
+      btn.textContent = "Preparing PDF…";
+    } else {
+      btn.disabled = false;
+      btn.removeAttribute("aria-busy");
+      btn.textContent =
+        labelWhenDone || btn.getAttribute("data-pp-dl-label") || btn.textContent || "Download PDF";
+      btn.removeAttribute("data-pp-dl-label");
+    }
+  }
+
   function participantDownloadSlug(data) {
     var p = (data && data.participant) || {};
     var raw = String(p.display_name || p.first_name || "participant")
@@ -792,6 +812,13 @@
 
   function bindFormerHistoryDownloads(host, data) {
     if (!host || !isFormerClient(data)) return;
+    var pName = ((data && data.participant) || {}).display_name || "Participant";
+    var term =
+      (data && data.term_label) ||
+      (data && data.general && data.general.term_label) ||
+      "";
+    var pdf = historyPdfApi();
+
     host.querySelectorAll("[data-pp-dl-week-note]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var idx = Number(btn.getAttribute("data-pp-dl-week-note"));
@@ -803,12 +830,37 @@
         var note = notes[idx];
         if (!note) return;
         var week = String(note.week_start || "week").slice(0, 10);
-        downloadTextFile(
-          participantDownloadSlug(data) + "-weekly-note-" + week + ".txt",
-          weeklyNoteDownloadText(data, note),
-        );
+        var range = weekRangeLabel(note.week_start, note.week_end);
+        setDownloadBusy(btn, true);
+        var done = function () {
+          setDownloadBusy(btn, false, "Download PDF");
+        };
+        if (pdf && typeof pdf.downloadWeeklyNote === "function") {
+          void pdf
+            .downloadWeeklyNote({
+              participantName: pName,
+              weekLabel: range,
+              body: note.body || "",
+              filenameSlug: participantDownloadSlug(data) + "-weekly-note-" + week,
+            })
+            .then(done)
+            .catch(function () {
+              downloadTextFile(
+                participantDownloadSlug(data) + "-weekly-note-" + week + ".txt",
+                weeklyNoteDownloadText(data, note),
+              );
+              done();
+            });
+        } else {
+          downloadTextFile(
+            participantDownloadSlug(data) + "-weekly-note-" + week + ".txt",
+            weeklyNoteDownloadText(data, note),
+          );
+          done();
+        }
       });
     });
+
     var allNotes = host.querySelector("[data-pp-dl-all-week-notes]");
     if (allNotes) {
       allNotes.addEventListener("click", function () {
@@ -818,14 +870,46 @@
             ? data.weekly_notes
             : [];
         if (!notes.length) return;
-        var body = notes
-          .map(function (n) {
-            return weeklyNoteDownloadText(data, n);
-          })
-          .join("\n--------------------\n\n");
-        downloadTextFile(participantDownloadSlug(data) + "-weekly-notes-all.txt", body);
+        setDownloadBusy(allNotes, true);
+        var done = function () {
+          setDownloadBusy(allNotes, false, "Download all notes (PDF)");
+        };
+        var mapped = notes.map(function (n) {
+          return {
+            weekLabel: weekRangeLabel(n.week_start, n.week_end),
+            week_start: n.week_start,
+            body: n.body || "",
+          };
+        });
+        if (pdf && typeof pdf.downloadWeeklyNotesAll === "function") {
+          void pdf
+            .downloadWeeklyNotesAll({
+              participantName: pName,
+              notes: mapped,
+              filenameSlug: participantDownloadSlug(data) + "-weekly-notes",
+            })
+            .then(done)
+            .catch(function () {
+              var body = notes
+                .map(function (n) {
+                  return weeklyNoteDownloadText(data, n);
+                })
+                .join("\n--------------------\n\n");
+              downloadTextFile(participantDownloadSlug(data) + "-weekly-notes-all.txt", body);
+              done();
+            });
+        } else {
+          var body = notes
+            .map(function (n) {
+              return weeklyNoteDownloadText(data, n);
+            })
+            .join("\n--------------------\n\n");
+          downloadTextFile(participantDownloadSlug(data) + "-weekly-notes-all.txt", body);
+          done();
+        }
       });
     }
+
     host.querySelectorAll("[data-pp-dl-session]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var idx = Number(btn.getAttribute("data-pp-dl-session"));
@@ -833,23 +917,72 @@
         var row = sessions[idx];
         if (!row) return;
         var day = String(row.session_date || "session").slice(0, 10);
-        downloadTextFile(
-          participantDownloadSlug(data) + "-session-" + day + ".txt",
-          sessionFeedbackDownloadText(data, row),
-        );
+        setDownloadBusy(btn, true);
+        var done = function () {
+          setDownloadBusy(btn, false, "Download PDF");
+        };
+        if (pdf && typeof pdf.downloadSingleSession === "function") {
+          void pdf
+            .downloadSingleSession({
+              participantName: pName,
+              termLabel: term,
+              session: row,
+              filenameSlug: participantDownloadSlug(data) + "-session-" + day,
+            })
+            .then(done)
+            .catch(function () {
+              downloadTextFile(
+                participantDownloadSlug(data) + "-session-" + day + ".txt",
+                sessionFeedbackDownloadText(data, row),
+              );
+              done();
+            });
+        } else {
+          downloadTextFile(
+            participantDownloadSlug(data) + "-session-" + day + ".txt",
+            sessionFeedbackDownloadText(data, row),
+          );
+          done();
+        }
       });
     });
+
     var allSess = host.querySelector("[data-pp-dl-all-sessions]");
     if (allSess) {
       allSess.addEventListener("click", function () {
         var sessions = Array.isArray(data.sessions) ? data.sessions : [];
         if (!sessions.length) return;
-        var body = sessions
-          .map(function (row) {
-            return sessionFeedbackDownloadText(data, row);
-          })
-          .join("\n--------------------\n\n");
-        downloadTextFile(participantDownloadSlug(data) + "-session-feedback-all.txt", body);
+        setDownloadBusy(allSess, true);
+        var done = function () {
+          setDownloadBusy(allSess, false, "Download overview (PDF)");
+        };
+        if (pdf && typeof pdf.downloadSessionsOverview === "function") {
+          void pdf
+            .downloadSessionsOverview({
+              participantName: pName,
+              termLabel: term,
+              sessions: sessions,
+              filenameSlug: participantDownloadSlug(data) + "-sessions-overview",
+            })
+            .then(done)
+            .catch(function () {
+              var body = sessions
+                .map(function (row) {
+                  return sessionFeedbackDownloadText(data, row);
+                })
+                .join("\n--------------------\n\n");
+              downloadTextFile(participantDownloadSlug(data) + "-session-feedback-all.txt", body);
+              done();
+            });
+        } else {
+          var body = sessions
+            .map(function (row) {
+              return sessionFeedbackDownloadText(data, row);
+            })
+            .join("\n--------------------\n\n");
+          downloadTextFile(participantDownloadSlug(data) + "-session-feedback-all.txt", body);
+          done();
+        }
       });
     }
   }
@@ -5419,7 +5552,7 @@
       return;
     }
     var former = isFormerClient(data);
-    var termChips = former ? "" : termSessionDateChipsHtml(data, null, viewOpts);
+    var termChips = termSessionDateChipsHtml(data, null, viewOpts);
     var yearBadge = viewOpts.feedbackYear
       ? '<p class="pp-feedback-year-badge" aria-label="Selected year">' +
         esc(feedbackYearLabel(data, viewOpts.feedbackYear)) +
@@ -5427,7 +5560,7 @@
       : "";
     var dlBar =
       former && Array.isArray(data.sessions) && data.sessions.length
-        ? '<div class="pp-former-dl-bar"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-all-sessions>Download all feedback</button></div>'
+        ? '<div class="pp-former-dl-bar"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-all-sessions>Download overview (PDF)</button></div>'
         : "";
     host.innerHTML = subviewShell(
       data,
@@ -5436,7 +5569,7 @@
         yearBadge +
         '<p class="pp-muted pp-pax-subview-note">' +
         (former
-          ? "Past session feedback — engagement, regulation and independence. Download to keep a copy on your device."
+          ? "Attendance, engagement, regulation and independence for past sessions — same overview as when the place was active. Download a branded PDF to keep."
           : "Term dates below, then date, service, instructor, engagement, regulation and independence — absents are listed as Absent. Shown separately for each activity when your child does more than one.") +
         "</p>" +
         dlBar +
@@ -5446,26 +5579,7 @@
             termChips +
             "</div></section>"
           : "") +
-        '<div id="ppPaxSessionsHost"><p class="pcso-loading" role="status">Loading sessions…</p></div>' +
-        (former && Array.isArray(data.sessions) && data.sessions.length
-          ? '<div class="pp-former-session-dl-list" aria-label="Download individual sessions">' +
-            data.sessions
-              .map(function (row, idx) {
-                var label =
-                  formatDate(row.session_date) +
-                  (row.service ? " · " + String(row.service) : "");
-                return (
-                  '<div class="pp-former-session-dl-row">' +
-                  '<span class="pp-muted">' +
-                  esc(label) +
-                  '</span><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-session="' +
-                  idx +
-                  '">Download</button></div>'
-                );
-              })
-              .join("") +
-            "</div>"
-          : ""),
+        '<div id="ppPaxSessionsHost"><p class="pcso-loading" role="status">Loading sessions…</p></div>',
     );
     bindBack(host, data, opts);
     bindFormerHistoryDownloads(host, data);
@@ -5475,7 +5589,7 @@
             return null;
           })
         : null;
-    if (!former) mountTermDateChipStatuses(host, data, opts, messagesPromise);
+    mountTermDateChipStatuses(host, data, opts, messagesPromise);
     var sessionsHost = host.querySelector("#ppPaxSessionsHost");
     if (
       sessionsHost &&
@@ -5484,7 +5598,7 @@
     ) {
       global.PortalClientSessionsOverview.renderParent(sessionsHost, {
         sessions: data.sessions || [],
-        attendance_summary: former ? null : data.attendance_summary || null,
+        attendance_summary: data.attendance_summary || null,
         term_label: data.term_label || (data.general && data.general.term_label) || "",
         hideAchievements: true,
       });
@@ -6198,7 +6312,7 @@
     } else {
       body =
         (former
-          ? '<div class="pp-former-dl-bar"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-all-week-notes>Download all notes</button></div>'
+          ? '<div class="pp-former-dl-bar"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-all-week-notes>Download all notes (PDF)</button></div>'
           : "") +
         '<ul class="pp-week-notes-folder" aria-label="Weekly notes by week">' +
         notes
@@ -6228,7 +6342,7 @@
               (former
                 ? '<div class="pp-former-dl-row"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-week-note="' +
                   idx +
-                  '">Download this note</button></div>'
+                  '">Download PDF</button></div>'
                 : "") +
               "</details></li>"
             );
@@ -6247,7 +6361,7 @@
           : "") +
         '<p class="pp-muted pp-pax-subview-note">' +
         (former
-          ? "One short note per week. Open a week to read it, or download notes to keep on your device."
+          ? "One short note per week. Open a week to read it, or download branded PDFs to keep on your device."
           : "One short note per week. Open a week to read it — older notes stay collapsed so the list stays easy to scroll.") +
         "</p>" +
         body,
