@@ -300,7 +300,11 @@
                       },
                     ],
               payment_method_hint:
-                demoState.pay_plan === "gocardless_monthly" ? "gocardless" : "bank_transfer",
+                demoState.pay_plan === "gocardless_monthly"
+                  ? "gocardless"
+                  : demoState.pay_plan === "stripe_instant"
+                    ? "stripe"
+                    : "bank_transfer",
               gocardless_url:
                 demoState.pay_plan === "gocardless_monthly"
                   ? "https://example.com/gocardless-demo"
@@ -308,14 +312,30 @@
               due_date: today,
             }
           : null,
-      bank: {
-        payee_name: "clubSENsational (demo)",
-        sort_code: "00-00-00",
-        account_number: "00000000",
-      },
-      transfer_reference: "MALAZ-DEMO",
+      bank:
+        demoState.pay_plan === "stripe_instant"
+          ? null
+          : {
+              payee_name: "clubSENsational (demo)",
+              sort_code: "00-00-00",
+              account_number: "00000000",
+            },
+      transfer_reference:
+        demoState.pay_plan === "stripe_instant" ? null : "MALAZ-DEMO",
       gocardless_url:
         demoState.pay_plan === "gocardless_monthly" ? "https://example.com/gocardless-demo" : null,
+      checkout_url:
+        demoState.pay_plan === "stripe_instant"
+          ? "https://example.com/stripe-checkout-demo"
+          : null,
+      stripe_checkout:
+        demoState.pay_plan === "stripe_instant"
+          ? {
+              checkout_url: "https://example.com/stripe-checkout-demo",
+              charge_gbp: round2(unit * 1.029 + 0.2),
+              fee_gbp: round2(unit * 0.029 + 0.2),
+            }
+          : null,
       booking_kind: demoState.booking_scope === "trial_session" ? "trial" : "term",
       is_trial_intent: demoState.booking_scope === "trial_session",
       completed: demoState.status === "completed",
@@ -351,12 +371,17 @@
       demoState.pay_plan = extra.pay_plan || demoState.pay_plan;
       demoState.status = "awaiting_payment";
       var p = demoPayload();
+      var stripeTrial = demoState.pay_plan === "stripe_instant";
       return Promise.resolve({
         ok: true,
         invoice: p.invoice,
-        bank: p.bank,
-        transfer_reference: p.transfer_reference,
+        bank: stripeTrial ? null : p.bank,
+        transfer_reference: stripeTrial ? null : p.transfer_reference,
         gocardless_url: p.gocardless_url,
+        checkout_url: p.checkout_url || null,
+        stripe_checkout: p.stripe_checkout || null,
+        pay_hold_minutes: 30,
+        pay_hold_expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       });
     }
     if (action === "confirm_paid") {
@@ -989,11 +1014,17 @@
       (data.quotes && data.quotes.trial_one_off && data.quotes.trial_one_off.is_trial);
     var isTrialBank =
       isTrial &&
+      data.pay_plan !== "stripe_instant" &&
+      inv.payment_method_hint !== "stripe" &&
       (data.pay_plan === "one_off_bank" ||
         inv.payment_method_hint === "bank_transfer" ||
         (!checkoutUrl && data.bank));
     var isTrialStripe =
-      isTrial && !isTrialBank && (data.pay_plan === "stripe_instant" || checkoutUrl || inv.payment_method_hint === "stripe");
+      isTrial &&
+      !isTrialBank &&
+      (data.pay_plan === "stripe_instant" ||
+        checkoutUrl ||
+        inv.payment_method_hint === "stripe");
     var firstVia = String((first && first.collect_via) || "").toLowerCase();
     var gcBankFirst =
       data.pay_plan === "gocardless_monthly" &&
@@ -1056,7 +1087,15 @@
           : "";
       if (isDemoMode()) {
         html +=
-          '<button type="button" class="btn btn--pri" id="fbConfirmPaid">Demo: paid with card</button>';
+          chargeNote +
+          '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
+          holdLine +
+          "</p>" +
+          '<a class="btn btn--pri" href="' +
+          esc(checkoutUrl || "#") +
+          '">Pay with card / Apple Pay</a>' +
+          '<p class="muted" style="margin:10px 0 8px">Demo: Stripe checkout (no real charge). Or mark paid below.</p>' +
+          '<button type="button" class="btn" id="fbConfirmPaid">Demo: paid with card</button>';
       } else if (checkoutUrl) {
         html +=
           chargeNote +
