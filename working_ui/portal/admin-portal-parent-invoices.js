@@ -471,8 +471,8 @@
     var items = rows
       .map(function (r, i) {
         var rowPaid = String(r.status || 'pending').toLowerCase() === 'paid';
-        /* Fully paid invoice → every instalment shows Paid (even if schedule row was left pending). */
-        var st = invoicePaid || rowPaid ? 'paid' : 'pending';
+        /* Only trust the schedule row — do not paint future GC months Paid just because invoice header is paid. */
+        var st = rowPaid ? 'paid' : 'pending';
         var label =
           String(r.label || '').trim() ||
           'Instalment ' + String(r.seq || i + 1);
@@ -499,8 +499,8 @@
             : isScheduledNext
               ? 'Scheduled'
               : 'Hidden';
-        var paidAtShow = r.paid_at || (invoicePaid ? invoicePaidAt : null);
-        var paidViaShow = r.paid_via || (invoicePaid ? invoicePaidVia : null);
+        var paidAtShow = r.paid_at || null;
+        var paidViaShow = r.paid_via || null;
         var meta = [];
         if (due) meta.push(due);
         meta.push(formatMoney(r.amount_gbp));

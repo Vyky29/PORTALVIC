@@ -250,6 +250,43 @@ export async function gocardlessCreatePayment(input: {
   };
 }
 
+export async function gocardlessGetPayment(
+  paymentId: string,
+): Promise<
+  GcApiResult<{
+    id: string;
+    amount_pence: number;
+    status?: string;
+    charge_date?: string | null;
+    metadata: Record<string, unknown>;
+  }>
+> {
+  const id = String(paymentId || "").trim().slice(0, 80);
+  if (!id) return { ok: false, error: "payment_required" };
+  const res = await gocardlessRequest<{
+    payments?: {
+      id?: string;
+      amount?: number;
+      status?: string;
+      charge_date?: string;
+      metadata?: Record<string, unknown>;
+    };
+  }>("GET", `/payments/${encodeURIComponent(id)}`);
+  if (!res.ok) return res;
+  const pay = res.data.payments;
+  if (!pay?.id) return { ok: false, error: "gocardless_payment_missing" };
+  return {
+    ok: true,
+    data: {
+      id: String(pay.id),
+      amount_pence: Math.round(Number(pay.amount) || 0),
+      status: pay.status,
+      charge_date: pay.charge_date || null,
+      metadata: pay.metadata && typeof pay.metadata === "object" ? pay.metadata : {},
+    },
+  };
+}
+
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let out = 0;

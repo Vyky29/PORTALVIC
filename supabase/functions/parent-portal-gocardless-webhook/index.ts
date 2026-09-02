@@ -6,6 +6,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   gocardlessGetBillingRequest,
+  gocardlessGetPayment,
   gocardlessVerifyAndParseWebhook,
 } from "../_shared/gocardless.ts";
 import {
@@ -16,6 +17,7 @@ import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
 import { recordInvoiceInstalmentPayment } from "../_shared/portal_create_family_invoice.ts";
+import { normalizePaymentSchedule } from "../_shared/portal_invoice_payment_schedule.ts";
 import {
   tryCompleteBookingAfterGocardlessMandateSetup,
   tryCompleteBookingAfterInvoicePayment,
@@ -161,6 +163,74 @@ async function markInvoicePaid(
       ok: true as const,
       invoice_id: target.id,
       tracker_invoice_id: before.id,
+      payment_status: rolled.payment_status,
+      xero,
+      hold,
+    };
+  }
+
+  // No consolidated tracker: apply ONE instalment (or legacy full amount), never paint whole schedule paid blindly.
+  const schedule = normalizePaymentSchedule(before.payment_schedule);
+  const paymentRef = clean(opts.paymentId || before.gocardless_payment_id, 80);
+  const paidViaRef = clean(`gocardless:${paymentRef || before.id}`, 40);
+
+  if (schedule.length) {
+    if (
+      schedule.some((row) => String(row?.paid_via || "") === paidViaRef)
+    ) {
+      return { ok: true as const, invoice_id: before.id, already_applied: true };
+    }
+    let amountGbp = 0;
+    if (paymentRef) {
+      const pay = await gocardlessGetPayment(paymentRef);
+      if (pay.ok && pay.data.amount_pence > 0) {
+        amountGbp = Math.round(pay.data.amount_pence) / 100;
+      }
+    }
+    if (!(amountGbp > 0)) {
+      const nextPending = schedule.find((row) => row.status !== "paid");
+      amountGbp = Number(nextPending?.amount_gbp || 0);
+    }
+    if (!(amountGbp > 0)) {
+      return { ok: false as const, reason: "instalment_amount_missing" };
+    }
+    const rolled = await recordInvoiceInstalmentPayment(supabase, String(before.id), {
+      amountGbp,
+      paidVia: paidViaRef,
+    });
+    if (!rolled.ok) return { ok: false as const, reason: rolled.error };
+
+    let xero = { synced: false, skipped: "term_not_fully_paid" };
+    if (rolled.payment_status === "paid") {
+      const { data: paidTarget } = await supabase
+        .from("portal_parent_invoice_share")
+        .select(
+          "id, contact_id, payment_status, amount_gbp, invoice_number, paid_via, xero_invoice_id, xero_payment_id",
+        )
+        .eq("id", before.id)
+        .maybeSingle();
+      if (paidTarget) xero = await xeroEnsurePaidShareInBooks(supabase, paidTarget);
+    }
+    let hold = null;
+    try {
+      const cid = clean(before.contact_id, 120);
+      if (cid && rolled.payment_status === "paid") {
+        hold = await clearPaymentHoldForContact(supabase, cid, "gocardless");
+      }
+    } catch (e) {
+      console.error("[gc-webhook] hold", e instanceof Error ? e.message : String(e));
+    }
+    try {
+      await tryCompleteBookingAfterInvoicePayment(supabase, String(before.id));
+    } catch (e) {
+      console.error(
+        "[gc-webhook] finish booking",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
+    return {
+      ok: true as const,
+      invoice_id: before.id,
       payment_status: rolled.payment_status,
       xero,
       hold,

@@ -13,6 +13,8 @@ export type InvoicePaymentScheduleRow = {
   paid_via?: string | null;
   /** How this instalment is collected (hybrid GC: first month bank, later months DD). */
   collect_via?: "bank_transfer" | "gocardless" | null;
+  /** GoCardless payment id scheduled/collected for this instalment only. */
+  gocardless_payment_id?: string | null;
 };
 
 export function round2(n: number): number {
@@ -45,6 +47,9 @@ export function normalizePaymentSchedule(raw: unknown): InvoicePaymentScheduleRo
       paid_at: o.paid_at ? String(o.paid_at) : null,
       paid_via: o.paid_via ? String(o.paid_via).slice(0, 40) : null,
       collect_via,
+      gocardless_payment_id: o.gocardless_payment_id
+        ? String(o.gocardless_payment_id).slice(0, 80)
+        : null,
     });
   }
   return out.sort((a, b) => a.seq - b.seq);
