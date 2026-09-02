@@ -692,6 +692,21 @@
     });
   }
 
+  /** Pay-hold expiry for parents: time only (e.g. 10:39 UTC), no calendar date. */
+  function formatHoldExpiryTime(iso) {
+    var s = String(iso || "").trim();
+    if (!s) return "";
+    var m = s.match(/T(\d{2}:\d{2})/);
+    if (m) return m[1] + " UTC";
+    var d = new Date(s);
+    if (!Number.isNaN(d.getTime())) {
+      var hh = String(d.getUTCHours()).padStart(2, "0");
+      var mm = String(d.getUTCMinutes()).padStart(2, "0");
+      return hh + ":" + mm + " UTC";
+    }
+    return "";
+  }
+
   function plansForChannel(channel, data) {
     if (channel === "gocardless") {
       return [
@@ -1074,8 +1089,8 @@
         "";
       var holdLine = holdExp
         ? "Your place is held until <strong>" +
-          esc(String(holdExp).replace("T", " ").slice(0, 16)) +
-          " UTC</strong> while you pay. If payment is not completed in time, the slot goes back on the Booking Portal."
+          esc(formatHoldExpiryTime(holdExp) || "the deadline") +
+          "</strong> while you pay. If payment is not completed in time, the slot goes back on the Booking Portal."
         : "Pay now with card or Apple Pay. If payment is not completed in time, the slot is not booked.";
       var chargeNote =
         data.stripe_checkout && data.stripe_checkout.charge_gbp
