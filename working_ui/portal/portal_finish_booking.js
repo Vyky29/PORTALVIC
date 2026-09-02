@@ -1152,9 +1152,6 @@
       '<p class="muted" style="margin:0 0 12px;overflow-wrap:break-word">First amount due: <strong>' +
       esc(money(firstAmt)) +
       "</strong>" +
-      (gcBankFirst
-        ? " <span>(Step 1: bank · Step 2: tell the office · Step 3: GoCardless)</span>"
-        : "") +
       "</p>";
 
     if (
@@ -1180,17 +1177,17 @@
           "</strong>. After it clears, the office can confirm and we send your Parent Portal PIN.</p>";
       }
     } else if (isTrialStripe) {
-      var holdMin =
+      var holdMinS =
         Number(data.pay_hold_minutes) ||
         (data.choices_json && Number(data.choices_json.pay_hold_minutes)) ||
         30;
-      var holdExp =
+      var holdExpS =
         data.pay_hold_expires_at ||
         (data.choices_json && data.choices_json.pay_hold_expires_at) ||
         "";
-      var holdLine = holdExp
+      var holdLineS = holdExpS
         ? "Your place is held until <strong>" +
-          esc(formatHoldExpiryTime(holdExp) || "the deadline") +
+          esc(formatHoldExpiryTime(holdExpS) || "the deadline") +
           "</strong> while you pay. If payment is not completed in time, the slot goes back on the Booking Portal."
         : "Pay now with card or Apple Pay. If payment is not completed in time, the slot is not booked.";
       var chargeNote =
@@ -1205,7 +1202,7 @@
         html +=
           chargeNote +
           '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
-          holdLine +
+          holdLineS +
           "</p>" +
           '<a class="btn btn--pri" href="' +
           esc(checkoutUrl || "#") +
@@ -1216,7 +1213,7 @@
         html +=
           chargeNote +
           '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
-          holdLine +
+          holdLineS +
           "</p>" +
           '<a class="btn btn--pri" id="fbStripePay" href="' +
           esc(checkoutUrl) +
@@ -1226,7 +1223,7 @@
         html +=
           chargeNote +
           '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
-          holdLine +
+          holdLineS +
           "</p>" +
           '<button type="button" class="btn btn--pri" id="fbStripeRetry">Pay with card / Apple Pay</button>';
       }
@@ -1274,84 +1271,156 @@
       );
       var waHref =
         "https://wa.me/447592558671?text=" + encodeURIComponent(paidMsg);
-      html +=
-        '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 1 — Pay</p>' +
-        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">Pay the amount above by bank transfer <strong>or</strong> card / Apple Pay.</p>' +
-        '<div class="card-inner" style="margin:0 0 12px">' +
-        '<div style="font-weight:700;margin:0 0 6px;color:var(--ink)">Bank transfer</div>' +
-        "<div><strong>Payee</strong> " +
-        esc(bank.payee_name || "clubSENsational") +
-        "</div>" +
-        "<div><strong>Sort code</strong> " +
-        esc(bank.sort_code || "—") +
-        "</div>" +
-        "<div><strong>Account</strong> " +
-        esc(bank.account_number || "—") +
-        "</div>" +
-        "<div><strong>Reference</strong> " +
-        esc(data.transfer_reference || data.participant_name || "") +
-        "</div>" +
-        "</div>" +
-        '<p style="margin:0 0 8px;text-align:center;color:var(--muted);font-size:.82rem;font-weight:700">or</p>' +
-        '<button type="button" class="btn btn--pri" id="fbBankStripePay" style="gap:8px;margin:0 0 8px">' +
-        iconCard() +
-        " Pay with card / Apple Pay</button>" +
-        '<p class="muted" style="margin:0 0 12px;overflow-wrap:break-word">Card / Apple Pay includes a small fee so we receive <strong>' +
-        esc(money(firstAmt)) +
-        "</strong> in full. Confirms automatically — no Step 2.</p>" +
-        '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
-        holdLine +
-        "</p>" +
-        '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
-        '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 2 — Tell the office</p>' +
-        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word"><strong>Only if you paid by bank transfer.</strong> WhatsApp or email saying you have paid' +
-        (isTrialBank ? " (include reference + amount)" : "") +
-        ". Skip this if you used card / Apple Pay — we are notified automatically.</p>" +
-        '<p style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px">' +
-        '<a class="btn btn--pri" id="fbNotifyWa" href="' +
-        esc(waHref) +
-        '" target="_blank" rel="noopener noreferrer" style="width:auto;flex:1 1 140px;gap:8px">' +
-        iconWa() +
-        " WhatsApp the office</a>" +
-        '<a class="btn btn--pri" id="fbNotifyEmail" href="mailto:info@clubsensational.org?subject=' +
-        mailSub +
-        "&body=" +
-        mailBody +
-        '" style="width:auto;flex:1 1 140px;gap:8px">' +
-        iconMail() +
-        " Email the office</a>" +
-        "</p>" +
-        "</div>";
-      if (gcBankFirst) {
-        var gcUnlocked =
-          data.gc_step2_unlocked === true ||
-          Boolean(
-            data.choices_json && data.choices_json.office_paid_notified_at,
-          );
-        var gcHref = gcUnlocked && gcUrl ? gcUrl : "";
+      var payViaKey = "fb_invoice_pay_via_" + String(inv.id || inv.invoice_number || "x");
+      var payVia = String(data.invoice_pay_via || "").trim();
+      if (!payVia) {
+        try {
+          payVia = String(global.sessionStorage.getItem(payViaKey) || "").trim();
+        } catch (_e) {
+          payVia = "";
+        }
+      }
+      if (payVia !== "bank" && payVia !== "apple_pay") payVia = "";
+
+      if (!payVia) {
         html +=
-          '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
-          '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 3 — Set up GoCardless</p>' +
-          '<p class="muted" id="fbGcStep2Hint" style="margin:0 0 10px;overflow-wrap:break-word">' +
-          (gcUnlocked
-            ? "After Steps 1 and 2, set up Direct Debit so later months collect on the <strong>1st</strong> with every family."
-            : "Locked until you tap <strong>WhatsApp the office</strong> or <strong>Email the office</strong> in Step 2.") +
+          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">Choose how you want to pay the amount above:</p>' +
+          '<label class="choice">' +
+          '<input type="radio" name="fb_invoice_pay_via" value="bank" checked />' +
+          "<strong>Bank transfer</strong>" +
+          '<span class="hint">2 steps: transfer the money, then WhatsApp or email the office.</span>' +
+          "</label>" +
+          '<label class="choice">' +
+          '<input type="radio" name="fb_invoice_pay_via" value="apple_pay" />' +
+          "<strong>Card / Apple Pay</strong>" +
+          '<span class="hint">1 step: pay now. We are notified automatically — no message needed.</span>' +
+          "</label>" +
+          '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
+          holdLine +
           "</p>" +
-          (gcHref
-            ? '<a class="btn btn--pri" id="fbGcStep2" href="' +
-              esc(gcHref) +
-              '"' +
-              (isDemoMode() ? ' target="_blank" rel="noopener noreferrer"' : "") +
-              ' style="gap:8px">' +
-              iconGc() +
-              " Set up GoCardless</a>"
-            : '<button type="button" class="btn btn--pri" id="fbGcStep2" disabled style="gap:8px;opacity:.55;cursor:not-allowed">' +
-              iconGc() +
-              " Set up GoCardless</button>") +
+          '<button type="button" class="btn btn--pri" id="fbInvoicePayViaNext">Continue</button>';
+      } else if (payVia === "apple_pay") {
+        html +=
+          '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Pay with card / Apple Pay</p>' +
+          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">One step — payment confirms automatically and the office is notified. Includes a small card fee so we receive <strong>' +
+          esc(money(firstAmt)) +
+          "</strong> in full.</p>" +
+          '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
+          holdLine +
+          "</p>" +
+          '<button type="button" class="btn btn--pri" id="fbBankStripePay" style="gap:8px;margin:0 0 10px">' +
+          iconCard() +
+          " Pay with card / Apple Pay</button>" +
+          '<button type="button" class="btn" id="fbInvoicePayViaBack" style="background:#eef3f7;color:var(--ink)">Back — choose bank transfer</button>';
+      } else {
+        html +=
+          '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 1 — Pay by bank transfer</p>' +
+          '<div class="card-inner" style="margin:0 0 12px">' +
+          "<div><strong>Payee</strong> " +
+          esc(bank.payee_name || "clubSENsational") +
+          "</div>" +
+          "<div><strong>Sort code</strong> " +
+          esc(bank.sort_code || "—") +
+          "</div>" +
+          "<div><strong>Account</strong> " +
+          esc(bank.account_number || "—") +
+          "</div>" +
+          "<div><strong>Reference</strong> " +
+          esc(data.transfer_reference || data.participant_name || "") +
+          "</div>" +
+          "</div>" +
+          '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
+          holdLine +
+          "</p>" +
+          '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
+          '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 2 — Tell the office</p>' +
+          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, WhatsApp or email saying you have paid' +
+          (isTrialBank ? " (include reference + amount)" : "") +
+          ". A photo/screenshot is helpful but optional.</p>" +
+          '<p style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px">' +
+          '<a class="btn btn--pri" id="fbNotifyWa" href="' +
+          esc(waHref) +
+          '" target="_blank" rel="noopener noreferrer" style="width:auto;flex:1 1 140px;gap:8px">' +
+          iconWa() +
+          " WhatsApp the office</a>" +
+          '<a class="btn btn--pri" id="fbNotifyEmail" href="mailto:info@clubsensational.org?subject=' +
+          mailSub +
+          "&body=" +
+          mailBody +
+          '" style="width:auto;flex:1 1 140px;gap:8px">' +
+          iconMail() +
+          " Email the office</a>" +
+          "</p>" +
           "</div>";
+        if (gcBankFirst) {
+          var gcUnlocked =
+            data.gc_step2_unlocked === true ||
+            Boolean(
+              data.choices_json && data.choices_json.office_paid_notified_at,
+            );
+          var gcHref = gcUnlocked && gcUrl ? gcUrl : "";
+          html +=
+            '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
+            '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 3 — Set up GoCardless</p>' +
+            '<p class="muted" id="fbGcStep2Hint" style="margin:0 0 10px;overflow-wrap:break-word">' +
+            (gcUnlocked
+              ? "After Steps 1 and 2, set up Direct Debit so later months collect on the <strong>1st</strong> with every family."
+              : "Locked until you tap <strong>WhatsApp the office</strong> or <strong>Email the office</strong> in Step 2.") +
+            "</p>" +
+            (gcHref
+              ? '<a class="btn btn--pri" id="fbGcStep2" href="' +
+                esc(gcHref) +
+                '"' +
+                (isDemoMode() ? ' target="_blank" rel="noopener noreferrer"' : "") +
+                ' style="gap:8px">' +
+                iconGc() +
+                " Set up GoCardless</a>"
+              : '<button type="button" class="btn btn--pri" id="fbGcStep2" disabled style="gap:8px;opacity:.55;cursor:not-allowed">' +
+                iconGc() +
+                " Set up GoCardless</button>") +
+            "</div>";
+        }
+        html +=
+          '<button type="button" class="btn" id="fbInvoicePayViaBack" style="background:#eef3f7;color:var(--ink);margin-top:12px">Back — choose Card / Apple Pay</button>';
       }
     }
     if (host) host.innerHTML = html;
+    var payViaKeyBind =
+      "fb_invoice_pay_via_" + String(inv.id || inv.invoice_number || "x");
+    function setInvoicePayVia(via) {
+      data.invoice_pay_via = via || "";
+      try {
+        if (via) global.sessionStorage.setItem(payViaKeyBind, via);
+        else global.sessionStorage.removeItem(payViaKeyBind);
+      } catch (_e) {
+        /* ignore */
+      }
+      showInvoice(data);
+    }
+    var payViaNext = document.getElementById("fbInvoicePayViaNext");
+    if (payViaNext) {
+      payViaNext.onclick = function () {
+        var picked = (
+          document.querySelector('input[name="fb_invoice_pay_via"]:checked') ||
+          {}
+        ).value;
+        if (picked !== "bank" && picked !== "apple_pay") {
+          showNotice(
+            document.getElementById("fbNotice"),
+            "Choose bank transfer or Card / Apple Pay.",
+            "error",
+          );
+          return;
+        }
+        setInvoicePayVia(picked);
+      };
+    }
+    var payViaBack = document.getElementById("fbInvoicePayViaBack");
+    if (payViaBack) {
+      payViaBack.onclick = function () {
+        setInvoicePayVia("");
+      };
+    }
     var bankStripePay = document.getElementById("fbBankStripePay");
     if (bankStripePay) {
       bankStripePay.onclick = function () {
