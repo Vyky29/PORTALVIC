@@ -211,7 +211,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260901-tue-acton-roberto"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260902-thu-acton-simon"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260902-emanuel-fadi-1230"></script>
   <!-- local board bump: 20260901c-open-slots -->
   <script>
@@ -232,7 +232,7 @@
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Standing · DC + AS (template rest of term)" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing · Acton AS Roberto/Aurora/Javier/Luliya" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Standing · Acton swim Javier/Youssef 30' + Northolt + Hub Bespoke" },
-    { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton AS (no Youssef PM; Yossi on; Hazem/Eiji aquatic withdrawn)" },
+    { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton AS Simon (Elijah/Yuri); Aurora from 4.30; no Youssef PM" },
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Standing · Acton Youssef + Hub Tinashe Roberto" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
     { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Standing · weekend · Erik Multi open (Berta 12.30-1.15 / Aurora 1.15-2)" },
@@ -363,8 +363,8 @@
       ],
     },
     thursday: {
-      /* Autumn Acton AS: no Youssef PM. Mohammed/Thushyan open.
-       * Hazem+Eiji withdrew Aquatic (Climb+Multi only). Yossi paid Yosiyas booking. */
+      /* Autumn Acton AS: Simon (not Luliya). No Youssef PM. Hazem+Eiji withdrew Aquatic.
+       * Elijah → Simon 4–4.30; Yuri → Simon 5–5.30; Aurora CLOSED 4–4.30 (starts 4.30). */
       Roberto: [
         { name: "Tom", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Yassir", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
@@ -372,8 +372,9 @@
         { name: "No participant", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
-      Luliya: [
-        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
+      Simon: [
+        { name: "Elijah", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Closed", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "closed" },
         { name: "Yuri", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "No participant", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
@@ -385,7 +386,7 @@
         { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
       Aurora: [
-        { name: "Elijah", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
+        { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
         { name: "Aqsa", time: "4.30 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "No participant", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Maiyar", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
@@ -539,7 +540,7 @@
   var WEEKDAY_EXTRA_ORDER = {
     tuesday: ["Javier", "Aurora"],
     wednesday: ["Javier", "Dan", "Godsway", "John", "Emanuel"],
-    thursday: ["Javier", "Aurora"],
+    thursday: ["Simon", "Javier", "Aurora"],
     friday: ["Roberto"],
     monday: ["Dan", "Godsway", "John", "Emanuel"],
   };
@@ -601,9 +602,9 @@
     thursday: {
       Roberto: "12.15 to 3.15 · 4 to 6.30",
       Youssef: "12.30 to 3",
-      Luliya: "4.30 to 6.30",
+      Simon: "4 to 6.30",
       Javier: "4 to 6.30",
-      Aurora: "4 to 6.30",
+      Aurora: "4.30 to 6.30",
     },
     friday: {
       Roberto: "11 to 3 · 4.15 to 6.15",

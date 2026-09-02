@@ -681,10 +681,16 @@
       return null;
     }
 
-    /* Thursday: Luliya takes Simon's Acton book (Yuri / Eiji). */
-    if (day === "thursday" && /\bsimon\b/i.test(raw)) {
-      if (/\bluliya\b|\blulia\b|\baida\b/i.test(raw)) return null;
-      return { instructors: "LULIYA" };
+    /* Thursday Acton: Simon keeps Elijah / Yuri (not Luliya). Elijah off Aurora → Simon. */
+    if (day === "thursday") {
+      if (/^elijah\b/.test(client)) {
+        if (/\bsimon\b/i.test(raw)) return null;
+        return { instructors: "SIMON" };
+      }
+      if (/^yuri\b/.test(client)) {
+        if (/\bsimon\b/i.test(raw)) return null;
+        return { instructors: "SIMON" };
+      }
     }
 
     return null;
@@ -804,29 +810,56 @@
     },
   ];
 
-  /** Simon's Thursday Acton book → Luliya (inject if live MADRE dropped Simon without successor). */
-  var LULIYA_THURSDAY_ACTON_FROM_SIMON = [
-    {
-      client_name: "Yuri",
-      day: "Thursday",
-      instructors: "LULIYA",
-      service: "Aquatic Activity",
-      area: "Lane (SE)",
-      time_slot: "5 to 5.30",
-      venue: "Acton",
-      session_date: "2026-07-16",
-    },
-    {
-      client_name: "Eiji",
-      day: "Thursday",
-      instructors: "LULIYA",
-      service: "Aquatic Activity",
-      area: "Lane (DE)",
-      time_slot: "5.30 to 6.30",
-      venue: "Acton",
-      session_date: "2026-07-16",
-    },
+  /**
+   * Standing Thu Acton AS: Roberto / Simon / Javier / Aurora (no Luliya).
+   * Elijah + Yuri with Simon; Aurora CLOSED 4–4.30 (starts 4.30). Eiji aquatic withdrawn.
+   */
+  var AUTUMN_ACTON_THURSDAY_BOARD = [
+    { staff: "ROBERTO", name: "Tom", time: "4 to 4.30" },
+    { staff: "ROBERTO", name: "Yassir", time: "4.30 to 5" },
+    { staff: "ROBERTO", name: "Yossi", time: "5 to 5.30" },
+    { staff: "ROBERTO", name: "No participant", time: "5.30 to 6" },
+    { staff: "ROBERTO", name: "No participant", time: "6 to 6.30" },
+    { staff: "SIMON", name: "Elijah", time: "4 to 4.30" },
+    { staff: "SIMON", name: "Closed", time: "4.30 to 5" },
+    { staff: "SIMON", name: "Yuri", time: "5 to 5.30" },
+    { staff: "SIMON", name: "No participant", time: "5.30 to 6" },
+    { staff: "SIMON", name: "No participant", time: "6 to 6.30" },
+    { staff: "JAVIER", name: "Ayman", time: "4 to 5" },
+    { staff: "JAVIER", name: "Khalid Ab", time: "5 to 5.30" },
+    { staff: "JAVIER", name: "Karo", time: "5.30 to 6" },
+    { staff: "JAVIER", name: "No participant", time: "6 to 6.30" },
+    { staff: "AURORA", name: "Closed", time: "4 to 4.30" },
+    { staff: "AURORA", name: "Aqsa", time: "4.30 to 5.30" },
+    { staff: "AURORA", name: "No participant", time: "5.30 to 6" },
+    { staff: "AURORA", name: "Maiyar", time: "6 to 6.30" },
   ];
+
+  function autumnActonThursdayStandingRows() {
+    var iso = DAY_CENTRE_STANDING_ISO.thursday;
+    return AUTUMN_ACTON_THURSDAY_BOARD.map(function (slot) {
+      return {
+        client_name: slot.name,
+        day: "Thursday",
+        instructors: slot.staff,
+        service: "Aquatic Activity",
+        area: "Teaching Pool",
+        time_slot: slot.time,
+        venue: "Acton",
+        session_date: iso,
+      };
+    });
+  }
+
+  function isThursdayActonAquaticStandingRow(row) {
+    if (!row) return false;
+    if (!isAquaticService(row.service) || !isActonVenue(row.venue)) return false;
+    if (normalizeDowKey(row.day) !== "thursday") return false;
+    var d = normIso(row.session_date);
+    if (!d) return true;
+    if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
+    return false;
+  }
 
   function mondayActonClientKey(name) {
     var s = String(name || "")
@@ -905,13 +938,14 @@
    * - Acton Thu: Simon → Luliya (Yuri / Eiji)
    * - Northolt Mon/Wed: replace summer (Roberto/Dan) with Services Autumn Dan+Luliya book
    * - Luliya: DC Ikram Mon/Tue/Wed 11–3 + Fri 11–4; pool Mon/Wed Northolt 4.30–6.30,
-   *   Tue Acton 4–6.30, Thu Acton 4.30–6.30
+   *   Tue Acton 4–6.30 (not Thu — Simon covers Thu Acton AS)
    * - Roberto Wed DC: Emanuel 11–12.30 + Fadi 12.30–3 (ends 15:00; no Emanuel 3–4)
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
    * - Fri DC: Victor+Raul end 15:00; Michelle+Luliya Ikram to 16:00; Youssef Emanuel 15–16
    * - Acton Fri: Roberto → Youssef (Adam Pi / Amaar); Hub Fri Tinashe: Roberto (21h PT band)
    * - Victor OFF Mondays (DC)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
+   * - Acton Thu AS: Simon (Elijah 4–4.30, Yuri 5–5.30); Aurora CLOSED 4–4.30
    */
   function applyAutumnStandingParticipantRows(rows) {
     var out = [];
@@ -934,6 +968,8 @@
       if (isLuliyaInstructor(r.instructors) && isShadowingOnlyRow(r)) return;
       /* Drop summer Tue Acton aquatic — rebuild from AUTUMN_ACTON_TUESDAY_BOARD. */
       if (isTuesdayActonAquaticStandingRow(r)) return;
+      /* Drop summer/live Thu Acton aquatic — rebuild from AUTUMN_ACTON_THURSDAY_BOARD. */
+      if (isThursdayActonAquaticStandingRow(r)) return;
       if (isDayCentreService(r.service)) {
         var dkDc = normalizeDowKey(r.day);
         if (
@@ -1037,12 +1073,10 @@
       if (hasFridayActonClient(out, key)) return;
       out.push(Object.assign({}, row));
     });
-    LULIYA_THURSDAY_ACTON_FROM_SIMON.forEach(function (row) {
-      var key = thursdayActonClientKey(row.client_name);
-      if (hasThursdayActonClient(out, key)) return;
+    autumnActonTuesdayStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
-    autumnActonTuesdayStandingRows().forEach(function (row) {
+    autumnActonThursdayStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     return out;
