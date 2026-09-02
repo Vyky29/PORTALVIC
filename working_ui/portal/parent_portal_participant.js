@@ -719,6 +719,141 @@
     return p.in_class === false;
   }
 
+  function downloadTextFile(filename, text) {
+    var name = String(filename || "download.txt").replace(/[^\w.\-]+/g, "_");
+    var blob = new Blob([String(text || "")], { type: "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (_e) {}
+    }, 1000);
+  }
+
+  function participantDownloadSlug(data) {
+    var p = (data && data.participant) || {};
+    var raw = String(p.display_name || p.first_name || "participant")
+      .trim()
+      .replace(/[^\w]+/g, "-")
+      .replace(/^-|-$/g, "");
+    return raw || "participant";
+  }
+
+  function weeklyNoteDownloadText(data, note) {
+    var p = (data && data.participant) || {};
+    var range = weekRangeLabel(note && note.week_start, note && note.week_end);
+    return (
+      "clubSENsational — Weekly note\n" +
+      "Participant: " +
+      String(p.display_name || "Participant") +
+      "\n" +
+      "Week: " +
+      String(range || note.week_start || "") +
+      "\n\n" +
+      String((note && note.body) || "").trim() +
+      "\n"
+    );
+  }
+
+  function sessionFeedbackDownloadText(data, row) {
+    var p = (data && data.participant) || {};
+    var bits = [
+      "clubSENsational — Session feedback",
+      "Participant: " + String(p.display_name || "Participant"),
+      "Date: " + formatDate(row && row.session_date),
+      "Service: " + String((row && row.service) || "").trim(),
+      "Time: " + String((row && row.session_time) || "").trim(),
+      "Instructor: " +
+        String((row && (row.instructor || row.feedback_by_name || row.completed_by_name)) || "").trim(),
+      "Engagement: " +
+        (row && row.engagement_rating != null && String(row.engagement_rating).trim() !== ""
+          ? String(row.engagement_rating)
+          : "—"),
+      "Regulation: " + String((row && row.client_emotions) || "").trim(),
+      "Independence: " + String((row && (row.independence || row.engagement_patterns)) || "").trim(),
+      "",
+      String((row && (row.comment || row.parent_message)) || "").trim(),
+      "",
+    ];
+    return bits
+      .filter(function (line, i, arr) {
+        if (line !== "") return true;
+        return i === 0 || arr[i - 1] !== "";
+      })
+      .join("\n");
+  }
+
+  function bindFormerHistoryDownloads(host, data) {
+    if (!host || !isFormerClient(data)) return;
+    host.querySelectorAll("[data-pp-dl-week-note]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = Number(btn.getAttribute("data-pp-dl-week-note"));
+        var notes = Array.isArray(data._ppDownloadWeeklyNotes)
+          ? data._ppDownloadWeeklyNotes
+          : Array.isArray(data.weekly_notes)
+            ? data.weekly_notes
+            : [];
+        var note = notes[idx];
+        if (!note) return;
+        var week = String(note.week_start || "week").slice(0, 10);
+        downloadTextFile(
+          participantDownloadSlug(data) + "-weekly-note-" + week + ".txt",
+          weeklyNoteDownloadText(data, note),
+        );
+      });
+    });
+    var allNotes = host.querySelector("[data-pp-dl-all-week-notes]");
+    if (allNotes) {
+      allNotes.addEventListener("click", function () {
+        var notes = Array.isArray(data._ppDownloadWeeklyNotes)
+          ? data._ppDownloadWeeklyNotes
+          : Array.isArray(data.weekly_notes)
+            ? data.weekly_notes
+            : [];
+        if (!notes.length) return;
+        var body = notes
+          .map(function (n) {
+            return weeklyNoteDownloadText(data, n);
+          })
+          .join("\n--------------------\n\n");
+        downloadTextFile(participantDownloadSlug(data) + "-weekly-notes-all.txt", body);
+      });
+    }
+    host.querySelectorAll("[data-pp-dl-session]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = Number(btn.getAttribute("data-pp-dl-session"));
+        var sessions = Array.isArray(data.sessions) ? data.sessions : [];
+        var row = sessions[idx];
+        if (!row) return;
+        var day = String(row.session_date || "session").slice(0, 10);
+        downloadTextFile(
+          participantDownloadSlug(data) + "-session-" + day + ".txt",
+          sessionFeedbackDownloadText(data, row),
+        );
+      });
+    });
+    var allSess = host.querySelector("[data-pp-dl-all-sessions]");
+    if (allSess) {
+      allSess.addEventListener("click", function () {
+        var sessions = Array.isArray(data.sessions) ? data.sessions : [];
+        if (!sessions.length) return;
+        var body = sessions
+          .map(function (row) {
+            return sessionFeedbackDownloadText(data, row);
+          })
+          .join("\n--------------------\n\n");
+        downloadTextFile(participantDownloadSlug(data) + "-session-feedback-all.txt", body);
+      });
+    }
+  }
+
   function formerHasFeedback(data) {
     if (data && data.has_session_feedback === true) return true;
     var notes = Array.isArray(data && data.weekly_notes) ? data.weekly_notes : [];
@@ -754,9 +889,9 @@
     var unpaidRelease = isUnpaidAug15Released(data);
     var title = unpaidRelease ? "Place released" : "Former client";
     var body = unpaidRelease
-      ? "Your Autumn place was released because the first payment was not received by 15 August. You do not need to register again — use Booking services below to book a new place, or contact the office."
+      ? "Your Autumn place was released because the first payment was not received by 15 August. You can still open and download past weekly notes and session feedback below. You do not need to register again — use Booking services to book a new place, or contact the office."
       : hasFb
-        ? "Family portal access for this place has ended. You can still open past session notes below. To book again, use Booking services, or contact admin."
+        ? "Family portal access for this place has ended. You can still open and download past weekly notes and session feedback below. To book again, use Booking services, or contact admin."
         : "Family portal access for this place has ended. To book again, use Booking services, or contact admin.";
     return (
       '<aside class="pp-hub-reenrol pp-hub-reenrol--former" role="status" aria-label="' +
@@ -5283,34 +5418,64 @@
       bindBack(host, data, opts);
       return;
     }
-    var termChips = termSessionDateChipsHtml(data, null, viewOpts);
+    var former = isFormerClient(data);
+    var termChips = former ? "" : termSessionDateChipsHtml(data, null, viewOpts);
     var yearBadge = viewOpts.feedbackYear
       ? '<p class="pp-feedback-year-badge" aria-label="Selected year">' +
         esc(feedbackYearLabel(data, viewOpts.feedbackYear)) +
         "</p>"
       : "";
+    var dlBar =
+      former && Array.isArray(data.sessions) && data.sessions.length
+        ? '<div class="pp-former-dl-bar"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-all-sessions>Download all feedback</button></div>'
+        : "";
     host.innerHTML = subviewShell(
       data,
       "sessions",
       '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
         yearBadge +
-        '<p class="pp-muted pp-pax-subview-note">Term dates below, then date, service, instructor, engagement, regulation and independence — absents are listed as Absent. Shown separately for each activity when your child does more than one.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">' +
+        (former
+          ? "Past session feedback — engagement, regulation and independence. Download to keep a copy on your device."
+          : "Term dates below, then date, service, instructor, engagement, regulation and independence — absents are listed as Absent. Shown separately for each activity when your child does more than one.") +
+        "</p>" +
+        dlBar +
         (termChips
           ? '<section class="pp-sessions-term-dates" aria-label="Term session dates">' +
             '<div class="pp-hub-ops__badge-row">' +
             termChips +
             "</div></section>"
           : "") +
-        '<div id="ppPaxSessionsHost"><p class="pcso-loading" role="status">Loading sessions…</p></div>',
+        '<div id="ppPaxSessionsHost"><p class="pcso-loading" role="status">Loading sessions…</p></div>' +
+        (former && Array.isArray(data.sessions) && data.sessions.length
+          ? '<div class="pp-former-session-dl-list" aria-label="Download individual sessions">' +
+            data.sessions
+              .map(function (row, idx) {
+                var label =
+                  formatDate(row.session_date) +
+                  (row.service ? " · " + String(row.service) : "");
+                return (
+                  '<div class="pp-former-session-dl-row">' +
+                  '<span class="pp-muted">' +
+                  esc(label) +
+                  '</span><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-session="' +
+                  idx +
+                  '">Download</button></div>'
+                );
+              })
+              .join("") +
+            "</div>"
+          : ""),
     );
     bindBack(host, data, opts);
+    bindFormerHistoryDownloads(host, data);
     var messagesPromise =
       opts && typeof opts.loadMessages === "function"
         ? opts.loadMessages({ markRead: false }).catch(function () {
             return null;
           })
         : null;
-    mountTermDateChipStatuses(host, data, opts, messagesPromise);
+    if (!former) mountTermDateChipStatuses(host, data, opts, messagesPromise);
     var sessionsHost = host.querySelector("#ppPaxSessionsHost");
     if (
       sessionsHost &&
@@ -5319,7 +5484,7 @@
     ) {
       global.PortalClientSessionsOverview.renderParent(sessionsHost, {
         sessions: data.sessions || [],
-        attendance_summary: data.attendance_summary || null,
+        attendance_summary: former ? null : data.attendance_summary || null,
         term_label: data.term_label || (data.general && data.general.term_label) || "",
         hideAchievements: true,
       });
@@ -6024,12 +6189,17 @@
     notes.sort(function (a, b) {
       return String(b.week_start || "").localeCompare(String(a.week_start || ""));
     });
+    data._ppDownloadWeeklyNotes = notes;
+    var former = isFormerClient(data);
     var body;
     if (!notes.length) {
       body =
         '<p class="pp-muted">Weekly notes will collect here once session feedbacks for a Saturday–Friday week are ready. Each note is a short, warm summary of the week.</p>';
     } else {
       body =
+        (former
+          ? '<div class="pp-former-dl-bar"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-all-week-notes>Download all notes</button></div>'
+          : "") +
         '<ul class="pp-week-notes-folder" aria-label="Weekly notes by week">' +
         notes
           .map(function (n, idx) {
@@ -6054,7 +6224,13 @@
               "</summary>" +
               '<p class="pp-week-notes-folder__body">' +
               esc(full) +
-              "</p></details></li>"
+              "</p>" +
+              (former
+                ? '<div class="pp-former-dl-row"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-week-note="' +
+                  idx +
+                  '">Download this note</button></div>'
+                : "") +
+              "</details></li>"
             );
           })
           .join("") +
@@ -6069,10 +6245,15 @@
             esc(feedbackYearLabel(data, viewOpts.feedbackYear)) +
             "</p>"
           : "") +
-        '<p class="pp-muted pp-pax-subview-note">One short note per week. Open a week to read it — older notes stay collapsed so the list stays easy to scroll.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">' +
+        (former
+          ? "One short note per week. Open a week to read it, or download notes to keep on your device."
+          : "One short note per week. Open a week to read it — older notes stay collapsed so the list stays easy to scroll.") +
+        "</p>" +
         body,
     );
     bindBack(host, data, opts);
+    bindFormerHistoryDownloads(host, data);
   }
 
   function renderAnnouncements(host, data, opts) {

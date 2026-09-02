@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <title>Preview — Karo · former / Place released</title>
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueSoft: #eaf5fb;
+      --ink: #173247;
+      --text: #314555;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.12);
+      --bg: #edf4fb;
+      --white: #fff;
+      --former: #5a6a76;
+      --formerSoft: #eef1f4;
+      --amber: #b7791f;
+      --amberSoft: #fff6e5;
+      --danger: #b42318;
+      --dangerSoft: #fef3f2;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: #dfe8f0;
+      min-height: 100dvh;
+    }
+    .stage {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px 14px 40px;
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(0, 1fr);
+    }
+    @media (min-width: 900px) {
+      .stage { grid-template-columns: 390px minmax(0, 1fr); align-items: start; }
+    }
+    .banner {
+      grid-column: 1 / -1;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      min-width: 0;
+    }
+    .banner h1 {
+      margin: 0 0 4px;
+      font-size: 16px;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .banner p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.45;
+      overflow-wrap: break-word;
+    }
+    .phone {
+      width: 100%;
+      max-width: 390px;
+      margin: 0 auto;
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+      border: 1px solid #c5d3df;
+      border-radius: 28px;
+      box-shadow: 0 18px 40px rgba(23, 50, 71, 0.12);
+      overflow: hidden;
+      min-width: 0;
+    }
+    .phone__bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 14px 8px;
+      background: rgba(255, 255, 255, 0.72);
+      border-bottom: 1px solid var(--line);
+      min-width: 0;
+    }
+    .phone__bar strong {
+      font-size: 13px;
+      color: var(--ink);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px 10px;
+      overflow-x: auto;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+    .tabs button {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .tabs button.is-on {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .screen { padding: 14px; min-width: 0; }
+    .chip {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--formerSoft);
+      color: var(--former);
+      border: 1px solid #cfd6dc;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .chip--place {
+      background: var(--dangerSoft);
+      color: var(--danger);
+      border-color: #fecdca;
+    }
+    .hero {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      min-width: 0;
+      margin-bottom: 12px;
+    }
+    .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: #d7e6f1;
+      color: var(--blue);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 22px;
+      flex: 0 0 auto;
+    }
+    .hero h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      color: var(--ink);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .meta {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .notice {
+      border: 1px solid #c5ced6;
+      background: #f7f9fb;
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 14px;
+      min-width: 0;
+    }
+    .notice strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .notice p {
+      margin: 0 0 10px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .btn--primary { background: var(--blue); color: #fff; }
+    .btn--ghost { background: #fff; border-color: var(--line); color: var(--ink); }
+    .btn--amber { background: var(--amberSoft); color: var(--amber); border-color: #f0d9a8; }
+    .btn--sm { padding: 7px 11px; font-size: 12px; }
+    .section-label {
+      margin: 0 0 8px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .shortcut {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 16px;
+      padding: 12px 10px;
+      text-align: center;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+      min-width: 0;
+    }
+    .shortcut__ico {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 8px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: var(--blueSoft);
+      color: var(--blue);
+      font-size: 18px;
+    }
+    .shortcut--notes .shortcut__ico { background: var(--amberSoft); color: var(--amber); }
+    .shortcut__label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 12px;
+      align-items: center;
+      min-width: 0;
+    }
+    .toolbar p {
+      margin: 0;
+      flex: 1 1 140px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 10px;
+      min-width: 0;
+    }
+    .card__top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      min-width: 0;
+    }
+    .card__top strong {
+      color: var(--ink);
+      font-size: 14px;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .card p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-wrap: break-word;
+    }
+    .card .teaser { color: var(--muted); }
+    .toast {
+      position: sticky;
+      bottom: 10px;
+      margin-top: 10px;
+      background: #173247;
+      color: #fff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+    .side {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      min-width: 0;
+    }
+    .side h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: var(--ink);
+    }
+    .side p, .side li {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--text);
+      overflow-wrap: break-word;
+    }
+    .side ul { margin: 0 0 12px; padding-left: 18px; }
+    .wa-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 8px 0 12px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(100, 116, 139, 0.1);
+      border-left: 3px solid #94a3b8;
+      font-size: 13px;
+      font-weight: 700;
+      color: #475569;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .wa-bubble {
+      background: #e7ffdb;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      border: 1px solid #c5e8b5;
+    }
+    .dl-status {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: var(--amber);
+      font-weight: 700;
+      min-height: 1.2em;
+      overflow-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="banner">
+      <h1>Local preview - Karo (Place released / former client)</h1>
+      <p>
+        Mock of what the family would see after we flip Lost-slot / unpaid Aug-15 people to
+        <strong>former</strong>: hub notice, Notes + Sessions still open, and real file downloads
+        (try the Download buttons - they save .txt to your machine). Not live data; sample copy for Chopi weeks.
+      </p>
+    </div>
+
+    <div class="phone" aria-label="Parent portal phone mock">
+      <div class="phone__bar">
+        <strong>Family portal</strong>
+        <span class="chip chip--place">Place released</span>
+      </div>
+      <div class="tabs" role="tablist">
+        <button type="button" class="is-on" data-tab="hub">Hub</button>
+        <button type="button" data-tab="notes">Notes</button>
+        <button type="button" data-tab="sessions">Sessions</button>
+      </div>
+
+      <div class="screen" id="viewHub">
+        <div class="hero">
+          <div class="avatar" aria-hidden="true">K</div>
+          <div style="min-width:0">
+            <h2>Karo <span class="chip chip--place">Place released</span></h2>
+            <p class="meta">contact gap-karo-alhassani · in_class false · Aug-15 unpaid release</p>
+          </div>
+        </div>
+
+        <aside class="notice" role="status">
+          <strong>Place released</strong>
+          <p>
+            Your Autumn place was released because the first payment was not received by 15 August.
+            You can still open and <strong>download</strong> past weekly notes and session feedback below.
+            You do not need to register again - use Booking services to book a new place, or contact the office.
+          </p>
+          <div class="actions">
+            <a class="btn btn--primary" href="https://www.clubsensational.org/bookingportal" target="_blank" rel="noopener">Booking services</a>
+            <a class="btn btn--ghost" href="mailto:info@clubsensational.org">Contact the office</a>
+          </div>
+        </aside>
+
+        <p class="section-label">Quick access</p>
+        <div class="grid">
+          <button type="button" class="shortcut" data-goto="notes">
+            <div class="shortcut__ico shortcut--notes">N</div>
+            <div class="shortcut__label">Notes</div>
+          </button>
+          <button type="button" class="shortcut" data-goto="sessions">
+            <div class="shortcut__ico">S</div>
+            <div class="shortcut__label">Sessions</div>
+          </button>
+          <button type="button" class="shortcut" data-goto="notes">
+            <div class="shortcut__ico" style="background:#eef1f4;color:#5a6a76">B</div>
+            <div class="shortcut__label">Booking</div>
+          </button>
+          <button type="button" class="shortcut" disabled style="opacity:.55">
+            <div class="shortcut__ico">P</div>
+            <div class="shortcut__label">Photos (if any)</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="screen" id="viewNotes" hidden>
+        <h2 style="margin:0 0 8px;font-size:16px;color:var(--ink)">Weekly notes</h2>
+        <div class="toolbar">
+          <p>One short note per week. Former clients can download each note or all at once.</p>
+          <button type="button" class="btn btn--amber btn--sm" id="dlAllNotes">Download all notes</button>
+        </div>
+        <div id="notesList"></div>
+        <p class="dl-status" id="notesStatus" aria-live="polite"></p>
+      </div>
+
+      <div class="screen" id="viewSessions" hidden>
+        <h2 style="margin:0 0 8px;font-size:16px;color:var(--ink)">Sessions Overview</h2>
+        <div class="toolbar">
+          <p>Session feedback table (engagement / regulation / independence) plus download as a text file.</p>
+          <button type="button" class="btn btn--amber btn--sm" id="dlAllSessions">Download all feedback</button>
+        </div>
+        <div id="sessionsList"></div>
+        <p class="dl-status" id="sessionsStatus" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div class="side">
+      <h3>Admin WhatsApp after flip</h3>
+      <p>Same number, but tagged like Tina/Zouka leads were - for Karo as <strong>Former</strong> / old client:</p>
+      <div class="wa-chip">Former · Karo · Place released (Lost slot)</div>
+      <h3>WhatsApp aviso (draft)</h3>
+      <div class="wa-bubble" id="waDraft">Hi — this is clubSENsational.
+
+Karo's Autumn place was released after 15 August (first payment not received), so Family portal access is now limited.
+
+Before we close the full hub, please open the Family portal with your PIN and download anything you want to keep:
+• Weekly notes
+• Session feedback
+• Achievement photos (if any)
+
+You can still book again later via Booking services — no new registration needed.
+
+Thank you</div>
+      <p style="margin-top:12px;color:var(--muted);font-size:12px">
+        Preview only - file at <code>working_ui/preview_former_client_karo.html</code>. Open in browser (this page or local static server).
+      </p>
+      <ul>
+        <li>Hub: Place released notice + Notes / Sessions</li>
+        <li>Notes: Download per week + Download all (.txt)</li>
+        <li>Sessions: Download per row + Download all (.txt)</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var NOTES = [
+        {
+          week: "Sat 12 – Fri 18 Jul 2025",
+          file: "Karo-weekly-note-2025-07-12.txt",
+          body:
+            "Karo had a steady week with Chopi. He settled quicker after the first few minutes and joined short games with support. Next week we will keep the same routine and build on turn-taking.",
+        },
+        {
+          week: "Sat 5 – Fri 11 Jul 2025",
+          file: "Karo-weekly-note-2025-07-05.txt",
+          body:
+            "A positive week overall. Karo enjoyed movement games and needed occasional breaks when the room got busy. Staff used a calm countdown and he returned to the activity well.",
+        },
+        {
+          week: "Sat 28 Jun – Fri 4 Jul 2025",
+          file: "Karo-weekly-note-2025-06-28.txt",
+          body:
+            "Karo practised waiting for his turn and asking for help with a simple phrase. Engagement was good in shorter bursts. We will keep sessions structured and predictable.",
+        },
+      ];
+
+      var SESSIONS = [
+        {
+          date: "Fri 18 Jul 2025",
+          service: "Multi-Activity · Chopi",
+          file: "Karo-session-2025-07-18.txt",
+          engagement: "4/5",
+          regulation: "Calm with support",
+          independence: "Prompted",
+          note: "Joined group game after warm-up. Needed one break; returned independently.",
+        },
+        {
+          date: "Wed 16 Jul 2025",
+          service: "Multi-Activity · Chopi",
+          file: "Karo-session-2025-07-16.txt",
+          engagement: "3/5",
+          regulation: "Needed breaks",
+          independence: "Hand-over-hand at times",
+          note: "Busy room. Visual timer helped. Enjoyed ball skills 1:1.",
+        },
+        {
+          date: "Fri 11 Jul 2025",
+          service: "Multi-Activity · Chopi",
+          file: "Karo-session-2025-07-11.txt",
+          engagement: "5/5",
+          regulation: "Settled",
+          independence: "Mostly independent",
+          note: "Strong session. Shared equipment and celebrated a goal with peers.",
+        },
+      ];
+
+      function esc(s) {
+        return String(s == null ? "" : s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function downloadText(filename, text) {
+        var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 800);
+      }
+
+      function noteFileText(n) {
+        return (
+          "clubSENsational — Weekly note\n" +
+          "Participant: Karo\n" +
+          "Week: " +
+          n.week +
+          "\n\n" +
+          n.body +
+          "\n"
+        );
+      }
+
+      function sessionFileText(s) {
+        return (
+          "clubSENsational — Session feedback\n" +
+          "Participant: Karo\n" +
+          "Date: " +
+          s.date +
+          "\n" +
+          "Service: " +
+          s.service +
+          "\n" +
+          "Engagement: " +
+          s.engagement +
+          "\n" +
+          "Regulation: " +
+          s.regulation +
+          "\n" +
+          "Independence: " +
+          s.independence +
+          "\n\n" +
+          s.note +
+          "\n"
+        );
+      }
+
+      function setStatus(id, msg) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = msg || "";
+      }
+
+      function showTab(name) {
+        document.getElementById("viewHub").hidden = name !== "hub";
+        document.getElementById("viewNotes").hidden = name !== "notes";
+        document.getElementById("viewSessions").hidden = name !== "sessions";
+        document.querySelectorAll(".tabs button").forEach(function (btn) {
+          btn.classList.toggle("is-on", btn.getAttribute("data-tab") === name);
+        });
+      }
+
+      document.querySelectorAll(".tabs button").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          showTab(btn.getAttribute("data-tab") || "hub");
+        });
+      });
+      document.querySelectorAll("[data-goto]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          showTab(btn.getAttribute("data-goto") || "hub");
+        });
+      });
+
+      var notesHost = document.getElementById("notesList");
+      notesHost.innerHTML = NOTES.map(function (n, i) {
+        return (
+          '<article class="card">' +
+          '<div class="card__top"><strong>' +
+          esc(n.week) +
+          '</strong><button type="button" class="btn btn--amber btn--sm" data-dl-note="' +
+          i +
+          '">Download</button></div>' +
+          '<p class="teaser">' +
+          esc(n.body) +
+          "</p></article>"
+        );
+      }).join("");
+
+      notesHost.addEventListener("click", function (ev) {
+        var t = ev.target.closest("[data-dl-note]");
+        if (!t) return;
+        var n = NOTES[Number(t.getAttribute("data-dl-note"))];
+        if (!n) return;
+        downloadText(n.file, noteFileText(n));
+        setStatus("notesStatus", "Saved " + n.file + " (check Downloads)");
+      });
+
+      document.getElementById("dlAllNotes").addEventListener("click", function () {
+        var all = NOTES.map(noteFileText).join("\n--------------------\n\n");
+        downloadText("Karo-weekly-notes-all.txt", all);
+        setStatus("notesStatus", "Saved Karo-weekly-notes-all.txt");
+      });
+
+      var sessHost = document.getElementById("sessionsList");
+      sessHost.innerHTML = SESSIONS.map(function (s, i) {
+        return (
+          '<article class="card">' +
+          '<div class="card__top"><strong>' +
+          esc(s.date) +
+          '</strong><button type="button" class="btn btn--amber btn--sm" data-dl-session="' +
+          i +
+          '">Download</button></div>' +
+          "<p><strong>" +
+          esc(s.service) +
+          "</strong></p>" +
+          '<p class="teaser">Engagement ' +
+          esc(s.engagement) +
+          " · Regulation " +
+          esc(s.regulation) +
+          " · Independence " +
+          esc(s.independence) +
+          "</p>" +
+          "<p style=\"margin-top:6px\">" +
+          esc(s.note) +
+          "</p></article>"
+        );
+      }).join("");
+
+      sessHost.addEventListener("click", function (ev) {
+        var t = ev.target.closest("[data-dl-session]");
+        if (!t) return;
+        var s = SESSIONS[Number(t.getAttribute("data-dl-session"))];
+        if (!s) return;
+        downloadText(s.file, sessionFileText(s));
+        setStatus("sessionsStatus", "Saved " + s.file + " (check Downloads)");
+      });
+
+      document.getElementById("dlAllSessions").addEventListener("click", function () {
+        var all = SESSIONS.map(sessionFileText).join("\n--------------------\n\n");
+        downloadText("Karo-session-feedback-all.txt", all);
+        setStatus("sessionsStatus", "Saved Karo-session-feedback-all.txt");
+      });
+    })();
+  </script>
+</body>
+</html>
