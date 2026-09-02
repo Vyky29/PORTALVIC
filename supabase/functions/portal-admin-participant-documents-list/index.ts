@@ -109,6 +109,16 @@ function holdStillOpen(holdExpiresAt: string | null | undefined): boolean {
   return Number.isFinite(t) && t > Date.now();
 }
 
+function officePlaceTag(
+  notes: string | null | undefined,
+  payload: Record<string, unknown>,
+): string {
+  const fromNotes = String(notes || "").match(/office_place\s*=\s*([a-z0-9_]+)/i);
+  if (fromNotes && fromNotes[1]) return fromNotes[1].toLowerCase();
+  const fromPayload = String(payload.office_place || "").trim().toLowerCase();
+  return fromPayload;
+}
+
 type PlaceOut = {
   kind: string;
   label: string;
@@ -173,6 +183,66 @@ function derivePlace(row: {
     bookingStatus === "waiting_list" ||
     clientStatus === "waiting_list" ||
     waitFromPayload;
+
+  const officeTag = officePlaceTag(notes, payload);
+
+  // Explicit office triage tags (Registration forms Place column).
+  if (officeTag === "registered_trial_expired_admin_hold") {
+    return {
+      kind: "registered_trial_expired_admin_hold",
+      label: "Registered · trial expired",
+      tone: "pend",
+      detail,
+      secondary_label: "Slot hold by admin",
+      secondary_tone: "warn",
+    };
+  }
+  if (officeTag === "registered_trial_expired_slot_lost") {
+    return {
+      kind: "registered_trial_expired_slot_lost",
+      label: "Registered · trial expired",
+      tone: "pend",
+      detail,
+      secondary_label: "Slot lost",
+      secondary_tone: "urg",
+    };
+  }
+  if (
+    officeTag === "waiting_list_ma_sunday" ||
+    (waitFlag && String(payload.waitlist_service || "").toLowerCase().includes("multi"))
+  ) {
+    const wlDetail = [
+      payload.waitlist_service || "Multi-Activity",
+      payload.waitlist_venue || "SwimFarm",
+      payload.waitlist_day || "Sunday",
+    ]
+      .map((x) => String(x || "").trim())
+      .filter(Boolean)
+      .join(" · ");
+    return {
+      kind: "waiting_list_ma_sunday",
+      label: "Waiting list · MA Sunday",
+      tone: "info",
+      detail: wlDetail || detail,
+      secondary_label: null,
+      secondary_tone: null,
+    };
+  }
+  if (
+    officeTag === "nhs_referral_2to1" ||
+    truthyFlag(payload.nhs_referral) ||
+    String(payload.support_regulated || "").toLowerCase().includes("2to1") ||
+    /nhs_referral|ratio\s*=\s*2to1|no_parent_pay/i.test(notes)
+  ) {
+    return {
+      kind: "nhs_referral_2to1",
+      label: "NHS referral · 2:1",
+      tone: "info",
+      detail: detail || "Contact social worker - parents do not pay",
+      secondary_label: "No parent pay",
+      secondary_tone: "ok",
+    };
+  }
 
   // Office declined a variant (e.g. fortnightly) — stay Registered only.
   if (
@@ -248,14 +318,14 @@ function derivePlace(row: {
           waitFlag,
         );
       }
-      // Accepted / held trial but no paid marker (e.g. Ayaan) — not Formal.
+      // Accepted / held trial but no paid marker — treat as admin hold pending contact.
       return {
-        kind: "trial_unpaid",
-        label: "Trial hold (unpaid)",
-        tone: "warn",
+        kind: "registered_trial_expired_admin_hold",
+        label: "Registered · trial expired",
+        tone: "pend",
         detail,
-        secondary_label: null,
-        secondary_tone: null,
+        secondary_label: "Slot hold by admin",
+        secondary_tone: "warn",
       };
     }
     return withWaitSecondary(
@@ -290,27 +360,34 @@ function derivePlace(row: {
   }
 
   if (resStatus === "expired") {
+    if (/admin_hold|accepted_by_admin/i.test(notes)) {
+      return {
+        kind: "registered_trial_expired_admin_hold",
+        label: "Registered · trial expired",
+        tone: "pend",
+        detail,
+        secondary_label: "Slot hold by admin",
+        secondary_tone: "warn",
+      };
+    }
     return {
       kind: "expired",
-      label:
-        /unpaid|pay_hold|accepted_by_admin/i.test(notes)
-          ? "Did not finish (unpaid)"
-          : "Hold expired",
-      tone: "warn",
+      label: "Registered · trial expired",
+      tone: "pend",
       detail,
-      secondary_label: null,
-      secondary_tone: null,
+      secondary_label: "Slot lost",
+      secondary_tone: "urg",
     };
   }
 
   if (resStatus === "released") {
     return {
       kind: "released",
-      label: "Slot released",
-      tone: "warn",
+      label: "Registered · trial expired",
+      tone: "pend",
       detail,
-      secondary_label: null,
-      secondary_tone: null,
+      secondary_label: "Slot lost",
+      secondary_tone: "urg",
     };
   }
 
