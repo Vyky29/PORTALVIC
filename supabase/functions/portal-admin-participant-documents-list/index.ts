@@ -79,7 +79,27 @@ function namesMatch(a: string, b: string): boolean {
   if (na.includes(nb) || nb.includes(na)) return true;
   const ap = na.split(" ");
   const bp = nb.split(" ");
-  return ap[0] === bp[0] && (!!ap[1] || !!bp[1]) && (ap[1] || "") === (bp[1] || "");
+  if (ap[0] === bp[0] && (!!ap[1] || !!bp[1]) && (ap[1] || "") === (bp[1] || "")) {
+    return true;
+  }
+  // Nickname / form spelling: Yossi ↔ Yosiyas (same family surname).
+  const nickPairs = [["yossi", "yosiyas"], ["yosiyas", "yossi"]];
+  for (const [x, y] of nickPairs) {
+    if (ap[0] === x && bp[0] === y && (ap[1] || "") && (ap[1] || "") === (bp[1] || "")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isMergedRetiredName(name: string): boolean {
+  const n = normalizeName(name);
+  return (
+    n.includes("merged") ||
+    n.includes("retired") ||
+    n.startsWith("zzz ") ||
+    /\(merged/.test(n)
+  );
 }
 
 function slotDetailFromReservation(r: ReservationLite | null): string | null {
@@ -573,7 +593,7 @@ Deno.serve(async (req) => {
 
   const contactByChild = new Map<
     string,
-    { in_class: boolean | null; on_waiting_list: boolean | null }
+    { in_class: boolean | null; on_waiting_list: boolean | null; child_display: string }
   >();
   if (childNames.length) {
     const { data: contacts } = await admin
@@ -581,14 +601,28 @@ Deno.serve(async (req) => {
       .select("child_display, in_class, on_waiting_list")
       .limit(5000);
     for (const c of contacts || []) {
-      const key = normalizeName(String(c.child_display || ""));
+      const display = String(c.child_display || "");
+      if (isMergedRetiredName(display)) continue;
+      const key = normalizeName(display);
       if (!key) continue;
-      if (!childNames.some((n) => n === key || key.includes(n) || n.includes(key))) continue;
-      contactByChild.set(key, {
+      if (
+        !childNames.some(
+          (n) => n === key || namesMatch(n, key) || key.includes(n) || n.includes(key),
+        )
+      ) {
+        continue;
+      }
+      const next = {
         in_class: c.in_class === true ? true : c.in_class === false ? false : null,
         on_waiting_list:
           c.on_waiting_list === true ? true : c.on_waiting_list === false ? false : null,
-      });
+        child_display: display,
+      };
+      const prev = contactByChild.get(key);
+      // Prefer live in-class / non-retired over stale duplicate contacts.
+      if (!prev || (next.in_class === true && prev.in_class !== true)) {
+        contactByChild.set(key, next);
+      }
     }
   }
 
@@ -693,9 +727,10 @@ Deno.serve(async (req) => {
     let contact = childKey ? contactByChild.get(childKey) : null;
     if (!contact && childKey) {
       for (const [k, v] of contactByChild.entries()) {
-        if (k.includes(childKey) || childKey.includes(k)) {
+        if (isMergedRetiredName(v.child_display || k)) continue;
+        if (namesMatch(k, childKey) || k.includes(childKey) || childKey.includes(k)) {
           contact = v;
-          break;
+          if (v.in_class === true) break;
         }
       }
     }
