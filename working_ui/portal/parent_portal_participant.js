@@ -4831,7 +4831,7 @@
           ? "Your Autumn 2026/27 place is confirmed. The next class will show here once the first date is on the calendar (from early September)."
           : "Your 2026/27 place is on file. Open Booking to see kept services — weekly days appear here once the Autumn roster is published (from early September)."
         : summerEndedEmpty
-          ? "Summer term has ended and this place has no current roster days yet. Re-enrol for 2026/27 (or open Crash course July) from Quick access."
+          ? "Summer term has ended and this place has no current roster days yet. Re-enrol for 2026/27 from Quick access."
           : "No weekly services on the current roster yet — next sessions will show here when days are assigned.";
       nextBody =
         '<div class="pp-hub-ops__empty-wrap">' +
