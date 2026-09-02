@@ -1730,15 +1730,43 @@
       if (hold && (hold.status === 'soft_hold' || hold.status === 'session_held' || hold.status === 'hard_cut')) {
         var holdLabel =
           hold.status === 'session_held'
-            ? 'Session held'
+            ? hold.reason === 'gocardless_failed'
+              ? 'Seat blocked · HOLD WAITLIST'
+              : 'Session held'
             : hold.status === 'hard_cut'
               ? 'Hard cut'
-              : 'Soft hold';
+              : hold.reason === 'gocardless_failed'
+                ? 'GC failed · bank due'
+                : 'Soft hold';
+        var graceBit = '';
+        if (hold.reason === 'gocardless_failed' && hold.grace_deadline_at && hold.status === 'soft_hold') {
+          try {
+            var gd = new Date(hold.grace_deadline_at);
+            graceBit =
+              ' · by ' +
+              gd.toLocaleString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+          } catch (_g) {}
+        }
+        if (hold.reason === 'gocardless_failed' && hold.amount_gbp != null) {
+          graceBit += ' · £' + Number(hold.amount_gbp).toFixed(2);
+        }
         holdChip =
-          '<div class="chip chip--pend" style="margin-top:4px;font-size:11px">' +
+          '<div class="chip chip--pend" style="margin-top:4px;font-size:11px' +
+          (hold.reason === 'gocardless_failed' ? ';background:#fee2e2;color:#991b1b' : '') +
+          '">' +
           esc(holdLabel) +
-          (hold.reminder_count ? ' · ' + esc(String(hold.reminder_count)) + ' reminders' : '') +
-          (hold.held_session_label ? ' · ' + esc(String(hold.held_session_label).slice(0, 48)) : '') +
+          esc(graceBit) +
+          (hold.reminder_count && hold.reason !== 'gocardless_failed'
+            ? ' · ' + esc(String(hold.reminder_count)) + ' reminders'
+            : '') +
+          (hold.held_session_label && hold.reason !== 'gocardless_failed'
+            ? ' · ' + esc(String(hold.held_session_label).slice(0, 48))
+            : '') +
           '</div>';
         if (hold.status !== 'hard_cut') {
           holdBtns =

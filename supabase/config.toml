@@ -671,6 +671,9 @@ verify_jwt = false
 [functions.portal-cron-booking-pay-hold]
 verify_jwt = false
 
+[functions.portal-cron-gocardless-fail-grace]
+verify_jwt = false
+
 # Staff / leader WhatsApp (JWT checked inside function).
 [functions.portal-staff-notify-send]
 verify_jwt = false

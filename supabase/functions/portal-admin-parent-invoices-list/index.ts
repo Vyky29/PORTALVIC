@@ -408,7 +408,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     const { data: holds } = await admin
       .from("portal_family_payment_holds")
       .select(
-        "id, contact_id, status, reminder_count, held_session_date, held_session_label, advance_buffer_gbp, updated_at",
+        "id, contact_id, status, reason, reminder_count, held_session_date, held_session_label, advance_buffer_gbp, amount_gbp, grace_deadline_at, whatsapp_sent_at, gocardless_payment_id, updated_at",
       )
       .in("contact_id", contactIds)
       .in("status", ["soft_hold", "session_held", "hard_cut"])

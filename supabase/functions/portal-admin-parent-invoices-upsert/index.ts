@@ -11,6 +11,7 @@ import {
 } from "../_shared/portal_admin_auth.ts";
 import { xeroEnsurePaidShareInBooks } from "../_shared/xero_payments.ts";
 import { clearPaymentHoldForContact } from "../_shared/portal_payment_holds.ts";
+import { clearGcFailHoldOnPay } from "../_shared/portal_gocardless_fail_grace.ts";
 import { type PortalInvoiceVatMode } from "../_shared/portal_tax_invoice_pdf.ts";
 import { createPortalFamilyInvoice, regeneratePortalInvoiceSharePdf } from "../_shared/portal_create_family_invoice.ts";
 import { confirmCrashSummerBookingsForInvoice } from "../_shared/crash_summer_confirm.ts";
@@ -1212,14 +1213,37 @@ Deno.serve(async (req) => {
     // Full ACCREC in Xero on first money (partial) or full Confirm paid — instalments reconcile in Xero.
     if (payNow === "paid" || payNow === "partial") {
       xero = await xeroEnsurePaidShareInBooks(admin, updated);
+      try {
+        const cid = clean(updated.contact_id, 120);
+        if (cid) {
+          hold = await clearGcFailHoldOnPay(
+            admin,
+            cid,
+            "admin",
+            verified.userId || null,
+          );
+        }
+      } catch (e) {
+        console.error(
+          "[portal-admin-parent-invoices-upsert] hold clear",
+          e instanceof Error ? e.message : String(e),
+        );
+      }
     }
     if (payNow === "paid") {
       try {
         const cid = clean(updated.contact_id, 120);
-        if (cid) hold = await clearPaymentHoldForContact(admin, cid, "admin", verified.userId || null);
+        if (cid && !(hold && hold.cleared)) {
+          hold = await clearPaymentHoldForContact(
+            admin,
+            cid,
+            "admin",
+            verified.userId || null,
+          );
+        }
       } catch (e) {
         console.error(
-          "[portal-admin-parent-invoices-upsert] hold clear",
+          "[portal-admin-parent-invoices-upsert] buffer hold clear",
           e instanceof Error ? e.message : String(e),
         );
       }
