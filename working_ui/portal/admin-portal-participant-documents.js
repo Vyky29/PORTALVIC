@@ -37,6 +37,7 @@
       title: 'Registration forms',
       intro:
         '<strong>New-client registration</strong> — PDF + photo from Booking Portal leads (not climbing). ' +
+        '<strong>Place</strong> shows Formal place, Waiting list, or Registered only. ' +
         'Flow: slot → registration → <strong>payment</strong> (finish-booking link sent automatically) → office marks invoice paid → review form/PDF after payment → Parent Portal PIN. ' +
         '<strong>Mark reviewed</strong> tracks that you opened the form; <strong>Resend finish link</strong> if the parent lost it. ' +
         'Climbing forms: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_climbing_registrations">Climbing registrations</button>. ' +
@@ -182,7 +183,7 @@
     return (
       '<div class="card" style="margin-top:0"><div class="card-pad" style="overflow:auto;padding:0">' +
       '<table class="tbl tbl--center tbl--dense"><thead><tr>' +
-      '<th>Submitted</th><th>Form</th><th>Participant</th><th>Parent</th><th>Requested slot</th><th>Status</th><th>PDF</th><th>Photo</th><th>Review</th>' +
+      '<th>Submitted</th><th>Form</th><th>Place</th><th>Participant</th><th>Parent</th><th>Requested slot</th><th>Office review</th><th>PDF</th><th>Photo</th><th>Review</th>' +
       '</tr></thead><tbody>' +
       docs.map(function (d) {
         var formType = String(d.form_type || '').toLowerCase();
@@ -197,6 +198,12 @@
             formLab = 'Place request (existing client)';
           }
         } catch (_lab) {}
+        var placeLab = String(d.place_label || '').trim();
+        var placeTone = String(d.place_tone || 'pend').trim() || 'pend';
+        if (!placeLab) {
+          placeLab = 'Registered only';
+          placeTone = 'pend';
+        }
         var parentLine = [d.parent_name, d.parent_email].filter(Boolean).join(' · ') || '—';
         var pdfLink = d.pdf_signed_url
           ? '<button type="button" class="btn btn--pri btn--sm portal-pax-doc-open" data-url="' +
@@ -260,6 +267,12 @@
           '<td style="min-width:0;overflow-wrap:break-word">' +
           esc(formLab) +
           '</td>' +
+          '<td style="min-width:0">' +
+          '<span class="chip chip--' +
+          esc(placeTone) +
+          '" title="Place / pipeline status">' +
+          esc(placeLab) +
+          '</span></td>' +
           '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
           esc(d.participant_name || '—') +
           '</strong></td>' +

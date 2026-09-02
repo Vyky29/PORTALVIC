@@ -23,6 +23,13 @@ type DocRow = {
   submitted_at: string;
   pdf_signed_url: string | null;
   photo_signed_url: string | null;
+  place_kind: string;
+  place_label: string;
+  place_tone: string;
+  booking_status: string | null;
+  client_status: string | null;
+  in_class: boolean | null;
+  on_waiting_list: boolean | null;
 };
 
 function normalizeName(value: string): string {
@@ -30,6 +37,79 @@ function normalizeName(value: string): string {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
+}
+
+function emailNorm(value: string): string {
+  return String(value || "").trim().toLowerCase();
+}
+
+function asRecord(v: unknown): Record<string, unknown> | null {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  return v as Record<string, unknown>;
+}
+
+function truthyFlag(v: unknown): boolean {
+  if (v === true) return true;
+  const s = String(v == null ? "" : v).trim().toLowerCase();
+  return s === "true" || s === "yes" || s === "1" || s === "waiting_list";
+}
+
+/** Formal place | Waiting list | Registered only — office triage for Registration forms. */
+function derivePlace(row: {
+  payload_json: Record<string, unknown> | null;
+  booking_status: string | null;
+  client_status: string | null;
+  in_class: boolean | null;
+  on_waiting_list: boolean | null;
+}): { kind: string; label: string; tone: string } {
+  const payload = asRecord(row.payload_json) || {};
+  const br = asRecord(payload.booking_request);
+  const bookingStatus = String(row.booking_status || "").toLowerCase();
+  const clientStatus = String(row.client_status || "").toLowerCase();
+
+  const waitFromPayload =
+    truthyFlag(payload.waiting_list) ||
+    truthyFlag(payload.on_waiting_list) ||
+    truthyFlag(br?.waiting_list) ||
+    truthyFlag(br?.join_waiting_list) ||
+    String(br?.mode || "").toLowerCase() === "waiting_list" ||
+    String(br?.booking_mode || "").toLowerCase() === "waiting_list";
+
+  if (row.on_waiting_list === true || bookingStatus === "waiting_list" || waitFromPayload) {
+    return { kind: "waiting_list", label: "Waiting list", tone: "info" };
+  }
+
+  if (row.in_class === true || bookingStatus === "booking_completed") {
+    return { kind: "formal", label: "Formal place", tone: "ok" };
+  }
+
+  const hasSlot =
+    !!br &&
+    !!(
+      br.slot_id ||
+      br.service_name ||
+      br.service ||
+      br.service_id ||
+      br.venue ||
+      br.day ||
+      br.time
+    );
+
+  if (hasSlot || payload.existing_client_confirm === true) {
+    return { kind: "formal", label: "Formal place", tone: "ok" };
+  }
+
+  if (
+    clientStatus === "registered" ||
+    bookingStatus === "registration_submitted" ||
+    bookingStatus === "registration_started" ||
+    bookingStatus === "exploring_services" ||
+    bookingStatus === "new_lead"
+  ) {
+    return { kind: "registered_only", label: "Registered only", tone: "pend" };
+  }
+
+  return { kind: "registered_only", label: "Registered only", tone: "pend" };
 }
 
 Deno.serve(async (req) => {
@@ -66,7 +146,6 @@ Deno.serve(async (req) => {
 
   const participantFilter = String(body.participant_name || "").trim();
   const limit = Math.min(Math.max(Number(body.limit) || 200, 1), 500);
-  /* Default: client registration forms only (climbing has its own admin screen; consents elsewhere). */
   const includeConsents = body.include_consents === true;
 
   const ALLOWED = new Set([
@@ -116,7 +195,18 @@ Deno.serve(async (req) => {
     return portalAdminJson(500, { ok: false, error: "query_failed" });
   }
 
-  const rows = (data || []) as Omit<DocRow, "pdf_signed_url" | "photo_signed_url">[];
+  const rows = (data || []) as Omit<
+    DocRow,
+    | "pdf_signed_url"
+    | "photo_signed_url"
+    | "place_kind"
+    | "place_label"
+    | "place_tone"
+    | "booking_status"
+    | "client_status"
+    | "in_class"
+    | "on_waiting_list"
+  >[];
   const filterNorm = participantFilter ? normalizeName(participantFilter) : "";
 
   const filtered = filterNorm
@@ -131,6 +221,57 @@ Deno.serve(async (req) => {
     : rows;
 
   const capped = filtered.slice(0, limit);
+
+  const emails = Array.from(
+    new Set(
+      capped
+        .map((r) => emailNorm(String(r.parent_email || "")))
+        .filter((e) => e.includes("@")),
+    ),
+  );
+  const childNames = Array.from(
+    new Set(capped.map((r) => normalizeName(r.participant_name)).filter(Boolean)),
+  );
+
+  const leadByEmail = new Map<
+    string,
+    { booking_status: string | null; client_status: string | null }
+  >();
+  if (emails.length) {
+    const { data: leads } = await admin
+      .from("portal_booking_leads")
+      .select("email, email_norm, booking_status, client_status")
+      .in("email_norm", emails)
+      .limit(800);
+    for (const lead of leads || []) {
+      const key = emailNorm(String(lead.email_norm || lead.email || ""));
+      if (!key) continue;
+      leadByEmail.set(key, {
+        booking_status: lead.booking_status != null ? String(lead.booking_status) : null,
+        client_status: lead.client_status != null ? String(lead.client_status) : null,
+      });
+    }
+  }
+
+  const contactByChild = new Map<
+    string,
+    { in_class: boolean | null; on_waiting_list: boolean | null }
+  >();
+  if (childNames.length) {
+    const { data: contacts } = await admin
+      .from("portal_parent_contacts")
+      .select("child_display, in_class, on_waiting_list")
+      .limit(5000);
+    for (const c of contacts || []) {
+      const key = normalizeName(String(c.child_display || ""));
+      if (!key) continue;
+      if (!childNames.some((n) => n === key || key.includes(n) || n.includes(key))) continue;
+      contactByChild.set(key, {
+        in_class: c.in_class === true ? true : c.in_class === false ? false : null,
+        on_waiting_list: c.on_waiting_list === true ? true : c.on_waiting_list === false ? false : null,
+      });
+    }
+  }
 
   const out: DocRow[] = [];
   for (const row of capped) {
@@ -148,10 +289,39 @@ Deno.serve(async (req) => {
         .createSignedUrl(row.photo_storage_path, 3600);
       photoSigned = photoUrl?.signedUrl ?? null;
     }
+
+    const em = emailNorm(String(row.parent_email || ""));
+    const lead = em ? leadByEmail.get(em) : null;
+    const childKey = normalizeName(row.participant_name);
+    let contact = childKey ? contactByChild.get(childKey) : null;
+    if (!contact && childKey) {
+      for (const [k, v] of contactByChild.entries()) {
+        if (k.includes(childKey) || childKey.includes(k)) {
+          contact = v;
+          break;
+        }
+      }
+    }
+
+    const place = derivePlace({
+      payload_json: (row.payload_json || {}) as Record<string, unknown>,
+      booking_status: lead?.booking_status ?? null,
+      client_status: lead?.client_status ?? null,
+      in_class: contact?.in_class ?? null,
+      on_waiting_list: contact?.on_waiting_list ?? null,
+    });
+
     out.push({
       ...row,
       pdf_signed_url: pdfSigned,
       photo_signed_url: photoSigned,
+      place_kind: place.kind,
+      place_label: place.label,
+      place_tone: place.tone,
+      booking_status: lead?.booking_status ?? null,
+      client_status: lead?.client_status ?? null,
+      in_class: contact?.in_class ?? null,
+      on_waiting_list: contact?.on_waiting_list ?? null,
     });
   }
 
