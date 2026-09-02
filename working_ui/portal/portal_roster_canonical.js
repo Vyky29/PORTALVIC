@@ -321,7 +321,7 @@
     { staff: "ROBERTO", name: "Logan", time: "5 to 5.30" },
     { staff: "ROBERTO", name: "No participant", time: "5.30 to 6" },
     { staff: "ROBERTO", name: "Richard", time: "6 to 6.30" },
-    { staff: "LULIYA", name: "Closed", time: "4 to 4.30" },
+    { staff: "LULIYA", name: "No participant", time: "4 to 4.30" },
     { staff: "LULIYA", name: "Serine", time: "4.30 to 5.30" },
     { staff: "LULIYA", name: "No participant", time: "5.30 to 6" },
     { staff: "LULIYA", name: "No participant", time: "6 to 6.30" },
@@ -813,6 +813,7 @@
   /**
    * Standing Thu Acton AS: Roberto / Simon / Javier / Aurora (no Luliya).
    * Elijah + Yuri with Simon; Aurora CLOSED 4–4.30 (starts 4.30). Eiji aquatic withdrawn.
+   * Simon works 4–6.30 — gap 4.30–5 is open (No participant), not Closed.
    */
   var AUTUMN_ACTON_THURSDAY_BOARD = [
     { staff: "ROBERTO", name: "Tom", time: "4 to 4.30" },
@@ -821,7 +822,7 @@
     { staff: "ROBERTO", name: "No participant", time: "5.30 to 6" },
     { staff: "ROBERTO", name: "No participant", time: "6 to 6.30" },
     { staff: "SIMON", name: "Elijah", time: "4 to 4.30" },
-    { staff: "SIMON", name: "Closed", time: "4.30 to 5" },
+    { staff: "SIMON", name: "No participant", time: "4.30 to 5" },
     { staff: "SIMON", name: "Yuri", time: "5 to 5.30" },
     { staff: "SIMON", name: "No participant", time: "5.30 to 6" },
     { staff: "SIMON", name: "No participant", time: "6 to 6.30" },
