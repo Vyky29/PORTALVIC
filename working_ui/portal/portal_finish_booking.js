@@ -484,10 +484,11 @@
         "";
       if (firstVia === "bank_transfer" || firstVia === "bank") {
         return (
+          "Today " +
           money(q.first_due_gbp) +
-          " by bank now + set up GoCardless for later 1sts (" +
+          " by bank · then GoCardless on later 1sts (" +
           rem +
-          " · total " +
+          " · term " +
           money(q.invoice_total_gbp) +
           ")"
         );
@@ -692,29 +693,39 @@
     });
   }
 
-  /** Pay-hold expiry for parents: time only (e.g. 10:39 UTC), no calendar date. */
+  /** Pay-hold expiry for parents: today + time only (no calendar date). */
   function formatHoldExpiryTime(iso) {
     var s = String(iso || "").trim();
     if (!s) return "";
     var m = s.match(/T(\d{2}:\d{2})/);
-    if (m) return m[1] + " UTC";
+    if (m) return "today " + m[1] + " UTC";
     var d = new Date(s);
     if (!Number.isNaN(d.getTime())) {
       var hh = String(d.getUTCHours()).padStart(2, "0");
       var mm = String(d.getUTCMinutes()).padStart(2, "0");
-      return hh + ":" + mm + " UTC";
+      return "today " + hh + ":" + mm + " UTC";
     }
     return "";
   }
 
   function plansForChannel(channel, data) {
     if (channel === "gocardless") {
+      var gcQ = (data && data.quotes && data.quotes.gocardless_monthly) || null;
+      var gcFirstVia =
+        (gcQ &&
+          gcQ.schedule &&
+          gcQ.schedule[0] &&
+          String(gcQ.schedule[0].collect_via || "").toLowerCase()) ||
+        "";
+      var gcBankNow =
+        gcFirstVia === "bank_transfer" || gcFirstVia === "bank";
       return [
         {
           value: "gocardless_monthly",
           title: "GoCardless monthly",
-          hint:
-            "Pro-rata: only remaining sessions are billed. All GoCardless collections on the 1st (same day for every family). If you finish after this month's 1st: bank transfer this month's share now + set up GoCardless for later months. £1.50 per GoCardless instalment.",
+          hint: gcBankNow
+            ? "Only remaining sessions are billed. Today: pay this month by bank transfer, tell the office, then set up GoCardless. Later months collect on the 1st with every family (£1.50 per Direct Debit)."
+            : "Only remaining sessions are billed. Set up Direct Debit now — collections on the 1st each month with every family (£1.50 per instalment).",
         },
       ];
     }
@@ -1054,7 +1065,7 @@
       esc(money(firstAmt)) +
       "</strong>" +
       (gcBankFirst
-        ? " <span>(pay by bank transfer now; later months via GoCardless)</span>"
+        ? " <span>(Step 1: bank transfer today · Step 2: GoCardless)</span>"
         : "") +
       "</p>";
 
@@ -1140,10 +1151,10 @@
         "";
       var holdLine = holdExp
         ? "Place held until <strong>" +
-          esc(String(holdExp).replace("T", " ").slice(0, 16)) +
-          " UTC</strong> (" +
+          esc(formatHoldExpiryTime(holdExp) || "the deadline") +
+          "</strong> (" +
           esc(String(holdMin)) +
-          " minutes from invoice). If unpaid by then, the seat returns to the Booking Portal."
+          " minutes). If unpaid by then, the seat returns to the Booking Portal."
         : "Place held for <strong>" +
           esc(String(holdMin)) +
           " minutes</strong> only. If unpaid by then, the seat returns to the Booking Portal.";
@@ -1173,7 +1184,11 @@
       );
       var waHref =
         "https://wa.me/447592558671?text=" + encodeURIComponent(paidMsg);
+      var step1Title = gcBankFirst
+        ? '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 1 — Bank transfer today + tell the office</p>'
+        : "";
       html +=
+        step1Title +
         '<div class="card-inner" style="margin:0 0 12px">' +
         "<div><strong>Payee</strong> " +
         esc(bank.payee_name || "clubSENsational") +
@@ -1191,28 +1206,30 @@
         '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
         holdLine +
         "</p>" +
-        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>send us a WhatsApp or email</strong> saying you have paid' +
+        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>WhatsApp or email the office</strong> saying you have paid' +
         (isTrialBank ? " (include reference + amount)" : "") +
         ". A photo/screenshot is helpful but optional.</p>" +
         '<p style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px">' +
         '<a class="btn btn--pri" href="' +
         esc(waHref) +
-        '" target="_blank" rel="noopener noreferrer">WhatsApp the office</a>' +
-        '<a class="btn" href="mailto:info@clubsensational.org?subject=' +
+        '" target="_blank" rel="noopener noreferrer" style="width:auto;flex:1 1 140px">WhatsApp the office</a>' +
+        '<a class="btn btn--office" href="mailto:info@clubsensational.org?subject=' +
         mailSub +
         "&body=" +
         mailBody +
-        '">Email info@...</a>' +
-        "</p>" +
-        '<p class="muted" style="margin:0">Use the club WhatsApp you already chat on if you prefer - same \"I\'ve paid\" message is fine.</p>';
+        '" style="width:auto;flex:1 1 140px">EMAIL THE OFFICE</a>' +
+        "</p>";
       if (gcBankFirst && gcUrl) {
         html +=
-          '<p class="notice" style="margin:14px 0 8px;overflow-wrap:break-word"><strong>Two steps:</strong> (1) bank transfer the amount above now (pro-rata for remaining sessions this month), then WhatsApp/email the office; (2) set up GoCardless so later months collect on the 1st with everyone else.</p>' +
-          '<a class="btn" href="' +
+          '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
+          '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 2 — Set up GoCardless</p>' +
+          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After Step 1, set up Direct Debit so later months collect on the <strong>1st</strong> with every family.</p>' +
+          '<a class="btn btn--pri" href="' +
           esc(gcUrl) +
           '"' +
           (isDemoMode() ? ' target="_blank" rel="noopener noreferrer"' : "") +
-          ">Step 2 — Set up GoCardless</a>";
+          ">Set up GoCardless</a>" +
+          "</div>";
       }
     }
     if (host) host.innerHTML = html;
