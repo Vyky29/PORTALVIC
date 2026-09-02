@@ -409,18 +409,31 @@
     }
     if (action === "notify_office_paid") {
       var notifiedAt = new Date().toISOString();
+      var officeExp = new Date(Date.now() + 30 * 60 * 1000).toISOString();
       demoState.choices_json = Object.assign({}, demoState.choices_json || {}, {
         office_paid_notified_at: notifiedAt,
         office_paid_notify_channel: extra.channel || "unknown",
         office_paid_notify_at: notifiedAt,
+        pay_hold_expires_at: officeExp,
+        pay_hold_minutes: 30,
+        office_confirm_hold_expires_at: officeExp,
       });
+      demoState.status = "awaiting_office_payment";
       return Promise.resolve({
         ok: true,
-        gocardless_url: "https://example.com/gocardless-demo",
+        gocardless_url:
+          demoState.pay_plan === "gocardless_monthly"
+            ? "https://example.com/gocardless-demo"
+            : null,
         office_paid_notified_at: notifiedAt,
-        gc_step2_unlocked: true,
+        gc_step2_unlocked: demoState.pay_plan === "gocardless_monthly",
         choices_json: demoState.choices_json,
-        status: demoState.status,
+        status: "awaiting_office_payment",
+        pay_hold_minutes: 30,
+        pay_hold_expires_at: officeExp,
+        office_confirm_hold: true,
+        message:
+          "Thanks — your place is held while the office confirms Tide (about 30 more minutes).",
       });
     }
     if (action === "create_stripe_checkout") {
@@ -903,6 +916,15 @@
       return;
     }
     if (data.status === "awaiting_office_payment") {
+      if (data.invoice) {
+        showInvoice(data);
+        showNotice(
+          notice,
+          "Thanks — your place is held while the office confirms Tide. PIN arrives after they Mark paid.",
+          "ok",
+        );
+        return;
+      }
       setStep("fbStepAwaitingOffice");
       showNotice(
         notice,
@@ -1245,6 +1267,18 @@
         : "Place held for <strong>" +
           esc(String(holdMin)) +
           " minutes</strong> only. If unpaid by then, the seat returns to the Booking Portal.";
+      var officeNotified = Boolean(
+        data.status === "awaiting_office_payment" ||
+          (data.choices_json && data.choices_json.office_paid_notified_at) ||
+          data.office_confirm_hold,
+      );
+      if (officeNotified) {
+        holdLine = holdExp
+          ? "You told the office you paid. Place held for Tide confirmation until <strong>" +
+            esc(formatHoldExpiryTime(holdExp) || "the deadline") +
+            "</strong>. Your seat stays reserved; PIN is sent after they Mark paid."
+          : "You told the office you paid. Your seat stays reserved while they confirm Tide. PIN is sent after they Mark paid.";
+      }
       var paidMsg =
         "Hi, I have paid for " +
         (data.participant_name || "my child") +
@@ -1454,68 +1488,55 @@
           });
       };
     }
-    if (gcBankFirst) {
-      function unlockGcStep2(url) {
-        data.gc_step2_unlocked = true;
-        data.gocardless_url = url || data.gocardless_url || "";
-        if (data.invoice) data.invoice.gocardless_url = data.gocardless_url;
-        var btn = document.getElementById("fbGcStep2");
-        var hint = document.getElementById("fbGcStep2Hint");
-        if (hint) {
-          hint.innerHTML =
-            "After Steps 1 and 2, set up Direct Debit so later months collect on the <strong>1st</strong> with every family.";
-        }
-        if (btn && data.gocardless_url) {
-          var a = document.createElement("a");
-          a.className = "btn btn--pri";
-          a.id = "fbGcStep2";
-          a.href = data.gocardless_url;
-          a.style.cssText = "gap:8px";
-          if (isDemoMode()) {
-            a.target = "_blank";
-            a.rel = "noopener noreferrer";
+    function onOfficeNotify(channel) {
+      void api("notify_office_paid", { channel: channel })
+        .then(function (out) {
+          if (out.choices_json) data.choices_json = out.choices_json;
+          else {
+            data.choices_json = data.choices_json || {};
+            data.choices_json.office_paid_notified_at =
+              out.office_paid_notified_at || new Date().toISOString();
           }
-          a.innerHTML = iconGc() + " Set up GoCardless";
-          btn.replaceWith(a);
-        }
-      }
-      function onOfficeNotify(channel) {
-        void api("notify_office_paid", { channel: channel })
-          .then(function (out) {
-            if (out.choices_json) data.choices_json = out.choices_json;
-            else {
-              data.choices_json = data.choices_json || {};
-              data.choices_json.office_paid_notified_at =
-                out.office_paid_notified_at || new Date().toISOString();
-            }
-            unlockGcStep2(out.gocardless_url);
-            showNotice(
-              document.getElementById("fbNotice"),
-              "Step 3 unlocked — set up GoCardless when ready.",
-              "ok",
-            );
-          })
-          .catch(function (err) {
-            showNotice(
-              document.getElementById("fbNotice"),
-              err.message ||
-                "Could not unlock GoCardless yet. Message the office, then try again.",
-              "error",
-            );
-          });
-      }
-      var waBtn = document.getElementById("fbNotifyWa");
-      var emailBtn = document.getElementById("fbNotifyEmail");
-      if (waBtn) {
-        waBtn.addEventListener("click", function () {
-          onOfficeNotify("whatsapp");
+          if (out.pay_hold_expires_at) {
+            data.pay_hold_expires_at = out.pay_hold_expires_at;
+            data.choices_json.pay_hold_expires_at = out.pay_hold_expires_at;
+          }
+          if (out.pay_hold_minutes != null) {
+            data.pay_hold_minutes = out.pay_hold_minutes;
+          }
+          data.status = out.status || "awaiting_office_payment";
+          data.office_confirm_hold = true;
+          data.gc_step2_unlocked =
+            out.gc_step2_unlocked === true || data.gc_step2_unlocked;
+          if (out.gocardless_url) data.gocardless_url = out.gocardless_url;
+          showInvoice(data);
+          showNotice(
+            document.getElementById("fbNotice"),
+            out.message ||
+              "Thanks — place held while the office confirms Tide. PIN after Mark paid.",
+            "ok",
+          );
+        })
+        .catch(function (err) {
+          showNotice(
+            document.getElementById("fbNotice"),
+            err.message ||
+              "Could not record your message. Still WhatsApp/email the office, then try again.",
+            "error",
+          );
         });
-      }
-      if (emailBtn) {
-        emailBtn.addEventListener("click", function () {
-          onOfficeNotify("email");
-        });
-      }
+    }
+    var waBtn = document.getElementById("fbNotifyWa");
+    var emailBtn = document.getElementById("fbNotifyEmail");
+    if (waBtn) {
+      waBtn.addEventListener("click", function () {
+        onOfficeNotify("whatsapp");
+      });
+    }
+    if (emailBtn) {
+      emailBtn.addEventListener("click", function () {
+        onOfficeNotify("email");
+      });
     }
     var stripeRetry = document.getElementById("fbStripeRetry");
     if (stripeRetry) {

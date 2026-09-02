@@ -44,10 +44,13 @@ import {
 } from "../_shared/portal_booking_context.ts";
 import {
   BOOKING_PAY_HOLD_MINUTES,
+  BOOKING_OFFICE_CONFIRM_HOLD_MINUTES,
   BOOKING_SLOT_HOLD_STATUSES,
   bookingPayHoldExpiresAt,
+  bookingOfficeConfirmHoldExpiresAt,
   runBookingPayHoldMaintenance,
 } from "../_shared/portal_booking_pay_hold.ts";
+import { notifyOfficeBankPaymentReported } from "../_shared/portal_booking_lead_office_notify.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -1203,7 +1206,8 @@ Deno.serve(async (req) => {
   }
 
   if (action === "notify_office_paid") {
-    // Step 1 gate: parent tapped WhatsApp or Email → unlock Step 2 GoCardless.
+    // Parent tapped WhatsApp / Email after bank transfer:
+    // stop the pay-now 30' clock, mark reported, give office another 30' to confirm Tide.
     if (token.status === "completed") {
       return json(200, { ok: true, status: "completed", completed: true });
     }
@@ -1213,81 +1217,135 @@ Deno.serve(async (req) => {
     const { data: inv } = await admin
       .from("portal_parent_invoice_share")
       .select(
-        "id, invoice_number, amount_gbp, amount_paid_gbp, payment_status, payment_schedule, payment_method_hint, gocardless_url, due_date",
+        "id, invoice_number, amount_gbp, amount_paid_gbp, payment_status, payment_schedule, payment_method_hint, gocardless_url, due_date, contact_id, parent_reported_paid_at",
       )
       .eq("id", token.invoice_share_id)
       .maybeSingle();
     if (!inv) return json(404, { ok: false, error: "invoice_not_found" });
 
-    const bankFirst = paymentScheduleBankFirst(inv.payment_schedule);
-    if (!bankFirst) {
-      return json(400, {
-        ok: false,
-        error: "notify_not_required",
-        message: "This payment plan does not require the bank-notify step.",
-      });
+    const paySt = String(inv.payment_status || "").toLowerCase();
+    if (paySt === "paid" || paySt === "void") {
+      return json(409, { ok: false, error: "invoice_not_payable" });
     }
 
+    const bankFirst = paymentScheduleBankFirst(inv.payment_schedule);
     const channelRaw = clean(body.channel, 20).toLowerCase();
     const channel =
       channelRaw === "whatsapp" || channelRaw === "email" ? channelRaw : "unknown";
     const now = new Date().toISOString();
+    const officeHoldExpires = bookingOfficeConfirmHoldExpiresAt();
+    const alreadyNotified = Boolean(
+      String(savedChoices.office_paid_notified_at || "").trim() ||
+        inv.parent_reported_paid_at,
+    );
     const nextChoices = {
       ...savedChoices,
       office_paid_notified_at:
         String(savedChoices.office_paid_notified_at || "").trim() || now,
       office_paid_notify_channel: channel,
       office_paid_notify_at: now,
-      gc_requires_office_notify: true,
+      pay_hold_minutes: BOOKING_OFFICE_CONFIRM_HOLD_MINUTES,
+      pay_hold_expires_at: officeHoldExpires,
+      office_confirm_hold_minutes: BOOKING_OFFICE_CONFIRM_HOLD_MINUTES,
+      office_confirm_hold_expires_at: officeHoldExpires,
+      gc_requires_office_notify: bankFirst,
     };
+
+    const schedule = Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
+    const firstOpen = (schedule as Array<Record<string, unknown>>).find((r) =>
+      String(r?.status || "pending").toLowerCase() !== "paid"
+    ) || (schedule[0] as Record<string, unknown> | undefined);
+    const reportAmt = Number(firstOpen?.amount_gbp) || Number(inv.amount_gbp) || 0;
+
+    await admin
+      .from("portal_parent_invoice_share")
+      .update({
+        parent_reported_paid_at: inv.parent_reported_paid_at || now,
+        parent_reported_method: channel === "email" ? "email" : "whatsapp",
+        parent_reported_notes: `finish_booking_notify_${channel}`,
+        payment_status: paySt === "partial" ? "partial" : "pending_confirmation",
+        updated_at: now,
+      })
+      .eq("id", String(inv.id));
 
     await admin
       .from("portal_booking_completion_tokens")
       .update({
+        status: "awaiting_office_payment",
         choices_json: nextChoices,
         updated_at: now,
       })
       .eq("id", token.id);
 
-    let gocardlessUrl = clean(inv.gocardless_url, 2000) || null;
-    if (!gocardlessUrl) {
-      const contactId = clean(token.contact_id, 80);
-      if (!contactId) {
-        return json(400, { ok: false, error: "contact_required" });
-      }
+    if (reservation?.id) {
+      const prevNotes = String(reservation.notes || "").trim();
+      await admin
+        .from("portal_booking_slot_reservations")
+        .update({
+          status: "awaiting_payment",
+          hold_expires_at: officeHoldExpires,
+          updated_at: now,
+          notes: [prevNotes, "office_confirm_hold_30m", `parent_reported_${channel}`]
+            .filter(Boolean)
+            .join("|")
+            .slice(0, 500),
+        })
+        .eq("id", String(reservation.id));
+    }
+
+    if (!alreadyNotified) {
       try {
-        gocardlessUrl = await mintFinishBookingGocardlessUrl(admin, {
-          contactId,
-          parentPersonId: clean(token.parent_person_id, 80) || null,
-          participantName: String(doc.participant_name || ""),
-          invoiceId: String(inv.id),
+        await notifyOfficeBankPaymentReported({
+          invoiceShareId: String(inv.id),
           invoiceNumber: clean(inv.invoice_number, 40) || null,
-          rawToken,
-          paymentSchedule: inv.payment_schedule,
+          participantName: String(doc.participant_name || ""),
+          parentName: String(doc.parent_name || "") || null,
+          parentEmail: String(doc.parent_email || "") || null,
+          amountGbp: reportAmt,
+          isTrial: savedScope === "trial_session",
+          paymentRef: suggestedTransferReference(
+            inv.invoice_number,
+            String(doc.participant_name || ""),
+          ),
+          viaParentMessage: true,
         });
       } catch (e) {
-        console.warn("[portal-booking-finish] notify_office_paid gc", e);
+        console.warn("[portal-booking-finish] office bank report notify", e);
       }
     }
 
-    if (!gocardlessUrl) {
-      return json(502, {
-        ok: false,
-        error: "gocardless_unavailable",
-        message:
-          "Thanks — we recorded that you contacted the office. GoCardless setup is not ready yet; try again in a moment or ask the office.",
-        office_paid_notified_at: nextChoices.office_paid_notified_at,
-        gc_step2_unlocked: true,
-      });
+    let gocardlessUrl: string | null = clean(inv.gocardless_url, 2000) || null;
+    if (bankFirst && !gocardlessUrl) {
+      const contactId = clean(token.contact_id, 80) || clean(inv.contact_id, 80);
+      if (contactId) {
+        try {
+          gocardlessUrl = await mintFinishBookingGocardlessUrl(admin, {
+            contactId,
+            parentPersonId: clean(token.parent_person_id, 80) || null,
+            participantName: String(doc.participant_name || ""),
+            invoiceId: String(inv.id),
+            invoiceNumber: clean(inv.invoice_number, 40) || null,
+            rawToken,
+            paymentSchedule: inv.payment_schedule,
+          });
+        } catch (e) {
+          console.warn("[portal-booking-finish] notify_office_paid gc", e);
+        }
+      }
     }
 
     return json(200, {
       ok: true,
-      gocardless_url: gocardlessUrl,
+      gocardless_url: bankFirst ? gocardlessUrl : null,
       office_paid_notified_at: nextChoices.office_paid_notified_at,
-      gc_step2_unlocked: true,
+      gc_step2_unlocked: bankFirst,
       choices_json: nextChoices,
-      status: token.status,
+      status: "awaiting_office_payment",
+      pay_hold_minutes: BOOKING_OFFICE_CONFIRM_HOLD_MINUTES,
+      pay_hold_expires_at: officeHoldExpires,
+      office_confirm_hold: true,
+      message:
+        "Thanks — your place is held while the office confirms Tide (about 30 more minutes). Parent Portal PIN is sent after they Mark paid.",
     });
   }
 

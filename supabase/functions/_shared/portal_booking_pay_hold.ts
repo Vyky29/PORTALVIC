@@ -10,12 +10,18 @@ import {
 } from "./portal_parent_messaging.ts";
 
 export const BOOKING_PAY_HOLD_MINUTES = 30;
+/** After parent taps WhatsApp/Email (says paid), office gets this window to confirm Tide. */
+export const BOOKING_OFFICE_CONFIRM_HOLD_MINUTES = 30;
 /** Reminder when this many minutes remain before hold_expires_at (30' - 5' = minute 25). */
 export const BOOKING_PAY_HOLD_NUDGE_BEFORE_EXPIRY_MINUTES = 5;
 const NUDGE_NOTE_TAG = "pay_hold_nudge_25m";
 
 export function bookingPayHoldExpiresAt(fromMs = Date.now()): string {
   return new Date(fromMs + BOOKING_PAY_HOLD_MINUTES * 60 * 1000).toISOString();
+}
+
+export function bookingOfficeConfirmHoldExpiresAt(fromMs = Date.now()): string {
+  return new Date(fromMs + BOOKING_OFFICE_CONFIRM_HOLD_MINUTES * 60 * 1000).toISOString();
 }
 
 /** Active reservation statuses that occupy a Booking Portal seat. */
@@ -46,10 +52,25 @@ async function shouldSkipTermPayHoldExpiry(
 ): Promise<boolean> {
   const { data: toks } = await admin
     .from("portal_booking_completion_tokens")
-    .select("invoice_share_id, choices_json")
+    .select("invoice_share_id, choices_json, status")
     .eq("document_id", documentId)
     .not("invoice_share_id", "is", null);
   if (!toks?.length) return false;
+
+  // Parent already told the office they paid — keep seat until Mark paid / Tide.
+  if (
+    toks.some((t) => {
+      const st = String(t.status || "").toLowerCase();
+      if (st === "awaiting_office_payment") return true;
+      const c =
+        t.choices_json && typeof t.choices_json === "object"
+          ? (t.choices_json as Record<string, unknown>)
+          : {};
+      return Boolean(String(c.office_paid_notified_at || "").trim());
+    })
+  ) {
+    return true;
+  }
 
   const isTrial = toks.some((t) => {
     const c =
