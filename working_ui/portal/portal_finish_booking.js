@@ -1133,7 +1133,7 @@
       esc(money(firstAmt)) +
       "</strong>" +
       (gcBankFirst
-        ? " <span>(Step 1: bank transfer today · Step 2: GoCardless)</span>"
+        ? " <span>(Step 1: bank · Step 2: tell the office · Step 3: GoCardless)</span>"
         : "") +
       "</p>";
 
@@ -1254,11 +1254,8 @@
       );
       var waHref =
         "https://wa.me/447592558671?text=" + encodeURIComponent(paidMsg);
-      var step1Title = gcBankFirst
-        ? '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 1 — Bank transfer today + tell the office</p>'
-        : "";
       html +=
-        step1Title +
+        '<p style="margin:0 0 8px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 1 — Pay by bank transfer</p>' +
         '<div class="card-inner" style="margin:0 0 12px">' +
         "<div><strong>Payee</strong> " +
         esc(bank.payee_name || "clubSENsational") +
@@ -1276,7 +1273,9 @@
         '<p class="notice notice--error" style="margin:0 0 12px" role="status">' +
         holdLine +
         "</p>" +
-        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>WhatsApp or email the office</strong> saying you have paid' +
+        '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
+        '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 2 — Tell the office</p>' +
+        '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, WhatsApp or email saying you have paid' +
         (isTrialBank ? " (include reference + amount)" : "") +
         ". A photo/screenshot is helpful but optional.</p>" +
         '<p style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px">' +
@@ -1292,7 +1291,8 @@
         '" style="width:auto;flex:1 1 140px;gap:8px">' +
         iconMail() +
         " Email the office</a>" +
-        "</p>";
+        "</p>" +
+        "</div>";
       if (gcBankFirst) {
         var gcUnlocked =
           data.gc_step2_unlocked === true ||
@@ -1302,11 +1302,11 @@
         var gcHref = gcUnlocked && gcUrl ? gcUrl : "";
         html +=
           '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
-          '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 2 — Set up GoCardless</p>' +
+          '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 3 — Set up GoCardless</p>' +
           '<p class="muted" id="fbGcStep2Hint" style="margin:0 0 10px;overflow-wrap:break-word">' +
           (gcUnlocked
-            ? "After Step 1, set up Direct Debit so later months collect on the <strong>1st</strong> with every family."
-            : "Locked until you tap <strong>WhatsApp the office</strong> or <strong>Email the office</strong> above (after your bank transfer).") +
+            ? "After Steps 1 and 2, set up Direct Debit so later months collect on the <strong>1st</strong> with every family."
+            : "Locked until you tap <strong>WhatsApp the office</strong> or <strong>Email the office</strong> in Step 2.") +
           "</p>" +
           (gcHref
             ? '<a class="btn btn--pri" id="fbGcStep2" href="' +
@@ -1332,7 +1332,7 @@
         var hint = document.getElementById("fbGcStep2Hint");
         if (hint) {
           hint.innerHTML =
-            "After Step 1, set up Direct Debit so later months collect on the <strong>1st</strong> with every family.";
+            "After Steps 1 and 2, set up Direct Debit so later months collect on the <strong>1st</strong> with every family.";
         }
         if (btn && data.gocardless_url) {
           var a = document.createElement("a");
@@ -1360,7 +1360,7 @@
             unlockGcStep2(out.gocardless_url);
             showNotice(
               document.getElementById("fbNotice"),
-              "Step 2 unlocked — set up GoCardless when ready.",
+              "Step 3 unlocked — set up GoCardless when ready.",
               "ok",
             );
           })
