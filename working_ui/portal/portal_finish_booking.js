@@ -339,11 +339,32 @@
     if (plan === "trial_one_off" || q.is_trial) {
       return money(q.first_due_gbp) + " due now (1 trial session)";
     }
+    var rem =
+      q.remaining_sessions != null
+        ? String(q.remaining_sessions) + " remaining sessions"
+        : "remaining sessions";
+    if (plan === "gocardless_monthly") {
+      var firstVia =
+        (q.schedule &&
+          q.schedule[0] &&
+          String(q.schedule[0].collect_via || "").toLowerCase()) ||
+        "";
+      if (firstVia === "bank_transfer" || firstVia === "bank") {
+        return (
+          money(q.first_due_gbp) +
+          " by bank now + set up GoCardless for later 1sts (" +
+          rem +
+          " · total " +
+          money(q.invoice_total_gbp) +
+          ")"
+        );
+      }
+    }
     return (
       money(q.first_due_gbp) +
       " due first (" +
-      esc(String(q.remaining_sessions || "—")) +
-      " sessions · total " +
+      rem +
+      " · total " +
       money(q.invoice_total_gbp) +
       ")"
     );
@@ -545,7 +566,7 @@
           value: "gocardless_monthly",
           title: "GoCardless monthly",
           hint:
-            "All GoCardless collections on the 1st of the month (same day for every family — one batch). If you finish after this month's 1st, pay this month's share by bank transfer now; later months stay on the 1st. £1.50 per GoCardless instalment.",
+            "Pro-rata: only remaining sessions are billed. All GoCardless collections on the 1st (same day for every family). If you finish after this month's 1st: bank transfer this month's share now + set up GoCardless for later months. £1.50 per GoCardless instalment.",
         },
       ];
     }
@@ -1024,10 +1045,10 @@
         '<p class="muted" style="margin:0">Use the club WhatsApp you already chat on if you prefer - same \"I\'ve paid\" message is fine.</p>';
       if (gcBankFirst && gcUrl && !isDemoMode()) {
         html +=
-          '<p class="muted" style="margin:14px 0 8px;overflow-wrap:break-word">After (or alongside) the bank transfer, set up GoCardless so later months collect on the 1st:</p>' +
+          '<p class="notice" style="margin:14px 0 8px;overflow-wrap:break-word"><strong>Two steps:</strong> (1) bank transfer the amount above now (pro-rata for remaining sessions this month), then WhatsApp/email the office; (2) set up GoCardless so later months collect on the 1st with everyone else.</p>' +
           '<a class="btn" href="' +
           esc(gcUrl) +
-          '">Set up GoCardless for later months</a>';
+          '">Step 2 — Set up GoCardless</a>';
       }
     }
     if (host) host.innerHTML = html;

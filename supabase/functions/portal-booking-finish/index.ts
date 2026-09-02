@@ -455,11 +455,15 @@ Deno.serve(async (req) => {
     venue,
     formType,
   });
+  const todayIso = new Date().toISOString().slice(0, 10);
   const sessionDateIso = resolveSessionDateIso({
     dateIso: reservation?.date_iso ? String(reservation.date_iso).slice(0, 10) : null,
     day,
-    asOfIso: new Date().toISOString().slice(0, 10),
+    asOfIso: todayIso,
   });
+  // Pro-rata from first attended session (or today if they already missed that date).
+  const proRataAsOf =
+    sessionDateIso && sessionDateIso > todayIso ? sessionDateIso : todayIso;
   // Trial and term quotes: one session at that service's catalogue rate
   // (climbing £75 / 60', aquatic £50 / 30', …) — never a blind £50 default.
   const unit = inferUnitPriceGbp({
@@ -487,6 +491,8 @@ Deno.serve(async (req) => {
       day,
       unitPriceGbp: unit,
       plan,
+      asOfIso: proRataAsOf,
+      payAsOfIso: todayIso,
       serviceKey,
       serviceLabel: serviceName,
       detail: detailLine,
@@ -500,6 +506,7 @@ Deno.serve(async (req) => {
         first_due_date: q.paymentSchedule[0]?.due_date ?? null,
         schedule: q.paymentSchedule,
         payment_method_hint: q.paymentMethodHint,
+        pro_rata_from: q.asOfIso,
       };
     }
   }
@@ -795,6 +802,8 @@ Deno.serve(async (req) => {
           day,
           unitPriceGbp: unit,
           plan,
+          asOfIso: proRataAsOf,
+          payAsOfIso: todayIso,
           serviceKey,
           serviceLabel: serviceName,
           detail: detailLine,
