@@ -364,9 +364,7 @@
   ],
   "erik": [
     "aurora",
-    "berta",
-    "dan",
-    "john"
+    "berta"
   ],
   "fadi": [
     "roberto",

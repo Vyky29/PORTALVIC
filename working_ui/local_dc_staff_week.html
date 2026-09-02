@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260902-open-slots</title>
+  <title>LOCAL · DC staff week compare (from 1 Sep) · v20260902-erik</title>
   <style>
     :root {
       --ink: #173247;
@@ -199,7 +199,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260902-open-slots · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260902-erik · Autumn 2026</h1>
   <p class="note">
     Same static server as Roberto (<code>127.0.0.1:3456</code>). Club closed Mon 31 Aug 2026 (BH).
     Two blocks: <strong>1-6 Sep</strong> = first week (Tue-Fri Day Centre only; Sat 5 + Sun 6 weekend);
@@ -211,7 +211,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260902-luliya-simon-open"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260902-erik-multi"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260902-emanuel-fadi-1230"></script>
   <!-- local board bump: 20260901c-open-slots -->
   <script>
@@ -228,14 +228,14 @@
     { dow: "thursday", iso: "2026-09-03", phase: "w1", hint: "Week 1 · Fadi off · Roberto + Youssef OFF" },
     { dow: "friday", iso: "2026-09-04", phase: "w1", hint: "Week 1 · Fadi off · Victor/Raul Timi 11-1 · Youssef OFF (starts Sat)" },
     { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Week 1 · first Saturday" },
-    { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · first Sunday · Erik Multi open only" },
+    { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · first Sunday · Erik Multi (Berta/Aurora)" },
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Standing · DC + AS (template rest of term)" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing · Acton AS Roberto/Aurora/Javier/Luliya" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Standing · Acton swim Javier/Youssef 30' + Northolt + Hub Bespoke" },
     { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton AS Simon (Elijah/Yuri); Aurora from 4.30; no Youssef PM" },
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Standing · Acton Youssef + Hub Tinashe Roberto" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
-    { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Standing · weekend · Erik Multi open (Berta 12.30-1.15 / Aurora 1.15-2)" },
+    { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Standing · weekend · Erik Multi Berta 12.30-1.15 / Aurora 1.15-2" },
   ];
   var DAY_LABEL = {
     tuesday: "Tuesday",
@@ -432,8 +432,8 @@
         { name: "Arthur Ma", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
         { name: "Cyrus", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
         { name: "Aydaan Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
-        /* Erik Ndregjoni Multi 1.15-2 — only Sunday Multi non-renew → open */
-        { name: "No participant", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool", kind: "open" },
+        /* Erik Ndregjoni Multi 1.15-2 · finish-booking INV-P-0461 (was open while non-renew) */
+        { name: "Erik", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Zakariya", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
         { name: "Faris", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
       ],
@@ -442,8 +442,8 @@
         { name: "Adam Ab", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Cyrus", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Arthur Ma", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
-        /* Erik Ndregjoni Multi Hub 12.30-1.15 — same non-renew as Aurora 1.15-2 */
-        { name: "No participant", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "open" },
+        /* Erik Hub 12.30-1.15 · same Multi 12.30–2 place */
+        { name: "Erik", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Aydaan Ah", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
       ],
       Godsway: [

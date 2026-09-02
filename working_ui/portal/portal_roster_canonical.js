@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 29;
+  var SOURCE_VERSION = 30;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -728,6 +728,33 @@
     );
   }
 
+  /**
+   * Erik Ndregjoni Multi Sun 12.30–2 (INV-P-0461 paid/partial).
+   * Restore name if a summer snap left the seat as No participant / HOLD WAITLIST.
+   */
+  function restoreErikSundayMultiSeat(row) {
+    if (!row || !isMultiActivityService(row.service)) return null;
+    if (normalizeDowKey(row.day) !== "sunday") return null;
+    if (!/swimfarm/i.test(String(row.venue || ""))) return null;
+    var cn = String(row.client_name || "").trim();
+    if (!/^(no participant|no client|hold waitlist|closed)$/i.test(cn)) return null;
+    var slot = String(row.time_slot || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+      .replace(/:/g, ".");
+    var area = String(row.area || "").toLowerCase();
+    var inst = String(row.instructors || "");
+    var hubHalf =
+      (slot === "12.30 to 1.15" || slot.indexOf("12.30 to 1.15") === 0) &&
+      (/hub/i.test(area) || /\bberta\b|\bjohn\b/i.test(inst));
+    var poolHalf =
+      (slot === "1.15 to 2" || slot.indexOf("1.15 to 2") === 0) &&
+      (/big\s*pool/i.test(area) || /\baurora\b|\bdan\b|\byoussef\b/i.test(inst));
+    if (!hubHalf && !poolHalf) return null;
+    return { client_name: "Erik" };
+  }
+
   var YOUSSEF_ACTON_OPEN_430_ROWS = [
     {
       client_name: "No participant",
@@ -1008,6 +1035,11 @@
             client_name: "No participant",
           })
         );
+        return;
+      }
+      var erikPatch = restoreErikSundayMultiSeat(r);
+      if (erikPatch) {
+        out.push(Object.assign({}, r, erikPatch));
         return;
       }
       /* Standing Tue/Wed often omit Youssef 4–4.30 — treat CLOSED / NO CLIENT as open too. */
