@@ -953,13 +953,27 @@
     };
   }
 
+  function summerMarchInvoiceGbp(r) {
+    var d = (r && r.data) || {};
+    var mar = Number(d["March invoice (25/26)"]);
+    return mar > 0 ? mar : 0;
+  }
+
+  function summerJulPaidExtraGbp(r) {
+    var d = (r && r.data) || {};
+    var n = Number(d["July paid Inv 0384 (25/26)"]);
+    return n > 0 ? n : 0;
+  }
+
   function summerAprMayInvoicesGbp(r) {
     var d = (r && r.data) || {};
     var apr = Number(d["April invoice (25/26)"]);
     var may = Number(d["May invoice (25/26)"]);
+    var aprPaidAmt = Number(d["April paid (25/26)"]);
     var mayPaid = Number(d["May paid (25/26)"]);
     var tot = Number(d["April–May invoices (25/26)"]);
-    if (!(apr > 0) && !(may > 0) && !(tot > 0) && !(mayPaid > 0)) {
+    var paidBlob = [d["Summer basis"], d["NHS due months"], d.Next].join(" ");
+    if (!(apr > 0) && !(may > 0) && !(tot > 0) && !(mayPaid > 0) && !(aprPaidAmt > 0)) {
       var blob = [d.Extras, d["Summer basis"], d.Next, d.Sessions].join(" ");
       var mApr = blob.match(/\bapr(?:il|\.)?\b[^\d£]{0,12}£?\s*([\d,]+(?:\.\d+)?)/i);
       var mMay = blob.match(/\bmay\b[^\d£]{0,12}£?\s*([\d,]+(?:\.\d+)?)/i);
@@ -974,7 +988,7 @@
         }
       }
     }
-    if (!(apr > 0)) apr = 0;
+    if (!(apr > 0)) apr = aprPaidAmt > 0 ? aprPaidAmt : 0;
     if (!(may > 0)) may = mayPaid > 0 ? mayPaid : 0;
     if (!(tot > 0)) tot = apr + may;
     if (!(tot > 0)) return null;
@@ -982,9 +996,8 @@
       april: apr,
       may: may,
       total: tot,
-      mayPaid: mayPaid > 0 || /may[^\n]{0,40}\bpaid\b/i.test(
-        [d["Summer basis"], d["NHS due months"], d.Next].join(" "),
-      ),
+      aprilPaid: aprPaidAmt > 0 || nhsMonthMarkedPaid(paidBlob, "apr"),
+      mayPaid: mayPaid > 0 || nhsMonthMarkedPaid(paidBlob, "may") || /may[^\n]{0,40}\bpaid\b/i.test(paidBlob),
     };
   }
 
@@ -1277,11 +1290,22 @@
           + money(termAmt)
           + "</span>";
       }
+      var marInv = summerMarchInvoiceGbp(r);
+      var julPaidExtra = summerJulPaidExtraGbp(r);
       var monthBits = "";
+      if (marInv > 0) {
+        monthBits +=
+          '<span class="pay-amt-season" title="NHS March invoice (DC + transport)">Mar '
+          + money(marInv)
+          + "</span>";
+      }
       if (aprMay && aprMay.april > 0) {
         monthBits +=
-          '<span class="pay-amt-season" title="NHS April invoice">Apr '
+          '<span class="pay-amt-season" title="'
+          + (aprMay.aprilPaid ? "April invoice already paid" : "NHS April invoice")
+          + '">Apr '
           + money(aprMay.april)
+          + (aprMay.aprilPaid ? " paid" : "")
           + "</span>";
       }
       if (aprMay && aprMay.may > 0) {
@@ -1306,7 +1330,13 @@
           + (julPaid ? " paid" : "")
           + "</span>";
       }
-      if (!julyPay && !ealingCreditBal && !aprMay && !junJul && !uplift && payCat !== "partial") {
+      if (julPaidExtra > 0) {
+        monthBits +=
+          '<span class="pay-amt-season" title="July Inv 0384 paid (separate from unpaid Jul line)">Jul 0384 '
+          + money(julPaidExtra)
+          + " paid</span>";
+      }
+      if (!julyPay && !ealingCreditBal && !aprMay && !junJul && !uplift && !marInv && !julPaidExtra && payCat !== "partial") {
         return summerMain;
       }
       return '<span class="pay-amt-stack" title="'
