@@ -744,21 +744,9 @@
     );
   }
 
-  function crashQuickAccessBtnHtml(data, icoFn) {
-    var p = (data && data.participant) || {};
-    var contactId = p.contact_id || "";
-    var href =
-      "/parent/crash-summer" +
-      (contactId ? "?contact_id=" + encodeURIComponent(String(contactId)) : "");
-    return (
-      '<a class="pp-hub-shortcut pp-hub-shortcut--crash" href="' +
-      esc(href) +
-      '" aria-label="Crash course July">' +
-      '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
-      icoFn('<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>') +
-      "</span>" +
-      '<span class="pp-hub-shortcut__label">Crash course July</span></a>'
-    );
+  function crashQuickAccessBtnHtml() {
+    /* July 2026 crash course ended — hide booking entry points. */
+    return "";
   }
 
   function formerClientNoticeHtml(data) {
@@ -986,7 +974,7 @@
   function isOfficeBilledLaOrNhs(data) {
     var booking = bookingSummary(data);
     if (booking.show_invoices === false) return true;
-    return (
+      return (
       booking.parent_action === "auto" &&
       (booking.parent_action_reasons || []).indexOf("la_funded") >= 0
     );
@@ -1698,20 +1686,16 @@
     if (isFormerClient(data)) return "";
     if (needsUnconfirmedSlotBanner(data)) return "";
     var startBtn = startReenrolBtnHtml(data);
-    var crashBtn = canBookExtrasFor(data) ? crashBookBtnHtml(data) : "";
-    if (!startBtn && !crashBtn) return "";
-    var hint = startBtn
-      ? isReenrolSoftHoldContact(data)
-        ? '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Mon 31 Aug 23:59 · place held until then</p>'
-        : '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Wed 22 Jul · place held until then</p>'
-      : "";
+    if (!startBtn) return "";
+    var hint = isReenrolSoftHoldContact(data)
+      ? '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Mon 31 Aug 23:59 · place held until then</p>'
+      : '<p class="pp-muted pp-hub-menu-reenr__hint">Confirm by Wed 22 Jul · place held until then</p>';
     return (
       '<section class="pp-hub-menu-reenr" aria-label="Re-enrolments and intensive courses">' +
       '<p class="pp-pax-info-section-label">Re-enrolments &amp; Intensive Courses</p>' +
       hint +
       '<div class="pp-hub-menu-reenr__actions">' +
       startBtn +
-      crashBtn +
       "</div></section>"
     );
   }
@@ -1767,7 +1751,6 @@
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
       startReenrolBtnHtml(data) +
-      (canBookExtrasFor(data) ? crashBookBtnHtml(data) : "") +
       "</div>" +
       '<button type="button" class="pp-btn pp-btn--ghost pp-reenrol-popup__dismiss" data-pp-reenrol-popup-close>Close</button>' +
       "</aside></div>";
@@ -1811,26 +1794,9 @@
     return "";
   }
 
-  function crashBookBtnHtml(data) {
-    if (!canBookExtrasFor(data)) {
-      return (
-        '<p class="pp-muted pp-hub-reenrol__no-extra" role="note">' +
-        "Extra holiday sessions are not available for this place." +
-        "</p>"
-      );
-    }
-    var p = (data && data.participant) || {};
-    var contactId = p.contact_id || "";
-    var href =
-      "/parent/crash-summer" +
-      (contactId ? "?contact_id=" + encodeURIComponent(String(contactId)) : "");
-    return (
-      '<a class="pp-btn pp-btn--ghost pp-hub-reenrol__cta pp-hub-reenrol__cta--crash" href="' +
-      esc(href) +
-      '">' +
-      '<svg class="pp-hub-reenrol__cta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>' +
-      "<span>Crash course July</span></a>"
-    );
+  function crashBookBtnHtml() {
+    /* July 2026 crash course ended — keep helper for callers, return nothing. */
+    return "";
   }
 
   function contactLinkHtml(opts) {
@@ -2122,23 +2088,9 @@
     );
   }
 
-  function hubMenuHeadActionsHtml(opts) {
-    var infoIco =
-      '<svg class="pp-hub-menu-sheet__action-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6"/><path d="M12 7h.01"/></svg>';
-    var detailsIco =
-      '<svg class="pp-hub-menu-sheet__action-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>';
-    return (
-      '<button type="button" class="pp-hub-menu-sheet__action" data-pp-open="general" aria-label="General Info">' +
-      infoIco +
-      '<span class="pp-hub-menu-sheet__action-label">General Info</span>' +
-      "</button>" +
-      (opts && typeof opts.openContactDetails === "function"
-        ? '<button type="button" class="pp-hub-menu-sheet__action" data-pp-open-contact aria-label="Details on file">' +
-          detailsIco +
-          '<span class="pp-hub-menu-sheet__action-label">Details on file</span>' +
-          "</button>"
-        : "")
-    );
+  function hubMenuHeadActionsHtml() {
+    /* General Info + Details on file live under Participant Details in the menu body. */
+    return "";
   }
 
   function hubMenuBodyHtml(data, opts) {
@@ -2200,9 +2152,14 @@
     }
     if (btn) btn.hidden = false;
     if (headActions) {
-      headActions.innerHTML = hubMenuHeadActionsHtml(opts);
-      bindHubOpenButtons(host, data, opts, headActions);
-      headActions.querySelectorAll("[data-pp-open-contact]").forEach(function (el) {
+      headActions.innerHTML = hubMenuHeadActionsHtml();
+      headActions.hidden = true;
+    }
+    if (sheetBody) {
+      var menuOpts = Object.assign({}, opts || {}, { host: host });
+      sheetBody.innerHTML = hubMenuBodyHtml(data, menuOpts);
+      bindHubOpenButtons(host, data, opts, sheetBody);
+      sheetBody.querySelectorAll("[data-pp-open-contact]").forEach(function (el) {
         if (el.__ppBoundContact) return;
         el.__ppBoundContact = true;
         el.addEventListener("click", function () {
@@ -2210,11 +2167,6 @@
           if (opts && typeof opts.openContactDetails === "function") opts.openContactDetails();
         });
       });
-    }
-    if (sheetBody) {
-      var menuOpts = Object.assign({}, opts || {}, { host: host });
-      sheetBody.innerHTML = hubMenuBodyHtml(data, menuOpts);
-      bindHubOpenButtons(host, data, opts, sheetBody);
     }
     if (btn && !btn.__ppBoundMenu) {
       btn.__ppBoundMenu = true;
@@ -2298,8 +2250,31 @@
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>';
     var swimIcon =
       '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/><path d="M2 16c2.5 2.5 5.5 4 10 4s7.5-1.5 10-4"/></svg>';
+    var generalIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6"/><path d="M12 7h.01"/></svg>';
+    var detailsIcon =
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>';
+    var detailsBtn =
+      opts && typeof opts.openContactDetails === "function"
+        ? '<button type="button" class="pp-pax-info-btn pp-pax-info-btn--details" data-pp-open-contact aria-label="Details on file — Contact and household">' +
+          '<span class="pp-pax-info-btn-stack">' +
+          '<span class="pp-pax-info-icon-plate" aria-hidden="true">' +
+          detailsIcon +
+          "</span>" +
+          '<span class="pp-pax-info-caption">Details on file</span>' +
+          '<span class="pp-pax-info-subcaption">Contact &amp; household</span>' +
+          "</span></button>"
+        : "";
     return (
       '<div class="pp-pax-info-buttons">' +
+      '<p class="pp-pax-info-section-label pp-pax-info-section-label--details">Participant Details</p>' +
+      '<div class="pp-pax-info-row pp-pax-info-row--details">' +
+      infoBtnHtml("general", "General Info", generalIcon, {
+        extraClass: " pp-pax-info-btn--general",
+        subtitle: "Profile & support notes",
+      }) +
+      detailsBtn +
+      "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--schedule">Schedule</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--schedule">' +
       infoBtnHtml("calendar", "My Calendar", calIcon, {
@@ -2317,7 +2292,7 @@
           ? booking.hint || "2026/27 choices"
           : booking.parent_action === "auto"
             ? "2026/27 with the office"
-            : "Crash & 2026/27 places",
+            : "2026/27 places",
         extraClass: " pp-pax-info-btn--booking",
       }) +
       infoBtnHtml("absence", "Report absent", absentIcon, {
@@ -3544,22 +3519,22 @@
 
   function dateChipSpanHtml(d, statusByIso) {
     if (!d || !d.iso) return "";
-    var meta = termChipToneMeta(d, statusByIso);
+          var meta = termChipToneMeta(d, statusByIso);
     var label = String(d.shortLabel || formatTermChipLabel(d.iso) || d.iso || "").trim();
     if (!label) return "";
-    return (
-      '<span class="pp-hub-ops__date-chip pp-hub-ops__date-chip--' +
-      meta.tone +
-      '" role="listitem" data-pp-term-iso="' +
-      esc(d.iso) +
-      '" title="' +
-      esc(meta.title) +
-      '">' +
-      meta.icon +
-      "<span>" +
+          return (
+            '<span class="pp-hub-ops__date-chip pp-hub-ops__date-chip--' +
+            meta.tone +
+            '" role="listitem" data-pp-term-iso="' +
+            esc(d.iso) +
+            '" title="' +
+            esc(meta.title) +
+            '">' +
+            meta.icon +
+            "<span>" +
       esc(label) +
-      "</span></span>"
-    );
+            "</span></span>"
+          );
   }
 
   /** Confirmed / held summer crash days for this child (hub chips). */
@@ -4003,8 +3978,8 @@
             list
               .map(function (d) {
                 return dateChipSpanHtml(d, statusByIso);
-              })
-              .join("") +
+        })
+        .join("") +
             "</div>"
           );
         }
@@ -4835,10 +4810,10 @@
     } else {
       next = nextList[0] || null;
       sameDay = next
-        ? nextList.filter(function (x) {
-            return x.iso === next.iso;
-          })
-        : [];
+      ? nextList.filter(function (x) {
+          return x.iso === next.iso;
+        })
+      : [];
       if (next && next.source === "crash") {
         sameDay = sameDay.filter(function (x) {
           return x.source === "crash";
@@ -5299,10 +5274,10 @@
   function renderSessions(host, data, opts, viewOpts) {
     viewOpts = viewOpts || {};
     if (!sessionProgressEnabled(data)) {
-      host.innerHTML = subviewShell(
-        data,
-        "sessions",
-        '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
+    host.innerHTML = subviewShell(
+      data,
+      "sessions",
+      '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
           '<p class="pp-muted">Session overview and stats are not shown for this participant.</p>',
       );
       bindBack(host, data, opts);
@@ -5700,7 +5675,7 @@
       });
       loadOpts.mineIsoColors = mineIso;
     } else {
-      var built = buildMyCalendarDayColors(data);
+    var built = buildMyCalendarDayColors(data);
       loadOpts.dayColors = built.colMap || {};
     }
     if (typeof global.portalLoadSessionsCalendar202627Into === "function") {
@@ -5938,23 +5913,13 @@
           ? yearChips
           : '<p class="pp-muted">Day Centre dates will appear here once your weekdays are on the current roster.</p>');
     } else if (!booking.submitted || !booking.items.length) {
-      var crashAction = canBookExtrasFor(data)
-        ? '<a class="pp-btn pp-btn--ghost" href="/parent/crash-summer?contact_id=' +
-          encodeURIComponent(String(contactId)) +
-          '">Crash course July</a>'
-        : '<p class="pp-muted">Extra holiday sessions are not available for this place.</p>';
       body =
         '<p class="pp-muted">You have not submitted re-enrolment choices for 2026/27 yet.</p>' +
-        '<p class="pp-muted">Please respond by <strong>Wednesday 22 July 2026</strong>. From Thursday 23 July, unconfirmed places may be released to new clients.' +
-        (canBookExtrasFor(data)
-          ? " You can book crash courses first if you prefer, then complete re-enrolment."
-          : "") +
-        "</p>" +
+        '<p class="pp-muted">Please respond by <strong>Wednesday 22 July 2026</strong>. From Thursday 23 July, unconfirmed places may be released to new clients.</p>' +
         '<div class="pp-hub-reenrol__actions" style="margin-top:10px">' +
         '<a class="pp-btn pp-btn--primary" href="' +
         esc(reenrolHref) +
         '">Open re-enrolment form</a>' +
-        crashAction +
         "</div>";
     } else {
       var activityItems = (booking.items || []).filter(isBookingActivityItem);
@@ -5970,7 +5935,7 @@
         (booking.parent_action === "auto"
           ? bookingDayCentreYearChipsHtml(data)
           : '<a class="pp-btn pp-btn--ghost" href="' +
-            esc(reenrolHref) +
+        esc(reenrolHref) +
             '">Update booking choices</a>');
     }
     var invoiceBlock = showInvoicesForParticipant(data)
@@ -6379,7 +6344,7 @@
           if (String((m && m.role) || "").toLowerCase() === "cover") {
             merged.push(Object.assign({}, m, { covering_after_change: true }));
           } else {
-            merged.push(m);
+          merged.push(m);
           }
         });
         covers.forEach(function (c) {
@@ -8077,8 +8042,8 @@
     if (!title) {
       title = String((inv && inv.title) || "Invoice")
         .replace(/^Invoice\s+/i, "")
-        .replace(/\s*[·•|]\s*VAT\s*(?:20%|Exempt)?/gi, "")
-        .replace(/\s*[·•|]\s*PAID\b/gi, "")
+          .replace(/\s*[·•|]\s*VAT\s*(?:20%|Exempt)?/gi, "")
+          .replace(/\s*[·•|]\s*PAID\b/gi, "")
         .trim();
       if (!title || /^Crash\b/i.test(title) || /£\s*\d/.test(title)) {
         title = "Invoice";
@@ -8407,7 +8372,7 @@
         ? ""
         : gcPending
           ? '<p class="pp-muted pp-invoice-pay__note">Direct Payment (GoCardless) — your mandate will collect this automatically around the due date. No bank transfer or card payment needed.</p>'
-          : "") +
+        : "") +
       (isPaid
         ? ""
         : isLaInvoice
@@ -8424,10 +8389,10 @@
       (isPaid
         ? ""
         : pl
-          ? '<p class="pp-muted pp-invoice-pay__note">External card link may include a surcharge' +
-            (surcharge ? ": " + esc(surcharge) : "") +
-            ". Bank transfer is preferred (no fee).</p>"
-          : "") +
+        ? '<p class="pp-muted pp-invoice-pay__note">External card link may include a surcharge' +
+          (surcharge ? ": " + esc(surcharge) : "") +
+          ". Bank transfer is preferred (no fee).</p>"
+        : "") +
       "</article>"
     );
   }
@@ -8591,12 +8556,12 @@
             if (pendingPaid) {
               sessionStorage.removeItem("pp_invoice_return_pending");
               sessionStorage.removeItem("pp_invoice_return_tries");
-              showNotice(
-                "success",
+            showNotice(
+              "success",
                 "Payment received — " +
                   (pendingInv.invoice_number
                     ? "invoice " + pendingInv.invoice_number
-                    : "invoice") +
+                      : "invoice") +
                   " is marked paid. Open the PDF below.",
               );
               var paidCard = listHost.querySelector(
@@ -8709,7 +8674,7 @@
               .then(function (out) {
                 var url = out && out.blobUrl ? out.blobUrl : "";
                 if (!url) throw new Error("empty_preview");
-                openInvoicePreview(url, title);
+          openInvoicePreview(url, title);
               })
               .catch(function () {
                 if (fallbackUrl) openInvoicePreview(fallbackUrl, title);
@@ -8751,9 +8716,9 @@
                     ? "This invoice is already marked paid."
                     : code === "prior_invoice_unconfirmed"
                       ? "Please wait for the office to confirm your earlier invoice before paying this one."
-                      : code === "amount_required"
-                        ? "This invoice has no amount for card payment. Contact the office."
-                        : "Could not start card payment — please try bank transfer or contact the office.");
+                    : code === "amount_required"
+                      ? "This invoice has no amount for card payment. Contact the office."
+                      : "Could not start card payment — please try bank transfer or contact the office.");
               showNotice("error", msg);
             });
         });
@@ -8922,7 +8887,7 @@
                     ? "This invoice is already marked paid."
                     : code === "prior_invoice_unconfirmed"
                       ? "Please wait for the office to confirm your earlier invoice before reporting this one."
-                      : "Could not save — please try again."),
+                    : "Could not save — please try again."),
               );
             });
         });
@@ -9509,7 +9474,7 @@
               openSubview(host, fresh || data, opts, view);
             })
             .catch(function () {
-              openSubview(host, data, opts, view);
+        openSubview(host, data, opts, view);
             })
             .finally(function () {
               btn.disabled = false;

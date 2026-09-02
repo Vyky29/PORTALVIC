@@ -699,6 +699,10 @@
       flex: 1;
       min-width: 0;
     }
+    .pp-hub-menu-sheet__actions:empty,
+    .pp-hub-menu-sheet__actions[hidden] {
+      display: none !important;
+    }
     .pp-hub-menu-sheet__action {
       display: inline-flex;
       flex-direction: column;
@@ -739,23 +743,43 @@
     }
     .pp-hub-menu-sheet__close {
       display: inline-flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
-      margin: 0;
-      padding: 0;
+      gap: 2px;
+      width: auto;
+      min-width: 52px;
+      height: auto;
+      min-height: 44px;
+      margin: 0 0 0 auto;
+      padding: 6px 12px;
       border: 0;
-      border-radius: 10px;
-      background: transparent;
-      color: var(--muted);
+      border-radius: 12px;
+      background: #dc2626;
+      color: #fff;
       cursor: pointer;
       flex-shrink: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pp-hub-menu-sheet__close:hover,
+    .pp-hub-menu-sheet__close:focus-visible {
+      background: #b91c1c;
+      color: #fff;
+      outline: none;
     }
     .pp-hub-menu-sheet__close svg {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       display: block;
+    }
+    .pp-hub-menu-sheet__close-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      color: inherit;
+      white-space: nowrap;
     }
     .pp-hub-menu-sheet__body {
       flex: 1;
@@ -3563,6 +3587,10 @@
       background: linear-gradient(90deg, rgba(37, 99, 235, 0.12), rgba(37, 99, 235, 0.02));
       border-left-color: #2563eb;
     }
+    .pp-pax-info-section-label--details {
+      background: linear-gradient(90deg, rgba(31, 106, 148, 0.12), rgba(31, 106, 148, 0.02));
+      border-left-color: #1f6a94;
+    }
     .pp-pax-info-section-label--club {
       background: linear-gradient(90deg, rgba(124, 58, 237, 0.12), rgba(124, 58, 237, 0.02));
       border-left-color: #7c3aed;
@@ -4047,6 +4075,8 @@
     /* Icon plate tones */
     .pp-pax-info-btn--announcements .pp-pax-info-icon-plate { background: #fff4df; color: #b7791f; }
     .pp-pax-info-btn--messages .pp-pax-info-icon-plate { background: #eaf5fb; color: #1f6a94; }
+    .pp-pax-info-btn--general .pp-pax-info-icon-plate { background: #eaf5fb; color: #1f6a94; }
+    .pp-pax-info-btn--details .pp-pax-info-icon-plate { background: #eef2ff; color: #4338ca; }
     .pp-pax-info-btn--absence .pp-pax-info-icon-plate { background: #fff1e8; color: #c2410c; }
     .pp-pax-info-btn--calendar .pp-pax-info-icon-plate { background: #e8f0fe; color: #1d4ed8; }
     .pp-pax-info-btn--team .pp-pax-info-icon-plate { background: #fff6e5; color: #b7791f; }
@@ -5271,6 +5301,7 @@
             <div id="ppHubMenuSheetHeadActions" class="pp-hub-menu-sheet__actions"></div>
             <button type="button" class="pp-hub-menu-sheet__close" data-pp-hub-menu-close aria-label="Close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+              <span class="pp-hub-menu-sheet__close-label">Close</span>
             </button>
           </div>
           <div id="ppHubMenuSheetBody" class="pp-hub-menu-sheet__body"></div>
@@ -5295,7 +5326,7 @@
   <script src="/portal/portal_client_sessions_overview.js?v=20260723-date-svc-stack"></script>
   <script src="/portal/parent_portal_team.js?v=20260828-team-one-instructor"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260828-trial-iso-cal"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260901-message-paid-no-btn"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260902-menu-participant-details"></script>
   <script src="/portal/parent_portal_app.js?v=20260831-partial-pdf-view"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
