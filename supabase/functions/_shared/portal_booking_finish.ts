@@ -36,6 +36,7 @@ import {
 import { foldValidatedReservationOntoMadre, preferredInstructorForReservation } from "./portal_booking_fold_madre.ts";
 import { unitPriceFor } from "./reenrolment_catalog.ts";
 import { resolvePortalInvoiceOwnerUserId } from "./portal_create_family_invoice.ts";
+import { bookingPayHoldExpiresAt } from "./portal_booking_pay_hold.ts";
 
 export const FINISH_TOKEN_TTL_DAYS = 14;
 /** Fallback only when service cannot be classified (legacy aquatic 30'). */
@@ -583,7 +584,9 @@ export async function prepareReservationsForFinishBooking(
         status: "validated",
         validated_at: nowIso,
         updated_at: nowIso,
-        notes: "auto_finish_link",
+        // Fresh 30' clock when finish-booking link is minted (no multi-week soft hold).
+        hold_expires_at: bookingPayHoldExpiresAt(),
+        notes: "auto_finish_link|pay_hold_30m",
       })
       .eq("id", hold.id)
       .eq("status", "pending");

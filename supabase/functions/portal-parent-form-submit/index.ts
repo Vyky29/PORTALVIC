@@ -12,6 +12,7 @@ import {
   loadPendingBookingForEmail,
   type PortalBookingRequest,
 } from "../_shared/portal_booking_context.ts";
+import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -55,8 +56,8 @@ function parseDob(raw: string): string | null {
   return `${m[3]}-${mm}-${dd}`;
 }
 
-/** Soft hold window while admin reviews the registration form. */
-const SLOT_HOLD_DAYS = 21;
+/** Booking Portal seat: 30' window to finish pay (same as finish-booking invoice hold). */
+
 
 type BookingRequest = PortalBookingRequest;
 
@@ -404,7 +405,7 @@ Deno.serve(async (req) => {
   let reservationId: string | null = null;
   if (bookingRequest && formType === "client_registration") {
     try {
-      const holdExpires = new Date(Date.now() + SLOT_HOLD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+      const holdExpires = bookingPayHoldExpiresAt();
       const tokenHash = bookingSessionToken ? await sha256Hex(bookingSessionToken) : null;
 
       // One pending hold per email+slot — refresh if they re-submit.
@@ -445,9 +446,9 @@ Deno.serve(async (req) => {
           status: "pending",
           hold_expires_at: holdExpires,
           notes:
-            bookingRequest.booking_kind === "trial"
-              ? "booking_kind=trial"
-              : "booking_kind=term",
+            (bookingRequest.booking_kind === "trial"
+              ? "booking_kind=trial|"
+              : "booking_kind=term|") + "pay_hold_30m",
         })
         .select("id")
         .single();

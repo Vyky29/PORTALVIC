@@ -21,7 +21,8 @@ import { notifyOfficeRegistrationSubmitted } from "../_shared/portal_booking_lea
 import { sendFinishBookingAfterRegistration } from "../_shared/portal_booking_finish.ts";
 import { saveParticipantAvatarWithArchive } from "../_shared/participant_avatar.ts";
 
-const SLOT_HOLD_DAYS = 21;
+import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
+
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const BUCKET = "participant-documents";
 
@@ -438,7 +439,7 @@ Deno.serve(async (req) => {
     return bookingLeadJson({ ok: false, error: "save_failed" }, 500);
   }
 
-  const holdExpires = new Date(Date.now() + SLOT_HOLD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const holdExpires = bookingPayHoldExpiresAt();
   const tokenHash = await sha256Hex(token);
   const parentEmail = clean(lead.email, 200);
   if (parentEmail) {
@@ -480,7 +481,7 @@ Deno.serve(async (req) => {
       notes:
         (bookingRequest.booking_kind === "trial"
           ? "booking_kind=trial|"
-          : "booking_kind=term|") + "existing_client_confirm",
+          : "booking_kind=term|") + "existing_client_confirm|pay_hold_30m",
     })
     .select("id")
     .single();

@@ -326,8 +326,13 @@ export async function expireUnpaidBookingPayHolds(
     .from("portal_booking_slot_reservations")
     .select("id, document_id")
     .eq("status", "validated")
-    .ilike("notes", "%pay_hold_30m%")
-    .lt("hold_expires_at", now);
+    .or(
+      "notes.ilike.%pay_hold_30m%,notes.ilike.%auto_finish_link%,notes.ilike.%existing_client_confirm%",
+    )
+    .lt("hold_expires_at", now)
+    .not("notes", "ilike", "%booking_paid%")
+    .not("notes", "ilike", "%ops_synced%")
+    .not("notes", "ilike", "%trial_paid%");
 
   if (selTaggedErr) {
     console.warn("[expireUnpaidBookingPayHolds] select tagged", selTaggedErr.message);
