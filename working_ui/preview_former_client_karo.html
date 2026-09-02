@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex" />
   <title>Preview — Karo · former / Place released</title>
-  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260723-date-svc-stack" />
+  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260902-kpi-2x2" />
   <style>
     :root {
       --blue: #2d84b3;
@@ -54,7 +54,7 @@
     .banner p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45; overflow-wrap: break-word; }
     .phone {
       width: 100%;
-      max-width: 420px;
+      max-width: 430px;
       margin: 0 auto;
       background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
       border: 1px solid #c5d3df;
@@ -261,7 +261,7 @@
           <p>Full stats (same as active clients) + PDF overview with logo and summary box.</p>
           <button type="button" class="btn btn--amber btn--sm" id="dlAllSessions">Download overview (PDF)</button>
         </div>
-        <div id="sessionsHost"></div>
+        <div id="sessionsHost" class="pp-participant-body"></div>
         <p class="dl-status" id="sessionsStatus" aria-live="polite"></p>
       </div>
     </div>
@@ -291,7 +291,7 @@ Thank you</div>
   </div>
 
   <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
-  <script src="/portal/portal_client_sessions_overview.js?v=20260723-date-svc-stack"></script>
+  <script src="/portal/portal_client_sessions_overview.js?v=20260902-kpi-2x2"></script>
   <script src="/portal/portal_parent_history_pdf.js?v=20260902-history-pdf-noblack"></script>
   <script>
     (function () {

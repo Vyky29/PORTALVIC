@@ -691,10 +691,10 @@
     });
     if (!total) return '<p class="pcso-kpi-empty">No independence labels yet.</p>';
     const order = [
-      { key: "independent", label: "Independent", color: "#ddd6fe" },
-      { key: "prompts", label: "With prompts", color: "#c4b5fd" },
-      { key: "regular", label: "Regular support", color: "#a78bfa" },
-      { key: "full", label: "Full support", labelLines: ["Full", "Support"], color: "#7c3aed" },
+      { key: "independent", label: "Independent", short: "Indep.", color: "#ddd6fe" },
+      { key: "prompts", label: "With prompts", short: "Prompts", color: "#c4b5fd" },
+      { key: "regular", label: "Regular support", short: "Regular", color: "#a78bfa" },
+      { key: "full", label: "Full support", short: "Full", color: "#7c3aed" },
     ];
     return (
       '<div class="pcso-ind-bars" role="img" aria-label="Independence distribution">' +
@@ -704,11 +704,11 @@
           const pct = (n / total) * 100;
           const h = n > 0 ? Math.max(10, Math.round(pct)) : 0;
           const lbl =
-            o.labelLines && o.labelLines.length
-              ? '<span class="pcso-ind-bar__lbl">' +
-                o.labelLines.map(function (line) { return esc(line); }).join("<br>") +
-                "</span>"
-              : '<span class="pcso-ind-bar__lbl">' + esc(o.label) + "</span>";
+            '<span class="pcso-ind-bar__lbl" title="' +
+            esc(o.label) +
+            '">' +
+            esc(o.short || o.label) +
+            "</span>";
           return (
             '<div class="pcso-ind-bar">' +
             '<span class="pcso-ind-bar__pct">' + Math.round(pct) + "%</span>" +
