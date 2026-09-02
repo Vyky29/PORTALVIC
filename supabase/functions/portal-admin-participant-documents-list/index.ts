@@ -26,10 +26,25 @@ type DocRow = {
   place_kind: string;
   place_label: string;
   place_tone: string;
+  place_detail: string | null;
+  reservation_status: string | null;
   booking_status: string | null;
   client_status: string | null;
   in_class: boolean | null;
   on_waiting_list: boolean | null;
+};
+
+type ReservationLite = {
+  status: string | null;
+  participant_name: string | null;
+  parent_email: string | null;
+  service_name: string | null;
+  venue: string | null;
+  day_label: string | null;
+  time_label: string | null;
+  notes: string | null;
+  hold_expires_at: string | null;
+  updated_at: string | null;
 };
 
 function normalizeName(value: string): string {
@@ -54,18 +69,73 @@ function truthyFlag(v: unknown): boolean {
   return s === "true" || s === "yes" || s === "1" || s === "waiting_list";
 }
 
-/** Formal place | Waiting list | Registered only — office triage for Registration forms. */
+function namesMatch(a: string, b: string): boolean {
+  const na = normalizeName(a);
+  const nb = normalizeName(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.includes(nb) || nb.includes(na)) return true;
+  const ap = na.split(" ");
+  const bp = nb.split(" ");
+  return ap[0] === bp[0] && (!!ap[1] || !!bp[1]) && (ap[1] || "") === (bp[1] || "");
+}
+
+function slotDetailFromPayload(payload: Record<string, unknown> | null): string | null {
+  const br = asRecord(payload?.booking_request);
+  if (!br) return null;
+  const bits = [
+    br.service_name || br.service || br.service_id,
+    br.venue,
+    br.day || br.day_label || br.day_name,
+    br.time || br.time_label,
+  ]
+    .map((x) => String(x || "").trim())
+    .filter(Boolean);
+  return bits.length ? bits.join(" · ") : null;
+}
+
+function slotDetailFromReservation(r: ReservationLite | null): string | null {
+  if (!r) return null;
+  const bits = [r.service_name, r.venue, r.day_label, r.time_label]
+    .map((x) => String(x || "").trim())
+    .filter(Boolean);
+  return bits.length ? bits.join(" · ") : null;
+}
+
+function isTrialNotes(notes: string | null | undefined): boolean {
+  return /booking_kind\s*=\s*trial/i.test(String(notes || ""));
+}
+
+function isPayHoldNotes(notes: string | null | undefined): boolean {
+  return /pay_hold/i.test(String(notes || ""));
+}
+
+function holdStillOpen(holdExpiresAt: string | null | undefined): boolean {
+  if (!holdExpiresAt) return false;
+  const t = Date.parse(String(holdExpiresAt));
+  return Number.isFinite(t) && t > Date.now();
+}
+
+/**
+ * Live place status for office triage — reservation / contact first, form snapshot last.
+ */
 function derivePlace(row: {
   payload_json: Record<string, unknown> | null;
   booking_status: string | null;
   client_status: string | null;
   in_class: boolean | null;
   on_waiting_list: boolean | null;
-}): { kind: string; label: string; tone: string } {
+  reservation: ReservationLite | null;
+}): { kind: string; label: string; tone: string; detail: string | null } {
   const payload = asRecord(row.payload_json) || {};
   const br = asRecord(payload.booking_request);
   const bookingStatus = String(row.booking_status || "").toLowerCase();
   const clientStatus = String(row.client_status || "").toLowerCase();
+  const res = row.reservation;
+  const resStatus = String(res?.status || "").toLowerCase();
+  const detailLive = slotDetailFromReservation(res);
+  const detailForm = slotDetailFromPayload(payload);
+  const detail = detailLive || detailForm;
 
   const waitFromPayload =
     truthyFlag(payload.waiting_list) ||
@@ -75,15 +145,13 @@ function derivePlace(row: {
     String(br?.mode || "").toLowerCase() === "waiting_list" ||
     String(br?.booking_mode || "").toLowerCase() === "waiting_list";
 
-  if (row.on_waiting_list === true || bookingStatus === "waiting_list" || waitFromPayload) {
-    return { kind: "waiting_list", label: "Waiting list", tone: "info" };
-  }
+  const waitFlag =
+    row.on_waiting_list === true ||
+    bookingStatus === "waiting_list" ||
+    clientStatus === "waiting_list" ||
+    waitFromPayload;
 
-  if (row.in_class === true || bookingStatus === "booking_completed") {
-    return { kind: "formal", label: "Formal place", tone: "ok" };
-  }
-
-  const hasSlot =
+  const hasFormSlot =
     !!br &&
     !!(
       br.slot_id ||
@@ -95,21 +163,86 @@ function derivePlace(row: {
       br.time
     );
 
-  if (hasSlot || payload.existing_client_confirm === true) {
-    return { kind: "formal", label: "Formal place", tone: "ok" };
+  // 1) Live seat / class membership wins over stale waiting-list lead flags.
+  if (row.in_class === true) {
+    if (resStatus === "validated" && isTrialNotes(res?.notes)) {
+      return { kind: "trial_in_class", label: "In class · trial", tone: "ok", detail };
+    }
+    return { kind: "in_class", label: "In class", tone: "ok", detail };
   }
 
-  if (
-    clientStatus === "registered" ||
-    bookingStatus === "registration_submitted" ||
-    bookingStatus === "registration_started" ||
-    bookingStatus === "exploring_services" ||
-    bookingStatus === "new_lead"
-  ) {
-    return { kind: "registered_only", label: "Registered only", tone: "pend" };
+  if (resStatus === "validated") {
+    if (isPayHoldNotes(res?.notes) && holdStillOpen(res?.hold_expires_at)) {
+      return {
+        kind: "pay_hold",
+        label: isTrialNotes(res?.notes) ? "Pay hold · trial" : "Pay hold (seat held)",
+        tone: "pend",
+        detail,
+      };
+    }
+    if (isPayHoldNotes(res?.notes) && !holdStillOpen(res?.hold_expires_at)) {
+      return {
+        kind: "pay_hold_lapsed",
+        label: "Pay hold lapsed",
+        tone: "warn",
+        detail,
+      };
+    }
+    if (isTrialNotes(res?.notes)) {
+      return { kind: "trial", label: "Trial place", tone: "ok", detail };
+    }
+    return { kind: "formal", label: "Formal place", tone: "ok", detail };
   }
 
-  return { kind: "registered_only", label: "Registered only", tone: "pend" };
+  if (resStatus === "pending" || resStatus === "awaiting_payment") {
+    return {
+      kind: "awaiting_payment",
+      label: isTrialNotes(res?.notes) ? "Awaiting payment · trial" : "Awaiting payment",
+      tone: "pend",
+      detail,
+    };
+  }
+
+  if (resStatus === "expired") {
+    return {
+      kind: "expired",
+      label: /unpaid|pay_hold/i.test(String(res?.notes || ""))
+        ? "Did not finish (unpaid)"
+        : "Hold expired",
+      tone: "warn",
+      detail,
+    };
+  }
+
+  if (resStatus === "released") {
+    return {
+      kind: "released",
+      label: "Slot released",
+      tone: "warn",
+      detail,
+    };
+  }
+
+  // 2) Waiting list when they are not holding / in class.
+  if (waitFlag) {
+    return { kind: "waiting_list", label: "Waiting list", tone: "info", detail };
+  }
+
+  if (bookingStatus === "booking_completed") {
+    return { kind: "formal", label: "Formal place", tone: "ok", detail };
+  }
+
+  // 3) Form asked for a slot but nothing live now.
+  if (hasFormSlot || payload.existing_client_confirm === true) {
+    return {
+      kind: "slot_requested",
+      label: "Slot requested (not booked)",
+      tone: "pend",
+      detail: detailForm,
+    };
+  }
+
+  return { kind: "registered_only", label: "Registered only", tone: "pend", detail: null };
 }
 
 Deno.serve(async (req) => {
@@ -202,6 +335,8 @@ Deno.serve(async (req) => {
     | "place_kind"
     | "place_label"
     | "place_tone"
+    | "place_detail"
+    | "reservation_status"
     | "booking_status"
     | "client_status"
     | "in_class"
@@ -268,9 +403,86 @@ Deno.serve(async (req) => {
       if (!childNames.some((n) => n === key || key.includes(n) || n.includes(key))) continue;
       contactByChild.set(key, {
         in_class: c.in_class === true ? true : c.in_class === false ? false : null,
-        on_waiting_list: c.on_waiting_list === true ? true : c.on_waiting_list === false ? false : null,
+        on_waiting_list:
+          c.on_waiting_list === true ? true : c.on_waiting_list === false ? false : null,
       });
     }
+  }
+
+  /** Latest reservation per email+child (prefer live statuses). */
+  const reservationByKey = new Map<string, ReservationLite>();
+  if (emails.length) {
+    // Case-insensitive match: reservations may store mixed-case emails.
+    const emailOr = emails.map((e) => `parent_email.ilike.${e}`).join(",");
+    const { data: reservations } = await admin
+      .from("portal_booking_slot_reservations")
+      .select(
+        "status, participant_name, parent_email, service_name, venue, day_label, time_label, notes, hold_expires_at, updated_at",
+      )
+      .or(emailOr)
+      .order("updated_at", { ascending: false })
+      .limit(1200);
+
+    const statusRank = (s: string): number => {
+      const x = String(s || "").toLowerCase();
+      if (x === "validated") return 50;
+      if (x === "pending" || x === "awaiting_payment") return 40;
+      if (x === "expired") return 20;
+      if (x === "released") return 10;
+      return 0;
+    };
+
+    for (const raw of reservations || []) {
+      const em = emailNorm(String(raw.parent_email || ""));
+      const who = normalizeName(String(raw.participant_name || ""));
+      if (!em || !who) continue;
+      const key = em + "|" + who;
+      const candidate: ReservationLite = {
+        status: raw.status != null ? String(raw.status) : null,
+        participant_name: raw.participant_name != null ? String(raw.participant_name) : null,
+        parent_email: raw.parent_email != null ? String(raw.parent_email) : null,
+        service_name: raw.service_name != null ? String(raw.service_name) : null,
+        venue: raw.venue != null ? String(raw.venue) : null,
+        day_label: raw.day_label != null ? String(raw.day_label) : null,
+        time_label: raw.time_label != null ? String(raw.time_label) : null,
+        notes: raw.notes != null ? String(raw.notes) : null,
+        hold_expires_at: raw.hold_expires_at != null ? String(raw.hold_expires_at) : null,
+        updated_at: raw.updated_at != null ? String(raw.updated_at) : null,
+      };
+      const prev = reservationByKey.get(key);
+      if (!prev) {
+        reservationByKey.set(key, candidate);
+        continue;
+      }
+      const pr = statusRank(String(prev.status || ""));
+      const cr = statusRank(String(candidate.status || ""));
+      if (cr > pr) {
+        reservationByKey.set(key, candidate);
+        continue;
+      }
+      if (cr === pr) {
+        const pt = Date.parse(String(prev.updated_at || "")) || 0;
+        const ct = Date.parse(String(candidate.updated_at || "")) || 0;
+        if (ct >= pt) reservationByKey.set(key, candidate);
+      }
+    }
+  }
+
+  function findReservation(
+    email: string,
+    participantName: string,
+  ): ReservationLite | null {
+    const em = emailNorm(email);
+    const who = normalizeName(participantName);
+    if (!em || !who) return null;
+    const exact = reservationByKey.get(em + "|" + who);
+    if (exact) return exact;
+    for (const [k, v] of reservationByKey.entries()) {
+      if (!k.startsWith(em + "|")) continue;
+      const child = k.slice(em.length + 1);
+      if (namesMatch(child, who)) return v;
+    }
+    return null;
   }
 
   const out: DocRow[] = [];
@@ -303,12 +515,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    const reservation = findReservation(String(row.parent_email || ""), row.participant_name);
     const place = derivePlace({
       payload_json: (row.payload_json || {}) as Record<string, unknown>,
       booking_status: lead?.booking_status ?? null,
       client_status: lead?.client_status ?? null,
       in_class: contact?.in_class ?? null,
       on_waiting_list: contact?.on_waiting_list ?? null,
+      reservation,
     });
 
     out.push({
@@ -318,6 +532,8 @@ Deno.serve(async (req) => {
       place_kind: place.kind,
       place_label: place.label,
       place_tone: place.tone,
+      place_detail: place.detail,
+      reservation_status: reservation?.status ?? null,
       booking_status: lead?.booking_status ?? null,
       client_status: lead?.client_status ?? null,
       in_class: contact?.in_class ?? null,

@@ -37,7 +37,7 @@
       title: 'Registration forms',
       intro:
         '<strong>New-client registration</strong> — PDF + photo from Booking Portal leads (not climbing). ' +
-        '<strong>Place</strong> shows Formal place, Waiting list, or Registered only. ' +
+        '<strong>Place</strong> is live status (In class / Trial / Pay hold / Did not finish / Waiting list / Slot requested / Registered only) — not only what the form asked for. ' +
         'Flow: slot → registration → <strong>payment</strong> (finish-booking link sent automatically) → office marks invoice paid → review form/PDF after payment → Parent Portal PIN. ' +
         '<strong>Mark reviewed</strong> tracks that you opened the form; <strong>Resend finish link</strong> if the parent lost it. ' +
         'Climbing forms: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_climbing_registrations">Climbing registrations</button>. ' +
@@ -200,10 +200,17 @@
         } catch (_lab) {}
         var placeLab = String(d.place_label || '').trim();
         var placeTone = String(d.place_tone || 'pend').trim() || 'pend';
+        var placeKind = String(d.place_kind || '').trim();
+        if (placeTone === 'warn') placeTone = 'urg';
+        if (/trial/i.test(placeKind) || /trial/i.test(placeLab)) placeTone = 'trial';
         if (!placeLab) {
           placeLab = 'Registered only';
           placeTone = 'pend';
         }
+        var placeDetail = String(d.place_detail || '').trim();
+        var placeTitle = placeDetail
+          ? placeLab + ' — ' + placeDetail
+          : 'Live place / booking status (not only the form snapshot)';
         var parentLine = [d.parent_name, d.parent_email].filter(Boolean).join(' · ') || '—';
         var pdfLink = d.pdf_signed_url
           ? '<button type="button" class="btn btn--pri btn--sm portal-pax-doc-open" data-url="' +
@@ -267,12 +274,21 @@
           '<td style="min-width:0;overflow-wrap:break-word">' +
           esc(formLab) +
           '</td>' +
-          '<td style="min-width:0">' +
+          '<td style="min-width:0;max-width:12rem">' +
+          '<div style="display:flex;flex-direction:column;gap:2px;min-width:0">' +
           '<span class="chip chip--' +
           esc(placeTone) +
-          '" title="Place / pipeline status">' +
+          '" title="' +
+          esc(placeTitle) +
+          '" style="max-width:100%;overflow-wrap:break-word;white-space:normal;line-height:1.25">' +
           esc(placeLab) +
-          '</span></td>' +
+          '</span>' +
+          (placeDetail
+            ? '<span class="muted" style="font-size:11px;line-height:1.25;overflow-wrap:break-word">' +
+              esc(placeDetail) +
+              '</span>'
+            : '') +
+          '</div></td>' +
           '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
           esc(d.participant_name || '—') +
           '</strong></td>' +
