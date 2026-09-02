@@ -412,8 +412,10 @@ Deno.serve(async (req) => {
   /** Latest reservation per email+child (prefer live statuses). */
   const reservationByKey = new Map<string, ReservationLite>();
   if (emails.length) {
-    // Case-insensitive match: reservations may store mixed-case emails.
-    const emailOr = emails.map((e) => `parent_email.ilike.${e}`).join(",");
+    // Quote emails so @ / . are not parsed as PostgREST operators.
+    const emailOr = emails
+      .map((e) => `parent_email.ilike."${e.replace(/"/g, "")}"`)
+      .join(",");
     const { data: reservations } = await admin
       .from("portal_booking_slot_reservations")
       .select(
