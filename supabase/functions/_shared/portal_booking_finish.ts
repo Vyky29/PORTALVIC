@@ -36,7 +36,10 @@ import {
 import { foldValidatedReservationOntoMadre, preferredInstructorForReservation } from "./portal_booking_fold_madre.ts";
 import { unitPriceFor } from "./reenrolment_catalog.ts";
 import { resolvePortalInvoiceOwnerUserId } from "./portal_create_family_invoice.ts";
-import { bookingPayHoldExpiresAt } from "./portal_booking_pay_hold.ts";
+import {
+  BOOKING_SLOT_HOLD_STATUSES,
+  bookingPayHoldExpiresAt,
+} from "./portal_booking_pay_hold.ts";
 
 export const FINISH_TOKEN_TTL_DAYS = 14;
 /** Fallback only when service cannot be classified (legacy aquatic 30'). */
@@ -356,22 +359,27 @@ export async function notifyParentFinishBooking(opts: {
   rawToken: string;
   admin?: SupabaseClient | null;
   /** registration_submitted = pay-now copy after form submit (no suitability wording) */
-  variant?: "accepted" | "registration_submitted";
+  variant?: "accepted" | "registration_submitted" | "resend_pay_hold";
 }): Promise<{ emailOk: boolean; waOk: boolean; waError?: string }> {
   const name = clean(opts.parentName, 120) || "Parent / carer";
   const participant = clean(opts.participantName, 120) || "your child";
   const link = finishBookingUrl(opts.rawToken);
   const slot = clean(opts.slotSummary, 200);
   const autoPay = opts.variant === "registration_submitted";
+  const resendHold = opts.variant === "resend_pay_hold";
   // Flat body for Meta contact_update template (newlines are stripped).
-  const bodyText = autoPay
-    ? `clubSENsational received the registration for ${participant}. ` +
+  const bodyText = resendHold
+    ? `clubSENsational: finish booking for ${participant} now. ` +
       (slot ? `Place: ${slot}. ` : "") +
-      `Complete booking and payment now: ${link}`
-    : `clubSENsational accepted the registration for ${participant}. ` +
-      (slot ? `Place: ${slot}. ` : "") +
-      `Finish booking (funding, payment, first instalment): ${link} ` +
-      `After the office confirms your payment we send your Parent Portal PIN.`;
+      `Your place is held for 30 minutes only. Complete funding, payment and first instalment: ${link}`
+    : autoPay
+      ? `clubSENsational received the registration for ${participant}. ` +
+        (slot ? `Place: ${slot}. ` : "") +
+        `Your place is held for 30 minutes. Complete booking and payment now: ${link}`
+      : `clubSENsational accepted the registration for ${participant}. ` +
+        (slot ? `Place: ${slot}. ` : "") +
+        `Finish booking (funding, payment, first instalment): ${link} ` +
+        `Place held 30 minutes. After the office confirms your payment we send your Parent Portal PIN.`;
 
   let emailOk = false;
   let waOk = false;
@@ -386,20 +394,27 @@ export async function notifyParentFinishBooking(opts: {
     const mail = await sendParentEmailViaSmtp({
       config: smtp,
       to: email,
-      subject: autoPay
-        ? `Complete booking · ${participant}`
+      subject: resendHold || autoPay
+        ? `Complete booking · ${participant} · 30 minutes`
         : `Finish booking · ${participant}`,
-      bodyText: autoPay
+      bodyText: resendHold
         ? `Hi ${name},\n\n` +
-          `Thank you — we received the registration for ${participant}.\n\n` +
-          (slot ? `Requested place: ${slot}\n\n` : "") +
-          `Please complete booking and payment now:\n${link}\n\n` +
-          `Your place is held for 30 minutes while you pay.\n\n— clubSENsational`
-        : `Hi ${name},\n\n` +
-          `clubSENsational has accepted the registration for ${participant}.\n\n` +
-          (slot ? `Requested place: ${slot}\n\n` : "") +
-          `Please finish your booking:\n${link}\n\n` +
-          `After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\n— clubSENsational`,
+          `Please finish booking for ${participant} now.\n\n` +
+          (slot ? `Place: ${slot}\n\n` : "") +
+          `Your place is held for 30 minutes only while you complete funding, payment and the first instalment:\n${link}\n\n` +
+          `If the window ends without payment, the seat returns to the Booking Portal.\n\n` +
+          `After the office confirms your payment we send your Parent Portal PIN.\n\n— clubSENsational`
+        : autoPay
+          ? `Hi ${name},\n\n` +
+            `Thank you — we received the registration for ${participant}.\n\n` +
+            (slot ? `Requested place: ${slot}\n\n` : "") +
+            `Please complete booking and payment now:\n${link}\n\n` +
+            `Your place is held for 30 minutes while you pay.\n\n— clubSENsational`
+          : `Hi ${name},\n\n` +
+            `clubSENsational has accepted the registration for ${participant}.\n\n` +
+            (slot ? `Requested place: ${slot}\n\n` : "") +
+            `Please finish your booking:\n${link}\n\n` +
+            `Your place is held for 30 minutes while you pay. After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\n— clubSENsational`,
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-notify] email", mail.error);
@@ -596,6 +611,129 @@ export async function prepareReservationsForFinishBooking(
   return prepared;
 }
 
+/** Rough capacity for Booking Portal slots (aquatic pairs vs multi bands). */
+function approxSlotCapacity(slotId: string): number {
+  const s = String(slotId || "").toLowerCase();
+  if (s.includes("multi") || s.includes("swimfarm") || s.includes("day-centre")) return 6;
+  return 2;
+}
+
+/**
+ * Office resend / remint: if the doc's seat was released or expired unpaid,
+ * put it back on hold for 30' when the slot still has space.
+ */
+export async function reholdReleasedReservationForFinishBooking(
+  admin: SupabaseClient,
+  documentId: string,
+): Promise<{
+  ok: boolean;
+  reservationId: string | null;
+  holdExpiresAt: string | null;
+  error?: string;
+}> {
+  const docId = clean(documentId, 80);
+  if (!docId) return { ok: false, reservationId: null, holdExpiresAt: null, error: "document_required" };
+
+  const { data: active } = await admin
+    .from("portal_booking_slot_reservations")
+    .select("id, hold_expires_at, status")
+    .eq("document_id", docId)
+    .in("status", [...BOOKING_SLOT_HOLD_STATUSES])
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (active?.id) {
+    const holdExpires = bookingPayHoldExpiresAt();
+    await admin
+      .from("portal_booking_slot_reservations")
+      .update({
+        hold_expires_at: holdExpires,
+        updated_at: new Date().toISOString(),
+        notes: "auto_finish_link|pay_hold_30m|office_resend_refresh",
+        released_at: null,
+      })
+      .eq("id", String(active.id));
+    return {
+      ok: true,
+      reservationId: String(active.id),
+      holdExpiresAt: holdExpires,
+    };
+  }
+
+  const { data: prior } = await admin
+    .from("portal_booking_slot_reservations")
+    .select(
+      "id, slot_id, status, notes, service_id, service_name, venue, day_label, time_label, activity, booking_mode, week_id, block_id, date_iso, participant_name, parent_name, parent_email, parent_phone",
+    )
+    .eq("document_id", docId)
+    .in("status", ["released", "expired"])
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!prior?.id || !prior.slot_id) {
+    return { ok: false, reservationId: null, holdExpiresAt: null, error: "no_reservation" };
+  }
+
+  const slotId = String(prior.slot_id);
+  const { count, error: countErr } = await admin
+    .from("portal_booking_slot_reservations")
+    .select("id", { count: "exact", head: true })
+    .eq("slot_id", slotId)
+    .in("status", [...BOOKING_SLOT_HOLD_STATUSES])
+    .neq("id", String(prior.id));
+  if (countErr) {
+    console.warn("[reholdReleasedReservationForFinishBooking] count", countErr.message);
+  }
+  const cap = approxSlotCapacity(slotId);
+  if ((count || 0) >= cap) {
+    return {
+      ok: false,
+      reservationId: String(prior.id),
+      holdExpiresAt: null,
+      error: "slot_unavailable",
+    };
+  }
+
+  const holdExpires = bookingPayHoldExpiresAt();
+  const nowIso = new Date().toISOString();
+  const prevNotes = String(prior.notes || "").trim();
+  const keepTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
+  if (keepTrial) {
+    return {
+      ok: false,
+      reservationId: String(prior.id),
+      holdExpiresAt: null,
+      error: "trial_needs_fresh_book",
+    };
+  }
+
+  const { error: updErr } = await admin
+    .from("portal_booking_slot_reservations")
+    .update({
+      status: "validated",
+      validated_at: nowIso,
+      hold_expires_at: holdExpires,
+      released_at: null,
+      updated_at: nowIso,
+      notes: "auto_finish_link|pay_hold_30m|office_resend_rehold",
+    })
+    .eq("id", String(prior.id));
+  if (updErr) {
+    console.warn("[reholdReleasedReservationForFinishBooking] update", updErr.message);
+    return {
+      ok: false,
+      reservationId: String(prior.id),
+      holdExpiresAt: null,
+      error: "rehold_failed",
+    };
+  }
+  return {
+    ok: true,
+    reservationId: String(prior.id),
+    holdExpiresAt: holdExpires,
+  };
+}
+
 /**
  * Mint finish-booking link and notify parent right after registration submit.
  * Admin suitability review happens after payment, not before.
@@ -614,7 +752,9 @@ export async function sendFinishBookingAfterRegistration(
     reservationId?: string | null;
     leadId?: string | null;
     notify?: boolean;
-    variant?: "accepted" | "registration_submitted";
+    variant?: "accepted" | "registration_submitted" | "resend_pay_hold";
+    /** When true (office resend): re-hold released/expired seat for 30' if still free. */
+    reholdReleased?: boolean;
   },
 ): Promise<{
   finish_url: string;
@@ -623,16 +763,48 @@ export async function sendFinishBookingAfterRegistration(
   wa_ok: boolean;
   token_id: string | null;
   reservations_prepared: number;
+  slot_held: boolean;
+  hold_expires_at: string | null;
+  rehold_error: string | null;
 }> {
-  const reservationsPrepared = await prepareReservationsForFinishBooking(admin, doc.id);
+  let reservationsPrepared = await prepareReservationsForFinishBooking(admin, doc.id);
+  let slotHeld = reservationsPrepared > 0;
+  let holdExpiresAt: string | null = null;
+  let reholdError: string | null = null;
+  let reservationIdHint = opts?.reservationId ? String(opts.reservationId) : null;
+
+  if (opts?.reholdReleased || opts?.variant === "resend_pay_hold") {
+    const rehold = await reholdReleasedReservationForFinishBooking(admin, doc.id);
+    if (rehold.ok) {
+      slotHeld = true;
+      holdExpiresAt = rehold.holdExpiresAt;
+      if (rehold.reservationId) reservationIdHint = rehold.reservationId;
+      reservationsPrepared = Math.max(reservationsPrepared, 1);
+    } else {
+      reholdError = rehold.error || "rehold_failed";
+      if (reholdError === "slot_unavailable") {
+        return {
+          finish_url: "",
+          finish_url_sent: false,
+          email_ok: false,
+          wa_ok: false,
+          token_id: null,
+          reservations_prepared: reservationsPrepared,
+          slot_held: false,
+          hold_expires_at: null,
+          rehold_error: reholdError,
+        };
+      }
+    }
+  }
 
   const resolved = await resolveFinishBookingLeadAndReservation(
     admin,
     doc,
-    opts?.reservationId ? String(opts.reservationId) : null,
+    reservationIdHint,
   );
   const leadId = opts?.leadId ? String(opts.leadId) : resolved.leadId;
-  const reservationId = resolved.reservationId;
+  const reservationId = resolved.reservationId || reservationIdHint;
 
   const minted = await mintFinishBookingToken(admin, {
     leadId,
@@ -685,6 +857,9 @@ export async function sendFinishBookingAfterRegistration(
     wa_ok: waOk,
     token_id: minted.tokenId,
     reservations_prepared: reservationsPrepared,
+    slot_held: slotHeld,
+    hold_expires_at: holdExpiresAt,
+    rehold_error: reholdError,
   };
 }
 

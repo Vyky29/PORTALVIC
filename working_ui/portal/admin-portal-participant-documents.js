@@ -426,22 +426,38 @@
         var id = String(btn.getAttribute('data-id') || '').trim();
         var name = String(btn.getAttribute('data-name') || '').trim() || 'this participant';
         if (!id) return;
-        if (!global.confirm('Resend finish-booking link to parent for ' + name + '?')) return;
+        if (!global.confirm(
+          'Resend finish-booking link for ' +
+            name +
+            '?\n\nThis re-holds their Booking Portal seat for 30 minutes and tells them to finish funding/payment now. If the slot is full, nothing is sent.',
+        )) return;
         btn.disabled = true;
         btn.textContent = '…';
         void acceptDocument(id, 'resend_finish_link').then(function (out) {
           btn.disabled = false;
           btn.textContent = 'Resend finish link';
           if (!out || !out.ok) {
-            global.alert('Could not resend (' + ((out && out.error) || 'failed') + ').');
+            global.alert(
+              out && out.error === 'slot_unavailable'
+                ? 'Could not re-hold — that slot looks full. Link was not sent.'
+                : 'Could not resend (' + ((out && out.error) || 'failed') + ').',
+            );
             return;
           }
+          var holdMsg = out.slot_held
+            ? ' · seat held 30′'
+            : out.rehold_error
+              ? ' · no seat re-hold (' + out.rehold_error + ')'
+              : '';
           if (typeof cfg.toast === 'function') {
             cfg.toast(
-              'Finish link resent' + (out.email_ok ? ' · email' : '') + (out.wa_ok ? ' · WhatsApp' : '')
+              'Finish link resent' +
+                holdMsg +
+                (out.email_ok ? ' · email' : '') +
+                (out.wa_ok ? ' · WhatsApp' : ''),
             );
           } else {
-            global.alert('Finish-booking link resent.');
+            global.alert('Finish-booking link resent' + holdMsg + '.');
           }
         });
       });

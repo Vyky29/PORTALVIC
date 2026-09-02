@@ -122,22 +122,31 @@ async function mintAndNotify(
     parent_phone: string | null;
     payload_json?: unknown;
   },
-  variant: "accepted" | "registration_submitted" = "accepted",
+  variant: "accepted" | "registration_submitted" | "resend_pay_hold" = "accepted",
 ): Promise<{
   finish_url_sent: boolean;
   email_ok: boolean;
   wa_ok: boolean;
   token_id: string | null;
+  slot_held: boolean;
+  hold_expires_at: string | null;
+  rehold_error: string | null;
+  reservations_prepared: number;
 }> {
   const sent = await sendFinishBookingAfterRegistration(admin, doc, {
     variant,
     notify: true,
+    reholdReleased: variant === "resend_pay_hold" || variant === "accepted",
   });
   return {
     finish_url_sent: sent.finish_url_sent,
     email_ok: sent.email_ok,
     wa_ok: sent.wa_ok,
     token_id: sent.token_id,
+    slot_held: sent.slot_held,
+    hold_expires_at: sent.hold_expires_at,
+    rehold_error: sent.rehold_error,
+    reservations_prepared: sent.reservations_prepared,
   };
 }
 
@@ -209,7 +218,16 @@ Deno.serve(async (req) => {
 
   if (action === "resend_finish_link") {
     try {
-      const sent = await mintAndNotify(admin, doc, "accepted");
+      const sent = await mintAndNotify(admin, doc, "resend_pay_hold");
+      if (sent.rehold_error === "slot_unavailable") {
+        return portalAdminJson(409, {
+          ok: false,
+          error: "slot_unavailable",
+          message:
+            "Could not re-hold the seat — the slot looks full. Finish link was not sent.",
+          ...sent,
+        });
+      }
       return portalAdminJson(200, {
         ok: true,
         action: "resend_finish_link",
