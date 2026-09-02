@@ -29,6 +29,7 @@ import {
   parseNewClientPayPlan,
   quoteNewClientMidTermInvoice,
   quoteNewClientTrialInvoice,
+  registrationSupportFromPayload,
   type CompletionTokenRow,
 } from "../_shared/portal_booking_finish.ts";
 import { SESSION_COUNTS } from "../_shared/reenrolment_catalog.ts";
@@ -48,7 +49,10 @@ import {
   bookingPayHoldExpiresAt,
   runBookingPayHoldMaintenance,
 } from "../_shared/portal_booking_pay_hold.ts";
-import { notifyOfficePayHoldStarted } from "../_shared/portal_booking_lead_office_notify.ts";
+import {
+  notifyOfficePayHoldStarted,
+  notifyOfficeSwNhsReferral,
+} from "../_shared/portal_booking_lead_office_notify.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -81,6 +85,22 @@ function json(status: number, body: Record<string, unknown>) {
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function looksLikeEmail(raw: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw);
+}
+
+function readSwContactFromBody(
+  body: Record<string, unknown>,
+  fallback: { name: string | null; email: string | null },
+): { name: string; email: string } | null {
+  const name = clean(body.social_worker_name ?? body.sw_name, 200) ||
+    clean(fallback.name, 200);
+  const email = clean(body.social_worker_email ?? body.sw_email, 200).toLowerCase() ||
+    clean(fallback.email, 200).toLowerCase();
+  if (!name || !email || !looksLikeEmail(email)) return null;
+  return { name, email };
 }
 
 /** First instalment collected by bank (mid-month GoCardless join). */
@@ -656,6 +676,11 @@ Deno.serve(async (req) => {
       : {};
   const savedScope = parseBookingScope(savedChoices.booking_scope) ||
     (portalBookingKind === "trial" ? "trial_session" : null);
+  const docPayload =
+    doc.payload_json && typeof doc.payload_json === "object" && !Array.isArray(doc.payload_json)
+      ? doc.payload_json as Record<string, unknown>
+      : {};
+  const registrationSupport = registrationSupportFromPayload(docPayload);
 
   if (action === "load") {
     let invoice: Record<string, unknown> | null = null;
@@ -680,6 +705,13 @@ Deno.serve(async (req) => {
       is_trial_intent: portalBookingKind === "trial",
       participant_name: doc.participant_name,
       parent_name: doc.parent_name,
+      registration_support: registrationSupport,
+      social_worker_name:
+        clean(savedChoices.social_worker_name, 200) ||
+        registrationSupport.social_worker_name,
+      social_worker_email:
+        clean(savedChoices.social_worker_email, 200) ||
+        registrationSupport.social_worker_email,
       slot: {
         service_name: serviceName,
         venue,
@@ -720,8 +752,13 @@ Deno.serve(async (req) => {
   }
 
   if (action === "save_choices") {
-    if (token.status === "completed") {
-      return json(200, { ok: true, status: "completed", completed: true });
+    if (token.status === "completed" || token.status === "awaiting_office_referral") {
+      return json(200, {
+        ok: true,
+        status: token.status,
+        completed: token.status === "completed",
+        awaiting_office_referral: token.status === "awaiting_office_referral",
+      });
     }
     const funding = parseFundingCode(body.funding_code);
     if (!funding) return json(400, { ok: false, error: "funding_required" });
@@ -729,16 +766,44 @@ Deno.serve(async (req) => {
     const scope = parseBookingScope(body.booking_scope) || savedScope;
     const planOnly = parseNewClientPayPlan(body.pay_plan);
 
+    const swContact = funding === "sw_nhs_referral"
+      ? readSwContactFromBody(body, {
+        name:
+          clean(savedChoices.social_worker_name, 200) ||
+          registrationSupport.social_worker_name,
+        email:
+          clean(savedChoices.social_worker_email, 200) ||
+          registrationSupport.social_worker_email,
+      })
+      : null;
+    if (funding === "sw_nhs_referral" && !swContact) {
+      return json(400, {
+        ok: false,
+        error: "social_worker_contact_required",
+        message:
+          "Confirm or edit the social worker / NHS manager name and email from the registration form.",
+      });
+    }
+
     // Funding only (step 1) — continue to booking scope.
     if (!scope && !planOnly) {
       const now = new Date().toISOString();
+      const choices: Record<string, unknown> = {
+        funding_code: funding,
+        saved_at: now,
+      };
+      if (swContact) {
+        choices.social_worker_name = swContact.name;
+        choices.social_worker_email = swContact.email;
+        choices.social_worker_contact = `${swContact.name} · ${swContact.email}`;
+      }
       await admin
         .from("portal_booking_completion_tokens")
         .update({
           funding_code: funding,
           pay_plan: null,
           status: "funding_saved",
-          choices_json: { funding_code: funding, saved_at: now },
+          choices_json: choices,
           updated_at: now,
         })
         .eq("id", token.id);
@@ -746,6 +811,128 @@ Deno.serve(async (req) => {
         ok: true,
         status: "funding_saved",
         funding_code: funding,
+        social_worker_name: swContact?.name || null,
+        social_worker_email: swContact?.email || null,
+      });
+    }
+
+    // SW / NHS referral: funding + scope — no parent invoice; office contacts SW.
+    if (funding === "sw_nhs_referral" && scope && !planOnly) {
+      const now = new Date().toISOString();
+      const scopeLabel =
+        scope === "trial_session"
+          ? "Trial session (office arranges with SW/NHS)"
+          : scope === "auto_reenroll_year"
+          ? "Auto re-enrol by term (all year)"
+          : "This term only";
+      const fundingLabel = "Social Worker (LA) / NHS referral";
+      const ensured = await ensureContact(
+        admin,
+        token,
+        doc,
+        fundingLabel,
+        "No parent pay · office contacts SW/NHS",
+      );
+      if ("error" in ensured) return json(400, { ok: false, error: ensured.error });
+
+      const choices: Record<string, unknown> = {
+        funding_code: funding,
+        booking_scope: scope,
+        scope_label: scopeLabel,
+        social_worker_name: swContact!.name,
+        social_worker_email: swContact!.email,
+        social_worker_contact: `${swContact!.name} · ${swContact!.email}`,
+        support_regulated: registrationSupport.support_regulated,
+        ehcp: registrationSupport.ehcp,
+        ehcp_storage_path: registrationSupport.ehcp_storage_path,
+        no_parent_pay: true,
+        saved_at: now,
+      };
+
+      if (reservation?.id) {
+        const prevNotes = String(reservation.notes || "").trim();
+        const ratioTag = registrationSupport.support_regulated
+          ? `ratio=${registrationSupport.support_regulated}`
+          : "";
+        await admin
+          .from("portal_booking_slot_reservations")
+          .update({
+            status: "pending",
+            hold_expires_at: null,
+            updated_at: now,
+            notes: [
+              prevNotes.replace(/\|?pay_hold_30m/gi, ""),
+              "sw_nhs_referral",
+              "no_parent_pay",
+              "awaiting_office",
+              ratioTag,
+            ]
+              .filter(Boolean)
+              .join("|")
+              .slice(0, 500),
+          })
+          .eq("id", String(reservation.id));
+      }
+
+      await admin
+        .from("portal_participant_documents")
+        .update({
+          payload_json: {
+            ...docPayload,
+            sw_nhs_referral: true,
+            nhs_referral: true,
+            social_worker_name: swContact!.name,
+            social_worker_email: swContact!.email,
+            social_worker_contact: `${swContact!.name} · ${swContact!.email}`,
+            office_place: registrationSupport.support_regulated === "2to1"
+              ? "nhs_referral_2to1"
+              : "sw_nhs_referral",
+          },
+        })
+        .eq("id", doc.id);
+
+      await admin
+        .from("portal_booking_completion_tokens")
+        .update({
+          funding_code: funding,
+          pay_plan: null,
+          contact_id: ensured.contactId,
+          parent_person_id: ensured.parentPersonId,
+          status: "awaiting_office_referral",
+          choices_json: choices,
+          updated_at: now,
+        })
+        .eq("id", token.id);
+
+      try {
+        await notifyOfficeSwNhsReferral({
+          participantName: String(doc.participant_name || ""),
+          parentName: clean(doc.parent_name, 200) || null,
+          parentEmail: clean(doc.parent_email, 200) || null,
+          slotSummary: slotSummaryFromReservation(reservation) ||
+            [serviceName, venue, day, timeLabel].filter(Boolean).join(" · "),
+          bookingScope: scopeLabel,
+          swName: swContact!.name,
+          swEmail: swContact!.email,
+          supportRegulated: registrationSupport.support_regulated,
+          ehcp: registrationSupport.ehcp,
+          ehcpUploaded: !!registrationSupport.ehcp_storage_path,
+          documentId: String(doc.id || "") || null,
+        });
+      } catch (e) {
+        console.warn("[portal-booking-finish] sw nhs notify", e);
+      }
+
+      return json(200, {
+        ok: true,
+        status: "awaiting_office_referral",
+        funding_code: funding,
+        booking_scope: scope,
+        social_worker_name: swContact!.name,
+        social_worker_email: swContact!.email,
+        no_parent_pay: true,
+        message:
+          "We will contact the social worker / NHS manager to process this booking. No parent invoice.",
       });
     }
 
@@ -779,6 +966,13 @@ Deno.serve(async (req) => {
     }
     if (!scope) {
       return json(400, { ok: false, error: "booking_scope_required" });
+    }
+    if (funding === "sw_nhs_referral") {
+      return json(400, {
+        ok: false,
+        error: "sw_nhs_no_parent_pay",
+        message: "Social Worker / NHS referral bookings have no parent invoice.",
+      });
     }
     if (
       scope === "trial_session" &&
@@ -827,10 +1021,24 @@ Deno.serve(async (req) => {
     if (token.status === "completed") {
       return json(200, { ok: true, status: "completed", completed: true });
     }
+    if (token.status === "awaiting_office_referral") {
+      return json(200, {
+        ok: true,
+        status: "awaiting_office_referral",
+        no_parent_pay: true,
+      });
+    }
     const funding = parseFundingCode(body.funding_code) ||
       parseFundingCode(token.funding_code);
     if (!funding) {
       return json(400, { ok: false, error: "funding_required" });
+    }
+    if (funding === "sw_nhs_referral") {
+      return json(400, {
+        ok: false,
+        error: "sw_nhs_no_parent_pay",
+        message: "Social Worker / NHS referral bookings have no parent invoice.",
+      });
     }
     let plan = parseNewClientPayPlan(body.pay_plan) ||
       parseNewClientPayPlan(token.pay_plan);

@@ -26,6 +26,7 @@ const corsHeaders: Record<string, string> = {
 const BUCKET = "participant-documents";
 const MAX_PDF_BYTES = 18 * 1024 * 1024;
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+const MAX_EHCP_BYTES = 12 * 1024 * 1024;
 const ALLOWED_FORM_TYPES = new Set(["climbing_registration", "client_registration"]);
 
 function json(status: number, body: Record<string, unknown>) {
@@ -241,6 +242,24 @@ Deno.serve(async (req) => {
     return json(400, { ok: false, error: "missing_photo" });
   }
 
+  const ehcpFile = form.get("ehcp_file");
+  let ehcpBlob: File | null = null;
+  if (ehcpFile instanceof File && ehcpFile.size) {
+    if (ehcpFile.size > MAX_EHCP_BYTES) {
+      return json(413, { ok: false, error: "ehcp_too_large" });
+    }
+    const ehcpType = String(ehcpFile.type || "").toLowerCase();
+    const ehcpName = String(ehcpFile.name || "").toLowerCase();
+    const okType =
+      ehcpType.includes("pdf") ||
+      ehcpType.startsWith("image/") ||
+      /\.(pdf|jpe?g|png|webp)$/.test(ehcpName);
+    if (!okType) {
+      return json(400, { ok: false, error: "invalid_ehcp_type" });
+    }
+    ehcpBlob = ehcpFile;
+  }
+
   let payload: Record<string, unknown> = {};
   const payloadRaw = String(form.get("payload") || "").trim();
   if (payloadRaw) {
@@ -282,6 +301,26 @@ Deno.serve(async (req) => {
     payload = { ...payload, booking_request: bookingRequest };
   }
 
+  // Prefer structured SW fields; keep combined contact for older readers.
+  const swName = sanitizePart(String(payload.social_worker_name || ""), 200);
+  const swEmail = sanitizePart(String(payload.social_worker_email || ""), 200).toLowerCase();
+  if (swName || swEmail) {
+    payload = {
+      ...payload,
+      social_worker_name: swName || null,
+      social_worker_email: swEmail || null,
+      social_worker_contact:
+        sanitizePart(String(payload.social_worker_contact || ""), 400) ||
+        [swName, swEmail].filter(Boolean).join(" · "),
+    };
+  }
+
+  const ehcpAnswer = sanitizePart(String(payload.ehcp || ""), 40).toLowerCase();
+  const ehcpNeedsFile = ehcpAnswer === "yes" || ehcpAnswer === "in progress";
+  if (formType === "client_registration" && ehcpNeedsFile && !ehcpBlob) {
+    return json(400, { ok: false, error: "missing_ehcp_file" });
+  }
+
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const safeName = sanitizeFilenamePart(participantName);
   const prefix = `${formType}/${stamp}_${safeName}`;
@@ -316,6 +355,45 @@ Deno.serve(async (req) => {
     }
   }
 
+  let ehcpPath: string | null = null;
+  if (ehcpBlob) {
+    const ehcpType = String(ehcpBlob.type || "").toLowerCase();
+    const ehcpName = String(ehcpBlob.name || "").toLowerCase();
+    let ehcpExt = "pdf";
+    if (ehcpType.includes("png") || ehcpName.endsWith(".png")) ehcpExt = "png";
+    else if (ehcpType.includes("webp") || ehcpName.endsWith(".webp")) ehcpExt = "webp";
+    else if (ehcpType.includes("jpeg") || ehcpType.includes("jpg") || /\.jpe?g$/.test(ehcpName)) {
+      ehcpExt = "jpg";
+    } else if (ehcpType.includes("pdf") || ehcpName.endsWith(".pdf")) ehcpExt = "pdf";
+    ehcpPath = `${prefix}/ehcp.${ehcpExt}`;
+    const ehcpBytes = new Uint8Array(await ehcpBlob.arrayBuffer());
+    const contentType =
+      ehcpBlob.type ||
+      (ehcpExt === "pdf"
+        ? "application/pdf"
+        : ehcpExt === "png"
+        ? "image/png"
+        : ehcpExt === "webp"
+        ? "image/webp"
+        : "image/jpeg");
+    const { error: ehcpUpErr } = await admin.storage.from(BUCKET).upload(ehcpPath, ehcpBytes, {
+      contentType,
+      upsert: false,
+    });
+    if (ehcpUpErr) {
+      console.error("[portal-parent-form-submit] ehcp upload", ehcpUpErr.message);
+      const removePaths = [pdfPath];
+      if (photoPath) removePaths.push(photoPath);
+      await admin.storage.from(BUCKET).remove(removePaths);
+      return json(500, { ok: false, error: "ehcp_upload_failed" });
+    }
+    payload = {
+      ...payload,
+      ehcp_storage_path: ehcpPath,
+      ehcp_filename: sanitizePart(String(ehcpBlob.name || `ehcp.${ehcpExt}`), 200),
+    };
+  }
+
   const { data: row, error: insErr } = await admin
     .from("portal_participant_documents")
     .insert({
@@ -337,6 +415,7 @@ Deno.serve(async (req) => {
     console.error("[portal-parent-form-submit] insert", insErr?.message);
     const removePaths = [pdfPath];
     if (photoPath) removePaths.push(photoPath);
+    if (ehcpPath) removePaths.push(ehcpPath);
     await admin.storage.from(BUCKET).remove(removePaths);
     return json(500, { ok: false, error: "save_failed" });
   }
@@ -360,6 +439,16 @@ Deno.serve(async (req) => {
             : "Requested booking\tNone (registration only — Interested in our services)",
           parentBits.ehcp ? `EHCP\t${sanitizePart(String(parentBits.ehcp), 40)}` : "",
           parentBits.ehcp_details ? `EHCP details\t${sanitizePart(String(parentBits.ehcp_details), 400)}` : "",
+          parentBits.ehcp_storage_path ? `EHCP file\tuploaded` : "",
+          parentBits.social_worker_name
+            ? `Social worker\t${sanitizePart(String(parentBits.social_worker_name), 120)}`
+            : "",
+          parentBits.social_worker_email
+            ? `Social worker email\t${sanitizePart(String(parentBits.social_worker_email), 120)}`
+            : "",
+          parentBits.support_regulated
+            ? `Support when regulated\t${sanitizePart(String(parentBits.support_regulated), 40)}`
+            : "",
           parentBits.motivators ? `Motivators\t${sanitizePart(String(parentBits.motivators), 400)}` : "",
           parentBits.dislikes ? `Dislikes\t${sanitizePart(String(parentBits.dislikes), 400)}` : "",
           `Registration document\t${row.id}`,

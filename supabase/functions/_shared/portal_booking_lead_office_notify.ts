@@ -784,3 +784,105 @@ export async function notifyOfficePayHoldStarted(opts: {
     console.warn("[pay-hold-office-notify] push error", e);
   }
 }
+
+/** Office FYI: parent chose Social Worker (LA) / NHS referral — no parent invoice. */
+export async function notifyOfficeSwNhsReferral(opts: {
+  participantName: string;
+  parentName: string | null;
+  parentEmail: string | null;
+  slotSummary?: string | null;
+  bookingScope?: string | null;
+  swName: string;
+  swEmail: string;
+  supportRegulated?: string | null;
+  ehcp?: string | null;
+  ehcpUploaded?: boolean;
+  documentId?: string | null;
+}): Promise<void> {
+  const participant = String(opts.participantName || "").trim() || "Participant";
+  const parent = String(opts.parentName || "").trim() || "Parent / carer";
+  const email = String(opts.parentEmail || "").trim();
+  const slot = String(opts.slotSummary || "").trim();
+  const scope = String(opts.bookingScope || "").trim();
+  const swName = String(opts.swName || "").trim() || "(not provided)";
+  const swEmail = String(opts.swEmail || "").trim() || "(not provided)";
+  const ratio = String(opts.supportRegulated || "").trim();
+  const ehcp = String(opts.ehcp || "").trim();
+
+  const smtp = readParentNotifySmtpConfig();
+  const tos = officeNotifyEmails();
+  const adminUrl = reenrolmentsReviewUrl();
+  const subject = `SW/NHS referral · no parent pay · ${participant}`;
+  const bodyText =
+    `Finish-booking: parent chose Social Worker (LA) / NHS referral. Do not invoice the parent.\n\n` +
+    `Participant: ${participant}\n` +
+    `Parent / carer: ${parent}\n` +
+    (email ? `Parent email: ${email}\n` : "") +
+    (slot ? `Requested session: ${slot}\n` : "") +
+    (scope ? `Booking length: ${scope}\n` : "") +
+    `Social worker / NHS manager: ${swName}\n` +
+    `SW / NHS email: ${swEmail}\n` +
+    (ratio ? `Support when regulated: ${ratio} (instructors needed in the same session)\n` : "") +
+    (ehcp ? `EHCP on form: ${ehcp}\n` : "") +
+    (opts.ehcpUploaded ? `EHCP file: uploaded with registration\n` : "") +
+    (opts.documentId ? `Registration document: ${opts.documentId}\n` : "") +
+    `\nContact the social worker / NHS manager to process the booking with LA or NHS.\n` +
+    (adminUrl ? `${adminUrl}\n\n` : "\n") +
+    `- clubSENsational portal`;
+
+  if (smtp && tos.length) {
+    for (const to of tos) {
+      const mail = await sendParentEmailViaSmtp({
+        config: smtp,
+        to,
+        subject,
+        bodyText,
+      });
+      if (!mail.ok) {
+        console.warn("[sw-nhs-referral-office-notify] email failed", to, mail.error);
+      }
+    }
+  } else {
+    console.log(
+      `[sw-nhs-referral-office-notify] participant=${participant} sw=${swName} <${swEmail}> slot=${slot || "-"}`,
+    );
+  }
+
+  const baseUrl = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const secret = (Deno.env.get("PORTAL_PUSH_WEBHOOK_SECRET") || "").trim();
+  if (!baseUrl || !secret) return;
+
+  try {
+    const res = await fetch(
+      `${baseUrl}/functions/v1/portal-push-dispatch-admin-alert`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-portal-webhook-secret": secret,
+        },
+        body: JSON.stringify({
+          type: "UPDATE",
+          table: "portal_booking_completion_tokens",
+          record: {
+            participant_name: participant,
+            parent_name: parent,
+            parent_email: email || null,
+            notify_event: "sw_nhs_referral",
+            slot_summary: slot || null,
+            social_worker_name: swName,
+            social_worker_email: swEmail,
+            support_regulated: ratio || null,
+            document_id: opts.documentId || null,
+          },
+        }),
+      },
+    );
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      console.warn("[sw-nhs-referral-office-notify] push failed", res.status, t.slice(0, 200));
+    }
+  } catch (e) {
+    console.warn("[sw-nhs-referral-office-notify] push error", e);
+  }
+}

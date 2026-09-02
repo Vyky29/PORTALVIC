@@ -124,7 +124,28 @@
     setRadio(form, "ehcp", answers.ehcp);
     setVal(form, "ehcp_details", answers.ehcp_details);
     setRadio(form, "social_worker", answers.social_worker);
-    setVal(form, "social_worker_contact", answers.social_worker_contact);
+    setVal(form, "social_worker_name", answers.social_worker_name);
+    setVal(form, "social_worker_email", answers.social_worker_email);
+    if (!answers.social_worker_name && !answers.social_worker_email && answers.social_worker_contact) {
+      var raw = String(answers.social_worker_contact || "").trim();
+      var em = raw.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+      if (em) {
+        setVal(form, "social_worker_email", em[0]);
+        setVal(
+          form,
+          "social_worker_name",
+          raw.replace(em[0], "").replace(/[,;|/·]+/g, " ").trim(),
+        );
+      } else {
+        setVal(form, "social_worker_name", raw);
+      }
+    }
+    setVal(
+      form,
+      "social_worker_contact",
+      answers.social_worker_contact ||
+        [answers.social_worker_name, answers.social_worker_email].filter(Boolean).join(" · "),
+    );
     setVal(form, "motivators", answers.motivators);
     setVal(form, "dislikes", answers.dislikes);
     setVal(form, "medication", answers.medication);
@@ -188,7 +209,11 @@
       ehcp: radio("ehcp"),
       ehcp_details: val("ehcp_details"),
       social_worker: radio("social_worker"),
-      social_worker_contact: val("social_worker_contact"),
+      social_worker_name: val("social_worker_name"),
+      social_worker_email: val("social_worker_email"),
+      social_worker_contact:
+        val("social_worker_contact") ||
+        [val("social_worker_name"), val("social_worker_email")].filter(Boolean).join(" · "),
       motivators: val("motivators"),
       dislikes: val("dislikes"),
       medication: val("medication"),

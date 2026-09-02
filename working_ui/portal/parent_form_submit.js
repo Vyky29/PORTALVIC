@@ -36,6 +36,18 @@
     if (code === "invalid_photo_type" || code === "photo_decode_failed") {
       return "That photo format is not supported. Please use a JPEG or PNG (not HEIC if your phone offers a choice).";
     }
+    if (code === "missing_ehcp_file") {
+      return "Please upload the EHCP (PDF or photo), then submit again.";
+    }
+    if (code === "ehcp_too_large") {
+      return "The EHCP file is too large. Use a PDF or photo under 12 MB.";
+    }
+    if (code === "invalid_ehcp_type") {
+      return "EHCP must be a PDF or an image (JPEG/PNG).";
+    }
+    if (code === "ehcp_upload_failed") {
+      return "The club server could not store the EHCP. Please try again in a minute.";
+    }
     if (code === "pdf_upload_failed" || code === "photo_upload_failed" || code === "save_failed") {
       return "The club server could not store the form (" + raw + "). Please try again in a minute.";
     }
@@ -134,6 +146,13 @@
       fd.append("pdf", pdfBlob, options.pdf_filename || "registration.pdf");
       if (options.photo instanceof Blob) {
         fd.append("photo", options.photo, options.photo_filename || "participant-photo.jpg");
+      }
+      if (options.ehcp_file instanceof Blob) {
+        fd.append(
+          "ehcp_file",
+          options.ehcp_file,
+          options.ehcp_filename || "ehcp.pdf",
+        );
       }
       try {
         var sessTok =

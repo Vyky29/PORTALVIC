@@ -1591,10 +1591,21 @@ async function activateContactInClassAfterPaidBooking(
     .eq("contact_id", cid);
 }
 
-export function parseFundingCode(raw: unknown): "privately_funded" | "la_direct_payments" | null {
+export function parseFundingCode(
+  raw: unknown,
+): "privately_funded" | "la_direct_payments" | "sw_nhs_referral" | null {
   const s = clean(raw, 40).toLowerCase();
   if (s === "privately_funded" || s === "private" || s === "privately") {
     return "privately_funded";
+  }
+  if (
+    s === "sw_nhs_referral" ||
+    s === "social_worker_referral" ||
+    s === "nhs_referral" ||
+    s === "sw_nhs" ||
+    s === "referred_sw_nhs"
+  ) {
+    return "sw_nhs_referral";
   }
   if (
     s === "la_direct_payments" ||
@@ -1606,6 +1617,53 @@ export function parseFundingCode(raw: unknown): "privately_funded" | "la_direct_
     return "la_direct_payments";
   }
   return null;
+}
+
+/** Split legacy "Name email@x" social_worker_contact into name + email. */
+export function splitSocialWorkerContact(raw: unknown): { name: string; email: string } {
+  const s = clean(raw, 400);
+  if (!s) return { name: "", email: "" };
+  const emailMatch = s.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  const email = emailMatch ? emailMatch[0] : "";
+  let name = s;
+  if (email) {
+    name = s.replace(email, "").replace(/[,;|/·]+/g, " ").replace(/\s+/g, " ").trim();
+  }
+  return { name: clean(name, 200), email: clean(email, 200).toLowerCase() };
+}
+
+export function registrationSupportFromPayload(
+  payload: Record<string, unknown> | null | undefined,
+): {
+  ehcp: string | null;
+  ehcp_details: string | null;
+  ehcp_storage_path: string | null;
+  social_worker: string | null;
+  social_worker_name: string | null;
+  social_worker_email: string | null;
+  social_worker_contact: string | null;
+  support_regulated: string | null;
+  support_dysregulated: string | null;
+} {
+  const p = payload && typeof payload === "object" ? payload : {};
+  const split = splitSocialWorkerContact(p.social_worker_contact);
+  const name = clean(p.social_worker_name, 200) || split.name || null;
+  const email = clean(p.social_worker_email, 200).toLowerCase() || split.email || null;
+  const contact =
+    clean(p.social_worker_contact, 400) ||
+    [name, email].filter(Boolean).join(" · ") ||
+    null;
+  return {
+    ehcp: clean(p.ehcp, 40) || null,
+    ehcp_details: clean(p.ehcp_details, 800) || null,
+    ehcp_storage_path: clean(p.ehcp_storage_path, 400) || null,
+    social_worker: clean(p.social_worker, 40) || null,
+    social_worker_name: name,
+    social_worker_email: email,
+    social_worker_contact: contact,
+    support_regulated: clean(p.support_regulated, 40) || null,
+    support_dysregulated: clean(p.support_dysregulated, 200) || null,
+  };
 }
 
 export {

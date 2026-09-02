@@ -107,7 +107,7 @@
     <div class="brand">
       <img src="/portal/F-02-1.png" alt="clubSENsational" width="72" height="72" />
       <h1>Finish your booking</h1>
-      <p>Choose funding, booking length, payment, and pay the first instalment</p>
+      <p>Choose funding, booking length, and (if paying yourself) the first instalment</p>
     </div>
 
     <div id="fbNotice" class="notice" hidden></div>
@@ -128,6 +128,21 @@
           <strong>Using LA money (Participant EHCP funds)</strong>
           <span class="hint">You use Local Authority / EHCP Direct Payments for approved activities. You still receive an invoice and pay the first instalment here.</span>
         </label>
+        <label class="choice">
+          <input type="radio" name="funding" value="sw_nhs_referral" />
+          <strong>Social Worker (LA) / NHS referral</strong>
+          <span class="hint">Referred by a social worker or NHS manager. No parent invoice — we contact them to process the booking.</span>
+        </label>
+        <div id="fbSwConfirm" class="card-inner" hidden style="margin:12px 0;padding:12px;border:1px solid #d7e3ec;border-radius:10px;background:#f7fbfe;min-width:0">
+          <p class="muted" style="margin:0 0 8px;overflow-wrap:break-word">
+            Confirm the social worker / NHS manager from the registration form (or edit if needed):
+          </p>
+          <label class="field-label" for="fbSwName" style="display:block;font-size:13px;font-weight:600;margin:0 0 4px">Name</label>
+          <input id="fbSwName" type="text" autocomplete="name" style="width:100%;max-width:100%;box-sizing:border-box;margin:0 0 10px;padding:10px 12px;border:1px solid #c9d7e3;border-radius:8px" />
+          <label class="field-label" for="fbSwEmail" style="display:block;font-size:13px;font-weight:600;margin:0 0 4px">Email</label>
+          <input id="fbSwEmail" type="email" autocomplete="email" inputmode="email" style="width:100%;max-width:100%;box-sizing:border-box;margin:0 0 4px;padding:10px 12px;border:1px solid #c9d7e3;border-radius:8px" />
+          <p id="fbSwRatioHint" class="hint" style="margin:8px 0 0;overflow-wrap:break-word" hidden></p>
+        </div>
         <button type="submit" class="btn btn--pri">Continue</button>
       </form>
     </div>
@@ -201,6 +216,16 @@
       </p>
     </div>
 
+    <div id="fbStepSwReferral" class="card" hidden>
+      <h2>We will contact the social worker / NHS</h2>
+      <p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">
+        Thank you. There is <strong>no parent invoice</strong> for this path.
+        The office will contact the social worker or NHS manager you confirmed
+        to process the booking with the LA or NHS.
+      </p>
+      <div id="fbSwReferralSummary" style="overflow-wrap:break-word;min-width:0"></div>
+    </div>
+
     <div id="fbStepDone" class="card" hidden>
       <h2>You’re in</h2>
       <p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">
@@ -210,6 +235,6 @@
       <a class="btn btn--pri" href="/parent">Open Parent Portal</a>
     </div>
   </div>
-  <script src="/portal/portal_finish_booking.js?v=20260903-wa-email-only"></script>
+  <script src="/portal/portal_finish_booking.js?v=20260903-sw-nhs"></script>
 </body>
 </html>

@@ -353,6 +353,21 @@
           : null,
       booking_kind: demoState.booking_scope === "trial_session" ? "trial" : "term",
       is_trial_intent: demoState.booking_scope === "trial_session",
+      registration_support: {
+        ehcp: "Yes",
+        ehcp_details: "Demo EHCP",
+        ehcp_storage_path: "demo/ehcp.pdf",
+        social_worker: "Yes",
+        social_worker_name: "Miss Sarah Kagaba",
+        social_worker_email: "sarah.kagaba@example.nhs.uk",
+        social_worker_contact: "Miss Sarah Kagaba · sarah.kagaba@example.nhs.uk",
+        support_regulated: "2to1",
+        support_dysregulated: null,
+      },
+      social_worker_name:
+        demoState.social_worker_name || "Miss Sarah Kagaba",
+      social_worker_email:
+        demoState.social_worker_email || "sarah.kagaba@example.nhs.uk",
       completed: demoState.status === "completed",
     };
   }
@@ -363,10 +378,17 @@
     }
     if (action === "save_choices") {
       if (extra.funding_code) demoState.funding_code = extra.funding_code;
+      if (extra.social_worker_name) demoState.social_worker_name = extra.social_worker_name;
+      if (extra.social_worker_email) demoState.social_worker_email = extra.social_worker_email;
       if (extra.booking_scope) demoState.booking_scope = extra.booking_scope;
       if (extra.pay_plan) {
         demoState.pay_plan = extra.pay_plan;
         demoState.status = "choices_saved";
+      } else if (
+        extra.booking_scope &&
+        demoState.funding_code === "sw_nhs_referral"
+      ) {
+        demoState.status = "awaiting_office_referral";
       } else if (extra.booking_scope) {
         demoState.status = "scope_saved";
       } else {
@@ -378,6 +400,9 @@
         funding_code: demoState.funding_code,
         booking_scope: demoState.booking_scope,
         pay_plan: demoState.pay_plan,
+        social_worker_name: demoState.social_worker_name || null,
+        social_worker_email: demoState.social_worker_email || null,
+        no_parent_pay: demoState.funding_code === "sw_nhs_referral",
       });
     }
     if (action === "create_invoice") {
@@ -689,17 +714,116 @@
   }
 
   function setStep(name) {
-    ["fbStepFunding", "fbStepScope", "fbStepPay", "fbStepInvoice", "fbStepAwaitingOffice", "fbStepDone"].forEach(
-      function (id) {
-        var el = document.getElementById(id);
-        if (el) el.hidden = true;
-      },
-    );
+    [
+      "fbStepFunding",
+      "fbStepScope",
+      "fbStepPay",
+      "fbStepInvoice",
+      "fbStepAwaitingOffice",
+      "fbStepSwReferral",
+      "fbStepDone",
+    ].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.hidden = true;
+    });
     var show = document.getElementById(name);
     if (show) show.hidden = false;
   }
 
+  function looksLikeEmail(s) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || "").trim());
+  }
+
+  function syncSwConfirmPanel(data) {
+    var panel = document.getElementById("fbSwConfirm");
+    var checked = document.querySelector('input[name="funding"]:checked');
+    var isSw = checked && checked.value === "sw_nhs_referral";
+    if (panel) panel.hidden = !isSw;
+    if (!isSw) return;
+    var nameEl = document.getElementById("fbSwName");
+    var emailEl = document.getElementById("fbSwEmail");
+    var ratioEl = document.getElementById("fbSwRatioHint");
+    var rs = (data && data.registration_support) || {};
+    if (nameEl && !nameEl.value) {
+      nameEl.value =
+        data.social_worker_name ||
+        rs.social_worker_name ||
+        "";
+    }
+    if (emailEl && !emailEl.value) {
+      emailEl.value =
+        data.social_worker_email ||
+        rs.social_worker_email ||
+        "";
+    }
+    if (ratioEl) {
+      var ratio = String(rs.support_regulated || "").toLowerCase();
+      if (ratio === "2to1") {
+        ratioEl.hidden = false;
+        ratioEl.textContent =
+          "Registration says support when regulated is 2to1 — two instructors are needed in the same session (one open slot alone is not enough).";
+      } else if (ratio === "1to1") {
+        ratioEl.hidden = false;
+        ratioEl.textContent =
+          "Registration says support when regulated is 1to1 (one instructor).";
+      } else {
+        ratioEl.hidden = true;
+        ratioEl.textContent = "";
+      }
+    }
+  }
+
+  function showSwReferralDone(data) {
+    setStep("fbStepSwReferral");
+    var box = document.getElementById("fbSwReferralSummary");
+    if (!box) return;
+    var rs = data.registration_support || {};
+    var name = data.social_worker_name || rs.social_worker_name || "—";
+    var email = data.social_worker_email || rs.social_worker_email || "—";
+    var ratio = rs.support_regulated || "";
+    box.innerHTML =
+      "<div><strong>Social worker / NHS manager:</strong> " +
+      esc(name) +
+      "</div>" +
+      "<div><strong>Email:</strong> " +
+      esc(email) +
+      "</div>" +
+      (ratio
+        ? "<div><strong>Support when regulated:</strong> " + esc(ratio) + "</div>"
+        : "") +
+      (data.booking_scope
+        ? "<div><strong>Booking length:</strong> " + esc(data.booking_scope) + "</div>"
+        : "");
+  }
+
+  function adaptScopeForFunding(data) {
+    var trial = document.querySelector(
+      'input[name="booking_scope"][value="trial_session"]',
+    );
+    if (!trial) return;
+    var label = trial.closest("label");
+    var hint = label && label.querySelector(".hint");
+    var strong = label && label.querySelector("strong");
+    if (data.funding_code === "sw_nhs_referral") {
+      if (strong) strong.textContent = "Trial session (office arranges with SW/NHS)";
+      if (hint) {
+        hint.textContent =
+          "One session request. No parent payment — the office arranges with the social worker / NHS.";
+      }
+    } else {
+      if (strong) strong.textContent = "Trial session (pay now)";
+      if (hint) {
+        hint.textContent =
+          "One session only. Pay immediately with card or Apple Pay — the slot is not booked until payment succeeds.";
+      }
+    }
+  }
+
   function showPayChannel(data) {
+    if (data.funding_code === "sw_nhs_referral") {
+      showSwReferralDone(data);
+      return;
+    }
     if (data.booking_scope === "trial_session") {
       showTrialPayChannel(data);
       return;
@@ -912,6 +1036,15 @@
       );
       return;
     }
+    if (data.status === "awaiting_office_referral") {
+      showSwReferralDone(data);
+      showNotice(
+        notice,
+        "No parent invoice. The office will contact the social worker / NHS manager.",
+        "ok",
+      );
+      return;
+    }
     if (data.status === "awaiting_payment" && data.invoice) {
       showInvoice(data);
       return;
@@ -922,7 +1055,9 @@
       data.funding_code &&
       data.booking_scope
     ) {
-      if (data.booking_scope === "trial_session") {
+      if (data.funding_code === "sw_nhs_referral") {
+        showSwReferralDone(data);
+      } else if (data.booking_scope === "trial_session") {
         if (data.pay_plan === "stripe_instant" || data.pay_plan === "one_off_bank") {
           if (data.invoice) {
             showInvoice(data);
@@ -940,10 +1075,25 @@
       }
     } else if (data.status === "funding_saved" && data.funding_code) {
       setStep("fbStepScope");
+      adaptScopeForFunding(data);
       preselectScope(data);
     } else {
       setStep("fbStepFunding");
+      if (data.funding_code) {
+        var preFund = document.querySelector(
+          'input[name="funding"][value="' + data.funding_code + '"]',
+        );
+        if (preFund) preFund.checked = true;
+      }
+      syncSwConfirmPanel(data);
     }
+
+    document.querySelectorAll('input[name="funding"]').forEach(function (el) {
+      el.addEventListener("change", function () {
+        syncSwConfirmPanel(data);
+      });
+    });
+    syncSwConfirmPanel(data);
 
     var fundForm = document.getElementById("fbFundingForm");
     if (fundForm) {
@@ -954,12 +1104,31 @@
           showNotice(notice, "Please choose how you fund sessions.", "error");
           return;
         }
+        var payload = { funding_code: funding };
+        if (funding === "sw_nhs_referral") {
+          var swName = String((document.getElementById("fbSwName") || {}).value || "").trim();
+          var swEmail = String((document.getElementById("fbSwEmail") || {}).value || "").trim();
+          if (!swName || !looksLikeEmail(swEmail)) {
+            showNotice(
+              notice,
+              "Confirm or edit the social worker / NHS manager name and email.",
+              "error",
+            );
+            syncSwConfirmPanel(data);
+            return;
+          }
+          payload.social_worker_name = swName;
+          payload.social_worker_email = swEmail;
+          data.social_worker_name = swName;
+          data.social_worker_email = swEmail;
+        }
         data.funding_code = funding;
         data.pay_plan = null;
         showNotice(notice, "Saving…", "");
-        void api("save_choices", { funding_code: funding })
+        void api("save_choices", payload)
           .then(function () {
             setStep("fbStepScope");
+            adaptScopeForFunding(data);
             preselectScope(data);
             showNotice(notice, "", "");
           })
@@ -972,6 +1141,7 @@
     var scopeForm = document.getElementById("fbScopeForm");
     if (scopeForm) {
       preselectScope(data);
+      adaptScopeForFunding(data);
       scopeForm.onsubmit = function (ev) {
         ev.preventDefault();
         var scope = (scopeForm.querySelector('input[name="booking_scope"]:checked') || {})
@@ -982,28 +1152,36 @@
           return;
         }
         data.booking_scope = scope;
-        if (scope === "trial_session") {
-          showNotice(notice, "Saving…", "");
-          void api("save_choices", {
-            funding_code: funding,
-            booking_scope: scope,
-          })
-            .then(function () {
-              setStep("fbStepPay");
-              showPayChannel(data);
-              showNotice(notice, "", "");
-            })
-            .catch(function (err) {
-              showNotice(notice, err.message || "Could not save booking length.", "error");
-            });
-          return;
-        }
-        showNotice(notice, "Saving…", "");
-        void api("save_choices", {
+        var scopePayload = {
           funding_code: funding,
           booking_scope: scope,
-        })
-          .then(function () {
+        };
+        if (funding === "sw_nhs_referral") {
+          scopePayload.social_worker_name = data.social_worker_name;
+          scopePayload.social_worker_email = data.social_worker_email;
+        }
+        showNotice(notice, "Saving…", "");
+        void api("save_choices", scopePayload)
+          .then(function (out) {
+            if (
+              funding === "sw_nhs_referral" ||
+              (out && out.status === "awaiting_office_referral")
+            ) {
+              data.status = "awaiting_office_referral";
+              if (out && out.social_worker_name) {
+                data.social_worker_name = out.social_worker_name;
+              }
+              if (out && out.social_worker_email) {
+                data.social_worker_email = out.social_worker_email;
+              }
+              showSwReferralDone(data);
+              showNotice(
+                notice,
+                "No parent invoice. The office will contact the social worker / NHS manager.",
+                "ok",
+              );
+              return;
+            }
             setStep("fbStepPay");
             showPayChannel(data);
             showNotice(notice, "", "");

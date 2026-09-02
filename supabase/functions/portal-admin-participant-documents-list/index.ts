@@ -230,13 +230,21 @@ function derivePlace(row: {
   }
   if (
     officeTag === "nhs_referral_2to1" ||
+    officeTag === "sw_nhs_referral" ||
     truthyFlag(payload.nhs_referral) ||
-    String(payload.support_regulated || "").toLowerCase().includes("2to1") ||
-    /nhs_referral|ratio\s*=\s*2to1|no_parent_pay/i.test(notes)
+    truthyFlag(payload.sw_nhs_referral) ||
+    /sw_nhs_referral|nhs_referral|no_parent_pay/i.test(notes)
   ) {
+    const ratioRaw = String(payload.support_regulated || "").toLowerCase();
+    const ratio =
+      ratioRaw.includes("2to1") || /ratio\s*=\s*2to1/i.test(notes)
+        ? "2:1"
+        : ratioRaw.includes("1to1") || /ratio\s*=\s*1to1/i.test(notes)
+        ? "1:1"
+        : "";
     return {
-      kind: "nhs_referral_2to1",
-      label: "NHS referral · 2:1",
+      kind: ratio === "2:1" ? "nhs_referral_2to1" : "sw_nhs_referral",
+      label: ratio ? `SW/NHS referral · ${ratio}` : "SW/NHS referral",
       tone: "info",
       detail: detail || "Contact social worker - parents do not pay",
       secondary_label: "No parent pay",
