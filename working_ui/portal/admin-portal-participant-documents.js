@@ -202,7 +202,16 @@
         var placeTone = String(d.place_tone || 'pend').trim() || 'pend';
         var placeKind = String(d.place_kind || '').trim();
         if (placeTone === 'warn') placeTone = 'urg';
-        if (/trial/i.test(placeKind) || /trial/i.test(placeLab)) placeTone = 'trial';
+        // In class · trial = dark green (active seat). Purple "trial" only for expired / lost trial.
+        if (placeKind === 'trial_in_class' || /^in class\s*·\s*trial$/i.test(placeLab)) {
+          placeTone = 'okDark';
+        } else if (
+          placeKind === 'registered_trial_expired_slot_hold' ||
+          placeKind === 'registered_trial_expired_slot_lost' ||
+          (/trial/i.test(placeKind) || /trial/i.test(placeLab))
+        ) {
+          placeTone = 'trial';
+        }
         if (!placeLab) {
           placeLab = 'Registered only';
           placeTone = 'pend';

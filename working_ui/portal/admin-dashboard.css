@@ -1491,6 +1491,7 @@
 
     .chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600}
     .chip--ok{background:var(--successSoft);color:var(--success)}
+    .chip--okDark{background:#bbf7d0;color:#14532d;border:1px solid rgba(20,83,45,.35);font-weight:700}
     .chip--pend{background:var(--warnSoft);color:var(--warn)}
     .chip--urg{background:var(--dangerSoft);color:var(--danger)}
     .portal-late-admin-rows{display:flex;flex-direction:column;gap:12px;margin-top:12px}
