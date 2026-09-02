@@ -331,7 +331,7 @@
     { staff: "JAVIER", name: "Rayan Ta", time: "5.30 to 6" },
     { staff: "JAVIER", name: "Kareena", time: "6 to 6.30" },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30" },
-    { staff: "AURORA", name: "Bediako", time: "4.30 to 5" },
+    { staff: "AURORA", name: "No participant", time: "4.30 to 5" },
     { staff: "AURORA", name: "Junaid", time: "5 to 5.30" },
     { staff: "AURORA", name: "Aydaan Ah", time: "5.30 to 6" },
     { staff: "AURORA", name: "Anas", time: "6 to 6.30" },
