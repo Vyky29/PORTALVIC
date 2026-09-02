@@ -4566,6 +4566,44 @@
     .then(function () {
       fillFilterSelects();
       refresh();
+      try {
+        var deep = new URLSearchParams(window.location.search || "");
+        var svcQ = String(deep.get("service") || deep.get("svc") || "").trim().toLowerCase();
+        var venueQ = String(deep.get("venue") || "").trim();
+        if (svcQ === "swim" || svcQ === "swimming" || svcQ === "aa") svcQ = "aquatic";
+        if (svcQ && fService) {
+          var svcOk = Array.prototype.some.call(fService.options || [], function (o) {
+            return String(o.value || "").toLowerCase() === svcQ;
+          });
+          if (svcOk) fService.value = svcQ;
+        }
+        if (venueQ && fVenue) {
+          var venueHit = "";
+          Array.prototype.forEach.call(fVenue.options || [], function (o) {
+            var v = String(o.value || "");
+            if (!v) return;
+            if (v.toLowerCase() === venueQ.toLowerCase()) venueHit = v;
+          });
+          if (venueHit) fVenue.value = venueHit;
+        }
+        if ((svcQ && fService && fService.value) || (venueQ && fVenue && fVenue.value)) {
+          refresh();
+          if (fService && fService.value) {
+            var elDeep = document.getElementById("timetable-" + fService.value);
+            if (elDeep && typeof elDeep.scrollIntoView === "function") {
+              setTimeout(function () {
+                elDeep.scrollIntoView({ behavior: "smooth", block: "start" });
+              }, 80);
+            }
+          }
+        } else {
+          var hash = String(window.location.hash || "").replace(/^#/, "");
+          var mHash = hash.match(/^timetable-(.+)$/i);
+          if (mHash && mHash[1]) jumpToService(mHash[1]);
+        }
+      } catch (_deep) {
+        /* ignore */
+      }
       var n = (mock.MOCK_SLOTS || []).length;
       var weekly = mock.stats && mock.stats.weekly_slots;
       setBanner(
