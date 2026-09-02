@@ -325,8 +325,8 @@
     { staff: "LULIYA", name: "Serine", time: "4.30 to 5.30" },
     { staff: "LULIYA", name: "No participant", time: "5.30 to 6" },
     { staff: "LULIYA", name: "No participant", time: "6 to 6.30" },
-    { staff: "JAVIER", name: "Ayman", time: "4 to 4.30" },
-    { staff: "JAVIER", name: "No participant", time: "4.30 to 5" },
+    /* Invoice INV-P-0139: Aquatic 60' Tue 4–5 Acton (same as Thu). */
+    { staff: "JAVIER", name: "Ayman", time: "4 to 5" },
     { staff: "JAVIER", name: "Linda", time: "5 to 5.30" },
     { staff: "JAVIER", name: "Rayan Ta", time: "5.30 to 6" },
     { staff: "JAVIER", name: "Kareena", time: "6 to 6.30" },

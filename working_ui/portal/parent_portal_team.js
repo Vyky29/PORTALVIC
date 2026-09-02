@@ -296,8 +296,7 @@
     "andres"
   ],
   "ayman": [
-    "javier",
-    "youssef"
+    "javier"
   ],
   "bediako": [
     "aurora"
