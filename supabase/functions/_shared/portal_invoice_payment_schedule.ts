@@ -63,6 +63,29 @@ export function scheduleInstalmentCount(raw: unknown): number {
   return normalizePaymentSchedule(raw).length;
 }
 
+/** Mid-month join: bank remainder + later GC 1sts. */
+export function hybridBankGcPlanLabel(
+  rows: InvoicePaymentScheduleRow[],
+): string | null {
+  let bank = 0;
+  let gc = 0;
+  for (const r of rows || []) {
+    const via = String(r.collect_via || "").toLowerCase();
+    const lab = String(r.label || "").toLowerCase();
+    if (via === "bank_transfer" || via === "bank" || /bank transfer/.test(lab)) {
+      bank += 1;
+    } else if (via === "gocardless" || via === "gc" || /gocardless/.test(lab)) {
+      gc += 1;
+    }
+  }
+  if (bank > 0 && gc > 0) {
+    const bankBit = bank === 1 ? "1 bank transfer" : `${bank} bank transfers`;
+    const gcBit = gc === 1 ? "1 GoCardless" : `${gc} GoCardless`;
+    return `${bankBit} + ${gcBit} · £1.50 / GC instalment`;
+  }
+  return null;
+}
+
 /**
  * Short plan phrase for admin Method chip + PDF "Payment Method" line.
  * Always keep the invoice total separate; this only describes how they pay it.
@@ -85,6 +108,9 @@ export function paymentSchedulePlanShortLabel(
   const method = String(opts?.paymentMethodHint || "").toLowerCase();
   const isBank = !method || method === "bank_transfer" || method === "bank" || method === "tide";
   const isGc = method === "gocardless";
+
+  const hybrid = hybridBankGcPlanLabel(rows);
+  if (hybrid) return hybrid;
 
   if (
     /own way|own arrangement|own_term|admin fee|minimum prepaid|top-?ups? as you go/.test(

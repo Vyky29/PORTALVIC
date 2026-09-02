@@ -782,10 +782,29 @@
   var OWN_WAY_TITLE =
     'Own way — pay on your own dates; always keep 2 sessions prepaid; remind when buffer drops; £50 admin fee per term';
 
+  function hybridBankGcPlanLabel(rows) {
+    var bank = 0;
+    var gc = 0;
+    for (var i = 0; i < (rows || []).length; i++) {
+      var r = rows[i] || {};
+      var via = String(r.collect_via || '').toLowerCase();
+      var lab = String(r.label || '').toLowerCase();
+      if (via === 'bank_transfer' || via === 'bank' || /bank transfer/.test(lab)) bank += 1;
+      else if (via === 'gocardless' || via === 'gc' || /gocardless/.test(lab)) gc += 1;
+    }
+    if (bank > 0 && gc > 0) {
+      var bankBit = bank === 1 ? '1 bank transfer' : bank + ' bank transfers';
+      var gcBit = gc === 1 ? '1 GoCardless' : gc + ' GoCardless';
+      return bankBit + ' + ' + gcBit + ' · £1.50 / GC instalment';
+    }
+    return '';
+  }
+
   /**
    * Arrangement:
    * One-off payment (year|term) · Flexi: 2 per term · Flexi: 6 per year ·
    * GoCardless (one per term / monthly ×N · term) · £1.50 / instalment · Own way
+   * Hybrid mid-month: 1 bank transfer + N GoCardless
    */
   function schedulePlanShort(inv) {
     var code = String(inv.reenrol_payment_schedule_code || '').toLowerCase();
@@ -794,6 +813,9 @@
     var channel = methodChannelLabel(inv);
     var isGc = channel === 'GoCardless';
     var yearCadence = cadence === 'whole_year' || cadence === 'auto';
+    var rows = scheduleRows(inv);
+    var hybrid = hybridBankGcPlanLabel(rows);
+    if (hybrid) return hybrid;
 
     if (code === 'own_term' || payCode === 'own_way_flexible') return 'Own way';
     if (code === 'yearly_1off') return 'One-off payment (year)';
@@ -809,7 +831,6 @@
         : 'One-off payment (term)';
     }
 
-    var rows = scheduleRows(inv);
     var blob = rows
       .map(function (r) {
         return String(r.label || '');
