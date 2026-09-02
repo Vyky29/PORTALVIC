@@ -545,7 +545,7 @@
           value: "gocardless_monthly",
           title: "GoCardless monthly",
           hint:
-            "After this month's Direct Debit day (1st): pay this month's share by bank transfer now; later months on the 1st via GoCardless. On/before the 1st: first payment on booking day via GoCardless, then the 1sts. £1.50 per GoCardless instalment.",
+            "All GoCardless collections on the 1st of the month (same day for every family — one batch). If you finish after this month's 1st, pay this month's share by bank transfer now; later months stay on the 1st. £1.50 per GoCardless instalment.",
         },
       ];
     }
@@ -893,11 +893,15 @@
           '<button type="button" class="btn btn--pri" id="fbConfirmPaid">Demo: I’ve paid — report to office</button>' +
           '<p class="muted" style="margin:10px 0 0">PIN is only sent after office confirms payment (not on this click).</p>';
       } else {
+        var firstDueIso = first && first.due_date ? String(first.due_date).slice(0, 10) : "";
+        var firstDueLabel = formatUkShortDate(firstDueIso) || "the 1st";
         html +=
           '<a class="btn btn--pri" href="' +
           esc(gcUrl) +
           '">Set up GoCardless</a>' +
-          '<p class="muted" style="margin:10px 0 0">When the first Direct Debit payment clears, the office can confirm and we send your Parent Portal PIN.</p>';
+          '<p class="muted" style="margin:10px 0 0;overflow-wrap:break-word">Direct Debit collections are on the <strong>1st of each month</strong> (same day as other families). First collection: <strong>' +
+          esc(firstDueLabel) +
+          "</strong>. After it clears, the office can confirm and we send your Parent Portal PIN.</p>";
       }
     } else if (isTrialStripe) {
       var holdMin =

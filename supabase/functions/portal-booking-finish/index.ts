@@ -872,17 +872,22 @@ Deno.serve(async (req) => {
         const firstRow = quote.paymentSchedule[0];
         const bankFirst = firstRow?.collect_via === "bank_transfer";
         const firstGbp = Number(firstRow?.amount_gbp) || 0;
-        // After monthly collection day: first instalment is bank transfer — mandate only (no GC charge now).
+        const firstDue = String(firstRow?.due_date || "").slice(0, 10);
+        // Charge via Billing Request only when first GC instalment is due today (the shared 1st).
+        // Otherwise mandate-only — later months collect on the 1st with everyone else.
+        const chargeGcNow =
+          !bankFirst &&
+          firstRow?.collect_via === "gocardless" &&
+          firstDue === asOf &&
+          firstGbp > 0;
         const br = await gocardlessCreateBillingRequest({
           contactId: ensured.contactId,
           parentPersonId: ensured.parentPersonId,
           description: `clubSENsational · ${clean(doc.participant_name, 80)}`,
-          paymentAmountPence: bankFirst || !(firstGbp > 0)
-            ? null
-            : Math.round(firstGbp * 100),
-          paymentDescription: bankFirst
-            ? `Later instalments · ${clean(created.invoice?.invoice_number, 40) || invoiceId}`
-            : `First instalment · ${clean(created.invoice?.invoice_number, 40) || invoiceId}`,
+          paymentAmountPence: chargeGcNow ? Math.round(firstGbp * 100) : null,
+          paymentDescription: chargeGcNow
+            ? `Payment due ${firstDue} · ${clean(created.invoice?.invoice_number, 40) || invoiceId}`
+            : `Monthly on the 1st · ${clean(created.invoice?.invoice_number, 40) || invoiceId}`,
           invoiceShareId: invoiceId,
           invoiceNumber: clean(created.invoice?.invoice_number, 40) || null,
         });

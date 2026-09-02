@@ -2,9 +2,9 @@
  * New Booking Portal clients (mid-term / term already started):
  * one INV-P per term, amount = remaining sessions.
  *
- * GoCardless: after this month's collection day (1st), first instalment = bank transfer
- * due on booking day (current-month remainder); later months on the 1sts via GoCardless.
- * Before/on that 1st: first due on booking day via GoCardless, then remaining 1sts.
+ * GoCardless: all Direct Debit collections on the term month 1sts (same day for every
+ * client — avoids separate GC payment fees). If they finish after this month's 1st,
+ * current-month share is bank transfer due on booking day; later months stay on the 1sts.
  * Flexi (bank): two halves — first on the fixed term due (e.g. Autumn 15 Aug), or booking
  * day if that date has already passed; second on the fixed mid-term date if still future.
  * One-off (bank): single instalment due today.
@@ -283,38 +283,49 @@ export function gcNeedsBankRemainderForCurrentMonth(
 }
 
 /**
- * GoCardless: after this month's 1st, first instalment = bank (remainder) due booking day;
- * later months on the 1sts via GoCardless. Otherwise first on booking day via GC, then 1sts.
+ * GoCardless only on month 1sts (same collection day for all clients / one GC fee batch).
+ * After this month's 1st: bank transfer for current-month share now + later 1sts via GC.
+ * Never charge GoCardless on a random booking day.
  */
 export function buildNewClientGcMonthDueSlots(
   term: BookingTermKey,
   asOfIso: string,
 ): Array<{ label: string; dueIso: string; collectVia: CollectVia }> {
   const asOf = isoToday(asOfIso);
-  const rest = (MONTHLY_TERM_1STS[term] || []).filter((m) => m.dueIso > asOf);
   const bankFirst = gcNeedsBankRemainderForCurrentMonth(term, asOf);
   const monthName =
     (MONTHLY_TERM_1STS[term] || []).find((m) => m.dueIso.startsWith(asOf.slice(0, 7)))
       ?.label || "Current month";
-  const first = bankFirst
-    ? {
-        label: `${monthName} remainder · bank transfer (due on booking day)`,
-        dueIso: asOf,
-        collectVia: "bank_transfer" as const,
-      }
-    : {
-        label: "First payment · GoCardless (due on booking day)",
-        dueIso: asOf,
-        collectVia: "gocardless" as const,
-      };
-  return [
-    first,
-    ...rest.map((m) => ({
-      label: `Payment · ${m.label} · GoCardless`,
+  // On/before the 1st: include that 1st. After the 1st: only later months (bank covers this one).
+  const gcMonths = (MONTHLY_TERM_1STS[term] || []).filter((m) =>
+    bankFirst ? m.dueIso > asOf : m.dueIso >= asOf
+  );
+
+  const slots: Array<{ label: string; dueIso: string; collectVia: CollectVia }> = [];
+  if (bankFirst) {
+    slots.push({
+      label: `${monthName} remainder · bank transfer (due on booking day)`,
+      dueIso: asOf,
+      collectVia: "bank_transfer",
+    });
+  }
+  for (const m of gcMonths) {
+    slots.push({
+      label: `Payment · ${m.label} · GoCardless (1st)`,
       dueIso: m.dueIso,
-      collectVia: "gocardless" as const,
-    })),
-  ];
+      collectVia: "gocardless",
+    });
+  }
+  if (!slots.length) {
+    return [
+      {
+        label: `${bookingTermDisplayLabel(term)} term · balance · bank transfer (due on booking day)`,
+        dueIso: asOf,
+        collectVia: "bank_transfer",
+      },
+    ];
+  }
+  return slots;
 }
 
 /**
@@ -510,8 +521,8 @@ export function quoteNewClientMidTermInvoice(args: {
   const planPhrase =
     args.plan === "gocardless_monthly"
       ? gcBankFirst
-        ? `GoCardless monthly · after this month's collection day: pay current-month remainder by bank transfer now; later months on the 1st via GoCardless`
-        : `GoCardless monthly · first instalment due on booking day, then 1st of each remaining month`
+        ? `GoCardless monthly · collections only on the 1st (same day for all clients). This month's share by bank transfer now; later months on the 1st via GoCardless`
+        : `GoCardless monthly · collections only on the 1st of each month (same day for all clients — one batch)`
       : args.plan === "flexi_bank"
         ? `Bank transfer · Flexi (2 instalments this term; ${flexiBankFirst})`
         : args.plan === "own_way"
