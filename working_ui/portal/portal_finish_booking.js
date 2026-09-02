@@ -1139,7 +1139,7 @@
         "</p>" +
         '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, <strong>send us a WhatsApp or email</strong> saying you have paid' +
         (isTrialBank ? " (include reference + amount)" : "") +
-        ". A photo/screenshot is helpful but optional. There is no \"I've paid\" button here - the office checks Tide, marks you paid, then sends your Parent Portal PIN.</p>" +
+        ". A photo/screenshot is helpful but optional.</p>" +
         '<p style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px">' +
         '<a class="btn btn--pri" href="' +
         esc(waHref) +
