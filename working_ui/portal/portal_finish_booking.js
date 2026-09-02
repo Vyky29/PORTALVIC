@@ -91,9 +91,14 @@
   function demoPayload() {
     var unit = 50;
     var termSessions = 14;
-    var remaining = 14;
+    // Mid-term join now (after 1 Sept): e.g. first Wednesday still ahead → 13 remaining.
+    var remaining = 13;
+    var today = new Date().toISOString().slice(0, 10);
     var termTotal = unit * termSessions;
     var payable = unit * remaining;
+    function round2(n) {
+      return Math.round(n * 100) / 100;
+    }
     function quote(plan) {
       if (plan === "own_way") {
         var own = unit * 2 + 50;
@@ -102,27 +107,122 @@
           programme_total_gbp: own,
           invoice_total_gbp: own,
           first_due_gbp: own,
-          first_due_date: new Date().toISOString().slice(0, 10),
-          schedule: [{ amount_gbp: own, due_date: new Date().toISOString().slice(0, 10), status: "pending" }],
+          first_due_date: today,
+          schedule: [
+            {
+              amount_gbp: own,
+              due_date: today,
+              status: "pending",
+              collect_via: "bank_transfer",
+            },
+          ],
           payment_method_hint: "bank_transfer",
+          pro_rata_from: today,
         };
       }
-      var first =
-        plan === "gocardless_monthly"
-          ? Math.round((payable / 3) * 100) / 100 + 1.5
-          : plan === "flexi_bank"
-            ? Math.round((payable / 2) * 100) / 100
-            : payable;
+      if (plan === "gocardless_monthly") {
+        // After month 1st: bank remainder now + Oct/Nov/Dec on the 1st (equal split + £1.50 GC fee).
+        var base = round2(payable / 4);
+        var lastBase = round2(payable - base * 3);
+        var schedule = [
+          {
+            seq: 1,
+            label: "September 2026 remainder · bank transfer (due on booking day)",
+            amount_gbp: base,
+            due_date: today,
+            status: "pending",
+            collect_via: "bank_transfer",
+          },
+          {
+            seq: 2,
+            label: "Payment · October 2026 · GoCardless (1st)",
+            amount_gbp: round2(base + 1.5),
+            due_date: "2026-10-01",
+            status: "pending",
+            collect_via: "gocardless",
+          },
+          {
+            seq: 3,
+            label: "Payment · November 2026 · GoCardless (1st)",
+            amount_gbp: round2(base + 1.5),
+            due_date: "2026-11-01",
+            status: "pending",
+            collect_via: "gocardless",
+          },
+          {
+            seq: 4,
+            label: "Payment · December 2026 · GoCardless (1st)",
+            amount_gbp: round2(lastBase + 1.5),
+            due_date: "2026-12-01",
+            status: "pending",
+            collect_via: "gocardless",
+          },
+        ];
+        var invTotal = round2(schedule.reduce(function (s, r) {
+          return s + r.amount_gbp;
+        }, 0));
+        return {
+          remaining_sessions: remaining,
+          programme_total_gbp: payable,
+          invoice_total_gbp: invTotal,
+          first_due_gbp: schedule[0].amount_gbp,
+          first_due_date: today,
+          schedule: schedule,
+          payment_method_hint: "gocardless",
+          pro_rata_from: today,
+        };
+      }
+      if (plan === "flexi_bank") {
+        var half = round2(payable / 2);
+        var half2 = round2(payable - half);
+        return {
+          remaining_sessions: remaining,
+          programme_total_gbp: payable,
+          invoice_total_gbp: payable,
+          first_due_gbp: half,
+          first_due_date: today,
+          schedule: [
+            {
+              label: "Autumn term · 1st half",
+              amount_gbp: half,
+              due_date: today,
+              status: "pending",
+              collect_via: "bank_transfer",
+            },
+            {
+              label: "Autumn term · 2nd half",
+              amount_gbp: half2,
+              due_date: "2026-10-26",
+              status: "pending",
+              collect_via: "bank_transfer",
+            },
+          ],
+          payment_method_hint: "bank_transfer",
+          pro_rata_from: today,
+        };
+      }
       return {
         remaining_sessions: remaining,
         programme_total_gbp: payable,
-        invoice_total_gbp: plan === "gocardless_monthly" ? payable + 4.5 : payable,
-        first_due_gbp: first,
-        first_due_date: new Date().toISOString().slice(0, 10),
-        schedule: [{ amount_gbp: first, due_date: new Date().toISOString().slice(0, 10), status: "pending" }],
-        payment_method_hint: plan === "gocardless_monthly" ? "gocardless" : "bank_transfer",
+        invoice_total_gbp: payable,
+        first_due_gbp: payable,
+        first_due_date: today,
+        schedule: [
+          {
+            amount_gbp: payable,
+            due_date: today,
+            status: "pending",
+            collect_via: "bank_transfer",
+          },
+        ],
+        payment_method_hint: "bank_transfer",
+        pro_rata_from: today,
       };
     }
+    var activeQuote =
+      demoState.pay_plan && quote(demoState.pay_plan)
+        ? quote(demoState.pay_plan)
+        : null;
     return {
       ok: true,
       status: demoState.status,
@@ -160,11 +260,11 @@
           programme_total_gbp: unit,
           invoice_total_gbp: unit,
           first_due_gbp: unit,
-          first_due_date: new Date().toISOString().slice(0, 10),
+          first_due_date: today,
           schedule: [
             {
               amount_gbp: unit,
-              due_date: new Date().toISOString().slice(0, 10),
+              due_date: today,
               status: "pending",
             },
           ],
@@ -180,24 +280,32 @@
               amount_gbp:
                 demoState.booking_scope === "trial_session"
                   ? unit
-                  : (demoState.pay_plan && quote(demoState.pay_plan).invoice_total_gbp) || payable,
+                  : (activeQuote && activeQuote.invoice_total_gbp) || payable,
               amount_paid_gbp: 0,
               payment_status: "unpaid",
-              payment_schedule: [
-                {
-                  amount_gbp:
-                    demoState.booking_scope === "trial_session"
-                      ? unit
-                      : (demoState.pay_plan && quote(demoState.pay_plan).first_due_gbp) || payable,
-                  due_date: new Date().toISOString().slice(0, 10),
-                  status: "pending",
-                },
-              ],
+              payment_schedule:
+                demoState.booking_scope === "trial_session"
+                  ? [
+                      {
+                        amount_gbp: unit,
+                        due_date: today,
+                        status: "pending",
+                      },
+                    ]
+                  : (activeQuote && activeQuote.schedule) || [
+                      {
+                        amount_gbp: payable,
+                        due_date: today,
+                        status: "pending",
+                      },
+                    ],
               payment_method_hint:
                 demoState.pay_plan === "gocardless_monthly" ? "gocardless" : "bank_transfer",
               gocardless_url:
-                demoState.pay_plan === "gocardless_monthly" ? "https://example.com/gocardless-demo" : null,
-              due_date: new Date().toISOString().slice(0, 10),
+                demoState.pay_plan === "gocardless_monthly"
+                  ? "https://example.com/gocardless-demo"
+                  : null,
+              due_date: today,
             }
           : null,
       bank: {
@@ -1043,12 +1151,14 @@
         '">Email info@...</a>' +
         "</p>" +
         '<p class="muted" style="margin:0">Use the club WhatsApp you already chat on if you prefer - same \"I\'ve paid\" message is fine.</p>';
-      if (gcBankFirst && gcUrl && !isDemoMode()) {
+      if (gcBankFirst && gcUrl) {
         html +=
           '<p class="notice" style="margin:14px 0 8px;overflow-wrap:break-word"><strong>Two steps:</strong> (1) bank transfer the amount above now (pro-rata for remaining sessions this month), then WhatsApp/email the office; (2) set up GoCardless so later months collect on the 1st with everyone else.</p>' +
           '<a class="btn" href="' +
           esc(gcUrl) +
-          '">Step 2 — Set up GoCardless</a>';
+          '"' +
+          (isDemoMode() ? ' target="_blank" rel="noopener noreferrer"' : "") +
+          ">Step 2 — Set up GoCardless</a>";
       }
     }
     if (host) host.innerHTML = html;
