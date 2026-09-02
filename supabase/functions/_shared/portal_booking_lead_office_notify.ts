@@ -785,7 +785,7 @@ export async function notifyOfficePayHoldStarted(opts: {
   }
 }
 
-/** Office FYI: parent chose (LA) / NHS referral — no parent invoice. */
+/** Office FYI: parent chose Local Authority / NHS referral. */
 export async function notifyOfficeSwNhsReferral(opts: {
   participantName: string;
   parentName: string | null;
@@ -812,9 +812,9 @@ export async function notifyOfficeSwNhsReferral(opts: {
   const smtp = readParentNotifySmtpConfig();
   const tos = officeNotifyEmails();
   const adminUrl = reenrolmentsReviewUrl();
-  const subject = `(LA) / NHS referral · no parent pay · ${participant}`;
+  const subject = `Local Authority / NHS referral · ${participant}`;
   const bodyText =
-    `Finish-booking: parent chose (LA) / NHS referral. Do not invoice the parent.\n\n` +
+    `Finish-booking: parent chose Local Authority / NHS referral. Our team will contact the family to finalise the booking.\n\n` +
     `Participant: ${participant}\n` +
     `Parent / carer: ${parent}\n` +
     (email ? `Parent email: ${email}\n` : "") +
@@ -826,7 +826,7 @@ export async function notifyOfficeSwNhsReferral(opts: {
     (ehcp ? `EHCP on form: ${ehcp}\n` : "") +
     (opts.ehcpUploaded ? `EHCP file: uploaded with registration\n` : "") +
     (opts.documentId ? `Registration document: ${opts.documentId}\n` : "") +
-    `\nContact the social worker / NHS manager to process the booking with LA or NHS.\n` +
+    `\nContact the social worker / NHS manager and the family to finalise with LA or NHS.\n` +
     (adminUrl ? `${adminUrl}\n\n` : "\n") +
     `- clubSENsational portal`;
 

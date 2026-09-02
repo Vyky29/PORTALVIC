@@ -792,7 +792,7 @@
       if (strong) strong.textContent = "Trial session (office arranges with LA/NHS)";
       if (hint) {
         hint.textContent =
-          "One session request. No parent payment — the office arranges with LA / NHS.";
+          "One session request. Our team will contact you to finalise the booking.";
       }
     } else {
       if (strong) strong.textContent = "Trial session (pay now)";
@@ -1024,7 +1024,7 @@
       showSwReferralDone(data);
       showNotice(
         notice,
-        "No parent invoice. The office will contact the social worker / NHS manager.",
+        "Our team will contact you to finalise the booking.",
         "ok",
       );
       return;
@@ -1161,7 +1161,7 @@
               showSwReferralDone(data);
               showNotice(
                 notice,
-                "No parent invoice. The office will contact the social worker / NHS manager.",
+                "Our team will contact you to finalise the booking.",
                 "ok",
               );
               return;

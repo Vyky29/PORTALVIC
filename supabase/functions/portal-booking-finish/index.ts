@@ -825,13 +825,13 @@ Deno.serve(async (req) => {
           : scope === "auto_reenroll_year"
           ? "Auto re-enrol by term (all year)"
           : "This term only";
-      const fundingLabel = "(LA) / NHS referral";
+      const fundingLabel = "Local Authority / NHS referral";
       const ensured = await ensureContact(
         admin,
         token,
         doc,
         fundingLabel,
-        "No parent pay · office contacts LA/NHS",
+        "Office will contact family to finalise booking",
       );
       if ("error" in ensured) return json(400, { ok: false, error: ensured.error });
 
@@ -932,7 +932,7 @@ Deno.serve(async (req) => {
         social_worker_email: swContact!.email,
         no_parent_pay: true,
         message:
-          "We will contact the social worker / NHS manager to process this booking. No parent invoice.",
+          "Our team will contact you to finalise the booking.",
       });
     }
 
