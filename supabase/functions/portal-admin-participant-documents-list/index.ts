@@ -29,6 +29,7 @@ type DocRow = {
   place_detail: string | null;
   place_secondary_label: string | null;
   place_secondary_tone: string | null;
+  place_chips: PlaceChip[] | null;
   reservation_status: string | null;
   booking_status: string | null;
   client_status: string | null;
@@ -139,6 +140,8 @@ function officePlaceTag(
   return fromPayload;
 }
 
+type PlaceChip = { label: string; tone: string };
+
 type PlaceOut = {
   kind: string;
   label: string;
@@ -146,6 +149,7 @@ type PlaceOut = {
   detail: string | null;
   secondary_label: string | null;
   secondary_tone: string | null;
+  chips?: PlaceChip[] | null;
 };
 
 function withWaitSecondary(
@@ -210,21 +214,31 @@ function derivePlace(row: {
   if (officeTag === "registered_trial_expired_admin_hold") {
     return {
       kind: "registered_trial_expired_admin_hold",
-      label: "Registered · trial expired",
+      label: "Registered",
       tone: "pend",
       detail,
-      secondary_label: "Slot hold by admin",
-      secondary_tone: "warn",
+      secondary_label: null,
+      secondary_tone: null,
+      chips: [
+        { label: "Registered", tone: "pend" },
+        { label: "Trial expired", tone: "orange" },
+        { label: "Slot hold by admin", tone: "urgSoft" },
+      ],
     };
   }
   if (officeTag === "registered_trial_expired_slot_lost") {
     return {
       kind: "registered_trial_expired_slot_lost",
-      label: "Registered · trial expired",
+      label: "Registered",
       tone: "pend",
       detail,
-      secondary_label: "Slot lost",
-      secondary_tone: "urg",
+      secondary_label: null,
+      secondary_tone: null,
+      chips: [
+        { label: "Registered", tone: "pend" },
+        { label: "Trial expired", tone: "orange" },
+        { label: "Slot lost", tone: "urg" },
+      ],
     };
   }
   if (
@@ -755,6 +769,7 @@ Deno.serve(async (req) => {
       place_detail: place.detail,
       place_secondary_label: place.secondary_label,
       place_secondary_tone: place.secondary_tone,
+      place_chips: place.chips || null,
       reservation_status: reservation?.status ?? null,
       booking_status: lead?.booking_status ?? null,
       client_status: lead?.client_status ?? null,

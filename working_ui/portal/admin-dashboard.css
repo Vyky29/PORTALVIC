@@ -1493,7 +1493,10 @@
     .chip--ok{background:var(--successSoft);color:var(--success)}
     .chip--okDark{background:#bbf7d0;color:#14532d;border:1px solid rgba(20,83,45,.35);font-weight:700}
     .chip--pend{background:var(--warnSoft);color:var(--warn)}
+    .chip--orange{background:#ffedd5;color:#c2410c;border:1px solid rgba(194,65,12,.28)}
     .chip--urg{background:var(--dangerSoft);color:var(--danger)}
+    .chip--urgSoft{background:#fee2e2;color:#b91c1c;border:1px solid rgba(185,28,28,.22)}
+    .chip--trial{background:#f3e8ff;color:#7c3aed;border:1px solid rgba(124,58,237,.32)}
     .portal-late-admin-rows{display:flex;flex-direction:column;gap:12px;margin-top:12px}
     .portal-late-admin-row__head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
     .portal-late-admin-meta{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px 16px;margin:0 0 8px;font-size:13px}

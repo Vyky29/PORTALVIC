@@ -202,15 +202,9 @@
         var placeTone = String(d.place_tone || 'pend').trim() || 'pend';
         var placeKind = String(d.place_kind || '').trim();
         if (placeTone === 'warn') placeTone = 'urg';
-        // In class · trial = dark green (active seat). Purple "trial" only for expired / lost trial.
+        // In class · trial = dark green (active seat).
         if (placeKind === 'trial_in_class' || /^in class\s*·\s*trial$/i.test(placeLab)) {
           placeTone = 'okDark';
-        } else if (
-          placeKind === 'registered_trial_expired_slot_hold' ||
-          placeKind === 'registered_trial_expired_slot_lost' ||
-          (/trial/i.test(placeKind) || /trial/i.test(placeLab))
-        ) {
-          placeTone = 'trial';
         }
         if (!placeLab) {
           placeLab = 'Registered only';
@@ -219,9 +213,72 @@
         var placeDetail = String(d.place_detail || '').trim();
         var placeSec = String(d.place_secondary_label || '').trim();
         var placeSecTone = String(d.place_secondary_tone || 'info').trim() || 'info';
+        if (placeSecTone === 'warn') placeSecTone = 'urgSoft';
+        var placeChips = Array.isArray(d.place_chips) ? d.place_chips : null;
+        // Split trial-expired office tags into 3 chips if API did not send place_chips yet.
+        if (
+          !placeChips &&
+          (placeKind === 'registered_trial_expired_slot_lost' ||
+            placeKind === 'registered_trial_expired_admin_hold' ||
+            /registered\s*·\s*trial expired/i.test(placeLab))
+        ) {
+          placeChips = [
+            { label: 'Registered', tone: 'pend' },
+            { label: 'Trial expired', tone: 'orange' },
+            {
+              label:
+                placeKind === 'registered_trial_expired_admin_hold' ||
+                /slot hold by admin/i.test(placeSec)
+                  ? 'Slot hold by admin'
+                  : placeSec || 'Slot lost',
+              tone:
+                placeKind === 'registered_trial_expired_admin_hold' ||
+                /slot hold by admin/i.test(placeSec)
+                  ? 'urgSoft'
+                  : 'urg',
+            },
+          ];
+          placeSec = '';
+        }
         var placeTitle = placeDetail
-          ? placeLab + (placeSec ? ' + ' + placeSec : '') + ' — ' + placeDetail
+          ? (placeChips
+              ? placeChips
+                  .map(function (c) {
+                    return c && c.label ? String(c.label) : '';
+                  })
+                  .filter(Boolean)
+                  .join(' + ')
+              : placeLab + (placeSec ? ' + ' + placeSec : '')) +
+              ' — ' +
+              placeDetail
           : 'Live place status (slot comes from finish-booking / pay alerts, not this form)';
+        function placeChipHtml(label, tone, title) {
+          var t = String(tone || 'pend').trim() || 'pend';
+          if (t === 'warn') t = 'urgSoft';
+          return (
+            '<span class="chip chip--' +
+            esc(t) +
+            '"' +
+            (title ? ' title="' + esc(title) + '"' : '') +
+            ' style="max-width:100%;overflow-wrap:break-word;white-space:normal;line-height:1.25">' +
+            esc(label) +
+            '</span>'
+          );
+        }
+        var placeChipsHtml = '';
+        if (placeChips && placeChips.length) {
+          placeChipsHtml = placeChips
+            .map(function (c) {
+              if (!c || !c.label) return '';
+              return placeChipHtml(String(c.label), String(c.tone || 'pend'), placeTitle);
+            })
+            .filter(Boolean)
+            .join('');
+        } else {
+          placeChipsHtml =
+            placeChipHtml(placeLab, placeTone, placeTitle) +
+            (placeSec ? placeChipHtml(placeSec, placeSecTone, '') : '');
+        }
         var parentLine = [d.parent_name, d.parent_email].filter(Boolean).join(' · ') || '—';
         var pdfLink = d.pdf_signed_url
           ? '<button type="button" class="btn btn--pri btn--sm portal-pax-doc-open" data-url="' +
@@ -272,20 +329,7 @@
           '</td>' +
           '<td style="min-width:0;max-width:12rem">' +
           '<div style="display:flex;flex-direction:column;gap:2px;min-width:0">' +
-          '<span class="chip chip--' +
-          esc(placeTone) +
-          '" title="' +
-          esc(placeTitle) +
-          '" style="max-width:100%;overflow-wrap:break-word;white-space:normal;line-height:1.25">' +
-          esc(placeLab) +
-          '</span>' +
-          (placeSec
-            ? '<span class="chip chip--' +
-              esc(placeSecTone) +
-              '" style="max-width:100%;overflow-wrap:break-word;white-space:normal;line-height:1.25">' +
-              esc(placeSec) +
-              '</span>'
-            : '') +
+          placeChipsHtml +
           (placeDetail
             ? '<span class="muted" style="font-size:11px;line-height:1.25;overflow-wrap:break-word">' +
               esc(placeDetail) +
