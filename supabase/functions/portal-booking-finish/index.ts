@@ -1,7 +1,7 @@
-// portal-booking-finish — public finish-booking after Accept (magic token).
+// portal-booking-finish — public finish-booking (magic token).
 // Actions: load | save_choices | create_invoice | create_stripe_checkout |
-// notify_office_paid (unlocks GoCardless after WhatsApp/email Step 1)
-// (confirm_paid disabled — parent messages/emails office after bank transfer)
+// notify_office_paid / confirm_paid disabled — parent WhatsApps or emails office after bank transfer
+// (tap alone must not mark pending_confirmation).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -44,16 +44,11 @@ import {
 } from "../_shared/portal_booking_context.ts";
 import {
   BOOKING_PAY_HOLD_MINUTES,
-  BOOKING_OFFICE_CONFIRM_HOLD_MINUTES,
   BOOKING_SLOT_HOLD_STATUSES,
   bookingPayHoldExpiresAt,
-  bookingOfficeConfirmHoldExpiresAt,
   runBookingPayHoldMaintenance,
 } from "../_shared/portal_booking_pay_hold.ts";
-import {
-  notifyOfficeBankPaymentReported,
-  notifyOfficePayHoldStarted,
-} from "../_shared/portal_booking_lead_office_notify.ts";
+import { notifyOfficePayHoldStarted } from "../_shared/portal_booking_lead_office_notify.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -1249,152 +1244,15 @@ Deno.serve(async (req) => {
   }
 
   if (action === "notify_office_paid") {
-    // Parent tapped WhatsApp / Email after bank transfer:
-    // stop the pay-now 30' clock, mark reported, give office another 30' to confirm Tide.
-    if (token.status === "completed") {
-      return json(200, { ok: true, status: "completed", completed: true });
-    }
-    if (!token.invoice_share_id) {
-      return json(400, { ok: false, error: "invoice_required" });
-    }
-    const { data: inv } = await admin
-      .from("portal_parent_invoice_share")
-      .select(
-        "id, invoice_number, amount_gbp, amount_paid_gbp, payment_status, payment_schedule, payment_method_hint, gocardless_url, due_date, contact_id, parent_reported_paid_at",
-      )
-      .eq("id", token.invoice_share_id)
-      .maybeSingle();
-    if (!inv) return json(404, { ok: false, error: "invoice_not_found" });
-
-    const paySt = String(inv.payment_status || "").toLowerCase();
-    if (paySt === "paid" || paySt === "void") {
-      return json(409, { ok: false, error: "invoice_not_payable" });
-    }
-
-    const bankFirst = paymentScheduleBankFirst(inv.payment_schedule);
-    const channelRaw = clean(body.channel, 20).toLowerCase();
-    const channel =
-      channelRaw === "whatsapp" || channelRaw === "email" ? channelRaw : "unknown";
-    const now = new Date().toISOString();
-    const officeHoldExpires = bookingOfficeConfirmHoldExpiresAt();
-    const alreadyNotified = Boolean(
-      String(savedChoices.office_paid_notified_at || "").trim() ||
-        inv.parent_reported_paid_at,
-    );
-    const nextChoices = {
-      ...savedChoices,
-      office_paid_notified_at:
-        String(savedChoices.office_paid_notified_at || "").trim() || now,
-      office_paid_notify_channel: channel,
-      office_paid_notify_at: now,
-      pay_hold_minutes: BOOKING_OFFICE_CONFIRM_HOLD_MINUTES,
-      pay_hold_expires_at: officeHoldExpires,
-      office_confirm_hold_minutes: BOOKING_OFFICE_CONFIRM_HOLD_MINUTES,
-      office_confirm_hold_expires_at: officeHoldExpires,
-      gc_requires_office_notify: bankFirst,
-    };
-
-    const schedule = Array.isArray(inv.payment_schedule) ? inv.payment_schedule : [];
-    const firstOpen = (schedule as Array<Record<string, unknown>>).find((r) =>
-      String(r?.status || "pending").toLowerCase() !== "paid"
-    ) || (schedule[0] as Record<string, unknown> | undefined);
-    const reportAmt = Number(firstOpen?.amount_gbp) || Number(inv.amount_gbp) || 0;
-
-    await admin
-      .from("portal_parent_invoice_share")
-      .update({
-        parent_reported_paid_at: inv.parent_reported_paid_at || now,
-        parent_reported_method: channel === "email" ? "email" : "whatsapp",
-        parent_reported_notes: `finish_booking_notify_${channel}`,
-        payment_status: paySt === "partial" ? "partial" : "pending_confirmation",
-        updated_at: now,
-      })
-      .eq("id", String(inv.id));
-
-    await admin
-      .from("portal_booking_completion_tokens")
-      .update({
-        status: "awaiting_office_payment",
-        choices_json: nextChoices,
-        updated_at: now,
-      })
-      .eq("id", token.id);
-
-    if (reservation?.id) {
-      const prevNotes = String(reservation.notes || "").trim();
-      await admin
-        .from("portal_booking_slot_reservations")
-        .update({
-          status: "awaiting_payment",
-          hold_expires_at: officeHoldExpires,
-          updated_at: now,
-          notes: [prevNotes, "office_confirm_hold_30m", `parent_reported_${channel}`]
-            .filter(Boolean)
-            .join("|")
-            .slice(0, 500),
-        })
-        .eq("id", String(reservation.id));
-    }
-
-    if (!alreadyNotified) {
-      try {
-        await notifyOfficeBankPaymentReported({
-          invoiceShareId: String(inv.id),
-          invoiceNumber: clean(inv.invoice_number, 40) || null,
-          participantName: String(doc.participant_name || ""),
-          parentName: String(doc.parent_name || "") || null,
-          parentEmail: String(doc.parent_email || "") || null,
-          amountGbp: reportAmt,
-          isTrial: savedScope === "trial_session",
-          paymentRef: suggestedTransferReference(
-            inv.invoice_number,
-            String(doc.participant_name || ""),
-          ),
-          viaParentMessage: true,
-          slotSummary: slotSummaryFromReservation(
-            reservation as Record<string, unknown> | null,
-          ) || null,
-          holdExpiresAt: officeHoldExpires,
-          fundingLabel: clean(savedChoices.funding_code, 80) || null,
-          payPlanLabel: clean(savedChoices.pay_plan, 80) || null,
-        });
-      } catch (e) {
-        console.warn("[portal-booking-finish] office bank report notify", e);
-      }
-    }
-
-    let gocardlessUrl: string | null = clean(inv.gocardless_url, 2000) || null;
-    if (bankFirst && !gocardlessUrl) {
-      const contactId = clean(token.contact_id, 80) || clean(inv.contact_id, 80);
-      if (contactId) {
-        try {
-          gocardlessUrl = await mintFinishBookingGocardlessUrl(admin, {
-            contactId,
-            parentPersonId: clean(token.parent_person_id, 80) || null,
-            participantName: String(doc.participant_name || ""),
-            invoiceId: String(inv.id),
-            invoiceNumber: clean(inv.invoice_number, 40) || null,
-            rawToken,
-            paymentSchedule: inv.payment_schedule,
-          });
-        } catch (e) {
-          console.warn("[portal-booking-finish] notify_office_paid gc", e);
-        }
-      }
-    }
-
-    return json(200, {
-      ok: true,
-      gocardless_url: bankFirst ? gocardlessUrl : null,
-      office_paid_notified_at: nextChoices.office_paid_notified_at,
-      gc_step2_unlocked: bankFirst,
-      choices_json: nextChoices,
-      status: "awaiting_office_payment",
-      pay_hold_minutes: BOOKING_OFFICE_CONFIRM_HOLD_MINUTES,
-      pay_hold_expires_at: officeHoldExpires,
-      office_confirm_hold: true,
+    // Disabled: a one-tap "I've paid" / WA-Email click used to mark pending_confirmation
+    // and confuse admin when parents tapped by mistake before transferring.
+    // UI opens WhatsApp or email only; office is notified when the parent actually sends
+    // a message (WhatsApp webhook / parent messages / email). Then check Tide → Mark paid.
+    return json(410, {
+      ok: false,
+      error: "notify_office_paid_disabled",
       message:
-        "Thanks — your place is held while the office confirms Tide (about 30 more minutes). Parent Portal PIN is sent after they Mark paid.",
+        "Please WhatsApp or email the office that you have paid (photo optional). Opening the button alone does not notify us. The office will confirm Tide and then send your Parent Portal PIN.",
     });
   }
 

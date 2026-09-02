@@ -408,32 +408,11 @@
       });
     }
     if (action === "notify_office_paid") {
-      var notifiedAt = new Date().toISOString();
-      var officeExp = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-      demoState.choices_json = Object.assign({}, demoState.choices_json || {}, {
-        office_paid_notified_at: notifiedAt,
-        office_paid_notify_channel: extra.channel || "unknown",
-        office_paid_notify_at: notifiedAt,
-        pay_hold_expires_at: officeExp,
-        pay_hold_minutes: 30,
-        office_confirm_hold_expires_at: officeExp,
-      });
-      demoState.status = "awaiting_office_payment";
       return Promise.resolve({
-        ok: true,
-        gocardless_url:
-          demoState.pay_plan === "gocardless_monthly"
-            ? "https://example.com/gocardless-demo"
-            : null,
-        office_paid_notified_at: notifiedAt,
-        gc_step2_unlocked: demoState.pay_plan === "gocardless_monthly",
-        choices_json: demoState.choices_json,
-        status: "awaiting_office_payment",
-        pay_hold_minutes: 30,
-        pay_hold_expires_at: officeExp,
-        office_confirm_hold: true,
+        ok: false,
+        error: "notify_office_paid_disabled",
         message:
-          "Thanks — your place is held while the office confirms Tide (about 30 more minutes).",
+          "Demo: WhatsApp/email open only. Send the message; tap alone does not notify office.",
       });
     }
     if (action === "create_stripe_checkout") {
@@ -1367,10 +1346,10 @@
           holdLine +
           "</p>" +
           '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
-          '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 2 — Tell the office</p>' +
-          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, WhatsApp or email saying you have paid' +
+          '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 2 - Tell the office</p>' +
+          '<p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">After you transfer, open WhatsApp or email and <strong>send</strong> a short message that you have paid' +
           (isTrialBank ? " (include reference + amount)" : "") +
-          ". A photo/screenshot is helpful but optional.</p>" +
+          ". A photo/screenshot is helpful but optional. Opening the app alone does not notify us - you must send the message.</p>" +
           '<p style="margin:0 0 8px;display:flex;flex-wrap:wrap;gap:8px">' +
           '<a class="btn btn--pri" id="fbNotifyWa" href="' +
           esc(waHref) +
@@ -1387,19 +1366,22 @@
           "</p>" +
           "</div>";
         if (gcBankFirst) {
+          var invPaySt = String(inv.payment_status || "").toLowerCase();
           var gcUnlocked =
             data.gc_step2_unlocked === true ||
             Boolean(
               data.choices_json && data.choices_json.office_paid_notified_at,
-            );
+            ) ||
+            invPaySt === "paid" ||
+            invPaySt === "partial";
           var gcHref = gcUnlocked && gcUrl ? gcUrl : "";
           html +=
             '<div style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);min-width:0">' +
-            '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 3 — Set up GoCardless</p>' +
+            '<p style="margin:0 0 6px;font-weight:800;color:var(--ink);overflow-wrap:break-word">Step 3 - Set up GoCardless</p>' +
             '<p class="muted" id="fbGcStep2Hint" style="margin:0 0 10px;overflow-wrap:break-word">' +
             (gcUnlocked
-              ? "After Steps 1 and 2, set up Direct Debit so later months collect on the <strong>1st</strong> with every family."
-              : "Locked until you tap <strong>WhatsApp the office</strong> or <strong>Email the office</strong> in Step 2.") +
+              ? "After the office confirms your bank transfer, set up Direct Debit so later months collect on the <strong>1st</strong> with every family."
+              : "Locked until the office confirms your bank transfer (Tide / Mark paid). First message them in Step 2.") +
             "</p>" +
             (gcHref
               ? '<a class="btn btn--pri" id="fbGcStep2" href="' +
@@ -1488,54 +1470,27 @@
           });
       };
     }
-    function onOfficeNotify(channel) {
-      void api("notify_office_paid", { channel: channel })
-        .then(function (out) {
-          if (out.choices_json) data.choices_json = out.choices_json;
-          else {
-            data.choices_json = data.choices_json || {};
-            data.choices_json.office_paid_notified_at =
-              out.office_paid_notified_at || new Date().toISOString();
-          }
-          if (out.pay_hold_expires_at) {
-            data.pay_hold_expires_at = out.pay_hold_expires_at;
-            data.choices_json.pay_hold_expires_at = out.pay_hold_expires_at;
-          }
-          if (out.pay_hold_minutes != null) {
-            data.pay_hold_minutes = out.pay_hold_minutes;
-          }
-          data.status = out.status || "awaiting_office_payment";
-          data.office_confirm_hold = true;
-          data.gc_step2_unlocked =
-            out.gc_step2_unlocked === true || data.gc_step2_unlocked;
-          if (out.gocardless_url) data.gocardless_url = out.gocardless_url;
-          showInvoice(data);
-          showNotice(
-            document.getElementById("fbNotice"),
-            out.message ||
-              "Thanks — place held while the office confirms Tide. PIN after Mark paid.",
-            "ok",
-          );
-        })
-        .catch(function (err) {
-          showNotice(
-            document.getElementById("fbNotice"),
-            err.message ||
-              "Could not record your message. Still WhatsApp/email the office, then try again.",
-            "error",
-          );
-        });
-    }
+    // WhatsApp / Email are plain links only - do NOT call notify_office_paid on click.
+    // Accidental taps must not mark pending_confirmation / alter admin. Office is
+    // notified when the parent actually sends the message (WhatsApp webhook / email).
     var waBtn = document.getElementById("fbNotifyWa");
     var emailBtn = document.getElementById("fbNotifyEmail");
     if (waBtn) {
       waBtn.addEventListener("click", function () {
-        onOfficeNotify("whatsapp");
+        showNotice(
+          document.getElementById("fbNotice"),
+          "WhatsApp opened - send the message so the office can check Tide. We are not notified until you send it.",
+          "ok",
+        );
       });
     }
     if (emailBtn) {
       emailBtn.addEventListener("click", function () {
-        onOfficeNotify("email");
+        showNotice(
+          document.getElementById("fbNotice"),
+          "Email draft opened - send it so the office can check Tide. We are not notified until you send it.",
+          "ok",
+        );
       });
     }
     var stripeRetry = document.getElementById("fbStripeRetry");
