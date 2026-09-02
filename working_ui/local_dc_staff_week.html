@@ -212,7 +212,7 @@
   <div class="week" id="week"></div>
 
   <script src="/portal/portal_roster_canonical.js?v=20260901-tue-acton-roberto"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260901-roberto-wed-fadi-only"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260902-dc-hub-pool-mwf"></script>
   <!-- local board bump: 20260901c-open-slots -->
   <script>
 (function () {
@@ -675,29 +675,29 @@
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
     "ikram|11to4": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "1 to 4", area: "Day Centre" },
+      { time_slot: "1 to 4", area: "Hub Room" },
     ],
     "ikram|11to3": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "1 to 3", area: "Day Centre" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
-    "ikram|12.30to4": [{ time_slot: "12.30 to 4", area: "Day Centre" }],
+    "ikram|12.30to4": [{ time_slot: "12.30 to 4", area: "Hub Room" }],
     "emanuel|11to4": [
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "2 to 4", area: "Hub Room" },
+      { time_slot: "1 to 4", area: "Hub Room" },
     ],
     "emanuel|11to12.30": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 12.30", area: "Big Pool" },
     ],
     "emanuel|11to3": [
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "2 to 3", area: "Hub Room" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
     "emanuel|11to2": [
       { time_slot: "11 to 12", area: "Hub Room" },
@@ -709,8 +709,8 @@
     ],
   };
   var PLAIN = {
-    "ikram|11to4": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
-    "ikram|11to3": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
+    "ikram|11to4": ["tuesday", "thursday", "saturday", "sunday"],
+    "ikram|11to3": ["tuesday", "thursday", "saturday", "sunday"],
     "fadi|12.30to3": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
   };
   var DAY_OVERRIDE = {
@@ -725,7 +725,7 @@
   };
   function areaHintFor(name) {
     var n = String(name || "").toLowerCase();
-    if (n === "emanuel") return "Hub Room";
+    if (n === "emanuel" || n === "emmanuel" || n === "ikram") return "Hub Room";
     if (n === "manager") return "Hub · Manager";
     return "Day Centre";
   }
@@ -744,10 +744,6 @@
     var key = String(name).trim().toLowerCase() + "|" + slot;
     var dayKey = String(day).toLowerCase();
     var areaFallback = areaHintFor(name);
-    /* Autumn Wednesdays: Day Centre / Hub only — no Multi-Activity pool splits. */
-    if (dayKey === "wednesday") {
-      return [{ time_slot: timeLabel, area: areaFallback }];
-    }
     if (PLAIN[key] && PLAIN[key].indexOf(dayKey) !== -1) {
       return [{ time_slot: timeLabel, area: areaFallback }];
     }

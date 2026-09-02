@@ -27,8 +27,8 @@
 
   /**
    * Display-only breakdown for combined Day Centre slots (pool hour + centre),
-   * e.g. Fadi: Big Pool 12.30–1 + Day Centre 1–3; Ikram: Day Centre + Big Pool +
-   * Day Centre across 11–4. The static bundle carries `segments`, but the live
+   * e.g. Fadi: Big Pool 12.30–1 + Day Centre 1–3; Ikram / Emanuel: Hub + Big Pool +
+   * Hub across 11–4. The static bundle carries `segments`, but the live
    * MADRE document may omit them, which made the card render combined on first
    * paint then revert to a single block after the live roster refresh.
    * Synthesizing the same breakdown here keeps the combined card stable from ANY
@@ -40,34 +40,34 @@
       { time_slot: "12.30 to 1", area: "Big Pool" },
       { time_slot: "1 to 3", area: "Day Centre" },
     ],
+    // Ikram Mon/Wed/Fri: Hub 11–12 · swim 12–1 · Hub 1–4 (same as Emanuel).
     "ikram|11to4": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "1 to 4", area: "Day Centre" },
+      { time_slot: "1 to 4", area: "Hub Room" },
     ],
-    // Cover split (e.g. Wed 8 Jul): Luliya/Youssef take 11-3, Victor takes 3-4.
+    // Cover split (shorter morning): Hub 11–12 · swim 12–1 · Hub 1–3.
     "ikram|11to3": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "1 to 3", area: "Day Centre" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
     // Michelle Tue after Manager block: Ikram 12.30–4 (no swim Tue).
-    "ikram|12.30to4": [{ time_slot: "12.30 to 4", area: "Day Centre" }],
-    // Emanuel (Roberto Mon/Fri long block): Hub 11–12 · swim 12–1 · Hub 2–4 (gap 1–2).
-    // Wednesday morning block 11–12.30: Day Centre 11–12 · Big Pool 12–12.30 (then Fadi).
+    "ikram|12.30to4": [{ time_slot: "12.30 to 4", area: "Hub Room" }],
+    // Emanuel always swims 12–1; whoever is with him 12–1 sees Big Pool.
     "emanuel|11to4": [
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "2 to 4", area: "Hub Room" },
+      { time_slot: "1 to 4", area: "Hub Room" },
     ],
     "emanuel|11to12.30": [
-      { time_slot: "11 to 12", area: "Day Centre" },
+      { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 12.30", area: "Big Pool" },
     ],
     "emanuel|11to3": [
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
-      { time_slot: "2 to 3", area: "Hub Room" },
+      { time_slot: "1 to 3", area: "Hub Room" },
     ],
     "emanuel|11to2": [
       { time_slot: "11 to 12", area: "Hub Room" },
@@ -78,18 +78,13 @@
       { time_slot: "12 to 1", area: "Big Pool" },
     ],
   };
-  // Days with no pool hour inside the block: SPECIAL card = one Day Centre /
-  // Hub segment only. Fadi + Ikram swim Mon/Fri only (like Emanuel);
-  // Tue/Wed/Thu = centre only (Autumn: no Multi-Activity on Wednesdays).
+  // Days with no pool hour inside the block: SPECIAL card = one Hub / centre
+  // segment only. Ikram + Emanuel swim Mon/Wed/Fri; Tue/Thu stay land-only.
+  // Fadi swim Mon/Fri only (Wed DC may still be centre-only when he is in).
   var PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS = {
-    "ikram|11to4": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
-    "ikram|11to3": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
+    "ikram|11to4": ["tuesday", "thursday", "saturday", "sunday"],
+    "ikram|11to3": ["tuesday", "thursday", "saturday", "sunday"],
     "fadi|12.30to3": ["tuesday", "wednesday", "thursday", "saturday", "sunday"],
-    "emanuel|11to12.30": ["wednesday"],
-    "emanuel|11to4": ["wednesday"],
-    "emanuel|11to3": ["wednesday"],
-    "emanuel|11to2": ["wednesday"],
-    "emanuel|11to1": ["wednesday"],
   };
   var PORTAL_COMBINED_SEGMENTS_DAY_OVERRIDE = {
     "fadi|12.30to3|monday": [
@@ -113,11 +108,9 @@
     const areaFallback =
       name === "manager"
         ? "Hub · Manager"
-        : String(areaHint || "").trim() || "Day Centre";
-    /* Autumn Wednesdays: Day Centre / Hub only — no Multi-Activity pool splits. */
-    if (dayKey === "wednesday") {
-      return [{ time_slot: timeLabel, area: areaFallback }];
-    }
+        : name === "emanuel" || name === "emmanuel" || name === "ikram"
+          ? "Hub Room"
+          : String(areaHint || "").trim() || "Day Centre";
     const plainDays = PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS[key];
     if (plainDays && plainDays.indexOf(dayKey) !== -1) {
       return [{ time_slot: timeLabel, area: areaFallback }];
@@ -132,8 +125,7 @@
 
   /**
    * Display-only merge of a participant's TWO same-day Day Centre blocks into ONE
-   * segmented card. Emanuel Mon/Fri: Hub 11–12 · Big Pool 12–1 · Hub 2–4.
-   * Wednesday is separate blocks (11–12.30 + 3–4) with Fadi in between — do not merge.
+   * segmented card. Emanuel Mon/Wed/Fri: Hub 11–12 · Big Pool 12–1 · Hub 1–4.
    * Pay is driven by the continuous shift band, so collapsing the two blocks for display
    * does not change hours; the merged slot is one feedback session (like other combined
    * Day Centre cards). Keyed by canonical clientId + weekday.
@@ -145,7 +137,16 @@
       segments: [
         { time_slot: "11 to 12", area: "Hub Room" },
         { time_slot: "12 to 1", area: "Big Pool" },
-        { time_slot: "2 to 4", area: "Hub Room" },
+        { time_slot: "1 to 4", area: "Hub Room" },
+      ],
+    },
+    "emanuel|wednesday": {
+      blockStarts: ["11:00", "14:00"],
+      merged: { time_slot: "11 to 4", start: "11:00", end: "16:00" },
+      segments: [
+        { time_slot: "11 to 12", area: "Hub Room" },
+        { time_slot: "12 to 1", area: "Big Pool" },
+        { time_slot: "1 to 4", area: "Hub Room" },
       ],
     },
     "emanuel|friday": {
@@ -154,7 +155,7 @@
       segments: [
         { time_slot: "11 to 12", area: "Hub Room" },
         { time_slot: "12 to 1", area: "Big Pool" },
-        { time_slot: "2 to 4", area: "Hub Room" },
+        { time_slot: "1 to 4", area: "Hub Room" },
       ],
     },
   };
@@ -904,15 +905,15 @@
         );
         if (synthSegments) baseSession.segments = synthSegments;
       }
-      /* Prefer current Emanuel Mon/Fri SPECIAL shape even if an older MADRE/bundle
-         row still carries a stale 11–4 contiguous 1–4 Day Centre third segment. */
+      /* Prefer current Emanuel Mon/Wed/Fri SPECIAL shape even if an older MADRE/bundle
+         row still carries a stale contiguous third segment. */
       if (
         nameLower === "emanuel" &&
         String(rosterService || "").trim().toLowerCase() === "day centre" &&
         String(timeSlotLabel || "").replace(/\s+/g, "").toLowerCase() === "11to4"
       ) {
         const dayKey = String(day || "").trim().toLowerCase();
-        if (dayKey === "monday" || dayKey === "friday") {
+        if (dayKey === "monday" || dayKey === "wednesday" || dayKey === "friday") {
           const prefer = portalSynthesizeCombinedSegments(
             nameLower,
             rosterService,
