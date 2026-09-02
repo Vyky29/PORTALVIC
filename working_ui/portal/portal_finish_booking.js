@@ -789,10 +789,10 @@
     var hint = label && label.querySelector(".hint");
     var strong = label && label.querySelector("strong");
     if (data.funding_code === "sw_nhs_referral") {
-      if (strong) strong.textContent = "Trial session (office arranges with SW/NHS)";
+      if (strong) strong.textContent = "Trial session (office arranges with LA/NHS)";
       if (hint) {
         hint.textContent =
-          "One session request. No parent payment — the office arranges with the social worker / NHS.";
+          "One session request. No parent payment — the office arranges with LA / NHS.";
       }
     } else {
       if (strong) strong.textContent = "Trial session (pay now)";

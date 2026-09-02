@@ -821,17 +821,17 @@ Deno.serve(async (req) => {
       const now = new Date().toISOString();
       const scopeLabel =
         scope === "trial_session"
-          ? "Trial session (office arranges with SW/NHS)"
+          ? "Trial session (office arranges with LA/NHS)"
           : scope === "auto_reenroll_year"
           ? "Auto re-enrol by term (all year)"
           : "This term only";
-      const fundingLabel = "Social Worker (LA) / NHS referral";
+      const fundingLabel = "(LA) / NHS referral";
       const ensured = await ensureContact(
         admin,
         token,
         doc,
         fundingLabel,
-        "No parent pay · office contacts SW/NHS",
+        "No parent pay · office contacts LA/NHS",
       );
       if ("error" in ensured) return json(400, { ok: false, error: ensured.error });
 

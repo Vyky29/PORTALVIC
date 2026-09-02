@@ -785,7 +785,7 @@ export async function notifyOfficePayHoldStarted(opts: {
   }
 }
 
-/** Office FYI: parent chose Social Worker (LA) / NHS referral — no parent invoice. */
+/** Office FYI: parent chose (LA) / NHS referral — no parent invoice. */
 export async function notifyOfficeSwNhsReferral(opts: {
   participantName: string;
   parentName: string | null;
@@ -812,9 +812,9 @@ export async function notifyOfficeSwNhsReferral(opts: {
   const smtp = readParentNotifySmtpConfig();
   const tos = officeNotifyEmails();
   const adminUrl = reenrolmentsReviewUrl();
-  const subject = `SW/NHS referral · no parent pay · ${participant}`;
+  const subject = `(LA) / NHS referral · no parent pay · ${participant}`;
   const bodyText =
-    `Finish-booking: parent chose Social Worker (LA) / NHS referral. Do not invoice the parent.\n\n` +
+    `Finish-booking: parent chose (LA) / NHS referral. Do not invoice the parent.\n\n` +
     `Participant: ${participant}\n` +
     `Parent / carer: ${parent}\n` +
     (email ? `Parent email: ${email}\n` : "") +
@@ -822,7 +822,7 @@ export async function notifyOfficeSwNhsReferral(opts: {
     (scope ? `Booking length: ${scope}\n` : "") +
     `Social worker / NHS manager: ${swName}\n` +
     `SW / NHS email: ${swEmail}\n` +
-    (ratio ? `Support when regulated: ${ratio} (instructors needed in the same session)\n` : "") +
+    (ratio ? `Support when regulated: ${ratio}\n` : "") +
     (ehcp ? `EHCP on form: ${ehcp}\n` : "") +
     (opts.ehcpUploaded ? `EHCP file: uploaded with registration\n` : "") +
     (opts.documentId ? `Registration document: ${opts.documentId}\n` : "") +

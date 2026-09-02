@@ -244,7 +244,7 @@ function derivePlace(row: {
         : "";
     return {
       kind: ratio === "2:1" ? "nhs_referral_2to1" : "sw_nhs_referral",
-      label: ratio ? `SW/NHS referral · ${ratio}` : "SW/NHS referral",
+      label: ratio ? `(LA) / NHS referral · ${ratio}` : "(LA) / NHS referral",
       tone: "info",
       detail: detail || "Contact social worker - parents do not pay",
       secondary_label: "No parent pay",
