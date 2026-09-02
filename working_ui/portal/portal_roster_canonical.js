@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 32;
+  var SOURCE_VERSION = 33;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1145,6 +1145,31 @@
             out.push(Object.assign({}, r, { client_name: "No participant" }));
             return;
           }
+        }
+      }
+      /* Wed Acton: Cyrus with Javier is 4–5 only (not 5–5.30). */
+      if (
+        isAquaticService(r.service) &&
+        isActonVenue(r.venue) &&
+        normalizeDowKey(r.day) === "wednesday" &&
+        /^cyrus\b/i.test(String(r.client_name || "").trim())
+      ) {
+        var slotC = String(r.time_slot || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+        if (
+          slotC === "5 to 5.30" ||
+          slotC === "5.00 to 5.30" ||
+          slotC === "17 to 17.30" ||
+          slotC === "17.00 to 17.30"
+        ) {
+          out.push(Object.assign({}, r, { client_name: "No participant" }));
+          return;
+        }
+        if (slotC === "4 to 5.30" || slotC === "4.00 to 5.30") {
+          out.push(Object.assign({}, r, { time_slot: "4 to 5" }));
+          return;
         }
       }
       var poolPatch = remapAutumnActonPoolInstructors(r);
