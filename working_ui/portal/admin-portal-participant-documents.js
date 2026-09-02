@@ -208,8 +208,10 @@
           placeTone = 'pend';
         }
         var placeDetail = String(d.place_detail || '').trim();
+        var placeSec = String(d.place_secondary_label || '').trim();
+        var placeSecTone = String(d.place_secondary_tone || 'info').trim() || 'info';
         var placeTitle = placeDetail
-          ? placeLab + ' — ' + placeDetail
+          ? placeLab + (placeSec ? ' + ' + placeSec : '') + ' — ' + placeDetail
           : 'Live place status (slot comes from finish-booking / pay alerts, not this form)';
         var parentLine = [d.parent_name, d.parent_email].filter(Boolean).join(' · ') || '—';
         var pdfLink = d.pdf_signed_url
@@ -268,6 +270,13 @@
           '" style="max-width:100%;overflow-wrap:break-word;white-space:normal;line-height:1.25">' +
           esc(placeLab) +
           '</span>' +
+          (placeSec
+            ? '<span class="chip chip--' +
+              esc(placeSecTone) +
+              '" style="max-width:100%;overflow-wrap:break-word;white-space:normal;line-height:1.25">' +
+              esc(placeSec) +
+              '</span>'
+            : '') +
           (placeDetail
             ? '<span class="muted" style="font-size:11px;line-height:1.25;overflow-wrap:break-word">' +
               esc(placeDetail) +

@@ -27,6 +27,8 @@ type DocRow = {
   place_label: string;
   place_tone: string;
   place_detail: string | null;
+  place_secondary_label: string | null;
+  place_secondary_tone: string | null;
   reservation_status: string | null;
   booking_status: string | null;
   client_status: string | null;
@@ -92,6 +94,11 @@ function isTrialNotes(notes: string | null | undefined): boolean {
   return /booking_kind\s*=\s*trial/i.test(String(notes || ""));
 }
 
+function isTrialPaidNotes(notes: string | null | undefined): boolean {
+  const n = String(notes || "");
+  return /trial_paid/i.test(n) || /paid_stripe/i.test(n) || /stripe.*paid|paid.*stripe/i.test(n);
+}
+
 function isPayHoldNotes(notes: string | null | undefined): boolean {
   return /pay_hold/i.test(String(notes || ""));
 }
@@ -100,6 +107,28 @@ function holdStillOpen(holdExpiresAt: string | null | undefined): boolean {
   if (!holdExpiresAt) return false;
   const t = Date.parse(String(holdExpiresAt));
   return Number.isFinite(t) && t > Date.now();
+}
+
+type PlaceOut = {
+  kind: string;
+  label: string;
+  tone: string;
+  detail: string | null;
+  secondary_label: string | null;
+  secondary_tone: string | null;
+};
+
+function withWaitSecondary(
+  place: PlaceOut,
+  waitFlag: boolean,
+): PlaceOut {
+  if (!waitFlag) return place;
+  if (/waiting.?list/i.test(place.label)) return place;
+  return {
+    ...place,
+    secondary_label: "Waiting list",
+    secondary_tone: "info",
+  };
 }
 
 /**
@@ -113,14 +142,23 @@ function derivePlace(row: {
   in_class: boolean | null;
   on_waiting_list: boolean | null;
   reservation: ReservationLite | null;
-}): { kind: string; label: string; tone: string; detail: string | null } {
+}): PlaceOut {
   const payload = asRecord(row.payload_json) || {};
   const br = asRecord(payload.booking_request);
   const bookingStatus = String(row.booking_status || "").toLowerCase();
   const clientStatus = String(row.client_status || "").toLowerCase();
   const res = row.reservation;
   const resStatus = String(res?.status || "").toLowerCase();
+  const notes = String(res?.notes || "");
   const detail = slotDetailFromReservation(res);
+  const none: PlaceOut = {
+    kind: "registered_only",
+    label: "Registered only",
+    tone: "pend",
+    detail: null,
+    secondary_label: null,
+    secondary_tone: null,
+  };
 
   const waitFromPayload =
     truthyFlag(payload.waiting_list) ||
@@ -136,22 +174,55 @@ function derivePlace(row: {
     clientStatus === "waiting_list" ||
     waitFromPayload;
 
-  // 1) Live seat / class membership wins over stale waiting-list lead flags.
+  // Office declined a variant (e.g. fortnightly) — stay Registered only.
+  if (
+    (resStatus === "released" || resStatus === "expired") &&
+    /registered_only|office_declined|fortnight/i.test(notes)
+  ) {
+    return { ...none, kind: "registered_only" };
+  }
+
+  // 1) Live seat / class membership (may also be on another waiting list).
   if (row.in_class === true) {
     if (resStatus === "validated" && isTrialNotes(res?.notes)) {
-      return { kind: "trial_in_class", label: "In class · trial", tone: "ok", detail };
+      return withWaitSecondary(
+        {
+          kind: "trial_in_class",
+          label: "In class · trial",
+          tone: "ok",
+          detail,
+          secondary_label: null,
+          secondary_tone: null,
+        },
+        waitFlag,
+      );
     }
-    return { kind: "in_class", label: "In class", tone: "ok", detail };
+    return withWaitSecondary(
+      {
+        kind: "in_class",
+        label: "In class",
+        tone: "ok",
+        detail,
+        secondary_label: null,
+        secondary_tone: null,
+      },
+      waitFlag,
+    );
   }
 
   if (resStatus === "validated") {
     if (isPayHoldNotes(res?.notes) && holdStillOpen(res?.hold_expires_at)) {
-      return {
-        kind: "pay_hold",
-        label: isTrialNotes(res?.notes) ? "Pay hold · trial" : "Pay hold (seat held)",
-        tone: "pend",
-        detail,
-      };
+      return withWaitSecondary(
+        {
+          kind: "pay_hold",
+          label: isTrialNotes(res?.notes) ? "Pay hold · trial" : "Pay hold (seat held)",
+          tone: "pend",
+          detail,
+          secondary_label: null,
+          secondary_tone: null,
+        },
+        waitFlag,
+      );
     }
     if (isPayHoldNotes(res?.notes) && !holdStillOpen(res?.hold_expires_at)) {
       return {
@@ -159,16 +230,49 @@ function derivePlace(row: {
         label: "Pay hold lapsed",
         tone: "warn",
         detail,
+        secondary_label: null,
+        secondary_tone: null,
       };
     }
     if (isTrialNotes(res?.notes)) {
-      return { kind: "trial", label: "Trial place", tone: "ok", detail };
+      if (isTrialPaidNotes(res?.notes)) {
+        return withWaitSecondary(
+          {
+            kind: "trial",
+            label: "Formal · trial",
+            tone: "ok",
+            detail,
+            secondary_label: null,
+            secondary_tone: null,
+          },
+          waitFlag,
+        );
+      }
+      // Accepted / held trial but no paid marker (e.g. Ayaan) — not Formal.
+      return {
+        kind: "trial_unpaid",
+        label: "Trial hold (unpaid)",
+        tone: "warn",
+        detail,
+        secondary_label: null,
+        secondary_tone: null,
+      };
     }
-    return { kind: "formal", label: "Formal place", tone: "ok", detail };
+    return withWaitSecondary(
+      {
+        kind: "formal",
+        label: "Formal place",
+        tone: "ok",
+        detail,
+        secondary_label: null,
+        secondary_tone: null,
+      },
+      waitFlag,
+    );
   }
 
   if (resStatus === "pending" || resStatus === "awaiting_payment") {
-    const officeConfirm = /office_confirm_hold/i.test(String(res?.notes || ""));
+    const officeConfirm = /office_confirm_hold/i.test(notes);
     return {
       kind: officeConfirm ? "awaiting_tide" : "awaiting_payment",
       label: officeConfirm
@@ -180,17 +284,22 @@ function derivePlace(row: {
           : "Pay hold (30 min)",
       tone: "pend",
       detail,
+      secondary_label: null,
+      secondary_tone: null,
     };
   }
 
   if (resStatus === "expired") {
     return {
       kind: "expired",
-      label: /unpaid|pay_hold/i.test(String(res?.notes || ""))
-        ? "Did not finish (unpaid)"
-        : "Hold expired",
+      label:
+        /unpaid|pay_hold|accepted_by_admin/i.test(notes)
+          ? "Did not finish (unpaid)"
+          : "Hold expired",
       tone: "warn",
       detail,
+      secondary_label: null,
+      secondary_tone: null,
     };
   }
 
@@ -200,20 +309,36 @@ function derivePlace(row: {
       label: "Slot released",
       tone: "warn",
       detail,
+      secondary_label: null,
+      secondary_tone: null,
     };
   }
 
   // 2) Waiting list when they are not holding / in class.
   if (waitFlag) {
-    return { kind: "waiting_list", label: "Waiting list", tone: "info", detail };
+    return {
+      kind: "waiting_list",
+      label: "Waiting list",
+      tone: "info",
+      detail,
+      secondary_label: null,
+      secondary_tone: null,
+    };
   }
 
   if (bookingStatus === "booking_completed") {
-    return { kind: "formal", label: "Formal place", tone: "ok", detail };
+    return {
+      kind: "formal",
+      label: "Formal place",
+      tone: "ok",
+      detail,
+      secondary_label: null,
+      secondary_tone: null,
+    };
   }
 
-  // 3) Registered form only — no live seat. Slot appears later via finish-booking avisos.
-  return { kind: "registered_only", label: "Registered only", tone: "pend", detail: null };
+  // 3) Registered form only — no live seat.
+  return none;
 }
 
 Deno.serve(async (req) => {
@@ -307,6 +432,8 @@ Deno.serve(async (req) => {
     | "place_label"
     | "place_tone"
     | "place_detail"
+    | "place_secondary_label"
+    | "place_secondary_tone"
     | "reservation_status"
     | "booking_status"
     | "client_status"
@@ -506,6 +633,8 @@ Deno.serve(async (req) => {
       place_label: place.label,
       place_tone: place.tone,
       place_detail: place.detail,
+      place_secondary_label: place.secondary_label,
+      place_secondary_tone: place.secondary_tone,
       reservation_status: reservation?.status ?? null,
       booking_status: lead?.booking_status ?? null,
       client_status: lead?.client_status ?? null,
