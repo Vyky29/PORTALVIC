@@ -6,14 +6,15 @@
   "use strict";
 
   var JSPDF_URL =
-    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260902-parent-history";
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260902-parent-history-noblack";
+  /** Prefer transparent crest — logoPDF.png is a JPEG with black square background. */
   var PDF_LOGO_URLS = [
-    "portal/logoPDF.png",
-    "logoPDF.png",
     "portal/F-02-1.png",
-    "/portal/logoPDF.png",
-    "/logoPDF.png",
+    "portal/Logo-CS-brand-transparent.png",
+    "portal/Logo-CS-brand-tight.png",
     "/portal/F-02-1.png",
+    "/portal/Logo-CS-brand-transparent.png",
+    "/portal/Logo-CS-brand-tight.png",
   ];
   var ORG = "clubSENsational";
   var logoDataUrlCache = null;
