@@ -8,7 +8,7 @@ import {
   familyBookingPaymentMethodLabel,
   resolvePortalInvoiceOwnerUserId,
 } from "../_shared/portal_create_family_invoice.ts";
-import { bookingPortalServiceLabel } from "../_shared/booking_portal_term_invoices.ts";
+import { bookingPortalServiceLabel, gcNeedsBankRemainderForCurrentMonth } from "../_shared/booking_portal_term_invoices.ts";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 import {
   suggestedTransferReference,
@@ -750,13 +750,19 @@ Deno.serve(async (req) => {
       funding === "la_direct_payments"
         ? "Using LA money (Participant EHCP funds)"
         : "Using Own money (private family funds)";
+    const asOfForLabel = new Date().toISOString().slice(0, 10);
+    const gcBankFirstLabel =
+      plan === "gocardless_monthly" &&
+      gcNeedsBankRemainderForCurrentMonth(term, asOfForLabel);
     const paymentLabel =
       scope === "trial_session"
         ? plan === "one_off_bank"
           ? "Trial session · Bank transfer (30 min hold)"
           : "Trial session · Card / Apple Pay (pay now)"
         : plan === "gocardless_monthly"
-          ? "GoCardless (monthly)"
+          ? gcBankFirstLabel
+            ? "GoCardless (monthly) · first month bank transfer"
+            : "GoCardless (monthly)"
           : plan === "flexi_bank"
             ? "Bank transfer · Flexi (2 per term)"
             : plan === "own_way"
@@ -863,13 +869,20 @@ Deno.serve(async (req) => {
     let gocardlessUrl: string | null = null;
     if (plan === "gocardless_monthly" && gocardlessConfigured() && invoiceId) {
       try {
-        const firstGbp = Number(quote.paymentSchedule[0]?.amount_gbp) || 0;
+        const firstRow = quote.paymentSchedule[0];
+        const bankFirst = firstRow?.collect_via === "bank_transfer";
+        const firstGbp = Number(firstRow?.amount_gbp) || 0;
+        // After monthly collection day: first instalment is bank transfer — mandate only (no GC charge now).
         const br = await gocardlessCreateBillingRequest({
           contactId: ensured.contactId,
           parentPersonId: ensured.parentPersonId,
           description: `clubSENsational · ${clean(doc.participant_name, 80)}`,
-          paymentAmountPence: firstGbp > 0 ? Math.round(firstGbp * 100) : null,
-          paymentDescription: `First instalment · ${clean(created.invoice?.invoice_number, 40) || invoiceId}`,
+          paymentAmountPence: bankFirst || !(firstGbp > 0)
+            ? null
+            : Math.round(firstGbp * 100),
+          paymentDescription: bankFirst
+            ? `Later instalments · ${clean(created.invoice?.invoice_number, 40) || invoiceId}`
+            : `First instalment · ${clean(created.invoice?.invoice_number, 40) || invoiceId}`,
           invoiceShareId: invoiceId,
           invoiceNumber: clean(created.invoice?.invoice_number, 40) || null,
         });

@@ -11,6 +11,8 @@ export type InvoicePaymentScheduleRow = {
   status: "pending" | "paid";
   paid_at?: string | null;
   paid_via?: string | null;
+  /** How this instalment is collected (hybrid GC: first month bank, later months DD). */
+  collect_via?: "bank_transfer" | "gocardless" | null;
 };
 
 export function round2(n: number): number {
@@ -27,6 +29,13 @@ export function normalizePaymentSchedule(raw: unknown): InvoicePaymentScheduleRo
     const amount = Number(o.amount_gbp);
     if (!Number.isFinite(amount) || amount <= 0) continue;
     const status = String(o.status || "pending").toLowerCase() === "paid" ? "paid" : "pending";
+    const viaRaw = String(o.collect_via || "").trim().toLowerCase();
+    const collect_via =
+      viaRaw === "bank_transfer" || viaRaw === "bank" || viaRaw === "tide"
+        ? ("bank_transfer" as const)
+        : viaRaw === "gocardless" || viaRaw === "gc"
+          ? ("gocardless" as const)
+          : null;
     out.push({
       seq: Number(o.seq) > 0 ? Math.floor(Number(o.seq)) : i + 1,
       label: String(o.label || `Payment ${i + 1}`).trim().slice(0, 120),
@@ -35,6 +44,7 @@ export function normalizePaymentSchedule(raw: unknown): InvoicePaymentScheduleRo
       status,
       paid_at: o.paid_at ? String(o.paid_at) : null,
       paid_via: o.paid_via ? String(o.paid_via).slice(0, 40) : null,
+      collect_via,
     });
   }
   return out.sort((a, b) => a.seq - b.seq);

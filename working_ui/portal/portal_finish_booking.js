@@ -525,14 +525,27 @@
     }
   }
 
-  function plansForChannel(channel) {
+  function formatUkShortDate(iso) {
+    var s = String(iso || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+    var parts = s.split("-").map(Number);
+    var dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    return dt.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  }
+
+  function plansForChannel(channel, data) {
     if (channel === "gocardless") {
       return [
         {
           value: "gocardless_monthly",
           title: "GoCardless monthly",
           hint:
-            "First payment on booking day, then the 1st of each remaining month this term. £1.50 per instalment.",
+            "After this month's Direct Debit day (1st): pay this month's share by bank transfer now; later months on the 1st via GoCardless. On/before the 1st: first payment on booking day via GoCardless, then the 1sts. £1.50 per GoCardless instalment.",
         },
       ];
     }
@@ -546,6 +559,17 @@
         },
       ];
     }
+    var flexiQ = (data && data.quotes && data.quotes.flexi_bank) || null;
+    var flexiDue = flexiQ && flexiQ.first_due_date ? String(flexiQ.first_due_date).slice(0, 10) : "";
+    var today = new Date().toISOString().slice(0, 10);
+    var flexiHint =
+      flexiDue && flexiDue <= today
+        ? "First half due now (the fixed term due date has already passed), second half mid-term — bank transfer."
+        : flexiDue
+          ? "First half due " +
+            formatUkShortDate(flexiDue) +
+            ", second half mid-term — bank transfer."
+          : "Two instalments this term by bank transfer (first on the term due date, or now if that date has passed).";
     return [
       {
         value: "one_off_bank",
@@ -555,7 +579,7 @@
       {
         value: "flexi_bank",
         title: "Flexi (2 payments this term)",
-        hint: "Half on the fixed due date (Autumn 15 Aug), half mid-term — bank transfer.",
+        hint: flexiHint,
       },
     ];
   }
@@ -577,7 +601,7 @@
             : "Own way — confirm the prepaid minimum:";
     }
     if (!host) return;
-    host.innerHTML = plansForChannel(channel)
+    host.innerHTML = plansForChannel(channel, data)
       .map(function (p, i) {
         return (
           '<label class="choice">' +
@@ -841,15 +865,29 @@
         (!checkoutUrl && data.bank));
     var isTrialStripe =
       isTrial && !isTrialBank && (data.pay_plan === "stripe_instant" || checkoutUrl || inv.payment_method_hint === "stripe");
+    var firstVia = String((first && first.collect_via) || "").toLowerCase();
+    var gcBankFirst =
+      data.pay_plan === "gocardless_monthly" &&
+      (firstVia === "bank_transfer" ||
+        firstVia === "bank" ||
+        /bank transfer/i.test(String((first && first.label) || "")));
     var html =
       '<p style="margin:0 0 8px"><strong>Invoice ' +
       esc(inv.invoice_number || "") +
       "</strong></p>" +
       '<p class="muted" style="margin:0 0 12px;overflow-wrap:break-word">First amount due: <strong>' +
       esc(money(firstAmt)) +
-      "</strong></p>";
+      "</strong>" +
+      (gcBankFirst
+        ? " <span>(pay by bank transfer now; later months via GoCardless)</span>"
+        : "") +
+      "</p>";
 
-    if (gcUrl && (data.pay_plan === "gocardless_monthly" || inv.payment_method_hint === "gocardless")) {
+    if (
+      gcUrl &&
+      !gcBankFirst &&
+      (data.pay_plan === "gocardless_monthly" || inv.payment_method_hint === "gocardless")
+    ) {
       if (isDemoMode()) {
         html +=
           '<button type="button" class="btn btn--pri" id="fbConfirmPaid">Demo: I’ve paid — report to office</button>' +
@@ -980,6 +1018,13 @@
         '">Email info@...</a>' +
         "</p>" +
         '<p class="muted" style="margin:0">Use the club WhatsApp you already chat on if you prefer - same \"I\'ve paid\" message is fine.</p>';
+      if (gcBankFirst && gcUrl && !isDemoMode()) {
+        html +=
+          '<p class="muted" style="margin:14px 0 8px;overflow-wrap:break-word">After (or alongside) the bank transfer, set up GoCardless so later months collect on the 1st:</p>' +
+          '<a class="btn" href="' +
+          esc(gcUrl) +
+          '">Set up GoCardless for later months</a>';
+      }
     }
     if (host) host.innerHTML = html;
     var stripeRetry = document.getElementById("fbStripeRetry");

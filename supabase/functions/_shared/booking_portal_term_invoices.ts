@@ -2,7 +2,9 @@
  * New Booking Portal clients (mid-term / term already started):
  * one INV-P per term, amount = remaining sessions.
  *
- * GoCardless: first due on booking day, then 1st of each remaining month in the term.
+ * GoCardless: after this month's collection day (1st), first instalment = bank transfer
+ * due on booking day (current-month remainder); later months on the 1sts via GoCardless.
+ * Before/on that 1st: first due on booking day via GoCardless, then remaining 1sts.
  * Flexi (bank): two halves — first on the fixed term due (e.g. Autumn 15 Aug), or booking
  * day if that date has already passed; second on the fixed mid-term date if still future.
  * One-off (bank): single instalment due today.
@@ -218,45 +220,100 @@ export function parseBookingScope(raw: unknown): BookingScope | null {
   return null;
 }
 
-function withGcFee(amount: number, plan: NewClientPayPlan): number {
+type CollectVia = "bank_transfer" | "gocardless";
+
+function withGcFee(
+  amount: number,
+  plan: NewClientPayPlan,
+  collectVia?: CollectVia | null,
+): number {
   const base = round2(amount);
   if (plan !== "gocardless_monthly" || base <= 0) return base;
+  // Bank remainder (after monthly collection day) has no £1.50 GC fee.
+  if (collectVia === "bank_transfer") return base;
   return round2(base + GC_FEE);
 }
 
 function splitEqual(
   total: number,
-  slots: Array<{ label: string; dueIso: string }>,
+  slots: Array<{ label: string; dueIso: string; collectVia?: CollectVia }>,
   plan: NewClientPayPlan,
-): Array<{ label: string; dueIso: string; amountGbp: number }> {
+): Array<{
+  label: string;
+  dueIso: string;
+  amountGbp: number;
+  collectVia?: CollectVia;
+}> {
   const n = slots.length;
   if (n <= 0 || total <= 0) return [];
   const programme = round2(total);
   const raw = programme / n;
-  const out: Array<{ label: string; dueIso: string; amountGbp: number }> = [];
+  const out: Array<{
+    label: string;
+    dueIso: string;
+    amountGbp: number;
+    collectVia?: CollectVia;
+  }> = [];
   let allocated = 0;
   for (let i = 0; i < n; i++) {
     const slice = i === n - 1 ? round2(programme - allocated) : round2(raw);
     allocated = round2(allocated + slice);
+    const collectVia = slots[i]!.collectVia;
     out.push({
       label: slots[i]!.label,
       dueIso: slots[i]!.dueIso,
-      amountGbp: withGcFee(slice, plan),
+      amountGbp: withGcFee(slice, plan, collectVia),
+      collectVia,
     });
   }
   return out;
 }
 
-/** GoCardless: first due = booking day; then each month 1st still ahead in the term. */
+/** True when asOf is after this calendar month's term collection day (1st). */
+export function gcNeedsBankRemainderForCurrentMonth(
+  term: BookingTermKey,
+  asOfIso: string,
+): boolean {
+  const asOf = isoToday(asOfIso);
+  const ym = asOf.slice(0, 7);
+  const thisMonth = (MONTHLY_TERM_1STS[term] || []).find((m) =>
+    m.dueIso.startsWith(ym)
+  );
+  return Boolean(thisMonth && asOf > thisMonth.dueIso);
+}
+
+/**
+ * GoCardless: after this month's 1st, first instalment = bank (remainder) due booking day;
+ * later months on the 1sts via GoCardless. Otherwise first on booking day via GC, then 1sts.
+ */
 export function buildNewClientGcMonthDueSlots(
   term: BookingTermKey,
   asOfIso: string,
-): Array<{ label: string; dueIso: string }> {
+): Array<{ label: string; dueIso: string; collectVia: CollectVia }> {
   const asOf = isoToday(asOfIso);
   const rest = (MONTHLY_TERM_1STS[term] || []).filter((m) => m.dueIso > asOf);
+  const bankFirst = gcNeedsBankRemainderForCurrentMonth(term, asOf);
+  const monthName =
+    (MONTHLY_TERM_1STS[term] || []).find((m) => m.dueIso.startsWith(asOf.slice(0, 7)))
+      ?.label || "Current month";
+  const first = bankFirst
+    ? {
+        label: `${monthName} remainder · bank transfer (due on booking day)`,
+        dueIso: asOf,
+        collectVia: "bank_transfer" as const,
+      }
+    : {
+        label: "First payment · GoCardless (due on booking day)",
+        dueIso: asOf,
+        collectVia: "gocardless" as const,
+      };
   return [
-    { label: "First payment · due on booking day", dueIso: asOf },
-    ...rest.map((m) => ({ label: `Payment · ${m.label}`, dueIso: m.dueIso })),
+    first,
+    ...rest.map((m) => ({
+      label: `Payment · ${m.label} · GoCardless`,
+      dueIso: m.dueIso,
+      collectVia: "gocardless" as const,
+    })),
   ];
 }
 
@@ -292,7 +349,7 @@ export function buildNewClientPaymentSchedule(args: {
   const total = round2(args.programmeTotalGbp);
   if (total <= 0) return [];
 
-  let slots: Array<{ label: string; dueIso: string }> = [];
+  let slots: Array<{ label: string; dueIso: string; collectVia?: CollectVia }> = [];
   if (args.plan === "gocardless_monthly") {
     slots = buildNewClientGcMonthDueSlots(args.term, asOf);
   } else if (args.plan === "flexi_bank") {
@@ -319,6 +376,14 @@ export function buildNewClientPaymentSchedule(args: {
     due_date: r.dueIso,
     amount_gbp: r.amountGbp,
     status: "pending" as const,
+    collect_via:
+      args.plan === "gocardless_monthly"
+        ? r.collectVia || ("gocardless" as const)
+        : args.plan === "flexi_bank" ||
+            args.plan === "one_off_bank" ||
+            args.plan === "own_way"
+          ? ("bank_transfer" as const)
+          : null,
   }));
 }
 
@@ -420,14 +485,15 @@ export function quoteNewClientMidTermInvoice(args: {
     });
   }
   if (args.plan === "gocardless_monthly") {
+    const gcRows = schedule.filter((r) => r.collect_via !== "bank_transfer");
     const feeTotal = round2(invoiceTotal - programmeTotal);
-    if (feeTotal > 0) {
+    if (feeTotal > 0 && gcRows.length > 0) {
       lineItems.push({
         service_key: "GC_FEE",
         description: "GoCardless fee",
-        detail: `£${GC_FEE.toFixed(2)} × ${schedule.length} instalment(s)`,
+        detail: `£${GC_FEE.toFixed(2)} × ${gcRows.length} instalment(s)`,
         dates: null,
-        quantity: schedule.length,
+        quantity: gcRows.length,
         unit_price_gbp: GC_FEE,
         amount_gbp: feeTotal,
         xero_item_code: null,
@@ -435,11 +501,19 @@ export function quoteNewClientMidTermInvoice(args: {
     }
   }
 
+  const flexiFirstDue = schedule[0]?.due_date || asOf;
+  const flexiBankFirst =
+    args.plan === "flexi_bank" && flexiFirstDue === asOf
+      ? `first half due on booking day (fixed term due date already passed)`
+      : `first half due ${flexiFirstDue}`;
+  const gcBankFirst = schedule[0]?.collect_via === "bank_transfer";
   const planPhrase =
     args.plan === "gocardless_monthly"
-      ? `GoCardless monthly · first instalment due on booking day, then 1st of each remaining month`
+      ? gcBankFirst
+        ? `GoCardless monthly · after this month's collection day: pay current-month remainder by bank transfer now; later months on the 1st via GoCardless`
+        : `GoCardless monthly · first instalment due on booking day, then 1st of each remaining month`
       : args.plan === "flexi_bank"
-        ? `Bank transfer · Flexi (2 instalments this term; first on fixed due date e.g. Autumn 15 Aug)`
+        ? `Bank transfer · Flexi (2 instalments this term; ${flexiBankFirst})`
         : args.plan === "own_way"
           ? `Own way · pay ${ownWaySessions} sessions prepaid + £${OWN_WAY_ADMIN_FEE} admin now; top up as you go to keep 2 sessions prepaid`
           : `Bank transfer · one-off full term (due on booking day)`;
