@@ -18,7 +18,7 @@
     "/portal/portal-roster-rows-merge.js?v=20260831-dated-slot-instructor",
     "/portal/portal_roster_canonical.js?v=20260902-cyrus-wed-5",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
-    "/portal/portal_madre_fold.js?v=20260713-authoritative-week",
+    "/portal/portal_madre_fold.js?v=20260902-luliya-instr",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
@@ -27,7 +27,7 @@
     "/portal/portal_participant_identity.js?v=20260712-rayyan-f",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
     "/portal/staff_roster_resolve.js?v=20260630-staff-display-names",
-    "/portal/portal_staff_display_names.js?v=20260630-staff-display-names",
+    "/portal/portal_staff_display_names.js?v=20260902-luliya-display",
   ];
 
   var TIER_UI = [

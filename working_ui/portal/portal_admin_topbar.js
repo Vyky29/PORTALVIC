@@ -255,7 +255,13 @@
     if (fromProfile && !isGenericDisplayName(fromProfile)) return fromProfile;
     var key = inferStaffKey(profile, email);
     if (key && EXEC_DISPLAY_NAMES[key]) return EXEC_DISPLAY_NAMES[key];
-    if (key) return key.charAt(0).toUpperCase() + key.slice(1);
+    if (key) {
+      if (typeof global.portalStaffDisplayName === "function") {
+        var fromCanon = String(global.portalStaffDisplayName(key) || "").trim();
+        if (fromCanon) return fromCanon;
+      }
+      return key.charAt(0).toUpperCase() + key.slice(1);
+    }
     if (email) {
       var mapped = staffKeyFromEmail(email);
       if (mapped && EXEC_DISPLAY_NAMES[mapped]) return EXEC_DISPLAY_NAMES[mapped];

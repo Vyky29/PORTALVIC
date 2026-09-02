@@ -1132,6 +1132,8 @@
     if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
       return window.portalStaffDisplayName(sid);
     }
+    var k = canonicalStaffMatchKey(sid);
+    if (k === "lulia") return "Luliya";
     return sid.charAt(0).toUpperCase() + sid.slice(1).toLowerCase();
   }
 
@@ -2948,7 +2950,9 @@
     var title =
       typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
         ? window.portalStaffDisplayName(n)
-        : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+        : canonicalStaffMatchKey(n) === "lulia"
+          ? "Luliya"
+          : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
     return '<span class="ash-pill">' + esc(title) + "</span>";
   }
 

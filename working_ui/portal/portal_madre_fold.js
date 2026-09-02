@@ -121,9 +121,26 @@
     weeks.forEach(function (w) {
       madreStaffList(w).forEach(function (st) {
         if (!st) return;
+        // Always emit LULIYA for this person — never LULIA from roster key `lulia`.
+        var staffKeyNorm = String(st.staffKey || st.name || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "");
         var staffName = String(st.staffName || st.staffKey || st.name || "")
           .trim()
           .toUpperCase();
+        if (
+          staffKeyNorm === "lulia" ||
+          staffKeyNorm === "luliya" ||
+          staffKeyNorm === "lulya" ||
+          staffKeyNorm === "aida" ||
+          staffKeyNorm === "stf021" ||
+          staffName === "LULIA" ||
+          staffName === "LULYA" ||
+          staffName === "AIDA"
+        ) {
+          staffName = "LULIYA";
+        }
         (st.days || []).forEach(function (d) {
           var iso = String(d.sessionDate || d.session_date || "").trim().slice(0, 10);
           if (iso && !sessionDateBelongsToWeek(iso, w)) return;

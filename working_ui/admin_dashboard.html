@@ -64,7 +64,7 @@
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260828-timetable-nav"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260720-dc-crash-weeks" />
-  <script src="/portal/portal_staff_display_names.js?v=20260630-staff-display-names"></script>
+  <script src="/portal/portal_staff_display_names.js?v=20260902-luliya-display"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260828-hours-weeknav" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
@@ -105,7 +105,7 @@
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-ios-gallery-upload-fix" />
   <script src="/portal/admin-portal-staff-map.js?v=20260610-live-map-all"></script>
 <script src="/portal/portal_ops_admin_display.js?v=20260630-sevitha-admin-fix"></script>
-<script src="/portal/portal_admin_topbar.js?v=20260711-lead-same-window"></script>
+<script src="/portal/portal_admin_topbar.js?v=20260902-luliya-display"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260704-login-map-fix"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260712-ghost-inapp" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260712-ghost-inapp"></script>
@@ -149,7 +149,7 @@
   <script src="/portal/portal-roster-rows-merge.js?v=20260831-dated-slot-instructor"></script>
   <script src="/portal/portal_roster_canonical.js?v=20260902-cyrus-wed-5"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
-  <script src="/portal/portal_madre_fold.js?v=20260809-staff-map"></script>
+  <script src="/portal/portal_madre_fold.js?v=20260902-luliya-instr"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal-shared-js/portal_field_autocomplete.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal/admin-portal-term-slot.js?v=20260811-autumn-preserve"></script>
@@ -14751,8 +14751,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var name = String(labelHint || '').trim()
         || (base && base.name)
         || String(prof.staffName || '').trim()
-        || r
-        || '—';
+        || r;
+      if(typeof portalStaffDisplayName === 'function'){
+        var dn = portalStaffDisplayName(name) || portalStaffDisplayName(r);
+        if(dn) name = dn;
+      }
+      if(!name) name = '—';
       var roleFromSheet = portalStaffRoleTrackLabel(String(prof.staffRoleTrack || prof.staffRole || '').trim());
       var roleLine = (roleFromSheet && roleFromSheet !== '—')
         ? roleFromSheet
@@ -15961,11 +15965,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function schedStaffDisplayName(slug, hint){
       var s = normalizeSchedAnchorStaffId(slug) || String(slug || '').trim().toLowerCase();
-      if(!s) return String(hint || '').trim() || '—';
+      var hintStr = String(hint || '').trim();
+      if(typeof portalStaffDisplayName === 'function'){
+        var fromSlug = s ? portalStaffDisplayName(s) : '';
+        if(fromSlug) return fromSlug;
+        var fromHint = hintStr ? portalStaffDisplayName(hintStr) : '';
+        if(fromHint) return fromHint;
+      }
+      if(!s) return hintStr || '—';
       var prof = portalStaffProfileByRosterId(s);
       var n = String(prof.staffName || '').trim();
       if(n) return n;
-      return String(hint || '').trim() || s;
+      return hintStr || s;
     }
     function schedParticipantPillHtml(label, openKey, tone, openKind){
       var lab = esc(String(label || '').trim() || '—');
@@ -21510,7 +21521,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260813-autumn-merge-standing';
+    var PORTAL_ADMIN_HUB_BUILD = '20260902-luliya-display';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

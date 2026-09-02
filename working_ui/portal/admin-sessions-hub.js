@@ -1433,6 +1433,8 @@
     if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
       return window.portalStaffDisplayName(sid);
     }
+    var k = canonicalStaffMatchKey(sid);
+    if (k === "lulia") return "Luliya";
     return sid.charAt(0).toUpperCase() + sid.slice(1).toLowerCase();
   }
 
@@ -3882,7 +3884,7 @@
     var title =
       typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
         ? window.portalStaffDisplayName(n)
-        : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+        : canonicalInstructorFilterName(n);
     return '<span class="ash-pill">' + esc(title) + "</span>";
   }
 
@@ -3892,7 +3894,7 @@
     var title =
       typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
         ? window.portalStaffDisplayName(n)
-        : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+        : canonicalInstructorFilterName(n);
     return '<span class="ash-pill ash-pill--out">' + esc(title) + "</span>";
   }
 
@@ -3903,6 +3905,7 @@
     if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
       return window.portalStaffDisplayName(n);
     }
+    if (canonicalStaffMatchKey(n) === "lulia") return "Luliya";
     if (/^[A-Z]{2,}$/.test(n)) {
       return n.charAt(0) + n.slice(1).toLowerCase();
     }

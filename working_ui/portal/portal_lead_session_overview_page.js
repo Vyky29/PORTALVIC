@@ -20,7 +20,7 @@ import {
   PORTAL_LEAD_SUMMER_TERM_START,
 } from "./portal_lead_session_scope.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260813-autumn-merge-standing";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260902-luliya-display";
 
 function portalProgrammeLeadHubUrl(profile, authEmail) {
   return "staff_dashboard.html";
