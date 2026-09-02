@@ -97,7 +97,13 @@ function officePaidNotified(choices: Record<string, unknown>): boolean {
   return Boolean(String(choices.office_paid_notified_at || "").trim());
 }
 
-/** Hide GC authorisation URL until parent taps WhatsApp/Email (Step 1). */
+function invoiceBankConfirmed(invoice: Record<string, unknown> | null): boolean {
+  if (!invoice) return false;
+  const st = String(invoice.payment_status || "").toLowerCase();
+  return st === "paid" || st === "partial";
+}
+
+/** Hide GC URL for bank-first until office confirms Tide (Mark paid). */
 function redactGcUntilOfficeNotify(
   invoice: Record<string, unknown> | null,
   choices: Record<string, unknown>,
@@ -105,7 +111,8 @@ function redactGcUntilOfficeNotify(
   if (!invoice) return null;
   if (
     paymentScheduleBankFirst(invoice.payment_schedule) &&
-    !officePaidNotified(choices)
+    !officePaidNotified(choices) &&
+    !invoiceBankConfirmed(invoice)
   ) {
     return { ...invoice, gocardless_url: null };
   }
