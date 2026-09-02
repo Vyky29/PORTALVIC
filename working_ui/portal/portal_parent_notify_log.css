@@ -217,6 +217,34 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   font-weight: 800;
 }
 
+.portal-pnlog-conv--lead {
+  background: rgba(217, 119, 6, 0.06);
+  box-shadow: inset 3px 0 0 #d97706;
+}
+
+.portal-pnlog-conv--lead:hover {
+  background: rgba(217, 119, 6, 0.11);
+}
+
+.portal-pnlog-conv--lead.is-selected {
+  background: rgba(217, 119, 6, 0.14);
+  box-shadow: inset 3px 0 0 #d97706;
+}
+
+.portal-pnlog-conv--former {
+  background: rgba(100, 116, 139, 0.05);
+  box-shadow: inset 3px 0 0 #94a3b8;
+}
+
+.portal-pnlog-conv__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .portal-pnlog-conv__top {
   display: flex;
   width: 100%;
@@ -290,6 +318,10 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
 }
 
 .portal-pnlog-pane-head__who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   font-weight: 800;
   font-size: 15px;
   overflow-wrap: anywhere;
@@ -829,11 +861,25 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   color: #8a6a00;
 }
 
+.portal-pnlog-chip--lead {
+  background: rgba(217, 119, 6, 0.18);
+  color: #9a3412;
+  font-weight: 700;
+  margin-top: 0;
+}
+
+.portal-pnlog-chip--former {
+  background: rgba(100, 116, 139, 0.16);
+  color: #475569;
+  font-weight: 700;
+  margin-top: 0;
+}
+
 .portal-pnlog-chip--unread {
   background: var(--pnlog-blue);
   color: #fff;
   font-weight: 700;
-  margin-top: 4px;
+  margin-top: 0;
 }
 
 /* Composer sits in #portalPnlogComposerMount (scrollable when Meta template UI is tall) */

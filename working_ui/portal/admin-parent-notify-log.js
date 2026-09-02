@@ -429,6 +429,34 @@
     return hit ? String(hit) : "";
   }
 
+  function truthyFlag(v) {
+    if (v === true) return true;
+    var s = String(v == null ? "" : v).trim().toLowerCase();
+    return s === "true" || s === "yes" || s === "y" || s === "1";
+  }
+
+  function falsyInClass(v) {
+    if (v === false) return true;
+    var s = String(v == null ? "" : v).trim().toLowerCase();
+    return s === "false" || s === "no" || s === "n" || s === "0";
+  }
+
+  /**
+   * lead = waiting list / web-email interested (not enrolled).
+   * former = not in class and not waiting (released / old).
+   * client = in class.
+   */
+  function contactKindFromFlags(inClass, onWaitingList) {
+    var waiting = truthyFlag(onWaitingList);
+    var enrolled = truthyFlag(inClass);
+    var notEnrolled = falsyInClass(inClass);
+    if (waiting && !enrolled) return "lead";
+    if (waiting && enrolled) return "client";
+    if (enrolled) return "client";
+    if (notEnrolled) return "former";
+    return "";
+  }
+
   function normalizeDirContact(row) {
     if (!row) return null;
     var child = String(row.child_display || row.child || row.client || "").trim();
@@ -437,6 +465,20 @@
     var contactId = String(row.contact_id || row.contactId || "").trim();
     var parentPersonId = String(row.parent_person_id || row.parentPersonId || "").trim();
     if (!child && !mobile && !contactId) return null;
+    var inClassRaw =
+      row.in_class != null
+        ? row.in_class
+        : row.inClass != null
+          ? row.inClass
+          : null;
+    var waitingRaw =
+      row.on_waiting_list != null
+        ? row.on_waiting_list
+        : row.onWaitingList != null
+          ? row.onWaitingList
+          : null;
+    var fundingLabel = String(row.funding_label || row.fundingLabel || "").trim();
+    var contactKind = contactKindFromFlags(inClassRaw, waitingRaw);
     return {
       contactId: contactId,
       parentPersonId: parentPersonId,
@@ -449,6 +491,10 @@
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, " ")
         .trim(),
+      inClass: truthyFlag(inClassRaw),
+      onWaitingList: truthyFlag(waitingRaw),
+      fundingLabel: fundingLabel,
+      contactKind: contactKind,
     };
   }
 
@@ -530,6 +576,10 @@
           if (c.parentPersonId && !existing.parentPersonId) {
             existing.parentPersonId = c.parentPersonId;
           }
+          if (c.contactKind) existing.contactKind = c.contactKind;
+          if (c.fundingLabel) existing.fundingLabel = c.fundingLabel;
+          existing.inClass = !!c.inClass;
+          existing.onWaitingList = !!c.onWaitingList;
         } else {
           if (!existing.mobile && c.mobile) {
             existing.mobile = c.mobile;
@@ -543,6 +593,12 @@
           }
           if (!existing.parentPersonId && c.parentPersonId) {
             existing.parentPersonId = c.parentPersonId;
+          }
+          if (!existing.contactKind && c.contactKind) existing.contactKind = c.contactKind;
+          if (!existing.fundingLabel && c.fundingLabel) existing.fundingLabel = c.fundingLabel;
+          if (existing.inClass == null && c.inClass != null) existing.inClass = !!c.inClass;
+          if (existing.onWaitingList == null && c.onWaitingList != null) {
+            existing.onWaitingList = !!c.onWaitingList;
           }
         }
         if (existing.matchKey) byPhone[existing.matchKey] = existing;
@@ -597,6 +653,12 @@
       t.phoneFromProfile = !!(remapped && remapped !== threadDigits);
       if (contact && contact.parent) t.parentName = contact.parent;
       if (contact && contact.child) t.client = contact.child;
+      if (contact) {
+        t.contactKind = contact.contactKind || "";
+        t.inClass = !!contact.inClass;
+        t.onWaitingList = !!contact.onWaitingList;
+        t.fundingLabel = contact.fundingLabel || "";
+      }
       /* Coordinator phones win over any mis-stamped outbound (Kate/Maire → Jordan). */
       var ov = knownWaThreadOverride(t.phone || t.sendPhone);
       if (ov) {
@@ -1258,6 +1320,7 @@
   /** Identity fields only — never staff sender email (would match every thread Victor sent). */
   function threadIdentityHay(t) {
     var phoneKey = phoneMatchKey(t.phone || t.sendPhone || "");
+    var kind = String(t.contactKind || "").toLowerCase();
     return foldSearchText(
       [
         t.name,
@@ -1270,6 +1333,9 @@
         phoneKey,
         t.fromDirectory ? "directory" : "",
         t.coordinatorThread ? "jordan acat h&f" : "",
+        kind === "lead" ? "lead interested waiting list web email" : "",
+        kind === "former" ? "former old client released" : "",
+        t.fundingLabel || "",
       ].join(" ")
     );
   }
@@ -1337,6 +1403,8 @@
     if (outcome === "failed" && !t.hasFailed) return false;
     if (outcome === "sent" && !t.hasSent) return false;
     if (outcome === "unread" && !isThreadUnread(t)) return false;
+    if (outcome === "leads" && String(t.contactKind || "") !== "lead") return false;
+    if (outcome === "clients" && String(t.contactKind || "") === "lead") return false;
     if (!q) return true;
     if (threadPhoneMatchesQuery(t, qRaw)) return true;
     if (hayMatchesQuery(threadIdentityHay(t), q)) return true;
@@ -1350,7 +1418,7 @@
     var q = foldSearchText(qRaw);
     if (q.length < 2) return [];
     var outcome = String(state.outcome || "all").toLowerCase();
-    if (outcome && outcome !== "all") return [];
+    if (outcome && outcome !== "all" && outcome !== "leads") return [];
     var existing = Object.create(null);
     (state.threads || []).forEach(function (t) {
       var d = phoneDigits(t.phone || t.sendPhone || "");
@@ -1361,10 +1429,11 @@
     var out = [];
     (state.contactDirectory || []).forEach(function (c) {
       if (!c || !c.mobile) return;
+      if (outcome === "leads" && c.contactKind !== "lead") return;
       var digits = c.sendDigits || canonicalPhoneDigits(c.mobile) || phoneDigits(c.mobile);
       if (!digits || existing[digits] || existing[c.matchKey]) return;
       var hay = foldSearchText(
-        [c.parent, c.child, c.mobile, digits, c.contactId].join(" ")
+        [c.parent, c.child, c.mobile, digits, c.contactId, c.contactKind === "lead" ? "lead interested" : ""].join(" ")
       );
       if (!phoneQueryMatches(c.mobile, qRaw) && !phoneQueryMatches(digits, qRaw) && !hayMatchesQuery(hay, q)) {
         return;
@@ -1380,6 +1449,10 @@
         sendPhone: digits,
         profilePhone: digits,
         phoneFromProfile: true,
+        contactKind: c.contactKind || "",
+        inClass: !!c.inClass,
+        onWaitingList: !!c.onWaitingList,
+        fundingLabel: c.fundingLabel || "",
         events: [],
         lastAt: "",
         hasInbound: false,
@@ -1690,6 +1763,21 @@
     syncComposerSendingState();
   }
 
+  function contactKindChipHtml(t) {
+    var kind = String((t && t.contactKind) || "").toLowerCase();
+    if (kind === "lead") {
+      return (
+        '<span class="portal-pnlog-chip portal-pnlog-chip--lead" title="Web / email lead — interested, not an enrolled client">Lead</span>'
+      );
+    }
+    if (kind === "former") {
+      return (
+        '<span class="portal-pnlog-chip portal-pnlog-chip--former" title="Not in class — former / released place">Former</span>'
+      );
+    }
+    return "";
+  }
+
   function renderPaneHeadHtml(t) {
     if (!t) return "";
     var title = t.name;
@@ -1698,12 +1786,14 @@
     }
     var participant = t.client || "";
     var enrolledHtml = participant ? enrolledChipsForClient(participant) : "";
+    var kindHtml = contactKindChipHtml(t);
     var subline = threadPhoneForUi(t) + (participant ? " · " + participant : "");
     return (
       '<button type="button" class="btn btn--ghost btn--sm portal-pnlog-pane-back" id="portalPnlogBack">← Back</button>' +
       '<div class="portal-pnlog-pane-head__text">' +
       '<div class="portal-pnlog-pane-head__who">' +
       esc(title) +
+      kindHtml +
       "</div>" +
       '<div class="portal-pnlog-pane-head__sub-row">' +
       '<div class="portal-pnlog-pane-head__sub muted">' +
@@ -1851,6 +1941,9 @@
   function renderConvListItem(t) {
     var unread = isThreadUnread(t);
     var sel = t.key === state.selectedKey ? " is-selected" : "";
+    var kind = String(t.contactKind || "").toLowerCase();
+    var kindCls =
+      kind === "lead" ? " portal-pnlog-conv--lead" : kind === "former" ? " portal-pnlog-conv--former" : "";
     var sub = t.events.length
       ? bodyPreview(clientFacingOutboundBody(t.events[t.events.length - 1]))
       : t.fromDirectory
@@ -1862,9 +1955,13 @@
     if (t.client && namesRoughlySame(headName, t.client) && t.waContact && !namesRoughlySame(t.waContact, t.client)) {
       headName = t.waContact;
     }
+    var chips = "";
+    chips += contactKindChipHtml(t);
+    if (unread) chips += '<span class="portal-pnlog-chip portal-pnlog-chip--unread">Unread</span>';
     return (
       '<button type="button" class="portal-pnlog-conv' +
       sel +
+      kindCls +
       (unread ? " portal-pnlog-conv--unread" : "") +
       '" data-thread-key="' +
       esc(t.key) +
@@ -1882,7 +1979,7 @@
       '<span class="portal-pnlog-conv__preview muted">' +
       esc(sub) +
       "</span>" +
-      (unread ? '<span class="portal-pnlog-chip portal-pnlog-chip--unread">Unread</span>' : "") +
+      (chips ? '<span class="portal-pnlog-conv__chips">' + chips + "</span>" : "") +
       "</button>"
     );
   }
@@ -2839,6 +2936,8 @@
       '<input type="search" id="portalParentNotifyLogSearch" class="inp portal-pnlog-toolbar__search" placeholder="Search parent, participant, phone…" autocomplete="off" />' +
       '<select id="portalParentNotifyLogOutcome" class="sel portal-pnlog-toolbar__sel" aria-label="Filter">' +
       '<option value="all">All</option>' +
+      '<option value="leads">Leads / interested</option>' +
+      '<option value="clients">Clients (not leads)</option>' +
       '<option value="unread">Unread</option>' +
       '<option value="replies">Has replies</option>' +
       '<option value="sent">Sent OK</option>' +

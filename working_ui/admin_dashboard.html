@@ -24812,7 +24812,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               contact_id: row && row.contactId,
               child_display: child,
               parent_display: row && row.parentDisplay,
-              mobile: row && row.mobile
+              mobile: row && row.mobile,
+              in_class: row && (row.inClass === true || String(row.inClass || '').trim().toLowerCase() === 'yes' || String(row.inClass || '').trim().toLowerCase() === 'y'),
+              on_waiting_list: row && (row.onWaitingList === true || String(row.onWaitingList || '').toLowerCase() === 'true'),
+              funding_label: row && (row.fundingLabel || row._adminFundingLabel || '')
             });
           }
           return out;

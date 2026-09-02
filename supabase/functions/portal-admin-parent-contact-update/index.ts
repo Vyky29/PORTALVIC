@@ -79,7 +79,9 @@ Deno.serve(async (req) => {
   if (action === "directory") {
     const { data, error } = await admin
       .from("portal_parent_contacts")
-      .select("contact_id, parent_person_id, child_display, parent_display, mobile")
+      .select(
+        "contact_id, parent_person_id, child_display, parent_display, mobile, in_class, on_waiting_list, funding_label",
+      )
       .limit(8000);
     if (error) {
       console.error("[portal-admin-parent-contact-update] directory", error.message);
@@ -92,6 +94,9 @@ Deno.serve(async (req) => {
       child_display: String(row.child_display || "").trim(),
       parent_display: String(row.parent_display || "").trim(),
       mobile: String(row.mobile || "").trim(),
+      in_class: row.in_class === true,
+      on_waiting_list: row.on_waiting_list === true,
+      funding_label: String(row.funding_label || "").trim(),
     })).filter((row) => row.contact_id || row.child_display || row.mobile);
     return portalAdminJson(200, { ok: true, contacts });
   }
