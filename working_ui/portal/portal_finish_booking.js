@@ -742,7 +742,6 @@
     if (!isSw) return;
     var nameEl = document.getElementById("fbSwName");
     var emailEl = document.getElementById("fbSwEmail");
-    var ratioEl = document.getElementById("fbSwRatioHint");
     var rs = (data && data.registration_support) || {};
     if (nameEl && !nameEl.value) {
       nameEl.value =
@@ -755,21 +754,6 @@
         data.social_worker_email ||
         rs.social_worker_email ||
         "";
-    }
-    if (ratioEl) {
-      var ratio = String(rs.support_regulated || "").toLowerCase();
-      if (ratio === "2to1") {
-        ratioEl.hidden = false;
-        ratioEl.textContent =
-          "Registration says support when regulated is 2to1 — two instructors are needed in the same session (one open slot alone is not enough).";
-      } else if (ratio === "1to1") {
-        ratioEl.hidden = false;
-        ratioEl.textContent =
-          "Registration says support when regulated is 1to1 (one instructor).";
-      } else {
-        ratioEl.hidden = true;
-        ratioEl.textContent = "";
-      }
     }
   }
 

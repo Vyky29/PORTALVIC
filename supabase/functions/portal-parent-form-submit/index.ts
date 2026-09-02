@@ -534,10 +534,21 @@ Deno.serve(async (req) => {
           booking_session_token_hash: tokenHash,
           status: "pending",
           hold_expires_at: holdExpires,
-          notes:
-            (bookingRequest.booking_kind === "trial"
-              ? "booking_kind=trial|"
-              : "booking_kind=term|") + "pay_hold_30m",
+          notes: (() => {
+            const ratio = sanitizePart(
+              String(payload.support_regulated || bookingRequest.support_regulated || ""),
+              20,
+            ).toLowerCase().replace(/\s+/g, "");
+            const seatsNeeded = ratio === "2to1" || ratio === "2:1" ? 2 : 1;
+            return [
+              bookingRequest.booking_kind === "trial" ? "booking_kind=trial" : "booking_kind=term",
+              "pay_hold_30m",
+              ratio ? `support_regulated=${ratio}` : "",
+              `seats_needed=${seatsNeeded}`,
+            ]
+              .filter(Boolean)
+              .join("|");
+          })(),
         })
         .select("id")
         .single();

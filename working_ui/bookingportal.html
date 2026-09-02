@@ -254,7 +254,7 @@
       width: 100%;
     }
     @media (min-width: 900px) {
-      .filter-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .filter-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     }
     label.field {
       display: flex;
@@ -2341,6 +2341,16 @@
           </span>
           <select id="fTime" aria-label="Filter by time"><option value="">All times</option></select>
         </label>
+        <label class="field">
+          <span class="field-label">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Support when regulated
+          </span>
+          <select id="fSupport" aria-label="Support when regulated">
+            <option value="1to1">1to1</option>
+            <option value="2to1">2to1</option>
+          </select>
+        </label>
       </div>
       <div class="filter-row">
         <label class="toggle">
@@ -2700,7 +2710,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260825-halfhour-bands"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260903-support-seats"></script>
   <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260831-privacy-not-you"></script>
@@ -2911,9 +2921,23 @@
   var fVenue = document.getElementById("fVenue");
   var fDay = document.getElementById("fDay");
   var fTime = document.getElementById("fTime");
+  var fSupport = document.getElementById("fSupport");
   var fHideFull = document.getElementById("fHideFull");
   var offerBanner = document.getElementById("offerBanner");
   var offerBannerText = document.getElementById("offerBannerText");
+
+  function currentSupportRatio() {
+    var v = fSupport && fSupport.value ? String(fSupport.value) : "1to1";
+    return v === "2to1" ? "2to1" : "1to1";
+  }
+
+  function currentSeatsNeeded() {
+    return mock.seatsNeededForSupport
+      ? mock.seatsNeededForSupport(currentSupportRatio())
+      : currentSupportRatio() === "2to1"
+        ? 2
+        : 1;
+  }
 
   // Clear browse first; OTP gate blurs + modal after PREVIEW_MS (see portal_booking_lead_gate.js).
   function fillFilterSelects() {
@@ -2937,12 +2961,17 @@
   }
 
   function currentFilters() {
+    var minSeats = currentSeatsNeeded();
     return {
       serviceId: fService.value || "",
       venue: fVenue.value || "",
       day: fDay.value || "",
       timeLabel: fTime.value || "",
       hideFull: !!fHideFull.checked,
+      supportRegulated: currentSupportRatio(),
+      minSeats: minSeats,
+      /* 2to1: only list bands with enough free instructor seats. */
+      requireSeats: minSeats > 1,
     };
   }
 
@@ -2965,6 +2994,27 @@
     return !!s.enquireOnly && !(s.intensiveBlocks || s.tier === "core");
   }
 
+  function slotFilterOpts(filters, extra) {
+    filters = filters || currentFilters();
+    extra = extra || {};
+    var minSeats =
+      filters.minSeats != null ? Number(filters.minSeats) : currentSeatsNeeded();
+    return {
+      serviceId: extra.serviceId != null ? extra.serviceId : filters.serviceId || "",
+      venue: extra.venue != null ? extra.venue : filters.venue || "",
+      day: extra.day != null ? extra.day : filters.day || "",
+      timeLabel: extra.timeLabel != null ? extra.timeLabel : filters.timeLabel || "",
+      hideFull: extra.hideFull != null ? !!extra.hideFull : !!filters.hideFull,
+      minSeats: minSeats,
+      requireSeats:
+        extra.requireSeats != null
+          ? !!extra.requireSeats
+          : filters.requireSeats != null
+            ? !!filters.requireSeats
+            : minSeats > 1,
+    };
+  }
+
   function serviceVisibleInFilters(s, filters) {
     filters = filters || {};
     if (filters.serviceId && s.id !== filters.serviceId) return false;
@@ -2975,13 +3025,9 @@
       if (filters.day || filters.timeLabel) return false;
       return true;
     }
-    var slots = mock.filterSlots({
-      serviceId: s.id,
-      venue: filters.venue || "",
-      day: filters.day || "",
-      timeLabel: filters.timeLabel || "",
-      hideFull: !!filters.hideFull,
-    });
+    var slots = mock.filterSlots(
+      slotFilterOpts(filters, { serviceId: s.id }),
+    );
     return slots.length > 0;
   }
 
@@ -3260,15 +3306,16 @@
   function serviceCardHtml(s, active, filters) {
     filters = filters || {};
     var pack = serviceIconPack(s.id);
-    var slotsForAvail = mock.filterSlots({
-      serviceId: s.id,
-      venue: filters.venue || "",
-      day: filters.day || "",
-      timeLabel: filters.timeLabel || "",
-      hideFull: false,
-    });
+    var slotsForAvail = mock.filterSlots(
+      slotFilterOpts(filters, {
+        serviceId: s.id,
+        hideFull: false,
+        requireSeats: false,
+      }),
+    );
+    var need = Number(filters.minSeats) || currentSeatsNeeded();
     var openN = slotsForAvail.filter(function (slot) {
-      return !mock.isFull(slot);
+      return !mock.isFull(slot, need);
     }).length;
     var officeEnquire = isOfficeEnquireService(s);
     var enquireOnly = !!s.enquireOnly;
@@ -3612,7 +3659,8 @@
   }
 
   function slotRowHtml(slot, svc) {
-    var full = mock.isFull(slot);
+    var needed = currentSeatsNeeded();
+    var full = mock.isFull(slot, needed);
     var left = mock.seatsLeft(slot);
     var enquireOnly = !!(slot.enquireOnly || (svc && svc.enquireOnly));
     var badge = enquireOnly
@@ -3809,13 +3857,7 @@
   }
 
   function renderIntensiveTimetable(s, filters, pack, showRowsHead) {
-    var slots = mock.filterSlots({
-      serviceId: s.id,
-      venue: filters.venue,
-      day: filters.day,
-      timeLabel: filters.timeLabel,
-      hideFull: filters.hideFull,
-    });
+    var slots = mock.filterSlots(slotFilterOpts(filters, { serviceId: s.id }));
     var blocks = mock.groupIntensiveByBlock(slots);
     var body;
     if (!blocks.length) {
@@ -3915,13 +3957,7 @@
         if (isOfficeEnquireService(s)) {
           body = officeEnquireInfoHtml(s);
         } else {
-          var slots = mock.filterSlots({
-            serviceId: s.id,
-            venue: filters.venue,
-            day: filters.day,
-            timeLabel: filters.timeLabel,
-            hideFull: filters.hideFull,
-          });
+          var slots = mock.filterSlots(slotFilterOpts(filters, { serviceId: s.id }));
           var venues = mock.groupSlotsByVenueThenDay(slots);
           body = venues.length
             ? venuesAccordionHtml(s, venues, true)
@@ -3976,6 +4012,7 @@
     if (slot.blockId) q.set("block_id", slot.blockId);
     if (slot.dateIso) q.set("date", slot.dateIso);
     q.set("booking_kind", bookingKind);
+    q.set("support_regulated", currentSupportRatio());
     try {
       if (window.PortalBookingLeadGate) {
         var tok = window.PortalBookingLeadGate.getSessionToken();
@@ -4547,12 +4584,14 @@
     fVenue.value = "";
     fDay.value = "";
     fTime.value = "";
+    if (fSupport) fSupport.value = "1to1";
     fHideFull.checked = false;
     activeInfoServiceId = "";
     refresh();
   });
 
-  [fService, fVenue, fDay, fTime, fHideFull].forEach(function (el) {
+  [fService, fVenue, fDay, fTime, fSupport, fHideFull].forEach(function (el) {
+    if (!el) return;
     el.addEventListener("change", function (e) {
       if (SVC_ROWS_LAYOUT && el === fService && e && e.isTrusted) {
         activeInfoServiceId = "";

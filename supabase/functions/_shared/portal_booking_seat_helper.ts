@@ -688,10 +688,21 @@ export function holdParticipantAlreadyOnOfferSlot(
 }
 
 /** Apply active booking holds without double-counting roster names already on the band. */
+export function seatsNeededFromHoldNotes(notes: unknown): number {
+  const raw = String(notes || "");
+  const m = raw.match(/seats_needed\s*=\s*(\d+)/i);
+  if (m) {
+    const n = Number(m[1]);
+    if (Number.isFinite(n) && n >= 1) return Math.min(4, Math.floor(n));
+  }
+  if (/support_regulated\s*=\s*2to1|ratio\s*=\s*2to1/i.test(raw)) return 2;
+  return 1;
+}
+
 export function applyBookingSlotHoldsToOffer(
   weeklySlots: OfferSlot[],
   intensiveSlots: OfferSlot[],
-  holds: Array<{ slot_id?: unknown; participant_name?: unknown }> | null | undefined,
+  holds: Array<{ slot_id?: unknown; participant_name?: unknown; notes?: unknown }> | null | undefined,
 ): { applied: number; skipped_roster: number } {
   let applied = 0;
   let skippedRoster = 0;
@@ -713,8 +724,9 @@ export function applyBookingSlotHoldsToOffer(
       skippedRoster += 1;
       continue;
     }
+    const seats = seatsNeededFromHoldNotes(hold.notes);
     const cap = Number(slot.capacity) || 0;
-    slot.taken = Math.min(cap, (Number(slot.taken) || 0) + 1);
+    slot.taken = Math.min(cap, (Number(slot.taken) || 0) + seats);
     applied += 1;
   }
   return { applied, skipped_roster: skippedRoster };

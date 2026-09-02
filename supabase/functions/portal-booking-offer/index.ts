@@ -442,7 +442,7 @@ Deno.serve(async (req) => {
 
   const { data: holds, error: holdsErr } = await supabase
     .from("portal_booking_slot_reservations")
-    .select("slot_id, participant_name")
+    .select("slot_id, participant_name, notes")
     .in("status", [...BOOKING_SLOT_HOLD_STATUSES]);
 
   if (holdsErr) {

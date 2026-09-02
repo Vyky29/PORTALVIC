@@ -698,10 +698,9 @@
           </div>
           <div class="field" data-icon="check">
             <label class="field-label"><span class="field-label__text">Support when regulated (calm and engaged) <span class="required-mark">*</span></span></label>
-            <p class="hint">This sets how many instructors the participant needs in the same session. 1to1 = one instructor. 2to1 = two instructors for one participant - one open slot alone is not enough.</p>
             <div class="checks">
-              <label class="check-row"><input type="radio" name="support_regulated" value="1to1" required /> 1to1 (one instructor)</label>
-              <label class="check-row"><input type="radio" name="support_regulated" value="2to1" /> 2to1 (two instructors)</label>
+              <label class="check-row"><input type="radio" name="support_regulated" value="1to1" required /> 1to1</label>
+              <label class="check-row"><input type="radio" name="support_regulated" value="2to1" /> 2to1</label>
             </div>
           </div>
           <div class="field" data-icon="alert">
@@ -1122,6 +1121,10 @@
           booking_kind: (function () {
             var k = String(q.get('booking_kind') || '').trim().toLowerCase();
             return k === 'trial' || k === 'trial_session' || k === 'taster' ? 'trial' : 'term';
+          })(),
+          support_regulated: (function () {
+            var r = String(q.get('support_regulated') || '').trim().toLowerCase().replace(/\s+/g, '');
+            return r === '2to1' || r === '2:1' ? '2to1' : r === '1to1' || r === '1:1' ? '1to1' : null;
           })()
         };
       } catch (_e) {
@@ -1149,6 +1152,12 @@
 
     var bookingRequest = bookingRequestFromUrl() || restoreBookingRequest();
     if (bookingRequest && bookingRequest.slot_id) persistBookingRequest(bookingRequest);
+    if (bookingRequest && bookingRequest.support_regulated) {
+      var ratioEl = form.querySelector(
+        'input[name="support_regulated"][value="' + bookingRequest.support_regulated + '"]',
+      );
+      if (ratioEl) ratioEl.checked = true;
+    }
 
     (function applyBookingLeadPrefill() {
       var gate = window.PortalBookingLeadGate;
@@ -1604,7 +1613,9 @@
               support_regulated: radio('support_regulated')
             };
         if (bookingRequest) {
-          submitPayload.booking_request = bookingRequest;
+          submitPayload.booking_request = Object.assign({}, bookingRequest, {
+            support_regulated: radio('support_regulated') || bookingRequest.support_regulated || null,
+          });
         }
         function downloadParentPdfCopy() {
           try {

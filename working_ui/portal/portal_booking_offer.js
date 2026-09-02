@@ -120,8 +120,16 @@
     return Math.max(0, Number(slot.capacity || 0) - Number(slot.taken || 0));
   }
 
-  function isFull(slot) {
-    return seatsLeft(slot) <= 0;
+  /** Instructor seats this booking needs (2to1 = two places on the same band). */
+  function seatsNeededForSupport(supportRegulated) {
+    var s = String(supportRegulated || "").toLowerCase().replace(/\s+/g, "");
+    if (s === "2to1" || s === "2:1" || s.indexOf("2to1") >= 0) return 2;
+    return 1;
+  }
+
+  function isFull(slot, minSeats) {
+    var need = Math.max(1, Number(minSeats) || 1);
+    return seatsLeft(slot) < need;
   }
 
   function serviceById(id) {
@@ -508,12 +516,14 @@
 
   function filterSlots(filters) {
     filters = filters || {};
+    var minSeats = Math.max(1, Number(filters.minSeats) || 1);
     return state.MOCK_SLOTS.filter(function (slot) {
       if (filters.serviceId && slot.serviceId !== filters.serviceId) return false;
       if (filters.venue && slot.venue !== filters.venue) return false;
       if (filters.day && slot.day !== filters.day) return false;
       if (filters.timeLabel && slotStartKey(slot) !== filters.timeLabel) return false;
-      if (filters.hideFull && isFull(slot)) return false;
+      if (filters.hideFull && isFull(slot, minSeats)) return false;
+      if (filters.requireSeats && isFull(slot, minSeats)) return false;
       return true;
     }).sort(function (a, b) {
       var da = DAY_ORDER[a.day];
@@ -567,6 +577,7 @@
     venueLabel: venueLabel,
     blockById: blockById,
     seatsLeft: seatsLeft,
+    seatsNeededForSupport: seatsNeededForSupport,
     isFull: isFull,
     filterOptions: filterOptions,
     filterSlots: filterSlots,
