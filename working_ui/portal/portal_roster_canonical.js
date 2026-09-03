@@ -651,8 +651,8 @@
 
   /**
    * Autumn Sunday Hub Multi standing remaps (snap-date agnostic).
-   * Standing Jul week stored John's Hub book under BERTA (lead-on-duty).
-   * Autumn: John keeps that Hub book; Berta is Sunday Leader (no Multi clients).
+   * Standing Jul week stored Hub books under BERTA / GIUSEPPE etc.
+   * Do NOT remap BERTA→JOHN here — John only works Sunday 6 Sep (calendar cover).
    * Calendar-specific Sep 6 cover is applied in resolveAutumnInstructorsForCalendarDate.
    */
   function remapAutumnMultiInstructorsStanding(instructorsRaw) {
@@ -661,9 +661,7 @@
     return s
       .replace(/\bBISMARK\b/gi, "GODSWAY")
       .replace(/\bBISMARCK\b/gi, "GODSWAY")
-      .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
-      /* Hub Multi book that summer tagged BERTA → JOHN (Leader has no Multi clients). */
-      .replace(/\bBERTA\b/gi, "JOHN");
+      .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
   }
 
   /**
@@ -690,7 +688,8 @@
     if (isMultiActivityService(service)) {
       s = remapAutumnMultiInstructorsStanding(s);
       if (iso === "2026-09-06") {
-        s = s.replace(/\bEMANUEL\b/gi, "YOUSSEF");
+        /* Youssef covers Emanuel Hub book; John takes former BERTA Hub book this day only. */
+        s = s.replace(/\bEMANUEL\b/gi, "YOUSSEF").replace(/\bBERTA\b/gi, "JOHN");
       }
     }
     if (isBespokeService(service)) {

@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260903-john-sun-hub";
+} from "./portal_lead_session_scope.js?v=20260903-john-sun6-only";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",

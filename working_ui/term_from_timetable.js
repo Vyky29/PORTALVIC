@@ -75,12 +75,17 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "from": "2026-09-01",
       "to": "2026-12-17",
       "weekdays": [
-        5
+        5,
+        0
       ]
     }
   },
   "termStaffFeedbackCompleteDatesByProfileKey": {},
-  "termStaffExtraCalendarDatesByProfileKey": {},
+  "termStaffExtraCalendarDatesByProfileKey": {
+    "john": [
+      "2026-09-06"
+    ]
+  },
   "termStaffCatchUpFeedbackDatesByProfileKey": {},
   "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {},
   "termStaffLateSubmissionBypassProfileKeys": [],
@@ -131,7 +136,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       4
     ],
     "john": [
-      0,
       1,
       3
     ],
@@ -220,7 +224,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       4
     ],
     "john": [
-      0,
       1,
       3
     ],
@@ -592,44 +595,30 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-09-06",
       "2026-09-07",
       "2026-09-09",
-      "2026-09-13",
       "2026-09-14",
       "2026-09-16",
-      "2026-09-20",
       "2026-09-21",
       "2026-09-23",
-      "2026-09-27",
       "2026-09-28",
       "2026-09-30",
-      "2026-10-04",
       "2026-10-05",
       "2026-10-07",
-      "2026-10-11",
       "2026-10-12",
       "2026-10-14",
-      "2026-10-18",
       "2026-10-19",
       "2026-10-21",
-      "2026-10-25",
-      "2026-11-01",
       "2026-11-02",
       "2026-11-04",
-      "2026-11-08",
       "2026-11-09",
       "2026-11-11",
-      "2026-11-15",
       "2026-11-16",
       "2026-11-18",
-      "2026-11-22",
       "2026-11-23",
       "2026-11-25",
-      "2026-11-29",
       "2026-11-30",
       "2026-12-02",
-      "2026-12-06",
       "2026-12-07",
       "2026-12-09",
-      "2026-12-13",
       "2026-12-14",
       "2026-12-16"
     ],
