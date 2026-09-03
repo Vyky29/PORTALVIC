@@ -150,7 +150,11 @@ Deno.serve(async (req) => {
     portalOpen = "communications_call";
     tag = `comms-call-${sourceId.slice(0, 24)}`;
     requireInteraction = true;
-    callData = { callId: sourceId, type: kind };
+    callData = {
+      callId: sourceId,
+      type: kind,
+      conversationId: String(record.conversation_id || ""),
+    };
     ttl = 45;
     urgency = "high";
   } else if (table === "communication_group_members") {

@@ -187,7 +187,7 @@
         var next = Math.max(0, Number(res.data) || 0);
         applyUnreadBadge(next);
         subscribeUnreadRealtime();
-        subscribeIncomingCalls();
+        watchIncomingCalls();
         bindIntrinsicCommsAlerts();
         return lastUnreadCount;
       } catch (_e) {
@@ -510,8 +510,10 @@
 
   function showIncomingOverlay(row) {
     if (isCommsAppPage() || !row || !row.id) return;
-    if (String(row.initiated_by || "") === myUserId()) return;
+    var uid = myUserId();
+    if (uid && String(row.initiated_by || "") === uid) return;
     if (String(row.status || "calling") !== "calling") return;
+    if (incomingCallState && String(incomingCallState.id) === String(row.id)) return;
     incomingCallState = {
       id: String(row.id),
       type: String(row.type || "AUDIO"),
@@ -587,10 +589,71 @@
             if (row.status && row.status !== "calling") hideIncomingOverlay();
           }
         )
-        .subscribe();
+        .subscribe(function (status) {
+          if (status === "SUBSCRIBED") {
+            void pollRingingCalls();
+            return;
+          }
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            try {
+              c.removeChannel(incomingCallChannel);
+            } catch (_rm) {}
+            incomingCallChannel = null;
+            global.setTimeout(subscribeIncomingCalls, 2500);
+          }
+        });
     } catch (_rt) {
       incomingCallChannel = null;
     }
+  }
+
+  async function pollRingingCalls() {
+    if (isCommsAppPage()) return;
+    var c = client();
+    if (!c || typeof c.from !== "function") return;
+    try {
+      var res = await c
+        .from("communication_calls")
+        .select("id,type,status,conversation_id,initiated_by,started_at")
+        .eq("status", "calling")
+        .order("started_at", { ascending: false })
+        .limit(8);
+      var rows = (res && res.data) || [];
+      if (incomingCallState) {
+        var still = rows.some(function (r) {
+          return String(r.id) === String(incomingCallState.id) && String(r.status) === "calling";
+        });
+        if (!still) hideIncomingOverlay();
+      }
+      if (!incomingCallState) {
+        for (var i = 0; i < rows.length; i++) {
+          showIncomingOverlay(rows[i]);
+          if (incomingCallState) break;
+        }
+      }
+    } catch (_e) {}
+  }
+
+  function watchIncomingCalls() {
+    subscribeIncomingCalls();
+    void pollRingingCalls();
+    if (!global.__PORTAL_COMMS_CALL_POLL__) {
+      global.__PORTAL_COMMS_CALL_POLL__ = true;
+      global.setInterval(function () {
+        try {
+          if (document.visibilityState === "visible") void pollRingingCalls();
+        } catch (_p) {}
+      }, 2000);
+    }
+  }
+
+  function ensurePortalPushSw() {
+    if (!global.navigator || !global.navigator.serviceWorker) return;
+    try {
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260904-comms-14", global.location.href).href;
+      var scopeBase = new URL("./", global.location.href).href;
+      global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
+    } catch (_sw) {}
   }
 
   function bindIncomingPushMessages() {
@@ -609,8 +672,8 @@
               id: callId,
               type: (d.call && d.call.type) || "AUDIO",
               status: "calling",
-              initiated_by: "",
-              conversation_id: "",
+              initiated_by: d.senderUserId || "",
+              conversation_id: (d.call && (d.call.conversationId || d.call.conversation_id)) || "",
             });
           }
         }
@@ -793,8 +856,10 @@
 
   function boot() {
     try {
+      ensurePortalPushSw();
       bindIncomingPushMessages();
       bindIntrinsicCommsAlerts();
+      watchIncomingCalls();
       var key = "";
       if (typeof global.resolveTopbarStaffKey === "function") {
         key = global.resolveTopbarStaffKey() || "";
@@ -826,9 +891,13 @@
     global.addEventListener("portal:supabase-ready", function () {
       boot();
       void refreshUnread();
+      watchIncomingCalls();
     });
     document.addEventListener("visibilitychange", function () {
-      if (document.visibilityState === "visible") void refreshUnread();
+      if (document.visibilityState === "visible") {
+        void refreshUnread();
+        void pollRingingCalls();
+      }
     });
   } catch (_e2) {}
   if (!global.__PORTAL_COMMS_UNREAD_POLL__) {
