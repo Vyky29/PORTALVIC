@@ -9,14 +9,14 @@
   var VER = "20260901-roberto-pt-zh";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260903-scrub-angel",
+    "/portal/term_from_timetable.js?v=20260903-jad-hold",
     "/portal/term_calendar_dashboard_shared.js?v=20260702-feedback-jun25",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
-    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-scrub-angel",
+    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-jad-hold",
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp",
-      "/portal/portal_roster_canonical.js?v=20260903-scrub-angel",
+      "/portal/portal_roster_canonical.js?v=20260903-jad-hold",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
     "/portal/portal_madre_fold.js?v=20260902-luliya-instr",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
@@ -45,7 +45,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260903-scrub-angel",
+    "/portal/portal_lead_team_shift.js?v=20260903-jad-hold",
   ];
 
   var TIER_IDLE = [
@@ -59,7 +59,7 @@
     "/portal/staff-dashboard-calendar.js?v=" + VER,
     "/portal/staff-dashboard-term.js?v=" + VER,
     "/portal/staff-dashboard-participants.js?v=20260903-photo-repair",
-    "/portal/staff-dashboard-today.js?v=20260903-scrub-angel",
+    "/portal/staff-dashboard-today.js?v=20260903-jad-hold",
     "/portal/staff-dashboard-ui.js?v=20260903-photo-repair",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,

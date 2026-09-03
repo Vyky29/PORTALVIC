@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare · v20260903-scrub-angel</title>
+  <title>LOCAL · DC staff week compare · v20260903-jad-hold</title>
   <style>
     :root {
       --ink: #173247;
@@ -171,6 +171,12 @@
     }
     .card--trial .card__name { color: #1e40af; }
     .card--trial .card__band { color: #1d4ed8; }
+    .card--hold {
+      background: #fff7ed;
+      border-color: #fdba74;
+    }
+    .card--hold .card__name { color: #9a3412; }
+    .card--hold .card__band { color: #c2410c; }
     .card__band {
       display: block;
       font-size: 0.55rem;
@@ -245,7 +251,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260903-scrub-angel · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260903-jad-hold · Autumn 2026</h1>
   <p class="note">
     Open at <code>http://127.0.0.1:8765/local_dc_staff_week.html</code> (not file://). Club closed Mon 31 Aug 2026 (BH).
     <strong>1-6 Sep</strong> = week 1 (DC weekdays; Sat 5 + Sun 6 weekend · Hub: <strong>Berta Lead + Jack W…Aydaan book</strong> · <strong>John = Emanuel book</strong> · Godsway · Youssef off · Emanuel off).
@@ -257,9 +263,9 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260903-scrub-angel"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-scrub-angel"></script>
-  <!-- local board bump: 20260903-scrub-angel -->
+  <script src="/portal/portal_roster_canonical.js?v=20260903-jad-hold"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-jad-hold"></script>
+  <!-- local board bump: 20260903-jad-hold -->
   <script>
 (function () {
   var STAFF = ["Roberto", "Luliya", "Michelle", "Victor", "Raul", "Youssef"];
@@ -553,7 +559,14 @@
         { name: "Mario", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
       Luliya: [
-        { name: "No participant", time: "4.30 to 5", band: "After school", area: "Northolt · Aquatic", kind: "open" },
+        /* Office hold Jad (Salem Zerti) until Fri 4 Sep 2026 18:00 BST; release if not booked. */
+        {
+          name: "Jad (hold)",
+          time: "4.30 to 5",
+          band: "After school",
+          area: "Northolt · Aquatic · until Fri 4 6pm",
+          kind: "hold",
+        },
         { name: "Gemma", time: "5 to 5.30", band: "After school", area: "Northolt · Aquatic" },
         { name: "Zayana", time: "5.30 to 6", band: "After school", area: "Northolt · Aquatic" },
         { name: "Yamik", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic" },
@@ -1163,13 +1176,22 @@
     var k = String((c && c.kind) || "")
       .trim()
       .toLowerCase();
-    if (k === "trial" || k === "closed" || k === "open" || k === "shadowing" || k === "interview") return k;
+    if (
+      k === "trial" ||
+      k === "closed" ||
+      k === "open" ||
+      k === "shadowing" ||
+      k === "interview" ||
+      k === "hold"
+    )
+      return k;
     var n = String((c && c.name) || "")
       .trim()
       .toLowerCase()
       .replace(/\s+/g, " ");
     if (n === "closed") return "closed";
     if (n === "no participant" || n === "no client" || n === "open") return "open";
+    if (/\(hold\)|\bhold\b/i.test(String((c && c.name) || ""))) return "hold";
     if (/\(trial\)|\btrial\b/i.test(String((c && c.name) || ""))) return "trial";
     return "";
   }
@@ -1388,6 +1410,8 @@
         bandLabel = service ? service + " · Shadowing" : "Shadowing";
       } else if (kind === "trial") {
         bandLabel = (service || "AQUATIC") + " · Trial";
+      } else if (kind === "hold") {
+        bandLabel = (service || "AQUATIC") + " · Hold";
       } else if (/^manager$/i.test(String(c.name || "").trim())) {
         bandLabel = "MANAGER";
       } else {
@@ -1407,21 +1431,23 @@
     }
 
     var tone =
-      kind === "trial"
-        ? "card--trial"
-        : kind === "closed"
-          ? "card--closed"
-          : kind === "open"
-            ? "card--open"
-            : kind === "shadowing" || kind === "interview"
-              ? "card--trial"
-              : /^manager$/i.test(String(c.name || "").trim())
-                ? "card--manager"
-              : c.dc
-                ? cardAccentClass(c.name)
-                : c.band === "Weekend"
-                  ? "card--weekend"
-                  : "card--as";
+      kind === "hold"
+        ? "card--hold"
+        : kind === "trial"
+          ? "card--trial"
+          : kind === "closed"
+            ? "card--closed"
+            : kind === "open"
+              ? "card--open"
+              : kind === "shadowing" || kind === "interview"
+                ? "card--trial"
+                : /^manager$/i.test(String(c.name || "").trim())
+                  ? "card--manager"
+                  : c.dc
+                    ? cardAccentClass(c.name)
+                    : c.band === "Weekend"
+                      ? "card--weekend"
+                      : "card--as";
     /* Tall only for merged 2×30' AS swim (Cyrus/Stephanie).
      * Hub Multi + Sunday singles stay Aquatic-sized (units 1).
      * Sunday pool Yusuf uses band span 2 on the shared grid. */

@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 47;
+  var SOURCE_VERSION = 48;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -543,7 +543,8 @@
       {
         staff: "Luliya",
         clients: [
-          { name: "No participant", time: "4.30 to 5" },
+          /* Office hold until Fri 4 Sep 2026 18:00 BST (booking reservation pending). */
+          { name: "Jad (hold)", time: "4.30 to 5" },
           { name: "Gemma", time: "5 to 5.30" },
           { name: "Zayana", time: "5.30 to 6" },
           { name: "Yamik", time: "6 to 6.30" },
