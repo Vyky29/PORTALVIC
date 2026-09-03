@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260904-team-day-ops-roberto";
+} from "./portal_lead_session_scope.js?v=20260904-berta-sun-only";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -168,13 +168,7 @@ function portalLeadTeamDayKind(ctx, iso) {
     const swimfarm = venues.some(function (v) {
       return normKey(v).indexOf("swimfarm") >= 0;
     });
-    const acton = venues.some(function (v) {
-      return normKey(v).indexOf("acton") >= 0;
-    });
     if (wd === "Sunday" && (sc.leadTeamBanner || sc.programmeWideRoster) && isMulti && swimfarm) return "sunday_ma_swimfarm";
-    if (wd === "Wednesday" && leadKey === "berta" && (sc.leadTeamBanner || sc.programmeWideRoster) && isMulti && acton) {
-      return "berta_wed_acton_ma";
-    }
     if (leadKey === "john" && isBespoke && swimfarm && (wd === "Monday" || wd === "Wednesday")) {
       return "john_bespoke_mw";
     }
@@ -263,15 +257,6 @@ function filterJohnBespokeTeam(keys, iso) {
   return dedupeKeys(out).slice(0, 2);
 }
 
-function filterBertaWedTeam(keys) {
-  const leadKey = "berta";
-  let pool = excludePeerProgrammeLead(keys, leadKey);
-  const others = pool.filter(function (k) {
-    return k !== leadKey && !PROGRAMME_LEAD_KEYS.has(k);
-  });
-  return dedupeKeys(others.slice(0, 3));
-}
-
 /** Wed Acton — Luliya, Javier, Youssef (+ roster hits when present). */
 function filterJohnWedActonTeam(keys) {
   const leadKey = "john";
@@ -332,7 +317,6 @@ function applyTeamDayFilter(keys, dayKind, leadKey, iso) {
     return filterJohnBespokeTeam(keys, iso);
   }
   if (dayKind === "john_wed_acton_ma") return filterJohnWedActonTeam(keys);
-  if (dayKind === "berta_wed_acton_ma") return filterBertaWedTeam(keys);
   if (dayKind === "michelle_day_centre") return filterProgrammeWideTeam(keys, leadKey);
   if (dayKind === "roberto_thu_dc") return filterRobertoThuDcTeam(keys);
   if (dayKind === "roberto_sun_pool") return filterProgrammeWideTeam(keys, leadKey);

@@ -126,15 +126,6 @@ const MICHELLE_SCOPES = [
 
 const BERTA_SCOPES = [
   {
-    id: "wednesday-ma-acton",
-    label: "Wednesday — Multi-Activity (Acton)",
-    weekdays: ["Wednesday"],
-    serviceKeys: ["multi"],
-    venues: ["acton"],
-    /* Team + absent chips: whole MA Acton programme. Today cards: Berta's clients only. */
-    leadTeamBanner: true,
-  },
-  {
     id: "sunday-ma-swimfarm",
     label: "Sunday — Multi-Activity (SwimFarm)",
     weekdays: ["Sunday"],

@@ -241,7 +241,7 @@
       void loadSequential(
         [
           "/portal/portal_orientation_lock.js?v=20260622-next-chip-client",
-          "/portal/portal_venue_report_schedule.js?v=20260621-venue-duty-fix",
+          "/portal/portal_venue_report_schedule.js?v=20260904-berta-sun-only",
         ],
         false
       );

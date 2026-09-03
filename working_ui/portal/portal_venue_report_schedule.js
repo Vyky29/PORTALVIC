@@ -159,17 +159,7 @@
     serviceEnd: mins(17, 0),
   };
 
-  /** Berta — Acton Wednesday (afternoon). */
-  var BERTA_WED_ACTON = {
-    venue: "Acton",
-    label: "Acton (Wed)",
-    openEnd: mins(16, 25),
-    closeEnd: mins(18, 45),
-    serviceStart: mins(16, 30),
-    serviceEnd: mins(18, 30),
-  };
-
-  /** Sunday — pool (Roberto) and programme leaders (John, Berta). */
+  /** Sunday — pool (Roberto) and programme leader (Berta). No Wednesday Acton MA. */
   var SUNDAY = {
     roberto: {
       venue: "SwimFarm",
@@ -202,7 +192,7 @@
     michelle: { dows: [2], slot: "day_centre" },
     roberto: { sun: "roberto" },
     victor: { dows: [4], slot: "victor_thu" },
-    berta: { wedActon: true, sun: "berta" },
+    berta: { sun: "berta" },
   };
 
   function normViewDateIso(v) {
@@ -239,16 +229,6 @@
         venue: ROBERTO_THU.venue,
         label: ROBERTO_THU.label,
         openEnd: ROBERTO_THU.openEnd,
-      };
-    }
-
-    if (id === "berta" && dow === 3 && staffOnVenueRoster(id, dayName, "acton", sessionsModel)) {
-      return {
-        kind: "open",
-        scopeKey: "berta_wed_acton_open",
-        venue: BERTA_WED_ACTON.venue,
-        label: BERTA_WED_ACTON.label,
-        openEnd: BERTA_WED_ACTON.openEnd,
       };
     }
 
@@ -382,15 +362,6 @@
     }
 
     if (id === "berta") {
-      if (dow === 3 && staffOnVenueRoster(id, dayName, "acton", sessionsModel)) {
-        return {
-          kind: "close",
-          scopeKey: "berta_wed_acton_close",
-          venue: BERTA_WED_ACTON.venue,
-          label: BERTA_WED_ACTON.label,
-          closeEnd: BERTA_WED_ACTON.closeEnd,
-        };
-      }
       if (dow === 0 && staffOnVenueRoster(id, dayName, "swimfarm", sessionsModel)) {
         return {
           kind: "close",

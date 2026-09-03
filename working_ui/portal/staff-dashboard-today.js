@@ -3671,7 +3671,6 @@
       }
       if(sid === 'berta'){
         return [
-          { weekdays: ['Wednesday'], serviceKeys: ['multi'], venues: ['acton'], leadTeamBanner: true },
           { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'], leadTeamBanner: true }
         ];
       }
