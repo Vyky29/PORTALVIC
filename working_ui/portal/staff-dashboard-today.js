@@ -1,3 +1,16 @@
+    function portalStaffIdsMatchLoose(a, b){
+      if(typeof portalStaffKeysMatch === 'function') return portalStaffKeysMatch(a, b);
+      if(typeof window !== 'undefined' && typeof window.portalStaffKeysMatch === 'function'){
+        return window.portalStaffKeysMatch(a, b);
+      }
+      const ca = typeof portalCanonicalStaffKeyLite === 'function'
+        ? portalCanonicalStaffKeyLite(a)
+        : String(a || '').trim().toLowerCase();
+      const cb = typeof portalCanonicalStaffKeyLite === 'function'
+        ? portalCanonicalStaffKeyLite(b)
+        : String(b || '').trim().toLowerCase();
+      return !!(ca && cb && ca === cb);
+    }
     function portalStaffClientSessionsOnCalendarDate(isoYmd, weekdayLong, staffId, modelOverride){
       const iso = normaliseIsoDate(isoYmd);
       const sid = String(staffId || '').trim().toLowerCase();
@@ -7,7 +20,7 @@
         ? modelOverride
         : ((typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : []);
       return model.some(function(s){
-        if(String(s.staffId || '').toLowerCase() !== sid) return false;
+        if(!portalStaffIdsMatchLoose(s.staffId, sid)) return false;
         if(!portalSessionClientActiveOnDate(s, iso)) return false;
         return typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
           && portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, w);
@@ -41,7 +54,7 @@
       const fb = window.portalBootstrapFromMachineFallback(sid);
       if(!fb || !fb.boot || !Array.isArray(fb.boot.sessionsModel) || !fb.boot.sessionsModel.length) return false;
       const onIso = fb.boot.sessionsModel.some(function(s){
-        return String(s.staffId || '').toLowerCase() === sid
+        return portalStaffIdsMatchLoose(s.staffId, sid)
           && normaliseIsoDate(s.session_date || s.sessionDate) === iso;
       });
       if(!onIso) return false;
@@ -83,7 +96,7 @@
       const model = Array.isArray(modelOverride)
         ? modelOverride
         : ((typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : []);
-      if(!model.some(function(s){ return String(s.staffId || '').toLowerCase() === sid; })) return false;
+      if(!model.some(function(s){ return portalStaffIdsMatchLoose(s.staffId, sid); })) return false;
       /* Timetable-only shift hints apply to live calendar today — not week/term review days. */
       const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
       if(!liveToday) return false;
@@ -2392,7 +2405,7 @@
       }
       if(staffId && baseModel.length && !useIsoPin){
         const hasStaffOnIso = baseModel.some(function(s){
-          return String(s.staffId || '').toLowerCase() === staffId
+          return portalStaffIdsMatchLoose(s.staffId, staffId)
             && normaliseIsoDate(s.session_date || s.sessionDate) === sessionDateKey;
         });
         if(!hasStaffOnIso){
@@ -2408,7 +2421,7 @@
               const fbShift = window.portalBootstrapFromMachineFallback(staffId);
               if(fbShift && fbShift.boot && Array.isArray(fbShift.boot.sessionsModel)){
                 const onIso = fbShift.boot.sessionsModel.some(function(s){
-                  return String(s.staffId || '').toLowerCase() === staffId
+                  return portalStaffIdsMatchLoose(s.staffId, staffId)
                     && normaliseIsoDate(s.session_date || s.sessionDate) === sessionDateKey;
                 });
                 if(onIso){
@@ -2463,7 +2476,7 @@
           }
           return true;
         }
-        if(String(s.staffId || '').toLowerCase() !== staffId) return false;
+        if(!portalStaffIdsMatchLoose(s.staffId, staffId)) return false;
         if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
           return portalSessionSpreadsheetRowMatchesCalendarDate(s, viewCalendarIso, anchorDayWord);
         }
@@ -2510,7 +2523,7 @@
           const sessionEndTs = _rowTs.sessionEndTs;
           const dutyLabel = portalRosterDutySlotLabel(s);
           if(dutyLabel){
-            if(String(s.staffId || '').trim().toLowerCase() !== staffId) return null;
+            if(!portalStaffIdsMatchLoose(s.staffId, staffId)) return null;
             const isHomeDuty = dutyLabel === 'HOME';
             const isAdminDuty = !isHomeDuty && String(dutyLabel).toUpperCase() === 'ADMIN';
             const dutyKind = isHomeDuty ? 'home' : (isAdminDuty ? 'admin' : 'manager');
@@ -2546,7 +2559,7 @@
               ? portalRosterNonClientSessionKind(s)
               : '';
           if(nonClientKind){
-            if(String(s.staffId || '').trim().toLowerCase() !== staffId) return null;
+            if(!portalStaffIdsMatchLoose(s.staffId, staffId)) return null;
             const displayTitle =
               nonClientKind === 'shadowing'
                 ? 'Shadowing'
@@ -6893,7 +6906,7 @@
       const viewDay = String(DEMO_VIEW_DAY).trim();
       const staffId = String(STAFF_DASHBOARD_ID).trim().toLowerCase();
       return sessionsModel.filter(s =>
-        String(s.staffId).toLowerCase() === staffId &&
+        portalStaffIdsMatchLoose(s.staffId, staffId) &&
         String(s.day).trim() === viewDay
       );
     }

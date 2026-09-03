@@ -327,7 +327,7 @@
       .trim();
     if (!v) return "";
     if (v === "yousef" || v === "youssef" || v === "yusef") return "youssef";
-    if (v === "lulia") return "luliya";
+    if (v === "lulia" || v === "lulya") return "luliya";
     if (v === "aida") return "luliya";
     return v;
   }
@@ -865,7 +865,8 @@
       const selfKey =
         targets.find((k) => normalizePersonId(k) === wanted) ||
         String(staffIdForMatch || "").trim().toLowerCase();
-      const staffKeyOut = stored || String(selfKey).toLowerCase();
+      /* Always stamp canonical roster id (luliya not lulia) so Today/Week filters match auth. */
+      const staffKeyOut = normalizePersonId(stored || selfKey) || String(stored || selfKey || "").toLowerCase();
 
       // Only enforce service/date gates for rows inside this term's calendar view.
       // Summer MADRE dated rows (Jun–Jul) stay in the model as weekday standing
@@ -1091,10 +1092,21 @@
     const source = (options && options.source) || window.STAFF_DASHBOARD_SOURCE || {};
     const rawId = String((options && options.staffId) || "").trim().toLowerCase();
     const profiles = (source && source.staffProfiles) || {};
-    const profile = profiles[rawId] || {};
+    const wantedCanon = normalizePersonId(rawId) || rawId;
+    let profileKey = rawId;
+    if (!profiles[profileKey] && wantedCanon) {
+      const keys = Object.keys(profiles);
+      for (let pi = 0; pi < keys.length; pi++) {
+        if (normalizePersonId(keys[pi]) === wantedCanon) {
+          profileKey = keys[pi];
+          break;
+        }
+      }
+    }
+    const profile = profiles[profileKey] || profiles[rawId] || {};
 
-    const isDemoAcct = rawId === "teflon";
-    const effectiveRowStaffId = isDemoAcct ? "teflon" : rawId;
+    const isDemoAcct = rawId === "teflon" || wantedCanon === "teflon";
+    const effectiveRowStaffId = isDemoAcct ? "teflon" : wantedCanon || rawId;
     let rosterSource = source;
     if (
       typeof window !== "undefined" &&
@@ -1103,7 +1115,7 @@
     ) {
       rosterSource = window.portalOpsAdminDutyRoster.mergeDutyRows(source, effectiveRowStaffId);
     }
-    const built = buildForStaff(rosterSource, effectiveRowStaffId, isDemoAcct ? "teflon" : null);
+    const built = buildForStaff(rosterSource, effectiveRowStaffId, isDemoAcct ? "teflon" : wantedCanon || rawId);
     const allRows = Array.isArray(rosterSource && rosterSource.rows) ? rosterSource.rows : [];
     mergeCompanyClientsFromRosterRows(built.clientNotesById, allRows);
 

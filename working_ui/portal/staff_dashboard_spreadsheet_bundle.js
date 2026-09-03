@@ -191,8 +191,19 @@
       "staffRoleTrack": "admin",
       "canViewAll": true
     },
+    "luliya": {
+      "staffId": "luliya",
+      "staffName": "Luliya",
+      "avatarFile": "portal/staff_photos/luliya.png?v=20260609-luliya",
+      "staffRoleTrack": "support",
+      "staffRoleTracks": [
+        "support",
+        "swimming"
+      ],
+      "canViewAll": false
+    },
     "lulia": {
-      "staffId": "lulia",
+      "staffId": "luliya",
       "staffName": "Luliya",
       "avatarFile": "portal/staff_photos/luliya.png?v=20260609-luliya",
       "staffRoleTrack": "support",
