@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 46;
+  var SOURCE_VERSION = 47;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -358,12 +358,33 @@
 
   function isTuesdayActonAquaticStandingRow(row) {
     if (!row) return false;
-    if (!isAquaticService(row.service) || !isActonVenue(row.venue)) return false;
+    if (!isActonVenue(row.venue)) return false;
     if (normalizeDowKey(row.day) !== "tuesday") return false;
+    /*
+     * Empty-service junk (e.g. bundle "cayra"/"richard" 16.30 rows under ANGEL) must
+     * also be replaced — otherwise Autumn weekday snap resurrects Angel's old book.
+     */
+    if (!isAquaticService(row.service) && String(row.service || "").trim()) return false;
     var d = normIso(row.session_date);
     if (!d) return true;
     if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
     return false;
+  }
+
+  /**
+   * Angel left before Autumn — LOCAL board has no Angel columns.
+   * Drop leftover summer / MADRE Angel instructor rows so his Today / Term calendar
+   * do not project Cayra/Richard (or HOLD WAITLIST) onto Sep Tuesdays.
+   */
+  function scrubDepartedAngelInstructorRows(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var inst = String(r.instructors || "").trim();
+      if (/\bangel\b/i.test(inst)) return;
+      out.push(r);
+    });
+    return out;
   }
 
   function applyAutumnWeek1DayCentre(rows) {
@@ -1457,6 +1478,7 @@
     var withAutumn = applyAutumnStandingParticipantRows(base);
     var merged = opts.skipDb ? withAutumn.slice() : applyPortalRosterDbRows(withAutumn);
     merged = applyAutumnActonTuesdayStanding(merged);
+    merged = scrubDepartedAngelInstructorRows(merged);
     merged = applyAutumnWeek1DayCentre(merged);
     merged = scrubAndEnsureSep6HubCover(merged);
     return dedupeRosterAdapterRows(merged);
