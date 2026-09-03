@@ -1292,9 +1292,17 @@
     );
   }
 
-  function overrideIsInstructorReassignType(ov) {
+  function overrideIsInstructorCoverNeededType(ov) {
     return (
-      String(ov && ov.override_type || "").trim() === "instructor_reassign" &&
+      String(ov && ov.override_type || "").trim() === "instructor_cover_needed" &&
+      String(ov && ov.status || "active").trim() === "active"
+    );
+  }
+
+  function overrideIsInstructorReassignType(ov) {
+    var t = String(ov && ov.override_type || "").trim();
+    return (
+      (t === "instructor_reassign" || t === "instructor_cover_needed") &&
       String(ov && ov.status || "active").trim() === "active"
     );
   }
@@ -1649,6 +1657,7 @@
     if (!ov) return "";
     if (overrideIsShadowingSessionAdd(ov)) return "Shadowing";
     if (overrideIsSlotUpdateType(ov)) return "Updated";
+    if (overrideIsInstructorCoverNeededType(ov)) return "COVER NEEDED";
     if (overrideIsInstructorReassignType(ov)) return "Changed instructor";
     if (overrideIsTrialType(ov)) return "Trial";
     if (overrideIsReplaceType(ov)) return "MakeUp";
@@ -1658,6 +1667,7 @@
   function hubOverrideChipClass(ov) {
     if (overrideIsShadowingSessionAdd(ov)) return "override--shadowing";
     if (overrideIsSlotUpdateType(ov)) return "override--updated";
+    if (overrideIsInstructorCoverNeededType(ov)) return "override--cover-needed";
     if (overrideIsInstructorReassignType(ov)) return "override--instructor";
     if (overrideIsTrialType(ov)) return "override--trial";
     if (overrideIsReplaceType(ov)) return "override--replace";
@@ -1699,12 +1709,24 @@
     for (var i = 0; i < ovs.length; i++) {
       if (!overrideIsInstructorReassignType(ovs[i])) continue;
       if (!hub.overrideMatchesSlot(slot, ovs[i])) continue;
+      var cand = ovs[i];
+      if (!best) {
+        best = cand;
+        continue;
+      }
+      var bestIsReal = String(best.override_type || "").trim() === "instructor_reassign";
+      var candIsReal = String(cand.override_type || "").trim() === "instructor_reassign";
+      /* Prefer a real cover assignment over COVER NEEDED. */
+      if (candIsReal && !bestIsReal) {
+        best = cand;
+        continue;
+      }
+      if (!candIsReal && bestIsReal) continue;
       if (
-        !best ||
-        (ovs[i].created_at &&
-          (!best.created_at || String(ovs[i].created_at) > String(best.created_at)))
+        cand.created_at &&
+        (!best.created_at || String(cand.created_at) > String(best.created_at))
       ) {
-        best = ovs[i];
+        best = cand;
       }
     }
     return best;
@@ -1753,9 +1775,19 @@
     }
     if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
       var origHtml = normalizeInstructorList(slot.portalOriginalInstructors).map(formatInstructorPillOut).join("");
-      var coverHtml = slotInstructors(slot).map(formatInstructorPill).join("");
+      var coverNeeded = !!(
+        slot.__portalScheduleOverride &&
+        overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride)
+      );
+      var coverHtml = slotInstructors(slot)
+        .map(function (n) {
+          return coverNeeded ? formatInstructorPillCoverNeeded(n) : formatInstructorPill(n);
+        })
+        .join("");
       return (
-        '<span class="ash-instructor-reassign">' +
+        '<span class="ash-instructor-reassign' +
+        (coverNeeded ? " ash-instructor-reassign--cover-needed" : "") +
+        '">' +
         origHtml +
         '<span class="ash-instructor-reassign-sep" aria-hidden="true">/</span>' +
         coverHtml +
@@ -3881,11 +3913,22 @@
   function formatInstructorPill(name) {
     var n = clean(name);
     if (!n) return "";
+    if (/^cover[\s_]*needed$/i.test(n) || canonicalStaffMatchKey(n) === "coverneeded") {
+      return '<span class="ash-pill ash-pill--cover-needed">COVER NEEDED</span>';
+    }
     var title =
       typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
         ? window.portalStaffDisplayName(n)
         : canonicalInstructorFilterName(n);
     return '<span class="ash-pill">' + esc(title) + "</span>";
+  }
+
+  function formatInstructorPillCoverNeeded(name) {
+    var n = clean(name);
+    if (!n || /^cover[\s_]*needed$/i.test(n) || canonicalStaffMatchKey(n) === "coverneeded") {
+      return '<span class="ash-pill ash-pill--cover-needed">COVER NEEDED</span>';
+    }
+    return formatInstructorPill(n);
   }
 
   function formatInstructorPillOut(name) {
@@ -8333,6 +8376,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
         var isShadowing = hubSlotShowsShadowingChip(slot);
         var isInstructorReassign = hubSlotShowsInstructorReassignChip(slot, slotOv);
+        var isCoverNeeded = overrideIsInstructorCoverNeededType(slotOv) ||
+          (slot.__portalScheduleOverride && overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride));
         var isTrial = hubSlotShowsTrialChip(slot, slotOv);
         var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
         var isOpenSlot = isOpenRosterSlot(slot.client_name);
@@ -8376,6 +8421,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--shadowing">' +
                   esc(hubOverrideLabel(slot.__portalShadowingOverride)) +
                   "</span>"
+              : isCoverNeeded
+                ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--cover-needed">COVER NEEDED</span>'
               : isInstructorReassign
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--instructor">' +
                   esc(slotOv ? hubOverrideLabel(slotOv) : "Changed instructor") +
@@ -8412,7 +8459,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           participantCell = htmlParticipantPill(slot.client_name, esc, slot);
         }
         return (
-          "<tr>" +
+          '<tr class="' +
+          (isCoverNeeded ? "ash-row--cover-needed" : "") +
+          '">' +
           '<td class="ash-td-center">' +
           svc +
           "</td>" +
@@ -9533,13 +9582,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var ovLabel = ov ? esc(hubOverrideLabel(ov)) : "\u2014";
         var inst = hubInstructorCellHtml(slot, ov);
         var client = htmlParticipantPill(slot.client_name, esc, slot);
+        var coverNeeded = !!(ov && overrideIsInstructorCoverNeededType(ov));
         return (
-          "<tr>" +
+          '<tr class="' +
+          (coverNeeded ? "ash-row--cover-needed" : "") +
+          '">' +
           "<td>" + esc(rosterTimeDisplay(slot) || slot.time_start) + "</td>" +
           "<td>" + esc(slot.venue) + "</td>" +
           "<td>" + inst + "</td>" +
           "<td>" + client + "</td>" +
-          '<td><span class="ash-badge ash-badge--booked">Booked</span></td>' +
+          '<td><span class="ash-badge ash-badge--booked">Booked</span>' +
+          (coverNeeded
+            ? ' <span class="override-chip override--cover-needed">COVER NEEDED</span>'
+            : "") +
+          "</td>" +
           "<td>" + ovLabel + "</td>" +
           "</tr>"
         );

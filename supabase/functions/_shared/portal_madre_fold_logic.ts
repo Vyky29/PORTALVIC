@@ -92,14 +92,33 @@ function staffSlug(name: string): string {
   return norm(name).toLowerCase().replace(/\s+/g, "_");
 }
 
+function clientMatchKey(name: string): string {
+  return norm(name)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
+
+function clientsMatch(a: string, b: string): boolean {
+  const ka = clientMatchKey(a);
+  const kb = clientMatchKey(b);
+  if (!ka || !kb) return false;
+  if (ka === kb) return true;
+  // slug_style vs display: jack_w vs Jack W
+  const sa = staffSlug(a).replace(/_/g, "");
+  const sb = staffSlug(b).replace(/_/g, "");
+  return !!(sa && sb && sa === sb);
+}
+
 function findStaffColumn(week: MadreWeek, instructors: string): MadreStaffCol | null {
-  const key = norm(instructors).split(",")[0]?.toLowerCase() ?? "";
+  const key = clientMatchKey(norm(instructors).split(",")[0] ?? "");
   if (!key) return null;
   for (const st of week.staff ?? []) {
     if (!st) continue;
-    const sk = String(st.staffKey ?? "").toLowerCase();
-    const sn = String(st.staffName ?? "").toLowerCase();
-    if (key === sk || key === sn || sk.includes(key) || sn.includes(key)) return st;
+    const sk = clientMatchKey(String(st.staffKey ?? ""));
+    const sn = clientMatchKey(String(st.staffName ?? ""));
+    if (key === sk || key === sn) return st;
+    if (sk.includes(key) || sn.includes(key) || key.includes(sk) || key.includes(sn)) return st;
   }
   return null;
 }
@@ -315,6 +334,113 @@ function foldStaffUpsert(madre: MadreDoc, iso: string, payload: Record<string, u
   return true;
 }
 
+function ensureStaffColumn(week: MadreWeek, instructors: string): MadreStaffCol {
+  const existing = findStaffColumn(week, instructors);
+  if (existing) return existing;
+  const name = norm(instructors) || "COVER NEEDED";
+  const col: MadreStaffCol = {
+    staffKey: staffSlug(name),
+    staffName: name.toUpperCase() === "COVER NEEDED" || staffSlug(name) === "cover_needed"
+      ? "COVER NEEDED"
+      : name.toUpperCase(),
+    days: [],
+  };
+  week.staff = week.staff ?? [];
+  week.staff.push(col);
+  return col;
+}
+
+/**
+ * Move a booked participant from one instructor column to another for a calendar day
+ * (e.g. Aurora → COVER NEEDED, or COVER NEEDED → real cover). Slot stays booked.
+ */
+function foldInstructorColumnMove(
+  madre: MadreDoc,
+  iso: string,
+  payload: Record<string, unknown>,
+): boolean {
+  const client = norm(payload.client_name);
+  const timeSlot = norm(payload.time_slot);
+  const fromRaw = norm(payload.from_instructors ?? payload.absent_staff_id);
+  const toRaw = norm(payload.to_instructors ?? payload.covering_staff_name ?? payload.covering_staff_id);
+  if (!client || !iso || !toRaw) return false;
+
+  for (const week of madre.weeks ?? []) {
+    const start = String(week.start ?? "").slice(0, 10);
+    const end = String(week.end ?? "").slice(0, 10);
+    if (iso < start || iso > end) continue;
+
+    let moved: MadreSlot | null = null;
+    const fromCol = fromRaw ? findStaffColumn(week, fromRaw) : null;
+    const searchList = fromCol ? [fromCol] : (week.staff ?? []);
+    for (const st of searchList) {
+      if (!st) continue;
+      const day = findDay(st, iso);
+      if (!day?.slots?.length) continue;
+      const idx = day.slots.findIndex(
+        (s) =>
+          clientsMatch(String(s.client_name ?? ""), client) &&
+          (!timeSlot || timeSlotsEquivalent(String(s.time_slot ?? ""), timeSlot)),
+      );
+      if (idx < 0) continue;
+      moved = { ...day.slots[idx] };
+      day.slots.splice(idx, 1);
+      break;
+    }
+    if (!moved && fromCol) {
+      // Fallback: search any column for this client/time on the day.
+      for (const st of week.staff ?? []) {
+        if (!st) continue;
+        const day = findDay(st, iso);
+        if (!day?.slots?.length) continue;
+        const idx = day.slots.findIndex(
+          (s) =>
+            clientsMatch(String(s.client_name ?? ""), client) &&
+            (!timeSlot || timeSlotsEquivalent(String(s.time_slot ?? ""), timeSlot)),
+        );
+        if (idx < 0) continue;
+        moved = { ...day.slots[idx] };
+        day.slots.splice(idx, 1);
+        break;
+      }
+    }
+    if (!moved) continue;
+
+    const toCol = ensureStaffColumn(week, toRaw);
+    let toDay = findDay(toCol, iso);
+    if (!toDay) {
+      toDay = {
+        weekday: String(payload.day ?? ""),
+        sessionDate: iso,
+        slots: [],
+      };
+      toCol.days = toCol.days ?? [];
+      toCol.days.push(toDay);
+    }
+    toDay.slots = toDay.slots ?? [];
+    if (payload.service) moved.service = norm(payload.service);
+    if (payload.venue) moved.venue = norm(payload.venue);
+    const area = norm(payload.area ?? payload.pool_note);
+    if (area) {
+      moved.area = area;
+      moved.pool_note = area;
+    }
+    if (timeSlot && !moved.time_slot) moved.time_slot = timeSlot;
+    // Replace any duplicate on destination.
+    toDay.slots = toDay.slots.filter(
+      (s) =>
+        !(
+          clientsMatch(String(s.client_name ?? ""), client) &&
+          (!timeSlot || timeSlotsEquivalent(String(s.time_slot ?? ""), timeSlot))
+        ),
+    );
+    toDay.slots.push(moved);
+    toDay.slots.sort((a, b) => norm(a.time_slot).localeCompare(norm(b.time_slot)));
+    return true;
+  }
+  return false;
+}
+
 export function applyFoldToMadre(madre: MadreDoc, input: FoldInput): { ok: boolean; note: string } {
   const iso = String(input.session_date ?? "").slice(0, 10);
   const payload = input.payload ?? {};
@@ -327,6 +453,10 @@ export function applyFoldToMadre(madre: MadreDoc, input: FoldInput): { ok: boole
   if (ft === "participant_slot_cancel") {
     const ok = foldParticipantCancel(madre, iso, payload);
     return { ok, note: ok ? "participant cancel" : "slot not found" };
+  }
+  if (ft === "instructor_column_move" || ft === "instructor_cover_needed") {
+    const ok = foldInstructorColumnMove(madre, iso, payload);
+    return { ok, note: ok ? "instructor column move" : "slot not found for move" };
   }
   if (ft === "staff_shift_upsert") {
     return { ok: foldStaffUpsert(madre, iso, payload), note: "staff shift upsert" };
@@ -377,6 +507,41 @@ export function foldFromScheduleOverride(record: Record<string, unknown>): FoldI
     : {}) as Record<string, unknown>;
   const ovType = String(record.override_type ?? "").toLowerCase();
   const iso = String(record.session_date ?? "").slice(0, 10) || null;
+
+  if (ovType === "instructor_cover_needed") {
+    return {
+      fold_type: "instructor_cover_needed",
+      session_date: iso,
+      payload: {
+        client_name: record.anchor_client_id,
+        time_slot: record.anchor_time_slot_label,
+        venue: record.anchor_venue ?? pl.venue,
+        service: pl.service,
+        area: pl.area,
+        from_instructors: pl.absent_staff_id ?? record.anchor_staff_id,
+        to_instructors: "COVER NEEDED",
+        covering_staff_name: "COVER NEEDED",
+        covering_staff_id: "cover_needed",
+      },
+    };
+  }
+
+  if (ovType === "instructor_reassign" && (pl.covering_staff_id || pl.covering_staff_name)) {
+    return {
+      fold_type: "instructor_column_move",
+      session_date: iso,
+      payload: {
+        client_name: record.anchor_client_id,
+        time_slot: record.anchor_time_slot_label,
+        venue: record.anchor_venue ?? pl.venue,
+        service: pl.service,
+        area: pl.area,
+        from_instructors: pl.absent_staff_id ?? record.anchor_staff_id,
+        to_instructors: pl.covering_staff_name ?? pl.covering_staff_id,
+      },
+    };
+  }
+
   const isStaff =
     ovType.includes("staff") || ovType === "instructor_cover" || !!pl.covering_staff_id;
 

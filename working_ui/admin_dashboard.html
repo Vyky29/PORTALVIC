@@ -63,7 +63,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260828-timetable-nav"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260720-dc-crash-weeks" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260903-cover-needed" />
   <script src="/portal/portal_staff_display_names.js?v=20260902-luliya-display"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260828-hours-weeknav" />
@@ -149,7 +149,7 @@
   <script src="/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp"></script>
   <script src="/portal/portal_roster_canonical.js?v=20260903-tue-acat-ikram"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
-  <script src="/portal/portal_madre_fold.js?v=20260902-luliya-instr"></script>
+  <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal-shared-js/portal_field_autocomplete.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal/admin-portal-term-slot.js?v=20260811-autumn-preserve"></script>
@@ -162,7 +162,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260903-place-3chips" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260903-cover-needed" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -267,6 +267,10 @@
             <span class="admin-icon-btn__svg" id="btnStaffWaIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="staffWaBadge">0</span>
           </button>
+          <a class="admin-icon-btn admin-icon-btn--chat" id="btnComunicaciones" href="comunicaciones.html" aria-label="Comunicaciones" title="Comunicaciones">
+            <span class="admin-icon-btn__svg" id="btnComunicacionesIco" aria-hidden="true">💬</span>
+            <span class="admin-badge is-empty" id="commsBadge">0</span>
+          </a>
           <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
             🔔
             <span class="admin-badge" id="alertBadge">0</span>
@@ -4514,8 +4518,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         push(ov.anchor_staff_id);
         var pl = ov.payload || {};
         var t = String(ov.override_type || '').trim();
-        if(t === 'instructor_reassign'){
+        if(t === 'instructor_reassign' || t === 'instructor_cover_needed'){
           push(pl.covering_staff_id);
+          push(pl.covering_staff_name);
         }
       }
       return keys;
@@ -10034,6 +10039,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         slot_update: 25,
         client_absence_announced: 20,
         instructor_reassign: 15,
+        instructor_cover_needed: 14,
         slot_open: 10,
         slot_clear_client: 10,
         slot_close: 5
@@ -10110,6 +10116,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!ids.length) return;
       var up = await client.from('schedule_overrides').update({ status: 'cancelled' }).in('id', ids);
       if(up.error) console.warn('[sched] cancel duplicate instructor_reassign', up.error);
+    }
+    /** When a real cover is assigned, drop COVER NEEDED placeholders for the same slot. */
+    async function schedCancelCoverNeededForSlot(client, slot, keepId){
+      if(!client || !slot) return;
+      var keep = String(keepId || '').trim();
+      var ids = [];
+      (sched.overrides || []).forEach(function(o){
+        if(!o || !o.id) return;
+        if(String(o.status || 'active') !== 'active') return;
+        if(keep && String(o.id) === keep) return;
+        if(String(o.override_type || '').trim() !== 'instructor_cover_needed') return;
+        if(!schedOverrideMatchesSlot(slot, o)) return;
+        ids.push(o.id);
+      });
+      if(!ids.length) return;
+      var up = await client.from('schedule_overrides').update({ status: 'cancelled' }).in('id', ids);
+      if(up.error) console.warn('[sched] cancel cover_needed after reassign', up.error);
     }
     async function schedCancelDuplicateActiveOverrides(client, slot, ovType, keepId){
       if(!client || !slot) return;
@@ -13538,6 +13561,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         slot_clear_client: 'No Participant',
         client_replace_in_slot: 'Make up',
         instructor_reassign: 'Changed instructor',
+        instructor_cover_needed: 'COVER NEEDED',
         slot_close: 'Closed',
         slot_open: 'Open closed slot',
         override_void: 'Void',
@@ -13636,6 +13660,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(k === 'slot_open') return 'override--slot-open';
       if((k === 'client_replace_in_slot' || k === 'replace_participant') && schedOverrideIsTrial(ov)) return 'override--trial';
       if(k === 'client_replace_in_slot' || k === 'replace_participant') return 'override--makeup';
+      if(k === 'instructor_cover_needed') return 'override--cover-needed';
       if(k === 'instructor_reassign') return 'override--instructor';
       if(k === 'slot_update') return 'override--updated';
       return '';
@@ -14556,6 +14581,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       await schedCancelDuplicateActiveOverrides(client, slot, ovType, ins0.id);
       if(ovType === 'instructor_reassign'){
         await schedCancelDuplicateInstructorReassigns(client, row, ins0.id);
+        await schedCancelCoverNeededForSlot(client, slot, ins0.id);
       }
       var evRow = {
         override_id: ins0.id,
@@ -16064,17 +16090,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '<span class="sched-pax-pill '+toneCls+'"'+styleAttr+'>'+lab+'</span>';
     }
     function schedInstructorCellHtml(slot, ov, schedIso){
-      if(ov && String(ov.override_type || '').trim() === 'instructor_reassign'){
+      var ovType = ov ? String(ov.override_type || '').trim() : '';
+      if(ov && (ovType === 'instructor_reassign' || ovType === 'instructor_cover_needed')){
         var coverSlug = normalizeSchedAnchorStaffId(ov.payload && ov.payload.covering_staff_id) ||
           String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
         var coverName = String(ov.payload && (ov.payload.covering_staff_name || ov.payload.to_staff_name) || '').trim();
         var origLab = String(slot.staffName || '').trim() || schedStaffDisplayName(slot.staffRosterId, slot.staffRosterId);
-        var replLab = coverName || schedStaffDisplayName(coverSlug, coverSlug);
+        var coverNeeded = ovType === 'instructor_cover_needed' || coverSlug === 'cover_needed' ||
+          /^cover[\s_]*needed$/i.test(coverName);
+        var replLab = coverNeeded ? 'COVER NEEDED' : (coverName || schedStaffDisplayName(coverSlug, coverSlug));
         return (
-          '<div class="sched-pax-pill-row">' +
+          '<div class="sched-pax-pill-row' + (coverNeeded ? ' sched-pax-pill-row--cover-needed' : '') + '">' +
           schedStaffPillHtml(origLab, slot.staffRosterId, schedIso, 'out') +
           '<span class="sched-pax-pill-sep">/</span>' +
-          schedStaffPillHtml(replLab, coverSlug, schedIso, 'in') +
+          (coverNeeded
+            ? '<span class="sched-pax-pill sched-pax-pill--cover-needed">COVER NEEDED</span>'
+            : schedStaffPillHtml(replLab, coverSlug, schedIso, 'in')) +
           '</div>'
         );
       }
@@ -16205,7 +16236,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var notesCell = notesRaw
           ? '<span class="sched-notes-cell">'+esc(notesRaw)+'</span>'
           : '<span class="muted">—</span>';
-        return '<tr class="sched-slot-row" data-sched-demo-id="'+esc(slot.demoId)+'" data-venue="'+esc(slot.venue)+'" data-staff="'+esc(staffKey)+'"'+staffAllAttr+' data-pax-slug="'+esc(paxSlug)+'"'+(paxSlug2 ? ' data-pax-slug2="'+esc(paxSlug2)+'"' : '')+' data-has-ov="'+(hasOv?'1':'0')+'">'+
+        var coverNeededRow = !!(ov && String(ov.override_type || '').trim() === 'instructor_cover_needed');
+        return '<tr class="sched-slot-row'+(coverNeededRow ? ' sched-slot-row--cover-needed' : '')+'" data-sched-demo-id="'+esc(slot.demoId)+'" data-venue="'+esc(slot.venue)+'" data-staff="'+esc(staffKey)+'"'+staffAllAttr+' data-pax-slug="'+esc(paxSlug)+'"'+(paxSlug2 ? ' data-pax-slug2="'+esc(paxSlug2)+'"' : '')+' data-has-ov="'+(hasOv?'1':'0')+'">'+
           '<td style="min-width:0">'+clientCellHtml+'</td>'+
           '<td style="min-width:0">'+serviceCell+'</td>'+
           '<td style="white-space:nowrap">'+esc(rosterBandLabelFromPg(slot.anchorStart, slot.anchorEnd, slot.sheetDay)||slot.anchorTimeLabel||normTimeShort(slot.anchorStart))+'</td>'+
@@ -21529,7 +21561,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260902-luliya-display';
+    var PORTAL_ADMIN_HUB_BUILD = '20260903-cover-needed';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -23032,7 +23064,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<section class="card card-pad">'+
           '<div class="card-h" style="align-items:flex-start"><div style="min-width:0">'+
             '<h2 style="margin:0">Session disruptions</h2>'+
-            '<p class="muted" style="margin:6px 0 0;max-width:52rem;overflow-wrap:break-word">Staff absence / disruption reports (POL-048). Review each one and <strong>Validate</strong> the day — the worker\u2019s dashboard then shows <em>Day off (Time Off Requested)</em> in place of that shift. Undo removes the day off again. Per-person history (all dates): <strong>H&amp;R → Staff → open the person → Days off / unavailability</strong>, or the <em>Days Off Requested</em> column on that Staff table.</p>'+
+            '<p class="muted" style="margin:6px 0 0;max-width:52rem;overflow-wrap:break-word">Staff absence / disruption reports (POL-048). <strong>Validate day</strong> (1) marks the worker <em>Day off (Time Off Requested)</em>, (2) removes them from that day\u2019s booked services and paints <strong style="color:var(--danger,#b00)">COVER NEEDED</strong> in red on Services / Schedule &amp; Covers / MADRE-facing rota, (3) pushes an admin alert to assign cover. Parents are <strong>not</strong> notified until you put a real instructor on via Schedule &amp; Covers. Undo reverses the day off and cancels those COVER NEEDED rows. History: <strong>H&amp;R → Staff → Days off / unavailability</strong>.</p>'+
           '</div><button type="button" class="btn btn--ghost btn--sm" id="sdRefreshBtn">Refresh</button></div>'+
           '<div id="sdReportsRoot" class="card-pad" style="padding:12px 0 0"><p class="muted" style="margin:0">Loading reports\u2026</p></div>'+
         '</section>';
@@ -23103,17 +23135,108 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         b.addEventListener('click', function(){ portalSdOpenDetail(b.getAttribute('data-sd-view')); });
       });
     }
+    function portalSdNormStaffKey(v){
+      return String(v || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '')
+        .trim();
+    }
+    function portalSdStaffKeysForReport(report){
+      var keys = [];
+      var seen = Object.create(null);
+      function push(v){
+        var k = portalSdNormStaffKey(v);
+        if(!k || seen[k]) return;
+        if(k === 'lulia' || k === 'aida' || k === 'lulya') k = 'luliya';
+        if(seen[k]) return;
+        seen[k] = true;
+        keys.push(k);
+      }
+      if(!report) return keys;
+      push(report.submitted_by_name);
+      var first = String(report.submitted_by_name || '').trim().split(/\s+/)[0] || '';
+      push(first);
+      try{
+        var box = window.__PORTAL_SUPABASE__;
+        /* username often resolves later via validate edge; also match roster first name */
+      }catch(_e){}
+      return keys;
+    }
+    /** Booked spreadsheet slots for this staff on the disruption date (for COVER NEEDED overrides). */
+    function portalSdCollectCoverSlots(report){
+      var iso = String(report && report.session_date || '').slice(0, 10);
+      if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return [];
+      var wantKeys = portalSdStaffKeysForReport(report);
+      if(!wantKeys.length) return [];
+      var slots = [];
+      try{
+        if(typeof slotsForSelectedDate === 'function'){
+          slots = slotsForSelectedDate(iso) || [];
+        }
+      }catch(_e){ slots = []; }
+      var out = [];
+      for(var i = 0; i < slots.length; i++){
+        var sl = slots[i];
+        if(!sl) continue;
+        var sid = portalSdNormStaffKey(sl.staffRosterId || sl.staffName || '');
+        if(wantKeys.indexOf(sid) < 0) continue;
+        var cid = String(sl.clientSlug || '').trim().toLowerCase();
+        if(!cid || cid === 'available' || cid === 'closed' || cid === 'noparticipant' || cid === 'no_participant') continue;
+        if(cid === 'manager' || cid === 'home') continue;
+        var label = String(sl.clientDisplay || '').trim().toLowerCase();
+        if(label === 'no participant' || label === 'closed' || label === 'available') continue;
+        out.push({
+          anchor_start: sl.anchorStart || sl.start || '',
+          anchor_end: sl.anchorEnd || sl.end || '',
+          anchor_venue: sl.venue || '',
+          anchor_client_id: cid,
+          anchor_client_name: String(sl.clientDisplay || sl.clientName || '').trim(),
+          anchor_time_slot_label: sl.anchorTimeLabel || sl.whenLabel || '',
+          programme: sl.programme || '',
+          area: sl.rosterArea || ''
+        });
+      }
+      return out;
+    }
     async function portalSdValidate(reportId, action, btn){
       if(!reportId) return false;
-      if(action === 'undo' && !window.confirm('Remove the validated day off for this report?')) return false;
+      if(action === 'undo' && !window.confirm('Remove the validated day off and cancel COVER NEEDED rows for this report?')) return false;
       var prev = btn ? btn.textContent : '';
       if(btn){ btn.disabled = true; btn.textContent = action === 'undo' ? 'Removing\u2026' : 'Validating\u2026'; }
       try{
-        var res = await adminEdgePost('portal-admin-session-disruption-validate', { report_id: reportId, action: action });
+        var report = portalSdFindReport(reportId);
+        var payload = { report_id: reportId, action: action };
+        if(action === 'validate' && report){
+          payload.slots = portalSdCollectCoverSlots(report);
+        }
+        var res = await adminEdgePost('portal-admin-session-disruption-validate', payload);
         if(res.error || !res.data || !res.data.ok){
           if(btn){ btn.disabled = false; btn.textContent = prev; }
           window.alert('Action failed'+(res.error ? ': '+res.error : (res.data && res.data.error ? ': '+res.data.error : '.')));
           return false;
+        }
+        if(action === 'validate'){
+          var n = Number(res.data.covers_written || 0);
+          try{
+            window.alert(
+              n > 0
+                ? ('Validated. '+n+' service'+(n===1?'':'s')+' marked COVER NEEDED (red). Worker day off recorded. Admins alerted. Parents were not notified — assign cover in Schedule & Covers.')
+                : 'Validated day off for the worker. No booked participant slots were found on the roster for that date (COVER NEEDED not written). Check Schedule & Covers / Services if they still appear on shift.'
+            );
+          }catch(_a){}
+          try{
+            if(typeof adminInvalidateSessionsHubLiveCaches === 'function') adminInvalidateSessionsHubLiveCaches();
+          }catch(_c){}
+          try{
+            if(typeof refreshSchedulingModule === 'function') await refreshSchedulingModule();
+          }catch(_r){}
+          try{
+            if(window.PortalMadreFold && typeof window.PortalMadreFold.invalidateLiveMadreCache === 'function'){
+              window.PortalMadreFold.invalidateLiveMadreCache();
+            }
+          }catch(_m){}
         }
         await portalSdLoad();
         return true;
@@ -31750,6 +31873,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(document.visibilityState === 'visible') window.portalAdminRefreshStaffWaBadge();
         }, 30000);
         setTimeout(function(){ window.portalAdminRefreshStaffWaBadge(); }, 1500);
+      }
+      if(!window.__portalAdminCommsBadgeBound){
+        window.__portalAdminCommsBadgeBound = true;
+        window.portalAdminRefreshCommsBadge = function portalAdminRefreshCommsBadge(){
+          var badge = $('commsBadge');
+          if(!badge) return;
+          var c = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+          if(!c || !c.rpc) return;
+          Promise.resolve(c.rpc('communication_unread_count')).then(function(res){
+            var n = res && typeof res.data === 'number' ? res.data : 0;
+            n = n > 0 ? n : 0;
+            badge.textContent = n > 99 ? '99+' : String(n);
+            badge.classList.toggle('is-empty', n < 1);
+            var btn = $('btnComunicaciones');
+            if(btn){
+              btn.classList.toggle('admin-icon-btn--has-alerts', n > 0);
+              btn.setAttribute('aria-label', n > 0 ? ('Comunicaciones (' + n + ')') : 'Comunicaciones');
+            }
+          }).catch(function(){});
+        };
+        window.addEventListener('portal:supabase-ready', function(){ window.portalAdminRefreshCommsBadge(); });
+        document.addEventListener('visibilitychange', function(){
+          if(document.visibilityState === 'visible') window.portalAdminRefreshCommsBadge();
+        });
+        setInterval(function(){
+          if(document.visibilityState === 'visible') window.portalAdminRefreshCommsBadge();
+        }, 30000);
+        setTimeout(function(){ window.portalAdminRefreshCommsBadge(); }, 1600);
       }
       var alertsPopEl = $('alertsPop');
       if(alertsPopEl && !alertsPopEl.dataset.activityJumpBound){

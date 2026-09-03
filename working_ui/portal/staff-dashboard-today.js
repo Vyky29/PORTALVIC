@@ -1916,23 +1916,32 @@
     }
     /** True when this instructor_reassign hands the slot to `staffId` (they are the cover). */
     function portalInstructorReassignCoverIsStaff(ov, staffId){
-      if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign') return false;
+      const t = String(ov && ov.override_type || '').trim();
+      if(t !== 'instructor_reassign' && t !== 'instructor_cover_needed') return false;
       const cov = portalInstructorCoverStaffKeyFromOverride(ov);
-      if(!cov) return false;
+      if(!cov || cov === 'cover_needed') return false;
       const me = typeof portalCanonicalStaffKeyForMatch === 'function'
         ? portalCanonicalStaffKeyForMatch(staffId)
         : portalNormKeyStr(staffId);
       return !!(me && cov === me);
     }
     /**
-     * Drop a roster card for instructor_reassign only when someone ELSE is covering.
-     * If we are the cover (sunday replace / dated CSV already lists us on the slot), keep it —
-     * otherwise the last Sunday aquatic cards (e.g. Luliya→Shaan 2.30–3) vanished from Today.
+     * Drop a roster card for instructor_reassign / COVER NEEDED only when someone ELSE is covering
+     * (or cover is still needed). If we are the real cover, keep the card.
      */
     function portalInstructorReassignShouldHideForViewer(ov, staffId){
-      if(!ov || String(ov.override_type || '').trim() !== 'instructor_reassign') return false;
+      const t = String(ov && ov.override_type || '').trim();
+      if(t !== 'instructor_reassign' && t !== 'instructor_cover_needed') return false;
       const cov = portalInstructorCoverStaffKeyFromOverride(ov);
       if(!cov) return false;
+      if(t === 'instructor_cover_needed' || cov === 'cover_needed'){
+        const me = typeof portalCanonicalStaffKeyForMatch === 'function'
+          ? portalCanonicalStaffKeyForMatch(staffId)
+          : portalNormKeyStr(staffId);
+        const anchor = portalNormKeyStr(ov.anchor_staff_id);
+        /* Absent instructor loses the card; nobody else owns COVER NEEDED yet. */
+        return !!(me && anchor && me === anchor);
+      }
       return !portalInstructorReassignCoverIsStaff(ov, staffId);
     }
     try{

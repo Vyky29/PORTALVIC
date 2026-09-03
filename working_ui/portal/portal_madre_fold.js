@@ -421,6 +421,42 @@
     var payload = row.payload || {};
     var ovType = String(row.override_type || "").toLowerCase();
     var iso = normIso(row.session_date || opts.session_date);
+
+    if (ovType === "instructor_cover_needed") {
+      return applyFoldToLiveMadre(client, {
+        fold_type: "instructor_cover_needed",
+        session_date: iso || null,
+        payload: {
+          client_name: row.anchor_client_id || "",
+          time_slot: row.anchor_time_slot_label || "",
+          venue: row.anchor_venue || payload.venue || "",
+          service: payload.service || "",
+          area: payload.area || "",
+          from_instructors: payload.absent_staff_id || row.anchor_staff_id || "",
+          to_instructors: "COVER NEEDED",
+        },
+      });
+    }
+
+    if (
+      ovType === "instructor_reassign" &&
+      (payload.covering_staff_id || payload.covering_staff_name)
+    ) {
+      return applyFoldToLiveMadre(client, {
+        fold_type: "instructor_column_move",
+        session_date: iso || null,
+        payload: {
+          client_name: row.anchor_client_id || "",
+          time_slot: row.anchor_time_slot_label || "",
+          venue: row.anchor_venue || payload.venue || "",
+          service: payload.service || "",
+          area: payload.area || "",
+          from_instructors: payload.absent_staff_id || row.anchor_staff_id || "",
+          to_instructors: payload.covering_staff_name || payload.covering_staff_id || "",
+        },
+      });
+    }
+
     var isStaffCover =
       ovType.indexOf("staff") >= 0 ||
       ovType === "instructor_cover" ||

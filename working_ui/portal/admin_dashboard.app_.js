@@ -8192,6 +8192,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         slot_clear_client: 'No Participant',
         client_replace_in_slot: 'MakeUp',
         instructor_reassign: 'Change Instructor',
+        instructor_cover_needed: 'COVER NEEDED',
         slot_close: 'Closed',
         slot_open: 'Open closed slot',
         override_void: 'Void'
@@ -8210,6 +8211,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(k === 'slot_close') return 'override--closed';
       if(k === 'slot_open') return 'override--slot-open';
       if(k === 'client_replace_in_slot' || k === 'replace_participant') return 'override--replace';
+      if(k === 'instructor_cover_needed') return 'override--cover-needed';
       if(k === 'instructor_reassign') return 'override--instructor';
       return '';
     }
