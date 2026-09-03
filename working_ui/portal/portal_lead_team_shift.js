@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260903-john-sun6-only";
+} from "./portal_lead_session_scope.js?v=20260903-sun6-john-berta";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -572,7 +572,7 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   });
   /* Seed expected Hub Multi support when standing rows did not resolve yet (Berta is Sunday Lead). */
   if (dayKind === "sunday_ma_swimfarm" && ctx.leadKey === "berta") {
-    const seeds = iso === "2026-09-06" ? ["godsway", "youssef", "john"] : ["godsway", "emanuel"];
+    const seeds = iso === "2026-09-06" ? ["godsway", "john", "berta"] : ["godsway", "emanuel"];
     seeds.forEach(function (k) {
       if (memberKeys.indexOf(k) < 0) memberKeys.push(k);
     });

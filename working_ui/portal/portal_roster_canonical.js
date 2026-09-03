@@ -623,8 +623,8 @@
     return /multi[\s-]*activity/i.test(String(service || ""));
   }
 
-  /** Sun 6 Sep 2026: Emanuel off — Youssef covers his Hub Multi book (dated so Today matches). */
-  var SEP6_2026_YOUSSEF_HUB_MULTI = [
+  /** Sun 6 Sep 2026: Emanuel off — John covers his Hub Multi book (dated so Today matches). */
+  var SEP6_2026_JOHN_EMANUEL_HUB_MULTI = [
     { client_name: "Zaid", time_slot: "9.30 to 10.15" },
     /* Standing Jack S <-> Samer: Hub 10.15 is Jack S. */
     { client_name: "Jack S", time_slot: "10.15 to 11" },
@@ -634,12 +634,22 @@
     { client_name: "Rayyan F", time_slot: "1.15 to 2" },
   ];
 
-  function autumnSundaySep6YoussefHubMultiRows() {
-    return SEP6_2026_YOUSSEF_HUB_MULTI.map(function (slot) {
+  /** Sun 6 Sep 2026: Berta Lead keeps the Hub Multi book that was on John. */
+  var SEP6_2026_BERTA_HUB_MULTI = [
+    { client_name: "Jack W", time_slot: "9.30 to 10.15" },
+    { client_name: "Adam Ab", time_slot: "10.15 to 11" },
+    { client_name: "Cyrus", time_slot: "11 to 11.45" },
+    { client_name: "Arthur Ma", time_slot: "11.45 to 12.30" },
+    { client_name: "Erik", time_slot: "12.30 to 1.15" },
+    { client_name: "Aydaan Ah", time_slot: "1.15 to 2" },
+  ];
+
+  function autumnSundaySep6HubCoverRows() {
+    var john = SEP6_2026_JOHN_EMANUEL_HUB_MULTI.map(function (slot) {
       return {
         client_name: slot.client_name,
         day: "Sunday",
-        instructors: "YOUSSEF",
+        instructors: "JOHN",
         service: "Multi-Activity",
         area: "Hub Room",
         time_slot: slot.time_slot,
@@ -647,6 +657,19 @@
         session_date: "2026-09-06",
       };
     });
+    var berta = SEP6_2026_BERTA_HUB_MULTI.map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "BERTA",
+        service: "Multi-Activity",
+        area: "Hub Room",
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+    return john.concat(berta);
   }
 
   /**
@@ -688,8 +711,14 @@
     if (isMultiActivityService(service)) {
       s = remapAutumnMultiInstructorsStanding(s);
       if (iso === "2026-09-06") {
-        /* Youssef covers Emanuel Hub book; John takes former BERTA Hub book this day only. */
-        s = s.replace(/\bEMANUEL\b/gi, "YOUSSEF").replace(/\bBERTA\b/gi, "JOHN");
+        /*
+         * Sun 6 Hub: John covers Emanuel book; Berta Lead keeps former John book.
+         * Order matters — move JOHN→BERTA before EMANUEL→JOHN.
+         */
+        s = s
+          .replace(/\bJOHN\b/gi, "__SEP6_BERTA_BOOK__")
+          .replace(/\bEMANUEL\b/gi, "JOHN")
+          .replace(/__SEP6_BERTA_BOOK__/g, "BERTA");
       }
     }
     if (isBespokeService(service)) {
@@ -1342,7 +1371,7 @@
     autumnSundayClimbingStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
-    autumnSundaySep6YoussefHubMultiRows().forEach(function (row) {
+    autumnSundaySep6HubCoverRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     return out;

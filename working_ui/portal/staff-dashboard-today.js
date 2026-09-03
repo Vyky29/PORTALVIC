@@ -1848,8 +1848,8 @@
         : portalNormKeyStr(pl.covering_staff_name);
       var cov = fromId || fromName || '';
       /*
-       * Sun 6 Sep 2026: office overrides wrongly assigned Emanuel/Giuseppe Hub Multi
-       * (Zaid…Rayyan F) to John. Ops truth = Youssef covers that book; John keeps his own.
+       * Sun 6 Sep 2026: Emanuel Hub Multi (Zaid…Rayyan F) → John.
+       * Keep cover as John even if an old override still names Youssef.
        */
       try{
         var iso = normaliseIsoDate(ov && ov.session_date);
@@ -1862,11 +1862,10 @@
         };
         if(
           iso === '2026-09-06' &&
-          cov === 'john' &&
           emanuelBook[cid] &&
-          (anchor === 'emanuel' || anchor === 'giuseppe' || anchor === 'youssef')
+          (anchor === 'emanuel' || anchor === 'giuseppe' || anchor === 'youssef' || cov === 'youssef')
         ){
-          return 'youssef';
+          return 'john';
         }
       }catch(_fix){}
       return cov;

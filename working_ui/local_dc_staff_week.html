@@ -234,16 +234,16 @@
   <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260903-berta-climb-row · Autumn 2026</h1>
   <p class="note">
     Open at <code>http://127.0.0.1:8765/local_dc_staff_week.html</code> (not file://). Club closed Mon 31 Aug 2026 (BH).
-    <strong>1-6 Sep</strong> = week 1 (DC weekdays; Sat 5 + Sun 6 weekend · Hub Multi: Berta Leader no clients · <strong>John only this Sunday</strong> · Godsway · Youssef = Emanuel book @ £24; Emanuel off).
+    <strong>1-6 Sep</strong> = week 1 (DC weekdays; Sat 5 + Sun 6 weekend · Hub: <strong>Berta Lead + Jack W…Aydaan book</strong> · <strong>John = Emanuel book</strong> · Godsway · Youssef off · Emanuel off).
     <strong>7-13 Sep</strong> = Emanuel onboarding (Mon 7 interview 4pm; shadow Wed 9 / Fri 11; Sun 13 Multi Hub shadow — Hub staff: Berta · Godsway · Emanuel only; John off).
     Hub Tinashe Mon/Wed = <strong>Godsway + John + Raul</strong> (paid 4.15-6.15). Victor off Mondays. Fri Tinashe = <strong>Roberto</strong> (21h PT).
-    Sundays: <strong>Berta Leader</strong> (no clients) · Godsway · Emanuel (from 20 Sep). <strong>John Sunday = 6 Sep only</strong>.
+    Sundays: <strong>Berta Leader</strong> · Godsway · Emanuel (from 20 Sep). <strong>John Sunday = 6 Sep only</strong> (Emanuel cover book).
     <strong>From Mon 14 Sep</strong> = Emanuel also on Mon/Wed/Fri Tinashe + Sunday MA @ £18 Level 1 SW.
   </p>
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260903-jacks-samer-swap"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260903-sun6-john-berta"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260902-emanuel-fadi-1230"></script>
   <!-- local board bump: 20260901c-open-slots -->
   <script>
@@ -260,7 +260,7 @@
     { dow: "thursday", iso: "2026-09-03", phase: "w1", hint: "Week 1 · Fadi off · Roberto + Youssef OFF" },
     { dow: "friday", iso: "2026-09-04", phase: "w1", hint: "Week 1 · Fadi off · Victor/Raul Timi 11-1 · Youssef OFF (starts Sat)" },
     { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Week 1 · first Saturday" },
-    { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · Hub: Berta Manager 9-2.30 · John Hub book (only Sunday he works) · Godsway · Youssef = Emanuel book · Emanuel OFF" },
+    { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · Hub: Berta Lead + Jack W…Aydaan · John = Emanuel book (Zaid…Rayyan F) · Godsway · Youssef OFF · Emanuel OFF" },
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Emanuel interview 4pm · Godsway/John/Raul Tinashe 4.15-6.15 · Victor OFF · Dan in Victor column" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing · Acton AS Roberto/Aurora/Javier/Luliya" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Emanuel shadowing · Godsway/John/Raul Tinashe" },
@@ -488,7 +488,7 @@
         { name: "Adaam Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Amaar Ah", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
       ],
-      /* Standing from Sun 20 Sep: Emanuel Hub Multi. Sun 6 = Youssef (DATE_EXTRA). Sun 13 = shadow only. */
+      /* Standing from Sun 20 Sep: Emanuel Hub Multi. Sun 6 = John (DATE_EXTRA). Sun 13 = shadow only. */
       Emanuel: [
         { name: "Zaid", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         /* Standing swap: Jack S Hub 10.15-11. */
@@ -568,8 +568,8 @@
   /* Date-specific cards (onboarding / one-off). Merged on top of EXTRA by iso. */
   var DATE_EXTRA = {
     "2026-09-06": {
-      /* Emanuel off — Youssef takes that Hub Multi book. John Hub book this Sunday only. */
-      Youssef: [
+      /* Emanuel + Youssef off. John covers Emanuel Hub book. Berta Lead keeps former John Hub book. */
+      John: [
         { name: "Zaid", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Jack S", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Eiji", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
@@ -577,7 +577,7 @@
         { name: "Haneef", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Rayyan F", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
       ],
-      John: [
+      Berta: [
         { name: "Jack W", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Adam Ab", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Cyrus", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
@@ -632,15 +632,14 @@
   ];
 
   var SUNDAY_STAFF_ORDER = [
-    /* Pool swimming, Hub Multi books, then Leader + Climb on the second row. */
+    /* Pool swimming, Hub Multi books (Berta Lead + clients, John cover, Godsway), Climb. */
     "Roberto",
     "Aurora",
     "Javier",
-    "Youssef",
+    "Berta",
     "John",
     "Godsway",
     "Emanuel",
-    "Berta",
     "Alex",
     "Carlos",
   ];
@@ -788,11 +787,12 @@
     if ((iso === "2026-09-09" || iso === "2026-09-11") && staffName === "Emanuel") return "4.15 to 6.15";
     if (iso === "2026-09-13" && staffName === "Emanuel") return "9.15 to 2.15";
     if (iso === "2026-09-06" && staffName === "Emanuel") return "";
-    if (iso === "2026-09-06" && staffName === "Youssef") return "9.15 to 2.15";
+    if (iso === "2026-09-06" && staffName === "Youssef") return "";
     if (iso === "2026-09-06" && staffName === "John") return "9.15 to 2.15";
+    if (iso === "2026-09-06" && staffName === "Berta") return "Leader · 9 to 2.30";
     /* John Sundays: cover 6 Sep only (not 13 Sep / standing). */
     if (staffName === "John" && dk === "sunday") return "";
-    /* Emanuel Sunday MA standing from 20 Sep only (Sep 6 = Youssef; Sep 13 = shadow). */
+    /* Emanuel Sunday MA standing from 20 Sep only (Sep 6 off; Sep 13 = shadow). */
     if (staffName === "Emanuel" && dk === "sunday" && iso && iso < "2026-09-20" && iso !== "2026-09-13") {
       return "";
     }
@@ -992,7 +992,10 @@
         /* Date overlay replaces weekday EXTRA for this staff (interview / shadow / John Sun 6). */
         extraStaff = datePack;
       } else if (iso === "2026-09-06" && staffName === "Emanuel") {
-        /* Sun 6: Youssef covers Hub Multi — Emanuel off. */
+        /* Sun 6: John covers Hub Multi — Emanuel off. */
+        extraStaff = null;
+      } else if (iso === "2026-09-06" && staffName === "Youssef") {
+        /* Sun 6: Youssef off (John takes Emanuel book). */
         extraStaff = null;
       } else if (staffName === "John" && dayKey === "sunday" && iso !== "2026-09-06") {
         /* John Hub Multi Sunday = 6 Sep only (off on 13 Sep and standing Sundays). */
@@ -1428,7 +1431,7 @@
       ban.className = "week-banner";
       ban.textContent =
         day.phase === "w1"
-          ? "Week 1 · 1-6 Sep 2026 · Day Centre Tue-Fri + first weekend (Berta Leader · John Hub 6 Sep only · Youssef = Emanuel book)"
+          ? "Week 1 · 1-6 Sep 2026 · Day Centre Tue-Fri + first weekend (Berta Lead + Jack W book · John = Emanuel book · Youssef off)"
           : day.phase === "w2"
             ? "Week 2 · 7-13 Sep 2026 · Emanuel interview/shadow · Sun 13 Hub: Berta · Godsway · Emanuel (John off)"
             : "From 14 Sep 2026 · Emanuel + Godsway/John/Raul Mon/Wed · Fri Roberto+Tinashe · Sunday MA";
