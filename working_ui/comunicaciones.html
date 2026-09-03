@@ -7,7 +7,7 @@
   <title>Communications - clubSENsational</title>
   <link rel="icon" href="/portal/F-02-1.png" type="image/png" />
   <script src="/portal-static-bootstrap.js"></script>
-  <link rel="stylesheet" href="/portal/comunicaciones/comunicaciones.css?v=20260903-comms-6" />
+  <link rel="stylesheet" href="/portal/comunicaciones/comunicaciones.css?v=20260903-comms-7" />
 </head>
 <body class="comms-app">
   <div id="commsBoot" class="comms-boot">
@@ -82,8 +82,8 @@
 
   <div id="commsCallOverlay" class="comms-call" hidden>
     <div class="comms-call-stage">
-      <video id="commsRemoteVideo" autoplay playsinline></video>
-      <video id="commsLocalVideo" autoplay playsinline muted></video>
+      <video id="commsRemoteVideo" autoplay playsinline webkit-playsinline></video>
+      <video id="commsLocalVideo" autoplay playsinline webkit-playsinline muted></video>
       <p class="comms-call-status" id="commsCallStatus">Calling...</p>
       <p class="comms-call-peer" id="commsCallPeer"></p>
       <div class="comms-call-bar">
@@ -96,6 +96,6 @@
     </div>
   </div>
 
-  <script type="module" src="/portal/comunicaciones/comunicaciones_app.js?v=20260903-comms-6"></script>
+  <script type="module" src="/portal/comunicaciones/comunicaciones_app.js?v=20260903-comms-7"></script>
 </body>
 </html>

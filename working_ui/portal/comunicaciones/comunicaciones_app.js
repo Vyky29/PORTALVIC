@@ -1,6 +1,10 @@
 import { bootstrapDashboardSupabase, portalLogout } from "/portal/auth-handler.js?v=20260903-comms-1";
 
-const STUN = [{ urls: "stun:stun.l.google.com:19302" }];
+const ICE_SERVERS = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+];
 const ALLOWED_MIME = [
   "image/jpeg",
   "image/png",
@@ -32,6 +36,9 @@ const state = {
   localStream: null,
   remoteStream: null,
   call: null,
+  pendingSignals: [],
+  iceQueue: [],
+  remoteDescSet: false,
   pendingFile: null,
   recording: false,
   mediaRecorder: null,
@@ -632,11 +639,11 @@ function subscribeRealtime() {
     .on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "communication_call_signals" },
-      (payload) => {
+      async (payload) => {
         const row = payload.new || {};
         if (!state.call || String(row.call_id) !== String(state.call.id)) return;
         if (String(row.sender_id) === String(state.me.id)) return;
-        handleSignal(row.payload || {});
+        await handleSignal(row.payload || {});
       }
     )
     .subscribe();
@@ -871,23 +878,104 @@ function setCallUi(phase) {
   $("commsHang").hidden = phase === "incoming";
   $("commsMuteMic").hidden = phase === "incoming";
   $("commsMuteCam").hidden = phase === "incoming" || (state.call && state.call.type !== "VIDEO");
+  void playVideoEl($("commsRemoteVideo"));
+  void playVideoEl($("commsLocalVideo"));
+}
+
+function playVideoEl(el) {
+  if (!el) return Promise.resolve();
+  el.playsInline = true;
+  el.setAttribute("playsinline", "");
+  el.setAttribute("webkit-playsinline", "");
+  const p = el.play();
+  if (p && p.catch) {
+    return p.catch(function () {
+      const wasMuted = el.muted;
+      el.muted = true;
+      return el.play().then(function () {
+        if (!wasMuted && el.id === "commsRemoteVideo") el.muted = false;
+      }).catch(function () {});
+    });
+  }
+  return Promise.resolve();
+}
+
+function bindRemoteTrack(track) {
+  if (!track) return;
+  if (!state.remoteStream) state.remoteStream = new MediaStream();
+  const already = state.remoteStream.getTracks().some(function (t) {
+    return t.id === track.id;
+  });
+  if (!already) state.remoteStream.addTrack(track);
+  const v = $("commsRemoteVideo");
+  if (v) {
+    v.srcObject = state.remoteStream;
+    void playVideoEl(v);
+  }
+}
+
+function rtcDescFromPayload(payload) {
+  const raw = payload && payload.sdp;
+  if (raw && typeof raw === "object" && raw.sdp) {
+    return new RTCSessionDescription({ type: raw.type || payload.type, sdp: raw.sdp });
+  }
+  if (typeof raw === "string") {
+    return new RTCSessionDescription({ type: payload.type, sdp: raw });
+  }
+  return new RTCSessionDescription(payload);
+}
+
+function sendCallSignal(kind, obj) {
+  if (!state.call || !state.call.id) return Promise.resolve();
+  let payload;
+  if (kind === "ice") {
+    payload = {
+      type: "ice",
+      candidate: obj && typeof obj.toJSON === "function" ? obj.toJSON() : obj,
+    };
+  } else {
+    payload = { type: kind, sdp: { type: obj.type, sdp: obj.sdp } };
+  }
+  return rpc("communication_call_signal", {
+    p_call_id: state.call.id,
+    p_payload: payload,
+  });
+}
+
+async function flushIceQueue(pc) {
+  const queued = state.iceQueue.splice(0);
+  for (let i = 0; i < queued.length; i++) {
+    try {
+      await pc.addIceCandidate(new RTCIceCandidate(queued[i]));
+    } catch (_e) {}
+  }
 }
 
 async function ensurePc() {
   if (state.pc) return state.pc;
-  const pc = new RTCPeerConnection({ iceServers: STUN });
+  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
   state.pc = pc;
   state.remoteStream = new MediaStream();
-  $("commsRemoteVideo").srcObject = state.remoteStream;
+  const remote = $("commsRemoteVideo");
+  if (remote) remote.srcObject = state.remoteStream;
   pc.ontrack = function (ev) {
-    ev.streams[0].getTracks().forEach((t) => state.remoteStream.addTrack(t));
+    if (ev.track) bindRemoteTrack(ev.track);
+    if (ev.streams && ev.streams[0]) {
+      ev.streams[0].getTracks().forEach(function (t) {
+        bindRemoteTrack(t);
+      });
+    }
   };
   pc.onicecandidate = function (ev) {
     if (!ev.candidate || !state.call) return;
-    rpc("communication_call_signal", {
-      p_call_id: state.call.id,
-      p_payload: { type: "ice", candidate: ev.candidate },
-    }).catch(function () {});
+    sendCallSignal("ice", ev.candidate).catch(function () {});
+  };
+  pc.onconnectionstatechange = function () {
+    if (!state.pc) return;
+    if (state.pc.connectionState === "connected") {
+      $("commsCallStatus").textContent = "In call";
+      void playVideoEl($("commsRemoteVideo"));
+    }
   };
   return pc;
 }
@@ -895,13 +983,48 @@ async function ensurePc() {
 async function attachLocal(video) {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: true,
-    video: !!video,
+    video: video ? { facingMode: "user" } : false,
   });
   state.localStream = stream;
-  $("commsLocalVideo").srcObject = stream;
-  $("commsLocalVideo").hidden = !video;
+  const local = $("commsLocalVideo");
+  if (local) {
+    local.srcObject = stream;
+    local.muted = true;
+    local.hidden = !video;
+    void playVideoEl(local);
+  }
   const pc = await ensurePc();
-  stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+  stream.getTracks().forEach(function (t) {
+    const sent = pc.getSenders().some(function (s) {
+      return s.track && s.track.id === t.id;
+    });
+    if (!sent) pc.addTrack(t, stream);
+  });
+}
+
+async function processQueuedSignals() {
+  const queued = state.pendingSignals.splice(0);
+  for (let i = 0; i < queued.length; i++) {
+    await handleSignal(queued[i]);
+  }
+}
+
+async function pullCallSignals() {
+  const c = client();
+  if (!c || !state.call) return;
+  try {
+    const res = await c
+      .from("communication_call_signals")
+      .select("id, sender_id, payload")
+      .eq("call_id", state.call.id)
+      .order("created_at", { ascending: true });
+    const rows = res && res.data ? res.data : [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (String(row.sender_id) === String(state.me.id)) continue;
+      await handleSignal(row.payload || {});
+    }
+  } catch (_e) {}
 }
 
 async function startCall(type) {
@@ -912,6 +1035,9 @@ async function startCall(type) {
       p_type: type,
     });
     state.call = { id: out.call_id, type: out.type, role: "offerer" };
+    state.pendingSignals = [];
+    state.iceQueue = [];
+    state.remoteDescSet = false;
     $("commsCallPeer").textContent =
       commsStaffLabel((itemByConversation(state.open.conversation_id) || {}).display_name) || "";
     $("commsCallStatus").textContent = "Calling...";
@@ -920,10 +1046,7 @@ async function startCall(type) {
     const pc = await ensurePc();
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    await rpc("communication_call_signal", {
-      p_call_id: state.call.id,
-      p_payload: { type: "offer", sdp: offer },
-    });
+    await sendCallSignal("offer", offer);
   } catch (err) {
     window.alert(err.message || "Could not start the call.");
     tearDownCall(true);
@@ -931,7 +1054,11 @@ async function startCall(type) {
 }
 
 async function incomingCall(row) {
+  if (state.call && String(state.call.id) === String(row.id)) return;
   state.call = { id: row.id, type: row.type, role: "answerer", conversation_id: row.conversation_id };
+  state.pendingSignals = [];
+  state.iceQueue = [];
+  state.remoteDescSet = false;
   $("commsCallPeer").textContent = "Incoming call";
   $("commsCallStatus").textContent = row.type === "VIDEO" ? "Video call" : "Audio call";
   setCallUi("incoming");
@@ -944,6 +1071,8 @@ async function acceptCall() {
     $("commsCallStatus").textContent = "Connecting...";
     setCallUi("outgoing");
     await attachLocal(state.call.type === "VIDEO");
+    await pullCallSignals();
+    await processQueuedSignals();
   } catch (err) {
     window.alert(err.message || "Could not answer.");
     tearDownCall(true);
@@ -951,21 +1080,36 @@ async function acceptCall() {
 }
 
 async function handleSignal(payload) {
+  if (!payload || !payload.type) return;
+  if (!state.call) return;
+  if (state.call.role === "answerer" && !state.localStream) {
+    state.pendingSignals.push(payload);
+    return;
+  }
   try {
     const pc = await ensurePc();
     if (payload.type === "offer" && payload.sdp) {
-      await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+      if (state.remoteDescSet) return;
+      await pc.setRemoteDescription(rtcDescFromPayload(payload));
+      state.remoteDescSet = true;
+      await flushIceQueue(pc);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      await rpc("communication_call_signal", {
-        p_call_id: state.call.id,
-        p_payload: { type: "answer", sdp: answer },
-      });
+      await sendCallSignal("answer", answer);
       $("commsCallStatus").textContent = "In call";
+      void playVideoEl($("commsRemoteVideo"));
     } else if (payload.type === "answer" && payload.sdp) {
-      await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+      if (pc.signalingState !== "have-local-offer") return;
+      await pc.setRemoteDescription(rtcDescFromPayload(payload));
+      state.remoteDescSet = true;
+      await flushIceQueue(pc);
       $("commsCallStatus").textContent = "In call";
+      void playVideoEl($("commsRemoteVideo"));
     } else if (payload.type === "ice" && payload.candidate) {
+      if (!state.remoteDescSet) {
+        state.iceQueue.push(payload.candidate);
+        return;
+      }
       await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
     }
   } catch (_e) {}
@@ -987,6 +1131,9 @@ async function tearDownCall(notify) {
   state.localStream = null;
   state.remoteStream = null;
   state.call = null;
+  state.pendingSignals = [];
+  state.iceQueue = [];
+  state.remoteDescSet = false;
   $("commsCallOverlay").hidden = true;
   $("commsRemoteVideo").srcObject = null;
   $("commsLocalVideo").srcObject = null;
