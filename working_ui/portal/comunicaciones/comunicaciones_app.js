@@ -253,7 +253,7 @@ function inboxRow(it) {
 function bubbleHtml(m) {
   const mine = String(m.performed_by_user_id) === String(state.me.id);
   const admin = m.sender_context === "ADMINISTRATION";
-  const klass = "comms-bubble" + (mine ? " is-mine" : "") + (admin && !mine ? " is-admin" : "");
+  let klass = "comms-bubble" + (mine ? " is-mine" : "") + (admin && !mine ? " is-admin" : "");
   let who = esc(m.sender_display || "");
   if (admin && m.performed_by_name) {
     who += " · sent by " + esc(m.performed_by_name);
@@ -279,11 +279,14 @@ function bubbleHtml(m) {
       esc(m.file_name || "File") +
       "</a>";
   } else if (m.message_type === "call") {
+    klass = "comms-bubble is-call";
+    who = "";
     body = esc(m.body || "Call");
   } else {
     body = esc(m.body || "");
   }
-  const read = mine ? (m.read_count > 1 || m.delivered_read ? " · read" : " · sent") : "";
+  const read =
+    m.message_type === "call" ? "" : mine ? (m.read_count > 1 || m.delivered_read ? " · read" : " · sent") : "";
   return (
     '<article class="' +
     klass +
@@ -766,6 +769,18 @@ function subscribeRealtime() {
     .on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "communication_messages" },
+      async (payload) => {
+        const row = payload.new || {};
+        if (state.open && String(row.conversation_id) === String(state.open.conversation_id)) {
+          await openConversation(state.open.conversation_id, state.open, { silent: true });
+        } else {
+          await loadInbox();
+        }
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "communication_messages" },
       async (payload) => {
         const row = payload.new || {};
         if (state.open && String(row.conversation_id) === String(state.open.conversation_id)) {

@@ -312,10 +312,18 @@ body.comms-app {
   background: var(--blueSoft);
   border-color: rgba(45, 132, 179, .22);
 }
-.comms-bubble.is-admin {
-  background: #fff7e6;
-  border-color: rgba(244, 183, 64, .45);
+.comms-bubble.is-call {
+  align-self: center;
+  max-width: min(90%, 420px);
+  background: transparent;
+  border: 1px dashed var(--line);
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
 }
+.comms-bubble.is-call .comms-bubble-who { display: none; }
+.comms-bubble.is-call .comms-bubble-meta { text-align: center; }
 .comms-bubble-who { font-size: 11px; font-weight: 800; color: var(--blueDeep); margin-bottom: 4px; }
 .comms-bubble-meta { margin: 6px 0 0; font-size: 11px; color: var(--muted); }
 .comms-file {
