@@ -112,7 +112,7 @@
       color: var(--muted);
       letter-spacing: 0.02em;
     }
-    /* After-school aquatic: shared 30' rows so 60' (Cyrus/Stephanie) spans two cells. */
+    /* Timed columns: 30' AS aquatic or 15' Sunday Multi/Aquatic pool. */
     .col__slots {
       display: grid;
       gap: 4px;
@@ -1265,19 +1265,46 @@
     };
   }
 
-  /** After-school aquatic columns: align on a shared 30' CSS grid (60' = span 2). */
+  /**
+   * Timed CSS grid for AS aquatic (30') and Sunday pool Multi/Aquatic (15').
+   * Skip Day Centre, Climbing, Bespoke-only, Manager-only.
+   */
   function columnUsesSlotGrid(clients) {
     if (!clients || !clients.length) return false;
     if (clients.some(function (c) { return !!c.dc; })) return false;
     return clients.every(function (c) {
       var area = String((c && c.area) || "").toLowerCase();
-      if (/multi|bespoke|climb|hub|manager|fitness/.test(area)) return false;
+      var nm = String((c && c.name) || "")
+        .trim()
+        .toLowerCase();
+      if (/climb/.test(area)) return false;
+      if (/bespoke/.test(area) && !/multi/.test(area)) return false;
+      if (nm === "manager" || (/manager/.test(area) && !/multi/.test(area))) return false;
+      if (/fitness/.test(area) && !/multi|aquatic|pool/.test(area)) return false;
       var r = parseTimeRange(c.time);
-      return !!(r && (r.end - r.start) % 30 === 0);
+      return !!(r && (r.end - r.start) % 15 === 0);
     });
   }
 
-  function slotGridWindow(clients) {
+  /** Sunday Big/Small Pool columns (not Hub) — share one 15' grid so Yusuf 75' lines up. */
+  function isSundayPoolColumn(clients) {
+    if (!clients || !clients.length) return false;
+    return clients.every(function (c) {
+      var area = String((c && c.area) || "").toLowerCase();
+      return /swimfarm/.test(area) && /pool/.test(area) && !/hub\s*room/.test(area);
+    });
+  }
+
+  function slotGridStep(clients) {
+    var need15 = (clients || []).some(function (c) {
+      var r = parseTimeRange(c.time);
+      return !!(r && (r.end - r.start) % 30 !== 0);
+    });
+    return need15 ? 15 : 30;
+  }
+
+  function slotGridWindow(clients, step) {
+    step = step || 30;
     var minS = Infinity;
     var maxE = -Infinity;
     (clients || []).forEach(function (c) {
@@ -1287,9 +1314,9 @@
       if (r.end > maxE) maxE = r.end;
     });
     if (!Number.isFinite(minS) || !Number.isFinite(maxE) || maxE <= minS) return null;
-    minS = Math.floor(minS / 30) * 30;
-    maxE = Math.ceil(maxE / 30) * 30;
-    return { start: minS, end: maxE, rows: (maxE - minS) / 30 };
+    minS = Math.floor(minS / step) * step;
+    maxE = Math.ceil(maxE / step) * step;
+    return { start: minS, end: maxE, step: step, rows: (maxE - minS) / step };
   }
 
   function renderCard(c, dayKey, gridPos) {
@@ -1507,23 +1534,47 @@
     cols.className = "cols";
     var staffList = staffColumnsForDay(day);
     var clientsByStaff = {};
-    var sharedGrid = null;
+    var sundayPoolShared = null;
     staffList.forEach(function (staff) {
       var cl = boardClients(day, staff);
       clientsByStaff[staff] = cl;
-      if (!columnUsesSlotGrid(cl)) return;
-      var win = slotGridWindow(cl);
+      if (dk !== "sunday" || !columnUsesSlotGrid(cl) || !isSundayPoolColumn(cl)) return;
+      var step = 15;
+      var win = slotGridWindow(cl, step);
       if (!win) return;
-      if (!sharedGrid) {
-        sharedGrid = { start: win.start, end: win.end };
+      if (!sundayPoolShared) {
+        sundayPoolShared = { start: win.start, end: win.end, step: step };
       } else {
-        if (win.start < sharedGrid.start) sharedGrid.start = win.start;
-        if (win.end > sharedGrid.end) sharedGrid.end = win.end;
+        if (win.start < sundayPoolShared.start) sundayPoolShared.start = win.start;
+        if (win.end > sundayPoolShared.end) sundayPoolShared.end = win.end;
       }
     });
-    if (sharedGrid) {
-      sharedGrid.rows = (sharedGrid.end - sharedGrid.start) / 30;
+    if (sundayPoolShared) {
+      sundayPoolShared.rows =
+        (sundayPoolShared.end - sundayPoolShared.start) / sundayPoolShared.step;
     }
+
+    function appendTimedSlots(colEl, clients, grid) {
+      var slots = document.createElement("div");
+      slots.className = "col__slots";
+      var rowPx = grid.step === 15 ? 22 : 40;
+      slots.style.gridTemplateRows =
+        "repeat(" + grid.rows + ", minmax(" + rowPx + "px, auto))";
+      var html = "";
+      clients.forEach(function (c) {
+        var r = parseTimeRange(c.time);
+        if (!r) {
+          html += renderCard(c, dk);
+          return;
+        }
+        var rowStart = Math.round((r.start - grid.start) / grid.step) + 1;
+        var rowSpan = Math.max(1, Math.round((r.end - r.start) / grid.step));
+        html += renderCard(c, dk, { rowStart: rowStart, rowSpan: rowSpan });
+      });
+      slots.innerHTML = html;
+      colEl.appendChild(slots);
+    }
+
     staffList.forEach(function (staff) {
       var clients = clientsByStaff[staff] || [];
       /* Keep Sunday Leader column (Berta) even with no clients. */
@@ -1550,24 +1601,23 @@
                   ? "OFF (starts Saturday)"
                   : "No sessions";
         col.innerHTML += '<p class="empty">' + esc(emptyLabel) + "</p>";
-      } else if (sharedGrid && columnUsesSlotGrid(clients)) {
-        var slots = document.createElement("div");
-        slots.className = "col__slots";
-        slots.style.gridTemplateRows =
-          "repeat(" + sharedGrid.rows + ", minmax(40px, auto))";
-        var html = "";
-        clients.forEach(function (c) {
-          var r = parseTimeRange(c.time);
-          if (!r) {
-            html += renderCard(c, dk);
-            return;
-          }
-          var rowStart = Math.round((r.start - sharedGrid.start) / 30) + 1;
-          var rowSpan = Math.max(1, Math.round((r.end - r.start) / 30));
-          html += renderCard(c, dk, { rowStart: rowStart, rowSpan: rowSpan });
-        });
-        slots.innerHTML = html;
-        col.appendChild(slots);
+      } else if (
+        sundayPoolShared &&
+        columnUsesSlotGrid(clients) &&
+        isSundayPoolColumn(clients)
+      ) {
+        /* FOTO1: shared 15' grid — Yusuf 75' = Simon 30' + Adam Ab 45'. */
+        appendTimedSlots(col, clients, sundayPoolShared);
+      } else if (columnUsesSlotGrid(clients)) {
+        /* FOTO2: per-column grid (no leading empty rows when shift starts later). */
+        var step = slotGridStep(clients);
+        var win = slotGridWindow(clients, step);
+        if (win) appendTimedSlots(col, clients, win);
+        else {
+          clients.forEach(function (c) {
+            col.innerHTML += renderCard(c, dk);
+          });
+        }
       } else {
         clients.forEach(function (c) {
           col.innerHTML += renderCard(c, dk);
