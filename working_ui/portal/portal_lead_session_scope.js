@@ -67,7 +67,7 @@ const JOHN_SCOPES = [
     venues: ["swimfarm"],
     leadTeamBanner: true,
   },
-  /* Sunday Multi Lead is Berta. John may cover Hub Multi (e.g. 6 Sep) as support — not programme lead. */
+  /* Sunday Multi Lead is Berta. John works Sunday Hub Multi as support (own clients), not programme lead. */
 ];
 
 const MICHELLE_SCOPES = [

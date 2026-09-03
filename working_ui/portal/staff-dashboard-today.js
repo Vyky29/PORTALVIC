@@ -3597,7 +3597,7 @@
       if(sid === 'john'){
         return [
           { weekdays: ['Monday', 'Wednesday'], serviceKeys: ['bespoke'], venues: ['swimfarm'], leadTeamBanner: true }
-          /* Sunday Multi Lead = Berta. John covers Hub Multi only when rostered (e.g. 6 Sep). */
+          /* Sunday Multi Lead = Berta. John still works Sunday Hub Multi support book. */
         ];
       }
       if(sid === 'berta'){
