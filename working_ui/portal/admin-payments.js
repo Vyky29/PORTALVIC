@@ -6093,7 +6093,10 @@
     var key = anonKey();
     if (!base || !key) return Promise.resolve([]);
     return portalAuthToken().then(function (token) {
-      if (!token) return [];
+      if (!token) {
+        console.warn("[AdminPayments] missing auth token for parent invoices");
+        return [];
+      }
       return fetch(base + "/functions/v1/portal-admin-parent-invoices-list", {
         method: "POST",
         headers: {
@@ -6105,14 +6108,26 @@
           share_status: "all",
           payment_status: "all",
           billing_amount: "autumn",
-          limit: 400,
+          limit: 800,
+          /* List paint does not need PDF links; opens stay faster. */
+          skip_pdf_urls: true,
         }),
       }).then(function (res) { return res.json().then(function (j) { return { res: res, j: j }; }); })
         .then(function (pack) {
-          if (!pack.res.ok || !pack.j || !pack.j.ok) return [];
+          if (!pack.res.ok || !pack.j || !pack.j.ok) {
+            console.warn(
+              "[AdminPayments] parent invoices list failed",
+              pack.res && pack.res.status,
+              pack.j && (pack.j.error || pack.j.message),
+            );
+            return [];
+          }
           return pack.j.invoices || [];
         })
-        .catch(function () { return []; });
+        .catch(function (err) {
+          console.warn("[AdminPayments] parent invoices list error", err);
+          return [];
+        });
     });
   }
 

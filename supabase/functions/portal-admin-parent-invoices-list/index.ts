@@ -320,6 +320,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     limit?: number;
     filter?: string;
     billing_amount?: string;
+    skip_pdf_urls?: boolean;
   } = {};
   try {
     body = await req.json();
@@ -334,7 +335,9 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     (body as { billing_amount?: string }).billing_amount || CURRENT_BILLING_TERM,
   );
   const contactId = clean(body.contact_id, 120);
-  const limit = Math.min(Math.max(Number(body.limit) || 200, 1), 400);
+  /* Payments + Re-enrolments need the full autumn cohort (300+ non-void shares). */
+  const limit = Math.min(Math.max(Number(body.limit) || 200, 1), 800);
+  const skipPdfUrls = (body as { skip_pdf_urls?: boolean }).skip_pdf_urls === true;
 
   const admin = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -419,6 +422,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
   const nameByContact = new Map<string, string>();
   const parentByContact = new Map<string, string>();
   const inClassByContact = new Map<string, boolean>();
+  const contactFundingLabelById = new Map<string, string>();
   if (contactIds.length) {
     const { data: pax } = await admin
       .from("portal_participants")
@@ -434,7 +438,9 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     }
     const { data: parents } = await admin
       .from("portal_parent_contacts")
-      .select("contact_id, parent_display, parent_first_name, parent_last_name")
+      .select(
+        "contact_id, parent_display, parent_first_name, parent_last_name, funding_label",
+      )
       .in("contact_id", contactIds);
     for (const p of parents || []) {
       const id = clean(p.contact_id, 120);
@@ -442,6 +448,7 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
         clean(p.parent_display, 120) ||
         [p.parent_first_name, p.parent_last_name].filter(Boolean).join(" ").trim();
       if (id && name) parentByContact.set(id, name);
+      if (id) contactFundingLabelById.set(id, clean(p.funding_label, 120));
     }
   }
 
@@ -461,24 +468,12 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
     }
   }
 
+  /*
+   * Buffer checks are expensive (extra queries per contact). Only run for
+   * Own-way families we already know from re-enrol payloads — never N×all.
+   * Deferred until reenrolByContact is filled below.
+   */
   const bufferByContact = new Map<string, Record<string, unknown>>();
-  await Promise.all(
-    contactIds.map(async (cid) => {
-      try {
-        const ev = await evaluateOwnArrangementBuffer(admin, cid);
-        if (ev.is_own_arrangement) {
-          bufferByContact.set(cid, {
-            required_gbp: ev.required_gbp,
-            available_gbp: ev.available_gbp,
-            shortfall_gbp: ev.shortfall_gbp,
-            is_low: ev.is_low,
-          });
-        }
-      } catch (err) {
-        console.error("[portal-admin-parent-invoices-list] buffer", cid, err);
-      }
-    }),
-  );
 
   // Latest re-enrolment submission per contact (2026-27) for sort + booked totals + funding chips.
   type ReenrolMeta = {
@@ -536,6 +531,35 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
       if (nameKey && !reenrolByName.has(nameKey)) {
         reenrolByName.set(nameKey, { submitted_at: submittedAt, totals, contact_id: cid });
       }
+    }
+  }
+
+  /* Own-way buffer only — skips hundreds of empty lookups that used to time out the list. */
+  {
+    const ownWayIds = contactIds.filter((cid) => {
+      const meta = reenrolByContact.get(cid);
+      return meta && clean(meta.payment_method_code, 40) === "own_way_flexible";
+    });
+    const CONCURRENCY = 8;
+    for (let i = 0; i < ownWayIds.length; i += CONCURRENCY) {
+      const slice = ownWayIds.slice(i, i + CONCURRENCY);
+      await Promise.all(
+        slice.map(async (cid) => {
+          try {
+            const ev = await evaluateOwnArrangementBuffer(admin, cid);
+            if (ev.is_own_arrangement) {
+              bufferByContact.set(cid, {
+                required_gbp: ev.required_gbp,
+                available_gbp: ev.available_gbp,
+                shortfall_gbp: ev.shortfall_gbp,
+                is_low: ev.is_low,
+              });
+            }
+          } catch (err) {
+            console.error("[portal-admin-parent-invoices-list] buffer", cid, err);
+          }
+        }),
+      );
     }
   }
 
@@ -615,25 +639,94 @@ async function handleAdminParentInvoicesList(req: Request): Promise<Response> {
   const fundingByContact = new Map<string, Awaited<ReturnType<typeof resolveParticipantInvoiceFunding>>>();
   const invoiceContactIds = new Set<string>();
 
+  /* Batch-sign PDFs (sequential createSignedUrl was timing out the whole list). */
+  const pdfUrlByPath = new Map<string, string>();
+  if (!skipPdfUrls) {
+    const paths: string[] = [];
+    const seenPath = new Set<string>();
+    for (const share of shares || []) {
+      const doc = docsById.get(String(share.document_id)) || {};
+      const path = clean(doc.file_url, 500);
+      if (!path || seenPath.has(path)) continue;
+      seenPath.add(path);
+      paths.push(path);
+    }
+    const CHUNK = 40;
+    for (let i = 0; i < paths.length; i += CHUNK) {
+      const chunk = paths.slice(i, i + CHUNK);
+      try {
+        const { data: signedRows, error: signErr } = await admin.storage
+          .from(BUCKET)
+          .createSignedUrls(chunk, 3600);
+        if (signErr) {
+          console.error("[portal-admin-parent-invoices-list] signedUrls", signErr.message);
+          continue;
+        }
+        for (let j = 0; j < chunk.length; j++) {
+          const row = (signedRows || [])[j] as
+            | { path?: string; signedUrl?: string; error?: string }
+            | undefined;
+          if (!row || row.error) continue;
+          const path = clean(row.path, 500) || chunk[j];
+          const url = clean(row.signedUrl, 2000);
+          if (path && url) pdfUrlByPath.set(path, url);
+        }
+      } catch (err) {
+        console.error("[portal-admin-parent-invoices-list] signedUrls chunk", err);
+      }
+    }
+  }
+
   for (const share of shares || []) {
     const doc = docsById.get(String(share.document_id)) || {};
-    let pdfUrl: string | null = null;
-    if (doc.file_url) {
-      const { data: signed } = await admin.storage
-        .from(BUCKET)
-        .createSignedUrl(String(doc.file_url), 3600);
-      pdfUrl = signed?.signedUrl || null;
-    }
+    const filePath = clean(doc.file_url, 500);
+    const pdfUrl = filePath ? pdfUrlByPath.get(filePath) || null : null;
     const cid = clean(share.contact_id, 120);
     if (cid) invoiceContactIds.add(cid);
     const displayName =
       nameByContact.get(cid) || clean(doc.related_client, 120) || "";
     let funding = fundingByContact.get(cid);
     if (!funding) {
-      funding = await resolveParticipantInvoiceFunding(admin, {
-        contactId: cid,
-        displayName,
-      });
+      const labelFromContact = contactFundingLabelById.get(cid) || "";
+      const laPack = cid ? (laPayByContact.get(cid) || [])[0] : null;
+      if (laPack || labelFromContact || reenrolByContact.has(cid)) {
+        const sheet = laPack ? clean(laPack.sheet, 40) : "";
+        const sheetUp = sheet.toUpperCase();
+        const fundFromLa = laPack
+          ? clean(
+              (laPack.row.data && typeof laPack.row.data === "object"
+                ? (laPack.row.data as Record<string, unknown>).Funder ||
+                  (laPack.row.data as Record<string, unknown>).Funding
+                : "") as unknown,
+              120,
+            )
+          : "";
+        const fundingLabel = fundFromLa || labelFromContact || "";
+        const fl = fundingLabel.toLowerCase();
+        const vatMode: "exempt" | "vat_20" =
+          sheetUp === "LA" ||
+          sheetUp === "DIRECT_PAYMENTS" ||
+          /nhs|local authority|direct.?payment|funds from/i.test(fl)
+            ? "exempt"
+            : "vat_20";
+        funding = {
+          vatMode,
+          fundingLabel: fundingLabel || (vatMode === "exempt" ? "Local Authority" : "Private"),
+          clientId: cid,
+          po: "",
+          source: laPack ? "client_payments" : labelFromContact ? "funding_label" : "fallback",
+          paymentSheet: sheet || (vatMode === "exempt" && /direct.?payment|funds from/i.test(fl)
+            ? "DIRECT_PAYMENTS"
+            : sheetUp === "LA" || /nhs|local authority|la managed/i.test(fl)
+              ? "LA"
+              : "PARENTS"),
+        };
+      } else {
+        funding = await resolveParticipantInvoiceFunding(admin, {
+          contactId: cid,
+          displayName,
+        });
+      }
       fundingByContact.set(cid, funding);
     }
     const reenrol =

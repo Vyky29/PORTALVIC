@@ -2496,7 +2496,7 @@
     if (!host) return;
     host.innerHTML = '<p class="muted">Loading…</p>';
     try {
-      var body = { limit: 300 };
+      var body = { limit: 800 };
       if (state.filter === 'ready' || state.filter === 'hidden') body.share_status = state.filter;
       if (state.filter === 'unpaid') {
         body.share_status = 'ready';
