@@ -151,7 +151,7 @@ begin
       'kind', 'admin_staff',
       'conversation_id', v_admin_thread,
       'employee_id', v_uid,
-      'display_name', 'Administracion',
+      'display_name', 'Administration',
       'avatar_url', null,
       'last', v_last,
       'unread', coalesce(v_unread, 0)

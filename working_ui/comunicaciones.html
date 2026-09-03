@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#edf4fb" />
-  <title>Comunicaciones — clubSENsational</title>
+  <title>Communications - clubSENsational</title>
   <link rel="icon" href="/portal/F-02-1.png" type="image/png" />
   <script src="/portal-static-bootstrap.js"></script>
-  <link rel="stylesheet" href="/portal/comunicaciones/comunicaciones.css?v=20260903-comms-2" />
+  <link rel="stylesheet" href="/portal/comunicaciones/comunicaciones.css?v=20260903-comms-4" />
 </head>
 <body class="comms-app">
   <div id="commsBoot" class="comms-boot">
-    <p>Abriendo Comunicaciones…</p>
+    <p>Opening Communications...</p>
   </div>
 
   <div id="commsShell" class="comms-shell" hidden>
@@ -21,54 +21,54 @@
         <div class="comms-brand">
           <img src="/portal/F-02-1.png" alt="" width="36" height="36" />
           <div class="comms-brand-text">
-            <strong>Comunicaciones</strong>
-            <span id="commsMeName">—</span>
+            <strong>Communications</strong>
+            <span id="commsMeName">-</span>
           </div>
         </div>
         <div class="comms-context" id="commsContextSwitch" hidden>
-          <button type="button" class="comms-ctx-btn is-on" data-comms-mode="personal">Mi cuenta</button>
-          <button type="button" class="comms-ctx-btn" data-comms-mode="administration">Administracion</button>
+          <button type="button" class="comms-ctx-btn is-on" data-comms-mode="personal">My account</button>
+          <button type="button" class="comms-ctx-btn" data-comms-mode="administration">Administration</button>
         </div>
         <label class="comms-search-wrap" id="commsSearchWrap" hidden>
-          <span class="comms-sr">Buscar</span>
-          <input type="search" id="commsSearch" placeholder="Buscar trabajador, grupo o mensaje…" autocomplete="off" />
+          <span class="comms-sr">Search</span>
+          <input type="search" id="commsSearch" placeholder="Search worker, group or message..." autocomplete="off" />
         </label>
       </header>
       <div class="comms-side-body">
-        <p class="comms-kicker" id="commsKickerDirect">Mis mensajes</p>
+        <p class="comms-kicker" id="commsKickerDirect">My messages</p>
         <div id="commsListDirect" class="comms-list"></div>
-        <p class="comms-kicker">Grupos</p>
+        <p class="comms-kicker">Groups</p>
         <div id="commsListGroups" class="comms-list"></div>
       </div>
       <footer class="comms-side-foot">
-        <button type="button" class="comms-foot-btn" id="commsNewGroupBtn" hidden>+ Nuevo grupo</button>
-        <button type="button" class="comms-foot-btn" id="commsAuditBtn" hidden>Auditoria</button>
+        <button type="button" class="comms-foot-btn" id="commsNewGroupBtn" hidden>+ New group</button>
+        <button type="button" class="comms-foot-btn" id="commsAuditBtn" hidden>Audit</button>
       </footer>
     </aside>
 
     <section class="comms-main" id="commsMain">
       <header class="comms-chat-head" id="commsChatHead">
-        <button type="button" class="comms-mob-back" id="commsMobBack" aria-label="Volver">←</button>
+        <button type="button" class="comms-mob-back" id="commsMobBack" aria-label="Back">←</button>
         <div class="comms-chat-who">
           <div class="comms-avatar" id="commsPeerAvatar" aria-hidden="true"></div>
           <div class="comms-chat-who-text">
-            <h1 id="commsPeerName">Selecciona una conversacion</h1>
+            <h1 id="commsPeerName">Select a conversation</h1>
             <p id="commsPeerMeta" class="comms-peer-meta"></p>
           </div>
         </div>
         <div class="comms-chat-actions" id="commsChatActions" hidden>
-          <button type="button" class="comms-icon-btn" id="commsCallAudio" title="Llamar" aria-label="Llamada de audio">📞</button>
-          <button type="button" class="comms-icon-btn" id="commsCallVideo" title="Videollamada" aria-label="Videollamada">🎥</button>
-          <button type="button" class="comms-icon-btn" id="commsGroupManage" hidden title="Participantes">👥</button>
+          <button type="button" class="comms-icon-btn" id="commsCallAudio" title="Call" aria-label="Audio call">📞</button>
+          <button type="button" class="comms-icon-btn" id="commsCallVideo" title="Video call" aria-label="Video call">🎥</button>
+          <button type="button" class="comms-icon-btn" id="commsGroupManage" hidden title="Members">👥</button>
         </div>
       </header>
       <div class="comms-thread" id="commsThread" role="log" aria-live="polite"></div>
-      <p class="comms-closed-banner" id="commsClosedBanner" hidden>Este grupo esta cerrado. Puedes consultar el historial.</p>
+      <p class="comms-closed-banner" id="commsClosedBanner" hidden>This group is closed. You can still read the history.</p>
       <form class="comms-composer" id="commsComposer" hidden>
         <input type="file" id="commsFile" hidden accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" />
-        <button type="button" class="comms-attach" id="commsAttachBtn" aria-label="Adjuntar">📎</button>
-        <textarea id="commsDraft" rows="1" maxlength="4000" placeholder="Escribir…" enterkeyhint="send"></textarea>
-        <button type="submit" class="comms-send" id="commsSendBtn">Enviar</button>
+        <button type="button" class="comms-attach" id="commsAttachBtn" aria-label="Attach">📎</button>
+        <textarea id="commsDraft" rows="1" maxlength="4000" placeholder="Write a message..." enterkeyhint="send"></textarea>
+        <button type="submit" class="comms-send" id="commsSendBtn">Send</button>
       </form>
     </section>
   </div>
@@ -82,18 +82,18 @@
     <div class="comms-call-stage">
       <video id="commsRemoteVideo" autoplay playsinline></video>
       <video id="commsLocalVideo" autoplay playsinline muted></video>
-      <p class="comms-call-status" id="commsCallStatus">Llamando…</p>
+      <p class="comms-call-status" id="commsCallStatus">Calling...</p>
       <p class="comms-call-peer" id="commsCallPeer"></p>
       <div class="comms-call-bar">
         <button type="button" id="commsMuteMic">Mic</button>
         <button type="button" id="commsMuteCam">Cam</button>
-        <button type="button" class="comms-hang" id="commsHang">Colgar</button>
-        <button type="button" class="comms-answer" id="commsAnswer">Aceptar</button>
-        <button type="button" class="comms-reject" id="commsReject">Rechazar</button>
+        <button type="button" class="comms-hang" id="commsHang">Hang up</button>
+        <button type="button" class="comms-answer" id="commsAnswer">Answer</button>
+        <button type="button" class="comms-reject" id="commsReject">Decline</button>
       </div>
     </div>
   </div>
 
-  <script type="module" src="/portal/comunicaciones/comunicaciones_app.js?v=20260903-comms-3"></script>
+  <script type="module" src="/portal/comunicaciones/comunicaciones_app.js?v=20260903-comms-4"></script>
 </body>
 </html>

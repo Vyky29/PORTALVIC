@@ -76,7 +76,7 @@
       } else if (badge) {
         badge.remove();
       }
-      var lab = lastUnreadCount > 0 ? "Comunicaciones (" + lastUnreadCount + ")" : "Comunicaciones";
+      var lab = lastUnreadCount > 0 ? "Communications (" + lastUnreadCount + ")" : "Communications";
       btn.setAttribute("aria-label", lab);
       var labelEl = btn.querySelector(".topbar-staff-wa-btn__label, .topbar-tool-label");
       if (labelEl) labelEl.textContent = lastUnreadCount > 0 ? "COMMS (" + lastUnreadCount + ")" : "COMMS";
@@ -96,7 +96,7 @@
             : "No unread messages";
       }
       if (alertsBtn) {
-        alertsBtn.textContent = lastUnreadCount > 0 ? "Open Comunicaciones (" + lastUnreadCount + ")" : "Open Comunicaciones";
+        alertsBtn.textContent = lastUnreadCount > 0 ? "Open Communications (" + lastUnreadCount + ")" : "Open Communications";
       }
     }
   }
@@ -229,7 +229,7 @@
     }
     var existing = document.getElementById("topbarStaffWaBtn");
     if (existing) {
-      existing.setAttribute("aria-label", "Comunicaciones");
+      existing.setAttribute("aria-label", "Communications");
       if (!existing.getAttribute("href")) existing.setAttribute("href", commsUrl());
       syncWaTopbarPlacement();
       void refreshUnread();
@@ -239,7 +239,7 @@
     btn.type = "button";
     btn.id = "topbarStaffWaBtn";
     btn.className = "topbar-staff-wa-btn";
-    btn.setAttribute("aria-label", "Comunicaciones");
+    btn.setAttribute("aria-label", "Communications");
     btn.innerHTML =
       '<span class="topbar-staff-wa-btn__ico" aria-hidden="true">' +
       COMMS_ICO +

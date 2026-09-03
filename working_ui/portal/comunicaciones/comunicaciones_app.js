@@ -49,6 +49,7 @@ function esc(s) {
 /** CEO Javi Palankas (username Javi) — never instructor Javier. */
 function commsStaffLabel(name) {
   const n = String(name || "").trim();
+  if (/^administraci[oó]n$/i.test(n)) return "Administration";
   if (/palankas/i.test(n) && !/\bjavi\b/i.test(n)) return "Javi Palankas";
   return n;
 }
@@ -69,7 +70,7 @@ function fmtTime(iso) {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString("es-ES", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" });
+  return d.toLocaleString("en-GB", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" });
 }
 
 function avatarHtml(url, name, cls) {
@@ -88,7 +89,7 @@ function avatarHtml(url, name, cls) {
 
 async function rpc(name, args) {
   const c = client();
-  if (!c) throw new Error("Sin sesion");
+  if (!c) throw new Error("No session");
   const { data, error } = await c.rpc(name, args || {});
   if (error) throw error;
   return data;
@@ -128,20 +129,20 @@ function renderInbox() {
   const items = state.inbox.items || [];
   const d = items.filter((it) => it.kind === "admin_staff");
   const g = items.filter((it) => it.kind === "group");
-  $("commsKickerDirect").textContent = state.mode === "administration" ? "Trabajadores" : "Mis mensajes";
+  $("commsKickerDirect").textContent = state.mode === "administration" ? "Workers" : "My messages";
   direct.innerHTML = d.length
     ? d.map((it) => inboxRow(it)).join("")
-    : '<p class="comms-empty">No hay conversaciones.</p>';
+    : '<p class="comms-empty">No conversations.</p>';
   groups.innerHTML = g.length
     ? g.map((it) => inboxRow(it)).join("")
-    : '<p class="comms-empty">Sin grupos.</p>';
+    : '<p class="comms-empty">No groups.</p>';
 }
 
 function inboxRow(it) {
   const on = state.open && String(state.open.conversation_id) === String(it.conversation_id) ? " is-on" : "";
-  const last = it.last && it.last.body ? it.last.body : "Sin mensajes";
+  const last = it.last && it.last.body ? it.last.body : "No messages";
   const unread = Number(it.unread) || 0;
-  const closed = it.status === "CLOSED" ? " (cerrado)" : "";
+  const closed = it.status === "CLOSED" ? " (closed)" : "";
   return (
     '<button type="button" class="comms-item' +
     on +
@@ -166,7 +167,7 @@ function bubbleHtml(m) {
   const klass = "comms-bubble" + (mine ? " is-mine" : "") + (admin && !mine ? " is-admin" : "");
   let who = esc(m.sender_display || "");
   if (admin && m.performed_by_name) {
-    who += " · enviado por " + esc(m.performed_by_name);
+    who += " · sent by " + esc(m.performed_by_name);
   }
   let body = "";
   if (m.message_type === "image" && m.storage_path) {
@@ -181,14 +182,14 @@ function bubbleHtml(m) {
       '<a class="comms-file" data-file="' +
       esc(m.storage_path) +
       '" href="#">' +
-      esc(m.file_name || "Archivo") +
+      esc(m.file_name || "File") +
       "</a>";
   } else if (m.message_type === "call") {
-    body = esc(m.body || "Llamada");
+    body = esc(m.body || "Call");
   } else {
     body = esc(m.body || "");
   }
-  const read = mine ? (m.read_count > 1 || m.delivered_read ? " · leido" : " · enviado") : "";
+  const read = mine ? (m.read_count > 1 || m.delivered_read ? " · read" : " · sent") : "";
   return (
     '<article class="' +
     klass +
@@ -209,11 +210,11 @@ function renderThread() {
   const el = $("commsThread");
   if (!el) return;
   if (!state.open) {
-    el.innerHTML = '<p class="comms-empty">Elige una conversacion a la izquierda.</p>';
+    el.innerHTML = '<p class="comms-empty">Choose a conversation on the left.</p>';
     $("commsComposer").hidden = true;
     $("commsChatActions").hidden = true;
     $("commsClosedBanner").hidden = true;
-    $("commsPeerName").textContent = "Selecciona una conversacion";
+    $("commsPeerName").textContent = "Select a conversation";
     $("commsPeerMeta").textContent = "";
     $("commsPeerAvatar").innerHTML = "";
     return;
@@ -232,17 +233,17 @@ function renderThread() {
   $("commsCallAudio").disabled = closed;
   $("commsCallVideo").disabled = closed;
   if (it.kind === "group") {
-    $("commsPeerMeta").textContent = closed ? "Grupo cerrado" : "Grupo";
-    $("commsDraft").placeholder = "Escribir en el grupo…";
+    $("commsPeerMeta").textContent = closed ? "Closed group" : "Group";
+    $("commsDraft").placeholder = "Write in the group...";
   } else if (state.mode === "administration") {
-    $("commsPeerMeta").textContent = "Conversacion con Administracion";
-    $("commsDraft").placeholder = "Escribir como Administracion…";
+    $("commsPeerMeta").textContent = "Conversation with Administration";
+    $("commsDraft").placeholder = "Write as Administration...";
   } else {
-    $("commsPeerMeta").textContent = "Administracion";
-    $("commsDraft").placeholder = "Escribir a Administracion…";
+    $("commsPeerMeta").textContent = "Administration";
+    $("commsDraft").placeholder = "Write to Administration...";
   }
   if (!state.messages.length) {
-    el.innerHTML = '<p class="comms-empty">Todavia no hay mensajes. Escribe el primero.</p>';
+    el.innerHTML = '<p class="comms-empty">No messages yet. Send the first one.</p>';
   } else {
     el.innerHTML = state.messages.map(bubbleHtml).join("");
     hydrateFiles(el);
@@ -322,10 +323,10 @@ async function sendMessage(ev) {
     let name = null;
     let size = null;
     if (file) {
-      if (file.size > MAX_FILE) throw new Error("El archivo supera 15 MB.");
+      if (file.size > MAX_FILE) throw new Error("File is larger than 15 MB.");
       mime = file.type || "application/octet-stream";
       if (ALLOWED_MIME.indexOf(mime) === -1 && !String(mime).startsWith("image/")) {
-        throw new Error("Tipo de archivo no permitido.");
+        throw new Error("This file type is not allowed.");
       }
       type = String(mime).startsWith("image/") ? "image" : "file";
       const safe = String(file.name || "file").replace(/[^\w.\-]+/g, "_");
@@ -353,7 +354,7 @@ async function sendMessage(ev) {
     $("commsAttachBtn").textContent = "📎";
     await openConversation(state.open.conversation_id, state.open, { silent: true });
   } catch (err) {
-    window.alert(err.message || "No se pudo enviar.");
+    window.alert(err.message || "Could not send.");
   } finally {
     $("commsSendBtn").disabled = false;
   }
@@ -438,14 +439,14 @@ async function openNewGroup() {
     const data = await rpc("communication_staff_picker");
     staff = (data && data.staff) || [];
   } catch (err) {
-    window.alert(err.message || "No se pudo cargar el directorio.");
+    window.alert(err.message || "Could not load the directory.");
     return;
   }
   showModal(
-    "<h2>Nuevo grupo</h2>" +
-      '<label>Nombre<input id="gName" maxlength="80" /></label>' +
-      '<label>Descripcion<input id="gDesc" maxlength="200" /></label>' +
-      '<p class="comms-peer-meta">Participantes</p><div class="comms-pick" id="gPick">' +
+    "<h2>New group</h2>" +
+      '<label>Name<input id="gName" maxlength="80" /></label>' +
+      '<label>Description<input id="gDesc" maxlength="200" /></label>' +
+      '<p class="comms-peer-meta">Members</p><div class="comms-pick" id="gPick">' +
       staff
         .filter((s) => String(s.id) !== String(state.me.id))
         .map(
@@ -458,8 +459,8 @@ async function openNewGroup() {
         )
         .join("") +
       "</div>" +
-      '<div class="comms-modal-actions"><button type="button" data-comms-modal-close="1">Cancelar</button>' +
-      '<button type="button" class="comms-primary" id="gCreate">Crear</button></div>'
+      '<div class="comms-modal-actions"><button type="button" data-comms-modal-close="1">Cancel</button>' +
+      '<button type="button" class="comms-primary" id="gCreate">Create</button></div>'
   );
   $("gCreate").onclick = async function () {
     const name = String($("gName").value || "").trim();
@@ -481,7 +482,7 @@ async function openNewGroup() {
         });
       }
     } catch (err) {
-      window.alert(err.message || "No se pudo crear.");
+      window.alert(err.message || "Could not create.");
     }
   };
 }
@@ -496,14 +497,14 @@ async function openGroupManage() {
     const s = await rpc("communication_staff_picker");
     staff = (s && s.staff) || [];
   } catch (err) {
-    window.alert(err.message || "No se pudo cargar.");
+    window.alert(err.message || "Could not load.");
     return;
   }
   const memberIds = new Set(members.map((x) => String(x.id)));
   showModal(
-    "<h2>Participantes</h2><div class='comms-pick'>" +
+    "<h2>Members</h2><div class='comms-pick'>" +
       members.map((x) => "<div>" + esc(commsStaffLabel(x.full_name)) + "</div>").join("") +
-      "</div><p class='comms-peer-meta'>Anadir</p><div class='comms-pick' id='gAdd'>" +
+      "</div><p class='comms-peer-meta'>Add</p><div class='comms-pick' id='gAdd'>" +
       staff
         .filter((s) => !memberIds.has(String(s.id)))
         .map(
@@ -515,7 +516,7 @@ async function openGroupManage() {
             "</label>"
         )
         .join("") +
-      "</div><p class='comms-peer-meta'>Quitar</p><div class='comms-pick' id='gDel'>" +
+      "</div><p class='comms-peer-meta'>Remove</p><div class='comms-pick' id='gDel'>" +
       members
         .map(
           (s) =>
@@ -527,10 +528,10 @@ async function openGroupManage() {
         )
         .join("") +
       "</div>" +
-      '<div class="comms-modal-actions"><button type="button" data-comms-modal-close="1">Cerrar</button>' +
+      '<div class="comms-modal-actions"><button type="button" data-comms-modal-close="1">Close</button>' +
       (state.open.status === "CLOSED"
         ? ""
-        : '<button type="button" id="gSave">Guardar</button><button type="button" class="comms-hang" id="gClose">Cerrar grupo</button>') +
+        : '<button type="button" id="gSave">Save</button><button type="button" class="comms-hang" id="gClose">Close group</button>') +
       "</div>"
   );
   const save = $("gSave");
@@ -547,21 +548,21 @@ async function openGroupManage() {
         hideModal();
         await loadInbox();
       } catch (err) {
-        window.alert(err.message || "No se pudo actualizar.");
+        window.alert(err.message || "Could not update.");
       }
     };
   }
   const closeBtn = $("gClose");
   if (closeBtn) {
     closeBtn.onclick = async function () {
-      if (!window.confirm("Cerrar este grupo? Se conserva el historial.")) return;
+      if (!window.confirm("Close this group? History is kept.")) return;
       try {
         await rpc("communication_close_group", { p_group_id: state.open.group_id });
         hideModal();
         await loadInbox();
         await openConversation(state.open.conversation_id, state.open);
       } catch (err) {
-        window.alert(err.message || "No se pudo cerrar.");
+        window.alert(err.message || "Could not close.");
       }
     };
   }
@@ -576,7 +577,7 @@ async function openSearch(q) {
     const groups = data.groups || [];
     const messages = data.messages || [];
     showModal(
-      "<h2>Busqueda</h2>" +
+      "<h2>Search</h2>" +
         people
           .map(
             (p) =>
@@ -611,10 +612,10 @@ async function openSearch(q) {
               "</span></span></button>"
           )
           .join("") +
-        '<div class="comms-modal-actions"><button type="button" data-comms-modal-close="1">Cerrar</button></div>'
+        '<div class="comms-modal-actions"><button type="button" data-comms-modal-close="1">Close</button></div>'
     );
   } catch (err) {
-    window.alert(err.message || "Busqueda no disponible.");
+    window.alert(err.message || "Search is not available.");
   }
 }
 
@@ -623,7 +624,7 @@ async function openAudit() {
     const data = await rpc("communication_audit_list", { p_limit: 80 });
     const rows = (data && data.rows) || [];
     showModal(
-      "<h2>Auditoria</h2><div class='comms-pick'>" +
+      "<h2>Audit</h2><div class='comms-pick'>" +
         rows
           .map(
             (r) =>
@@ -636,10 +637,10 @@ async function openAudit() {
               "</div></div>"
           )
           .join("") +
-        "</div><div class='comms-modal-actions'><button type='button' data-comms-modal-close='1'>Cerrar</button></div>"
+        "</div><div class='comms-modal-actions'><button type='button' data-comms-modal-close='1'>Close</button></div>"
     );
   } catch (err) {
-    window.alert(err.message || "No se pudo cargar la auditoria.");
+    window.alert(err.message || "Could not load the audit log.");
   }
 }
 
@@ -693,7 +694,7 @@ async function startCall(type) {
     state.call = { id: out.call_id, type: out.type, role: "offerer" };
     $("commsCallPeer").textContent =
       commsStaffLabel((itemByConversation(state.open.conversation_id) || {}).display_name) || "";
-    $("commsCallStatus").textContent = "Llamando…";
+    $("commsCallStatus").textContent = "Calling...";
     setCallUi("outgoing");
     await attachLocal(type === "VIDEO");
     const pc = await ensurePc();
@@ -704,15 +705,15 @@ async function startCall(type) {
       p_payload: { type: "offer", sdp: offer },
     });
   } catch (err) {
-    window.alert(err.message || "No se pudo iniciar la llamada.");
+    window.alert(err.message || "Could not start the call.");
     tearDownCall(true);
   }
 }
 
 async function incomingCall(row) {
   state.call = { id: row.id, type: row.type, role: "answerer", conversation_id: row.conversation_id };
-  $("commsCallPeer").textContent = "Llamada entrante";
-  $("commsCallStatus").textContent = row.type === "VIDEO" ? "Videollamada" : "Llamada de audio";
+  $("commsCallPeer").textContent = "Incoming call";
+  $("commsCallStatus").textContent = row.type === "VIDEO" ? "Video call" : "Audio call";
   setCallUi("incoming");
 }
 
@@ -720,11 +721,11 @@ async function acceptCall() {
   if (!state.call) return;
   try {
     await rpc("communication_call_respond", { p_call_id: state.call.id, p_action: "answer" });
-    $("commsCallStatus").textContent = "Conectando…";
+    $("commsCallStatus").textContent = "Connecting...";
     setCallUi("outgoing");
     await attachLocal(state.call.type === "VIDEO");
   } catch (err) {
-    window.alert(err.message || "No se pudo aceptar.");
+    window.alert(err.message || "Could not answer.");
     tearDownCall(true);
   }
 }
@@ -740,10 +741,10 @@ async function handleSignal(payload) {
         p_call_id: state.call.id,
         p_payload: { type: "answer", sdp: answer },
       });
-      $("commsCallStatus").textContent = "En llamada";
+      $("commsCallStatus").textContent = "In call";
     } else if (payload.type === "answer" && payload.sdp) {
       await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-      $("commsCallStatus").textContent = "En llamada";
+      $("commsCallStatus").textContent = "In call";
     } else if (payload.type === "ice" && payload.candidate) {
       await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
     }
@@ -845,7 +846,7 @@ function bindUi() {
           });
         })
         .catch(function (err) {
-          window.alert(err.message || "No se pudo abrir.");
+          window.alert(err.message || "Could not open.");
         });
     }
     const msg = ev.target.closest("[data-search-msg]");
@@ -930,7 +931,7 @@ async function boot() {
       rpc("communication_heartbeat", { p_status: state.call ? "in_call" : "available" }).catch(function () {});
     }, 25000);
   } catch (err) {
-    setBoot((err && err.message) || "No se pudo abrir Comunicaciones. Vuelve al portal.");
+    setBoot((err && err.message) || "Could not open Communications. Return to the portal.");
     console.warn("[comunicaciones]", err);
   }
 }

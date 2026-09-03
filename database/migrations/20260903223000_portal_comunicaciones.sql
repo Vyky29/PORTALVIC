@@ -738,7 +738,7 @@ begin
       'kind', 'admin_staff',
       'conversation_id', v_admin_thread,
       'employee_id', v_uid,
-      'display_name', 'Administracion',
+      'display_name', 'Administration',
       'avatar_url', null,
       'last', v_last,
       'unread', coalesce(v_unread, 0)
@@ -904,7 +904,7 @@ begin
       m.sender_context,
       m.performed_by_user_id,
       case
-        when m.sender_context = 'ADMINISTRATION' then 'Administracion'
+        when m.sender_context = 'ADMINISTRATION' then 'Administration'
         else coalesce(nullif(trim(sp.full_name), ''), sp.username, 'Staff')
       end as sender_display,
       case
