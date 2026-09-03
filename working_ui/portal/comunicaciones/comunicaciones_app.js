@@ -321,6 +321,15 @@ async function loadInbox() {
   renderInbox();
 }
 
+function sortMessagesOldestFirst(rows) {
+  return (rows || []).slice().sort(function (a, b) {
+    const ta = Date.parse(a && a.created_at) || 0;
+    const tb = Date.parse(b && b.created_at) || 0;
+    if (ta !== tb) return ta - tb;
+    return String((a && a.id) || "").localeCompare(String((b && b.id) || ""));
+  });
+}
+
 async function openConversation(id, extra, opts) {
   const silent = !!(opts && opts.silent);
   if (!silent && state.recording) await stopVoice(false);
@@ -336,7 +345,7 @@ async function openConversation(id, extra, opts) {
     p_limit: 40,
   });
   const rows = (payload && payload.messages) || [];
-  state.messages = rows.slice().reverse();
+  state.messages = sortMessagesOldestFirst(rows);
   if (state.messages[0]) state.oldestAt = state.messages[0].created_at;
   renderThread();
   try {
@@ -1097,7 +1106,7 @@ function bindUi() {
         p_before: state.oldestAt,
         p_limit: 40,
       });
-      const rows = ((payload && payload.messages) || []).slice().reverse();
+      const rows = sortMessagesOldestFirst((payload && payload.messages) || []);
       if (rows.length) {
         const keep = $("commsThread").scrollHeight;
         state.messages = rows.concat(state.messages);
