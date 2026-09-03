@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 43;
+  var SOURCE_VERSION = 44;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -680,7 +680,8 @@
 
   /**
    * Resolve instructors for a calendar day (Today / team strip).
-   * Standing Multi remaps + Sun 6 Sep: Emanuel book → John (after standing JOHN→BERTA).
+   * Standing Multi remaps + Sun 6 Sep: Emanuel book → John.
+   * Critical: on 2026-09-06 do NOT remap JOHN→BERTA — John is the dated cover that day.
    */
   function resolveAutumnInstructorsForCalendarDate(instructorsRaw, calendarIso, meta) {
     meta = meta || {};
@@ -688,14 +689,15 @@
     if (!s) return s;
     var iso = String(calendarIso || "").trim().slice(0, 10);
     var service = meta.service || "";
-    if (isMultiActivityService(service)) {
-      s = remapAutumnMultiInstructorsStanding(s);
-      if (iso === "2026-09-06") {
-        /* Sun 6: John covers Emanuel Hub book (standing already moved former John book → Berta). */
-        s = s.replace(/\bEMANUEL\b/gi, "JOHN");
-      }
+    if (!isMultiActivityService(service)) return s;
+    if (iso === "2026-09-06") {
+      return s
+        .replace(/\bBISMARK\b/gi, "GODSWAY")
+        .replace(/\bBISMARCK\b/gi, "GODSWAY")
+        .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
+        .replace(/\bEMANUEL\b/gi, "JOHN");
     }
-    return s;
+    return remapAutumnMultiInstructorsStanding(s);
   }
 
   /** @deprecated use resolveAutumnInstructorsForCalendarDate for calendar days */
