@@ -1,0 +1,34 @@
+---
+description: local_dc_staff_week.html is production roster truth; always commit and push when it changes.
+alwaysApply: true
+---
+
+# LOCAL DC staff week = production truth (before overrides)
+
+`working_ui/local_dc_staff_week.html` is the **authoritative Autumn board** for week-1 DC, standing start dates, weekend/after-school phases, and Sep-specific covers **before** day-of `schedule_overrides`.
+
+## When this file changes
+
+**Always commit and push to `main` immediately** (unless the user explicitly says "local only" / "no push").
+
+1. Stage `working_ui/local_dc_staff_week.html` and any companion updates needed for production to match (typically `portal_roster_canonical.js`, cache-bust query strings on dashboards, calendar HTML if term colours change).
+2. Commit with a message that states what week/phase changed (e.g. week-1 DC, Sep 6 cover, standing from Mon 7).
+3. Push to origin so Vercel deploys `working_ui/`.
+
+Do **not** leave this file changed only on disk — production must stay in sync because MADRE, dashboards, and staff Today views derive from the same Autumn logic.
+
+## Truth model (do not regress)
+
+- **Tue 1 – Fri 4 Sep:** week-1 Day Centre (`WEEK1_DC_BOARD`) — different from standing DC.
+- **Thu 3 Sep:** closed (Fadi off; Roberto + Youssef empty).
+- **Sat 5 Sep:** first weekend / after-school.
+- **Mon 7 Sep:** standing Day Centre + weekday after-school.
+- **Sun 6 Sep:** John covers Emanuel Hub book; Berta Lead keeps Jack W…Aydaan book.
+
+Never park week-1 / `DATE_EXTRA` / phase painting behind `STANDING_ONLY = true` without explicit user request.
+
+## Related files
+
+- Roster merge: `working_ui/portal/portal_roster_canonical.js` (`applyAutumnWeek1DayCentre`, `resolveAutumnInstructorsForCalendarDate`)
+- Local preview only: open at `http://127.0.0.1:8765/local_dc_staff_week.html` (not `file://`)
+- Optional Supabase MADRE sync (after local is pushed): `database/local-vault/office-madre-sync-local-board-mon-fri.mjs`

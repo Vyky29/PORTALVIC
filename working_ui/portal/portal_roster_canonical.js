@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 44;
+  var SOURCE_VERSION = 45;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -367,8 +367,16 @@
   }
 
   function applyAutumnWeek1DayCentre(rows) {
-    /* Standing start: no week-1 dated DC overlay — LOCAL AUTUMN_DAY_CENTRE_BOARD only. */
-    return Array.isArray(rows) ? rows.slice() : [];
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isDayCentreService(r.service) && isAutumnWeek1DcIso(r.session_date)) return;
+      out.push(r);
+    });
+    autumnWeek1DayCentreRows().forEach(function (row) {
+      out.push(row);
+    });
+    return out;
   }
 
   function applyAutumnActonTuesdayStanding(rows) {
@@ -674,14 +682,12 @@
     return s
       .replace(/\bBISMARK\b/gi, "GODSWAY")
       .replace(/\bBISMARCK\b/gi, "GODSWAY")
-      .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
-      .replace(/\bJOHN\b/gi, "BERTA");
+      .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
   }
 
   /**
-   * Resolve instructors for a calendar day (Today / team strip).
-   * Standing Multi remaps + Sun 6 Sep: Emanuel book → John.
-   * Critical: on 2026-09-06 do NOT remap JOHN→BERTA — John is the dated cover that day.
+   * Resolve instructors for a *calendar* day (Today / team strip).
+   * Standing Multi remaps are usually already on the row; this adds date-specific covers.
    */
   function resolveAutumnInstructorsForCalendarDate(instructorsRaw, calendarIso, meta) {
     meta = meta || {};
@@ -689,15 +695,37 @@
     if (!s) return s;
     var iso = String(calendarIso || "").trim().slice(0, 10);
     var service = meta.service || "";
-    if (!isMultiActivityService(service)) return s;
-    if (iso === "2026-09-06") {
-      return s
-        .replace(/\bBISMARK\b/gi, "GODSWAY")
-        .replace(/\bBISMARCK\b/gi, "GODSWAY")
-        .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
-        .replace(/\bEMANUEL\b/gi, "JOHN");
+    var day = normalizeDowKey(meta.day) || "";
+    if (!day && iso) {
+      try {
+        var dt = new Date(iso + "T12:00:00");
+        if (!isNaN(dt.getTime())) {
+          day = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
+            dt.getDay()
+          ];
+        }
+      } catch (_) {}
     }
-    return remapAutumnMultiInstructorsStanding(s);
+    if (isMultiActivityService(service)) {
+      s = remapAutumnMultiInstructorsStanding(s);
+      if (iso === "2026-09-06") {
+        /*
+         * Sun 6 Hub: John covers Emanuel book; Berta Lead keeps former John book.
+         * Order matters — move JOHN→BERTA before EMANUEL→JOHN.
+         */
+        s = s
+          .replace(/\bJOHN\b/gi, "__SEP6_BERTA_BOOK__")
+          .replace(/\bEMANUEL\b/gi, "JOHN")
+          .replace(/__SEP6_BERTA_BOOK__/g, "BERTA");
+      }
+    }
+    if (isBespokeService(service)) {
+      /* Mon 1–13 Sep: Emanuel not on Tinashe yet → Raul with Godsway + John. */
+      if (iso && iso >= "2026-09-01" && iso < "2026-09-14" && day === "monday") {
+        s = s.replace(/\bEMANUEL\b/gi, "RAUL");
+      }
+    }
+    return s;
   }
 
   /** @deprecated use resolveAutumnInstructorsForCalendarDate for calendar days */
