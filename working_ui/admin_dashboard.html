@@ -147,7 +147,7 @@
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260903-no-summer-departed"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260903-multi-sun-fix"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260902-luliya-instr"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -155,7 +155,7 @@
   <script src="/portal/admin-portal-term-slot.js?v=20260811-autumn-preserve"></script>
   <script src="/portal/portal-staff-timetable-merge.js?v=20260614-changelog"></script>
   <script src="/portal/spreadsheet_reference_data.js?v=20260828-autumn-hours-base"></script>
-  <script src="/portal/autumn_staff_hours_reference.js?v=20260903-no-summer-departed"></script>
+  <script src="/portal/autumn_staff_hours_reference.js?v=20260903-multi-sun-fix"></script>
   <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260828-hours-weeknav"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
@@ -7623,8 +7623,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ' title="Open participant info (side panel)">'+esc(pax.paxName)+'</button>'
       );
     }
-    function adminServicesMultiSundayInstrCellHtml(half, dataSlot){
+    function adminServicesMultiSundayInstrCellHtml(half, dataSlot, opts){
+      opts = opts || {};
       if(!half || !half.staffName){
+        /* Empty capacity / unpaired open half — not a rota CLOSED block. */
+        if(opts.openSeat){
+          return '<span class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" title="Open 45′ half — no instructor paired on this seat">Open</span>';
+        }
         return adminServicesClosedChipHtml('No instructor on this 45′ half');
       }
       return '<button type="button" class="c4k-svc-slot-instr-btn" data-novo-edit-sched-slot="1" '+dataSlot+
@@ -7652,7 +7657,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           half = pax ? (halfKey === 'b' ? pax.halfB : pax.halfA) : null;
           rowTds.push(
             '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">'+
-            adminServicesMultiSundayInstrCellHtml(half, dataSlot)+
+            adminServicesMultiSundayInstrCellHtml(half, dataSlot, { openSeat: !!(pax && pax.open) })+
             '</td>'
           );
         }
@@ -18413,7 +18418,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var k = String(nm || '').trim().toLowerCase();
       if(!k) return true;
       return k === 'teflon' || k === 'no participant' || k === 'closed' || k === 'available' || k === 'demo' || k === 'shadowing' ||
-        k === 'bismark' || k === 'bismarck' || k === 'giuseppe';
+        k === 'bismark' || k === 'bismarck' || k === 'giuseppe' || k === 'angel' || k === 'andres' || k === 'andrés';
     }
     /** Bespoke Tue/Thu: no open places for Booking Portal / Services availability (Cyrus Tue booked only). */
     function adminServicesBespokeNoOpenPlacesDow(dowNorm){

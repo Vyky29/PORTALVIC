@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 49;
+  var SOURCE_VERSION = 50;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -393,9 +393,30 @@
     var out = [];
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
-      var inst = String(r.instructors || "").trim();
-      if (AUTUMN_NO_SESSION_INSTRUCTOR_RE.test(inst)) return;
-      out.push(r);
+      var row = r;
+      /* DB overlays may reintroduce summer Multi names — remap again before scrub. */
+      if (isMultiActivityService(row.service)) {
+        var mapped = remapAutumnMultiInstructorsStanding(row.instructors);
+        if (mapped !== String(row.instructors || "").trim()) {
+          row = Object.assign({}, row, { instructors: mapped });
+        }
+      }
+      var inst = String(row.instructors || "").trim();
+      if (!AUTUMN_NO_SESSION_INSTRUCTOR_RE.test(inst)) {
+        out.push(row);
+        return;
+      }
+      /* Strip departed co-instructors; keep the seat if anyone Autumn remains. */
+      var kept = inst
+        .split(/[,+/]| and /i)
+        .map(function (p) {
+          return String(p || "").trim();
+        })
+        .filter(function (p) {
+          return p && !AUTUMN_NO_SESSION_INSTRUCTOR_RE.test(p);
+        });
+      if (!kept.length) return;
+      out.push(Object.assign({}, row, { instructors: kept.join(", ").toUpperCase() }));
     });
     return out;
   }
@@ -722,7 +743,10 @@
     return s
       .replace(/\bBISMARK\b/gi, "GODSWAY")
       .replace(/\bBISMARCK\b/gi, "GODSWAY")
-      .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
+      .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
+      /* Standing: Berta Lead keeps the Hub book that summer stored under John.
+       * Sun 6 dated cover re-injects JOHN for the Emanuel book after this remap. */
+      .replace(/\bJOHN\b/gi, "BERTA");
   }
 
   /**
