@@ -326,12 +326,13 @@ export function portalCanonicalStaffRosterKey(value) {
   if (!k) return "";
   if (k === "lulia") return "luliya";
   if (k === "lulya") return "luliya";
-  if (k === "aida") return "luliya";
-  if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+  if (k === "aida" || k === "aidalulia" || k === "aidaluliyajemal") return "luliya";
+  if (k === "yousef" || k === "yousseff" || k === "yusef" || k === "josep") return "youssef";
   if (k === "javiermarquez") return "javier";
   if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
   if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
   if (k === "michelleemmacaleb" || k.startsWith("michelle")) return "michelle";
+  if (k === "auroragarcia") return "aurora";
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
 }
 

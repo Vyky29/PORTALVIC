@@ -399,7 +399,7 @@
       const seen = Object.create(null);
       const isos = [];
       model.forEach(function(s){
-        if(String(s.staffId || '').toLowerCase() !== sid) return;
+        if(!portalStaffIdsMatchLoose(s.staffId, sid)) return;
         if(String(s.day || '').trim() !== w) return;
         const ri = normaliseIsoDate(s.session_date || s.sessionDate);
         if(!ri || seen[ri]) return;
@@ -1551,7 +1551,7 @@
     }
     window.portalWeekStripSessionShouldCount = function(s, dayName, staffId){
       const sid = String(staffId || '').trim().toLowerCase();
-      if(String(s.staffId || '').toLowerCase() !== sid) return false;
+      if(!portalStaffIdsMatchLoose(s.staffId, sid)) return false;
       if(String(s.day || '').trim() !== String(dayName || '').trim()) return false;
       const cell = typeof calendarDateForWeekListDay === 'function' ? calendarDateForWeekListDay(dayName) : null;
       if(!cell) return false;
@@ -1644,7 +1644,7 @@
       const acc = [];
       (sessionsModel || []).forEach(function(s){
         if(!s) return;
-        if(String(s.staffId || '').toLowerCase() !== sid) return;
+        if(!portalStaffIdsMatchLoose(s.staffId, sid)) return;
         if(String(s.day || '').trim() !== dw) return;
         if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
           && !portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateIso, dw)) return;
@@ -4617,6 +4617,12 @@
         .replace(/[^a-z0-9]+/g, '')
         .trim();
       if(!k) return '';
+      if(typeof portalCanonicalStaffKeyForMatch === 'function'){
+        return portalCanonicalStaffKeyForMatch(k) || k;
+      }
+      if(typeof window !== 'undefined' && typeof window.portalCanonicalStaffKeyForMatch === 'function'){
+        return window.portalCanonicalStaffKeyForMatch(k) || k;
+      }
       if(k === 'lulia' || k === 'luliya' || k === 'aida' || k === 'stf021') return 'luliya';
       if(typeof window.portalCanonicalStaffRosterKey === 'function'){
         return window.portalCanonicalStaffRosterKey(k) || k;
@@ -6774,7 +6780,7 @@
       const map = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
       const seen = new Set();
       (model || []).forEach(function (s) {
-        if(String(s.staffId || '').toLowerCase() !== id) return;
+        if(!portalStaffIdsMatchLoose(s.staffId, id)) return;
         const d = String(s.day || '').trim();
         if(Object.prototype.hasOwnProperty.call(map, d)) seen.add(map[d]);
       });

@@ -326,9 +326,58 @@
       .replace(/[^a-z0-9]+/g, "")
       .trim();
     if (!v) return "";
-    if (v === "yousef" || v === "youssef" || v === "yusef") return "youssef";
-    if (v === "lulia" || v === "lulya") return "luliya";
-    if (v === "aida") return "luliya";
+    /* Import codes → roster keys (same map as auth-map). */
+    const CODE = {
+      stf001: "sandra",
+      stf002: "roberto",
+      stf003: "dan",
+      stf004: "angel",
+      stf005: "youssef",
+      stf006: "john",
+      stf007: "bismark",
+      stf008: "giuseppe",
+      stf009: "godsway",
+      stf010: "javier",
+      stf011: "aurora",
+      stf012: "berta",
+      stf013: "victor",
+      stf014: "carlos",
+      stf015: "alex",
+      stf016: "simon",
+      stf017: "javi",
+      stf018: "raul",
+      stf019: "sevitha",
+      stf020: "teflon",
+      stf021: "luliya",
+      stf022: "andres",
+    };
+    if (CODE[v]) return CODE[v];
+    if (v === "yousef" || v === "youssef" || v === "yusef" || v === "yousseff" || v === "josep") {
+      return "youssef";
+    }
+    if (v === "lulia" || v === "lulya" || v === "aida" || v === "aidalulia" || v === "aidaluliyajemal") {
+      return "luliya";
+    }
+    if (v === "javiermarquez") return "javier";
+    if (
+      v === "javiarranz" ||
+      v === "javiarranzescorial" ||
+      v === "palankas" ||
+      v === "palankasarranz" ||
+      v === "palankasarranzescorial"
+    ) {
+      return "javi";
+    }
+    if (v === "michelleemmacaleb" || (v.indexOf("michelle") === 0 && v !== "michelle")) {
+      return "michelle";
+    }
+    if (v === "auroragarcia") return "aurora";
+    if (typeof window !== "undefined" && typeof window.portalCanonicalStaffRosterKey === "function") {
+      const canon = String(window.portalCanonicalStaffRosterKey(v) || "")
+        .trim()
+        .toLowerCase();
+      if (canon) return canon;
+    }
     return v;
   }
 

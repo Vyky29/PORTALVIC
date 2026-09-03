@@ -2269,7 +2269,11 @@
         const list = Array.isArray(sessionsModel) ? sessionsModel : [];
         for(let i = 0; i < list.length; i++){
           const s = list[i];
-          if(!s || String(s.staffId || '').toLowerCase() !== staffId) continue;
+          if(!s || !(typeof portalStaffKeysMatch === 'function'
+            ? portalStaffKeysMatch(s.staffId, staffId)
+            : (typeof window.portalStaffKeysMatch === 'function'
+              ? window.portalStaffKeysMatch(s.staffId, staffId)
+              : String(s.staffId || '').toLowerCase() === staffId))) continue;
           if(String(s.day || '').trim() !== dayWord) continue;
           if(!isReal(s)) continue;
           const manualOv = String(s.override || '').trim().toUpperCase();

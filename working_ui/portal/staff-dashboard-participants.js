@@ -72,7 +72,7 @@
         out.push(cid);
       }
       sessionsModel.forEach(s => {
-        if(String(s.staffId).toLowerCase() !== sid) return;
+        if(!portalStaffKeysMatch(s.staffId, sid)) return;
         const st = sessionModelStatus(s);
         if(st === 'Closed' || st === 'Available' || st === 'Home' || st === 'Manager') return;
         pushClient(s.clientId);
@@ -80,7 +80,7 @@
       function pushDashboardRow(row){
         if(!row) return;
         const rowStaff = String(row.staffId || row.instructorId || row.staff || '').trim().toLowerCase();
-        if(rowStaff && rowStaff !== sid) return;
+        if(rowStaff && !portalStaffKeysMatch(rowStaff, sid)) return;
         pushClient(row.clientId);
       }
       (dashboardData.today || []).forEach(pushDashboardRow);
@@ -1708,11 +1708,23 @@
     function portalNormKeyStr(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
     /** Match roster keys across aliases (luliya/lulia/aida, javi/javier). */
     function portalCanonicalStaffKeyForMatch(v){
-      var k = portalNormKeyStr(v);
+      var k = portalNormKeyStr(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
       if(!k) return '';
-      if(k === 'lulia' || k === 'luliya' || k === 'lulya' || k === 'aida' || k === 'stf021') return 'luliya';
+      var CODE = {
+        stf001: 'sandra', stf002: 'roberto', stf003: 'dan', stf004: 'angel',
+        stf005: 'youssef', stf006: 'john', stf007: 'bismark', stf008: 'giuseppe',
+        stf009: 'godsway', stf010: 'javier', stf011: 'aurora', stf012: 'berta',
+        stf013: 'victor', stf014: 'carlos', stf015: 'alex', stf016: 'simon',
+        stf017: 'javi', stf018: 'raul', stf019: 'sevitha', stf020: 'teflon',
+        stf021: 'luliya', stf022: 'andres'
+      };
+      if(CODE[k]) return CODE[k];
+      if(k === 'lulia' || k === 'luliya' || k === 'lulya' || k === 'aida' || k === 'aidalulia' || k === 'aidaluliyajemal') return 'luliya';
+      if(k === 'yousef' || k === 'yusef' || k === 'yousseff' || k === 'josep') return 'youssef';
       if(k === 'javiermarquez') return 'javier';
-      if(k === 'javiarranz' || k === 'javiarranzescorial' || k === 'palankas' || k === 'palankasarranz') return 'javi';
+      if(k === 'javiarranz' || k === 'javiarranzescorial' || k === 'palankas' || k === 'palankasarranz' || k === 'palankasarranzescorial') return 'javi';
+      if(k === 'michelleemmacaleb' || (k.indexOf('michelle') === 0 && k !== 'michelle')) return 'michelle';
+      if(k === 'auroragarcia') return 'aurora';
       if(typeof window.portalCanonicalStaffRosterKey === 'function'){
         var canon = String(window.portalCanonicalStaffRosterKey(k) || '').trim().toLowerCase();
         if(canon) return canon;
@@ -2599,7 +2611,7 @@
       for(let i = 0; i < model.length; i++){
         const s = model[i];
         if(!s) continue;
-        if(String(s.staffId || '').trim().toLowerCase() !== sid) continue;
+        if(!portalStaffKeysMatch(s.staffId, sid)) continue;
         if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
           if(!portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, dayWord)) continue;
         }else if(String(s.day || '').trim() !== dayWord){
@@ -4192,7 +4204,7 @@
       if(!iso || !sid) return false;
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
       return model.some(function(row){
-        if(String(row.staffId || '').toLowerCase() !== sid) return false;
+        if(!portalStaffKeysMatch(row.staffId, sid)) return false;
         if(normaliseIsoDate(row && (row.session_date || row.sessionDate)) !== iso) return false;
         const cid = String(row.clientId || '').trim().toLowerCase();
         if(!cid || cid === 'available' || cid === 'closed') return false;
@@ -4208,7 +4220,7 @@
       const ceil = maxSessionDateIso ? normaliseIsoDate(maxSessionDateIso) : '';
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
       return model.some(function(row){
-        if(String(row.staffId || '').toLowerCase() !== sid) return false;
+        if(!portalStaffKeysMatch(row.staffId, sid)) return false;
         if(String(row.day || '').trim() !== w) return false;
         const ri = normaliseIsoDate(row && (row.session_date || row.sessionDate));
         if(!ri) return false;

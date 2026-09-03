@@ -2162,7 +2162,11 @@
         return Boolean(cid && cid !== 'closed' && cid !== 'available');
       };
       const modelRows = (sessionsModel || []).filter(function(s){
-        if(String(s.staffId || '').toLowerCase() !== sid) return false;
+        if(typeof portalStaffKeysMatch === 'function'
+          ? !portalStaffKeysMatch(s.staffId, sid)
+          : (typeof window.portalStaffKeysMatch === 'function'
+            ? !window.portalStaffKeysMatch(s.staffId, sid)
+            : String(s.staffId || '').toLowerCase() !== sid)) return false;
         if(String(s.day || '').trim() !== dayWord) return false;
         if(!isReal(s)) return false;
         return typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
@@ -2630,7 +2634,11 @@
         const rel = typeof portalBaseClientSessionsForCalendarDate === 'function'
           ? portalBaseClientSessionsForCalendarDate(dayWord, key, staffId, isRealFn)
           : (sessionsModel || []).filter(s =>
-            String(s.staffId || '').toLowerCase() === staffId &&
+            (typeof portalStaffKeysMatch === 'function'
+              ? portalStaffKeysMatch(s.staffId, staffId)
+              : (typeof window.portalStaffKeysMatch === 'function'
+                ? window.portalStaffKeysMatch(s.staffId, staffId)
+                : String(s.staffId || '').toLowerCase() === staffId)) &&
             String(s.day || '').trim() === dayWord &&
             isRealFn(s) &&
             (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
