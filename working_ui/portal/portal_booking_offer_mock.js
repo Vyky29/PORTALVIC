@@ -22,7 +22,8 @@
   var TERM_CALENDAR = {
     start: "2026-09-05",
     end: "2026-12-18",
-    closedRanges: [{ start: "2026-10-26", end: "2026-10-30" }],
+    /* Half term week + flanking weekends (13 Sat / 13 Sun — not 15). */
+    closedRanges: [{ start: "2026-10-24", end: "2026-11-01" }],
   };
 
   var WEEKDAY_NUM = {
