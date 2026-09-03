@@ -534,17 +534,26 @@
         return '<div class="today-day-panel today-day-panel--loading" role="status">' +
           '<p class="today-day-panel__loading">Loading your schedule…</p></div>';
       }
+      const rosterId = String(
+        (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
+        || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')
+        || ''
+      ).trim().toLowerCase();
+      const noAutumn = typeof portalStaffHasNoAutumnTermSessions === 'function'
+        && portalStaffHasNoAutumnTermSessions(rosterId);
       const shiftMeta = mode === 'shift' && typeof portalStaffTodayLeadShiftPanelMeta === 'function'
-        ? portalStaffTodayLeadShiftPanelMeta(
-          (typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '')
-          || (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')
-        )
+        ? portalStaffTodayLeadShiftPanelMeta(rosterId)
         : null;
-      const hasNext = !!(preview && (Number(preview.sessionCount) || 0));
+      const hasNext = !noAutumn && !!(preview && (Number(preview.sessionCount) || 0));
       const offRequested = mode === 'off_time_requested';
       let html = '<div class="today-day-panel' + (hasNext ? ' today-day-panel--has-next' : ' today-day-panel--solo') + (offRequested ? ' today-day-panel--off-requested' : '') + (mode === 'shift' ? ' today-day-panel--shift' : '') + '" role="status">';
       html += '<div class="today-day-panel__off">';
-      if(mode === 'shift' && shiftMeta){
+      if(noAutumn){
+        html += '<span class="today-day-panel__off-icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>';
+        html += '<div class="today-day-panel__off-copy">';
+        html += '<p class="today-day-panel__off-title">No sessions this term</p>';
+        html += '<p class="today-day-panel__off-sub">You have no session this term.</p></div></div>';
+      }else if(mode === 'shift' && shiftMeta){
         html += '<div class="today-day-panel__off-copy">';
         html += '<p class="today-day-panel__off-title">Your shift</p>';
         html += '<p class="today-day-panel__off-sub">' + escapeHtml(
@@ -3304,6 +3313,21 @@
       }
       const termTitle = document.getElementById('termSheetTitle');
       if(termTitle) termTitle.textContent = dashboardData.termName || 'Autumn Term 2026';
+      const termSub = document.querySelector('.term-sheet-subtitle');
+      const termHint = document.getElementById('termSheetHint');
+      const noAutumnTerm = typeof portalStaffHasNoAutumnTermSessions === 'function'
+        && portalStaffHasNoAutumnTermSessions(String(STAFF_DASHBOARD_ID || '').trim().toLowerCase());
+      const noWorked = noAutumnTerm || !(Array.isArray(dashboardData.termWorkedWeekdays) && dashboardData.termWorkedWeekdays.length);
+      if(termSub){
+        termSub.textContent = noWorked && noAutumnTerm
+          ? 'You have no session this term.'
+          : 'Days confirmed to work this term';
+      }
+      if(termHint){
+        termHint.innerHTML = noWorked && noAutumnTerm
+          ? 'Red = not your shift. You are not rostered for Autumn Term 2026 sessions.'
+          : 'Tap a <strong>green</strong> or <strong>blue</strong> day to open that day&apos;s session cards. Red = not your shift.';
+      }
       renderTermCalendarGrid();
       renderQuickMenuSetupVisibility();
       if(typeof portalRefreshDashboardParticipantPhotos === 'function'){

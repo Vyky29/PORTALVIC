@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare · v20260903-jad-hold</title>
+  <title>LOCAL · DC staff week compare · v20260903-no-summer-departed</title>
   <style>
     :root {
       --ink: #173247;
@@ -171,12 +171,16 @@
     }
     .card--trial .card__name { color: #1e40af; }
     .card--trial .card__band { color: #1d4ed8; }
+    /* Office hold only (Jad) — solid orange so it stands out from open/yellow. */
     .card--hold {
-      background: #fff7ed;
-      border-color: #fdba74;
+      background: #f97316;
+      border-color: #ea580c;
     }
-    .card--hold .card__name { color: #9a3412; }
-    .card--hold .card__band { color: #c2410c; }
+    .card--hold .card__name { color: #fff7ed; }
+    .card--hold .card__band { color: #ffedd5; }
+    .card--hold .card__venue,
+    .card--hold .seg__time,
+    .card--hold .seg__area { color: #ffedd5; }
     .card__band {
       display: block;
       font-size: 0.55rem;
@@ -251,7 +255,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260903-jad-hold · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260903-no-summer-departed · Autumn 2026</h1>
   <p class="note">
     Open at <code>http://127.0.0.1:8765/local_dc_staff_week.html</code> (not file://). Club closed Mon 31 Aug 2026 (BH).
     <strong>1-6 Sep</strong> = week 1 (DC weekdays; Sat 5 + Sun 6 weekend · Hub: <strong>Berta Lead + Jack W…Aydaan book</strong> · <strong>John = Emanuel book</strong> · Godsway · Youssef off · Emanuel off).
@@ -263,9 +267,9 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260903-jad-hold"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-jad-hold"></script>
-  <!-- local board bump: 20260903-jad-hold -->
+  <script src="/portal/portal_roster_canonical.js?v=20260903-no-summer-departed"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-no-summer-departed"></script>
+  <!-- local board bump: 20260903-no-summer-departed -->
   <script>
 (function () {
   var STAFF = ["Roberto", "Luliya", "Michelle", "Victor", "Raul", "Youssef"];

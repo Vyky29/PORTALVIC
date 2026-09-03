@@ -2135,6 +2135,14 @@
     }
     /** Shipped bundle/timetable must not replace Supabase roster when admin overrides apply. */
     function portalStaffMachineBundleFallbackAllowed(staffId, iso){
+      if(typeof portalStaffHasNoAutumnTermSessions === 'function'
+        && portalStaffHasNoAutumnTermSessions(staffId)){
+        const key = String(iso || '').trim().slice(0, 10);
+        if(!(typeof portalCalendarIsoUsesSummerDatedRosterOnly === 'function'
+          && portalCalendarIsoUsesSummerDatedRosterOnly(key))){
+          return false;
+        }
+      }
       if(typeof portalStaffMachineBundleBlockedByScheduleOverrideOnDate === 'function'
         && portalStaffMachineBundleBlockedByScheduleOverrideOnDate(staffId, iso)) return false;
       return true;

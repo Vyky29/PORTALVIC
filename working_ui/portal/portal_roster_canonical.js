@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 48;
+  var SOURCE_VERSION = 49;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -372,19 +372,37 @@
   }
 
   /**
-   * Angel left before Autumn — LOCAL board has no Angel columns.
-   * Drop leftover summer / MADRE Angel instructor rows so his Today / Term calendar
-   * do not project Cayra/Richard (or HOLD WAITLIST) onto Sep Tuesdays.
+   * No Autumn Term 2026 sessions (LOCAL has no columns). Summer / MADRE leftovers
+   * must not project onto Sep+ Today or Term calendars.
    */
-  function scrubDepartedAngelInstructorRows(rows) {
+  var AUTUMN_NO_SESSION_STAFF_KEYS = ["angel", "giuseppe", "andres", "bismark"];
+  var AUTUMN_NO_SESSION_INSTRUCTOR_RE =
+    /\b(angel|giuseppe|andres|andr[eé]s|bismark|bismarck)\b/i;
+
+  function isAutumnNoSessionStaffKey(staffKey) {
+    var id = String(staffKey || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+    if (!id) return false;
+    if (id === "andres" || id === "andrés" || id === "andresx") return true;
+    return AUTUMN_NO_SESSION_STAFF_KEYS.indexOf(id) >= 0;
+  }
+
+  function scrubDepartedAutumnInstructorRows(rows) {
     var out = [];
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
       var inst = String(r.instructors || "").trim();
-      if (/\bangel\b/i.test(inst)) return;
+      if (AUTUMN_NO_SESSION_INSTRUCTOR_RE.test(inst)) return;
       out.push(r);
     });
     return out;
+  }
+
+  /** @deprecated use scrubDepartedAutumnInstructorRows */
+  function scrubDepartedAngelInstructorRows(rows) {
+    return scrubDepartedAutumnInstructorRows(rows);
   }
 
   function applyAutumnWeek1DayCentre(rows) {
@@ -1479,7 +1497,7 @@
     var withAutumn = applyAutumnStandingParticipantRows(base);
     var merged = opts.skipDb ? withAutumn.slice() : applyPortalRosterDbRows(withAutumn);
     merged = applyAutumnActonTuesdayStanding(merged);
-    merged = scrubDepartedAngelInstructorRows(merged);
+    merged = scrubDepartedAutumnInstructorRows(merged);
     merged = applyAutumnWeek1DayCentre(merged);
     merged = scrubAndEnsureSep6HubCover(merged);
     return dedupeRosterAdapterRows(merged);
@@ -1532,6 +1550,10 @@
     WEEKEND_STANDING_ISO: WEEKEND_STANDING_ISO,
     AUTUMN_DAY_CENTRE_BOARD: AUTUMN_DAY_CENTRE_BOARD,
     WEEK1_DC_BOARD: WEEK1_DC_BOARD,
+    AUTUMN_NO_SESSION_STAFF_KEYS: AUTUMN_NO_SESSION_STAFF_KEYS,
+    isAutumnNoSessionStaffKey: isAutumnNoSessionStaffKey,
+    scrubDepartedAutumnInstructorRows: scrubDepartedAutumnInstructorRows,
+    scrubDepartedAngelInstructorRows: scrubDepartedAngelInstructorRows,
     normIso: normIso,
   };
 })(typeof window !== "undefined" ? window : globalThis);

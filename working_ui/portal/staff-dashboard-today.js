@@ -202,6 +202,18 @@
       if(!foundAny) return [];
       return out.sort();
     }
+    function portalStaffHasNoAutumnTermSessions(staffId){
+      const id = String(staffId || '').trim().toLowerCase();
+      if(!id) return false;
+      try{
+        const PRC = window.PortalRosterCanonical;
+        if(PRC && typeof PRC.isAutumnNoSessionStaffKey === 'function'){
+          return !!PRC.isAutumnNoSessionStaffKey(id);
+        }
+      }catch(_){}
+      return /^(angel|giuseppe|andres|andr[eé]s|bismark|bismarck)$/i.test(id);
+    }
+    try{ window.portalStaffHasNoAutumnTermSessions = portalStaffHasNoAutumnTermSessions; }catch(_){}
     function portalStaffHasShiftOnCalendarDate(isoYmd, staffId){
       const dates = portalTermStaffShiftDatesFor(staffId);
       if(dates === null) return null;
@@ -249,6 +261,10 @@
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(!iso || !sid || !w) return true;
+      /* Departed Autumn staff: never paint / project summer weekday snaps. */
+      if(portalStaffHasNoAutumnTermSessions(sid) && !portalCalendarIsoUsesSummerDatedRosterOnly(iso)){
+        return false;
+      }
       if(typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
         && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)) return true;
       if(portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0) return true;
@@ -297,6 +313,9 @@
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(!iso || !sid || !w) return iso;
+      if(portalStaffHasNoAutumnTermSessions(sid) && !portalCalendarIsoUsesSummerDatedRosterOnly(iso)){
+        return '';
+      }
       if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return iso;
       if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return iso;
       if(portalStaffHasDatedRowsForIso(iso, sid)) return iso;
@@ -1584,6 +1603,12 @@
     function portalBaseClientSessionsForCalendarDate(dayWord, sessionDateIso, staffId, isRealFn){
       const sid = String(staffId || '').trim().toLowerCase();
       const dw = String(dayWord || '').trim();
+      const iso = String(sessionDateIso || '').trim().slice(0, 10);
+      if(sid && typeof portalStaffHasNoAutumnTermSessions === 'function' && portalStaffHasNoAutumnTermSessions(sid)){
+        if(!(typeof portalCalendarIsoUsesSummerDatedRosterOnly === 'function' && portalCalendarIsoUsesSummerDatedRosterOnly(iso))){
+          return [];
+        }
+      }
       const acc = [];
       (sessionsModel || []).forEach(function(s){
         if(!s) return;
@@ -6521,6 +6546,9 @@
       }
       function portalFindNextSessionCalendarInfo(staffId, fromNow, model){
         var id = String(staffId || '').trim().toLowerCase();
+        if(typeof portalStaffHasNoAutumnTermSessions === 'function' && portalStaffHasNoAutumnTermSessions(id)){
+          return null;
+        }
         var start = new Date(fromNow.getFullYear(), fromNow.getMonth(), fromNow.getDate());
         var viewFrom = '';
         var viewTo = '';
@@ -6764,10 +6792,12 @@
         }
       } else {
         let worked = [];
-        if(ptd && typeof ptd.workedWeekdaysForStaff === 'function'){
+        if(typeof portalStaffHasNoAutumnTermSessions === 'function' && portalStaffHasNoAutumnTermSessions(id)){
+          worked = [];
+        } else if(ptd && typeof ptd.workedWeekdaysForStaff === 'function'){
           worked = ptd.workedWeekdaysForStaff(id);
         }
-        if(!worked.length && t && typeof t === 'object'){
+        if(!worked.length && !(typeof portalStaffHasNoAutumnTermSessions === 'function' && portalStaffHasNoAutumnTermSessions(id)) && t && typeof t === 'object'){
           const dashMap = t.termStaffWeekdayIndicesDashboardByProfileKey;
           const baseMap = t.termStaffWeekdayIndicesByProfileKey;
           if(dashMap && Array.isArray(dashMap[id]) && dashMap[id].length){
@@ -6776,7 +6806,8 @@
             worked = baseMap[id].slice();
           }
         }
-        if(!worked.length){
+        /* Never invent Autumn weekdays from summer session snaps for departed staff. */
+        if(!worked.length && !(typeof portalStaffHasNoAutumnTermSessions === 'function' && portalStaffHasNoAutumnTermSessions(id))){
           worked = portalWorkedWeekdaysFromSessions(typeof sessionsModel !== 'undefined' ? sessionsModel : [], id);
         }
         dashboardData.termWorkedWeekdays = worked.sort(function(a, b){ return a - b; });
