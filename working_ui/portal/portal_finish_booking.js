@@ -761,20 +761,13 @@
     var rs = data.registration_support || {};
     var name = data.social_worker_name || rs.social_worker_name || "—";
     var email = data.social_worker_email || rs.social_worker_email || "—";
-    var ratio = rs.support_regulated || "";
     box.innerHTML =
       "<div><strong>Social worker / NHS manager:</strong> " +
       esc(name) +
       "</div>" +
       "<div><strong>Email:</strong> " +
       esc(email) +
-      "</div>" +
-      (ratio
-        ? "<div><strong>Support when regulated:</strong> " + esc(ratio) + "</div>"
-        : "") +
-      (data.booking_scope
-        ? "<div><strong>Booking length:</strong> " + esc(data.booking_scope) + "</div>"
-        : "");
+      "</div>";
   }
 
   function adaptScopeForFunding(data) {
