@@ -40,6 +40,7 @@ import {
   BOOKING_SLOT_HOLD_STATUSES,
   bookingPayHoldExpiresAt,
 } from "./portal_booking_pay_hold.ts";
+import { mandateIsActive } from "./gocardless_portal.ts";
 
 export const FINISH_TOKEN_TTL_DAYS = 14;
 /** Fallback only when service cannot be classified (legacy aquatic 30'). */
@@ -66,6 +67,47 @@ export type CompletionTokenRow = {
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+/** First instalment collected by bank (mid-month GoCardless join). */
+function paymentScheduleBankFirst(schedule: unknown): boolean {
+  const rows = Array.isArray(schedule) ? schedule : [];
+  const first = rows[0] as Record<string, unknown> | undefined;
+  if (!first) return false;
+  const via = String(first.collect_via || "").toLowerCase();
+  if (via === "bank_transfer" || via === "bank") return true;
+  return /bank transfer/i.test(String(first.label || ""));
+}
+
+/** Bank-first GoCardless: PIN only after mandate is active (not on admin Mark paid alone). */
+async function finishBookingNeedsGocardlessMandateBeforePin(
+  admin: SupabaseClient,
+  token: CompletionTokenRow,
+  inv: {
+    payment_schedule?: unknown;
+    payment_method_hint?: unknown;
+    contact_id?: unknown;
+  },
+): Promise<boolean> {
+  const plan = clean(token.pay_plan, 40).toLowerCase();
+  const hint = String(inv.payment_method_hint || "").toLowerCase();
+  const isGc =
+    plan === "gocardless_monthly" ||
+    plan === "gocardless" ||
+    hint === "gocardless";
+  if (!isGc || !paymentScheduleBankFirst(inv.payment_schedule)) return false;
+
+  const contactId =
+    clean(token.contact_id, 40) || clean(inv.contact_id, 40);
+  if (!contactId) return true;
+
+  const { data: mandateRow } = await admin
+    .from("portal_parent_gocardless_mandates")
+    .select("gocardless_mandate_id, mandate_status")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  const mandateId = clean(mandateRow?.gocardless_mandate_id, 80);
+  return !(mandateId && mandateIsActive(mandateRow?.mandate_status));
 }
 
 /** Public family site (booking + parent pages). Staff app stays on portalvic.vercel.app. */
@@ -924,6 +966,78 @@ export async function notifyParentPortalPin(opts: {
   });
 }
 
+/** After bank-first GC is confirmed paid, remind parent to complete Step 3 (mandate). */
+export async function notifyParentCompleteGocardlessStep3(opts: {
+  parentName: string | null;
+  parentEmail: string | null;
+  parentPhone: string | null;
+  participantName: string;
+  gocardlessUrl: string | null;
+  admin?: SupabaseClient | null;
+}): Promise<{ emailOk: boolean; waOk: boolean }> {
+  const name = clean(opts.parentName, 120) || "Parent / carer";
+  const participant = clean(opts.participantName, 120) || "your child";
+  const gcUrl = clean(opts.gocardlessUrl, 500);
+  const portalUrl = `${portalPublicOrigin()}/parent`;
+  const bodyText = gcUrl
+    ? `clubSENsational confirmed the first bank payment for ${participant}. ` +
+      `Please complete Step 3 and set up GoCardless so monthly collections run on the 1st: ${gcUrl} ` +
+      `Or sign in at ${portalUrl} and open Invoices.`
+    : `clubSENsational confirmed the first bank payment for ${participant}. ` +
+      `Please sign in at ${portalUrl}, open Invoices, and set up GoCardless (Direct Debit) for monthly payments on the 1st.`;
+
+  let emailOk = false;
+  let waOk = false;
+  let waResult: { ok: boolean; id?: string; channel?: string; error?: string } = {
+    ok: false,
+  };
+
+  const smtp = readParentNotifySmtpConfig();
+  const email = clean(opts.parentEmail, 200);
+  if (smtp && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const mail = await sendParentEmailViaSmtp({
+      config: smtp,
+      to: email,
+      subject: `Set up GoCardless · ${participant}`,
+      bodyText:
+        `Hi ${name},\n\n` +
+        `Thank you — we have confirmed your first bank payment for ${participant}.\n\n` +
+        `One more step: please set up GoCardless (Direct Debit) so we can collect the remaining monthly payments on the 1st of each month, same as other families.\n\n` +
+        (gcUrl
+          ? `Complete Step 3 here:\n${gcUrl}\n\n`
+          : "") +
+        `Or sign in to the Parent Portal (${portalUrl}) → Invoices → Set up Direct Payment.\n\n` +
+        `We cannot schedule future collections until GoCardless is completed.\n\n— clubSENsational`,
+    });
+    emailOk = mail.ok;
+    if (!mail.ok) console.warn("[finish-booking-gc-step3] email", mail.error);
+  }
+
+  const phone = normalizeParentPhoneE164(String(opts.parentPhone || ""));
+  if (phone) {
+    const wa = await sendParentMobileMessage(phone, bodyText, {
+      kind: "contact_update",
+    });
+    waResult = wa;
+    waOk = wa.ok;
+    if (!wa.ok) console.warn("[finish-booking-gc-step3] whatsapp", wa.error);
+  }
+
+  await logFinishBookingNotify(opts.admin, {
+    kind: "gocardless_step3",
+    parentName: name,
+    parentEmail: email || null,
+    parentPhone: phone,
+    participantName: participant,
+    subject: `Set up GoCardless · ${participant}`,
+    bodyText,
+    emailOk,
+    wa: waResult,
+  });
+
+  return { emailOk, waOk };
+}
+
 export async function issueParentPortalPinForCompletion(
   admin: SupabaseClient,
   token: CompletionTokenRow,
@@ -993,6 +1107,7 @@ async function findFinishTokenForInvoice(
   const open = rows.find((r) =>
     [
       "awaiting_payment",
+      "awaiting_gocardless",
       "awaiting_office_payment",
       "choices_saved",
       "scope_saved",
@@ -1413,7 +1528,9 @@ async function completeFinishBookingWithPin(
 
   const { data: inv } = await admin
     .from("portal_parent_invoice_share")
-    .select("id, payment_status, amount_paid_gbp, payment_schedule, contact_id")
+    .select(
+      "id, payment_status, amount_paid_gbp, payment_schedule, contact_id, payment_method_hint, gocardless_url",
+    )
     .eq("id", invId)
     .maybeSingle();
   if (!inv) return { completed: false, reason: "invoice_missing" };
@@ -1502,6 +1619,42 @@ async function completeFinishBookingWithPin(
     return { completed: false, reason: "parent_person_missing" };
   }
 
+  // New family + bank-first GoCardless: seat confirmed; PIN only after mandate (webhook).
+  if (await finishBookingNeedsGocardlessMandateBeforePin(admin, token, inv)) {
+    const nowDefer = new Date().toISOString();
+    await activateContactInClassAfterPaidBooking(admin, contactId);
+    const sync = await syncOpsAfterFinishBookingPaid(admin, token as CompletionTokenRow, {
+      paidVia: "paid",
+    });
+    await admin
+      .from("portal_booking_completion_tokens")
+      .update({
+        status: "awaiting_gocardless",
+        updated_at: nowDefer,
+      })
+      .eq("id", token.id);
+    try {
+      await notifyParentCompleteGocardlessStep3({
+        admin,
+        parentName: contact?.parent_display || null,
+        parentEmail: contact?.email || null,
+        parentPhone: contact?.mobile || null,
+        participantName: contact?.child_display || "Participant",
+        gocardlessUrl: clean(inv.gocardless_url, 500) || null,
+      });
+    } catch (e) {
+      console.warn(
+        "[finish-booking] gc step3 notify",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
+    console.log(
+      "[finish-booking] deferred pin for GC mandate",
+      sync.notes.join("|"),
+    );
+    return { completed: false, pinSent: false, reason: "awaiting_gocardless_mandate" };
+  }
+
   const result = await issueParentPortalPinForCompletion(admin, token as CompletionTokenRow, {
     parentName: contact?.parent_display || null,
     parentEmail: contact?.email || null,
@@ -1552,6 +1705,7 @@ export async function tryCompleteBookingAfterGocardlessMandateSetup(
       const isGc = plan === "gocardless_monthly" || plan === "gocardless";
       const open = [
         "awaiting_payment",
+        "awaiting_gocardless",
         "awaiting_office_payment",
         "choices_saved",
         "scope_saved",

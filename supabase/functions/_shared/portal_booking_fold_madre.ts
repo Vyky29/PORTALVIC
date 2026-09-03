@@ -3,6 +3,7 @@
  * participant onto a MADRE open seat so Services + Booking Portal capacity match.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { resolveSessionDateIso } from "./portal_booking_context.ts";
 import {
   applyFoldToMadre,
   type MadreDoc,
@@ -47,6 +48,15 @@ export function preferredInstructorForReservation(row: {
   ) {
     return "Dan";
   }
+  /* Tue Acton 4.30-5 standing band is Aurora (Autumn AS pool). */
+  if (
+    /acton/.test(venue) &&
+    /^tue/.test(day) &&
+    /4\.?30\s*[-–to]+\s*5(\.00)?/.test(time) &&
+    !/climb/.test(service)
+  ) {
+    return "Aurora";
+  }
   return "";
 }
 
@@ -76,7 +86,7 @@ export async function foldValidatedReservationOntoMadre(
   const { data: row, error } = await admin
     .from("portal_booking_slot_reservations")
     .select(
-      "id, status, participant_name, date_iso, day_label, time_label, venue, service_name, notes",
+      "id, status, participant_name, date_iso, day_label, time_label, venue, service_name, notes, validated_at",
     )
     .eq("id", rid)
     .maybeSingle();
@@ -88,8 +98,22 @@ export async function foldValidatedReservationOntoMadre(
   }
 
   const client = clean(row.participant_name, 80);
-  const iso = clean(row.date_iso, 12).slice(0, 10);
   const timeSlot = madreTimeSlotLabel(String(row.time_label || ""));
+  let iso = clean(row.date_iso, 12).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const asOf = clean(row.validated_at, 32).slice(0, 10) || new Date().toISOString().slice(0, 10);
+    iso = resolveSessionDateIso({
+      dateIso: null,
+      day: clean(row.day_label, 20),
+      asOfIso: asOf,
+    }) || "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso) && !clean(row.date_iso, 12)) {
+      await admin
+        .from("portal_booking_slot_reservations")
+        .update({ date_iso: iso, updated_at: new Date().toISOString() })
+        .eq("id", rid);
+    }
+  }
   if (!client || !/^\d{4}-\d{2}-\d{2}$/.test(iso) || !timeSlot) {
     return { ok: false, note: "incomplete_reservation" };
   }
