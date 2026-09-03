@@ -402,7 +402,7 @@
   </style>
   <script src="/portal-static-bootstrap.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="/portal/parent_form_submit.js?v=20260903-sw-nhs"></script>
+  <script src="/portal/parent_form_submit.js?v=20260903-no-support-filter"></script>
   <script src="/portal/parent_registration_portal.js?v=20260903-sw-nhs"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-bookingportal"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260724-returning-no-privacy"></script>
@@ -1782,6 +1782,35 @@
               }
             } catch (_leadPing) {}
             if (finishUrl) {
+              var needTwoSeats = false;
+              try {
+                var supportAns = String(radio("support_regulated") || "")
+                  .trim()
+                  .toLowerCase()
+                  .replace(/\s+/g, "");
+                var mobilityAns = String(radio("mobility") || "").toLowerCase();
+                needTwoSeats =
+                  supportAns === "2to1" ||
+                  supportAns === "2:1" ||
+                  /wheelchair/.test(mobilityAns);
+              } catch (_need2) {}
+              if (needTwoSeats) {
+                window.portalFinishParentSubmit({
+                  formEl: form,
+                  successEl: document.getElementById("parentSubmitDone"),
+                  noticeEl: document.getElementById("formNotice"),
+                  submitBtn: btn,
+                  message:
+                    "Form sent. Your answers need two instructor places — taking you back to Booking to choose a time with two free seats…",
+                });
+                setTimeout(function () {
+                  var base = String(
+                    window.PORTAL_FAMILY_ORIGIN || "https://www.clubsensational.org",
+                  ).replace(/\/$/, "");
+                  global.location.href = base + "/bookingportal?seats=2";
+                }, 1200);
+                return;
+              }
               window.portalFinishParentSubmit({
                 formEl: form,
                 successEl: document.getElementById('parentSubmitDone'),

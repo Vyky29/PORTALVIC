@@ -254,7 +254,7 @@
       width: 100%;
     }
     @media (min-width: 900px) {
-      .filter-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .filter-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
     label.field {
       display: flex;
@@ -2341,16 +2341,6 @@
           </span>
           <select id="fTime" aria-label="Filter by time"><option value="">All times</option></select>
         </label>
-        <label class="field">
-          <span class="field-label">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Support when regulated
-          </span>
-          <select id="fSupport" aria-label="Support when regulated">
-            <option value="1to1">1to1</option>
-            <option value="2to1">2to1</option>
-          </select>
-        </label>
       </div>
       <div class="filter-row">
         <label class="toggle">
@@ -2710,7 +2700,7 @@
     </div>
   </div>
 
-  <script src="/portal/portal_booking_offer.js?v=20260903-support-seats"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260903-no-support-filter"></script>
   <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
   <script src="/portal/portal_booking_service_presence.js?v=20260716-daycentre-info"></script>
   <script src="/portal/portal_booking_lead_gate.js?v=20260831-privacy-not-you"></script>
@@ -2921,22 +2911,26 @@
   var fVenue = document.getElementById("fVenue");
   var fDay = document.getElementById("fDay");
   var fTime = document.getElementById("fTime");
-  var fSupport = document.getElementById("fSupport");
   var fHideFull = document.getElementById("fHideFull");
   var offerBanner = document.getElementById("offerBanner");
   var offerBannerText = document.getElementById("offerBannerText");
 
-  function currentSupportRatio() {
-    var v = fSupport && fSupport.value ? String(fSupport.value) : "1to1";
-    return v === "2to1" ? "2to1" : "1to1";
+  /**
+   * Public browse always shows normal 1-seat availability.
+   * Internal only: ?seats=2 (or need_seats=2) after registration when 2to1 / wheelchair
+   * needs two instructor places — never a filter control on this page.
+   */
+  function currentSeatsNeeded() {
+    try {
+      var q = new URLSearchParams(window.location.search || "");
+      var raw = String(q.get("seats") || q.get("need_seats") || "").trim();
+      if (raw === "2" || raw === "2to1") return 2;
+    } catch (_e) {}
+    return 1;
   }
 
-  function currentSeatsNeeded() {
-    return mock.seatsNeededForSupport
-      ? mock.seatsNeededForSupport(currentSupportRatio())
-      : currentSupportRatio() === "2to1"
-        ? 2
-        : 1;
+  function currentSupportRatio() {
+    return currentSeatsNeeded() >= 2 ? "2to1" : "1to1";
   }
 
   // Clear browse first; OTP gate blurs + modal after PREVIEW_MS (see portal_booking_lead_gate.js).
@@ -2970,7 +2964,7 @@
       hideFull: !!fHideFull.checked,
       supportRegulated: currentSupportRatio(),
       minSeats: minSeats,
-      /* 2to1: only list bands with enough free instructor seats. */
+      /* Internal seats=2 only: bands with enough free instructor seats. */
       requireSeats: minSeats > 1,
     };
   }
@@ -4012,7 +4006,8 @@
     if (slot.blockId) q.set("block_id", slot.blockId);
     if (slot.dateIso) q.set("date", slot.dateIso);
     q.set("booking_kind", bookingKind);
-    q.set("support_regulated", currentSupportRatio());
+    /* Support ratio is answered on registration — not a public filter. */
+    if (currentSeatsNeeded() >= 2) q.set("support_regulated", "2to1");
     try {
       if (window.PortalBookingLeadGate) {
         var tok = window.PortalBookingLeadGate.getSessionToken();
@@ -4584,13 +4579,12 @@
     fVenue.value = "";
     fDay.value = "";
     fTime.value = "";
-    if (fSupport) fSupport.value = "1to1";
     fHideFull.checked = false;
     activeInfoServiceId = "";
     refresh();
   });
 
-  [fService, fVenue, fDay, fTime, fSupport, fHideFull].forEach(function (el) {
+  [fService, fVenue, fDay, fTime, fHideFull].forEach(function (el) {
     if (!el) return;
     el.addEventListener("change", function (e) {
       if (SVC_ROWS_LAYOUT && el === fService && e && e.isTrusted) {
@@ -4600,13 +4594,19 @@
     });
   });
 
-  mock
+    mock
     .load()
     .then(function () {
       fillFilterSelects();
       refresh();
       try {
         var deep = new URLSearchParams(window.location.search || "");
+        if (currentSeatsNeeded() >= 2) {
+          setBanner(
+            "",
+            "Showing times with two free places (needed when support is 2to1 or mobility needs two instructor seats). Pick a time below to continue."
+          );
+        }
         var svcQ = String(deep.get("service") || deep.get("svc") || "").trim().toLowerCase();
         var venueQ = String(deep.get("venue") || "").trim();
         if (svcQ === "swim" || svcQ === "swimming" || svcQ === "aa") svcQ = "aquatic";
