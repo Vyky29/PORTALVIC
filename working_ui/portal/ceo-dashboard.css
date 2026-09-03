@@ -1117,6 +1117,37 @@
         margin-bottom: 10px;
       }
     }
+    .portal-comms-unread-badge {
+      flex: 0 0 auto;
+      margin-left: auto;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 18px;
+      text-align: center;
+      box-shadow: 0 0 0 1.5px rgba(15, 23, 42, 0.35);
+    }
+    .portal-comms-unread-badge.is-empty {
+      display: none !important;
+    }
+    .ceo-dash-switch__opt {
+      position: relative;
+    }
+    .ceo-dash-switch__opt .portal-comms-unread-badge {
+      position: absolute;
+      top: -6px;
+      right: -2px;
+      margin-left: 0;
+    }
+    .ceo-nav-link.portal-comms-has-unread,
+    .ceo-dash-switch__opt.portal-comms-has-unread {
+      box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.45);
+    }
   </style>
 </head>
 <body>

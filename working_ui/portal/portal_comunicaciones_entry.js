@@ -1,6 +1,6 @@
 /**
- * Staff dashboard — light launcher for the independent Comunicaciones app.
- * Replaces the CS WhatsApp sheet button (WhatsApp API UI) without loading that sheet.
+ * Communications unread badge + Staff COMMS launcher.
+ * Same count on Staff, Admin, CEO and Office — per signed-in user, not shared reads.
  */
 (function (global) {
   "use strict";
@@ -29,6 +29,8 @@
 
   var lastUnreadCount = 0;
   var fetchInFlight = null;
+  var unreadRetryTimer = null;
+  var unreadChannel = null;
   var COMMS_ICO =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>';
 
@@ -57,29 +59,61 @@
     return "";
   }
 
+  function unreadLabel(n) {
+    if (n > 99) return "99+";
+    return String(n);
+  }
+
+  function paintDataUnreadNodes(count) {
+    var nodes = document.querySelectorAll("[data-comms-unread]");
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      el.textContent = count > 0 ? unreadLabel(count) : "0";
+      el.classList.toggle("is-empty", count < 1);
+      el.hidden = count < 1;
+      el.setAttribute("aria-hidden", count < 1 ? "true" : "false");
+      var host = el.closest("[data-comms-unread-host]") || el.parentElement;
+      if (host) host.classList.toggle("portal-comms-has-unread", count > 0);
+    }
+  }
+
   function applyUnreadBadge(count) {
     lastUnreadCount = Math.max(0, Number(count) || 0);
+    paintDataUnreadNodes(lastUnreadCount);
     var btn = document.getElementById("topbarStaffWaBtn");
     if (btn) {
       var inGrid = btn.classList.contains("topbar-tool-btn--staff-wa");
       btn.classList.toggle("topbar-staff-wa-btn--unread", !inGrid && lastUnreadCount > 0);
       btn.classList.toggle("topbar-tool-btn--staff-wa-unread", inGrid && lastUnreadCount > 0);
-      var badge = btn.querySelector(".topbar-staff-wa-btn__badge");
+      var badge = btn.querySelector("[data-comms-unread], .topbar-staff-wa-btn__badge");
       if (lastUnreadCount > 0) {
         if (!badge) {
           badge = document.createElement("span");
           badge.className = "topbar-staff-wa-btn__badge";
+          badge.setAttribute("data-comms-unread", "");
           badge.setAttribute("aria-hidden", "true");
           btn.appendChild(badge);
         }
-        badge.textContent = lastUnreadCount > 9 ? "9+" : String(lastUnreadCount);
+        badge.hidden = false;
+        badge.classList.remove("is-empty");
+        badge.textContent = unreadLabel(lastUnreadCount);
       } else if (badge) {
-        badge.remove();
+        badge.hidden = true;
+        badge.classList.add("is-empty");
+        badge.textContent = "0";
       }
       var lab = lastUnreadCount > 0 ? "Communications (" + lastUnreadCount + ")" : "Communications";
       btn.setAttribute("aria-label", lab);
       var labelEl = btn.querySelector(".topbar-staff-wa-btn__label, .topbar-tool-label");
       if (labelEl) labelEl.textContent = lastUnreadCount > 0 ? "COMMS (" + lastUnreadCount + ")" : "COMMS";
+    }
+    var adminBtn = document.getElementById("btnComunicaciones");
+    if (adminBtn) {
+      adminBtn.classList.toggle("admin-icon-btn--has-alerts", lastUnreadCount > 0);
+      adminBtn.setAttribute(
+        "aria-label",
+        lastUnreadCount > 0 ? "Communications (" + lastUnreadCount + ")" : "Communications"
+      );
     }
     var alertsBlock = document.getElementById("portalStaffWaAlertsBlock");
     var alertsStatus = document.getElementById("portalStaffWaAlertsStatus");
@@ -99,6 +133,19 @@
         alertsBtn.textContent = lastUnreadCount > 0 ? "Open Communications (" + lastUnreadCount + ")" : "Open Communications";
       }
     }
+    try {
+      global.dispatchEvent(
+        new CustomEvent("portal:comms-unread", { detail: { count: lastUnreadCount } })
+      );
+    } catch (_ev) {}
+  }
+
+  function scheduleUnreadRetry() {
+    if (unreadRetryTimer) return;
+    unreadRetryTimer = global.setTimeout(function () {
+      unreadRetryTimer = null;
+      void refreshUnread();
+    }, 700);
   }
 
   async function refreshUnread() {
@@ -106,19 +153,51 @@
     fetchInFlight = (async function () {
       try {
         var c = client();
-        if (!c) return lastUnreadCount;
+        if (!c || !c.rpc) {
+          scheduleUnreadRetry();
+          return lastUnreadCount;
+        }
         var res = await c.rpc("communication_unread_count");
         if (res.error) return lastUnreadCount;
         var next = Math.max(0, Number(res.data) || 0);
         applyUnreadBadge(next);
+        subscribeUnreadRealtime();
         return lastUnreadCount;
       } catch (_e) {
+        scheduleUnreadRetry();
         return lastUnreadCount;
       } finally {
         fetchInFlight = null;
       }
     })();
     return fetchInFlight;
+  }
+
+  function subscribeUnreadRealtime() {
+    var c = client();
+    if (!c || typeof c.channel !== "function") return;
+    if (unreadChannel) return;
+    try {
+      unreadChannel = c
+        .channel("portal-comms-unread-badge")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "communication_messages" },
+          function () {
+            void refreshUnread();
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "communication_message_reads" },
+          function () {
+            void refreshUnread();
+          }
+        )
+        .subscribe();
+    } catch (_rt) {
+      unreadChannel = null;
+    }
   }
 
   function countSessionTopbarTools() {
@@ -271,6 +350,7 @@
   global.portalStaffWaRefreshUnread = refreshUnread;
   global.portalCommsOpen = openApp;
   global.portalCommsRefreshUnread = refreshUnread;
+  global.portalAdminRefreshCommsBadge = refreshUnread;
 
   function boot() {
     try {
@@ -281,7 +361,17 @@
       if (!key && global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) {
         key = normalizeKey(global.__PORTAL_SUPABASE__.staff_profile.username || "");
       }
-      syncForStaffKey(key);
+      if (
+        document.getElementById("topbarToolsGridLeft") ||
+        document.getElementById("topbarToolsGridRight") ||
+        document.getElementById("topbarToolsGrid") ||
+        document.getElementById("topbarWaRow") ||
+        document.getElementById("topbarStaffWaBtn")
+      ) {
+        syncForStaffKey(key);
+      } else {
+        void refreshUnread();
+      }
     } catch (_e) {}
   }
 
@@ -296,13 +386,16 @@
       boot();
       void refreshUnread();
     });
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") void refreshUnread();
+    });
   } catch (_e2) {}
-  if (!global.__PORTAL_STAFF_WA_UNREAD_POLL__) {
-    global.__PORTAL_STAFF_WA_UNREAD_POLL__ = true;
+  if (!global.__PORTAL_COMMS_UNREAD_POLL__) {
+    global.__PORTAL_COMMS_UNREAD_POLL__ = true;
     global.setInterval(function () {
       try {
         if (document.visibilityState === "visible") void refreshUnread();
       } catch (_p) {}
-    }, 20000);
+    }, 8000);
   }
 })(typeof window !== "undefined" ? window : this);

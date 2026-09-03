@@ -127,10 +127,25 @@
 .topbar-tool-btn--staff-wa-unread{
   box-shadow:0 0 0 2px rgba(220,38,38,.45),0 1px 3px rgba(217,154,31,.28) !important;
 }
-.topbar-tool-btn--staff-wa .topbar-staff-wa-btn__badge{
-  top:-9px;
-  right:4px;
-  z-index:3;
+.topbar-staff-wa-btn__badge.is-empty{
+  display:none !important;
+}
+.topbar-tool-btn.topbar-tool-btn--staff-wa,
+#topbarStaffWaBtn.topbar-tool-btn{
+  overflow:visible !important;
+}
+.topbar-tool-btn--staff-wa .topbar-staff-wa-btn__badge,
+#topbarStaffWaBtn .topbar-staff-wa-btn__badge{
+  top:2px;
+  right:8px;
+  left:auto;
+  z-index:6;
+  min-width:17px;
+  height:17px;
+  padding:0 4px;
+  line-height:17px;
+  font-size:9.5px;
+  box-shadow:0 1px 3px rgba(0,0,0,.28),0 0 0 1.5px rgba(255,255,255,.85);
 }
 /*
  * Halo flanks: ADMIN sits under Photo/Plan with only a ~3px row gap.

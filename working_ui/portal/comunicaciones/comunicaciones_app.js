@@ -337,6 +337,29 @@ function sortMessagesOldestFirst(rows) {
   });
 }
 
+function chatPaneOnScreen() {
+  const shell = $("commsShell");
+  if (!shell || shell.hidden) return false;
+  try {
+    if (window.matchMedia && window.matchMedia("(max-width: 860px)").matches) {
+      return shell.classList.contains("is-chat");
+    }
+  } catch (_e) {}
+  return true;
+}
+
+function shouldMarkConversationRead(conversationId, silent) {
+  if (!conversationId) return false;
+  try {
+    if (document.visibilityState !== "visible") return false;
+  } catch (_e) {
+    return false;
+  }
+  if (!silent) return true;
+  if (!state.open || String(state.open.conversation_id) !== String(conversationId)) return false;
+  return chatPaneOnScreen();
+}
+
 async function openConversation(id, extra, opts) {
   const silent = !!(opts && opts.silent);
   if (!silent && state.recording) await stopVoice(false);
@@ -344,7 +367,7 @@ async function openConversation(id, extra, opts) {
   state.open = it;
   state.messages = [];
   state.oldestAt = null;
-  $("commsShell").classList.add("is-chat");
+  if (!silent) $("commsShell").classList.add("is-chat");
   renderInbox();
   const payload = await rpc("communication_list_messages", {
     p_conversation_id: id,
@@ -356,7 +379,9 @@ async function openConversation(id, extra, opts) {
   if (state.messages[0]) state.oldestAt = state.messages[0].created_at;
   renderThread();
   try {
-    await rpc("communication_mark_read", { p_conversation_id: id });
+    if (shouldMarkConversationRead(id, silent)) {
+      await rpc("communication_mark_read", { p_conversation_id: id });
+    }
     if (
       !silent &&
       state.me &&
@@ -1300,6 +1325,19 @@ async function boot() {
     window.setInterval(function () {
       rpc("communication_heartbeat", { p_status: state.call ? "in_call" : "available" }).catch(function () {});
     }, 25000);
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState !== "visible") return;
+      if (!state.open || !state.open.conversation_id) return;
+      if (!shouldMarkConversationRead(state.open.conversation_id, true)) return;
+      rpc("communication_mark_read", { p_conversation_id: state.open.conversation_id })
+        .then(function () {
+          return loadInbox();
+        })
+        .then(function () {
+          renderInbox();
+        })
+        .catch(function () {});
+    });
   } catch (err) {
     setBoot((err && err.message) || "Could not open Communications. Return to the portal.");
     console.warn("[comunicaciones]", err);

@@ -19,6 +19,7 @@
   <script src="/portal/portal_ensure_web_push.js?v=20260619-denied-help"></script>
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260712-no-self-wa-push"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
+  <script src="/portal/portal_comunicaciones_entry.js?v=20260903-comms-8"></script>
   <script>
     /* Register push SW on admin so Send test alert / background push work. */
     (function () {
@@ -267,9 +268,9 @@
             <span class="admin-icon-btn__svg" id="btnStaffWaIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="staffWaBadge">0</span>
           </button>
-          <a class="admin-icon-btn admin-icon-btn--chat" id="btnComunicaciones" href="comunicaciones.html" aria-label="Communications" title="Communications">
+          <a class="admin-icon-btn admin-icon-btn--chat" id="btnComunicaciones" href="comunicaciones.html" aria-label="Communications" title="Communications" data-comms-unread-host>
             <span class="admin-icon-btn__svg" id="btnComunicacionesIco" aria-hidden="true">💬</span>
-            <span class="admin-badge is-empty" id="commsBadge">0</span>
+            <span class="admin-badge is-empty" id="commsBadge" data-comms-unread hidden>0</span>
           </a>
           <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
             🔔
@@ -31877,30 +31878,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!window.__portalAdminCommsBadgeBound){
         window.__portalAdminCommsBadgeBound = true;
         window.portalAdminRefreshCommsBadge = function portalAdminRefreshCommsBadge(){
-          var badge = $('commsBadge');
-          if(!badge) return;
-          var c = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
-          if(!c || !c.rpc) return;
-          Promise.resolve(c.rpc('communication_unread_count')).then(function(res){
-            var n = res && typeof res.data === 'number' ? res.data : 0;
-            n = n > 0 ? n : 0;
-            badge.textContent = n > 99 ? '99+' : String(n);
-            badge.classList.toggle('is-empty', n < 1);
-            var btn = $('btnComunicaciones');
-            if(btn){
-              btn.classList.toggle('admin-icon-btn--has-alerts', n > 0);
-              btn.setAttribute('aria-label', n > 0 ? ('Communications (' + n + ')') : 'Communications');
-            }
-          }).catch(function(){});
+          if(typeof window.portalCommsRefreshUnread === 'function'){
+            return window.portalCommsRefreshUnread();
+          }
         };
         window.addEventListener('portal:supabase-ready', function(){ window.portalAdminRefreshCommsBadge(); });
-        document.addEventListener('visibilitychange', function(){
-          if(document.visibilityState === 'visible') window.portalAdminRefreshCommsBadge();
-        });
-        setInterval(function(){
-          if(document.visibilityState === 'visible') window.portalAdminRefreshCommsBadge();
-        }, 30000);
-        setTimeout(function(){ window.portalAdminRefreshCommsBadge(); }, 1600);
+        window.addEventListener('portal:comms-unread', function(){});
+        setTimeout(function(){ window.portalAdminRefreshCommsBadge(); }, 400);
       }
       var alertsPopEl = $('alertsPop');
       if(alertsPopEl && !alertsPopEl.dataset.activityJumpBound){

@@ -65,6 +65,14 @@
     .tile-copy{min-width:0;flex:1}
     .tile-copy strong{display:block;font-size:1rem;color:var(--ink);margin-bottom:4px}
     .tile-copy span{display:block;font-size:.82rem;color:var(--muted);line-height:1.4;overflow-wrap:break-word}
+    .tile{position:relative}
+    .portal-comms-unread-badge{
+      flex:0 0 auto;min-width:20px;height:20px;padding:0 6px;border-radius:999px;
+      background:#dc2626;color:#fff;font-size:11px;font-weight:800;line-height:20px;
+      text-align:center;align-self:center;box-shadow:0 1px 3px rgba(0,0,0,.2);
+    }
+    .portal-comms-unread-badge.is-empty{display:none !important}
+    .tile.portal-comms-has-unread{border-color:rgba(220,38,38,.45);box-shadow:0 0 0 1px rgba(220,38,38,.2)}
     .foot{margin-top:18px;text-align:center}
     .link-btn{
       background:none;border:none;padding:8px 12px;font:inherit;
@@ -151,12 +159,13 @@
               <span>Admin — H&amp;R staff roster, payslips, documents and the full sidebar menu.</span>
             </span>
           </a>
-          <a class="tile tile--admin" id="goComms" href="comunicaciones.html">
+          <a class="tile tile--admin" id="goComms" href="comunicaciones.html" data-comms-unread-host>
             <span class="tile-ico" aria-hidden="true">💬</span>
             <span class="tile-copy">
               <strong>Communications</strong>
               <span>Internal chat with staff as Administration, plus groups.</span>
             </span>
+            <span class="portal-comms-unread-badge is-empty" data-comms-unread hidden>0</span>
           </a>
         </div>
       </section>
@@ -166,6 +175,7 @@
       <button type="button" class="link-btn" id="btnSignOut">Sign out</button>
     </div>
   </div>
+  <script src="/portal/portal_comunicaciones_entry.js?v=20260903-comms-8"></script>
   <script type="module">
     import {
       bootstrapDashboardSupabase,
