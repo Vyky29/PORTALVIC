@@ -9,7 +9,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260820-es-full"></script>
-  <link rel="stylesheet" href="/portal/ceo-dashboard.css?v=20260903-comms-8" />
+  <link rel="stylesheet" href="/portal/ceo-dashboard.css?v=20260904-menu-fix" />
 </head>
 <body>
   <div class="ceo-shell" id="ceoShell">
@@ -120,14 +120,27 @@
       var mob = document.getElementById("ceoBtnMenuMob");
       var bd = document.getElementById("ceoSidebarBackdrop");
       function setOpen(open) {
-        document.body.classList.toggle("ceo-sidebar-open", open);
+        document.body.classList.toggle("ceo-sidebar-open", !!open);
         if (mob) mob.setAttribute("aria-expanded", open ? "true" : "false");
+        if (bd) bd.setAttribute("aria-hidden", open ? "false" : "true");
       }
       function closeMenu() {
         setOpen(false);
       }
-      if (mob) mob.addEventListener("click", function () { setOpen(!document.body.classList.contains("ceo-sidebar-open")); });
+      function toggleMenu(ev) {
+        if (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+        }
+        setOpen(!document.body.classList.contains("ceo-sidebar-open"));
+      }
+      if (mob) {
+        mob.addEventListener("click", toggleMenu);
+      }
       if (bd) bd.addEventListener("click", closeMenu);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeMenu();
+      });
       var sb = document.getElementById("ceoSidebar");
       if (sb) {
         sb.addEventListener("click", function (e) {
