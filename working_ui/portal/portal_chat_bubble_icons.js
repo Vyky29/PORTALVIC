@@ -35,4 +35,7 @@
   global.portalStaffChatIconSvg = function portalStaffChatIconSvg(opts) {
     return portalChatBubbleIconSvg("S", opts);
   };
+  global.portalCommsChatIconSvg = function portalCommsChatIconSvg(opts) {
+    return portalChatBubbleIconSvg("C", opts);
+  };
 })(typeof window !== "undefined" ? window : globalThis);

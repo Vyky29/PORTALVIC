@@ -19,7 +19,7 @@
   <script src="/portal/portal_ensure_web_push.js?v=20260619-denied-help"></script>
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260904-comms-push"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
-  <script src="/portal/portal_comunicaciones_entry.js?v=20260904-comms-12"></script>
+  <script src="/portal/portal_comunicaciones_entry.js?v=20260904-comms-13"></script>
   <script>
     /* Register push SW on admin so Send test alert / background push work. */
     (function () {
@@ -133,7 +133,7 @@
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
   <script src="/portal/portal_wa_thread_refresh.js?v=20260716-wa-audio-guard"></script>
-  <script src="/portal/portal_chat_bubble_icons.js?v=20260716-admin-ps-icons-lg"></script>
+  <script src="/portal/portal_chat_bubble_icons.js?v=20260904-comms-13"></script>
   <script src="/portal/admin-parent-notify-log.js?v=20260901-tpl-len-row"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260901-no-edit-lab"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
@@ -163,7 +163,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260903-cover-needed" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260904-comms-13" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -243,6 +243,11 @@
       </div>
       <nav class="admin-nav" id="adminNav"></nav>
       <div class="admin-sidebar-foot">
+        <button type="button" class="admin-sidebar-staff-wa" id="btnStaffWa" aria-label="CS WhatsApp — staff API" title="CS WhatsApp (staff API)">
+          <span class="admin-icon-btn__svg" id="btnStaffWaIco" aria-hidden="true"></span>
+          <span class="admin-sidebar-staff-wa__lab">CS WhatsApp</span>
+          <span class="admin-badge is-empty" id="staffWaBadge">0</span>
+        </button>
         <div class="admin-sidebar-width-controls" role="presentation">
           <button type="button" class="admin-sidebar-rail-btn" id="adminSidebarPinToggle" aria-label="Expand sidebar to full width" title="Expand to full width">+</button>
         </div>
@@ -264,13 +269,9 @@
             <span class="admin-icon-btn__svg" id="btnFamilyMsgsIco" aria-hidden="true"></span>
             <span class="admin-badge is-empty" id="familyMsgBadge">0</span>
           </button>
-          <button type="button" class="admin-icon-btn admin-icon-btn--chat" id="btnStaffWa" aria-label="CS WhatsApp — staff" title="CS WhatsApp (staff)">
-            <span class="admin-icon-btn__svg" id="btnStaffWaIco" aria-hidden="true"></span>
-            <span class="admin-badge is-empty" id="staffWaBadge">0</span>
-          </button>
           <a class="admin-icon-btn admin-icon-btn--chat" id="btnComunicaciones" href="comunicaciones.html?from=admin" aria-label="Communications" title="Communications" data-comms-unread-host>
-            <span class="admin-icon-btn__svg" id="btnComunicacionesIco" aria-hidden="true">💬</span>
-            <span class="admin-badge is-empty" id="commsBadge" data-comms-unread hidden>0</span>
+            <span class="admin-icon-btn__svg" id="btnComunicacionesIco" aria-hidden="true"></span>
+            <span class="admin-badge is-empty" id="commsBadge" data-comms-unread>0</span>
           </a>
           <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
             🔔
@@ -31818,11 +31819,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       (function portalAdminInitWaTopbarIcons(){
         var pIco = $('btnFamilyMsgsIco');
         var sIco = $('btnStaffWaIco');
+        var cIco = $('btnComunicacionesIco');
         if(typeof window.portalParentChatIconSvg === 'function' && pIco){
           pIco.innerHTML = window.portalParentChatIconSvg({ size: 28 });
         }
         if(typeof window.portalStaffChatIconSvg === 'function' && sIco){
           sIco.innerHTML = window.portalStaffChatIconSvg({ size: 28 });
+        }
+        if(typeof window.portalCommsChatIconSvg === 'function' && cIco){
+          cIco.innerHTML = window.portalCommsChatIconSvg({ size: 28 });
+        } else if(typeof window.portalChatBubbleIconSvg === 'function' && cIco){
+          cIco.innerHTML = window.portalChatBubbleIconSvg('C', { size: 28 });
         }
       })();
       if(!window.__portalAdminFamilyMsgBadgeBound){

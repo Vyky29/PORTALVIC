@@ -30,6 +30,7 @@
   var lastUnreadCount = 0;
   var fetchInFlight = null;
   var unreadRetryTimer = null;
+  var unreadRefreshQueued = false;
   var unreadChannel = null;
   var COMMS_ICO =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>';
@@ -85,7 +86,10 @@
       var el = nodes[i];
       el.textContent = count > 0 ? unreadLabel(count) : "0";
       el.classList.toggle("is-empty", count < 1);
-      el.hidden = count < 1;
+      try {
+        el.removeAttribute("hidden");
+      } catch (_h) {}
+      el.hidden = false;
       el.setAttribute("aria-hidden", count < 1 ? "true" : "false");
       var host = el.closest("[data-comms-unread-host]") || el.parentElement;
       if (host) host.classList.toggle("portal-comms-has-unread", count > 0);
@@ -164,7 +168,10 @@
   }
 
   async function refreshUnread() {
-    if (fetchInFlight) return fetchInFlight;
+    if (fetchInFlight) {
+      unreadRefreshQueued = true;
+      return fetchInFlight;
+    }
     fetchInFlight = (async function () {
       try {
         var c = client();
@@ -188,6 +195,10 @@
         return lastUnreadCount;
       } finally {
         fetchInFlight = null;
+        if (unreadRefreshQueued) {
+          unreadRefreshQueued = false;
+          void refreshUnread();
+        }
       }
     })();
     return fetchInFlight;
@@ -204,7 +215,9 @@
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "communication_messages" },
           function (payload) {
-            maybeShowMessageToast((payload && payload.new) || {});
+            var row = (payload && payload.new) || {};
+            bumpUnreadFromIncoming(row);
+            maybeShowMessageToast(row);
             void refreshUnread();
           }
         )
@@ -328,6 +341,14 @@
     messageToastCount = 0;
     var el = document.getElementById("portalCommsMsgToast");
     if (el) el.hidden = true;
+  }
+
+  function bumpUnreadFromIncoming(row) {
+    if (!row) return;
+    var type = String(row.message_type || "text").toLowerCase();
+    if (type === "system") return;
+    if (String(row.performed_by_user_id || "") === myUserId()) return;
+    applyUnreadBadge(lastUnreadCount + 1);
   }
 
   function maybeShowMessageToast(row) {

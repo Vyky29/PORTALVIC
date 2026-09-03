@@ -330,6 +330,22 @@
       flex-shrink:0;padding:12px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:var(--sidebarText);
       display:flex;flex-direction:column;gap:8px;min-width:0;
     }
+    .admin-sidebar-staff-wa{
+      display:flex;align-items:center;gap:8px;width:100%;margin:0;padding:8px 10px;
+      border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.06);
+      color:#e2e8f0;font:inherit;cursor:pointer;text-align:left;position:relative;min-width:0;
+    }
+    .admin-sidebar-staff-wa:hover,.admin-sidebar-staff-wa:focus-visible{
+      background:rgba(255,255,255,.1);outline:none;
+    }
+    .admin-sidebar-staff-wa .admin-icon-btn__svg{flex:0 0 auto;color:#e2e8f0}
+    .admin-sidebar-staff-wa .admin-icon-btn__svg svg{width:22px;height:22px;display:block}
+    .admin-sidebar-staff-wa__lab{
+      flex:1;min-width:0;font-size:12px;font-weight:700;overflow-wrap:break-word;line-height:1.25;
+    }
+    .admin-sidebar-staff-wa .admin-badge{
+      position:static;flex:0 0 auto;margin-left:auto;
+    }
     .admin-sidebar-foot__txt{min-width:0;line-height:1.35;overflow-wrap:break-word}
     .admin-sidebar-width-controls{
       display:none;flex-direction:row;flex-wrap:nowrap;gap:8px;width:100%;min-width:0;justify-content:center;align-items:stretch;box-sizing:border-box;
@@ -864,14 +880,19 @@
       position:relative;width:40px;height:40px;border:1px solid var(--btnSecBorder);border-radius:10px;background:var(--btnSecBg);cursor:pointer;
       display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--ink);
       transition:background .15s,border-color .15s,box-shadow .15s;
+      overflow:visible;
     }
     .admin-icon-btn:hover,.admin-icon-btn:focus-visible{background:#f1f5f9;border-color:#8eb4d0;outline:none;box-shadow:0 0 0 1px rgba(45,132,179,.1)}
     .admin-icon-btn__svg{display:flex;align-items:center;justify-content:center;line-height:0;pointer-events:none}
     .admin-icon-btn__svg svg{display:block}
     .admin-icon-btn--chat{width:46px;height:46px}
     .admin-icon-btn--chat .admin-icon-btn__svg svg{width:28px!important;height:28px!important}
-    .admin-badge{position:absolute;top:6px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:9px;font-weight:800;line-height:16px;text-align:center}
+    .admin-badge{position:absolute;top:4px;right:4px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:9px;font-weight:800;line-height:16px;text-align:center;z-index:2}
     .admin-badge.is-empty{display:none}
+    #commsBadge:not(.is-empty),
+    #familyMsgBadge:not(.is-empty){
+      display:inline-block !important;
+    }
     .dayops-screen-nav__card--portal-dm-unread,
     .dayops-screen-nav__card--portal-ceo-dm-unread,
     .dayops-screen-nav__card--portal-ceo-group-unread{
@@ -4343,7 +4364,8 @@
       body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar:not(:hover):not(:focus-within) .admin-sidebar-brand > span{
         position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;white-space:nowrap;border:0;clip-path:inset(50%);
       }
-      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar:not(:hover):not(:focus-within) .admin-sidebar-foot__txt{
+      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar:not(:hover):not(:focus-within) .admin-sidebar-foot__txt,
+      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar:not(:hover):not(:focus-within) .admin-sidebar-staff-wa__lab{
         position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;white-space:nowrap;border:0;clip-path:inset(50%);
       }
       body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar:not(:hover):not(:focus-within) .admin-sidebar-brand{padding:10px 8px 8px}
@@ -4379,7 +4401,8 @@
       body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar.admin-sidebar--suppress-expand .admin-sidebar-brand > span{
         position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;white-space:nowrap;border:0;clip-path:inset(50%);
       }
-      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar.admin-sidebar--suppress-expand .admin-sidebar-foot__txt{
+      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar.admin-sidebar--suppress-expand .admin-sidebar-foot__txt,
+      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar.admin-sidebar--suppress-expand .admin-sidebar-staff-wa__lab{
         position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;white-space:nowrap;border:0;clip-path:inset(50%);
       }
       body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar.admin-sidebar--suppress-expand .admin-sidebar-brand{padding:10px 8px 8px}
@@ -4517,6 +4540,7 @@
     }
     body.admin-touch-compact.sidebar-open .admin-nav-pending-badge{margin-left:auto;flex-shrink:0}
     body.admin-touch-compact.sidebar-open .admin-sidebar-foot__txt{display:block !important}
+    body.admin-touch-compact .admin-sidebar-staff-wa{width:100%}
 
     @media (max-width:899px) and (orientation:landscape){
       body.admin-touch-compact .admin-sidebar{
