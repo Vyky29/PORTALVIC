@@ -400,9 +400,10 @@
     "youssef"
   ],
   "jack_s": [
-    "bismark",
-    "godsway",
-    "roberto"
+    "emanuel",
+    "giuseppe",
+    "javier",
+    "youssef"
   ],
   "jack_w": [
     "aurora",
@@ -488,8 +489,9 @@
     "youssef"
   ],
   "samer": [
-    "giuseppe",
-    "javier"
+    "bismark",
+    "godsway",
+    "roberto"
   ],
   "scott": [
     "alex",

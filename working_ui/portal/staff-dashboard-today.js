@@ -1854,7 +1854,7 @@
           ? portalCanonicalStaffKeyForMatch(ov && ov.anchor_staff_id)
           : portalNormKeyStr(ov && ov.anchor_staff_id);
         var emanuelBook = {
-          zaid: 1, samer: 1, eiji: 1, hazem: 1, haneef: 1, rayyan_f: 1, rayyanf: 1
+          zaid: 1, jack_s: 1, jacks: 1, samer: 1, eiji: 1, hazem: 1, haneef: 1, rayyan_f: 1, rayyanf: 1
         };
         if(
           iso === '2026-09-06' &&
