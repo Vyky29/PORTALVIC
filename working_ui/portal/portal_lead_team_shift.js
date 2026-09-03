@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260903-john-bespoke-mw";
+} from "./portal_lead_session_scope.js?v=20260903-john-no-sun-lead";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -570,9 +570,10 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
     }
     return !PROGRAMME_LEAD_KEYS.has(k);
   });
-  /* Seed expected Hub Multi support when standing rows did not resolve yet. */
-  if (dayKind === "sunday_ma_swimfarm" && ctx.leadKey === "john") {
-    ["berta", "godsway", "youssef"].forEach(function (k) {
+  /* Seed expected Hub Multi support when standing rows did not resolve yet (Berta is Sunday Lead). */
+  if (dayKind === "sunday_ma_swimfarm" && ctx.leadKey === "berta") {
+    const seeds = iso === "2026-09-06" ? ["godsway", "youssef", "john"] : ["godsway", "emanuel"];
+    seeds.forEach(function (k) {
       if (memberKeys.indexOf(k) < 0) memberKeys.push(k);
     });
   }
@@ -1119,7 +1120,7 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
   }
 
   /* Ensure Berta Leader column exists for Sunday MA even if not in team.members yet. */
-  if (dayWord === "Sunday" && leadKey === "john") {
+  if (dayWord === "Sunday" && leadKey === "berta") {
     const hasBerta = members.some(function (m) {
       return normKey(m.key) === "berta";
     });

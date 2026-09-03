@@ -3596,9 +3596,8 @@
       var sid = String(staffId || '').trim().toLowerCase();
       if(sid === 'john'){
         return [
-          { weekdays: ['Monday', 'Wednesday'], serviceKeys: ['bespoke'], venues: ['swimfarm'], leadTeamBanner: true },
-          /* Sunday SwimFarm Multi: John teaches his own Hub book; team banner is separate. */
-          { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'], leadTeamBanner: true }
+          { weekdays: ['Monday', 'Wednesday'], serviceKeys: ['bespoke'], venues: ['swimfarm'], leadTeamBanner: true }
+          /* Sunday Multi Lead = Berta. John covers Hub Multi only when rostered (e.g. 6 Sep). */
         ];
       }
       if(sid === 'berta'){

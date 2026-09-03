@@ -167,8 +167,7 @@ def sunday_template() -> list[tuple[str, str, str]]:
         _pairs("Javier", "9-3", "SwimFarm"),
         _pairs("Roberto", "8.45-3.15", "SwimFarm"),
         _pairs("Berta", "9-2.30", "SwimFarm"),
-        # John keeps the Hub Multi book (MADRE BERTA→JOHN); Berta = Sunday Leader only.
-        _pairs("John", "9.15-2.15", "SwimFarm"),
+        # John is NOT standing Sunday — Mon/Wed only; 6 Sep Hub Multi cover via extra calendar date.
         _pairs("Emanuel", "9.15-2.15", "SwimFarm"),
         _pairs("Godsway", "9.15-2.15", "SwimFarm"),
         _pairs("Alex", "10-2", "Westway"),
@@ -269,6 +268,25 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
     )
     shift_dates = merge_term_staff_shift_date_maps(shift_tt, shift_roster)
 
+    # John: standing Mon/Wed only. Sunday Hub Multi is cover (extra date), not a worked weekday.
+    # Standing MADRE BERTA→JOHN would otherwise flood every Autumn Sunday into his shift map.
+    john_sunday_cover = {"2026-09-06"}
+    for key in ("john",):
+        if key in staff_wd:
+            staff_wd[key] = [d for d in staff_wd[key] if d != 0]
+        if key in staff_wd_dashboard:
+            staff_wd_dashboard[key] = [d for d in staff_wd_dashboard[key] if d != 0]
+        if key in shift_dates:
+            shift_dates[key] = [
+                d
+                for d in shift_dates[key]
+                if parse_iso(d).weekday() != 6 or d in john_sunday_cover
+            ]
+            for extra in sorted(john_sunday_cover):
+                if extra not in shift_dates[key]:
+                    shift_dates[key].append(extra)
+            shift_dates[key].sort()
+
     view_month_keys = _month_range_keys(view_from, view_to)
     dashboard_months = [mm - 1 for _, mm in view_month_keys]
     dashboard_year = view_month_keys[0][0] if view_month_keys else 2026
@@ -328,12 +346,15 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
                 "john": {
                     "from": SESSION_FROM,
                     "to": SESSION_TO,
-                    # Friday off only — Sunday is Hub Multi (Jack W…Aydaan Ah).
-                    "weekdays": [5],
+                    # Friday + Sunday off standing. Sun 6 Sep Hub Multi cover = extra calendar date.
+                    "weekdays": [5, 0],
                 },
             },
             "termStaffFeedbackCompleteDatesByProfileKey": {},
-            "termStaffExtraCalendarDatesByProfileKey": {},
+            "termStaffExtraCalendarDatesByProfileKey": {
+                # John Mon/Wed standing; Sun 6 Sep covers Hub Multi (like Youssef covering Emanuel that day).
+                "john": ["2026-09-06"],
+            },
             "termStaffCatchUpFeedbackDatesByProfileKey": {},
             "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {},
             "termStaffLateSubmissionBypassProfileKeys": [],

@@ -67,15 +67,7 @@ const JOHN_SCOPES = [
     venues: ["swimfarm"],
     leadTeamBanner: true,
   },
-  {
-    id: "sunday-ma-swimfarm",
-    label: "Sunday — Multi-Activity (SwimFarm)",
-    weekdays: ["Sunday"],
-    serviceKeys: ["multi"],
-    venues: ["swimfarm"],
-    /* Team banner lists everyone on shift; Today cards stay lead-instructor only (one client per 45'). */
-    leadTeamBanner: true,
-  },
+  /* Sunday Multi Lead is Berta. John may cover Hub Multi (e.g. 6 Sep) as support — not programme lead. */
 ];
 
 const MICHELLE_SCOPES = [
