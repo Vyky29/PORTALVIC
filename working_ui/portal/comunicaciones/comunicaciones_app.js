@@ -112,10 +112,49 @@ async function rpc(name, args) {
 }
 
 function portalHome() {
+  const FROM_PAGE = {
+    admin: "admin_dashboard.html",
+    ceo: "ceo_dashboard.html",
+    staff: "staff_dashboard.html",
+    office: "office_portal.html",
+  };
+  function pageForFrom(raw) {
+    const k = String(raw || "")
+      .trim()
+      .toLowerCase();
+    return FROM_PAGE[k] || "";
+  }
+  try {
+    const sp = new URLSearchParams(String(window.location.search || "").replace(/^\?/, ""));
+    const fromQ = pageForFrom(sp.get("from") || sp.get("portal"));
+    if (fromQ) {
+      try {
+        sessionStorage.setItem("portal_comms_from", String(sp.get("from") || sp.get("portal") || "").trim().toLowerCase());
+      } catch (_s) {}
+      return fromQ;
+    }
+  } catch (_q) {}
+  try {
+    const stored = pageForFrom(sessionStorage.getItem("portal_comms_from"));
+    if (stored) return stored;
+  } catch (_st) {}
+  try {
+    const ref = String(document.referrer || "");
+    if (ref) {
+      const u = new URL(ref, window.location.href);
+      if (u.origin === window.location.origin) {
+        const path = String(u.pathname || "").toLowerCase();
+        if (path.indexOf("admin_dashboard") >= 0) return FROM_PAGE.admin;
+        if (path.indexOf("ceo_dashboard") >= 0) return FROM_PAGE.ceo;
+        if (path.indexOf("office_portal") >= 0) return FROM_PAGE.office;
+        if (path.indexOf("staff_dashboard") >= 0) return FROM_PAGE.staff;
+      }
+    }
+  } catch (_r) {}
   const me = state.me || {};
-  if (me.is_office_admin) return "office_portal.html";
-  if (me.is_ceo) return "ceo_dashboard.html";
-  return "staff_dashboard.html";
+  if (me.is_office_admin) return FROM_PAGE.office;
+  if (me.is_ceo) return FROM_PAGE.ceo;
+  return FROM_PAGE.staff;
 }
 
 function setBoot(msg) {

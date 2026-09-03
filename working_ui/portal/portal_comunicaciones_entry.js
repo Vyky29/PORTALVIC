@@ -34,11 +34,26 @@
   var COMMS_ICO =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>';
 
+  function detectFromPortal() {
+    try {
+      var path = String(global.location && global.location.pathname || "").toLowerCase();
+      if (path.indexOf("admin_dashboard") >= 0) return "admin";
+      if (path.indexOf("ceo_dashboard") >= 0) return "ceo";
+      if (path.indexOf("office_portal") >= 0) return "office";
+      if (path.indexOf("staff_dashboard") >= 0) return "staff";
+    } catch (_e) {}
+    return "";
+  }
+
   function commsUrl() {
     try {
-      return new URL("comunicaciones.html", global.location.href).href;
+      var u = new URL("comunicaciones.html", global.location.href);
+      var from = detectFromPortal();
+      if (from) u.searchParams.set("from", from);
+      return u.href;
     } catch (_e) {
-      return "comunicaciones.html";
+      var from2 = detectFromPortal();
+      return from2 ? "comunicaciones.html?from=" + encodeURIComponent(from2) : "comunicaciones.html";
     }
   }
 
@@ -309,7 +324,9 @@
     var existing = document.getElementById("topbarStaffWaBtn");
     if (existing) {
       existing.setAttribute("aria-label", "Communications");
-      if (!existing.getAttribute("href")) existing.setAttribute("href", commsUrl());
+      if (!existing.getAttribute("href") || existing.getAttribute("href").indexOf("comunicaciones") >= 0) {
+        existing.setAttribute("href", commsUrl());
+      }
       syncWaTopbarPlacement();
       void refreshUnread();
       return existing;
