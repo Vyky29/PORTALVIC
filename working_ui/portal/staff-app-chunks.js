@@ -60,7 +60,7 @@
     "/portal/staff-dashboard-term.js?v=" + VER,
     "/portal/staff-dashboard-participants.js?v=20260903-john-hub-team",
     "/portal/staff-dashboard-today.js?v=20260903-john-sun-book",
-    "/portal/staff-dashboard-ui.js?v=20260903-chip-photos",
+    "/portal/staff-dashboard-ui.js?v=20260903-john-sun-book",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];

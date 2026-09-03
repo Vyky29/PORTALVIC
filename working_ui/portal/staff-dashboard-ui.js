@@ -1520,7 +1520,9 @@
         const tEff = (t === 'slot_clear_client' && ov.payload && ov.payload.cancelled_by_admin) ? 'slot_clear_client_cancelled' : t;
         if(!tEff || tEff === 'override_void') return;
         const anchorSid = String(ov.anchor_staff_id || '').trim().toLowerCase();
-        const coverSid = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
+        const coverSid = typeof portalInstructorCoverStaffKeyFromOverride === 'function'
+          ? portalInstructorCoverStaffKeyFromOverride(ov)
+          : String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
         const applies = tEff === 'instructor_reassign'
           ? (anchorSid === sid || coverSid === sid)
           : (anchorSid === sid);
@@ -2143,7 +2145,9 @@
           ? portalTodayScheduleOverrideForSession(s, key)
           : null;
         const cov = ov && ov.override_type === 'instructor_reassign'
-          ? String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase()
+          ? (typeof portalInstructorCoverStaffKeyFromOverride === 'function'
+              ? portalInstructorCoverStaffKeyFromOverride(ov)
+              : String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase())
           : '';
         return Boolean(cov && cov !== sid);
       });
