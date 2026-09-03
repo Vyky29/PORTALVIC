@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 42;
+  var SOURCE_VERSION = 43;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -663,9 +663,10 @@
 
   /**
    * Autumn Sunday Hub Multi standing remaps (snap-date agnostic).
-   * Standing Jul week may still store Hub books under BERTA / GIUSEPPE etc.
-   * Sun 6 Sep calendar cover (John = Emanuel book) is applied in
-   * resolveAutumnInstructorsForCalendarDate + autumnSundaySep6HubCoverRows.
+   * Standing Jul week may still store Hub books under BERTA / GIUSEPPE / JOHN etc.
+   * - BISMARK → GODSWAY; GIUSEPPE → EMANUEL
+   * - JOHN → BERTA (Berta Lead keeps that Hub book; John only works Sun 6 via dated cover)
+   * Sun 6 Sep: dated autumnSundaySep6HubCoverRows give John the Emanuel book.
    */
   function remapAutumnMultiInstructorsStanding(instructorsRaw) {
     var s = String(instructorsRaw || "").trim();
@@ -673,12 +674,13 @@
     return s
       .replace(/\bBISMARK\b/gi, "GODSWAY")
       .replace(/\bBISMARCK\b/gi, "GODSWAY")
-      .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
+      .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
+      .replace(/\bJOHN\b/gi, "BERTA");
   }
 
   /**
    * Resolve instructors for a calendar day (Today / team strip).
-   * Standing Multi remaps + Sun 6 Sep John cover only.
+   * Standing Multi remaps + Sun 6 Sep: Emanuel book → John (after standing JOHN→BERTA).
    */
   function resolveAutumnInstructorsForCalendarDate(instructorsRaw, calendarIso, meta) {
     meta = meta || {};
@@ -689,14 +691,8 @@
     if (isMultiActivityService(service)) {
       s = remapAutumnMultiInstructorsStanding(s);
       if (iso === "2026-09-06") {
-        /*
-         * Sun 6 Hub: John covers Emanuel book; Berta Lead keeps former John book.
-         * Order matters — move JOHN→BERTA before EMANUEL→JOHN.
-         */
-        s = s
-          .replace(/\bJOHN\b/gi, "__SEP6_BERTA_BOOK__")
-          .replace(/\bEMANUEL\b/gi, "JOHN")
-          .replace(/__SEP6_BERTA_BOOK__/g, "BERTA");
+        /* Sun 6: John covers Emanuel Hub book (standing already moved former John book → Berta). */
+        s = s.replace(/\bEMANUEL\b/gi, "JOHN");
       }
     }
     return s;
@@ -1344,6 +1340,30 @@
     autumnSundayClimbingStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
+    /* Sep 6 Hub cover is applied once in resolveCanonicalRosterRows (after DB rows). */
+    return out;
+  }
+
+  /**
+   * Sun 6 Sep: John = Emanuel Hub book; Emanuel off; drop any other John Multi that day
+   * (standing former John book already remapped to Berta; DB overlays must not resurrect it).
+   */
+  function scrubAndEnsureSep6HubCover(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var d = normIso(r.session_date);
+      if (
+        d === "2026-09-06" &&
+        isMultiActivityService(r.service) &&
+        /swimfarm/i.test(String(r.venue || "SwimFarm"))
+      ) {
+        var inst = String(r.instructors || "");
+        if (/\bjohn\b/i.test(inst)) return;
+        if (/\bemanuel\b/i.test(inst) || /\bgiuseppe\b/i.test(inst)) return;
+      }
+      out.push(r);
+    });
     autumnSundaySep6HubCoverRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
@@ -1408,6 +1428,7 @@
     var merged = opts.skipDb ? withAutumn.slice() : applyPortalRosterDbRows(withAutumn);
     merged = applyAutumnActonTuesdayStanding(merged);
     merged = applyAutumnWeek1DayCentre(merged);
+    merged = scrubAndEnsureSep6HubCover(merged);
     return dedupeRosterAdapterRows(merged);
   }
 
