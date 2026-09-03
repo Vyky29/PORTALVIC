@@ -476,11 +476,11 @@ function rosterRowMatchesIso(row, iso) {
   /* Standing Services snaps (Jul week) project onto Autumn calendar weekdays. */
   try {
     const PRC = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
-    const map = PRC && PRC.DAY_CENTRE_STANDING_ISO;
-    if (map && wd) {
-      const snap = map[String(wd).toLowerCase()];
-      if (snap && rowIso === snap) return true;
-    }
+    const wdKey = String(wd || "").toLowerCase();
+    const dcMap = PRC && PRC.DAY_CENTRE_STANDING_ISO;
+    if (dcMap && wdKey && dcMap[wdKey] && rowIso === dcMap[wdKey]) return true;
+    const weMap = PRC && PRC.WEEKEND_STANDING_ISO;
+    if (weMap && wdKey && weMap[wdKey] && rowIso === weMap[wdKey]) return true;
   } catch (_) {}
   try {
     if (typeof window !== "undefined" && typeof window.portalSessionSpreadsheetRowMatchesCalendarDate === "function") {
@@ -560,8 +560,22 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   const roleOverrides = coverChipRoleOverridesForIso(iso, ctx.scopes, src);
   memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey, iso);
   memberKeys = memberKeys.filter(function (k) {
-    return k !== ctx.leadKey && !PROGRAMME_LEAD_KEYS.has(k);
+    if (!k || k === ctx.leadKey) return false;
+    /* Sunday MA: keep peer Leader (Berta/John) on the team strip. */
+    if (
+      dayKind === "sunday_ma_swimfarm" &&
+      ((k === "berta" && ctx.leadKey === "john") || (k === "john" && ctx.leadKey === "berta"))
+    ) {
+      return true;
+    }
+    return !PROGRAMME_LEAD_KEYS.has(k);
   });
+  /* Seed expected Hub Multi support when standing rows did not resolve yet. */
+  if (dayKind === "sunday_ma_swimfarm" && ctx.leadKey === "john") {
+    ["berta", "godsway", "youssef"].forEach(function (k) {
+      if (memberKeys.indexOf(k) < 0) memberKeys.push(k);
+    });
+  }
 
   memberKeys = sortTeamMemberKeys(memberKeys, roleOverrides);
 
@@ -924,7 +938,7 @@ function isDutyClientName(name) {
   );
 }
 
-/** Display labels for lead team board (Hub Room → Day Centre, etc.). */
+/** Display labels for lead team board (pools / Hub Room / Day Centre). */
 function leadTeamAreaLabel(area, service, client) {
   const a = String(area || "").trim();
   const low = a.toLowerCase();
@@ -934,7 +948,10 @@ function leadTeamAreaLabel(area, service, client) {
   if (/small\s*pool/.test(low)) return "Small Pool";
   if (/teaching\s*pool|lane/.test(low)) return "Pools";
   if (c === "acat" && (/hub/.test(low) || /day\s*centre/.test(svc))) return "Pools";
-  if (/hub|day\s*centre|manager/.test(low) || /day\s*centre/.test(svc)) return "Day Centre";
+  /* Hub Room must stay Hub — never collapse Multi Hub into Day Centre. */
+  if (/hub/.test(low)) return "Hub Room";
+  if (/day\s*centre|manager/.test(low) || /day\s*centre/.test(svc)) return "Day Centre";
+  if (/multi/.test(svc) && !/pool/.test(low)) return "Hub Room";
   if (/pool/.test(low)) return "Pools";
   return a || (/day\s*centre/.test(svc) ? "Day Centre" : "");
 }
@@ -1082,7 +1099,14 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
   let members = team.members.filter(function (m) {
     const k = normKey(m.key);
     if (leadKey && k === leadKey) return false;
+    /* Sunday MA: Berta stays as Leader column even with no clients. */
+    if (k === "berta" && dayWord === "Sunday") return true;
     return (byStaff[k] || []).length > 0;
+  }).map(function (m) {
+    if (normKey(m.key) === "berta" && dayWord === "Sunday") {
+      return Object.assign({}, m, { isSundayLeader: true, chipRole: m.chipRole || "support-lead" });
+    }
+    return m;
   });
 
   if (leadKey) {
@@ -1092,6 +1116,22 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
       chipRole: "lead",
       isViewerLead: true,
     });
+  }
+
+  /* Ensure Berta Leader column exists for Sunday MA even if not in team.members yet. */
+  if (dayWord === "Sunday" && leadKey === "john") {
+    const hasBerta = members.some(function (m) {
+      return normKey(m.key) === "berta";
+    });
+    if (!hasBerta) {
+      if (!byStaff.berta) byStaff.berta = [];
+      members.splice(1, 0, {
+        key: "berta",
+        name: staffDisplayName("berta"),
+        chipRole: "support-lead",
+        isSundayLeader: true,
+      });
+    }
   }
 
   members.forEach(function (m) {
@@ -1179,7 +1219,11 @@ function renderLeadTeamRosterTableHtml(model) {
           );
         })
         .join("");
-      const blankLabel = isViewer ? "Lead" : "—";
+      const blankLabel = isViewer
+        ? "Lead"
+        : m.isSundayLeader || (k === "berta" && !clients)
+          ? "Leader"
+          : "—";
       return (
         '<section class="portal-lead-team-roster__col' +
         (isViewer ? " portal-lead-team-roster__col--viewer" : "") +

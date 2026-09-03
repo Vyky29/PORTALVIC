@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 37;
+  var SOURCE_VERSION = 38;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1401,6 +1401,7 @@
     buildDayCentreStaffBoard: buildDayCentreStaffBoard,
     autumnDayCentreStandingRows: autumnDayCentreStandingRows,
     DAY_CENTRE_STANDING_ISO: DAY_CENTRE_STANDING_ISO,
+    WEEKEND_STANDING_ISO: WEEKEND_STANDING_ISO,
     AUTUMN_DAY_CENTRE_BOARD: AUTUMN_DAY_CENTRE_BOARD,
     WEEK1_DC_BOARD: WEEK1_DC_BOARD,
     normIso: normIso,
