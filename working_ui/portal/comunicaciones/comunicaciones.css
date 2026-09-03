@@ -33,7 +33,8 @@ body.comms-app {
 .comms-chat-actions[hidden],
 .comms-context[hidden],
 .comms-search-wrap[hidden],
-.comms-foot-btn[hidden] {
+.comms-foot-btn[hidden],
+.comms-record-status[hidden] {
   display: none !important;
 }
 
@@ -299,6 +300,13 @@ body.comms-app {
   text-decoration: none;
 }
 .comms-file img { max-width: 220px; max-height: 180px; border-radius: 10px; display: block; }
+.comms-audio {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  min-width: 0;
+  height: 40px;
+}
 .comms-closed-banner {
   margin: 0;
   padding: 8px 14px;
@@ -310,11 +318,12 @@ body.comms-app {
 
 .comms-composer {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   gap: 8px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
   background: #fff;
+  align-items: end;
 }
 .comms-composer textarea {
   width: 100%;
@@ -325,15 +334,34 @@ body.comms-app {
   font: inherit;
   min-height: 44px;
   max-height: 120px;
+  min-width: 0;
 }
-.comms-attach, .comms-send {
+.comms-attach, .comms-send, .comms-record {
   border: 0;
   border-radius: 12px;
   cursor: pointer;
   font-weight: 800;
 }
-.comms-attach { width: 44px; background: var(--blueSoft); }
-.comms-send { padding: 0 16px; background: var(--ink); color: #fff; }
+.comms-attach, .comms-record {
+  width: 44px;
+  height: 44px;
+  background: var(--blueSoft);
+  flex: 0 0 auto;
+}
+.comms-record.is-on {
+  background: var(--danger);
+  color: #fff;
+}
+.comms-send { padding: 0 16px; height: 44px; background: var(--ink); color: #fff; }
+.comms-record-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--danger);
+  overflow-wrap: break-word;
+}
 
 .comms-modal {
   position: fixed;
@@ -451,4 +479,6 @@ body.comms-app {
   .comms-shell:not(.is-chat) .comms-main { display: none; }
   .comms-mob-back { display: inline-flex; }
   .comms-bubble { max-width: 86%; }
+  .comms-attach, .comms-record { width: 40px; height: 40px; }
+  .comms-send { height: 40px; }
 }

@@ -7,7 +7,7 @@
   <title>Communications - clubSENsational</title>
   <link rel="icon" href="/portal/F-02-1.png" type="image/png" />
   <script src="/portal-static-bootstrap.js"></script>
-  <link rel="stylesheet" href="/portal/comunicaciones/comunicaciones.css?v=20260903-comms-4" />
+  <link rel="stylesheet" href="/portal/comunicaciones/comunicaciones.css?v=20260903-comms-5" />
 </head>
 <body class="comms-app">
   <div id="commsBoot" class="comms-boot">
@@ -65,10 +65,12 @@
       <div class="comms-thread" id="commsThread" role="log" aria-live="polite"></div>
       <p class="comms-closed-banner" id="commsClosedBanner" hidden>This group is closed. You can still read the history.</p>
       <form class="comms-composer" id="commsComposer" hidden>
-        <input type="file" id="commsFile" hidden accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" />
+        <input type="file" id="commsFile" hidden accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" />
         <button type="button" class="comms-attach" id="commsAttachBtn" aria-label="Attach">📎</button>
+        <button type="button" class="comms-attach comms-record" id="commsRecordBtn" aria-label="Record voice note">🎤</button>
         <textarea id="commsDraft" rows="1" maxlength="4000" placeholder="Write a message..." enterkeyhint="send"></textarea>
         <button type="submit" class="comms-send" id="commsSendBtn">Send</button>
+        <p class="comms-record-status" id="commsRecordStatus" hidden></p>
       </form>
     </section>
   </div>
@@ -94,6 +96,6 @@
     </div>
   </div>
 
-  <script type="module" src="/portal/comunicaciones/comunicaciones_app.js?v=20260903-comms-4"></script>
+  <script type="module" src="/portal/comunicaciones/comunicaciones_app.js?v=20260903-comms-5"></script>
 </body>
 </html>

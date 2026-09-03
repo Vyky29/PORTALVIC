@@ -262,7 +262,7 @@ create table if not exists public.communication_messages (
   sender_context text not null check (sender_context in ('PERSONAL', 'ADMINISTRATION')),
   performed_by_user_id uuid not null references public.staff_profiles(id),
   body text,
-  message_type text not null default 'text' check (message_type in ('text', 'image', 'file', 'system', 'call')),
+  message_type text not null default 'text' check (message_type in ('text', 'image', 'file', 'audio', 'system', 'call')),
   storage_path text,
   mime_type text,
   file_name text,
@@ -275,7 +275,7 @@ create table if not exists public.communication_messages (
     or message_type in ('system', 'call')
     or (message_type = 'text' and body is not null and char_length(trim(body)) > 0)
     or (
-      message_type in ('image', 'file')
+      message_type in ('image', 'file', 'audio')
       and storage_path is not null
       and char_length(trim(storage_path)) > 0
     )
@@ -1004,7 +1004,7 @@ begin
     end if;
   end if;
 
-  if v_type not in ('text', 'image', 'file') then
+  if v_type not in ('text', 'image', 'file', 'audio') then
     raise exception 'invalid type';
   end if;
 
@@ -1634,7 +1634,16 @@ values (
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'text/plain',
-    'text/csv'
+    'text/csv',
+    'audio/webm',
+    'audio/ogg',
+    'audio/mp4',
+    'audio/mpeg',
+    'audio/mp3',
+    'audio/aac',
+    'audio/wav',
+    'audio/x-m4a',
+    'audio/x-wav'
   ]::text[]
 )
 on conflict (id) do update

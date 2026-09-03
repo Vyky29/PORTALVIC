@@ -17,6 +17,7 @@ const ALLOWED_MIME = [
   "text/csv",
 ];
 const MAX_FILE = 15 * 1024 * 1024;
+const MAX_VOICE_MS = 180000;
 
 const state = {
   me: null,
@@ -32,6 +33,14 @@ const state = {
   remoteStream: null,
   call: null,
   pendingFile: null,
+  recording: false,
+  mediaRecorder: null,
+  recordChunks: [],
+  recordTimer: null,
+  recordStarted: 0,
+  recordStream: null,
+  voiceStopping: false,
+  recordSend: false,
 };
 
 function $(id) {
@@ -122,13 +131,40 @@ function itemByConversation(id) {
   return (state.inbox.items || []).find((it) => String(it.conversation_id) === String(id));
 }
 
+function recencyTs(it) {
+  const at = it && it.last && it.last.at;
+  const t = at ? Date.parse(at) : 0;
+  return Number.isFinite(t) ? t : 0;
+}
+
+function byRecentThenName(a, b) {
+  const d = recencyTs(b) - recencyTs(a);
+  if (d) return d;
+  return String(commsStaffLabel(a.display_name) || "").localeCompare(
+    String(commsStaffLabel(b.display_name) || ""),
+    "en",
+    { sensitivity: "base" }
+  );
+}
+
+function inboxPreview(it) {
+  const last = it && it.last;
+  if (!last) return "No messages";
+  const t = String(last.type || "");
+  if (t === "audio") return "Voice note";
+  if (t === "image") return "Photo";
+  if (t === "call") return last.body || "Call";
+  if (t === "file") return last.body || last.file_name || "File";
+  return last.body || "No messages";
+}
+
 function renderInbox() {
   const direct = $("commsListDirect");
   const groups = $("commsListGroups");
   if (!direct || !groups) return;
   const items = state.inbox.items || [];
-  const d = items.filter((it) => it.kind === "admin_staff");
-  const g = items.filter((it) => it.kind === "group");
+  const d = items.filter((it) => it.kind === "admin_staff").slice().sort(byRecentThenName);
+  const g = items.filter((it) => it.kind === "group").slice().sort(byRecentThenName);
   $("commsKickerDirect").textContent = state.mode === "administration" ? "Workers" : "My messages";
   direct.innerHTML = d.length
     ? d.map((it) => inboxRow(it)).join("")
@@ -140,7 +176,7 @@ function renderInbox() {
 
 function inboxRow(it) {
   const on = state.open && String(state.open.conversation_id) === String(it.conversation_id) ? " is-on" : "";
-  const last = it.last && it.last.body ? it.last.body : "No messages";
+  const last = inboxPreview(it);
   const unread = Number(it.unread) || 0;
   const closed = it.status === "CLOSED" ? " (closed)" : "";
   return (
@@ -177,6 +213,11 @@ function bubbleHtml(m) {
       '" href="#"><img alt="" data-file-img="' +
       esc(m.storage_path) +
       '" /></a>';
+  } else if (m.message_type === "audio" && m.storage_path) {
+    body =
+      '<audio class="comms-audio" controls preload="metadata" data-file="' +
+      esc(m.storage_path) +
+      '"></audio>';
   } else if (m.message_type === "file" && m.storage_path) {
     body =
       '<a class="comms-file" data-file="' +
@@ -260,11 +301,15 @@ async function hydrateFiles(root) {
     try {
       const { data } = await c.storage.from("communication-files").createSignedUrl(path, 3600);
       if (data && data.signedUrl) {
-        a.href = data.signedUrl;
-        a.target = "_blank";
-        a.rel = "noopener";
-        const img = a.querySelector("[data-file-img]");
-        if (img) img.src = data.signedUrl;
+        if (a.tagName === "AUDIO") {
+          a.src = data.signedUrl;
+        } else {
+          a.href = data.signedUrl;
+          a.target = "_blank";
+          a.rel = "noopener";
+          const img = a.querySelector("[data-file-img]");
+          if (img) img.src = data.signedUrl;
+        }
       }
     } catch (_e) {}
   }
@@ -278,6 +323,7 @@ async function loadInbox() {
 
 async function openConversation(id, extra, opts) {
   const silent = !!(opts && opts.silent);
+  if (!silent && state.recording) await stopVoice(false);
   const it = itemByConversation(id) || extra || { conversation_id: id };
   state.open = it;
   state.messages = [];
@@ -309,6 +355,169 @@ async function openConversation(id, extra, opts) {
   renderInbox();
 }
 
+function mimeAllowed(mime) {
+  const m = String(mime || "")
+    .toLowerCase()
+    .split(";")[0]
+    .trim();
+  if (!m) return false;
+  if (m.startsWith("image/") || m.startsWith("audio/")) return true;
+  return ALLOWED_MIME.indexOf(m) !== -1;
+}
+
+function messageTypeForMime(mime) {
+  const m = String(mime || "").toLowerCase();
+  if (m.startsWith("image/")) return "image";
+  if (m.startsWith("audio/")) return "audio";
+  return "file";
+}
+
+function fmtVoiceClock(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const mm = String(Math.floor(s / 60)).padStart(1, "0");
+  const ss = String(s % 60).padStart(2, "0");
+  return mm + ":" + ss;
+}
+
+function setRecordUi(on) {
+  const btn = $("commsRecordBtn");
+  const status = $("commsRecordStatus");
+  const form = $("commsComposer");
+  if (btn) {
+    btn.classList.toggle("is-on", !!on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.setAttribute("aria-label", on ? "Stop and send voice note" : "Record voice note");
+  }
+  if (form) form.classList.toggle("is-recording", !!on);
+  if (status) {
+    status.hidden = !on;
+    if (!on) status.textContent = "";
+  }
+}
+
+function stopVoiceTracks() {
+  try {
+    if (state.recordStream) state.recordStream.getTracks().forEach((t) => t.stop());
+  } catch (_e) {}
+  state.recordStream = null;
+  if (state.recordTimer) {
+    window.clearInterval(state.recordTimer);
+    state.recordTimer = null;
+  }
+}
+
+function pickRecorderMime() {
+  if (typeof MediaRecorder === "undefined") return "";
+  const opts = ["audio/mp4", "audio/ogg;codecs=opus", "audio/webm;codecs=opus", "audio/webm"];
+  for (let i = 0; i < opts.length; i++) {
+    try {
+      if (MediaRecorder.isTypeSupported(opts[i])) return opts[i];
+    } catch (_e) {}
+  }
+  return "";
+}
+
+function voiceExt(mime) {
+  const m = String(mime || "").toLowerCase();
+  if (m.indexOf("ogg") >= 0) return "ogg";
+  if (m.indexOf("mp4") >= 0 || m.indexOf("m4a") >= 0 || m.indexOf("aac") >= 0) return "m4a";
+  if (m.indexOf("mpeg") >= 0 || m.indexOf("mp3") >= 0) return "mp3";
+  return "webm";
+}
+
+async function finishVoiceBlob(blob, mime) {
+  if (!blob || blob.size < 800) return;
+  const base = String(mime || blob.type || "audio/webm")
+    .split(";")[0]
+    .trim();
+  const file = new File([blob], "voice-note." + voiceExt(base), { type: base || "audio/webm" });
+  state.pendingFile = file;
+  await sendMessage();
+}
+
+async function stopVoice(sendIt) {
+  if (state.voiceStopping) return;
+  if (!state.recording && !state.mediaRecorder) return;
+  state.voiceStopping = true;
+  state.recordSend = !!sendIt;
+  const rec = state.mediaRecorder;
+  state.recording = false;
+  setRecordUi(false);
+  try {
+    if (rec && rec.state !== "inactive") rec.stop();
+    else {
+      stopVoiceTracks();
+      state.mediaRecorder = null;
+      state.voiceStopping = false;
+    }
+  } catch (_e) {
+    stopVoiceTracks();
+    state.mediaRecorder = null;
+    state.voiceStopping = false;
+  }
+}
+
+async function startVoice() {
+  if (state.call) {
+    window.alert("Finish the call before recording a voice note.");
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined") {
+    window.alert("Voice notes are not supported on this device.");
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mime = pickRecorderMime();
+    state.recordChunks = [];
+    state.recordStream = stream;
+    state.mediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    state.recording = true;
+    state.recordSend = true;
+    state.voiceStopping = false;
+    state.recordStarted = Date.now();
+    setRecordUi(true);
+    const status = $("commsRecordStatus");
+    if (status) status.textContent = "Recording 0:00 - tap the mic to send";
+    state.recordTimer = window.setInterval(function () {
+      const elapsed = Date.now() - state.recordStarted;
+      if (status) status.textContent = "Recording " + fmtVoiceClock(elapsed) + " - tap the mic to send";
+      if (elapsed >= MAX_VOICE_MS) void stopVoice(true);
+    }, 250);
+    state.mediaRecorder.ondataavailable = function (ev) {
+      if (ev.data && ev.data.size) state.recordChunks.push(ev.data);
+    };
+    state.mediaRecorder.onstop = function () {
+      const chunks = state.recordChunks.slice();
+      const recMime = (state.mediaRecorder && state.mediaRecorder.mimeType) || mime || "audio/webm";
+      const elapsed = Date.now() - state.recordStarted;
+      const shouldSend = state.recordSend;
+      stopVoiceTracks();
+      state.mediaRecorder = null;
+      state.recordChunks = [];
+      state.recording = false;
+      state.voiceStopping = false;
+      setRecordUi(false);
+      if (!shouldSend || elapsed < 400 || !chunks.length) return;
+      const blob = new Blob(chunks, { type: recMime.split(";")[0] || "audio/webm" });
+      void finishVoiceBlob(blob, recMime);
+    };
+    state.mediaRecorder.start();
+  } catch (_e) {
+    stopVoiceTracks();
+    state.recording = false;
+    setRecordUi(false);
+    window.alert("Microphone permission is needed for voice notes.");
+  }
+}
+
+async function toggleVoice() {
+  if (state.recording) {
+    await stopVoice(true);
+    return;
+  }
+  await startVoice();
+}
 async function sendMessage(ev) {
   if (ev) ev.preventDefault();
   if (!state.open) return;
@@ -324,11 +533,13 @@ async function sendMessage(ev) {
     let size = null;
     if (file) {
       if (file.size > MAX_FILE) throw new Error("File is larger than 15 MB.");
-      mime = file.type || "application/octet-stream";
-      if (ALLOWED_MIME.indexOf(mime) === -1 && !String(mime).startsWith("image/")) {
+      mime = String(file.type || "application/octet-stream")
+        .split(";")[0]
+        .trim();
+      if (!mimeAllowed(mime)) {
         throw new Error("This file type is not allowed.");
       }
-      type = String(mime).startsWith("image/") ? "image" : "file";
+      type = messageTypeForMime(mime);
       const safe = String(file.name || "file").replace(/[^\w.\-]+/g, "_");
       path = state.open.conversation_id + "/" + crypto.randomUUID() + "_" + safe;
       const up = await client().storage.from("communication-files").upload(path, file, {
@@ -341,7 +552,7 @@ async function sendMessage(ev) {
     }
     await rpc("communication_send_message", {
       p_conversation_id: state.open.conversation_id,
-      p_body: body || name,
+      p_body: body || (type === "audio" ? "Voice note" : name),
       p_sender_context: state.mode === "administration" ? "ADMINISTRATION" : "PERSONAL",
       p_message_type: type,
       p_storage_path: path,
@@ -807,6 +1018,9 @@ function bindUi() {
   });
   $("commsAttachBtn").addEventListener("click", function () {
     $("commsFile").click();
+  });
+  $("commsRecordBtn").addEventListener("click", function () {
+    void toggleVoice();
   });
   $("commsFile").addEventListener("change", function () {
     const f = $("commsFile").files && $("commsFile").files[0];
