@@ -1,17 +1,17 @@
 /**
  * Programme lead — team on shift (Phase 1: Today strip + Quick menu).
- * Staff dashboard only (Michelle / John / Berta). No worker Term day-off reds.
+ * Staff dashboard: Michelle / John / Berta / Roberto + ops (Victor/Javi/Raul). No worker Term day-off reds.
  */
 import {
-  portalLeadProgrammeKey,
-  portalLeadSessionScopesForProfile,
+  portalLeadTeamViewerKey,
+  portalLeadTeamSessionScopesForProfile,
   portalLeadSlotInScope,
   portalLeadDayUsesProgrammeWideRoster,
   portalLeadProgrammeWideTodayForStaff,
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260903-sun6-john-berta";
+} from "./portal_lead_session_scope.js?v=20260904-team-day-ops-roberto";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -114,7 +114,7 @@ function staffRoleTrack(staffKey) {
 
 function teamMemberChipRole(staffKey) {
   const k = normKey(staffKey);
-  if (k === "john" || k === "berta" || k === "michelle") return "support-lead";
+  if (k === "john" || k === "berta" || k === "michelle" || k === "roberto") return "support-lead";
   const track = staffRoleTrack(k);
   if (track === "swimming") return "swim-instructor";
   if (track === "support" || track === "support_lead") return "support-worker";
@@ -148,11 +148,22 @@ function portalLeadTeamDayKind(ctx, iso) {
   if (!ctx || !iso) return "";
   const wd = weekdayFromIso(iso);
   const leadKey = ctx.leadKey;
+  if (leadKey === "ops") {
+    for (let i = 0; i < ctx.scopes.length; i++) {
+      const sc = ctx.scopes[i];
+      if (sc.weekdays && sc.weekdays.indexOf(wd) >= 0 && (sc.leadTeamBanner || sc.programmeWideRoster)) {
+        return "ops_club_all";
+      }
+    }
+    return "";
+  }
   for (let i = 0; i < ctx.scopes.length; i++) {
     const sc = ctx.scopes[i];
     if (!sc.weekdays || sc.weekdays.indexOf(wd) < 0) continue;
     const isMulti = sc.serviceKeys && sc.serviceKeys.indexOf("multi") >= 0;
     const isBespoke = sc.serviceKeys && sc.serviceKeys.indexOf("bespoke") >= 0;
+    const isDayCentre = sc.serviceKeys && sc.serviceKeys.indexOf("daycentre") >= 0;
+    const isAquatic = sc.serviceKeys && sc.serviceKeys.indexOf("aquatic") >= 0;
     const venues = sc.venues || [];
     const swimfarm = venues.some(function (v) {
       return normKey(v).indexOf("swimfarm") >= 0;
@@ -170,10 +181,15 @@ function portalLeadTeamDayKind(ctx, iso) {
     if (
       leadKey === "michelle" &&
       (sc.leadTeamBanner || sc.programmeWideRoster) &&
-      sc.serviceKeys &&
-      sc.serviceKeys.indexOf("daycentre") >= 0
+      isDayCentre
     ) {
       return "michelle_day_centre";
+    }
+    if (leadKey === "roberto" && (sc.leadTeamBanner || sc.programmeWideRoster) && isDayCentre && wd === "Thursday") {
+      return "roberto_thu_dc";
+    }
+    if (leadKey === "roberto" && (sc.leadTeamBanner || sc.programmeWideRoster) && isAquatic && swimfarm && wd === "Sunday") {
+      return "roberto_sun_pool";
     }
   }
   return "";
@@ -292,6 +308,24 @@ function sortTeamMemberKeys(keys, roleOverrides) {
   });
 }
 
+function filterOpsClubTeam(keys) {
+  return dedupeKeys(
+    (keys || []).filter(function (k) {
+      return k && k !== "ops" && k !== "victor" && k !== "raul" && k !== "javi";
+    })
+  );
+}
+
+function filterRobertoThuDcTeam(keys) {
+  return dedupeKeys(
+    (keys || []).filter(function (k) {
+      if (!k || k === "roberto") return false;
+      if (k === "michelle") return true;
+      return !PROGRAMME_LEAD_KEYS.has(k);
+    })
+  );
+}
+
 function applyTeamDayFilter(keys, dayKind, leadKey, iso) {
   if (dayKind === "sunday_ma_swimfarm") return filterSundayMaTeam(keys, leadKey);
   if (dayKind === "john_bespoke_mw" || dayKind === "john_bespoke_mwf") {
@@ -300,6 +334,9 @@ function applyTeamDayFilter(keys, dayKind, leadKey, iso) {
   if (dayKind === "john_wed_acton_ma") return filterJohnWedActonTeam(keys);
   if (dayKind === "berta_wed_acton_ma") return filterBertaWedTeam(keys);
   if (dayKind === "michelle_day_centre") return filterProgrammeWideTeam(keys, leadKey);
+  if (dayKind === "roberto_thu_dc") return filterRobertoThuDcTeam(keys);
+  if (dayKind === "roberto_sun_pool") return filterProgrammeWideTeam(keys, leadKey);
+  if (dayKind === "ops_club_all") return filterOpsClubTeam(keys);
   return keys.slice();
 }
 
@@ -536,9 +573,9 @@ function todayIsoYmd() {
 
 export function portalLeadTeamShiftContext() {
   const { profile, email } = portalAuthContext();
-  const leadKey = portalLeadProgrammeKey(profile, email);
+  const leadKey = portalLeadTeamViewerKey(profile, email);
   if (!leadKey) return null;
-  const scopes = portalLeadSessionScopesForProfile(profile, email);
+  const scopes = portalLeadTeamSessionScopesForProfile(profile, email);
   if (!scopes.length) return null;
   return { profile, email, leadKey, scopes };
 }
@@ -566,6 +603,8 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
     ) {
       return true;
     }
+    if (dayKind === "roberto_thu_dc" && k === "michelle") return true;
+    if (dayKind === "ops_club_all") return true;
     return !PROGRAMME_LEAD_KEYS.has(k);
   });
   /* Seed expected Hub Multi support when standing rows did not resolve yet (Berta is Sunday Lead). */

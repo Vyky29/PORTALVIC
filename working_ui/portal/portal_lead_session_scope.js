@@ -6,6 +6,15 @@ import { resolveStaffKeyFromAuthEmail } from "./auth-map.js";
 
 const LEAD_OVERVIEW_KEYS = new Set(["berta", "john", "michelle"]);
 
+/** Team-of-the-day viewers who are not programme Session Overview leads. */
+const TEAM_VIEWER_OPS_KEYS = new Set(["victor", "raul", "javi"]);
+const TEAM_VIEWER_OPS_EMAILS = new Set([
+  "victor@clubsensational.org",
+  "raul@clubsensational.org",
+  "javi@clubsensational.org",
+  "javier@clubsensational.org",
+]);
+
 /** Auth email → programme lead key (wins over staff_profiles.username e.g. stf012). */
 const LEAD_PROGRAMME_EMAIL_TO_KEY = {
   "johnnyosti37@gmail.com": "john",
@@ -58,6 +67,37 @@ export function portalLeadProgrammeKey(profile, authEmail) {
   return LEAD_OVERVIEW_KEYS.has(inferred) ? inferred : "";
 }
 
+/**
+ * Team-of-the-Day strip viewer key (programme leads + Roberto + ops).
+ * Does not grant Session Overview — use portalLeadProgrammeKey for that.
+ * @returns {"john"|"berta"|"michelle"|"roberto"|"ops"|""}
+ */
+export function portalLeadTeamViewerKey(profile, authEmail) {
+  const prog = portalLeadProgrammeKey(profile, authEmail);
+  if (prog) return prog;
+  const em = portalLeadNormalizeAuthEmail(authEmail);
+  if (em && TEAM_VIEWER_OPS_EMAILS.has(em)) return "ops";
+  const staffKeyFromEmail = resolveStaffKeyFromAuthEmail(em);
+  if (staffKeyFromEmail === "roberto") return "roberto";
+  if (TEAM_VIEWER_OPS_KEYS.has(staffKeyFromEmail)) return "ops";
+  const usernameKey = normKey(profile && profile.username);
+  if (usernameKey === "roberto" || usernameKey === "stf002") return "roberto";
+  if (TEAM_VIEWER_OPS_KEYS.has(usernameKey)) return "ops";
+  const firstNameKey = normKey(
+    String((profile && profile.full_name) || "")
+      .trim()
+      .split(/\s+/)[0]
+  );
+  if (firstNameKey === "roberto") return "roberto";
+  if (TEAM_VIEWER_OPS_KEYS.has(firstNameKey)) return "ops";
+  const fullNameKey = normKey(profile && profile.full_name);
+  if (fullNameKey.indexOf("roberto") >= 0) return "roberto";
+  const inferred = portalInferStaffKey(profile, authEmail);
+  if (inferred === "roberto") return "roberto";
+  if (TEAM_VIEWER_OPS_KEYS.has(inferred)) return "ops";
+  return "";
+}
+
 const JOHN_SCOPES = [
   {
     id: "bespoke-mw",
@@ -73,9 +113,9 @@ const JOHN_SCOPES = [
 const MICHELLE_SCOPES = [
   {
     id: "day-centre-all",
-    label: "Day Centre — all programme days",
-    /* Day Centre is Mon–Fri only — weekend scopes freeze/slow Michelle's PWA lead paths. */
-    weekdays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    label: "Day Centre — Mon to Thu",
+    /* Team of the Day: Michelle Mon–Thu (not Friday). */
+    weekdays: ["Monday", "Tuesday", "Wednesday", "Thursday"],
     serviceKeys: ["daycentre"],
     programmeWideRoster: true,
     leadTeamBanner: true,
@@ -104,6 +144,40 @@ const BERTA_SCOPES = [
   },
 ];
 
+/** Roberto: Thu Day Centre + Sunday pool (SwimFarm). Not Session Overview. */
+const ROBERTO_SCOPES = [
+  {
+    id: "thu-day-centre",
+    label: "Thursday — Day Centre",
+    weekdays: ["Thursday"],
+    serviceKeys: ["daycentre"],
+    programmeWideRoster: true,
+    leadTeamBanner: true,
+  },
+  {
+    id: "sunday-pool-swimfarm",
+    label: "Sunday — Pool (SwimFarm)",
+    weekdays: ["Sunday"],
+    serviceKeys: ["aquatic"],
+    venues: ["swimfarm"],
+    programmeWideRoster: true,
+    leadTeamBanner: true,
+  },
+];
+
+/** Victor / Javi / Raul: Team of the Day every calendar day (viewer only). */
+const OPS_TEAM_SCOPES = [
+  {
+    id: "ops-club-all-days",
+    label: "Club — Team of the Day",
+    weekdays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    serviceKeys: [],
+    includeAllServices: true,
+    programmeWideRoster: true,
+    leadTeamBanner: true,
+  },
+];
+
 function normKey(v) {
   return String(v || "")
     .trim()
@@ -127,9 +201,19 @@ function isDayCentreService(serviceRaw) {
   return normService(serviceRaw) === "daycentre";
 }
 
-function serviceExcludedForLeadOverview(serviceRaw) {
+function serviceExcludedForLeadOverview(serviceRaw, scopes) {
   const sk = normService(serviceRaw);
-  return sk === "climbing" || sk === "aquatic";
+  if (sk !== "climbing" && sk !== "aquatic") return false;
+  if (
+    Array.isArray(scopes) &&
+    scopes.some(function (sc) {
+      if (sc && sc.includeAllServices === true) return true;
+      return Array.isArray(sc.serviceKeys) && sc.serviceKeys.indexOf(sk) >= 0;
+    })
+  ) {
+    return false;
+  }
+  return true;
 }
 
 function normVenue(v) {
@@ -207,6 +291,17 @@ export function portalLeadSessionScopesForProfile(profile, authEmail) {
   if (key === "john") return JOHN_SCOPES.slice();
   if (key === "berta") return BERTA_SCOPES.slice();
   if (key === "michelle") return MICHELLE_SCOPES.slice();
+  return [];
+}
+
+/** Scopes for Team of the Day strip (includes Roberto + ops viewers). */
+export function portalLeadTeamSessionScopesForProfile(profile, authEmail) {
+  const key = portalLeadTeamViewerKey(profile, authEmail);
+  if (key === "john") return JOHN_SCOPES.slice();
+  if (key === "berta") return BERTA_SCOPES.slice();
+  if (key === "michelle") return MICHELLE_SCOPES.slice();
+  if (key === "roberto") return ROBERTO_SCOPES.slice();
+  if (key === "ops") return OPS_TEAM_SCOPES.slice();
   return [];
 }
 
@@ -307,7 +402,7 @@ export function portalLeadSlotHasLeadInstructor(slot, leadProfileKey) {
 /** Roster slot object from AdminSessionsHub.expandSlotsForDate */
 export function portalLeadSlotInScope(slot, scopes) {
   if (!slot || !scopes || !scopes.length) return false;
-  if (serviceExcludedForLeadOverview(slot.service)) return false;
+  if (serviceExcludedForLeadOverview(slot.service, scopes)) return false;
   const iso = String(slot.iso || slot.session_date || "").slice(0, 10);
   return scopesMatchRow(scopes, iso, slot.service, slot.venue);
 }
@@ -319,7 +414,7 @@ export function portalLeadSlotInScopeForLead(slot, scopes, leadProfileKey) {
 
 export function portalLeadFeedbackInScope(fb, scopes) {
   if (!fb || !scopes || !scopes.length) return false;
-  if (serviceExcludedForLeadOverview(fb.service)) return false;
+  if (serviceExcludedForLeadOverview(fb.service, scopes)) return false;
   const iso = String(fb.session_date || fb.date || "").trim().slice(0, 10);
   const venue = portalLeadInferFeedbackVenue(fb);
   return scopesMatchRow(scopes, iso, fb.service, venue, { allowEmptyVenue: true });
@@ -339,7 +434,7 @@ export function portalLeadReportInScope(report, scopes) {
 /** Quick absent marks — same weekday/service/venue rules as feedback rows. */
 export function portalLeadAbsentMarkInScope(mark, scopes) {
   if (!mark || !scopes || !scopes.length) return false;
-  if (serviceExcludedForLeadOverview(mark.service)) return false;
+  if (serviceExcludedForLeadOverview(mark.service, scopes)) return false;
   const iso = String(mark.session_date || "")
     .trim()
     .slice(0, 10);
@@ -361,7 +456,7 @@ export function portalLeadSessionScopeFilterFns(scopes, leadProfileKey) {
       return portalLeadSlotInScopeForLead(slot, scopes, leadKey);
     },
     feedbackRowScopeFilter: function (fb) {
-      if (serviceExcludedForLeadOverview(fb.service)) return false;
+      if (serviceExcludedForLeadOverview(fb.service, scopes)) return false;
       return portalLeadFeedbackInScope(fb, scopes);
     },
     absentMarkScopeFilter: function (mark) {
@@ -599,6 +694,9 @@ export function portalLeadProgrammeLeadWorkingOnIso(leadKey, iso, scopes) {
     .trim()
     .slice(0, 10);
   if (!lk || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  /* Ops / Roberto team-banner days: show Team of the Day without fixed-session gate (Javi covers). */
+  if (lk === "ops") return portalLeadDayIsProgrammeWorkDay(day, scopes);
+  if (lk === "roberto" && portalLeadDayIsProgrammeWorkDay(day, scopes)) return true;
   try {
     const g = typeof globalThis !== "undefined" ? globalThis : null;
     if (g && typeof g.portalStaffHasShiftOnCalendarDate === "function") {
