@@ -16,7 +16,7 @@
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp",
-      "/portal/portal_roster_canonical.js?v=20260903-john-sun6-emanuel",
+      "/portal/portal_roster_canonical.js?v=20260903-berta-sun-team",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
     "/portal/portal_madre_fold.js?v=20260902-luliya-instr",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
@@ -45,7 +45,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260713-team-avatars",
+    "/portal/portal_lead_team_shift.js?v=20260903-berta-sun-team",
   ];
 
   var TIER_IDLE = [

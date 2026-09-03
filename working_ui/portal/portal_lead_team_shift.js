@@ -207,14 +207,14 @@ function filterProgrammeWideTeam(keys, leadKey) {
 }
 
 function filterSundayMaTeam(keys, leadKey) {
-  let pool = excludePeerProgrammeLead(keys, leadKey);
-  // Show everyone actually on shift in scope — do NOT force a fixed
-  // 2-support/3-swim shape. Cover instructors can come from any track (e.g. a
-  // support-track worker covering a swim lane), so slicing by role would drop
-  // them and leave the team strip short of the full team for the day.
+  // Do not strip John via excludePeerProgrammeLead — on Sundays he is support
+  // when present (e.g. 6 Sep covering Emanuel), not a peer programme lead.
   return dedupeKeys(
-    pool.filter(function (k) {
-      return k !== leadKey && !PROGRAMME_LEAD_KEYS.has(k);
+    (keys || []).filter(function (k) {
+      if (!k || k === leadKey) return false;
+      if (k === "john" && leadKey === "berta") return true;
+      if (k === "berta" && leadKey === "john") return true;
+      return !PROGRAMME_LEAD_KEYS.has(k);
     })
   );
 }

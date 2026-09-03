@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 34;
+  var SOURCE_VERSION = 35;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -627,8 +627,9 @@
    * Autumn Sunday Hub rota:
    * - Bismark → Godsway
    * - Giuseppe → Emanuel (standing)
-   * - John → Berta (John only works Sun Multi on 2026-09-06 covering Emanuel's book)
-   * Sun 6 only: Emanuel → John (+ Youssef support); Emanuel off that day.
+   * - "JOHN, BERTA" dual labels → BERTA (Berta owns that Hub book; John off Sundays
+   *   except 2026-09-06 when he covers Emanuel's book with Youssef)
+   * Sun 6 only: Emanuel → John, Youssef
    */
   function remapAutumnMultiInstructors(instructorsRaw, sessionDateIso) {
     var s = String(instructorsRaw || "").trim();
@@ -637,17 +638,21 @@
       .replace(/\bBISMARK\b/gi, "GODSWAY")
       .replace(/\bBISMARCK\b/gi, "GODSWAY")
       .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
-      /* Standing: former John Hub Multi book → Berta (manager). */
-      .replace(/\bJOHN\b/gi, "BERTA");
+      /* Dual lead/support label from summer snaps — Berta keeps the book. */
+      .replace(/\bJOHN\s*,\s*BERTA\b/gi, "BERTA")
+      .replace(/\bBERTA\s*,\s*JOHN\b/gi, "BERTA");
     var iso = String(sessionDateIso || "").trim().slice(0, 10);
     if (iso === "2026-09-06") {
-      /* Emanuel off · John takes that book; Youssef @ £24 support same Hub Multis. */
-      mapped = mapped
-        .replace(/\bEMANUEL\b/gi, "JOHN")
-        .replace(/\bJOHN\b/gi, "JOHN, YOUSSEF");
-      /* Avoid doubling if already JOHN, YOUSSEF from a prior pass. */
-      mapped = mapped.replace(/\bJOHN,\s*YOUSSEF,\s*YOUSSEF\b/gi, "JOHN, YOUSSEF");
+      /* Emanuel off · John + Youssef take that Hub Multi book only. */
+      mapped = mapped.replace(/\bEMANUEL\b/gi, "JOHN, YOUSSEF");
+      /* Lone JOHN on Berta's former book → BERTA (do not touch JOHN, YOUSSEF). */
+      mapped = mapped.replace(/\bJOHN\b(?!\s*,\s*YOUSSEF)/gi, "BERTA");
+    } else {
+      mapped = mapped.replace(/\bJOHN\b/gi, "BERTA");
     }
+    mapped = mapped
+      .replace(/\bBERTA\s*,\s*BERTA\b/gi, "BERTA")
+      .replace(/\bJOHN\s*,\s*YOUSSEF\s*,\s*YOUSSEF\b/gi, "JOHN, YOUSSEF");
     return mapped;
   }
 
