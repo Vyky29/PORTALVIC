@@ -1621,8 +1621,16 @@
       const sundayPool = portalCorrectSundaySwimFarmPoolArea(s, viewDay);
       if(sundayPool && (!a || /^teaching pool$/i.test(a))) a = sundayPool;
       if(!a){
-        if(supportWorkerMode) return '';
-        a = String(activity || '').trim();
+        const svc = String(activity || (s && (s.rosterService || s.activity || s.service)) || '').trim();
+        const ven = String((s && s.venue) || '').trim();
+        /* SwimFarm Multi-Activity is always Hub Room — keep note even when admin overrides omit area. */
+        if(/multi[\s-]*activity/i.test(svc) && /swimfarm/i.test(ven)){
+          a = 'Hub Room';
+        } else if(supportWorkerMode){
+          return '';
+        } else {
+          a = svc;
+        }
       }
       if(typeof portalApplySessionAreaNoteOverrides === 'function'){
         const overridden = portalApplySessionAreaNoteOverrides({

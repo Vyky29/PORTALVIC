@@ -429,6 +429,11 @@
       if(portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through)) return false;
       return w === String(s.day || '').trim();
     }
+    try{
+      if(typeof window !== 'undefined'){
+        window.portalSessionSpreadsheetRowMatchesCalendarDate = portalSessionSpreadsheetRowMatchesCalendarDate;
+      }
+    }catch(_){}
     function portalScheduleOverrideFetchIsoList(opts){
       opts = opts || {};
       const out = [];

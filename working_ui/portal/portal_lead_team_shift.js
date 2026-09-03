@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260719-michelle-dc-weekdays";
+} from "./portal_lead_session_scope.js?v=20260903-john-bespoke-mw";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -80,16 +80,21 @@ function rosterSource() {
   }
 }
 
-/** Same dated sunday overrides as staff_dashboard_spreadsheet_adapter (e.g. BISMARK → JAVI). */
-function resolveInstructorsForSessionDate(instructorsRaw, sessionDate, source) {
-  const raw = String(instructorsRaw || "").trim();
+/** Sunday dated overrides + Autumn calendar remaps (e.g. Mon early Sep Emanuel → Raul). */
+function resolveInstructorsForSessionDate(instructorsRaw, sessionDate, source, meta) {
+  let out = String(instructorsRaw || "").trim();
   const iso = String(sessionDate || "").trim().slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return raw;
+  try {
+    const canon = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
+    if (canon && typeof canon.resolveAutumnInstructorsForCalendarDate === "function") {
+      out = canon.resolveAutumnInstructorsForCalendarDate(out, iso, meta || {});
+    }
+  } catch (_) {}
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return out;
   const overrides = source && source.sundayDateOverrides ? source.sundayDateOverrides : null;
   const day = overrides && overrides[iso] ? overrides[iso] : null;
   const map = day && day.replaceInstructor ? day.replaceInstructor : null;
-  if (!map) return raw;
-  let out = raw;
+  if (!map) return out;
   Object.keys(map).forEach(function (fromKey) {
     const to = String(map[fromKey] || "").trim();
     if (!fromKey || !to) return;
@@ -123,7 +128,10 @@ function teamMemberChipRoleForDay(staffKey, roleOverrides) {
 }
 
 function resolvedInstructorsForRow(row, iso, source) {
-  return resolveInstructorsForSessionDate(row && row.instructors, iso, source || rosterSource());
+  return resolveInstructorsForSessionDate(row && row.instructors, iso, source || rosterSource(), {
+    service: row && row.service,
+    day: row && row.day,
+  });
 }
 
 function staffOnInScopeRosterRow(staffKey, row, iso, scopes, source) {
@@ -156,11 +164,8 @@ function portalLeadTeamDayKind(ctx, iso) {
     if (wd === "Wednesday" && leadKey === "berta" && (sc.leadTeamBanner || sc.programmeWideRoster) && isMulti && acton) {
       return "berta_wed_acton_ma";
     }
-    if (wd === "Wednesday" && leadKey === "john" && (sc.leadTeamBanner || sc.programmeWideRoster) && acton && (isMulti || sc.serviceKeys.indexOf("aquatic") >= 0)) {
-      return "john_wed_acton_ma";
-    }
-    if (leadKey === "john" && isBespoke && swimfarm && (wd === "Monday" || wd === "Friday")) {
-      return "john_bespoke_mwf";
+    if (leadKey === "john" && isBespoke && swimfarm && (wd === "Monday" || wd === "Wednesday")) {
+      return "john_bespoke_mw";
     }
     if (
       leadKey === "michelle" &&
@@ -219,13 +224,29 @@ function filterSundayMaTeam(keys, leadKey) {
   );
 }
 
-function filterJohnBespokeTeam(keys) {
+/** Mon before 14 Sep: Godsway + Raul. Wed + Mon from 14 Sep: Godsway + Emanuel. */
+function filterJohnBespokeTeam(keys, iso) {
   const leadKey = "john";
-  let pool = excludePeerProgrammeLead(keys, leadKey);
-  const supportWorkers = pool.filter(function (k) {
-    return k !== leadKey && teamMemberChipRole(k) === "support-worker";
+  let pool = excludePeerProgrammeLead(keys, leadKey).filter(function (k) {
+    return k && k !== leadKey && !PROGRAMME_LEAD_KEYS.has(k);
   });
-  return dedupeKeys(supportWorkers.slice(0, 2));
+  const wd = weekdayFromIso(iso);
+  const earlyMonRaul = wd === "Monday" && iso && iso < "2026-09-14";
+  const prefer = earlyMonRaul ? ["godsway", "raul"] : ["godsway", "emanuel"];
+  const out = [];
+  prefer.forEach(function (w) {
+    if (pool.indexOf(w) >= 0 && out.indexOf(w) < 0) out.push(w);
+  });
+  prefer.forEach(function (w) {
+    if (out.indexOf(w) < 0 && out.length < 2) out.push(w);
+  });
+  pool.forEach(function (k) {
+    if (out.length >= 2) return;
+    if (out.indexOf(k) >= 0) return;
+    const role = teamMemberChipRole(k);
+    if (role === "support-worker" || k === "raul") out.push(k);
+  });
+  return dedupeKeys(out).slice(0, 2);
 }
 
 function filterBertaWedTeam(keys) {
@@ -273,9 +294,11 @@ function sortTeamMemberKeys(keys, roleOverrides) {
   });
 }
 
-function applyTeamDayFilter(keys, dayKind, leadKey) {
+function applyTeamDayFilter(keys, dayKind, leadKey, iso) {
   if (dayKind === "sunday_ma_swimfarm") return filterSundayMaTeam(keys, leadKey);
-  if (dayKind === "john_bespoke_mwf") return filterJohnBespokeTeam(keys);
+  if (dayKind === "john_bespoke_mw" || dayKind === "john_bespoke_mwf") {
+    return filterJohnBespokeTeam(keys, iso);
+  }
   if (dayKind === "john_wed_acton_ma") return filterJohnWedActonTeam(keys);
   if (dayKind === "berta_wed_acton_ma") return filterBertaWedTeam(keys);
   if (dayKind === "michelle_day_centre") return filterProgrammeWideTeam(keys, leadKey);
@@ -445,15 +468,27 @@ function rosterRowToSlot(row, iso) {
 
 function rosterRowMatchesIso(row, iso) {
   if (!row || !iso) return false;
+  const wd = weekdayFromIso(iso);
+  const rowIso = String(row.session_date || row.sessionDate || "").trim().slice(0, 10);
+  const rowDay = String(row.day || "").trim();
+  if (rowIso === iso) return true;
+  if (rowDay && wd && rowDay !== wd) return false;
+  /* Standing Services snaps (Jul week) project onto Autumn calendar weekdays. */
+  try {
+    const PRC = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
+    const map = PRC && PRC.DAY_CENTRE_STANDING_ISO;
+    if (map && wd) {
+      const snap = map[String(wd).toLowerCase()];
+      if (snap && rowIso === snap) return true;
+    }
+  } catch (_) {}
   try {
     if (typeof window !== "undefined" && typeof window.portalSessionSpreadsheetRowMatchesCalendarDate === "function") {
-      const wd = weekdayFromIso(iso);
       return window.portalSessionSpreadsheetRowMatchesCalendarDate(row, iso, wd);
     }
   } catch (_) {}
-  const rowIso = String(row.session_date || row.sessionDate || "").trim().slice(0, 10);
-  if (rowIso) return rowIso === iso;
-  return String(row.day || "").trim() === weekdayFromIso(iso);
+  if (!rowIso) return rowDay === wd;
+  return false;
 }
 
 function staffKeysFromInstructorLabel(label) {
@@ -523,7 +558,7 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   let memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
   memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
   const roleOverrides = coverChipRoleOverridesForIso(iso, ctx.scopes, src);
-  memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey);
+  memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey, iso);
   memberKeys = memberKeys.filter(function (k) {
     return k !== ctx.leadKey && !PROGRAMME_LEAD_KEYS.has(k);
   });

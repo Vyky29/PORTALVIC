@@ -330,17 +330,22 @@
     return v;
   }
 
-  /** Apply dated sunday overrides (e.g. BISMARK → JAVI cover on 2026-06-21). */
-  function resolveInstructorsForSessionDate(instructorsRaw, sessionDate, source) {
-    var raw = String(instructorsRaw || "").trim();
+  /** Apply dated sunday overrides + Autumn calendar remaps. */
+  function resolveInstructorsForSessionDate(instructorsRaw, sessionDate, source, meta) {
+    var out = String(instructorsRaw || "").trim();
     var iso = String(sessionDate || "").trim().slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return raw;
+    try {
+      var canon = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
+      if (canon && typeof canon.resolveAutumnInstructorsForCalendarDate === "function") {
+        out = canon.resolveAutumnInstructorsForCalendarDate(out, iso, meta || {});
+      }
+    } catch (_) {}
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return out;
     var overrides =
       source && source.sundayDateOverrides ? source.sundayDateOverrides : null;
     var day = overrides && overrides[iso] ? overrides[iso] : null;
     var map = day && day.replaceInstructor ? day.replaceInstructor : null;
-    if (!map) return raw;
-    var out = raw;
+    if (!map) return out;
     Object.keys(map).forEach(function (fromKey) {
       var to = String(map[fromKey] || "").trim();
       if (!fromKey || !to) return;
@@ -802,7 +807,8 @@
       const instructorsResolved = resolveInstructorsForSessionDate(
         row.instructors,
         sessionDate,
-        source
+        source,
+        { service: row.service, day: row.day }
       );
       const targets = instructorProfileKeysForRow(instructorsResolved, profiles);
       if (!targets.some((k) => normalizePersonId(k) === wanted)) return;

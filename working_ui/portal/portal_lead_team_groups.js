@@ -16,16 +16,9 @@
   };
 
   var JOHN_BESPOKE_SCOPE = {
-    weekdays: ["Monday", "Friday"],
+    weekdays: ["Monday", "Wednesday"],
     serviceKeys: ["bespoke"],
     venues: ["swimfarm"],
-  };
-
-  var JOHN_WED_ACTON_SCOPE = {
-    weekdays: ["Wednesday"],
-    serviceKeys: ["multi", "aquatic"],
-    venues: ["acton"],
-    programmeWideRoster: true,
   };
 
   var JOHN_SUNDAY_MA_SCOPE = {
@@ -57,13 +50,7 @@
         label: "Bespoke programme",
         scopes: [JOHN_BESPOKE_SCOPE],
         leadRosterKeys: ["john"],
-      },
-      {
-        slug: "lead_team_john_wed_acton",
-        label: "Wednesday Multi-Activity (Acton)",
-        scopes: [JOHN_WED_ACTON_SCOPE],
-        leadRosterKeys: ["john"],
-        staticRosterKeys: ["lulia", "javier", "youssef"],
+        staticRosterKeys: ["godsway", "emanuel", "raul"],
       },
       {
         slug: "lead_team_john_sunday_ma",

@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 35;
+  var SOURCE_VERSION = 36;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -623,37 +623,91 @@
     return /multi[\s-]*activity/i.test(String(service || ""));
   }
 
+  /** Sun 6 Sep 2026: Emanuel off — John + Youssef cover his Hub Multi book (dated so Today matches). */
+  var SEP6_2026_JOHN_HUB_MULTI = [
+    { client_name: "Zaid", time_slot: "9.30 to 10.15" },
+    { client_name: "Samer", time_slot: "10.15 to 11" },
+    { client_name: "Eiji", time_slot: "11 to 11.45" },
+    { client_name: "Hazem", time_slot: "11.45 to 12.30" },
+    { client_name: "Haneef", time_slot: "12.30 to 1.15" },
+    { client_name: "Rayyan F", time_slot: "1.15 to 2" },
+  ];
+
+  function autumnSundaySep6JohnHubMultiRows() {
+    return SEP6_2026_JOHN_HUB_MULTI.map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "JOHN, YOUSSEF",
+        service: "Multi-Activity",
+        area: "Hub Room",
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+  }
+
   /**
-   * Autumn Sunday Hub rota:
-   * - Bismark → Godsway
-   * - Giuseppe → Emanuel (standing)
-   * - "JOHN, BERTA" dual labels → BERTA (Berta owns that Hub book; John off Sundays
-   *   except 2026-09-06 when he covers Emanuel's book with Youssef)
-   * Sun 6 only: Emanuel → John, Youssef
+   * Autumn Sunday Hub Multi standing remaps (snap-date agnostic).
+   * Calendar-specific Sep 6 cover is applied in resolveAutumnInstructorsForCalendarDate.
    */
-  function remapAutumnMultiInstructors(instructorsRaw, sessionDateIso) {
+  function remapAutumnMultiInstructorsStanding(instructorsRaw) {
     var s = String(instructorsRaw || "").trim();
     if (!s) return s;
-    var mapped = s
+    return s
       .replace(/\bBISMARK\b/gi, "GODSWAY")
       .replace(/\bBISMARCK\b/gi, "GODSWAY")
       .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
-      /* Dual lead/support label from summer snaps — Berta keeps the book. */
       .replace(/\bJOHN\s*,\s*BERTA\b/gi, "BERTA")
-      .replace(/\bBERTA\s*,\s*JOHN\b/gi, "BERTA");
-    var iso = String(sessionDateIso || "").trim().slice(0, 10);
-    if (iso === "2026-09-06") {
-      /* Emanuel off · John + Youssef take that Hub Multi book only. */
-      mapped = mapped.replace(/\bEMANUEL\b/gi, "JOHN, YOUSSEF");
-      /* Lone JOHN on Berta's former book → BERTA (do not touch JOHN, YOUSSEF). */
-      mapped = mapped.replace(/\bJOHN\b(?!\s*,\s*YOUSSEF)/gi, "BERTA");
-    } else {
-      mapped = mapped.replace(/\bJOHN\b/gi, "BERTA");
+      .replace(/\bBERTA\s*,\s*JOHN\b/gi, "BERTA")
+      .replace(/\bJOHN\b/gi, "BERTA")
+      .replace(/\bBERTA\s*,\s*BERTA\b/gi, "BERTA");
+  }
+
+  /**
+   * Resolve instructors for a *calendar* day (Today / team strip).
+   * Standing Multi remaps are usually already on the row; this adds date-specific covers.
+   */
+  function resolveAutumnInstructorsForCalendarDate(instructorsRaw, calendarIso, meta) {
+    meta = meta || {};
+    var s = String(instructorsRaw || "").trim();
+    if (!s) return s;
+    var iso = String(calendarIso || "").trim().slice(0, 10);
+    var service = meta.service || "";
+    var day = normalizeDowKey(meta.day) || "";
+    if (!day && iso) {
+      try {
+        var dt = new Date(iso + "T12:00:00");
+        if (!isNaN(dt.getTime())) {
+          day = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
+            dt.getDay()
+          ];
+        }
+      } catch (_) {}
     }
-    mapped = mapped
-      .replace(/\bBERTA\s*,\s*BERTA\b/gi, "BERTA")
-      .replace(/\bJOHN\s*,\s*YOUSSEF\s*,\s*YOUSSEF\b/gi, "JOHN, YOUSSEF");
-    return mapped;
+    if (isMultiActivityService(service)) {
+      s = remapAutumnMultiInstructorsStanding(s);
+      if (iso === "2026-09-06") {
+        s = s
+          .replace(/\bEMANUEL\b/gi, "JOHN, YOUSSEF")
+          .replace(/\bJOHN\s*,\s*YOUSSEF\s*,\s*YOUSSEF\b/gi, "JOHN, YOUSSEF");
+      }
+    }
+    if (isBespokeService(service)) {
+      /* Mon 1–13 Sep: Emanuel not on Tinashe yet → Raul with Godsway + John. */
+      if (iso && iso >= "2026-09-01" && iso < "2026-09-14" && day === "monday") {
+        s = s.replace(/\bEMANUEL\b/gi, "RAUL");
+      }
+    }
+    return s;
+  }
+
+  /** @deprecated use resolveAutumnInstructorsForCalendarDate for calendar days */
+  function remapAutumnMultiInstructors(instructorsRaw, sessionDateIso) {
+    return resolveAutumnInstructorsForCalendarDate(instructorsRaw, sessionDateIso, {
+      service: "Multi-Activity",
+    });
   }
 
   /** Autumn Acton pool remaps for departed / cover staff. */
@@ -1199,7 +1253,7 @@
         return;
       }
       if (isMultiActivityService(r.service)) {
-        var mapped = remapAutumnMultiInstructors(r.instructors, d);
+        var mapped = remapAutumnMultiInstructorsStanding(r.instructors);
         if (mapped !== String(r.instructors || "").trim()) {
           out.push(Object.assign({}, r, { instructors: mapped }));
           return;
@@ -1239,6 +1293,9 @@
       out.push(Object.assign({}, row));
     });
     autumnSundayClimbingStandingRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    autumnSundaySep6JohnHubMultiRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     return out;
@@ -1342,6 +1399,9 @@
     applyAutumnStandingParticipantRows: applyAutumnStandingParticipantRows,
     resolveCanonicalRosterRows: resolveCanonicalRosterRows,
     resolveCanonicalStaffDashboardSource: resolveCanonicalStaffDashboardSource,
+    remapAutumnMultiInstructorsStanding: remapAutumnMultiInstructorsStanding,
+    resolveAutumnInstructorsForCalendarDate: resolveAutumnInstructorsForCalendarDate,
+    remapAutumnMultiInstructors: remapAutumnMultiInstructors,
     getCanonicalRosterMeta: getCanonicalRosterMeta,
     buildDayCentreStaffBoard: buildDayCentreStaffBoard,
     autumnDayCentreStandingRows: autumnDayCentreStandingRows,

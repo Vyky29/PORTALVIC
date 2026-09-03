@@ -60,20 +60,11 @@ export function portalLeadProgrammeKey(profile, authEmail) {
 
 const JOHN_SCOPES = [
   {
-    id: "bespoke-mwf",
-    label: "Mon / Fri — Bespoke Programme (SwimFarm)",
-    weekdays: ["Monday", "Friday"],
+    id: "bespoke-mw",
+    label: "Mon / Wed — Bespoke Programme (SwimFarm)",
+    weekdays: ["Monday", "Wednesday"],
     serviceKeys: ["bespoke"],
     venues: ["swimfarm"],
-    leadTeamBanner: true,
-  },
-  {
-    id: "wednesday-ma-acton",
-    label: "Wednesday — Multi-Activity (Acton)",
-    weekdays: ["Wednesday"],
-    serviceKeys: ["multi", "aquatic"],
-    venues: ["acton"],
-    /* Team banner lists who is on shift; Today cards stay lead-instructor / cover only. */
     leadTeamBanner: true,
   },
   {
