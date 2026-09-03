@@ -96,6 +96,20 @@
       min-width: 0;
       overflow: hidden;
     }
+    .card--cal {
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    .cal-host {
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .cal-host .dc-cal {
+      padding-left: 4px;
+      padding-right: 4px;
+    }
     .card h2 {
       margin: 0 0 8px;
       color: var(--ink);
@@ -211,7 +225,7 @@
     <section id="panel-weekly" class="card" role="tabpanel" aria-labelledby="tab-weekly">
       <h2>Weekly sessions</h2>
       <p>Standing after-school, weekend, and Hub times for Autumn 2026. Places are 1:1 or small group - see the booking portal for live availability.</p>
-      <p><span class="chip">After-school from Mon 7 Sep</span><span class="chip">Weekends from Sat 5 Sep</span><span class="chip">After-school closed 26-30 Oct</span></p>
+      <p><span class="chip">After-school from Mon 7 Sep</span><span class="chip">Weekends from Sat 5 Sep</span><span class="chip">Closed 24 Oct–1 Nov (half term + weekends)</span></p>
       <div class="grid-wrap">
         <table class="grid">
           <thead>
@@ -319,17 +333,19 @@
       </div>
     </section>
 
-    <section id="panel-dates" class="card" role="tabpanel" aria-labelledby="tab-dates" hidden>
+    <section id="panel-dates" class="card card--cal" role="tabpanel" aria-labelledby="tab-dates" hidden>
       <h2>Term dates 2026/27</h2>
-      <p class="note">Replaces the old September 2025 calendars on the website. Numbers shown are open days (Day Centre and/or after-school).</p>
-      <div id="calHost">Loading calendars…</div>
+      <p class="note">After-schools &amp; weekends, Day Centre, and crash courses — green = sessions running, red = closed.</p>
+      <div id="calHost" class="cal-host">Loading calendars…</div>
     </section>
   </main>
+  <script src="/portal/portal_calendar_2026_27.js?v=20260903-tt-visual"></script>
   <script src="/portal/portal_booking_offer.js?v=20260901-tt"></script>
   <script>
     (function () {
       var DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
       var SKIP = { day_centre: 1, bespoke: 1, counselling: 1, intensive: 1 };
+      var CAL_URL = "/portal/day-centre-calendar-2026-27-section.html?v=20260903-tt-visual";
 
       function showTab(id) {
         document.querySelectorAll("[role='tab']").forEach(function (btn) {
@@ -351,13 +367,22 @@
       function loadCalendars() {
         if (calLoaded) return;
         var host = document.getElementById("calHost");
-        fetch("/portal/public-term-calendars-2026-27.html?v=20260901-tt")
+        fetch(CAL_URL)
           .then(function (r) { return r.text(); })
           .then(function (html) {
             var doc = new DOMParser().parseFromString(html, "text/html");
-            var cal = doc.querySelector(".cs-calendar");
+            var cal = doc.querySelector(".dc-cal");
             host.innerHTML = "";
-            if (cal) host.appendChild(cal);
+            if (!cal) {
+              host.textContent = "Could not load term calendars. Email info@clubsensational.org.";
+              return;
+            }
+            var back = cal.querySelector(".dc-cal__back-wrap");
+            if (back) back.remove();
+            host.appendChild(document.importNode(cal, true));
+            if (typeof window.portalInitCalendar202627Tabs === "function") {
+              window.portalInitCalendar202627Tabs(host.querySelector(".dc-cal"));
+            }
             calLoaded = true;
           })
           .catch(function () {
