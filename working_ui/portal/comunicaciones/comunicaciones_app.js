@@ -37,8 +37,12 @@ const state = {
   remoteStream: null,
   call: null,
   pendingSignals: [],
-  iceQueue: [],
-  remoteDescSet: false,
+  iceQueues: {},
+  pcs: {},
+  remoteDescSet: {},
+  presence: { administration: "offline", people: {} },
+  typing: {},
+  typingChannel: null,
   pendingFile: null,
   recording: false,
   mediaRecorder: null,
@@ -231,7 +235,10 @@ function inboxRow(it) {
     '" data-open-conv="' +
     esc(it.conversation_id) +
     '">' +
+    '<span class="comms-item-av-wrap">' +
     avatarHtml(it.avatar_url, commsStaffLabel(it.display_name)) +
+    presenceDot(presenceOfItem(it)) +
+    "</span>" +
     '<span class="comms-item-text"><strong>' +
     esc(commsStaffLabel(it.display_name)) +
     closed +
@@ -364,7 +371,93 @@ async function hydrateFiles(root) {
 async function loadInbox() {
   const data = await rpc("communication_inbox", { p_mode: state.mode });
   state.inbox = data || { items: [] };
+  try {
+    const snap = await rpc("communication_presence_snapshot");
+    if (snap) state.presence = snap;
+  } catch (_e) {}
   renderInbox();
+}
+
+function presenceOfItem(it) {
+  if (!it || it.kind === "group") return "";
+  if (it.kind === "admin_staff" && state.mode !== "administration") {
+    return (state.presence && state.presence.administration) || "offline";
+  }
+  if (it.kind === "admin_staff" && it.employee_id) {
+    const p = state.presence && state.presence.people && state.presence.people[it.employee_id];
+    return (p && p.status) || "offline";
+  }
+  return "offline";
+}
+
+function presenceDot(status) {
+  const st = String(status || "").trim();
+  if (!st) return "";
+  return '<span class="comms-presence comms-presence--' + esc(st) + '" title="' + esc(st) + '"></span>';
+}
+
+function typingLabel() {
+  const now = Date.now();
+  const names = [];
+  Object.keys(state.typing || {}).forEach(function (id) {
+    const row = state.typing[id];
+    if (!row || row.until < now) {
+      delete state.typing[id];
+      return;
+    }
+    if (String(id) === String(state.me && state.me.id)) return;
+    names.push(row.name || "Someone");
+  });
+  return names.length ? names.join(", ") + (names.length === 1 ? " is typing..." : " are typing...") : "";
+}
+
+function paintTyping() {
+  const el = $("commsTyping");
+  if (!el) return;
+  const t = typingLabel();
+  el.textContent = t;
+  el.hidden = !t;
+}
+
+function sendTypingPing() {
+  if (!state.typingChannel || !state.open || !state.me) return;
+  try {
+    state.typingChannel.send({
+      type: "broadcast",
+      event: "typing",
+      payload: {
+        user_id: state.me.id,
+        name:
+          state.mode === "administration"
+            ? "Administration"
+            : commsStaffLabel(state.me.full_name),
+      },
+    });
+  } catch (_e) {}
+}
+
+function bindTypingChannel(conversationId) {
+  const c = client();
+  if (!c) return;
+  if (state.typingChannel) {
+    try {
+      c.removeChannel(state.typingChannel);
+    } catch (_e) {}
+    state.typingChannel = null;
+  }
+  state.typing = {};
+  paintTyping();
+  if (!conversationId) return;
+  const ch = c.channel("comms-typing-" + conversationId, { config: { broadcast: { self: false } } });
+  ch.on("broadcast", { event: "typing" }, function (ev) {
+    const p = (ev && ev.payload) || {};
+    const id = String(p.user_id || "");
+    if (!id || id === String(state.me && state.me.id)) return;
+    state.typing[id] = { name: p.name || "Someone", until: Date.now() + 3500 };
+    paintTyping();
+  });
+  ch.subscribe();
+  state.typingChannel = ch;
 }
 
 function sortMessagesOldestFirst(rows) {
@@ -407,6 +500,7 @@ async function openConversation(id, extra, opts) {
   state.messages = [];
   state.oldestAt = null;
   if (!silent) $("commsShell").classList.add("is-chat");
+  bindTypingChannel(id);
   renderInbox();
   const payload = await rpc("communication_list_messages", {
     p_conversation_id: id,
@@ -707,7 +801,7 @@ function subscribeRealtime() {
         const row = payload.new || {};
         if (!state.call || String(row.call_id) !== String(state.call.id)) return;
         if (String(row.sender_id) === String(state.me.id)) return;
-        await handleSignal(row.payload || {});
+        await handleSignal(row.payload || {}, row.sender_id);
       }
     )
     .subscribe();
@@ -942,8 +1036,8 @@ function setCallUi(phase) {
   $("commsHang").hidden = phase === "incoming";
   $("commsMuteMic").hidden = phase === "incoming";
   $("commsMuteCam").hidden = phase === "incoming" || (state.call && state.call.type !== "VIDEO");
-  void playVideoEl($("commsRemoteVideo"));
   void playVideoEl($("commsLocalVideo"));
+  layoutRemoteGrid();
 }
 
 function playVideoEl(el) {
@@ -957,23 +1051,58 @@ function playVideoEl(el) {
       const wasMuted = el.muted;
       el.muted = true;
       return el.play().then(function () {
-        if (!wasMuted && el.id === "commsRemoteVideo") el.muted = false;
+        if (!wasMuted) el.muted = wasMuted;
       }).catch(function () {});
     });
   }
   return Promise.resolve();
 }
 
-function bindRemoteTrack(track) {
-  if (!track) return;
-  if (!state.remoteStream) state.remoteStream = new MediaStream();
-  const already = state.remoteStream.getTracks().some(function (t) {
+function layoutRemoteGrid() {
+  const grid = $("commsRemoteGrid");
+  if (!grid) return;
+  const n = grid.querySelectorAll("video").length;
+  grid.setAttribute("data-count", String(n));
+}
+
+function remoteVideoFor(peerId) {
+  const grid = $("commsRemoteGrid");
+  if (!grid) return null;
+  const id = "commsRemote-" + peerId;
+  let v = document.getElementById(id);
+  if (!v) {
+    const wrap = document.createElement("div");
+    wrap.className = "comms-remote-tile";
+    wrap.setAttribute("data-peer", peerId);
+    v = document.createElement("video");
+    v.id = id;
+    v.autoplay = true;
+    v.playsInline = true;
+    v.setAttribute("playsinline", "");
+    v.setAttribute("webkit-playsinline", "");
+    const lab = document.createElement("span");
+    lab.className = "comms-remote-name";
+    lab.textContent = commsStaffLabel((state.callPeers && state.callPeers[peerId]) || "Participant");
+    wrap.appendChild(v);
+    wrap.appendChild(lab);
+    grid.appendChild(wrap);
+    layoutRemoteGrid();
+  }
+  return v;
+}
+
+function bindRemoteTrackFor(peerId, track) {
+  if (!track || !peerId) return;
+  if (!state.remoteStreams) state.remoteStreams = {};
+  if (!state.remoteStreams[peerId]) state.remoteStreams[peerId] = new MediaStream();
+  const stream = state.remoteStreams[peerId];
+  const already = stream.getTracks().some(function (t) {
     return t.id === track.id;
   });
-  if (!already) state.remoteStream.addTrack(track);
-  const v = $("commsRemoteVideo");
+  if (!already) stream.addTrack(track);
+  const v = remoteVideoFor(peerId);
   if (v) {
-    v.srcObject = state.remoteStream;
+    v.srcObject = stream;
     void playVideoEl(v);
   }
 }
@@ -989,16 +1118,25 @@ function rtcDescFromPayload(payload) {
   return new RTCSessionDescription(payload);
 }
 
-function sendCallSignal(kind, obj) {
+function sendCallSignal(kind, obj, toUserId) {
   if (!state.call || !state.call.id) return Promise.resolve();
   let payload;
-  if (kind === "ice") {
+  if (kind === "join" || kind === "leave") {
+    payload = { type: kind, from: state.me.id };
+  } else if (kind === "ice") {
     payload = {
       type: "ice",
+      from: state.me.id,
+      to: toUserId,
       candidate: obj && typeof obj.toJSON === "function" ? obj.toJSON() : obj,
     };
   } else {
-    payload = { type: kind, sdp: { type: obj.type, sdp: obj.sdp } };
+    payload = {
+      type: kind,
+      from: state.me.id,
+      to: toUserId,
+      sdp: { type: obj.type, sdp: obj.sdp },
+    };
   }
   return rpc("communication_call_signal", {
     p_call_id: state.call.id,
@@ -1006,8 +1144,13 @@ function sendCallSignal(kind, obj) {
   });
 }
 
-async function flushIceQueue(pc) {
-  const queued = state.iceQueue.splice(0);
+function iceQueueFor(peerId) {
+  if (!state.iceQueues[peerId]) state.iceQueues[peerId] = [];
+  return state.iceQueues[peerId];
+}
+
+async function flushIceQueue(pc, peerId) {
+  const queued = iceQueueFor(peerId).splice(0);
   for (let i = 0; i < queued.length; i++) {
     try {
       await pc.addIceCandidate(new RTCIceCandidate(queued[i]));
@@ -1015,30 +1158,35 @@ async function flushIceQueue(pc) {
   }
 }
 
-async function ensurePc() {
-  if (state.pc) return state.pc;
+async function ensurePcFor(peerId) {
+  const key = String(peerId || "");
+  if (!key) return null;
+  if (state.pcs[key]) return state.pcs[key];
   const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-  state.pc = pc;
-  state.remoteStream = new MediaStream();
-  const remote = $("commsRemoteVideo");
-  if (remote) remote.srcObject = state.remoteStream;
+  state.pcs[key] = pc;
+  if (state.localStream) {
+    state.localStream.getTracks().forEach(function (t) {
+      const sent = pc.getSenders().some(function (s) {
+        return s.track && s.track.id === t.id;
+      });
+      if (!sent) pc.addTrack(t, state.localStream);
+    });
+  }
   pc.ontrack = function (ev) {
-    if (ev.track) bindRemoteTrack(ev.track);
+    if (ev.track) bindRemoteTrackFor(key, ev.track);
     if (ev.streams && ev.streams[0]) {
       ev.streams[0].getTracks().forEach(function (t) {
-        bindRemoteTrack(t);
+        bindRemoteTrackFor(key, t);
       });
     }
   };
   pc.onicecandidate = function (ev) {
     if (!ev.candidate || !state.call) return;
-    sendCallSignal("ice", ev.candidate).catch(function () {});
+    sendCallSignal("ice", ev.candidate, key).catch(function () {});
   };
   pc.onconnectionstatechange = function () {
-    if (!state.pc) return;
-    if (state.pc.connectionState === "connected") {
+    if (pc.connectionState === "connected") {
       $("commsCallStatus").textContent = "In call";
-      void playVideoEl($("commsRemoteVideo"));
     }
   };
   return pc;
@@ -1057,19 +1205,30 @@ async function attachLocal(video) {
     local.hidden = !video;
     void playVideoEl(local);
   }
-  const pc = await ensurePc();
-  stream.getTracks().forEach(function (t) {
-    const sent = pc.getSenders().some(function (s) {
-      return s.track && s.track.id === t.id;
+  Object.keys(state.pcs).forEach(function (key) {
+    const pc = state.pcs[key];
+    stream.getTracks().forEach(function (t) {
+      const sent = pc.getSenders().some(function (s) {
+        return s.track && s.track.id === t.id;
+      });
+      if (!sent) pc.addTrack(t, stream);
     });
-    if (!sent) pc.addTrack(t, stream);
   });
+}
+
+async function offerToPeer(peerId) {
+  if (!peerId || String(peerId) === String(state.me.id)) return;
+  const pc = await ensurePcFor(peerId);
+  if (!pc || pc.signalingState !== "stable") return;
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await sendCallSignal("offer", offer, peerId);
 }
 
 async function processQueuedSignals() {
   const queued = state.pendingSignals.splice(0);
   for (let i = 0; i < queued.length; i++) {
-    await handleSignal(queued[i]);
+    await handleSignal(queued[i].payload, queued[i].senderId);
   }
 }
 
@@ -1086,7 +1245,9 @@ async function pullCallSignals() {
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       if (String(row.sender_id) === String(state.me.id)) continue;
-      await handleSignal(row.payload || {});
+      const pl = row.payload || {};
+      if (pl.type === "join") continue;
+      await handleSignal(pl, row.sender_id);
     }
   } catch (_e) {}
 }
@@ -1098,19 +1259,24 @@ async function startCall(type) {
       p_conversation_id: state.open.conversation_id,
       p_type: type,
     });
-    state.call = { id: out.call_id, type: out.type, role: "offerer" };
+    state.call = {
+      id: out.call_id,
+      type: out.type,
+      role: "offerer",
+      conversation_id: state.open.conversation_id,
+    };
     state.pendingSignals = [];
-    state.iceQueue = [];
-    state.remoteDescSet = false;
+    state.iceQueues = {};
+    state.pcs = {};
+    state.remoteDescSet = {};
+    state.remoteStreams = {};
+    state.callPeers = {};
     $("commsCallPeer").textContent =
       commsStaffLabel((itemByConversation(state.open.conversation_id) || {}).display_name) || "";
     $("commsCallStatus").textContent = "Calling...";
     setCallUi("outgoing");
     await attachLocal(type === "VIDEO");
-    const pc = await ensurePc();
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    await sendCallSignal("offer", offer);
+    await sendCallSignal("join");
   } catch (err) {
     window.alert(err.message || "Could not start the call.");
     tearDownCall(true);
@@ -1119,11 +1285,15 @@ async function startCall(type) {
 
 async function incomingCall(row) {
   if (state.call && String(state.call.id) === String(row.id)) return;
+  if (state.call) return;
   state.call = { id: row.id, type: row.type, role: "answerer", conversation_id: row.conversation_id };
   state.pendingSignals = [];
-  state.iceQueue = [];
-  state.remoteDescSet = false;
-  $("commsCallPeer").textContent = "Incoming call";
+  state.iceQueues = {};
+  state.pcs = {};
+  state.remoteDescSet = {};
+  state.remoteStreams = {};
+  const it = itemByConversation(row.conversation_id);
+  $("commsCallPeer").textContent = commsStaffLabel((it && it.display_name) || "Incoming call");
   $("commsCallStatus").textContent = row.type === "VIDEO" ? "Video call" : "Audio call";
   setCallUi("incoming");
 }
@@ -1135,6 +1305,7 @@ async function acceptCall() {
     $("commsCallStatus").textContent = "Connecting...";
     setCallUi("outgoing");
     await attachLocal(state.call.type === "VIDEO");
+    await sendCallSignal("join");
     await pullCallSignals();
     await processQueuedSignals();
   } catch (err) {
@@ -1143,35 +1314,56 @@ async function acceptCall() {
   }
 }
 
-async function handleSignal(payload) {
+function signalForMe(payload) {
+  if (!payload) return false;
+  if (payload.type === "join" || payload.type === "leave") return true;
+  if (!payload.to) return true;
+  return String(payload.to) === String(state.me.id);
+}
+
+async function handleSignal(payload, senderId) {
   if (!payload || !payload.type) return;
   if (!state.call) return;
-  if (state.call.role === "answerer" && !state.localStream) {
-    state.pendingSignals.push(payload);
+  if (!signalForMe(payload)) return;
+  const from = String(payload.from || senderId || "");
+  if (from && from === String(state.me.id)) return;
+  if (payload.type === "join") {
+    if (!state.localStream) return;
+    if (from) {
+      state.callPeers[from] = state.callPeers[from] || "Participant";
+      await offerToPeer(from);
+    }
+    return;
+  }
+  if (!state.localStream) {
+    state.pendingSignals.push({ payload: payload, senderId: senderId });
     return;
   }
   try {
-    const pc = await ensurePc();
+    if (payload.type === "leave") {
+      closePeer(from);
+      return;
+    }
+    if (!from) return;
+    const pc = await ensurePcFor(from);
     if (payload.type === "offer" && payload.sdp) {
-      if (state.remoteDescSet) return;
+      if (state.remoteDescSet[from]) return;
       await pc.setRemoteDescription(rtcDescFromPayload(payload));
-      state.remoteDescSet = true;
-      await flushIceQueue(pc);
+      state.remoteDescSet[from] = true;
+      await flushIceQueue(pc, from);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      await sendCallSignal("answer", answer);
+      await sendCallSignal("answer", answer, from);
       $("commsCallStatus").textContent = "In call";
-      void playVideoEl($("commsRemoteVideo"));
     } else if (payload.type === "answer" && payload.sdp) {
       if (pc.signalingState !== "have-local-offer") return;
       await pc.setRemoteDescription(rtcDescFromPayload(payload));
-      state.remoteDescSet = true;
-      await flushIceQueue(pc);
+      state.remoteDescSet[from] = true;
+      await flushIceQueue(pc, from);
       $("commsCallStatus").textContent = "In call";
-      void playVideoEl($("commsRemoteVideo"));
     } else if (payload.type === "ice" && payload.candidate) {
-      if (!state.remoteDescSet) {
-        state.iceQueue.push(payload.candidate);
+      if (!state.remoteDescSet[from]) {
+        iceQueueFor(from).push(payload.candidate);
         return;
       }
       await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
@@ -1179,32 +1371,57 @@ async function handleSignal(payload) {
   } catch (_e) {}
 }
 
-async function tearDownCall(notify) {
+function closePeer(peerId) {
+  const key = String(peerId || "");
   try {
-    if (notify && state.call && state.call.id) {
-      await rpc("communication_call_respond", { p_call_id: state.call.id, p_action: "end" });
+    if (state.pcs[key]) state.pcs[key].close();
+  } catch (_e) {}
+  delete state.pcs[key];
+  delete state.iceQueues[key];
+  delete state.remoteDescSet[key];
+  delete state.remoteStreams[key];
+  const tile = document.querySelector('.comms-remote-tile[data-peer="' + key + '"]');
+  if (tile) tile.remove();
+  layoutRemoteGrid();
+}
+
+async function tearDownCall(notify) {
+  const callId = state.call && state.call.id;
+  const isGroup = !!(state.open && state.open.kind === "group");
+  const peerCount = Object.keys(state.pcs || {}).length;
+  try {
+    if (notify && callId) {
+      const action = isGroup && peerCount >= 1 ? "leave" : "end";
+      if (action === "leave") await sendCallSignal("leave");
+      await rpc("communication_call_respond", { p_call_id: callId, p_action: action });
     }
   } catch (_e) {}
   try {
     if (state.localStream) state.localStream.getTracks().forEach((t) => t.stop());
   } catch (_e) {}
-  try {
-    if (state.pc) state.pc.close();
-  } catch (_e) {}
-  state.pc = null;
+  Object.keys(state.pcs || {}).forEach(function (k) {
+    try {
+      state.pcs[k].close();
+    } catch (_e2) {}
+  });
+  state.pcs = {};
   state.localStream = null;
-  state.remoteStream = null;
+  state.remoteStreams = {};
   state.call = null;
   state.pendingSignals = [];
-  state.iceQueue = [];
-  state.remoteDescSet = false;
+  state.iceQueues = {};
+  state.remoteDescSet = {};
+  state.callPeers = {};
+  const grid = $("commsRemoteGrid");
+  if (grid) grid.innerHTML = "";
   $("commsCallOverlay").hidden = true;
-  $("commsRemoteVideo").srcObject = null;
-  $("commsLocalVideo").srcObject = null;
+  const local = $("commsLocalVideo");
+  if (local) local.srcObject = null;
   try {
     await rpc("communication_heartbeat", { p_status: "available" });
   } catch (_e) {}
 }
+
 
 function bindUi() {
   $("commsBackPortal").href = portalHome();
@@ -1235,6 +1452,9 @@ function bindUi() {
       ev.preventDefault();
       sendMessage();
     }
+  });
+  $("commsDraft").addEventListener("input", function () {
+    sendTypingPing();
   });
   $("commsAttachBtn").addEventListener("click", function () {
     $("commsFile").click();
@@ -1363,7 +1583,31 @@ async function boot() {
     rpc("communication_heartbeat", { p_status: "available" }).catch(function () {});
     window.setInterval(function () {
       rpc("communication_heartbeat", { p_status: state.call ? "in_call" : "available" }).catch(function () {});
+      loadInbox().catch(function () {});
+      paintTyping();
     }, 25000);
+    window.setInterval(paintTyping, 1000);
+    try {
+      if (typeof window.portalEnsureWebPushSubscription === "function") {
+        void window.portalEnsureWebPushSubscription();
+      }
+    } catch (_p) {}
+    const params = new URLSearchParams(window.location.search);
+    const conv = String(params.get("conv") || "").trim();
+    const callId = String(params.get("call") || "").trim();
+    if (conv) {
+      await openConversation(conv);
+    }
+    if (callId) {
+      try {
+        const res = await client().from("communication_calls").select("id,type,status,conversation_id,initiated_by").eq("id", callId).maybeSingle();
+        const row = res && res.data;
+        if (row && String(row.initiated_by) !== String(state.me.id) && (row.status === "calling" || row.status === "answered")) {
+          await incomingCall(row);
+          await acceptCall();
+        }
+      } catch (_c) {}
+    }
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState !== "visible") return;
       if (!state.open || !state.open.conversation_id) return;

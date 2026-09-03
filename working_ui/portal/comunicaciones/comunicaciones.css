@@ -34,7 +34,8 @@ body.comms-app {
 .comms-context[hidden],
 .comms-search-wrap[hidden],
 .comms-foot-btn[hidden],
-.comms-record-status[hidden] {
+.comms-record-status[hidden],
+.comms-typing[hidden] {
   display: none !important;
 }
 
@@ -153,7 +154,33 @@ body.comms-app {
   width: 100%;
   min-width: 0;
 }
-.comms-item:hover, .comms-item.is-on { background: var(--blueSoft); }
+.comms-item-av-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+}
+.comms-presence {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #94a3b8;
+}
+.comms-presence--available { background: #16a34a; }
+.comms-presence--away { background: #eab308; }
+.comms-presence--in_call { background: #dc2626; }
+.comms-presence--offline { background: #94a3b8; }
+.comms-typing {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--blueDeep);
+  font-weight: 700;
+  min-height: 0;
+}
 .comms-avatar, .comms-item-av {
   width: 40px;
   height: 40px;
@@ -426,14 +453,40 @@ body.comms-app {
   place-items: center;
 }
 .comms-call-stage { width: min(960px, 100%); height: min(100dvh, 720px); position: relative; }
-#commsRemoteVideo {
+.comms-remote-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: 4px;
+  background: #102433;
+  z-index: 0;
+}
+.comms-remote-grid[data-count="0"],
+.comms-remote-grid[data-count="1"] { grid-template-columns: 1fr; }
+.comms-remote-grid[data-count="2"] { grid-template-columns: 1fr 1fr; }
+.comms-remote-grid[data-count="3"],
+.comms-remote-grid[data-count="4"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.comms-remote-tile {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.comms-remote-tile video {
   width: 100%;
   height: 100%;
   object-fit: cover;
   background: #102433;
-  border-radius: 0;
-  position: relative;
-  z-index: 0;
+}
+.comms-remote-name {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.45);
+  font-size: 12px;
+  font-weight: 700;
 }
 #commsLocalVideo {
   position: absolute;

@@ -539,7 +539,7 @@
       global.navigator.serviceWorker.addEventListener("message", function (ev) {
         var d = ev && ev.data;
         if (!d || d.type !== "portal-push-received") return;
-        if (d.portalOpen === "incoming_call") return;
+        if (d.portalOpen === "incoming_call" || d.portalOpen === "communications_call") return;
         /* Leader-facing WA pushes belong on staff dashboard only; never toast them on admin. */
         if (d.portalOpen === "staff_whatsapp") return;
         if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(d)) {

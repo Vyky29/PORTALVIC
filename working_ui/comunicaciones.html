@@ -7,7 +7,7 @@
   <title>Communications - clubSENsational</title>
   <link rel="icon" href="/portal/F-02-1.png" type="image/png" />
   <script src="/portal-static-bootstrap.js"></script>
-  <link rel="stylesheet" href="/portal/comunicaciones/comunicaciones.css?v=20260904-comms-return" />
+  <link rel="stylesheet" href="/portal/comunicaciones/comunicaciones.css?v=20260904-comms-9" />
 </head>
 <body class="comms-app">
   <div id="commsBoot" class="comms-boot">
@@ -54,6 +54,7 @@
           <div class="comms-chat-who-text">
             <h1 id="commsPeerName">Select a conversation</h1>
             <p id="commsPeerMeta" class="comms-peer-meta"></p>
+            <p id="commsTyping" class="comms-typing" hidden></p>
           </div>
         </div>
         <div class="comms-chat-actions" id="commsChatActions" hidden>
@@ -82,7 +83,7 @@
 
   <div id="commsCallOverlay" class="comms-call" hidden>
     <div class="comms-call-stage">
-      <video id="commsRemoteVideo" autoplay playsinline webkit-playsinline></video>
+      <div id="commsRemoteGrid" class="comms-remote-grid" data-count="0"></div>
       <video id="commsLocalVideo" autoplay playsinline webkit-playsinline muted></video>
       <p class="comms-call-status" id="commsCallStatus">Calling...</p>
       <p class="comms-call-peer" id="commsCallPeer"></p>
@@ -96,6 +97,9 @@
     </div>
   </div>
 
-  <script type="module" src="/portal/comunicaciones/comunicaciones_app.js?v=20260904-comms-return"></script>
+  <script src="/portal/portal-vapid-public.js?v=20260904-comms-9"></script>
+  <script src="/portal/portal_web_push_support.js?v=20260904-comms-push"></script>
+  <script src="/portal/portal_ensure_web_push.js?v=20260904-comms-9"></script>
+  <script type="module" src="/portal/comunicaciones/comunicaciones_app.js?v=20260904-comms-9"></script>
 </body>
 </html>

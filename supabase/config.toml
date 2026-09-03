@@ -435,6 +435,9 @@ verify_jwt = false
 [functions.portal-push-dispatch-staff-dm]
 verify_jwt = false
 
+[functions.portal-push-dispatch-communications]
+verify_jwt = false
+
 [functions.portal-push-dispatch-schedule-override]
 verify_jwt = false
 

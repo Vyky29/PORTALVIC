@@ -5,6 +5,7 @@
  * v20260609-sw-syntax-fix (restore after chat cleanup script broke ternary)
  * v20260712-cs-portal-wa (Leader WhatsApp deep-link + CS Portal branding)
  * v20260711-always-os-banner (foreground skip broke alerts after chat UI removal)
+ * v20260904-comms-push (Communications message + incoming-call banners)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 
@@ -71,7 +72,7 @@ function portalNotifyOpenClients(title, body, portalOpen, callData, chatData, me
           senderUserId: meta.senderUserId || '',
           targetUserId: meta.targetUserId || '',
         });
-        if (portalOpen === 'incoming_call' && typeof client.focus === 'function') {
+        if ((portalOpen === 'incoming_call' || portalOpen === 'communications_call') && typeof client.focus === 'function') {
           try {
             client.focus();
           } catch (eFocus) {}
@@ -182,11 +183,16 @@ self.addEventListener('push', function (event) {
     portalOpen === 'chat' ||
     portalOpen === 'portal_staff_whatsapp' ||
     portalOpen === 'staff_whatsapp' ||
-    portalOpen === 'incoming_call'
+    portalOpen === 'incoming_call' ||
+    portalOpen === 'communications' ||
+    portalOpen === 'communications_call'
   ) {
     requireInteraction = true;
     if (!vibrate) {
-      vibrate = portalOpen === 'incoming_call' ? PORTAL_CALL_VIBRATE : PORTAL_ALERT_VIBRATE;
+      vibrate =
+        portalOpen === 'incoming_call' || portalOpen === 'communications_call'
+          ? PORTAL_CALL_VIBRATE
+          : PORTAL_ALERT_VIBRATE;
     }
   }
   var icon = portalPushIconUrl();

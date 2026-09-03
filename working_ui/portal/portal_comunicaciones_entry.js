@@ -177,6 +177,12 @@
         var next = Math.max(0, Number(res.data) || 0);
         applyUnreadBadge(next);
         subscribeUnreadRealtime();
+        subscribeIncomingCalls();
+        try {
+          if (typeof global.portalEnsureWebPushSubscription === "function") {
+            void global.portalEnsureWebPushSubscription();
+          }
+        } catch (_p) {}
         return lastUnreadCount;
       } catch (_e) {
         scheduleUnreadRetry();
@@ -213,6 +219,249 @@
     } catch (_rt) {
       unreadChannel = null;
     }
+  }
+
+  function myUserId() {
+    try {
+      var box = supabaseBox();
+      if (box && box.staff_profile && box.staff_profile.id) return String(box.staff_profile.id);
+      if (box && box.session && box.session.user && box.session.user.id) {
+        return String(box.session.user.id);
+      }
+    } catch (_e) {}
+    return "";
+  }
+
+  function isCommsAppPage() {
+    try {
+      return String(global.location && global.location.pathname || "")
+        .toLowerCase()
+        .indexOf("comunicaciones") >= 0;
+    } catch (_e2) {
+      return false;
+    }
+  }
+
+  function commsUrlWith(params) {
+    var href = commsUrl();
+    try {
+      var url = new URL(href, global.location.href);
+      Object.keys(params || {}).forEach(function (k) {
+        if (params[k]) url.searchParams.set(k, params[k]);
+      });
+      return url.href;
+    } catch (_e) {
+      return href;
+    }
+  }
+
+  var incomingCallChannel = null;
+  var incomingCallState = null;
+  var incomingCueTimer = null;
+
+  function stopIncomingCue() {
+    if (incomingCueTimer) {
+      global.clearInterval(incomingCueTimer);
+      incomingCueTimer = null;
+    }
+    try {
+      if (global.navigator && global.navigator.vibrate) global.navigator.vibrate(0);
+    } catch (_v) {}
+  }
+
+  function playIncomingCue() {
+    try {
+      if (global.navigator && global.navigator.vibrate) {
+        global.navigator.vibrate([500, 180, 500, 180, 700]);
+      }
+    } catch (_v) {}
+    try {
+      if (typeof global.portalPlayAlertCue === "function") {
+        global.portalPlayAlertCue({ vibrate: [500, 180, 500, 180, 700] });
+        return;
+      }
+    } catch (_c) {}
+    try {
+      var Ctx = global.AudioContext || global.webkitAudioContext;
+      if (!Ctx) return;
+      var ctx = new Ctx();
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = 880;
+      o.connect(g);
+      g.connect(ctx.destination);
+      g.gain.value = 0.08;
+      o.start();
+      o.stop(ctx.currentTime + 0.28);
+    } catch (_a) {}
+  }
+
+  function ensureIncomingOverlay() {
+    if (document.getElementById("portalCommsIncoming")) {
+      return document.getElementById("portalCommsIncoming");
+    }
+    if (!document.getElementById("portalCommsIncomingCss")) {
+      var st = document.createElement("style");
+      st.id = "portalCommsIncomingCss";
+      st.textContent =
+        "#portalCommsIncoming{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:rgba(5,12,20,.94)}" +
+        "#portalCommsIncoming[hidden]{display:none!important}" +
+        ".portal-comms-incoming-card{width:100%;max-width:24rem;padding:28px 22px 22px;border-radius:24px;background:#173247;border:1px solid rgba(255,255,255,.16);color:#fff;text-align:center}" +
+        ".portal-comms-incoming-card h2{margin:0 0 6px;font-size:18px}" +
+        ".portal-comms-incoming-card p{margin:0 0 16px;font-size:14px;color:rgba(255,255,255,.78)}" +
+        ".portal-comms-incoming-actions{display:flex;gap:10px}" +
+        ".portal-comms-incoming-actions button{flex:1;min-width:0;padding:12px 10px;border-radius:999px;border:0;font:inherit;font-size:14px;font-weight:800;cursor:pointer}" +
+        "#portalCommsIncomingDecline{background:rgba(255,255,255,.12);color:#fff}" +
+        "#portalCommsIncomingAnswer{background:#16a34a;color:#fff}";
+      (document.head || document.documentElement).appendChild(st);
+    }
+    var el = document.createElement("div");
+    el.id = "portalCommsIncoming";
+    el.hidden = true;
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-modal", "true");
+    el.setAttribute("aria-label", "Incoming call");
+    el.innerHTML =
+      '<div class="portal-comms-incoming-card">' +
+      "<h2 id=\"portalCommsIncomingTitle\">Incoming call</h2>" +
+      "<p id=\"portalCommsIncomingSub\">Communications</p>" +
+      '<div class="portal-comms-incoming-actions">' +
+      '<button type="button" id="portalCommsIncomingDecline">Decline</button>' +
+      '<button type="button" id="portalCommsIncomingAnswer">Answer</button>' +
+      "</div></div>";
+    (document.body || document.documentElement).appendChild(el);
+    document.getElementById("portalCommsIncomingAnswer").addEventListener("click", function () {
+      answerIncomingOverlay();
+    });
+    document.getElementById("portalCommsIncomingDecline").addEventListener("click", function () {
+      void declineIncomingOverlay();
+    });
+    return el;
+  }
+
+  function hideIncomingOverlay() {
+    stopIncomingCue();
+    incomingCallState = null;
+    var el = document.getElementById("portalCommsIncoming");
+    if (el) el.hidden = true;
+  }
+
+  function showIncomingOverlay(row) {
+    if (isCommsAppPage() || !row || !row.id) return;
+    if (String(row.initiated_by || "") === myUserId()) return;
+    if (String(row.status || "calling") !== "calling") return;
+    incomingCallState = {
+      id: String(row.id),
+      type: String(row.type || "AUDIO"),
+      conversation_id: String(row.conversation_id || ""),
+    };
+    var el = ensureIncomingOverlay();
+    var title = document.getElementById("portalCommsIncomingTitle");
+    var sub = document.getElementById("portalCommsIncomingSub");
+    if (title) {
+      title.textContent = incomingCallState.type === "VIDEO" ? "Incoming video call" : "Incoming call";
+    }
+    if (sub) sub.textContent = "Communications";
+    el.hidden = false;
+    playIncomingCue();
+    if (!incomingCueTimer) {
+      incomingCueTimer = global.setInterval(playIncomingCue, 2200);
+    }
+  }
+
+  function answerIncomingOverlay() {
+    var st = incomingCallState;
+    hideIncomingOverlay();
+    if (!st) return;
+    var params = { call: st.id };
+    if (st.conversation_id) params.conv = st.conversation_id;
+    global.location.href = commsUrlWith(params);
+  }
+
+  async function declineIncomingOverlay() {
+    var st = incomingCallState;
+    hideIncomingOverlay();
+    if (!st || !st.id) return;
+    var c = client();
+    if (!c) return;
+    var isGroup = false;
+    try {
+      if (st.conversation_id) {
+        var conv = await c
+          .from("communication_conversations")
+          .select("type")
+          .eq("id", st.conversation_id)
+          .maybeSingle();
+        isGroup = String((conv && conv.data && conv.data.type) || "").toUpperCase() === "GROUP";
+      }
+    } catch (_t) {}
+    if (isGroup) return;
+    try {
+      await c.rpc("communication_call_respond", { p_call_id: st.id, p_action: "reject" });
+    } catch (_e) {}
+  }
+
+  function subscribeIncomingCalls() {
+    var c = client();
+    if (!c || typeof c.channel !== "function" || isCommsAppPage()) return;
+    if (incomingCallChannel) return;
+    try {
+      incomingCallChannel = c
+        .channel("portal-comms-incoming-calls")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "communication_calls" },
+          function (payload) {
+            var row = (payload && payload.new) || {};
+            showIncomingOverlay(row);
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "communication_calls" },
+          function (payload) {
+            var row = (payload && payload.new) || {};
+            if (!incomingCallState || String(row.id) !== String(incomingCallState.id)) return;
+            if (row.status && row.status !== "calling") hideIncomingOverlay();
+          }
+        )
+        .subscribe();
+    } catch (_rt) {
+      incomingCallChannel = null;
+    }
+  }
+
+  function bindIncomingPushMessages() {
+    if (global.__PORTAL_COMMS_PUSH_MSG_BOUND__) return;
+    if (!global.navigator || !global.navigator.serviceWorker) return;
+    global.__PORTAL_COMMS_PUSH_MSG_BOUND__ = true;
+    try {
+      global.navigator.serviceWorker.addEventListener("message", function (ev) {
+        var d = ev && ev.data;
+        if (!d) return;
+        var open = String(d.portalOpen || "");
+        if (d.type === "portal-push-received" && open === "communications_call") {
+          var callId = d.call && (d.call.callId || d.call.id);
+          if (callId) {
+            showIncomingOverlay({
+              id: callId,
+              type: (d.call && d.call.type) || "AUDIO",
+              status: "calling",
+              initiated_by: "",
+              conversation_id: "",
+            });
+          }
+        }
+        if (d.type === "portal-notification-click" && (open === "communications" || open === "communications_call")) {
+          if (d.url) {
+            try {
+              global.location.href = d.url;
+            } catch (_u) {}
+          }
+        }
+      });
+    } catch (_m) {}
   }
 
   function countSessionTopbarTools() {
@@ -371,6 +620,7 @@
 
   function boot() {
     try {
+      bindIncomingPushMessages();
       var key = "";
       if (typeof global.resolveTopbarStaffKey === "function") {
         key = global.resolveTopbarStaffKey() || "";
