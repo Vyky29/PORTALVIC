@@ -216,13 +216,10 @@ function rebuildTuesday(week) {
   const youssef = findStaff(week, "youssef");
 
   setDcDay(roberto, "Tuesday", [
-    { time: "11 to 12.30", client: "Ikram", instr: "ROBERTO" },
+    { time: "11 to 12", client: "ACAT", instr: "ROBERTO" },
     { time: "12.30 to 3", client: "Fadi", instr: "ROBERTO" },
   ]);
-  setDcDay(michelle, "Tuesday", [
-    { time: "11 to 12.30", client: "Manager", instr: "MICHELLE", area: "Manager" },
-    { time: "12.30 to 4", client: "Ikram", instr: "MICHELLE" },
-  ]);
+  setDcDay(michelle, "Tuesday", [{ time: "11 to 4", client: "Ikram", instr: "MICHELLE" }]);
   setDcDay(luliya, "Tuesday", [{ time: "11 to 3", client: "Ikram", instr: "LULIYA" }]);
   setDcDay(victor, "Tuesday", [
     { time: "12.30 to 3", client: "Fadi", instr: "VICTOR" },
@@ -230,7 +227,7 @@ function rebuildTuesday(week) {
   ]);
   setDcDay(raul, "Tuesday", []);
   setDcDay(youssef, "Tuesday", []);
-  note("Tue DC = local Autumn (Raul OFF; Michelle Manager then Ikram)");
+  note("Tue DC = local Autumn (Roberto ACAT 11-12 + Fadi 12.30-3; Michelle Ikram 11-4; Raul OFF)");
 }
 
 function rebuildWednesday(week) {

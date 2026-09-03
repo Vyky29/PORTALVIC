@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 51;
+  var SOURCE_VERSION = 52;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -71,17 +71,14 @@
       {
         staff: "Roberto",
         clients: [
-          { name: "Ikram", time: "11 to 12.30" },
+          { name: "ACAT", time: "11 to 12" },
           { name: "Fadi", time: "12.30 to 3" },
         ],
       },
-      /* Michelle Tue: Manager duty 11–12.30, then Ikram 12.30–4 */
+      /* Michelle Tue: Ikram full DC block 11-4 (no Manager duty). */
       {
         staff: "Michelle",
-        clients: [
-          { name: "Manager", time: "11 to 12.30" },
-          { name: "Ikram", time: "12.30 to 4" },
-        ],
+        clients: [{ name: "Ikram", time: "11 to 4" }],
       },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
       /* Victor takes Raul's Tue DC; Raul OFF (column kept for board visibility) */
@@ -1264,7 +1261,7 @@
    * - Acton Tue: Roberto / Aurora / Javier / Luliya (Logan+Richard Roberto; Serine Luliya; no Youssef)
    * - Acton Thu: Roberto / Simon / Javier / Aurora (Luliya OFF; Simon keeps Elijah / Yuri)
    * - Northolt Mon/Wed: replace summer (Roberto/Dan) with Services Autumn Dan+Luliya book
-   * - Luliya: DC Ikram Mon/Tue/Wed 11–3 + Fri 11–4; pool Mon/Wed Northolt 4.30–6.30,
+   * - Luliya: DC Ikram Mon/Tue/Wed 11–3 + Fri 11-4; pool Mon/Wed Northolt 4.30–6.30,
    *   Tue Acton 4–6.30 (not Thu — Simon covers Thu Acton AS)
    * - Roberto Wed DC: Emanuel 11–12.30 + Fadi 12.30–3 (ends 15:00; no Emanuel 3–4)
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
