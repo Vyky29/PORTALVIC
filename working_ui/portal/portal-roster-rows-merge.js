@@ -388,9 +388,11 @@
       seenDated[sk] = true;
     });
 
-    // Standing open-seat templates (session_date null): stamp onto every matching weekday
-    // date present in the base roster so Services / Booking see the new instructor columns.
-    var isosByDay = Object.create(null);
+    // Standing open-seat templates (session_date null): stamp onto weekday dates that
+    // already have a row for the SAME instructor(s). Do NOT use every Monday iso from
+    // other staff (e.g. Dan's dated Muhammad 7 Sep) — that poisoned Luliya's autumn snap
+    // with a lone NO PARTICIPANT and hid DC + afternoon clients.
+    var isosByDayInstr = Object.create(null);
     function rememberIso(row) {
       var iso = normIso(row && row.session_date);
       if (!iso) return;
@@ -398,8 +400,11 @@
         .trim()
         .toLowerCase();
       if (!day) return;
-      if (!isosByDay[day]) isosByDay[day] = [];
-      if (isosByDay[day].indexOf(iso) < 0) isosByDay[day].push(iso);
+      var instr = normInstructors(row.instructors);
+      if (!instr) return;
+      var key = day + "\0" + instr;
+      if (!isosByDayInstr[key]) isosByDayInstr[key] = [];
+      if (isosByDayInstr[key].indexOf(iso) < 0) isosByDayInstr[key].push(iso);
     }
     base.forEach(rememberIso);
     out.forEach(rememberIso);
@@ -408,7 +413,8 @@
       var tpl = templates[tk];
       if (!tpl || !isNoClientName(tpl.client_name)) return;
       var tplDay = String(tpl.day || "").toLowerCase();
-      var isos = isosByDay[tplDay] || [];
+      var instr = normInstructors(tpl.instructors);
+      var isos = isosByDayInstr[tplDay + "\0" + instr] || [];
       for (var ii = 0; ii < isos.length; ii++) {
         var iso = isos[ii];
         var probe = {

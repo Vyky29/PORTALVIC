@@ -4161,15 +4161,21 @@
         return normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
       });
     }
-    /** This staff has at least one roster row keyed to this calendar date (not other instructors). */
+    /** This staff has at least one named (non-open) roster row keyed to this calendar date.
+     * Open NO PARTICIPANT stamps alone must not pin autumn days off the standing snap
+     * (that hid Luliya DC + afternoon when a Mon open template hit 7 Sep via Dan's date). */
     function portalStaffHasDatedRowsForIso(isoYmd, staffId){
       const iso = normaliseIsoDate(isoYmd);
       const sid = String(staffId || '').trim().toLowerCase();
       if(!iso || !sid) return false;
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
       return model.some(function(row){
-        return String(row.staffId || '').toLowerCase() === sid
-          && normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
+        if(String(row.staffId || '').toLowerCase() !== sid) return false;
+        if(normaliseIsoDate(row && (row.session_date || row.sessionDate)) !== iso) return false;
+        const cid = String(row.clientId || '').trim().toLowerCase();
+        if(!cid || cid === 'available' || cid === 'closed') return false;
+        if(/^(no[_\s-]?participant|no[_\s-]?client|open[_\s-]?slot)$/i.test(cid)) return false;
+        return true;
       });
     }
     function portalStaffHasDatedWeekdaySnapshots(staffId, weekdayLong, minSessionDateIso, maxSessionDateIso){
