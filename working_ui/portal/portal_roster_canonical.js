@@ -624,16 +624,31 @@
   }
 
   /**
-   * Autumn Sunday Hub rota: Godsway + Emanuel replace departed Bismark / Giuseppe
-   * on Multi-Activity (same clients / 45′ halves).
+   * Autumn Sunday Hub rota:
+   * - Bismark → Godsway
+   * - Giuseppe → Emanuel (standing)
+   * - John → Berta (John only works Sun Multi on 2026-09-06 covering Emanuel's book)
+   * Sun 6 only: Emanuel → John (+ Youssef support); Emanuel off that day.
    */
-  function remapAutumnMultiInstructors(instructorsRaw) {
+  function remapAutumnMultiInstructors(instructorsRaw, sessionDateIso) {
     var s = String(instructorsRaw || "").trim();
     if (!s) return s;
-    return s
+    var mapped = s
       .replace(/\bBISMARK\b/gi, "GODSWAY")
       .replace(/\bBISMARCK\b/gi, "GODSWAY")
-      .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
+      .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
+      /* Standing: former John Hub Multi book → Berta (manager). */
+      .replace(/\bJOHN\b/gi, "BERTA");
+    var iso = String(sessionDateIso || "").trim().slice(0, 10);
+    if (iso === "2026-09-06") {
+      /* Emanuel off · John takes that book; Youssef @ £24 support same Hub Multis. */
+      mapped = mapped
+        .replace(/\bEMANUEL\b/gi, "JOHN")
+        .replace(/\bJOHN\b/gi, "JOHN, YOUSSEF");
+      /* Avoid doubling if already JOHN, YOUSSEF from a prior pass. */
+      mapped = mapped.replace(/\bJOHN,\s*YOUSSEF,\s*YOUSSEF\b/gi, "JOHN, YOUSSEF");
+    }
+    return mapped;
   }
 
   /** Autumn Acton pool remaps for departed / cover staff. */
@@ -1015,7 +1030,8 @@
    *   (drop all DC rows in the summer dated window for weekdays on the board —
    *   not only 13–17 Jul — so June ACAT/Fadi snaps cannot win Autumn projection)
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
-   * - Multi-Activity: Bismark→Godsway, Giuseppe→Emanuel (Sunday Hub shifts)
+   * - Multi-Activity: Bismark→Godsway; Giuseppe→Emanuel; John→Berta (Sun Hub);
+   *   Sun 6 only: Emanuel→John+Youssef (Emanuel off)
    * - Acton Mon: Angel → Roberto (Adam P / Steven / Mario)
    * - Acton Tue: Roberto / Aurora / Javier / Luliya (Logan+Richard Roberto; Serine Luliya; no Youssef)
    * - Acton Thu: Simon → Luliya (Yuri / Eiji)
@@ -1178,7 +1194,7 @@
         return;
       }
       if (isMultiActivityService(r.service)) {
-        var mapped = remapAutumnMultiInstructors(r.instructors);
+        var mapped = remapAutumnMultiInstructors(r.instructors, d);
         if (mapped !== String(r.instructors || "").trim()) {
           out.push(Object.assign({}, r, { instructors: mapped }));
           return;
