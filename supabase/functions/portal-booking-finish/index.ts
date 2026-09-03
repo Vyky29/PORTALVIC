@@ -902,7 +902,7 @@ Deno.serve(async (req) => {
         social_worker_email: swContact!.email,
         no_parent_pay: true,
         message:
-          "Our team will contact you to finalise the booking.",
+          `Our team will contact ${swContact!.name} to finalise the booking.`,
       });
     }
 

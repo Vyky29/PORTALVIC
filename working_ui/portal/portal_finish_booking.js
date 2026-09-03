@@ -754,12 +754,28 @@
     }
   }
 
+  function swContactPersonName(data) {
+    var rs = (data && data.registration_support) || {};
+    return String(
+      (data && data.social_worker_name) || rs.social_worker_name || "",
+    ).trim();
+  }
+
+  function swFinaliseMessage(data, withThanks) {
+    var name = swContactPersonName(data);
+    var who = name || "the social worker / NHS manager";
+    var core = "Our team will contact " + who + " to finalise the booking.";
+    return withThanks ? "Thank you. " + core : core;
+  }
+
   function showSwReferralDone(data) {
     setStep("fbStepSwReferral");
+    var lead = document.getElementById("fbSwReferralLead");
+    if (lead) lead.textContent = swFinaliseMessage(data, true);
     var box = document.getElementById("fbSwReferralSummary");
     if (!box) return;
     var rs = data.registration_support || {};
-    var name = data.social_worker_name || rs.social_worker_name || "—";
+    var name = swContactPersonName(data) || "—";
     var email = data.social_worker_email || rs.social_worker_email || "—";
     box.innerHTML =
       "<div><strong>Social worker / NHS manager:</strong> " +
@@ -782,7 +798,7 @@
       if (strong) strong.textContent = "Trial session (office arranges with LA/NHS)";
       if (hint) {
         hint.textContent =
-          "One session request. Our team will contact you to finalise the booking.";
+          "One session request. Our team will contact the social worker / NHS manager to finalise the booking.";
       }
     } else {
       if (strong) strong.textContent = "Trial session (pay now)";
@@ -1014,7 +1030,7 @@
       showSwReferralDone(data);
       showNotice(
         notice,
-        "Our team will contact you to finalise the booking.",
+        swFinaliseMessage(data, false),
         "ok",
       );
       return;
@@ -1069,7 +1085,7 @@
           showSwReferralDone(data);
           showNotice(
             notice,
-            "Our team will contact you to finalise the booking.",
+            swFinaliseMessage(data, false),
             "ok",
           );
         })
@@ -1146,7 +1162,7 @@
               showSwReferralDone(data);
               showNotice(
                 notice,
-                "Our team will contact you to finalise the booking.",
+                swFinaliseMessage(data, false),
                 "ok",
               );
               return;
@@ -1201,7 +1217,7 @@
               showSwReferralDone(data);
               showNotice(
                 notice,
-                "Our team will contact you to finalise the booking.",
+                swFinaliseMessage(data, false),
                 "ok",
               );
               return;
