@@ -671,8 +671,9 @@
       godsway: { hourly_rate: 18, role_label: "Support Worker 1" },
       giuseppe: { hourly_rate: 20, role_label: "Support Worker 2" },
       bismark: { hourly_rate: 23, role_label: "Support Worker 3" },
-      john: { hourly_rate: 30, role_label: "Service Lead" },
+      john: { hourly_rate: 25, role_label: "Support Worker" },
       berta: { hourly_rate: 30, role_label: "Service Lead" },
+      emanuel: { hourly_rate: 18, role_label: "Support Worker 1" },
       lulia: {
         roleRates: { "Support Worker": 18, "Swimming Instructor": 22 },
         roleScales: { "Support Worker": "Scale 1", "Swimming Instructor": "Scale 1" },
@@ -2204,6 +2205,13 @@
       ) {
         return { startMin: 9 * 60, endMin: 14 * 60 + 30 };
       }
+      if (
+        dayName === "Sunday" &&
+        SUNDAY_JOHN_SUPPORT_KEYS.has(key) &&
+        (Number(hours) === SUNDAY_SUPPORT_MA_PAY_HOURS || Number(hours) >= 5)
+      ) {
+        return { startMin: 9 * 60 + 15, endMin: 14 * 60 + 15 };
+      }
       if (Number.isFinite(minStart) && Number.isFinite(maxEnd) && maxEnd > minStart) {
         return { startMin: minStart, endMin: maxEnd };
       }
@@ -2264,10 +2272,11 @@
     /** Weekday Multi-Activity / Bespoke: Support Workers paid 4:15–6:15 (2h) even when client slots are 4:30–6:00. */
     const WEEKDAY_MA_BESPOKE_PAY_HOURS = 2;
 
-    /** Sunday SwimFarm support: 9:15–2:15 (5h). Programme leads (Berta/John/Michelle): 9:00–2:30 (5.5h). */
+    /** Sunday SwimFarm support: 9:15–2:15 (5h). Berta/Michelle leads: 9:00–2:30 (5.5h). John from 6 Sep: 9:15–2:15 @ £25 (support band). */
     const SUNDAY_SUPPORT_MA_PAY_HOURS = 5;
     const SUNDAY_LEAD_MA_PAY_HOURS = 5.5;
-    const SUNDAY_MA_LEAD_KEYS = new Set(["berta", "john", "michelle"]);
+    const SUNDAY_MA_LEAD_KEYS = new Set(["berta", "michelle"]);
+    const SUNDAY_JOHN_SUPPORT_KEYS = new Set(["john"]);
 
     /** Michelle day-centre Mon–Wed + Fri: 10:45–16:15 (5.5h) even when clients are 11–4. */
     const MICHELLE_DAY_CENTRE_PAY_HOURS = 5.5;

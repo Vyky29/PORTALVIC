@@ -166,7 +166,7 @@
 
   function isSundayMaProgrammeLeadKey(v) {
     var n = normKey(v);
-    return n === "berta" || n === "john" || n === "michelle";
+    return n === "berta" || n === "michelle";
   }
 
   /** Sunday Multi SwimFarm programme leads: fixed 9:00–2:30 (5.5h). */

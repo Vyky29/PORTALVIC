@@ -4,9 +4,10 @@
  * Schedules by funder (client_payments.sheet = LA · data.Funder):
  *   - NHS / NHS·SBS / NHS (ILA)     → 11 monthly INV-Ps (Sep 2026 – Jul 2027)
  *                                    Only September shared (ready); later months hidden
- *                                    until due (arrears — September paid in October).
- *   - Ealing Local Authority         → 1 annual INV-P with 11 instalments (Sep → Jul)
- *   - H&F (Hammersmith & Fulham)     → 11 monthly INV-Ps (same share rule as NHS)
+ *                                    until due. Dues a mes vencido (Sept service → due 1 Oct).
+ *   - Ealing Local Authority         → 1 annual INV-P with 11 BACS instalments (Sep → Jul),
+ *                                    each instalment due the following month.
+ *   - H&F (Hammersmith & Fulham)     → 11 monthly INV-Ps (same share + arrears rule as NHS)
  *
  * Parent hub never lists la_funded. share_status = ready so admin matches private cards.
  *
@@ -41,23 +42,24 @@ import {
 const APPLY = (Deno.env.get("APPLY") || "") === "1";
 const READY_ROOT = "office_funder_2627";
 
+/** Service month ym + label; dueIso = 1st of following month (mes vencido / BACS arrears). */
 const MONTHS_11: Array<{
   term: "autumn" | "spring" | "summer";
   label: string;
   ym: string;
   dueIso: string;
 }> = [
-  { term: "autumn", label: "September 2026", ym: "2026-09", dueIso: "2026-09-01" },
-  { term: "autumn", label: "October 2026", ym: "2026-10", dueIso: "2026-10-01" },
-  { term: "autumn", label: "November 2026", ym: "2026-11", dueIso: "2026-11-01" },
-  { term: "autumn", label: "December 2026", ym: "2026-12", dueIso: "2026-12-01" },
-  { term: "spring", label: "January 2027", ym: "2027-01", dueIso: "2027-01-01" },
-  { term: "spring", label: "February 2027", ym: "2027-02", dueIso: "2027-02-01" },
-  { term: "spring", label: "March 2027", ym: "2027-03", dueIso: "2027-03-01" },
-  { term: "summer", label: "April 2027", ym: "2027-04", dueIso: "2027-04-01" },
-  { term: "summer", label: "May 2027", ym: "2027-05", dueIso: "2027-05-01" },
-  { term: "summer", label: "June 2027", ym: "2027-06", dueIso: "2027-06-01" },
-  { term: "summer", label: "July 2027", ym: "2027-07", dueIso: "2027-07-01" },
+  { term: "autumn", label: "September 2026", ym: "2026-09", dueIso: "2026-10-01" },
+  { term: "autumn", label: "October 2026", ym: "2026-10", dueIso: "2026-11-01" },
+  { term: "autumn", label: "November 2026", ym: "2026-11", dueIso: "2026-12-01" },
+  { term: "autumn", label: "December 2026", ym: "2026-12", dueIso: "2027-01-01" },
+  { term: "spring", label: "January 2027", ym: "2027-01", dueIso: "2027-02-01" },
+  { term: "spring", label: "February 2027", ym: "2027-02", dueIso: "2027-03-01" },
+  { term: "spring", label: "March 2027", ym: "2027-03", dueIso: "2027-04-01" },
+  { term: "summer", label: "April 2027", ym: "2027-04", dueIso: "2027-05-01" },
+  { term: "summer", label: "May 2027", ym: "2027-05", dueIso: "2027-06-01" },
+  { term: "summer", label: "June 2027", ym: "2027-06", dueIso: "2027-07-01" },
+  { term: "summer", label: "July 2027", ym: "2027-07", dueIso: "2027-08-01" },
 ];
 
 const TERMS: Array<{
@@ -331,7 +333,8 @@ for (const p of packs) {
       term: null,
       label: `Academic year ${REENROL_ACADEMIC_YEAR.replace("-", "/")}`,
       amount: p.totals.annual,
-      dueIso: "2026-09-01",
+      // First BACS instalment (Sept service) due 1 Oct — mes vencido.
+      dueIso: MONTHS_11[0].dueIso,
       monthYm: null,
       marker: `${READY_ROOT}_ealing_year_${p.clientKey}`,
     });
@@ -500,7 +503,7 @@ for (const job of jobs) {
       ? "schedule:monthly_11"
       : job.kind === "term"
       ? "schedule:term_3"
-      : "schedule:year_1";
+      : "schedule:year_11_bacs_arrears";
 
   const hfHeaderMarker =
     p.bucket === "hf"
@@ -512,6 +515,33 @@ for (const job of jobs) {
     `${job.marker} · ${scheduleTag} · ${p.funder} · ${p.clientKey} · ` +
     `${p.clientName} · office funder INV-P for email/download · not shown to parents`;
   const notes = hfHeaderMarker ? `${hfHeaderMarker} ${notesBase}` : notesBase;
+
+  const paymentSchedule =
+    job.kind === "year" && p.bucket === "ealing"
+      ? (() => {
+          const amounts = splitEqualAcrossMonths(amountGbp, MONTHS_11.length);
+          return MONTHS_11.map((m, i) => ({
+            seq: i + 1,
+            label: `${m.label} · Ealing BACS`,
+            due_date: m.dueIso,
+            amount_gbp: amounts[i] || 0,
+            status: "pending" as const,
+            collect_via: "bank_transfer",
+            paid_at: null,
+            paid_via: null,
+          }));
+        })()
+      : [
+          {
+            seq: 1,
+            label: `${job.label} · funder invoice`,
+            due_date: job.dueIso,
+            amount_gbp: amountGbp,
+            status: "pending" as const,
+            paid_at: null,
+            paid_via: null,
+          },
+        ];
 
   const createdInv = await createPortalFamilyInvoice(admin, {
     contactId: p.contactId,
@@ -535,17 +565,7 @@ for (const job of jobs) {
     clientIdLabel: p.clientId || null,
     poLabel: p.po || null,
     quantity: lineItems.reduce((s, li) => s + (num(li.quantity) || 1), 0) || 1,
-    paymentSchedule: [
-      {
-        seq: 1,
-        label: `${job.label} · funder invoice`,
-        due_date: job.dueIso,
-        amount_gbp: amountGbp,
-        status: "pending",
-        paid_at: null,
-        paid_via: null,
-      },
-    ],
+    paymentSchedule,
     lineItems,
   });
 
