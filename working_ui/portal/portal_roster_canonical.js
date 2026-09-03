@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 40;
+  var SOURCE_VERSION = 41;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -170,8 +170,8 @@
   };
 
   /**
-   * Autumn 26/27 Hub afternoon Bespoke — same staff shifts as the Autumn rota
-   * (Godsway / John / Emanuel Mon+Wed 4.15-6.15; Fri Roberto; Tinashe booked).
+   * Autumn 26/27 Hub afternoon Bespoke — same staff as LOCAL EXTRA standing start
+   * (Godsway / John / Raul Mon+Wed 4.15-6.15; Fri Roberto; Tinashe booked).
    * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30-5 only).
    */
   var AUTUMN_BESPOKE_HUB_ROWS = [
@@ -198,7 +198,7 @@
     {
       client_name: "Tinashe",
       day: "Monday",
-      instructors: "EMANUEL",
+      instructors: "RAUL",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.15 to 6.15",
@@ -228,7 +228,7 @@
     {
       client_name: "Tinashe",
       day: "Wednesday",
-      instructors: "EMANUEL",
+      instructors: "RAUL",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.15 to 6.15",
@@ -367,16 +367,8 @@
   }
 
   function applyAutumnWeek1DayCentre(rows) {
-    var out = [];
-    (Array.isArray(rows) ? rows : []).forEach(function (r) {
-      if (!r) return;
-      if (isDayCentreService(r.service) && isAutumnWeek1DcIso(r.session_date)) return;
-      out.push(r);
-    });
-    autumnWeek1DayCentreRows().forEach(function (row) {
-      out.push(row);
-    });
-    return out;
+    /* Standing start: no week-1 dated DC overlay — LOCAL AUTUMN_DAY_CENTRE_BOARD only. */
+    return Array.isArray(rows) ? rows.slice() : [];
   }
 
   function applyAutumnActonTuesdayStanding(rows) {
@@ -671,9 +663,8 @@
 
   /**
    * Autumn Sunday Hub Multi standing remaps (snap-date agnostic).
-   * Standing Jul week stored Hub books under BERTA / GIUSEPPE etc.
-   * Do NOT remap BERTA→JOHN here — John only works Sunday 6 Sep (calendar cover).
-   * Calendar-specific Sep 6 cover is applied in resolveAutumnInstructorsForCalendarDate.
+   * Standing Jul week may still store Hub books under BERTA / GIUSEPPE etc.
+   * Date covers (e.g. Sun 6 John) are parked — standing start = LOCAL EXTRA only.
    */
   function remapAutumnMultiInstructorsStanding(instructorsRaw) {
     var s = String(instructorsRaw || "").trim();
@@ -685,44 +676,16 @@
   }
 
   /**
-   * Resolve instructors for a *calendar* day (Today / team strip).
-   * Standing Multi remaps are usually already on the row; this adds date-specific covers.
+   * Resolve instructors for a calendar day (Today / team strip).
+   * Standing start: Multi name remap only — no date-specific covers.
    */
   function resolveAutumnInstructorsForCalendarDate(instructorsRaw, calendarIso, meta) {
     meta = meta || {};
     var s = String(instructorsRaw || "").trim();
     if (!s) return s;
-    var iso = String(calendarIso || "").trim().slice(0, 10);
     var service = meta.service || "";
-    var day = normalizeDowKey(meta.day) || "";
-    if (!day && iso) {
-      try {
-        var dt = new Date(iso + "T12:00:00");
-        if (!isNaN(dt.getTime())) {
-          day = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
-            dt.getDay()
-          ];
-        }
-      } catch (_) {}
-    }
     if (isMultiActivityService(service)) {
       s = remapAutumnMultiInstructorsStanding(s);
-      if (iso === "2026-09-06") {
-        /*
-         * Sun 6 Hub: John covers Emanuel book; Berta Lead keeps former John book.
-         * Order matters — move JOHN→BERTA before EMANUEL→JOHN.
-         */
-        s = s
-          .replace(/\bJOHN\b/gi, "__SEP6_BERTA_BOOK__")
-          .replace(/\bEMANUEL\b/gi, "JOHN")
-          .replace(/__SEP6_BERTA_BOOK__/g, "BERTA");
-      }
-    }
-    if (isBespokeService(service)) {
-      /* Mon 1–13 Sep: Emanuel not on Tinashe yet → Raul with Godsway + John. */
-      if (iso && iso >= "2026-09-01" && iso < "2026-09-14" && day === "monday") {
-        s = s.replace(/\bEMANUEL\b/gi, "RAUL");
-      }
     }
     return s;
   }
@@ -1369,9 +1332,7 @@
     autumnSundayClimbingStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
-    autumnSundaySep6HubCoverRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
-    });
+    /* Sun 6 dated Hub covers parked — standing start uses LOCAL EXTRA / MADRE only. */
     return out;
   }
 

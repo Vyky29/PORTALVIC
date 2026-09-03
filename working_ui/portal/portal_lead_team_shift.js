@@ -80,7 +80,7 @@ function rosterSource() {
   }
 }
 
-/** Sunday dated overrides + Autumn calendar remaps (e.g. Mon early Sep Emanuel → Raul). */
+/** Sunday Multi standing remaps only (date covers parked while LOCAL = MADRE start). */
 function resolveInstructorsForSessionDate(instructorsRaw, sessionDate, source, meta) {
   let out = String(instructorsRaw || "").trim();
   const iso = String(sessionDate || "").trim().slice(0, 10);
@@ -224,15 +224,13 @@ function filterSundayMaTeam(keys, leadKey) {
   );
 }
 
-/** Mon before 14 Sep: Godsway + Raul. Wed + Mon from 14 Sep: Godsway + Emanuel. */
+/** Standing Hub Tinashe with John: Godsway + Raul (LOCAL EXTRA start; no date split). */
 function filterJohnBespokeTeam(keys, iso) {
   const leadKey = "john";
   let pool = excludePeerProgrammeLead(keys, leadKey).filter(function (k) {
     return k && k !== leadKey && !PROGRAMME_LEAD_KEYS.has(k);
   });
-  const wd = weekdayFromIso(iso);
-  const earlyMonRaul = wd === "Monday" && iso && iso < "2026-09-14";
-  const prefer = earlyMonRaul ? ["godsway", "raul"] : ["godsway", "emanuel"];
+  const prefer = ["godsway", "raul"];
   const out = [];
   prefer.forEach(function (w) {
     if (pool.indexOf(w) >= 0 && out.indexOf(w) < 0) out.push(w);
@@ -572,7 +570,7 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   });
   /* Seed expected Hub Multi support when standing rows did not resolve yet (Berta is Sunday Lead). */
   if (dayKind === "sunday_ma_swimfarm" && ctx.leadKey === "berta") {
-    const seeds = iso === "2026-09-06" ? ["godsway", "john", "berta"] : ["godsway", "emanuel"];
+    const seeds = ["godsway", "emanuel"];
     seeds.forEach(function (k) {
       if (memberKeys.indexOf(k) < 0) memberKeys.push(k);
     });

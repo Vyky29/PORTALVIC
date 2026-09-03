@@ -6,14 +6,14 @@
 
   var SETS = {
     roster: [
-      "/portal/term_from_timetable.js?v=20260903-fri-emanuel-1-4",
+      "/portal/term_from_timetable.js?v=20260903-standing-start",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260828-aurora-javier-hours",
       "/portal/clients_info_embed.js?v=20260707-social-workers",
-      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-fri-emanuel-1-4",
+      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-standing-start",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp",
       "/portal/portal_madre_fold.js?v=20260902-luliya-instr",
-      "/portal/portal_roster_canonical.js?v=20260903-fri-emanuel-1-4",
+      "/portal/portal_roster_canonical.js?v=20260903-standing-start",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260704-roster-seq",
     ],
     feedback: [
@@ -29,7 +29,7 @@
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: [
       "/portal/spreadsheet_reference_data.js?v=20260828-autumn-hours-base",
-      "/portal/autumn_staff_hours_reference.js?v=20260903-fri-emanuel-1-4",
+      "/portal/autumn_staff_hours_reference.js?v=20260903-standing-start",
     ],
   };
 

@@ -1847,27 +1847,7 @@
         ? portalCanonicalStaffKeyForMatch(pl.covering_staff_name)
         : portalNormKeyStr(pl.covering_staff_name);
       var cov = fromId || fromName || '';
-      /*
-       * Sun 6 Sep 2026: Emanuel Hub Multi (Zaid…Rayyan F) → John.
-       * Keep cover as John even if an old override still names Youssef.
-       */
-      try{
-        var iso = normaliseIsoDate(ov && ov.session_date);
-        var cid = String(ov && ov.anchor_client_id || '').trim().toLowerCase();
-        var anchor = typeof portalCanonicalStaffKeyForMatch === 'function'
-          ? portalCanonicalStaffKeyForMatch(ov && ov.anchor_staff_id)
-          : portalNormKeyStr(ov && ov.anchor_staff_id);
-        var emanuelBook = {
-          zaid: 1, jack_s: 1, jacks: 1, samer: 1, eiji: 1, hazem: 1, haneef: 1, rayyan_f: 1, rayyanf: 1
-        };
-        if(
-          iso === '2026-09-06' &&
-          emanuelBook[cid] &&
-          (anchor === 'emanuel' || anchor === 'giuseppe' || anchor === 'youssef' || cov === 'youssef')
-        ){
-          return 'john';
-        }
-      }catch(_fix){}
+      /* Date-specific instructor covers parked (standing start = LOCAL / MADRE only). */
       return cov;
     }
     /** True when this instructor_reassign hands the slot to `staffId` (they are the cover). */
