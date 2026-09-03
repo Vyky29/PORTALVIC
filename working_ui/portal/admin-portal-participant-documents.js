@@ -215,6 +215,22 @@
         var placeSecTone = String(d.place_secondary_tone || 'info').trim() || 'info';
         if (placeSecTone === 'warn') placeSecTone = 'urgSoft';
         var placeChips = Array.isArray(d.place_chips) ? d.place_chips : null;
+        var formChips = Array.isArray(d.form_chips) ? d.form_chips : null;
+        // Fallback when API has not deployed form_chips yet: split LA/NHS · ratio from Place.
+        if (!formChips && /local authority\s*\/\s*nhs referral/i.test(placeLab)) {
+          formChips = [{ label: 'Local Authority / NHS referral', tone: 'info' }];
+          var ratioFromPlace = placeLab.match(/·\s*(1to1|2to1|1:1|2:1)/i);
+          if (ratioFromPlace) {
+            formChips.push({
+              label: /2/.test(ratioFromPlace[1]) ? '2to1' : '1to1',
+              tone: 'info',
+            });
+          }
+          placeLab = placeDetail ? 'Pending place' : 'Registered only';
+          placeTone = 'pend';
+          placeSec = '';
+          placeChips = null;
+        }
         // Split trial-expired office tags into 3 chips if API did not send place_chips yet.
         if (
           !placeChips &&
@@ -264,6 +280,16 @@
             esc(label) +
             '</span>'
           );
+        }
+        var formChipsHtml = '';
+        if (formChips && formChips.length) {
+          formChipsHtml = formChips
+            .map(function (c) {
+              if (!c || !c.label) return '';
+              return placeChipHtml(String(c.label), String(c.tone || 'info'), '');
+            })
+            .filter(Boolean)
+            .join('');
         }
         var placeChipsHtml = '';
         if (placeChips && placeChips.length) {
@@ -324,8 +350,17 @@
           '<td class="muted" style="white-space:nowrap">' +
           esc(formatDate(d.submitted_at)) +
           '</td>' +
-          '<td style="min-width:0;overflow-wrap:break-word">' +
+          '<td style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
+          '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;align-items:flex-start">' +
+          '<span style="overflow-wrap:break-word">' +
           esc(formLab) +
+          '</span>' +
+          (formChipsHtml
+            ? '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;align-items:flex-start">' +
+              formChipsHtml +
+              '</div>'
+            : '') +
+          '</div>' +
           '</td>' +
           '<td style="min-width:0;max-width:12rem">' +
           '<div style="display:flex;flex-direction:column;gap:2px;min-width:0">' +

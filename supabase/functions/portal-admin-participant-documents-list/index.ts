@@ -30,6 +30,7 @@ type DocRow = {
   place_secondary_label: string | null;
   place_secondary_tone: string | null;
   place_chips: PlaceChip[] | null;
+  form_chips: PlaceChip[] | null;
   reservation_status: string | null;
   booking_status: string | null;
   client_status: string | null;
@@ -152,6 +153,92 @@ type PlaceOut = {
   chips?: PlaceChip[] | null;
 };
 
+function normalizeSupportRatio(
+  raw: string | null | undefined,
+  notes?: string | null,
+): "1to1" | "2to1" | null {
+  const s = String(raw || "").toLowerCase().replace(/\s+/g, "");
+  const n = String(notes || "");
+  if (
+    s === "2to1" ||
+    s === "2:1" ||
+    s.includes("2to1") ||
+    /ratio\s*=\s*2to1|support_regulated\s*=\s*2to1/i.test(n)
+  ) {
+    return "2to1";
+  }
+  if (
+    s === "1to1" ||
+    s === "1:1" ||
+    s.includes("1to1") ||
+    /ratio\s*=\s*1to1|support_regulated\s*=\s*1to1/i.test(n)
+  ) {
+    return "1to1";
+  }
+  return null;
+}
+
+function fundingChipFromCode(code: string | null | undefined): PlaceChip | null {
+  const c = String(code || "").trim().toLowerCase();
+  if (c === "sw_nhs_referral" || c === "nhs_referral") {
+    return { label: "Local Authority / NHS referral", tone: "info" };
+  }
+  if (c === "la_direct_payments") {
+    return { label: "Funded with Direct Payments", tone: "info" };
+  }
+  if (c === "privately_funded") {
+    return { label: "Privately funded", tone: "pend" };
+  }
+  return null;
+}
+
+/** Funding + support chips for the Form column (registration / booking attempt). */
+function deriveFormChips(opts: {
+  payload_json: Record<string, unknown> | null;
+  reservation: ReservationLite | null;
+  funding_code?: string | null;
+}): PlaceChip[] {
+  const payload = asRecord(opts.payload_json) || {};
+  const br = asRecord(payload.booking_request);
+  const notes = String(opts.reservation?.notes || "");
+  const officeTag = officePlaceTag(notes, payload);
+
+  let funding =
+    fundingChipFromCode(opts.funding_code) ||
+    fundingChipFromCode(String(payload.funding_code || "")) ||
+    fundingChipFromCode(String(br?.funding_code || ""));
+
+  if (!funding) {
+    if (
+      officeTag === "nhs_referral_2to1" ||
+      officeTag === "sw_nhs_referral" ||
+      truthyFlag(payload.nhs_referral) ||
+      truthyFlag(payload.sw_nhs_referral) ||
+      /sw_nhs_referral|nhs_referral|no_parent_pay/i.test(notes)
+    ) {
+      funding = { label: "Local Authority / NHS referral", tone: "info" };
+    } else if (/la_direct_payments|direct.?payment/i.test(notes)) {
+      funding = { label: "Funded with Direct Payments", tone: "info" };
+    } else if (/privately_funded/i.test(notes)) {
+      funding = { label: "Privately funded", tone: "pend" };
+    }
+  }
+
+  const support = normalizeSupportRatio(
+    String(
+      payload.support_regulated ||
+        br?.support_regulated ||
+        "",
+    ),
+    notes,
+  );
+
+  const chips: PlaceChip[] = [];
+  if (funding) chips.push(funding);
+  if (support) chips.push({ label: support, tone: "info" });
+  return chips;
+}
+
 function withWaitSecondary(
   place: PlaceOut,
   waitFlag: boolean,
@@ -262,31 +349,8 @@ function derivePlace(row: {
       secondary_tone: null,
     };
   }
-  if (
-    officeTag === "nhs_referral_2to1" ||
-    officeTag === "sw_nhs_referral" ||
-    truthyFlag(payload.nhs_referral) ||
-    truthyFlag(payload.sw_nhs_referral) ||
-    /sw_nhs_referral|nhs_referral|no_parent_pay/i.test(notes)
-  ) {
-    const ratioRaw = String(payload.support_regulated || "").toLowerCase();
-    const ratio =
-      ratioRaw.includes("2to1") || /ratio\s*=\s*2to1/i.test(notes)
-        ? "2:1"
-        : ratioRaw.includes("1to1") || /ratio\s*=\s*1to1/i.test(notes)
-        ? "1:1"
-        : "";
-    return {
-      kind: ratio === "2:1" ? "nhs_referral_2to1" : "sw_nhs_referral",
-      label: ratio ? `Local Authority / NHS referral · ${ratio}` : "Local Authority / NHS referral",
-      tone: "info",
-      detail: detail || "Contact social worker - parents do not pay",
-      secondary_label: "No parent pay",
-      secondary_tone: "ok",
-    };
-  }
 
-  // Office declined a variant (e.g. fortnightly) — stay Registered only.
+  // LA / NHS referral funding is shown under Form (funding + support chips), not as Place.
   if (
     (resStatus === "released" || resStatus === "expired") &&
     /registered_only|office_declined|fortnight/i.test(notes)
@@ -574,6 +638,23 @@ Deno.serve(async (req) => {
 
   const capped = filtered.slice(0, limit);
 
+  const fundingByDocId = new Map<string, string>();
+  const docIds = capped.map((r) => String(r.id || "")).filter(Boolean);
+  if (docIds.length) {
+    const { data: tokens } = await admin
+      .from("portal_booking_completion_tokens")
+      .select("document_id, funding_code, updated_at")
+      .in("document_id", docIds)
+      .order("updated_at", { ascending: false })
+      .limit(800);
+    for (const t of tokens || []) {
+      const id = String(t.document_id || "");
+      const code = String(t.funding_code || "").trim();
+      if (!id || !code || fundingByDocId.has(id)) continue;
+      fundingByDocId.set(id, code);
+    }
+  }
+
   const emails = Array.from(
     new Set(
       capped
@@ -758,6 +839,11 @@ Deno.serve(async (req) => {
       on_waiting_list: contact?.on_waiting_list ?? null,
       reservation,
     });
+    const formChips = deriveFormChips({
+      payload_json: (row.payload_json || {}) as Record<string, unknown>,
+      reservation,
+      funding_code: fundingByDocId.get(String(row.id)) || null,
+    });
 
     out.push({
       ...row,
@@ -770,6 +856,7 @@ Deno.serve(async (req) => {
       place_secondary_label: place.secondary_label,
       place_secondary_tone: place.secondary_tone,
       place_chips: place.chips || null,
+      form_chips: formChips.length ? formChips : null,
       reservation_status: reservation?.status ?? null,
       booking_status: lead?.booking_status ?? null,
       client_status: lead?.client_status ?? null,
