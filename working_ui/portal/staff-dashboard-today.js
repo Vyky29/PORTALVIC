@@ -355,8 +355,29 @@
       }
       return true;
     }
+    /** Exact Autumn standing template ISO for a weekday (LOCAL board stamp — not summer history). */
+    function portalAutumnStandingSnapIsoForWeekday(weekdayLong){
+      try{
+        const PRC = typeof window !== 'undefined' ? window.PortalRosterCanonical : null;
+        const w = String(weekdayLong || '').trim().toLowerCase();
+        let dk = '';
+        if(w.indexOf('mon') === 0) dk = 'monday';
+        else if(w.indexOf('tue') === 0) dk = 'tuesday';
+        else if(w.indexOf('wed') === 0) dk = 'wednesday';
+        else if(w.indexOf('thu') === 0) dk = 'thursday';
+        else if(w.indexOf('fri') === 0) dk = 'friday';
+        else if(w.indexOf('sat') === 0) dk = 'saturday';
+        else if(w.indexOf('sun') === 0) dk = 'sunday';
+        if(!dk) return '';
+        const dc = PRC && PRC.DAY_CENTRE_STANDING_ISO;
+        if(dc && dc[dk]) return String(dc[dk] || '').trim().slice(0, 10);
+        const we = PRC && PRC.WEEKEND_STANDING_ISO;
+        if(we && we[dk]) return String(we[dk] || '').trim().slice(0, 10);
+      }catch(_){}
+      return '';
+    }
     /** Nearest / standing roster YYYY-MM-DD for this staff on a weekday.
-     * Autumn days project Services standing (≤ termSummerDatedRosterThrough), never crash weeks. */
+     * Autumn days snap only to Autumn LOCAL template stamps — never summer history weeks. */
     function portalBestStaffRosterIsoForWeekday(model, staffId, weekdayLong, anchorDate){
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
@@ -376,22 +397,20 @@
       const anchorIso = typeof portalIsoYmdFromDate === 'function'
         ? portalIsoYmdFromDate(anchorDate)
         : '';
+      const summerOnly = portalCalendarIsoUsesSummerDatedRosterOnly(anchorIso);
+
+      // Autumn: only the LOCAL standing template ISO for this weekday (Jul 11–17 stamps).
+      if(!summerOnly){
+        const stamp = portalAutumnStandingSnapIsoForWeekday(w);
+        if(stamp && isos.indexOf(stamp) >= 0) return stamp;
+        /* Dated Autumn exception on this calendar day. */
+        if(anchorIso && isos.indexOf(anchorIso) >= 0) return anchorIso;
+        return '';
+      }
+
       const bounds = portalTermStandingSnapBounds();
       const summerFloor = bounds.from;
       const standingThrough = bounds.through;
-      const summerOnly = portalCalendarIsoUsesSummerDatedRosterOnly(anchorIso);
-
-      // Autumn / non-summer-dated view: latest standing ISO for this weekday (Services truth).
-      if(!summerOnly){
-        let bestStanding = '';
-        isos.forEach(function(ri){
-          if(summerFloor && String(ri) < summerFloor) return;
-          if(standingThrough && String(ri) > standingThrough) return;
-          if(!bestStanding || String(ri) > bestStanding) bestStanding = ri;
-        });
-        return bestStanding;
-      }
-
       let best = '';
       let bestDiff = Infinity;
       isos.forEach(function(ri){
@@ -6806,10 +6825,7 @@
             worked = baseMap[id].slice();
           }
         }
-        /* Never invent Autumn weekdays from summer session snaps for departed staff. */
-        if(!worked.length && !(typeof portalStaffHasNoAutumnTermSessions === 'function' && portalStaffHasNoAutumnTermSessions(id))){
-          worked = portalWorkedWeekdaysFromSessions(typeof sessionsModel !== 'undefined' ? sessionsModel : [], id);
-        }
+        /* Term colours: Staff Timetable only — never invent weekdays from session snaps. */
         dashboardData.termWorkedWeekdays = worked.sort(function(a, b){ return a - b; });
         dashboardData.termFeedbackByDate = {};
         dashboardData.termShiftEndByDate = {};

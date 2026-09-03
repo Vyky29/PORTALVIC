@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 50;
+  var SOURCE_VERSION = 51;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1205,9 +1205,52 @@
     });
   }
 
-  /** Summer dated window whose Day Centre who-with-whom is replaced by Autumn board. */
+  /**
+   * Autumn template stamp dates (NOT summer truth).
+   * Rows are stamped on these ISOs so weekday snap can find Autumn LOCAL boards.
+   * Real summer history (other May–Jul dates) must not remain in the resolved roster.
+   */
+  var AUTUMN_TERM_FROM_ISO = "2026-09-01";
+  /** While applying Autumn patches, drop summer DC/Hub rows in this window before re-injecting LOCAL boards. */
   var AUTUMN_DC_REPLACE_FROM = "2026-06-01";
   var AUTUMN_DC_REPLACE_THROUGH = "2026-07-19";
+  var AUTUMN_STANDING_TEMPLATE_ISO_SET = {
+    "2026-07-11": 1 /* Sat weekend standing */,
+    "2026-07-12": 1 /* Sun Multi/Climb standing */,
+    "2026-07-13": 1 /* Mon */,
+    "2026-07-14": 1 /* Tue */,
+    "2026-07-15": 1 /* Wed */,
+    "2026-07-16": 1 /* Thu */,
+    "2026-07-17": 1 /* Fri */,
+  };
+
+  function isAutumnStandingTemplateIso(iso) {
+    var d = normIso(iso);
+    return !!(d && AUTUMN_STANDING_TEMPLATE_ISO_SET[d]);
+  }
+
+  function isAutumnTermOrTemplateIso(iso) {
+    var d = normIso(iso);
+    if (!d) return false;
+    if (d >= AUTUMN_TERM_FROM_ISO) return true;
+    return !!AUTUMN_STANDING_TEMPLATE_ISO_SET[d];
+  }
+
+  /**
+   * Drop summer history weeks. Autumn dashboards must never project May/Jun/early-Jul
+   * books — only Autumn template stamps (Jul 11–17 LOCAL boards) + dated Sep+ rows.
+   */
+  function purgeSummerHistoryOutsideAutumnTemplates(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var d = normIso(r.session_date);
+      if (!d) return;
+      if (!isAutumnTermOrTemplateIso(d)) return;
+      out.push(r);
+    });
+    return out;
+  }
 
   /**
    * Autumn 26/27 standing patches on snap dates (13–17 Jul):
@@ -1524,6 +1567,8 @@
     merged = scrubDepartedAutumnInstructorRows(merged);
     merged = applyAutumnWeek1DayCentre(merged);
     merged = scrubAndEnsureSep6HubCover(merged);
+    /* After all Autumn patches: no summer history weeks left to snap onto Sep+. */
+    merged = purgeSummerHistoryOutsideAutumnTemplates(merged);
     return dedupeRosterAdapterRows(merged);
   }
 
@@ -1536,8 +1581,8 @@
       rosterSourceVersion: SOURCE_VERSION,
       rosterSourceNote:
         global.PORTAL_MADRE_LIVE && global.PORTAL_MADRE_LIVE.rows
-          ? "Live MADRE (portal_madre_document) + portal_roster_rows + Autumn standing (DC/Hub/Northolt/Acton)"
-          : "Bundle (MADRE snapshot) + portal_roster_rows + Autumn standing (DC/Hub/Northolt/Acton)",
+          ? "Autumn LOCAL standing templates + dated Sep+ (summer history purged)"
+          : "Autumn LOCAL standing templates + dated Sep+ (summer history purged)",
     });
   }
 
@@ -1575,9 +1620,14 @@
     AUTUMN_DAY_CENTRE_BOARD: AUTUMN_DAY_CENTRE_BOARD,
     WEEK1_DC_BOARD: WEEK1_DC_BOARD,
     AUTUMN_NO_SESSION_STAFF_KEYS: AUTUMN_NO_SESSION_STAFF_KEYS,
+    AUTUMN_TERM_FROM_ISO: AUTUMN_TERM_FROM_ISO,
+    AUTUMN_STANDING_TEMPLATE_ISO_SET: AUTUMN_STANDING_TEMPLATE_ISO_SET,
+    isAutumnStandingTemplateIso: isAutumnStandingTemplateIso,
+    isAutumnTermOrTemplateIso: isAutumnTermOrTemplateIso,
     isAutumnNoSessionStaffKey: isAutumnNoSessionStaffKey,
     scrubDepartedAutumnInstructorRows: scrubDepartedAutumnInstructorRows,
     scrubDepartedAngelInstructorRows: scrubDepartedAngelInstructorRows,
+    purgeSummerHistoryOutsideAutumnTemplates: purgeSummerHistoryOutsideAutumnTemplates,
     normIso: normIso,
   };
 })(typeof window !== "undefined" ? window : globalThis);

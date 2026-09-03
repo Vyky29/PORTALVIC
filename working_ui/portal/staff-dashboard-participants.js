@@ -4230,7 +4230,8 @@
     function portalTermSummerRosterFromIso(){
       return portalTermSummerDatedRosterFromIso();
     }
-    /** True only inside the summer dated-roster window — Autumn uses weekday standing snap (Services). */
+    /** True only inside the summer dated-roster window.
+     * Autumn (Sep+) never uses summer history — only LOCAL standing template stamps. */
     function portalCalendarIsoUsesSummerDatedRosterOnly(isoYmd){
       const iso = normaliseIsoDate(isoYmd);
       const from = portalTermSummerDatedRosterFromIso();
