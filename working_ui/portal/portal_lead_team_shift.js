@@ -981,6 +981,7 @@ const LEAD_TEAM_COMBINED_SEGMENTS = {
     { time_slot: "11 to 12", area: "Day Centre" },
     { time_slot: "12 to 1", area: "Big Pool" },
   ],
+  "emanuel|1to4": [{ time_slot: "1 to 4", area: "Day Centre" }],
   "timi|11to1": [
     { time_slot: "11 to 12", area: "Day Centre" },
     { time_slot: "12 to 12.30", area: "Small Pool" },

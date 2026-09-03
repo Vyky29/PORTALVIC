@@ -134,29 +134,26 @@
           { name: "Fadi", time: "1 to 3" },
         ],
       },
-      /* Michelle + Luliya + Youssef stay to 4 with Ikram / Emanuel; Victor + Raul end 3 */
+      /* Michelle + Luliya Ikram to 4; Victor + Raul Timi then Emanuel 1–4; Youssef Fadi to 3 (Acton from 4). */
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
       {
         staff: "Victor",
         clients: [
           { name: "Timi", time: "11 to 1" },
-          { name: "Emanuel", time: "1 to 3" },
+          { name: "Emanuel", time: "1 to 4" },
         ],
       },
       {
         staff: "Raul",
         clients: [
           { name: "Timi", time: "11 to 1" },
-          { name: "Emanuel", time: "1 to 3" },
+          { name: "Emanuel", time: "1 to 4" },
         ],
       },
       {
         staff: "Youssef",
-        clients: [
-          { name: "Fadi", time: "12.30 to 3" },
-          { name: "Emanuel", time: "3 to 4" },
-        ],
+        clients: [{ name: "Fadi", time: "12.30 to 3" }],
       },
     ],
   };
@@ -1163,7 +1160,8 @@
    *   Tue Acton 4–6.30 (not Thu — Simon covers Thu Acton AS)
    * - Roberto Wed DC: Emanuel 11–12.30 + Fadi 12.30–3 (ends 15:00; no Emanuel 3–4)
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
-   * - Fri DC: Victor+Raul end 15:00; Michelle+Luliya Ikram to 16:00; Youssef Emanuel 15–16
+   * - Fri DC: Victor+Raul Emanuel 1–4 (after Timi); Michelle+Luliya Ikram to 16:00;
+   *   Youssef Fadi ends 15:00 (Acton from 16:00 — no Emanuel 3–4)
    * - Acton Fri: Roberto → Youssef (Adam Pi / Amaar); Hub Fri Tinashe: Roberto (21h PT band)
    * - Victor OFF Mondays (DC)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)

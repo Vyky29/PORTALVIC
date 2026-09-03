@@ -82,6 +82,8 @@
       { time_slot: "11 to 12", area: "Hub Room" },
       { time_slot: "12 to 1", area: "Big Pool" },
     ],
+    /* Fri Victor/Raul: Emanuel Hub 1–4 after Timi. */
+    "emanuel|1to4": [{ time_slot: "1 to 4", area: "Hub Room" }],
   };
   // Days with no pool hour inside the block: SPECIAL card = one Hub / centre
   // segment only. Ikram + Emanuel swim Mon/Wed/Fri; Tue/Thu stay land-only.
