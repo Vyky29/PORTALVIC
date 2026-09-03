@@ -1616,6 +1616,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     return (
       p === "onboarding" ||
       p === "cs_cliq" ||
+      p === "comunicaciones" ||
       p === "admin" ||
       p === "office" ||
       p === "ceo" ||
@@ -1632,6 +1633,7 @@ export async function bootstrapDashboardSupabase(_opts) {
   const sessionWaitMs =
     isLeadOverview ||
     page === "cs_cliq" ||
+    page === "comunicaciones" ||
     page === "onboarding" ||
     page === "admin" ||
     page === "office" ||
@@ -1650,6 +1652,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       page === "lead_overview" ||
       page === "ceo" ||
       page === "cs_cliq" ||
+      page === "comunicaciones" ||
       page === "choose"
     );
   }

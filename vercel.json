@@ -136,7 +136,8 @@
     { "source": "/climbing-registration", "destination": "/climbing_registration.html" },
     { "source": "/climbing_registration", "destination": "/climbing_registration.html" },
     { "source": "/parent_climbing_registration.html", "destination": "/climbing_registration.html" },
-    { "source": "/registration-form", "destination": "/parent_registration.html" }
+    { "source": "/registration-form", "destination": "/parent_registration.html" },
+    { "source": "/comunicaciones", "destination": "/comunicaciones.html" }
   ],
   "headers": [
     {
@@ -238,6 +239,12 @@
     },
     {
       "source": "/cs_cliq.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/comunicaciones.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]

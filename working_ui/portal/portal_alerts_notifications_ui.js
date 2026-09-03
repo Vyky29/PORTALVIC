@@ -486,7 +486,9 @@
     } else if (t.id === "portalStaffWaAlertsOpenBtn") {
       e.preventDefault();
       flashAlertsButton(t);
-      if (typeof global.portalStaffWaOpen === "function") {
+      if (typeof global.portalCommsOpen === "function") {
+        global.portalCommsOpen();
+      } else if (typeof global.portalStaffWaOpen === "function") {
         global.portalStaffWaOpen();
       }
     }
