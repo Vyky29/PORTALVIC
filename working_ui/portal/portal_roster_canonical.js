@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 38;
+  var SOURCE_VERSION = 39;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -650,7 +650,8 @@
 
   /**
    * Autumn Sunday Hub Multi standing remaps (snap-date agnostic).
-   * John keeps his own Hub book; Berta is Sunday Leader (no Multi clients).
+   * Standing Jul week stored John's Hub book under BERTA (lead-on-duty).
+   * Autumn: John keeps that Hub book; Berta is Sunday Leader (no Multi clients).
    * Calendar-specific Sep 6 cover is applied in resolveAutumnInstructorsForCalendarDate.
    */
   function remapAutumnMultiInstructorsStanding(instructorsRaw) {
@@ -659,7 +660,9 @@
     return s
       .replace(/\bBISMARK\b/gi, "GODSWAY")
       .replace(/\bBISMARCK\b/gi, "GODSWAY")
-      .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
+      .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
+      /* Hub Multi book that summer tagged BERTA → JOHN (Leader has no Multi clients). */
+      .replace(/\bBERTA\b/gi, "JOHN");
   }
 
   /**

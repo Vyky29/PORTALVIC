@@ -1839,11 +1839,33 @@
       var fromId = typeof portalCanonicalStaffKeyForMatch === 'function'
         ? portalCanonicalStaffKeyForMatch(pl.covering_staff_id)
         : portalNormKeyStr(pl.covering_staff_id);
-      if(fromId) return fromId;
       var fromName = typeof portalCanonicalStaffKeyForMatch === 'function'
         ? portalCanonicalStaffKeyForMatch(pl.covering_staff_name)
         : portalNormKeyStr(pl.covering_staff_name);
-      return fromName || '';
+      var cov = fromId || fromName || '';
+      /*
+       * Sun 6 Sep 2026: office overrides wrongly assigned Emanuel/Giuseppe Hub Multi
+       * (Zaid…Rayyan F) to John. Ops truth = Youssef covers that book; John keeps his own.
+       */
+      try{
+        var iso = normaliseIsoDate(ov && ov.session_date);
+        var cid = String(ov && ov.anchor_client_id || '').trim().toLowerCase();
+        var anchor = typeof portalCanonicalStaffKeyForMatch === 'function'
+          ? portalCanonicalStaffKeyForMatch(ov && ov.anchor_staff_id)
+          : portalNormKeyStr(ov && ov.anchor_staff_id);
+        var emanuelBook = {
+          zaid: 1, samer: 1, eiji: 1, hazem: 1, haneef: 1, rayyan_f: 1, rayyanf: 1
+        };
+        if(
+          iso === '2026-09-06' &&
+          cov === 'john' &&
+          emanuelBook[cid] &&
+          (anchor === 'emanuel' || anchor === 'giuseppe' || anchor === 'youssef')
+        ){
+          return 'youssef';
+        }
+      }catch(_fix){}
+      return cov;
     }
     /** True when this instructor_reassign hands the slot to `staffId` (they are the cover). */
     function portalInstructorReassignCoverIsStaff(ov, staffId){
@@ -3574,10 +3596,8 @@
       var sid = String(staffId || '').trim().toLowerCase();
       if(sid === 'john'){
         return [
-          { weekdays: ['Monday', 'Friday'], serviceKeys: ['bespoke'], venues: ['swimfarm'], leadTeamBanner: true },
-          { weekdays: ['Wednesday'], serviceKeys: ['multi', 'aquatic'], venues: ['acton'], leadTeamBanner: true },
-          /* Sunday SwimFarm Multi-Activity: John teaches his own client per 45' slot; lead report at
-             end covers the wider programme. Team banner (leadTeamBanner) lists who is on shift. */
+          { weekdays: ['Monday', 'Wednesday'], serviceKeys: ['bespoke'], venues: ['swimfarm'], leadTeamBanner: true },
+          /* Sunday SwimFarm Multi: John teaches his own Hub book; team banner is separate. */
           { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'], leadTeamBanner: true }
         ];
       }
