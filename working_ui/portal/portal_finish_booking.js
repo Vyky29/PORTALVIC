@@ -384,10 +384,7 @@
       if (extra.pay_plan) {
         demoState.pay_plan = extra.pay_plan;
         demoState.status = "choices_saved";
-      } else if (
-        extra.booking_scope &&
-        demoState.funding_code === "sw_nhs_referral"
-      ) {
+      } else if (demoState.funding_code === "sw_nhs_referral") {
         demoState.status = "awaiting_office_referral";
       } else if (extra.booking_scope) {
         demoState.status = "scope_saved";
@@ -1057,6 +1054,37 @@
         setStep("fbStepPay");
         showPayChannel(data);
       }
+    } else if (
+      data.status === "funding_saved" &&
+      data.funding_code === "sw_nhs_referral"
+    ) {
+      // Legacy tokens that stopped after funding: finalise referral without booking length.
+      showNotice(notice, "Saving…", "");
+      void api("save_choices", {
+        funding_code: "sw_nhs_referral",
+        social_worker_name: data.social_worker_name,
+        social_worker_email: data.social_worker_email,
+      })
+        .then(function (out) {
+          data.status = "awaiting_office_referral";
+          if (out && out.social_worker_name) {
+            data.social_worker_name = out.social_worker_name;
+          }
+          if (out && out.social_worker_email) {
+            data.social_worker_email = out.social_worker_email;
+          }
+          showSwReferralDone(data);
+          showNotice(
+            notice,
+            "Our team will contact you to finalise the booking.",
+            "ok",
+          );
+        })
+        .catch(function (err) {
+          setStep("fbStepFunding");
+          syncSwConfirmPanel(data);
+          showNotice(notice, err.message || "Could not save referral.", "error");
+        });
     } else if (data.status === "funding_saved" && data.funding_code) {
       setStep("fbStepScope");
       adaptScopeForFunding(data);
@@ -1110,7 +1138,26 @@
         data.pay_plan = null;
         showNotice(notice, "Saving…", "");
         void api("save_choices", payload)
-          .then(function () {
+          .then(function (out) {
+            if (
+              funding === "sw_nhs_referral" ||
+              (out && out.status === "awaiting_office_referral")
+            ) {
+              data.status = "awaiting_office_referral";
+              if (out && out.social_worker_name) {
+                data.social_worker_name = out.social_worker_name;
+              }
+              if (out && out.social_worker_email) {
+                data.social_worker_email = out.social_worker_email;
+              }
+              showSwReferralDone(data);
+              showNotice(
+                notice,
+                "Our team will contact you to finalise the booking.",
+                "ok",
+              );
+              return;
+            }
             setStep("fbStepScope");
             adaptScopeForFunding(data);
             preselectScope(data);

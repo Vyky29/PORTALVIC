@@ -785,46 +785,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Funding only (step 1) — continue to booking scope.
-    if (!scope && !planOnly) {
+    // LA / NHS referral: funding (+ optional SW confirm) — no parent invoice, no booking-length step.
+    if (funding === "sw_nhs_referral" && !planOnly) {
       const now = new Date().toISOString();
-      const choices: Record<string, unknown> = {
-        funding_code: funding,
-        saved_at: now,
-      };
-      if (swContact) {
-        choices.social_worker_name = swContact.name;
-        choices.social_worker_email = swContact.email;
-        choices.social_worker_contact = `${swContact.name} · ${swContact.email}`;
-      }
-      await admin
-        .from("portal_booking_completion_tokens")
-        .update({
-          funding_code: funding,
-          pay_plan: null,
-          status: "funding_saved",
-          choices_json: choices,
-          updated_at: now,
-        })
-        .eq("id", token.id);
-      return json(200, {
-        ok: true,
-        status: "funding_saved",
-        funding_code: funding,
-        social_worker_name: swContact?.name || null,
-        social_worker_email: swContact?.email || null,
-      });
-    }
-
-    // SW / NHS referral: funding + scope — no parent invoice; office contacts SW.
-    if (funding === "sw_nhs_referral" && scope && !planOnly) {
-      const now = new Date().toISOString();
-      const scopeLabel =
-        scope === "trial_session"
+      const scopeLabel = scope
+        ? scope === "trial_session"
           ? "Trial session (office arranges with LA/NHS)"
           : scope === "auto_reenroll_year"
           ? "Auto re-enrol by term (all year)"
-          : "This term only";
+          : "This term only"
+        : "Office will confirm booking length with LA/NHS";
       const fundingLabel = "Local Authority / NHS referral";
       const ensured = await ensureContact(
         admin,
@@ -837,7 +807,7 @@ Deno.serve(async (req) => {
 
       const choices: Record<string, unknown> = {
         funding_code: funding,
-        booking_scope: scope,
+        booking_scope: scope || null,
         scope_label: scopeLabel,
         social_worker_name: swContact!.name,
         social_worker_email: swContact!.email,
@@ -927,12 +897,36 @@ Deno.serve(async (req) => {
         ok: true,
         status: "awaiting_office_referral",
         funding_code: funding,
-        booking_scope: scope,
+        booking_scope: scope || null,
         social_worker_name: swContact!.name,
         social_worker_email: swContact!.email,
         no_parent_pay: true,
         message:
           "Our team will contact you to finalise the booking.",
+      });
+    }
+
+    // Funding only (step 1) — continue to booking scope (private / LA invoice paths).
+    if (!scope && !planOnly) {
+      const now = new Date().toISOString();
+      const choices: Record<string, unknown> = {
+        funding_code: funding,
+        saved_at: now,
+      };
+      await admin
+        .from("portal_booking_completion_tokens")
+        .update({
+          funding_code: funding,
+          pay_plan: null,
+          status: "funding_saved",
+          choices_json: choices,
+          updated_at: now,
+        })
+        .eq("id", token.id);
+      return json(200, {
+        ok: true,
+        status: "funding_saved",
+        funding_code: funding,
       });
     }
 
