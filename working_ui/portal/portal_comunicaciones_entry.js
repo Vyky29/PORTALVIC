@@ -173,16 +173,15 @@
           return lastUnreadCount;
         }
         var res = await c.rpc("communication_unread_count");
-        if (res.error) return lastUnreadCount;
+        if (res.error) {
+          scheduleUnreadRetry();
+          return lastUnreadCount;
+        }
         var next = Math.max(0, Number(res.data) || 0);
         applyUnreadBadge(next);
         subscribeUnreadRealtime();
         subscribeIncomingCalls();
-        try {
-          if (typeof global.portalEnsureWebPushSubscription === "function") {
-            void global.portalEnsureWebPushSubscription();
-          }
-        } catch (_p) {}
+        bindIntrinsicCommsAlerts();
         return lastUnreadCount;
       } catch (_e) {
         scheduleUnreadRetry();
@@ -204,7 +203,8 @@
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "communication_messages" },
-          function () {
+          function (payload) {
+            maybeShowMessageToast((payload && payload.new) || {});
             void refreshUnread();
           }
         )
@@ -258,6 +258,146 @@
   var incomingCallChannel = null;
   var incomingCallState = null;
   var incomingCueTimer = null;
+  var messageToastTimer = null;
+  var messageToastCount = 0;
+
+  function previewMessageBody(row) {
+    var type = String((row && row.message_type) || "text").toLowerCase();
+    if (type === "image") return "Photo";
+    if (type === "file") return String((row && row.file_name) || "File");
+    if (type === "voice") return "Voice note";
+    var body = String((row && row.body) || "").replace(/\s+/g, " ").trim();
+    if (!body) return "New message";
+    return body.length > 90 ? body.slice(0, 89) + "..." : body;
+  }
+
+  function messageToastSender(row) {
+    var ctx = String((row && row.sender_context) || "").toUpperCase();
+    if (ctx === "ADMINISTRATION" || ctx === "ADMIN") return "ADMIN";
+    return "Communications";
+  }
+
+  function ensureMessageToast() {
+    if (document.getElementById("portalCommsMsgToast")) {
+      return document.getElementById("portalCommsMsgToast");
+    }
+    if (!document.getElementById("portalCommsIncomingCss")) {
+      ensureIncomingOverlay();
+    }
+    if (!document.getElementById("portalCommsMsgToastCss")) {
+      var st = document.createElement("style");
+      st.id = "portalCommsMsgToastCss";
+      st.textContent =
+        "#btnComunicaciones,#topbarStaffWaBtn{overflow:visible!important}" +
+        "#portalCommsMsgToast{position:fixed;left:12px;right:12px;top:max(12px,env(safe-area-inset-top));z-index:2147482500;display:flex;gap:10px;align-items:center;max-width:28rem;margin:0 auto;padding:12px 12px 12px 14px;border-radius:16px;background:#173247;color:#fff;box-shadow:0 12px 32px rgba(15,23,42,.35);border:1px solid rgba(255,255,255,.14);min-width:0}" +
+        "#portalCommsMsgToast[hidden]{display:none!important}" +
+        "#portalCommsMsgToast .portal-comms-toast-copy{min-width:0;flex:1}" +
+        "#portalCommsMsgToast strong{display:block;font-size:13px;line-height:1.25;overflow-wrap:anywhere}" +
+        "#portalCommsMsgToast span{display:block;margin-top:2px;font-size:12px;color:rgba(255,255,255,.78);overflow-wrap:anywhere;max-height:2.6em;overflow:hidden}" +
+        "#portalCommsMsgToastOpen{flex:0 0 auto;padding:8px 12px;border:0;border-radius:999px;background:#16a34a;color:#fff;font:inherit;font-size:12px;font-weight:800;cursor:pointer}";
+      (document.head || document.documentElement).appendChild(st);
+    }
+    var el = document.createElement("div");
+    el.id = "portalCommsMsgToast";
+    el.hidden = true;
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    el.innerHTML =
+      '<div class="portal-comms-toast-copy"><strong id="portalCommsMsgToastTitle">Communications</strong><span id="portalCommsMsgToastBody">New message</span></div>' +
+      '<button type="button" id="portalCommsMsgToastOpen">Open</button>';
+    (document.body || document.documentElement).appendChild(el);
+    el.addEventListener("click", function (ev) {
+      if (ev.target && ev.target.id === "portalCommsMsgToastOpen") return;
+      hideMessageToast();
+      openApp();
+    });
+    document.getElementById("portalCommsMsgToastOpen").addEventListener("click", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      hideMessageToast();
+      openApp();
+    });
+    return el;
+  }
+
+  function hideMessageToast() {
+    if (messageToastTimer) {
+      global.clearTimeout(messageToastTimer);
+      messageToastTimer = null;
+    }
+    messageToastCount = 0;
+    var el = document.getElementById("portalCommsMsgToast");
+    if (el) el.hidden = true;
+  }
+
+  function maybeShowMessageToast(row) {
+    if (isCommsAppPage() || !row) return;
+    var type = String(row.message_type || "text").toLowerCase();
+    if (type === "system" || type === "call") return;
+    if (String(row.performed_by_user_id || "") === myUserId()) return;
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    messageToastCount += 1;
+    var el = ensureMessageToast();
+    var titleEl = document.getElementById("portalCommsMsgToastTitle");
+    var bodyEl = document.getElementById("portalCommsMsgToastBody");
+    if (titleEl) {
+      titleEl.textContent =
+        messageToastCount > 1
+          ? "Communications (" + messageToastCount + " new)"
+          : messageToastSender(row);
+    }
+    if (bodyEl) bodyEl.textContent = previewMessageBody(row);
+    el.hidden = false;
+    try {
+      if (typeof global.portalPlayAlertCue === "function") {
+        global.portalPlayAlertCue({ vibrate: [180, 80, 180] });
+      } else if (global.navigator && global.navigator.vibrate) {
+        global.navigator.vibrate([180, 80, 180]);
+      }
+    } catch (_cue) {}
+    if (messageToastTimer) global.clearTimeout(messageToastTimer);
+    messageToastTimer = global.setTimeout(hideMessageToast, 8000);
+  }
+
+  function subscribeIfNotifyGranted() {
+    try {
+      if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+      if (typeof global.portalEnsureWebPushSubscription === "function") {
+        void global.portalEnsureWebPushSubscription();
+      }
+    } catch (_s) {}
+  }
+
+  function requestCommsNotifyQuietly() {
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission === "granted") {
+      subscribeIfNotifyGranted();
+      return;
+    }
+    if (Notification.permission === "denied") return;
+    try {
+      void Notification.requestPermission().then(function (r) {
+        if (r === "granted") subscribeIfNotifyGranted();
+      });
+    } catch (_r) {}
+  }
+
+  function bindIntrinsicCommsAlerts() {
+    if (global.__PORTAL_COMMS_ALERTS_BOUND__) {
+      subscribeIfNotifyGranted();
+      return;
+    }
+    global.__PORTAL_COMMS_ALERTS_BOUND__ = true;
+    subscribeIfNotifyGranted();
+    if (typeof Notification === "undefined" || Notification.permission !== "default") return;
+    function onFirstGesture() {
+      document.removeEventListener("pointerdown", onFirstGesture, true);
+      document.removeEventListener("keydown", onFirstGesture, true);
+      requestCommsNotifyQuietly();
+    }
+    document.addEventListener("pointerdown", onFirstGesture, true);
+    document.addEventListener("keydown", onFirstGesture, true);
+  }
 
   function stopIncomingCue() {
     if (incomingCueTimer) {
@@ -453,6 +593,18 @@
             });
           }
         }
+        if (d.type === "portal-push-received" && open === "communications") {
+          var toastEl = document.getElementById("portalCommsMsgToast");
+          if (!toastEl || toastEl.hidden) {
+            maybeShowMessageToast({
+              message_type: "text",
+              body: d.body || "New message",
+              sender_context: "PERSONAL",
+              performed_by_user_id: d.senderUserId || "",
+            });
+          }
+          void refreshUnread();
+        }
         if (d.type === "portal-notification-click" && (open === "communications" || open === "communications_call")) {
           if (d.url) {
             try {
@@ -621,6 +773,7 @@
   function boot() {
     try {
       bindIncomingPushMessages();
+      bindIntrinsicCommsAlerts();
       var key = "";
       if (typeof global.resolveTopbarStaffKey === "function") {
         key = global.resolveTopbarStaffKey() || "";

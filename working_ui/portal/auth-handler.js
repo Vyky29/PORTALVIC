@@ -1293,6 +1293,14 @@ function bindLogin() {
     e.preventDefault();
     e.stopImmediatePropagation();
 
+    /* Same tap as Login: OS prompt is intrinsic to entering the app. Do this
+       before any await so the browser still treats it as a user gesture. */
+    try {
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        void Notification.requestPermission();
+      }
+    } catch (_perm) {}
+
     if (window.__PORTAL_LOGIN_SUBMIT_INFLIGHT__) return;
 
     await tryMergeStaffLoginMapFromSiblingJson();

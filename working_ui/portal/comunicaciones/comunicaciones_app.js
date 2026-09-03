@@ -1610,6 +1610,20 @@ async function boot() {
     }, 25000);
     window.setInterval(paintTyping, 1000);
     try {
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        document.addEventListener(
+          "pointerdown",
+          function commsAskNotifyOnce() {
+            document.removeEventListener("pointerdown", commsAskNotifyOnce, true);
+            void Notification.requestPermission().then(function (r) {
+              if (r === "granted" && typeof window.portalEnsureWebPushSubscription === "function") {
+                void window.portalEnsureWebPushSubscription();
+              }
+            });
+          },
+          true
+        );
+      }
       if (typeof window.portalEnsureWebPushSubscription === "function") {
         void window.portalEnsureWebPushSubscription();
       }
