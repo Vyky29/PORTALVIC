@@ -334,7 +334,7 @@
         if (fromRoster) return fromRoster;
       }
     } catch (_) {}
-    if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "lulia" || k === "luliya" || k === "aida" || k === "stf021") return "luliya";
     if (k === "yousef" || k === "yousseff" || k === "yusef" || k === "stf005") return "youssef";
     if (k.indexOf("youssef") === 0 || k.indexOf("yousef") === 0) return "youssef";
     if (k === "javiermarquez" || k === "stf010") return "javier";

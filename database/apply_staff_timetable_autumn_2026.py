@@ -318,7 +318,7 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
             "termDashboardCalendarToDayCentre": SESSION_TO,
             "termStaffDayCentreCalendarKeys": [
                 "michelle",
-                "lulia",
+                "luliya",
                 "victor",
                 "raul",
                 "roberto",
@@ -349,7 +349,7 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
                     "weekdays": [5, 0],
                 },
                 # Luliya OFF Thursdays (Acton Thu = Roberto / Simon / Javier / Aurora).
-                "lulia": {
+                "luliya": {
                     "from": SESSION_FROM,
                     "to": SESSION_TO,
                     "weekdays": [4],

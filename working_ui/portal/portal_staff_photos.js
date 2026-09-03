@@ -21,7 +21,7 @@
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "");
     if (!k) return "";
-    if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "lulia" || k === "luliya" || k === "aida" || k === "stf021") return "luliya";
     if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
     if (k === "stf006") return "john";
     if (k === "stf012") return "berta";
@@ -47,7 +47,7 @@
     simongriffiths: "simon",
     andresborrego: "andres",
     youssefmoustafa: "youssef",
-    aidalulia: "lulia",
+    aidalulia: "luliya",
   };
 
   function photoLookupKeys(nameOrKey, opts) {
@@ -162,7 +162,7 @@
       } catch (_) {}
       if (hadProfileFile) return;
       if (!key) return;
-      if (key === "lulia") {
+      if (key === "lulia" || key === "luliya") {
         pushCandidate(urls, base + "luliya.png");
       }
       pushCandidate(urls, base + key + ".png");

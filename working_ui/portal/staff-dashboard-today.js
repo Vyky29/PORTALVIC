@@ -2025,7 +2025,7 @@
     }
     /** Luliya Day Centre (Ikram) ends at 15:00 when she covers aquatic sessions that afternoon. */
     function portalStaffKeyIsLulia(staffId){
-      return portalNormKeyStr(staffId) === 'lulia';
+      return portalNormKeyStr(staffId) === 'luliya';
     }
     function portalRosterRowIsLuliaIkramDayCentre(s){
       if(!s) return false;
@@ -4595,7 +4595,7 @@
         .replace(/[^a-z0-9]+/g, '')
         .trim();
       if(!k) return '';
-      if(k === 'luliya' || k === 'aida' || k === 'stf021') return 'lulia';
+      if(k === 'lulia' || k === 'luliya' || k === 'aida' || k === 'stf021') return 'luliya';
       if(typeof window.portalCanonicalStaffRosterKey === 'function'){
         return window.portalCanonicalStaffRosterKey(k) || k;
       }
@@ -4624,7 +4624,7 @@
           .replace(/[^a-z0-9]+/g, '')
           .trim();
         if(!k || seen[k]) return;
-        if(k === 'luliya' || k === 'aida') k = 'lulia';
+        if(k === 'lulia' || k === 'aida') k = 'luliya';
         seen[k] = true;
         keys.push(k);
         if(/^stf\d{3}$/.test(k)){
@@ -4633,7 +4633,7 @@
             stf005: 'youssef', stf006: 'john', stf007: 'bismark', stf008: 'giuseppe',
             stf009: 'godsway', stf010: 'javier', stf011: 'aurora', stf012: 'berta',
             stf013: 'victor', stf014: 'carlos', stf015: 'alex', stf016: 'simon', stf017: 'javi',
-            stf018: 'raul', stf019: 'sevitha', stf020: 'teflon', stf021: 'lulia',
+            stf018: 'raul', stf019: 'sevitha', stf020: 'teflon', stf021: 'luliya',
             stf022: 'andres'
           };
           if(map[k] && !seen[map[k]]){ seen[map[k]] = true; keys.push(map[k]); }

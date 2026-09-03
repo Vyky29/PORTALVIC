@@ -74,7 +74,7 @@
         scopes: MICHELLE_DC_SCOPES,
         leadRosterKeys: ["michelle"],
         /** Support + CEO cover on Day Centre sessions only. */
-        staticRosterKeys: ["roberto", "lulia", "luliya", "youssef", "victor", "raul"],
+        staticRosterKeys: ["roberto", "luliya", "youssef", "victor", "raul"],
         allowExecCover: true,
       },
     ],
@@ -150,7 +150,7 @@
     var out = [];
     var add = function (n) {
       var k = normKey(n);
-      if (k === "luliya") k = "lulia";
+      if (k === "lulia") k = "luliya";
       if (k && out.indexOf(k) < 0) out.push(k);
     };
     if (Array.isArray(raw)) {
@@ -185,7 +185,7 @@
 
   function shouldIncludeRosterKey(k, teamDef) {
     k = normKey(k);
-    if (k === "luliya") k = "lulia";
+    if (k === "lulia") k = "luliya";
     if (!k) return false;
     if (EXEC_COVER_ROSTER_KEYS[k] && !(teamDef && teamDef.allowExecCover)) return false;
     return true;
@@ -197,7 +197,7 @@
     var keys = [];
     var add = function (k) {
       k = normKey(k);
-      if (k === "luliya") k = "lulia";
+      if (k === "lulia") k = "luliya";
       if (!shouldIncludeRosterKey(k, teamDef)) return;
       if (!k || keys.indexOf(k) >= 0) return;
       keys.push(k);
@@ -246,7 +246,7 @@
 
   function chipToneForMember(rosterKey, ctx, profileRow) {
     rosterKey = normKey(rosterKey);
-    if (rosterKey === "luliya") rosterKey = "lulia";
+    if (rosterKey === "lulia") rosterKey = "luliya";
     ctx = ctx || {};
     if (ctx.sessionLeadsRing) return "lead";
     if (SESSION_LEAD_KEYS[rosterKey]) {
@@ -276,7 +276,7 @@
     var seen = Object.create(null);
     rosterKeys.forEach(function (rk) {
       var want = normKey(rk);
-      if (want === "luliya") want = "lulia";
+      if (want === "lulia") want = "luliya";
       var row = null;
       if (res && !res.error && Array.isArray(res.data)) {
         for (var i = 0; i < res.data.length; i++) {

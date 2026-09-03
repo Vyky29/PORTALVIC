@@ -2008,7 +2008,7 @@
         ? portalCanonicalStaffKeyForMatch(id)
         : id;
       if(canon && keys.indexOf(canon) < 0) keys.push(canon);
-      if(canon === 'lulia' || id === 'luliya' || id === 'lulia' || id === 'aida'){
+      if(canon === 'luliya' || canon === 'lulia' || id === 'luliya' || id === 'lulia' || id === 'aida'){
         if(keys.indexOf('luliya') < 0) keys.push('luliya');
         if(keys.indexOf('lulia') < 0) keys.push('lulia');
       }

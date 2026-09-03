@@ -23,7 +23,7 @@
     stf018: "raul",
     stf019: "sevitha",
     stf020: "teflon",
-    stf021: "lulia",
+    stf021: "luliya",
     stf022: "andres",
   };
 
@@ -48,9 +48,9 @@
       .replace(/[^a-z0-9]+/g, "")
       .trim();
     if (!k) return "";
-    if (k === "luliya") return "lulia";
-    if (k === "lulya") return "lulia";
-    if (k === "aida") return "lulia";
+    if (k === "lulia") return "luliya";
+    if (k === "lulya") return "luliya";
+    if (k === "aida") return "luliya";
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
     if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
@@ -74,7 +74,7 @@
     "stf002@staff.import.pending": "roberto",
     "stf012@staff.import.pending": "berta",
     "stf006@staff.import.pending": "john",
-    "stf021@staff.import.pending": "lulia",
+    "stf021@staff.import.pending": "luliya",
     "stf016@staff.import.pending": "simon",
     "victor@clubsensational.org": "victor",
     "raul@clubsensational.org": "raul",

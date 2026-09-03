@@ -61,8 +61,8 @@
       .trim();
     if (!v) return "";
     if (v === "yousef" || v === "youssef" || v === "yusef") return "youssef";
-    if (v === "luliya") return "lulia";
-    if (v === "aida") return "lulia";
+    if (v === "lulia") return "luliya";
+    if (v === "aida") return "luliya";
     return v;
   }
 

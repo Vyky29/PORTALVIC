@@ -1441,7 +1441,7 @@
   /** Collapse staff aliases (luliya/lulia/aida, javi/javier) so override anchors bind to roster names. */
   function canonicalStaffMatchKey(value) {
     var k = clean(value).toLowerCase().split(/\s+/)[0] || "";
-    if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "luliya";
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial" || k === "palankas" || k === "palankasarranz") return "javi";
     return k;
@@ -3905,7 +3905,7 @@
     if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
       return window.portalStaffDisplayName(n);
     }
-    if (canonicalStaffMatchKey(n) === "lulia") return "Luliya";
+    if (canonicalStaffMatchKey(n) === "luliya") return "Luliya";
     if (/^[A-Z]{2,}$/.test(n)) {
       return n.charAt(0) + n.slice(1).toLowerCase();
     }

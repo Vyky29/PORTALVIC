@@ -41,7 +41,7 @@
   function canonicalStaffRosterKey(value) {
     const k = String(value || "").trim().toLowerCase();
     if (!k) return "";
-    if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "lulia" || k === "luliya" || k === "aida" || k === "stf021") return "luliya";
     if (k === "yousef" || k === "youssef" || k === "yousseff" || k === "yusef") return "youssef";
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";

@@ -1710,7 +1710,7 @@
     function portalCanonicalStaffKeyForMatch(v){
       var k = portalNormKeyStr(v);
       if(!k) return '';
-      if(k === 'luliya' || k === 'lulya' || k === 'aida' || k === 'stf021') return 'lulia';
+      if(k === 'lulia' || k === 'luliya' || k === 'lulya' || k === 'aida' || k === 'stf021') return 'luliya';
       if(k === 'javiermarquez') return 'javier';
       if(k === 'javiarranz' || k === 'javiarranzescorial' || k === 'palankas' || k === 'palankasarranz') return 'javi';
       if(typeof window.portalCanonicalStaffRosterKey === 'function'){

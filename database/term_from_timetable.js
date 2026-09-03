@@ -29,7 +29,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termDashboardCalendarToDayCentre": "2026-12-17",
   "termStaffDayCentreCalendarKeys": [
     "michelle",
-    "lulia",
+    "luliya",
     "victor",
     "raul",
     "roberto",
@@ -79,7 +79,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         0
       ]
     },
-    "lulia": {
+    "luliya": {
       "from": "2026-09-01",
       "to": "2026-12-17",
       "weekdays": [
@@ -146,7 +146,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       1,
       3
     ],
-    "lulia": [
+    "luliya": [
       1,
       2,
       3,
@@ -236,7 +236,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       1,
       3
     ],
-    "lulia": [
+    "luliya": [
       1,
       2,
       3,
@@ -633,7 +633,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-12-14",
       "2026-12-16"
     ],
-    "lulia": [
+    "luliya": [
       "2026-09-01",
       "2026-09-02",
       "2026-09-04",

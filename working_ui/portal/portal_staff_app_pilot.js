@@ -18,7 +18,7 @@ export const PORTAL_STAFF_APP_PILOT_ROSTER_KEYS = new Set([
   "javier",
   "roberto",
   "luliya",
-  "lulia",
+  "luliya",
   "youssef",
   "yousef",
   "yusef",

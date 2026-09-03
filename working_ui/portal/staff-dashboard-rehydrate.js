@@ -119,7 +119,7 @@
         if (typeof window.portalCanonicalStaffRosterKey === "function") {
           return window.portalCanonicalStaffRosterKey(k) || k;
         }
-        if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+        if (k === "luliya" || k === "aida" || k === "stf021") return "luliya";
         return k;
       }
       var _rehydrateRun = 0;
@@ -221,7 +221,7 @@
             .replace(/[^a-z0-9]+/g, "")
             .trim();
           if (!k || seen[k]) return;
-          if (k === "luliya" || k === "aida") k = "lulia";
+          if (k === "lulia" || k === "aida") k = "luliya";
           seen[k] = true;
           keys.push(k);
           if (/^stf\d{3}$/.test(k)) {
@@ -230,7 +230,7 @@
               stf005: "youssef", stf006: "john", stf007: "bismark", stf008: "giuseppe",
               stf009: "godsway", stf010: "javier", stf011: "aurora", stf012: "berta",
               stf013: "victor", stf014: "carlos", stf015: "alex", stf017: "javi",
-              stf018: "raul", stf019: "sevitha", stf020: "teflon", stf021: "lulia",
+              stf018: "raul", stf019: "sevitha", stf020: "teflon", stf021: "luliya",
               stf022: "andres",
             };
             if (map[k] && !seen[map[k]]) { seen[map[k]] = true; keys.push(map[k]); }

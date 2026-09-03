@@ -23,7 +23,7 @@
     stf018: "raul",
     stf019: "sevitha",
     stf020: "teflon",
-    stf021: "lulia",
+    stf021: "luliya",
     stf022: "andres",
   };
 
@@ -48,8 +48,9 @@
       .replace(/[^a-z0-9]+/g, "")
       .trim();
     if (!k) return "";
-    if (k === "luliya") return "lulia";
-    if (k === "aida") return "lulia";
+    if (k === "lulia") return "luliya";
+    if (k === "lulya") return "luliya";
+    if (k === "aida") return "luliya";
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
     var alias = PORTAL_STAFF_CODE_TO_ROSTER_KEY[k];

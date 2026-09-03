@@ -259,7 +259,7 @@ function filterBertaWedTeam(keys) {
 /** Wed Acton — Luliya, Javier, Youssef (+ roster hits when present). */
 function filterJohnWedActonTeam(keys) {
   const leadKey = "john";
-  const prefer = ["lulia", "javier", "youssef"];
+  const prefer = ["luliya", "javier", "youssef"];
   let pool = excludePeerProgrammeLead(keys, leadKey);
   const out = [];
   prefer.forEach(function (w) {
