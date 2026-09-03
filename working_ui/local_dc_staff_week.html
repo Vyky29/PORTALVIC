@@ -1266,8 +1266,9 @@
   }
 
   /**
-   * Timed CSS grid for AS aquatic (30') and Sunday pool Multi/Aquatic (15').
-   * Skip Day Centre, Climbing, Bespoke-only, Manager-only.
+   * Timed CSS grid for AS aquatic (30' / 60' span 2).
+   * Sunday Hub Multi stays compact stack (same height as Aquatic).
+   * Sunday pool uses band rows (below) — not minute-proportional height.
    */
   function columnUsesSlotGrid(clients) {
     if (!clients || !clients.length) return false;
@@ -1278,6 +1279,7 @@
         .trim()
         .toLowerCase();
       if (/climb/.test(area)) return false;
+      if (/hub\s*room/.test(area)) return false;
       if (/bespoke/.test(area) && !/multi/.test(area)) return false;
       if (nm === "manager" || (/manager/.test(area) && !/multi/.test(area))) return false;
       if (/fitness/.test(area) && !/multi|aquatic|pool/.test(area)) return false;
@@ -1286,13 +1288,43 @@
     });
   }
 
-  /** Sunday Big/Small Pool columns (not Hub) — share one 15' grid so Yusuf 75' lines up. */
+  /** Sunday Big/Small Pool columns (not Hub). */
   function isSundayPoolColumn(clients) {
     if (!clients || !clients.length) return false;
     return clients.every(function (c) {
       var area = String((c && c.area) || "").toLowerCase();
       return /swimfarm/.test(area) && /pool/.test(area) && !/hub\s*room/.test(area);
     });
+  }
+
+  /**
+   * Sunday pool visual bands: each row = one Aquatic-sized card.
+   * 30' and 45' Multi = 1 row; Yusuf 9–10.15 = 2 rows (Simon + Adam Ab).
+   */
+  var SUNDAY_POOL_BANDS = [
+    { start: 9 * 60, end: 9 * 60 + 30 },
+    { start: 9 * 60 + 30, end: 10 * 60 + 15 },
+    { start: 10 * 60 + 15, end: 11 * 60 },
+    { start: 11 * 60, end: 11 * 60 + 45 },
+    { start: 11 * 60 + 45, end: 12 * 60 + 30 },
+    { start: 12 * 60 + 30, end: 13 * 60 + 15 },
+    { start: 13 * 60 + 15, end: 14 * 60 },
+    { start: 14 * 60, end: 14 * 60 + 30 },
+    { start: 14 * 60 + 30, end: 15 * 60 },
+  ];
+
+  function bandsForRange(bands, start, end) {
+    var first = -1;
+    var last = -1;
+    for (var i = 0; i < bands.length; i++) {
+      var b = bands[i];
+      if (b.end > start && b.start < end) {
+        if (first < 0) first = i;
+        last = i;
+      }
+    }
+    if (first < 0) return null;
+    return { rowStart: first + 1, rowSpan: last - first + 1 };
   }
 
   function slotGridStep(clients) {
@@ -1382,9 +1414,9 @@
                 : c.band === "Weekend"
                   ? "card--weekend"
                   : "card--as";
-    /* Tall card only for merged 2×30' swim (Cyrus/Stephanie) or ~75' Multi.
-     * Climbing is always 60' bookable — keep normal (1 unit) height, not 2×30'.
-     * When placed on .col__slots grid, height comes from row span (not --units). */
+    /* Tall only for merged 2×30' AS swim (Cyrus/Stephanie).
+     * Hub Multi + Sunday singles stay Aquatic-sized (units 1).
+     * Sunday pool Yusuf uses band span 2 on the shared grid. */
     var units = 1;
     var gridStyle = "";
     if (gridPos && gridPos.rowStart && gridPos.rowSpan) {
@@ -1397,10 +1429,10 @@
     } else if (!c.dc) {
       var areaLow = String(c.area || "").toLowerCase();
       var isClimb = /climb/.test(areaLow);
+      var isHub = /hub\s*room/.test(areaLow);
       var u = durationUnits(c.time);
-      if (!isClimb) {
-        if (c.merged && u >= 2) units = Math.min(u, 2.5);
-        else if (!c.merged && u >= 2 && u <= 2.5) units = u;
+      if (!isClimb && !isHub && c.merged && u >= 2) {
+        units = Math.min(u, 2);
       }
     }
     return (
@@ -1534,30 +1566,23 @@
     cols.className = "cols";
     var staffList = staffColumnsForDay(day);
     var clientsByStaff = {};
-    var sundayPoolShared = null;
+    var sundayPoolGrid = null;
     staffList.forEach(function (staff) {
       var cl = boardClients(day, staff);
       clientsByStaff[staff] = cl;
-      if (dk !== "sunday" || !columnUsesSlotGrid(cl) || !isSundayPoolColumn(cl)) return;
-      var step = 15;
-      var win = slotGridWindow(cl, step);
-      if (!win) return;
-      if (!sundayPoolShared) {
-        sundayPoolShared = { start: win.start, end: win.end, step: step };
-      } else {
-        if (win.start < sundayPoolShared.start) sundayPoolShared.start = win.start;
-        if (win.end > sundayPoolShared.end) sundayPoolShared.end = win.end;
+      if (dk === "sunday" && isSundayPoolColumn(cl)) {
+        sundayPoolGrid = {
+          bands: SUNDAY_POOL_BANDS,
+          rows: SUNDAY_POOL_BANDS.length,
+          rowPx: 40,
+        };
       }
     });
-    if (sundayPoolShared) {
-      sundayPoolShared.rows =
-        (sundayPoolShared.end - sundayPoolShared.start) / sundayPoolShared.step;
-    }
 
     function appendTimedSlots(colEl, clients, grid) {
       var slots = document.createElement("div");
       slots.className = "col__slots";
-      var rowPx = grid.step === 15 ? 22 : 40;
+      var rowPx = grid.rowPx || 40;
       slots.style.gridTemplateRows =
         "repeat(" + grid.rows + ", minmax(" + rowPx + "px, auto))";
       var html = "";
@@ -1567,8 +1592,20 @@
           html += renderCard(c, dk);
           return;
         }
-        var rowStart = Math.round((r.start - grid.start) / grid.step) + 1;
-        var rowSpan = Math.max(1, Math.round((r.end - r.start) / grid.step));
+        var rowStart;
+        var rowSpan;
+        if (grid.bands) {
+          var pos = bandsForRange(grid.bands, r.start, r.end);
+          if (!pos) {
+            html += renderCard(c, dk);
+            return;
+          }
+          rowStart = pos.rowStart;
+          rowSpan = pos.rowSpan;
+        } else {
+          rowStart = Math.round((r.start - grid.start) / grid.step) + 1;
+          rowSpan = Math.max(1, Math.round((r.end - r.start) / grid.step));
+        }
         html += renderCard(c, dk, { rowStart: rowStart, rowSpan: rowSpan });
       });
       slots.innerHTML = html;
@@ -1601,24 +1638,23 @@
                   ? "OFF (starts Saturday)"
                   : "No sessions";
         col.innerHTML += '<p class="empty">' + esc(emptyLabel) + "</p>";
-      } else if (
-        sundayPoolShared &&
-        columnUsesSlotGrid(clients) &&
-        isSundayPoolColumn(clients)
-      ) {
-        /* FOTO1: shared 15' grid — Yusuf 75' = Simon 30' + Adam Ab 45'. */
-        appendTimedSlots(col, clients, sundayPoolShared);
+      } else if (sundayPoolGrid && isSundayPoolColumn(clients)) {
+        /* Pool: one band = Aquatic height; Yusuf spans 2 bands. */
+        appendTimedSlots(col, clients, sundayPoolGrid);
       } else if (columnUsesSlotGrid(clients)) {
-        /* FOTO2: per-column grid (no leading empty rows when shift starts later). */
+        /* AS Acton/Northolt: 30' rows, 60' spans 2. Per-column (no Dan gap). */
         var step = slotGridStep(clients);
         var win = slotGridWindow(clients, step);
-        if (win) appendTimedSlots(col, clients, win);
-        else {
+        if (win) {
+          win.rowPx = 40;
+          appendTimedSlots(col, clients, win);
+        } else {
           clients.forEach(function (c) {
             col.innerHTML += renderCard(c, dk);
           });
         }
       } else {
+        /* Hub Multi etc.: compact singles like Aquatic. */
         clients.forEach(function (c) {
           col.innerHTML += renderCard(c, dk);
         });
