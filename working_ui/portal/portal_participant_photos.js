@@ -521,6 +521,10 @@
         img.src = retrySrc;
       }
     });
+
+    if (typeof global.portalRefreshTodayNextParticipantPhotos === "function") {
+      global.portalRefreshTodayNextParticipantPhotos(root);
+    }
   };
 
   global.portalParticipantCalendarAvatarFallback = function (img) {

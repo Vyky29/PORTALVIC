@@ -816,6 +816,9 @@
           mode: panelMode
         });
         portalBindTodayDayOffPanel(grid);
+        if(typeof portalRefreshTodayNextParticipantPhotos === 'function'){
+          portalRefreshTodayNextParticipantPhotos(grid);
+        }
         if(panelMode === 'sync' && typeof portalStaffScheduleTodaySyncRetry === 'function'){
           portalStaffScheduleTodaySyncRetry();
         }

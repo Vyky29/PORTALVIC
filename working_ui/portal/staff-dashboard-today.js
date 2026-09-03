@@ -3961,6 +3961,32 @@
       }
       return true;
     }
+    function portalEnrichNextSessionPreviewPhotos(preview){
+      if(!preview || !Array.isArray(preview.participants)) return preview;
+      preview.participants.forEach(function(p){
+        if(!p) return;
+        var name = String(p.name || '').trim();
+        var cid = String(p.clientId || '').trim();
+        if(!name || name === '—') return;
+        var photoUrl = String(p.photoUrl || '').trim();
+        if(!photoUrl && typeof resolveParticipantPhotoUrl === 'function'){
+          photoUrl = resolveParticipantPhotoUrl(name, cid) || '';
+        }
+        if(!photoUrl && typeof portalParticipantPhotoUrl === 'function'){
+          photoUrl = portalParticipantPhotoUrl(name, '', cid) || '';
+        }
+        if(!photoUrl && typeof clientPhotoUrl === 'function'){
+          photoUrl = clientPhotoUrl(name) || '';
+        }
+        if(photoUrl){
+          p.photoUrl = photoUrl;
+          p.preloadUrls = typeof portalParticipantPhotoPathCandidates === 'function'
+            ? portalParticipantPhotoPathCandidates(name, photoUrl, cid)
+            : [photoUrl];
+        }
+      });
+      return preview;
+    }
     function portalStabilizeNextSessionPreview(nextPreview, prevPreview, staffId){
       var sid = String(staffId || portalAuthStaffRosterId() || '').trim().toLowerCase();
       if(dashboardData && dashboardData.__portalStableNextSessionStaffId !== sid){
@@ -3970,12 +3996,13 @@
       var prevUsable = prevPreview && dashboardData && dashboardData.__portalStableNextSessionStaffId === sid
         && portalNextSessionPreviewHasParticipants(prevPreview);
       if(portalNextSessionPreviewHasParticipants(nextPreview)){
+        nextPreview = portalEnrichNextSessionPreviewPhotos(nextPreview);
         /* Avoid the avatar/name flicker: a transient incomplete rebuild (participant missing its
            resolved name while the model is still hydrating) must not replace a complete cached
            next-session preview. */
         if(prevUsable && portalNextSessionPreviewParticipantsComplete(prevPreview)
           && !portalNextSessionPreviewParticipantsComplete(nextPreview)){
-          return prevPreview;
+          return portalEnrichNextSessionPreviewPhotos(prevPreview);
         }
         if(dashboardData){
           dashboardData.__portalStableNextSessionPreview = nextPreview;
@@ -3984,11 +4011,11 @@
         return nextPreview;
       }
       if(!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__)){
-        if(prevUsable) return prevPreview;
-        return portalNextSessionPreviewHasParticipants(nextPreview) ? nextPreview : null;
+        if(prevUsable) return portalEnrichNextSessionPreviewPhotos(prevPreview);
+        return portalNextSessionPreviewHasParticipants(nextPreview) ? portalEnrichNextSessionPreviewPhotos(nextPreview) : null;
       }
       if(prevUsable){
-        return prevPreview;
+        return portalEnrichNextSessionPreviewPhotos(prevPreview);
       }
       if(dashboardData){
         dashboardData.__portalStableNextSessionPreview = null;
