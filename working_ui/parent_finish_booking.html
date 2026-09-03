@@ -146,19 +146,24 @@
           <strong>Local Authority / NHS referral</strong>
           <span class="hint">Funding is arranged through Local Authority / NHS. Our team will contact the social worker / NHS manager to finalise the booking.</span>
         </label>
-        <div id="fbSwConfirm" class="card-inner" hidden style="margin:12px 0;padding:12px;border:1px solid #d7e3ec;border-radius:10px;background:#f7fbfe;min-width:0">
-          <div class="fb-alert" role="alert">
-            <strong>Only if LA / NHS referred you to book with us</strong>
-            Choose this path only when your social worker or NHS manager has referred you to book sessions here and we will finish the booking with them.
-          </div>
-          <p class="muted" style="margin:0 0 8px;overflow-wrap:break-word">
-            Confirm the social worker / NHS manager from the registration form (or edit if needed):
-          </p>
-          <label class="field-label" for="fbSwName" style="display:block;font-size:13px;font-weight:600;margin:0 0 4px">Name</label>
-          <input id="fbSwName" type="text" autocomplete="name" style="width:100%;max-width:100%;box-sizing:border-box;margin:0 0 10px;padding:10px 12px;border:1px solid #c9d7e3;border-radius:8px" />
-          <label class="field-label" for="fbSwEmail" style="display:block;font-size:13px;font-weight:600;margin:0 0 4px">Email</label>
-          <input id="fbSwEmail" type="email" autocomplete="email" inputmode="email" style="width:100%;max-width:100%;box-sizing:border-box;margin:0 0 4px;padding:10px 12px;border:1px solid #c9d7e3;border-radius:8px" />
-        </div>
+        <button type="submit" class="btn btn--pri">Continue</button>
+      </form>
+    </div>
+
+    <div id="fbStepSwConfirm" class="card" hidden>
+      <h2>Local Authority / NHS referral</h2>
+      <div class="fb-alert" role="alert">
+        <strong>Only if LA / NHS referred you to book with us</strong>
+        Choose this path only when your social worker or NHS manager has referred you to book sessions here and we will finish the booking with them.
+      </div>
+      <p class="muted" style="margin:0 0 8px;overflow-wrap:break-word">
+        Confirm the social worker / NHS manager from the registration form (or edit if needed):
+      </p>
+      <form id="fbSwConfirmForm">
+        <label class="field-label" for="fbSwName" style="display:block;font-size:13px;font-weight:600;margin:0 0 4px">Name</label>
+        <input id="fbSwName" type="text" autocomplete="name" style="width:100%;max-width:100%;box-sizing:border-box;margin:0 0 10px;padding:10px 12px;border:1px solid #c9d7e3;border-radius:8px" />
+        <label class="field-label" for="fbSwEmail" style="display:block;font-size:13px;font-weight:600;margin:0 0 4px">Email</label>
+        <input id="fbSwEmail" type="email" autocomplete="email" inputmode="email" style="width:100%;max-width:100%;box-sizing:border-box;margin:0 0 12px;padding:10px 12px;border:1px solid #c9d7e3;border-radius:8px" />
         <button type="submit" class="btn btn--pri">Continue</button>
       </form>
     </div>
@@ -249,6 +254,6 @@
       <a class="btn btn--pri" href="/parent">Open Parent Portal</a>
     </div>
   </div>
-  <script src="/portal/portal_finish_booking.js?v=20260903-sw-fund-hint"></script>
+  <script src="/portal/portal_finish_booking.js?v=20260903-sw-step2"></script>
 </body>
 </html>

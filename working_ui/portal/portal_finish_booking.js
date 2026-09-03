@@ -713,6 +713,7 @@
   function setStep(name) {
     [
       "fbStepFunding",
+      "fbStepSwConfirm",
       "fbStepScope",
       "fbStepPay",
       "fbStepInvoice",
@@ -731,27 +732,28 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || "").trim());
   }
 
-  function syncSwConfirmPanel(data) {
-    var panel = document.getElementById("fbSwConfirm");
-    var checked = document.querySelector('input[name="funding"]:checked');
-    var isSw = checked && checked.value === "sw_nhs_referral";
-    if (panel) panel.hidden = !isSw;
-    if (!isSw) return;
+  function fillSwConfirmFields(data) {
     var nameEl = document.getElementById("fbSwName");
     var emailEl = document.getElementById("fbSwEmail");
     var rs = (data && data.registration_support) || {};
-    if (nameEl && !nameEl.value) {
+    if (nameEl && !String(nameEl.value || "").trim()) {
       nameEl.value =
         data.social_worker_name ||
         rs.social_worker_name ||
         "";
     }
-    if (emailEl && !emailEl.value) {
+    if (emailEl && !String(emailEl.value || "").trim()) {
       emailEl.value =
         data.social_worker_email ||
         rs.social_worker_email ||
         "";
     }
+  }
+
+  function showSwConfirmStep(data) {
+    data.funding_code = "sw_nhs_referral";
+    fillSwConfirmFields(data);
+    setStep("fbStepSwConfirm");
   }
 
   function swContactPersonName(data) {
@@ -1091,7 +1093,6 @@
         })
         .catch(function (err) {
           setStep("fbStepFunding");
-          syncSwConfirmPanel(data);
           showNotice(notice, err.message || "Could not save referral.", "error");
         });
     } else if (data.status === "funding_saved" && data.funding_code) {
@@ -1106,15 +1107,7 @@
         );
         if (preFund) preFund.checked = true;
       }
-      syncSwConfirmPanel(data);
     }
-
-    document.querySelectorAll('input[name="funding"]').forEach(function (el) {
-      el.addEventListener("change", function () {
-        syncSwConfirmPanel(data);
-      });
-    });
-    syncSwConfirmPanel(data);
 
     var fundForm = document.getElementById("fbFundingForm");
     if (fundForm) {
@@ -1125,48 +1118,16 @@
           showNotice(notice, "Please choose how you fund sessions.", "error");
           return;
         }
-        var payload = { funding_code: funding };
-        if (funding === "sw_nhs_referral") {
-          var swName = String((document.getElementById("fbSwName") || {}).value || "").trim();
-          var swEmail = String((document.getElementById("fbSwEmail") || {}).value || "").trim();
-          if (!swName || !looksLikeEmail(swEmail)) {
-            showNotice(
-              notice,
-              "Confirm or edit the social worker / NHS manager name and email.",
-              "error",
-            );
-            syncSwConfirmPanel(data);
-            return;
-          }
-          payload.social_worker_name = swName;
-          payload.social_worker_email = swEmail;
-          data.social_worker_name = swName;
-          data.social_worker_email = swEmail;
-        }
         data.funding_code = funding;
         data.pay_plan = null;
+        if (funding === "sw_nhs_referral") {
+          showSwConfirmStep(data);
+          showNotice(notice, "", "");
+          return;
+        }
         showNotice(notice, "Saving…", "");
-        void api("save_choices", payload)
-          .then(function (out) {
-            if (
-              funding === "sw_nhs_referral" ||
-              (out && out.status === "awaiting_office_referral")
-            ) {
-              data.status = "awaiting_office_referral";
-              if (out && out.social_worker_name) {
-                data.social_worker_name = out.social_worker_name;
-              }
-              if (out && out.social_worker_email) {
-                data.social_worker_email = out.social_worker_email;
-              }
-              showSwReferralDone(data);
-              showNotice(
-                notice,
-                swFinaliseMessage(data, false),
-                "ok",
-              );
-              return;
-            }
+        void api("save_choices", { funding_code: funding })
+          .then(function () {
             setStep("fbStepScope");
             adaptScopeForFunding(data);
             preselectScope(data);
@@ -1174,6 +1135,47 @@
           })
           .catch(function (err) {
             showNotice(notice, err.message || "Could not save funding.", "error");
+          });
+      };
+    }
+
+    var swConfirmForm = document.getElementById("fbSwConfirmForm");
+    if (swConfirmForm) {
+      swConfirmForm.onsubmit = function (ev) {
+        ev.preventDefault();
+        var swName = String((document.getElementById("fbSwName") || {}).value || "").trim();
+        var swEmail = String((document.getElementById("fbSwEmail") || {}).value || "").trim();
+        if (!swName || !looksLikeEmail(swEmail)) {
+          showNotice(
+            notice,
+            "Confirm or edit the social worker / NHS manager name and email.",
+            "error",
+          );
+          return;
+        }
+        data.funding_code = "sw_nhs_referral";
+        data.social_worker_name = swName;
+        data.social_worker_email = swEmail;
+        data.pay_plan = null;
+        showNotice(notice, "Saving…", "");
+        void api("save_choices", {
+          funding_code: "sw_nhs_referral",
+          social_worker_name: swName,
+          social_worker_email: swEmail,
+        })
+          .then(function (out) {
+            data.status = "awaiting_office_referral";
+            if (out && out.social_worker_name) {
+              data.social_worker_name = out.social_worker_name;
+            }
+            if (out && out.social_worker_email) {
+              data.social_worker_email = out.social_worker_email;
+            }
+            showSwReferralDone(data);
+            showNotice(notice, swFinaliseMessage(data, false), "ok");
+          })
+          .catch(function (err) {
+            showNotice(notice, err.message || "Could not save referral.", "error");
           });
       };
     }
