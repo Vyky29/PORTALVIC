@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 41;
+  var SOURCE_VERSION = 42;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -664,7 +664,8 @@
   /**
    * Autumn Sunday Hub Multi standing remaps (snap-date agnostic).
    * Standing Jul week may still store Hub books under BERTA / GIUSEPPE etc.
-   * Date covers (e.g. Sun 6 John) are parked — standing start = LOCAL EXTRA only.
+   * Sun 6 Sep calendar cover (John = Emanuel book) is applied in
+   * resolveAutumnInstructorsForCalendarDate + autumnSundaySep6HubCoverRows.
    */
   function remapAutumnMultiInstructorsStanding(instructorsRaw) {
     var s = String(instructorsRaw || "").trim();
@@ -677,15 +678,26 @@
 
   /**
    * Resolve instructors for a calendar day (Today / team strip).
-   * Standing start: Multi name remap only — no date-specific covers.
+   * Standing Multi remaps + Sun 6 Sep John cover only.
    */
   function resolveAutumnInstructorsForCalendarDate(instructorsRaw, calendarIso, meta) {
     meta = meta || {};
     var s = String(instructorsRaw || "").trim();
     if (!s) return s;
+    var iso = String(calendarIso || "").trim().slice(0, 10);
     var service = meta.service || "";
     if (isMultiActivityService(service)) {
       s = remapAutumnMultiInstructorsStanding(s);
+      if (iso === "2026-09-06") {
+        /*
+         * Sun 6 Hub: John covers Emanuel book; Berta Lead keeps former John book.
+         * Order matters — move JOHN→BERTA before EMANUEL→JOHN.
+         */
+        s = s
+          .replace(/\bJOHN\b/gi, "__SEP6_BERTA_BOOK__")
+          .replace(/\bEMANUEL\b/gi, "JOHN")
+          .replace(/__SEP6_BERTA_BOOK__/g, "BERTA");
+      }
     }
     return s;
   }
@@ -1332,7 +1344,9 @@
     autumnSundayClimbingStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
-    /* Sun 6 dated Hub covers parked — standing start uses LOCAL EXTRA / MADRE only. */
+    autumnSundaySep6HubCoverRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
     return out;
   }
 

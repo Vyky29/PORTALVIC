@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare · v20260903-standing-start</title>
+  <title>LOCAL · DC staff week compare · v20260903-sun6-john</title>
   <style>
     :root {
       --ink: #173247;
@@ -245,20 +245,19 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260903-standing-start · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260903-sun6-john · Autumn 2026</h1>
   <p class="note">
     Open at <code>http://127.0.0.1:8765/local_dc_staff_week.html</code> (not file://).
-    <strong>Standing start only</strong> (no date overrides): this board is the Autumn template we sync into MADRE.
-    DC = <code>AUTUMN_DAY_CENTRE_BOARD</code>. After school / weekend = <code>EXTRA</code>.
+    <strong>Standing start</strong> (most days): DC + EXTRA template for MADRE.
+    <strong>Exception Sun 6 Sep</strong>: John covers Emanuel Hub book (Zaid…Rayyan F); Berta Lead keeps Jack W…Aydaan; Emanuel off.
     Hub Tinashe Mon/Wed = <strong>Godsway + John + Raul</strong>. Fri Tinashe = <strong>Roberto</strong>. Victor off Mondays.
-    Sunday Multi standing: Berta Lead + book · Godsway · Emanuel. Parked week-1 / interview / shadow packs stay in the file but are not painted.
   </p>
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260903-standing-start"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-standing-start"></script>
-  <!-- local board bump: 20260903-standing-start -->
+  <script src="/portal/portal_roster_canonical.js?v=20260903-sun6-john"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-sun6-john"></script>
+  <!-- local board bump: 20260903-sun6-john -->
   <script>
 (function () {
   var STAFF = ["Roberto", "Luliya", "Michelle", "Victor", "Raul", "Youssef"];
@@ -273,7 +272,7 @@
     { dow: "thursday", iso: "2026-09-03", phase: "w1", hint: "Standing Thu" },
     { dow: "friday", iso: "2026-09-04", phase: "w1", hint: "Standing Fri" },
     { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Standing Sat" },
-    { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Standing Sun Multi / Climb" },
+    { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Sun 6 · John covers Emanuel Hub book (Zaid…Rayyan F) · Berta Lead + Jack W…Aydaan · Godsway · Emanuel OFF" },
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Standing Mon · Victor OFF · Godsway/John/Raul Tinashe" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing Tue · Acton AS Roberto/Aurora/Javier/Luliya" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Standing Wed · Godsway/John/Raul Tinashe" },
@@ -1005,22 +1004,21 @@
       });
     }
     if (dayUsesExtra(day)) {
+      /* Sun 6 Sep: John covers Emanuel Hub book (always — not parked with other DATE_EXTRA). */
+      var allowDateExtra =
+        !STANDING_ONLY || iso === "2026-09-06";
       var datePack =
-        !STANDING_ONLY && iso && DATE_EXTRA[iso] ? DATE_EXTRA[iso][staffName] : null;
+        allowDateExtra && iso && DATE_EXTRA[iso] ? DATE_EXTRA[iso][staffName] : null;
       var extraStaff = null;
       if (datePack && datePack.length) {
-        /* Date overlay replaces weekday EXTRA for this staff (parked while STANDING_ONLY). */
         extraStaff = datePack;
-      } else if (!STANDING_ONLY && iso === "2026-09-06" && staffName === "Emanuel") {
+      } else if (iso === "2026-09-06" && staffName === "Emanuel") {
+        /* Sun 6: John covers Hub Multi — Emanuel off. */
         extraStaff = null;
-      } else if (!STANDING_ONLY && iso === "2026-09-06" && staffName === "Youssef") {
+      } else if (iso === "2026-09-06" && staffName === "Youssef") {
         extraStaff = null;
-      } else if (
-        !STANDING_ONLY &&
-        staffName === "John" &&
-        dayKey === "sunday" &&
-        iso !== "2026-09-06"
-      ) {
+      } else if (staffName === "John" && dayKey === "sunday" && iso !== "2026-09-06") {
+        /* John Hub Multi Sunday = 6 Sep only. */
         extraStaff = null;
       } else if (
         !STANDING_ONLY &&
@@ -1031,7 +1029,7 @@
         iso !== "2026-09-13"
       ) {
         extraStaff = null;
-      } else if (!( !STANDING_ONLY && iso === "2026-09-13" && staffName === "Emanuel")) {
+      } else if (!(!STANDING_ONLY && iso === "2026-09-13" && staffName === "Emanuel")) {
         var extraDay = EXTRA[dayKey];
         extraStaff = extraDay && extraDay[staffName];
       }

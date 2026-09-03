@@ -570,7 +570,7 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   });
   /* Seed expected Hub Multi support when standing rows did not resolve yet (Berta is Sunday Lead). */
   if (dayKind === "sunday_ma_swimfarm" && ctx.leadKey === "berta") {
-    const seeds = ["godsway", "emanuel"];
+    const seeds = iso === "2026-09-06" ? ["godsway", "john", "berta"] : ["godsway", "emanuel"];
     seeds.forEach(function (k) {
       if (memberKeys.indexOf(k) < 0) memberKeys.push(k);
     });

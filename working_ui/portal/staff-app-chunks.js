@@ -9,14 +9,14 @@
   var VER = "20260901-roberto-pt-zh";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260903-standing-start",
+    "/portal/term_from_timetable.js?v=20260903-sun6-john",
     "/portal/term_calendar_dashboard_shared.js?v=20260702-feedback-jun25",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues",
-    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-standing-start",
+    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-sun6-john",
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp",
-      "/portal/portal_roster_canonical.js?v=20260903-standing-start",
+      "/portal/portal_roster_canonical.js?v=20260903-sun6-john",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
     "/portal/portal_madre_fold.js?v=20260902-luliya-instr",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
@@ -45,7 +45,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260903-standing-start",
+    "/portal/portal_lead_team_shift.js?v=20260903-sun6-john",
   ];
 
   var TIER_IDLE = [
@@ -58,9 +58,9 @@
     "/portal/staff-dashboard-feedback.js?v=" + VER,
     "/portal/staff-dashboard-calendar.js?v=" + VER,
     "/portal/staff-dashboard-term.js?v=" + VER,
-    "/portal/staff-dashboard-participants.js?v=20260903-standing-start",
-    "/portal/staff-dashboard-today.js?v=20260903-standing-start",
-    "/portal/staff-dashboard-ui.js?v=20260903-standing-start",
+    "/portal/staff-dashboard-participants.js?v=20260903-sun6-john",
+    "/portal/staff-dashboard-today.js?v=20260903-sun6-john",
+    "/portal/staff-dashboard-ui.js?v=20260903-sun6-john",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];
