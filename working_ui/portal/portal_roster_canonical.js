@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 36;
+  var SOURCE_VERSION = 37;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -623,8 +623,8 @@
     return /multi[\s-]*activity/i.test(String(service || ""));
   }
 
-  /** Sun 6 Sep 2026: Emanuel off — John + Youssef cover his Hub Multi book (dated so Today matches). */
-  var SEP6_2026_JOHN_HUB_MULTI = [
+  /** Sun 6 Sep 2026: Emanuel off — Youssef covers his Hub Multi book (dated so Today matches). */
+  var SEP6_2026_YOUSSEF_HUB_MULTI = [
     { client_name: "Zaid", time_slot: "9.30 to 10.15" },
     { client_name: "Samer", time_slot: "10.15 to 11" },
     { client_name: "Eiji", time_slot: "11 to 11.45" },
@@ -633,12 +633,12 @@
     { client_name: "Rayyan F", time_slot: "1.15 to 2" },
   ];
 
-  function autumnSundaySep6JohnHubMultiRows() {
-    return SEP6_2026_JOHN_HUB_MULTI.map(function (slot) {
+  function autumnSundaySep6YoussefHubMultiRows() {
+    return SEP6_2026_YOUSSEF_HUB_MULTI.map(function (slot) {
       return {
         client_name: slot.client_name,
         day: "Sunday",
-        instructors: "JOHN, YOUSSEF",
+        instructors: "YOUSSEF",
         service: "Multi-Activity",
         area: "Hub Room",
         time_slot: slot.time_slot,
@@ -650,6 +650,7 @@
 
   /**
    * Autumn Sunday Hub Multi standing remaps (snap-date agnostic).
+   * John keeps his own Hub book; Berta is Sunday Leader (no Multi clients).
    * Calendar-specific Sep 6 cover is applied in resolveAutumnInstructorsForCalendarDate.
    */
   function remapAutumnMultiInstructorsStanding(instructorsRaw) {
@@ -658,11 +659,7 @@
     return s
       .replace(/\bBISMARK\b/gi, "GODSWAY")
       .replace(/\bBISMARCK\b/gi, "GODSWAY")
-      .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
-      .replace(/\bJOHN\s*,\s*BERTA\b/gi, "BERTA")
-      .replace(/\bBERTA\s*,\s*JOHN\b/gi, "BERTA")
-      .replace(/\bJOHN\b/gi, "BERTA")
-      .replace(/\bBERTA\s*,\s*BERTA\b/gi, "BERTA");
+      .replace(/\bGIUSEPPE\b/gi, "EMANUEL");
   }
 
   /**
@@ -689,9 +686,7 @@
     if (isMultiActivityService(service)) {
       s = remapAutumnMultiInstructorsStanding(s);
       if (iso === "2026-09-06") {
-        s = s
-          .replace(/\bEMANUEL\b/gi, "JOHN, YOUSSEF")
-          .replace(/\bJOHN\s*,\s*YOUSSEF\s*,\s*YOUSSEF\b/gi, "JOHN, YOUSSEF");
+        s = s.replace(/\bEMANUEL\b/gi, "YOUSSEF");
       }
     }
     if (isBespokeService(service)) {
@@ -1089,8 +1084,8 @@
    *   (drop all DC rows in the summer dated window for weekdays on the board —
    *   not only 13–17 Jul — so June ACAT/Fadi snaps cannot win Autumn projection)
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
-   * - Multi-Activity: Bismark→Godsway; Giuseppe→Emanuel; John→Berta (Sun Hub);
-   *   Sun 6 only: Emanuel→John+Youssef (Emanuel off)
+   * - Multi-Activity: Bismark→Godsway; Giuseppe→Emanuel; John keeps Hub book;
+   *   Berta Sunday = Leader (no Multi clients); Sun 6 only: Emanuel→Youssef (Emanuel off)
    * - Acton Mon: Angel → Roberto (Adam P / Steven / Mario)
    * - Acton Tue: Roberto / Aurora / Javier / Luliya (Logan+Richard Roberto; Serine Luliya; no Youssef)
    * - Acton Thu: Simon → Luliya (Yuri / Eiji)
@@ -1295,7 +1290,7 @@
     autumnSundayClimbingStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
-    autumnSundaySep6JohnHubMultiRows().forEach(function (row) {
+    autumnSundaySep6YoussefHubMultiRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     return out;
