@@ -348,6 +348,12 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
                     # Friday + Sunday off standing. Sun 6 Sep Hub Multi cover = extra calendar date.
                     "weekdays": [5, 0],
                 },
+                # Luliya OFF Thursdays (Acton Thu = Roberto / Simon / Javier / Aurora).
+                "lulia": {
+                    "from": SESSION_FROM,
+                    "to": SESSION_TO,
+                    "weekdays": [4],
+                },
             },
             "termStaffFeedbackCompleteDatesByProfileKey": {},
             "termStaffExtraCalendarDatesByProfileKey": {

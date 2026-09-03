@@ -6819,10 +6819,19 @@
         if(!worked.length && !(typeof portalStaffHasNoAutumnTermSessions === 'function' && portalStaffHasNoAutumnTermSessions(id)) && t && typeof t === 'object'){
           const dashMap = t.termStaffWeekdayIndicesDashboardByProfileKey;
           const baseMap = t.termStaffWeekdayIndicesByProfileKey;
-          if(dashMap && Array.isArray(dashMap[id]) && dashMap[id].length){
-            worked = dashMap[id].slice();
-          } else if(baseMap && Array.isArray(baseMap[id]) && baseMap[id].length){
-            worked = baseMap[id].slice();
+          const keys = typeof portalTermStaffProfileLookupKeys === 'function'
+            ? portalTermStaffProfileLookupKeys(id)
+            : [id];
+          for(let ki = 0; ki < keys.length; ki++){
+            const k = keys[ki];
+            if(dashMap && Array.isArray(dashMap[k]) && dashMap[k].length){
+              worked = dashMap[k].slice();
+              break;
+            }
+            if(baseMap && Array.isArray(baseMap[k]) && baseMap[k].length){
+              worked = baseMap[k].slice();
+              break;
+            }
           }
         }
         /* Term colours: Staff Timetable only — never invent weekdays from session snaps. */

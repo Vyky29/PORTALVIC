@@ -78,6 +78,13 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         5,
         0
       ]
+    },
+    "lulia": {
+      "from": "2026-09-01",
+      "to": "2026-12-17",
+      "weekdays": [
+        4
+      ]
     }
   },
   "termStaffFeedbackCompleteDatesByProfileKey": {},

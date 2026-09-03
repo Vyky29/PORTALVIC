@@ -4247,20 +4247,27 @@
     /** Summer Term 2+: weekdays off pool rota (e.g. Roberto no Saturdays from 1 Jun). */
     function portalTermStaffOffWeekdayOnDate(isoYmd, staffId){
       const iso = normaliseIsoDate(isoYmd);
-      const sid = String(staffId || '').trim().toLowerCase();
-      if(!iso || !sid) return false;
+      if(!iso) return false;
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const map = t && t.termStaffOffWeekdaysRangeByProfileKey;
-      const cfg = map && map[sid];
-      if(!cfg || typeof cfg !== 'object') return false;
-      const from = normaliseIsoDate(cfg.from);
-      const to = normaliseIsoDate(cfg.to);
-      if(from && iso < from) return false;
-      if(to && iso > to) return false;
+      if(!map || typeof map !== 'object') return false;
+      const keys = typeof portalTermStaffProfileLookupKeys === 'function'
+        ? portalTermStaffProfileLookupKeys(staffId)
+        : [String(staffId || '').trim().toLowerCase()].filter(Boolean);
       const wd = new Date(iso + 'T12:00:00').getDay();
-      const drop = Array.isArray(cfg.weekdays) ? cfg.weekdays.map(Number) : [];
-      return drop.indexOf(wd) >= 0;
+      for(let i = 0; i < keys.length; i++){
+        const cfg = map[keys[i]];
+        if(!cfg || typeof cfg !== 'object') continue;
+        const from = normaliseIsoDate(cfg.from);
+        const to = normaliseIsoDate(cfg.to);
+        if(from && iso < from) continue;
+        if(to && iso > to) continue;
+        const drop = Array.isArray(cfg.weekdays) ? cfg.weekdays.map(Number) : [];
+        if(drop.indexOf(wd) >= 0) return true;
+      }
+      return false;
     }
+    try{ window.portalTermStaffOffWeekdayOnDate = portalTermStaffOffWeekdayOnDate; }catch(_){}
     const CALENDAR_WEEK_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
     function mondayStartOfWeekLocal(d){
       const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());

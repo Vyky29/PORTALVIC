@@ -192,21 +192,31 @@
   }
 
   function workedWeekdaysForStaff(staffId) {
-    var id = String(staffId || "").trim().toLowerCase();
+    var keys = termStaffProfileLookupKeys(staffId);
     var t = termCfg();
     var dash = t.termStaffWeekdayIndicesDashboardByProfileKey;
     var all = t.termStaffWeekdayIndicesByProfileKey;
-    if (dash && Array.isArray(dash[id]) && dash[id].length) {
-      return dash[id].slice().sort(function (a, b) {
-        return a - b;
-      });
+    var i, id, worked;
+    for (i = 0; i < keys.length; i++) {
+      id = keys[i];
+      if (dash && Array.isArray(dash[id]) && dash[id].length) {
+        worked = dash[id].slice();
+        break;
+      }
     }
-    if (all && Array.isArray(all[id]) && all[id].length) {
-      return all[id].slice().sort(function (a, b) {
-        return a - b;
-      });
+    if (!worked) {
+      for (i = 0; i < keys.length; i++) {
+        id = keys[i];
+        if (all && Array.isArray(all[id]) && all[id].length) {
+          worked = all[id].slice();
+          break;
+        }
+      }
     }
-    return [];
+    if (!worked || !worked.length) return [];
+    return worked.sort(function (a, b) {
+      return a - b;
+    });
   }
 
   function termStaffProfileLookupKeys(staffId) {
@@ -292,19 +302,25 @@
   }
 
   function staffOffWeekdayOnDate(iso, staffId) {
-    var id = String(staffId || "").trim().toLowerCase();
-    if (!iso || !id) return false;
+    var keys = termStaffProfileLookupKeys(staffId);
+    if (!iso || !keys.length) return false;
     var t = termCfg();
     var map = t.termStaffOffWeekdaysRangeByProfileKey;
-    var cfg = map && map[id];
-    if (!cfg || typeof cfg !== "object") return false;
-    var f = normIso(cfg.from);
-    var to = normIso(cfg.to);
-    if (f && iso < f) return false;
-    if (to && iso > to) return false;
+    if (!map || typeof map !== "object") return false;
     var wd = new Date(iso + "T12:00:00").getDay();
-    var drop = Array.isArray(cfg.weekdays) ? cfg.weekdays.map(Number) : [];
-    return drop.indexOf(wd) >= 0;
+    var ki, id, cfg, f, to, drop;
+    for (ki = 0; ki < keys.length; ki++) {
+      id = keys[ki];
+      cfg = map[id];
+      if (!cfg || typeof cfg !== "object") continue;
+      f = normIso(cfg.from);
+      to = normIso(cfg.to);
+      if (f && iso < f) continue;
+      if (to && iso > to) continue;
+      drop = Array.isArray(cfg.weekdays) ? cfg.weekdays.map(Number) : [];
+      if (drop.indexOf(wd) >= 0) return true;
+    }
+    return false;
   }
 
   function rosterRowIsDayCentre(row) {
@@ -320,7 +336,7 @@
     if (!iso || iso < "2026-09-01") return false;
     var t = termCfg();
     var weekendFrom = normIso(t.termAfterSchoolWeekendFrom) || "2026-09-05";
-    var weekdayFrom = normIso(t.termAfterSchoolWeekdayFrom) || "2026-09-08";
+    var weekdayFrom = normIso(t.termAfterSchoolWeekdayFrom) || "2026-09-07";
     var dow = new Date(iso + "T12:00:00").getDay();
     if (dow === 0 || dow === 6) return iso >= weekendFrom;
     return iso >= weekdayFrom;
