@@ -217,6 +217,12 @@
           : null;
         return `<button type="button" class="clients-grid-card${myCls}" data-client-id="${escapeHtml(clientId)}" data-list-mode="${listMode}"${gAttr}>${clientsParticipantRowInnerHtml(clientId, c, schedIso, schedOpts)}</button>`;
       }).join('');
+      if(typeof portalRefreshDashboardParticipantPhotos === 'function'){
+        portalRefreshDashboardParticipantPhotos(grid, {
+          resolvePhotoUrl: typeof resolveParticipantPhotoUrl === 'function' ? resolveParticipantPhotoUrl : undefined,
+          escapeHtml: escapeHtml
+        });
+      }
     }
     function getClientsDirectoryQuery(){
       const el = document.getElementById('clientsDirectorySearch');

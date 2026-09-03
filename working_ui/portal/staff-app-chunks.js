@@ -32,13 +32,13 @@
 
   var TIER_UI = [
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-    "/portal/portal_dashboard_ui_coalesce.js?v=20260630-term-idle-rAF",
+    "/portal/portal_dashboard_ui_coalesce.js?v=20260903-photo-repair",
     "/portal/portal_participant_photos.js?v=20260903-chip-photos",
     "/portal/portal_topbar_header.js?v=20260721-flank6-swap",
     "/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category",
     "/portal/portal_swimming_instructor_menus.js?v=20260721-aurora-no-plan",
     "/portal/portal_area_note_icons.js?v=20260702-home-icon",
-    "/portal/portal_today_next_chips.js?v=20260903-chip-photos",
+    "/portal/portal_today_next_chips.js?v=20260903-photo-repair",
     "/portal/portal_staff_photos.js?v=20260624-rt-debug",
     "/portal/portal_sheet_back.js?v=20260720-aria-sheet-focus",
   ];
@@ -58,9 +58,9 @@
     "/portal/staff-dashboard-feedback.js?v=" + VER,
     "/portal/staff-dashboard-calendar.js?v=" + VER,
     "/portal/staff-dashboard-term.js?v=" + VER,
-    "/portal/staff-dashboard-participants.js?v=20260903-sun6-john-keep",
+    "/portal/staff-dashboard-participants.js?v=20260903-photo-repair",
     "/portal/staff-dashboard-today.js?v=20260903-sun6-john-keep",
-    "/portal/staff-dashboard-ui.js?v=20260903-sun6-john-keep",
+    "/portal/staff-dashboard-ui.js?v=20260903-photo-repair",
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];

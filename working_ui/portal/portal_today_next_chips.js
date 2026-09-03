@@ -173,12 +173,14 @@
         return;
       }
       if (img.complete && img.naturalWidth > 0) return;
-      if (!img.complete && img.src) return;
-      if (img.getAttribute("data-photo-fallbacks")) {
+      /* Incomplete or zero-size: often after sheet open/close aborts decode on iOS.
+         Force a reload instead of leaving initials forever. */
+      if (img.getAttribute("data-photo-fallbacks") && img.complete && !(img.naturalWidth > 0)) {
         portalTodayNextChipPhotoTryFallback(img);
         return;
       }
-      var retry = img.src;
+      el.classList.add("today-participant-chip__avatar--has-photo");
+      var retry = img.src || src;
       img.src = "";
       img.src = retry;
     });

@@ -35,6 +35,9 @@
     }, 140);
   }
 
+  /** Repair participant photos after sheet close / skipped list re-render. */
+  global.portalScheduleParticipantPhotoRepair = scheduleParticipantPhotoRepair;
+
   global.portalPreloadParticipantPhotoUrls = function portalPreloadParticipantPhotoUrls(urls) {
     if (!global.__PORTAL_PARTICIPANT_PHOTO_PRELOAD__) {
       global.__PORTAL_PARTICIPANT_PHOTO_PRELOAD__ = Object.create(null);

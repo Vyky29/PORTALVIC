@@ -835,7 +835,18 @@
         : '';
       if(todaySig && grid.getAttribute('data-today-cards-sig') === todaySig && grid.querySelector('.today-grid-rows')){
         applyTodayGridSizing(grid, count);
+        /* Same cards DOM — still repair photos (sheet open/close can abort img loads). */
+        if(typeof portalRefreshTodayNextParticipantPhotos === 'function'){
+          portalRefreshTodayNextParticipantPhotos(grid);
+        }
+        if(typeof portalRefreshDashboardParticipantPhotos === 'function'){
+          portalRefreshDashboardParticipantPhotos(grid, {
+            resolvePhotoUrl: typeof resolveParticipantPhotoUrl === 'function' ? resolveParticipantPhotoUrl : undefined,
+            escapeHtml: escapeHtml
+          });
+        }
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
         return;
       }
       const fb = document.getElementById('todayGridFallback');
@@ -898,6 +909,15 @@
           requestAnimationFrame(function(){ applyTodayGridSizing(grid, count); });
         });
       });
+      if(typeof portalRefreshTodayNextParticipantPhotos === 'function'){
+        portalRefreshTodayNextParticipantPhotos(grid);
+      }
+      if(typeof portalRefreshDashboardParticipantPhotos === 'function'){
+        portalRefreshDashboardParticipantPhotos(grid, {
+          resolvePhotoUrl: typeof resolveParticipantPhotoUrl === 'function' ? resolveParticipantPhotoUrl : undefined,
+          escapeHtml: escapeHtml
+        });
+      }
       if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
       if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
     }
@@ -3550,6 +3570,20 @@
       syncDockNavContext();
       if(typeof syncPortalIosAlertPreviewStack === 'function') syncPortalIosAlertPreviewStack();
       if(typeof portalOnSheetClosed === 'function') portalOnSheetClosed(opts || {});
+      /* Returning to the dashboard: re-attach participant photos (loads often abort under sheets). */
+      try{
+        const anySheetOpen = !!document.querySelector('.sheet.open');
+        if(!anySheetOpen){
+          if(typeof portalScheduleParticipantPhotoRepair === 'function'){
+            portalScheduleParticipantPhotoRepair();
+          }else if(typeof portalRefreshDashboardParticipantPhotos === 'function'){
+            portalRefreshDashboardParticipantPhotos(document, {
+              resolvePhotoUrl: typeof resolveParticipantPhotoUrl === 'function' ? resolveParticipantPhotoUrl : undefined,
+              escapeHtml: escapeHtml
+            });
+          }
+        }
+      }catch(_photoRepair){}
       return true;
     }
 
