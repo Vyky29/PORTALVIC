@@ -1262,7 +1262,7 @@
    *   Berta Sunday = Leader (no Multi clients); Sun 6 only: Emanuel→Youssef (Emanuel off)
    * - Acton Mon: Angel → Roberto (Adam P / Steven / Mario)
    * - Acton Tue: Roberto / Aurora / Javier / Luliya (Logan+Richard Roberto; Serine Luliya; no Youssef)
-   * - Acton Thu: Simon → Luliya (Yuri / Eiji)
+   * - Acton Thu: Roberto / Simon / Javier / Aurora (Luliya OFF; Simon keeps Elijah / Yuri)
    * - Northolt Mon/Wed: replace summer (Roberto/Dan) with Services Autumn Dan+Luliya book
    * - Luliya: DC Ikram Mon/Tue/Wed 11–3 + Fri 11–4; pool Mon/Wed Northolt 4.30–6.30,
    *   Tue Acton 4–6.30 (not Thu — Simon covers Thu Acton AS)
