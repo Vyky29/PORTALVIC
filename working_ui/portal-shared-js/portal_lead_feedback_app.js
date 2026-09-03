@@ -42,7 +42,7 @@ function leadReportFixedSessionTime(iso, service) {
   const svc = clean(service);
   if (!wd || !svc) return "";
   if (isMultiActivityService(svc)) {
-    if (wd === "Sunday") return "9.15 to 2.15";
+    if (wd === "Sunday") return "9 to 2.30";
     if (wd === "Wednesday") return "4.15 to 6.15";
   }
   if (
