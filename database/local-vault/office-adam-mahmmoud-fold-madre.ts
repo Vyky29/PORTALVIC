@@ -158,26 +158,42 @@ const doc = madreRow!.document as {
 };
 const standing = (doc.weeks || []).find((w) => w.start === "2026-07-13");
 let madrePatched = false;
-for (const st of standing?.staff || []) {
+function staffList(week) {
+  const s = week?.staff;
+  if (!s) return [];
+  return Array.isArray(s) ? s : Object.values(s);
+}
+function dayList(st) {
+  const d = st?.days;
+  if (!d) return [];
+  return Array.isArray(d) ? d : Object.values(d);
+}
+function slotTime(sl: Record<string, unknown>) {
+  return String(sl.time || sl.time_slot || "").replace(/\s+/g, " ").trim();
+}
+for (const st of staffList(standing)) {
   if (!st) continue;
   const sk = String(st.staffName || st.staffKey || "");
   if (!/^aurora$/i.test(sk)) continue;
-  const tue = st.days?.[1];
-  if (!tue?.slots) continue;
-  for (const sl of tue.slots) {
-    const t = String(sl.time || sl.time_slot || "");
-    const v = String(sl.venue || "");
-    if (!/acton/i.test(v) || !/^4\.30\s*to\s*5(\.00)?$/i.test(t.replace(/\s+/g, " "))) continue;
-    const cur = String(sl.client_name || "");
-    if (/^adam/i.test(cur)) {
-      madrePatched = true;
-      break;
-    }
-    if (/^no participant$/i.test(cur)) {
-      sl.client_name = "Adam Mahmmoud";
-      sl.service = sl.service || "Aquatic Activity";
-      madrePatched = true;
-      break;
+  for (const day of dayList(st)) {
+    if (!day?.slots) continue;
+    const wd = String(day.weekday || day.day || "").toLowerCase();
+    if (!wd.startsWith("tue")) continue;
+    for (const sl of day.slots) {
+      const t = slotTime(sl);
+      const v = String(sl.venue || "");
+      if (!/acton/i.test(v) || !/^4\.30\s*to\s*5(\.00)?$/i.test(t)) continue;
+      const cur = String(sl.client_name || "");
+      if (/^adam/i.test(cur)) {
+        madrePatched = true;
+        break;
+      }
+      if (/^no participant$/i.test(cur)) {
+        sl.client_name = "Adam Mahmmoud";
+        sl.service = sl.service || "Aquatic Activity";
+        madrePatched = true;
+        break;
+      }
     }
   }
 }

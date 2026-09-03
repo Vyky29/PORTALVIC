@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 45;
+  var SOURCE_VERSION = 46;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -329,7 +329,7 @@
     { staff: "JAVIER", name: "Rayan Ta", time: "5.30 to 6" },
     { staff: "JAVIER", name: "Kareena", time: "6 to 6.30" },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30" },
-    { staff: "AURORA", name: "No participant", time: "4.30 to 5" },
+    { staff: "AURORA", name: "Adam Mahmmoud", time: "4.30 to 5" },
     { staff: "AURORA", name: "Junaid", time: "5 to 5.30" },
     { staff: "AURORA", name: "Aydaan Ah", time: "5.30 to 6" },
     { staff: "AURORA", name: "Anas", time: "6 to 6.30" },
