@@ -231,12 +231,22 @@ function deriveFormChips(opts: {
   payload_json: Record<string, unknown> | null;
   reservation: ReservationLite | null;
   funding_code?: string | null;
+  /** Finish-booking token exists (even if funding never saved). */
+  has_finish_token?: boolean;
 }): PlaceChip[] {
   const payload = asRecord(opts.payload_json) || {};
   const br = asRecord(payload.booking_request);
   const notes = String(opts.reservation?.notes || "");
   const officeTag = officePlaceTag(notes, payload);
   const existingClient = truthyFlag(payload.existing_client_confirm);
+  const bookingKind = String(br?.booking_kind || payload.booking_kind || "")
+    .trim()
+    .toLowerCase();
+  const isTrialIntent =
+    bookingKind === "trial" ||
+    bookingKind === "trial_session" ||
+    bookingKind === "taster" ||
+    /booking_kind\s*=\s*trial/i.test(notes);
 
   /* Registration form / NHS flags first — finish-token funding can be stale (expired retry). */
   let funding =
@@ -262,6 +272,12 @@ function deriveFormChips(opts: {
 
   if (!funding) {
     funding = fundingChipFromCode(opts.funding_code);
+  }
+
+  /* Funding is chosen on finish-booking (not the registration PDF). If they never
+     finished that step, show an explicit gap so office does not think the chip is broken. */
+  if (!funding && (opts.has_finish_token || isTrialIntent || existingClient)) {
+    funding = { label: "Funding not chosen", tone: "urgSoft" };
   }
 
   let support = normalizeSupportRatio(
@@ -689,6 +705,7 @@ Deno.serve(async (req) => {
   const capped = filtered.slice(0, limit);
 
   const fundingByDocId = new Map<string, string>();
+  const finishTokenByDocId = new Set<string>();
   const docIds = capped.map((r) => String(r.id || "")).filter(Boolean);
   if (docIds.length) {
     const { data: tokens } = await admin
@@ -697,6 +714,10 @@ Deno.serve(async (req) => {
       .in("document_id", docIds)
       .order("updated_at", { ascending: false })
       .limit(800);
+    for (const t of tokens || []) {
+      const id = String(t.document_id || "");
+      if (id) finishTokenByDocId.add(id);
+    }
     const picked = pickFundingCodeFromTokens(tokens || []);
     for (const [id, code] of picked.entries()) fundingByDocId.set(id, code);
   }
@@ -889,6 +910,7 @@ Deno.serve(async (req) => {
       payload_json: (row.payload_json || {}) as Record<string, unknown>,
       reservation,
       funding_code: fundingByDocId.get(String(row.id)) || null,
+      has_finish_token: finishTokenByDocId.has(String(row.id)),
     });
 
     out.push({
