@@ -192,6 +192,40 @@ function fundingChipFromCode(code: string | null | undefined): PlaceChip | null 
   return null;
 }
 
+function fundingCodeFromChoices(choices: unknown): string {
+  const cj = asRecord(choices);
+  if (!cj) return "";
+  return String(cj.funding_code || cj.funding || "").trim();
+}
+
+/** Prefer live finish choices over stale expired token columns. */
+function pickFundingCodeFromTokens(
+  tokens: Array<{
+    document_id?: string | null;
+    funding_code?: string | null;
+    status?: string | null;
+    choices_json?: unknown;
+    updated_at?: string | null;
+  }>,
+): Map<string, string> {
+  const best = new Map<string, { code: string; score: number; at: number }>();
+  for (const t of tokens || []) {
+    const id = String(t.document_id || "");
+    const code = String(t.funding_code || "").trim() || fundingCodeFromChoices(t.choices_json);
+    if (!id || !code) continue;
+    const st = String(t.status || "").toLowerCase();
+    const score = st === "completed" ? 3 : st === "pending" ? 2 : st === "expired" ? 1 : 0;
+    const at = Date.parse(String(t.updated_at || "")) || 0;
+    const prev = best.get(id);
+    if (!prev || score > prev.score || (score === prev.score && at > prev.at)) {
+      best.set(id, { code, score, at });
+    }
+  }
+  const out = new Map<string, string>();
+  for (const [id, v] of best.entries()) out.set(id, v.code);
+  return out;
+}
+
 /** Funding + support chips for the Form column (registration / booking attempt). */
 function deriveFormChips(opts: {
   payload_json: Record<string, unknown> | null;
@@ -202,11 +236,13 @@ function deriveFormChips(opts: {
   const br = asRecord(payload.booking_request);
   const notes = String(opts.reservation?.notes || "");
   const officeTag = officePlaceTag(notes, payload);
+  const existingClient = truthyFlag(payload.existing_client_confirm);
 
+  /* Registration form / NHS flags first — finish-token funding can be stale (expired retry). */
   let funding =
-    fundingChipFromCode(opts.funding_code) ||
     fundingChipFromCode(String(payload.funding_code || "")) ||
-    fundingChipFromCode(String(br?.funding_code || ""));
+    fundingChipFromCode(String(br?.funding_code || "")) ||
+    null;
 
   if (!funding) {
     if (
@@ -224,14 +260,28 @@ function deriveFormChips(opts: {
     }
   }
 
-  const support = normalizeSupportRatio(
+  if (!funding) {
+    funding = fundingChipFromCode(opts.funding_code);
+  }
+
+  let support = normalizeSupportRatio(
     String(
       payload.support_regulated ||
         br?.support_regulated ||
+        payload.ratio_needed ||
         "",
     ),
     notes,
   );
+  /* Booking Portal defaults to 1to1; existing-client confirm often omitted the field. */
+  if (
+    !support &&
+    (existingClient ||
+      String(br?.from || "").toLowerCase() === "bookingportal" ||
+      funding)
+  ) {
+    support = "1to1";
+  }
 
   const chips: PlaceChip[] = [];
   if (funding) chips.push(funding);
@@ -643,16 +693,12 @@ Deno.serve(async (req) => {
   if (docIds.length) {
     const { data: tokens } = await admin
       .from("portal_booking_completion_tokens")
-      .select("document_id, funding_code, updated_at")
+      .select("document_id, funding_code, status, choices_json, updated_at")
       .in("document_id", docIds)
       .order("updated_at", { ascending: false })
       .limit(800);
-    for (const t of tokens || []) {
-      const id = String(t.document_id || "");
-      const code = String(t.funding_code || "").trim();
-      if (!id || !code || fundingByDocId.has(id)) continue;
-      fundingByDocId.set(id, code);
-    }
+    const picked = pickFundingCodeFromTokens(tokens || []);
+    for (const [id, code] of picked.entries()) fundingByDocId.set(id, code);
   }
 
   const emails = Array.from(

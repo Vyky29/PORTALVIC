@@ -215,21 +215,37 @@
         var placeSecTone = String(d.place_secondary_tone || 'info').trim() || 'info';
         if (placeSecTone === 'warn') placeSecTone = 'urgSoft';
         var placeChips = Array.isArray(d.place_chips) ? d.place_chips : null;
-        var formChips = Array.isArray(d.form_chips) ? d.form_chips : null;
-        // Fallback when API has not deployed form_chips yet: split LA/NHS · ratio from Place.
-        if (!formChips && /local authority\s*\/\s*nhs referral/i.test(placeLab)) {
-          formChips = [{ label: 'Local Authority / NHS referral', tone: 'info' }];
-          var ratioFromPlace = placeLab.match(/·\s*(1to1|2to1|1:1|2:1)/i);
-          if (ratioFromPlace) {
-            formChips.push({
-              label: /2/.test(ratioFromPlace[1]) ? '2to1' : '1to1',
-              tone: 'info',
-            });
+        var formChips = Array.isArray(d.form_chips) ? d.form_chips.slice() : null;
+        // Fallback when API has not deployed form_chips yet: split funding · ratio from Place.
+        if (!formChips || !formChips.length) {
+          var placeLow = placeLab.toLowerCase();
+          var fundLab = "";
+          var fundTone = "info";
+          if (/local authority\s*\/\s*nhs|nhs referral|sw_nhs/i.test(placeLow)) {
+            fundLab = "Local Authority / NHS referral";
+          } else if (/direct\s*payments/i.test(placeLow)) {
+            fundLab = "Funded with Direct Payments";
+          } else if (/privately\s*funded|private\s*pay/i.test(placeLow)) {
+            fundLab = "Privately funded";
+            fundTone = "pend";
           }
-          placeLab = placeDetail ? 'Pending place' : 'Registered only';
-          placeTone = 'pend';
-          placeSec = '';
-          placeChips = null;
+          var ratioFromPlace = placeLab.match(/\b(1to1|2to1|1:1|2:1)\b/i);
+          if (fundLab || ratioFromPlace) {
+            formChips = [];
+            if (fundLab) formChips.push({ label: fundLab, tone: fundTone });
+            if (ratioFromPlace) {
+              formChips.push({
+                label: /2/.test(ratioFromPlace[1]) ? "2to1" : "1to1",
+                tone: "info",
+              });
+            }
+            if (/local authority|direct payment|privately funded/i.test(placeLow)) {
+              placeLab = placeDetail ? "Pending place" : "Registered only";
+              placeTone = "pend";
+              placeSec = "";
+              placeChips = null;
+            }
+          }
         }
         // Split trial-expired office tags into 3 chips if API did not send place_chips yet.
         if (

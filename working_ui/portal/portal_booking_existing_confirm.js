@@ -97,6 +97,16 @@
 
   function bookingRequestFromQuery() {
     var q = qs();
+    var supportRaw = String(q.get("support_regulated") || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "");
+    var support =
+      supportRaw === "2to1" || supportRaw === "2:1"
+        ? "2to1"
+        : supportRaw === "1to1" || supportRaw === "1:1"
+          ? "1to1"
+          : "1to1";
     return {
       from: "bookingportal",
       slot_id: q.get("slot_id") || "",
@@ -112,6 +122,7 @@
       date_iso: q.get("date") || "",
       pack: q.get("pack") || "",
       booking_kind: String(q.get("booking_kind") || "term").toLowerCase() === "trial" ? "trial" : "term",
+      support_regulated: support,
     };
   }
 
