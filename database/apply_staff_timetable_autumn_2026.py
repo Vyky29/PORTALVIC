@@ -167,6 +167,8 @@ def sunday_template() -> list[tuple[str, str, str]]:
         _pairs("Javier", "9-3", "SwimFarm"),
         _pairs("Roberto", "8.45-3.15", "SwimFarm"),
         _pairs("Berta", "9-2.30", "SwimFarm"),
+        # John keeps the Hub Multi book (MADRE BERTA→JOHN); Berta = Sunday Leader only.
+        _pairs("John", "9.15-2.15", "SwimFarm"),
         _pairs("Emanuel", "9.15-2.15", "SwimFarm"),
         _pairs("Godsway", "9.15-2.15", "SwimFarm"),
         _pairs("Alex", "10-2", "Westway"),
@@ -326,7 +328,8 @@ def write_autumn_term_js(records: list[dict], roster_rows: list | None = None) -
                 "john": {
                     "from": SESSION_FROM,
                     "to": SESSION_TO,
-                    "weekdays": [5, 0],
+                    # Friday off only — Sunday is Hub Multi (Jack W…Aydaan Ah).
+                    "weekdays": [5],
                 },
             },
             "termStaffFeedbackCompleteDatesByProfileKey": {},
