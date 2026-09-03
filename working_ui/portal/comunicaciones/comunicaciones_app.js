@@ -69,7 +69,7 @@ function esc(s) {
 /** CEO Javi Palankas (username Javi) — never instructor Javier. */
 function commsStaffLabel(name) {
   const n = String(name || "").trim();
-  if (/^administraci[oó]n$/i.test(n)) return "Administration";
+  if (/^administraci[oó]n$/i.test(n) || /^admin$/i.test(n)) return "ADMIN";
   if (/palankas/i.test(n) && !/\bjavi\b/i.test(n)) return "Javi Palankas";
   return n;
 }
@@ -213,7 +213,7 @@ function renderInbox() {
   const groups = $("commsListGroups");
   if (!direct || !groups) return;
   const items = state.inbox.items || [];
-  const d = items.filter((it) => it.kind === "admin_staff").slice().sort(byRecentThenName);
+  const d = items.filter((it) => it.kind === "admin_staff" || it.kind === "ceo_peer").slice().sort(byRecentThenName);
   const g = items.filter((it) => it.kind === "group").slice().sort(byRecentThenName);
   $("commsKickerDirect").textContent = state.mode === "administration" ? "Workers" : "My messages";
   direct.innerHTML = d.length
@@ -329,12 +329,15 @@ function renderThread() {
   if (it.kind === "group") {
     $("commsPeerMeta").textContent = closed ? "Closed group" : "Group";
     $("commsDraft").placeholder = "Write in the group...";
+  } else if (it.kind === "ceo_peer") {
+    $("commsPeerMeta").textContent = "Direct";
+    $("commsDraft").placeholder = "Write to " + (commsStaffLabel(it.display_name) || "them") + "...";
   } else if (state.mode === "administration") {
-    $("commsPeerMeta").textContent = "Conversation with Administration";
-    $("commsDraft").placeholder = "Write as Administration...";
+    $("commsPeerMeta").textContent = "Conversation with ADMIN";
+    $("commsDraft").placeholder = "Write as ADMIN...";
   } else {
-    $("commsPeerMeta").textContent = "Administration";
-    $("commsDraft").placeholder = "Write to Administration...";
+    $("commsPeerMeta").textContent = "ADMIN";
+    $("commsDraft").placeholder = "Write to ADMIN...";
   }
   if (!state.messages.length) {
     el.innerHTML = '<p class="comms-empty">No messages yet. Send the first one.</p>';
@@ -380,6 +383,10 @@ async function loadInbox() {
 
 function presenceOfItem(it) {
   if (!it || it.kind === "group") return "";
+  if (it.kind === "ceo_peer" && it.employee_id) {
+    const peer = state.presence && state.presence.people && state.presence.people[it.employee_id];
+    return (peer && peer.status) || "offline";
+  }
   if (it.kind === "admin_staff" && state.mode !== "administration") {
     return (state.presence && state.presence.administration) || "offline";
   }
@@ -429,7 +436,7 @@ function sendTypingPing() {
         user_id: state.me.id,
         name:
           state.mode === "administration"
-            ? "Administration"
+            ? "ADMIN"
             : commsStaffLabel(state.me.full_name),
       },
     });

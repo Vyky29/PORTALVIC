@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     else if (msgType === "image") body = "Photo";
     else if (msgType === "file") body = String(record.file_name || "File");
     else body = preview || "New message";
-    title = ctx === "ADMINISTRATION" ? "Administration" : "Communications";
+    title = ctx === "ADMINISTRATION" ? "ADMIN" : "Communications";
     const conv = String(record.conversation_id || "").trim();
     url = withQuery(openUrl, conv ? { conv } : {});
     tag = `comms-msg-${sourceId.slice(0, 24)}`;
