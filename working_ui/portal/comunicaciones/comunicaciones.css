@@ -99,6 +99,7 @@ body.comms-app {
   gap: 6px;
 }
 .comms-ctx-btn {
+  position: relative;
   border: 1px solid var(--line);
   background: var(--white);
   color: var(--ink);
@@ -108,6 +109,23 @@ body.comms-app {
   font-size: 12px;
   cursor: pointer;
   min-width: 0;
+}
+.comms-ctx-unread {
+  display: inline-block;
+  min-width: 16px;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 16px;
+  vertical-align: middle;
+}
+.comms-ctx-btn.is-on .comms-ctx-unread {
+  background: #fff;
+  color: #b91c1c;
 }
 .comms-ctx-btn.is-on {
   background: var(--ink);

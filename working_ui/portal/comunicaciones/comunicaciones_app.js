@@ -172,8 +172,22 @@ function showShell() {
 }
 
 function applyModeButtons() {
+  const counts = state.unreadCounts || {};
   document.querySelectorAll("[data-comms-mode]").forEach((btn) => {
-    btn.classList.toggle("is-on", btn.getAttribute("data-comms-mode") === state.mode);
+    const mode = btn.getAttribute("data-comms-mode");
+    btn.classList.toggle("is-on", mode === state.mode);
+    const n = Math.max(0, Number(counts[mode]) || 0);
+    let badge = btn.querySelector(".comms-ctx-unread");
+    if (n > 0) {
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "comms-ctx-unread";
+        btn.appendChild(badge);
+      }
+      badge.textContent = n > 9 ? "9+" : String(n);
+    } else if (badge) {
+      badge.remove();
+    }
   });
 }
 
@@ -381,6 +395,11 @@ async function loadInbox() {
     const snap = await rpc("communication_presence_snapshot");
     if (snap) state.presence = snap;
   } catch (_e) {}
+  try {
+    const counts = await rpc("communication_unread_counts");
+    if (counts && typeof counts === "object") state.unreadCounts = counts;
+  } catch (_c) {}
+  applyModeButtons();
   renderInbox();
 }
 
@@ -1589,7 +1608,19 @@ async function boot() {
   try {
     const data = await rpc("communication_bootstrap");
     state.me = data.me;
-    if (state.me.can_act_as_administration) state.mode = "administration";
+    const params = new URLSearchParams(window.location.search);
+    const modeQ = String(params.get("mode") || "").toLowerCase();
+    let counts = { personal: 0, administration: 0 };
+    try {
+      const raw = await rpc("communication_unread_counts");
+      if (raw && typeof raw === "object") counts = raw;
+    } catch (_counts) {}
+    state.unreadCounts = counts;
+    if (modeQ === "personal" || modeQ === "administration") {
+      state.mode = modeQ;
+    } else if (state.me.can_act_as_administration) {
+      state.mode = Number(counts.personal) > 0 ? "personal" : "administration";
+    }
     $("commsMeName").textContent = state.me.full_name;
     $("commsContextSwitch").hidden = !state.me.can_act_as_administration;
     $("commsSearchWrap").hidden = !state.me.can_act_as_administration;

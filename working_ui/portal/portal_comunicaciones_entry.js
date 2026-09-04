@@ -28,6 +28,10 @@
   }
 
   var lastUnreadCount = 0;
+  var lastPersonalCount = -1;
+  var lastToastMode = "";
+  var lastToastConv = "";
+  var convMetaCache = {};
   var fetchInFlight = null;
   var unreadRetryTimer = null;
   var unreadRefreshQueued = false;
@@ -59,7 +63,10 @@
   }
 
   function openApp() {
-    global.location.href = commsUrl();
+    var params = {};
+    if (lastToastMode) params.mode = lastToastMode;
+    if (lastToastConv) params.conv = lastToastConv;
+    global.location.href = commsUrlWith(params);
   }
 
   function currentStaffKey() {
@@ -179,13 +186,40 @@
           scheduleUnreadRetry();
           return lastUnreadCount;
         }
-        var res = await c.rpc("communication_unread_count");
-        if (res.error) {
-          scheduleUnreadRetry();
-          return lastUnreadCount;
+        var countsRes = await c.rpc("communication_unread_counts");
+        if (countsRes && countsRes.error) {
+          var res = await c.rpc("communication_unread_count");
+          if (res.error) {
+            scheduleUnreadRetry();
+            return lastUnreadCount;
+          }
+          applyUnreadBadge(Math.max(0, Number(res.data) || 0));
+        } else {
+          var counts = countsRes && countsRes.data && typeof countsRes.data === "object" ? countsRes.data : {};
+          var personal = Math.max(0, Number(counts.personal) || 0);
+          var total = Math.max(0, Number(counts.total) || 0);
+          if (
+            lastPersonalCount >= 0 &&
+            personal > lastPersonalCount &&
+            !isCommsAppPage() &&
+            typeof document !== "undefined" &&
+            document.visibilityState === "visible"
+          ) {
+            lastToastMode = "personal";
+            lastToastConv = "";
+            maybeShowMessageToast({
+              message_type: "text",
+              body: personal === 1 ? "New message in My account" : personal + " unread in My account",
+              sender_context: "PERSONAL",
+              performed_by_user_id: "",
+              _alertTitle: "My account",
+              _alertMode: "personal",
+            });
+          }
+          lastPersonalCount = personal;
+          applyUnreadBadge(total);
+          updateCommsLaunchLinks(personal > 0 ? "personal" : "");
         }
-        var next = Math.max(0, Number(res.data) || 0);
-        applyUnreadBadge(next);
         subscribeUnreadRealtime();
         watchIncomingCalls();
         bindIntrinsicCommsAlerts();
@@ -204,6 +238,20 @@
     return fetchInFlight;
   }
 
+  function updateCommsLaunchLinks(preferMode) {
+    var href = commsUrlWith(preferMode ? { mode: preferMode } : {});
+    var hosts = document.querySelectorAll("[data-comms-unread-host]");
+    for (var i = 0; i < hosts.length; i++) {
+      if (String(hosts[i].tagName || "").toLowerCase() === "a") {
+        hosts[i].setAttribute("href", href);
+      }
+    }
+    var staff = document.getElementById("topbarStaffWaBtn");
+    if (staff && String(staff.tagName || "").toLowerCase() === "a") {
+      staff.setAttribute("href", href);
+    }
+  }
+
   function subscribeUnreadRealtime() {
     var c = client();
     if (!c || typeof c.channel !== "function") return;
@@ -217,7 +265,7 @@
           function (payload) {
             var row = (payload && payload.new) || {};
             bumpUnreadFromIncoming(row);
-            maybeShowMessageToast(row);
+            void maybeShowMessageToast(row);
             void refreshUnread();
           }
         )
@@ -228,7 +276,16 @@
             void refreshUnread();
           }
         )
-        .subscribe();
+        .subscribe(function (status) {
+          if (status === "SUBSCRIBED") return;
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            try {
+              c.removeChannel(unreadChannel);
+            } catch (_rm) {}
+            unreadChannel = null;
+            global.setTimeout(subscribeUnreadRealtime, 2500);
+          }
+        });
     } catch (_rt) {
       unreadChannel = null;
     }
@@ -351,21 +408,57 @@
     applyUnreadBadge(lastUnreadCount + 1);
   }
 
-  function maybeShowMessageToast(row) {
+  async function conversationAlertMeta(row) {
+    if (row && row._alertMode) {
+      return {
+        mode: String(row._alertMode),
+        title: String(row._alertTitle || "My account"),
+      };
+    }
+    var convId = String((row && row.conversation_id) || "");
+    var uid = myUserId();
+    if (convId && convMetaCache[convId]) return convMetaCache[convId];
+    var fallback = { mode: "personal", title: "Communications" };
+    var c = client();
+    if (!c || !convId || typeof c.from !== "function") return fallback;
+    try {
+      var res = await c
+        .from("communication_conversations")
+        .select("type,employee_id,peer_a,peer_b")
+        .eq("id", convId)
+        .maybeSingle();
+      var conv = res && res.data;
+      if (!conv) return fallback;
+      var t = String(conv.type || "").toUpperCase();
+      var meta;
+      if (t === "PEER") meta = { mode: "personal", title: "My account" };
+      else if (t === "ADMIN_STAFF" && uid && String(conv.employee_id) === uid) {
+        meta = { mode: "personal", title: "My account" };
+      } else if (t === "ADMIN_STAFF") meta = { mode: "administration", title: "ADMIN" };
+      else meta = { mode: "personal", title: "Communications" };
+      convMetaCache[convId] = meta;
+      return meta;
+    } catch (_e) {
+      return fallback;
+    }
+  }
+
+  async function maybeShowMessageToast(row) {
     if (isCommsAppPage() || !row) return;
     var type = String(row.message_type || "text").toLowerCase();
     if (type === "system" || type === "call") return;
     if (String(row.performed_by_user_id || "") === myUserId()) return;
     if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    var meta = await conversationAlertMeta(row);
+    lastToastMode = meta.mode || "personal";
+    lastToastConv = String(row.conversation_id || lastToastConv || "");
     messageToastCount += 1;
     var el = ensureMessageToast();
     var titleEl = document.getElementById("portalCommsMsgToastTitle");
     var bodyEl = document.getElementById("portalCommsMsgToastBody");
     if (titleEl) {
       titleEl.textContent =
-        messageToastCount > 1
-          ? "Communications (" + messageToastCount + " new)"
-          : messageToastSender(row);
+        messageToastCount > 1 ? meta.title + " (" + messageToastCount + " new)" : meta.title;
     }
     if (bodyEl) bodyEl.textContent = previewMessageBody(row);
     el.hidden = false;
@@ -860,6 +953,7 @@
       bindIncomingPushMessages();
       bindIntrinsicCommsAlerts();
       watchIncomingCalls();
+      subscribeUnreadRealtime();
       var key = "";
       if (typeof global.resolveTopbarStaffKey === "function") {
         key = global.resolveTopbarStaffKey() || "";
@@ -906,6 +1000,6 @@
       try {
         if (document.visibilityState === "visible") void refreshUnread();
       } catch (_p) {}
-    }, 8000);
+    }, 2500);
   }
 })(typeof window !== "undefined" ? window : this);
