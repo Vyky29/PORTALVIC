@@ -137,7 +137,7 @@
     }
     global.__PORTAL_SW_REG_PROMISE__ = (async function () {
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260904-comms-14", global.location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260905-comms-32", global.location.href).href;
         var scopeBase = new URL("./", global.location.href).href;
         var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
         global.__PORTAL_SW_REG__ = reg;

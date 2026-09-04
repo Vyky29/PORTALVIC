@@ -742,12 +742,7 @@
     lastToastMode = meta.mode || "personal";
     lastToastConv = String(row.conversation_id || lastToastConv || "");
     var preview = previewMessageBody(row);
-    var hidden = typeof document !== "undefined" && document.visibilityState === "hidden";
-    if (hidden) {
-      showCommsOsBanner(meta.title || "Communications", preview, lastToastConv);
-      try {
-        if (global.navigator && global.navigator.vibrate) global.navigator.vibrate([180, 80, 180]);
-      } catch (_v) {}
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") {
       return;
     }
     messageToastCount += 1;
@@ -1309,7 +1304,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260904-comms-29", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260905-comms-32", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
     } catch (_sw) {}

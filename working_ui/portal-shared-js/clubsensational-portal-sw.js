@@ -6,6 +6,7 @@
  * v20260712-cs-portal-wa (Leader WhatsApp deep-link + CS Portal branding)
  * v20260711-always-os-banner (foreground skip broke alerts after chat UI removal)
  * v20260904-comms-push (Communications message + incoming-call banners)
+ * v20260905-comms-32 (COMMS: no OS banner while the PWA is in the foreground)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 
@@ -207,17 +208,22 @@ self.addEventListener('push', function (event) {
     data: { url: url, portalOpen: portalOpen, call: callData, chat: chatData },
   };
   if (vibrate) notifyOpts.vibrate = vibrate;
+  var isCommsPush = portalOpen === 'communications' || portalOpen === 'communications_call';
   event.waitUntil(
-    Promise.all([
-      /* Always show the OS banner (app open, background, or sleeping). Skipping
-         when a portal tab was visible broke alerts after the in-app handlers
-         were removed with the old chat UI. */
-      self.registration.showNotification(title, notifyOpts),
-      portalNotifyOpenClients(title, body, portalOpen, callData, chatData, {
-        senderUserId: senderUserId,
-        targetUserId: targetUserId,
-      }),
-    ])
+    portalHasVisiblePortalClient().then(function (hasVisibleClient) {
+      var tasks = [
+        portalNotifyOpenClients(title, body, portalOpen, callData, chatData, {
+          senderUserId: senderUserId,
+          targetUserId: targetUserId,
+        }),
+      ];
+      /* COMMS aviso interno covers the open PWA. Aviso del sistema (logo + vibrate)
+         only when locked, another app, or the PWA is in the background. */
+      if (!(isCommsPush && hasVisibleClient)) {
+        tasks.unshift(self.registration.showNotification(title, notifyOpts));
+      }
+      return Promise.all(tasks);
+    })
   );
 });
 

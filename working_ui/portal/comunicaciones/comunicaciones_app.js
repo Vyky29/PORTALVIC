@@ -707,6 +707,9 @@ async function pingIncomingMessage(row) {
   if (!row || isOwnMessageRow(row)) return;
   const type = String(row.message_type || "text").toLowerCase();
   if (type === "system" || type === "call") return;
+  try {
+    if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+  } catch (_vis) {}
   if (watchingConversation(row.conversation_id)) return;
   playCommsCue();
   showLivePing(row);
