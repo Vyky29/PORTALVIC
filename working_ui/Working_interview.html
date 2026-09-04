@@ -1472,6 +1472,45 @@
       );
     }
 
+    function localDateInputValue(d) {
+      const x = d instanceof Date ? d : new Date();
+      const y = x.getFullYear();
+      const m = String(x.getMonth() + 1).padStart(2, "0");
+      const day = String(x.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + day;
+    }
+
+    function localTimeInputValue(d) {
+      const x = d instanceof Date ? d : new Date();
+      const h = String(x.getHours()).padStart(2, "0");
+      const min = String(x.getMinutes()).padStart(2, "0");
+      return h + ":" + min;
+    }
+
+    /** Stamp day + live clock when an interview stage is opened with empty date/time. */
+    function stampInterviewOpenMeta(interview) {
+      if (!interview || typeof interview !== "object") return false;
+      const now = new Date();
+      let changed = false;
+      if (!String(interview.date || "").trim()) {
+        interview.date = localDateInputValue(now);
+        changed = true;
+      }
+      if (!String(interview.time || "").trim()) {
+        interview.time = localTimeInputValue(now);
+        changed = true;
+      }
+      return changed;
+    }
+
+    function syncInterviewDateTimeInputs(prefix, interview) {
+      if (!interview) return;
+      const dateEl = document.getElementById(prefix + "Date");
+      const timeEl = document.getElementById(prefix + "Time");
+      if (dateEl && interview.date) dateEl.value = interview.date;
+      if (timeEl && interview.time) timeEl.value = interview.time;
+    }
+
     function interviewReturnUrl() {
       try {
         const sp = new URLSearchParams(window.location.search || "");
@@ -2787,6 +2826,12 @@
         faceLockedNotice.classList.add("hidden");
         stage2Chip.classList.add("active");
         stage2Chip.classList.remove("locked", "alert");
+        const faceCandidate = ensureCandidateShape(findCandidateById(currentCandidateId));
+        if (faceCandidate && stampInterviewOpenMeta(faceCandidate.faceToFaceInterview)) {
+          syncInterviewDateTimeInputs("face", faceCandidate.faceToFaceInterview);
+        } else if (faceCandidate) {
+          syncInterviewDateTimeInputs("face", faceCandidate.faceToFaceInterview);
+        }
       } else if (status === "unsuccessful") {
         unsuccessBtn.classList.add("active-unsuccess");
         callUnsuccessfulWrap.classList.remove("hidden");
@@ -3285,26 +3330,14 @@
     }
 
     function applyMobileDateTimeInputs() {
-      const isMobile = window.matchMedia("(max-width: 768px)").matches;
-      document.querySelectorAll('input[data-input-type="date"]').forEach(inp => {
-        const originalType = inp.getAttribute("data-input-type") || "date";
-        if (isMobile) {
-          inp.type = "text";
-          inp.placeholder = "YYYY-MM-DD";
-        } else {
-          inp.type = originalType;
-          inp.placeholder = "";
-        }
+      /* Keep native date/time pickers on all viewports so Day is selectable and Time stays a clock control. */
+      document.querySelectorAll('input[data-input-type="date"]').forEach(function (inp) {
+        inp.type = "date";
+        inp.placeholder = "";
       });
-      document.querySelectorAll('input[data-input-type="time"]').forEach(inp => {
-        const originalType = inp.getAttribute("data-input-type") || "time";
-        if (isMobile) {
-          inp.type = "text";
-          inp.placeholder = "HH:MM";
-        } else {
-          inp.type = originalType;
-          inp.placeholder = "";
-        }
+      document.querySelectorAll('input[data-input-type="time"]').forEach(function (inp) {
+        inp.type = "time";
+        inp.placeholder = "";
       });
     }
 
@@ -3409,6 +3442,9 @@
       const onboardingStarted = isOnboardingStarted(onboarding);
       const readyForOnboarding = !!onboarding.readyToStart;
 
+      stampInterviewOpenMeta(candidate.callInterview);
+      if (callSuccessful) stampInterviewOpenMeta(candidate.faceToFaceInterview);
+
       mainContent.innerHTML = `
         <div class="content-header">
           <div class="candidate-summary">
@@ -3503,7 +3539,7 @@
 
                 <div class="field full">
                   <label for="callTime">Time</label>
-                  <input id="callTime" class="input" type="time" data-input-type="time" value="${escapeHtml(candidate.callInterview.time)}" />
+                  <input id="callTime" class="input" type="time" data-input-type="time" step="60" value="${escapeHtml(candidate.callInterview.time)}" />
                 </div>
 
                 <div class="field full hidden">
@@ -3610,7 +3646,7 @@
 
                   <div class="field full">
                     <label for="faceTime">Time</label>
-                    <input id="faceTime" class="input" type="time" data-input-type="time" value="${escapeHtml(candidate.faceToFaceInterview.time)}" />
+                    <input id="faceTime" class="input" type="time" data-input-type="time" step="60" value="${escapeHtml(candidate.faceToFaceInterview.time)}" />
                   </div>
 
                   <div class="field full phase-block phase-block--org">
