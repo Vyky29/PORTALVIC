@@ -1062,6 +1062,10 @@
       background:var(--blueSoft);
     }
 
+    .phase-block--call-filter{
+      background:rgba(45,132,179,.07);
+    }
+
     .phase-block--exp{
       background:rgba(204,149,43,.08);
     }
@@ -2408,8 +2412,51 @@
       ]
     };
 
+    var CALL_FILTER_QUESTIONS = [
+      {
+        id: "filterQ1",
+        title: "How did you find us?",
+        tip: "Note the channel (Indeed, referral, Instagram, friend at the club, etc.). Helps you see where good candidates come from and if someone recommended them."
+      },
+      {
+        id: "filterQ2",
+        title: "What do you know about clubSENsational?",
+        tip: "Listen for autism / learning disabilities, sessions, community work - not a perfect speech. Vague \"I just need a job\" is a weak signal."
+      },
+      {
+        id: "filterQ3",
+        title: "Why do you want this role / why work with us?",
+        tip: "Look for genuine interest in the people we support and the role, not only hours or location."
+      },
+      {
+        id: "filterQ4",
+        title: "What experience do you have with autism or learning disabilities?",
+        tip: "Ask briefly: 1:1, group, or both; what kind of support. Even \"none yet, but...\" is fine if attitude is strong - capture it in writing."
+      },
+      {
+        id: "filterQ5",
+        title: "What is your availability, and how would you travel to our venues?",
+        tip: "Days, mornings/afternoons/weekends, hours wanted. Car / public transport / which venues they can reach. Filters people who cannot actually do the shifts."
+      },
+      {
+        id: "filterQ6",
+        title: "When could you start, and do you have a notice period?",
+        tip: "Earliest start date and any notice with a current employer. Avoid booking face-to-face if they cannot start in a useful window."
+      },
+      {
+        id: "filterQ7",
+        title: "For this role we need to complete a DBS check. Is there anything we should know that could affect or delay that check?",
+        tip: "The company arranges the DBS. Soft yes/no + short note; if they won't proceed with DBS, don't take them to Stage 2."
+      },
+      {
+        id: "filterQ8",
+        title: "Is there anything that would stop you doing a face-to-face interview or the role as we described it?",
+        tip: "Open catch-all: can't attend wet/dry sessions, can't travel, long notice, won't do shadowing, etc. If there's a hard blocker, don't progress them."
+      }
+    ];
+
     function getDefaultCallInterview() {
-      return {
+      var base = {
         interviewerName: "",
         date: "",
         time: "",
@@ -2438,6 +2485,11 @@
         uploadedTextDataUrl: "",
         uploadedTextMime: ""
       };
+      CALL_FILTER_QUESTIONS.forEach(function (q) {
+        base[q.id] = 0;
+        base[q.id + "Notes"] = "";
+      });
+      return base;
     }
 
     function getDefaultFaceToFace() {
@@ -2656,7 +2708,16 @@
       if (candidate.faceToFaceInterview.status === "unsuccessful") return "face-unsuccessful";
       if (candidate.callInterview.status === "successful") return "face-to-face";
       if (candidate.callInterview.status === "unsuccessful") return "call-unsuccessful";
-      if (candidate.callInterview.date || candidate.callInterview.time || candidate.callInterview.comments || candidate.callInterview.generalNotes || (candidate.callInterview.callNotesAudio && candidate.callInterview.callNotesAudio.length > 0)) return "call-interview";
+      if (
+        candidate.callInterview.date ||
+        candidate.callInterview.time ||
+        candidate.callInterview.comments ||
+        candidate.callInterview.generalNotes ||
+        callHasFilterAnswers(candidate.callInterview) ||
+        (candidate.callInterview.callNotesAudio && candidate.callInterview.callNotesAudio.length > 0)
+      ) {
+        return "call-interview";
+      }
       return "new";
     }
 
@@ -2788,6 +2849,37 @@
                         ${renderQuestionAudio(face, questionId, currentCandidateId)}
                         <input type="hidden" id="${escapeHtml(questionId)}" value="${face && face[questionId] ? face[questionId] : 0}" />
                       </div>`;
+    }
+
+    function renderCallFilterQuestion(call, question, index) {
+      const id = question.id;
+      const notesId = id + "Notes";
+      const score = call && call[id] ? Number(call[id]) : 0;
+      const notes = call && call[notesId] ? String(call[notesId]) : "";
+      return `<div class="check-card">
+<div class="question-label"><label for="${escapeHtml(notesId)}">${index}. ${escapeHtml(question.title)}</label><p class="question-helper">${escapeHtml(question.tip)}</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="${escapeHtml(id)}" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                        </div>
+                        <input type="hidden" id="${escapeHtml(id)}" value="${score || 0}" />
+                        <div class="question-notes">
+                          <textarea id="${escapeHtml(notesId)}" class="textarea" rows="3" placeholder="Write the answer / notes...">${escapeHtml(notes)}</textarea>
+                        </div>
+                      </div>`;
+    }
+
+    function callHasFilterAnswers(call) {
+      if (!call) return false;
+      return CALL_FILTER_QUESTIONS.some(function (q) {
+        const notes = String(call[q.id + "Notes"] || "").trim();
+        const score = Number(call[q.id] || 0);
+        return !!notes || score > 0;
+      });
     }
 
     function renderCallNotesAudio(call) {
@@ -3127,6 +3219,12 @@
       candidate.callInterview.roleScales = getCheckboxValue("callRoleScales");
       candidate.callInterview.shadowingProcessRate = getCheckboxValue("callShadowingProcessRate");
       candidate.callInterview.faceToFaceSessionWet = getCheckboxValue("callFaceToFaceSessionWet");
+      CALL_FILTER_QUESTIONS.forEach(function (q) {
+        var scoreEl = document.getElementById(q.id);
+        var notesEl = document.getElementById(q.id + "Notes");
+        candidate.callInterview[q.id] = scoreEl ? Number(scoreEl.value || 0) : 0;
+        candidate.callInterview[q.id + "Notes"] = notesEl ? notesEl.value.trim() : "";
+      });
 
       candidate.faceToFaceInterview.interviewerName = callStatus.value === "successful" && faceInterviewerName ? faceInterviewerName.value.trim() : "";
       candidate.faceToFaceInterview.date = callStatus.value === "successful" ? faceDate.value : "";
@@ -3545,6 +3643,9 @@
             const next = v === current ? 0 : v;
             hidden.value = String(next);
             render(next);
+            if (typeof updateCandidateFromForm === "function" && currentCandidateId) {
+              updateCandidateFromForm(true);
+            }
           });
         });
       });
@@ -4019,7 +4120,7 @@
             <div class="section-head">
               <div>
                 <h3>Stage 1 · Call Interview</h3>
-                <p>Use this section for the first screening call. Topics covered are now integrated inside the main summary section.</p>
+                <p>First screening call. Use the filter questions below so answers are saved before Stage 2. Process points (pay, shadowing, face-to-face) stay as quick ticks.</p>
               </div>
             </div>
             <div class="section-body">
@@ -4044,32 +4145,21 @@
                   <textarea id="callComments" class="textarea" placeholder="Add your summary from the call interview...">${escapeHtml(candidate.callInterview.comments)}</textarea>
                 </div>
 
+                <div class="field full phase-block phase-block--call-filter">
+                  <label>Screening filter questions</label>
+                  <div class="check-grid">
+                    ${CALL_FILTER_QUESTIONS.map(function (q, i) {
+                      return renderCallFilterQuestion(candidate.callInterview, q, i + 1);
+                    }).join("")}
+                  </div>
+                </div>
+
                 <div class="field full">
-                  <label>Topics covered inside call summary</label>
+                  <label>Process covered with the candidate</label>
                   <div class="check-grid">
                     <div class="check-card">
-                      <input type="checkbox" id="callPreviousExperience" ${candidate.callInterview.previousExperience ? "checked" : ""}>
-                      <label for="callPreviousExperience">Previous experience</label>
-                    </div>
-
-                    <div class="check-card">
-                      <input type="checkbox" id="callSendExperience" ${candidate.callInterview.sendExperience ? "checked" : ""}>
-                      <label for="callSendExperience">SEN experience</label>
-                    </div>
-
-                    <div class="check-card">
-                      <input type="checkbox" id="callMotivation" ${candidate.callInterview.motivation ? "checked" : ""}>
-                      <label for="callMotivation">Why joining clubSENsational</label>
-                    </div>
-
-                    <div class="check-card">
-                      <input type="checkbox" id="callLocationTravel" ${candidate.callInterview.locationTravel ? "checked" : ""}>
-                      <label for="callLocationTravel">Location and travel</label>
-                    </div>
-
-                    <div class="check-card">
                       <input type="checkbox" id="callRoleScales" ${candidate.callInterview.roleScales ? "checked" : ""}>
-                      <label for="callRoleScales">Role scales</label>
+                      <label for="callRoleScales">Role scales / pay</label>
                     </div>
 
                     <div class="check-card">
@@ -4079,7 +4169,7 @@
 
                     <div class="check-card">
                       <input type="checkbox" id="callFaceToFaceSessionWet" ${candidate.callInterview.faceToFaceSessionWet ? "checked" : ""}>
-                      <label for="callFaceToFaceSessionWet">Face to Face Interview (Dry & Wet)</label>
+                      <label for="callFaceToFaceSessionWet">Face to Face Interview (Dry &amp; Wet)</label>
                     </div>
                   </div>
                 </div>
