@@ -44,6 +44,19 @@ body.comms-app {
   display: grid;
   place-items: center;
   color: var(--muted);
+  padding: 24px;
+  text-align: center;
+}
+.comms-boot p {
+  margin: 0;
+  max-width: 22rem;
+  overflow-wrap: break-word;
+}
+.comms-boot p + p { margin-top: 12px; }
+.comms-boot-back {
+  color: var(--blueDeep);
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .comms-shell {

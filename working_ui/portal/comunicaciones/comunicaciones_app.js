@@ -161,9 +161,27 @@ function portalHome() {
   return FROM_PAGE.staff;
 }
 
+function withTimeout(promise, ms, message) {
+  let t = 0;
+  const timeout = new Promise((_, reject) => {
+    t = window.setTimeout(function () {
+      reject(new Error(message || "Timed out"));
+    }, ms);
+  });
+  return Promise.race([promise, timeout]).finally(function () {
+    if (t) window.clearTimeout(t);
+  });
+}
+
 function setBoot(msg) {
   const el = $("commsBoot");
-  if (el) el.innerHTML = "<p>" + esc(msg) + "</p>";
+  if (!el) return;
+  el.innerHTML =
+    "<p>" +
+    esc(msg) +
+    "</p><p><a class=\"comms-boot-back\" href=\"" +
+    esc(portalHome()) +
+    "\">Back to portal</a></p>";
 }
 
 function showShell() {
@@ -1606,7 +1624,13 @@ async function boot() {
     return;
   }
   try {
-    const data = await rpc("communication_bootstrap");
+    setBoot("Connecting...");
+    const data = await withTimeout(
+      rpc("communication_bootstrap"),
+      12000,
+      "Could not connect to Communications."
+    );
+    if (!data || !data.me) throw new Error("Could not open Communications.");
     state.me = data.me;
     const params = new URLSearchParams(window.location.search);
     const modeQ = String(params.get("mode") || "").toLowerCase();
@@ -1629,7 +1653,7 @@ async function boot() {
     applyModeButtons();
     bindUi();
     $("commsCallOverlay").hidden = true;
-    await loadInbox();
+    await withTimeout(loadInbox(), 15000, "Could not load conversations.");
     renderThread();
     showShell();
     subscribeRealtime();
@@ -1659,7 +1683,6 @@ async function boot() {
         void window.portalEnsureWebPushSubscription();
       }
     } catch (_p) {}
-    const params = new URLSearchParams(window.location.search);
     const conv = String(params.get("conv") || "").trim();
     const callId = String(params.get("call") || "").trim();
     if (conv) {
@@ -1695,4 +1718,7 @@ async function boot() {
 }
 
 window.portalLogout = portalLogout;
-boot();
+boot().catch(function (err) {
+  setBoot((err && err.message) || "Could not open Communications. Return to the portal.");
+  console.warn("[comunicaciones]", err);
+});

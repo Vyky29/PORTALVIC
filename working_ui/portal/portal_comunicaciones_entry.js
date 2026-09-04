@@ -1003,6 +1003,7 @@
 
   function boot() {
     try {
+      if (isCommsAppPage()) return;
       ensureUnreadBadgeCss();
       ensurePortalPushSw();
       bindIncomingPushMessages();
@@ -1038,11 +1039,13 @@
   try {
     global.addEventListener("portal:staff-profile-ready", boot);
     global.addEventListener("portal:supabase-ready", function () {
+      if (isCommsAppPage()) return;
       boot();
       void refreshUnread();
       watchIncomingCalls();
     });
     document.addEventListener("visibilitychange", function () {
+      if (isCommsAppPage()) return;
       if (document.visibilityState === "visible") {
         void refreshUnread();
         void pollRingingCalls();
@@ -1053,6 +1056,7 @@
     global.__PORTAL_COMMS_UNREAD_POLL__ = true;
     global.setInterval(function () {
       try {
+        if (isCommsAppPage()) return;
         if (document.visibilityState === "visible") void refreshUnread();
       } catch (_p) {}
     }, 8000);
