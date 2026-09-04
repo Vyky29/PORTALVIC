@@ -620,10 +620,84 @@ function chatPaneOnScreen() {
   return true;
 }
 
+function playCommsCue() {
+  try {
+    if (typeof window.portalPlayAlertCue === "function") {
+      window.portalPlayAlertCue({ vibrate: [180, 80, 180] });
+      return;
+    }
+  } catch (_c) {}
+  try {
+    if (window.navigator && window.navigator.vibrate) window.navigator.vibrate([180, 80, 180]);
+  } catch (_v) {}
+}
+
+function isOwnMessageRow(row) {
+  if (!row || !state.me) return false;
+  const me = String(state.me.id || "").trim().toLowerCase();
+  if (!me) return false;
+  const a = String(row.performed_by_user_id || "").trim().toLowerCase();
+  const b = String(row.sender_user_id || "").trim().toLowerCase();
+  return (a && a === me) || (b && b === me);
+}
+
+let livePingTimer = 0;
+let livePingConv = "";
+
+function showLivePing(row) {
+  const el = $("commsLivePing");
+  if (!el) return;
+  const titleEl = $("commsLivePingTitle");
+  const bodyEl = $("commsLivePingBody");
+  const admin = String((row && row.sender_context) || "").toUpperCase() === "ADMINISTRATION";
+  const watchingAdmin = state.mode === "administration";
+  if (titleEl) {
+    titleEl.textContent = watchingAdmin || admin ? "ADMIN" : "My account";
+    if (state.mode === "personal" && state.me && state.me.can_act_as_administration) {
+      titleEl.textContent = "ADMIN";
+    }
+  }
+  if (bodyEl) {
+    const preview = String((row && row.body) || row.file_name || "New message").replace(/\s+/g, " ").trim();
+    bodyEl.textContent = preview.length > 80 ? preview.slice(0, 79) + "..." : preview || "New message";
+  }
+  livePingConv = String((row && row.conversation_id) || "");
+  el.hidden = false;
+  try {
+    el.removeAttribute("hidden");
+  } catch (_h) {}
+  if (livePingTimer) window.clearTimeout(livePingTimer);
+  livePingTimer = window.setTimeout(function () {
+    el.hidden = true;
+  }, 8000);
+}
+
+function watchingConversation(conversationId) {
+  if (!state.open || !conversationId) return false;
+  if (String(state.open.conversation_id) !== String(conversationId)) return false;
+  try {
+    if (document.visibilityState !== "visible") return false;
+    if (typeof document.hasFocus === "function" && !document.hasFocus()) return false;
+  } catch (_e) {
+    return false;
+  }
+  return chatPaneOnScreen();
+}
+
+async function pingIncomingMessage(row) {
+  if (!row || isOwnMessageRow(row)) return;
+  const type = String(row.message_type || "text").toLowerCase();
+  if (type === "system" || type === "call") return;
+  if (watchingConversation(row.conversation_id)) return;
+  playCommsCue();
+  showLivePing(row);
+}
+
 function shouldMarkConversationRead(conversationId, silent) {
   if (!conversationId) return false;
   try {
     if (document.visibilityState !== "visible") return false;
+    if (typeof document.hasFocus === "function" && !document.hasFocus()) return false;
   } catch (_e) {
     return false;
   }
@@ -902,6 +976,15 @@ function subscribeRealtime() {
       { event: "INSERT", schema: "public", table: "communication_messages" },
       async (payload) => {
         const row = payload.new || {};
+        if (isOwnMessageRow(row)) {
+          if (state.open && String(row.conversation_id) === String(state.open.conversation_id)) {
+            await openConversation(state.open.conversation_id, state.open, { silent: true });
+          } else {
+            await loadInbox();
+          }
+          return;
+        }
+        await pingIncomingMessage(row);
         if (state.open && String(row.conversation_id) === String(state.open.conversation_id)) {
           await openConversation(state.open.conversation_id, state.open, { silent: true });
         } else {
@@ -1874,6 +1957,20 @@ function bindUi() {
   $("commsCallAudio").addEventListener("click", function () {
     startCall("AUDIO");
   });
+  const pingOpen = $("commsLivePingOpen");
+  if (pingOpen) {
+    pingOpen.addEventListener("click", async function (ev) {
+      ev.preventDefault();
+      const conv = livePingConv;
+      const ping = $("commsLivePing");
+      if (ping) ping.hidden = true;
+      if (!conv) return;
+      try {
+        await ensureModeForConversation(conv);
+        await openConversation(conv);
+      } catch (_o) {}
+    });
+  }
   $("commsCallVideo").addEventListener("click", function () {
     startCall("VIDEO");
   });

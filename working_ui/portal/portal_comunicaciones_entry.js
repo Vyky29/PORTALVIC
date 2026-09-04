@@ -24,7 +24,57 @@
 
   function client() {
     var box = supabaseBox();
-    return box && box.client ? box.client : null;
+    if (box && box.client) return box.client;
+    try {
+      if (typeof global.portalAdminGetSupabaseClient === "function") {
+        var adminClient = global.portalAdminGetSupabaseClient();
+        if (adminClient) return adminClient;
+      }
+    } catch (_a) {}
+    if (global.__PORTAL_SUPABASE_SINGLETON__) return global.__PORTAL_SUPABASE_SINGLETON__;
+    return null;
+  }
+
+  function myUserIds() {
+    var ids = {};
+    function add(raw) {
+      var s = String(raw || "").trim().toLowerCase();
+      if (s) ids[s] = true;
+    }
+    try {
+      var box = supabaseBox();
+      if (box && box.staff_profile && box.staff_profile.id) add(box.staff_profile.id);
+      if (box && box.session && box.session.user && box.session.user.id) add(box.session.user.id);
+    } catch (_b) {}
+    try {
+      if (typeof global.portalCurrentPushAuthUserId === "function") {
+        add(global.portalCurrentPushAuthUserId());
+      }
+    } catch (_p) {}
+    try {
+      if (typeof global.portalAdminReadStoredAuthSession === "function") {
+        var stored = global.portalAdminReadStoredAuthSession();
+        if (stored && stored.user && stored.user.id) add(stored.user.id);
+      }
+    } catch (_s) {}
+    return Object.keys(ids);
+  }
+
+  function myUserId() {
+    return myUserIds()[0] || "";
+  }
+
+  function isOwnCommsRow(row) {
+    if (!row) return false;
+    var mine = myUserIds();
+    if (!mine.length) return false;
+    var a = String(row.performed_by_user_id || "").trim().toLowerCase();
+    var b = String(row.sender_user_id || "").trim().toLowerCase();
+    for (var i = 0; i < mine.length; i++) {
+      if (a && a === mine[i]) return true;
+      if (b && b === mine[i]) return true;
+    }
+    return false;
   }
 
   var lastUnreadCount = 0;
@@ -347,6 +397,7 @@
           { event: "INSERT", schema: "public", table: "communication_messages" },
           function (payload) {
             var row = (payload && payload.new) || {};
+            if (isOwnCommsRow(row)) return;
             bumpUnreadFromIncoming(row);
             void maybeShowMessageToast(row);
             global.setTimeout(function () {
@@ -378,17 +429,6 @@
     } catch (_rt) {
       unreadChannel = null;
     }
-  }
-
-  function myUserId() {
-    try {
-      var box = supabaseBox();
-      if (box && box.staff_profile && box.staff_profile.id) return String(box.staff_profile.id);
-      if (box && box.session && box.session.user && box.session.user.id) {
-        return String(box.session.user.id);
-      }
-    } catch (_e) {}
-    return "";
   }
 
   function isCommsAppPage() {
@@ -571,7 +611,7 @@
     if (!row) return;
     var type = String(row.message_type || "text").toLowerCase();
     if (type === "system") return;
-    if (String(row.performed_by_user_id || "") === myUserId()) return;
+    if (isOwnCommsRow(row)) return;
     var next = lastUnreadCount + 1;
     unreadHoldMin = next;
     unreadHoldUntil = Date.now() + 25000;
@@ -586,7 +626,6 @@
       };
     }
     var convId = String((row && row.conversation_id) || "");
-    var uid = myUserId();
     if (convId && convMetaCache[convId]) return convMetaCache[convId];
     var fallback = { mode: "personal", title: "Communications" };
     var c = client();
@@ -602,10 +641,22 @@
       var t = String(conv.type || "").toUpperCase();
       var meta;
       if (t === "PEER") meta = { mode: "personal", title: "My account" };
-      else if (t === "ADMIN_STAFF" && uid && String(conv.employee_id) === uid) {
-        meta = { mode: "personal", title: "My account" };
-      } else if (t === "ADMIN_STAFF") meta = { mode: "administration", title: "ADMIN" };
-      else meta = { mode: "personal", title: "Communications" };
+      else if (t === "ADMIN_STAFF") {
+        var mine = myUserIds();
+        var emp = String(conv.employee_id || "").trim().toLowerCase();
+        var isMineThread = false;
+        for (var i = 0; i < mine.length; i++) {
+          if (emp && emp === mine[i]) {
+            isMineThread = true;
+            break;
+          }
+        }
+        meta = isMineThread
+          ? { mode: "personal", title: "My account" }
+          : mine.length
+            ? { mode: "administration", title: "ADMIN" }
+            : fallback;
+      } else meta = { mode: "personal", title: "Communications" };
       convMetaCache[convId] = meta;
       return meta;
     } catch (_e) {
@@ -659,7 +710,10 @@
     if (isCommsAppPage() || !row) return;
     var type = String(row.message_type || "text").toLowerCase();
     if (type === "system" || type === "call") return;
-    if (String(row.performed_by_user_id || "") === myUserId()) return;
+    if (isOwnCommsRow(row)) return;
+    if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(row)) {
+      return;
+    }
     var meta = await conversationAlertMeta(row);
     lastToastMode = meta.mode || "personal";
     lastToastConv = String(row.conversation_id || lastToastConv || "");
@@ -1198,7 +1252,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260904-comms-27", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260904-comms-29", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
     } catch (_sw) {}
@@ -1226,13 +1280,21 @@
           }
         }
         if (d.type === "portal-push-received" && open === "communications") {
+          if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(d)) {
+            return;
+          }
+          if (isOwnCommsRow({ performed_by_user_id: d.senderUserId || "", sender_user_id: d.senderUserId || "" })) {
+            return;
+          }
           var toastEl = document.getElementById("portalCommsMsgToast");
           if (!toastEl || toastEl.hidden) {
             maybeShowMessageToast({
               message_type: "text",
               body: d.body || "New message",
-              sender_context: "PERSONAL",
+              sender_context: String(d.title || "").toUpperCase() === "ADMIN" ? "ADMINISTRATION" : "PERSONAL",
               performed_by_user_id: d.senderUserId || "",
+              _alertTitle: d.title || "Communications",
+              _alertMode: String(d.title || "").toUpperCase() === "ADMIN" ? "administration" : "personal",
             });
           }
           void refreshUnread();
@@ -1462,6 +1524,6 @@
         if (isCommsAppPage()) return;
         if (document.visibilityState === "visible") void refreshUnread();
       } catch (_p) {}
-    }, 8000);
+    }, 3000);
   }
 })(typeof window !== "undefined" ? window : this);

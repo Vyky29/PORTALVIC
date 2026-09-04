@@ -145,6 +145,43 @@ body.comms-app {
   color: #fff;
   border-color: var(--ink);
 }
+.comms-live-ping {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #173247;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.14);
+}
+.comms-live-ping[hidden] { display: none !important; }
+.comms-live-ping-copy {
+  flex: 1;
+  min-width: 0;
+}
+.comms-live-ping-copy strong,
+.comms-live-ping-copy span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.comms-live-ping-copy strong { font-size: 12px; }
+.comms-live-ping-copy span { font-size: 11px; color: rgba(255,255,255,.8); }
+.comms-live-ping button {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #f5d56a;
+  color: #173247;
+  font-weight: 800;
+  font-size: 11px;
+  cursor: pointer;
+}
 .comms-search-wrap input {
   width: 100%;
   border: 1px solid var(--line);

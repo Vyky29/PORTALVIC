@@ -689,11 +689,17 @@ export async function sendPushPayloadToUserIds(
   admin: SupabaseClient,
   userIds: string[],
   pushPayload: string,
-  options?: { TTL?: number; urgency?: string; topic?: string },
+  options?: { TTL?: number; urgency?: string; topic?: string; excludeUserIds?: string[] },
 ): Promise<{ sent: number; targets: number; subs: number; failed: number; lastStatus?: number; expandedTargets?: number }> {
   if (!userIds.length) return { sent: 0, targets: 0, subs: 0, failed: 0 };
 
-  const expandedIds = await expandPushSubscriptionUserIds(admin, userIds);
+  const exclude = new Set(
+    (options?.excludeUserIds || []).map((id) => String(id || "").trim()).filter(Boolean),
+  );
+  const expandedIds = (await expandPushSubscriptionUserIds(admin, userIds)).filter((id) => !exclude.has(id));
+  if (!expandedIds.length) {
+    return { sent: 0, targets: userIds.length, subs: 0, failed: 0, expandedTargets: 0 };
+  }
 
   const { data: subsRaw, error: subErr } = await admin
     .from("portal_push_subscriptions")

@@ -192,6 +192,12 @@ Deno.serve(async (req) => {
   if (!recipientIds.length) {
     return jsonPushResponse({ skipped: true, reason: "no recipients" });
   }
+  recipientIds = [...new Set(recipientIds.map(String).filter(Boolean))].filter(
+    (id) => !senderUserId || id !== senderUserId,
+  );
+  if (!recipientIds.length) {
+    return jsonPushResponse({ skipped: true, reason: "sender only" });
+  }
 
   const dedupe = await insertDedupeOrSkip(admin, DEDUPE_TABLE, sourceTable, sourceId);
   if (dedupe === "duplicate") {
@@ -201,37 +207,44 @@ Deno.serve(async (req) => {
     return jsonPushResponse({ error: "dedupe failed" }, 500);
   }
 
-  const pushPayload = JSON.stringify({
-    title,
-    body,
-    url,
-    portalOpen,
-    tag,
-    requireInteraction,
-    vibrate: portalOpen === "communications_call" ? [500, 180, 500, 180, 700] : [200, 80, 200],
-    senderUserId,
-    call: callData,
-    chat: chatData,
-  });
-
-  const result = await sendPushPayloadToUserIds(admin, recipientIds, pushPayload, {
-    TTL: ttl,
-    urgency,
-    topic: tag.slice(0, 32),
-  });
+  let sent = 0;
+  let targets = 0;
+  for (const rid of recipientIds) {
+    const pushPayload = JSON.stringify({
+      title,
+      body,
+      url,
+      portalOpen,
+      tag,
+      requireInteraction,
+      vibrate: portalOpen === "communications_call" ? [500, 180, 500, 180, 700] : [200, 80, 200],
+      senderUserId,
+      targetUserId: rid,
+      call: callData,
+      chat: chatData,
+    });
+    const result = await sendPushPayloadToUserIds(admin, [rid], pushPayload, {
+      TTL: ttl,
+      urgency,
+      topic: tag.slice(0, 32),
+      excludeUserIds: senderUserId ? [senderUserId] : [],
+    });
+    sent += result.sent || 0;
+    targets += result.targets || 0;
+  }
 
   console.log("[portal-push-comms]", {
     table,
     sourceId,
     recipients: recipientIds.length,
-    sent: result.sent,
+    sent,
   });
 
   return jsonPushResponse({
     ok: true,
     table,
-    sent: result.sent,
-    targets: result.targets,
-    note: result.sent === 0 ? "no portal_push_subscriptions or all sends failed" : "ok",
+    sent,
+    targets,
+    note: sent === 0 ? "no portal_push_subscriptions or all sends failed" : "ok",
   });
 });
