@@ -12,6 +12,12 @@
   var jitsiScriptLoading = null;
   var joinGen = 0;
   var RING_MS = 45000;
+  var heldStream = null;
+  var warmupApi = null;
+  var warmupHost = null;
+  var warmupRoom = "hold" + String(Math.random()).replace(".", "").slice(2, 12);
+  var warmupPromise = null;
+  var warmupReady = false;
 
   function stripId(raw) {
     return String(raw || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 80);
@@ -19,7 +25,11 @@
 
   function roomSlug(opts) {
     opts = opts || {};
-    var key = stripId(opts.conversationId || opts.callId || opts.room);
+    if (opts.room) {
+      var custom = String(opts.room).replace(/[^a-zA-Z0-9-]/g, "").slice(0, 80);
+      if (custom) return custom.indexOf("comms-") === 0 ? custom : "comms-" + custom;
+    }
+    var key = stripId(opts.conversationId || opts.callId);
     return key ? "comms-" + key : "";
   }
 
@@ -156,7 +166,7 @@
     if (!iframe) return;
     iframe.setAttribute(
       "allow",
-      "camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
+      "camera *; microphone *; display-capture *; autoplay *; clipboard-write; fullscreen"
     );
     iframe.setAttribute("allowfullscreen", "true");
     iframe.style.width = "100%";
@@ -236,6 +246,188 @@
     return null;
   }
 
+  function attachHeldStream(stream) {
+    if (!stream || !document.body) return;
+    var el = document.getElementById("portalCommsHeldMedia");
+    if (!el) {
+      el = document.createElement("video");
+      el.id = "portalCommsHeldMedia";
+      el.muted = true;
+      el.autoplay = true;
+      el.playsInline = true;
+      el.setAttribute("playsinline", "");
+      el.setAttribute("webkit-playsinline", "");
+      el.setAttribute("aria-hidden", "true");
+      el.style.cssText =
+        "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;bottom:0";
+      document.body.appendChild(el);
+    }
+    el.srcObject = stream;
+    var play = el.play();
+    if (play && play.catch) play.catch(function () {});
+  }
+
+  async function holdLocalDevices() {
+    if (!global.navigator || !navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") {
+      return null;
+    }
+    if (heldStream && heldStream.active) {
+      attachHeldStream(heldStream);
+      return heldStream;
+    }
+    heldStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 360 } },
+    });
+    try {
+      heldStream.getVideoTracks().forEach(function (t) {
+        t.enabled = false;
+      });
+    } catch (_v) {}
+    attachHeldStream(heldStream);
+    try {
+      if (typeof global.markMicrophoneGranted === "function") global.markMicrophoneGranted();
+      if (typeof global.markCameraGranted === "function") global.markCameraGranted();
+    } catch (_m) {}
+    return heldStream;
+  }
+
+  function ensureWarmupHost() {
+    if (warmupHost && warmupHost.parentNode) return warmupHost;
+    warmupHost = document.createElement("div");
+    warmupHost.id = "portalCommsJitsiWarmup";
+    warmupHost.setAttribute("aria-hidden", "true");
+    warmupHost.style.cssText =
+      "position:fixed;left:-9999px;top:0;width:280px;height:160px;opacity:0;pointer-events:none;overflow:hidden";
+    (document.body || document.documentElement).appendChild(warmupHost);
+    return warmupHost;
+  }
+
+  function muteWarmup() {
+    if (!warmupApi) return;
+    try {
+      warmupApi.isAudioMuted().then(function (muted) {
+        if (!muted) warmupApi.executeCommand("toggleAudio");
+      });
+    } catch (_a) {
+      try {
+        warmupApi.executeCommand("toggleAudio");
+      } catch (_a2) {}
+    }
+    try {
+      warmupApi.isVideoMuted().then(function (muted) {
+        if (!muted) warmupApi.executeCommand("toggleVideo");
+      });
+    } catch (_v) {
+      try {
+        warmupApi.executeCommand("toggleVideo");
+      } catch (_v2) {}
+    }
+  }
+
+  function warmup(opts) {
+    opts = opts || {};
+    if (warmupReady && warmupApi) return Promise.resolve(true);
+    if (warmupPromise) return warmupPromise;
+    warmupPromise = (async function () {
+      try {
+        await holdLocalDevices();
+      } catch (_gum) {}
+      preload();
+      if (warmupApi) {
+        warmupReady = true;
+        return true;
+      }
+      if (!opts.client) return true;
+      try {
+        var token = await mint(opts.client, {
+          room: warmupRoom,
+          displayName: opts.displayName || "Staff",
+        });
+        var domain = String(token.domain || "8x8.vc");
+        await loadJitsiScript("https://" + domain + "/external_api.js");
+        var host = ensureWarmupHost();
+        var Jitsi = global.JitsiMeetExternalAPI;
+        warmupApi = new Jitsi(domain, {
+          roomName: String(token.roomName),
+          jwt: String(token.jwt),
+          parentNode: host,
+          width: 280,
+          height: 160,
+          lang: "en",
+          userInfo: { displayName: String(opts.displayName || "Staff").slice(0, 80) },
+          configOverwrite: {
+            prejoinPageEnabled: false,
+            prejoinConfig: { enabled: false },
+            startWithVideoMuted: false,
+            startWithAudioMuted: false,
+            startAudioOnly: false,
+            disableDeepLinking: true,
+            deeplinking: { disabled: true },
+            disableInviteFunctions: true,
+            enableNoAudioDetection: false,
+            enableNoisyMicDetection: false,
+            toolbarButtons: [],
+          },
+          interfaceConfigOverwrite: {
+            MOBILE_APP_PROMO: false,
+            SHOW_JITSI_WATERMARK: false,
+          },
+          onload: function () {
+            decorateIframe(host);
+          },
+        });
+        decorateIframe(host);
+        warmupApi.addListener("videoConferenceJoined", function () {
+          warmupReady = true;
+          muteWarmup();
+        });
+        await new Promise(function (resolve) {
+          var done = false;
+          function finish() {
+            if (done) return;
+            done = true;
+            resolve(true);
+          }
+          warmupApi.addListener("videoConferenceJoined", finish);
+          global.setTimeout(finish, 8000);
+        });
+        muteWarmup();
+        warmupReady = true;
+      } catch (_w) {}
+      return true;
+    })().then(function (ok) {
+      warmupPromise = null;
+      return ok;
+    });
+    return warmupPromise;
+  }
+
+  function stopHeldDevices() {
+    if (heldStream) {
+      try {
+        heldStream.getTracks().forEach(function (t) {
+          t.stop();
+        });
+      } catch (_s) {}
+      heldStream = null;
+    }
+    var el = document.getElementById("portalCommsHeldMedia");
+    if (el) {
+      try {
+        el.srcObject = null;
+      } catch (_e) {}
+    }
+    if (warmupApi) {
+      try {
+        warmupApi.dispose();
+      } catch (_d) {}
+      warmupApi = null;
+    }
+    warmupReady = false;
+    warmupPromise = null;
+  }
+
   function dispose() {
     joinGen += 1;
     if (!jitsiApi) return;
@@ -255,6 +447,11 @@
     var parent = opts.parent;
     if (!parent) throw new Error("Call screen missing.");
     var gen = ++joinGen;
+    await warmup({
+      client: opts.client,
+      displayName: opts.displayName,
+    });
+    if (gen !== joinGen) return null;
     if (jitsiApi) {
       try {
         jitsiApi.dispose();
@@ -272,6 +469,7 @@
     var Jitsi = global.JitsiMeetExternalAPI;
     var hangupArmed = false;
     var joined = false;
+    var audioOnly = opts.video !== true;
     jitsiApi = new Jitsi(domain, {
       roomName: String(token.roomName),
       jwt: String(token.jwt),
@@ -282,15 +480,21 @@
       userInfo: { displayName: String(opts.displayName || "Staff").slice(0, 80) },
       configOverwrite: {
         prejoinPageEnabled: false,
-        prejoinConfig: { enabled: false },
-        startWithVideoMuted: opts.video !== true,
+        prejoinConfig: { enabled: false, hideExtraJoinButtons: true },
+        startWithVideoMuted: audioOnly,
         startWithAudioMuted: false,
+        startAudioOnly: audioOnly,
         disableDeepLinking: true,
         deeplinking: { disabled: true },
         disableInviteFunctions: true,
         disableProfile: true,
+        enableWelcomePage: false,
+        requireDisplayName: false,
         enableNoAudioDetection: false,
         enableNoisyMicDetection: false,
+        constraints: audioOnly
+          ? { audio: true, video: false }
+          : { audio: true, video: { height: { ideal: 360, max: 480 }, facingMode: "user" } },
         toolbarButtons: ["microphone", "camera", "hangup", "toggle-camera", "tileview"],
       },
       interfaceConfigOverwrite: {
@@ -363,6 +567,8 @@
     describeIncoming: describeIncoming,
     describeIncomingAsync: describeIncomingAsync,
     preload: preload,
+    holdLocalDevices: holdLocalDevices,
+    warmup: warmup,
     prepare: prepare,
     preparedToken: preparedToken,
     mint: mint,

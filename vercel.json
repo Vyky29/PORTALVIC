@@ -186,7 +186,8 @@
     {
       "source": "/admin_dashboard.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\")" }
       ]
     },
     {
@@ -210,7 +211,8 @@
     {
       "source": "/staff_dashboard.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\")" }
       ]
     },
     {
@@ -246,7 +248,8 @@
     {
       "source": "/comunicaciones.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\")" }
       ]
     }
   ]

@@ -1159,13 +1159,21 @@ function setCallUi(phase) {
 
 function prepareLiveCall() {
   const helper = window.PortalCommsCalls;
-  if (!helper || typeof helper.prepare !== "function" || !state.call) return;
-  void helper.prepare({
-    client: client(),
-    callId: state.call.id,
-    conversationId: state.call.conversation_id,
-    displayName: myCallDisplayName(),
-  }).catch(function () {});
+  if (!helper || !state.call) return;
+  if (typeof helper.warmup === "function") {
+    void helper.warmup({
+      client: client(),
+      displayName: myCallDisplayName(),
+    }).catch(function () {});
+  }
+  if (typeof helper.prepare === "function") {
+    void helper.prepare({
+      client: client(),
+      callId: state.call.id,
+      conversationId: state.call.conversation_id,
+      displayName: myCallDisplayName(),
+    }).catch(function () {});
+  }
   if (typeof helper.preload === "function") helper.preload();
 }
 
@@ -1537,6 +1545,12 @@ async function startCall(type) {
   if (!state.open) return;
   if (state.call) return;
   try {
+    if (window.PortalCommsCalls && typeof window.PortalCommsCalls.warmup === "function") {
+      await window.PortalCommsCalls.warmup({
+        client: client(),
+        displayName: myCallDisplayName(),
+      });
+    }
     $("commsCallPeer").textContent = callPeerLabel(itemByConversation(state.open.conversation_id) || state.open) || "Calling...";
     $("commsCallStatus").textContent = "Starting...";
     setCallUi("outgoing");
@@ -1796,8 +1810,24 @@ function bindUi() {
     state.pendingFile = f;
     $("commsAttachBtn").textContent = "✓";
   });
+  $("commsCallAudio").addEventListener("pointerdown", function () {
+    if (window.PortalCommsCalls && typeof window.PortalCommsCalls.warmup === "function") {
+      void window.PortalCommsCalls.warmup({
+        client: client(),
+        displayName: myCallDisplayName(),
+      }).catch(function () {});
+    }
+  });
   $("commsCallAudio").addEventListener("click", function () {
     startCall("AUDIO");
+  });
+  $("commsCallVideo").addEventListener("pointerdown", function () {
+    if (window.PortalCommsCalls && typeof window.PortalCommsCalls.warmup === "function") {
+      void window.PortalCommsCalls.warmup({
+        client: client(),
+        displayName: myCallDisplayName(),
+      }).catch(function () {});
+    }
   });
   $("commsCallVideo").addEventListener("click", function () {
     startCall("VIDEO");

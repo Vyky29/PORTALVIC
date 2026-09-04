@@ -717,13 +717,21 @@
     document.getElementById("portalCommsIncomingAnswer").addEventListener("pointerdown", function () {
       var helper = global.PortalCommsCalls;
       var st = incomingCallState;
-      if (!helper || !st || typeof helper.prepare !== "function") return;
-      void helper.prepare({
-        client: client(),
-        callId: st.id,
-        conversationId: st.conversation_id,
-        displayName: myDashboardCallName(st.mode),
-      }).catch(function () {});
+      if (!helper || !st) return;
+      if (typeof helper.warmup === "function") {
+        void helper.warmup({
+          client: client(),
+          displayName: myDashboardCallName(st.mode),
+        }).catch(function () {});
+      }
+      if (typeof helper.prepare === "function") {
+        void helper.prepare({
+          client: client(),
+          callId: st.id,
+          conversationId: st.conversation_id,
+          displayName: myDashboardCallName(st.mode),
+        }).catch(function () {});
+      }
     });
     document.getElementById("portalCommsIncomingAnswer").addEventListener("click", function () {
       void answerIncomingOverlay();
@@ -741,7 +749,7 @@
     if (global.PortalCommsCalls) return Promise.resolve(global.PortalCommsCalls);
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260904-comms-24";
+      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260904-comms-25";
       s.onload = function () {
         if (global.PortalCommsCalls) resolve(global.PortalCommsCalls);
         else reject(new Error("Call service failed to load."));
