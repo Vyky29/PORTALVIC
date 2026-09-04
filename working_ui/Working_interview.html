@@ -1353,6 +1353,27 @@
       overflow-wrap:break-word;
     }
     .save-toast__msg strong{ display:block; margin-bottom:4px; font-size:15px; }
+    .sync-banner{
+      margin:0 0 14px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #cbd5e1;
+      background:#f8fafc;
+      color:#0f172a;
+      font-size:13px;
+      line-height:1.4;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 12px;
+      align-items:center;
+      justify-content:space-between;
+      min-width:0;
+    }
+    .sync-banner strong{ font-weight:700; }
+    .sync-banner--ok{ border-color:#86efac; background:#f0fdf4; }
+    .sync-banner--pending{ border-color:#fde68a; background:#fffbeb; }
+    .sync-banner--err{ border-color:#fecaca; background:#fef2f2; color:#7f1d1d; }
+    .sync-banner .btn{ flex:0 0 auto; }
     .save-toast__close{
       flex:0 0 auto;
       border:0;
@@ -1458,6 +1479,11 @@
       "clubsensational_interview_onboarding_portal_v1",
       "clubsensational_interview_onboarding_portal"
     ];
+    /** Audio clips live here - not inside onboarding_candidates JSON (iPad payload failures). */
+    const INTERVIEW_AUDIO_BUCKET = "interview-audio";
+    const INLINE_AUDIO_MAX_CHARS = 12000;
+    const localAudioObjectUrls = Object.create(null);
+    let syncUi = { state: "idle", message: "Not synced yet", at: null, error: "" };
 
     /** Populated only from onboarding_portal_config.js (not from this file). */
     function readPortalOnboardingSupabaseConfig() {
@@ -1949,6 +1975,7 @@
       saveToastLastKey = "";
       saveToastCooldownUntil = 0;
       hideSaveToast();
+      setSyncUi("ok", "Saved to club database", "");
     }
 
     function notifySaveFailure(err, context) {
@@ -1959,17 +1986,195 @@
         /jwt|auth|row-level|rls|permission|not authenticated/i.test(raw)
           ? " Open Interviews again from Staff or Admin while signed in."
           : /payload|too large|413|statement timeout|bytes|Load failed|Failed to fetch|NetworkError/i.test(raw)
-            ? " A recording may be too large or the connection dropped. Your answers stay on this device — try a shorter clip, then Save again."
+            ? " A recording may be too large or the connection dropped. Answers stay on this device until Save succeeds."
             : " Your answers stay on this device. Check the connection and try Save again.";
       const key = raw.slice(0, 120);
       const now = Date.now();
       if (key === saveToastLastKey && now < saveToastCooldownUntil) return;
       saveToastLastKey = key;
       saveToastCooldownUntil = now + 12000;
+      setSyncUi("err", "Not on club database yet", raw);
       showSaveToast(
         "Could not save interview to the club database",
         "(" + raw + ")." + hint
       );
+    }
+
+    function setSyncUi(state, message, error) {
+      syncUi = {
+        state: state || "idle",
+        message: message || "",
+        at: new Date().toISOString(),
+        error: error || "",
+      };
+      const el = document.getElementById("interviewSyncBanner");
+      if (el) el.outerHTML = renderSyncBannerHtml();
+    }
+
+    function renderSyncBannerHtml() {
+      const cls =
+        syncUi.state === "ok"
+          ? "sync-banner sync-banner--ok"
+          : syncUi.state === "err"
+            ? "sync-banner sync-banner--err"
+            : syncUi.state === "pending"
+              ? "sync-banner sync-banner--pending"
+              : "sync-banner";
+      const when = syncUi.at
+        ? new Date(syncUi.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : "";
+      const detail = syncUi.error
+        ? " · " + escapeHtml(String(syncUi.error).slice(0, 120))
+        : when
+          ? " · " + escapeHtml(when)
+          : "";
+      return (
+        '<div class="' +
+        cls +
+        '" id="interviewSyncBanner">' +
+        "<div style=\"min-width:0;overflow-wrap:break-word\"><strong>Club sync:</strong> " +
+        escapeHtml(syncUi.message || "Idle") +
+        detail +
+        "</div>" +
+        '<button type="button" class="btn" id="interviewForceSaveBtn">Save to club now</button>' +
+        "</div>"
+      );
+    }
+
+    function localAudioKey(candidateId, questionId) {
+      return String(candidateId || "") + "::" + String(questionId || "");
+    }
+
+    function preferNonEmptyString(localVal, remoteVal) {
+      const l = String(localVal || "");
+      const r = String(remoteVal || "");
+      if (l.trim()) return l;
+      if (r.trim()) return r;
+      return l || r || "";
+    }
+
+    function mergeInterviewSections(localSec, remoteSec) {
+      const out = Object.assign({}, remoteSec || {}, localSec || {});
+      const keys = new Set([
+        ...Object.keys(remoteSec || {}),
+        ...Object.keys(localSec || {}),
+      ]);
+      keys.forEach(function (k) {
+        const lv = localSec ? localSec[k] : undefined;
+        const rv = remoteSec ? remoteSec[k] : undefined;
+        if (/Audio$/i.test(k) && typeof lv === "string" && typeof rv === "string") {
+          out[k] = lv.length >= rv.length ? lv : rv;
+          return;
+        }
+        if (/AudioPath$/i.test(k)) {
+          out[k] = preferNonEmptyString(lv, rv);
+          return;
+        }
+        if (/Notes$/i.test(k) || k === "comments" || k === "followUpNotes" || k === "phase1Impressions") {
+          out[k] = preferNonEmptyString(lv, rv);
+          return;
+        }
+        if (
+          typeof lv === "number" &&
+          typeof rv === "number" &&
+          !/Audio/i.test(k)
+        ) {
+          out[k] = lv > 0 ? lv : rv;
+        }
+      });
+      return out;
+    }
+
+    function mergeCandidateWithRemote(localCand, remoteCand) {
+      if (!remoteCand) return localCand;
+      const local = ensureCandidateShape(localCand);
+      const remote = ensureCandidateShape(remoteCand);
+      return ensureCandidateShape({
+        ...remote,
+        ...local,
+        callInterview: mergeInterviewSections(local.callInterview, remote.callInterview),
+        faceToFaceInterview: mergeInterviewSections(
+          local.faceToFaceInterview,
+          remote.faceToFaceInterview
+        ),
+        onboarding: Object.assign({}, remote.onboarding || {}, local.onboarding || {}),
+        updatedAt: local.updatedAt || remote.updatedAt,
+      });
+    }
+
+    function stripHeavyInlineAudio(section) {
+      if (!section || typeof section !== "object") return section;
+      const out = Object.assign({}, section);
+      Object.keys(out).forEach(function (k) {
+        if (!/Audio$/i.test(k) || /AudioPath$/i.test(k) || /AudioMime$/i.test(k)) return;
+        const v = out[k];
+        if (typeof v !== "string") return;
+        const pathKey = k + "Path"; // orgQ1Audio -> orgQ1AudioPath
+        if (out[pathKey] && v.length > INLINE_AUDIO_MAX_CHARS) {
+          out[k] = "";
+        } else if (!out[pathKey] && v.length > 180000) {
+          out[k] = "";
+        }
+      });
+      return out;
+    }
+
+    function prepareCandidatePayload(candidate) {
+      const c = ensureCandidateShape(candidate);
+      const { id, ...rest } = c;
+      const face = stripHeavyInlineAudio(rest.faceToFaceInterview);
+      const call = stripHeavyInlineAudio(rest.callInterview);
+      if (call && call.uploadedAudioDataUrl && String(call.uploadedAudioDataUrl).length > INLINE_AUDIO_MAX_CHARS) {
+        call.uploadedAudioDataUrl = "";
+      }
+      return {
+        ...rest,
+        id,
+        faceToFaceInterview: face,
+        callInterview: call,
+      };
+    }
+
+    async function uploadInterviewAudioBlob(candidateId, questionId, blob, mimeType) {
+      const sb = getSupabase();
+      if (!sb || !blob || !candidateId || !questionId) {
+        return { ok: false, error: "missing_client_or_blob" };
+      }
+      const safeQ = String(questionId).replace(/[^a-zA-Z0-9_-]/g, "_");
+      const ext =
+        /mp4|m4a/i.test(mimeType || "") ? "m4a" : /ogg/i.test(mimeType || "") ? "ogg" : "webm";
+      const path =
+        String(candidateId) + "/" + safeQ + "_" + Date.now() + "." + ext;
+      const { error } = await sb.storage.from(INTERVIEW_AUDIO_BUCKET).upload(path, blob, {
+        contentType: mimeType || "audio/webm",
+        upsert: true,
+      });
+      if (error) return { ok: false, error: error.message || String(error) };
+      return { ok: true, path: path };
+    }
+
+    async function resolveInterviewAudioSrc(faceOrCall, questionId, candidateId) {
+      const key = localAudioKey(candidateId, questionId);
+      if (localAudioObjectUrls[key]) return localAudioObjectUrls[key];
+      const section = faceOrCall || {};
+      const inline = section[questionId + "Audio"];
+      const mime = section[questionId + "AudioMime"] || "audio/webm";
+      if (inline && String(inline).length > 32) {
+        return "data:" + mime + ";base64," + inline;
+      }
+      const path = section[questionId + "AudioPath"];
+      if (!path) return "";
+      const sb = getSupabase();
+      if (!sb) return "";
+      try {
+        const { data, error } = await sb.storage
+          .from(INTERVIEW_AUDIO_BUCKET)
+          .createSignedUrl(path, 60 * 60 * 12);
+        if (error || !data || !data.signedUrl) return "";
+        return data.signedUrl;
+      } catch (_e) {
+        return "";
+      }
     }
 
     function loadCandidatesFromStorage() {
@@ -2075,16 +2280,36 @@
     async function saveCandidateToSupabase(candidate) {
       const sb = getSupabase();
       if (!sb) return;
-      const c = candidate;
-      const { id, ...rest } = c;
+      const c = ensureCandidateShape(candidate);
+      setSyncUi("pending", "Saving to club database…", "");
+      let remoteCand = null;
+      try {
+        const { data: remoteRow } = await sb
+          .from("onboarding_candidates")
+          .select("id, data")
+          .eq("id", c.id)
+          .maybeSingle();
+        if (remoteRow && remoteRow.data) {
+          remoteCand = ensureCandidateShape({ ...remoteRow.data, id: remoteRow.id });
+        }
+      } catch (_e) {
+        /* merge best-effort */
+      }
+      const merged = mergeCandidateWithRemote(c, remoteCand);
+      const payload = prepareCandidatePayload(merged);
       const { error } = await sb.from("onboarding_candidates").upsert({
-        id: c.id,
-        updated_at: c.updatedAt || new Date().toISOString(),
-        data: { ...rest, id: c.id }
+        id: payload.id,
+        updated_at: payload.updatedAt || new Date().toISOString(),
+        data: payload
       }, { onConflict: "id" });
       if (error) {
         console.error("Supabase save error for", c.id, error);
         throw error;
+      }
+      const idx = candidates.findIndex(function (x) { return x && x.id === c.id; });
+      if (idx >= 0) {
+        candidates[idx] = merged;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
       }
     }
 
@@ -2510,16 +2735,25 @@
       return m || "audio/webm";
     }
 
-    function renderQuestionAudio(face, questionId) {
+    function renderQuestionAudio(face, questionId, candidateId) {
       const audio = (face && face[questionId + "Audio"]) ? face[questionId + "Audio"] : "";
+      const path = (face && face[questionId + "AudioPath"]) ? face[questionId + "AudioPath"] : "";
       const mime = getAudioMime(face, questionId);
       const wrapId = "wrap-" + questionId;
-      if (!audio) {
+      const localUrl = localAudioObjectUrls[localAudioKey(candidateId, questionId)] || "";
+      if (!audio && !path && !localUrl) {
         return `<div class="question-audio" id="${escapeHtml(wrapId)}"><span class="audio-placeholder">No recording</span></div>`;
       }
+      const src = localUrl
+        ? localUrl
+        : audio
+          ? `data:${escapeHtml(mime)};base64,${audio}`
+          : "";
+      const pathAttr = path ? ` data-audio-path="${escapeHtml(path)}"` : "";
+      const srcAttr = src ? ` src="${escapeHtml(src)}"` : "";
       return `<div class="question-audio" id="${escapeHtml(wrapId)}">
         <div class="audio-wrap">
-          <audio preload="metadata" data-question="${escapeHtml(questionId)}" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
+          <audio preload="metadata" data-question="${escapeHtml(questionId)}"${pathAttr}${srcAttr}></audio>
           <div class="audio-controls-row">
             <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
             <div class="audio-progress-wrap">
@@ -2551,7 +2785,7 @@
                           </div>
                           <button type="button" class="btn-record" title="Record" data-question="${escapeHtml(questionId)}" aria-label="Record">⏺</button>
                         </div>
-                        ${renderQuestionAudio(face, questionId)}
+                        ${renderQuestionAudio(face, questionId, currentCandidateId)}
                         <input type="hidden" id="${escapeHtml(questionId)}" value="${face && face[questionId] ? face[questionId] : 0}" />
                       </div>`;
     }
@@ -3380,14 +3614,23 @@
       candidate.faceToFaceInterview[questionId + "AudioMime"] = mimeType || "audio/webm";
       const face = candidate.faceToFaceInterview;
       const audio = (face && face[questionId + "Audio"]) ? face[questionId + "Audio"] : "";
+      const path = face[questionId + "AudioPath"] || "";
       const mime = getAudioMime(face, questionId);
       if (!wrap) return;
-      if (!audio) {
+      const localUrl = localAudioObjectUrls[localAudioKey(candidateId, questionId)] || "";
+      if (!audio && !path && !localUrl) {
         wrap.innerHTML = '<span class="audio-placeholder">No recording</span>';
         return;
       }
+      const src = localUrl
+        ? localUrl
+        : audio
+          ? `data:${escapeHtml(mime)};base64,${audio}`
+          : "";
+      const pathAttr = path ? ` data-audio-path="${escapeHtml(path)}"` : "";
+      const srcAttr = src ? ` src="${src}"` : "";
       wrap.innerHTML = `<div class="audio-wrap">
-        <audio preload="metadata" data-question="${escapeHtml(questionId)}" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
+        <audio preload="metadata" data-question="${escapeHtml(questionId)}"${pathAttr}${srcAttr}></audio>
         <div class="audio-controls-row">
           <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
           <div class="audio-progress-wrap">
@@ -3402,6 +3645,24 @@
         </div>
       </div>`;
       initAudioSpeedInWrap(wrap);
+      if (!src && path) hydrateAudioElements(wrap, candidateId);
+    }
+
+    async function hydrateAudioElements(root, candidateId) {
+      const scope = root || document;
+      const nodes = scope.querySelectorAll
+        ? scope.querySelectorAll("audio[data-audio-path]")
+        : [];
+      for (let i = 0; i < nodes.length; i++) {
+        const audioEl = nodes[i];
+        if (audioEl.getAttribute("src")) continue;
+        const path = audioEl.getAttribute("data-audio-path");
+        const qid = audioEl.getAttribute("data-question") || "";
+        if (!path) continue;
+        const face = { [qid + "AudioPath"]: path };
+        const src = await resolveInterviewAudioSrc(face, qid, candidateId);
+        if (src) audioEl.setAttribute("src", src);
+      }
     }
 
     function formatAudioTime(sec) {
@@ -3460,10 +3721,66 @@
       const candidate = findCandidateById(candidateId);
       if (!candidate) return;
       candidate.updatedAt = new Date().toISOString();
+      setSyncUi("pending", "Saving recording…", "");
       saveCandidates(candidate.id).catch(function () {});
       if (currentCandidateId === candidateId) {
         renderSearchResults(filterCandidates(searchInput.value.trim()));
       }
+    }
+
+    async function persistRecordingWithUpload(candidateId, questionId, blob, mimeType) {
+      const candidate = findCandidateById(candidateId);
+      if (!candidate) return;
+      const key = localAudioKey(candidateId, questionId);
+      try {
+        if (localAudioObjectUrls[key]) URL.revokeObjectURL(localAudioObjectUrls[key]);
+      } catch (_e) {}
+      localAudioObjectUrls[key] = URL.createObjectURL(blob);
+      const up = await uploadInterviewAudioBlob(candidateId, questionId, blob, mimeType);
+      let inlineBase64 = "";
+      if (!up.ok && blob.size < 90000) {
+        inlineBase64 = await new Promise(function (resolve) {
+          const reader = new FileReader();
+          reader.onload = function () {
+            const dataUrl = typeof reader.result === "string" ? reader.result : "";
+            resolve(
+              dataUrl.indexOf("base64,") >= 0 ? dataUrl.split("base64,")[1] : ""
+            );
+          };
+          reader.onerror = function () { resolve(""); };
+          reader.readAsDataURL(blob);
+        });
+      }
+      if (questionId === "callNotes") {
+        candidate.callInterview = candidate.callInterview || {};
+        if (up.ok) {
+          candidate.callInterview.callNotesAudioPath = up.path;
+          candidate.callInterview.callNotesAudio = "";
+        } else {
+          candidate.callInterview.callNotesAudio = inlineBase64;
+        }
+        candidate.callInterview.callNotesAudioMime = mimeType || "audio/webm";
+      } else {
+        candidate.faceToFaceInterview = candidate.faceToFaceInterview || {};
+        if (up.ok) {
+          candidate.faceToFaceInterview[questionId + "AudioPath"] = up.path;
+          candidate.faceToFaceInterview[questionId + "Audio"] = "";
+        } else {
+          candidate.faceToFaceInterview[questionId + "Audio"] = inlineBase64;
+        }
+        candidate.faceToFaceInterview[questionId + "AudioMime"] = mimeType || "audio/webm";
+      }
+      if (!up.ok) {
+        setSyncUi(
+          "pending",
+          inlineBase64
+            ? "Storage upload failed - saved short clip inline"
+            : "Storage upload failed - clip kept on this device only",
+          up.error || ""
+        );
+      }
+      updateAudioWrap(questionId, inlineBase64, mimeType || "audio/webm", candidateId);
+      persistCandidateAfterRecording(candidateId);
     }
 
     function bindCallUploadHandlers() {
@@ -3569,15 +3886,12 @@
               if (qid) {
                 if (chunks.length > 0) {
                   const blob = new Blob(chunks, { type: recorder.mimeType || chosenMime || "audio/webm" });
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    const dataUrl = reader.result;
-                    const base64 = (dataUrl && typeof dataUrl === "string" && dataUrl.indexOf("base64,") >= 0) ? dataUrl.split("base64,")[1] : "";
-                    if (base64) updateAudioWrap(qid, base64, usedMime, recordingCandidateId);
-                    else updateAudioWrap(qid, "", usedMime, recordingCandidateId);
-                    persistCandidateAfterRecording(recordingCandidateId);
-                  };
-                  reader.readAsDataURL(blob);
+                  void persistRecordingWithUpload(
+                    recordingCandidateId,
+                    qid,
+                    blob,
+                    usedMime
+                  );
                 } else {
                   updateAudioWrap(qid, "", usedMime, recordingCandidateId);
                   persistCandidateAfterRecording(recordingCandidateId);
@@ -3636,6 +3950,8 @@
             <button class="btn btn-danger" id="deleteCandidateBtn">Delete Candidate</button>
           </div>
         </div>
+
+        ${renderSyncBannerHtml()}
 
         <div class="mini-meta">
           <div class="mini-card">
@@ -4232,6 +4548,15 @@
       }
       scheduleAutoSave();
       document.getElementById("deleteCandidateBtn").addEventListener("click", deleteCurrentCandidate);
+      const forceSaveBtn = document.getElementById("interviewForceSaveBtn");
+      if (forceSaveBtn) {
+        forceSaveBtn.addEventListener("click", function () {
+          if (!currentCandidateId) return;
+          updateCandidateFromForm(true);
+          setSyncUi("pending", "Manual save…", "");
+          saveCandidates(currentCandidateId).catch(function () {});
+        });
+      }
 
       document.getElementById("btnCallSuccessful").addEventListener("click", () => {
         setCallStatus("successful");
@@ -4291,6 +4616,7 @@
       bindCallUploadHandlers();
       initAudioSpeedButtons();
       applyMobileDateTimeInputs();
+      void hydrateAudioElements(mainContent, id);
       if (!window._mobileDateTimeResizeBound) {
         window._mobileDateTimeResizeBound = true;
         window.addEventListener("resize", applyMobileDateTimeInputs);

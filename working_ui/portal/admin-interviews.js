@@ -145,8 +145,10 @@
   }
 
   function openHref(name) {
-    var q = name ? "?q=" + encodeURIComponent(name) : "";
-    return "/Working_interview.html" + q;
+    var params = new URLSearchParams();
+    params.set("v", "20260904-interview-sync");
+    if (name) params.set("q", name);
+    return "/Working_interview.html?" + params.toString();
   }
 
   async function readAdminSessionForHandoff() {
