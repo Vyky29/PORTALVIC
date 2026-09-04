@@ -2118,6 +2118,14 @@
         engQ3Audio: "",
         engQ4Audio: "",
         engQ5Audio: "",
+        engScenQ1: 0,
+        engScenQ2: 0,
+        engScenQ3: 0,
+        engScenQ4: 0,
+        engScenQ1Audio: "",
+        engScenQ2Audio: "",
+        engScenQ3Audio: "",
+        engScenQ4Audio: "",
         expQ1: 0,
         expQ2: 0,
         expQ3: 0,
@@ -2676,6 +2684,10 @@
       const engQ3 = document.getElementById("engQ3");
       const engQ4 = document.getElementById("engQ4");
       const engQ5 = document.getElementById("engQ5");
+      const engScenQ1 = document.getElementById("engScenQ1");
+      const engScenQ2 = document.getElementById("engScenQ2");
+      const engScenQ3 = document.getElementById("engScenQ3");
+      const engScenQ4 = document.getElementById("engScenQ4");
       const expQ1 = document.getElementById("expQ1");
       const expQ2 = document.getElementById("expQ2");
       const expQ3 = document.getElementById("expQ3");
@@ -2774,6 +2786,10 @@
       candidate.faceToFaceInterview.engQ3 = callStatus.value === "successful" && engQ3 ? Number(engQ3.value || 0) : 0;
       candidate.faceToFaceInterview.engQ4 = callStatus.value === "successful" && engQ4 ? Number(engQ4.value || 0) : 0;
       candidate.faceToFaceInterview.engQ5 = callStatus.value === "successful" && engQ5 ? Number(engQ5.value || 0) : 0;
+      candidate.faceToFaceInterview.engScenQ1 = callStatus.value === "successful" && engScenQ1 ? Number(engScenQ1.value || 0) : 0;
+      candidate.faceToFaceInterview.engScenQ2 = callStatus.value === "successful" && engScenQ2 ? Number(engScenQ2.value || 0) : 0;
+      candidate.faceToFaceInterview.engScenQ3 = callStatus.value === "successful" && engScenQ3 ? Number(engScenQ3.value || 0) : 0;
+      candidate.faceToFaceInterview.engScenQ4 = callStatus.value === "successful" && engScenQ4 ? Number(engScenQ4.value || 0) : 0;
       candidate.faceToFaceInterview.expQ1 = callStatus.value === "successful" && expQ1 ? Number(expQ1.value || 0) : 0;
       candidate.faceToFaceInterview.expQ2 = callStatus.value === "successful" && expQ2 ? Number(expQ2.value || 0) : 0;
       candidate.faceToFaceInterview.expQ3 = callStatus.value === "successful" && expQ3 ? Number(expQ3.value || 0) : 0;
@@ -3790,6 +3806,71 @@
                   </div>
 
                   <div class="field full phase-block phase-block--scen">
+                    <label>Scenario-Based Questions</label>
+                    <div class="check-grid">
+                      <div class="check-card">
+<div class="question-label"><label for="scenQ1">1. How would you respond if a participant refuses to take part and does not want to access the session?</label><p class="question-helper">(Please explain the steps you would take to engage them safely and positively.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="scenQ1" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="scenQ1" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ1")}
+                        <input type="hidden" id="scenQ1" value="${candidate.faceToFaceInterview.scenQ1 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="scenQ2">2. How would you manage the situation if a participant becomes upset or dysregulated and tries to hit or bite?</label><p class="question-helper">(We want to hear how you would keep everyone safe while supporting regulation.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="scenQ2" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="scenQ2" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ2")}
+                        <input type="hidden" id="scenQ2" value="${candidate.faceToFaceInterview.scenQ2 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="scenQ3">3. How would you keep participants with short attention spans engaged throughout the session?</label><p class="question-helper">(Please give practical examples of strategies or adaptations you would use.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="scenQ3" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="scenQ3" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ3")}
+                        <input type="hidden" id="scenQ3" value="${candidate.faceToFaceInterview.scenQ3 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="scenQ4">4. How would you react if a participant starts throwing, breaking, or biting resources during the session?</label><p class="question-helper">(Please explain what you would do immediately and how you would follow up.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="scenQ4" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="scenQ4" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ4")}
+                        <input type="hidden" id="scenQ4" value="${candidate.faceToFaceInterview.scenQ4 || 0}" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field full phase-block phase-block--scen">
                     <label>Working with the young person</label>
                     <div class="check-grid">
                       ${renderFaceRatedQuestion(
@@ -3819,23 +3900,23 @@
                       )}
                       ${renderFaceRatedQuestion(
                         candidate.faceToFaceInterview,
-                        "scenQ1",
+                        "engScenQ1",
                         "6. Scenario - You've planned to take the young person somewhere they normally enjoy. You've got everything ready, but when it's time to leave they refuse. You encourage them and they become increasingly agitated. They start shouting, knock something over and tell you to go away. What do you do next - and what are you thinking while you're doing it?",
                         "Then keep changing the scenario with the follow-ups below. That sequence should tell you a lot about the candidate."
                       )}
                       ${renderFaceRatedQuestion(
                         candidate.faceToFaceInterview,
-                        "scenQ2",
+                        "engScenQ2",
                         "6b. They then throw something towards you. What now?"
                       )}
                       ${renderFaceRatedQuestion(
                         candidate.faceToFaceInterview,
-                        "scenQ3",
+                        "engScenQ3",
                         "6c. You can feel yourself becoming frustrated. What do you do with that feeling?"
                       )}
                       ${renderFaceRatedQuestion(
                         candidate.faceToFaceInterview,
-                        "scenQ4",
+                        "engScenQ4",
                         "6d. Ten minutes later they've completely calmed down and are behaving as though nothing happened. How do you respond to them?"
                       )}
                     </div>
