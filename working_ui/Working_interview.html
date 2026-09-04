@@ -2458,18 +2458,18 @@
     var CALL_PROCESS_QUESTIONS = [
       {
         id: "processQ1",
-        title: "Did you explain the role scales / pay for this position? How did they respond?",
-        tip: "Confirm they understand the pay band. Note if they seemed fine, surprised, or pushed back on money."
+        title: "Explain role scales / pay for this position - then note their reaction.",
+        tip: "Interviewer covers this. Confirm they understand the pay band. Stars = how clear/comfortable their response felt (fine, surprised, or pushed back on money)."
       },
       {
         id: "processQ2",
-        title: "Did you explain the shadowing process and the shadowing rate? How did they respond?",
-        tip: "Cover how shadowing works and the rate (paid/unpaid as applicable). Note if they accept it or hesitate."
+        title: "Explain the shadowing process and the shadowing rate - then note their reaction.",
+        tip: "Interviewer covers this. Cover how shadowing works and the rate (paid/unpaid as applicable). Stars = how clear/comfortable their response felt."
       },
       {
         id: "processQ3",
-        title: "Did you explain that Stage 2 is a face-to-face interview (dry and wet where relevant)? How did they respond?",
-        tip: "Make sure they know it is in person and may include wet session for swimming roles. Note any hesitation about attending."
+        title: "Explain that Stage 2 is a face-to-face interview (dry and wet where relevant) - then note their reaction.",
+        tip: "Interviewer covers this. Make sure they know it is in person and may include a wet session for swimming roles. Stars = how clear/comfortable their response felt."
       }
     ];
 
@@ -4175,7 +4175,7 @@
             <div class="section-head">
               <div>
                 <h3>Stage 1 · Call Interview</h3>
-                <p>First screening call. Use the filter and process questions below so answers are saved before Stage 2.</p>
+                <p>First screening call. Questions 1-8 are asked to the candidate. Questions 9-11 are for the interviewer: explain pay, shadowing and Stage 2, then note their reaction.</p>
               </div>
             </div>
             <div class="section-body">
@@ -4210,7 +4210,7 @@
                 </div>
 
                 <div class="field full phase-block phase-block--call-filter">
-                  <label>Process explained (pay, shadowing, Stage 2)</label>
+                  <label>Process we must explain</label>
                   <div class="check-grid">
                     ${CALL_PROCESS_QUESTIONS.map(function (q, i) {
                       return renderCallFilterQuestion(candidate.callInterview, q, CALL_FILTER_QUESTIONS.length + i + 1);
