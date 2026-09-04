@@ -70,6 +70,42 @@
       align-items:end;
     }
 
+    .interview-exit-row{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10px;
+      margin:0 0 12px;
+      min-width:0;
+    }
+    .btn-exit-interviews{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-height:44px;
+      padding:10px 16px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--ink);
+      font:inherit;
+      font-weight:700;
+      font-size:14px;
+      text-decoration:none;
+      cursor:pointer;
+      box-shadow:0 1px 2px rgba(15,23,42,.06);
+      max-width:100%;
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    .btn-exit-interviews:hover{
+      background:var(--blueSoft);
+      border-color:rgba(45,132,179,.35);
+      color:var(--blue);
+    }
+
     .brand h1{
       margin:0 0 6px;
       font-size:clamp(24px, 2.8vw, 38px);
@@ -1310,6 +1346,9 @@
   <div class="page">
 
     <div id="mainPortal">
+    <div class="interview-exit-row">
+      <a class="btn-exit-interviews" id="interviewExitBtn" href="/staff_dashboard.html">← Exit Interviews</a>
+    </div>
     <div id="interviewAuthStatus" class="auth-status-bar" role="status" aria-live="polite">
       <span class="auth-status-msg" id="interviewAuthStatusMsg">Checking staff login…</span>
       <a id="interviewAuthLoginLink" class="hidden" href="/staff_dashboard.html">Back to Staff portal</a>
@@ -1320,7 +1359,7 @@
           <h1>Interview and Onboarding Portal</h1>
           <p>Search candidates, create records, continue interview stages, complete onboarding, and review a saved history log from the same page.</p>
           <p id="portalOnboardingSupabaseHint" class="hidden" style="margin-top:10px;font-size:13px;line-height:1.5;color:var(--muted);max-width:720px;">
-            Open this page from <strong>Admin → Interviews → Start a new interview</strong> (same browser). You should not need to sign in again.
+            Open this page from <strong>Admin → Interviews</strong> or Staff → Interviews (same browser). You should not need to sign in again.
           </p>
         </div>
 
@@ -1433,12 +1472,46 @@
       return interviewReturnUrl();
     }
 
+    function interviewExitLabel(backHref) {
+      const h = String(backHref || "");
+      if (/staff_dashboard/i.test(h)) return "← Exit to Staff portal";
+      if (/admin_dashboard/i.test(h)) return "← Exit to Admin Interviews";
+      if (/ceo_dashboard/i.test(h)) return "← Exit to CEO portal";
+      return "← Exit Interviews";
+    }
+
+    function syncInterviewExitButton() {
+      const btn = document.getElementById("interviewExitBtn");
+      if (!btn) return;
+      const back = interviewReturnUrl();
+      btn.href = back;
+      btn.textContent = interviewExitLabel(back);
+      btn.setAttribute("aria-label", btn.textContent.replace(/^←\s*/, "Exit Interviews — "));
+    }
+
+    function exitInterviews(ev) {
+      try {
+        if (isInterviewEmbedded() && window.parent && window.parent !== window) {
+          if (ev) ev.preventDefault();
+          window.parent.postMessage({ type: "portal-interview-close" }, window.location.origin);
+          return;
+        }
+      } catch (_e) {}
+      const back = interviewReturnUrl();
+      try {
+        window.location.href = back;
+      } catch (_nav) {
+        window.location.assign(back);
+      }
+    }
+
     function setInterviewAuthStatus(ok, message) {
       const bar = document.getElementById("interviewAuthStatus");
       const msg = document.getElementById("interviewAuthStatusMsg");
       const link = document.getElementById("interviewAuthLoginLink");
       if (msg) msg.textContent = message || "";
       if (bar) bar.classList.toggle("is-ok", !!ok);
+      syncInterviewExitButton();
       if (link) {
         if (ok) {
           link.classList.add("hidden");
@@ -3952,8 +4025,17 @@
     }
 
     (async function portalOnboardingEntry() {
+      syncInterviewExitButton();
+      const exitBtn = document.getElementById("interviewExitBtn");
+      if (exitBtn && !exitBtn.dataset.bound) {
+        exitBtn.dataset.bound = "1";
+        exitBtn.addEventListener("click", function (ev) {
+          exitInterviews(ev);
+        });
+      }
       await bootstrapPortalOnboardingSupabase();
       syncPortalOnboardingHintVisibility();
+      syncInterviewExitButton();
       if (!portalUseSupabase) {
         candidates = loadCandidatesFromStorage().map(ensureCandidateShape);
       }
