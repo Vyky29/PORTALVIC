@@ -2455,6 +2455,28 @@
       }
     ];
 
+    var CALL_PROCESS_QUESTIONS = [
+      {
+        id: "processQ1",
+        title: "Did you explain the role scales / pay for this position? How did they respond?",
+        tip: "Confirm they understand the pay band. Note if they seemed fine, surprised, or pushed back on money."
+      },
+      {
+        id: "processQ2",
+        title: "Did you explain the shadowing process and the shadowing rate? How did they respond?",
+        tip: "Cover how shadowing works and the rate (paid/unpaid as applicable). Note if they accept it or hesitate."
+      },
+      {
+        id: "processQ3",
+        title: "Did you explain that Stage 2 is a face-to-face interview (dry and wet where relevant)? How did they respond?",
+        tip: "Make sure they know it is in person and may include wet session for swimming roles. Note any hesitation about attending."
+      }
+    ];
+
+    function allCallScreeningQuestions() {
+      return CALL_FILTER_QUESTIONS.concat(CALL_PROCESS_QUESTIONS);
+    }
+
     function getDefaultCallInterview() {
       var base = {
         interviewerName: "",
@@ -2485,7 +2507,7 @@
         uploadedTextDataUrl: "",
         uploadedTextMime: ""
       };
-      CALL_FILTER_QUESTIONS.forEach(function (q) {
+      allCallScreeningQuestions().forEach(function (q) {
         base[q.id] = 0;
         base[q.id + "Notes"] = "";
       });
@@ -2875,7 +2897,7 @@
 
     function callHasFilterAnswers(call) {
       if (!call) return false;
-      return CALL_FILTER_QUESTIONS.some(function (q) {
+      return allCallScreeningQuestions().some(function (q) {
         const notes = String(call[q.id + "Notes"] || "").trim();
         const score = Number(call[q.id] || 0);
         return !!notes || score > 0;
@@ -3216,15 +3238,22 @@
       candidate.callInterview.safeguardingAwareness = getCheckboxValue("callSafeguardingAwareness");
       candidate.callInterview.motivation = getCheckboxValue("callMotivation");
       candidate.callInterview.locationTravel = getCheckboxValue("callLocationTravel");
-      candidate.callInterview.roleScales = getCheckboxValue("callRoleScales");
-      candidate.callInterview.shadowingProcessRate = getCheckboxValue("callShadowingProcessRate");
-      candidate.callInterview.faceToFaceSessionWet = getCheckboxValue("callFaceToFaceSessionWet");
-      CALL_FILTER_QUESTIONS.forEach(function (q) {
+      allCallScreeningQuestions().forEach(function (q) {
         var scoreEl = document.getElementById(q.id);
         var notesEl = document.getElementById(q.id + "Notes");
         candidate.callInterview[q.id] = scoreEl ? Number(scoreEl.value || 0) : 0;
         candidate.callInterview[q.id + "Notes"] = notesEl ? notesEl.value.trim() : "";
       });
+      // Keep legacy booleans in sync for older records / admin views.
+      candidate.callInterview.roleScales =
+        Number(candidate.callInterview.processQ1 || 0) > 0 ||
+        !!String(candidate.callInterview.processQ1Notes || "").trim();
+      candidate.callInterview.shadowingProcessRate =
+        Number(candidate.callInterview.processQ2 || 0) > 0 ||
+        !!String(candidate.callInterview.processQ2Notes || "").trim();
+      candidate.callInterview.faceToFaceSessionWet =
+        Number(candidate.callInterview.processQ3 || 0) > 0 ||
+        !!String(candidate.callInterview.processQ3Notes || "").trim();
 
       candidate.faceToFaceInterview.interviewerName = callStatus.value === "successful" && faceInterviewerName ? faceInterviewerName.value.trim() : "";
       candidate.faceToFaceInterview.date = callStatus.value === "successful" ? faceDate.value : "";
@@ -4120,7 +4149,7 @@
             <div class="section-head">
               <div>
                 <h3>Stage 1 · Call Interview</h3>
-                <p>First screening call. Use the filter questions below so answers are saved before Stage 2. Process points (pay, shadowing, face-to-face) stay as quick ticks.</p>
+                <p>First screening call. Use the filter and process questions below so answers are saved before Stage 2.</p>
               </div>
             </div>
             <div class="section-body">
@@ -4154,23 +4183,12 @@
                   </div>
                 </div>
 
-                <div class="field full">
-                  <label>Process covered with the candidate</label>
+                <div class="field full phase-block phase-block--call-filter">
+                  <label>Process explained (pay, shadowing, Stage 2)</label>
                   <div class="check-grid">
-                    <div class="check-card">
-                      <input type="checkbox" id="callRoleScales" ${candidate.callInterview.roleScales ? "checked" : ""}>
-                      <label for="callRoleScales">Role scales / pay</label>
-                    </div>
-
-                    <div class="check-card">
-                      <input type="checkbox" id="callShadowingProcessRate" ${candidate.callInterview.shadowingProcessRate ? "checked" : ""}>
-                      <label for="callShadowingProcessRate">Shadowing process and rate</label>
-                    </div>
-
-                    <div class="check-card">
-                      <input type="checkbox" id="callFaceToFaceSessionWet" ${candidate.callInterview.faceToFaceSessionWet ? "checked" : ""}>
-                      <label for="callFaceToFaceSessionWet">Face to Face Interview (Dry &amp; Wet)</label>
-                    </div>
+                    ${CALL_PROCESS_QUESTIONS.map(function (q, i) {
+                      return renderCallFilterQuestion(candidate.callInterview, q, CALL_FILTER_QUESTIONS.length + i + 1);
+                    }).join("")}
                   </div>
                 </div>
 
