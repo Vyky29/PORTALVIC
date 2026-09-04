@@ -577,6 +577,49 @@ Deno.serve(async (req) => {
   const { doc, reservation } = await loadContext(admin, token);
   if (!doc) return json(404, { ok: false, error: "document_missing" });
 
+  // Pay window ended → seat is live again. Mark token expired so parent must rebook.
+  if (token.status !== "completed") {
+    const resStatus = String(reservation?.status || "").toLowerCase();
+    const holdExpRaw = reservation?.hold_expires_at
+      ? String(reservation.hold_expires_at)
+      : "";
+    const holdPast =
+      !!holdExpRaw && new Date(holdExpRaw).getTime() < Date.now();
+    const seatReleased =
+      resStatus === "expired" ||
+      resStatus === "released" ||
+      (holdPast &&
+        (resStatus === "awaiting_payment" ||
+          resStatus === "validated" ||
+          resStatus === "pending"));
+    if (seatReleased) {
+      try {
+        await runBookingPayHoldMaintenance(admin);
+      } catch (_e) {
+        /* best-effort */
+      }
+      if (token.status !== "expired") {
+        await admin
+          .from("portal_booking_completion_tokens")
+          .update({ status: "expired", updated_at: new Date().toISOString() })
+          .eq("id", token.id)
+          .in("status", [
+            "awaiting_payment",
+            "awaiting_office_payment",
+            "choices_saved",
+            "pending",
+          ]);
+      }
+      return json(410, {
+        ok: false,
+        error: "token_expired",
+        reason: "pay_hold_lapsed",
+        message:
+          "The 30-minute payment window ended and that place went live again. Open Booking Portal to choose a slot and finish booking again.",
+      });
+    }
+  }
+
   const day = clean(reservation?.day_label, 40) || "Wednesday";
   const timeLabel = clean(reservation?.time_label, 80);
   const venue = clean(reservation?.venue, 80);
@@ -746,8 +789,10 @@ Deno.serve(async (req) => {
       gc_step2_unlocked: officePaidNotified(savedChoices),
       completed: token.status === "completed",
       place_released:
+        token.status === "expired" ||
         token.status === "expired_unpaid" ||
-        String(reservation?.status || "") === "expired",
+        String(reservation?.status || "") === "expired" ||
+        String(reservation?.status || "") === "released",
     });
   }
 

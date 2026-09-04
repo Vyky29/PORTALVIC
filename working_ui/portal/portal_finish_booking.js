@@ -73,8 +73,9 @@
     }
     if (!res.ok || !j || !j.ok) {
       var err = (j && j.error) || "request_failed";
-      var e = new Error(err);
+      var e = new Error((j && j.message) || err);
       e.code = err;
+      e.reason = j && j.reason ? j.reason : "";
       e.payload = j;
       throw e;
     }
@@ -1826,11 +1827,15 @@
         }
       })
       .catch(function (err) {
-        var msg = err.code === "token_expired"
-          ? "This link has expired. Ask the office to resend your finish-booking link."
-          : err.code === "invalid_token"
-            ? "This link is not valid. Ask the office to resend it."
-            : err.message || "Could not load booking.";
+        var msg =
+          err.code === "token_expired" || err.error === "token_expired"
+            ? err.reason === "pay_hold_lapsed" ||
+              /30-minute|pay window|went live/i.test(String(err.message || ""))
+              ? "The 30-minute payment window ended and that place went live again. Open Booking Portal to choose a slot and finish booking again."
+              : "This link has expired. Ask the office to resend your finish-booking link."
+            : err.code === "invalid_token"
+              ? "This link is not valid. Ask the office to resend it."
+              : err.message || "Could not load booking.";
         showNotice(notice, msg, "error");
       });
   }

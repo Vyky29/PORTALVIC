@@ -449,17 +449,26 @@ Deno.serve(async (req) => {
 
   const { data: holds, error: holdsErr } = await supabase
     .from("portal_booking_slot_reservations")
-    .select("slot_id, participant_name, notes")
+    .select("slot_id, participant_name, notes, hold_expires_at, status")
     .in("status", [...BOOKING_SLOT_HOLD_STATUSES]);
 
   if (holdsErr) {
     console.warn("[portal-booking-offer] slot holds", holdsErr.message);
   }
 
+  const nowMs = Date.now();
+  const activeHolds = (holds || []).filter((h) => {
+    const exp = h.hold_expires_at ? new Date(String(h.hold_expires_at)).getTime() : NaN;
+    // Soft holds without expiry still occupy the seat; timed pay holds drop when the clock ends
+    // even if cron has not flipped status yet.
+    if (Number.isFinite(exp) && exp < nowMs) return false;
+    return true;
+  });
+
   const holdApply = applyBookingSlotHoldsToOffer(
     weekly.slots,
     intensive.slots,
-    holds || [],
+    activeHolds,
   );
 
   const todayIso = new Date().toISOString().slice(0, 10);

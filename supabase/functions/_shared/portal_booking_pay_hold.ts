@@ -392,14 +392,15 @@ export async function expireUnpaidBookingPayHolds(
     if (!docId) continue;
     expired += 1;
 
+    // DB check allows `expired` (not `expired_unpaid`) — parent finish-booking treats that as released.
     await admin
       .from("portal_booking_completion_tokens")
       .update({
-        status: "expired_unpaid",
+        status: "expired",
         updated_at: now,
       })
       .eq("document_id", docId)
-      .in("status", ["awaiting_payment", "awaiting_office_payment", "choices_saved"]);
+      .in("status", ["awaiting_payment", "awaiting_office_payment", "choices_saved", "pending"]);
 
     const { data: toks } = await admin
       .from("portal_booking_completion_tokens")
