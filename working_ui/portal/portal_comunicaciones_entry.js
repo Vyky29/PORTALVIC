@@ -87,7 +87,34 @@
     return String(n);
   }
 
+  function ensureUnreadBadgeCss() {
+    if (typeof document === "undefined") return;
+    if (document.getElementById("portalCommsUnreadBadgeCss")) return;
+    var st = document.createElement("style");
+    st.id = "portalCommsUnreadBadgeCss";
+    st.textContent =
+      "#btnComunicaciones,#topbarStaffWaBtn{overflow:visible!important;position:relative}" +
+      "[data-comms-unread].is-empty{display:none!important}" +
+      "[data-comms-unread]:not(.is-empty){display:inline-flex!important;align-items:center;justify-content:center;position:absolute;z-index:8;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:800;line-height:18px;box-shadow:0 0 0 2px #fff}" +
+      "#commsBadge:not(.is-empty){top:-4px;right:-4px;min-width:20px;height:20px;line-height:20px;font-size:11px}" +
+      "#btnComunicaciones.admin-icon-btn--has-alerts{border-color:#dc2626!important;box-shadow:0 0 0 2px rgba(220,38,38,.45)}" +
+      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
+      "#topbarToolsGridRight .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread," +
+      "#topbarToolCellStaffWa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread{" +
+      "background:#dc2626!important;border-color:#991b1b!important;color:#fff!important;" +
+      "box-shadow:0 0 0 2px rgba(220,38,38,.35),0 2px 8px rgba(220,38,38,.35)!important}" +
+      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label," +
+      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-staff-wa-btn__label," +
+      "#topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-label{color:#fff!important}" +
+      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico," +
+      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg," +
+      "#topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico," +
+      "#topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{color:#fff!important}";
+    (document.head || document.documentElement).appendChild(st);
+  }
+
   function paintDataUnreadNodes(count) {
+    ensureUnreadBadgeCss();
     var nodes = document.querySelectorAll("[data-comms-unread]");
     for (var i = 0; i < nodes.length; i++) {
       var el = nodes[i];
@@ -120,11 +147,17 @@
           badge.setAttribute("aria-hidden", "true");
           btn.appendChild(badge);
         }
+        try {
+          badge.removeAttribute("hidden");
+        } catch (_h2) {}
         badge.hidden = false;
         badge.classList.remove("is-empty");
         badge.textContent = unreadLabel(lastUnreadCount);
       } else if (badge) {
-        badge.hidden = true;
+        try {
+          badge.removeAttribute("hidden");
+        } catch (_h3) {}
+        badge.hidden = false;
         badge.classList.add("is-empty");
         badge.textContent = "0";
       }
@@ -174,10 +207,33 @@
     }, 700);
   }
 
+  function parseUnreadCounts(raw) {
+    var data = raw;
+    if (typeof data === "string") {
+      try {
+        data = JSON.parse(data);
+      } catch (_j) {
+        data = {};
+      }
+    }
+    if (Array.isArray(data)) data = data[0] || {};
+    if (!data || typeof data !== "object") data = {};
+    var personal = Math.max(0, Number(data.personal) || 0);
+    var administration = Math.max(0, Number(data.administration) || 0);
+    var listed = Math.max(0, Number(data.total) || 0);
+    return {
+      personal: personal,
+      administration: administration,
+      total: Math.max(listed, personal, administration),
+    };
+  }
+
   async function refreshUnread() {
     if (fetchInFlight) {
       unreadRefreshQueued = true;
-      return fetchInFlight;
+      return fetchInFlight.then(function () {
+        return unreadRefreshQueued ? refreshUnread() : lastUnreadCount;
+      });
     }
     fetchInFlight = (async function () {
       try {
@@ -195,12 +251,10 @@
           }
           applyUnreadBadge(Math.max(0, Number(res.data) || 0));
         } else {
-          var counts = countsRes && countsRes.data && typeof countsRes.data === "object" ? countsRes.data : {};
-          var personal = Math.max(0, Number(counts.personal) || 0);
-          var total = Math.max(0, Number(counts.total) || 0);
+          var parsed = parseUnreadCounts(countsRes && countsRes.data);
           if (
             lastPersonalCount >= 0 &&
-            personal > lastPersonalCount &&
+            parsed.personal > lastPersonalCount &&
             !isCommsAppPage() &&
             typeof document !== "undefined" &&
             document.visibilityState === "visible"
@@ -209,26 +263,31 @@
             lastToastConv = "";
             maybeShowMessageToast({
               message_type: "text",
-              body: personal === 1 ? "New message in My account" : personal + " unread in My account",
+              body:
+                parsed.personal === 1
+                  ? "New message in My account"
+                  : parsed.personal + " unread in My account",
               sender_context: "PERSONAL",
               performed_by_user_id: "",
               _alertTitle: "My account",
               _alertMode: "personal",
             });
           }
-          lastPersonalCount = personal;
-          applyUnreadBadge(total);
-          updateCommsLaunchLinks(personal > 0 ? "personal" : "");
+          lastPersonalCount = parsed.personal;
+          applyUnreadBadge(parsed.total);
+          updateCommsLaunchLinks(parsed.personal > 0 ? "personal" : "");
         }
-        subscribeUnreadRealtime();
-        watchIncomingCalls();
-        bindIntrinsicCommsAlerts();
         return lastUnreadCount;
       } catch (_e) {
         scheduleUnreadRetry();
         return lastUnreadCount;
       } finally {
         fetchInFlight = null;
+        try {
+          subscribeUnreadRealtime();
+          watchIncomingCalls();
+          bindIntrinsicCommsAlerts();
+        } catch (_side) {}
         if (unreadRefreshQueued) {
           unreadRefreshQueued = false;
           void refreshUnread();
@@ -949,6 +1008,7 @@
 
   function boot() {
     try {
+      ensureUnreadBadgeCss();
       ensurePortalPushSw();
       bindIncomingPushMessages();
       bindIntrinsicCommsAlerts();

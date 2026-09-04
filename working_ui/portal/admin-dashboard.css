@@ -891,7 +891,23 @@
     .admin-badge.is-empty{display:none}
     #commsBadge:not(.is-empty),
     #familyMsgBadge:not(.is-empty){
-      display:inline-block !important;
+      display:inline-flex !important;
+      align-items:center;
+      justify-content:center;
+    }
+    #commsBadge:not(.is-empty){
+      top:-4px;
+      right:-4px;
+      min-width:20px;
+      height:20px;
+      line-height:20px;
+      font-size:11px;
+      z-index:8;
+      box-shadow:0 0 0 2px var(--surface,#fff);
+    }
+    .admin-icon-btn--chat.admin-icon-btn--has-alerts{
+      border-color:#dc2626;
+      box-shadow:0 0 0 2px rgba(220,38,38,.4);
     }
     .dayops-screen-nav__card--portal-dm-unread,
     .dayops-screen-nav__card--portal-ceo-dm-unread,
