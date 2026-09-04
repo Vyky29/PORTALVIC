@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ClubSEN activities - clubSENsational</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Figtree:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #10253a;
+      --ink-soft: #2a455c;
+      --sea: #1f6f8b;
+      --sea-deep: #0e4d66;
+      --aqua: #3aa6b8;
+      --sun: #e8b84a;
+      --foam: #f3f8fb;
+      --mist: rgba(255, 255, 255, 0.72);
+      --line: rgba(16, 37, 58, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #d9e4ec;
+      color: var(--ink);
+      font-family: "Figtree", system-ui, sans-serif;
+    }
+
+    .sheet {
+      width: min(100%, 794px);
+      min-height: 1123px;
+      margin: 24px auto;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(1200px 520px at 8% -5%, rgba(58, 166, 184, 0.28), transparent 55%),
+        radial-gradient(900px 480px at 100% 0%, rgba(232, 184, 74, 0.22), transparent 50%),
+        linear-gradient(165deg, #eaf6fa 0%, #f7fbfd 42%, #e7f1f6 100%);
+      box-shadow: 0 24px 60px rgba(16, 37, 58, 0.18);
+    }
+
+    .sheet::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(16, 37, 58, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 37, 58, 0.035) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.35), transparent 55%);
+      pointer-events: none;
+    }
+
+    .inner {
+      position: relative;
+      z-index: 1;
+      padding: 42px 48px 36px;
+      min-height: 1123px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .brand img {
+      width: 88px;
+      height: 88px;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 18px rgba(14, 77, 102, 0.2));
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-kicker {
+      margin: 0 0 4px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--sea);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(34px, 5vw, 48px);
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+      color: var(--sea-deep);
+    }
+
+    .brand p {
+      margin: 8px 0 0;
+      font-size: 16px;
+      line-height: 1.35;
+      color: var(--ink-soft);
+      max-width: 34ch;
+    }
+
+    .hero-line {
+      height: 4px;
+      width: 100%;
+      border: 0;
+      margin: 0 0 28px;
+      background: linear-gradient(90deg, var(--sea-deep), var(--aqua) 45%, var(--sun));
+      border-radius: 999px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 18px;
+      flex: 1;
+    }
+
+    .activity {
+      padding: 16px 16px 14px;
+      border-left: 4px solid var(--aqua);
+      background: linear-gradient(135deg, rgba(255,255,255,0.78), rgba(255,255,255,0.42));
+      min-width: 0;
+    }
+
+    .activity:nth-child(2) { border-left-color: #2f8f6b; }
+    .activity:nth-child(3) { border-left-color: #d39a2d; }
+    .activity:nth-child(4) { border-left-color: #3a7cc9; }
+    .activity:nth-child(5) { border-left-color: #c45d3c; }
+    .activity:nth-child(6) { border-left-color: var(--sea-deep); }
+    .activity.span-2 {
+      grid-column: 1 / -1;
+      border-left-color: #1a8f9c;
+    }
+
+    .activity h2 {
+      margin: 0 0 6px;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 22px;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+
+    .activity .meta {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--sea);
+    }
+
+    .activity p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.4;
+      color: var(--ink-soft);
+    }
+
+    .footer {
+      margin-top: 28px;
+      padding: 18px 20px;
+      background: linear-gradient(120deg, var(--sea-deep), #17607a 55%, #1f7f74);
+      color: #f4fbfd;
+      display: grid;
+      gap: 6px;
+    }
+
+    .footer strong {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 22px;
+      letter-spacing: -0.02em;
+    }
+
+    .footer a {
+      color: #ffe29a;
+      font-weight: 700;
+      font-size: 18px;
+      text-decoration: none;
+    }
+
+    .footer .note {
+      margin: 2px 0 0;
+      font-size: 13px;
+      opacity: 0.92;
+      line-height: 1.35;
+    }
+
+    .print-hint {
+      width: min(100%, 794px);
+      margin: 0 auto 28px;
+      text-align: center;
+      color: #5b7386;
+      font-size: 13px;
+    }
+
+    @media print {
+      @page { size: A4; margin: 0; }
+      body { background: white; }
+      .print-hint { display: none; }
+      .sheet {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0;
+        box-shadow: none;
+      }
+      .inner {
+        min-height: 297mm;
+        padding: 14mm 14mm 12mm;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .sheet { margin: 0; box-shadow: none; }
+      .inner { padding: 28px 20px 24px; }
+      .grid { grid-template-columns: 1fr; }
+      .brand { align-items: flex-start; }
+      .brand img { width: 72px; height: 72px; }
+    }
+  </style>
+</head>
+<body>
+  <p class="print-hint">Open this page and use Print -> Save as PDF (A4) for a shareable poster.</p>
+
+  <main class="sheet" aria-label="ClubSEN activities poster">
+    <div class="inner">
+      <header class="brand">
+        <img src="portal/F-02-1.png" width="88" height="88" alt="clubSENsational logo" />
+        <div class="brand-copy">
+          <p class="brand-kicker">ClubSEN / clubSENsational</p>
+          <h1>Our activities</h1>
+          <p>Specialist sessions for children and young people with autism and learning disabilities.</p>
+        </div>
+      </header>
+
+      <hr class="hero-line" />
+
+      <section class="grid" aria-label="Activity list">
+        <article class="activity">
+          <h2>Aquatic Activity</h2>
+          <p class="meta">From 3 years / Acton / Northolt / SwimFarm</p>
+          <p>1:1 or small-group swimming with sensory-aware instructors - water confidence, regulation, and independence in the pool.</p>
+        </article>
+
+        <article class="activity">
+          <h2>Climbing Activity</h2>
+          <p class="meta">From 3 years / Westway</p>
+          <p>Supported climbing that builds strength, focus, and confidence, with routes matched to each child.</p>
+        </article>
+
+        <article class="activity">
+          <h2>Physical Activity</h2>
+          <p class="meta">From 12 years / SwimFarm / Acton</p>
+          <p>Active movement sessions for coordination, stamina, and structure - adapted so every young person can take part safely.</p>
+        </article>
+
+        <article class="activity">
+          <h2>Multi-Activity</h2>
+          <p class="meta">From 3 years / SwimFarm / Northolt</p>
+          <p>A longer visit that combines activities in one block - ideal when you want more variety in a single session.</p>
+        </article>
+
+        <article class="activity">
+          <h2>Bespoke Programme</h2>
+          <p class="meta">From 3 years / SwimFarm / Acton / Westway</p>
+          <p>A tailored programme built around your child's goals, support needs, and schedule.</p>
+        </article>
+
+        <article class="activity">
+          <h2>Day Centre</h2>
+          <p class="meta">Mon-Fri / 11am-4pm / SwimFarm</p>
+          <p>Weekday daytime support with structured activity, life skills, swimming, and community trips when staffing allows.</p>
+        </article>
+
+        <article class="activity span-2">
+          <h2>Holiday crash courses</h2>
+          <p class="meta">School holidays / Climbing at Westway / Swimming at Acton</p>
+          <p>Short intensive weeks in the holidays - climbing and swimming crash courses when dates are open for booking.</p>
+        </article>
+      </section>
+
+      <footer class="footer">
+        <strong>Want to know more?</strong>
+        <div>Email us at <a href="mailto:info@clubsensational.org">info@clubsensational.org</a></div>
+        <p class="note">We are happy to talk through places, venues, and the best fit for your child or young person.</p>
+      </footer>
+    </div>
+  </main>
+</body>
+</html>
