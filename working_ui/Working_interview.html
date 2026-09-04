@@ -1326,6 +1326,45 @@
     .auth-set-password .field label{ color:rgba(255,255,255,.85); }
     .auth-set-password .input{ max-width:200px; }
     .auth-set-password-title{ color:#fff; font-size:15px; font-weight:700; margin:0 0 8px; width:100%; }
+
+    .save-toast{
+      position:fixed;
+      left:50%;
+      bottom:max(18px, env(safe-area-inset-bottom));
+      transform:translateX(-50%);
+      z-index:10050;
+      width:min(520px, calc(100% - 28px));
+      display:none;
+      align-items:flex-start;
+      gap:12px;
+      padding:14px 16px;
+      border-radius:16px;
+      background:#1f2f3a;
+      color:#fff;
+      box-shadow:0 16px 40px rgba(0,0,0,.28);
+      min-width:0;
+    }
+    .save-toast.is-open{ display:flex; }
+    .save-toast__msg{
+      flex:1 1 auto;
+      min-width:0;
+      font-size:14px;
+      line-height:1.45;
+      overflow-wrap:break-word;
+    }
+    .save-toast__msg strong{ display:block; margin-bottom:4px; font-size:15px; }
+    .save-toast__close{
+      flex:0 0 auto;
+      border:0;
+      background:transparent;
+      color:#8ec8ef;
+      font:inherit;
+      font-weight:700;
+      cursor:pointer;
+      padding:4px 2px;
+      min-height:44px;
+      min-width:52px;
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260419-99"></script>
   <script>
@@ -1342,6 +1381,13 @@
   <div id="recordingIndicator" class="recording-indicator" aria-live="polite" aria-atomic="true">
     <span class="dot"></span>
     <span>Recording in progress...</span>
+  </div>
+  <div id="saveToast" class="save-toast" role="alertdialog" aria-modal="true" aria-labelledby="saveToastTitle" aria-describedby="saveToastBody" hidden>
+    <div class="save-toast__msg">
+      <strong id="saveToastTitle">Could not save to the club database</strong>
+      <span id="saveToastBody"></span>
+    </div>
+    <button type="button" class="save-toast__close" id="saveToastClose">Close</button>
   </div>
   <div class="page">
 
@@ -1856,20 +1902,74 @@
       return supabaseClient;
     }
 
+    var saveToastCooldownUntil = 0;
+    var saveToastLastKey = "";
+    var saveInFlight = null;
+
+    function hideSaveToast() {
+      var el = document.getElementById("saveToast");
+      if (!el) return;
+      el.classList.remove("is-open");
+      el.hidden = true;
+    }
+
+    function showSaveToast(title, body) {
+      var el = document.getElementById("saveToast");
+      var titleEl = document.getElementById("saveToastTitle");
+      var bodyEl = document.getElementById("saveToastBody");
+      if (!el || !titleEl || !bodyEl) return;
+      titleEl.textContent = title || "Could not save to the club database";
+      bodyEl.textContent = body || "";
+      el.hidden = false;
+      el.classList.add("is-open");
+    }
+
+    function bindSaveToastOnce() {
+      var closeBtn = document.getElementById("saveToastClose");
+      var el = document.getElementById("saveToast");
+      if (!closeBtn || closeBtn.dataset.bound === "1") return;
+      closeBtn.dataset.bound = "1";
+      closeBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideSaveToast();
+      });
+      if (el) {
+        el.addEventListener("click", function (e) {
+          /* Keep toast itself from bubbling into page handlers */
+          e.stopPropagation();
+        });
+      }
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") hideSaveToast();
+      });
+    }
+
+    function notifySaveSuccess() {
+      saveToastLastKey = "";
+      saveToastCooldownUntil = 0;
+      hideSaveToast();
+    }
+
     function notifySaveFailure(err, context) {
+      bindSaveToastOnce();
       const raw = String((err && (err.message || err.error_description || err.code)) || err || "unknown").trim();
       console.error("Save error", context || "", err);
       const hint =
         /jwt|auth|row-level|rls|permission|not authenticated/i.test(raw)
           ? " Open Interviews again from Staff or Admin while signed in."
-          : /payload|too large|413|statement timeout|bytes/i.test(raw)
-            ? " A recording may be too large — record a shorter clip, then Save again."
-            : "";
-      try {
-        alert("Could not save interview to the club database (" + raw + ")." + hint);
-      } catch (_e) {
-        /* ignore */
-      }
+          : /payload|too large|413|statement timeout|bytes|Load failed|Failed to fetch|NetworkError/i.test(raw)
+            ? " A recording may be too large or the connection dropped. Your answers stay on this device — try a shorter clip, then Save again."
+            : " Your answers stay on this device. Check the connection and try Save again.";
+      const key = raw.slice(0, 120);
+      const now = Date.now();
+      if (key === saveToastLastKey && now < saveToastCooldownUntil) return;
+      saveToastLastKey = key;
+      saveToastCooldownUntil = now + 12000;
+      showSaveToast(
+        "Could not save interview to the club database",
+        "(" + raw + ")." + hint
+      );
     }
 
     function loadCandidatesFromStorage() {
@@ -1994,19 +2094,44 @@
         return;
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
-      try {
-        if (candidateId) {
-          const target = candidates.find(c => c.id === candidateId);
-          if (target) await saveCandidateToSupabase(target);
-          return;
-        }
-        for (const c of candidates) {
-          await saveCandidateToSupabase(c);
-        }
-      } catch (e) {
-        notifySaveFailure(e, candidateId || "all");
-        throw e;
+
+      if (saveInFlight) {
+        saveInFlight._pendingId = candidateId || saveInFlight._pendingId || null;
+        return saveInFlight;
       }
+
+      const runSave = async function (id) {
+        try {
+          if (id) {
+            const target = candidates.find(c => c.id === id);
+            if (target) await saveCandidateToSupabase(target);
+          } else {
+            for (const c of candidates) {
+              await saveCandidateToSupabase(c);
+            }
+          }
+          notifySaveSuccess();
+        } catch (e) {
+          notifySaveFailure(e, id || "all");
+          throw e;
+        }
+      };
+
+      saveInFlight = (async function () {
+        var id = candidateId || null;
+        try {
+          await runSave(id);
+          while (saveInFlight && saveInFlight._pendingId !== undefined) {
+            id = saveInFlight._pendingId;
+            saveInFlight._pendingId = undefined;
+            await runSave(id);
+          }
+        } finally {
+          saveInFlight = null;
+        }
+      })();
+      saveInFlight._pendingId = undefined;
+      return saveInFlight;
     }
 
     function startSharedRealtimeSync() {
