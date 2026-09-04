@@ -570,6 +570,15 @@ Deno.serve(async (req) => {
   const rawToken = clean(body.token, 128);
   const token = await loadCompletionByRawToken(admin, rawToken);
   if (!token) return json(404, { ok: false, error: "invalid_token" });
+  if (token.status === "expired") {
+    return json(410, {
+      ok: false,
+      error: "token_expired",
+      reason: "pay_hold_lapsed",
+      message:
+        "The 30-minute payment window ended and that place went live again. Open Booking Portal to choose a slot and finish booking again.",
+    });
+  }
   if (tokenExpired(token) && token.status !== "completed") {
     return json(410, { ok: false, error: "token_expired" });
   }
