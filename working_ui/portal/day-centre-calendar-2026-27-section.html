@@ -264,7 +264,28 @@
     }
     .dc-cal-weekdays--weekdays { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     .dc-cal-weekdays--thu { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .dc-cal-weekdays span { min-width: 0; }
+    .dc-cal-weekdays span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: clip;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+    @media (max-width: 720px) {
+      .dc-cal-weekdays {
+        font-size: 0.7rem;
+        letter-spacing: 0;
+        gap: 2px;
+      }
+      /* Show single-letter initials so Mon/Tue/… do not collide on narrow months. */
+      .dc-cal-weekdays span {
+        font-size: 0;
+      }
+      .dc-cal-weekdays span::first-letter {
+        font-size: 0.7rem;
+        font-weight: 800;
+      }
+    }
     .dc-cal-grid {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -296,12 +317,13 @@
       text-align: center;
     }
     .dc-cal-bh-label {
-      font-size: clamp(0.34rem, 1.3vw, 0.45rem);
-      font-weight: 700;
-      line-height: 1.05;
+      font-size: clamp(0.42rem, 1.6vw, 0.55rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0.02em;
       color: rgba(0, 0, 0, 0.78);
-      overflow-wrap: anywhere;
       max-width: 100%;
+      white-space: nowrap;
     }
     .dc-cal-cell--empty { background: transparent; }
     .dc-cal-cell--green { background: var(--dc-green); }
@@ -473,14 +495,14 @@
   </p>
 
   <header class="dc-cal__header">
-    <p class="dc-cal__year" id="dcCal2627Title">2026–2027</p>
-    <h2 class="dc-cal__title">Term Dates &amp; Calendar</h2>
+    <p class="dc-cal__year" id="dcCal2627Title" hidden>2026–2027</p>
+    <h2 class="dc-cal__title" hidden>Term Dates &amp; Calendar</h2>
   </header>
 
   <div class="dc-cal-tabs" role="tablist" aria-label="Calendar type">
     <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalSessionsTab" role="tab" aria-selected="true" aria-controls="dcCalSessionsPanel" data-dc-cal-target="dcCalSessionsPanel" aria-label="After-Schools and Weekends — Swimming, Climbing, Fitness, Bespoke and Multi-Activity"><span class="dc-cal-tab__head">After-Schools<br>&amp;<br>Weekends</span><span class="dc-cal-tab__sub">Swimming, Climbing, Fitness</span><span class="dc-cal-tab__sub">Bespoke &amp; Multi-Activity</span></button>
     <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalDayCentreTab" role="tab" aria-selected="false" aria-controls="dcCalDayCentrePanel" data-dc-cal-target="dcCalDayCentrePanel"><span class="dc-cal-tab__head">Day<br>Centre</span><span class="dc-cal-tab__sub">Mon–Fri only</span></button>
-    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalCrashTab" role="tab" aria-selected="false" aria-controls="dcCalCrashPanel" data-dc-cal-target="dcCalCrashPanel"><span class="dc-cal-tab__head">Crash<br>Courses</span><span class="dc-cal-tab__sub">Summer &amp; half terms</span></button>
+    <button type="button" class="dc-cal-tab dc-cal-tab--stack" id="dcCalCrashTab" role="tab" aria-selected="false" aria-controls="dcCalCrashPanel" data-dc-cal-target="dcCalCrashPanel"><span class="dc-cal-tab__head">Crash<br>Courses</span><span class="dc-cal-tab__sub">Half terms</span></button>
   </div>
 
   <div class="dc-cal__summary" id="dcCalSummaryDayCentre" data-dc-cal-summary="dcCalDayCentrePanel" aria-label="Day Centre weeks summary" hidden>
@@ -660,7 +682,7 @@
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
-            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">1</span></span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label" title="Bank holiday">BH</span><span class="dc-cal-day">1</span></span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
@@ -732,8 +754,8 @@
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">23</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">24</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">25</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">26</span></span></span>
-            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">29</span></span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label" title="Bank holiday">BH</span><span class="dc-cal-day">26</span></span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label" title="Bank holiday">BH</span><span class="dc-cal-day">29</span></span></span>
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">30</span></span>
             <span class="dc-cal-cell dc-cal-cell--red" role="gridcell"><span class="dc-cal-day">31</span></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
@@ -791,7 +813,7 @@
           <h4 class="dc-cal-month__label">May 2027</h4>
           <div class="dc-cal-weekdays dc-cal-weekdays--weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span></div>
           <div class="dc-cal-grid dc-cal-grid--weekdays" role="grid" aria-label="May 2027">
-            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">3</span></span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label" title="Bank holiday">BH</span><span class="dc-cal-day">3</span></span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
@@ -811,7 +833,7 @@
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">26</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">27</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">28</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">31</span></span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label" title="Bank holiday">BH</span><span class="dc-cal-day">31</span></span></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
@@ -1246,7 +1268,7 @@
             <span class="dc-cal-cell dc-cal-cell--empty" role="gridcell"></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">1</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">2</span></span>
-            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label">Bank holiday</span><span class="dc-cal-day">3</span></span></span>
+            <span class="dc-cal-cell dc-cal-cell--red dc-cal-cell--bank-hol" role="gridcell"><span class="dc-cal-cell__stack"><span class="dc-cal-bh-label" title="Bank holiday">BH</span><span class="dc-cal-day">3</span></span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">4</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">5</span></span>
             <span class="dc-cal-cell dc-cal-cell--green" role="gridcell"><span class="dc-cal-day">6</span></span>
@@ -1364,82 +1386,10 @@
       <li><span class="dc-cal__swatch dc-cal__swatch--red" aria-hidden="true"></span> Red = No crash course</li>
     </ul>
     <p class="dc-cal-panel__intro">
-      <strong>Summer holiday 2026 (July):</strong> Tuesday–Friday crash courses — Climbing (Westway) and Swimming (Acton).
-      <strong>Currently open for booking: Week 1</strong> — climbing Mon 20 – Thu 23 July; swimming Tue 21 – Fri 24 July.
-      <strong>Fully booked:</strong> Week 1 and Week 2 of the July 2026 Crash Course are now full.
-      Default booking is a <strong>four-day week pack (Tue–Fri)</strong>.
-      Individual leftover hours for Week 1: <strong>Fri 17 – Sun 19 July</strong>.
-      Half-term intensives (autumn / spring / summer) remain Monday–Thursday.
-      Places are limited; booking requires <strong>payment in full</strong>.
+      Half-term crash course days (Monday–Thursday; Fridays off). Calendar only — finished blocks hide automatically.
     </p>
 
-    <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-summer">
-      <header class="dc-cal-term__head">
-        <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-summer"><span class="dc-cal-term__icon" aria-hidden="true">☀️</span> Summer holiday crash courses · July 2026</h3>
-      </header>
-      <ul class="dc-cal-term__info">
-        <li><strong>Week 1 (open now):</strong> Tuesday 21 – Friday 24 July 2026</li>
-        <li><strong>Week 2 (opens at 80% of Week 1):</strong> Tuesday 28 – Friday 31 July 2026</li>
-        <li>Book Climbing, Swimming, or both. Four-day weekly packs (Tue–Fri) are the default.</li>
-        <li>Individual leftover hours for Week 1: Fri 17 – Sun 19 July (Week 2 window opens with Week 2).</li>
-        <li><strong>Pay in full</strong> to reserve — no place is held without payment.</li>
-        <li><strong>Summer crash courses: Fully booked — both July weeks.</strong></li>
-      </ul>
-      <div class="dc-cal-crash-offer">
-        <h4 class="dc-cal-crash-offer__title">Climbing</h4>
-        <ul class="dc-cal-term__info">
-          <li>Time: <strong>11:00 am – 1:00 pm</strong></li>
-          <li>Westway Sports &amp; Fitness Centre</li>
-          <li>1 Crowthorne Road, London W10 6RP</li>
-          <li>£75 per session · Four-day weekly pack £300</li>
-        </ul>
-        <ul class="dc-cal-crash-days" aria-label="Summer climbing week 1">
-          <li class="dc-cal-crash-day dc-cal-crash-day--off"><span class="dc-cal-crash-day__dow">Mon</span><span class="dc-cal-crash-day__num">20</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Tue</span><span class="dc-cal-crash-day__num">21</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Wed</span><span class="dc-cal-crash-day__num">22</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Thu</span><span class="dc-cal-crash-day__num">23</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Fri</span><span class="dc-cal-crash-day__num">24</span></li>
-        </ul>
-        <p class="dc-cal-term__info" style="margin:8px 0 0;font-size:12px" data-crash-w2-note>Week 2 day pills (28–31 Jul) appear here when Week 1 reaches 80% of places.</p>
-        <ul class="dc-cal-crash-days" aria-label="Summer climbing week 2" data-crash-week="w2" hidden style="margin-top:8px">
-          <li class="dc-cal-crash-day dc-cal-crash-day--off"><span class="dc-cal-crash-day__dow">Mon</span><span class="dc-cal-crash-day__num">27</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Tue</span><span class="dc-cal-crash-day__num">28</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Wed</span><span class="dc-cal-crash-day__num">29</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Thu</span><span class="dc-cal-crash-day__num">30</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Fri</span><span class="dc-cal-crash-day__num">31</span></li>
-        </ul>
-      </div>
-      <div class="dc-cal-crash-offer">
-        <h4 class="dc-cal-crash-offer__title">Swimming</h4>
-        <ul class="dc-cal-term__info">
-          <li>Time: <strong>4:30 pm – 6:30 pm</strong></li>
-          <li>Everyone Active Acton Centre</li>
-          <li>High Street, Acton, London W3 6NE</li>
-          <li>Tue &amp; Thu: Big Pool · Wed &amp; Fri: Teaching Pool</li>
-          <li>£50 per session · Four-day weekly pack £200</li>
-        </ul>
-        <ul class="dc-cal-crash-days" aria-label="Summer swimming week 1">
-          <li class="dc-cal-crash-day dc-cal-crash-day--off"><span class="dc-cal-crash-day__dow">Mon</span><span class="dc-cal-crash-day__num">20</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Tue</span><span class="dc-cal-crash-day__num">21</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Wed</span><span class="dc-cal-crash-day__num">22</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Thu</span><span class="dc-cal-crash-day__num">23</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Fri</span><span class="dc-cal-crash-day__num">24</span></li>
-        </ul>
-        <ul class="dc-cal-crash-days" aria-label="Summer swimming week 2" data-crash-week="w2" hidden style="margin-top:8px">
-          <li class="dc-cal-crash-day dc-cal-crash-day--off"><span class="dc-cal-crash-day__dow">Mon</span><span class="dc-cal-crash-day__num">27</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Tue</span><span class="dc-cal-crash-day__num">28</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Wed</span><span class="dc-cal-crash-day__num">29</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Thu</span><span class="dc-cal-crash-day__num">30</span></li>
-          <li class="dc-cal-crash-day"><span class="dc-cal-crash-day__dow">Fri</span><span class="dc-cal-crash-day__num">31</span></li>
-        </ul>
-      </div>
-    </article>
-
-    <p class="dc-cal-panel__intro" style="margin-top:18px">
-      Half-term crash courses (Monday–Thursday; Fridays off).
-      <strong>Slots and times are TBC</strong> — confirmed in September.
-    </p>
-    <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-october">
+    <article class="dc-cal-term" data-crash-ends="2026-10-30" aria-labelledby="dcCalCrashPanel-term-october">
       <header class="dc-cal-term__head">
         <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-october"><span class="dc-cal-term__icon" aria-hidden="true">🍂</span> <span class="dc-cal-term__title-text">October half term<br>2026</span></h3>
       </header>
@@ -1451,7 +1401,7 @@
         <li class="dc-cal-crash-day dc-cal-crash-day--off"><span class="dc-cal-crash-day__dow">Fri</span><span class="dc-cal-crash-day__num">30</span></li>
       </ul>
     </article>
-    <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-february">
+    <article class="dc-cal-term" data-crash-ends="2027-02-19" aria-labelledby="dcCalCrashPanel-term-february">
       <header class="dc-cal-term__head">
         <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-february"><span class="dc-cal-term__icon" aria-hidden="true">🌸</span> <span class="dc-cal-term__title-text">February half term<br>2027</span></h3>
       </header>
@@ -1463,7 +1413,7 @@
         <li class="dc-cal-crash-day dc-cal-crash-day--off"><span class="dc-cal-crash-day__dow">Fri</span><span class="dc-cal-crash-day__num">19</span></li>
       </ul>
     </article>
-    <article class="dc-cal-term" aria-labelledby="dcCalCrashPanel-term-may">
+    <article class="dc-cal-term" data-crash-ends="2027-06-04" aria-labelledby="dcCalCrashPanel-term-may">
       <header class="dc-cal-term__head">
         <h3 class="dc-cal-term__title" id="dcCalCrashPanel-term-may"><span class="dc-cal-term__icon" aria-hidden="true">☀️</span> <span class="dc-cal-term__title-text">May half term<br>2027</span></h3>
       </header>

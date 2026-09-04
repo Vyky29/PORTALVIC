@@ -7,7 +7,7 @@
   "use strict";
   var nodes = document.querySelectorAll(".cs-calendar");
   if (!nodes.length) return;
-  var url = "/portal/day-centre-calendar-2026-27-section.html?v=20260903-spring-summer-trim";
+  var url = "/portal/day-centre-calendar-2026-27-section.html?v=20260904-bh";
   fetch(url, { credentials: "omit" })
     .then(function (res) {
       if (!res.ok) throw new Error("calendar_http_" + res.status);

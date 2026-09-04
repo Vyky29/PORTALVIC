@@ -6,7 +6,7 @@
   "use strict";
 
   var HTML_SECTION_URL =
-    "/portal/day-centre-calendar-2026-27-section.html?v=20260903-spring-summer-trim";
+    "/portal/day-centre-calendar-2026-27-section.html?v=20260904-bh";
   var DOC_TITLE = "Calendar 2026/27";
   var DOC_TYPE = "calendar_2026_27";
   var DOC_CATEGORY = "documents";
@@ -14,7 +14,7 @@
   var DOC_SESSION_KEY = "calendar-2026-27";
   var ON_ACK_ACTION = "calendar_2026_27";
   /** Bump when calendar content changes — staff must re-ack to see updates. */
-  global.PORTAL_CALENDAR_2026_27_ACK_REVISION = 7;
+  global.PORTAL_CALENDAR_2026_27_ACK_REVISION = 8;
   var CALENDAR_ANNOUNCEMENT_ID = "a0270001-0001-4000-8000-0000000a2701";
   var JSPDF_URL =
     "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260702-html-cal";
@@ -811,8 +811,34 @@
       global.portalMarkCalendar202627Highlights(section);
     } catch (_mark) {}
     try {
+      global.portalHideEndedCrashBlocks(section);
+    } catch (_ended) {}
+    try {
       global.portalApplyCrashWeek2Gate(section);
     } catch (_gate) {}
+  };
+
+  /** Hide crash course blocks after their last day (data-crash-ends=YYYY-MM-DD). */
+  global.portalHideEndedCrashBlocks = function portalHideEndedCrashBlocks(root) {
+    var section = null;
+    if (root && root.querySelector) {
+      section = root.classList && root.classList.contains("dc-cal") ? root : root.querySelector(".dc-cal");
+    }
+    if (!section && global.document) section = global.document.querySelector(".dc-cal");
+    if (!section) return;
+    var today = new Date();
+    var y = today.getFullYear();
+    var m = String(today.getMonth() + 1).padStart(2, "0");
+    var d = String(today.getDate()).padStart(2, "0");
+    var todayIso = y + "-" + m + "-" + d;
+    section.querySelectorAll("[data-crash-ends]").forEach(function (el) {
+      var ends = String(el.getAttribute("data-crash-ends") || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ends)) return;
+      if (ends < todayIso) {
+        el.hidden = true;
+        el.setAttribute("hidden", "");
+      }
+    });
   };
 
   /** Show Week 2 crash pills / July highlights only when API says Week 2 is open. */
