@@ -384,6 +384,10 @@ function isAdminContext(m) {
   return String((m && m.sender_context) || "").toUpperCase() === "ADMINISTRATION";
 }
 
+function canSeeAdminAuthor() {
+  return !!(state.mode === "administration" && state.me && state.me.can_act_as_administration);
+}
+
 function bubbleIsMine(m) {
   if (state.mode === "administration" && isAdminContext(m)) return true;
   return String(m.performed_by_user_id) === String(state.me.id);
@@ -395,7 +399,7 @@ function bubbleHtml(m) {
   const admin = isAdminContext(m);
   let klass = "comms-bubble" + (mine ? " is-mine" : "") + (admin && !mine ? " is-admin" : "");
   let who = esc(m.sender_display || "");
-  if (admin && m.performed_by_name) {
+  if (admin && canSeeAdminAuthor() && m.performed_by_name) {
     who += " · sent by " + esc(m.performed_by_name);
   }
   let body = "";
