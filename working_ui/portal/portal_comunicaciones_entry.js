@@ -29,6 +29,7 @@
 
   var lastUnreadCount = 0;
   var lastPersonalCount = -1;
+  var lastAdminCount = -1;
   var lastToastMode = "";
   var lastToastConv = "";
   var convMetaCache = {};
@@ -253,9 +254,7 @@
           if (
             lastPersonalCount >= 0 &&
             parsed.personal > lastPersonalCount &&
-            !isCommsAppPage() &&
-            typeof document !== "undefined" &&
-            document.visibilityState === "visible"
+            !isCommsAppPage()
           ) {
             lastToastMode = "personal";
             lastToastConv = "";
@@ -271,7 +270,27 @@
               _alertMode: "personal",
             });
           }
+          if (
+            lastAdminCount >= 0 &&
+            parsed.administration > lastAdminCount &&
+            !isCommsAppPage()
+          ) {
+            lastToastMode = "administration";
+            lastToastConv = "";
+            maybeShowMessageToast({
+              message_type: "text",
+              body:
+                parsed.administration === 1
+                  ? "New message in ADMIN"
+                  : parsed.administration + " unread in ADMIN",
+              sender_context: "ADMINISTRATION",
+              performed_by_user_id: "",
+              _alertTitle: "ADMIN",
+              _alertMode: "administration",
+            });
+          }
           lastPersonalCount = parsed.personal;
+          lastAdminCount = parsed.administration;
           applyUnreadBadge(parsed.total);
           updateCommsLaunchLinks(parsed.personal > 0 ? "personal" : "");
         }
@@ -575,15 +594,65 @@
     }
   }
 
+  function commsNotifyIcon() {
+    try {
+      return new URL("/portal/app-icon/icon-192.png?v=20260624-push-icon", global.location.href).href;
+    } catch (_e) {
+      return "/portal/app-icon/icon-192.png";
+    }
+  }
+
+  function showCommsOsBanner(title, body, convId) {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    var url = commsUrlWith(convId ? { conv: convId } : lastToastMode ? { mode: lastToastMode } : {});
+    var opts = {
+      body: String(body || "New message"),
+      icon: commsNotifyIcon(),
+      badge: commsNotifyIcon(),
+      tag: "comms-msg-" + String(convId || Date.now()),
+      renotify: true,
+      silent: false,
+      data: { url: url, portalOpen: "communications" },
+    };
+    try {
+      if (global.navigator && global.navigator.serviceWorker && global.navigator.serviceWorker.ready) {
+        void global.navigator.serviceWorker.ready.then(function (reg) {
+          if (reg && reg.showNotification) return reg.showNotification(title || "Communications", opts);
+        });
+        return;
+      }
+    } catch (_sw) {}
+    try {
+      var n = new Notification(title || "Communications", opts);
+      n.onclick = function () {
+        try {
+          global.focus();
+          global.location.href = url;
+        } catch (_c) {}
+        try {
+          n.close();
+        } catch (_cl) {}
+      };
+    } catch (_n) {}
+  }
+
   async function maybeShowMessageToast(row) {
     if (isCommsAppPage() || !row) return;
     var type = String(row.message_type || "text").toLowerCase();
     if (type === "system" || type === "call") return;
     if (String(row.performed_by_user_id || "") === myUserId()) return;
-    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
     var meta = await conversationAlertMeta(row);
     lastToastMode = meta.mode || "personal";
     lastToastConv = String(row.conversation_id || lastToastConv || "");
+    var preview = previewMessageBody(row);
+    var hidden = typeof document !== "undefined" && document.visibilityState === "hidden";
+    if (hidden) {
+      showCommsOsBanner(meta.title || "Communications", preview, lastToastConv);
+      try {
+        if (global.navigator && global.navigator.vibrate) global.navigator.vibrate([180, 80, 180]);
+      } catch (_v) {}
+      return;
+    }
     messageToastCount += 1;
     var el = ensureMessageToast();
     var titleEl = document.getElementById("portalCommsMsgToastTitle");
@@ -592,8 +661,11 @@
       titleEl.textContent =
         messageToastCount > 1 ? meta.title + " (" + messageToastCount + " new)" : meta.title;
     }
-    if (bodyEl) bodyEl.textContent = previewMessageBody(row);
+    if (bodyEl) bodyEl.textContent = preview;
     el.hidden = false;
+    try {
+      el.removeAttribute("hidden");
+    } catch (_sh) {}
     try {
       if (typeof global.portalPlayAlertCue === "function") {
         global.portalPlayAlertCue({ vibrate: [180, 80, 180] });
@@ -1077,7 +1149,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260904-comms-14", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260904-comms-27", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
     } catch (_sw) {}
@@ -1283,12 +1355,12 @@
 
   function boot() {
     try {
-      if (isCommsAppPage()) return;
-      ensureIncomingOverlay();
-      ensureUnreadBadgeCss();
       ensurePortalPushSw();
       bindIncomingPushMessages();
       bindIntrinsicCommsAlerts();
+      if (isCommsAppPage()) return;
+      ensureIncomingOverlay();
+      ensureUnreadBadgeCss();
       watchIncomingCalls();
       subscribeUnreadRealtime();
       var key = "";

@@ -94,6 +94,8 @@ Deno.serve(async (req) => {
   let tag = "comms";
   let requireInteraction = false;
   let callData: Record<string, unknown> | null = null;
+  let chatData: Record<string, unknown> | null = null;
+  let senderUserId = "";
   let ttl = 86400;
   let urgency = "high";
 
@@ -120,8 +122,10 @@ Deno.serve(async (req) => {
     else body = preview || "New message";
     title = ctx === "ADMINISTRATION" ? "ADMIN" : "Communications";
     const conv = String(record.conversation_id || "").trim();
+    senderUserId = String(record.performed_by_user_id || record.sender_user_id || "").trim();
     url = withQuery(openUrl, conv ? { conv } : {});
     tag = `comms-msg-${sourceId.slice(0, 24)}`;
+    chatData = conv ? { conversationId: conv } : null;
   } else if (table === "communication_calls") {
     if (!sourceId) return jsonPushResponse({ skipped: true, reason: "no id" });
     const { data: ids, error } = await admin.rpc("communication_push_recipient_ids", {
@@ -150,6 +154,7 @@ Deno.serve(async (req) => {
     portalOpen = "communications_call";
     tag = `comms-call-${sourceId.slice(0, 24)}`;
     requireInteraction = true;
+    senderUserId = initiator;
     callData = {
       callId: sourceId,
       type: kind,
@@ -204,7 +209,9 @@ Deno.serve(async (req) => {
     tag,
     requireInteraction,
     vibrate: portalOpen === "communications_call" ? [500, 180, 500, 180, 700] : [200, 80, 200],
+    senderUserId,
     call: callData,
+    chat: chatData,
   });
 
   const result = await sendPushPayloadToUserIds(admin, recipientIds, pushPayload, {
