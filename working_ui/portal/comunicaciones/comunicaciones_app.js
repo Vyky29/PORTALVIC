@@ -1181,7 +1181,7 @@ function clearRingTimer() {
   }
 }
 
-function setCallUi(phase) {
+function setCallUi(phase, type) {
   const overlay = $("commsCallOverlay");
   overlay.hidden = false;
   try {
@@ -1195,17 +1195,26 @@ function setCallUi(phase) {
   $("commsMuteCam").hidden = true;
   const local = $("commsLocalVideo");
   if (local) local.hidden = true;
+  paintCallKind(type || (state.call && state.call.type));
+}
+
+function paintCallKind(type) {
+  const host = $("commsCallIncomingBrand");
+  if (!host) return;
+  if (window.PortalCommsCalls && typeof window.PortalCommsCalls.incomingBrandHtml === "function") {
+    host.innerHTML = window.PortalCommsCalls.incomingBrandHtml(type);
+    return;
+  }
+  const video = String(type || "").toUpperCase() === "VIDEO";
+  host.innerHTML =
+    '<div class="portal-comms-call-brand"><img class="portal-comms-call-logo" src="/portal/F-02-1.png" alt="" width="88" height="88" /><span class="portal-comms-call-kind" data-kind="' +
+    (video ? "video" : "audio") +
+    '" aria-hidden="true"></span></div>';
 }
 
 function prepareLiveCall() {
   const helper = window.PortalCommsCalls;
   if (!helper || !state.call) return;
-  if (typeof helper.warmup === "function") {
-    void helper.warmup({
-      client: client(),
-      displayName: myCallDisplayName(),
-    }).catch(function () {});
-  }
   if (typeof helper.prepare === "function") {
     void helper.prepare({
       client: client(),
@@ -1585,15 +1594,9 @@ async function startCall(type) {
   if (!state.open) return;
   if (state.call) return;
   try {
-    if (window.PortalCommsCalls && typeof window.PortalCommsCalls.warmup === "function") {
-      await window.PortalCommsCalls.warmup({
-        client: client(),
-        displayName: myCallDisplayName(),
-      });
-    }
     $("commsCallPeer").textContent = callPeerLabel(itemByConversation(state.open.conversation_id) || state.open) || "Calling...";
     $("commsCallStatus").textContent = "Starting...";
-    setCallUi("outgoing");
+    setCallUi("outgoing", type);
     if (window.PortalCommsCalls && typeof window.PortalCommsCalls.prepare === "function") {
       void window.PortalCommsCalls.prepare({
         client: client(),
@@ -1784,7 +1787,25 @@ async function tearDownCall(notify) {
     if (window.PortalCommsCalls) window.PortalCommsCalls.dispose();
   } catch (_j) {}
   const host = $("commsJitsiHost");
-  if (host) host.innerHTML = "";
+  if (host) {
+    try {
+      if (window.PortalCommsCalls && typeof window.PortalCommsCalls.stopTracksOn === "function") {
+        window.PortalCommsCalls.stopTracksOn(host);
+      }
+    } catch (_st) {}
+    host.innerHTML = "";
+  }
+  const localVid = $("commsLocalVideo");
+  if (localVid) {
+    try {
+      if (window.PortalCommsCalls && typeof window.PortalCommsCalls.stopTracksOn === "function") {
+        window.PortalCommsCalls.stopTracksOn(localVid);
+      } else if (localVid.srcObject && localVid.srcObject.getTracks) {
+        localVid.srcObject.getTracks().forEach((t) => t.stop());
+        localVid.srcObject = null;
+      }
+    } catch (_lv) {}
+  }
   try {
     if (notify && callId) {
       await rpc("communication_call_respond", { p_call_id: callId, p_action: isGroup ? "leave" : "end" });
@@ -1850,24 +1871,8 @@ function bindUi() {
     state.pendingFile = f;
     $("commsAttachBtn").textContent = "✓";
   });
-  $("commsCallAudio").addEventListener("pointerdown", function () {
-    if (window.PortalCommsCalls && typeof window.PortalCommsCalls.warmup === "function") {
-      void window.PortalCommsCalls.warmup({
-        client: client(),
-        displayName: myCallDisplayName(),
-      }).catch(function () {});
-    }
-  });
   $("commsCallAudio").addEventListener("click", function () {
     startCall("AUDIO");
-  });
-  $("commsCallVideo").addEventListener("pointerdown", function () {
-    if (window.PortalCommsCalls && typeof window.PortalCommsCalls.warmup === "function") {
-      void window.PortalCommsCalls.warmup({
-        client: client(),
-        displayName: myCallDisplayName(),
-      }).catch(function () {});
-    }
   });
   $("commsCallVideo").addEventListener("click", function () {
     startCall("VIDEO");

@@ -28,6 +28,8 @@
   }
 
   var lastUnreadCount = 0;
+  var unreadHoldMin = 0;
+  var unreadHoldUntil = 0;
   var lastPersonalCount = -1;
   var lastAdminCount = -1;
   var lastToastMode = "";
@@ -94,10 +96,11 @@
     var st = document.createElement("style");
     st.id = "portalCommsUnreadBadgeCss";
     st.textContent =
-      "#btnComunicaciones,#topbarStaffWaBtn{overflow:visible!important;position:relative}" +
-      "#commsBadge.is-empty,#topbarStaffWaBtn [data-comms-unread].is-empty{display:none!important}" +
-      "#commsBadge:not(.is-empty),#topbarStaffWaBtn [data-comms-unread]:not(.is-empty){display:inline-flex!important;align-items:center;justify-content:center;position:absolute;z-index:8;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:800;line-height:18px;box-shadow:0 0 0 2px #fff}" +
-      "#commsBadge:not(.is-empty){top:-4px;right:-4px;min-width:20px;height:20px;line-height:20px;font-size:11px}" +
+      "#btnComunicaciones,#topbarStaffWaBtn,#topbarToolCellStaffWa{overflow:visible!important;position:relative}" +
+      "#commsBadge.is-empty,#topbarStaffWaBtn [data-comms-unread].is-empty,.portal-comms-unread-badge.is-empty{display:none!important}" +
+      "#commsBadge:not(.is-empty){display:inline-flex!important;align-items:center;justify-content:center;position:absolute;z-index:8;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:800;line-height:20px;box-shadow:0 0 0 2px #fff}" +
+      "#topbarStaffWaBtn [data-comms-unread]:not(.is-empty){display:inline-flex!important;align-items:center;justify-content:center;position:static!important;flex:0 0 auto;z-index:2;min-width:18px;height:18px;margin:0 0 0 2px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:800;line-height:18px;box-shadow:0 0 0 1px rgba(255,255,255,.9)}" +
+      "#topbarStaffWaBtn .topbar-tool-label,#topbarStaffWaBtn .topbar-staff-wa-btn__label{width:auto!important;max-width:none!important;flex:0 1 auto!important;overflow:visible!important;text-overflow:clip!important}" +
       "#btnComunicaciones.admin-icon-btn--has-alerts{border-color:#dc2626!important;box-shadow:0 0 0 2px rgba(220,38,38,.45)}" +
       "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
       "#topbarToolsGridRight .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread," +
@@ -165,7 +168,7 @@
       var lab = lastUnreadCount > 0 ? "Communications (" + lastUnreadCount + ")" : "Communications";
       btn.setAttribute("aria-label", lab);
       var labelEl = btn.querySelector(".topbar-staff-wa-btn__label, .topbar-tool-label");
-      if (labelEl) labelEl.textContent = lastUnreadCount > 0 ? "COMMS (" + lastUnreadCount + ")" : "COMMS";
+      if (labelEl) labelEl.textContent = "COMMS";
     }
     var adminBtn = document.getElementById("btnComunicaciones");
     if (adminBtn) {
@@ -198,6 +201,13 @@
         new CustomEvent("portal:comms-unread", { detail: { count: lastUnreadCount } })
       );
     } catch (_ev) {}
+  }
+
+  function applyUnreadFromServer(n) {
+    var next = Math.max(0, Number(n) || 0);
+    if (Date.now() < unreadHoldUntil && next < unreadHoldMin) next = unreadHoldMin;
+    else if (next >= unreadHoldMin) unreadHoldUntil = 0;
+    applyUnreadBadge(next);
   }
 
   function scheduleUnreadRetry() {
@@ -248,7 +258,7 @@
             scheduleUnreadRetry();
             return lastUnreadCount;
           }
-          applyUnreadBadge(Math.max(0, Number(res.data) || 0));
+          applyUnreadFromServer(Math.max(0, Number(res.data) || 0));
         } else {
           var parsed = parseUnreadCounts(countsRes && countsRes.data);
           if (
@@ -291,7 +301,7 @@
           }
           lastPersonalCount = parsed.personal;
           lastAdminCount = parsed.administration;
-          applyUnreadBadge(parsed.total);
+          applyUnreadFromServer(parsed.total);
           updateCommsLaunchLinks(parsed.personal > 0 ? "personal" : "");
         }
         return lastUnreadCount;
@@ -339,13 +349,19 @@
             var row = (payload && payload.new) || {};
             bumpUnreadFromIncoming(row);
             void maybeShowMessageToast(row);
-            void refreshUnread();
+            global.setTimeout(function () {
+              void refreshUnread();
+            }, 900);
           }
         )
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "communication_message_reads" },
-          function () {
+          function (payload) {
+            var row = (payload && payload.new) || {};
+            var uid = myUserId();
+            if (uid && String(row.user_id || "") !== uid) return;
+            unreadHoldUntil = 0;
             void refreshUnread();
           }
         )
@@ -556,7 +572,10 @@
     var type = String(row.message_type || "text").toLowerCase();
     if (type === "system") return;
     if (String(row.performed_by_user_id || "") === myUserId()) return;
-    applyUnreadBadge(lastUnreadCount + 1);
+    var next = lastUnreadCount + 1;
+    unreadHoldMin = next;
+    unreadHoldUntil = Date.now() + 25000;
+    applyUnreadBadge(next);
   }
 
   async function conversationAlertMeta(row) {
@@ -742,8 +761,20 @@
     } catch (_c) {}
   }
 
+  function ensureIncomingBrandHost() {
+    var ring = document.getElementById("portalCommsIncomingRing");
+    var brand = document.getElementById("portalCommsIncomingBrand");
+    if (brand) return brand;
+    if (!ring) return null;
+    brand = document.createElement("div");
+    brand.id = "portalCommsIncomingBrand";
+    ring.insertBefore(brand, ring.firstChild);
+    return brand;
+  }
+
   function ensureIncomingOverlay() {
     if (document.getElementById("portalCommsIncoming")) {
+      ensureIncomingBrandHost();
       return document.getElementById("portalCommsIncoming");
     }
     if (!document.getElementById("portalCommsIncomingCss")) {
@@ -754,6 +785,12 @@
         "#portalCommsIncoming[hidden]{display:none!important}" +
         "#portalCommsIncoming.is-live{padding:0;align-items:stretch}" +
         ".portal-comms-incoming-card{width:100%;max-width:24rem;padding:28px 22px 22px;border-radius:24px;background:#173247;border:1px solid rgba(255,255,255,.16);color:#fff;text-align:center}" +
+        ".portal-comms-call-brand{display:flex;flex-direction:column;align-items:center;gap:14px;margin:0 0 18px}" +
+        ".portal-comms-call-logo{width:88px;height:88px;object-fit:contain;flex:0 0 auto}" +
+        ".portal-comms-call-kind{width:56px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#fff}" +
+        ".portal-comms-call-kind[data-kind=\"audio\"]{background:#16a34a}" +
+        ".portal-comms-call-kind[data-kind=\"video\"]{background:#2563eb}" +
+        ".portal-comms-call-kind svg{width:28px;height:28px;display:block}" +
         ".portal-comms-incoming-card h2{margin:0 0 6px;font-size:18px}" +
         ".portal-comms-incoming-card p{margin:0 0 16px;font-size:14px;color:rgba(255,255,255,.78)}" +
         ".portal-comms-incoming-actions{display:flex;gap:10px}" +
@@ -775,6 +812,7 @@
     el.setAttribute("aria-label", "Incoming call");
     el.innerHTML =
       '<div id="portalCommsIncomingRing" class="portal-comms-incoming-card">' +
+      '<div id="portalCommsIncomingBrand"></div>' +
       "<h2 id=\"portalCommsIncomingTitle\">Incoming call</h2>" +
       "<p id=\"portalCommsIncomingSub\">Communications</p>" +
       '<div class="portal-comms-incoming-actions">' +
@@ -790,12 +828,6 @@
       var helper = global.PortalCommsCalls;
       var st = incomingCallState;
       if (!helper || !st) return;
-      if (typeof helper.warmup === "function") {
-        void helper.warmup({
-          client: client(),
-          displayName: myDashboardCallName(st.mode),
-        }).catch(function () {});
-      }
       if (typeof helper.prepare === "function") {
         void helper.prepare({
           client: client(),
@@ -821,7 +853,7 @@
     if (global.PortalCommsCalls) return Promise.resolve(global.PortalCommsCalls);
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260904-comms-25";
+      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260904-comms-28";
       s.onload = function () {
         if (global.PortalCommsCalls) resolve(global.PortalCommsCalls);
         else reject(new Error("Call service failed to load."));
@@ -853,7 +885,14 @@
     var host = document.getElementById("portalCommsJitsi");
     if (ring) ring.hidden = false;
     if (live) live.hidden = true;
-    if (host) host.innerHTML = "";
+    if (host) {
+      try {
+        if (global.PortalCommsCalls && typeof global.PortalCommsCalls.stopTracksOn === "function") {
+          global.PortalCommsCalls.stopTracksOn(host);
+        }
+      } catch (_st) {}
+      host.innerHTML = "";
+    }
   }
 
   function hideIncomingOverlay() {
@@ -861,6 +900,9 @@
     incomingCueCount = 0;
     incomingCallState = null;
     incomingCallLive = false;
+    try {
+      if (global.PortalCommsCalls) global.PortalCommsCalls.dispose();
+    } catch (_d) {}
     resetIncomingOverlayLayout();
     var el = document.getElementById("portalCommsIncoming");
     if (el) el.hidden = true;
@@ -912,6 +954,13 @@
     var sub = document.getElementById("portalCommsIncomingSub");
     if (title) title.textContent = info.title || "Incoming call";
     if (sub) sub.textContent = info.subtitle || "Communications";
+    var brand = ensureIncomingBrandHost();
+    if (brand) {
+      brand.innerHTML =
+        helper && typeof helper.incomingBrandHtml === "function"
+          ? helper.incomingBrandHtml(row.type)
+          : "";
+    }
     el.hidden = false;
     try {
       el.removeAttribute("hidden");
@@ -1324,7 +1373,8 @@
       '<span class="topbar-staff-wa-btn__ico" aria-hidden="true">' +
       COMMS_ICO +
       "</span>" +
-      '<span class="topbar-staff-wa-btn__label">COMMS</span>';
+      '<span class="topbar-staff-wa-btn__label">COMMS</span>' +
+      '<span class="topbar-staff-wa-btn__badge is-empty" data-comms-unread aria-hidden="true">0</span>';
     btn.addEventListener("click", function (ev) {
       ev.preventDefault();
       ev.stopPropagation();

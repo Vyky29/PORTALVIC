@@ -149,41 +149,42 @@
   display:none !important;
 }
 .topbar-tool-btn.topbar-tool-btn--staff-wa,
-#topbarStaffWaBtn.topbar-tool-btn{
+#topbarStaffWaBtn.topbar-tool-btn,
+#topbarToolCellStaffWa,
+.topbar-lead--halo-flanks .topbar-tool-btn--staff-wa{
   overflow:visible !important;
 }
 .topbar-tool-btn--staff-wa .topbar-staff-wa-btn__badge,
 #topbarStaffWaBtn .topbar-staff-wa-btn__badge{
-  top:2px;
-  right:8px;
-  left:auto;
-  z-index:6;
-  min-width:17px;
-  height:17px;
-  padding:0 4px;
-  line-height:17px;
-  font-size:9.5px;
-  box-shadow:0 1px 3px rgba(0,0,0,.28),0 0 0 1.5px rgba(255,255,255,.85);
-}
-/*
- * Halo flanks: ADMIN sits under Photo/Plan with only a ~3px row gap.
- * A badge hung at top:-9px is clipped by the tile above — keep it inside the pill.
- */
-.topbar-lead--halo-flanks .topbar-tool-btn--staff-wa{
-  overflow:visible !important;
+  position: static;
+  top: auto;
+  right: auto;
+  left: auto;
+  flex: 0 0 auto;
+  z-index: 2;
+  min-width: 18px;
+  height: 18px;
+  margin: 0 0 0 2px;
+  padding: 0 5px;
+  line-height: 18px;
+  font-size: 11px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.28), 0 0 0 1.5px rgba(255,255,255,.85);
 }
 .topbar-lead--halo-flanks .topbar-tool-btn--staff-wa .topbar-staff-wa-btn__badge,
 .topbar-lead--halo-flanks #topbarStaffWaBtn .topbar-staff-wa-btn__badge{
-  top:2px;
-  right:5px;
-  left:auto;
-  z-index:6;
-  min-width:17px;
-  height:17px;
-  padding:0 4px;
-  line-height:17px;
-  font-size:9.5px;
-  box-shadow:0 1px 3px rgba(0,0,0,.28),0 0 0 1.5px rgba(255,255,255,.85);
+  position: static;
+  top: auto;
+  right: auto;
+  left: auto;
+  flex: 0 0 auto;
+  z-index: 2;
+  min-width: 18px;
+  height: 18px;
+  margin: 0 0 0 2px;
+  padding: 0 5px;
+  line-height: 18px;
+  font-size: 11px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.28), 0 0 0 1.5px rgba(255,255,255,.85);
 }
 
 .portal-staff-wa-toast{

@@ -512,6 +512,47 @@ body.comms-app {
   visibility: hidden;
   pointer-events: none;
 }
+.comms-call-incoming-hero {
+  position: absolute;
+  inset: 0 0 88px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.comms-call.is-live .comms-call-incoming-hero {
+  display: none;
+}
+.comms-call .portal-comms-call-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.comms-call .portal-comms-call-logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+.comms-call .portal-comms-call-kind {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.comms-call .portal-comms-call-kind[data-kind="audio"] { background: #16a34a; }
+.comms-call .portal-comms-call-kind[data-kind="video"] { background: #2563eb; }
+.comms-call .portal-comms-call-kind svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
 .comms-jitsi-host iframe {
   width: 100%;
   height: 100%;

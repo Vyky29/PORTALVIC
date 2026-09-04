@@ -12,12 +12,11 @@
   var jitsiScriptLoading = null;
   var joinGen = 0;
   var RING_MS = 45000;
-  var heldStream = null;
-  var warmupApi = null;
-  var warmupHost = null;
-  var warmupRoom = "hold" + String(Math.random()).replace(".", "").slice(2, 12);
-  var warmupPromise = null;
-  var warmupReady = false;
+  var CLUB_LOGO = "/portal/F-02-1.png";
+  var PHONE_ICON =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.7 2.34a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.74-1.27a2 2 0 0 1 2.11-.45c.74.34 1.53.57 2.34.7A2 2 0 0 1 22 16.92z"/></svg>';
+  var VIDEO_ICON =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>';
 
   function stripId(raw) {
     return String(raw || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 80);
@@ -246,193 +245,63 @@
     return null;
   }
 
-  function attachHeldStream(stream) {
-    if (!stream || !document.body) return;
-    var el = document.getElementById("portalCommsHeldMedia");
-    if (!el) {
-      el = document.createElement("video");
-      el.id = "portalCommsHeldMedia";
-      el.muted = true;
-      el.autoplay = true;
-      el.playsInline = true;
-      el.setAttribute("playsinline", "");
-      el.setAttribute("webkit-playsinline", "");
-      el.setAttribute("aria-hidden", "true");
-      el.style.cssText =
-        "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;bottom:0";
-      document.body.appendChild(el);
-    }
-    el.srcObject = stream;
-    var play = el.play();
-    if (play && play.catch) play.catch(function () {});
+  function isVideoType(type) {
+    return String(type || "").toUpperCase() === "VIDEO";
   }
 
-  async function holdLocalDevices() {
-    if (!global.navigator || !navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") {
-      return null;
-    }
-    if (heldStream && heldStream.active) {
-      attachHeldStream(heldStream);
-      return heldStream;
-    }
-    heldStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 360 } },
-    });
-    try {
-      heldStream.getVideoTracks().forEach(function (t) {
-        t.enabled = false;
-      });
-    } catch (_v) {}
-    attachHeldStream(heldStream);
-    try {
-      if (typeof global.markMicrophoneGranted === "function") global.markMicrophoneGranted();
-      if (typeof global.markCameraGranted === "function") global.markCameraGranted();
-    } catch (_m) {}
-    return heldStream;
+  function incomingBrandHtml(type) {
+    var video = isVideoType(type);
+    return (
+      '<div class="portal-comms-call-brand">' +
+      '<img class="portal-comms-call-logo" src="' +
+      CLUB_LOGO +
+      '" alt="" width="88" height="88" />' +
+      '<span class="portal-comms-call-kind" data-kind="' +
+      (video ? "video" : "audio") +
+      '" aria-hidden="true">' +
+      (video ? VIDEO_ICON : PHONE_ICON) +
+      "</span></div>"
+    );
   }
 
-  function ensureWarmupHost() {
-    if (warmupHost && warmupHost.parentNode) return warmupHost;
-    warmupHost = document.createElement("div");
-    warmupHost.id = "portalCommsJitsiWarmup";
-    warmupHost.setAttribute("aria-hidden", "true");
-    warmupHost.style.cssText =
-      "position:fixed;left:-9999px;top:0;width:280px;height:160px;opacity:0;pointer-events:none;overflow:hidden";
-    (document.body || document.documentElement).appendChild(warmupHost);
-    return warmupHost;
-  }
-
-  function muteWarmup() {
-    if (!warmupApi) return;
+  function stopTracksOn(el) {
+    if (!el) return;
     try {
-      warmupApi.isAudioMuted().then(function (muted) {
-        if (!muted) warmupApi.executeCommand("toggleAudio");
-      });
-    } catch (_a) {
-      try {
-        warmupApi.executeCommand("toggleAudio");
-      } catch (_a2) {}
-    }
-    try {
-      warmupApi.isVideoMuted().then(function (muted) {
-        if (!muted) warmupApi.executeCommand("toggleVideo");
-      });
-    } catch (_v) {
-      try {
-        warmupApi.executeCommand("toggleVideo");
-      } catch (_v2) {}
-    }
-  }
-
-  function warmup(opts) {
-    opts = opts || {};
-    if (warmupReady && warmupApi) return Promise.resolve(true);
-    if (warmupPromise) return warmupPromise;
-    warmupPromise = (async function () {
-      try {
-        await holdLocalDevices();
-      } catch (_gum) {}
-      preload();
-      if (warmupApi) {
-        warmupReady = true;
-        return true;
+      var stream = el.srcObject;
+      if (stream && stream.getTracks) {
+        stream.getTracks().forEach(function (t) {
+          try {
+            t.stop();
+          } catch (_t) {}
+        });
       }
-      if (!opts.client) return true;
-      try {
-        var token = await mint(opts.client, {
-          room: warmupRoom,
-          displayName: opts.displayName || "Staff",
-        });
-        var domain = String(token.domain || "8x8.vc");
-        await loadJitsiScript("https://" + domain + "/external_api.js");
-        var host = ensureWarmupHost();
-        var Jitsi = global.JitsiMeetExternalAPI;
-        warmupApi = new Jitsi(domain, {
-          roomName: String(token.roomName),
-          jwt: String(token.jwt),
-          parentNode: host,
-          width: 280,
-          height: 160,
-          lang: "en",
-          userInfo: { displayName: String(opts.displayName || "Staff").slice(0, 80) },
-          configOverwrite: {
-            prejoinPageEnabled: false,
-            prejoinConfig: { enabled: false },
-            startWithVideoMuted: false,
-            startWithAudioMuted: false,
-            startAudioOnly: false,
-            disableDeepLinking: true,
-            deeplinking: { disabled: true },
-            disableInviteFunctions: true,
-            enableNoAudioDetection: false,
-            enableNoisyMicDetection: false,
-            toolbarButtons: [],
-          },
-          interfaceConfigOverwrite: {
-            MOBILE_APP_PROMO: false,
-            SHOW_JITSI_WATERMARK: false,
-          },
-          onload: function () {
-            decorateIframe(host);
-          },
-        });
-        decorateIframe(host);
-        warmupApi.addListener("videoConferenceJoined", function () {
-          warmupReady = true;
-          muteWarmup();
-        });
-        await new Promise(function (resolve) {
-          var done = false;
-          function finish() {
-            if (done) return;
-            done = true;
-            resolve(true);
-          }
-          warmupApi.addListener("videoConferenceJoined", finish);
-          global.setTimeout(finish, 8000);
-        });
-        muteWarmup();
-        warmupReady = true;
-      } catch (_w) {}
-      return true;
-    })().then(function (ok) {
-      warmupPromise = null;
-      return ok;
-    });
-    return warmupPromise;
+      el.srcObject = null;
+    } catch (_e) {}
+    try {
+      el.querySelectorAll("video, audio").forEach(stopTracksOn);
+    } catch (_q) {}
   }
 
-  function stopHeldDevices() {
-    if (heldStream) {
+  function removeLegacyHoldNodes() {
+    ["portalCommsHeldMedia", "portalCommsJitsiWarmup"].forEach(function (id) {
+      var node = document.getElementById(id);
+      if (!node) return;
+      stopTracksOn(node);
       try {
-        heldStream.getTracks().forEach(function (t) {
-          t.stop();
-        });
-      } catch (_s) {}
-      heldStream = null;
-    }
-    var el = document.getElementById("portalCommsHeldMedia");
-    if (el) {
-      try {
-        el.srcObject = null;
-      } catch (_e) {}
-    }
-    if (warmupApi) {
-      try {
-        warmupApi.dispose();
-      } catch (_d) {}
-      warmupApi = null;
-    }
-    warmupReady = false;
-    warmupPromise = null;
+        if (node.parentNode) node.parentNode.removeChild(node);
+      } catch (_r) {}
+    });
   }
 
   function dispose() {
     joinGen += 1;
-    if (!jitsiApi) return;
+    removeLegacyHoldNodes();
     var api = jitsiApi;
     jitsiApi = null;
+    if (!api) return;
+    try {
+      api.executeCommand("hangup");
+    } catch (_h) {}
     try {
       api.dispose();
     } catch (_e) {}
@@ -447,23 +316,25 @@
     var parent = opts.parent;
     if (!parent) throw new Error("Call screen missing.");
     var gen = ++joinGen;
-    await warmup({
-      client: opts.client,
-      displayName: opts.displayName,
-    });
+    removeLegacyHoldNodes();
     if (gen !== joinGen) return null;
     if (jitsiApi) {
+      try {
+        jitsiApi.executeCommand("hangup");
+      } catch (_h) {}
       try {
         jitsiApi.dispose();
       } catch (_d) {}
       jitsiApi = null;
     }
+    stopTracksOn(parent);
     var token = opts.token || preparedToken(opts);
     if (!token) token = await mint(opts.client, opts);
     if (gen !== joinGen) return null;
     var domain = String(token.domain || "8x8.vc");
     await loadJitsiScript("https://" + domain + "/external_api.js");
     if (gen !== joinGen) return null;
+    stopTracksOn(parent);
     parent.innerHTML = "";
     var size = sizeHost(parent);
     var Jitsi = global.JitsiMeetExternalAPI;
@@ -567,13 +438,21 @@
     describeIncoming: describeIncoming,
     describeIncomingAsync: describeIncomingAsync,
     preload: preload,
-    holdLocalDevices: holdLocalDevices,
-    warmup: warmup,
+    isVideoType: isVideoType,
+    incomingBrandHtml: incomingBrandHtml,
     prepare: prepare,
     preparedToken: preparedToken,
     mint: mint,
     join: join,
     dispose: dispose,
+    stopTracksOn: stopTracksOn,
     isLive: isLive,
   };
+
+  try {
+    removeLegacyHoldNodes();
+    global.addEventListener("pagehide", function () {
+      dispose();
+    });
+  } catch (_boot) {}
 })(typeof window !== "undefined" ? window : this);

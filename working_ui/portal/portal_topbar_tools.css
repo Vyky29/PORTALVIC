@@ -1538,7 +1538,7 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   font-weight:800 !important;
   line-height:1 !important;
   color:#173247 !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
   white-space:nowrap !important;
 }

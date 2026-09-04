@@ -7,7 +7,7 @@
   <title>Communications - clubSENsational</title>
   <link rel="icon" href="/portal/F-02-1.png" type="image/png" />
   <script src="/portal-static-bootstrap.js"></script>
-  <link rel="stylesheet" href="/portal/comunicaciones/comunicaciones.css?v=20260904-comms-25" />
+  <link rel="stylesheet" href="/portal/comunicaciones/comunicaciones.css?v=20260904-comms-28" />
 </head>
 <body class="comms-app">
   <div id="commsBoot" class="comms-boot">
@@ -84,6 +84,9 @@
   <div id="commsCallOverlay" class="comms-call" hidden>
     <div class="comms-call-stage">
       <div id="commsJitsiHost" class="comms-jitsi-host"></div>
+      <div class="comms-call-incoming-hero" id="commsCallIncomingHero">
+        <div id="commsCallIncomingBrand"></div>
+      </div>
       <video id="commsLocalVideo" autoplay playsinline webkit-playsinline muted hidden></video>
       <p class="comms-call-status" id="commsCallStatus">Calling...</p>
       <p class="comms-call-peer" id="commsCallPeer"></p>
@@ -100,9 +103,9 @@
   <script src="/portal/portal-vapid-public.js?v=20260904-comms-9"></script>
   <script src="/portal/portal_web_push_support.js?v=20260904-comms-14"></script>
   <script src="/portal/portal_ensure_web_push.js?v=20260904-comms-9"></script>
-  <script src="/portal/comunicaciones/portal_comms_calls.js?v=20260904-comms-25"></script>
-  <script src="/portal/portal_comunicaciones_entry.js?v=20260904-comms-27"></script>
-  <script type="module" src="/portal/comunicaciones/comunicaciones_app.js?v=20260904-comms-27"></script>
+  <script src="/portal/comunicaciones/portal_comms_calls.js?v=20260904-comms-28"></script>
+  <script src="/portal/portal_comunicaciones_entry.js?v=20260904-comms-28"></script>
+  <script type="module" src="/portal/comunicaciones/comunicaciones_app.js?v=20260904-comms-28"></script>
   <script>
     window.setTimeout(function () {
       var boot = document.getElementById("commsBoot");
