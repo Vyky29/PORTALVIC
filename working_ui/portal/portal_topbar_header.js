@@ -580,6 +580,7 @@
     topbarToolAchievements: "quickMenuParticipantAchievements",
     topbarToolTermReview: "quickMenuStaffTermReview",
     topbarToolLeadTermReview: "quickMenuStaffLeadTermReview",
+    topbarToolInterviews: "quickMenuStaffInterviews",
     topbarToolVenue: "quickMenuWorkVenue",
     topbarToolPickup: "quickMenuDropoffPickup",
     topbarToolLeadReport: "quickMenuLeadFeedbackReport",
@@ -598,13 +599,27 @@
     var u = String(url || "").trim();
     if (!u) return false;
     try {
+      var target = u;
+      if (/Working_interview\.html/i.test(u)) {
+        try {
+          var tu = new URL(u, global.location.href);
+          if (!tu.searchParams.get("portalReturn")) {
+            tu.searchParams.set(
+              "portalReturn",
+              new URL("staff_dashboard.html", global.location.href).href,
+            );
+          }
+          if (!tu.searchParams.get("from")) tu.searchParams.set("from", "staff");
+          target = tu.href;
+        } catch (_ret) {}
+      }
       // Prefer in-app navigation so PWA / standalone keeps the signed-in session.
       // (window.open on iOS opens Safari with empty storage → login → admin for CEOs.)
       if (typeof global.portalQuickMenuNavigate === "function") {
-        global.portalQuickMenuNavigate(u);
+        global.portalQuickMenuNavigate(target);
         return true;
       }
-      global.location.href = new URL(u, global.location.href).href;
+      global.location.href = new URL(target, global.location.href).href;
       return true;
     } catch (_) {
       try {
@@ -680,6 +695,7 @@
     var stats = cell("topbarToolCellSessionsOverview");
     var venue = cell("topbarToolCellVenue");
     var swim = cell("topbarToolCellTermReview");
+    var interviews = cell("topbarToolCellInterviews");
     var lead = cell("topbarToolCellLeadReport");
     var teamRev = cell("topbarToolCellLeadTermReview");
     var wa = cell("topbarToolCellStaffWa");
@@ -688,8 +704,9 @@
     var hasStats = visible(stats);
     var hasPlan = visible(plan);
     var hasSwim = visible(swim);
+    var hasInterviews = visible(interviews);
     var mode = "4";
-    if (hasLead || hasStats) mode = "6";
+    if (hasLead || hasStats || hasInterviews) mode = "6";
     else if (hasPlan && hasSwim) mode = "5";
 
     leadRow.classList.remove(
@@ -708,15 +725,23 @@
     var leftOrder;
     var rightOrder;
     if (mode === "6") {
-      /* Swap: Photo+Plan sit above ADMIN; Lead+Stats take their left column. */
-      leftOrder = [lead, pickup, stats, venue];
-      rightOrder = [photo, plan, wa];
+      /* Michelle Interviews replaces Swim Rev; Stats stays in Service Leads menu when Interviews is on. */
+      if (hasInterviews) {
+        leftOrder = [lead, pickup, interviews, venue];
+        rightOrder = [photo, plan, wa];
+      } else {
+        leftOrder = [lead, pickup, stats, venue];
+        rightOrder = [photo, plan, wa];
+      }
     } else if (mode === "5") {
       leftOrder = [photo, pickup, swim, venue];
       rightOrder = [plan, wa];
     } else if (hasSwim && !hasPlan) {
       leftOrder = [photo, pickup, swim, venue];
       rightOrder = [wa];
+    } else if (hasInterviews && !hasLead) {
+      leftOrder = [photo, pickup, interviews, venue];
+      rightOrder = hasPlan ? [plan, wa] : [wa];
     } else {
       leftOrder = [photo, pickup, plan, venue];
       rightOrder = [wa];
@@ -728,9 +753,11 @@
     rightOrder.forEach(function (el) {
       if (el) right.appendChild(el);
     });
-    [photo, pickup, plan, stats, venue, swim, lead, teamRev].forEach(function (el) {
+    [photo, pickup, plan, stats, venue, swim, interviews, lead, teamRev].forEach(function (el) {
       if (!el) return;
       if (leftOrder.indexOf(el) >= 0 || rightOrder.indexOf(el) >= 0) return;
+      /* Keep the 2×2 left flank — Sessions Overview remains in Quick Menu → Service Leads. */
+      if (hasInterviews && el === stats) return;
       left.appendChild(el);
     });
     if (teamRev) left.appendChild(teamRev);

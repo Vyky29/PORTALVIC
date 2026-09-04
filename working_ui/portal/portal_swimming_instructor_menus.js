@@ -11,6 +11,11 @@
     "topbarToolCellTermReview",
     "topbarToolTermReview",
   ];
+  var INTERVIEWS_TOOL_IDS = [
+    "quickMenuStaffInterviews",
+    "topbarToolCellInterviews",
+    "topbarToolInterviews",
+  ];
   var LEAD_TERM_REVIEW_IDS = [
     "quickMenuStaffLeadTermReview",
     "topbarToolCellLeadTermReview",
@@ -186,6 +191,7 @@
       sixIcon: false,
       leadExtras: true,
       stats: true,
+      interviews: true,
     },
     sandra: {
       photo: true,
@@ -584,8 +590,10 @@
       visible: true,
     });
     /* Swim Rev is for swimming instructors only — never for Berta/John/Michelle (or lead shell). */
-    var showSwReview = !!profile.swReview && !isProgrammeLead && !isLeadShell;
+    var showSwReview = !!profile.swReview && !isProgrammeLead && !isLeadShell && staffKey !== "michelle";
     setTopbarToolGroup(SWIMMING_TERM_REVIEW_IDS, showSwReview, { visible: showSwReview });
+    var showInterviews = !!profile.interviews || staffKey === "michelle";
+    setTopbarToolGroup(INTERVIEWS_TOOL_IDS, showInterviews, { visible: showInterviews });
     setTopbarToolGroup(SWIMMING_VENUE_IDS, venueOn, { visible: true });
     setTopbarToolGroup(SWIMMING_PICKUP_IDS, !!profile.pickup, { visible: true });
     setTopbarToolGroup(SWIMMING_PLANNER_IDS, !!profile.planner, {
@@ -605,8 +613,10 @@
       isLeadShell || (showProgrammeOnly && !!profile.leadReview),
     );
     setTopbarToolGroup(STATS_IDS, isLeadShell || profile.stats !== false, {
-      visible: showProgrammeOnly,
+      /* Topbar slot yields to Interviews for Michelle; Sessions Overview stays in Service Leads menu. */
+      visible: showProgrammeOnly && !showInterviews,
     });
+    setElementVisible("quickMenuStaffSessionsOverview", showProgrammeOnly);
 
     if (profile.planner && typeof global.portalEnableRoutinesPlannerUi === "function") {
       try {
@@ -617,6 +627,7 @@
     SWIMMING_MENU_IDS.forEach(function (id) {
       setElementVisible(id, showSwReview);
     });
+    setElementVisible("quickMenuStaffInterviews", showInterviews);
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
     global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = !!profile.leadExtras || isProgrammeLead || isLeadShell;

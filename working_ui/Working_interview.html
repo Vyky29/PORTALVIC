@@ -1312,7 +1312,7 @@
     <div id="mainPortal">
     <div id="interviewAuthStatus" class="auth-status-bar" role="status" aria-live="polite">
       <span class="auth-status-msg" id="interviewAuthStatusMsg">Checking staff login…</span>
-      <a id="interviewAuthLoginLink" class="hidden" href="/admin_dashboard.html#interviews">Back to Admin → Interviews</a>
+      <a id="interviewAuthLoginLink" class="hidden" href="/staff_dashboard.html">Back to Staff portal</a>
     </div>
     <section class="topbar">
       <div class="topbar-grid">
@@ -1394,22 +1394,43 @@
     let sharedRefreshTimer = null;
     let sharedRealtimeChannel = null;
 
-    function interviewLoginUrl() {
-      // Do NOT return to Working_interview.html — that caused a login loop when the
-      // interview page failed to read the new session. Land on Admin; open Interviews from there.
+    function interviewReturnUrl() {
       try {
-        return "/login.html?next=" + encodeURIComponent(new URL("/admin_dashboard.html", window.location.href).href);
+        const sp = new URLSearchParams(window.location.search || "");
+        const from = String(sp.get("from") || "").trim().toLowerCase();
+        if (from === "staff") return new URL("/staff_dashboard.html", window.location.href).href;
+        if (from === "admin") return new URL("/admin_dashboard.html#interviews", window.location.href).href;
+        const raw = sp.get("portalReturn");
+        if (raw) {
+          const u = new URL(raw, window.location.href);
+          if (u.origin === window.location.origin) return u.href;
+        }
+      } catch (_e) {}
+      try {
+        const ref = String(document.referrer || "");
+        if (ref) {
+          const u = new URL(ref);
+          if (u.origin === window.location.origin) {
+            const path = String(u.pathname || "").toLowerCase();
+            if (path.indexOf("staff_dashboard") >= 0) return u.href;
+            if (path.indexOf("admin_dashboard") >= 0) return new URL("/admin_dashboard.html#interviews", window.location.href).href;
+          }
+        }
+      } catch (_r) {}
+      return new URL("/admin_dashboard.html#interviews", window.location.href).href;
+    }
+
+    function interviewLoginUrl() {
+      try {
+        const back = interviewReturnUrl();
+        return "/login.html?next=" + encodeURIComponent(back);
       } catch (_e) {
-        return "/login.html?next=/admin_dashboard.html";
+        return "/login.html?next=/staff_dashboard.html";
       }
     }
 
     function interviewAdminUrl() {
-      try {
-        return new URL("/admin_dashboard.html", window.location.href).href;
-      } catch (_e) {
-        return "/admin_dashboard.html";
-      }
+      return interviewReturnUrl();
     }
 
     function setInterviewAuthStatus(ok, message) {
@@ -1422,9 +1443,11 @@
         if (ok) {
           link.classList.add("hidden");
         } else {
-          // Never send to login when the user is already in Admin — that felt like a loop.
-          link.href = interviewAdminUrl() + "#interviews";
-          link.textContent = "Back to Admin → Interviews";
+          const back = interviewReturnUrl();
+          link.href = back;
+          link.textContent = /staff_dashboard/i.test(back)
+            ? "Back to Staff portal"
+            : "Back to Admin → Interviews";
           link.classList.remove("hidden");
         }
       }
@@ -1436,15 +1459,15 @@
       if (portalUseSupabase) hint.classList.add("hidden");
       else hint.classList.remove("hidden");
       if (portalUseSupabase) {
-        setInterviewAuthStatus(true, "Using your Admin login — interviews save to the shared list.");
+        setInterviewAuthStatus(true, "Using your portal login — interviews save to the shared list.");
       } else if (isInterviewEmbedded()) {
-        setInterviewAuthStatus(false, "Connecting to your Admin login…");
+        setInterviewAuthStatus(false, "Connecting to your portal login…");
         const link = document.getElementById("interviewAuthLoginLink");
         if (link) link.classList.add("hidden");
       } else {
         setInterviewAuthStatus(
           false,
-          "Open Interviews from Admin with Start / Open — stay inside Admin (do not open this page alone)."
+          "Open Interviews from your Staff or Admin portal so your login carries over."
         );
       }
     }
@@ -1687,7 +1710,7 @@
       console.error("Save error", context || "", err);
       const hint =
         /jwt|auth|row-level|rls|permission|not authenticated/i.test(raw)
-          ? " Open Admin while signed in, then Interviews → Start a new interview."
+          ? " Open Interviews again from Staff or Admin while signed in."
           : /payload|too large|413|statement timeout|bytes/i.test(raw)
             ? " A recording may be too large — record a shorter clip, then Save again."
             : "";
