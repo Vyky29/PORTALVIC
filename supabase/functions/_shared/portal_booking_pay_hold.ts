@@ -31,6 +31,34 @@ export const BOOKING_SLOT_HOLD_STATUSES = [
   "awaiting_payment",
 ] as const;
 
+/** Timed pay holds stop occupying the seat when the clock ends (even before cron flips status). */
+export function bookingHoldStillActive(
+  holdExpiresAt: string | null | undefined,
+  nowMs = Date.now(),
+): boolean {
+  if (holdExpiresAt == null || String(holdExpiresAt).trim() === "") return true;
+  const t = new Date(String(holdExpiresAt)).getTime();
+  if (!Number.isFinite(t)) return true;
+  return t > nowMs;
+}
+
+export function filterActiveBookingHolds<T extends { hold_expires_at?: unknown }>(
+  holds: T[] | null | undefined,
+  nowMs = Date.now(),
+): T[] {
+  return (holds || []).filter((h) =>
+    bookingHoldStillActive(
+      h.hold_expires_at == null ? null : String(h.hold_expires_at),
+      nowMs,
+    )
+  );
+}
+
+/** PostgREST filter: soft holds with no clock, or clock still open. */
+export function bookingActiveHoldExpiresFilter(nowIso = new Date().toISOString()): string {
+  return `hold_expires_at.is.null,hold_expires_at.gt.${nowIso}`;
+}
+
 function portalPublicOrigin(): string {
   return (
     String(Deno.env.get("PORTAL_PUBLIC_ORIGIN") || "").trim() ||
@@ -52,7 +80,7 @@ async function shouldSkipTermPayHoldExpiry(
 ): Promise<boolean> {
   const { data: toks } = await admin
     .from("portal_booking_completion_tokens")
-    .select("invoice_share_id, choices_json, status")
+    .select("invoice_share_id, choices_json, status, pay_plan")
     .eq("document_id", documentId)
     .not("invoice_share_id", "is", null);
   if (!toks?.length) return false;
@@ -114,6 +142,23 @@ async function shouldSkipTermPayHoldExpiry(
     .limit(1)
     .maybeSingle();
   if (completedTok?.id) return true;
+
+  const thisBookingIsGocardless = toks.some((t) => {
+    const plan = String(t.pay_plan || "").toLowerCase();
+    const c =
+      t.choices_json && typeof t.choices_json === "object"
+        ? (t.choices_json as Record<string, unknown>)
+        : {};
+    const cjPlan = String(c.pay_plan || "").toLowerCase();
+    return plan.includes("gocardless") || cjPlan.includes("gocardless");
+  }) ||
+    (invRows || []).some(
+      (inv) => String(inv.payment_method_hint || "").toLowerCase() === "gocardless",
+    );
+
+  // Bank / card unpaid term holds must expire — do not keep them because the family
+  // has an unrelated GoCardless mandate on another invoice.
+  if (!thisBookingIsGocardless) return false;
 
   const contactIds = [
     ...new Set(

@@ -46,6 +46,7 @@ import {
 import {
   BOOKING_PAY_HOLD_MINUTES,
   BOOKING_SLOT_HOLD_STATUSES,
+  bookingActiveHoldExpiresFilter,
   bookingPayHoldExpiresAt,
   runBookingPayHoldMaintenance,
 } from "../_shared/portal_booking_pay_hold.ts";
@@ -338,6 +339,7 @@ async function holdTrialSlotForPayment(
     .select("id", { count: "exact", head: true })
     .eq("slot_id", slotId)
     .in("status", [...BOOKING_SLOT_HOLD_STATUSES])
+    .or(bookingActiveHoldExpiresFilter())
     .neq("document_id", documentId);
   if (countErr) {
     console.warn("[portal-booking-finish] trial slot count", countErr.message);

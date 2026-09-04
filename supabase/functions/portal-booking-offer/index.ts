@@ -13,6 +13,7 @@ import { ensureReenrolUnconfirmedReleasedOnMadre } from "../_shared/portal_reenr
 import { runUnpaidAug15PlaceRelease } from "../_shared/portal_reenrol_release_unpaid_aug15.ts";
 import {
   BOOKING_SLOT_HOLD_STATUSES,
+  filterActiveBookingHolds,
   runBookingPayHoldMaintenance,
 } from "../_shared/portal_booking_pay_hold.ts";
 import {
@@ -457,13 +458,7 @@ Deno.serve(async (req) => {
   }
 
   const nowMs = Date.now();
-  const activeHolds = (holds || []).filter((h) => {
-    const exp = h.hold_expires_at ? new Date(String(h.hold_expires_at)).getTime() : NaN;
-    // Soft holds without expiry still occupy the seat; timed pay holds drop when the clock ends
-    // even if cron has not flipped status yet.
-    if (Number.isFinite(exp) && exp < nowMs) return false;
-    return true;
-  });
+  const activeHolds = filterActiveBookingHolds(holds || [], nowMs);
 
   const holdApply = applyBookingSlotHoldsToOffer(
     weekly.slots,

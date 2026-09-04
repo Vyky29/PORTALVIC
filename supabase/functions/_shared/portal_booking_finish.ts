@@ -38,6 +38,7 @@ import { unitPriceFor } from "./reenrolment_catalog.ts";
 import { resolvePortalInvoiceOwnerUserId } from "./portal_create_family_invoice.ts";
 import {
   BOOKING_SLOT_HOLD_STATUSES,
+  bookingActiveHoldExpiresFilter,
   bookingPayHoldExpiresAt,
 } from "./portal_booking_pay_hold.ts";
 import { mandateIsActive } from "./gocardless_portal.ts";
@@ -681,6 +682,7 @@ export async function reholdReleasedReservationForFinishBooking(
     .select("id, hold_expires_at, status")
     .eq("document_id", docId)
     .in("status", [...BOOKING_SLOT_HOLD_STATUSES])
+    .or(bookingActiveHoldExpiresFilter())
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -722,6 +724,7 @@ export async function reholdReleasedReservationForFinishBooking(
     .select("id", { count: "exact", head: true })
     .eq("slot_id", slotId)
     .in("status", [...BOOKING_SLOT_HOLD_STATUSES])
+    .or(bookingActiveHoldExpiresFilter())
     .neq("id", String(prior.id));
   if (countErr) {
     console.warn("[reholdReleasedReservationForFinishBooking] count", countErr.message);
