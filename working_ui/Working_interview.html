@@ -2477,6 +2477,13 @@
       return CALL_FILTER_QUESTIONS.concat(CALL_PROCESS_QUESTIONS);
     }
 
+    function isCallScreeningAudioQuestion(questionId) {
+      const id = String(questionId || "");
+      return allCallScreeningQuestions().some(function (q) {
+        return q.id === id;
+      });
+    }
+
     function getDefaultCallInterview() {
       var base = {
         interviewerName: "",
@@ -2510,6 +2517,9 @@
       allCallScreeningQuestions().forEach(function (q) {
         base[q.id] = 0;
         base[q.id + "Notes"] = "";
+        base[q.id + "Audio"] = "";
+        base[q.id + "AudioMime"] = "";
+        base[q.id + "AudioPath"] = "";
       });
       return base;
     }
@@ -2887,7 +2897,9 @@
                             <button type="button" class="rating-star" data-value="3">★</button>
                             <button type="button" class="rating-star" data-value="4">★</button>
                           </div>
+                          <button type="button" class="btn-record" title="Record" data-question="${escapeHtml(id)}" aria-label="Record">⏺</button>
                         </div>
+                        ${renderQuestionAudio(call, id, currentCandidateId)}
                         <input type="hidden" id="${escapeHtml(id)}" value="${score || 0}" />
                         <div class="question-notes">
                           <textarea id="${escapeHtml(notesId)}" class="textarea" rows="3" placeholder="Write the answer / notes...">${escapeHtml(notes)}</textarea>
@@ -2900,7 +2912,9 @@
       return allCallScreeningQuestions().some(function (q) {
         const notes = String(call[q.id + "Notes"] || "").trim();
         const score = Number(call[q.id] || 0);
-        return !!notes || score > 0;
+        const audio = String(call[q.id + "Audio"] || "");
+        const path = String(call[q.id + "AudioPath"] || "");
+        return !!notes || score > 0 || audio.length > 0 || path.length > 0;
       });
     }
 
@@ -3739,13 +3753,16 @@
         initAudioSpeedInWrap(wrap);
         return;
       }
-      if (!candidate.faceToFaceInterview) return;
-      candidate.faceToFaceInterview[questionId + "Audio"] = base64 || "";
-      candidate.faceToFaceInterview[questionId + "AudioMime"] = mimeType || "audio/webm";
-      const face = candidate.faceToFaceInterview;
-      const audio = (face && face[questionId + "Audio"]) ? face[questionId + "Audio"] : "";
-      const path = face[questionId + "AudioPath"] || "";
-      const mime = getAudioMime(face, questionId);
+      const storeOnCall = isCallScreeningAudioQuestion(questionId);
+      const section = storeOnCall
+        ? (candidate.callInterview = candidate.callInterview || {})
+        : (candidate.faceToFaceInterview = candidate.faceToFaceInterview || {});
+      if (!section) return;
+      section[questionId + "Audio"] = base64 || "";
+      section[questionId + "AudioMime"] = mimeType || "audio/webm";
+      const audio = section[questionId + "Audio"] || "";
+      const path = section[questionId + "AudioPath"] || "";
+      const mime = getAudioMime(section, questionId);
       if (!wrap) return;
       const localUrl = localAudioObjectUrls[localAudioKey(candidateId, questionId)] || "";
       if (!audio && !path && !localUrl) {
@@ -3890,6 +3907,15 @@
           candidate.callInterview.callNotesAudio = inlineBase64;
         }
         candidate.callInterview.callNotesAudioMime = mimeType || "audio/webm";
+      } else if (isCallScreeningAudioQuestion(questionId)) {
+        candidate.callInterview = candidate.callInterview || {};
+        if (up.ok) {
+          candidate.callInterview[questionId + "AudioPath"] = up.path;
+          candidate.callInterview[questionId + "Audio"] = "";
+        } else {
+          candidate.callInterview[questionId + "Audio"] = inlineBase64;
+        }
+        candidate.callInterview[questionId + "AudioMime"] = mimeType || "audio/webm";
       } else {
         candidate.faceToFaceInterview = candidate.faceToFaceInterview || {};
         if (up.ok) {
