@@ -19,7 +19,7 @@
   <script src="/portal/portal_ensure_web_push.js?v=20260619-denied-help"></script>
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260904-comms-push"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
-  <script src="/portal/portal_comunicaciones_entry.js?v=20260904-comms-17"></script>
+  <script src="/portal/portal_comunicaciones_entry.js?v=20260904-comms-18"></script>
   <script>
     /* Register push SW on admin so Send test alert / background push work. */
     (function () {
@@ -24955,8 +24955,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
     function viewPortalParentNotifyLog(){
-      portalParentNotifyLogConfigureOnce();
-      return window.PortalParentNotifyLog ? window.PortalParentNotifyLog.viewHtml() : '<p class="page-intro">Family messages module failed to load.</p>';
+      try{
+        portalParentNotifyLogConfigureOnce();
+        return window.PortalParentNotifyLog ? window.PortalParentNotifyLog.viewHtml() : '<p class="page-intro">Family messages module failed to load.</p>';
+      }catch(_e){
+        return '<p class="page-intro">Family messages failed to open. Refresh the page.</p>';
+      }
     }
     function portalStaffWhatsappConfigureOnce(){
       if(window.__portalStaffWhatsappConfigured || !window.PortalStaffWhatsappAdmin) return;
@@ -25115,10 +25119,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
     function bindPortalParentNotifyLogModule(){
-      portalParentNotifyLogConfigureOnce();
-      if(window.PortalParentNotifyLog && typeof window.PortalParentNotifyLog.bindModule === 'function'){
-        window.PortalParentNotifyLog.bindModule();
-      }
+      try{
+        portalParentNotifyLogConfigureOnce();
+        if(window.PortalParentNotifyLog && typeof window.PortalParentNotifyLog.bindModule === 'function'){
+          window.PortalParentNotifyLog.bindModule();
+        }
+      }catch(_e){}
     }
     function viewPortalPushDevices(){
       portalPushDevicesConfigureOnce();

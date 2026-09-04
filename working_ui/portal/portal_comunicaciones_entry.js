@@ -94,8 +94,8 @@
     st.id = "portalCommsUnreadBadgeCss";
     st.textContent =
       "#btnComunicaciones,#topbarStaffWaBtn{overflow:visible!important;position:relative}" +
-      "[data-comms-unread].is-empty{display:none!important}" +
-      "[data-comms-unread]:not(.is-empty){display:inline-flex!important;align-items:center;justify-content:center;position:absolute;z-index:8;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:800;line-height:18px;box-shadow:0 0 0 2px #fff}" +
+      "#commsBadge.is-empty,#topbarStaffWaBtn [data-comms-unread].is-empty{display:none!important}" +
+      "#commsBadge:not(.is-empty),#topbarStaffWaBtn [data-comms-unread]:not(.is-empty){display:inline-flex!important;align-items:center;justify-content:center;position:absolute;z-index:8;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:800;line-height:18px;box-shadow:0 0 0 2px #fff}" +
       "#commsBadge:not(.is-empty){top:-4px;right:-4px;min-width:20px;height:20px;line-height:20px;font-size:11px}" +
       "#btnComunicaciones.admin-icon-btn--has-alerts{border-color:#dc2626!important;box-shadow:0 0 0 2px rgba(220,38,38,.45)}" +
       "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
@@ -204,7 +204,7 @@
     unreadRetryTimer = global.setTimeout(function () {
       unreadRetryTimer = null;
       void refreshUnread();
-    }, 700);
+    }, 8000);
   }
 
   function parseUnreadCounts(raw) {
@@ -231,9 +231,7 @@
   async function refreshUnread() {
     if (fetchInFlight) {
       unreadRefreshQueued = true;
-      return fetchInFlight.then(function () {
-        return unreadRefreshQueued ? refreshUnread() : lastUnreadCount;
-      });
+      return fetchInFlight;
     }
     fetchInFlight = (async function () {
       try {
@@ -283,14 +281,11 @@
         return lastUnreadCount;
       } finally {
         fetchInFlight = null;
-        try {
-          subscribeUnreadRealtime();
-          watchIncomingCalls();
-          bindIntrinsicCommsAlerts();
-        } catch (_side) {}
         if (unreadRefreshQueued) {
           unreadRefreshQueued = false;
-          void refreshUnread();
+          global.setTimeout(function () {
+            void refreshUnread();
+          }, 400);
         }
       }
     })();
@@ -1060,6 +1055,6 @@
       try {
         if (document.visibilityState === "visible") void refreshUnread();
       } catch (_p) {}
-    }, 2500);
+    }, 8000);
   }
 })(typeof window !== "undefined" ? window : this);
