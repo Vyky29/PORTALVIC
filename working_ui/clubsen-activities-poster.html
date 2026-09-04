@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>What we offer - clubSENsational</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Figtree:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1c2a32;
+      --ink-soft: #3f5561;
+      --sea: #1f7a7a;
+      --sea-deep: #0f5a5c;
+      --aqua: #2f9e9a;
+      --sun: #d9a441;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #d9e4ec;
+      color: var(--ink);
+      font-family: "Figtree", system-ui, sans-serif;
+    }
+
+    .print-hint {
+      width: min(100%, 794px);
+      margin: 12px auto;
+      text-align: center;
+      color: #5b7386;
+      font-size: 13px;
+    }
+
+    .sheet {
+      width: min(100%, 794px);
+      height: 1123px;
+      margin: 0 auto 20px;
+      overflow: hidden;
+      background:
+        radial-gradient(1000px 460px at 0% 0%, rgba(217, 164, 65, 0.16), transparent 55%),
+        radial-gradient(900px 500px at 100% -10%, rgba(47, 158, 154, 0.16), transparent 52%),
+        linear-gradient(165deg, #f7f1e6 0%, #fbfaf6 46%, #eef5f3 100%);
+      box-shadow: 0 20px 50px rgba(16, 37, 58, 0.14);
+    }
+
+    .inner {
+      height: 100%;
+      padding: 22px 26px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .brand-kicker {
+      margin: 0 0 2px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sea);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 36px;
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+      color: var(--sea-deep);
+    }
+
+    .intro {
+      margin: 0 0 8px;
+      font-size: 14.5px;
+      line-height: 1.35;
+      color: var(--ink-soft);
+      flex-shrink: 0;
+    }
+
+    .hero-line {
+      height: 3px;
+      border: 0;
+      margin: 0 0 8px;
+      background: linear-gradient(90deg, var(--sea-deep), var(--aqua) 45%, var(--sun));
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-auto-rows: minmax(0, 1fr);
+      gap: 7px 10px;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .offer {
+      padding: 10px 11px 9px;
+      border-left: 4px solid var(--aqua);
+      background: rgba(255, 252, 246, 0.9);
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .offer:nth-child(2) { border-left-color: #2f8f6b; }
+    .offer:nth-child(3) { border-left-color: #d39a2d; }
+    .offer:nth-child(4) { border-left-color: #3a7cc9; }
+    .offer:nth-child(5) { border-left-color: #c45d3c; }
+    .offer:nth-child(6) { border-left-color: var(--sea-deep); }
+    .offer.span-2 {
+      grid-column: 1 / -1;
+      border-left-color: #1a8f9c;
+    }
+
+    .offer h2 {
+      margin: 0 0 2px;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 20px;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .offer .meta {
+      margin: 0 0 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--sea);
+    }
+
+    .offer p {
+      margin: 0;
+      font-size: 13.5px;
+      line-height: 1.32;
+      color: var(--ink-soft);
+    }
+
+    .footer {
+      margin-top: 8px;
+      padding: 11px 13px;
+      background: linear-gradient(120deg, #0f5a5c, #1a7472 55%, #2a6d4f);
+      color: #f4fbfd;
+      flex-shrink: 0;
+    }
+
+    .footer strong {
+      display: block;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+      margin-bottom: 3px;
+    }
+
+    .footer .links {
+      font-size: 13.5px;
+      line-height: 1.35;
+    }
+
+    .footer a {
+      color: #ffe29a;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .footer .note {
+      margin: 5px 0 0;
+      font-size: 12px;
+      opacity: 0.92;
+      line-height: 1.3;
+    }
+
+    @media print {
+      @page { size: A4; margin: 0; }
+      html, body { background: white; }
+      .print-hint { display: none !important; }
+      .sheet {
+        width: 210mm;
+        height: 297mm;
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <p class="print-hint">Print-ready one-page A4. Use Print -> Save as PDF.</p>
+
+  <main class="sheet" aria-label="clubSENsational what we offer">
+    <div class="inner">
+      <header class="brand">
+        <img src="portal/F-02-1.png" width="64" height="64" alt="clubSENsational logo" />
+        <div class="brand-copy">
+          <p class="brand-kicker">clubSENsational</p>
+          <h1>What we offer</h1>
+        </div>
+      </header>
+
+      <p class="intro">
+        clubSENsational provides specialist activity sessions and daytime support for children with autism and learning disabilities.
+        Our team delivers structured, sensory-aware sessions across trusted venues - helping each child build confidence, skills, and independence.
+      </p>
+
+      <hr class="hero-line" />
+
+      <section class="grid" aria-label="What we offer">
+        <article class="offer">
+          <h2>Aquatic Activity</h2>
+          <p class="meta">Acton / Northolt / SwimFarm</p>
+          <p>1:1 swimming with sensory-aware instructors - water confidence, regulation, and independence in the pool. Sessions are paced to each child so they feel safe, supported, and ready to progress.</p>
+        </article>
+
+        <article class="offer">
+          <h2>Climbing Activity</h2>
+          <p class="meta">Westway</p>
+          <p>Supported climbing that builds strength, focus, and confidence. Routes and support levels are matched to each child so they can challenge themselves safely.</p>
+        </article>
+
+        <article class="offer">
+          <h2>Physical Activity</h2>
+          <p class="meta">SwimFarm / Acton</p>
+          <p>Active movement sessions for coordination, stamina, and structure - adapted so every child can take part safely and stay engaged throughout the session.</p>
+        </article>
+
+        <article class="offer">
+          <h2>Multi-Activity</h2>
+          <p class="meta">SwimFarm / Northolt</p>
+          <p>A 90-minute activity that combines swimming with other classroom activities - ideal for children who benefit from variety and a longer, structured session in one visit.</p>
+        </article>
+
+        <article class="offer">
+          <h2>Bespoke Programme</h2>
+          <p class="meta">SwimFarm / Acton / Westway</p>
+          <p>A tailored programme built around your child's goals, support needs, and schedule - planned with you so the support stays consistent and meaningful.</p>
+        </article>
+
+        <article class="offer">
+          <h2>Day Centre</h2>
+          <p class="meta">SwimFarm</p>
+          <p>Weekday daytime support with structured activity, life skills, swimming, and community trips when staffing allows - a full daytime rhythm with familiar staff.</p>
+        </article>
+
+        <article class="offer span-2">
+          <h2>Holiday crash courses</h2>
+          <p class="meta">School holidays</p>
+          <p>Short intensive weeks in the holidays - climbing and swimming crash courses when dates are open for booking. A focused burst of activity while school is closed.</p>
+        </article>
+      </section>
+
+      <footer class="footer">
+        <strong>Want to know more?</strong>
+        <div class="links">
+          Email us at <a href="mailto:info@clubsensational.org">info@clubsensational.org</a>
+          or view available slots on our booking portal:
+          <a href="https://www.clubsensational.org/bookingportal">www.clubsensational.org/bookingportal</a>
+        </div>
+        <p class="note">We will be happy to talk you through places, venues, and the best fit for your child.</p>
+      </footer>
+    </div>
+  </main>
+</body>
+</html>
