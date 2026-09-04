@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>What we offer - Design B Editorial - clubSENsational</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,600;6..72,700&family=Source+Sans+3:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #ece7df; color: #173041; font-family: "Source Sans 3", system-ui, sans-serif; }
+    .sheet {
+      width: min(100%, 794px); height: 1123px; margin: 24px auto; background: #f7f4ee;
+      display: grid; grid-template-columns: 210px 1fr; box-shadow: 0 20px 50px rgba(23,48,65,0.14);
+    }
+    .rail {
+      background: #173041; color: #f4f7fa; padding: 36px 22px;
+      display: flex; flex-direction: column; gap: 18px;
+    }
+    .rail img { width: 92px; height: 92px; object-fit: contain; background: #fff; border-radius: 12px; padding: 8px; }
+    .rail h1 {
+      margin: 0; font-family: "Newsreader", Georgia, serif; font-size: 34px; line-height: 1.02; letter-spacing: -0.03em;
+    }
+    .rail p { margin: 0; font-size: 13.5px; line-height: 1.4; opacity: 0.9; }
+    .rail .cta { margin-top: auto; font-size: 13px; line-height: 1.45; }
+    .rail a { color: #f0c14d; font-weight: 700; text-decoration: none; word-break: break-word; }
+    .main { padding: 36px 34px 30px; display: flex; flex-direction: column; }
+    .intro { margin: 0 0 18px; font-size: 14.5px; line-height: 1.4; color: #3c5364; }
+    .list { display: grid; gap: 0; }
+    .row {
+      display: grid; grid-template-columns: 150px 1fr; gap: 14px;
+      padding: 12px 0; border-top: 1px solid rgba(23,48,65,0.12);
+    }
+    .row:last-child { border-bottom: 1px solid rgba(23,48,65,0.12); }
+    .row h2 { margin: 0; font-family: "Newsreader", Georgia, serif; font-size: 18px; line-height: 1.15; }
+    .row .meta { margin: 3px 0 0; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #2f6f86; }
+    .row p { margin: 0; font-size: 13.5px; line-height: 1.35; color: #3c5364; }
+    @media print {
+      @page { size: A4; margin: 0; }
+      body { background: white; }
+      .sheet { width: 210mm; height: 297mm; margin: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="sheet">
+    <aside class="rail">
+      <img src="portal/F-02-1.png" alt="clubSENsational logo" />
+      <h1>What we offer</h1>
+      <p>Specialist activity sessions and daytime support for children with autism and learning disabilities.</p>
+      <div class="cta">
+        <div>Want to know more?</div>
+        <div><a href="mailto:info@clubsensational.org">info@clubsensational.org</a></div>
+        <div style="margin-top:8px">Booking portal:</div>
+        <div><a href="https://www.clubsensational.org/bookingportal">clubsensational.org/bookingportal</a></div>
+      </div>
+    </aside>
+    <section class="main">
+      <p class="intro">
+        clubSENsational delivers structured, sensory-aware sessions across trusted venues -
+        helping each child build confidence, skills, and independence.
+      </p>
+      <div class="list">
+        <div class="row"><div><h2>Aquatic Activity</h2><p class="meta">Acton / Northolt / SwimFarm</p></div><p>1:1 swimming with sensory-aware instructors - water confidence, regulation, and independence in the pool.</p></div>
+        <div class="row"><div><h2>Climbing Activity</h2><p class="meta">Westway</p></div><p>Supported climbing that builds strength, focus, and confidence, with routes matched to each child.</p></div>
+        <div class="row"><div><h2>Physical Activity</h2><p class="meta">SwimFarm / Acton</p></div><p>Active movement sessions for coordination, stamina, and structure - adapted so every child can take part safely.</p></div>
+        <div class="row"><div><h2>Multi-Activity</h2><p class="meta">SwimFarm / Northolt</p></div><p>A 90-minute activity that combines swimming with other classroom activities - ideal for children who benefit from variety and a longer, structured session.</p></div>
+        <div class="row"><div><h2>Bespoke Programme</h2><p class="meta">SwimFarm / Acton / Westway</p></div><p>A tailored programme built around your child's goals, support needs, and schedule.</p></div>
+        <div class="row"><div><h2>Day Centre</h2><p class="meta">SwimFarm</p></div><p>Weekday daytime support with structured activity, life skills, swimming, and community trips when staffing allows.</p></div>
+        <div class="row"><div><h2>Holiday crash courses</h2><p class="meta">School holidays</p></div><p>Short intensive weeks in the holidays - climbing and swimming crash courses when dates are open for booking.</p></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
