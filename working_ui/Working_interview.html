@@ -4219,14 +4219,6 @@
                 </div>
 
                 <div class="field full">
-                  <label>Call interview notes (audio)</label>
-                  <div class="question-controls" style="margin-bottom: 8px;">
-                    <button type="button" class="btn-record" title="Record" data-question="callNotes" aria-label="Record">⏺</button>
-                  </div>
-                  ${renderCallNotesAudio(candidate.callInterview)}
-                </div>
-
-                <div class="field full">
                   <label for="callGeneralNotes">Call interview notes (written)</label>
                   <textarea id="callGeneralNotes" class="textarea" placeholder="Write additional notes from the call interview...">${escapeHtml(candidate.callInterview.generalNotes || "")}</textarea>
                 </div>
