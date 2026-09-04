@@ -146,18 +146,48 @@ function fmtTime(iso) {
   return d.toLocaleString("en-GB", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" });
 }
 
+function staffPhotoKeyFromLabel(name) {
+  const n = String(name || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+  if (!n) return "";
+  if (/palankas|\bjavi\b/.test(n) && !/javier/.test(n)) return "javi";
+  if (/luliya|lulia|\baida\b/.test(n)) return "luliya";
+  if (/michelle/.test(n)) return "michelle";
+  if (/youssef/.test(n)) return "youssef";
+  if (/godsway/.test(n)) return "godsway";
+  if (/sevitha/.test(n)) return "sevitha";
+  if (/kyei/.test(n) || /^john\b/.test(n)) return "john";
+  const first = (n.split(/\s+/)[0] || "").replace(/[^a-z0-9]/g, "");
+  return first;
+}
+
+function resolveCommsAvatarUrl(url, name) {
+  const raw = String(url || "").trim();
+  if (raw) return raw;
+  const key = staffPhotoKeyFromLabel(name);
+  if (!key) return "";
+  return "/portal/staff_photos/" + key + ".png";
+}
+
 function avatarHtml(url, name, cls) {
   const klass = cls || "comms-item-av";
-  if (url) {
+  const resolved = resolveCommsAvatarUrl(url, name);
+  const ini = esc(initials(name));
+  if (resolved) {
     return (
       '<span class="' +
       klass +
+      '" data-initials="' +
+      ini +
       '"><img src="' +
-      esc(url) +
-      '" alt="" /></span>'
+      esc(resolved) +
+      '" alt="" loading="lazy" onerror="var p=this.parentNode;if(p){p.textContent=p.getAttribute(\'data-initials\')||\'?\';}" /></span>'
     );
   }
-  return '<span class="' + klass + '">' + esc(initials(name)) + "</span>";
+  return '<span class="' + klass + '">' + ini + "</span>";
 }
 
 async function rpc(name, args) {
