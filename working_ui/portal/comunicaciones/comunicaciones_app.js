@@ -1142,7 +1142,12 @@ function clearRingTimer() {
 }
 
 function setCallUi(phase) {
-  $("commsCallOverlay").hidden = false;
+  const overlay = $("commsCallOverlay");
+  overlay.hidden = false;
+  try {
+    overlay.removeAttribute("hidden");
+  } catch (_h) {}
+  overlay.classList.toggle("is-live", phase !== "incoming");
   $("commsAnswer").hidden = phase !== "incoming";
   $("commsReject").hidden = phase !== "incoming";
   $("commsHang").hidden = phase === "incoming";
@@ -1152,14 +1157,28 @@ function setCallUi(phase) {
   if (local) local.hidden = true;
 }
 
+function prepareLiveCall() {
+  const helper = window.PortalCommsCalls;
+  if (!helper || typeof helper.prepare !== "function" || !state.call) return;
+  void helper.prepare({
+    client: client(),
+    callId: state.call.id,
+    conversationId: state.call.conversation_id,
+    displayName: myCallDisplayName(),
+  }).catch(function () {});
+  if (typeof helper.preload === "function") helper.preload();
+}
+
 async function joinLiveCall() {
   const helper = window.PortalCommsCalls;
   const host = $("commsJitsiHost");
   if (!helper || !host || !state.call) throw new Error("Call screen missing.");
   $("commsCallStatus").textContent = "Connecting...";
+  $("commsCallOverlay").classList.add("is-live");
   await helper.join({
     client: client(),
     callId: state.call.id,
+    conversationId: state.call.conversation_id,
     displayName: myCallDisplayName(),
     video: String(state.call.type || "").toUpperCase() === "VIDEO",
     parent: host,
@@ -1521,6 +1540,13 @@ async function startCall(type) {
     $("commsCallPeer").textContent = callPeerLabel(itemByConversation(state.open.conversation_id) || state.open) || "Calling...";
     $("commsCallStatus").textContent = "Starting...";
     setCallUi("outgoing");
+    if (window.PortalCommsCalls && typeof window.PortalCommsCalls.prepare === "function") {
+      void window.PortalCommsCalls.prepare({
+        client: client(),
+        conversationId: state.open.conversation_id,
+        displayName: myCallDisplayName(),
+      }).catch(function () {});
+    }
     const out = await rpc("communication_start_call", {
       p_conversation_id: state.open.conversation_id,
       p_type: type,
@@ -1551,14 +1577,25 @@ async function incomingCall(row) {
   if (state.call) return;
   let info = { forMe: false, peerLabel: "Incoming call" };
   try {
-    if (window.PortalCommsCalls && typeof window.PortalCommsCalls.describeIncomingAsync === "function") {
+    if (row && row.ring_mode) {
+      info = {
+        forMe: true,
+        mode: row.ring_mode === "administration" ? "administration" : "personal",
+        title: row.ring_title,
+        subtitle: row.ring_subtitle,
+        peerLabel: row.ring_mode === "administration" ? "Worker" : "ADMIN",
+      };
+    } else if (window.PortalCommsCalls && typeof window.PortalCommsCalls.describeIncomingAsync === "function") {
       info = await window.PortalCommsCalls.describeIncomingAsync(client(), row, state.me.id);
+    } else if (String(row.initiated_by) !== String(state.me.id)) {
+      info = { forMe: true, peerLabel: "Incoming call" };
     }
-  } catch (_d) {}
-  if (!info.forMe) return;
-  if (window.PortalCommsCalls && typeof window.PortalCommsCalls.preload === "function") {
-    window.PortalCommsCalls.preload();
+  } catch (_d) {
+    if (String(row.initiated_by) !== String(state.me.id)) {
+      info = { forMe: true, peerLabel: "Incoming call" };
+    }
   }
+  if (!info.forMe) return;
   state.call = {
     id: row.id,
     type: row.type,
@@ -1566,6 +1603,7 @@ async function incomingCall(row) {
     initiated_by: row.initiated_by,
     conversation_id: row.conversation_id,
   };
+  prepareLiveCall();
   if (info.mode === "personal" || info.mode === "administration") {
     state.mode = info.mode;
     applyModeButtons();
@@ -1586,8 +1624,8 @@ async function acceptCall() {
   try {
     $("commsCallStatus").textContent = "Connecting...";
     setCallUi("outgoing");
-    await rpc("communication_call_respond", { p_call_id: state.call.id, p_action: "answer" });
     await joinLiveCall();
+    await rpc("communication_call_respond", { p_call_id: state.call.id, p_action: "answer" });
   } catch (err) {
     window.alert((err && err.message) || "Could not answer.");
     if (state.call) setCallUi("incoming");
@@ -1705,6 +1743,7 @@ async function tearDownCall(notify) {
   state.call = null;
   state.endingCall = false;
   $("commsCallOverlay").hidden = true;
+  $("commsCallOverlay").classList.remove("is-live");
   try {
     await rpc("communication_heartbeat", { p_status: "available" });
   } catch (_e3) {}
@@ -1800,6 +1839,9 @@ function bindUi() {
   $("commsHang").addEventListener("click", function () {
     tearDownCall(true);
   });
+  $("commsAnswer").addEventListener("pointerdown", function () {
+    prepareLiveCall();
+  });
   $("commsAnswer").addEventListener("click", acceptCall);
   $("commsReject").addEventListener("click", function () {
     tearDownCall(true);
@@ -1890,6 +1932,18 @@ async function boot() {
     renderThread();
     showShell();
     subscribeRealtime();
+    async function pollIncomingCalls() {
+      if (state.call) return;
+      try {
+        const rows = await rpc("communication_ringing_for_me");
+        const list = Array.isArray(rows) ? rows : [];
+        if (list[0]) await incomingCall(list[0]);
+      } catch (_ring) {}
+    }
+    void pollIncomingCalls();
+    window.setInterval(function () {
+      void pollIncomingCalls();
+    }, 1500);
     rpc("communication_heartbeat", { p_status: "available" }).catch(function () {});
     window.setInterval(function () {
       rpc("communication_heartbeat", { p_status: state.call ? "in_call" : "available" }).catch(function () {});
