@@ -335,9 +335,19 @@ function inboxRow(it) {
   );
 }
 
+function isAdminContext(m) {
+  return String((m && m.sender_context) || "").toUpperCase() === "ADMINISTRATION";
+}
+
+function bubbleIsMine(m) {
+  if (state.mode === "administration" && isAdminContext(m)) return true;
+  return String(m.performed_by_user_id) === String(state.me.id);
+}
+
 function bubbleHtml(m) {
-  const mine = String(m.performed_by_user_id) === String(state.me.id);
-  const admin = m.sender_context === "ADMINISTRATION";
+  const fromMe = String(m.performed_by_user_id) === String(state.me.id);
+  const mine = bubbleIsMine(m);
+  const admin = isAdminContext(m);
   let klass = "comms-bubble" + (mine ? " is-mine" : "") + (admin && !mine ? " is-admin" : "");
   let who = esc(m.sender_display || "");
   if (admin && m.performed_by_name) {
@@ -371,7 +381,7 @@ function bubbleHtml(m) {
     body = esc(m.body || "");
   }
   const read =
-    m.message_type === "call" ? "" : mine ? (m.read_count > 1 || m.delivered_read ? " · read" : " · sent") : "";
+    m.message_type === "call" ? "" : fromMe ? (m.read_count > 1 || m.delivered_read ? " · read" : " · sent") : "";
   return (
     '<article class="' +
     klass +
