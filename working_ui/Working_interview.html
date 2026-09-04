@@ -2675,6 +2675,7 @@
       return {
         id: "cand_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
         name: name.trim(),
+        dateOfBirth: "",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         callInterview: getDefaultCallInterview(),
@@ -2686,6 +2687,7 @@
 
     function ensureCandidateShape(candidate) {
       const nowIso = new Date().toISOString();
+      candidate.dateOfBirth = candidate.dateOfBirth || "";
       candidate.callInterview = { ...getDefaultCallInterview(), ...(candidate.callInterview || {}) };
       candidate.faceToFaceInterview = { ...getDefaultFaceToFace(), ...(candidate.faceToFaceInterview || {}) };
       candidate.onboarding = { ...getDefaultOnboarding(), ...(candidate.onboarding || {}) };
@@ -2693,6 +2695,53 @@
       candidate.createdAt = candidate.createdAt || candidate.updatedAt || nowIso;
       candidate.updatedAt = candidate.updatedAt || candidate.createdAt || nowIso;
       return candidate;
+    }
+
+    function parseDobParts(raw) {
+      const s = String(raw || "").trim();
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+      if (!m) return null;
+      const y = Number(m[1]);
+      const mo = Number(m[2]);
+      const d = Number(m[3]);
+      if (!y || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+      return { y: y, mo: mo, d: d };
+    }
+
+    function formatDobDisplay(raw) {
+      const p = parseDobParts(raw);
+      if (!p) return "";
+      const dt = new Date(p.y, p.mo - 1, p.d);
+      if (isNaN(dt.getTime())) return "";
+      return dt.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
+    }
+
+    function ageFromDob(raw, asOf) {
+      const p = parseDobParts(raw);
+      if (!p) return null;
+      const ref = asOf instanceof Date ? asOf : new Date();
+      let age = ref.getFullYear() - p.y;
+      const m = ref.getMonth() + 1 - p.mo;
+      if (m < 0 || (m === 0 && ref.getDate() < p.d)) age -= 1;
+      if (age < 0 || age > 120) return null;
+      return age;
+    }
+
+    function candidateDobMetaHtml(candidate) {
+      const dobRaw = candidate && candidate.dateOfBirth;
+      const dobLabel = formatDobDisplay(dobRaw);
+      const age = ageFromDob(dobRaw);
+      if (!dobLabel && age == null) {
+        return '<div class="candidate-meta">Date of birth: Not set</div>';
+      }
+      const bits = [];
+      if (age != null) bits.push("Age: " + age);
+      if (dobLabel) bits.push("Date of birth: " + dobLabel);
+      return '<div class="candidate-meta">' + escapeHtml(bits.join(" · ")) + "</div>";
     }
 
     function formatDateTime(iso) {
@@ -2984,6 +3033,7 @@
             <div class="candidate-top">
               <div>
                 <h3 class="candidate-name">${escapeHtml(candidate.name)}</h3>
+                ${candidateDobMetaHtml(candidate)}
                 <div class="candidate-meta">Last updated: ${formatDateTime(candidate.updatedAt)}</div>
               </div>
               <span class="status-pill ${status.cls}">${status.text}</span>
@@ -3144,6 +3194,7 @@
       ensureCandidateShape(candidate);
 
       const candidateName = document.getElementById("candidateName");
+      const candidateDob = document.getElementById("candidateDob");
 
       const callInterviewerName = document.getElementById("callInterviewerName");
       const callDate = document.getElementById("callDate");
@@ -3237,6 +3288,7 @@
         }
       }
       candidate.name = name;
+      candidate.dateOfBirth = candidateDob ? candidateDob.value : "";
 
       candidate.callInterview.interviewerName = callInterviewerName ? callInterviewerName.value.trim() : "";
       candidate.callInterview.date = callDate.value;
@@ -4100,6 +4152,7 @@
         <div class="content-header">
           <div class="candidate-summary">
             <h2>${escapeHtml(candidate.name)}</h2>
+            ${candidateDobMetaHtml(candidate)}
             <p>Open, update, and continue this recruitment and onboarding record at any time from the same page. The stage tracker below lights up so different team members can immediately see where the candidate currently is.</p>
           </div>
           <div class="summary-actions">
@@ -4147,7 +4200,7 @@
             <div class="section-head">
               <div>
                 <h3>Candidate Details</h3>
-                <p>Update the candidate name if needed.</p>
+                <p>Update the candidate name and date of birth if needed.</p>
               </div>
             </div>
             <div class="section-body">
@@ -4155,6 +4208,11 @@
                 <div class="field full">
                   <label for="candidateName">Candidate name</label>
                   <input id="candidateName" class="input" type="text" value="${escapeHtml(candidate.name)}" />
+                </div>
+
+                <div class="field full">
+                  <label for="candidateDob">Date of birth</label>
+                  <input id="candidateDob" class="input" type="date" data-input-type="date" value="${escapeHtml(candidate.dateOfBirth || "")}" />
                 </div>
 
                 <div class="field full">

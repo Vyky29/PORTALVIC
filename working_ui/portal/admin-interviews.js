@@ -304,6 +304,53 @@
     });
   }
 
+  function parseDobParts(raw) {
+    var s = String(raw || "").trim();
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (!m) return null;
+    return { y: Number(m[1]), mo: Number(m[2]), d: Number(m[3]) };
+  }
+
+  function ageFromDob(raw) {
+    var p = parseDobParts(raw);
+    if (!p) return null;
+    var ref = new Date();
+    var age = ref.getFullYear() - p.y;
+    var m = ref.getMonth() + 1 - p.mo;
+    if (m < 0 || (m === 0 && ref.getDate() < p.d)) age -= 1;
+    if (age < 0 || age > 120) return null;
+    return age;
+  }
+
+  function formatDobShort(raw) {
+    var p = parseDobParts(raw);
+    if (!p) return "";
+    var dt = new Date(p.y, p.mo - 1, p.d);
+    if (isNaN(dt.getTime())) return "";
+    return dt.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  }
+
+  function nameCellHtml(c) {
+    var name = esc(c.name || "—");
+    var dobLabel = formatDobShort(c.dateOfBirth);
+    var age = ageFromDob(c.dateOfBirth);
+    var meta = "";
+    if (age != null || dobLabel) {
+      var bits = [];
+      if (age != null) bits.push("Age " + age);
+      if (dobLabel) bits.push(dobLabel);
+      meta =
+        '<div class="muted" style="margin-top:4px;font-size:12px;line-height:1.35">' +
+        esc(bits.join(" · ")) +
+        "</div>";
+    }
+    return "<strong>" + name + "</strong>" + meta;
+  }
+
   function tableFor(list) {
     if (!list.length) {
       return '<div class="ai-empty">None in this bucket yet.</div>';
@@ -316,9 +363,9 @@
         var role = (c.onboarding && c.onboarding.role) || "—";
         return (
           "<tr>" +
-          "<td><strong>" +
-          esc(c.name || "—") +
-          "</strong></td>" +
+          "<td>" +
+          nameCellHtml(c) +
+          "</td>" +
           "<td>" +
           esc(role) +
           "</td>" +
