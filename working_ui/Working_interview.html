@@ -124,7 +124,7 @@
 
     .search-panel{
       display:grid;
-      grid-template-columns:minmax(260px, 1fr) auto auto;
+      grid-template-columns:minmax(200px, 1.2fr) minmax(180px, 1fr) auto auto;
       gap:12px;
       align-items:end;
     }
@@ -322,6 +322,32 @@
       font-size:12px;
       color:var(--muted);
       line-height:1.5;
+    }
+    .candidate-meta .btn-link-cv{
+      display:inline;
+      margin:0;
+      padding:0;
+      border:0;
+      background:none;
+      color:var(--blue);
+      font:inherit;
+      font-weight:700;
+      text-decoration:underline;
+      cursor:pointer;
+    }
+    .candidate-meta .btn-link-cv:hover{
+      color:var(--ink);
+    }
+    .cv-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      min-width:0;
+    }
+    .cv-actions .input[type="file"]{
+      max-width:100%;
+      min-width:0;
     }
 
     .status-pill{
@@ -1439,6 +1465,10 @@
             <label for="searchInput">Candidate name</label>
             <input id="searchInput" class="input" type="text" placeholder="e.g. Laura Smith" />
           </div>
+          <div class="field">
+            <label for="newCandidateCv">CV (required to create)</label>
+            <input id="newCandidateCv" class="input" type="file" accept=".pdf,.doc,.docx,image/*,.heic,.heif" />
+          </div>
           <button class="btn btn-gold" id="addCandidateBtn">Add New Candidate</button>
           <button class="btn btn-primary" id="searchBtn">Search Candidate</button>
         </div>
@@ -1453,7 +1483,7 @@
       <div class="panel-body">
         <div id="searchResults" class="result-list"></div>
         <div class="footer-note">
-          Search by name above. Select a candidate card to open the full record below.
+          Search by name above. To create a candidate, enter the name, attach the CV (document or photo), then tap Add New Candidate.
         </div>
       </div>
     </section>
@@ -1485,8 +1515,11 @@
     ];
     /** Audio clips live here - not inside onboarding_candidates JSON (iPad payload failures). */
     const INTERVIEW_AUDIO_BUCKET = "interview-audio";
+    const INTERVIEW_CV_BUCKET = "interview-cvs";
+    const INTERVIEW_CV_MAX_BYTES = 20 * 1024 * 1024;
     const INLINE_AUDIO_MAX_CHARS = 12000;
     const localAudioObjectUrls = Object.create(null);
+    const localCvObjectUrls = Object.create(null);
     let syncUi = { state: "idle", message: "Not synced yet", at: null, error: "" };
 
     /** Populated only from onboarding_portal_config.js (not from this file). */
@@ -2157,6 +2190,137 @@
       return { ok: true, path: path };
     }
 
+    function isAllowedCvFile(file) {
+      if (!file) return false;
+      const mime = String(file.type || "").toLowerCase();
+      const name = String(file.name || "").toLowerCase();
+      if (file.size > INTERVIEW_CV_MAX_BYTES) return false;
+      if (
+        mime === "application/pdf" ||
+        mime === "application/msword" ||
+        mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        mime.indexOf("image/") === 0
+      ) {
+        return true;
+      }
+      return /\.(pdf|doc|docx|jpe?g|png|webp|gif|heic|heif)$/i.test(name);
+    }
+
+    function cvExtFromFile(file) {
+      const name = String((file && file.name) || "");
+      const m = /\.([a-z0-9]+)$/i.exec(name);
+      if (m) return m[1].toLowerCase();
+      const mime = String((file && file.type) || "").toLowerCase();
+      if (mime === "application/pdf") return "pdf";
+      if (mime.indexOf("jpeg") >= 0) return "jpg";
+      if (mime.indexOf("png") >= 0) return "png";
+      if (mime.indexOf("webp") >= 0) return "webp";
+      if (mime.indexOf("heic") >= 0) return "heic";
+      if (mime.indexOf("heif") >= 0) return "heif";
+      if (mime.indexOf("wordprocessingml") >= 0) return "docx";
+      if (mime === "application/msword") return "doc";
+      return "bin";
+    }
+
+    async function uploadInterviewCvBlob(candidateId, file) {
+      const sb = getSupabase();
+      if (!sb || !file || !candidateId) {
+        return { ok: false, error: "missing_client_or_file" };
+      }
+      if (!isAllowedCvFile(file)) {
+        return { ok: false, error: "unsupported_or_too_large" };
+      }
+      const ext = cvExtFromFile(file);
+      const path = String(candidateId) + "/cv_" + Date.now() + "." + ext;
+      const { error } = await sb.storage.from(INTERVIEW_CV_BUCKET).upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: true,
+      });
+      if (error) return { ok: false, error: error.message || String(error) };
+      return {
+        ok: true,
+        path: path,
+        fileName: file.name || ("cv." + ext),
+        mime: file.type || "application/octet-stream",
+        size: file.size || 0,
+      };
+    }
+
+    async function resolveInterviewCvUrl(candidate) {
+      if (!candidate) return "";
+      const key = String(candidate.id || "");
+      if (key && localCvObjectUrls[key]) return localCvObjectUrls[key];
+      const path = String(candidate.cvStoragePath || "").trim();
+      if (!path) return "";
+      const sb = getSupabase();
+      if (!sb) return "";
+      try {
+        const { data, error } = await sb.storage
+          .from(INTERVIEW_CV_BUCKET)
+          .createSignedUrl(path, 60 * 60 * 12);
+        if (error || !data || !data.signedUrl) return "";
+        return data.signedUrl;
+      } catch (_e) {
+        return "";
+      }
+    }
+
+    function candidateHasCv(candidate) {
+      return !!(candidate && String(candidate.cvStoragePath || "").trim());
+    }
+
+    function candidateCvMetaHtml(candidate) {
+      if (!candidateHasCv(candidate)) {
+        return '<div class="candidate-meta">CV: Missing</div>';
+      }
+      const name = String(candidate.cvFileName || "CV").trim() || "CV";
+      return (
+        '<div class="candidate-meta">CV: ' +
+        escapeHtml(name) +
+        ' <button type="button" class="btn-link-cv" data-open-cv="' +
+        escapeHtml(candidate.id) +
+        '">Open</button></div>'
+      );
+    }
+
+    async function openCandidateCv(candidateId) {
+      const candidate = findCandidateById(candidateId);
+      if (!candidate || !candidateHasCv(candidate)) {
+        alert("No CV uploaded for this candidate yet.");
+        return;
+      }
+      const url = await resolveInterviewCvUrl(candidate);
+      if (!url) {
+        alert("Could not open the CV. Check connection and try again.");
+        return;
+      }
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+
+    async function replaceCandidateCv(candidateId, file) {
+      const candidate = findCandidateById(candidateId);
+      if (!candidate || !file) return { ok: false, error: "missing" };
+      if (!isAllowedCvFile(file)) {
+        return { ok: false, error: "Please choose a PDF, Word document, or photo under 20MB." };
+      }
+      const up = await uploadInterviewCvBlob(candidateId, file);
+      if (!up.ok) {
+        return { ok: false, error: up.error || "upload_failed" };
+      }
+      try {
+        if (localCvObjectUrls[candidateId]) URL.revokeObjectURL(localCvObjectUrls[candidateId]);
+      } catch (_e) {}
+      localCvObjectUrls[candidateId] = URL.createObjectURL(file);
+      candidate.cvStoragePath = up.path;
+      candidate.cvFileName = up.fileName;
+      candidate.cvMime = up.mime;
+      candidate.cvSize = up.size;
+      candidate.cvUploadedAt = new Date().toISOString();
+      candidate.updatedAt = new Date().toISOString();
+      await saveCandidates(candidate.id);
+      return { ok: true };
+    }
+
     async function resolveInterviewAudioSrc(faceOrCall, questionId, candidateId) {
       const key = localAudioKey(candidateId, questionId);
       if (localAudioObjectUrls[key]) return localAudioObjectUrls[key];
@@ -2676,6 +2840,11 @@
         id: "cand_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
         name: name.trim(),
         dateOfBirth: "",
+        cvStoragePath: "",
+        cvFileName: "",
+        cvMime: "",
+        cvSize: 0,
+        cvUploadedAt: "",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         callInterview: getDefaultCallInterview(),
@@ -2688,6 +2857,11 @@
     function ensureCandidateShape(candidate) {
       const nowIso = new Date().toISOString();
       candidate.dateOfBirth = candidate.dateOfBirth || "";
+      candidate.cvStoragePath = candidate.cvStoragePath || "";
+      candidate.cvFileName = candidate.cvFileName || "";
+      candidate.cvMime = candidate.cvMime || "";
+      candidate.cvSize = Number(candidate.cvSize || 0) || 0;
+      candidate.cvUploadedAt = candidate.cvUploadedAt || "";
       candidate.callInterview = { ...getDefaultCallInterview(), ...(candidate.callInterview || {}) };
       candidate.faceToFaceInterview = { ...getDefaultFaceToFace(), ...(candidate.faceToFaceInterview || {}) };
       candidate.onboarding = { ...getDefaultOnboarding(), ...(candidate.onboarding || {}) };
@@ -3034,6 +3208,7 @@
               <div>
                 <h3 class="candidate-name">${escapeHtml(candidate.name)}</h3>
                 ${candidateDobMetaHtml(candidate)}
+                ${candidateCvMetaHtml(candidate)}
                 <div class="candidate-meta">Last updated: ${formatDateTime(candidate.updatedAt)}</div>
               </div>
               <span class="status-pill ${status.cls}">${status.text}</span>
@@ -3047,6 +3222,14 @@
             renderSearchResults(filterCandidates(searchInput.value.trim()));
             renderCandidateDetail(candidate.id);
           });
+          const openCvBtn = card.querySelector("[data-open-cv]");
+          if (openCvBtn) {
+            openCvBtn.addEventListener("click", function (ev) {
+              ev.preventDefault();
+              ev.stopPropagation();
+              void openCandidateCv(openCvBtn.getAttribute("data-open-cv"));
+            });
+          }
           searchResults.appendChild(card);
         });
     }
@@ -3090,7 +3273,7 @@
       return parts.join(" | ");
     }
 
-    function addNewCandidateFromInput() {
+    async function addNewCandidateFromInput() {
       if (!portalUseSupabase) {
         if (isInterviewEmbedded()) {
           alert("Still connecting to your Admin login — wait a second and try again.");
@@ -3108,10 +3291,21 @@
         return;
       }
       const name = searchInput.value.trim();
+      const cvInput = document.getElementById("newCandidateCv");
+      const cvFile = cvInput && cvInput.files && cvInput.files[0] ? cvInput.files[0] : null;
 
       if (!name) {
         alert("Please enter the candidate name first.");
         searchInput.focus();
+        return;
+      }
+      if (!cvFile) {
+        alert("Please attach the CV (document or photo) before creating the candidate.");
+        if (cvInput) cvInput.focus();
+        return;
+      }
+      if (!isAllowedCvFile(cvFile)) {
+        alert("CV must be a PDF, Word document, or photo under 20MB.");
         return;
       }
 
@@ -3128,10 +3322,42 @@
       const candidate = createCandidate(name);
       addHistoryEntry(candidate, "Candidate profile created.");
       candidates.push(candidate);
-      saveCandidates(candidate.id).catch(function () {});
       currentCandidateId = candidate.id;
-      renderSearchResults(filterCandidates(searchInput.value.trim()));
-      renderCandidateDetail(candidate.id);
+
+      const btn = document.getElementById("addCandidateBtn");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Uploading CV...";
+      }
+      try {
+        const up = await uploadInterviewCvBlob(candidate.id, cvFile);
+        if (!up.ok) {
+          candidates = candidates.filter(function (c) { return c.id !== candidate.id; });
+          currentCandidateId = null;
+          alert("Could not upload the CV: " + (up.error || "unknown error") + ". Candidate was not created.");
+          return;
+        }
+        localCvObjectUrls[candidate.id] = URL.createObjectURL(cvFile);
+        candidate.cvStoragePath = up.path;
+        candidate.cvFileName = up.fileName;
+        candidate.cvMime = up.mime;
+        candidate.cvSize = up.size;
+        candidate.cvUploadedAt = new Date().toISOString();
+        addHistoryEntry(candidate, "CV uploaded: " + up.fileName);
+        await saveCandidates(candidate.id);
+        if (cvInput) cvInput.value = "";
+        renderSearchResults(filterCandidates(searchInput.value.trim()));
+        renderCandidateDetail(candidate.id);
+      } catch (err) {
+        candidates = candidates.filter(function (c) { return c.id !== candidate.id; });
+        currentCandidateId = null;
+        alert("Could not create candidate: " + ((err && err.message) || "unknown error"));
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Add New Candidate";
+        }
+      }
     }
 
     async function deleteCurrentCandidate() {
@@ -4153,6 +4379,7 @@
           <div class="candidate-summary">
             <h2>${escapeHtml(candidate.name)}</h2>
             ${candidateDobMetaHtml(candidate)}
+            ${candidateCvMetaHtml(candidate)}
             <p>Open, update, and continue this recruitment and onboarding record at any time from the same page. The stage tracker below lights up so different team members can immediately see where the candidate currently is.</p>
           </div>
           <div class="summary-actions">
@@ -4213,6 +4440,20 @@
                 <div class="field full">
                   <label for="candidateDob">Date of birth</label>
                   <input id="candidateDob" class="input" type="date" data-input-type="date" value="${escapeHtml(candidate.dateOfBirth || "")}" />
+                </div>
+
+                <div class="field full">
+                  <label>CV (document or photo)</label>
+                  <div class="cv-actions">
+                    ${
+                      candidateHasCv(candidate)
+                        ? `<button type="button" class="btn btn-primary" id="openCandidateCvBtn">Open CV</button>
+                           <span class="candidate-meta">${escapeHtml(candidate.cvFileName || "CV on file")}</span>`
+                        : `<span class="candidate-meta">No CV on file yet.</span>`
+                    }
+                    <input id="replaceCandidateCv" class="input" type="file" accept=".pdf,.doc,.docx,image/*,.heic,.heif" />
+                  </div>
+                  <p class="question-helper" style="margin-top:8px;">Required when creating a candidate. You can replace it here before or during the interview.</p>
                 </div>
 
                 <div class="field full">
@@ -4732,6 +4973,34 @@
       }
       scheduleAutoSave();
       document.getElementById("deleteCandidateBtn").addEventListener("click", deleteCurrentCandidate);
+      const openCvBtn = document.getElementById("openCandidateCvBtn");
+      if (openCvBtn) {
+        openCvBtn.addEventListener("click", function () {
+          void openCandidateCv(id);
+        });
+      }
+      mainContent.querySelectorAll("[data-open-cv]").forEach(function (btn) {
+        btn.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          void openCandidateCv(btn.getAttribute("data-open-cv") || id);
+        });
+      });
+      const replaceCvInput = document.getElementById("replaceCandidateCv");
+      if (replaceCvInput) {
+        replaceCvInput.addEventListener("change", async function () {
+          const file = replaceCvInput.files && replaceCvInput.files[0] ? replaceCvInput.files[0] : null;
+          if (!file) return;
+          const res = await replaceCandidateCv(id, file);
+          replaceCvInput.value = "";
+          if (!res.ok) {
+            alert(res.error || "Could not upload CV.");
+            return;
+          }
+          renderCandidateDetail(id);
+          renderSearchResults(filterCandidates(searchInput.value.trim()));
+        });
+      }
       const forceSaveBtn = document.getElementById("interviewForceSaveBtn");
       if (forceSaveBtn) {
         forceSaveBtn.addEventListener("click", function () {
