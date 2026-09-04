@@ -253,9 +253,11 @@
     var video = isVideoType(type);
     return (
       '<div class="portal-comms-call-brand">' +
+      '<div class="portal-comms-call-logo-aura">' +
       '<img class="portal-comms-call-logo" src="' +
       CLUB_LOGO +
       '" alt="" width="88" height="88" />' +
+      "</div>" +
       '<span class="portal-comms-call-kind" data-kind="' +
       (video ? "video" : "audio") +
       '" aria-hidden="true">' +

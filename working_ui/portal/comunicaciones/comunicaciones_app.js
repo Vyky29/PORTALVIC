@@ -256,15 +256,30 @@ function withTimeout(promise, ms, message) {
   });
 }
 
+function bootBrandHtml() {
+  return (
+    '<div class="comms-boot-stack">' +
+    '<div class="portal-comms-call-logo-aura">' +
+    '<img class="portal-comms-call-logo" src="/portal/F-02-1.png" alt="" width="96" height="96" />' +
+    "</div>" +
+    '<p id="commsBootMsg"></p>' +
+    '<p><a class="comms-boot-back" href="' +
+    esc(portalHome()) +
+    '">Back to portal</a></p>' +
+    "</div>"
+  );
+}
+
 function setBoot(msg) {
   const el = $("commsBoot");
   if (!el) return;
-  el.innerHTML =
-    "<p>" +
-    esc(msg) +
-    "</p><p><a class=\"comms-boot-back\" href=\"" +
-    esc(portalHome()) +
-    "\">Back to portal</a></p>";
+  el.classList.add("is-connecting");
+  let msgEl = $("commsBootMsg");
+  if (!msgEl) {
+    el.innerHTML = bootBrandHtml();
+    msgEl = $("commsBootMsg");
+  }
+  if (msgEl) msgEl.textContent = msg || "Connecting...";
 }
 
 function showShell() {
@@ -1270,6 +1285,7 @@ function setCallUi(phase, type) {
   try {
     overlay.removeAttribute("hidden");
   } catch (_h) {}
+  overlay.classList.toggle("is-connecting", phase === "outgoing" || phase === "connecting");
   overlay.classList.toggle("is-live", phase !== "incoming");
   $("commsAnswer").hidden = phase !== "incoming";
   $("commsReject").hidden = phase !== "incoming";
@@ -1290,7 +1306,7 @@ function paintCallKind(type) {
   }
   const video = String(type || "").toUpperCase() === "VIDEO";
   host.innerHTML =
-    '<div class="portal-comms-call-brand"><img class="portal-comms-call-logo" src="/portal/F-02-1.png" alt="" width="88" height="88" /><span class="portal-comms-call-kind" data-kind="' +
+    '<div class="portal-comms-call-brand"><div class="portal-comms-call-logo-aura"><img class="portal-comms-call-logo" src="/portal/F-02-1.png" alt="" width="88" height="88" /></div><span class="portal-comms-call-kind" data-kind="' +
     (video ? "video" : "audio") +
     '" aria-hidden="true"></span></div>';
 }
@@ -1314,7 +1330,7 @@ async function joinLiveCall() {
   const host = $("commsJitsiHost");
   if (!helper || !host || !state.call) throw new Error("Call screen missing.");
   $("commsCallStatus").textContent = "Connecting...";
-  $("commsCallOverlay").classList.add("is-live");
+  $("commsCallOverlay").classList.add("is-live", "is-connecting");
   await helper.join({
     client: client(),
     callId: state.call.id,
@@ -1323,6 +1339,8 @@ async function joinLiveCall() {
     video: String(state.call.type || "").toUpperCase() === "VIDEO",
     parent: host,
     onJoined: function () {
+      const overlay = $("commsCallOverlay");
+      if (overlay) overlay.classList.remove("is-connecting");
       const el = $("commsCallStatus");
       if (el) el.textContent = "In call";
       clearRingTimer();
@@ -1902,6 +1920,7 @@ async function tearDownCall(notify) {
   state.endingCall = false;
   $("commsCallOverlay").hidden = true;
   $("commsCallOverlay").classList.remove("is-live");
+  $("commsCallOverlay").classList.remove("is-connecting");
   try {
     await rpc("communication_heartbeat", { p_status: "available" });
   } catch (_e3) {}

@@ -818,6 +818,7 @@
       box-shadow:0 1px 2px rgba(15,23,42,.1);
     }
     .admin-topbar{
+      overflow:visible;
       height:var(--topH);min-height:var(--topH);flex-shrink:0;display:flex;align-items:center;gap:12px;
       padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(15,23,42,.04);
     }
@@ -829,7 +830,7 @@
     }
     .admin-search-wrap input:focus{outline:2px solid rgba(45,132,179,.25);border-color:var(--blue);background:#fff}
     .admin-search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.45;font-size:14px}
-    .admin-topbar-meta{display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .admin-topbar-meta{display:flex;align-items:center;gap:10px;flex-shrink:0;overflow:visible}
     .admin-topbar .admin-topbar-chat-wrap.portal-admin-floating-chat-wrap{
       position:relative;
       right:auto;
@@ -896,11 +897,11 @@
       justify-content:center;
     }
     #commsBadge:not(.is-empty){
-      top:-4px;
-      right:-4px;
-      min-width:20px;
-      height:20px;
-      line-height:20px;
+      top:1px;
+      right:1px;
+      min-width:18px;
+      height:18px;
+      line-height:18px;
       font-size:11px;
       z-index:8;
       box-shadow:0 0 0 2px var(--surface,#fff);

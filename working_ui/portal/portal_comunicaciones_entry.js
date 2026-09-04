@@ -142,16 +142,34 @@
 
   function ensureUnreadBadgeCss() {
     if (typeof document === "undefined") return;
-    if (document.getElementById("portalCommsUnreadBadgeCss")) return;
-    var st = document.createElement("style");
-    st.id = "portalCommsUnreadBadgeCss";
+    var st = document.getElementById("portalCommsUnreadBadgeCss");
+    if (!st) {
+      st = document.createElement("style");
+      st.id = "portalCommsUnreadBadgeCss";
+    }
     st.textContent =
-      "#btnComunicaciones,#topbarStaffWaBtn,#topbarToolCellStaffWa{overflow:visible!important;position:relative}" +
-      "#commsBadge.is-empty,#topbarStaffWaBtn [data-comms-unread].is-empty,.portal-comms-unread-badge.is-empty{display:none!important}" +
-      "#commsBadge:not(.is-empty){display:inline-flex!important;align-items:center;justify-content:center;position:absolute;z-index:8;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:800;line-height:20px;box-shadow:0 0 0 2px #fff}" +
-      "#topbarStaffWaBtn [data-comms-unread]:not(.is-empty){display:inline-flex!important;align-items:center;justify-content:center;position:static!important;flex:0 0 auto;z-index:2;min-width:18px;height:18px;margin:0 0 0 2px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:800;line-height:18px;box-shadow:0 0 0 1px rgba(255,255,255,.9)}" +
-      "#topbarStaffWaBtn .topbar-tool-label,#topbarStaffWaBtn .topbar-staff-wa-btn__label{width:auto!important;max-width:none!important;flex:0 1 auto!important;overflow:visible!important;text-overflow:clip!important}" +
-      "#btnComunicaciones.admin-icon-btn--has-alerts{border-color:#dc2626!important;box-shadow:0 0 0 2px rgba(220,38,38,.45)}" +
+      "#adminTopbar,.admin-topbar,.admin-topbar-meta,#btnComunicaciones,#topbarStaffWaBtn,#topbarToolCellStaffWa{overflow:visible!important;contain:none!important}" +
+      "#btnComunicaciones,.admin-icon-btn--chat,#topbarStaffWaBtn,[data-comms-unread-host]{position:relative!important;isolation:isolate!important}" +
+      "#btnComunicaciones #commsBadge,#btnComunicaciones [data-comms-unread]," +
+      "#topbarStaffWaBtn .topbar-staff-wa-btn__badge,#topbarStaffWaBtn [data-comms-unread]," +
+      ".portal-comms-corner-badge{display:none!important}" +
+      "#btnComunicaciones[data-comms-count]::after," +
+      "#topbarStaffWaBtn[data-comms-count]::after," +
+      "[data-comms-unread-host][data-comms-count]::after{" +
+      "content:attr(data-comms-count)!important;position:absolute!important;" +
+      "top:1px!important;right:1px!important;left:auto!important;bottom:auto!important;" +
+      "z-index:30!important;min-width:18px!important;height:18px!important;width:auto!important;" +
+      "padding:0 5px!important;margin:0!important;border:0!important;border-radius:999px!important;" +
+      "background:#dc2626!important;color:#fff!important;font-size:11px!important;font-weight:800!important;" +
+      "line-height:18px!important;letter-spacing:0!important;text-align:center!important;" +
+      "display:flex!important;align-items:center!important;justify-content:center!important;" +
+      "box-shadow:0 0 0 2px #fff,0 2px 8px rgba(0,0,0,.28)!important;" +
+      "pointer-events:none!important;opacity:1!important;visibility:visible!important;" +
+      "transform:none!important}" +
+      "#btnComunicaciones.admin-icon-btn--has-alerts,#btnComunicaciones.portal-comms-has-unread{" +
+      "border-color:#dc2626!important;background:#fff5f5!important;" +
+      "box-shadow:0 0 0 2px rgba(220,38,38,.55)!important;animation:portalCommsBtnPulse 1.1s ease infinite}" +
+      "@keyframes portalCommsBtnPulse{0%,100%{box-shadow:0 0 0 2px rgba(220,38,38,.45)}50%{box-shadow:0 0 0 6px rgba(220,38,38,.2)}}" +
       "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
       "#topbarToolsGridRight .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread," +
       "#topbarToolCellStaffWa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread{" +
@@ -167,20 +185,24 @@
     (document.head || document.documentElement).appendChild(st);
   }
 
+  function paintCornerBadge(host, count) {
+    if (!host) return;
+    try {
+      host.style.setProperty("overflow", "visible", "important");
+      host.style.setProperty("position", "relative", "important");
+      host.style.setProperty("isolation", "isolate", "important");
+    } catch (_p) {}
+    if (count > 0) host.setAttribute("data-comms-count", unreadLabel(count));
+    else host.removeAttribute("data-comms-count");
+  }
+
   function paintDataUnreadNodes(count) {
     ensureUnreadBadgeCss();
-    var nodes = document.querySelectorAll("[data-comms-unread]");
-    for (var i = 0; i < nodes.length; i++) {
-      var el = nodes[i];
-      el.textContent = count > 0 ? unreadLabel(count) : "0";
-      el.classList.toggle("is-empty", count < 1);
-      try {
-        el.removeAttribute("hidden");
-      } catch (_h) {}
-      el.hidden = false;
-      el.setAttribute("aria-hidden", count < 1 ? "true" : "false");
-      var host = el.closest("[data-comms-unread-host]") || el.parentElement;
-      if (host) host.classList.toggle("portal-comms-has-unread", count > 0);
+    paintCornerBadge(document.getElementById("btnComunicaciones"), count);
+    paintCornerBadge(document.getElementById("topbarStaffWaBtn"), count);
+    var hosts = document.querySelectorAll("[data-comms-unread-host]");
+    for (var h = 0; h < hosts.length; h++) {
+      paintCornerBadge(hosts[h], count);
     }
   }
 
@@ -192,29 +214,7 @@
       var inGrid = btn.classList.contains("topbar-tool-btn--staff-wa");
       btn.classList.toggle("topbar-staff-wa-btn--unread", !inGrid && lastUnreadCount > 0);
       btn.classList.toggle("topbar-tool-btn--staff-wa-unread", inGrid && lastUnreadCount > 0);
-      var badge = btn.querySelector("[data-comms-unread], .topbar-staff-wa-btn__badge");
-      if (lastUnreadCount > 0) {
-        if (!badge) {
-          badge = document.createElement("span");
-          badge.className = "topbar-staff-wa-btn__badge";
-          badge.setAttribute("data-comms-unread", "");
-          badge.setAttribute("aria-hidden", "true");
-          btn.appendChild(badge);
-        }
-        try {
-          badge.removeAttribute("hidden");
-        } catch (_h2) {}
-        badge.hidden = false;
-        badge.classList.remove("is-empty");
-        badge.textContent = unreadLabel(lastUnreadCount);
-      } else if (badge) {
-        try {
-          badge.removeAttribute("hidden");
-        } catch (_h3) {}
-        badge.hidden = false;
-        badge.classList.add("is-empty");
-        badge.textContent = "0";
-      }
+      paintCornerBadge(btn, lastUnreadCount);
       var lab = lastUnreadCount > 0 ? "Communications (" + lastUnreadCount + ")" : "Communications";
       btn.setAttribute("aria-label", lab);
       var labelEl = btn.querySelector(".topbar-staff-wa-btn__label, .topbar-tool-label");
@@ -223,10 +223,12 @@
     var adminBtn = document.getElementById("btnComunicaciones");
     if (adminBtn) {
       adminBtn.classList.toggle("admin-icon-btn--has-alerts", lastUnreadCount > 0);
+      adminBtn.classList.toggle("portal-comms-has-unread", lastUnreadCount > 0);
       adminBtn.setAttribute(
         "aria-label",
         lastUnreadCount > 0 ? "Communications (" + lastUnreadCount + ")" : "Communications"
       );
+      paintCornerBadge(adminBtn, lastUnreadCount);
     }
     var alertsBlock = document.getElementById("portalStaffWaAlertsBlock");
     var alertsStatus = document.getElementById("portalStaffWaAlertsStatus");
@@ -251,6 +253,28 @@
         new CustomEvent("portal:comms-unread", { detail: { count: lastUnreadCount } })
       );
     } catch (_ev) {}
+    watchBadgeHosts();
+  }
+
+  function watchBadgeHosts() {
+    if (global.__PORTAL_COMMS_BADGE_OBS__ || typeof MutationObserver === "undefined") return;
+    global.__PORTAL_COMMS_BADGE_OBS__ = true;
+    var t = 0;
+    var obs = new MutationObserver(function () {
+      if (t) return;
+      t = global.setTimeout(function () {
+        t = 0;
+        if (lastUnreadCount > 0) applyUnreadBadge(lastUnreadCount);
+      }, 80);
+    });
+    ["adminTopbar", "topbarToolCellStaffWa", "btnComunicaciones", "topbarStaffWaBtn"].forEach(function (id) {
+      var n = document.getElementById(id);
+      if (n) {
+        try {
+          obs.observe(n, { childList: true, subtree: true });
+        } catch (_o) {}
+      }
+    });
   }
 
   function applyUnreadFromServer(n) {
@@ -558,7 +582,7 @@
     if (document.getElementById("portalCommsMsgToast")) {
       return document.getElementById("portalCommsMsgToast");
     }
-    if (!document.getElementById("portalCommsIncomingCss")) {
+    if (!document.getElementById("portalCommsIncomingCss30")) {
       ensureIncomingOverlay();
     }
     if (!document.getElementById("portalCommsMsgToastCss")) {
@@ -829,11 +853,22 @@
   function ensureIncomingOverlay() {
     if (document.getElementById("portalCommsIncoming")) {
       ensureIncomingBrandHost();
+      if (!document.getElementById("portalCommsConnectingCover")) {
+        var liveOld = document.getElementById("portalCommsIncomingLive");
+        var hangOld = document.getElementById("portalCommsLiveHang");
+        if (liveOld) {
+          var coverOld = document.createElement("div");
+          coverOld.id = "portalCommsConnectingCover";
+          coverOld.className = "portal-comms-connecting-cover";
+          coverOld.innerHTML = '<div id="portalCommsConnectingBrand"></div><p>Connecting...</p>';
+          liveOld.insertBefore(coverOld, hangOld || null);
+        }
+      }
       return document.getElementById("portalCommsIncoming");
     }
-    if (!document.getElementById("portalCommsIncomingCss")) {
+    if (!document.getElementById("portalCommsIncomingCss30")) {
       var st = document.createElement("style");
-      st.id = "portalCommsIncomingCss";
+      st.id = "portalCommsIncomingCss30";
       st.textContent =
         "#portalCommsIncoming{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:rgba(5,12,20,.94)}" +
         "#portalCommsIncoming[hidden]{display:none!important}" +
@@ -855,6 +890,15 @@
         "#portalCommsIncomingLive[hidden]{display:none!important}" +
         "#portalCommsJitsi{flex:1;min-height:50vh;min-width:0;height:100%}" +
         "#portalCommsJitsi iframe{width:100%;height:100%;border:0;display:block}" +
+        ".portal-comms-connecting-cover{position:absolute;inset:0 0 64px;z-index:5;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,27,38,.88);pointer-events:none;color:#fff;text-align:center;padding:16px}" +
+        "#portalCommsIncoming.is-connecting .portal-comms-connecting-cover{display:flex}" +
+        ".portal-comms-call-logo-aura{position:relative;width:118px;height:118px;display:flex;align-items:center;justify-content:center}" +
+        ".portal-comms-call-logo-aura::before,.portal-comms-call-logo-aura::after{content:\"\";position:absolute;inset:8px;border-radius:50%;border:3px solid #3b82f6;box-shadow:0 0 0 6px rgba(59,130,246,.22);opacity:0}" +
+        "#portalCommsIncoming.is-connecting .portal-comms-call-logo-aura::before,#portalCommsIncoming.is-connecting .portal-comms-call-logo-aura::after{animation:portal-comms-logo-aura 1.35s ease-out infinite}" +
+        "#portalCommsIncoming.is-connecting .portal-comms-call-logo-aura::after{animation-delay:.45s}" +
+        "@keyframes portal-comms-logo-aura{0%{transform:scale(.86);opacity:.95}100%{transform:scale(1.42);opacity:0}}" +
+        "@keyframes portal-comms-logo-blink{0%,100%{box-shadow:0 0 0 4px rgba(59,130,246,.95),0 0 22px rgba(59,130,246,.5)}50%{box-shadow:0 0 0 8px rgba(59,130,246,.28),0 0 36px rgba(59,130,246,.85)}}" +
+        "#portalCommsIncoming.is-connecting .portal-comms-call-logo{border-radius:50%;animation:portal-comms-logo-blink 1.1s ease-in-out infinite}" +
         "#portalCommsLiveHang{margin:12px 16px max(16px,env(safe-area-inset-bottom));padding:12px 10px;border:0;border-radius:999px;background:#dc2626;color:#fff;font:inherit;font-size:14px;font-weight:800}";
       (document.head || document.documentElement).appendChild(st);
     }
@@ -875,6 +919,10 @@
       "</div></div>" +
       '<div id="portalCommsIncomingLive" hidden>' +
       '<div id="portalCommsJitsi"></div>' +
+      '<div id="portalCommsConnectingCover" class="portal-comms-connecting-cover">' +
+      '<div id="portalCommsConnectingBrand"></div>' +
+      "<p>Connecting...</p>" +
+      "</div>" +
       '<button type="button" id="portalCommsLiveHang">Hang up</button>' +
       "</div>";
     (document.body || document.documentElement).appendChild(el);
@@ -907,7 +955,7 @@
     if (global.PortalCommsCalls) return Promise.resolve(global.PortalCommsCalls);
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260904-comms-28";
+      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260904-comms-30";
       s.onload = function () {
         if (global.PortalCommsCalls) resolve(global.PortalCommsCalls);
         else reject(new Error("Call service failed to load."));
@@ -933,7 +981,10 @@
   function resetIncomingOverlayLayout() {
     incomingCallLive = false;
     var root = document.getElementById("portalCommsIncoming");
-    if (root) root.classList.remove("is-live");
+    if (root) {
+      root.classList.remove("is-live");
+      root.classList.remove("is-connecting");
+    }
     var ring = document.getElementById("portalCommsIncomingRing");
     var live = document.getElementById("portalCommsIncomingLive");
     var host = document.getElementById("portalCommsJitsi");
@@ -1074,8 +1125,12 @@
         live.removeAttribute("hidden");
       } catch (_lv) {}
     }
-    el.classList.add("is-live");
+    el.classList.add("is-live", "is-connecting");
     incomingCallLive = true;
+    var coverBrand = document.getElementById("portalCommsConnectingBrand");
+    if (coverBrand && helper && typeof helper.incomingBrandHtml === "function") {
+      coverBrand.innerHTML = helper.incomingBrandHtml(st.type);
+    }
     var c = client();
     if (!c || !host) {
       window.alert("Could not answer.");
@@ -1090,7 +1145,9 @@
         displayName: myDashboardCallName(st.mode),
         video: String(st.type || "").toUpperCase() === "VIDEO",
         parent: host,
-        onJoined: function () {},
+        onJoined: function () {
+          el.classList.remove("is-connecting");
+        },
         onHangup: function () {
           void hangupDashboardCall(true);
         },
@@ -1356,19 +1413,20 @@
       if (ico) ico.className = "topbar-tool-btn__ico";
       if (lab) {
         lab.className = "topbar-tool-label";
-        lab.textContent = lastUnreadCount > 0 ? "COMMS (" + lastUnreadCount + ")" : "COMMS";
+        lab.textContent = "COMMS";
       }
     } else {
       btn.className = "topbar-staff-wa-btn";
       if (ico) ico.className = "topbar-staff-wa-btn__ico";
       if (lab) {
         lab.className = "topbar-staff-wa-btn__label";
-        lab.textContent = lastUnreadCount > 0 ? "COMMS (" + lastUnreadCount + ")" : "COMMS";
+        lab.textContent = "COMMS";
       }
     }
     if (lastUnreadCount > 0) {
       btn.classList.add(inGrid ? "topbar-tool-btn--staff-wa-unread" : "topbar-staff-wa-btn--unread");
     }
+    paintCornerBadge(btn, lastUnreadCount);
   }
 
   function placeWaInGrid(btn) {
