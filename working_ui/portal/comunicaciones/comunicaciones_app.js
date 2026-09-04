@@ -44,6 +44,8 @@ const state = {
   signalChain: Promise.resolve(),
   signalPoll: 0,
   connectTimer: 0,
+  ringTimer: 0,
+  endingCall: false,
   presence: { administration: "offline", people: {} },
   typing: {},
   typingChannel: null,
@@ -899,22 +901,7 @@ function subscribeRealtime() {
       }
     )
     .subscribe();
-  const sig = c
-    .channel("comms-signals")
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "communication_call_signals" },
-      async (payload) => {
-        const row = payload.new || {};
-        if (!state.call || String(row.call_id) !== String(state.call.id)) return;
-        if (String(row.sender_id) === String(state.me.id)) return;
-        enqueueSignal(function () {
-          return handleSignal(row.payload || {}, row.sender_id, row.id);
-        });
-      }
-    )
-    .subscribe();
-  state.channels.push(msgs, calls, sig);
+  state.channels.push(msgs, calls);
 }
 
 function showModal(html) {
@@ -1138,15 +1125,49 @@ async function openAudit() {
   }
 }
 
+function myCallDisplayName() {
+  if (state.mode === "administration") return "ADMIN";
+  return commsStaffLabel((state.me && state.me.full_name) || "") || "Staff";
+}
+
+function clearRingTimer() {
+  if (state.ringTimer) {
+    window.clearTimeout(state.ringTimer);
+    state.ringTimer = 0;
+  }
+}
+
 function setCallUi(phase) {
   $("commsCallOverlay").hidden = false;
   $("commsAnswer").hidden = phase !== "incoming";
   $("commsReject").hidden = phase !== "incoming";
   $("commsHang").hidden = phase === "incoming";
-  $("commsMuteMic").hidden = phase === "incoming";
-  $("commsMuteCam").hidden = phase === "incoming" || (state.call && state.call.type !== "VIDEO");
-  void playMediaEl($("commsLocalVideo"), true);
-  layoutRemoteGrid();
+  $("commsMuteMic").hidden = true;
+  $("commsMuteCam").hidden = true;
+  const local = $("commsLocalVideo");
+  if (local) local.hidden = true;
+}
+
+async function joinLiveCall() {
+  const helper = window.PortalCommsCalls;
+  const host = $("commsJitsiHost");
+  if (!helper || !host || !state.call) throw new Error("Call screen missing.");
+  $("commsCallStatus").textContent = "Connecting...";
+  await helper.join({
+    client: client(),
+    callId: state.call.id,
+    displayName: myCallDisplayName(),
+    video: String(state.call.type || "").toUpperCase() === "VIDEO",
+    parent: host,
+    onJoined: function () {
+      const el = $("commsCallStatus");
+      if (el) el.textContent = "In call";
+      clearRingTimer();
+    },
+    onHangup: function () {
+      tearDownCall(true);
+    },
+  });
 }
 
 function playMediaEl(el, allowMuteFallback) {
@@ -1491,11 +1512,11 @@ async function pullCallSignals() {
 
 async function startCall(type) {
   if (!state.open) return;
+  if (state.call) return;
   try {
     $("commsCallPeer").textContent = callPeerLabel(itemByConversation(state.open.conversation_id) || state.open) || "Calling...";
     $("commsCallStatus").textContent = "Starting...";
     setCallUi("outgoing");
-    await attachLocal(type === "VIDEO");
     const out = await rpc("communication_start_call", {
       p_conversation_id: state.open.conversation_id,
       p_type: type,
@@ -1507,19 +1528,16 @@ async function startCall(type) {
       initiated_by: state.me.id,
       conversation_id: state.open.conversation_id,
     };
-    resetCallSession(true);
     $("commsCallStatus").textContent = "Calling...";
-    await sendCallSignal("join");
-    startSignalPoll();
-    armConnectWatchdog();
+    clearRingTimer();
+    state.ringTimer = window.setTimeout(function () {
+      if (!state.call) return;
+      $("commsCallStatus").textContent = "No answer";
+      tearDownCall(true);
+    }, (window.PortalCommsCalls && window.PortalCommsCalls.RING_MS) || 45000);
+    await joinLiveCall();
   } catch (err) {
-    const msg =
-      err && err.name === "NotAllowedError"
-        ? "Allow the microphone (and camera) to start the call."
-        : err && err.message
-          ? err.message
-          : "Could not start the call.";
-    window.alert(msg);
+    window.alert((err && err.message) || "Could not start the call.");
     tearDownCall(true);
   }
 }
@@ -1527,6 +1545,16 @@ async function startCall(type) {
 async function incomingCall(row) {
   if (state.call && String(state.call.id) === String(row.id)) return;
   if (state.call) return;
+  let info = { forMe: false, peerLabel: "Incoming call" };
+  try {
+    if (window.PortalCommsCalls && typeof window.PortalCommsCalls.describeIncomingAsync === "function") {
+      info = await window.PortalCommsCalls.describeIncomingAsync(client(), row, state.me.id);
+    }
+  } catch (_d) {}
+  if (!info.forMe) return;
+  if (window.PortalCommsCalls && typeof window.PortalCommsCalls.preload === "function") {
+    window.PortalCommsCalls.preload();
+  }
   state.call = {
     id: row.id,
     type: row.type,
@@ -1534,28 +1562,18 @@ async function incomingCall(row) {
     initiated_by: row.initiated_by,
     conversation_id: row.conversation_id,
   };
-  resetCallSession(false);
-  let it = itemByConversation(row.conversation_id);
-  if (!it && row.conversation_id) {
-    try {
-      const res = await client()
-        .from("communication_conversations")
-        .select("type,employee_id")
-        .eq("id", row.conversation_id)
-        .maybeSingle();
-      const conv = res && res.data;
-      if (conv && String(conv.type || "").toUpperCase() === "ADMIN_STAFF") {
-        it = {
-          kind: "admin_staff",
-          conversation_id: row.conversation_id,
-          employee_id: conv.employee_id,
-          display_name: String(conv.employee_id) === String(state.me.id) ? "ADMIN" : "",
-        };
-      }
-    } catch (_e) {}
+  if (info.mode === "personal" || info.mode === "administration") {
+    state.mode = info.mode;
+    applyModeButtons();
   }
-  $("commsCallPeer").textContent = callPeerLabel(it) || "Incoming call";
-  $("commsCallStatus").textContent = row.type === "VIDEO" ? "Video call — tap Answer" : "Audio call — tap Answer";
+  if (row.conversation_id) {
+    try {
+      await ensureModeForConversation(row.conversation_id);
+    } catch (_m) {}
+  }
+  $("commsCallPeer").textContent = info.peerLabel || callPeerLabel(itemByConversation(row.conversation_id)) || "Incoming call";
+  $("commsCallStatus").textContent =
+    String(row.type || "").toUpperCase() === "VIDEO" ? "Video call — tap Answer" : "Audio call — tap Answer";
   setCallUi("incoming");
 }
 
@@ -1564,21 +1582,10 @@ async function acceptCall() {
   try {
     $("commsCallStatus").textContent = "Connecting...";
     setCallUi("outgoing");
-    await attachLocal(state.call.type === "VIDEO");
     await rpc("communication_call_respond", { p_call_id: state.call.id, p_action: "answer" });
-    await sendCallSignal("join");
-    startSignalPoll();
-    armConnectWatchdog();
-    await pullCallSignals();
-    await processQueuedSignals();
+    await joinLiveCall();
   } catch (err) {
-    const msg =
-      err && err.name === "NotAllowedError"
-        ? "Allow the microphone (and camera) and tap Answer again."
-        : err && err.message
-          ? err.message
-          : "Could not answer.";
-    window.alert(msg);
+    window.alert((err && err.message) || "Could not answer.");
     if (state.call) setCallUi("incoming");
   }
 }
@@ -1672,41 +1679,31 @@ function closePeer(peerId) {
 }
 
 async function tearDownCall(notify) {
+  if (state.endingCall) return;
+  state.endingCall = true;
   const callId = state.call && state.call.id;
   const isGroup = !!(state.open && state.open.kind === "group");
-  const peerCount = Object.keys(state.pcs || {}).length;
-  stopCallTimers();
+  clearRingTimer();
+  try {
+    if (window.PortalCommsCalls) window.PortalCommsCalls.dispose();
+  } catch (_j) {}
+  const host = $("commsJitsiHost");
+  if (host) host.innerHTML = "";
   try {
     if (notify && callId) {
-      const action = isGroup && peerCount >= 1 ? "leave" : "end";
-      if (action === "leave") await sendCallSignal("leave");
-      await rpc("communication_call_respond", { p_call_id: callId, p_action: action });
+      await rpc("communication_call_respond", { p_call_id: callId, p_action: isGroup ? "leave" : "end" });
     }
   } catch (_e) {}
   try {
     if (state.localStream) state.localStream.getTracks().forEach((t) => t.stop());
-  } catch (_e) {}
-  Object.keys(state.pcs || {}).forEach(function (k) {
-    try {
-      state.pcs[k].close();
-    } catch (_e2) {}
-  });
-  document.querySelectorAll("[data-comms-remote-audio]").forEach(function (el) {
-    try {
-      el.srcObject = null;
-      el.remove();
-    } catch (_a) {}
-  });
+  } catch (_e2) {}
   resetCallSession(false);
   state.call = null;
-  const grid = $("commsRemoteGrid");
-  if (grid) grid.innerHTML = "";
+  state.endingCall = false;
   $("commsCallOverlay").hidden = true;
-  const local = $("commsLocalVideo");
-  if (local) local.srcObject = null;
   try {
     await rpc("communication_heartbeat", { p_status: "available" });
-  } catch (_e) {}
+  } catch (_e3) {}
 }
 
 

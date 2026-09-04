@@ -492,13 +492,20 @@ body.comms-app {
   place-items: center;
 }
 .comms-call-stage { width: min(960px, 100%); height: min(100dvh, 720px); position: relative; }
-.comms-remote-grid {
+.comms-jitsi-host {
   position: absolute;
   inset: 0;
-  display: grid;
-  gap: 4px;
-  background: #102433;
-  z-index: 0;
+  z-index: 1;
+  background: #0b1b26;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.comms-jitsi-host iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
 }
 .comms-remote-grid[data-count="0"],
 .comms-remote-grid[data-count="1"] { grid-template-columns: 1fr; }

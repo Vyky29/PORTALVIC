@@ -381,6 +381,7 @@
 
   var incomingCallChannel = null;
   var incomingCallState = null;
+  var incomingCallLive = false;
   var incomingCueTimer = null;
   var incomingCueCount = 0;
   var convCallCache = {};
@@ -676,13 +677,19 @@
       st.textContent =
         "#portalCommsIncoming{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:rgba(5,12,20,.94)}" +
         "#portalCommsIncoming[hidden]{display:none!important}" +
+        "#portalCommsIncoming.is-live{padding:0;align-items:stretch}" +
         ".portal-comms-incoming-card{width:100%;max-width:24rem;padding:28px 22px 22px;border-radius:24px;background:#173247;border:1px solid rgba(255,255,255,.16);color:#fff;text-align:center}" +
         ".portal-comms-incoming-card h2{margin:0 0 6px;font-size:18px}" +
         ".portal-comms-incoming-card p{margin:0 0 16px;font-size:14px;color:rgba(255,255,255,.78)}" +
         ".portal-comms-incoming-actions{display:flex;gap:10px}" +
         ".portal-comms-incoming-actions button{flex:1;min-width:0;padding:12px 10px;border-radius:999px;border:0;font:inherit;font-size:14px;font-weight:800;cursor:pointer}" +
         "#portalCommsIncomingDecline{background:rgba(255,255,255,.12);color:#fff}" +
-        "#portalCommsIncomingAnswer{background:#16a34a;color:#fff}";
+        "#portalCommsIncomingAnswer{background:#16a34a;color:#fff}" +
+        "#portalCommsIncomingLive{position:absolute;inset:0;display:flex;flex-direction:column;background:#0b1b26;min-width:0;min-height:0}" +
+        "#portalCommsIncomingLive[hidden]{display:none!important}" +
+        "#portalCommsJitsi{flex:1;min-height:0;min-width:0}" +
+        "#portalCommsJitsi iframe{width:100%;height:100%;border:0;display:block}" +
+        "#portalCommsLiveHang{margin:12px 16px max(16px,env(safe-area-inset-bottom));padding:12px 10px;border:0;border-radius:999px;background:#dc2626;color:#fff;font:inherit;font-size:14px;font-weight:800}";
       (document.head || document.documentElement).appendChild(st);
     }
     var el = document.createElement("div");
@@ -692,27 +699,75 @@
     el.setAttribute("aria-modal", "true");
     el.setAttribute("aria-label", "Incoming call");
     el.innerHTML =
-      '<div class="portal-comms-incoming-card">' +
+      '<div id="portalCommsIncomingRing" class="portal-comms-incoming-card">' +
       "<h2 id=\"portalCommsIncomingTitle\">Incoming call</h2>" +
       "<p id=\"portalCommsIncomingSub\">Communications</p>" +
       '<div class="portal-comms-incoming-actions">' +
       '<button type="button" id="portalCommsIncomingDecline">Decline</button>' +
       '<button type="button" id="portalCommsIncomingAnswer">Answer</button>' +
-      "</div></div>";
+      "</div></div>" +
+      '<div id="portalCommsIncomingLive" hidden>' +
+      '<div id="portalCommsJitsi"></div>' +
+      '<button type="button" id="portalCommsLiveHang">Hang up</button>' +
+      "</div>";
     (document.body || document.documentElement).appendChild(el);
     document.getElementById("portalCommsIncomingAnswer").addEventListener("click", function () {
-      answerIncomingOverlay();
+      void answerIncomingOverlay();
     });
     document.getElementById("portalCommsIncomingDecline").addEventListener("click", function () {
       void declineIncomingOverlay();
     });
+    document.getElementById("portalCommsLiveHang").addEventListener("click", function () {
+      void hangupDashboardCall(true);
+    });
     return el;
+  }
+
+  function ensureCallsHelper() {
+    if (global.PortalCommsCalls) return Promise.resolve(global.PortalCommsCalls);
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260904-comms-22";
+      s.onload = function () {
+        if (global.PortalCommsCalls) resolve(global.PortalCommsCalls);
+        else reject(new Error("Call service failed to load."));
+      };
+      s.onerror = function () {
+        reject(new Error("Call service failed to load."));
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  function myDashboardCallName(mode) {
+    if (mode === "administration") return "ADMIN";
+    try {
+      var box = supabaseBox();
+      var n = box && box.staff_profile && (box.staff_profile.full_name || box.staff_profile.username);
+      n = String(n || "").trim();
+      if (n) return n;
+    } catch (_n) {}
+    return "Staff";
+  }
+
+  function resetIncomingOverlayLayout() {
+    incomingCallLive = false;
+    var root = document.getElementById("portalCommsIncoming");
+    if (root) root.classList.remove("is-live");
+    var ring = document.getElementById("portalCommsIncomingRing");
+    var live = document.getElementById("portalCommsIncomingLive");
+    var host = document.getElementById("portalCommsJitsi");
+    if (ring) ring.hidden = false;
+    if (live) live.hidden = true;
+    if (host) host.innerHTML = "";
   }
 
   function hideIncomingOverlay() {
     stopIncomingCue();
     incomingCueCount = 0;
     incomingCallState = null;
+    incomingCallLive = false;
+    resetIncomingOverlayLayout();
     var el = document.getElementById("portalCommsIncoming");
     if (el) el.hidden = true;
   }
@@ -720,7 +775,13 @@
   async function showIncomingOverlay(row) {
     if (isCommsAppPage() || !row || !row.id) return;
     if (String(row.status || "calling") !== "calling") return;
-    var info = await incomingCallTarget(row);
+    if (incomingCallLive) return;
+    var helper = await ensureCallsHelper().catch(function () {
+      return null;
+    });
+    var info = helper
+      ? await helper.describeIncomingAsync(client(), row, myUserId())
+      : await incomingCallTarget(row);
     if (!info.forMe) return;
     if (incomingCallState && String(incomingCallState.id) === String(row.id)) return;
     incomingCallState = {
@@ -731,6 +792,8 @@
     };
     incomingCueCount = 0;
     var el = ensureIncomingOverlay();
+    resetIncomingOverlayLayout();
+    incomingCallState.mode = info.mode || "personal";
     var title = document.getElementById("portalCommsIncomingTitle");
     var sub = document.getElementById("portalCommsIncomingSub");
     if (title) title.textContent = info.title || "Incoming call";
@@ -740,16 +803,69 @@
     if (!incomingCueTimer) {
       incomingCueTimer = global.setInterval(playIncomingCue, 4000);
     }
+    if (helper && typeof helper.preload === "function") helper.preload();
   }
 
-  function answerIncomingOverlay() {
+  async function hangupDashboardCall(notify) {
     var st = incomingCallState;
+    incomingCallLive = false;
+    try {
+      if (global.PortalCommsCalls) global.PortalCommsCalls.dispose();
+    } catch (_d) {}
+    if (notify && st && st.id) {
+      try {
+        var c = client();
+        if (c) await c.rpc("communication_call_respond", { p_call_id: st.id, p_action: "end" });
+      } catch (_e) {}
+    }
     hideIncomingOverlay();
-    if (!st) return;
-    var params = { call: st.id };
-    if (st.conversation_id) params.conv = st.conversation_id;
-    if (st.mode) params.mode = st.mode;
-    global.location.href = commsUrlWith(params);
+  }
+
+  async function answerIncomingOverlay() {
+    var st = incomingCallState;
+    if (!st || incomingCallLive) return;
+    stopIncomingCue();
+    incomingCueCount = 0;
+    var helper;
+    try {
+      helper = await ensureCallsHelper();
+    } catch (err) {
+      window.alert((err && err.message) || "Could not answer.");
+      return;
+    }
+    var el = ensureIncomingOverlay();
+    var ring = document.getElementById("portalCommsIncomingRing");
+    var live = document.getElementById("portalCommsIncomingLive");
+    var host = document.getElementById("portalCommsJitsi");
+    if (ring) ring.hidden = true;
+    if (live) live.hidden = false;
+    el.classList.add("is-live");
+    incomingCallLive = true;
+    var c = client();
+    if (!c || !host) {
+      window.alert("Could not answer.");
+      hideIncomingOverlay();
+      return;
+    }
+    try {
+      await c.rpc("communication_call_respond", { p_call_id: st.id, p_action: "answer" });
+      await helper.join({
+        client: c,
+        callId: st.id,
+        displayName: myDashboardCallName(st.mode),
+        video: String(st.type || "").toUpperCase() === "VIDEO",
+        parent: host,
+        onHangup: function () {
+          void hangupDashboardCall(true);
+        },
+      });
+    } catch (err) {
+      incomingCallLive = false;
+      window.alert((err && err.message) || "Could not answer.");
+      if (ring) ring.hidden = false;
+      if (live) live.hidden = true;
+      el.classList.remove("is-live");
+    }
   }
 
   async function declineIncomingOverlay() {
@@ -796,7 +912,10 @@
           function (payload) {
             var row = (payload && payload.new) || {};
             if (!incomingCallState || String(row.id) !== String(incomingCallState.id)) return;
-            if (row.status && row.status !== "calling") hideIncomingOverlay();
+            if (row.status === "answered" && incomingCallLive) return;
+            if (row.status && row.status !== "calling" && row.status !== "answered") {
+              void hangupDashboardCall(false);
+            }
           }
         )
         .subscribe(function (status) {
