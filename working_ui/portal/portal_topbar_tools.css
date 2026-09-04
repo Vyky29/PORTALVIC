@@ -1026,6 +1026,10 @@ body.dock-context-menu .topbar-tool-cell--participants .topbar-tool-label{
   overflow:hidden;
   box-sizing:border-box;
 }
+#topbarStaffWaBtn.topbar-tool-btn,
+#topbarStaffWaBtn{
+  overflow:visible !important;
+}
 .topbar-tools-grid--lead .topbar-tool-btn,
 .topbar-tools-grid--eight .topbar-tool-btn,
 .topbar-tools-grid--ceo-full .topbar-tool-btn{

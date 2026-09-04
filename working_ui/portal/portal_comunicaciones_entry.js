@@ -148,24 +148,11 @@
       st.id = "portalCommsUnreadBadgeCss";
     }
     st.textContent =
-      "#adminTopbar,.admin-topbar,.admin-topbar-meta,#btnComunicaciones,#topbarStaffWaBtn,#topbarToolCellStaffWa{overflow:visible!important;contain:none!important}" +
-      "#btnComunicaciones,.admin-icon-btn--chat,#topbarStaffWaBtn,[data-comms-unread-host]{position:relative!important;isolation:isolate!important}" +
-      "#btnComunicaciones #commsBadge,#btnComunicaciones [data-comms-unread]," +
-      "#topbarStaffWaBtn .topbar-staff-wa-btn__badge,#topbarStaffWaBtn [data-comms-unread]," +
-      ".portal-comms-corner-badge{display:none!important}" +
-      "#btnComunicaciones[data-comms-count]::after," +
-      "#topbarStaffWaBtn[data-comms-count]::after," +
-      "[data-comms-unread-host][data-comms-count]::after{" +
-      "content:attr(data-comms-count)!important;position:absolute!important;" +
-      "top:1px!important;right:1px!important;left:auto!important;bottom:auto!important;" +
-      "z-index:30!important;min-width:18px!important;height:18px!important;width:auto!important;" +
-      "padding:0 5px!important;margin:0!important;border:0!important;border-radius:999px!important;" +
-      "background:#dc2626!important;color:#fff!important;font-size:11px!important;font-weight:800!important;" +
-      "line-height:18px!important;letter-spacing:0!important;text-align:center!important;" +
-      "display:flex!important;align-items:center!important;justify-content:center!important;" +
-      "box-shadow:0 0 0 2px #fff,0 2px 8px rgba(0,0,0,.28)!important;" +
-      "pointer-events:none!important;opacity:1!important;visibility:visible!important;" +
-      "transform:none!important}" +
+      "#adminTopbar,.admin-topbar,.admin-topbar-meta,#btnComunicaciones,#topbarStaffWaBtn,#topbarToolCellStaffWa," +
+      ".topbar-tool-cell--staff-wa,.topbar-tools-grid{overflow:visible!important;contain:none!important}" +
+      "#btnComunicaciones,.admin-icon-btn--chat,#topbarStaffWaBtn,[data-comms-unread-host]," +
+      "#topbarStaffWaBtn.topbar-tool-btn{position:relative!important;isolation:isolate!important;overflow:visible!important}" +
+      "#commsBadge.is-empty,.topbar-staff-wa-btn__badge.is-empty,.portal-comms-corner-badge.is-empty{display:none!important}" +
       "#btnComunicaciones.admin-icon-btn--has-alerts,#btnComunicaciones.portal-comms-has-unread{" +
       "border-color:#dc2626!important;background:#fff5f5!important;" +
       "box-shadow:0 0 0 2px rgba(220,38,38,.55)!important;animation:portalCommsBtnPulse 1.1s ease infinite}" +
@@ -185,15 +172,58 @@
     (document.head || document.documentElement).appendChild(st);
   }
 
+  var CORNER_BADGE_ON =
+    "display:flex!important;align-items:center;justify-content:center;" +
+    "position:absolute!important;top:0!important;right:0!important;left:auto!important;bottom:auto!important;" +
+    "z-index:80!important;min-width:18px!important;height:18px!important;width:auto!important;" +
+    "padding:0 5px!important;margin:0!important;border:0!important;border-radius:999px!important;" +
+    "background:#dc2626!important;color:#fff!important;font-size:11px!important;font-weight:800!important;" +
+    "line-height:18px!important;letter-spacing:0!important;text-align:center!important;" +
+    "box-shadow:0 0 0 2px #fff,0 1px 4px rgba(0,0,0,.28)!important;" +
+    "pointer-events:none!important;opacity:1!important;visibility:visible!important;" +
+    "flex:0 0 auto!important;transform:none!important";
+  var CORNER_BADGE_OFF = "display:none!important";
+
   function paintCornerBadge(host, count) {
     if (!host) return;
     try {
       host.style.setProperty("overflow", "visible", "important");
       host.style.setProperty("position", "relative", "important");
       host.style.setProperty("isolation", "isolate", "important");
+      var p = host.parentElement;
+      var n = 0;
+      while (p && n < 5) {
+        p.style.setProperty("overflow", "visible", "important");
+        p = p.parentElement;
+        n += 1;
+      }
     } catch (_p) {}
     if (count > 0) host.setAttribute("data-comms-count", unreadLabel(count));
     else host.removeAttribute("data-comms-count");
+    var badge =
+      host.querySelector("#commsBadge, .topbar-staff-wa-btn__badge, [data-comms-unread], .portal-comms-corner-badge") ||
+      null;
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "portal-comms-corner-badge topbar-staff-wa-btn__badge";
+      badge.setAttribute("data-comms-unread", "");
+      host.appendChild(badge);
+    }
+    try {
+      badge.removeAttribute("hidden");
+    } catch (_h) {}
+    badge.hidden = false;
+    if (count > 0) {
+      badge.classList.remove("is-empty");
+      badge.textContent = unreadLabel(count);
+      badge.style.cssText = CORNER_BADGE_ON;
+      badge.setAttribute("aria-hidden", "false");
+    } else {
+      badge.classList.add("is-empty");
+      badge.textContent = "0";
+      badge.style.cssText = CORNER_BADGE_OFF;
+      badge.setAttribute("aria-hidden", "true");
+    }
   }
 
   function paintDataUnreadNodes(count) {
@@ -289,7 +319,30 @@
     unreadRetryTimer = global.setTimeout(function () {
       unreadRetryTimer = null;
       void refreshUnread();
-    }, 8000);
+    }, 1500);
+  }
+
+  async function inboxUnreadTotal(c) {
+    try {
+      var inboxRes = await c.rpc("communication_inbox", { p_mode: "personal" });
+      if (inboxRes && inboxRes.error) return 0;
+      var data = inboxRes && inboxRes.data;
+      if (typeof data === "string") {
+        try {
+          data = JSON.parse(data);
+        } catch (_j) {
+          data = {};
+        }
+      }
+      var items = (data && data.items) || (Array.isArray(data) ? data : []);
+      var sum = 0;
+      for (var i = 0; i < items.length; i++) {
+        sum += Math.max(0, Number(items[i] && items[i].unread) || 0);
+      }
+      return sum;
+    } catch (_e) {
+      return 0;
+    }
   }
 
   function parseUnreadCounts(raw) {
@@ -332,7 +385,7 @@
             scheduleUnreadRetry();
             return lastUnreadCount;
           }
-          applyUnreadFromServer(Math.max(0, Number(res.data) || 0));
+          applyUnreadFromServer(Math.max(0, Number(res.data) || 0, await inboxUnreadTotal(c)));
         } else {
           var parsed = parseUnreadCounts(countsRes && countsRes.data);
           if (
@@ -375,8 +428,10 @@
           }
           lastPersonalCount = parsed.personal;
           lastAdminCount = parsed.administration;
-          applyUnreadFromServer(parsed.total);
-          updateCommsLaunchLinks(parsed.personal > 0 ? "personal" : "");
+          var n = parsed.total;
+          if (n < 1) n = Math.max(n, await inboxUnreadTotal(c));
+          applyUnreadFromServer(n);
+          updateCommsLaunchLinks(parsed.personal > 0 || n > 0 ? "personal" : "");
         }
         return lastUnreadCount;
       } catch (_e) {
@@ -1458,6 +1513,7 @@
         global.portalSyncHaloFlankToolPlacement();
       }
     } catch (_e) {}
+    applyUnreadBadge(lastUnreadCount);
   }
 
   function ensureButton(staffKey) {
