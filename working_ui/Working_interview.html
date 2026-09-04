@@ -3276,7 +3276,7 @@
     async function addNewCandidateFromInput() {
       if (!portalUseSupabase) {
         if (isInterviewEmbedded()) {
-          alert("Still connecting to your Admin login — wait a second and try again.");
+          alert("Still connecting to your Admin login - wait a second and try again.");
           try {
             if (window.parent && window.parent !== window) {
               window.parent.postMessage({ type: "portal-interview-auth-request" }, window.location.origin);
