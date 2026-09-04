@@ -614,12 +614,6 @@
       min-width: 0;
       overflow-wrap: break-word;
     }
-    .venue-acc__count {
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 0.88rem;
-      white-space: nowrap;
-    }
     .venue-acc__body {
       display: grid;
       gap: 8px;
@@ -1314,8 +1308,9 @@
     }
     .slot.is-clickable { cursor: pointer; }
     .slot.is-clickable:hover { border-color: rgba(45,132,179,.45); }
-    #actionSheet.sheet { z-index: 60; }
-    .booking-gate { z-index: 70; }
+    /* Term/trial + waitlist must sit above the service times sheet (z-index 70). */
+    #actionSheet.sheet { z-index: 90; }
+    .booking-gate { z-index: 100; }
 
   </style>
 </head>
@@ -2075,11 +2070,11 @@
           choices.innerHTML =
             '<button type="button" class="sheet__choice sheet__choice--pri" data-book-kind="term" data-slot-id="' +
             esc(slot.id) +
-            '"><strong>Book term place</strong><span>Secure the standing place for the rest of the term or year.</span></button>' +
+            '"><strong>Book term place</strong><span>Secure the standing place for the rest of the term or year. After registration, complete funding, term or year choice, and payment in the booking flow.</span></button>' +
             '<button type="button" class="sheet__choice" data-book-kind="trial" data-slot-id="' +
             esc(slot.id) +
-            '"><strong>Book a trial</strong><span>One session' +
-            (price ? " (" + esc(price) + ")" : "") +
+            '"><strong>Book a trial</strong><span>One session. After registration, pay by card, Apple Pay, or bank transfer (30-minute hold)' +
+            (price ? " · " + esc(price) : "") +
             ".</span></button>";
         }
         action.hidden = false;
