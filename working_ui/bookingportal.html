@@ -1942,14 +1942,6 @@
         );
       }
 
-      function countVenueSlots(venueGroup) {
-        var n = 0;
-        (venueGroup.days || []).forEach(function (d) {
-          n += (d.slots || []).length;
-        });
-        return n;
-      }
-
       function slotsHtml(list) {
         var venues = [];
         if (api && typeof api.groupSlotsByVenueThenDay === "function") {
@@ -1963,12 +1955,10 @@
                 rows.push(slotRowHtml(s, false));
               });
             });
-            var count = countVenueSlots(v);
             return (
               '<details class="venue-acc"' + (idx === 0 ? " open" : "") + ">" +
               "<summary>" +
               '<span class="venue-acc__label">' + esc(v.venueLabel || venueName(v.venue)) + "</span>" +
-              '<span class="venue-acc__count">' + count + " times</span>" +
               "</summary>" +
               '<div class="venue-acc__body">' + rows.join("") + "</div>" +
               "</details>"
