@@ -3,7 +3,7 @@ import { bootstrapDashboardSupabase, portalLogout } from "/portal/auth-handler.j
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
-  { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun.cloudflare.com:3478" },
 ];
 const ALLOWED_MIME = [
   "image/jpeg",
@@ -40,6 +40,10 @@ const state = {
   iceQueues: {},
   pcs: {},
   remoteDescSet: {},
+  seenSignalIds: {},
+  signalChain: Promise.resolve(),
+  signalPoll: 0,
+  connectTimer: 0,
   presence: { administration: "offline", people: {} },
   typing: {},
   typingChannel: null,
@@ -860,7 +864,9 @@ function subscribeRealtime() {
         const row = payload.new || {};
         if (!state.call || String(row.call_id) !== String(state.call.id)) return;
         if (String(row.sender_id) === String(state.me.id)) return;
-        await handleSignal(row.payload || {}, row.sender_id);
+        enqueueSignal(function () {
+          return handleSignal(row.payload || {}, row.sender_id, row.id);
+        });
       }
     )
     .subscribe();
@@ -1095,11 +1101,11 @@ function setCallUi(phase) {
   $("commsHang").hidden = phase === "incoming";
   $("commsMuteMic").hidden = phase === "incoming";
   $("commsMuteCam").hidden = phase === "incoming" || (state.call && state.call.type !== "VIDEO");
-  void playVideoEl($("commsLocalVideo"));
+  void playMediaEl($("commsLocalVideo"), true);
   layoutRemoteGrid();
 }
 
-function playVideoEl(el) {
+function playMediaEl(el, allowMuteFallback) {
   if (!el) return Promise.resolve();
   el.playsInline = true;
   el.setAttribute("playsinline", "");
@@ -1107,14 +1113,101 @@ function playVideoEl(el) {
   const p = el.play();
   if (p && p.catch) {
     return p.catch(function () {
-      const wasMuted = el.muted;
+      if (!allowMuteFallback) return;
       el.muted = true;
-      return el.play().then(function () {
-        if (!wasMuted) el.muted = wasMuted;
-      }).catch(function () {});
+      return el.play().catch(function () {});
     });
   }
   return Promise.resolve();
+}
+
+function playVideoEl(el) {
+  return playMediaEl(el, true);
+}
+
+function enqueueSignal(fn) {
+  state.signalChain = (state.signalChain || Promise.resolve())
+    .then(fn)
+    .catch(function (err) {
+      console.warn("[comms-call] signal", err);
+    });
+  return state.signalChain;
+}
+
+function stopCallTimers() {
+  if (state.signalPoll) {
+    window.clearInterval(state.signalPoll);
+    state.signalPoll = 0;
+  }
+  if (state.connectTimer) {
+    window.clearTimeout(state.connectTimer);
+    state.connectTimer = 0;
+  }
+}
+
+function anyPcLive() {
+  return Object.keys(state.pcs || {}).some(function (k) {
+    const st = state.pcs[k] && state.pcs[k].iceConnectionState;
+    return st === "connected" || st === "completed";
+  });
+}
+
+function markCallConnected() {
+  if (state.connectTimer) {
+    window.clearTimeout(state.connectTimer);
+    state.connectTimer = 0;
+  }
+  const el = $("commsCallStatus");
+  if (el) el.textContent = "In call";
+}
+
+function armConnectWatchdog() {
+  if (state.connectTimer) window.clearTimeout(state.connectTimer);
+  state.connectTimer = window.setTimeout(function () {
+    state.connectTimer = 0;
+    if (!state.call || anyPcLive()) return;
+    const el = $("commsCallStatus");
+    if (el) el.textContent = "Could not connect. Stay on the same Wi-Fi and try again.";
+  }, 20000);
+}
+
+function startSignalPoll() {
+  if (state.signalPoll) window.clearInterval(state.signalPoll);
+  state.signalPoll = window.setInterval(function () {
+    if (!state.call) return;
+    enqueueSignal(function () {
+      return pullCallSignals();
+    });
+  }, 1200);
+}
+
+function resetCallSession(keepLocal) {
+  state.pendingSignals = [];
+  state.iceQueues = {};
+  state.pcs = {};
+  state.remoteDescSet = {};
+  state.remoteStreams = {};
+  state.callPeers = {};
+  state.seenSignalIds = {};
+  state.signalChain = Promise.resolve();
+  if (!keepLocal) state.localStream = null;
+}
+
+function shouldOfferTo(peerId) {
+  const me = String((state.me && state.me.id) || "");
+  const peer = String(peerId || "");
+  if (!me || !peer || peer === me) return false;
+  const init = String((state.call && state.call.initiated_by) || "");
+  if (init && me === init) return true;
+  if (init && peer === init) return false;
+  return me < peer;
+}
+
+function iceInitFromPayload(raw) {
+  if (!raw) return null;
+  const init = typeof raw === "string" ? { candidate: raw } : raw;
+  if (!init || !init.candidate) return null;
+  return init;
 }
 
 function layoutRemoteGrid() {
@@ -1150,6 +1243,21 @@ function remoteVideoFor(peerId) {
   return v;
 }
 
+function remoteAudioFor(peerId) {
+  const id = "commsRemoteAudio-" + peerId;
+  let a = document.getElementById(id);
+  if (!a) {
+    a = document.createElement("audio");
+    a.id = id;
+    a.autoplay = true;
+    a.setAttribute("playsinline", "");
+    a.setAttribute("data-comms-remote-audio", "1");
+    const host = $("commsCallOverlay") || document.body;
+    host.appendChild(a);
+  }
+  return a;
+}
+
 function bindRemoteTrackFor(peerId, track) {
   if (!track || !peerId) return;
   if (!state.remoteStreams) state.remoteStreams = {};
@@ -1162,8 +1270,12 @@ function bindRemoteTrackFor(peerId, track) {
   const v = remoteVideoFor(peerId);
   if (v) {
     v.srcObject = stream;
-    void playVideoEl(v);
+    void playMediaEl(v, false);
   }
+  const a = remoteAudioFor(peerId);
+  a.srcObject = stream;
+  a.muted = false;
+  void playMediaEl(a, false);
 }
 
 function rtcDescFromPayload(payload) {
@@ -1211,8 +1323,10 @@ function iceQueueFor(peerId) {
 async function flushIceQueue(pc, peerId) {
   const queued = iceQueueFor(peerId).splice(0);
   for (let i = 0; i < queued.length; i++) {
+    const init = iceInitFromPayload(queued[i]) || queued[i];
+    if (!init || !init.candidate) continue;
     try {
-      await pc.addIceCandidate(new RTCIceCandidate(queued[i]));
+      await pc.addIceCandidate(new RTCIceCandidate(init));
     } catch (_e) {}
   }
 }
@@ -1221,7 +1335,11 @@ async function ensurePcFor(peerId) {
   const key = String(peerId || "");
   if (!key) return null;
   if (state.pcs[key]) return state.pcs[key];
-  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  const pc = new RTCPeerConnection({
+    iceServers: ICE_SERVERS,
+    bundlePolicy: "max-bundle",
+    rtcpMuxPolicy: "require",
+  });
   state.pcs[key] = pc;
   if (state.localStream) {
     state.localStream.getTracks().forEach(function (t) {
@@ -1243,17 +1361,33 @@ async function ensurePcFor(peerId) {
     if (!ev.candidate || !state.call) return;
     sendCallSignal("ice", ev.candidate, key).catch(function () {});
   };
-  pc.onconnectionstatechange = function () {
-    if (pc.connectionState === "connected") {
-      $("commsCallStatus").textContent = "In call";
+  pc.oniceconnectionstatechange = function () {
+    if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+      markCallConnected();
+    } else if (pc.iceConnectionState === "failed") {
+      const el = $("commsCallStatus");
+      if (el) el.textContent = "Reconnecting...";
+      try {
+        pc.restartIce();
+      } catch (_r) {}
+      if (shouldOfferTo(key)) {
+        offerToPeer(key, true).catch(function () {});
+      }
     }
+  };
+  pc.onconnectionstatechange = function () {
+    if (pc.connectionState === "connected") markCallConnected();
   };
   return pc;
 }
 
 async function attachLocal(video) {
   const stream = await navigator.mediaDevices.getUserMedia({
-    audio: true,
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    },
     video: video ? { facingMode: "user" } : false,
   });
   state.localStream = stream;
@@ -1262,7 +1396,7 @@ async function attachLocal(video) {
     local.srcObject = stream;
     local.muted = true;
     local.hidden = !video;
-    void playVideoEl(local);
+    void playMediaEl(local, true);
   }
   Object.keys(state.pcs).forEach(function (key) {
     const pc = state.pcs[key];
@@ -1275,11 +1409,13 @@ async function attachLocal(video) {
   });
 }
 
-async function offerToPeer(peerId) {
+async function offerToPeer(peerId, iceRestart) {
   if (!peerId || String(peerId) === String(state.me.id)) return;
+  if (!state.localStream) return;
   const pc = await ensurePcFor(peerId);
-  if (!pc || pc.signalingState !== "stable") return;
-  const offer = await pc.createOffer();
+  if (!pc) return;
+  if (!iceRestart && pc.signalingState !== "stable") return;
+  const offer = await pc.createOffer(iceRestart ? { iceRestart: true } : undefined);
   await pc.setLocalDescription(offer);
   await sendCallSignal("offer", offer, peerId);
 }
@@ -1287,7 +1423,7 @@ async function offerToPeer(peerId) {
 async function processQueuedSignals() {
   const queued = state.pendingSignals.splice(0);
   for (let i = 0; i < queued.length; i++) {
-    await handleSignal(queued[i].payload, queued[i].senderId);
+    await handleSignal(queued[i].payload, queued[i].senderId, queued[i].signalId);
   }
 }
 
@@ -1304,9 +1440,7 @@ async function pullCallSignals() {
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       if (String(row.sender_id) === String(state.me.id)) continue;
-      const pl = row.payload || {};
-      if (pl.type === "join") continue;
-      await handleSignal(pl, row.sender_id);
+      await handleSignal(row.payload || {}, row.sender_id, row.id);
     }
   } catch (_e) {}
 }
@@ -1314,6 +1448,11 @@ async function pullCallSignals() {
 async function startCall(type) {
   if (!state.open) return;
   try {
+    $("commsCallPeer").textContent =
+      commsStaffLabel((itemByConversation(state.open.conversation_id) || {}).display_name) || "";
+    $("commsCallStatus").textContent = "Starting...";
+    setCallUi("outgoing");
+    await attachLocal(type === "VIDEO");
     const out = await rpc("communication_start_call", {
       p_conversation_id: state.open.conversation_id,
       p_type: type,
@@ -1322,22 +1461,22 @@ async function startCall(type) {
       id: out.call_id,
       type: out.type,
       role: "offerer",
+      initiated_by: state.me.id,
       conversation_id: state.open.conversation_id,
     };
-    state.pendingSignals = [];
-    state.iceQueues = {};
-    state.pcs = {};
-    state.remoteDescSet = {};
-    state.remoteStreams = {};
-    state.callPeers = {};
-    $("commsCallPeer").textContent =
-      commsStaffLabel((itemByConversation(state.open.conversation_id) || {}).display_name) || "";
+    resetCallSession(true);
     $("commsCallStatus").textContent = "Calling...";
-    setCallUi("outgoing");
-    await attachLocal(type === "VIDEO");
     await sendCallSignal("join");
+    startSignalPoll();
+    armConnectWatchdog();
   } catch (err) {
-    window.alert(err.message || "Could not start the call.");
+    const msg =
+      err && err.name === "NotAllowedError"
+        ? "Allow the microphone (and camera) to start the call."
+        : err && err.message
+          ? err.message
+          : "Could not start the call.";
+    window.alert(msg);
     tearDownCall(true);
   }
 }
@@ -1345,31 +1484,41 @@ async function startCall(type) {
 async function incomingCall(row) {
   if (state.call && String(state.call.id) === String(row.id)) return;
   if (state.call) return;
-  state.call = { id: row.id, type: row.type, role: "answerer", conversation_id: row.conversation_id };
-  state.pendingSignals = [];
-  state.iceQueues = {};
-  state.pcs = {};
-  state.remoteDescSet = {};
-  state.remoteStreams = {};
+  state.call = {
+    id: row.id,
+    type: row.type,
+    role: "answerer",
+    initiated_by: row.initiated_by,
+    conversation_id: row.conversation_id,
+  };
+  resetCallSession(false);
   const it = itemByConversation(row.conversation_id);
   $("commsCallPeer").textContent = commsStaffLabel((it && it.display_name) || "Incoming call");
-  $("commsCallStatus").textContent = row.type === "VIDEO" ? "Video call" : "Audio call";
+  $("commsCallStatus").textContent = row.type === "VIDEO" ? "Video call — tap Answer" : "Audio call — tap Answer";
   setCallUi("incoming");
 }
 
 async function acceptCall() {
   if (!state.call) return;
   try {
-    await rpc("communication_call_respond", { p_call_id: state.call.id, p_action: "answer" });
     $("commsCallStatus").textContent = "Connecting...";
     setCallUi("outgoing");
     await attachLocal(state.call.type === "VIDEO");
+    await rpc("communication_call_respond", { p_call_id: state.call.id, p_action: "answer" });
     await sendCallSignal("join");
+    startSignalPoll();
+    armConnectWatchdog();
     await pullCallSignals();
     await processQueuedSignals();
   } catch (err) {
-    window.alert(err.message || "Could not answer.");
-    tearDownCall(true);
+    const msg =
+      err && err.name === "NotAllowedError"
+        ? "Allow the microphone (and camera) and tap Answer again."
+        : err && err.message
+          ? err.message
+          : "Could not answer.";
+    window.alert(msg);
+    if (state.call) setCallUi("incoming");
   }
 }
 
@@ -1380,22 +1529,30 @@ function signalForMe(payload) {
   return String(payload.to) === String(state.me.id);
 }
 
-async function handleSignal(payload, senderId) {
+async function handleSignal(payload, senderId, signalId) {
   if (!payload || !payload.type) return;
   if (!state.call) return;
+  if (signalId) {
+    const sid = String(signalId);
+    if (state.seenSignalIds[sid]) return;
+    state.seenSignalIds[sid] = true;
+  }
   if (!signalForMe(payload)) return;
   const from = String(payload.from || senderId || "");
   if (from && from === String(state.me.id)) return;
   if (payload.type === "join") {
-    if (!state.localStream) return;
-    if (from) {
-      state.callPeers[from] = state.callPeers[from] || "Participant";
-      await offerToPeer(from);
+    if (from) state.callPeers[from] = state.callPeers[from] || "Participant";
+    if (!state.localStream) {
+      state.pendingSignals.push({ payload: payload, senderId: senderId, signalId: signalId });
+      if (signalId) delete state.seenSignalIds[String(signalId)];
+      return;
     }
+    if (shouldOfferTo(from)) await offerToPeer(from);
     return;
   }
   if (!state.localStream) {
-    state.pendingSignals.push({ payload: payload, senderId: senderId });
+    state.pendingSignals.push({ payload: payload, senderId: senderId, signalId: signalId });
+    if (signalId) delete state.seenSignalIds[String(signalId)];
     return;
   }
   try {
@@ -1406,28 +1563,32 @@ async function handleSignal(payload, senderId) {
     if (!from) return;
     const pc = await ensurePcFor(from);
     if (payload.type === "offer" && payload.sdp) {
-      if (state.remoteDescSet[from]) return;
+      if (state.remoteDescSet[from] && pc.signalingState === "stable") return;
+      if (pc.signalingState === "have-local-offer" && shouldOfferTo(from)) return;
+      if (pc.signalingState !== "stable" && pc.signalingState !== "have-local-offer") return;
       await pc.setRemoteDescription(rtcDescFromPayload(payload));
       state.remoteDescSet[from] = true;
       await flushIceQueue(pc, from);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       await sendCallSignal("answer", answer, from);
-      $("commsCallStatus").textContent = "In call";
     } else if (payload.type === "answer" && payload.sdp) {
       if (pc.signalingState !== "have-local-offer") return;
       await pc.setRemoteDescription(rtcDescFromPayload(payload));
       state.remoteDescSet[from] = true;
       await flushIceQueue(pc, from);
-      $("commsCallStatus").textContent = "In call";
-    } else if (payload.type === "ice" && payload.candidate) {
+    } else if (payload.type === "ice") {
+      const init = iceInitFromPayload(payload.candidate);
+      if (!init) return;
       if (!state.remoteDescSet[from]) {
-        iceQueueFor(from).push(payload.candidate);
+        iceQueueFor(from).push(init);
         return;
       }
-      await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+      await pc.addIceCandidate(new RTCIceCandidate(init));
     }
-  } catch (_e) {}
+  } catch (err) {
+    console.warn("[comms-call] handle", payload.type, err);
+  }
 }
 
 function closePeer(peerId) {
@@ -1441,6 +1602,11 @@ function closePeer(peerId) {
   delete state.remoteStreams[key];
   const tile = document.querySelector('.comms-remote-tile[data-peer="' + key + '"]');
   if (tile) tile.remove();
+  const audio = document.getElementById("commsRemoteAudio-" + key);
+  if (audio) {
+    audio.srcObject = null;
+    audio.remove();
+  }
   layoutRemoteGrid();
 }
 
@@ -1448,6 +1614,7 @@ async function tearDownCall(notify) {
   const callId = state.call && state.call.id;
   const isGroup = !!(state.open && state.open.kind === "group");
   const peerCount = Object.keys(state.pcs || {}).length;
+  stopCallTimers();
   try {
     if (notify && callId) {
       const action = isGroup && peerCount >= 1 ? "leave" : "end";
@@ -1463,14 +1630,14 @@ async function tearDownCall(notify) {
       state.pcs[k].close();
     } catch (_e2) {}
   });
-  state.pcs = {};
-  state.localStream = null;
-  state.remoteStreams = {};
+  document.querySelectorAll("[data-comms-remote-audio]").forEach(function (el) {
+    try {
+      el.srcObject = null;
+      el.remove();
+    } catch (_a) {}
+  });
+  resetCallSession(false);
   state.call = null;
-  state.pendingSignals = [];
-  state.iceQueues = {};
-  state.remoteDescSet = {};
-  state.callPeers = {};
   const grid = $("commsRemoteGrid");
   if (grid) grid.innerHTML = "";
   $("commsCallOverlay").hidden = true;
@@ -1694,7 +1861,6 @@ async function boot() {
         const row = res && res.data;
         if (row && String(row.initiated_by) !== String(state.me.id) && (row.status === "calling" || row.status === "answered")) {
           await incomingCall(row);
-          await acceptCall();
         }
       } catch (_c) {}
     }

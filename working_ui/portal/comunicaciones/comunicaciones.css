@@ -539,6 +539,13 @@ body.comms-app {
   background: #173247;
   box-shadow: 0 8px 24px rgba(0,0,0,.35);
 }
+[data-comms-remote-audio] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
 .comms-call-status, .comms-call-peer {
   position: absolute;
   left: 0;
@@ -546,13 +553,14 @@ body.comms-app {
   text-align: center;
   margin: 0;
 }
-.comms-call-peer { top: 24px; font-weight: 800; }
-.comms-call-status { top: 52px; color: #c5d4de; }
+.comms-call-peer { top: 24px; font-weight: 800; z-index: 3; }
+.comms-call-status { top: 52px; color: #c5d4de; z-index: 3; }
 .comms-call-bar {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 24px;
+  z-index: 4;
   display: flex;
   justify-content: center;
   gap: 10px;
