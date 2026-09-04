@@ -80,6 +80,10 @@ function commsStaffLabel(name) {
   return n;
 }
 
+function client() {
+  return window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+}
+
 function isMyAdminStaffThread(it) {
   return !!(
     it &&
