@@ -1433,6 +1433,45 @@
     let sharedRefreshTimer = null;
     let sharedRealtimeChannel = null;
 
+    const INTERVIEWER_OPTIONS = [
+      { value: "Victor", label: "Victor" },
+      { value: "Raul", label: "Raul" },
+      { value: "Javi", label: "Javi" },
+      { value: "Michelle", label: "Michelle" },
+    ];
+
+    function renderInterviewerSelect(selectId, selectedRaw) {
+      const selected = String(selectedRaw || "").trim();
+      const opts = INTERVIEWER_OPTIONS.slice();
+      if (selected && !opts.some(function (o) { return o.value.toLowerCase() === selected.toLowerCase(); })) {
+        opts.unshift({ value: selected, label: selected });
+      }
+      const optionsHtml =
+        '<option value="">Select who completed the interview</option>' +
+        opts
+          .map(function (o) {
+            const sel =
+              selected && o.value.toLowerCase() === selected.toLowerCase() ? " selected" : "";
+            return (
+              '<option value="' +
+              escapeHtml(o.value) +
+              '"' +
+              sel +
+              ">" +
+              escapeHtml(o.label) +
+              "</option>"
+            );
+          })
+          .join("");
+      return (
+        '<select id="' +
+        escapeHtml(selectId) +
+        '" class="input" required>' +
+        optionsHtml +
+        "</select>"
+      );
+    }
+
     function interviewReturnUrl() {
       try {
         const sp = new URLSearchParams(window.location.search || "");
@@ -3453,8 +3492,8 @@
             <div class="section-body">
               <div class="info-grid">
                 <div class="field full">
-                  <label for="callInterviewerName">Interviewer name</label>
-                  <input id="callInterviewerName" class="input" type="text" placeholder="e.g. Jane Smith" value="${escapeHtml(candidate.callInterview.interviewerName || "")}" />
+                  <label for="callInterviewerName">Who completed this interview</label>
+                  ${renderInterviewerSelect("callInterviewerName", candidate.callInterview.interviewerName)}
                 </div>
 
                 <div class="field full">
@@ -3560,8 +3599,8 @@
               <div id="faceSectionWrap" class="${callSuccessful ? "" : "hidden"}">
                 <div class="info-grid">
                   <div class="field full">
-                    <label for="faceInterviewerName">Interviewer name</label>
-                    <input id="faceInterviewerName" class="input" type="text" placeholder="e.g. Jane Smith" value="${escapeHtml(candidate.faceToFaceInterview.interviewerName || "")}" />
+                    <label for="faceInterviewerName">Who completed this interview</label>
+                    ${renderInterviewerSelect("faceInterviewerName", candidate.faceToFaceInterview.interviewerName)}
                   </div>
 
                   <div class="field full">
@@ -3735,41 +3774,6 @@
                         </div>
                         ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ4")}
                         <input type="hidden" id="scenQ4" value="${candidate.faceToFaceInterview.scenQ4 || 0}" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="field full phase-block phase-block--collab">
-                    <label>Collaboration and Communication</label>
-                    <div class="check-grid">
-                      <div class="check-card">
-<div class="question-label"><label for="collabQ1">1. Communication skills with parents/carers about progress and challenges.</label></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="collabQ1" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="collabQ1" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "collabQ1")}
-                        <input type="hidden" id="collabQ1" value="${candidate.faceToFaceInterview.collabQ1 || 0}" />
-                      </div>
-
-                      <div class="check-card">
-<div class="question-label"><label for="collabQ2">2. Collaboration with colleagues and openness to feedback.</label></div>
-                        <div class="question-controls">
-                          <div class="rating-stars" data-target="collabQ2" data-max="4">
-                            <button type="button" class="rating-star" data-value="1">★</button>
-                            <button type="button" class="rating-star" data-value="2">★</button>
-                            <button type="button" class="rating-star" data-value="3">★</button>
-                            <button type="button" class="rating-star" data-value="4">★</button>
-                          </div>
-                          <button type="button" class="btn-record" title="Record" data-question="collabQ2" aria-label="Record">⏺</button>
-                        </div>
-                        ${renderQuestionAudio(candidate.faceToFaceInterview, "collabQ2")}
-                        <input type="hidden" id="collabQ2" value="${candidate.faceToFaceInterview.collabQ2 || 0}" />
                       </div>
                     </div>
                   </div>
