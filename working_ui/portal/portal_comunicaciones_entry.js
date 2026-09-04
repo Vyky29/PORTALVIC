@@ -382,8 +382,82 @@
   var incomingCallChannel = null;
   var incomingCallState = null;
   var incomingCueTimer = null;
+  var incomingCueCount = 0;
+  var convCallCache = {};
   var messageToastTimer = null;
   var messageToastCount = 0;
+
+  function fetchCallConversation(id) {
+    if (!id) return Promise.resolve(null);
+    if (Object.prototype.hasOwnProperty.call(convCallCache, id)) {
+      return Promise.resolve(convCallCache[id]);
+    }
+    var c = client();
+    if (!c || typeof c.from !== "function") return Promise.resolve(null);
+    return c
+      .from("communication_conversations")
+      .select("id,type,employee_id,peer_a,peer_b,group_id")
+      .eq("id", id)
+      .maybeSingle()
+      .then(function (res) {
+        convCallCache[id] = (res && res.data) || null;
+        return convCallCache[id];
+      })
+      .catch(function () {
+        convCallCache[id] = null;
+        return null;
+      });
+  }
+
+  async function incomingCallTarget(row) {
+    var uid = myUserId();
+    if (!uid || !row || !row.id) return { forMe: false };
+    if (String(row.initiated_by || "") === uid) return { forMe: false };
+    var conv = await fetchCallConversation(row.conversation_id);
+    if (!conv) return { forMe: false };
+    var t = String(conv.type || "").toUpperCase();
+    var employee = String(conv.employee_id || "");
+    var initiated = String(row.initiated_by || "");
+    if (t === "ADMIN_STAFF") {
+      if (employee === uid) {
+        return {
+          forMe: true,
+          mode: "personal",
+          title: String(row.type || "").toUpperCase() === "VIDEO" ? "Incoming video call" : "Incoming call",
+          subtitle: "ADMIN is calling you",
+        };
+      }
+      if (initiated && initiated === employee) {
+        return {
+          forMe: true,
+          mode: "administration",
+          title: String(row.type || "").toUpperCase() === "VIDEO" ? "Incoming video call" : "Incoming call",
+          subtitle: "Worker calling ADMIN",
+        };
+      }
+      return { forMe: false };
+    }
+    if (t === "PEER" || t === "CEO_PEER") {
+      var a = String(conv.peer_a || "");
+      var b = String(conv.peer_b || "");
+      if (a !== uid && b !== uid) return { forMe: false };
+      return {
+        forMe: true,
+        mode: "personal",
+        title: String(row.type || "").toUpperCase() === "VIDEO" ? "Incoming video call" : "Incoming call",
+        subtitle: "Communications",
+      };
+    }
+    if (t === "GROUP") {
+      return {
+        forMe: true,
+        mode: "personal",
+        title: String(row.type || "").toUpperCase() === "VIDEO" ? "Incoming video call" : "Incoming group call",
+        subtitle: "Group call",
+      };
+    }
+    return { forMe: false };
+  }
 
   function previewMessageBody(row) {
     var type = String((row && row.message_type) || "text").toLowerCase();
@@ -578,31 +652,18 @@
   }
 
   function playIncomingCue() {
+    incomingCueCount += 1;
     try {
       if (global.navigator && global.navigator.vibrate) {
-        global.navigator.vibrate([500, 180, 500, 180, 700]);
+        global.navigator.vibrate([400, 160, 400]);
       }
     } catch (_v) {}
+    if (incomingCueCount > 1) return;
     try {
       if (typeof global.portalPlayAlertCue === "function") {
-        global.portalPlayAlertCue({ vibrate: [500, 180, 500, 180, 700] });
-        return;
+        global.portalPlayAlertCue({ vibrate: [400, 160, 400] });
       }
     } catch (_c) {}
-    try {
-      var Ctx = global.AudioContext || global.webkitAudioContext;
-      if (!Ctx) return;
-      var ctx = new Ctx();
-      var o = ctx.createOscillator();
-      var g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = 880;
-      o.connect(g);
-      g.connect(ctx.destination);
-      g.gain.value = 0.08;
-      o.start();
-      o.stop(ctx.currentTime + 0.28);
-    } catch (_a) {}
   }
 
   function ensureIncomingOverlay() {
@@ -650,33 +711,34 @@
 
   function hideIncomingOverlay() {
     stopIncomingCue();
+    incomingCueCount = 0;
     incomingCallState = null;
     var el = document.getElementById("portalCommsIncoming");
     if (el) el.hidden = true;
   }
 
-  function showIncomingOverlay(row) {
+  async function showIncomingOverlay(row) {
     if (isCommsAppPage() || !row || !row.id) return;
-    var uid = myUserId();
-    if (uid && String(row.initiated_by || "") === uid) return;
     if (String(row.status || "calling") !== "calling") return;
+    var info = await incomingCallTarget(row);
+    if (!info.forMe) return;
     if (incomingCallState && String(incomingCallState.id) === String(row.id)) return;
     incomingCallState = {
       id: String(row.id),
       type: String(row.type || "AUDIO"),
       conversation_id: String(row.conversation_id || ""),
+      mode: info.mode || "personal",
     };
+    incomingCueCount = 0;
     var el = ensureIncomingOverlay();
     var title = document.getElementById("portalCommsIncomingTitle");
     var sub = document.getElementById("portalCommsIncomingSub");
-    if (title) {
-      title.textContent = incomingCallState.type === "VIDEO" ? "Incoming video call" : "Incoming call";
-    }
-    if (sub) sub.textContent = "Communications";
+    if (title) title.textContent = info.title || "Incoming call";
+    if (sub) sub.textContent = info.subtitle || "Communications";
     el.hidden = false;
     playIncomingCue();
     if (!incomingCueTimer) {
-      incomingCueTimer = global.setInterval(playIncomingCue, 2200);
+      incomingCueTimer = global.setInterval(playIncomingCue, 4000);
     }
   }
 
@@ -686,6 +748,7 @@
     if (!st) return;
     var params = { call: st.id };
     if (st.conversation_id) params.conv = st.conversation_id;
+    if (st.mode) params.mode = st.mode;
     global.location.href = commsUrlWith(params);
   }
 
@@ -724,7 +787,7 @@
           { event: "INSERT", schema: "public", table: "communication_calls" },
           function (payload) {
             var row = (payload && payload.new) || {};
-            showIncomingOverlay(row);
+            void showIncomingOverlay(row);
           }
         )
         .on(
@@ -774,7 +837,7 @@
       }
       if (!incomingCallState) {
         for (var i = 0; i < rows.length; i++) {
-          showIncomingOverlay(rows[i]);
+          await showIncomingOverlay(rows[i]);
           if (incomingCallState) break;
         }
       }

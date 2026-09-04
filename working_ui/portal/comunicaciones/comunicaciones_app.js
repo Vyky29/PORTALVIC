@@ -78,8 +78,51 @@ function commsStaffLabel(name) {
   return n;
 }
 
-function client() {
-  return window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+function isMyAdminStaffThread(it) {
+  return !!(
+    it &&
+    (it.kind === "admin_staff" || String(it.kind || "").toLowerCase() === "admin_staff") &&
+    state.me &&
+    it.employee_id &&
+    String(it.employee_id) === String(state.me.id)
+  );
+}
+
+function callPeerLabel(it) {
+  if (!it) return "";
+  if (it.kind === "group") return commsStaffLabel(it.display_name) || "Group";
+  if (isMyAdminStaffThread(it)) return "ADMIN";
+  return commsStaffLabel(it.display_name) || "";
+}
+
+async function ensureModeForConversation(convId) {
+  if (!convId) return;
+  let it = itemByConversation(convId);
+  if (it && isMyAdminStaffThread(it) && state.mode !== "personal") {
+    state.mode = "personal";
+    applyModeButtons();
+    await loadInbox();
+    return;
+  }
+  if (it) return;
+  if (!state.me || !state.me.can_act_as_administration) return;
+  const prev = state.mode;
+  const other = prev === "personal" ? "administration" : "personal";
+  state.mode = other;
+  applyModeButtons();
+  await loadInbox();
+  it = itemByConversation(convId);
+  if (it) {
+    if (isMyAdminStaffThread(it) && state.mode !== "personal") {
+      state.mode = "personal";
+      applyModeButtons();
+      await loadInbox();
+    }
+    return;
+  }
+  state.mode = prev;
+  applyModeButtons();
+  await loadInbox();
 }
 
 function initials(name) {
@@ -353,8 +396,8 @@ function renderThread() {
     return;
   }
   const it = itemByConversation(state.open.conversation_id) || state.open;
-  $("commsPeerName").textContent = commsStaffLabel(it.display_name) || "Chat";
-  $("commsPeerAvatar").innerHTML = avatarHtml(it.avatar_url, commsStaffLabel(it.display_name), "comms-avatar").replace(
+  $("commsPeerName").textContent = callPeerLabel(it) || commsStaffLabel(it.display_name) || "Chat";
+  $("commsPeerAvatar").innerHTML = avatarHtml(it.avatar_url, callPeerLabel(it) || commsStaffLabel(it.display_name), "comms-avatar").replace(
     "comms-item-av",
     "comms-avatar"
   );
@@ -571,7 +614,8 @@ async function openConversation(id, extra, opts) {
       state.me &&
       state.me.can_act_as_administration &&
       it.kind === "admin_staff" &&
-      it.employee_id
+      it.employee_id &&
+      String(it.employee_id) !== String(state.me.id)
     ) {
       await rpc("communication_open_staff_thread", { p_employee_id: it.employee_id });
     }
@@ -1448,8 +1492,7 @@ async function pullCallSignals() {
 async function startCall(type) {
   if (!state.open) return;
   try {
-    $("commsCallPeer").textContent =
-      commsStaffLabel((itemByConversation(state.open.conversation_id) || {}).display_name) || "";
+    $("commsCallPeer").textContent = callPeerLabel(itemByConversation(state.open.conversation_id) || state.open) || "Calling...";
     $("commsCallStatus").textContent = "Starting...";
     setCallUi("outgoing");
     await attachLocal(type === "VIDEO");
@@ -1492,8 +1535,26 @@ async function incomingCall(row) {
     conversation_id: row.conversation_id,
   };
   resetCallSession(false);
-  const it = itemByConversation(row.conversation_id);
-  $("commsCallPeer").textContent = commsStaffLabel((it && it.display_name) || "Incoming call");
+  let it = itemByConversation(row.conversation_id);
+  if (!it && row.conversation_id) {
+    try {
+      const res = await client()
+        .from("communication_conversations")
+        .select("type,employee_id")
+        .eq("id", row.conversation_id)
+        .maybeSingle();
+      const conv = res && res.data;
+      if (conv && String(conv.type || "").toUpperCase() === "ADMIN_STAFF") {
+        it = {
+          kind: "admin_staff",
+          conversation_id: row.conversation_id,
+          employee_id: conv.employee_id,
+          display_name: String(conv.employee_id) === String(state.me.id) ? "ADMIN" : "",
+        };
+      }
+    } catch (_e) {}
+  }
+  $("commsCallPeer").textContent = callPeerLabel(it) || "Incoming call";
   $("commsCallStatus").textContent = row.type === "VIDEO" ? "Video call — tap Answer" : "Audio call — tap Answer";
   setCallUi("incoming");
 }
@@ -1810,7 +1871,11 @@ async function boot() {
     if (modeQ === "personal" || modeQ === "administration") {
       state.mode = modeQ;
     } else if (state.me.can_act_as_administration) {
-      state.mode = Number(counts.personal) > 0 ? "personal" : "administration";
+      if (String(params.get("call") || "").trim() || String(params.get("mode") || "").toLowerCase() === "personal") {
+        state.mode = "personal";
+      } else {
+        state.mode = Number(counts.personal) > 0 ? "personal" : "administration";
+      }
     }
     $("commsMeName").textContent = state.me.full_name;
     $("commsContextSwitch").hidden = !state.me.can_act_as_administration;
@@ -1853,6 +1918,7 @@ async function boot() {
     const conv = String(params.get("conv") || "").trim();
     const callId = String(params.get("call") || "").trim();
     if (conv) {
+      await ensureModeForConversation(conv);
       await openConversation(conv);
     }
     if (callId) {
