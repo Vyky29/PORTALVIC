@@ -57,6 +57,15 @@ export function preferredInstructorForReservation(row: {
   ) {
     return "Aurora";
   }
+  /* SwimFarm Sunday aquatic 9-9.30 open seat is Javier (Aurora has Simon that band). */
+  if (
+    /swimfarm/.test(venue) &&
+    /^sun/.test(day) &&
+    /aquatic/.test(service) &&
+    /9(\.00)?\s*[-–to]+\s*9\.?30/.test(time)
+  ) {
+    return "Javier";
+  }
   return "";
 }
 

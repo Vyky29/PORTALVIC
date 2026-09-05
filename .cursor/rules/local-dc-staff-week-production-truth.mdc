@@ -27,6 +27,17 @@ Do **not** leave this file changed only on disk — production must stay in sync
 
 Never park week-1 / `DATE_EXTRA` / phase painting behind `STANDING_ONLY = true` without explicit user request.
 
+## Day offs vs LOCAL board
+
+- Admin **Validate day** writes `staff_unavailability` (+ optional COVER NEEDED `schedule_overrides`). That is live truth for staff Today / Schedule & Covers.
+- Paint validated offs on `local_dc_staff_week.html` via `STAFF_DAY_OFF` so the LOCAL cards match what you approved (Sandra may be note-only if she is not on this AS/DC board).
+- Do **not** expect Validate day to rewrite LOCAL HTML by itself.
+
+## Stripe / Mark paid → roster
+
+- Finish-booking paid (Stripe / bank) runs `syncOpsAfterFinishBookingPaid` → MADRE fold + trial `schedule_overrides`.
+- LOCAL board still needs a matching seat edit (e.g. DATE_EXTRA / EXTRA open → named trial) when you want the card preview to show the paid place.
+
 ## Related files
 
 - Roster merge: `working_ui/portal/portal_roster_canonical.js` (`applyAutumnWeek1DayCentre`, `resolveAutumnInstructorsForCalendarDate`)
