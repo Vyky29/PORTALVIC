@@ -6,24 +6,24 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260905-roberto-venue-video";
+  var VER = "20260905-jack-zaid-swap";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260903-tue-acat-ikram",
     "/portal/term_calendar_dashboard_shared.js?v=20260903-tue-acat-ikram",
-    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260903-rota-cards-safe",
+    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260905-zaid-merge",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-rota-cards-safe",
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp",
-      "/portal/portal_roster_canonical.js?v=20260905-overview-thu-ma",
+      "/portal/portal_roster_canonical.js?v=20260905-jack-zaid-swap",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
     "/portal/portal_participants_sheet.js?v=20260614-roster-day-group",
-    "/portal/portal_staff_lead_aquatic_slots.js?v=20260805-cover-half-merge",
+    "/portal/portal_staff_lead_aquatic_slots.js?v=20260905-zaid-merge",
     "/portal/portal_participant_identity.js?v=20260712-rayyan-f",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
     "/portal/staff_roster_resolve.js?v=20260630-staff-display-names",
