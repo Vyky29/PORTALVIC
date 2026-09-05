@@ -550,7 +550,10 @@
     return "";
   }
 
-  /** Aquatic + Multi-Activity (e.g. Yusuf Sun with Roberto) → one Today card + one feedback. */
+  /** Aquatic + Multi-Activity (e.g. Yusuf Sun with Roberto) → one Today card + one feedback.
+   * Zaid+Javier trial: keep TWO cards (Aquatic trial + Multi) but same merge key so one
+   * feedback validates both. Admin Overview still shows one 9–10.15 row.
+   */
   function mergeTodayFeedbackMergeGroups(items, iso, dayWord, staffId) {
     if (!items || !items.length) return items || [];
     items = mergeTodayConsecutiveHalfHourClientSlots(items, iso, dayWord);
@@ -585,6 +588,21 @@
         out.push(only);
         return;
       }
+      /* Trial swim: two visible cards, shared feedback unit. */
+      if (mg === "zaid_javier_sun_swim") {
+        list.sort(function (a, b) {
+          return (a.sessionStartTs || 0) - (b.sessionStartTs || 0);
+        });
+        var mergeKey = String(iso || "").slice(0, 10) + "|merge|" + mg;
+        for (var zi = 0; zi < list.length; zi++) {
+          var zCard = Object.assign({}, list[zi]);
+          zCard.feedbackMergeGroup = mg;
+          zCard.sessionKey = mergeKey;
+          zCard.__portalFeedbackMergeCount = list.length;
+          out.push(zCard);
+        }
+        return;
+      }
       list.sort(function (a, b) {
         return (a.sessionStartTs || 0) - (b.sessionStartTs || 0);
       });
@@ -593,14 +611,10 @@
       var startHm = hmFromBaseSession(rep.__portalBaseSession).start;
       var endHm = hmFromBaseSession(last.__portalBaseSession).end;
       /*
-       * Yusuf / Zaid Sun with swim instructor: admin may keep Aquatic 9–9.30 + Multi to 11,
-       * but staff card is always one block 9–10.15 (hub from 10.15 is another instructor).
+       * Yusuf Sun with swim instructor: staff card is one block 9–10.15
+       * (hub from 10.15 is another instructor).
        */
-      if (
-        mg === "yusuf_ah_roberto_9am" ||
-        mg === "yusuf_ah_roberto_sun_swim" ||
-        mg === "zaid_javier_sun_swim"
-      ) {
+      if (mg === "yusuf_ah_roberto_9am" || mg === "yusuf_ah_roberto_sun_swim") {
         endHm = "10:15";
       }
       var merged = Object.assign({}, rep);
