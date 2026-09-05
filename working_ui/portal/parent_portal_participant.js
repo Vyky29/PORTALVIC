@@ -1838,21 +1838,10 @@
   var OFFICE_CONTACT_MAILTO = "mailto:info@clubsensational.org";
   /**
    * Office help-to-book Quick Access tiles (temporary). Remove contact id when done.
-   * Mohamed Mohamud (56) — Thursday Acton Aquatic 5.30–6.30.
+   * Mohamed Mohamud (56) — Thu Acton Javier 5.30–6.30 is office-arranged on MADRE/LOCAL;
+   * Booking Portal band is full — do not show a book CTA that points at that slot.
    */
-  var HUB_BOOKING_HELP_BY_CONTACT = {
-    "56": {
-      slotId: "live-aquatic-acton-thursday-17-30-5-30-6-30",
-      service: "aquatic",
-      label: "Book Thursday 5.30",
-      aria: "Finish Thursday 5.30 to 6.30 Acton aquatic booking",
-      matchDay: /thursday/i,
-      matchService: /aquatic|swim/i,
-      matchVenue: /acton/i,
-      /** Start minutes for 5.30 pm (17:30). */
-      startMins: 17 * 60 + 30,
-    },
-  };
+  var HUB_BOOKING_HELP_BY_CONTACT = {};
 
   /** Same-origin /bookingportal when possible so Parent Portal session can hand off (no second OTP). */
   function bookingPortalHref(opts) {

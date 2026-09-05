@@ -354,8 +354,7 @@ function rebuildThursday(week) {
     clearDayServices(d, isActonAquatic);
     d.slots.push(aquatic("Acton", "4 to 5", "Ayman", "JAVIER"));
     d.slots.push(aquatic("Acton", "5 to 5.30", "Khalid Ab", "JAVIER"));
-    d.slots.push(aquatic("Acton", "5.30 to 6", "NO PARTICIPANT", "JAVIER"));
-    d.slots.push(aquatic("Acton", "6 to 6.30", "NO PARTICIPANT", "JAVIER"));
+    d.slots.push(aquatic("Acton", "5.30 to 6.30", "Mohamed", "JAVIER"));
   }
   if (aurora) {
     const d = ensureDay(aurora, "Thursday");
@@ -364,7 +363,7 @@ function rebuildThursday(week) {
     d.slots.push(aquatic("Acton", "4.30 to 5.30", "Aqsa", "AURORA"));
     d.slots.push(aquatic("Acton", "5.30 to 6.30", "Joelle", "AURORA"));
   }
-  note("Thu Acton AS = Yunis+Maiyar Roberto; Joelle 5.30-6.30 Aurora+Simon");
+  note("Thu Acton AS = Yunis+Maiyar Roberto; Joelle 5.30-6.30 Aurora+Simon; Mohamed Javier 5.30-6.30");
 }
 
 function rebuildFriday(week) {

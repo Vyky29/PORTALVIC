@@ -147,7 +147,7 @@ const SERVICE_META: Record<PublicServiceId, Omit<OfferService, "venues">> = {
       "Swimming / aquatic within the day",
       "Lunch, life skills, and group snack",
       "Sensory room and regulation time",
-      "Karaoke, film, and end-of-day photo résumé",
+      "Karaoke, film, and photos shared with families at the end of the day",
       "Community trips (shops, local outings) with 2:1 when planned",
     ],
     blurb:
@@ -573,7 +573,16 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       lineCount,
       bucket.instructors.size,
     );
-    const taken = Math.min(bucket.bookedKeys.size || bucket.booked, cap);
+    /*
+     * Aquatic is 1:1 per instructor line. Prefer booked line count over unique
+     * client keys so a 2:1 client (same name on two staff) does not leave a
+     * phantom "places left" on the public offer.
+     */
+    const takenRaw =
+      serviceId === "aquatic"
+        ? bucket.booked
+        : bucket.bookedKeys.size || bucket.booked;
+    const taken = Math.min(takenRaw, cap);
     slots.push({
       id: slotId(serviceId, venue, day, sortTime, timeLabel),
       serviceId,

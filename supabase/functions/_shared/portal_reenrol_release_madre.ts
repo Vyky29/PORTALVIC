@@ -104,12 +104,7 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
     reason: "unconfirmed_deadline",
   },
   // Patrick Dhennin — office reassigned Climbing Sun 12–1 · Alex (11 Aug 2026). Do not auto-release.
-  {
-    /** Private Mohamed Yusuf (contact 56) — not the Roberto Thu office-hold Mohammed. */
-    kind: "all",
-    clients: ["Mohamed Yu", "Mohammed Yu", "Yusuf Mo"],
-    reason: "unconfirmed_deadline",
-  },
+  // Mohamed Yusuf (Anab, contact 56) — Autumn Thu Acton Javier 5.30–6.30 arranged; do not auto-release.
   {
     kind: "all",
     clients: ["Thushyan"],
@@ -122,9 +117,10 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
     clients: ["Yossi", "yossi"],
     reason: "office_hold_release",
   },
+  /* Roberto Thu Acton former office-hold "Mohammed" only — not Mohamed Yusuf (Anab). */
   {
     kind: "all",
-    clients: ["Mohammed", "Mohamed"],
+    clients: ["Mohammed"],
     reason: "office_hold_release",
   },
   {
@@ -202,7 +198,8 @@ function clientMatches(slotClient: string, tokens: string[]): boolean {
   return tokens.some((t) => {
     const tok = norm(t).toLowerCase();
     if (!tok) return false;
-    return c === tok || c.startsWith(tok + " ") || c.startsWith(tok);
+    /* Exact or "Token Rest" — never bare startsWith (Joel must not wipe Joelle). */
+    return c === tok || c.startsWith(tok + " ");
   });
 }
 

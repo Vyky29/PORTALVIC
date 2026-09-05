@@ -87,7 +87,7 @@
     "source": "staff_dashboard_spreadsheet_bundle.js + clients_info_embed.js",
     "termTo": "2026-07-31",
     "approved": false,
-    "revision": 431,
+    "revision": 443,
     "seededAt": "2026-06-22T13:36:19.674296+00:00",
     "services": [
       "Aquatic Activity",
@@ -144,7 +144,7 @@
     "lastEditedAt": "2026-07-19T22:53:34.928Z",
     "revisionNote": "Jul 1 Ikram 11–3 cancelled (paid) for Luliya + Michelle",
     "schemaVersion": 2,
-    "lastLiveFoldAt": "2026-09-05T09:37:10.166Z",
+    "lastLiveFoldAt": "2026-09-05T15:00:26.010Z",
     "staffShiftsNote": "Turnos pool/day centre por fecha. Editar en pestaña Staff del editor MADRE o plegar overrides desde portal_madre_fold_queue.",
     "lastLiveFoldNote": "office_sync:local_dc_staff_week standing weekdays 2026-09-03",
     "staffShiftsSource": "staff_timetable_machine.json",
@@ -222,7 +222,7 @@
     "madre_pre_sept_restore_at": "2026-07-23T16:41:19.032Z",
     "reenrol_release_live_from": "2026-07-23",
     "reenrol_release_mia_acton": 0,
-    "reenrol_release_applied_at": "2026-09-05T09:45:05.442Z",
+    "reenrol_release_applied_at": "2026-09-05T18:14:13.178Z",
     "madre_pre_sept_restore_note": "Restored NO PARTICIPANT → bundle names for sessionDate < 2026-09-01 after reenrol release wiped summer history.",
     "unpaid_aug15_release_changed": 6,
     "unpaid_aug15_release_contacts": [
@@ -14816,17 +14816,8 @@
                   "venue": "Acton",
                   "service": "Aquatic Activity",
                   "pool_note": "Lane (DE)",
-                  "time_slot": "5.30 to 6",
-                  "client_name": "NO PARTICIPANT",
-                  "instructors": "JAVIER"
-                },
-                {
-                  "area": "Lane (DE)",
-                  "venue": "Acton",
-                  "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
-                  "time_slot": "6 to 6.30",
-                  "client_name": "NO PARTICIPANT",
+                  "time_slot": "5.30 to 6.30",
+                  "client_name": "Mohamed",
                   "instructors": "JAVIER"
                 }
               ],
@@ -22050,6 +22041,11 @@
     },
     "rev 419: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)",
     "rev 429: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)",
-    "rev 431: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)"
+    "rev 431: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)",
+    "rev 435: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)",
+    "rev 437: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)",
+    "rev 439: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)",
+    "rev 441: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)",
+    "rev 443: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)"
   ]
 }

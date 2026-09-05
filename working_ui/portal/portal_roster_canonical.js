@@ -1120,8 +1120,8 @@
     { staff: "SIMON", name: "Joelle", time: "5.30 to 6.30" },
     { staff: "JAVIER", name: "Ayman", time: "4 to 5" },
     { staff: "JAVIER", name: "Khalid Ab", time: "5 to 5.30" },
-    { staff: "JAVIER", name: "No participant", time: "5.30 to 6" },
-    { staff: "JAVIER", name: "No participant", time: "6 to 6.30" },
+    /* Mohamed (Anab / Yusuf) — office arranged Thu 5.30–6.30; booking may still be finishing. */
+    { staff: "JAVIER", name: "Mohamed", time: "5.30 to 6.30" },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30" },
     { staff: "AURORA", name: "Aqsa", time: "4.30 to 5.30" },
     { staff: "AURORA", name: "Joelle", time: "5.30 to 6.30" },

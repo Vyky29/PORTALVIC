@@ -16,7 +16,7 @@
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp",
-      "/portal/portal_roster_canonical.js?v=20260905-aurora-javi-cover",
+      "/portal/portal_roster_canonical.js?v=20260905-mohamed-thu-javi",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
