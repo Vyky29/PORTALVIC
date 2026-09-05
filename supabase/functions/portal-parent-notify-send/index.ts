@@ -192,6 +192,8 @@ Deno.serve(async (req) => {
 
   let openSession = false;
   let contextWaId = str(payload.contextWaId, 200);
+  // Parent-app chat ids are not Meta wamids — never treat as an open WhatsApp session context.
+  if (contextWaId.startsWith("app:")) contextWaId = "";
   if (hasMedia) {
     if (channel === "email") {
       return portalAdminJson(400, { ok: false, error: "media_requires_whatsapp" });
@@ -324,11 +326,13 @@ Deno.serve(async (req) => {
           contextWaId: contextWaId || undefined,
         };
       let sent = await sendParentMobileMessage(parentPhone!, whatsappBodyText, waOpts);
-      // If free-text was rejected for re-engagement, retry once with the template.
+      // Free-text rejected outside Meta 24h window → retry once with approved template.
       if (
         !sent.ok &&
         (notifyKind === "custom" || notifyKind === "reply" || notifyKind === "whatsapp_reply") &&
-        /131047|re-engagement/i.test(String(sent.error || ""))
+        /131047|re-engagement|outside.*(24|twenty)|24.?hour|session.?expir|not.?in.?allowed/i.test(
+          String(sent.error || ""),
+        )
       ) {
         sent = await sendParentMobileMessage(parentPhone!, whatsappBodyText, {
           kind: coldRetryKind,

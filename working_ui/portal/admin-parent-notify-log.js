@@ -2047,7 +2047,8 @@
       sessionNote =
         '<div class="portal-pnlog-composer__tpl-banner" role="status">' +
         '<span class="portal-pnlog-composer__tpl-banner-txt">' +
-        "<strong>Needs Meta template</strong> — no open 24h window. " +
+        "<strong>Needs Meta template</strong> — no open WhatsApp Phone window " +
+        "(Parent app messages do not open Meta's 24h session). " +
         "Choose a shell, then edit only <code>{{1}}</code>. " +
         "<strong>Chat history stays above — scroll it to read.</strong>" +
         "</span>" +
@@ -2063,7 +2064,7 @@
       textareaMax = String(WA_TEMPLATE_BODY_MAX);
     } else if (openSession && !state.editing) {
       sessionNote =
-        '<p class="portal-pnlog-composer__session-open muted" role="status">24h window open — free-text reply (no Meta template).</p>';
+        '<p class="portal-pnlog-composer__session-open muted" role="status">WhatsApp 24h window open (parent messaged on Phone) — free-text reply.</p>';
     }
     var afterTextarea = needsTemplate
       ? '<div class="portal-pnlog-composer__tpl-fixed" id="portalPnlogTplSuffix" aria-hidden="true">' +
@@ -2298,12 +2299,24 @@
     });
   }
 
+  /** Meta 24h window opens only on real WhatsApp Phone inbound — not Parent app chat. */
+  function inboundOpensWhatsappSession(ev) {
+    if (!ev || ev.dir !== "in") return false;
+    if (ev.fromApp) return false;
+    var waId = "";
+    if (ev.row) {
+      waId = String(ev.row.wa_message_id || ev.row.context_wa_id || "").trim();
+    }
+    if (!waId || waId.indexOf("app:") === 0) return false;
+    return true;
+  }
+
   function threadHasOpenWhatsappSession(t) {
     if (!t || !Array.isArray(t.events)) return false;
     var cutoff = Date.now() - 24 * 60 * 60 * 1000;
     for (var i = t.events.length - 1; i >= 0; i--) {
       var ev = t.events[i];
-      if (!ev || ev.dir !== "in") continue;
+      if (!inboundOpensWhatsappSession(ev)) continue;
       var when = Date.parse(ev.when || "");
       return Number.isFinite(when) && when >= cutoff;
     }
@@ -2478,16 +2491,17 @@
       state.replyTo.waMessageId
     ) {
       contextWaId = String(state.replyTo.waMessageId).trim();
-    } else if (openSession && t.lastInboundId) {
+    } else if (openSession) {
       for (var i = t.events.length - 1; i >= 0; i--) {
-        if (t.events[i].dir === "in" && t.events[i].row) {
-          contextWaId = String(
-            t.events[i].row.wa_message_id || t.events[i].row.context_wa_id || ""
-          ).trim();
-          break;
-        }
+        if (!inboundOpensWhatsappSession(t.events[i]) || !t.events[i].row) continue;
+        contextWaId = String(
+          t.events[i].row.wa_message_id || t.events[i].row.context_wa_id || ""
+        ).trim();
+        if (contextWaId && contextWaId.indexOf("app:") !== 0) break;
+        contextWaId = "";
       }
     }
+    if (contextWaId.indexOf("app:") === 0) contextWaId = "";
     /* Cold outbound uses a Meta template; {{1}} must stay short (Meta #132005).
        Quote-corrections always use free-text with context (need open 24h window). */
     var coldTpl = activeColdTemplate();
