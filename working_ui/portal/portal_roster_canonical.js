@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 55;
+  var SOURCE_VERSION = 56;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1348,7 +1348,11 @@
       var jackSamerPatch = enforceJackSSamerSundayMultiSwap(r);
       if (jackSamerPatch) {
         var swapped = Object.assign({}, r, jackSamerPatch);
-        if (isMultiActivityService(swapped.service)) {
+        /* Never JOHN→BERTA on dated Sun 6 — scrubAndEnsureSep6HubCover owns that day. */
+        if (
+          isMultiActivityService(swapped.service) &&
+          normIso(swapped.session_date) !== "2026-09-06"
+        ) {
           var mappedSwap = remapAutumnMultiInstructorsStanding(swapped.instructors);
           if (mappedSwap !== String(swapped.instructors || "").trim()) {
             swapped.instructors = mappedSwap;
@@ -1435,7 +1439,7 @@
         out.push(Object.assign({}, r, poolPatch));
         return;
       }
-      if (isMultiActivityService(r.service)) {
+      if (isMultiActivityService(r.service) && normIso(r.session_date) !== "2026-09-06") {
         var mapped = remapAutumnMultiInstructorsStanding(r.instructors);
         if (mapped !== String(r.instructors || "").trim()) {
           out.push(Object.assign({}, r, { instructors: mapped }));
@@ -1483,8 +1487,11 @@
   }
 
   /**
-   * Sun 6 Sep: John = Emanuel Hub book; Emanuel off; drop any other John Multi that day
-   * (standing former John book already remapped to Berta; DB overlays must not resurrect it).
+   * Sun 6 Sep: John = Emanuel Hub book; Berta Lead = former John Hub book; Emanuel off.
+   * Drop John / Emanuel / Giuseppe Multi, and also Hub Berta Multi (standing JOHN→BERTA
+   * may have already rewritten the Emanuel-cover book to BERTA — that caused Zaid/Jack S
+   * to appear under both Berta and John). Re-inject the two authoritative Hub books.
+   * Godsway Hub + pool Multi rows are kept.
    */
   function scrubAndEnsureSep6HubCover(rows) {
     var out = [];
@@ -1497,8 +1504,10 @@
         /swimfarm/i.test(String(r.venue || "SwimFarm"))
       ) {
         var inst = String(r.instructors || "");
+        var area = String(r.area || "");
         if (/\bjohn\b/i.test(inst)) return;
         if (/\bemanuel\b/i.test(inst) || /\bgiuseppe\b/i.test(inst)) return;
+        if (/\bberta\b/i.test(inst) && /hub/i.test(area)) return;
       }
       out.push(r);
     });

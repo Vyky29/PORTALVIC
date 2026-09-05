@@ -950,6 +950,19 @@
       if (sd === isoDate) return true;
       if (project && standIso && standIso !== isoDate && sd === standIso) {
         if (week1Dc && /day\s*centre/i.test(String((r && r.service) || ""))) return false;
+        /*
+         * Sun 6 Sep Hub Multi is fully owned by scrubAndEnsureSep6HubCover (John + Berta books).
+         * Do not also project summer standing Hub Multi (JOHN→BERTA remap) onto that day —
+         * that duplicated kids like Zaid / Jack S under both instructors.
+         */
+        if (
+          isoDate === "2026-09-06" &&
+          /multi/i.test(String((r && r.service) || "")) &&
+          /swimfarm/i.test(String((r && r.venue) || "SwimFarm")) &&
+          /hub/i.test(String((r && r.area) || ""))
+        ) {
+          return false;
+        }
         if (clientHasDatedRosterInWeek(rosterRows, r.client_name, isoDate)) return false;
         return true;
       }
