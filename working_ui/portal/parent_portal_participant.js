@@ -586,14 +586,56 @@
     return base;
   }
 
+  /** Hub profile chips: duration + programme initials (30' AA, 90' MA, 60' CL, …). */
+  function compactServiceChipLabel(rawLabel) {
+    var s = String(rawLabel || "").trim();
+    if (!s) return "";
+    var dur = "";
+    var m = s.match(/^(\d+)\s*'\s*(.+)$/);
+    if (m) {
+      var mins = parseInt(m[1], 10) || 0;
+      if (mins > 90) {
+        var h = Math.round((mins / 60) * 10) / 10;
+        dur = h + "h ";
+      } else if (mins) {
+        dur = mins + "' ";
+      }
+      s = m[2];
+    }
+    var low = s.toLowerCase();
+    var code = "";
+    if (/multi[- ]?activity|s\s*&\s*c|splash/.test(low)) code = "MA";
+    else if (/aquatic|swim/.test(low)) {
+      if (!dur) dur = "30' ";
+      code = "AA";
+    } else if (/climb/.test(low)) code = "CL";
+    else if (/fitness|physical\s*activity|fit\s*fun/.test(low)) code = "FT";
+    else if (/bespoke/.test(low)) code = "BS";
+    else if (/crash|intensive|camp/.test(low)) code = "CC";
+    else if (/counsel|counsell/.test(low)) code = "CO";
+    else if (/day\s*centre|daycentre/.test(low)) code = "DC";
+    else {
+      var words = s.replace(/[^a-zA-Z\s]/g, " ").trim().split(/\s+/).filter(Boolean);
+      code = words
+        .slice(0, 2)
+        .map(function (w) {
+          return w.charAt(0).toUpperCase();
+        })
+        .join("");
+    }
+    return (dur + code).trim();
+  }
+
   function serviceChipToneClass(label) {
     var s = String(label || "").toLowerCase();
-    if (/aquatic|swim/.test(s)) return "aquatic";
-    if (/climb/.test(s)) return "climb";
-    if (/physical/.test(s)) return "physical";
-    if (/multi/.test(s)) return "multi";
-    if (/bespoke/.test(s)) return "bespoke";
-    if (/day\s*centre|daycentre/.test(s)) return "daycentre";
+    if (/aquatic|swim/.test(s) || /\baa\b/.test(s)) return "aquatic";
+    if (/climb|\bcl\b/.test(s)) return "climb";
+    if (/fitness|physical|\bft\b/.test(s)) return "physical";
+    if (/multi|\bma\b/.test(s)) return "multi";
+    if (/bespoke|\bbs\b/.test(s)) return "bespoke";
+    if (/crash|\bcc\b|intensive|camp/.test(s)) return "other";
+    if (/counsel|counsell|\bco\b/.test(s)) return "other";
+    if (/day\s*centre|daycentre|\bdc\b/.test(s)) return "daycentre";
     return "other";
   }
 
@@ -608,9 +650,10 @@
       '<div class="pp-svc-chips" aria-label="Booked services">' +
       detail
         .map(function (s) {
-          var label = shortServiceChipLabel(s.label || "Service", s.day);
-          var tip = [s.day, s.time].filter(Boolean).join(" / ");
-          var tone = serviceChipToneClass(s.label || label);
+          var full = shortServiceChipLabel(s.label || "Service", s.day);
+          var label = compactServiceChipLabel(s.label || "Service") || full;
+          var tip = [full, s.day, s.time].filter(Boolean).join(" / ");
+          var tone = serviceChipToneClass(s.label || full);
           return (
             '<span class="pp-svc-chip pp-svc-chip--' +
             esc(tone) +
