@@ -2352,6 +2352,18 @@
             var svcQ = String(deep.get("service") || deep.get("svc") || "").trim().toLowerCase();
             if (svcQ === "swim" || svcQ === "swimming" || svcQ === "aa") svcQ = "aquatic";
             if (svcQ && api.serviceById(svcQ)) openSheet(svcQ);
+            var slotQ = String(deep.get("slot_id") || deep.get("slot") || "").trim();
+            if (slotQ) {
+              var deepSlot = (api.MOCK_SLOTS || []).find(function (s) {
+                return String(s.id) === slotQ;
+              });
+              if (deepSlot) {
+                if (!svcQ && deepSlot.serviceId) openSheet(deepSlot.serviceId);
+                setTimeout(function () {
+                  openBookChoiceSheet(deepSlot);
+                }, 80);
+              }
+            }
           } catch (_d) {}
           try {
             if (window.PortalBookingLeadGate) {
