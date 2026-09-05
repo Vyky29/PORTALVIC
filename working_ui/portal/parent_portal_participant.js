@@ -2256,7 +2256,7 @@
             ) +
             hubShortcutBtn(
               "sessions",
-              "Sessions",
+              "Sessions Overview",
               icoF('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
               { extraClass: " pp-hub-shortcut--sessions" },
             )
@@ -2265,12 +2265,6 @@
         "</div></section>"
       );
     }
-    var msgUnread =
-      opts && typeof opts.unreadMessagesTotal === "function" ? opts.unreadMessagesTotal() : 0;
-    var msgBadge =
-      opts && typeof opts.unreadBadgeHtml === "function" && msgUnread > 0
-        ? opts.unreadBadgeHtml(msgUnread, "Unread messages")
-        : "";
     var consentPending =
       opts && typeof opts.consentsPendingCount === "function" ? opts.consentsPendingCount() : 0;
     var consentBadge =
@@ -2302,12 +2296,6 @@
       '<section class="pp-hub-shortcuts" aria-label="Quick access">' +
       '<p class="pp-pax-info-section-label">Quick access</p>' +
       '<div class="pp-hub-shortcuts__grid">' +
-      hubShortcutBtn(
-        "messages",
-        "Admin Messages",
-        ico('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
-        { unreadBadge: msgBadge, extraClass: " pp-hub-shortcut--messages" },
-      ) +
       (sessionProgressEnabled
         ? hubShortcutBtn(
             "sessions",
@@ -2431,6 +2419,33 @@
     if (doc.body) doc.body.classList.add("pp-hub-menu-open");
   }
 
+  function syncHubChromeMessages(data, opts) {
+    var doc = global.document;
+    if (!doc) return;
+    var btn = doc.getElementById("ppParticipantMessages");
+    if (!btn) return;
+    if (isFormerClient(data)) {
+      btn.hidden = true;
+      return;
+    }
+    btn.hidden = false;
+    var msgUnread =
+      opts && typeof opts.unreadMessagesTotal === "function" ? opts.unreadMessagesTotal() : 0;
+    var badgeHost = btn.querySelector(".pp-hub-chrome-btn__badge");
+    if (!badgeHost) return;
+    if (msgUnread > 0 && opts && typeof opts.unreadBadgeHtml === "function") {
+      badgeHost.innerHTML = opts.unreadBadgeHtml(msgUnread, "Unread messages");
+      badgeHost.hidden = false;
+      btn.classList.add("pp-hub-chrome-btn--has-unread");
+      btn.setAttribute("aria-label", "Admin Messages (" + msgUnread + " unread)");
+    } else {
+      badgeHost.innerHTML = "";
+      badgeHost.hidden = true;
+      btn.classList.remove("pp-hub-chrome-btn--has-unread");
+      btn.setAttribute("aria-label", "Admin Messages");
+    }
+  }
+
   function syncHubMenuChrome(host, data, opts) {
     var doc = global.document;
     if (!doc) return;
@@ -2438,6 +2453,7 @@
     var sheetBody = doc.getElementById("ppHubMenuSheetBody");
     var headActions = doc.getElementById("ppHubMenuSheetHeadActions");
     var sheet = doc.getElementById("ppHubMenuSheet");
+    syncHubChromeMessages(data, opts);
     if (isFormerClient(data)) {
       if (btn) btn.hidden = true;
       if (sheet) sheet.hidden = true;
@@ -2462,6 +2478,8 @@
         });
       });
     }
+    var chromeActions = doc.querySelector(".pp-participant-head-actions");
+    if (chromeActions) bindHubOpenButtons(host, data, opts, chromeActions);
     if (btn && !btn.__ppBoundMenu) {
       btn.__ppBoundMenu = true;
       btn.addEventListener("click", function () {
@@ -2651,7 +2669,7 @@
         subtitle: announceCount ? announceCount + " active" : "Club notices",
         unreadBadge: announceBadge,
       }) +
-      infoBtnHtml("messages", "Messages", msgIcon, {
+      infoBtnHtml("messages", "Admin Messages", msgIcon, {
         extraClass:
           " pp-pax-info-btn--messages" +
           (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
