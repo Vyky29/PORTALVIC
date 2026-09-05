@@ -9,11 +9,11 @@
       "/portal/term_from_timetable.js?v=20260905-overview-thu-ma",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260905-zaid-910",
       "/portal/clients_info_embed.js?v=20260707-social-workers",
-      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-tue-acat-ikram",
+      "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-zaid-local-hub",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
-      "/portal/portal_roster_canonical.js?v=20260905-javi-covers-aurora-tue",
+      "/portal/portal_roster_canonical.js?v=20260906-local-sun-hub",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260704-roster-seq",
     ],
     feedback: [

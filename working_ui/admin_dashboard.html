@@ -4281,6 +4281,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var tokens = adminRosterInstructorTokensResolved(row.instructors, profiles);
         if(!tokens.length) continue;
         var nameRaw = String(row.client_name || '').trim();
+        try{
+          if(typeof window.StaffDashboardSpreadsheetAdapter !== 'undefined'
+            && typeof window.StaffDashboardSpreadsheetAdapter.normalizeWorkerClientName === 'function'){
+            nameRaw = window.StaffDashboardSpreadsheetAdapter.normalizeWorkerClientName(nameRaw, nameRaw) || nameRaw;
+          }
+        }catch(_zn){}
         var nameLower = nameRaw.toLowerCase();
         var isClosed = nameLower === 'closed';
         var isOpenSlot = !nameRaw || nameLower === 'no client' || nameLower === 'noclient' || nameLower === 'no_client' || nameLower === 'no participant' || nameLower === 'no_participant';
@@ -4855,6 +4861,79 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var bucket = idx[days[0]];
       return !!(bucket && bucket[cid]);
     }
+    /** Hub vs pool Multi are different feedback seats — dated Hub must not hide Aurora pool Multi. */
+    function adminSchedSlotAreaKind(sessionOrRow){
+      var area = String((sessionOrRow && (sessionOrRow.rosterArea || sessionOrRow.area || sessionOrRow.notes)) || '')
+        .trim()
+        .toLowerCase();
+      if(/hub/.test(area)) return 'hub';
+      if(/pool|teaching|small|big/.test(area)) return 'pool';
+      var venue = String((sessionOrRow && sessionOrRow.venue) || '').trim().toLowerCase();
+      if(/hub/.test(venue)) return 'hub';
+      return '';
+    }
+    function adminSchedIsMultiProgramme(sessionOrRow){
+      var raw = String(
+        (sessionOrRow && (sessionOrRow.rosterService || sessionOrRow.programme || sessionOrRow.activity || sessionOrRow.service)) ||
+          ''
+      );
+      try{
+        if(typeof adminServiceProgrammeNormKey === 'function'){
+          return adminServiceProgrammeNormKey(raw) === 'multi';
+        }
+      }catch(_e){}
+      return /multi/i.test(raw);
+    }
+    function adminSchedIsSundaySwimfarmHubMulti(sessionOrRow){
+      if(!adminSchedIsMultiProgramme(sessionOrRow)) return false;
+      var venue = String((sessionOrRow && sessionOrRow.venue) || '').trim().toLowerCase();
+      if(venue && venue.indexOf('swimfarm') < 0) return false;
+      return adminSchedSlotAreaKind(sessionOrRow) === 'hub';
+    }
+    /** Same client + same programme family (Multi hub≠pool) has a dated row this week. */
+    function adminClientHasDatedRosterInWeekSameFamily(iso, standingSession){
+      var cid = adminCanonicalClientSlug(standingSession && (standingSession.clientId || standingSession.client_name));
+      if(!cid || cid === 'available' || cid === 'closed') return false;
+      var want = adminNormIsoDate(iso);
+      if(!want) return false;
+      var days = bookingWeekIsoRangeMonSun(want);
+      if(!days.length) return false;
+      var ws = days[0];
+      var we = days[days.length - 1];
+      var standMulti = adminSchedIsMultiProgramme(standingSession);
+      var standArea = standMulti ? adminSchedSlotAreaKind(standingSession) : '';
+      var standProg = '';
+      try{
+        standProg = typeof adminServiceProgrammeNormKey === 'function'
+          ? adminServiceProgrammeNormKey(standingSession.rosterService || standingSession.programme || standingSession.activity || '')
+          : String(standingSession.rosterService || '').toLowerCase();
+      }catch(_p){
+        standProg = String(standingSession.rosterService || '').toLowerCase();
+      }
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      var rows = src && Array.isArray(src.rows) ? src.rows : [];
+      for(var i = 0; i < rows.length; i++){
+        var r = rows[i];
+        var sd = adminNormIsoDate(r.session_date || r.date);
+        if(!sd || sd < ws || sd > we) continue;
+        if(adminCanonicalClientSlug(r.client_name) !== cid) continue;
+        var oProg = '';
+        try{
+          oProg = typeof adminServiceProgrammeNormKey === 'function'
+            ? adminServiceProgrammeNormKey(r.service || '')
+            : String(r.service || '').toLowerCase();
+        }catch(_o){
+          oProg = String(r.service || '').toLowerCase();
+        }
+        if(standProg === 'multi' && oProg === 'multi'){
+          var oArea = adminSchedSlotAreaKind({ rosterArea: r.area, venue: r.venue });
+          if(standArea && oArea && standArea !== oArea) continue;
+          return true;
+        }
+        if(standProg && oProg && standProg === oProg) return true;
+      }
+      return false;
+    }
     /** True when calendar day has a named dated booking on the same instructor + venue + time as this open standing seat. */
     function adminDatedNamedOccupiesOpenSeat(wantIso, openSession){
       var want = adminNormIsoDate(wantIso);
@@ -4968,7 +5047,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
          * standing Sunday — only that client's standing copy is suppressed below.
          */
         if(project && standIso && standIso !== wantIso && rowIso === standIso){
-          if(adminClientHasDatedRosterInWeek(wantIso, s.clientId)) return false;
+          /*
+           * Sun 6 Hub Multi is owned by LOCAL dated cover (John = Emanuel book, Berta Lead).
+           * Do not also project summer/standing Hub Multi — that stacked both books onto Berta.
+           */
+          if(wantIso === '2026-09-06' && adminSchedIsSundaySwimfarmHubMulti(s)) return false;
+          if(adminClientHasDatedRosterInWeekSameFamily(wantIso, s)) return false;
           /* Dated trial / new booking on this calendar day fills the open standing seat. */
           if(adminDatedNamedOccupiesOpenSeat(wantIso, s)) return false;
           return true;
@@ -4979,8 +5063,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(!project && adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
       if(project && standIso && standIso !== wantIso && adminRosterHasDatedSessionsForIso(standIso, sessions)) return false;
-      if(adminClientHasDatedRosterInWeek(wantIso, s.clientId)) return false;
-      if(project && standIso && standIso !== wantIso && adminClientHasDatedRosterInWeek(standIso, s.clientId)) return false;
+      if(wantIso === '2026-09-06' && adminSchedIsSundaySwimfarmHubMulti(s)) return false;
+      if(adminClientHasDatedRosterInWeekSameFamily(wantIso, s)) return false;
+      if(project && standIso && standIso !== wantIso && adminClientHasDatedRosterInWeekSameFamily(standIso, s)) return false;
       return normDayLabel(s.day) === normDayLabel(weekdayLong);
     }
     function schedClampIsoToTerm(iso){

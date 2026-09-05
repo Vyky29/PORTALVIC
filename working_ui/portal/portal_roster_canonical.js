@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 59;
+  var SOURCE_VERSION = 60;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1576,30 +1576,82 @@
     return out;
   }
 
+  /** LOCAL EXTRA Sunday Hub Multi — Berta Lead book (Jack W…Aydaan). */
+  var AUTUMN_SUNDAY_HUB_BERTA = [
+    { client_name: "Jack W", time_slot: "9.30 to 10.15" },
+    { client_name: "Adam Ab", time_slot: "10.15 to 11" },
+    { client_name: "Cyrus", time_slot: "11 to 11.45" },
+    { client_name: "Arthur Ma", time_slot: "11.45 to 12.30" },
+    { client_name: "Erik", time_slot: "12.30 to 1.15" },
+    { client_name: "Aydaan Ah", time_slot: "1.15 to 2" },
+  ];
+
+  /** LOCAL EXTRA Sunday Hub Multi — Emanuel book (Jack S…Rayyan F). John covers this on Sun 6 only. */
+  var AUTUMN_SUNDAY_HUB_EMANUEL = [
+    { client_name: "Jack S", time_slot: "9.30 to 10.15" },
+    { client_name: "Zaid", time_slot: "10.15 to 11" },
+    { client_name: "Eiji", time_slot: "11 to 11.45" },
+    { client_name: "Hazem", time_slot: "11.45 to 12.30" },
+    { client_name: "Haneef", time_slot: "12.30 to 1.15" },
+    { client_name: "Rayyan F", time_slot: "1.15 to 2" },
+  ];
+
+  function isSundaySwimfarmHubMultiRow(r) {
+    if (!r || !isMultiActivityService(r.service)) return false;
+    if (!/swimfarm/i.test(String(r.venue || "SwimFarm"))) return false;
+    if (!/hub/i.test(String(r.area || ""))) return false;
+    var day = normalizeDowKey(r.day);
+    if (day === "sunday") return true;
+    var d = normIso(r.session_date);
+    if (d) {
+      try {
+        var dt = new Date(d + "T12:00:00");
+        if (!isNaN(dt.getTime()) && dt.getDay() === 0) return true;
+      } catch (_) {}
+    }
+    return false;
+  }
+
+  function autumnSundayStandingHubRows() {
+    var iso = WEEKEND_STANDING_ISO.sunday;
+    function mapBook(staff, book) {
+      return book.map(function (slot) {
+        return {
+          client_name: slot.client_name,
+          day: "Sunday",
+          instructors: staff,
+          service: "Multi-Activity",
+          area: "Hub Room",
+          time_slot: slot.time_slot,
+          venue: "SwimFarm",
+          session_date: iso,
+        };
+      });
+    }
+    return mapBook("BERTA", AUTUMN_SUNDAY_HUB_BERTA).concat(
+      mapBook("EMANUEL", AUTUMN_SUNDAY_HUB_EMANUEL)
+    );
+  }
+
   /**
-   * Sun 6 Sep: John = Emanuel Hub book; Berta Lead = former John Hub book; Emanuel off.
-   * Drop John / Emanuel / Giuseppe Multi, and also Hub Berta Multi (standing JOHN→BERTA
-   * may have already rewritten the Emanuel-cover book to BERTA — that caused Zaid/Jack S
-   * to appear under both Berta and John). Re-inject the two authoritative Hub books.
-   * Godsway Hub + pool Multi rows are kept.
+   * Sunday Hub Multi = LOCAL only.
+   * Drop legacy summer/DB Hub books for Berta / John / Emanuel / Giuseppe (they stacked
+   * both books onto Berta after JOHN→BERTA, and duplicated John on Sun 6).
+   * Re-inject: standing Berta Lead + Emanuel books; Sun 6 dated John cover + Berta Lead.
+   * Godsway Hub + all pool Multi rows are kept.
    */
   function scrubAndEnsureSep6HubCover(rows) {
     var out = [];
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
-      var d = normIso(r.session_date);
-      if (
-        d === "2026-09-06" &&
-        isMultiActivityService(r.service) &&
-        /swimfarm/i.test(String(r.venue || "SwimFarm"))
-      ) {
+      if (isSundaySwimfarmHubMultiRow(r)) {
         var inst = String(r.instructors || "");
-        var area = String(r.area || "");
-        if (/\bjohn\b/i.test(inst)) return;
-        if (/\bemanuel\b/i.test(inst) || /\bgiuseppe\b/i.test(inst)) return;
-        if (/\bberta\b/i.test(inst) && /hub/i.test(area)) return;
+        if (/\b(john|emanuel|giuseppe|berta)\b/i.test(inst)) return;
       }
       out.push(r);
+    });
+    autumnSundayStandingHubRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
     });
     autumnSundaySep6HubCoverRows().forEach(function (row) {
       out.push(Object.assign({}, row));

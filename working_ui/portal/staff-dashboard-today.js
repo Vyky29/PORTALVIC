@@ -458,6 +458,15 @@
       const svc = String((s && (s.rosterService || s.activity || s.service)) || '').trim().toLowerCase();
       return svc === 'day centre' || svc.indexOf('day centre') === 0;
     }
+    /** LOCAL Sun Hub Multi seats (Berta / John / Emanuel) — not pool Multi. */
+    function portalSessionIsSundaySwimfarmHubMulti(s){
+      const svc = String((s && (s.rosterService || s.activity || s.service)) || '').trim().toLowerCase();
+      if(svc.indexOf('multi') < 0) return false;
+      const venue = String((s && s.venue) || '').trim().toLowerCase();
+      if(venue && venue.indexOf('swimfarm') < 0) return false;
+      const area = String((s && (s.rosterArea || s.area || '')) || '').trim().toLowerCase();
+      return area.indexOf('hub') >= 0;
+    }
     /** Roster row vs calendar day: dated rows match YYYY-MM-DD; undated rows match weekday (en-GB long). */
     function portalSessionSpreadsheetRowMatchesCalendarDate(s, isoYmd, weekdayLong){
       if(!s) return false;
@@ -468,6 +477,13 @@
       const sid = String(s.staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(rowIso){
+        /*
+         * Sun 6: Hub Multi is dated cover only (John = Emanuel book, Berta Lead).
+         * Never project standing Hub Multi onto that day — duplicates both books on Berta.
+         */
+        if(iso === '2026-09-06' && portalSessionIsSundaySwimfarmHubMulti(s) && rowIso !== iso){
+          return false;
+        }
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
         if(portalIsoIsAutumnWeek1Dc(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
         if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return rowIso === iso;
@@ -479,6 +495,7 @@
         const matchIso = portalStaffRosterMatchIsoForCalendar(iso, w, sid);
         return !!(iso && matchIso && rowIso === matchIso);
       }
+      if(iso === '2026-09-06' && portalSessionIsSundaySwimfarmHubMulti(s)) return false;
       if(portalStaffHasDatedRowsForIso(iso, sid)) return false;
       const snap = portalStaffStandingWeekdaySnapArgs(iso);
       if(portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through)) return false;
