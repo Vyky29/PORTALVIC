@@ -5756,6 +5756,41 @@
   function openSessionFeedbackEntry(host, data, opts, view, viewOpts) {
     viewOpts = viewOpts || {};
     var section = view === "weekly_notes" ? "weekly_notes" : "sessions";
+    /* Sessions Overview: no year picker / re-enrol date chips — term feedback accordions instead. */
+    if (view === "sessions") {
+      var yearKey =
+        viewOpts.feedbackYear ||
+        data.feedback_year ||
+        defaultFeedbackYearKey(data);
+      var loadOpts = { feedbackYear: yearKey };
+      if (
+        opts &&
+        typeof opts.isSectionLoaded === "function" &&
+        opts.isSectionLoaded(section, loadOpts)
+      ) {
+        openSubview(host, data, opts, view, Object.assign({}, viewOpts, {
+          feedbackYear: yearKey,
+          skipYearPicker: true,
+        }));
+        return Promise.resolve();
+      }
+      if (opts && typeof opts.loadSection === "function") {
+        host.innerHTML = '<p class="pcso-loading" role="status">Loading…</p>';
+        return opts
+          .loadSection(section, false, loadOpts)
+          .then(function (fresh) {
+            openSubview(host, fresh || data, opts, view, {
+              feedbackYear: yearKey,
+              skipYearPicker: true,
+            });
+          });
+      }
+      openSubview(host, data, opts, view, Object.assign({}, viewOpts, {
+        feedbackYear: yearKey,
+        skipYearPicker: true,
+      }));
+      return Promise.resolve();
+    }
     var yearKey =
       viewOpts.feedbackYear ||
       data.feedback_year ||
@@ -5788,25 +5823,46 @@
     return Promise.resolve();
   }
 
+  function sessionsFeedbackTermAccordionHtml(label, bodyHtml) {
+    if (!bodyHtml) return "";
+    return (
+      '<details class="pp-hub-ops__term-accordion pp-sessions-fb-acc">' +
+      '<summary class="pp-hub-ops__term-summary">' +
+      termHalfRowIcon(label) +
+      '<span class="pp-hub-ops__term-summary-title">' +
+      esc(label) +
+      "</span>" +
+      '<svg class="pp-hub-ops__term-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
+      "</summary>" +
+      '<div class="pp-hub-ops__term-body pp-sessions-fb-acc__body">' +
+      bodyHtml +
+      "</div></details>"
+    );
+  }
+
+  function sessionsHasFeedbackPayload(payload) {
+    if (!payload) return false;
+    if (Array.isArray(payload.sessions) && payload.sessions.length) return true;
+    var att = payload.attendance_summary;
+    if (att && (Number(att.total) > 0 || Number(att.attended) > 0 || Number(att.absent) > 0)) {
+      return true;
+    }
+    return false;
+  }
+
   function renderSessions(host, data, opts, viewOpts) {
     viewOpts = viewOpts || {};
     if (!sessionProgressEnabled(data)) {
-    host.innerHTML = subviewShell(
-      data,
-      "sessions",
-      '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
+      host.innerHTML = subviewShell(
+        data,
+        "sessions",
+        '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
           '<p class="pp-muted">Session overview and stats are not shown for this participant.</p>',
       );
       bindBack(host, data, opts);
       return;
     }
     var former = isFormerClient(data);
-    var termChips = termSessionDateChipsHtml(data, null, viewOpts);
-    var yearBadge = viewOpts.feedbackYear
-      ? '<p class="pp-feedback-year-badge" aria-label="Selected year">' +
-        esc(feedbackYearLabel(data, viewOpts.feedbackYear)) +
-        "</p>"
-      : "";
     var dlBar =
       former && Array.isArray(data.sessions) && data.sessions.length
         ? '<div class="pp-former-dl-bar"><button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" data-pp-dl-all-sessions>Download overview (PDF)</button></div>'
@@ -5815,43 +5871,116 @@
       data,
       "sessions",
       '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
-        yearBadge +
         '<p class="pp-muted pp-pax-subview-note">' +
         (former
-          ? "Attendance, engagement, regulation and independence for past sessions — same overview as when the place was active. Download a branded PDF to keep."
-          : "Term dates below, then date, service, instructor, engagement, regulation and independence — absents are listed as Absent. Shown separately for each activity when your child does more than one.") +
+          ? "Attendance, engagement, regulation and independence for past sessions. Open a term below. Download a branded PDF to keep."
+          : "Open a term for attendance, engagement, regulation and independence. Future terms appear here once session feedback is recorded.") +
         "</p>" +
         dlBar +
-        (termChips
-          ? '<section class="pp-sessions-term-dates" aria-label="Term session dates">' +
-            '<div class="pp-hub-ops__badge-row">' +
-            termChips +
-            "</div></section>"
-          : "") +
         '<div id="ppPaxSessionsHost"><p class="pcso-loading" role="status">Loading sessions…</p></div>',
     );
     bindBack(host, data, opts);
     bindFormerHistoryDownloads(host, data);
-    var messagesPromise =
-      opts && typeof opts.loadMessages === "function"
-        ? opts.loadMessages({ markRead: false }).catch(function () {
-            return null;
-          })
-        : null;
-    mountTermDateChipStatuses(host, data, opts, messagesPromise);
     var sessionsHost = host.querySelector("#ppPaxSessionsHost");
-    if (
-      sessionsHost &&
-      global.PortalClientSessionsOverview &&
-      typeof global.PortalClientSessionsOverview.renderParent === "function"
-    ) {
-      global.PortalClientSessionsOverview.renderParent(sessionsHost, {
-        sessions: data.sessions || [],
-        attendance_summary: data.attendance_summary || null,
-        term_label: data.term_label || (data.general && data.general.term_label) || "",
+    if (!sessionsHost) return;
+
+    var showSummer =
+      !isNewAutumnStarter(data) &&
+      (participantNeedsFeedbackYearPicker(data) ||
+        (Array.isArray(data.feedback_years_available) &&
+          data.feedback_years_available.some(function (y) {
+            return y && y.key === PARENT_FEEDBACK_PRIOR_YEAR;
+          })));
+
+    function overviewHtmlFor(payload, label) {
+      if (
+        !global.PortalClientSessionsOverview ||
+        typeof global.PortalClientSessionsOverview.parentOverviewHtml !== "function"
+      ) {
+        return '<p class="pp-muted">Session overview is unavailable. Please refresh.</p>';
+      }
+      return global.PortalClientSessionsOverview.parentOverviewHtml({
+        sessions: (payload && payload.sessions) || [],
+        attendance_summary: (payload && payload.attendance_summary) || null,
+        term_label: label || "",
         hideAchievements: true,
+        includeTable: true,
       });
     }
+
+    function paintAccordions(summerPayload, autumnPayload) {
+      if (!sessionsHost.isConnected) return;
+      var parts = [];
+      if (showSummer && sessionsHasFeedbackPayload(summerPayload)) {
+        parts.push(
+          sessionsFeedbackTermAccordionHtml(
+            "Summer 2026",
+            overviewHtmlFor(summerPayload, "Summer 2026"),
+          ),
+        );
+      }
+      parts.push(
+        sessionsFeedbackTermAccordionHtml(
+          "Autumn 2026",
+          overviewHtmlFor(autumnPayload || data, "Autumn 2026"),
+        ),
+      );
+      sessionsHost.innerHTML =
+        '<div class="pp-sessions-fb-stack" aria-label="Session feedback by term">' +
+        parts.join("") +
+        "</div>";
+    }
+
+    var autumnReady = Promise.resolve({
+      sessions: data.sessions || [],
+      attendance_summary: data.attendance_summary || null,
+    });
+    var summerReady = Promise.resolve(null);
+    if (showSummer && opts && typeof opts.loadSection === "function") {
+      summerReady = opts
+        .loadSection("sessions", false, { feedbackYear: PARENT_FEEDBACK_PRIOR_YEAR })
+        .then(function (fresh) {
+          return {
+            sessions: (fresh && fresh.sessions) || [],
+            attendance_summary: (fresh && fresh.attendance_summary) || null,
+          };
+        })
+        .catch(function () {
+          return null;
+        })
+        .then(function (summerPayload) {
+          /* Reload current year so state is not left on prior-year sessions. */
+          return opts
+            .loadSection("sessions", false, { feedbackYear: PARENT_FEEDBACK_CURRENT_YEAR })
+            .then(function (fresh) {
+              return {
+                summer: summerPayload,
+                autumn: {
+                  sessions: (fresh && fresh.sessions) || data.sessions || [],
+                  attendance_summary:
+                    (fresh && fresh.attendance_summary) || data.attendance_summary || null,
+                },
+              };
+            })
+            .catch(function () {
+              return {
+                summer: summerPayload,
+                autumn: {
+                  sessions: data.sessions || [],
+                  attendance_summary: data.attendance_summary || null,
+                },
+              };
+            });
+        });
+      summerReady.then(function (pack) {
+        paintAccordions(pack && pack.summer, pack && pack.autumn);
+      });
+      return;
+    }
+
+    autumnReady.then(function (autumnPayload) {
+      paintAccordions(null, autumnPayload);
+    });
   }
 
   var AQUATIC_NO_PHOTOS_NOTE =

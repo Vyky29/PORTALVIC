@@ -1321,19 +1321,26 @@
 
   function renderParent(hostEl, opts) {
     if (!hostEl) return;
-    var sessions = (opts && opts.sessions) || [];
-    var achievements = (opts && opts.achievements) || [];
-    var hideAchievements = !!(opts && opts.hideAchievements);
-    var term = clean((opts && opts.term_label) || TERM_LABEL);
+    hostEl.innerHTML = parentOverviewHtml(opts);
+  }
+
+  /** HTML for parent Sessions Overview KPIs (+ optional session table). */
+  function parentOverviewHtml(opts) {
+    opts = opts || {};
+    var sessions = opts.sessions || [];
+    var achievements = opts.achievements || [];
+    var hideAchievements = !!opts.hideAchievements;
+    var term = clean(opts.term_label || TERM_LABEL);
     var feedback = mergeAbsentDatesIntoParentFeedback(
       parentFacingFeedbackRows(sessions.map(mapParentSessionRow)),
-      opts && opts.attendance_summary,
+      opts.attendance_summary,
     );
-    hostEl.innerHTML =
+    var includeTable = opts.includeTable !== false;
+    return (
       overviewByServiceHtml(feedback, term, {
         includeAttendance: true,
-        attendanceSummary: null,
-        includeTable: true,
+        attendanceSummary: opts.attendance_summary || null,
+        includeTable: includeTable,
         parentTable: true,
         tableTitle: "Session feedback",
       }) +
@@ -1342,12 +1349,14 @@
         : '<section class="pcso-feed-section pp-ach-section">' +
           '<div class="pcso-feed-head"><h4 class="pcso-section__title">Achievements</h4></div>' +
           achievementsGalleryHtml(achievements) +
-          "</section>");
+          "</section>")
+    );
   }
 
   global.PortalClientSessionsOverview = {
     render: render,
     renderParent: renderParent,
+    parentOverviewHtml: parentOverviewHtml,
     achievementsGalleryHtml: achievementsGalleryHtml,
   };
 })(typeof window !== "undefined" ? window : globalThis);
