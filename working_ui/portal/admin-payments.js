@@ -2015,30 +2015,30 @@
     });
   }
 
-  /** Cyrus Day Centre stream = Thursday 90' Bespoke only (not aquatic / multi). */
+  /** Cyrus Day Centre stream = weekday 90' Bespoke only (Tue from Autumn; was Thu). */
   function isCyrusThursdayBespokeRow(r) {
     if (r && r._cyrusPart === "thu_bespoke") return true;
     if (r && r._cyrusPart === "afterschool") return false;
     var s = rowServiceBlob(r);
     if (!s) return false;
-    var thu = /\bthu(?:rs(?:day)?)?\b/.test(s);
+    var wd = /\b(?:tue(?:s(?:day)?)?|thu(?:rs(?:day)?)?)\b/.test(s);
     var bespoke90 = /90\s*['′']?\s*bespoke|bespoke[^.]{0,24}90|90[^.]{0,24}bespoke|90\s*['′']?\s*ff\b/.test(s);
-    return thu && bespoke90;
+    return wd && bespoke90;
   }
 
   /**
-   * Cyrus catalogue (friendly Thu 90' @ £90 + private afterschool package).
-   * Day Centre stream = Thursday only. Afterschool = Wed MA + Sun MA + Wed aquatic.
+   * Cyrus package faces aligned to GoCardless INV-P lines (Autumn 26/27).
+   * Day Centre = Bespoke 90' @ £187.50 (what GC collects). Afterschool = Wed Aquatic 60' + Sun Multi.
+   * Monthly GC £1,397.75 ≈ Bespoke £656.25 + Aquatic £350 + Multi £390 + fee £1.50.
    */
   function cyrusPackageSeasonTotals() {
-    var thuRate = 90;
+    var bespokeRate = 187.5;
     var multiRate = 120;
-    /* Wed Multi removed; Wed Aquatic is 60' (£100), Sun Multi kept. */
     var aqRate = 100;
     var wd = { autumn: 14, spring: 11, summer: 13, annual: 38 };
     var we = { autumn: 13, spring: 9, summer: 11, annual: 33 };
     function term(period) {
-      var dc = thuRate * wd[period];
+      var dc = bespokeRate * wd[period];
       var as = multiRate * we[period] + aqRate * wd[period];
       return { dc: dc, as: as, total: dc + as };
     }
@@ -2050,17 +2050,17 @@
     };
   }
 
-  /** Roster session → Cyrus Day Centre (Thu 90' Bespoke) only. */
+  /** Roster session → Cyrus Day Centre (Tue/Thu 90' Bespoke) only. */
   function isCyrusThuBespokeSession(sess) {
     if (!sess || typeof sess !== "object") return false;
     var blob = [sess.service, sess.day, sess.timeSlot, sess.time, sess.label]
       .map(function (x) { return String(x || ""); })
       .join(" ")
       .toLowerCase();
-    return /bespoke|\bff\b/.test(blob) && /\bthu/.test(blob);
+    return /bespoke|\bff\b/.test(blob) && /\b(?:tue|thu)/.test(blob);
   }
 
-  /** Roster session → Cyrus Afterschool (multi / aquatic; never Thu bespoke). */
+  /** Roster session → Cyrus Afterschool (multi / aquatic; never weekday bespoke). */
   function isCyrusAfterschoolSession(sess) {
     if (!sess || typeof sess !== "object") return false;
     if (isCyrusThuBespokeSession(sess)) return false;
@@ -2072,8 +2072,8 @@
   }
 
   /**
-   * Split Cyrus into Day Centre (Thu 90' Bespoke) vs Afterschool & Weekends (rest).
-   * Summer workbook + Autumn 26/27 re-enrol rows.
+   * Split Cyrus into Day Centre (Bespoke) vs Afterschool & Weekends (rest).
+   * One GoCardless mandate pays both — UI streams are synthetic for Finance filters.
    */
   function splitCyrusServiceRows(r) {
     if (!r || r._cyrusPart || r._crash) return null;
@@ -2082,15 +2082,15 @@
     if (bucket !== "summer_2526" && bucket !== "autumn_2627") return null;
     var d = r.data || {};
     var svc = String(d.Services || d.Service || "");
-    var thuNote = String(d["Thursday Bespoke"] || "");
+    var thuNote = String(d["Thursday Bespoke"] || d["Tuesday Bespoke"] || "");
     var blob = (svc + " " + thuNote + " " + String(r.client_name || "")).toLowerCase();
-    var hasThu = /90\s*['′']?\s*ff\b|\bff\s*\(\s*thu|thursday\s*bespoke|90\s*['′']?\s*bespoke|bespoke[^.]{0,40}thu/.test(blob)
-      && /\bthu/.test(blob);
+    var hasThu = /90\s*['′']?\s*ff\b|\bff\s*\(\s*(?:thu|tue)|(?:thursday|tuesday)\s*bespoke|90\s*['′']?\s*bespoke|bespoke[^.]{0,40}(?:thu|tue)/.test(blob)
+      && /\b(?:thu|tue)/.test(blob);
     var hasOther = /30\s*['′']?\s*sw\b|aquatic|s\s*&\s*c|multi-?activity|admin\s*fee/.test(blob);
     var isAutumn = bucket === "autumn_2627";
     /*
      * Always split Cyrus in these terms: roster enrich can leave Services empty
-     * or without a clear Thu token until after clone filters sessions.
+     * or without a clear Thu/Tue token until after clone filters sessions.
      */
     if (isAutumn || /bespoke|multi|aquatic|mahdavi|cyrus/i.test(blob) || (Array.isArray(r._participantSessions) && r._participantSessions.length)) {
       hasThu = true;
@@ -2100,7 +2100,7 @@
     if (bucket === "summer_2526" && !hasOther) return null;
 
     var pack = cyrusPackageSeasonTotals();
-    var thuSvcLabel = "90' Bespoke Programme - 3.30 pm to 5 pm - Thursday";
+    var thuSvcLabel = "90' Bespoke Programme - 3.30 pm to 5 pm - Tuesday (was Thursday)";
     var afterSvcLines = [
       "90' Multi-Activity - 11 am to 12.30 pm - Sunday",
       "60' Aquatic Activity - 4 pm to 5 pm - Wednesday",
@@ -2115,7 +2115,27 @@
       out._syntheticSplit = true;
       out.amount = amount;
       out.amount_billed = amount;
-      out.amount_out = amount;
+      /* Pro-rate any cash already received across Day Centre vs Afterschool faces. */
+      var srcPaid = Number(r._amountPaid) || 0;
+      var srcBill = Math.max(
+        Number(r.amount_billed) || 0,
+        Number(r._amountAutumn) || 0,
+        Number(r.amount) || 0,
+      );
+      var partPaid = 0;
+      if (srcPaid > 0.009 && srcBill > 0.009 && amount > 0) {
+        partPaid = Math.round(srcPaid * (amount / srcBill) * 100) / 100;
+      }
+      out._amountPaid = partPaid;
+      out.amount_out = Math.max(0, Math.round((amount - partPaid) * 100) / 100);
+      if (partPaid + 0.009 >= amount) {
+        out.payment_status = "Paid";
+        out.amount_out = 0;
+      } else if (partPaid > 0.009) {
+        out.payment_status = "Partial";
+      } else {
+        out.payment_status = "Outstanding";
+      }
       if (seasons) {
         out._amountAutumn = seasons.autumn;
         out._amountSpring = seasons.spring;
@@ -2144,10 +2164,12 @@
         Stream: part === "thu_bespoke" ? "Day Centre" : "Afterschool & Weekends",
       });
       if (part === "thu_bespoke") {
-        out.data["Thursday Bespoke"] = thuNote
-          || "90' Bespoke Programme · Thu 15:30–17:00 · Victor · SwimFarm Hub · £90/session";
+        out.data["Tuesday Bespoke"] = thuNote
+          || "90' Bespoke · Tue 15:30–17:00 · Victor · SwimFarm Hub · £187.50/session (GC line)";
+        out.data["Thursday Bespoke"] = out.data["Tuesday Bespoke"];
       } else {
         delete out.data["Thursday Bespoke"];
+        delete out.data["Tuesday Bespoke"];
       }
       if (isAutumn) out._termBucket = "autumn_2627";
       return out;
@@ -2161,7 +2183,7 @@
           pack.autumn.dc,
           thuSvcLabel,
           "14 / 11 / 13 / 38",
-          "£90 / session (friendly rate; std £125/hr)",
+          "£187.50 / session (GC INV-P) · ~£656.25 of each £1,397.75 monthly",
           {
             autumn: pack.autumn.dc,
             spring: pack.spring.dc,
@@ -2175,7 +2197,7 @@
           pack.autumn.as,
           afterSvcLines.join("\n"),
           "weekday 14/11/13 · weekend 13/9/11",
-          d.Cost || "Catalogue Multi £120 · Aquatic 60' £100",
+          "Catalogue Multi £120 · Aquatic 60' £100 · ~£740 of each £1,397.75 monthly (+ £1.50 fee)",
           {
             autumn: pack.autumn.as,
             spring: pack.spring.as,
@@ -2186,13 +2208,13 @@
       ];
     }
 
-    /* Summer 25/26 — keep prior workbook session split, map Thu @ £90. */
+    /* Summer 25/26 — keep prior workbook session split, map Bespoke @ invoice rate. */
     var sessParts = String(d.Sessions || "")
       .split("/")
       .map(function (x) { return parseInt(String(x).trim(), 10); })
       .filter(function (n) { return Number.isFinite(n) && n > 0; });
     var thuSessions = sessParts[0] || 13;
-    var thuRate = 90;
+    var thuRate = 187.5;
     var thuAmt = thuSessions * thuRate;
     var total = Number(r.amount) || 0;
     var otherAmt = total > thuAmt ? Math.round((total - thuAmt) * 100) / 100 : 0;
@@ -2205,7 +2227,7 @@
         thuAmt,
         thuSvcLabel,
         String(thuSessions),
-        "£90 / session (friendly rate; std £125/hr)",
+        "£187.50 / session (GC line)",
         null
       ),
       clonePart(
@@ -6328,6 +6350,18 @@
           if (!(Number(row._amountPaid) > 0)) {
             row.amount_out = row._amountAutumn;
           }
+        } else if (!(Number(row._amountPaid) > 0)) {
+          /*
+           * Catalogue autumn with amount_out still at initial 0 (common for NHS/LA
+           * exempt invoices) — still owed until a real payment is recorded.
+           */
+          row.amount_out = row._amountAutumn;
+          if (
+            String(row.payment_status || "").toLowerCase().indexOf("paid") !== 0
+            && String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0
+          ) {
+            row.payment_status = "Outstanding";
+          }
         }
       } else {
         row.amount = row.amount_out > 0 ? row.amount_out : row.amount_billed;
@@ -6360,7 +6394,22 @@
       if (String(row.payment_status || "").toLowerCase().indexOf("partial") === 0) {
         /* Keep Flexi / GoCardless partial — do not collapse to Paid/Outstanding. */
       } else if (row.amount_out <= 0 && row.amount_billed > 0) {
-        row.payment_status = "Paid";
+        var billedFace = Math.max(
+          Number(row.amount_billed) || 0,
+          Number(row._amountAutumn) || 0,
+        );
+        var paidProve = Number(row._amountPaid) || 0;
+        if (paidProve + 0.009 >= billedFace && billedFace > 0) {
+          row.payment_status = "Paid";
+          row.amount_out = 0;
+        } else {
+          /*
+           * Do not treat "out never set" as Paid (NHS/LA Exempt Invoice rows were
+           * collapsing Received = Billed with £0 outstanding while nothing was paid).
+           */
+          row.amount_out = billedFace;
+          row.payment_status = "Outstanding";
+        }
       } else if (row.amount_out > 0) {
         row.payment_status = "Outstanding";
       }
