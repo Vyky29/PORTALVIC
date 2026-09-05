@@ -6875,7 +6875,7 @@
       return (
         '<div class="pp-team-photo pp-team-photo--img"><img src="' +
         esc(url) +
-        '" alt="" width="72" height="72" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.remove(\'pp-team-photo--img\');" /><span class="pp-team-photo__init" aria-hidden="true">' +
+        '" alt="" width="72" height="72" loading="lazy" decoding="async" draggable="false" onerror="var p=this.parentElement;this.onerror=null;this.remove();if(p)p.classList.remove(\'pp-team-photo--img\');" /><span class="pp-team-photo__init" aria-hidden="true">' +
         esc(teamInitials(name)) +
         "</span></div>"
       );
@@ -6889,22 +6889,6 @@
 
   function teamMemberCardHtml(m) {
     m = m || {};
-    var speaks = Array.isArray(m.speaks) ? m.speaks : [];
-    var speaksHtml = speaks.length
-      ? '<div class="pp-team-card__speaks"><span class="pp-team-card__speaks-label">Speaks</span><span class="pp-team-chips">' +
-        speaks
-          .map(function (l) {
-            return '<span class="pp-team-chip">' + esc(l) + "</span>";
-          })
-          .join("") +
-        "</span></div>"
-      : "";
-    var natHtml = m.nationality
-      ? '<p class="pp-team-card__nat">' +
-        (m.flag ? '<span class="pp-team-flag" aria-hidden="true">' + esc(m.flag) + "</span>" : "") +
-        esc(m.nationality) +
-        "</p>"
-      : "";
     var isCover =
       String(m.role || "").toLowerCase() === "cover" ||
       !!m.is_cover ||
@@ -6924,8 +6908,6 @@
       "</h4>" +
       badgeHtml +
       "</div>" +
-      natHtml +
-      speaksHtml +
       (m.bio ? '<p class="pp-team-card__bio">' + esc(m.bio) + "</p>" : "") +
       "</div></article>"
     );

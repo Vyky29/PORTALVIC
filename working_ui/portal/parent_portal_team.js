@@ -65,16 +65,6 @@
     "avatar_url": "/portal/staff_photos/godsway.png",
     "bio": "Godsway is friendly, upbeat and very reliable. He builds strong rapport with families and keeps sessions positive, active and well organised from start to finish."
   },
-  "emanuel": {
-    "name": "Emanuel",
-    "nationality": "English",
-    "flag": "🇬🇧",
-    "speaks": [
-      "English"
-    ],
-    "avatar_url": "/portal/staff_photos/emanuel.png",
-    "bio": "Emanuel is warm, organised and great at keeping Hub sessions clear and calm. He helps children settle quickly and makes the room feel safe and structured."
-  },
   "javier": {
     "name": "Javier",
     "nationality": "Spanish",
@@ -583,7 +573,7 @@
   "zaid": [
     "javier",
     "carlos",
-    "emanuel"
+    "john"
   ],
   "zakariya": [
     "aurora",
@@ -813,35 +803,74 @@
     return keys.map(catalogMember).filter(Boolean);
   }
 
-  function catalogMember(key) {
-    var k = String(key || "").trim().toLowerCase();
+  /**
+   * Parent Team only shows staff with a real photo on file.
+   * Until a photo exists, that instructor is hidden (no initials placeholder).
+   */
+  var STAFF_WITH_TEAM_PHOTO = {
+    alex: 1,
+    andres: 1,
+    angel: 1,
+    aurora: 1,
+    berta: 1,
+    bismark: 1,
+    carlos: 1,
+    dan: 1,
+    giuseppe: 1,
+    godsway: 1,
+    javier: 1,
+    john: 1,
+    luliya: 1,
+    michelle: 1,
+    raul: 1,
+    roberto: 1,
+    sandra: 1,
+    simon: 1,
+    victor: 1,
+    youssef: 1,
+  };
+
+  /**
+   * Early Autumn Hub: Emanuel book is covered by John (e.g. Sun 6 Sep) until
+   * Emanuel has a Team photo / is live on the board for parents.
+   */
+  function normalizeTeamStaffKey(key) {
+    var k = String(key || "")
+      .trim()
+      .toLowerCase();
     if (k === "javi") k = "javier";
     if (k === "lulia") k = "luliya";
     if (k === "yousef" || k === "yusef") k = "youssef";
-    if (!k || !STAFF_CATALOG[k]) return null;
+    if (k === "emanuel" || k === "emmanuel") k = "john";
+    return k;
+  }
+
+  function staffHasTeamPhoto(key) {
+    return !!STAFF_WITH_TEAM_PHOTO[normalizeTeamStaffKey(key)];
+  }
+
+  function catalogMember(key) {
+    var k = normalizeTeamStaffKey(key);
+    if (!k || !STAFF_CATALOG[k] || !staffHasTeamPhoto(k)) return null;
     var card = Object.assign({ staff_key: k }, STAFF_CATALOG[k]);
     if (card.avatar_url && card.avatar_url.indexOf("?") === -1) {
-      card.avatar_url = card.avatar_url + "?v=20260710-team-photos";
+      card.avatar_url = card.avatar_url + "?v=20260905-team-photos";
     }
     return card;
   }
 
   function mergeTeamMember(base, patch) {
     var out = Object.assign({}, base || {}, patch || {});
-    if (Array.isArray(patch && patch.speaks) && patch.speaks.length) {
-      out.speaks = patch.speaks.slice();
-    } else if (base && Array.isArray(base.speaks)) {
-      out.speaks = base.speaks.slice();
-    }
-    /* Catalog is source of truth for photos / bio / nationality when present */
+    /* Catalog is source of truth for photos / bio when present */
     if (base) {
       if (base.avatar_url) out.avatar_url = base.avatar_url;
       if (base.bio) out.bio = base.bio;
-      if (base.nationality) out.nationality = base.nationality;
-      if (base.flag) out.flag = base.flag;
       if (base.name) out.name = base.name;
       if (base.staff_key) out.staff_key = base.staff_key;
     }
+    delete out.nationality;
+    delete out.flag;
+    delete out.speaks;
     return out;
   }
 
@@ -856,22 +885,25 @@
     var out = [];
     function addCard(card) {
       if (!card) return;
-      var k = String(card.staff_key || staffKeyFromFeedbackName(card.name) || "")
-        .trim()
-        .toLowerCase();
-      if (!k) return;
-      if (seen[k]) return;
+      var k = normalizeTeamStaffKey(
+        card.staff_key || staffKeyFromFeedbackName(card.name) || "",
+      );
+      if (!k || !staffHasTeamPhoto(k) || seen[k]) return;
+      var catalog = catalogMember(k);
+      if (!catalog) return;
       seen[k] = true;
-      out.push(card);
+      out.push(mergeTeamMember(catalog, Object.assign({}, card, { staff_key: k })));
     }
 
     if (data && Array.isArray(data.team)) {
       data.team.forEach(function (m) {
         if (!m) return;
-        var key = staffKeyFromFeedbackName(
-          m.staff_key || m.key || m.username || m.name || "",
+        var key = normalizeTeamStaffKey(
+          staffKeyFromFeedbackName(
+            m.staff_key || m.key || m.username || m.name || "",
+          ),
         );
-        addCard(mergeTeamMember(catalogMember(key), Object.assign({ staff_key: key }, m)));
+        addCard(Object.assign({ staff_key: key }, m));
       });
     }
     if (!out.length) {
@@ -900,5 +932,6 @@
     catalogMember: catalogMember,
     memberFromFeedbackName: memberFromFeedbackName,
     staffKeyFromFeedbackName: staffKeyFromFeedbackName,
+    staffHasTeamPhoto: staffHasTeamPhoto,
   };
 })(typeof window !== "undefined" ? window : global);
