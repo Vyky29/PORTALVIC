@@ -3200,6 +3200,70 @@
     return fmt(startMins) + " to " + fmt(endMins);
   }
 
+  /**
+   * Hub session cards: always "9.00 – 9.30" (same shape as Aquatic booking rows).
+   * Strips roster junk like "Activity, Sunday - 9.30 to 11".
+   */
+  function hubSlotClockLabel(startMins, endMins) {
+    if (startMins == null || endMins == null || endMins <= startMins) return "";
+    function fmt(mins) {
+      var h24 = Math.floor(mins / 60) % 24;
+      var mm = mins % 60;
+      var h12 = h24 % 12;
+      if (h12 === 0) h12 = 12;
+      if (mm === 0) return h12 + ".00";
+      if (mm === 30) return h12 + ".30";
+      return h12 + ":" + (mm < 10 ? "0" : "") + mm;
+    }
+    return fmt(startMins) + " – " + fmt(endMins);
+  }
+
+  function hubOpsDisplayTime(time) {
+    var start = parseServiceStartMinutes(time);
+    var end = parseServiceEndMinutes(time);
+    if (start < 9999 && end != null && end > start) {
+      return hubSlotClockLabel(start, end);
+    }
+    var s = String(time || "").trim();
+    if (!s) return "";
+    var m = s.match(
+      /(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?)\s*(?:[-–—]|to)\s*(\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)?)/i,
+    );
+    return m ? String(m[1]).trim() + " – " + String(m[2]).trim() : s;
+  }
+
+  /** Venue line for hub cards — never leave Multi/Climbing without a place row. */
+  function hubOpsDisplayPlace(s, data) {
+    var venue = String((s && s.venue) || "").trim();
+    var area = String((s && s.area) || "").trim();
+    if (venue && area && area.toLowerCase() !== venue.toLowerCase()) {
+      return venue + " · " + area;
+    }
+    if (venue) return venue;
+    if (area) return area;
+    var g = (data && data.general) || {};
+    var preferred = String(g.preferred_venue || g.venue || "").trim();
+    if (preferred) return preferred;
+    var lab = String((s && (s.rawLabel || s.label)) || "").toLowerCase();
+    var day = String((s && s.day) || "").toLowerCase();
+    var sunday =
+      /\bsunday\b/.test(day) ||
+      (s && s.isTomorrow && new Date().getDay() === 6) ||
+      (s && s.iso && String(s.iso).slice(0, 10) && (function () {
+        try {
+          var p = String(s.iso).split("-");
+          return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay() === 0;
+        } catch (_e) {
+          return false;
+        }
+      })());
+    if (sunday && (/multi|climb|aquatic|swim|bespoke/.test(lab) || !lab)) return "SwimFarm";
+    if (/acton/.test(lab)) return "Acton";
+    if (/northolt/.test(lab)) return "Northolt";
+    if (/swimfarm|swim\s*farm/.test(lab)) return "SwimFarm";
+    return "";
+  }
+
   function crashVenueFromSlotLabel(slotLabel) {
     var parts = String(slotLabel || "")
       .split("·")
@@ -3366,7 +3430,7 @@
           label: shortServiceChipLabel(s.label || "Service") || s.label || "Service",
           rawLabel: s.label || "Service",
           day: s.day || "",
-          time: s.time || "",
+          time: hubOpsDisplayTime(s.time) || s.time || "",
           venue: String(s.venue || "").trim(),
           area: String(s.area || "").trim(),
           isToday: iso === todayIso,
@@ -3409,7 +3473,7 @@
         label: shortServiceChipLabel(raw.label || "Service") || raw.label || "Service",
         rawLabel: raw.label || "Service",
         day: raw.day || "",
-        time: raw.time || "",
+        time: hubOpsDisplayTime(raw.time) || raw.time || "",
         venue: String(raw.venue || "").trim(),
         area: String(raw.area || "").trim(),
         isToday: iso === todayIso,
@@ -3477,17 +3541,10 @@
       },
     );
     if (crash.length) return crash;
-    var booked = findBookedReservationSessionRows(data, { includeCompletedToday: true }).filter(
-      function (s) {
-        return s.iso === want;
-      },
-    );
-    if (booked.length) return booked;
-    return findRosterPatternNextSessions(data, 24, { includeCompletedToday: true }).filter(
-      function (s) {
-        return s.iso === want;
-      },
-    );
+    /* Same merge as findNextSessions — trial Aquatic must not hide Multi/Climbing. */
+    return findNextSessions(data, 24, { includeCompletedToday: true }).filter(function (s) {
+      return s.iso === want;
+    });
   }
 
   /** Hub section title: Today / Tomorrow / Next session from the next remaining booking. */
@@ -5034,16 +5091,16 @@
     return '<svg class="pp-hub-ops__slot-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>';
   }
 
-  function hubOpsSessionSlotHtml(s) {
+  function hubOpsSessionSlotHtml(s, data) {
     var tone = serviceChipToneClass(s.rawLabel || s.label || "");
     var completed = !!s.completed;
-    var placeBits = [s.venue, s.area].filter(Boolean);
-    var place = placeBits.join(" · ");
+    var place = hubOpsDisplayPlace(s, data);
+    var clock = hubOpsDisplayTime(s.time);
     var pinIco =
       '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
     var clockIco =
       '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
-    var timeBlock = s.time
+    var timeBlock = clock
       ? '<span class="pp-hub-ops__slot-end">' +
         (completed
           ? '<span class="pp-hub-ops__session-done-chip"><span class="pp-hub-ops__session-done-chip__mark" aria-hidden="true">✓</span>SESSION COMPLETED</span>'
@@ -5051,7 +5108,7 @@
         '<span class="pp-hub-ops__slot-time">' +
         clockIco +
         "<span>" +
-        esc(s.time) +
+        esc(clock) +
         "</span></span></span>"
       : "";
     return (
@@ -5070,7 +5127,9 @@
       "</span>" +
       (place
         ? '<div class="pp-hub-ops__slot-place">' + pinIco + "<span>" + esc(place) + "</span></div>"
-        : "") +
+        : '<div class="pp-hub-ops__slot-place pp-hub-ops__slot-place--empty" aria-hidden="true">' +
+          pinIco +
+          "<span>—</span></div>") +
       "</div>" +
       timeBlock +
       "</li>"
@@ -5163,7 +5222,11 @@
         esc(next.dayLabel) +
         "</strong></div>" +
         '<ul class="pp-hub-ops__slots">' +
-        sameDay.map(hubOpsSessionSlotHtml).join("") +
+        sameDay
+          .map(function (row) {
+            return hubOpsSessionSlotHtml(row, data);
+          })
+          .join("") +
         "</ul></div>";
     }
     var termParts = buildTermSessionDateParts(data);
