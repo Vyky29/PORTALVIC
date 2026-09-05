@@ -2254,8 +2254,8 @@
       return null;
     }
     if (termBucketFor(r) !== "autumn_2627") return null;
-    /* Jack S: Multi paid on main INV-P — no separate ACAT Outstanding line in this table. */
-    if (slug === "jacks" && r._officeSplitPaidOnly) {
+    /* Multi-only paid INV-P (ACAT on a sibling invoice) — do not invent a Paid ACAT Day Centre half. */
+    if (r._officeSplitPaidOnly) {
       return null;
     }
     var blob = rowServiceBlob(r);
@@ -2304,13 +2304,18 @@
       out.amount = amount;
       out.amount_billed = amount;
       /*
-       * Inherit Paid/Partial from the combined INV-P. Forcing Outstanding here
-       * made Jack Walker look unpaid after INV-P-0342 was marked paid (£2260).
+       * Afterschool Multi half may inherit Paid from the Multi INV-P.
+       * ACAT Day Centre half must NOT — Multi cash is not ACAT (Jacks were showing
+       * Paid £750 DC while ACAT invoices were void / unpaid).
        */
       var srcSt = String(r.payment_status || "").toLowerCase();
       var srcPaidAmt = Number(r._amountPaid != null ? r._amountPaid : r.amount_paid_gbp) || 0;
       var srcFace = Number(r.amount_billed) || Number(r.amount) || Number(r._amountAutumn) || 0;
-      if (srcSt.indexOf("paid") === 0 && srcSt.indexOf("partial") < 0) {
+      if (part === "aquatic_mon") {
+        out.amount_out = amount;
+        out.payment_status = amount > 0 ? "Outstanding" : "Paid";
+        out._amountPaid = 0;
+      } else if (srcSt.indexOf("paid") === 0 && srcSt.indexOf("partial") < 0) {
         out.amount_out = 0;
         out.payment_status = "Paid";
         out._amountPaid = amount;
@@ -2392,9 +2397,8 @@
   }
 
   /**
-   * ACAT Mon 11–12 Aquatic (Jack S / Jack W / Kate / Kamy) — Day Centre stream.
-   * Prefer explicit Cohort/Stream; do not rely on Services alone (roster enrich can overwrite).
-   * Autumn 26/27 payment rows only after re-enrolment (Kate/Kamy not yet enrolled for autumn).
+   * ACAT Day Centre (Jack S / Jack W / Kate / Kamy) — Mon aquatic (summer) or
+   * Tue Day Centre Hub (autumn board). Prefer Cohort/Stream over roster enrich.
    */
   function isAcatMondayAquaticRow(r) {
     if (r && r._acatPart === "aquatic_mon") return true;
@@ -2415,6 +2419,7 @@
     var name = String((r && r.client_name) || "");
     if (/\(\s*acat\s*\)/i.test(name) || /\*/.test(name)) {
       var s0 = rowServiceBlob(r);
+      if (/day\s*centre/i.test(s0) && !/multi/i.test(s0)) return true;
       if (/aquatic/i.test(s0) && /\bmon(day)?\b/i.test(s0) && !/multi/i.test(s0)) return true;
     }
     var s = rowServiceBlob(r);
@@ -6113,6 +6118,21 @@
     if (via === "la_office_auto") {
       return String((inv && inv.id) || ("la-auto-" + cid));
     }
+    /*
+     * ACAT Tue Day Centre office INV-P must not merge into the Multi-Activity
+     * re-enrol row (same contact) — otherwise Paid Multi hides Outstanding ACAT.
+     */
+    var ready = String((inv && inv.ready_by) || "").toLowerCase();
+    if (
+      /office_acat_tue_dc_autumn_2627_|office_.*autumn_acat_2627|acat_tue_dc/.test(ready)
+      || (
+        /aquatic|day\s*centre/i.test(String((inv && inv.line_description) || ""))
+        && /acat/i.test(ready + " " + String((inv && inv.notes) || ""))
+        && !/multi/i.test(String((inv && inv.line_description) || ""))
+      )
+    ) {
+      return cid + "::acat-dc";
+    }
     return cid;
   }
 
@@ -6215,6 +6235,22 @@
       }
       var row = agg[key];
       mergeServiceLabelsIntoRow(row, inv);
+      if (String(key).indexOf("::acat-dc") >= 0) {
+        row._acatPart = "aquatic_mon";
+        row.data = row.data || {};
+        row.data.Cohort = "ACAT";
+        row.data.Stream = "Day Centre";
+        row.data.Paid = PAID_BY.FUNDS_FROM_LA;
+        row.data["Invoice type"] = INVOICE_TYPE.PARENT_EXEMPT;
+        row._vatMode = "exempt";
+        if (!row.data.Services || /multi/i.test(String(row.data.Services))) {
+          row.data.Services = "60' Day Centre - 11 am to 12 pm - Tuesday";
+        }
+        var nm = String(row.client_name || "").trim();
+        if (nm && !/\(\s*acat\s*\)/i.test(nm)) {
+          row.client_name = nm.replace(/\s*\*$/, "").trim() + " (ACAT)";
+        }
+      }
       if (isLaAuto) {
         row._laOfficeAuto = true;
         row._paymentMethodHint = "la_funded";
