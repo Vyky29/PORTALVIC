@@ -4890,6 +4890,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(venue && venue.indexOf('swimfarm') < 0) return false;
       return adminSchedSlotAreaKind(sessionOrRow) === 'hub';
     }
+    /** Sun 6 Hub books are dated cover only — Berta / John / Emanuel / Giuseppe Multi. */
+    function adminSchedIsSep6HubBookStaff(sessionOrRow){
+      var raw = String(
+        (sessionOrRow && (sessionOrRow.staffId || sessionOrRow.staffRosterId || sessionOrRow.instructors)) ||
+          ''
+      )
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ');
+      return (
+        /\bberta\b/.test(raw) ||
+        /\bjohn\b/.test(raw) ||
+        /\bemanuel\b/.test(raw) ||
+        /\bgiuseppe\b/.test(raw)
+      );
+    }
+    function adminSchedMustUseDatedSep6HubOnly(sessionOrRow){
+      if(!adminSchedIsMultiProgramme(sessionOrRow)) return false;
+      var venue = String((sessionOrRow && sessionOrRow.venue) || '').trim().toLowerCase();
+      if(venue && venue.indexOf('swimfarm') < 0) return false;
+      if(adminSchedIsSundaySwimfarmHubMulti(sessionOrRow)) return true;
+      return adminSchedIsSep6HubBookStaff(sessionOrRow);
+    }
     /** Same client + same programme family (Multi hub≠pool) has a dated row this week. */
     function adminClientHasDatedRosterInWeekSameFamily(iso, standingSession){
       var cid = adminCanonicalClientSlug(standingSession && (standingSession.clientId || standingSession.client_name));
@@ -5049,9 +5071,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(project && standIso && standIso !== wantIso && rowIso === standIso){
           /*
            * Sun 6 Hub Multi is owned by LOCAL dated cover (John = Emanuel book, Berta Lead).
-           * Do not also project summer/standing Hub Multi — that stacked both books onto Berta.
+           * Never project standing/summer Multi for those Hub staff — empty area used to
+           * escape the Hub-only check and leave Jack S under Berta.
            */
-          if(wantIso === '2026-09-06' && adminSchedIsSundaySwimfarmHubMulti(s)) return false;
+          if(wantIso === '2026-09-06' && adminSchedMustUseDatedSep6HubOnly(s)) return false;
           if(adminClientHasDatedRosterInWeekSameFamily(wantIso, s)) return false;
           /* Dated trial / new booking on this calendar day fills the open standing seat. */
           if(adminDatedNamedOccupiesOpenSeat(wantIso, s)) return false;
@@ -5063,7 +5086,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(!project && adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
       if(project && standIso && standIso !== wantIso && adminRosterHasDatedSessionsForIso(standIso, sessions)) return false;
-      if(wantIso === '2026-09-06' && adminSchedIsSundaySwimfarmHubMulti(s)) return false;
+      if(wantIso === '2026-09-06' && adminSchedMustUseDatedSep6HubOnly(s)) return false;
       if(adminClientHasDatedRosterInWeekSameFamily(wantIso, s)) return false;
       if(project && standIso && standIso !== wantIso && adminClientHasDatedRosterInWeekSameFamily(standIso, s)) return false;
       return normDayLabel(s.day) === normDayLabel(weekdayLong);

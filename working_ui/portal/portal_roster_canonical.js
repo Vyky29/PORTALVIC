@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 60;
+  var SOURCE_VERSION = 61;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -773,16 +773,20 @@
       } catch (_) {}
     }
     if (isMultiActivityService(service)) {
-      s = remapAutumnMultiInstructorsStanding(s);
       if (iso === "2026-09-06") {
         /*
-         * Sun 6 Hub: John covers Emanuel book; Berta Lead keeps former John book.
-         * Order matters — move JOHN→BERTA before EMANUEL→JOHN.
+         * Sun 6 LOCAL: John covers Emanuel Hub book; Berta Lead keeps Jack W book.
+         * Do NOT run JOHN→BERTA first — that turned John's dated cover into Berta and
+         * stacked both Hub books on Berta in Schedule & Covers / Today.
          */
         s = s
-          .replace(/\bJOHN\b/gi, "__SEP6_BERTA_BOOK__")
-          .replace(/\bEMANUEL\b/gi, "JOHN")
-          .replace(/__SEP6_BERTA_BOOK__/g, "BERTA");
+          .replace(/\bBISMARK\b/gi, "GODSWAY")
+          .replace(/\bBISMARCK\b/gi, "GODSWAY")
+          .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
+          .replace(/\bEMANUEL\b/gi, "JOHN");
+        /* Leave JOHN and BERTA as-is. */
+      } else {
+        s = remapAutumnMultiInstructorsStanding(s);
       }
     }
     if (isBespokeService(service)) {
@@ -1599,17 +1603,22 @@
   function isSundaySwimfarmHubMultiRow(r) {
     if (!r || !isMultiActivityService(r.service)) return false;
     if (!/swimfarm/i.test(String(r.venue || "SwimFarm"))) return false;
-    if (!/hub/i.test(String(r.area || ""))) return false;
     var day = normalizeDowKey(r.day);
-    if (day === "sunday") return true;
-    var d = normIso(r.session_date);
-    if (d) {
-      try {
-        var dt = new Date(d + "T12:00:00");
-        if (!isNaN(dt.getTime()) && dt.getDay() === 0) return true;
-      } catch (_) {}
+    var sunday = day === "sunday";
+    if (!sunday) {
+      var d = normIso(r.session_date);
+      if (d) {
+        try {
+          var dt = new Date(d + "T12:00:00");
+          if (!isNaN(dt.getTime()) && dt.getDay() === 0) sunday = true;
+        } catch (_) {}
+      }
     }
-    return false;
+    if (!sunday) return false;
+    /* Prefer Hub, but also treat Berta/John/Emanuel/Giuseppe Sunday Multi as Hub books
+       (summer rows sometimes omit area and escaped the scrub). */
+    if (/hub/i.test(String(r.area || ""))) return true;
+    return /\b(john|emanuel|giuseppe|berta)\b/i.test(String(r.instructors || ""));
   }
 
   function autumnSundayStandingHubRows() {
@@ -1635,10 +1644,10 @@
 
   /**
    * Sunday Hub Multi = LOCAL only.
-   * Drop legacy summer/DB Hub books for Berta / John / Emanuel / Giuseppe (they stacked
-   * both books onto Berta after JOHN→BERTA, and duplicated John on Sun 6).
-   * Re-inject: standing Berta Lead + Emanuel books; Sun 6 dated John cover + Berta Lead.
-   * Godsway Hub + all pool Multi rows are kept.
+   * Drop legacy summer/DB Sunday Multi for Berta / John / Emanuel / Giuseppe (with or
+   * without Hub in area — empty area previously left Jack S under Berta after JOHN→BERTA).
+   * Re-inject: standing Berta Lead + Emanuel; Sun 6 dated John cover + Berta Lead.
+   * Godsway Hub + Javier/Aurora/Roberto pool Multi are kept.
    */
   function scrubAndEnsureSep6HubCover(rows) {
     var out = [];

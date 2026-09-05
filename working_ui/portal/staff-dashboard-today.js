@@ -484,6 +484,19 @@
         if(iso === '2026-09-06' && portalSessionIsSundaySwimfarmHubMulti(s) && rowIso !== iso){
           return false;
         }
+        /* Standing Multi for Hub staff with empty area must also stay off Sun 6. */
+        if(iso === '2026-09-06' && rowIso && rowIso !== iso){
+          const svc = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
+          const venue = String((s && s.venue) || '').toLowerCase();
+          const sid = String((s && s.staffId) || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+          if(
+            svc.indexOf('multi') >= 0 &&
+            (!venue || venue.indexOf('swimfarm') >= 0) &&
+            (sid === 'berta' || sid === 'john' || sid === 'emanuel' || sid === 'giuseppe')
+          ){
+            return false;
+          }
+        }
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
         if(portalIsoIsAutumnWeek1Dc(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
         if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return rowIso === iso;
