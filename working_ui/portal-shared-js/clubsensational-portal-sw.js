@@ -7,8 +7,10 @@
  * v20260711-always-os-banner (foreground skip broke alerts after chat UI removal)
  * v20260904-comms-push (Communications message + incoming-call banners)
  * v20260905-comms-36 (Home screen PWA numeric badge via Badging API)
+ * v20260906-notif-open-fix (never navigate PWA to bare / — blank screen on iOS)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
+var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
 
 self.addEventListener('install', function (event) {
   event.waitUntil(
@@ -91,6 +93,50 @@ function portalAppendQueryParam(absUrl, key, value) {
   }
 }
 
+/** True when the open client is already a portal app page (do not navigate away). */
+function portalClientIsPortalApp(client) {
+  try {
+    var href = String((client && client.url) || '');
+    return /staff_dashboard|admin_dashboard|ceo_dashboard|office_portal|comunicaciones|parent_portal|cs_cliq|login\.html/i.test(
+      href
+    );
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Resolve a safe open URL for notification clicks / cold starts.
+ * Bare `/`, scope-only, or empty URLs blank the iOS/Android PWA (navigate to site root).
+ */
+function portalSafeOpenUrl(raw, portalOpen) {
+  var scope = (self.registration && self.registration.scope) || '/';
+  var fallback;
+  try {
+    fallback = new URL(PORTAL_DEFAULT_DASHBOARD, scope).href;
+  } catch (e0) {
+    fallback = '/' + PORTAL_DEFAULT_DASHBOARD;
+  }
+  var open = String(portalOpen || '').trim();
+  try {
+    var rawStr = String(raw || '').trim();
+    if (!rawStr || rawStr === '/' || rawStr === scope) {
+      return open ? portalAppendQueryParam(fallback, 'portalOpen', open) : fallback;
+    }
+    var abs = new URL(rawStr, scope);
+    var path = String(abs.pathname || '/');
+    if (path === '/' || path === '') {
+      abs.pathname = '/' + PORTAL_DEFAULT_DASHBOARD;
+    }
+    if (open && !abs.searchParams.get('portalOpen')) {
+      abs.searchParams.set('portalOpen', open);
+    }
+    return abs.href;
+  } catch (e) {
+    return open ? portalAppendQueryParam(fallback, 'portalOpen', open) : fallback;
+  }
+}
+
 function portalPushIconUrl() {
   try {
     var origin =
@@ -166,7 +212,10 @@ self.addEventListener('message', function (event) {
         requireInteraction: true,
         silent: false,
         vibrate: PORTAL_ALERT_VIBRATE,
-        data: { url: self.registration.scope || '/', portalOpen: 'alerts' },
+        data: {
+          url: portalSafeOpenUrl('', 'alerts'),
+          portalOpen: 'alerts',
+        },
       })
     );
     return;
@@ -190,7 +239,7 @@ self.addEventListener('message', function (event) {
 self.addEventListener('push', function (event) {
   var title = 'clubSENsational';
   var body = 'Schedule update';
-  var url = '/';
+  var url = portalSafeOpenUrl('', 'alerts');
   var portalOpen = 'alerts';
   var tag = 'portal-' + Date.now();
   var requireInteraction = false;
@@ -292,10 +341,10 @@ self.addEventListener('push', function (event) {
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
   var data = (event.notification && event.notification.data) || {};
-  var u = data.url || self.registration.scope || '/';
   var portalOpen = String(data.portalOpen || '');
   var callData = data.call || null;
   var chatData = data.chat || null;
+  var u = portalSafeOpenUrl(data.url, portalOpen);
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
       for (var i = 0; i < list.length; i++) {
@@ -309,7 +358,10 @@ self.addEventListener('notificationclick', function (event) {
               url: u,
             });
           } catch (e) {}
-          /* Deep-link into Leader WhatsApp / alerts / chat when a URL was provided. */
+          /* Already on a portal page: focus only. clients.navigate('/') blanks iOS PWAs. */
+          if (portalClientIsPortalApp(list[i])) {
+            return list[i].focus();
+          }
           if (u && typeof list[i].navigate === 'function') {
             try {
               return list[i].navigate(u).then(function () {
