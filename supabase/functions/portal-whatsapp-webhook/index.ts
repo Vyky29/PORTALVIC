@@ -18,6 +18,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 import { findStaffLeaderByPhone } from "../_shared/portal_staff_whatsapp.ts";
 import { notifyAdminsStaffWhatsappReply } from "../_shared/portal_staff_whatsapp_admin_push.ts";
+import { notifyAdminsParentWhatsappInbound } from "../_shared/portal_parent_whatsapp_admin_push.ts";
 import { handleParentSaysPaidMessage } from "../_shared/portal_parent_says_paid.ts";
 
 type MetaWebhookBody = {
@@ -359,15 +360,26 @@ async function storeInboundMessages(
       raw_payload: msg as Record<string, unknown>,
     };
 
-    const { error } = await admin
+    const { data: parentInserted, error } = await admin
       .from("portal_parent_whatsapp_inbound")
-      .upsert(row, { onConflict: "wa_message_id", ignoreDuplicates: true });
+      .upsert(row, { onConflict: "wa_message_id", ignoreDuplicates: true })
+      .select("id, from_phone, contact_name, body_text, message_type, created_at")
+      .maybeSingle();
 
     if (error) {
       console.warn("[portal-whatsapp-webhook] insert failed", waMessageId, error.message);
       continue;
     }
+    if (!parentInserted?.id) continue;
     inserted += 1;
+    await notifyAdminsParentWhatsappInbound({
+      id: String(parentInserted.id),
+      from_phone: String(parentInserted.from_phone || phone),
+      contact_name: String(parentInserted.contact_name || contactName || ""),
+      body_text: String(parentInserted.body_text || bodyText || ""),
+      message_type: String(parentInserted.message_type || row.message_type || "text"),
+      created_at: String(parentInserted.created_at || new Date().toISOString()),
+    });
 
     try {
       await handleParentSaysPaidMessage(admin, {

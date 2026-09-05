@@ -542,6 +542,7 @@
         if (d.portalOpen === "incoming_call" || d.portalOpen === "communications_call") return;
         /* Leader-facing WA pushes belong on staff dashboard only; never toast them on admin. */
         if (d.portalOpen === "staff_whatsapp") return;
+        if (d.portalOpen === "family_messages") return;
         if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(d)) {
           return;
         }

@@ -56,6 +56,7 @@ const ALLOWED_TABLES = new Set([
   "portal_staff_dm_messages",
   "portal_ceo_group_message",
   "portal_staff_whatsapp_inbound",
+  "portal_parent_whatsapp_inbound",
   "portal_booking_leads",
 ]);
 
@@ -137,6 +138,16 @@ function buildLeaderWhatsappUrl(base: string, staffUsername: string): string {
     return `${root}?portal_open=portal_staff_whatsapp${u ? `&staff=${u}` : ""}`;
   }
   return `${root}?portal_open=portal_staff_whatsapp${u ? `&staff=${u}` : ""}`;
+}
+
+function buildFamilyMessagesUrl(base: string, fromPhone: string): string {
+  const root = String(base || "").replace(/\/$/, "");
+  const digits = String(fromPhone || "").replace(/\D/g, "");
+  const q = digits ? `&wa=${encodeURIComponent(digits)}` : "";
+  if (/admin_dashboard\.html/i.test(root)) {
+    return `${root}?portal_open=portal_parent_notify_log${q}`;
+  }
+  return `${root}?portal_open=portal_parent_notify_log${q}`;
 }
 
 function buildAdminAlertsUrl(base: string): string {
@@ -290,6 +301,24 @@ function buildAlert(
       // iOS lock banner: app name (CS Portal) + this title; body shows on expand/tap.
       title: "Notification",
       body: `Leader WhatsApp - ${who}`,
+    };
+  }
+
+  if (table === "portal_parent_whatsapp_inbound") {
+    const rawWho = String(record.contact_name ?? "Parent").trim() || "Parent";
+    const first = rawWho.split(/\s+/)[0] || rawWho;
+    const who = first.charAt(0).toUpperCase() + first.slice(1);
+    const msgType = String(record.message_type ?? "text").toLowerCase();
+    let preview = clampPushBody(String(record.body_text ?? ""), 120);
+    if (msgType === "audio") preview = "Voice note";
+    else if (msgType === "image" || msgType === "sticker") preview = "Photo";
+    else if (msgType === "video") preview = "Video";
+    else if (msgType === "document" || msgType === "file") preview = "File";
+    if (!preview) preview = "New message";
+    return {
+      sourceId: id,
+      title: "Family messages",
+      body: clampPushBody(`${who}: ${preview}`),
     };
   }
 
@@ -564,6 +593,12 @@ Deno.serve(async (req) => {
   } else if (table === "portal_staff_whatsapp_inbound") {
     portalOpen = "portal_staff_whatsapp";
     notifyUrl = buildLeaderWhatsappUrl(openBase, staffUsername);
+  } else if (table === "portal_parent_whatsapp_inbound") {
+    portalOpen = "family_messages";
+    notifyUrl = buildFamilyMessagesUrl(
+      openBase,
+      String(record.from_phone ?? ""),
+    );
   } else if (table === "portal_booking_leads") {
     portalOpen = "leads";
     notifyUrl = buildBookingLeadsUrl(openBase);
@@ -607,6 +642,8 @@ Deno.serve(async (req) => {
         ? buildChatNotifyUrl(userBase, threadId, groupId)
         : table === "portal_staff_whatsapp_inbound"
         ? buildLeaderWhatsappUrl(userBase, staffUsername)
+        : table === "portal_parent_whatsapp_inbound"
+        ? buildFamilyMessagesUrl(userBase, String(record.from_phone ?? ""))
         : table === "portal_booking_leads"
         ? buildBookingLeadsUrl(userBase)
         : buildAdminAlertsUrl(userBase);

@@ -12,6 +12,7 @@ import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/par
 import { resolveParentPortalSession } from "../_shared/parent_portal_session.ts";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
 import { handleParentSaysPaidMessage } from "../_shared/portal_parent_says_paid.ts";
+import { notifyAdminsParentWhatsappInbound } from "../_shared/portal_parent_whatsapp_admin_push.ts";
 
 function clean(v: unknown, max = 2000): string {
   return String(v ?? "").trim().slice(0, max);
@@ -117,6 +118,17 @@ Deno.serve(async (req) => {
   if (error) {
     console.error("[parent-portal-message-send] insert failed", error);
     return parentPortalJsonInvalid(500);
+  }
+
+  if (inserted?.id) {
+    await notifyAdminsParentWhatsappInbound({
+      id: String(inserted.id),
+      from_phone: phone,
+      contact_name: parentName,
+      body_text: message,
+      message_type: "text",
+      created_at: String(inserted.created_at || now),
+    });
   }
 
   try {

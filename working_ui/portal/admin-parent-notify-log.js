@@ -3074,10 +3074,192 @@
     }
   }
 
+  var familyToastTimer = 0;
+  var familyToastCount = 0;
+  var lastFamilyAlertKey = "";
+  var lastFamilyAlertAt = 0;
+
+  function ensureFamilyToast() {
+    var existing = document.getElementById("portalFamilyMsgToast");
+    if (existing) return existing;
+    if (!document.getElementById("portalFamilyMsgToastCss")) {
+      var st = document.createElement("style");
+      st.id = "portalFamilyMsgToastCss";
+      st.textContent =
+        "#portalFamilyMsgToast{position:fixed;left:12px;right:12px;top:max(12px,env(safe-area-inset-top));z-index:2147482500;display:flex;gap:10px;align-items:center;max-width:28rem;margin:0 auto;padding:12px 12px 12px 14px;border-radius:16px;background:#173247;color:#fff;box-shadow:0 12px 32px rgba(15,23,42,.35);border:1px solid rgba(255,255,255,.14);min-width:0}" +
+        "#portalFamilyMsgToast[hidden]{display:none!important}" +
+        "#portalFamilyMsgToast .portal-family-toast-copy{min-width:0;flex:1}" +
+        "#portalFamilyMsgToast strong{display:block;font-size:13px;line-height:1.25;overflow-wrap:anywhere}" +
+        "#portalFamilyMsgToast span{display:block;margin-top:2px;font-size:12px;color:rgba(255,255,255,.78);overflow-wrap:anywhere;max-height:2.6em;overflow:hidden}" +
+        "#portalFamilyMsgToastOpen{flex:0 0 auto;padding:8px 12px;border:0;border-radius:999px;background:#16a34a;color:#fff;font:inherit;font-size:12px;font-weight:800;cursor:pointer}";
+      (document.head || document.documentElement).appendChild(st);
+    }
+    var el = document.createElement("div");
+    el.id = "portalFamilyMsgToast";
+    el.hidden = true;
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    el.innerHTML =
+      '<div class="portal-family-toast-copy"><strong id="portalFamilyMsgToastTitle">Family messages</strong><span id="portalFamilyMsgToastBody">New message</span></div>' +
+      '<button type="button" id="portalFamilyMsgToastOpen">Open</button>';
+    (document.body || document.documentElement).appendChild(el);
+    el.addEventListener("click", function (ev) {
+      if (ev.target && ev.target.id === "portalFamilyMsgToastOpen") return;
+      hideFamilyToast();
+      openFamilyMessages();
+    });
+    var openBtn = document.getElementById("portalFamilyMsgToastOpen");
+    if (openBtn) {
+      openBtn.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        hideFamilyToast();
+        openFamilyMessages();
+      });
+    }
+    return el;
+  }
+
+  function hideFamilyToast() {
+    if (familyToastTimer) {
+      global.clearTimeout(familyToastTimer);
+      familyToastTimer = 0;
+    }
+    familyToastCount = 0;
+    var el = document.getElementById("portalFamilyMsgToast");
+    if (el) el.hidden = true;
+  }
+
+  function openFamilyMessages() {
+    var btn = document.getElementById("btnFamilyMsgs");
+    if (btn && typeof btn.click === "function") {
+      btn.click();
+      return;
+    }
+    try {
+      global.location.href = "admin_dashboard.html?portal_open=portal_parent_notify_log";
+    } catch (_e) {}
+  }
+
+  function familyPreview(row) {
+    var t = String((row && row.message_type) || "text").toLowerCase();
+    if (t === "audio") return "Voice note";
+    if (t === "image" || t === "sticker") return "Photo";
+    if (t === "video") return "Video";
+    if (t === "document" || t === "file") return "File";
+    var body = String((row && (row.body_text || row.body)) || "").replace(/\s+/g, " ").trim();
+    return body || "New message";
+  }
+
+  function familyWho(row) {
+    var raw = String((row && row.contact_name) || "Parent").trim() || "Parent";
+    var first = raw.split(/\s+/)[0] || raw;
+    return first.charAt(0).toUpperCase() + first.slice(1);
+  }
+
+  function showFamilyInboundAlert(row, opts) {
+    opts = opts || {};
+    var meta = (row && row.meta) || {};
+    if (typeof meta === "string") {
+      try {
+        meta = JSON.parse(meta);
+      } catch (_j) {
+        meta = {};
+      }
+    }
+    if (String((meta && meta.direction_hint) || "").toLowerCase() === "club_to_parent") return;
+    var preview = opts.body || familyPreview(row);
+    var who = opts.title || familyWho(row);
+    var key = String((row && row.id) || who + ":" + preview);
+    var now = Date.now();
+    if (key && key === lastFamilyAlertKey && now - lastFamilyAlertAt < 2500) return;
+    lastFamilyAlertKey = key;
+    lastFamilyAlertAt = now;
+    try {
+      if (typeof global.portalAdminRefreshFamilyMsgBadge === "function") {
+        global.portalAdminRefreshFamilyMsgBadge();
+      }
+    } catch (_b) {}
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    familyToastCount += 1;
+    var el = ensureFamilyToast();
+    var titleEl = document.getElementById("portalFamilyMsgToastTitle");
+    var bodyEl = document.getElementById("portalFamilyMsgToastBody");
+    if (titleEl) {
+      titleEl.textContent =
+        familyToastCount > 1 ? "Family messages (" + familyToastCount + " new)" : "Family messages";
+    }
+    if (bodyEl) {
+      bodyEl.textContent = opts.body ? preview : who + ": " + preview;
+    }
+    el.hidden = false;
+    try {
+      el.removeAttribute("hidden");
+    } catch (_sh) {}
+    try {
+      if (typeof global.portalPlayAlertCue === "function") {
+        global.portalPlayAlertCue({ vibrate: [180, 80, 180] });
+      } else if (global.navigator && global.navigator.vibrate) {
+        global.navigator.vibrate([180, 80, 180]);
+      }
+    } catch (_cue) {}
+    if (familyToastTimer) global.clearTimeout(familyToastTimer);
+    familyToastTimer = global.setTimeout(hideFamilyToast, 8000);
+  }
+
+  function bindLiveAlerts() {
+    if (global.__PORTAL_FAMILY_INBOUND_ALERTS__) return;
+    global.__PORTAL_FAMILY_INBOUND_ALERTS__ = true;
+    try {
+      if (global.navigator && global.navigator.serviceWorker) {
+        global.navigator.serviceWorker.addEventListener("message", function (ev) {
+          var d = ev && ev.data;
+          if (!d || d.type !== "portal-push-received") return;
+          if (String(d.portalOpen || "") !== "family_messages") return;
+          if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(d)) {
+            return;
+          }
+          showFamilyInboundAlert(
+            { body_text: d.body || "New message" },
+            { body: String(d.body || "New message") }
+          );
+        });
+      }
+    } catch (_sw) {}
+    function startRt() {
+      var client =
+        (cfg.getClient && cfg.getClient()) ||
+        (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.client) ||
+        null;
+      if (!client || typeof client.channel !== "function") return false;
+      try {
+        client
+          .channel("portal_parent_whatsapp_inbound_alerts")
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "portal_parent_whatsapp_inbound" },
+            function (payload) {
+              showFamilyInboundAlert((payload && payload.new) || {});
+            }
+          )
+          .subscribe();
+        return true;
+      } catch (_sub) {
+        return false;
+      }
+    }
+    if (!startRt()) {
+      global.addEventListener("portal:supabase-ready", function () {
+        startRt();
+      });
+    }
+  }
+
   global.PortalParentNotifyLog = {
     configure: configure,
     viewHtml: viewHtml,
     bindModule: bindModule,
+    bindLiveAlerts: bindLiveAlerts,
     unreadCount: fetchUnreadCount,
     refresh: function () {
       return loadRows(true);
