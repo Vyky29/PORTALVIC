@@ -1167,7 +1167,7 @@
     { staff: "ALEX", name: "Rodin", time: "1 to 2" },
     { staff: "ALEX", name: "No participant", time: "2 to 3" },
     { staff: "CARLOS", name: "Hazem", time: "10 to 11" },
-    { staff: "CARLOS", name: "Zaid", time: "11 to 12" },
+    { staff: "CARLOS", name: "Zaid (Trial)", time: "11 to 12" },
     { staff: "CARLOS", name: "Serine", time: "12 to 1" },
     { staff: "CARLOS", name: "Zakariya", time: "1 to 2" },
     { staff: "CARLOS", name: "No participant", time: "2 to 3" },

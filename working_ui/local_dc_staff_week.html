@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare · v20260905-zaid-two-cards</title>
+  <title>LOCAL · DC staff week compare · v20260905-zaid-trial-pending</title>
   <style>
     :root {
       --ink: #173247;
@@ -261,7 +261,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260905-zaid-two-cards · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260905-zaid-trial-pending · Autumn 2026</h1>
   <p class="note">
     Open at <code>http://127.0.0.1:8765/local_dc_staff_week.html</code> (not file://). Club closed Mon 31 Aug 2026 (BH).
     <strong>1-6 Sep</strong> = week 1 (DC weekdays; Sat 5 + Sun 6 weekend · Hub: <strong>Berta Lead + Jack W…Aydaan book</strong> · <strong>John = Emanuel book</strong> · Godsway · Youssef off · Emanuel off).
@@ -275,9 +275,9 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260905-luliya-aurora-sun"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260905-zaid-trial-pending"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-tue-acat-ikram"></script>
-  <!-- local board bump: 20260905-zaid-two-cards -->
+  <!-- local board bump: 20260905-zaid-trial-pending -->
   <script>
 (function () {
   var STAFF = ["Roberto", "Luliya", "Michelle", "Victor", "Raul", "Youssef"];
@@ -307,7 +307,7 @@
     { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton AS Simon; Aurora from 4.30" },
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Emanuel shadowing Tinashe · Roberto + Tinashe 4.15-6.15" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
-    { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Hub: Berta Lead + Jack W…Aydaan · Godsway · Emanuel shadow · Aurora OFF · Luliya covers Aurora pool book · John OFF" },
+    { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Hub: Berta Lead + Jack W…Aydaan · Godsway · Emanuel shadow · Aurora OFF · Luliya covers Aurora pool · Zaid = trial (term TBD after +2h message) · John OFF" },
     { dow: "monday", iso: "2026-09-14", phase: "w3", hint: "From 14 Sep · Emanuel + Godsway/John/Raul Tinashe · Victor OFF Mon" },
     { dow: "tuesday", iso: "2026-09-15", phase: "w3", hint: "Aurora OFF · Javier covers Aurora Acton book (same as Tue 8)" },
     { dow: "wednesday", iso: "2026-09-16", phase: "w3", hint: "Emanuel + Godsway/John/Raul Tinashe" },
@@ -533,17 +533,19 @@
       ],
       /* Standing from Sun 20 Sep: Emanuel Hub Multi. Sun 6 = John (DATE_EXTRA). Sun 13 = shadow only. */
       Emanuel: [
-        /* Jack S Hub first, then pool with Javier; Zaid pool 9-10.15 then Hub. */
+        /* Jack S Hub first, then pool with Javier; Zaid Hub after pool — trial until term booked. */
         { name: "Jack S", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
-        { name: "Zaid", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Zaid (Trial)", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "trial" },
         { name: "Eiji", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Hazem", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Haneef", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Rayyan F", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
       ],
       Javier: [
-        /* Zaid like Yusuf: one pool card 9-10.15 (aquatic 9 + multi 9.30). Jack S pool after Hub. */
-        { name: "Zaid", time: "9 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
+        /* Zaid Aquatic+Multi trial held on board until post-session (+2h) term book or cancel → live.
+         * Not a confirmed Autumn CLIENT until finish-booking completes. */
+        { name: "Zaid (Trial)", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool", kind: "trial" },
+        { name: "Zaid (Trial)", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool", kind: "trial" },
         { name: "Jack S", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Hazem", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Eiji", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
@@ -563,7 +565,7 @@
       ],
       Carlos: [
         { name: "Hazem", time: "10 to 11", band: "Weekend", area: "Westway · Climbing" },
-        { name: "Zaid", time: "11 to 12", band: "Weekend", area: "Westway · Climbing" },
+        { name: "Zaid (Trial)", time: "11 to 12", band: "Weekend", area: "Westway · Climbing", kind: "trial" },
         { name: "Serine", time: "12 to 1", band: "Weekend", area: "Westway · Climbing" },
         { name: "Zakariya", time: "1 to 2", band: "Weekend", area: "Westway · Climbing" },
         { name: "No participant", time: "2 to 3", band: "Weekend", area: "Westway · Climbing", kind: "open" },
@@ -615,7 +617,7 @@
        * Admin Sessions Overview: one Javier swim row 9–10.15. Jack S: Hub then pool. */
       Javier: [
         { name: "Zaid (Trial)", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool", kind: "trial" },
-        { name: "Zaid", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
+        { name: "Zaid (Trial)", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool", kind: "trial" },
         { name: "Jack S", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Hazem", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Eiji", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
@@ -707,7 +709,7 @@
       /* Shadowing Multi @ shadowing rate — same Hub book (learns clients). */
       Emanuel: [
         { name: "Jack S", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
-        { name: "Zaid", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
+        { name: "Zaid (Trial)", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
         { name: "Eiji", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
         { name: "Hazem", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
         { name: "Haneef", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
