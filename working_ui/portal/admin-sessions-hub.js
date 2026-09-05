@@ -451,10 +451,20 @@
     chaitanya_trial_28_06: "chaitanya",
     junaid: "junaid_f",
     khalid: "khalid_ab",
+    /* Same child, fuller / trial-labelled names in overrides vs short roster ids. */
+    yossi_sium: "yossi",
+    yossi_si: "yossi",
+    zaid_alfadhl: "zaid",
+    zaid_al: "zaid",
   };
 
   function canonicalClientSlug(name) {
     var s = slugify(name);
+    /* "Trial - Zaid Alfadhl (Trial)" / "MakeUp - Yossi" → same person as roster short id. */
+    s = s
+      .replace(/^(trial|makeup|make_up|cover)_+/g, "")
+      .replace(/_+(trial|makeup|make_up)$/g, "")
+      .replace(/^(trial|makeup)_+/g, "");
     return CLIENT_SLUG_ALIASES[s] || s;
   }
 
@@ -1548,12 +1558,16 @@
     if (fromPayload) return fromPayload;
     var venue = clean(ov && ov.anchor_venue).toLowerCase();
     var staff = clean(ov && ov.anchor_staff_id).toLowerCase();
+    var area = clean(p.area || p.pool_note || "").toLowerCase();
     if (staff === "carlos") {
       if (venue === "westway") return "Climbing Activity";
       if (venue === "swimfarm") return "Day Centre";
       return "Climbing Activity";
     }
-    if (venue === "westway" || overrideIsTrialType(ov)) return "Climbing Activity";
+    /* Trials follow venue/area — never force Climbing (that duplicated Zaid aquatic as Wall). */
+    if (venue === "westway" || /wall|climb/.test(area)) return "Climbing Activity";
+    if (/hub/.test(area)) return "Multi-Activity";
+    if (venue === "acton" || venue === "northolt" || venue === "swimfarm") return "Aquatic Activity";
     return "Aquatic Activity";
   }
 
@@ -1565,6 +1579,9 @@
     var repName = overrideReplacementClientName(p);
     if (!repId && !repName) return null;
     var clientName = repName || resolveRosterClientName(repId) || repId.replace(/_/g, " ");
+    var cid = canonicalClientSlug(clientName || repId);
+    var rosterName = resolveRosterClientName(cid);
+    if (rosterName) clientName = rosterName;
     var timeLabel = clean(ov.anchor_time_slot_label);
     var slotTimes = parseTimeSlot(
       timeLabel ||
@@ -1702,6 +1719,9 @@
     if (!ov || overrideAnchorIsOpenSlot(ov.anchor_client_id)) return false;
     var anchorSlug = canonicalClientSlug(ov.anchor_client_id);
     if (!anchorSlug || anchorSlug === canonicalClientSlug(slot.client_name)) return false;
+    /* Avoid re-entering expandSlotsForDate while that date is still building (freeze / crash). */
+    var isoKey = String(slot.session_date || "").trim().substring(0, 10);
+    if (hub._expandingSlotsIso === isoKey && !hub._slotsByIso[isoKey]) return false;
     var daySlots = hub.expandSlotsForDate(slot.session_date) || [];
     for (var i = 0; i < daySlots.length; i++) {
       var s = daySlots[i];
@@ -2726,6 +2746,7 @@
   function shouldOmitOverviewSlot(hub, slot) {
     if (!slot) return false;
     if (makeupSlotAbsorbedByDisplacedRow(hub, slot)) return true;
+    if (shouldOmitMislabelledTrialClimbing(slot)) return true;
     var cfg = acatGroupCoverageConfig();
     if (cfg && slotMatchesAcatCoverage(slot, cfg)) {
       if (cfg.always_hide_individual_rows === true) return true;
@@ -2740,6 +2761,15 @@
       if (slotMatchesOverviewOmitRule(slot, omitRules[oi])) return true;
     }
     if (shouldOmitAutoMergedSwimDuplicate(slot)) return true;
+    return false;
+  }
+
+  /** Trial overrides used to default service=Climbing even for pool trials (SwimFarm Wall ghost). */
+  function shouldOmitMislabelledTrialClimbing(slot) {
+    if (!slot || !isClimbingService(slot.service)) return false;
+    if (clean(slot.venue).toLowerCase() === "westway") return false;
+    if (slot.portalOverrideTrialTag) return true;
+    if (/^trial\b/i.test(clean(slot.client_name))) return true;
     return false;
   }
 
@@ -3805,17 +3835,19 @@
     return merged;
   }
 
-  /** Same feedback unit must not appear twice; Multi hub vs pool stay separate. */
+  /** Same child + instructor + start must not appear twice (name variants / mislabelled trial service).
+   * Hub vs pool with different instructors (e.g. Jack S · John + Javier) stay separate. */
   function overviewSlotDedupeKey(slot) {
-    var uk = clean(slot && (slot.feedback_unit_key || feedbackUnitKey(slot)));
-    if (uk) return uk;
     var cid = canonicalClientSlug(slot && slot.client_name);
     var day = clean(slot && slot.session_date);
     if (!cid || !day) return "";
     var wd = slot.day || weekdayLongFromIso(day);
     var t = slot.time_start || normTimeKey(slot.time_slot, wd);
-    var area = sessionAreaKey(slot && slot.area);
     var inst = primaryInstructorKey(slot);
+    if (cid && t && inst) return day + "|" + cid + "|" + t + "|" + inst;
+    var uk = clean(slot && (slot.feedback_unit_key || feedbackUnitKey(slot)));
+    if (uk) return uk;
+    var area = sessionAreaKey(slot && slot.area);
     return t ? day + "|" + cid + "|" + t + "|" + area + "|" + inst : "";
   }
 
@@ -3825,8 +3857,13 @@
     if (clean(slot.area)) score += 2;
     if (clean(slot.venue)) score += 1;
     if (!slot.portalOverrideMakeUpTag && !slot.portalOverrideTrialTag) score += 2;
+    if (isAquaticService(slot.service)) score += 3;
+    if (isClimbingService(slot.service) && (slot.portalOverrideTrialTag || /^trial\b/i.test(clean(slot.client_name)))) {
+      score -= 4;
+    }
     var resolved = resolveRosterClientName(slot.client_name);
     if (resolved && clean(slot.client_name) === resolved) score += 1;
+    if (/^trial\b/i.test(clean(slot.client_name))) score -= 2;
     return score;
   }
 
@@ -5638,45 +5675,50 @@
     var isoKey = String(isoDate || "").trim().substring(0, 10);
     if (!this._slotsByIso) this._slotsByIso = Object.create(null);
     if (this._slotsByIso[isoKey]) return this._slotsByIso[isoKey];
-    var wd = weekdayLongFromIso(isoDate);
-    var sunSwimOv = wd === "Sunday" ? sundayDateSwimOverride(isoDate) : null;
-    var out = [];
-    for (var i = 0; i < this.rosterRows.length; i++) {
-      var r = this.rosterRows[i];
-      if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
-      if (!rosterServiceAllowedOnAutumnDate(r.service, isoDate)) continue;
-      if (!isRosterClient(r.client_name) && !isOpenRosterSlot(r.client_name)) continue;
-      if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
-      if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
-      if (sunSwimOv && sunSwimOv.replaceSwimFarm && clean(r.venue) === "SwimFarm") continue;
-      out.push(rosterRowToSlot(isoDate, wd, r));
-    }
-    if (sunSwimOv && sunSwimOv.rows && sunSwimOv.rows.length) {
-      for (var j = 0; j < sunSwimOv.rows.length; j++) {
-        var orow = sunSwimOv.rows[j];
-        if (!orow || !isRosterClient(orow.client_name)) continue;
-        if (!clientAllowedOnDate(orow.client_name, isoDate)) continue;
-        out.push(rosterRowToSlot(isoDate, wd, orow));
+    this._expandingSlotsIso = isoKey;
+    try {
+      var wd = weekdayLongFromIso(isoDate);
+      var sunSwimOv = wd === "Sunday" ? sundayDateSwimOverride(isoDate) : null;
+      var out = [];
+      for (var i = 0; i < this.rosterRows.length; i++) {
+        var r = this.rosterRows[i];
+        if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
+        if (!rosterServiceAllowedOnAutumnDate(r.service, isoDate)) continue;
+        if (!isRosterClient(r.client_name) && !isOpenRosterSlot(r.client_name)) continue;
+        if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
+        if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
+        if (sunSwimOv && sunSwimOv.replaceSwimFarm && clean(r.venue) === "SwimFarm") continue;
+        out.push(rosterRowToSlot(isoDate, wd, r));
       }
+      if (sunSwimOv && sunSwimOv.rows && sunSwimOv.rows.length) {
+        for (var j = 0; j < sunSwimOv.rows.length; j++) {
+          var orow = sunSwimOv.rows[j];
+          if (!orow || !isRosterClient(orow.client_name)) continue;
+          if (!clientAllowedOnDate(orow.client_name, isoDate)) continue;
+          out.push(rosterRowToSlot(isoDate, wd, orow));
+        }
+      }
+      out.sort(function (a, b) {
+        return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
+      });
+      out = injectOrphanMakeupOverrideSlots(this, out, isoDate, wd);
+      out = suppressOpenSlotsConsumedByMakeupOverrides(
+        out,
+        isoDate,
+        wd,
+        (this.payload && this.payload.schedule_overrides) || []
+      );
+      out = applyInstructorReassignOverrides(this, out);
+      out = annotateBespokeSharedUnitKeys(out);
+      out = applyShadowingHostDisplay(this, out);
+      if (this.opts && typeof this.opts.slotScopeFilter === "function") {
+        out = out.filter(this.opts.slotScopeFilter);
+      }
+      this._slotsByIso[isoKey] = out;
+      return out;
+    } finally {
+      if (this._expandingSlotsIso === isoKey) this._expandingSlotsIso = "";
     }
-    out.sort(function (a, b) {
-      return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
-    });
-    out = injectOrphanMakeupOverrideSlots(this, out, isoDate, wd);
-    out = suppressOpenSlotsConsumedByMakeupOverrides(
-      out,
-      isoDate,
-      wd,
-      (this.payload && this.payload.schedule_overrides) || []
-    );
-    out = applyInstructorReassignOverrides(this, out);
-    out = annotateBespokeSharedUnitKeys(out);
-    out = applyShadowingHostDisplay(this, out);
-    if (this.opts && typeof this.opts.slotScopeFilter === "function") {
-      out = out.filter(this.opts.slotScopeFilter);
-    }
-    this._slotsByIso[isoKey] = out;
-    return out;
   };
 
   AdminSessionsHub.prototype.weekDays = function () {

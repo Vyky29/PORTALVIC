@@ -1833,7 +1833,8 @@
       if(!s) return '';
       const sid = String(s.staffId || '').trim().toLowerCase();
       const iso = normaliseIsoDate(s.session_date || s.sessionDate);
-      const cid = String(s.clientId || '').trim().toLowerCase();
+      const cid = portalCanonicalTodayClientKey(s.clientId, s.clientName || s.name) ||
+        String(s.clientId || '').trim().toLowerCase();
       const start = typeof portalCanonicalHmToken === 'function'
         ? portalCanonicalHmToken(s.start)
         : String(s.start || '').trim();
@@ -3281,7 +3282,9 @@
       function portalTodayItemClientSlotDedupeKey(it){
         const base = it && it.__portalBaseSession ? it.__portalBaseSession : (it || {});
         const skParts = String(it && it.sessionKey || '').split('|');
-        const cid = String(it && it.clientId || base.clientId || '').trim().toLowerCase();
+        const cidRaw = String(it && it.clientId || base.clientId || '').trim().toLowerCase();
+        const display = String(it && (it.clientName || it.name || base.clientName) || '').trim();
+        const cid = portalCanonicalTodayClientKey(cidRaw, display) || cidRaw;
         if(!cid || cid === 'available' || cid === 'closed' || cid === 'meeting' || cid === 'training' || cid === 'shadowing') return '';
         const start = typeof portalCanonicalHmToken === 'function'
           ? portalCanonicalHmToken(base.start || skParts[1] || '')
@@ -3300,7 +3303,10 @@
           const k = portalTodayItemClientSlotDedupeKey(it);
           if(k) seenExact[k] = true;
           if(!it || it.kind !== 'client') return;
-          const cid = String(it.clientId || '').trim().toLowerCase();
+          const cid = portalCanonicalTodayClientKey(
+            it.clientId,
+            it.clientName || it.name
+          ) || String(it.clientId || '').trim().toLowerCase();
           if(!cid || cid === 'available' || cid === 'closed') return;
           occupied.push({ clientId: cid, win: portalTodayItemSlotWindow(it), dedupeKey: k });
         });
@@ -3314,7 +3320,10 @@
           const k = portalTodayItemClientSlotDedupeKey(it);
           if(k && seenExact[k]) return;
           const win = portalTodayItemSlotWindow(it);
-          const cid = String(it.clientId || '').trim().toLowerCase();
+          const cid = portalCanonicalTodayClientKey(
+            it.clientId,
+            it.clientName || it.name
+          ) || String(it.clientId || '').trim().toLowerCase();
           if(!cid || cid === 'available' || cid === 'closed'){
             kept.push(it);
             return;
@@ -3329,7 +3338,10 @@
           for(let j = 0; j < kept.length; j++){
             const kIt = kept[j];
             if(!kIt || kIt.kind !== 'client') continue;
-            const kCid = String(kIt.clientId || '').trim().toLowerCase();
+            const kCid = portalCanonicalTodayClientKey(
+              kIt.clientId,
+              kIt.clientName || kIt.name
+            ) || String(kIt.clientId || '').trim().toLowerCase();
             if(kCid !== cid) continue;
             const kExact = portalTodayItemClientSlotDedupeKey(kIt);
             if(k && kExact && k === kExact) return;

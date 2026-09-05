@@ -90,6 +90,9 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   // Portal "Zaid Alfadhl" vs roster / team map "zaid"
   zaid_alfadhl: "zaid",
   zaid_al: "zaid",
+  // Portal / override "Yossi Sium" vs roster "Yossi"
+  yossi_sium: "yossi",
+  yossi_si: "yossi",
   hazem_kei: "hazem",
 };
 
@@ -136,7 +139,11 @@ const CLIENT_INFO_SHEET_ALIASES: Record<string, string> = {
 };
 
 export function rosterParticipantSlugAlias(slug: string): string {
-  const s = slugifyParticipantKey(slug);
+  let s = slugifyParticipantKey(slug);
+  s = s
+    .replace(/^(trial|makeup|make_up|cover)_+/g, "")
+    .replace(/_+(trial|makeup|make_up)$/g, "")
+    .replace(/^(trial|makeup)_+/g, "");
   if (!s) return s;
   return ROSTER_SPELLING_ALIASES[s] || CLIENT_INFO_SLUG_ALIASES[s] ||
     CLIENT_INFO_SHEET_ALIASES[s] || PORTAL_PARTICIPANT_SLUG_ALIASES[s] || s;
