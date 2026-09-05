@@ -89,16 +89,34 @@ export function familyPushOpenBase(): string {
   return "https://www.clubsensational.org/parent";
 }
 
-/** Hub alert kinds that trigger Family Web Push (must match parent hub filter). */
-export const FAMILY_PUSH_NOTIFY_KINDS = new Set([
-  "instructor_change",
-  "instructor_reassign",
-  "session_cancelled",
-  "absence_announced",
+/** Tests, login OTP, and office-only rows — not parent Family PWA banners. */
+export const FAMILY_PUSH_SKIP_KINDS = new Set([
+  "whatsapp_test",
+  "smtp_test",
+  "portal_pin",
+  "gocardless_failed_seat_blocked",
 ]);
 
+/** Parent-facing notify_log kinds that should also ping the Family PWA. */
 export function isFamilyPushNotifyKind(kind: unknown): boolean {
-  return FAMILY_PUSH_NOTIFY_KINDS.has(String(kind ?? "").trim().toLowerCase());
+  const k = String(kind ?? "").trim().toLowerCase();
+  if (!k) return false;
+  return !FAMILY_PUSH_SKIP_KINDS.has(k);
+}
+
+/** Deep-link target inside parent_portal.html (?view=). */
+export function familyPushPortalOpenForKind(kind: unknown): string {
+  const k = String(kind ?? "").trim().toLowerCase();
+  if (k === "weekly_note") return "weekly_notes";
+  if (
+    k === "payment_due" ||
+    k.includes("gocardless") ||
+    k.includes("pay_hold") ||
+    k.includes("invoice")
+  ) {
+    return "invoices";
+  }
+  return "messages";
 }
 
 /**

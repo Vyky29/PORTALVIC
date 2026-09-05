@@ -8,7 +8,7 @@
   var DISMISS_KEY = "familyPushAlertsDismissed";
   // Served under /parent/ so default SW max-scope covers the portal even when
   // WordPress (www) strips Service-Worker-Allowed from /portal/* responses.
-  var SW_URL = "/parent/clubsensational-family-sw.js?v=20260716-parent-sw-scope";
+  var SW_URL = "/parent/clubsensational-family-sw.js?v=20260905-family-push-36";
 
   function $(id) {
     return document.getElementById(id);
@@ -124,7 +124,14 @@
       ".family-push-alerts__later{background:transparent;color:#173247;text-decoration:underline;" +
       "padding:8px 6px;font-weight:600}" +
       ".family-push-alerts--ok{background:#eef8f0;border-color:#9fd0a8}" +
-      ".family-push-alerts--warn{background:#fff8e6;border-color:#f4b740}";
+      ".family-push-alerts--warn{background:#fff8e6;border-color:#f4b740}" +
+      "#ppFamilyPushToast{position:fixed;left:12px;right:12px;bottom:16px;z-index:80;" +
+      "max-width:420px;margin:0 auto;padding:12px 14px;border-radius:14px;" +
+      "background:#173247;color:#fff;font-size:13px;line-height:1.45;font-weight:600;" +
+      "box-shadow:0 10px 28px rgba(23,50,71,.28);min-width:0;overflow-wrap:break-word}" +
+      "#ppFamilyPushToast[hidden]{display:none!important}" +
+      "#ppFamilyPushToast strong{display:block;font-size:12px;font-weight:800;" +
+      "letter-spacing:.02em;text-transform:uppercase;opacity:.85;margin:0 0 4px}";
     (document.head || document.documentElement).appendChild(el);
   }
 
@@ -302,7 +309,7 @@
     if (state === "enabled") {
       el.classList.add("family-push-alerts--ok");
       el.innerHTML =
-        "<p><strong>Alerts on.</strong> Session changes (instructor, cancellation, absence) can reach this phone even when the browser is closed.</p>";
+        "<p><strong>Alerts on.</strong> Club messages, session changes and Family portal updates can reach this phone even when the app is closed. WhatsApp still arrives as usual.</p>";
       return;
     }
     if (state === "busy") {
@@ -339,8 +346,8 @@
       return;
     }
     el.innerHTML =
-      "<p><strong>Turn on alerts</strong> for instructor changes, cancellations and absences — even when the browser is closed. " +
-      "Works in Chrome/Edge on phone or computer; no app install needed.</p>" +
+      "<p><strong>Turn on alerts</strong> for club messages, session changes and Family portal updates - even when the app is closed. " +
+      "Works in Chrome/Edge on phone or computer. WhatsApp still arrives as usual.</p>" +
       '<div class="family-push-alerts__actions">' +
       '<button type="button" class="family-push-alerts__go" data-family-push="enable">Turn on alerts</button>' +
       '<button type="button" class="family-push-alerts__later" data-family-push="dismiss">Not now</button>' +
@@ -435,11 +442,123 @@
     renderBanner(hubBanner, "prompt");
   }
 
+  function familyPlayAlertCue() {
+    try {
+      if (global.navigator && global.navigator.vibrate) {
+        global.navigator.vibrate([200, 80, 200, 80, 280]);
+      }
+    } catch (_v) {}
+    try {
+      var AC = global.AudioContext || global.webkitAudioContext;
+      if (!AC) return;
+      var ctx = global.__FAMILY_ALERT_AUDIO_CTX__ || new AC();
+      global.__FAMILY_ALERT_AUDIO_CTX__ = ctx;
+      if (ctx.state === "suspended") void ctx.resume();
+      var now = ctx.currentTime;
+      function beep(at, freq, dur) {
+        var o = ctx.createOscillator();
+        var g = ctx.createGain();
+        o.type = "sine";
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, at);
+        g.gain.exponentialRampToValueAtTime(0.18, at + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start(at);
+        o.stop(at + dur + 0.02);
+      }
+      beep(now, 880, 0.12);
+      beep(now + 0.16, 1175, 0.14);
+    } catch (_a) {}
+  }
+
+  function ensureFamilyToast() {
+    injectStyles();
+    var el = $("ppFamilyPushToast");
+    if (el) return el;
+    el = document.createElement("div");
+    el.id = "ppFamilyPushToast";
+    el.setAttribute("role", "status");
+    el.hidden = true;
+    (document.body || document.documentElement).appendChild(el);
+    return el;
+  }
+
+  function showFamilyToast(title, body) {
+    var el = ensureFamilyToast();
+    if (!el) return;
+    var t = String(title || "clubSENsational Family").slice(0, 80);
+    var b = String(body || "New club update").slice(0, 180);
+    el.innerHTML = "<strong></strong><span></span>";
+    el.querySelector("strong").textContent = t;
+    el.querySelector("span").textContent = b;
+    el.hidden = false;
+    if (global.__FAMILY_PUSH_TOAST_TIMER__) {
+      try {
+        clearTimeout(global.__FAMILY_PUSH_TOAST_TIMER__);
+      } catch (_c) {}
+    }
+    global.__FAMILY_PUSH_TOAST_TIMER__ = setTimeout(function () {
+      el.hidden = true;
+    }, 7000);
+  }
+
+  function familyPaintHomeBadge(n) {
+    var count = Math.max(0, Number(n) || 0);
+    try {
+      if (global.navigator && typeof global.navigator.setAppBadge === "function") {
+        if (count > 0) void global.navigator.setAppBadge(count);
+        else if (typeof global.navigator.clearAppBadge === "function") {
+          void global.navigator.clearAppBadge();
+        }
+      }
+    } catch (_b) {}
+    try {
+      if (!global.navigator || !global.navigator.serviceWorker) return;
+      void global.navigator.serviceWorker.ready.then(function (reg) {
+        if (reg && reg.active && typeof reg.active.postMessage === "function") {
+          reg.active.postMessage({ type: "family-set-app-badge", count: count });
+        }
+      });
+    } catch (_sw) {}
+  }
+
+  function bindFamilySwMessages() {
+    if (!global.navigator || !global.navigator.serviceWorker) return;
+    if (global.__FAMILY_SW_MSG_BOUND__) return;
+    global.__FAMILY_SW_MSG_BOUND__ = true;
+    global.navigator.serviceWorker.addEventListener("message", function (ev) {
+      var d = ev && ev.data;
+      if (!d || !d.type) return;
+      if (d.type === "family-push-received") {
+        showFamilyToast(d.title, d.body);
+        familyPlayAlertCue();
+        if (
+          global.ParentPortalApp &&
+          typeof global.ParentPortalApp.handleFamilyPushReceived === "function"
+        ) {
+          global.ParentPortalApp.handleFamilyPushReceived(d);
+        }
+        return;
+      }
+      if (d.type === "family-notification-click") {
+        if (
+          global.ParentPortalApp &&
+          typeof global.ParentPortalApp.handleFamilyPushClick === "function"
+        ) {
+          global.ParentPortalApp.handleFamilyPushClick(d);
+        }
+      }
+    });
+  }
+
   /**
    * Call after Family sign-in / hub load with the parent session token.
    */
   global.portalFamilyWebPushOnSession = function portalFamilyWebPushOnSession(token) {
     global.__FAMILY_PUSH_SESSION_TOKEN__ = String(token || "").trim();
+    bindFamilySwMessages();
     if (!global.__FAMILY_PUSH_SESSION_TOKEN__) {
       void syncUi();
       return;
@@ -451,7 +570,10 @@
 
   global.portalFamilyWebPushClear = function portalFamilyWebPushClear() {
     global.__FAMILY_PUSH_SESSION_TOKEN__ = "";
+    familyPaintHomeBadge(0);
     renderBanner($("familyPushAlertsBanner"), "hidden");
     renderBanner($("familyPushAlertsBannerHub"), "hidden");
   };
+
+  global.portalFamilySetHomeBadge = familyPaintHomeBadge;
 })(typeof window !== "undefined" ? window : globalThis);

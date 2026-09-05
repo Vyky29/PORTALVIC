@@ -18,6 +18,7 @@ import {
   bookingRequestSummary,
   normalizePendingBookingRequest,
 } from "./portal_booking_context.ts";
+import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
 import {
   type BookingTermKey,
   type NewClientPayPlan,
@@ -360,7 +361,7 @@ async function logFinishBookingNotify(
           : opts.emailOk
             ? "email"
             : "whatsapp";
-    await admin.from("portal_parent_notify_log").insert({
+    const { data: insertedFinishLog } = await admin.from("portal_parent_notify_log").insert({
       sent_by_user_id: null,
       sent_by_email: "system@finish-booking",
       kind: opts.kind,
@@ -387,7 +388,13 @@ async function logFinishBookingNotify(
           ? `Hello,\n${opts.bodyText.trim()}\nThank you.`
           : null,
       },
-    });
+    }).select("id").maybeSingle();
+    if (insertedFinishLog?.id) {
+      void notifyFamilyWebPushForParentNotify({
+        notifyLogId: String(insertedFinishLog.id),
+        kind: opts.kind,
+      });
+    }
   } catch (e) {
     console.warn("[finish-booking-notify] log failed", e);
   }

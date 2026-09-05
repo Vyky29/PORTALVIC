@@ -17,6 +17,7 @@ import {
   clearPaymentHoldForContact,
   getOpenPaymentHold,
 } from "./portal_payment_holds.ts";
+import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
 
 export const GC_FAIL_REASON = "gocardless_failed";
 export const HOLD_WAITLIST_CLIENT = "HOLD WAITLIST";
@@ -365,7 +366,7 @@ export async function handleGcPaymentsFailedBatch(
         : "sent"
       : "failed";
 
-    await supabase.from("portal_parent_notify_log").insert({
+    const { data: insertedGcLog } = await supabase.from("portal_parent_notify_log").insert({
       kind: "gocardless_failed_bank",
       channel: sent.ok && sent.channel === "sms" ? "sms" : "whatsapp",
       client_display: group.map((g) => g.child_display).join(", ").slice(0, 120),
@@ -380,7 +381,13 @@ export async function handleGcPaymentsFailedBatch(
         grace_deadline_at: deadline,
         gocardless_payment_ids: group.map((g) => g.gocardless_payment_id),
       },
-    });
+    }).select("id").maybeSingle();
+    if (insertedGcLog?.id) {
+      void notifyFamilyWebPushForParentNotify({
+        notifyLogId: String(insertedGcLog.id),
+        kind: "gocardless_failed_bank",
+      });
+    }
 
     for (const g of group) {
       const hold = await upsertGcFailHold(supabase, g, {

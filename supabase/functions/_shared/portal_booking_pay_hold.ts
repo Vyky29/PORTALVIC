@@ -8,6 +8,7 @@ import {
   sendParentEmailViaSmtp,
   sendParentMobileMessage,
 } from "./portal_parent_messaging.ts";
+import { notifyFamilyWebPushForParentNotify } from "./portal_family_webpush_notify.ts";
 
 export const BOOKING_PAY_HOLD_MINUTES = 30;
 /** After parent taps WhatsApp/Email (says paid), office gets this window to confirm Tide. */
@@ -335,7 +336,7 @@ export async function nudgeUnpaidBookingPayHolds(
         : phone
           ? "failed"
           : "skipped";
-      await admin.from("portal_parent_notify_log").insert({
+      const { data: insertedNudgeLog } = await admin.from("portal_parent_notify_log").insert({
         sent_by_user_id: null,
         sent_by_email: "system@finish-booking",
         kind: "booking_pay_hold_nudge_25m",
@@ -358,7 +359,13 @@ export async function nudgeUnpaidBookingPayHolds(
           hold_expires_at: row.hold_expires_at,
           mins_left: minsLeft,
         },
-      });
+      }).select("id").maybeSingle();
+      if (insertedNudgeLog?.id) {
+        void notifyFamilyWebPushForParentNotify({
+          notifyLogId: String(insertedNudgeLog.id),
+          kind: "booking_pay_hold_nudge_25m",
+        });
+      }
     } catch (e) {
       console.warn("[nudgeUnpaidBookingPayHolds] log", e);
     }

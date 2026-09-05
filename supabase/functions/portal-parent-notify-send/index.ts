@@ -458,8 +458,8 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Family Web Push is additive (WhatsApp/email unchanged). Fire for hub alert kinds
-  // even when email/WhatsApp partially failed, as long as a notify log row exists.
+  // Family Web Push is additive (WhatsApp/email unchanged). Fire for parent-facing
+  // kinds even when email/WhatsApp partially failed, as long as a notify log row exists.
   if (inserted?.id && isFamilyPushNotifyKind(logRow.kind)) {
     void notifyFamilyWebPushForParentNotify({
       notifyLogId: String(inserted.id),

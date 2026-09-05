@@ -128,11 +128,19 @@
     var byContact = (payload && payload.unread_by_contact_id) || {};
     state.messaging.unreadTotal = total;
     state.messaging.unreadByContact = Object.assign({}, byContact);
+    paintFamilyHomeBadge();
   }
 
   function clearMessagingCounts() {
     state.messaging.unreadTotal = 0;
     state.messaging.unreadByContact = {};
+    paintFamilyHomeBadge();
+  }
+
+  function paintFamilyHomeBadge() {
+    if (typeof global.portalFamilySetHomeBadge === "function") {
+      global.portalFamilySetHomeBadge(state.messaging.unreadTotal || 0);
+    }
   }
 
   function unreadCountForContact(contactId) {
@@ -830,6 +838,63 @@
     if (typeof global.portalFamilyWebPushClear === "function") {
       global.portalFamilyWebPushClear();
     }
+  }
+
+  function familyViewFromPortalOpen(portalOpen) {
+    var o = String(portalOpen || "").trim().toLowerCase();
+    if (o === "weekly_notes") return "weekly_notes";
+    if (o === "invoices") return "invoices";
+    return "messages";
+  }
+
+  function handleFamilyPushReceived() {
+    state.messaging.unreadTotal = (Number(state.messaging.unreadTotal) || 0) + 1;
+    paintFamilyHomeBadge();
+    void refreshMessagingCountsQuiet();
+  }
+
+  async function refreshMessagingCountsQuiet() {
+    if (!state.session.token) return;
+    try {
+      var res = await fetch(fn("parent-portal-home-load"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anonKey(),
+          Authorization: "Bearer " + anonKey(),
+          "x-parent-portal-session": state.session.token,
+        },
+        body: "{}",
+      });
+      var body = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok || !body.ok) return;
+      if (state.step === "home") {
+        renderHome(body);
+        return;
+      }
+      applyMessagingCounts(body);
+      if (state.home && body.children) {
+        state.home.children = body.children;
+        if (body.parent) state.home.parent = body.parent;
+      }
+    } catch (_e) {}
+  }
+
+  function handleFamilyPushClick(msg) {
+    var view = familyViewFromPortalOpen(msg && msg.portalOpen);
+    var kids = (state.home && state.home.children) || [];
+    var contactId = (state.participant && state.participant.contactId) || preferredContactId(kids);
+    if (contactId) {
+      void loadParticipantDetail(contactId, view);
+      return;
+    }
+    void loadHome({ skipAutoHub: true }).then(function (ok) {
+      if (!ok) return;
+      var id = preferredContactId((state.home && state.home.children) || []);
+      if (id) void loadParticipantDetail(id, view);
+    });
   }
 
   function syncFamilyWebPush() {
@@ -1982,7 +2047,7 @@
         sessionStorage.setItem("pp_gocardless_flash", String(gcParam));
       } catch (_eGc) {}
     }
-    if (!contactId && (view === "messages" || view === "alerts")) {
+    if (!contactId && (view === "messages" || view === "alerts" || view === "weekly_notes" || view === "invoices")) {
       var kids = (state.home && state.home.children) || [];
       contactId = preferredContactId(kids) || "";
       if (!view) view = "messages";
@@ -2032,6 +2097,8 @@
 
   global.ParentPortalApp = {
     bootstrap: bootstrap,
+    handleFamilyPushReceived: handleFamilyPushReceived,
+    handleFamilyPushClick: handleFamilyPushClick,
     photo: {
       missingNoticeHtml: childPhotoMissingNoticeHtml,
       blockHtml: childPhotoBlockHtml,
