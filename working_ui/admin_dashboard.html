@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260902-wait-click" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260905-buckets" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -70,7 +70,7 @@
   </script>
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
-  <script src="/portal/portal_ui_locale.js?v=20260828-timetable-nav"></script>
+  <script src="/portal/portal_ui_locale.js?v=20260905-buckets"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260903-cover-needed" />
   <script src="/portal/portal_staff_display_names.js?v=20260902-luliya-display"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
@@ -90,7 +90,7 @@
   <script src="/portal/admin-portal-documents.js?v=20260905-expense-amount"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260903-form-chips-both"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260813-office-phone-create"></script>
-  <script src="/portal/admin-portal-booking-leads.js?v=20260817-potential"></script>
+  <script src="/portal/admin-portal-booking-leads.js?v=20260905-buckets"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
   <script src="/portal/admin-office-calendar.js?v=20260814-office-cal-nav"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260813-office-phone-create"></script>
@@ -425,7 +425,7 @@
       { id:'roster_spreadsheets', label:'Instructor timetable', hubLabel:'Timetable' },
       { id:'absents_refunds', label:'Absents, refunds & credits', hubLabel:'Refunds & credits' },
       { id:'receptionist', label:'Receptionist hub' },
-      { id:'leads', label:'Enquiries & intake' },
+      { id:'leads', label:'LEADS' },
       { id:'c4k_services', label:'Services' },
       { id:'orders_all', label:'All', hubLabel:'Bookings' },
       { id:'comms_bookings', label:'Staff & shift notices' },
@@ -433,7 +433,7 @@
       { id:'portal_parent_notify_log', label:'Family messages' },
       { id:'portal_staff_whatsapp', label:'CS WhatsApp' },
       { id:'portal_parent_broadcast', label:'Family broadcast' },
-      { id:'clients', label:'Participants' },
+      { id:'clients', label:'CLIENT' },
       { id:'portal_nav_client_services', label:'Client services review', externalUrl:'/client_services_review.html', skipBottomNav:true },
       { id:'c4k_payments', label:'Programme payments (operations)', hubLabel:'Ops payments' },
       { id:'reenrol_payments', label:'Finance', hubLabel:'Finance' },
@@ -441,7 +441,7 @@
       { id:'invoices', label:'Finance', hubLabel:'Finance' },
       { id:'c4k_sessions', label:'Sessions overview' },
       { id:'session_disruptions', label:'Session disruptions' },
-      { id:'c4k_waitlist', label:'Waiting list' },
+      { id:'c4k_waitlist', label:'WAITING' },
       { id:'office_calendar', label:'Office calendar', hubLabel:'Office calendar' },
       { id:'open_places_2627', label:'Open places → Services §3' },
       { id:'c4k_reviews', label:'Reviews' },
@@ -469,7 +469,7 @@
       { id:'portal_docs_passport', label:'Passports' },
       { id:'portal_docs_checklist', label:'Checklists' },
       { id:'portal_docs_firstaid', label:'First aids' },
-      { id:'portal_participant_documents', label:'Registration forms', hubLabel:'Registration forms' },
+      { id:'portal_participant_documents', label:'REGISTERED', hubLabel:'REGISTERED' },
       { id:'portal_climbing_registrations', label:'Climbing registrations', hubLabel:'Climbing regs' },
       { id:'portal_parent_consents', label:'Parent consents', hubLabel:'Parent consents' },
       { id:'policies_portal', label:'Policies portal', externalUrl:'/policies_portal.html', skipBottomNav:true },
@@ -491,10 +491,10 @@
     var ADMIN_MOBILE_MAX_WIDTH = 899;
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'operations_admin', 'nav_all_menu'];
     var NAV_GROUPS = [
-      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator','office_calendar','__h:Intake','leads','receptionist'] },
-      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
+      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator','office_calendar','__h:People buckets','leads','portal_participant_documents','receptionist'] },
+      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:CLIENT','clients','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','staffhr_contracts','staffhr_training_records','staffhr_uniform','interviews'] },
-      { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Day Centre','day_centre_documents','__h:Participants','portal_participant_documents','portal_climbing_registrations','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
+      { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Day Centre','day_centre_documents','__h:Forms','portal_climbing_registrations','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance', children:['reenrol_payments','commissioning_terms'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
@@ -18068,10 +18068,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function paxContactsBookingStatusOptionsHtml(){
       return (
         '<option value="all">All</option>'+
-        '<option value="programme_in" selected>In Sessions</option>'+
+        '<option value="programme_in" selected>CLIENT</option>'+
         '<option value="trial">On a trial</option>'+
-        '<option value="waiting_list">In waiting list</option>'+
-        '<option value="old_participants">Old Participants</option>'
+        '<option value="waiting_list">WAITING</option>'+
+        '<option value="old_participants">OLD</option>'
       );
     }
     /** Compact booked-services cell for the participants list (programme + day abbreviations). */
@@ -18121,13 +18121,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function paxContactsBookingStatusMeta(st){
       switch(String(st || '')){
         case 'programme_in': case 'in_class': case 'in_camp':
-          return { label: 'In sessions', bg: '#dcfce7', fg: '#166534' };
+          return { label: 'CLIENT', bg: '#dcfce7', fg: '#166534' };
         case 'trial':
           return { label: 'On a trial', bg: '#e0f2fe', fg: '#075985' };
         case 'waiting_list':
-          return { label: 'Waiting list', bg: '#fef9c3', fg: '#854d0e' };
+          return { label: 'WAITING', bg: '#fef9c3', fg: '#854d0e' };
         case 'old_participants': case 'not_in_programme':
-          return { label: 'Old participant', bg: '#f1f5f9', fg: '#475569' };
+          return { label: 'OLD', bg: '#f1f5f9', fg: '#475569' };
         default:
           return null;
       }
@@ -18211,9 +18211,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var listRows = paxContactsListRowsHtml();
       var n = paxContactsUnifiedList().length;
       return (
-        '<div class="pax-contacts-toolbar"><h1 class="page-title">Participants</h1>'+
+        '<div class="pax-contacts-toolbar"><h1 class="page-title">CLIENT</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Participants and their booked services — tap anyone to open the full record (feedback, absences, incidents, positive feedback and more).</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">People in services (CLIENT), plus filters for WAITING and OLD. Tap anyone to open the full record.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
@@ -19027,7 +19027,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       if(out.length) return out.slice(0, 2).join(' · ');
       var n = (adminC4kWaitlistRows() || []).length;
-      return n ? (String(n) + ' on list · see Waiting list') : '—';
+      return n ? (String(n) + ' on list · see WAITING') : '—';
     }
     /** Open Waiting list focused on programme + venue (and optional band). */
     function adminOpenWaitlistForProgVenue(prog, venue, opts){
@@ -19445,7 +19445,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<strong>Assign</strong> opens Edit term slot for that band (existing participant). '+
         '<strong>Offer</strong> jumps to matching waitlist rows. '+
         'Also: jump bar on <strong>Services</strong> (1 Roster · 2 Fill seats · 3 Live open places) · '+
-        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_waitlist">Waiting list</button>. '+
+        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_waitlist">WAITING</button>. '+
         'Data source: <strong>'+esc(srcLabel)+'</strong>.';
       var headBlock = '';
       if(opts.bare){
@@ -22695,10 +22695,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var foot = '<p class="muted" style="margin:10px 0 0;font-size:12px;max-width:52rem;min-width:0;overflow-wrap:break-word">Live rows come from Booking Portal <strong>Join waiting list</strong>. Workbook history loads from <code>waiting_list_portal_data.js</code>.</p>';
       return (
-        '<h1 class="page-title">Waiting list</h1>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Families waiting for a place — triage, match, and progress offers. '+metaLine+' Day context: <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services</button>.</p>'+optHint+
+        '<h1 class="page-title">WAITING</h1>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Registered families waiting for a full service — triage, match, and progress offers. '+metaLine+' Day context: <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services</button>.</p>'+optHint+
         focusBanner+
-        '<div class="section"><div class="section-h"><h2>Waiting list (pipeline)</h2><p>Live Booking Portal joins first; workbook history kept below.</p></div>'+
+        '<div class="section"><div class="section-h"><h2>WAITING (pipeline)</h2><p>Live Booking Portal joins first; workbook history kept below.</p></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" id="bookingWaitlistTable"><thead><tr><th>Participant</th><th>Source</th><th>Stage</th><th>Since</th></tr></thead><tbody></tbody></table></div></div></div>'+
         '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Service matching queue</h2><p>Desired service, slot time, and preferences when present.</p></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" id="c4kWaitlistMatchTable" style="min-width:1120px"><thead><tr><th>Participant</th><th>Service</th><th>Slot time</th><th>Pref. time</th><th>Ratio</th><th>Location</th><th>Pri</th><th>Possible match</th><th>Contact</th><th>Last booking</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+foot+'</div></div>'
@@ -23073,7 +23073,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="sched-banner" role="status" style="margin-bottom:16px"><strong>Today’s intake (illustrative)</strong> — 2 WhatsApp threads awaiting reply · 1 LA email flagged · 3 follow-ups from last week. Mock counters only; open <strong>Services &amp; Participants → Ops comms &amp; log</strong> for the programme email log, or <strong>Day operations → Team → Notify</strong> for internal queues.</div>'+
         '<div class="grid-2" style="align-items:stretch;gap:14px">'+
         '<button type="button" class="card card-pad dash-link-card" data-view-target="comms_ops" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">✉</span><div class="dash-link-meta" style="min-width:0"><strong>Ops comms &amp; log</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Programme email log, internal outbox, and comms history — under Services &amp; Participants in the sidebar.</p></div></div></button>'+
-        '<button type="button" class="card card-pad dash-link-card" data-view-target="leads" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">🧭</span><div class="dash-link-meta" style="min-width:0"><strong>Enquiries &amp; intake</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Portal OTP contacts (~visitors), separate from email-interest import (not visits).</p></div></div></button>'+
+        '<button type="button" class="card card-pad dash-link-card" data-view-target="leads" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">🧭</span><div class="dash-link-meta" style="min-width:0"><strong>LEADS</strong><p class="muted" style="margin:0;overflow-wrap:break-word">OTP started, registration not finished — Portal contacts (not email-interest import).</p></div></div></button>'+
         (portalAdminBookingsHidden()
           ? '<button type="button" class="card card-pad dash-link-card" data-view-target="c4k_services" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">◈</span><div class="dash-link-meta" style="min-width:0"><strong>Services</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Weekly programme grid, capacity and registers.</p></div></div></button>'
           : '<button type="button" class="card card-pad dash-link-card" data-view-target="orders_all" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">◈</span><div class="dash-link-meta" style="min-width:0"><strong>Orders</strong><p class="muted" style="margin:0;overflow-wrap:break-word">All orders — filter outstanding balances on the page.</p></div></div></button>')+
@@ -24611,20 +24611,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalOperatorNewLeadsHubHtml(){
       var tiles =
         portalDashTileHtml('', '', 'new_participant', 'New participant', 'Name, age &amp; open slot', false, 'new_participant', 'new_participant')+
-        portalDashTileHtml('c4k_waitlist', '', 'c4k_waitlist', 'Waiting list', 'Offers &amp; matching queue', false, 'waitlist')+
+        portalDashTileHtml('c4k_waitlist', '', 'c4k_waitlist', 'WAITING', 'Full service — waiting for a place', false, 'waitlist')+
         portalDashTileHtml('c4k_services', '', 'c4k_services', 'Services', 'Roster · fill seats · live places', false, 'c4k_services')+
         portalDashTileHtml('open_places_2627', '', 'open_places_2627', 'Live open places', 'Jumps to Services §3', false, 'open_places')+
-        portalDashTileHtml('leads', '', 'leads', 'Enquiries &amp; intake', 'New families &amp; triage', false, 'leads');
+        portalDashTileHtml('leads', '', 'leads', 'LEADS', 'OTP received, registration incomplete', false, 'leads')+
+        portalDashTileHtml('portal_participant_documents', '', 'portal_participant_documents', 'REGISTERED', 'Form done — never been CLIENT', false, 'documents');
       return (
         '<div class="dash-hub dash-hub--embed">'+
         portalDashPanel({
-          title:'New leads',
-          subtitle:'Intake and placing people — use Services for roster + seats',
+          title:'People buckets',
+          subtitle:'LEADS · REGISTERED · WAITING · CLIENT · OLD',
           iconId:'leads',
           panelClass:'dash-hub__panel--leads',
           tiles: tiles,
-          gridClass:'dash-hub__grid--5',
-          ariaLabel:'New leads'
+          gridClass:'dash-hub__grid--6',
+          ariaLabel:'People buckets'
         })+
         '</div>'
       );
@@ -24640,8 +24641,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '<tr><td><strong>'+esc(c.name)+'</strong></td><td class="muted">'+esc(c.sub)+'</td><td>'+c.sessionsAttended+'</td><td>'+c.attendancePct+'%</td><td><button type="button" class="btn btn--pri btn--sm" data-client="'+esc(c.id)+'">View activity</button></td></tr>';
       }).join('');
       var gapPanel = adminParticipantsParentsGapPanelHtml();
-      return '<h1 class="page-title">Participants</h1>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Search the participant directory and open a profile to see activity and attendance (demo list).</p>'+
+      return '<h1 class="page-title">CLIENT</h1>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">CLIENT directory (demo list) — open a profile for activity and attendance.</p>'+
         gapPanel+
         '<div class="filter-row"><input class="inp" id="filClient" placeholder="Search participants…" style="max-width:320px"/></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" id="tblClients"><thead><tr><th>Participant</th><th>Programme</th><th>Sessions (YTD)</th><th>Attendance %</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';

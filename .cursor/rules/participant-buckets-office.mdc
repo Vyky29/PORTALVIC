@@ -29,7 +29,15 @@ Use **only** these five labels when talking to Victor or labelling office UI abo
 - **OLD** / **REGISTERED** / **LEADS** / **WAITING** must not appear as booked Sessions feedback units (open seats = No participant).
 - Rule companion: `.cursor/rules/former-clients-not-in-sessions.mdc` (those three are **OLD**).
 
-## When unsure
+## Admin UI labels (nav / pages)
 
-Ask which bucket before inventing a sixth label. A person can move buckets over time (e.g. LEADS → REGISTERED → WAITING → CLIENT, or CLIENT → OLD).
+| Bucket | Admin surface |
+|--------|----------------|
+| **CLIENT** | Nav + page formerly “Participants” (`clients`) |
+| **REGISTERED** | Nav + page formerly “Registration forms” (`portal_participant_documents`) |
+| **LEADS** | Nav + page formerly “Enquiries & intake” (`leads`) |
+| **WAITING** | Nav + page formerly “Waiting list” (`c4k_waitlist`) |
+| **OLD** | Filter / pill on CLIENT list (`old_participants`) — not a separate nav tab |
+
+A person can move buckets over time (e.g. LEADS → REGISTERED → WAITING → CLIENT, or CLIENT → OLD).
 ---
