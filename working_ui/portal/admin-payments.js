@@ -5802,7 +5802,48 @@
     (payments || []).forEach(stampLaCouncilOnRow);
   }
 
+  /**
+   * H&F / NHS / LA office invoices pay a mes vencido (after the month ends).
+   * Never treat catalogue / exempt status as cash received without amount_paid_gbp.
+   */
+  function isArrearsLaNhsInvoice(inv) {
+    if (!inv) return false;
+    var hint = String(inv.payment_method_hint || "").toLowerCase();
+    var via = String(inv.created_via || "").toLowerCase();
+    var sheet = String(inv.payment_sheet || "").toUpperCase();
+    var fund = String(inv.funding_label || "").toLowerCase();
+    var vat = String(inv.vat_mode || "").toLowerCase();
+    if (hint === "la_funded" || via === "la_office_auto" || inv.is_la_office_auto === true) {
+      return true;
+    }
+    if (sheet === "LA" && vat === "exempt") return true;
+    if (/funded by (la|nhs)|nhs \(exempt|local authority \(exempt|h\s*&\s*f|hammer|fulham|\bnnen\b|\bnen\b|\bsbs\b/.test(fund)) {
+      return true;
+    }
+    return String(inv.funding_category || "") === "la_managed"
+      || String(inv.funding_category || "") === "nhs_managed";
+  }
+
+  function isArrearsLaNhsPaymentRow(row) {
+    if (!row) return false;
+    var hint = String(row._paymentMethodHint || "").toLowerCase();
+    if (hint === "la_funded" || row._laOfficeAuto) return true;
+    var paid = String((row.data && row.data.Paid) || "");
+    var invType = String((row.data && row.data["Invoice type"]) || "");
+    if (paid === PAID_BY.FUNDED_BY_LA || paid === PAID_BY.FUNDED_BY_NHS) return true;
+    if (invType === INVOICE_TYPE.LA_EXEMPT || invType === INVOICE_TYPE.NHS_EXEMPT) return true;
+    if (/h\s*&\s*f|ealing|westminster|rbkc|brent|nhs/i.test(invType)) return true;
+    return String(row.sheet || "").toUpperCase() === "LA";
+  }
+
   function isAutumnReenrolInvoice(inv) {
+    if (!inv) return false;
+    /* Jul crash / Year 25/26 intensives must not feed Autumn Paid (Adam INV-P-0001). */
+    if (inv.is_standalone_year_2526 === true) return false;
+    if (crashCourseGbpFromInvoice(inv) > 0.009 && !String(inv.billing_term || "").trim()) {
+      var ready = String(inv.ready_by || "").toLowerCase();
+      if (/crash|admin_crash/.test(ready)) return false;
+    }
     var via = String((inv && inv.created_via) || "");
     // Family re-enrol INV-Ps + LA office-auto booked places (no family INV-P yet).
     if (via === "reenrolment" || via === "la_office_auto") return true;
@@ -6236,14 +6277,25 @@
         row.amount_billed = Math.max(Number(row.amount_billed) || 0, amt);
       }
       if (st === "paid") {
-        var paidOnInv = Number(inv.amount_paid_gbp) || amt;
-        if (paidOnInv > 0) {
+        var cashPaid = Number(inv.amount_paid_gbp) || 0;
+        /*
+         * LA/H&F/NHS (mes vencido): status "paid" without amount_paid_gbp is not cash —
+         * do not invent Received = face (H&F Autumn was showing Paid / £0 out).
+         * Parent bank/GC may still use face when admin marked paid without a paid £.
+         */
+        var paidOnInv = isArrearsLaNhsInvoice(inv) ? cashPaid : (cashPaid || amt);
+        if (isArrearsLaNhsInvoice(inv) && !(cashPaid > 0)) {
+          if (String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+            row.amount_out = Math.max(Number(row.amount_out) || 0, amt);
+            row.payment_status = "Outstanding";
+          }
+        } else if (paidOnInv > 0) {
           row._amountPaid = Math.max(Number(row._amountPaid) || 0, paidOnInv);
-        }
-        /* Paid Autumn INV-P — clear outstanding unless a later autumn sibling is open. */
-        if (!(Number(row.amount_out) > 0) && String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
-          row.amount_out = 0;
-          row.payment_status = "Paid";
+          /* Paid Autumn INV-P — clear outstanding unless a later autumn sibling is open. */
+          if (!(Number(row.amount_out) > 0) && String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0) {
+            row.amount_out = 0;
+            row.payment_status = "Paid";
+          }
         }
       } else if (st === "partial") {
         /* Flexi (2 bank) or GC monthly: only when amount_paid > 0 (ignore false GC partials). */
@@ -6357,9 +6409,9 @@
            */
           row.amount_out = row._amountAutumn;
           if (
-            String(row.payment_status || "").toLowerCase().indexOf("paid") !== 0
-            && String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0
+            String(row.payment_status || "").toLowerCase().indexOf("partial") !== 0
           ) {
+            /* Fake "Paid" with no cash (H&F / NHS mes vencido) → Outstanding. */
             row.payment_status = "Outstanding";
           }
         }
@@ -6384,12 +6436,19 @@
         && autumnFaceFix > 0
         && paidFix + 0.009 < autumnFaceFix
       ) {
-        row._amountPaid = paidFix || Number(row.amount_billed) || 0;
-        row.amount_out = Math.max(
-          0,
-          Math.round((autumnFaceFix - row._amountPaid) * 100) / 100,
-        );
-        row.payment_status = "Partial";
+        if (!(paidFix > 0)) {
+          /* Never invent _amountPaid from billed face (was collapsing H&F to Paid). */
+          row._amountPaid = 0;
+          row.amount_out = autumnFaceFix;
+          row.payment_status = "Outstanding";
+        } else {
+          row._amountPaid = paidFix;
+          row.amount_out = Math.max(
+            0,
+            Math.round((autumnFaceFix - row._amountPaid) * 100) / 100,
+          );
+          row.payment_status = "Partial";
+        }
       }
       if (String(row.payment_status || "").toLowerCase().indexOf("partial") === 0) {
         /* Keep Flexi / GoCardless partial — do not collapse to Paid/Outstanding. */
@@ -6411,6 +6470,18 @@
           row.payment_status = "Outstanding";
         }
       } else if (row.amount_out > 0) {
+        row.payment_status = "Outstanding";
+      }
+      /*
+       * Mes vencido safety net: LA/H&F/NHS Autumn stays Outstanding until cash
+       * is recorded on the row (amount_paid_gbp → _amountPaid).
+       */
+      if (
+        isArrearsLaNhsPaymentRow(row)
+        && Number(row._amountAutumn) > 0
+        && !(Number(row._amountPaid) > 0)
+      ) {
+        row.amount_out = Number(row._amountAutumn);
         row.payment_status = "Outstanding";
       }
       /*
