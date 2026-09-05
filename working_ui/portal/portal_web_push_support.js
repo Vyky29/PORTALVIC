@@ -137,7 +137,7 @@
     }
     global.__PORTAL_SW_REG_PROMISE__ = (async function () {
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260905-comms-35", global.location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260905-comms-36", global.location.href).href;
         var scopeBase = new URL("./", global.location.href).href;
         var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
         global.__PORTAL_SW_REG__ = reg;
@@ -225,6 +225,54 @@
     } catch (_a) {}
   }
   global.portalPlayAlertCue = portalPlayAlertCue;
+
+  var portalHomeBadgeParts = { comms: 0, family: 0, staffWa: 0 };
+
+  function portalHomeBadgeTotal() {
+    return Math.max(
+      0,
+      (Number(portalHomeBadgeParts.comms) || 0) +
+        (Number(portalHomeBadgeParts.family) || 0) +
+        (Number(portalHomeBadgeParts.staffWa) || 0)
+    );
+  }
+
+  /** Red numeric badge on the home-screen PWA icon (iOS 16.4+ Add to Home Screen). */
+  function portalSyncHomeScreenBadge(count) {
+    count = Math.max(0, Number(count) || 0);
+    try {
+      if (global.navigator && typeof global.navigator.setAppBadge === "function") {
+        if (count > 0) void global.navigator.setAppBadge(count);
+        else if (typeof global.navigator.clearAppBadge === "function") void global.navigator.clearAppBadge();
+      }
+    } catch (_e) {}
+    try {
+      var payload = { type: "portal-set-app-badge", count: count };
+      if (global.navigator && global.navigator.serviceWorker) {
+        if (global.navigator.serviceWorker.controller) {
+          global.navigator.serviceWorker.controller.postMessage(payload);
+        }
+        void global.navigator.serviceWorker.ready.then(function (reg) {
+          if (reg && reg.active) reg.active.postMessage(payload);
+        });
+      }
+    } catch (_p) {}
+  }
+
+  function portalSetHomeBadgePart(part, n) {
+    var key = String(part || "").trim();
+    if (!portalHomeBadgeParts.hasOwnProperty(key)) return;
+    portalHomeBadgeParts[key] = Math.max(0, Number(n) || 0);
+    portalSyncHomeScreenBadge(portalHomeBadgeTotal());
+  }
+  global.portalSetHomeBadgePart = portalSetHomeBadgePart;
+  global.portalSyncHomeScreenBadge = portalSyncHomeScreenBadge;
+  try {
+    global.addEventListener("portal:comms-unread", function (ev) {
+      var n = ev && ev.detail ? ev.detail.count : 0;
+      portalSetHomeBadgePart("comms", n);
+    });
+  } catch (_c) {}
 
   function portalCurrentPushAuthUserId() {
     try {

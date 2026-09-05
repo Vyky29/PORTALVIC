@@ -6,7 +6,7 @@
  * v20260712-cs-portal-wa (Leader WhatsApp deep-link + CS Portal branding)
  * v20260711-always-os-banner (foreground skip broke alerts after chat UI removal)
  * v20260904-comms-push (Communications message + incoming-call banners)
- * v20260905-comms-35 (Family WhatsApp: same dual alerts as COMMS)
+ * v20260905-comms-36 (Home screen PWA numeric badge via Badging API)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 
@@ -31,6 +31,53 @@ var PORTAL_ALERT_VIBRATE = [200, 80, 200, 80, 280, 100, 200];
 var PORTAL_CALL_VIBRATE = [500, 180, 500, 180, 700, 180, 500];
 /** Auth user id stamped by the page after login — used to drop pushes meant for someone else. */
 var portalPushUserId = '';
+var PORTAL_BADGE_CACHE = 'portal-app-badge-v1';
+var portalStoredAppBadge = 0;
+
+function portalPersistBadgeCount(n) {
+  portalStoredAppBadge = Math.max(0, Number(n) || 0);
+  return caches
+    .open(PORTAL_BADGE_CACHE)
+    .then(function (c) {
+      return c.put('count', new Response(String(portalStoredAppBadge)));
+    })
+    .catch(function () {});
+}
+
+function portalReadPersistedBadgeCount() {
+  return caches
+    .open(PORTAL_BADGE_CACHE)
+    .then(function (c) {
+      return c.match('count').then(function (r) {
+        if (!r) return portalStoredAppBadge;
+        return r.text().then(function (t) {
+          var parsed = parseInt(t, 10);
+          if (parsed > 0) portalStoredAppBadge = parsed;
+          return portalStoredAppBadge;
+        });
+      });
+    })
+    .catch(function () {
+      return portalStoredAppBadge;
+    });
+}
+
+function portalPaintAppBadge(n) {
+  var count = Math.max(0, Number(n) || 0);
+  var persist = portalPersistBadgeCount(count);
+  if (!self.navigator || typeof self.navigator.setAppBadge !== 'function') return persist;
+  var paint =
+    count < 1 && typeof self.navigator.clearAppBadge === 'function'
+      ? self.navigator.clearAppBadge()
+      : self.navigator.setAppBadge(count);
+  return Promise.all([persist, Promise.resolve(paint)]).catch(function () {});
+}
+
+function portalBumpAppBadge() {
+  return portalReadPersistedBadgeCount().then(function (n) {
+    return portalPaintAppBadge(n + 1);
+  });
+}
 
 function portalAppendQueryParam(absUrl, key, value) {
   try {
@@ -101,6 +148,10 @@ self.addEventListener('message', function (event) {
     portalPushUserId = String(d.userId || '').trim();
     return;
   }
+  if (d.type === 'portal-set-app-badge') {
+    event.waitUntil(portalPaintAppBadge(d.count));
+    return;
+  }
   if (d.type === 'portal-show-local-test') {
     var title = String(d.title || 'Test: portal notification');
     var body = String(d.body || 'If you see this banner, notifications are working on this device.');
@@ -148,6 +199,7 @@ self.addEventListener('push', function (event) {
   var chatData = null;
   var senderUserId = '';
   var targetUserId = '';
+  var appBadgeCount = null;
   try {
     if (event.data) {
       var j = event.data.json();
@@ -162,6 +214,9 @@ self.addEventListener('push', function (event) {
       if (j && j.chat) chatData = j.chat;
       if (j && j.senderUserId) senderUserId = String(j.senderUserId);
       if (j && j.targetUserId) targetUserId = String(j.targetUserId);
+      if (j && j.appBadge != null && isFinite(Number(j.appBadge))) {
+        appBadgeCount = Math.max(0, Number(j.appBadge));
+      }
     }
   } catch (e) {
     try {
@@ -223,6 +278,11 @@ self.addEventListener('push', function (event) {
          (logo + vibrate) only when locked, another app, or the PWA is in the background. */
       if (!((isCommsPush || isFamilyPush) && hasVisibleClient)) {
         tasks.unshift(self.registration.showNotification(title, notifyOpts));
+      }
+      if (!hasVisibleClient) {
+        tasks.push(
+          appBadgeCount != null ? portalPaintAppBadge(appBadgeCount) : portalBumpAppBadge()
+        );
       }
       return Promise.all(tasks);
     })

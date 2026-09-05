@@ -1408,7 +1408,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260905-comms-35", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260905-comms-36", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
     } catch (_sw) {}
@@ -1628,7 +1628,10 @@
       ensurePortalPushSw();
       bindIncomingPushMessages();
       bindIntrinsicCommsAlerts();
-      if (isCommsAppPage()) return;
+      if (isCommsAppPage()) {
+        void refreshUnread();
+        return;
+      }
       ensureIncomingOverlay();
       ensureUnreadBadgeCss();
       watchIncomingCalls();
@@ -1662,16 +1665,18 @@
   try {
     global.addEventListener("portal:staff-profile-ready", boot);
     global.addEventListener("portal:supabase-ready", function () {
-      if (isCommsAppPage()) return;
+      if (isCommsAppPage()) {
+        void refreshUnread();
+        return;
+      }
       boot();
       void refreshUnread();
       watchIncomingCalls();
     });
     document.addEventListener("visibilitychange", function () {
-      if (isCommsAppPage()) return;
       if (document.visibilityState === "visible") {
         void refreshUnread();
-        void pollRingingCalls();
+        if (!isCommsAppPage()) void pollRingingCalls();
       }
     });
   } catch (_e2) {}
@@ -1679,7 +1684,6 @@
     global.__PORTAL_COMMS_UNREAD_POLL__ = true;
     global.setInterval(function () {
       try {
-        if (isCommsAppPage()) return;
         if (document.visibilityState === "visible") void refreshUnread();
       } catch (_p) {}
     }, 3000);
