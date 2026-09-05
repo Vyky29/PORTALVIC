@@ -2040,10 +2040,27 @@
         window.location.href = registrationUrlForSlot(slot, opts);
       }
 
+      function bookingIntentFromUrl() {
+        try {
+          var deep = new URLSearchParams(window.location.search || "");
+          var intent = String(deep.get("intent") || deep.get("booking_kind") || "")
+            .trim()
+            .toLowerCase();
+          if (intent === "trial" || intent === "trial_session" || intent === "taster") {
+            return "trial";
+          }
+        } catch (_e) {}
+        return "";
+      }
+
       function openBookChoiceSheet(slot) {
         if (window.PortalBookingLeadGate && !window.PortalBookingLeadGate.isUnlocked()) {
           stashPendingBook({ slotId: slot.id, choice: true });
           window.PortalBookingLeadGate.openGate();
+          return;
+        }
+        if (bookingIntentFromUrl() === "trial") {
+          goToRegistration(slot, { bookingKind: "trial" });
           return;
         }
         var svc = api.serviceById(slot.serviceId);

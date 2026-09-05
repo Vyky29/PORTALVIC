@@ -1040,8 +1040,8 @@
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
       '<a class="pp-btn pp-btn--primary" href="' +
-      esc(BOOKING_PORTAL_URL) +
-      '" target="_blank" rel="noopener noreferrer">Booking services</a>' +
+      esc(bookingPortalHref({ intent: "trial" })) +
+      '" rel="noopener noreferrer">Book a trial</a>' +
       '<a class="pp-btn pp-btn--ghost" href="' +
       esc(OFFICE_CONTACT_MAILTO) +
       '">Contact the office</a>' +
@@ -1794,6 +1794,31 @@
   var BOOKING_PORTAL_URL = "https://www.clubsensational.org/bookingportal";
   var OFFICE_CONTACT_MAILTO = "mailto:info@clubsensational.org";
 
+  /** Same-origin /bookingportal when possible so Parent Portal session can hand off (no second OTP). */
+  function bookingPortalHref(opts) {
+    opts = opts || {};
+    var q = new URLSearchParams();
+    q.set("from", "parent_portal");
+    if (opts.service) q.set("service", String(opts.service));
+    if (opts.intent) q.set("intent", String(opts.intent));
+    if (opts.slotId) q.set("slot_id", String(opts.slotId));
+    var qs = q.toString();
+    try {
+      var host = String(global.location && global.location.hostname || "").toLowerCase();
+      if (
+        host === "www.clubsensational.org" ||
+        host === "clubsensational.org" ||
+        host === "family.clubsensational.org" ||
+        /\.vercel\.app$/i.test(host) ||
+        host === "localhost" ||
+        host === "127.0.0.1"
+      ) {
+        return "/bookingportal" + (qs ? "?" + qs : "");
+      }
+    } catch (_e) {}
+    return BOOKING_PORTAL_URL + (qs ? "?" + qs : "");
+  }
+
   function localIsoToday() {
     var now = new Date();
     var m = now.getMonth() + 1;
@@ -1879,18 +1904,18 @@
   }
 
   function bookingPortalQuickAccessBtnHtml(data, icoFn) {
-    /* Former + re-enrolled (incl. LA/NHS office-auto): booking portal for extra services. */
-    if (!isFormerClient(data) && !familyAcceptedNextYear(data)) return "";
+    /* Any signed-in family can book a trial (or term place) via Booking Portal — handoff uses Parent Portal session. */
+    if (participantBlocksExtraBookingLocal(data)) return "";
     return (
       '<a class="pp-hub-shortcut pp-hub-shortcut--book-portal" href="' +
-      esc(BOOKING_PORTAL_URL) +
-      '" target="_blank" rel="noopener noreferrer" aria-label="Book more services">' +
+      esc(bookingPortalHref({ intent: "trial" })) +
+      '" rel="noopener noreferrer" aria-label="Book a trial session">' +
       '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
       icoFn(
         '<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8l4 4-4 4"/>',
       ) +
       "</span>" +
-      '<span class="pp-hub-shortcut__label">Booking services</span></a>'
+      '<span class="pp-hub-shortcut__label">Book a trial</span></a>'
     );
   }
 
@@ -1940,8 +1965,8 @@
       "</div>" +
       '<div class="pp-hub-slot-live__actions">' +
       '<a class="pp-btn pp-btn--primary" href="' +
-      esc(BOOKING_PORTAL_URL) +
-      '" target="_blank" rel="noopener noreferrer">Book online</a>' +
+      esc(bookingPortalHref({ intent: "trial" })) +
+      '" rel="noopener noreferrer">Book a trial</a>' +
       '<a class="pp-btn pp-btn--ghost" href="' +
       esc(OFFICE_CONTACT_MAILTO) +
       '">Contact the office</a>' +
