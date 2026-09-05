@@ -2297,20 +2297,21 @@
         "</svg>"
       );
     };
+    var first = firstNameOf(data) || "Participant";
     return (
       '<section class="pp-hub-shortcuts" aria-label="Quick access">' +
       '<p class="pp-pax-info-section-label">Quick access</p>' +
       '<div class="pp-hub-shortcuts__grid">' +
       hubShortcutBtn(
         "messages",
-        "Messages",
+        "Admin Messages",
         ico('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
         { unreadBadge: msgBadge, extraClass: " pp-hub-shortcut--messages" },
       ) +
       (sessionProgressEnabled
         ? hubShortcutBtn(
             "sessions",
-            "Sessions",
+            "Sessions Overview",
             ico('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
             { extraClass: " pp-hub-shortcut--sessions" },
           )
@@ -2318,7 +2319,7 @@
       (hasAchievementPhotos(data) ? photosShortcutBtnHtml(ico) : "") +
       hubShortcutBtn(
         "calendar",
-        "Calendar",
+        first + " Calendar",
         ico(
           '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
         ),
@@ -2326,7 +2327,7 @@
       ) +
       hubShortcutBtn(
         "booking",
-        "Booking",
+        first + " Booking",
         ico(
           '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/>',
         ),
