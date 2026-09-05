@@ -377,6 +377,9 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
     width:100%;
     max-width:100%;
     box-sizing:border-box;
+    max-height:min(48dvh, 380px);
+    padding:8px 10px;
+    gap:6px;
   }
   .portal-staff-wa-admin__tools{
     width:100%;
@@ -385,11 +388,29 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
   .portal-staff-wa-admin__composer textarea{
     font-size:16px; /* avoid iOS zoom on focus */
     max-width:100%;
+    max-height:22vh;
   }
   .portal-staff-wa-admin__composer .btn,
   .portal-staff-wa-admin__composer #portalStaffWaSend{
     max-width:100%;
     box-sizing:border-box;
+  }
+  .portal-staff-wa-admin__tpl-banner,
+  .portal-staff-wa-admin__attach-blocked{
+    font-size:11px;
+    line-height:1.35;
+    padding:7px 9px;
+  }
+  /* Preview duplicates the draft — hide on narrow screens to free Send */
+  .portal-staff-wa-admin__composer--tpl .portal-staff-wa-admin__tpl-preview{
+    display:none !important;
+  }
+  #workspace:has(#portalStaffWaAdmin .portal-staff-wa-admin--thread) > .admin-page-head{
+    margin-bottom:4px;
+    gap:4px;
+  }
+  #workspace:has(#portalStaffWaAdmin .portal-staff-wa-admin--thread) > .admin-page-head .admin-page-head__title{
+    font-size:1rem;
   }
 }
 .portal-staff-wa-admin__bubble{
@@ -508,9 +529,26 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
   border-top:1px solid rgba(15,23,42,.08);
   min-width:0;
   max-width:100%;
-  flex:0 0 auto;
+  flex:0 1 auto;
   background:#fff;
   box-sizing:border-box;
+  /* Cold template UI is tall — scroll inside composer so Send is reachable */
+  max-height:min(52dvh, 420px);
+  overflow-x:hidden;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+/* Author display:flex must not override HTML [hidden] (UA is not !important). */
+.portal-staff-wa-admin__tools[hidden],
+.portal-staff-wa-admin__tpl-banner[hidden],
+.portal-staff-wa-admin__attach-blocked[hidden],
+.portal-staff-wa-admin__tpl-shell[hidden],
+.portal-staff-wa-admin__tpl-fixed[hidden],
+.portal-staff-wa-admin__tpl-len[hidden],
+.portal-staff-wa-admin__tpl-preview[hidden],
+.portal-staff-wa-admin__attach-preview[hidden]{
+  display:none !important;
 }
 .portal-staff-wa-admin__tools{
   display:flex;

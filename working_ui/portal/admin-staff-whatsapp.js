@@ -1070,7 +1070,9 @@
       draftEl.placeholder = needsTpl
         ? "Write {{1}} here — blank line between paragraphs…"
         : "Message…";
-      draftEl.rows = needsTpl ? 4 : 2;
+      draftEl.rows = needsTpl
+        ? (window.matchMedia && window.matchMedia("(max-width:720px)").matches ? 3 : 4)
+        : 2;
     }
     if (sendBtn) {
       sendBtn.textContent = needsTpl ? "Send template" : "Send WhatsApp";
