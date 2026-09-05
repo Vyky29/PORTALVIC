@@ -87,7 +87,7 @@
     "source": "staff_dashboard_spreadsheet_bundle.js + clients_info_embed.js",
     "termTo": "2026-07-31",
     "approved": false,
-    "revision": 419,
+    "revision": 429,
     "seededAt": "2026-06-22T13:36:19.674296+00:00",
     "services": [
       "Aquatic Activity",
@@ -144,7 +144,7 @@
     "lastEditedAt": "2026-07-19T22:53:34.928Z",
     "revisionNote": "Jul 1 Ikram 11–3 cancelled (paid) for Luliya + Michelle",
     "schemaVersion": 2,
-    "lastLiveFoldAt": "2026-09-03T08:41:40.308Z",
+    "lastLiveFoldAt": "2026-09-05T09:37:10.166Z",
     "staffShiftsNote": "Turnos pool/day centre por fecha. Editar en pestaña Staff del editor MADRE o plegar overrides desde portal_madre_fold_queue.",
     "lastLiveFoldNote": "office_sync:local_dc_staff_week standing weekdays 2026-09-03",
     "staffShiftsSource": "staff_timetable_machine.json",
@@ -215,14 +215,14 @@
       "2026-07-13"
     ],
     "lastManualReconcileNote": "reconcile_live_madre_from_local.py: applied local roster edits (3-way vs 48d823ae)",
-    "reenrol_release_changed": 2,
+    "reenrol_release_changed": 1,
     "mondayTemplateCopiedFrom": "2026-06-22",
     "reenrol_release_deadline": "2026-07-22",
     "unpaid_aug15_release_due": "2026-08-15",
     "madre_pre_sept_restore_at": "2026-07-23T16:41:19.032Z",
     "reenrol_release_live_from": "2026-07-23",
     "reenrol_release_mia_acton": 0,
-    "reenrol_release_applied_at": "2026-09-02T18:09:31.067Z",
+    "reenrol_release_applied_at": "2026-09-03T11:59:34.204Z",
     "madre_pre_sept_restore_note": "Restored NO PARTICIPANT → bundle names for sessionDate < 2026-09-01 after reenrol release wiped summer history.",
     "unpaid_aug15_release_changed": 6,
     "unpaid_aug15_release_contacts": [
@@ -14395,7 +14395,7 @@
                   "service": "Aquatic Activity",
                   "pool_note": "Lane (DE)",
                   "time_slot": "4.30 to 5",
-                  "client_name": "NO PARTICIPANT",
+                  "client_name": "Adam Mahmmoud",
                   "instructors": "AURORA"
                 },
                 {
@@ -14454,17 +14454,8 @@
                   "venue": "Acton",
                   "service": "Aquatic Activity",
                   "pool_note": "Lane (DE)",
-                  "time_slot": "5.30 to 6",
-                  "client_name": "Yunis Hussein",
-                  "instructors": "AURORA"
-                },
-                {
-                  "area": "Lane (DE)",
-                  "venue": "Acton",
-                  "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
-                  "time_slot": "6 to 6.30",
-                  "client_name": "Maiyar",
+                  "time_slot": "5.30 to 6.30",
+                  "client_name": "Joelle",
                   "instructors": "AURORA"
                 }
               ],
@@ -14683,7 +14674,6 @@
               "sessionDate": "2026-07-15"
             },
             {
-              "weekday": "Monday",
               "slots": [
                 {
                   "area": "Hub Room",
@@ -14695,11 +14685,12 @@
                   "instructors": "GODSWAY"
                 }
               ],
+              "weekday": "Monday",
               "sessionDate": "2026-07-13"
             },
             {
-              "weekday": "Friday",
               "slots": [],
+              "weekday": "Friday",
               "sessionDate": "2026-07-17"
             }
           ],
@@ -15095,20 +15086,11 @@
             {
               "slots": [
                 {
-                  "area": "Manager",
-                  "venue": "SwimFarm",
-                  "service": "Day Centre",
-                  "pool_note": "Manager",
-                  "time_slot": "11 to 12.30",
-                  "client_name": "Manager",
-                  "instructors": "MICHELLE"
-                },
-                {
                   "area": "Hub Room",
                   "venue": "SwimFarm",
                   "service": "Day Centre",
                   "pool_note": "Hub Room",
-                  "time_slot": "12.30 to 4",
+                  "time_slot": "11 to 4",
                   "client_name": "Ikram",
                   "instructors": "MICHELLE"
                 }
@@ -15372,8 +15354,8 @@
                   "venue": "SwimFarm",
                   "service": "Day Centre",
                   "pool_note": "Hub Room",
-                  "time_slot": "11 to 12.30",
-                  "client_name": "Ikram",
+                  "time_slot": "11 to 12",
+                  "client_name": "ACAT",
                   "instructors": "ROBERTO"
                 },
                 {
@@ -15457,7 +15439,7 @@
                   "service": "Aquatic Activity",
                   "pool_note": "Lane (DE)",
                   "time_slot": "5.30 to 6",
-                  "client_name": "NO PARTICIPANT",
+                  "client_name": "Yunis Hussein",
                   "instructors": "ROBERTO"
                 },
                 {
@@ -15466,7 +15448,7 @@
                   "service": "Aquatic Activity",
                   "pool_note": "Lane (DE)",
                   "time_slot": "6 to 6.30",
-                  "client_name": "NO PARTICIPANT",
+                  "client_name": "Maiyar",
                   "instructors": "ROBERTO"
                 }
               ],
@@ -15586,17 +15568,8 @@
                   "venue": "Acton",
                   "service": "Aquatic Activity",
                   "pool_note": "Lane (DE)",
-                  "time_slot": "5.30 to 6",
-                  "client_name": "NO PARTICIPANT",
-                  "instructors": "SIMON"
-                },
-                {
-                  "area": "Lane (DE)",
-                  "venue": "Acton",
-                  "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
-                  "time_slot": "6 to 6.30",
-                  "client_name": "NO PARTICIPANT",
+                  "time_slot": "5.30 to 6.30",
+                  "client_name": "Joelle",
                   "instructors": "SIMON"
                 }
               ],
@@ -15866,7 +15839,6 @@
               "sessionDate": "2026-07-16"
             },
             {
-              "weekday": "Saturday",
               "slots": [
                 {
                   "area": "Lane (DE)",
@@ -15932,6 +15904,7 @@
                   "instructors": "YOUSSEF"
                 }
               ],
+              "weekday": "Saturday",
               "sessionDate": "2026-07-18"
             }
           ],
@@ -22075,6 +22048,7 @@
       "at": "2026-09-02T14:41:34.653Z",
       "note": "Cleanup: Scott climb all staff → open; dedupe Erik Multi to one hub + one pool instructor"
     },
-    "rev 419: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)"
+    "rev 419: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)",
+    "rev 429: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)"
   ]
 }
