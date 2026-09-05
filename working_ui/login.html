@@ -3,6 +3,75 @@
 <head>
   <!-- PORTALVIC · Vercel static deploy (working_ui/) -->
   <meta charset="UTF-8" />
+  <script>
+    /* One-shot PWA heal on login (same as staff dashboard). */
+    (function () {
+      var FLAG = "portalPwaHealV9";
+      var KEEP = "clubsensational-portal-sw";
+      var force = false;
+      try {
+        var q = new URLSearchParams(String(location.search || ""));
+        force = q.get("portalHeal") === "1" || q.get("heal") === "1";
+        if (q.get("healed") === "1") {
+          try { localStorage.setItem(FLAG, "1"); } catch (e) {}
+          return;
+        }
+      } catch (e0) {}
+      try {
+        if (!force && localStorage.getItem(FLAG) === "1") return;
+      } catch (e1) {
+        return;
+      }
+      var jobs = [];
+      try {
+        if ("caches" in window) {
+          jobs.push(
+            caches.keys().then(function (keys) {
+              return Promise.all(
+                (keys || []).map(function (k) {
+                  if (String(k).indexOf("portal-push-icons") >= 0) return null;
+                  return caches.delete(k);
+                })
+              );
+            }).catch(function () {})
+          );
+        }
+      } catch (e2) {}
+      try {
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+          jobs.push(
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(
+                (regs || []).map(function (r) {
+                  var s =
+                    (r.active && r.active.scriptURL) ||
+                    (r.waiting && r.waiting.scriptURL) ||
+                    (r.installing && r.installing.scriptURL) ||
+                    "";
+                  if (String(s).indexOf(KEEP) >= 0) {
+                    return r.update().catch(function () {});
+                  }
+                  return r.unregister().catch(function () {});
+                })
+              );
+            }).catch(function () {})
+          );
+        }
+      } catch (e3) {}
+      Promise.all(jobs).then(function () {
+        try { localStorage.setItem(FLAG, "1"); } catch (e4) {}
+        if (force) {
+          try {
+            var u = new URL(location.href);
+            u.searchParams.delete("portalHeal");
+            u.searchParams.delete("heal");
+            u.searchParams.set("healed", "1");
+            location.replace(u.pathname + u.search + u.hash);
+          } catch (e5) {}
+        }
+      });
+    })();
+  </script>
   <script src="/portal-static-bootstrap.js?v=20260630-login-bootstrap"></script>
   <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>

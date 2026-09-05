@@ -13,55 +13,109 @@
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/staff_dashboard.html en producción.
   -->
   <script>
-    /* Zombie service-worker purge (runs inline so a stale cache-first SW cannot
-       intercept it). A legacy build (Jun 2026) registered /portal/staff-app-sw.js
-       which cached JS in `clubsensational-staff-static-*`. On installed PWAs (esp.
-       iOS) that SW + its caches survive removing the home-screen icon, so workers
-       kept seeing old roster/icons while Chrome/Safari (separate storage) were
-       fine. Delete every non-push cache + unregister every non-push SW, then
-       reload once (guarded by a session flag so it can never loop). */
+    /* Auto-heal installed PWA (iOS blank after alert tap). One-shot per version.
+       Opens with a visible banner so the phone is never a white void while caching clears. */
     (function () {
-      var FLAG = "portalPwaFreshV8";
+      var FLAG = "portalPwaHealV9";
       var KEEP = "clubsensational-portal-sw";
+      var force = false;
       try {
-        if (sessionStorage.getItem(FLAG)) return;
-      } catch (e) { return; }
+        var q = new URLSearchParams(String(location.search || ""));
+        force = q.get("portalHeal") === "1" || q.get("heal") === "1";
+      } catch (e0) {}
+      try {
+        if (!force && localStorage.getItem(FLAG) === "1") return;
+      } catch (e1) {
+        return;
+      }
+      try {
+        document.documentElement.style.background = "#edf4fb";
+        var b = document.createElement("div");
+        b.id = "portal-pwa-heal-banner";
+        b.setAttribute("role", "status");
+        b.textContent = "Updating CS Portal…";
+        b.setAttribute(
+          "style",
+          "position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;" +
+            "background:#edf4fb;font:600 15px/1.4 -apple-system,system-ui,sans-serif;color:#1e3a5f"
+        );
+        (document.documentElement || document.body).appendChild(b);
+      } catch (e2) {}
       var jobs = [];
       var foundStale = false;
       try {
         if ("caches" in window) {
           jobs.push(
             caches.keys().then(function (keys) {
-              var bad = (keys || []).filter(function (k) {
-                return String(k).indexOf("portal-push-icons") < 0;
-              });
-              if (bad.length) foundStale = true;
-              return Promise.all(bad.map(function (k) { return caches.delete(k); }));
+              var list = keys || [];
+              if (list.length) foundStale = true;
+              return Promise.all(
+                list.map(function (k) {
+                  if (String(k).indexOf("portal-push-icons") >= 0) return null;
+                  return caches.delete(k);
+                })
+              );
             }).catch(function () {})
           );
         }
-      } catch (e) {}
+      } catch (e3) {}
       try {
         if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
           jobs.push(
             navigator.serviceWorker.getRegistrations().then(function (regs) {
-              var bad = (regs || []).filter(function (r) {
-                var s = (r.active && r.active.scriptURL) ||
-                        (r.waiting && r.waiting.scriptURL) ||
-                        (r.installing && r.installing.scriptURL) || "";
-                return String(s).indexOf(KEEP) < 0;
-              });
-              if (bad.length) foundStale = true;
-              return Promise.all(bad.map(function (r) { return r.unregister(); }));
+              return Promise.all(
+                (regs || []).map(function (r) {
+                  var s =
+                    (r.active && r.active.scriptURL) ||
+                    (r.waiting && r.waiting.scriptURL) ||
+                    (r.installing && r.installing.scriptURL) ||
+                    "";
+                  if (String(s).indexOf(KEEP) >= 0) {
+                    return r.update().then(function () {
+                      foundStale = true;
+                    }).catch(function () {});
+                  }
+                  foundStale = true;
+                  return r.unregister().catch(function () {});
+                })
+              );
             }).catch(function () {})
           );
         }
-      } catch (e) {}
+      } catch (e4) {}
       Promise.all(jobs).then(function () {
-        try { sessionStorage.setItem(FLAG, "1"); } catch (e) {}
-        if (foundStale) {
-          try { window.location.reload(); } catch (e) {}
+        try {
+          localStorage.setItem(FLAG, "1");
+          sessionStorage.setItem("portalPwaFreshV9", "1");
+        } catch (e5) {}
+        var path = String(location.pathname || "");
+        var onRoot = path === "/" || path === "";
+        var u;
+        try {
+          u = new URL(location.href);
+          u.searchParams.delete("portalHeal");
+          u.searchParams.delete("heal");
+          if (onRoot) {
+            u.pathname = "/login.html";
+            u.searchParams.set("healed", "1");
+          } else if (force || foundStale) {
+            u.searchParams.set("healed", "1");
+            u.searchParams.set("_", String(Date.now()));
+          }
+          if (onRoot || force || foundStale) {
+            location.replace(u.pathname + u.search + u.hash);
+            return;
+          }
+        } catch (e6) {
+          if (onRoot) {
+            location.replace("/login.html?healed=1");
+            return;
+          }
         }
+        try {
+          var ban = document.getElementById("portal-pwa-heal-banner");
+          if (ban && ban.parentNode) ban.parentNode.removeChild(ban);
+        } catch (e7) {}
       });
     })();
   </script>
