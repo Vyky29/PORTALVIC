@@ -1,0 +1,21 @@
+---
+description: Former clients (Aug15 unpaid release) must not appear in Sessions / Autumn standing
+alwaysApply: true
+---
+
+# Former clients — not in Sessions
+
+**Karo, Kareena, and Shire** lost their Autumn places in the unpaid Aug 15 2026 release (live from **2026-08-16**). They are **former clients**, not current Sessions participants.
+
+## Do not
+
+- Put them back on Autumn standing boards (`portal_roster_canonical.js`, LOCAL DC staff week).
+- Show them as booked / awaiting feedback in admin Sessions Overview for dates on/after 2026-08-16.
+- Treat summer MADRE / spreadsheet history as a reason to re-project them onto Sep+ weeks.
+
+## Do
+
+- Empty seats = **No participant** (open), matching LOCAL truth (e.g. Javier Tue Acton 6–6.30).
+- Keep `clientRosterGoneFromDates` in `staff_dashboard_spreadsheet_bundle.js` and scrub via `scrubAug15ReleasedFormerClientRows` / `clientAllowedOnDate`.
+- Historical summer feedback (before 2026-08-16) may still exist in DB; do not invent Autumn roster rows for them.
+---

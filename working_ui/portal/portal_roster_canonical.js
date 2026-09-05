@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 57;
+  var SOURCE_VERSION = 58;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -324,7 +324,8 @@
     { staff: "JAVIER", name: "Ayman", time: "4 to 5" },
     { staff: "JAVIER", name: "Linda", time: "5 to 5.30" },
     { staff: "JAVIER", name: "Rayan Ta", time: "5.30 to 6" },
-    { staff: "JAVIER", name: "Kareena", time: "6 to 6.30" },
+    /* Kareena unpaid Aug15 release — open seat (LOCAL truth). */
+    { staff: "JAVIER", name: "No participant", time: "6 to 6.30" },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30" },
     { staff: "AURORA", name: "Adam Mahmmoud", time: "4.30 to 5" },
     { staff: "AURORA", name: "Junaid", time: "5 to 5.30" },
@@ -1548,6 +1549,34 @@
   }
 
   /**
+   * Unpaid Aug15 release (live from 16 Aug 2026): Karo, Kareena, Shire are former
+   * clients — never keep their names on Autumn standing / Sessions roster seats.
+   */
+  function isAug15ReleasedFormerClient(name) {
+    var n = String(name || "")
+      .trim()
+      .replace(/\s+/g, " ");
+    if (!n) return false;
+    if (/^karo\b/i.test(n)) return true;
+    if (/^kareena\b/i.test(n)) return true;
+    if (/^shire\b/i.test(n)) return true;
+    return false;
+  }
+
+  function scrubAug15ReleasedFormerClientRows(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (!isAug15ReleasedFormerClient(r.client_name)) {
+        out.push(r);
+        return;
+      }
+      out.push(Object.assign({}, r, { client_name: "No participant" }));
+    });
+    return out;
+  }
+
+  /**
    * Services Day Centre staff board model (ordered columns).
    * @param {string} dowNorm
    * @param {{ coach?: string, participant?: string }|null} [filt]
@@ -1607,6 +1636,7 @@
     merged = scrubDepartedAutumnInstructorRows(merged);
     merged = applyAutumnWeek1DayCentre(merged);
     merged = scrubAndEnsureSep6HubCover(merged);
+    merged = scrubAug15ReleasedFormerClientRows(merged);
     /* After all Autumn patches: no summer history weeks left to snap onto Sep+. */
     merged = purgeSummerHistoryOutsideAutumnTemplates(merged);
     return dedupeRosterAdapterRows(merged);
@@ -1669,6 +1699,8 @@
     isAutumnNoSessionStaffKey: isAutumnNoSessionStaffKey,
     scrubDepartedAutumnInstructorRows: scrubDepartedAutumnInstructorRows,
     scrubDepartedAngelInstructorRows: scrubDepartedAngelInstructorRows,
+    scrubAug15ReleasedFormerClientRows: scrubAug15ReleasedFormerClientRows,
+    isAug15ReleasedFormerClient: isAug15ReleasedFormerClient,
     purgeSummerHistoryOutsideAutumnTemplates: purgeSummerHistoryOutsideAutumnTemplates,
     normIso: normIso,
   };

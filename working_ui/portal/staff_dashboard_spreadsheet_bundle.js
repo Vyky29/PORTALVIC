@@ -263,6 +263,11 @@
     "Emanuel": "2026-06-12",
     "Logan": "2026-05-11"
   },
+  "clientRosterGoneFromDates": {
+    "Karo": "2026-08-16",
+    "Kareena": "2026-08-16",
+    "Shire": "2026-08-16"
+  },
   "clientWeekdaysOnly": {
     "Emanuel": [
       "Monday",

@@ -599,13 +599,23 @@
 
   /** First calendar day this client appears on roster (ISO date). */
   function clientAllowedOnDate(clientName, isoDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return true;
     var start = clientConfigMapEntry(
       global.STAFF_DASHBOARD_SOURCE && global.STAFF_DASHBOARD_SOURCE.clientRosterStartDates,
       clientName
     );
-    if (!start || !/^\d{4}-\d{2}-\d{2}$/.test(String(start))) return true;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return true;
-    return isoDate >= String(start);
+    if (start && /^\d{4}-\d{2}-\d{2}$/.test(String(start)) && isoDate < String(start)) {
+      return false;
+    }
+    /* Exclusive: first day they are no longer on Sessions / standing (former clients). */
+    var goneFrom = clientConfigMapEntry(
+      global.STAFF_DASHBOARD_SOURCE && global.STAFF_DASHBOARD_SOURCE.clientRosterGoneFromDates,
+      clientName
+    );
+    if (goneFrom && /^\d{4}-\d{2}-\d{2}$/.test(String(goneFrom)) && isoDate >= String(goneFrom)) {
+      return false;
+    }
+    return true;
   }
 
   function parseHm(token) {
@@ -6188,6 +6198,7 @@
       var d = hub.feedbackRowDate(fb);
       if (!d) return true;
       if (d < from || d > to) return false;
+      if (!clientAllowedOnDate(fb.client_name, d)) return false;
       if (!clientNameMatchesFilter(fb.client_name, q)) return false;
       if (hub.feedbackNoteFilter === "positive" && !clean(fb.positive_feedback)) return false;
       if (hub.feedbackNoteFilter === "relevant" && !clean(fb.relevant_information)) return false;
