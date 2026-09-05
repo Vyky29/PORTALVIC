@@ -302,6 +302,22 @@
           "service": "Multi-Activity"
         }
       ]
+    },
+    {
+      "day": "Sunday",
+      "client_name": "Zaid",
+      "instructors": "JAVIER",
+      "mergeKey": "zaid_javier_sun_swim",
+      "slots": [
+        {
+          "time_slot": "9 to 9.30",
+          "service": "Aquatic Activity"
+        },
+        {
+          "time_slot": "9.30 to 10.15",
+          "service": "Multi-Activity"
+        }
+      ]
     }
   ],
   "overviewOmitRosterSlots": [
@@ -314,6 +330,12 @@
     {
       "weekday": "Sunday",
       "client_slug": "yusuf_ah",
+      "time_slot": "9 to 9.30",
+      "service": "Aquatic Activity"
+    },
+    {
+      "weekday": "Sunday",
+      "client_slug": "zaid",
       "time_slot": "9 to 9.30",
       "service": "Aquatic Activity"
     }

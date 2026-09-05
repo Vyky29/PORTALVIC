@@ -685,9 +685,8 @@
 
   /** Sun 6 Sep 2026: Emanuel off — John covers his Hub Multi book (dated so Today matches). */
   var SEP6_2026_JOHN_EMANUEL_HUB_MULTI = [
-    { client_name: "Zaid", time_slot: "9.30 to 10.15" },
-    /* Standing Jack S <-> Samer: Hub 10.15 is Jack S. */
-    { client_name: "Jack S", time_slot: "10.15 to 11" },
+    { client_name: "Jack S", time_slot: "9.30 to 10.15" },
+    { client_name: "Zaid", time_slot: "10.15 to 11" },
     { client_name: "Eiji", time_slot: "11 to 11.45" },
     { client_name: "Hazem", time_slot: "11.45 to 12.30" },
     { client_name: "Haneef", time_slot: "12.30 to 1.15" },
@@ -922,39 +921,11 @@
   }
 
   /**
-   * Standing Sunday Multi: Jack S <-> Samer area swap.
-   *   Jack S: Big Pool 9.30-10.15, Hub Room 10.15-11
-   *   Samer:  Hub Room 9.30-10.15, Big Pool 10.15-11
-   * Idempotent on Jul-12 MADRE; corrects older May-pattern snaps.
+   * Former Jack S <-> Samer Sunday Multi swap (Jack pool-first) retired 5 Sep 2026.
+   * Standing now: Jack S Hub 9.30 then Big Pool 10.15; Samer Hub 9.30 then Big Pool 10.15
+   * (different instructor books). Keep no-op so older call sites stay safe.
    */
   function enforceJackSSamerSundayMultiSwap(row) {
-    if (!row || !isMultiActivityService(row.service)) return null;
-    if (normalizeDowKey(row.day) !== "sunday") return null;
-    if (!/swimfarm/i.test(String(row.venue || ""))) return null;
-    var cn = String(row.client_name || "")
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, " ");
-    if (cn !== "jack s" && cn !== "samer") return null;
-    var slot = String(row.time_slot || "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase()
-      .replace(/:/g, ".");
-    var is930 = slot === "9.30 to 10.15" || slot.indexOf("9.30 to 10.15") === 0;
-    var is1015 = slot === "10.15 to 11" || slot.indexOf("10.15 to 11") === 0;
-    if (!is930 && !is1015) return null;
-    var area = String(row.area || "").toLowerCase();
-    var hub = /hub/.test(area);
-    var big = /big\s*pool/.test(area);
-    if (!hub && !big) return null;
-    /* Wrong seats from pre-swap rota → rename into the standing pair. */
-    if (cn === "jack s" && ((hub && is930) || (big && is1015))) {
-      return { client_name: "Samer" };
-    }
-    if (cn === "samer" && ((big && is930) || (hub && is1015))) {
-      return { client_name: "Jack S" };
-    }
     return null;
   }
 

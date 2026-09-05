@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>LOCAL · DC staff week compare · v20260905-dayoff-zaid-trial</title>
+  <title>LOCAL · DC staff week compare · v20260905-jack-zaid-swap</title>
   <style>
     :root {
       --ink: #173247;
@@ -261,7 +261,7 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260905-dayoff-zaid-trial · Autumn 2026</h1>
+  <h1>LOCAL only · Staff week (DC + weekend / after school) · v20260905-jack-zaid-swap · Autumn 2026</h1>
   <p class="note">
     Open at <code>http://127.0.0.1:8765/local_dc_staff_week.html</code> (not file://). Club closed Mon 31 Aug 2026 (BH).
     <strong>1-6 Sep</strong> = week 1 (DC weekdays; Sat 5 + Sun 6 weekend · Hub: <strong>Berta Lead + Jack W…Aydaan book</strong> · <strong>John = Emanuel book</strong> · Godsway · Youssef off · Emanuel off).
@@ -493,7 +493,6 @@
     sunday: {
       Roberto: [
         { name: "Yusuf Ah", time: "9 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
-        /* Standing swap: Samer Big Pool 10.15-11 (Jack S goes Hub that half). */
         { name: "Samer", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Gabriel", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Arthur Mo", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
@@ -524,7 +523,7 @@
         { name: "Aydaan Ah", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
       ],
       Godsway: [
-        /* Standing swap: Samer Hub 9.30-10.15 (Jack S goes Big Pool that half). */
+        /* Samer Hub first half; pool second with Roberto. */
         { name: "Samer", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Yusuf Ah", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Arthur Mo", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
@@ -534,19 +533,18 @@
       ],
       /* Standing from Sun 20 Sep: Emanuel Hub Multi. Sun 6 = John (DATE_EXTRA). Sun 13 = shadow only. */
       Emanuel: [
-        { name: "Zaid", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
-        /* Standing swap: Jack S Hub 10.15-11. */
-        { name: "Jack S", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        /* Jack S Hub first, then pool with Javier; Zaid pool 9-10.15 then Hub. */
+        { name: "Jack S", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Zaid", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Eiji", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Hazem", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Haneef", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Rayyan F", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
       ],
       Javier: [
-        { name: "No participant", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool", kind: "open" },
-        /* Standing swap: Jack S Big Pool 9.30-10.15. */
-        { name: "Jack S", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
-        { name: "Zaid", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
+        /* Zaid like Yusuf: one pool card 9-10.15 (aquatic 9 + multi 9.30). Jack S pool after Hub. */
+        { name: "Zaid", time: "9 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
+        { name: "Jack S", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Hazem", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Eiji", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Rayyan F", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
@@ -613,11 +611,10 @@
   var DATE_EXTRA = {
     "2026-09-06": {
       /* Emanuel + Youssef off. John covers Emanuel Hub book. Berta Lead keeps former John Hub book.
-       * Zaid aquatic trial paid Stripe → Javier open 9-9.30 Small Pool. */
+       * Zaid trial 9-9.30 folds into Javier pool 9-10.15 (Yusuf-style). Jack S: Hub then pool. */
       Javier: [
-        { name: "Zaid (Trial)", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool", kind: "trial" },
-        { name: "Jack S", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
-        { name: "Zaid", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
+        { name: "Zaid (Trial)", time: "9 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool", kind: "trial" },
+        { name: "Jack S", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Hazem", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Eiji", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
         { name: "Rayyan F", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
@@ -626,8 +623,8 @@
         { name: "Shaan", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
       ],
       John: [
-        { name: "Zaid", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
-        { name: "Jack S", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Jack S", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
+        { name: "Zaid", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Eiji", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Hazem", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
         { name: "Haneef", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room" },
@@ -672,8 +669,8 @@
     "2026-09-13": {
       /* Shadowing Multi @ shadowing rate — same Hub book (learns clients). */
       Emanuel: [
-        { name: "Zaid", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
-        { name: "Jack S", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
+        { name: "Jack S", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
+        { name: "Zaid", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
         { name: "Eiji", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
         { name: "Hazem", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
         { name: "Haneef", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
