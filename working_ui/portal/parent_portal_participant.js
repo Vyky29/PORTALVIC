@@ -1793,6 +1793,23 @@
   var RE_ENROL_SOFT_HOLD_CONTACT_IDS = { "176": true };
   var BOOKING_PORTAL_URL = "https://www.clubsensational.org/bookingportal";
   var OFFICE_CONTACT_MAILTO = "mailto:info@clubsensational.org";
+  /**
+   * Office help-to-book Quick Access tiles (temporary). Remove contact id when done.
+   * Mohamed Mohamud (56) — Thursday Acton Aquatic 5.30–6.30.
+   */
+  var HUB_BOOKING_HELP_BY_CONTACT = {
+    "56": {
+      slotId: "live-aquatic-acton-thursday-17-30-5-30-6-30",
+      service: "aquatic",
+      label: "Book Thursday 5.30",
+      aria: "Finish Thursday 5.30 to 6.30 Acton aquatic booking",
+      matchDay: /thursday/i,
+      matchService: /aquatic|swim/i,
+      matchVenue: /acton/i,
+      /** Start minutes for 5.30 pm (17:30). */
+      startMins: 17 * 60 + 30,
+    },
+  };
 
   /** Same-origin /bookingportal when possible so Parent Portal session can hand off (no second OTP). */
   function bookingPortalHref(opts) {
@@ -1817,6 +1834,56 @@
       }
     } catch (_e) {}
     return BOOKING_PORTAL_URL + (qs ? "?" + qs : "");
+  }
+
+  function hubBookingHelpConfig(data) {
+    var id = String(((data && data.participant) || {}).contact_id || "").trim();
+    return id && HUB_BOOKING_HELP_BY_CONTACT[id] ? HUB_BOOKING_HELP_BY_CONTACT[id] : null;
+  }
+
+  /** True when Thursday Acton 5.30 aquatic (or configured help slot) is already on file. */
+  function hubBookingHelpSlotAlreadyBooked(data, cfg) {
+    if (!cfg) return false;
+    var wantStart = Number(cfg.startMins);
+    function startNear(time) {
+      var m = parseServiceStartMinutes(time);
+      if (m >= 9999 || !Number.isFinite(wantStart)) return false;
+      return Math.abs(m - wantStart) <= 20;
+    }
+    function blobMatches(day, label, venue, area, time) {
+      var dayOk = cfg.matchDay ? cfg.matchDay.test(String(day || "") + " " + String(label || "")) : true;
+      var svcOk = cfg.matchService
+        ? cfg.matchService.test(String(label || "") + " " + String(time || ""))
+        : true;
+      var place = String(venue || "") + " " + String(area || "") + " " + String(label || "");
+      var venueOk = cfg.matchVenue ? cfg.matchVenue.test(place) : true;
+      return dayOk && svcOk && venueOk && startNear(time);
+    }
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    for (var i = 0; i < detail.length; i++) {
+      var s = detail[i] || {};
+      if (blobMatches(s.day, s.label || s.service, s.venue, s.area, s.time)) return true;
+    }
+    var upcoming =
+      data && Array.isArray(data.upcoming_booked_sessions) ? data.upcoming_booked_sessions : [];
+    for (var j = 0; j < upcoming.length; j++) {
+      var u = upcoming[j] || {};
+      if (cfg.slotId && String(u.slot_id || u.slotId || "") === String(cfg.slotId)) return true;
+      if (blobMatches(u.day, u.label || u.service, u.venue, u.area, u.time)) return true;
+    }
+    return false;
+  }
+
+  function showHubBookingHelpCta(data) {
+    if (isFormerClient(data)) return false;
+    if (participantBlocksExtraBookingLocal(data)) return false;
+    var cfg = hubBookingHelpConfig(data);
+    if (!cfg) return false;
+    if (hubBookingHelpSlotAlreadyBooked(data, cfg)) return false;
+    return true;
   }
 
   function localIsoToday() {
@@ -1914,6 +1981,33 @@
       '<img class="pp-hub-shortcut__logo" src="/portal/F-02-1.png" alt="" width="22" height="22" decoding="async" />' +
       "</span>" +
       '<span class="pp-hub-shortcut__label">Booking Portal</span></a>'
+    );
+  }
+
+  /** Temporary office help: deep-link to a specific Booking Portal slot (e.g. Mohamed Thu 5.30). */
+  function hubBookingHelpQuickAccessBtnHtml(data, icoFn) {
+    if (!showHubBookingHelpCta(data)) return "";
+    var cfg = hubBookingHelpConfig(data);
+    if (!cfg) return "";
+    var href = bookingPortalHref({
+      service: cfg.service || "aquatic",
+      slotId: cfg.slotId,
+      intent: "term",
+    });
+    return (
+      '<a class="pp-hub-shortcut pp-hub-shortcut--book-help" href="' +
+      esc(href) +
+      '" rel="noopener noreferrer" aria-label="' +
+      esc(cfg.aria || cfg.label || "Finish booking") +
+      '">' +
+      '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
+      icoFn(
+        '<circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 1.5"/><path d="M9 16h6"/>',
+      ) +
+      "</span>" +
+      '<span class="pp-hub-shortcut__label">' +
+      esc(cfg.label || "Book help") +
+      "</span></a>"
     );
   }
 
@@ -2362,6 +2456,7 @@
           )
         : "") +
       reenrolQuickAccessBtnHtml(data, ico) +
+      hubBookingHelpQuickAccessBtnHtml(data, ico) +
       bookingPortalQuickAccessBtnHtml(data, ico) +
       summerSocialStoryQuickAccessBtnHtml(data, ico) +
       "</div></section>"
@@ -6571,6 +6666,13 @@
     var p = (data && data.participant) || {};
     var n = String(p.display_name || p.first_name || "Participant").trim();
     return n.split(/\s+/)[0] || n;
+  }
+
+  /** e.g. Mohamed → Mohamed's; James → James' */
+  function firstNamePossessive(data) {
+    var first = firstNameOf(data) || "Participant";
+    if (/s$/i.test(first)) return first + "'";
+    return first + "'s";
   }
 
   function teamMembers(data) {
