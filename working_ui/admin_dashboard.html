@@ -41,7 +41,13 @@
           var d = ev && ev.data;
           if (!d || d.type !== "portal-notification-click") return;
           var open = String(d.portalOpen || "");
-          if (open !== "portal_staff_whatsapp" && open !== "staff_whatsapp") return;
+          if (open !== "portal_staff_whatsapp" && open !== "staff_whatsapp" && open !== "family_messages") return;
+          if (open === "family_messages") {
+            try {
+              if (typeof setView === "function") setView("portal_parent_notify_log");
+            } catch (_fam) {}
+            return;
+          }
           var staff = "";
           try {
             var u = new URL(String(d.url || location.href), location.href);
@@ -118,7 +124,7 @@
   <script src="/portal/admin-hr.js?v=20260722-days-off-history"></script>
   <script src="/portal/policy-signoff-scope.js?v=20260728-home-office"></script>
   <script src="/portal/admin-policy-signoffs.js?v=20260728-home-office"></script>
-  <script src="/portal/admin-payments.js?v=20260905-acat-four"></script>
+  <script src="/portal/admin-payments.js?v=20260905-cyrus-bespoke-90"></script>
   <script src="/portal/admin-commissioning-terms.js?v=20260720-la-terms"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
   <script src="/portal/portal-admin-settings-hub.js?v=20260703-settings-timeout-fix"></script>
@@ -134,7 +140,7 @@
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
   <script src="/portal/portal_wa_thread_refresh.js?v=20260716-wa-audio-guard"></script>
   <script src="/portal/portal_chat_bubble_icons.js?v=20260904-comms-13"></script>
-  <script src="/portal/admin-parent-notify-log.js?v=20260901-tpl-len-row"></script>
+  <script src="/portal/admin-parent-notify-log.js?v=20260905-family-alerts"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260905-composer-fit"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
   <script src="/portal/admin-open-places-2627.js?v=20260817-services-one-board"></script>
@@ -31862,6 +31868,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(document.visibilityState === 'visible') window.portalAdminRefreshFamilyMsgBadge();
         }, 30000);
         setTimeout(function(){ window.portalAdminRefreshFamilyMsgBadge(); }, 1500);
+        if (window.PortalParentNotifyLog && typeof window.PortalParentNotifyLog.bindLiveAlerts === "function") {
+          window.PortalParentNotifyLog.bindLiveAlerts();
+        }
       }
       if(!window.__portalAdminStaffWaBadgeBound){
         window.__portalAdminStaffWaBadgeBound = true;
@@ -32011,6 +32020,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       try{
         var portalOpenParams = new URLSearchParams(String(location.search || ''));
+        if(portalOpenParams.get('portal_open') === 'portal_parent_notify_log' || portalOpenParams.get('portal_open') === 'family_messages'){
+          try{ setView('portal_parent_notify_log'); }catch(_famOpen){}
+        }
         if(portalOpenParams.get('portal_open') === 'portal_staff_whatsapp'){
           try{
             setView('portal_staff_whatsapp');

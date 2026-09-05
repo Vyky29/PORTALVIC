@@ -2027,12 +2027,13 @@
   }
 
   /**
-   * Cyrus package faces aligned to GoCardless INV-P lines (Autumn 26/27).
-   * Day Centre = Bespoke 90' @ £187.50 (what GC collects). Afterschool = Wed Aquatic 60' + Sun Multi.
-   * Monthly GC £1,397.75 ≈ Bespoke £656.25 + Aquatic £350 + Multi £390 + fee £1.50.
+   * Cyrus package faces for Finance stream split (Autumn 26/27).
+   * Day Centre = 90' Bespoke @ £90 (was Thu; now Tue 15:30–17:00).
+   * Afterschool = Wed Aquatic 60' £100 + Sun Multi £120.
+   * One GC mandate still collects the combined package; UI streams are synthetic.
    */
   function cyrusPackageSeasonTotals() {
-    var bespokeRate = 187.5;
+    var bespokeRate = 90;
     var multiRate = 120;
     var aqRate = 100;
     var wd = { autumn: 14, spring: 11, summer: 13, annual: 38 };
@@ -2165,7 +2166,7 @@
       });
       if (part === "thu_bespoke") {
         out.data["Tuesday Bespoke"] = thuNote
-          || "90' Bespoke · Tue 15:30–17:00 · Victor · SwimFarm Hub · £187.50/session (GC line)";
+          || "90' Bespoke · Tue 15:30–17:00 · Victor · SwimFarm Hub · £90/session (was Thursday)";
         out.data["Thursday Bespoke"] = out.data["Tuesday Bespoke"];
       } else {
         delete out.data["Thursday Bespoke"];
@@ -2183,7 +2184,7 @@
           pack.autumn.dc,
           thuSvcLabel,
           "14 / 11 / 13 / 38",
-          "£187.50 / session (GC INV-P) · ~£656.25 of each £1,397.75 monthly",
+          "£90 / session · Tue 15:30–17:00 (was Thursday Bespoke)",
           {
             autumn: pack.autumn.dc,
             spring: pack.spring.dc,
@@ -2197,7 +2198,7 @@
           pack.autumn.as,
           afterSvcLines.join("\n"),
           "weekday 14/11/13 · weekend 13/9/11",
-          "Catalogue Multi £120 · Aquatic 60' £100 · ~£740 of each £1,397.75 monthly (+ £1.50 fee)",
+          "Catalogue Multi £120 · Aquatic 60' £100",
           {
             autumn: pack.autumn.as,
             spring: pack.spring.as,
@@ -2208,13 +2209,13 @@
       ];
     }
 
-    /* Summer 25/26 — keep prior workbook session split, map Bespoke @ invoice rate. */
+    /* Summer 25/26 — workbook session split; Bespoke stays £90/session. */
     var sessParts = String(d.Sessions || "")
       .split("/")
       .map(function (x) { return parseInt(String(x).trim(), 10); })
       .filter(function (n) { return Number.isFinite(n) && n > 0; });
     var thuSessions = sessParts[0] || 13;
-    var thuRate = 187.5;
+    var thuRate = 90;
     var thuAmt = thuSessions * thuRate;
     var total = Number(r.amount) || 0;
     var otherAmt = total > thuAmt ? Math.round((total - thuAmt) * 100) / 100 : 0;
@@ -2227,7 +2228,7 @@
         thuAmt,
         thuSvcLabel,
         String(thuSessions),
-        "£187.50 / session (GC line)",
+        "£90 / session (Bespoke)",
         null
       ),
       clonePart(
@@ -3426,14 +3427,14 @@
 
   function isCyrusBespokeServiceLine(line) {
     var s = String(line || "").toLowerCase();
-    return /bespoke|\bff\b/.test(s) && /\bthu/.test(s);
+    return /bespoke|\bff\b/.test(s) && /\b(?:tue|thu)/.test(s);
   }
 
   /** Cyrus package lines (paid together) — emphasis follows Day Centre vs Afterschool stream. */
   function cyrusPackageServiceLines() {
     return [
       "90' Multi-Activity - 11 am to 12.30 pm - Sunday",
-      "90' Bespoke Programme - 3.30 pm to 5 pm - Thursday",
+      "90' Bespoke Programme - 3.30 pm to 5 pm - Tuesday (was Thursday)",
       "60' Aquatic Activity - 4 pm to 5 pm - Wednesday",
       "Admin Fee (GoCardless)",
     ];
@@ -4533,7 +4534,7 @@
     s = s.replace(/\bCL\b/g, "Climbing Activity");
     s = s.replace(/\bFT\b/g, "Physical Activity");
     s = s.replace(/\bFIT\b/g, "Physical Activity");
-    /* Workbook "90' FF (Thu)" = Thursday Bespoke Programme (£90 friendly). */
+    /* Workbook "90' FF (Thu/Tue)" = Bespoke Programme (£90/session). */
     s = s.replace(/(\d+\s*['′']?\s*)FF\b/gi, "$1Bespoke Programme");
     s = s.replace(/\bBS\b/g, "Bespoke");
     /* "30' Aquatic (Sat)" → "30' Aquatic Activity (Sat)" */
