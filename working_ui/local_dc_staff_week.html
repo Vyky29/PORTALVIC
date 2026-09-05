@@ -7,6 +7,33 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <title>LOCAL · DC staff week compare · v20260905-zaid-trial-pending</title>
+  <script>
+    /* LOCAL preview: kill any portal service worker registered on this origin
+       (admin/staff dashboards register clubsensational-portal-sw on :8765 too). */
+    (function () {
+      try {
+        if (!("serviceWorker" in navigator)) return;
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          (regs || []).forEach(function (r) {
+            try {
+              r.unregister();
+            } catch (_e) {}
+          });
+        });
+      } catch (_e) {}
+      try {
+        if ("caches" in window) {
+          caches.keys().then(function (keys) {
+            (keys || []).forEach(function (k) {
+              try {
+                caches.delete(k);
+              } catch (_e2) {}
+            });
+          });
+        }
+      } catch (_e3) {}
+    })();
+  </script>
   <style>
     :root {
       --ink: #173247;
@@ -271,6 +298,15 @@
     <strong>From Mon 14 Sep</strong> = Emanuel also on Mon/Wed/Fri Tinashe + Sunday MA @ £18 Level 1 SW.
     <strong>Day offs (validated admin):</strong> Sandra Mon 7 (not on this AS/DC board) · Aurora Tue 8 / Sun 13 / Tue 15 / Sun 4 Oct — painted here; live COVER NEEDED stays in Schedule &amp; Covers.
     <strong>Stripe/paid:</strong> finish-booking folds MADRE + schedule_overrides; after editing this file, commit/push + run <code>office-madre-sync-local-board-mon-fri.mjs</code> when standing seats change.
+  </p>
+  <p class="note" id="jumpNote" style="margin-top:8px">
+    Jump:
+    <a href="#day-2026-09-06">Sun 6</a> ·
+    <a href="#day-2026-09-08">Tue 8 (Javier cover)</a> ·
+    <a href="#day-2026-09-10">Thu 10 (Mohamed)</a> ·
+    <a href="#day-2026-09-13">Sun 13 (Luliya + Zaid trial)</a> ·
+    <a href="#day-2026-09-15">Tue 15</a> ·
+    <a href="#day-2026-10-04">Sun 4 Oct</a>
   </p>
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
@@ -1691,6 +1727,7 @@
     var dk = day.dow;
     var dayEl = document.createElement("section");
     dayEl.className = "day";
+    if (day.iso) dayEl.id = "day-" + day.iso;
     var hint = day.hint ? " · " + day.hint : "";
     dayEl.innerHTML =
       "<h2>" +
