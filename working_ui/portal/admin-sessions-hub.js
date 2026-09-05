@@ -3919,13 +3919,13 @@
   }
 
   /**
-   * Trial swim (e.g. Zaid+Javier): show Aquatic 9–9.30 and Multi 9.30–10.15 as two rows;
-   * one feedback_merge_group still validates both.
-   * Term swim (e.g. Yusuf+Roberto): AA omitted — one Multi row stretched 9–10.15.
+   * Yusuf / Zaid / Cyrus swim merges: one overview row covering Aquatic + Multi
+   * (e.g. Zaid trial 9–9.30 folds into Multi display 9–10.15). One feedback still
+   * validates both bands via sundayFeedbackMerges.
    */
   function expandOverviewSlotsForSwimMergeUnit(hub, unit) {
     var slots = unit && unit.slots ? unit.slots : [];
-    if (slots.length < 2) return null;
+    if (!slots.length) return null;
     var mergeId = "";
     var uk = clean(unit && unit.key);
     if (uk.indexOf("|merge|") >= 0) mergeId = uk.split("|merge|").pop() || "";
@@ -3943,9 +3943,9 @@
     ) {
       return null;
     }
-    var visible = [];
     var omittedAquatic = null;
     var multiPool = null;
+    var visible = [];
     for (var si = 0; si < slots.length; si++) {
       var s = slots[si];
       if (shouldOmitOverviewSlot(hub, s)) {
@@ -3956,46 +3956,44 @@
       if (isMultiActivityService(s.service) && isSwimInstructorPoolAreaKind(slotAreaKind(s))) {
         multiPool = s;
       }
+      if (isAquaticService(s.service) && !omittedAquatic) omittedAquatic = s;
     }
-    if (visible.length >= 2) {
-      /* Trial / split: keep every visible band (AA + Multi). */
-      visible.sort(function (a, b) {
-        return (a.time_start || "").localeCompare(b.time_start || "");
-      });
-      return visible;
-    }
-    if (visible.length === 1 && multiPool && visible[0] === multiPool) {
-      /*
-       * Term UX (Yusuf / Cyrus): AA omitted in overview — one Multi row covering AA+MA.
-       * Prefer omitted sibling times; else sundayFeedbackMerges rule start.
-       */
-      var aqStart = omittedAquatic ? clean(omittedAquatic.time_start) : "";
-      if (!aqStart) {
-        var rules = feedbackMergeRules();
-        for (var ri = 0; ri < rules.length; ri++) {
-          if (clean(rules[ri].mergeKey) !== mergeId) continue;
-          var rslots = rules[ri].slots || [];
-          for (var rj = 0; rj < rslots.length; rj++) {
-            if (!isAquaticService(rslots[rj].service)) continue;
-            var ptAq = parseTimeSlot(rslots[rj].time_slot, multiPool.day);
-            aqStart = (ptAq && ptAq.start) || "";
-            break;
-          }
+    if (!multiPool) {
+      for (var mj = 0; mj < slots.length; mj++) {
+        if (
+          isMultiActivityService(slots[mj].service) &&
+          isSwimInstructorPoolAreaKind(slotAreaKind(slots[mj]))
+        ) {
+          multiPool = slots[mj];
           break;
         }
       }
-      if (!aqStart) return null;
-      var maEnd = clean(multiPool.time_end) || "10:15";
-      if (clean(multiPool.time_start) === aqStart) return null;
-      var merged = Object.assign({}, multiPool);
-      merged.time_start = aqStart;
-      merged.time_end = maEnd;
-      merged.time_slot =
-        rosterTimeSlotLabelFromBounds(aqStart, maEnd, multiPool.day) ||
-        clean(multiPool.time_slot);
-      return [merged];
     }
-    return null;
+    if (!multiPool) return null;
+    var aqStart = "";
+    if (omittedAquatic) aqStart = clean(omittedAquatic.time_start);
+    if (!aqStart) {
+      var rules = feedbackMergeRules();
+      for (var ri = 0; ri < rules.length; ri++) {
+        if (clean(rules[ri].mergeKey) !== mergeId) continue;
+        var rslots = rules[ri].slots || [];
+        for (var rj = 0; rj < rslots.length; rj++) {
+          if (!isAquaticService(rslots[rj].service)) continue;
+          var ptAq = parseTimeSlot(rslots[rj].time_slot, multiPool.day);
+          aqStart = (ptAq && ptAq.start) || "";
+          break;
+        }
+        break;
+      }
+    }
+    if (!aqStart) aqStart = "09:00";
+    var maEnd = clean(multiPool.time_end) || "10:15";
+    var merged = Object.assign({}, multiPool);
+    merged.time_start = aqStart;
+    merged.time_end = maEnd;
+    merged.time_slot =
+      rosterTimeSlotLabelFromBounds(aqStart, maEnd, multiPool.day) || "9 to 10.15";
+    return [merged];
   }
 
   /** Prefer a visible roster row when merge groups hide duplicate aquatic blocks (e.g. Yusuf + Roberto). */

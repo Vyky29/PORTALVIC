@@ -337,6 +337,12 @@
       "client_slug": "yusuf_ah",
       "time_slot": "9 to 9.30",
       "service": "Aquatic Activity"
+    },
+    {
+      "weekday": "Sunday",
+      "client_slug": "zaid",
+      "time_slot": "9 to 9.30",
+      "service": "Aquatic Activity"
     }
   ],
   "rows": [
