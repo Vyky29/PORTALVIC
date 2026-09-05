@@ -791,15 +791,15 @@
         s = s.replace(/\bEMANUEL\b/gi, "RAUL");
       }
     }
-    /* Tue 8 + 15 Sep: Aurora day off → Javier covers her Acton Aquatic book. */
+    /* Tue 8 + 15 Sep: Aurora day off → Javi Palankas covers her Acton Aquatic book
+     * (not Javier the swim instructor — he keeps Ayman / Linda / Rayan Ta). */
     if (
       (iso === "2026-09-08" || iso === "2026-09-15") &&
       day === "tuesday" &&
       isAquaticService(service)
     ) {
-      /* Callers may omit venue; standing Tue Aurora aquatic is Acton-only. */
       if (!meta.venue || isActonVenue(meta.venue)) {
-        s = s.replace(/\bAURORA\b/gi, "JAVIER");
+        s = s.replace(/\bAURORA\b/gi, "JAVI");
       }
     }
     /* Sun 13 Sep + 4 Oct: Aurora day off → Luliya covers her SwimFarm pool book. */
