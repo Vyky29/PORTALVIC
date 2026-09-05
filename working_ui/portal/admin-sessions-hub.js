@@ -5884,17 +5884,56 @@
     for (var i = 0; i < displaySlots.length; i++) addInstructorsFromSlot(displaySlots[i]);
     for (var k = 0; k < visible.length; k++) addInstructorsFromSlot(visible[k]);
 
+    var paxMap = {};
+    for (var pi = 0; pi < displaySlots.length; pi++) {
+      var pn = clean(displaySlots[pi].client_name);
+      if (pn && !isOpenRosterSlot(pn) && rosterSlotKind(pn) !== "closed") paxMap[pn] = true;
+    }
+    for (var pj = 0; pj < visible.length; pj++) {
+      var pn2 = clean(visible[pj].client_name);
+      if (pn2 && !isOpenRosterSlot(pn2) && rosterSlotKind(pn2) !== "closed") paxMap[pn2] = true;
+    }
+
     return {
       instructors: uniqueInstructorFilterNames(instRaw),
       services: Object.keys(svcMap).sort(function (a, b) {
         return a.localeCompare(b, "en", { sensitivity: "base" });
       }),
+      participants: Object.keys(paxMap).sort(function (a, b) {
+        return a.localeCompare(b, "en", { sensitivity: "base" });
+      }),
     };
   };
 
+  function clientNameMatchesFilter(clientName, filterRaw) {
+    var q = clean(filterRaw);
+    if (!q) return true;
+    var cn = clean(clientName);
+    if (!cn) return false;
+    return cn.toLowerCase() === q.toLowerCase();
+  }
+
+  AdminSessionsHub.prototype.clientFilterOptionsForDay = function (dayIso) {
+    var hub = this;
+    var seen = {};
+    var roster = (hub.overviewFilterOptionsForDay(dayIso) || {}).participants || [];
+    for (var ri = 0; ri < roster.length; ri++) {
+      if (roster[ri]) seen[roster[ri]] = true;
+    }
+    if (hub.tab === "feedback" || hub.mode === "feedback") {
+      var rows = hub.feedbackLogRowsForDay(dayIso);
+      for (var i = 0; i < rows.length; i++) {
+        var n = clean(rows[i].client_name);
+        if (n) seen[n] = true;
+      }
+    }
+    return Object.keys(seen).sort(function (a, b) {
+      return a.localeCompare(b, "en", { sensitivity: "base" });
+    });
+  };
+
   AdminSessionsHub.prototype.slotPassesOverviewFilters = function (slot) {
-    var q = clean(this.clientSearch).toLowerCase();
-    if (q && slot.client_name.toLowerCase().indexOf(q) === -1) return false;
+    if (!clientNameMatchesFilter(slot.client_name, this.clientSearch)) return false;
     var inst = clean(this.instructorFilter);
     if (inst) {
       var labels = slotInstructors(slot);
@@ -5917,9 +5956,14 @@
     var opts = this.overviewFilterOptionsForDay(this.selectedDay);
     return (
       '<div class="ash-filter-row ash-filter-row--feedback">' +
-      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
-      esc(this.clientSearch) +
-      '"></label>' +
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashClientFilter",
+        label: "Participant",
+        value: this.clientSearch,
+        options: opts.participants || [],
+        placeholder: "All participants",
+      }) +
       buildAshFilterComboHtml({
         esc: esc,
         id: "ashInstructorFilter",
@@ -5944,9 +5988,15 @@
     var esc = this.escapeHtml;
     return (
       '<div class="ash-filter-row">' +
-      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
-      esc(this.clientSearch) +
-      '"></label></div>'
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashClientFilter",
+        label: "Participant",
+        value: this.clientSearch,
+        options: this.clientFilterOptionsForDay(this.selectedDay),
+        placeholder: "All participants",
+      }) +
+      "</div>"
     );
   };
 
@@ -5954,9 +6004,14 @@
     var esc = this.escapeHtml;
     return (
       '<div class="ash-filter-row ash-filter-row--feedback">' +
-      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
-      esc(this.clientSearch) +
-      '"></label>' +
+      buildAshFilterComboHtml({
+        esc: esc,
+        id: "ashClientFilter",
+        label: "Participant",
+        value: this.clientSearch,
+        options: this.clientFilterOptionsForDay(this.selectedDay),
+        placeholder: "All participants",
+      }) +
       buildAshFilterComboHtml({
         esc: esc,
         id: "ashInstructorFilter",
@@ -5990,7 +6045,7 @@
   AdminSessionsHub.prototype.feedbackInRange = function () {
     var from = this.rangeFrom;
     var to = this.rangeTo;
-    var q = clean(this.clientSearch).toLowerCase();
+    var q = clean(this.clientSearch);
     var hub = this;
     return (this.payload.session_feedback || []).filter(function (fb) {
       if (hub.isFeedbackAbsent(fb)) return false;
@@ -6001,7 +6056,7 @@
       var d = hub.feedbackRowDate(fb);
       if (!d) return true;
       if (d < from || d > to) return false;
-      if (q && clean(fb.client_name).toLowerCase().indexOf(q) === -1) return false;
+      if (!clientNameMatchesFilter(fb.client_name, q)) return false;
       if (hub.feedbackNoteFilter === "positive" && !clean(fb.positive_feedback)) return false;
       if (hub.feedbackNoteFilter === "relevant" && !clean(fb.relevant_information)) return false;
       return true;
@@ -6290,12 +6345,12 @@
     var hub = this;
     var day = clean(iso);
     if (!day) return [];
-    var q = clean(this.clientSearch).toLowerCase();
+    var q = clean(this.clientSearch);
     return (this.payload.session_feedback || [])
       .filter(function (fb) {
         if (hub.feedbackRowDate(fb) !== day) return false;
         if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) return false;
-        if (q && clean(fb.client_name).toLowerCase().indexOf(q) === -1) return false;
+        if (!clientNameMatchesFilter(fb.client_name, q)) return false;
         if (kind === "positive") return !!clean(fb.positive_feedback);
         if (kind === "relevant")
           return !!clean(fb.relevant_information) && feedbackNoteDateAllowed(hub, fb);
@@ -7052,12 +7107,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
       }
     }
-    var q = clean(this.clientSearch).toLowerCase();
+    var q = clean(this.clientSearch);
     var inst = clean(this.instructorFilter);
     if (!q && !inst && !this.feedbackNoteFilter) return rows;
     return rows.filter(function (fb) {
       var clientName = fb._ashAwaitingSlot && fb.slot ? fb.slot.client_name : fb.client_name;
-      if (q && clean(clientName).toLowerCase().indexOf(q) === -1) return false;
+      if (!clientNameMatchesFilter(clientName, q)) return false;
       if (inst && !submittedFeedbackMatchesInstructorFilter(hub, fb, inst)) {
         return false;
       }
@@ -7855,8 +7910,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     this.root.addEventListener("change", function (ev) {
       var t = ev.target;
       if (!t) return;
-      if (t.id === "ashClientSearch") {
-        hub.clientSearch = t.value;
+      if (t.id === "ashClientFilter") {
+        hub.clientSearch = t.value || "";
         hub.refreshClientFilterView();
         return;
       }
@@ -7873,12 +7928,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (t.id === "ashRangeFrom") hub.rangeFrom = t.value || hub.rangeFrom;
       if (t.id === "ashRangeTo") hub.rangeTo = t.value || hub.rangeTo;
       if (t.id === "ashScheduleDate") hub.scheduleDate = t.value || hub.scheduleDate;
-    });
-    this.root.addEventListener("input", function (ev) {
-      if (ev.target && ev.target.id === "ashClientSearch") {
-        hub.clientSearch = ev.target.value;
-        hub.refreshClientFilterView();
-      }
     });
     this.root.addEventListener("keydown", function (ev) {
       if (ev.key !== "Enter" && ev.key !== " ") return;
@@ -7930,8 +7979,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.bindAshFilterCombos = function () {
     var hub = this;
     var comboApi = global.PortalAdminSearchCombo;
-    ["ashInstructorFilter", "ashServiceFilter"].forEach(function (baseId) {
+    ["ashClientFilter", "ashInstructorFilter", "ashServiceFilter"].forEach(function (baseId) {
       function optionsForCombo() {
+        if (baseId === "ashClientFilter") {
+          return hub.clientFilterOptionsForDay(hub.selectedDay);
+        }
         if (baseId === "ashInstructorFilter") {
           if (hub.tab === "feedback" || hub.mode === "feedback") {
             return hub.instructorFilterOptionsForDay(hub.selectedDay);
@@ -7941,20 +7993,38 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         return (hub.overviewFilterOptionsForDay(hub.selectedDay) || {}).services || [];
       }
 
+      function allLabelForCombo() {
+        if (baseId === "ashClientFilter") return "All participants";
+        if (baseId === "ashInstructorFilter") return "All instructors";
+        return "All services";
+      }
+
+      function setFilterValue(val) {
+        var next = val || "";
+        if (baseId === "ashClientFilter") hub.clientSearch = next;
+        else if (baseId === "ashInstructorFilter") hub.instructorFilter = next;
+        else hub.serviceFilter = next;
+      }
+
+      function currentFilterValue() {
+        if (baseId === "ashClientFilter") return hub.clientSearch;
+        if (baseId === "ashInstructorFilter") return hub.instructorFilter;
+        return hub.serviceFilter;
+      }
+
       if (comboApi) {
         comboApi.ensure({
           id: baseId,
-          placeholder: baseId === "ashInstructorFilter" ? "All instructors" : "All services",
-          allLabel: baseId === "ashInstructorFilter" ? "All instructors" : "All services",
+          placeholder: allLabelForCombo(),
+          allLabel: allLabelForCombo(),
           maxVisible: 24,
           onChange: function (val) {
-            if (baseId === "ashInstructorFilter") hub.instructorFilter = val || "";
-            else hub.serviceFilter = val || "";
+            setFilterValue(val);
             hub.refreshClientFilterView();
           },
         });
         comboApi.setOptions(baseId, optionsForCombo(), { keepValue: true });
-        var cur = baseId === "ashInstructorFilter" ? hub.instructorFilter : hub.serviceFilter;
+        var cur = currentFilterValue();
         if (cur) comboApi.setValue(baseId, cur, cur);
         return;
       }
@@ -7980,14 +8050,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var clearBtn = document.createElement("button");
         clearBtn.type = "button";
         clearBtn.className = "ash-filter-suggest__btn ash-filter-suggest__btn--all";
-        clearBtn.textContent = baseId === "ashInstructorFilter" ? "All instructors" : "All services";
+        clearBtn.textContent = allLabelForCombo();
         clearBtn.addEventListener("mousedown", function (ev) {
           ev.preventDefault();
           hid.value = "";
           inp.value = "";
           sug.hidden = true;
-          if (baseId === "ashInstructorFilter") hub.instructorFilter = "";
-          else hub.serviceFilter = "";
+          setFilterValue("");
           hub.refreshClientFilterView();
         });
         sug.appendChild(clearBtn);
@@ -8001,8 +8070,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             hid.value = label;
             inp.value = label;
             sug.hidden = true;
-            if (baseId === "ashInstructorFilter") hub.instructorFilter = label;
-            else hub.serviceFilter = label;
+            setFilterValue(label);
             hub.refreshClientFilterView();
           });
           sug.appendChild(btn);
@@ -8018,8 +8086,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
       inp.addEventListener("input", function () {
         hid.value = "";
-        if (baseId === "ashInstructorFilter") hub.instructorFilter = "";
-        else hub.serviceFilter = "";
+        setFilterValue("");
         renderSuggest(inp.value);
       });
       inp.addEventListener("focus", function () {
@@ -9075,9 +9142,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var hub = this;
     var weekStart = week.weekStart;
     var weekEnd = addDaysIso(weekStart, 6);
-    var q = hub.clientSearch.toLowerCase();
+    var q = hub.clientSearch;
     var items = week.items.filter(function (fb) {
-      if (q && clean(fb.client_name).toLowerCase().indexOf(q) === -1) return false;
+      if (!clientNameMatchesFilter(fb.client_name, q)) return false;
       return true;
     });
     var cards = [];
