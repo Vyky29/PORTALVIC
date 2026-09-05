@@ -6,17 +6,17 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260905-former-aug15";
+  var VER = "20260905-jack-zaid-hub";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260903-tue-acat-ikram",
     "/portal/term_calendar_dashboard_shared.js?v=20260903-tue-acat-ikram",
-    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260905-former-aug15",
+    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260905-jack-zaid-hub",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-rota-cards-safe",
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp",
-      "/portal/portal_roster_canonical.js?v=20260905-former-aug15",
+      "/portal/portal_roster_canonical.js?v=20260905-jack-zaid-hub",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",

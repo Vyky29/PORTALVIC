@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 58;
+  var SOURCE_VERSION = 59;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -965,6 +965,34 @@
     return null;
   }
 
+  /**
+   * Autumn Sunday Hub Multi for Jack S + Zaid (LOCAL):
+   * Jack S Hub 9.30 then pool 10.15; Zaid pool 9.30 then Hub 10.15.
+   * Summer snap had them reversed on Hub (Jack S 10.15 + Zaid 9.30) so both
+   * overlapped their Javier pool half with the same clock.
+   */
+  function enforceAutumnSundayJackSZaidHubBook(row) {
+    if (!row || !isMultiActivityService(row.service)) return null;
+    if (normalizeDowKey(row.day) !== "sunday") return null;
+    if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return null;
+    if (!/hub/i.test(String(row.area || ""))) return null;
+    /* Dated Sep 6 Hub cover owns that day — do not rewrite those rows. */
+    if (normIso(row.session_date) === "2026-09-06") return null;
+    var cn = String(row.client_name || "").trim();
+    var slot = normSundayMultiTimeSlot(row.time_slot);
+    if (/^jack\s*s\b/i.test(cn)) {
+      if (slot === "10.15 to 11" || slot.indexOf("10.15 to 11") === 0) {
+        return { time_slot: "9.30 to 10.15" };
+      }
+    }
+    if (/^zaid\b/i.test(cn)) {
+      if (slot === "9.30 to 10.15" || slot.indexOf("9.30 to 10.15") === 0) {
+        return { time_slot: "10.15 to 11" };
+      }
+    }
+    return null;
+  }
+
   /** Standing-template Aquatic 9–9.30 so Zaid+Javier sundayFeedbackMerges can resolve. */
   function autumnSundayZaidJavierAquaticStandingRows() {
     return [
@@ -1387,6 +1415,18 @@
       var javierPoolPatch = enforceAutumnSundayJavierPoolBook(r);
       if (javierPoolPatch) {
         out.push(Object.assign({}, r, javierPoolPatch));
+        return;
+      }
+      var hubJackZaidPatch = enforceAutumnSundayJackSZaidHubBook(r);
+      if (hubJackZaidPatch) {
+        var hubPatched = Object.assign({}, r, hubJackZaidPatch);
+        if (isMultiActivityService(hubPatched.service) && normIso(hubPatched.session_date) !== "2026-09-06") {
+          var mappedHub = remapAutumnMultiInstructorsStanding(hubPatched.instructors);
+          if (mappedHub !== String(hubPatched.instructors || "").trim()) {
+            hubPatched.instructors = mappedHub;
+          }
+        }
+        out.push(hubPatched);
         return;
       }
       /* Standing Tue/Wed often omit Youssef 4–4.30 — treat CLOSED / NO CLIENT as open too. */
