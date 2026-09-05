@@ -1909,13 +1909,13 @@
     return (
       '<a class="pp-hub-shortcut pp-hub-shortcut--book-portal" href="' +
       esc(bookingPortalHref({ intent: "trial" })) +
-      '" rel="noopener noreferrer" aria-label="Book a trial session">' +
+      '" rel="noopener noreferrer" aria-label="Booking page">' +
       '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
       icoFn(
         '<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8l4 4-4 4"/>',
       ) +
       "</span>" +
-      '<span class="pp-hub-shortcut__label">Book a trial</span></a>'
+      '<span class="pp-hub-shortcut__label">Booking page</span></a>'
     );
   }
 
