@@ -576,4 +576,37 @@
   };
 
   global.portalFamilySetHomeBadge = familyPaintHomeBadge;
+
+  function isOfficeAlertPreview() {
+    try {
+      return new URLSearchParams(global.location.search || "").get("previewFamilyAlerts") === "1";
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function mountOfficeAlertPreview() {
+    if (!isOfficeAlertPreview()) return;
+    injectStyles();
+    var legend = document.createElement("div");
+    legend.className = "family-push-alerts family-push-alerts--warn";
+    legend.setAttribute("role", "status");
+    legend.innerHTML =
+      "<p><strong>Office preview.</strong> This is the in-app parent alert (aviso interno). " +
+      "The lock-screen banner only appears when Family is closed. Full storyboard: " +
+      '<a href="/parent_family_alerts_preview.html">parent_family_alerts_preview.html</a></p>';
+    var page = document.querySelector(".pp-page") || document.body;
+    if (page && page.firstChild) page.insertBefore(legend, page.firstChild);
+    else page.appendChild(legend);
+    showFamilyToast(
+      "New message - Jack",
+      "Hello Sarah, Jack's Saturday session is confirmed. Open Family for details.",
+    );
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", mountOfficeAlertPreview, { once: true });
+  } else {
+    mountOfficeAlertPreview();
+  }
 })(typeof window !== "undefined" ? window : globalThis);
