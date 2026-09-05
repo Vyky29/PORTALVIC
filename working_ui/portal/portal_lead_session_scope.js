@@ -218,7 +218,7 @@ export const PORTAL_LEAD_SUMMER_TERM_START = "2026-04-13";
 
 /** Club closed (no sessions) — show on lead week picker in red. */
 const PORTAL_LEAD_CLOSED_RANGES = [{ from: "2026-05-23", to: "2026-05-31" }];
-const PORTAL_LEAD_CLOSED_SINGLE_DATES = ["2026-05-04"];
+const PORTAL_LEAD_CLOSED_SINGLE_DATES = ["2026-05-04", "2026-09-03"];
 
 export function portalLeadOnOrAfterSummerTerm(iso) {
   const d = String(iso || "")

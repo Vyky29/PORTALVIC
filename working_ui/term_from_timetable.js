@@ -47,6 +47,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termFeedbackReminderFromIso": "2026-09-01",
   "termClosedDates": [
     "2026-08-31",
+    "2026-09-03",
     "2026-12-18",
     "2026-12-19",
     "2026-12-20",

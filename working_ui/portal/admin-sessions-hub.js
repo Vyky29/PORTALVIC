@@ -924,6 +924,36 @@
     return best;
   }
 
+  /** True when this client has a dated roster row in-week for the same feedback family
+   *  (and for Multi, same hub/pool area). Dated Hub must not hide standing Pool / Climbing. */
+  function clientHasDatedRosterInWeekSameFamily(rosterRows, standingRow, isoDate) {
+    var cid = canonicalClientSlug(standingRow && standingRow.client_name);
+    if (!cid || !rosterRows || !rosterRows.length) return false;
+    var ws = mondayOfWeek(isoDate);
+    var we = addDaysIso(ws, 6);
+    var standSvc = clean(standingRow && standingRow.service);
+    var standMulti = isMultiActivityService(standSvc);
+    var standArea = standMulti ? slotAreaKind(standingRow) : "";
+    for (var i = 0; i < rosterRows.length; i++) {
+      var o = rosterRows[i];
+      var sd = rosterRowSessionDate(o);
+      if (!sd || sd < ws || sd > we) continue;
+      if (canonicalClientSlug(o.client_name) !== cid) continue;
+      var oSvc = clean(o.service);
+      if (!standSvc || !oSvc) continue;
+      if (isMultiActivityService(standSvc) && isMultiActivityService(oSvc)) {
+        if (standArea && slotAreaKind(o) && standArea !== slotAreaKind(o)) continue;
+        return true;
+      }
+      if (isClimbingService(standSvc) && isClimbingService(oSvc)) return true;
+      if (isAquaticService(standSvc) && isAquaticService(oSvc)) return true;
+      if (isDayCentreService(standSvc) && isDayCentreService(oSvc)) return true;
+      if (isBespokeService(standSvc) && isBespokeService(oSvc)) return true;
+      if (serviceKey(standSvc) === serviceKey(oSvc)) return true;
+    }
+    return false;
+  }
+
   /**
    * Dated week rows on their calendar day; autumn also projects summer standing onto the
    * calendar date and merges sparse portal_roster_rows overlays (new bookings). Undated
@@ -952,8 +982,8 @@
         if (week1Dc && /day\s*centre/i.test(String((r && r.service) || ""))) return false;
         /*
          * Sun 6 Sep Hub Multi is fully owned by scrubAndEnsureSep6HubCover (John + Berta books).
-         * Do not also project summer standing Hub Multi (JOHN→BERTA remap) onto that day —
-         * that duplicated kids like Zaid / Jack S under both instructors.
+         * Do not also project summer standing Hub Multi onto that day.
+         * Pool Multi + Climbing standing must still project (MA = two feedbacks per 90').
          */
         if (
           isoDate === "2026-09-06" &&
@@ -963,7 +993,7 @@
         ) {
           return false;
         }
-        if (clientHasDatedRosterInWeek(rosterRows, r.client_name, isoDate)) return false;
+        if (clientHasDatedRosterInWeekSameFamily(rosterRows, r, isoDate)) return false;
         return true;
       }
       return false;
@@ -971,12 +1001,14 @@
     var cid = canonicalClientSlug(r.client_name);
     if (!cid) return true;
     if (week1Dc && /day\s*centre/i.test(String((r && r.service) || ""))) return false;
-    if (clientHasDatedRosterInWeek(rosterRows, r.client_name, isoDate)) return false;
+    if (clientHasDatedRosterInWeekSameFamily(rosterRows, r, isoDate)) return false;
     for (var i = 0; i < rosterRows.length; i++) {
       var o = rosterRows[i];
       if (rosterRowSessionDate(o) !== isoDate) continue;
       if (clean(o.day) !== wd) continue;
-      if (canonicalClientSlug(o.client_name) === cid) return false;
+      if (canonicalClientSlug(o.client_name) !== cid) continue;
+      /* Same client dated today — only suppress undated row when same feedback family/area. */
+      if (clientHasDatedRosterInWeekSameFamily([o], r, isoDate)) return false;
     }
     return true;
   }
@@ -3773,13 +3805,18 @@
     return merged;
   }
 
+  /** Same feedback unit must not appear twice; Multi hub vs pool stay separate. */
   function overviewSlotDedupeKey(slot) {
+    var uk = clean(slot && (slot.feedback_unit_key || feedbackUnitKey(slot)));
+    if (uk) return uk;
     var cid = canonicalClientSlug(slot && slot.client_name);
     var day = clean(slot && slot.session_date);
     if (!cid || !day) return "";
     var wd = slot.day || weekdayLongFromIso(day);
     var t = slot.time_start || normTimeKey(slot.time_slot, wd);
-    return t ? day + "|" + cid + "|" + t : "";
+    var area = sessionAreaKey(slot && slot.area);
+    var inst = primaryInstructorKey(slot);
+    return t ? day + "|" + cid + "|" + t + "|" + area + "|" + inst : "";
   }
 
   function overviewSlotRichnessScore(slot) {
@@ -5372,8 +5409,11 @@
         if (canonicalClientSlug(fbt.client_name) !== clientSlug) continue;
         if (isAbsentFeedbackRow(fbt)) continue;
         if (!feedbackFromSundayHubTeamWorker(fbt, teamKey)) continue;
+        /* Hub half only — pool Multi is a separate feedback unit (90' MA = 2 feedbacks). */
         var fk = feedbackAreaKindFromFb(fbt);
-        if (fk === "hub" || fk === "pool" || isMultiActivityService(fbt.service)) return true;
+        if (fk === "hub") return true;
+        if (fk === "pool" || fk === "aquatic" || fk === "climb") continue;
+        if (isMultiActivityService(fbt.service) && !fk) return true;
       }
       return false;
     }
@@ -8258,7 +8298,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       })
       .join("");
     return (
-      '<details class="ash-missing-fb" open>' +
+      '<details class="ash-missing-fb">' +
       '<summary class="ash-missing-fb__summary">' +
       "<strong>" +
       esc(String(report.missing.length)) +
@@ -9004,7 +9044,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '">' +
           '<div class="ash-day-card__top">' +
           htmlWeekdayLabel(iso, esc) +
-          '</div>' +
+          '<span class="ash-day-card__dt">' +
+          esc(formatShortDate(iso)) +
+          '</span></div>' +
           '<div class="ash-day-card__bar" style="--ash-pct:' +
           innerPct +
           ";--ash-col:" +
