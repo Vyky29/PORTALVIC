@@ -152,23 +152,30 @@
       ".topbar-tool-cell--staff-wa,.topbar-tools-grid{overflow:visible!important;contain:none!important}" +
       "#btnComunicaciones,.admin-icon-btn--chat,#topbarStaffWaBtn,[data-comms-unread-host]," +
       "#topbarStaffWaBtn.topbar-tool-btn{position:relative!important;isolation:isolate!important;overflow:visible!important}" +
+      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa{display:inline-flex!important;flex-direction:row!important;" +
+      "align-items:center!important;justify-content:center!important;grid-template-rows:none!important;overflow:visible!important}" +
       "#commsBadge.is-empty,.topbar-staff-wa-btn__badge.is-empty,.portal-comms-corner-badge.is-empty{display:none!important}" +
       "#btnComunicaciones.admin-icon-btn--has-alerts,#btnComunicaciones.portal-comms-has-unread{" +
       "border-color:#dc2626!important;background:#fff5f5!important;" +
       "box-shadow:0 0 0 2px rgba(220,38,38,.55)!important;animation:portalCommsBtnPulse 1.1s ease infinite}" +
       "@keyframes portalCommsBtnPulse{0%,100%{box-shadow:0 0 0 2px rgba(220,38,38,.45)}50%{box-shadow:0 0 0 6px rgba(220,38,38,.2)}}" +
-      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
-      "#topbarToolsGridRight .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread," +
-      "#topbarToolCellStaffWa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread{" +
+      /* 3 IDs so this beats the gold flank pill (`#grid > #cell > .btn`). */
+      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
+      "#topbarToolsGridRight > .topbar-tool-cell--staff-wa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread{" +
       "background:#dc2626!important;border-color:#991b1b!important;color:#fff!important;" +
       "box-shadow:0 0 0 2px rgba(220,38,38,.35),0 2px 8px rgba(220,38,38,.35)!important}" +
-      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label," +
-      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-staff-wa-btn__label," +
-      "#topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-label{color:#fff!important}" +
-      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico," +
-      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg," +
-      "#topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico," +
-      "#topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{color:#fff!important}";
+      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label," +
+      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-staff-wa-btn__label{color:#fff!important}" +
+      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico," +
+      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{color:#fff!important}" +
+      /* Number sits in the gold/red chip (flex item), not an absolute corner that parents clip. */
+      "#topbarStaffWaBtn .topbar-staff-wa-btn__badge:not(.is-empty)," +
+      "#topbarStaffWaBtn [data-comms-unread]:not(.is-empty){" +
+      "position:static!important;display:inline-flex!important;align-items:center;justify-content:center;" +
+      "flex:0 0 auto!important;min-width:18px!important;height:18px!important;margin:0 0 0 4px!important;" +
+      "padding:0 5px!important;border-radius:999px!important;background:#dc2626!important;color:#fff!important;" +
+      "font-size:11px!important;font-weight:800!important;line-height:18px!important;opacity:1!important;" +
+      "visibility:visible!important;z-index:2!important;text-decoration:none!important}";
     (document.head || document.documentElement).appendChild(st);
   }
 
@@ -182,17 +189,39 @@
     "box-shadow:0 0 0 2px #fff,0 1px 4px rgba(0,0,0,.28)!important;" +
     "pointer-events:none!important;opacity:1!important;visibility:visible!important;" +
     "flex:0 0 auto!important;transform:none!important";
+  var STAFF_BADGE_ON =
+    "display:inline-flex!important;align-items:center;justify-content:center;" +
+    "position:static!important;top:auto!important;right:auto!important;left:auto!important;bottom:auto!important;" +
+    "z-index:2!important;min-width:18px!important;height:18px!important;width:auto!important;" +
+    "padding:0 5px!important;margin:0 0 0 4px!important;border:0!important;border-radius:999px!important;" +
+    "background:#dc2626!important;color:#fff!important;font-size:11px!important;font-weight:800!important;" +
+    "line-height:18px!important;letter-spacing:0!important;text-align:center!important;" +
+    "box-shadow:0 0 0 1px rgba(255,255,255,.9)!important;" +
+    "pointer-events:none!important;opacity:1!important;visibility:visible!important;" +
+    "flex:0 0 auto!important;transform:none!important;text-decoration:none!important";
   var CORNER_BADGE_OFF = "display:none!important";
+
+  function isStaffCommsHost(host) {
+    if (!host) return false;
+    return host.id === "topbarStaffWaBtn" || host.classList.contains("topbar-tool-btn--staff-wa");
+  }
 
   function paintCornerBadge(host, count) {
     if (!host) return;
+    var staffHost = isStaffCommsHost(host);
     try {
       host.style.setProperty("overflow", "visible", "important");
       host.style.setProperty("position", "relative", "important");
-      host.style.setProperty("isolation", "isolate", "important");
+      if (staffHost) {
+        host.style.setProperty("display", "inline-flex", "important");
+        host.style.setProperty("flex-direction", "row", "important");
+        host.style.setProperty("align-items", "center", "important");
+      }
       var p = host.parentElement;
       var n = 0;
-      while (p && n < 5) {
+      while (p && n < 3) {
+        if (p === document.body || p === document.documentElement) break;
+        if (p.classList && p.classList.contains("app")) break;
         p.style.setProperty("overflow", "visible", "important");
         p = p.parentElement;
         n += 1;
@@ -216,7 +245,7 @@
     if (count > 0) {
       badge.classList.remove("is-empty");
       badge.textContent = unreadLabel(count);
-      badge.style.cssText = CORNER_BADGE_ON;
+      badge.style.cssText = staffHost ? STAFF_BADGE_ON : CORNER_BADGE_ON;
       badge.setAttribute("aria-hidden", "false");
     } else {
       badge.classList.add("is-empty");
@@ -241,14 +270,16 @@
     paintDataUnreadNodes(lastUnreadCount);
     var btn = document.getElementById("topbarStaffWaBtn");
     if (btn) {
-      var inGrid = btn.classList.contains("topbar-tool-btn--staff-wa");
-      btn.classList.toggle("topbar-staff-wa-btn--unread", !inGrid && lastUnreadCount > 0);
-      btn.classList.toggle("topbar-tool-btn--staff-wa-unread", inGrid && lastUnreadCount > 0);
+      btn.classList.toggle("topbar-staff-wa-btn--unread", lastUnreadCount > 0);
+      btn.classList.toggle("topbar-tool-btn--staff-wa-unread", lastUnreadCount > 0);
       paintCornerBadge(btn, lastUnreadCount);
       var lab = lastUnreadCount > 0 ? "Communications (" + lastUnreadCount + ")" : "Communications";
       btn.setAttribute("aria-label", lab);
       var labelEl = btn.querySelector(".topbar-staff-wa-btn__label, .topbar-tool-label");
-      if (labelEl) labelEl.textContent = "COMMS";
+      if (labelEl) {
+        labelEl.textContent = "COMMS";
+        labelEl.style.setProperty("overflow", "visible", "important");
+      }
     }
     var adminBtn = document.getElementById("btnComunicaciones");
     if (adminBtn) {
@@ -322,6 +353,20 @@
     }, 1500);
   }
 
+  async function hasAuthSession(c) {
+    try {
+      var box = supabaseBox();
+      if (box && box.session && box.session.user && box.session.user.id) return true;
+    } catch (_b) {}
+    try {
+      if (c && c.auth && typeof c.auth.getSession === "function") {
+        var gs = await c.auth.getSession();
+        if (gs && gs.data && gs.data.session && gs.data.session.user) return true;
+      }
+    } catch (_s) {}
+    return false;
+  }
+
   async function inboxUnreadTotal(c) {
     try {
       var inboxRes = await c.rpc("communication_inbox", { p_mode: "personal" });
@@ -378,6 +423,10 @@
           scheduleUnreadRetry();
           return lastUnreadCount;
         }
+        if (!(await hasAuthSession(c))) {
+          scheduleUnreadRetry();
+          return lastUnreadCount;
+        }
         var countsRes = await c.rpc("communication_unread_counts");
         if (countsRes && countsRes.error) {
           var res = await c.rpc("communication_unread_count");
@@ -428,8 +477,8 @@
           }
           lastPersonalCount = parsed.personal;
           lastAdminCount = parsed.administration;
-          var n = parsed.total;
-          if (n < 1) n = Math.max(n, await inboxUnreadTotal(c));
+          var inboxSum = await inboxUnreadTotal(c);
+          var n = Math.max(parsed.total, parsed.personal, inboxSum);
           applyUnreadFromServer(n);
           updateCommsLaunchLinks(parsed.personal > 0 || n > 0 ? "personal" : "");
         }
@@ -1507,13 +1556,13 @@
     }
     placeWaInGrid(btn);
     if (lead) lead.classList.add("topbar-lead--wa-in-grid");
-    applyUnreadBadge(lastUnreadCount);
+    if (lastUnreadCount > 0) applyUnreadBadge(lastUnreadCount);
     try {
       if (typeof global.portalSyncHaloFlankToolPlacement === "function") {
         global.portalSyncHaloFlankToolPlacement();
       }
     } catch (_e) {}
-    applyUnreadBadge(lastUnreadCount);
+    if (lastUnreadCount > 0) applyUnreadBadge(lastUnreadCount);
   }
 
   function ensureButton(staffKey) {
@@ -1560,7 +1609,6 @@
   function syncForStaffKey(staffKey) {
     ensureButton(staffKey);
     if (isCommsUser(staffKey)) void refreshUnread();
-    else applyUnreadBadge(0);
   }
 
   global.portalStaffWaSyncTopbar = syncForStaffKey;
@@ -1573,6 +1621,7 @@
   global.portalCommsOpen = openApp;
   global.portalCommsRefreshUnread = refreshUnread;
   global.portalAdminRefreshCommsBadge = refreshUnread;
+  global.portalCommsPaintUnread = applyUnreadBadge;
 
   function boot() {
     try {

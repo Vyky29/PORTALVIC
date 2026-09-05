@@ -129,20 +129,24 @@
 }
 #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread,
 #topbarToolsGridRight .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread,
-#topbarToolCellStaffWa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread{
+#topbarToolCellStaffWa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread,
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread{
   background:#dc2626 !important;
   border-color:#991b1b !important;
   color:#fff !important;
 }
 #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label,
 #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-staff-wa-btn__label,
-#topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-label{
+#topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-label,
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label{
   color:#fff !important;
 }
 #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico,
 #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg,
 #topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico,
-#topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{
+#topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg,
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico,
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{
   color:#fff !important;
 }
 .topbar-staff-wa-btn__badge.is-empty{
@@ -153,23 +157,28 @@
 #topbarToolCellStaffWa {
   overflow: visible !important;
 }
-.topbar-tool-btn--staff-wa .topbar-staff-wa-btn__badge,
-#topbarStaffWaBtn .topbar-staff-wa-btn__badge,
-.topbar-lead--halo-flanks .topbar-tool-btn--staff-wa .topbar-staff-wa-btn__badge,
-.topbar-lead--halo-flanks #topbarStaffWaBtn .topbar-staff-wa-btn__badge{
-  position: absolute;
-  top: 1px;
-  right: 1px;
+.topbar-tool-btn--staff-wa .topbar-staff-wa-btn__badge:not(.is-empty),
+#topbarStaffWaBtn .topbar-staff-wa-btn__badge:not(.is-empty),
+.topbar-lead--halo-flanks .topbar-tool-btn--staff-wa .topbar-staff-wa-btn__badge:not(.is-empty),
+.topbar-lead--halo-flanks #topbarStaffWaBtn .topbar-staff-wa-btn__badge:not(.is-empty){
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  top: auto;
+  right: auto;
   left: auto;
-  z-index: 4;
+  z-index: 2;
   min-width: 18px;
   height: 18px;
-  margin: 0;
+  margin: 0 0 0 4px;
   padding: 0 5px;
   line-height: 18px;
   font-size: 11px;
   pointer-events: none;
-  box-shadow: 0 0 0 2px #fff, 0 1px 3px rgba(0,0,0,.28);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.9);
+  text-decoration: none;
 }
 
 .portal-staff-wa-toast{

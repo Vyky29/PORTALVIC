@@ -1500,6 +1500,21 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   box-sizing:border-box !important;
   overflow:visible !important;
 }
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread,
+#topbarToolsGridRight > .topbar-tool-cell--staff-wa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread{
+  background:#dc2626 !important;
+  border-color:#991b1b !important;
+  color:#fff !important;
+  box-shadow:0 0 0 2px rgba(220,38,38,.35),0 2px 8px rgba(220,38,38,.35) !important;
+}
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label,
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-staff-wa-btn__label{
+  color:#fff !important;
+}
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico,
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{
+  color:#fff !important;
+}
 .topbar-lead--flank-4 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4 > .topbar-tool-btn,
 .topbar-lead--flank-4 #topbarToolsGridRight > #topbarToolCellStaffWa.topbar-tool-cell--flank-admin-4 > button{
   flex-direction:column !important;
