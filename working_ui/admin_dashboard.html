@@ -85,7 +85,8 @@
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260714-one-feedback"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260905-venue-video"></script>
+  <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260905-sessions-sync"></script>
   <script src="/portal/admin-portal-documents.js?v=20260905-expense-amount"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260903-form-chips-both"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260813-office-phone-create"></script>
@@ -2515,16 +2516,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         pct: pct
       };
     }
-    /** Must match `PORTAL_SESSION_FEEDBACK_FIRST_DATE_ISO` in `database/export_session_feedback_portal_js.py`. */
+    /** Current programme term shown on Sessions hub KPIs (live Autumn). */
+    var ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE = 'Autumn Term 2026/27';
+    /** Earliest feedback date still loaded into the hub (summer history + Autumn). */
     var ADMIN_PORTAL_SESSION_FEEDBACK_FIRST_DATE_ISO = '2026-04-13';
-    var ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE = 'Summer Term 2026';
+    /** Autumn 2026/27 start — KPI / strip windows prefer this when filtering "this term". */
+    var ADMIN_PORTAL_CURRENT_TERM_START_ISO = '2026-09-01';
     function adminPortalFeedbackTermStartIso(){
       try{
         var meta = window.SESSION_FEEDBACK_PORTAL_SOURCE && window.SESSION_FEEDBACK_PORTAL_SOURCE.meta;
         var s = meta && String(meta.coverageFromIso || '').trim();
         if(s.length >= 10 && /^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
       }catch(_e){}
-      return ADMIN_PORTAL_SESSION_FEEDBACK_FIRST_DATE_ISO;
+      return ADMIN_PORTAL_CURRENT_TERM_START_ISO;
+    }
+    function adminPortalFeedbackTermTitle(){
+      return ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE;
     }
     /** YYYY-MM-DD from register / portal row when present (else ''). */
     function adminC4kRegisterRowIso10(d){
@@ -2674,10 +2681,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** Daily register rows: workbook + live Supabase hub (June+ not in static export), else mock. */
     function adminC4kDailyRegistersList(){
       var byKey = {};
+      function adminCanonicalRegisterPaxKey(name){
+        var raw = adminSfStr(name);
+        if(!raw) return '';
+        try{
+          if(window.PortalParticipantIdentity && typeof window.PortalParticipantIdentity.canonicalClientId === 'function'){
+            return window.PortalParticipantIdentity.canonicalClientId(raw) || '';
+          }
+        }catch(_id){}
+        return typeof adminRosterSlugify === 'function' ? adminRosterSlugify(raw) : raw.toLowerCase();
+      }
       function rowKey(r){
+        /* Same child must not appear twice when export says "Yossi Sium" and live says "Yossi". */
         return [
           adminSfStr(r.date).substring(0, 10),
-          adminSfStr(r.clientName).toLowerCase(),
+          adminCanonicalRegisterPaxKey(r.clientName),
           adminSfStr(r.service).toLowerCase(),
           adminSfStr(r.portalSessionKey || r.sessionTimeSlot)
         ].join('|');
@@ -4044,13 +4062,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var kpiAttHead =
         '<div class="c4k-reg-kpi-card-head">' +
         '<h3 class="c4k-reg-kpi-card-title">Attendance</h3>' +
-        '<p class="c4k-reg-kpi-card-sub">(' + esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE) + ')</p>' +
+        '<p class="c4k-reg-kpi-card-sub">(' + esc(adminPortalFeedbackTermTitle()) + ')</p>' +
         '</div>';
       var kpiAttBody = adminC4kRegistersKpiAttendanceParticipantVisualHtml(pname, drf || []);
       var kpiCrHead =
         '<div class="c4k-reg-kpi-card-head">' +
         '<h3 class="c4k-reg-kpi-card-title">Credits</h3>' +
-        '<p class="c4k-reg-kpi-card-sub">(' + esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE) + ')</p>' +
+        '<p class="c4k-reg-kpi-card-sub">(' + esc(adminPortalFeedbackTermTitle()) + ')</p>' +
         '</div>';
       var kpiCrBody = adminC4kParticipantCreditsKpiVisualHtml(cq);
       return (
@@ -4070,8 +4088,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** Participant drawer · Sessions tab — same KPI family as Session feedback grid, scoped to this child. */
     function adminC4kParticipantSessionsKpiSlabHtml(pname, drf, od){
       drf = drf || [];
-      var usingPortal = adminSessionFeedbackPortalRows().length > 0;
-      var sub = ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE;
+      var usingPortal = adminSessionFeedbackPortalRows().length > 0 || adminLiveSessionFeedbackHubRows().length > 0;
+      var sub = adminPortalFeedbackTermTitle();
       var kpiEngBody = usingPortal
         ? adminC4kRegistersKpiEngagementGaugeHtml(drf)
         : adminC4kRegistersKpiMockEngagementGaugeHtml();
@@ -20377,10 +20395,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!h.sfSection) h.sfSection = 'main';
       state.sessionOverview = state.sessionOverview || {};
       if(!state.sessionOverview.iso) state.sessionOverview.iso = h.selectedIso || h.weekAnchorIso;
+      /* Keep overview + Register / Session Feedback on the same day + week. */
+      if(h.selectedIso) state.sessionOverview.iso = h.selectedIso;
       var st = sessionFeedbackEnsureState();
       st.anchorIso = h.weekAnchorIso;
       st.clientQ = h.clientQ;
-      if(h.tab === 'feedback' || h.sfSection !== 'main') st.selectedIso = h.selectedIso;
+      if(h.selectedIso) st.selectedIso = h.selectedIso;
+      else if(h.tab === 'feedback' || h.sfSection !== 'main') st.selectedIso = h.selectedIso;
       return h;
     }
     function sessionsHubWeekRangeLabel(anchorIso){
@@ -20395,7 +20416,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       d.setDate(d.getDate() + deltaWeeks * 7);
       var nextIso = isoDateLocal(d);
       var mon = bookingWeekIsoRangeMonSun(nextIso)[0] || nextIso;
-      /* Same Day Centre + crash window as Schedule & Covers (through 31 Jul). */
+      /* Same Autumn window as Schedule & Covers (Sep–Dec 2026). */
       if(mon < SCHED_COVER_TERM_START){
         var startDays = bookingWeekIsoRangeMonSun(SCHED_COVER_TERM_START);
         mon = startDays[0] || SCHED_COVER_TERM_START;
@@ -21570,7 +21591,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260905-overview-dedupe';
+    var PORTAL_ADMIN_HUB_BUILD = '20260905-sessions-sync';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -21620,13 +21641,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(showFb) sessionsHubShowLoading('adminSessionFeedbacksRoot', 'Loading session feedback…');
       function onHubRefreshDone(){
         var fh = window.PortalDayOps && window.PortalDayOps.getFeedbackHub && window.PortalDayOps.getFeedbackHub();
+        var th = window.PortalDayOps && window.PortalDayOps.getTrackingHub && window.PortalDayOps.getTrackingHub();
         if(fh && String(h.clientQ || '').trim()) fh.clientSearch = String(h.clientQ).trim();
-        if(showTrack){
-          var th = window.PortalDayOps && window.PortalDayOps.getTrackingHub && window.PortalDayOps.getTrackingHub();
-          var ovRoot = $('adminSessionsHubRoot');
-          if(th && ovRoot && !ovRoot.querySelector('.ash-panels') && typeof th.render === 'function'){
-            th.render();
-          }
+        /* Keep Overview + Register on the same selected day / week. */
+        if(th && fh){
+          try{
+            if(h.selectedIso){
+              th.selectedDay = h.selectedIso;
+              fh.selectedDay = h.selectedIso;
+            }
+            if(h.weekAnchorIso){
+              th.weekStart = h.weekAnchorIso;
+              fh.weekStart = h.weekAnchorIso;
+            }
+            if(typeof th.invalidateComputeCaches === 'function') th.invalidateComputeCaches();
+            if(typeof fh.invalidateComputeCaches === 'function') fh.invalidateComputeCaches();
+          }catch(_syncDay){}
+        }
+        if(showTrack && th && typeof th.render === 'function'){
+          th.render();
+        }
+        if(showFb && fh && typeof fh.render === 'function'){
+          fh.render();
         }
         sessionsHubStampRefresh();
         portalAdminApplyPendingActivityAlertFocus(h.tab);
