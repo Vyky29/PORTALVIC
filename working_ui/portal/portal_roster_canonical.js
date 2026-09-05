@@ -802,6 +802,14 @@
         s = s.replace(/\bAURORA\b/gi, "JAVIER");
       }
     }
+    /* Sun 13 Sep + 4 Oct: Aurora day off → Luliya covers her SwimFarm pool book. */
+    if (
+      (iso === "2026-09-13" || iso === "2026-10-04") &&
+      day === "sunday" &&
+      (isMultiActivityService(service) || isAquaticService(service))
+    ) {
+      s = s.replace(/\bAURORA\b/gi, "LULIYA");
+    }
     return s;
   }
 

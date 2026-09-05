@@ -275,7 +275,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260905-mohamed-thu-javi"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260905-luliya-aurora-sun"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260903-tue-acat-ikram"></script>
   <!-- local board bump: 20260905-zaid-two-cards -->
   <script>
@@ -307,13 +307,13 @@
     { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton AS Simon; Aurora from 4.30" },
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Emanuel shadowing Tinashe · Roberto + Tinashe 4.15-6.15" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
-    { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Hub: Berta Lead + Jack W…Aydaan · Godsway · Emanuel shadow · Aurora OFF · John OFF" },
+    { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Hub: Berta Lead + Jack W…Aydaan · Godsway · Emanuel shadow · Aurora OFF · Luliya covers Aurora pool book · John OFF" },
     { dow: "monday", iso: "2026-09-14", phase: "w3", hint: "From 14 Sep · Emanuel + Godsway/John/Raul Tinashe · Victor OFF Mon" },
     { dow: "tuesday", iso: "2026-09-15", phase: "w3", hint: "Aurora OFF · Javier covers Aurora Acton book (same as Tue 8)" },
     { dow: "wednesday", iso: "2026-09-16", phase: "w3", hint: "Emanuel + Godsway/John/Raul Tinashe" },
     { dow: "friday", iso: "2026-09-18", phase: "w3", hint: "Emanuel + Roberto Tinashe" },
     { dow: "sunday", iso: "2026-09-20", phase: "w3", hint: "Emanuel Sunday Multi MA (standing)" },
-    { dow: "sunday", iso: "2026-10-04", phase: "w3", hint: "Aurora OFF (day off validated)" },
+    { dow: "sunday", iso: "2026-10-04", phase: "w3", hint: "Aurora OFF · Luliya covers Aurora pool book" },
   ];
   var DAY_LABEL = {
     tuesday: "Tuesday",
@@ -692,6 +692,18 @@
       ],
     },
     "2026-09-13": {
+      /* Aurora OFF → Luliya covers her SwimFarm pool book (Aquatic + Multi). */
+      Luliya: [
+        { name: "Simon", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool · cover (Aurora)" },
+        { name: "Adam Ab", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
+        { name: "Jack W", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
+        { name: "Arthur Ma", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
+        { name: "Cyrus", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
+        { name: "Aydaan Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
+        { name: "Erik", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
+        { name: "Zakariya", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool · cover (Aurora)" },
+        { name: "Faris", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool · cover (Aurora)" },
+      ],
       /* Shadowing Multi @ shadowing rate — same Hub book (learns clients). */
       Emanuel: [
         { name: "Jack S", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
@@ -702,6 +714,20 @@
         { name: "Rayyan F", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Hub Room", kind: "shadowing" },
       ],
     },
+    "2026-10-04": {
+      /* Aurora OFF → Luliya covers her SwimFarm pool book (same as Sun 13 Sep). */
+      Luliya: [
+        { name: "Simon", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool · cover (Aurora)" },
+        { name: "Adam Ab", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
+        { name: "Jack W", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
+        { name: "Arthur Ma", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
+        { name: "Cyrus", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
+        { name: "Aydaan Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
+        { name: "Erik", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
+        { name: "Zakariya", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool · cover (Aurora)" },
+        { name: "Faris", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool · cover (Aurora)" },
+      ],
+    },
   };
 
   /* From Mon 14 Sep: Emanuel on Tinashe Mon/Wed/Fri (+ Sunday MA book below). */
@@ -710,9 +736,11 @@
   ];
 
   var SUNDAY_STAFF_ORDER = [
-    /* Pool swimming, Hub Multi books (Berta Lead + clients, John cover, Godsway), Climb. */
+    /* Pool swimming, Hub Multi books (Berta Lead + clients, John cover, Godsway), Climb.
+     * Luliya appears when covering Aurora (Sun 13 Sep / 4 Oct DATE_EXTRA). */
     "Roberto",
     "Aurora",
+    "Luliya",
     "Javier",
     "Berta",
     "John",
@@ -822,6 +850,7 @@
       Berta: "Leader · 9 to 2.30",
       John: "9.15 to 2.15",
       Aurora: "9 to 3",
+      Luliya: "9 to 3",
       Javier: "9 to 3",
       Godsway: "9.15 to 2.15",
       Youssef: "9.15 to 2.15",
