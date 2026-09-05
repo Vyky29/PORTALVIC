@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260901-roberto-pt-zh";
+  var VER = "20260905-admin-changes-nav";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260903-tue-acat-ikram",
@@ -43,6 +43,18 @@
     "/portal/portal_sheet_back.js?v=20260720-aria-sheet-focus",
   ];
 
+  var TIER_DASH = [
+    "/portal/staff-dashboard-topbar.js?v=" + VER,
+    "/portal/staff-dashboard-feedback.js?v=" + VER,
+    "/portal/staff-dashboard-calendar.js?v=" + VER,
+    "/portal/staff-dashboard-term.js?v=" + VER,
+    "/portal/staff-dashboard-participants.js?v=" + VER,
+    "/portal/staff-dashboard-today.js?v=20260903-rota-cards-safe",
+    "/portal/staff-dashboard-ui.js?v=" + VER,
+    "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
+    "/portal/staff-dashboard-rehydrate.js?v=" + VER,
+  ];
+
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
     "/portal/portal_lead_team_shift.js?v=20260904-berta-sun-only",
@@ -57,10 +69,10 @@
     "/portal/staff-dashboard-topbar.js?v=" + VER,
     "/portal/staff-dashboard-feedback.js?v=" + VER,
     "/portal/staff-dashboard-calendar.js?v=" + VER,
-    "/portal/staff-dashboard-term.js?v=20260903-rota-cards-safe",
-    "/portal/staff-dashboard-participants.js?v=20260903-rota-cards-safe",
+    "/portal/staff-dashboard-term.js?v=" + VER,
+    "/portal/staff-dashboard-participants.js?v=" + VER,
     "/portal/staff-dashboard-today.js?v=20260903-rota-cards-safe",
-    "/portal/staff-dashboard-ui.js?v=20260903-rota-cards-safe",
+    "/portal/staff-dashboard-ui.js?v=" + VER,
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
   ];

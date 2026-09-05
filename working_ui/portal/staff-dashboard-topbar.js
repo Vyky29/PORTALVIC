@@ -149,7 +149,7 @@
         window.__PORTAL_REVIEW_DAY_URL_LOCK = dayWord;
       }catch(_){}
     }
-    /** Topbar date pill: Teflon demo pins showcase ISO; everyone else uses live clock. */
+    /** Topbar date pill: review-day lock when viewing an Admin Changes / Term day; else live clock (Teflon demo pins showcase ISO). */
     function portalResolveTopbarDisplayDate(){
       if(typeof portalStaffIsDemoAccount === 'function' && portalStaffIsDemoAccount()){
         const iso = portalTeflonGuidePinnedIso();
@@ -158,6 +158,22 @@
           : new Date(2026, 5, 4);
         if(d && !isNaN(d.getTime())) return d;
       }
+      try{
+        const lockIso = String(
+          (typeof __PORTAL_REVIEW_DATE_URL_LOCK !== 'undefined' && __PORTAL_REVIEW_DATE_URL_LOCK)
+            || (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DATE_URL_LOCK)
+            || ''
+        ).trim().slice(0, 10);
+        if(/^\d{4}-\d{2}-\d{2}$/.test(lockIso) && typeof portalParseIsoDateLocal === 'function'){
+          const locked = portalParseIsoDateLocal(lockIso);
+          if(locked && !isNaN(locked.getTime())){
+            const now = new Date();
+            const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const l0 = new Date(locked.getFullYear(), locked.getMonth(), locked.getDate()).getTime();
+            if(l0 !== t0) return locked;
+          }
+        }
+      }catch(_){}
       return new Date();
     }
     /** Guide showcase card colours for 04/06 and 05/06 (portal/teflon_guide_demo_data.js). */

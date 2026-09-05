@@ -2527,9 +2527,13 @@
         window.portalQuickMenuDismissOverrideById(oid);
       }
     }
-    function portalOverrideAttentionButtonAttrs(item){
+    function portalOverrideAttentionButtonAttrs(item, dayIsoFallback){
       const id = escapeHtml(String(item && item.id || ''));
-      const iso = escapeHtml(String(item && item.iso || ''));
+      let isoRaw = String(item && item.iso || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(isoRaw)){
+        isoRaw = String(dayIsoFallback || '').trim().slice(0, 10);
+      }
+      const iso = escapeHtml(isoRaw);
       let attrs = ' data-action="open-roster-override-attention" data-portal-override-id="' + id + '" data-portal-override-nav-iso="' + iso + '"';
       if(item && Array.isArray(item._cancelledDismissIds) && item._cancelledDismissIds.length){
         attrs += ' data-portal-override-dismiss-all="' + escapeHtml(JSON.stringify(item._cancelledDismissIds)) + '"';
@@ -2538,6 +2542,26 @@
       }
       return attrs;
     }
+    /** Resolve ISO for Admin Changes taps (button attr → day host → reminder primary). */
+    function portalResolveOverrideNavIsoFromEl(el){
+      if(!el) return '';
+      let iso = String(el.getAttribute('data-portal-override-nav-iso') || '').trim().slice(0, 10);
+      if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+      try{
+        const host = el.closest('[data-portal-override-day-iso]');
+        if(host){
+          iso = String(host.getAttribute('data-portal-override-day-iso') || '').trim().slice(0, 10);
+          if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+        }
+      }catch(_){}
+      try{
+        const st = typeof portalReminderState === 'function' ? portalReminderState() : null;
+        iso = String(st && st.rosterOverridePrimaryIso || '').trim().slice(0, 10);
+        if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+      }catch(_){}
+      return '';
+    }
+    try{ window.portalResolveOverrideNavIsoFromEl = portalResolveOverrideNavIsoFromEl; }catch(_){}
     function portalOverrideCoverPayload(row){
       let pl = row && row.payload;
       if(typeof pl === 'string'){

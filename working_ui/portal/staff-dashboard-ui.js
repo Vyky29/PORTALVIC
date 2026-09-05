@@ -5426,16 +5426,22 @@
         const ovGo = e.target.closest('[data-action="open-roster-override-attention"]');
         if(ovGo){
           e.preventDefault();
+          const iso = typeof portalResolveOverrideNavIsoFromEl === 'function'
+            ? portalResolveOverrideNavIsoFromEl(ovGo)
+            : String(ovGo.getAttribute('data-portal-override-nav-iso') || '').trim();
+          let navigated = false;
+          if(typeof window.portalNavigateDashboardToOverrideDate === 'function'){
+            navigated = !!window.portalNavigateDashboardToOverrideDate(iso);
+          }
           if(typeof portalQuickMenuDismissOverrideFromEl === 'function'){
             portalQuickMenuDismissOverrideFromEl(ovGo);
           }
-          const iso = ovGo.getAttribute('data-portal-override-nav-iso') || '';
-          if(typeof window.portalNavigateDashboardToOverrideDate === 'function'){
-            window.portalNavigateDashboardToOverrideDate(iso);
-          }
-          if(typeof closeSheet === 'function') closeSheet();
+          if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
           if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
           if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
+          if(!navigated){
+            try{ console.warn('[portal] Admin Changes: could not open day', iso); }catch(_){}
+          }
           return;
         }
         const fbGo = e.target.closest('[data-action="open-pending-feedback"]');
@@ -5567,16 +5573,22 @@
       if(ovHit){
         e.preventDefault();
         e.stopPropagation();
+        const iso = typeof portalResolveOverrideNavIsoFromEl === 'function'
+          ? portalResolveOverrideNavIsoFromEl(ovHit)
+          : String(ovHit.getAttribute('data-portal-override-nav-iso') || '').trim();
+        let navigated = false;
+        if(typeof window.portalNavigateDashboardToOverrideDate === 'function'){
+          navigated = !!window.portalNavigateDashboardToOverrideDate(iso);
+        }
         if(typeof portalQuickMenuDismissOverrideFromEl === 'function'){
           portalQuickMenuDismissOverrideFromEl(ovHit);
         }
-        const iso = ovHit.getAttribute('data-portal-override-nav-iso') || '';
-        if(typeof window.portalNavigateDashboardToOverrideDate === 'function'){
-          window.portalNavigateDashboardToOverrideDate(iso);
-        }
-        if(typeof closeSheet === 'function') closeSheet();
+        if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
+        if(!navigated){
+          try{ console.warn('[portal] Admin Changes: could not open day', iso); }catch(_){}
+        }
         return;
       }
       const hit = e.target.closest('[data-action="open-pending-feedback"]');

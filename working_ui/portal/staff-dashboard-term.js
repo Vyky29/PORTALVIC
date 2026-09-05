@@ -1700,15 +1700,18 @@
       if(!st) return '';
       const rows = [];
       const dayGroups = Array.isArray(st.rosterOverrideDayGroups) ? st.rosterOverrideDayGroups : [];
-      function pushOverrideSetupRow(item){
+      function pushOverrideSetupRow(item, dayIso){
         const title = escapeHtml(String(item.title || 'Schedule change'));
         const subRaw = String(item.sub || '').trim();
         const sub = subRaw ? escapeHtml(subRaw) : '';
         const k = String(item.kind || 'other');
         const rowTone = k === 'reverted' ? 'setup-row--qm-ov-reverted' : ((k === 'new_shift' || k === 'roster_day' || k === 'client_moved') ? 'setup-row--qm-ov-new-shift' : (k === 'new_participant' ? 'setup-row--qm-ov-new-participant' : (k === 'absent' ? 'setup-row--qm-ov-absent' : (k === 'makeup' ? 'setup-row--qm-ov-makeup' : ((k === 'cancelled' || k === 'shift_cancelled') ? 'setup-row--qm-ov-cancelled' : (k === 'slot_opened' ? 'setup-row--qm-ov-slot-opened' : 'setup-row--qm-ov-other'))))));
         const subHtml = sub ? ('<span class="setup-row-sub">' + sub + '</span>') : '';
+        const attrsFn = typeof portalOverrideAttentionButtonAttrs === 'function'
+          ? portalOverrideAttentionButtonAttrs
+          : function(){ return ''; };
         rows.push(
-          '<button type="button" class="setup-row setup-row--portal-op ' + rowTone + ' setup-row--portal-register-note"' + portalOverrideAttentionButtonAttrs(item) + ' aria-label="' + title + '">' +
+          '<button type="button" class="setup-row setup-row--portal-op ' + rowTone + ' setup-row--portal-register-note"' + attrsFn(item, dayIso) + ' aria-label="' + title + '">' +
           '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg></span>' +
           '<span class="setup-row-text"><strong>' + title + '</strong>' + subHtml + '</span>' +
           '<span class="setup-row-chev" aria-hidden="true">›</span></button>'
@@ -1719,6 +1722,7 @@
         const grp = dayGroups[gi];
         const items = Array.isArray(grp && grp.items) ? grp.items : [];
         if(!items.length) continue;
+        const dayIso = String(grp && grp.iso || '').trim().slice(0, 10);
         const allNewShift = items.every(function(it){
           const k = String(it && it.kind || '');
           return k === 'new_shift' || k === 'roster_day';
@@ -1732,7 +1736,7 @@
           const lab = String(grp && grp.label || grp && grp.iso || '').trim();
           if(lab) rows.push('<div class="portal-qm-override-day-label portal-op-reminder-day-label">' + escapeHtml(lab) + '</div>');
         }
-        for(let ri = 0; ri < items.length; ri++) pushOverrideSetupRow(items[ri]);
+        for(let ri = 0; ri < items.length; ri++) pushOverrideSetupRow(items[ri], dayIso);
       }
       const inductionIcon =
         '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg></span>';
@@ -1982,13 +1986,16 @@
       if(!dayGroups.length) return '';
       const logoLite = typeof portalQuickMenuEntryMode !== 'undefined' && portalQuickMenuEntryMode === 'logo-lite';
       const calIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>';
-      function oneBtn(item){
+      function oneBtn(item, dayIso){
         const title = escapeHtml(String(item.title || 'Schedule change'));
         const subRaw = String(item.sub || '').trim();
         const sub = subRaw ? escapeHtml(subRaw) : '';
         const tone = portalQuickMenuOverrideKindMenuClass(item && item.kind) + ' menu-btn--portal-pulse';
         const subHtml = sub ? ('<span class="menu-btn-sub">' + sub + '</span>') : '';
-        return '<button type="button" class="menu-btn notice menu-btn--qm-tile ' + tone + '"' + portalQuickMenuOverrideCancelledInlineStyle(item && item.kind) + portalOverrideAttentionButtonAttrs(item) + ' aria-label="' + title + '">' +
+        const attrsFn = typeof portalOverrideAttentionButtonAttrs === 'function'
+          ? portalOverrideAttentionButtonAttrs
+          : function(){ return ''; };
+        return '<button type="button" class="menu-btn notice menu-btn--qm-tile ' + tone + '"' + portalQuickMenuOverrideCancelledInlineStyle(item && item.kind) + attrsFn(item, dayIso) + ' aria-label="' + title + '">' +
           '<div class="menu-btn-icon" aria-hidden="true">' + calIcon + '</div>' +
           '<div class="menu-btn-copy"><strong>' + title + '</strong>' + subHtml + '</div>' +
           '<span class="menu-btn-chev" aria-hidden="true">›</span></button>';
@@ -1997,21 +2004,29 @@
       if(logoLite){
         const flatItems = [];
         for(let g = 0; g < dayGroups.length; g++){
-          const items = Array.isArray(dayGroups[g] && dayGroups[g].items) ? dayGroups[g].items : [];
-          for(let i = 0; i < items.length; i++) flatItems.push(items[i]);
+          const grp = dayGroups[g];
+          const dayIso = String(grp && grp.iso || '').trim().slice(0, 10);
+          const items = Array.isArray(grp && grp.items) ? grp.items : [];
+          for(let i = 0; i < items.length; i++){
+            flatItems.push({ item: items[i], dayIso: dayIso });
+          }
         }
         flatItems.sort(function(a, b){
-          const ai = String(a && a.iso || '');
-          const bi = String(b && b.iso || '');
+          const ai = String((a.item && a.item.iso) || a.dayIso || '');
+          const bi = String((b.item && b.item.iso) || b.dayIso || '');
           return ai < bi ? -1 : (ai > bi ? 1 : 0);
         });
         html += '<div class="portal-qm-override-day" role="group" aria-label="Schedule changes">' +
-          flatItems.map(oneBtn).join('') + '</div>';
+          flatItems.map(function(pack){ return oneBtn(pack.item, pack.dayIso); }).join('') + '</div>';
       }else{
         for(let g = 0; g < dayGroups.length; g++){
           const grp = dayGroups[g];
           const items = Array.isArray(grp && grp.items) ? grp.items : [];
           if(!items.length) continue;
+          const dayIso = String(grp && grp.iso || '').trim().slice(0, 10);
+          const dayIsoAttr = /^\d{4}-\d{2}-\d{2}$/.test(dayIso)
+            ? (' data-portal-override-day-iso="' + escapeHtml(dayIso) + '"')
+            : '';
           const allNewShift = items.every(function(it){
             const k = String(it && it.kind || '');
             return k === 'new_shift' || k === 'roster_day';
@@ -2020,9 +2035,9 @@
             ? 'Schedule changes'
             : String(grp && grp.label || grp && grp.iso || '').trim();
           const labEsc = escapeHtml(labRaw);
-          html += '<div class="portal-qm-override-day" role="group" aria-label="' + labEsc + '">' +
+          html += '<div class="portal-qm-override-day" role="group" aria-label="' + labEsc + '"' + dayIsoAttr + '>' +
             (labRaw ? ('<div class="portal-qm-override-day-label">' + labEsc + '</div>') : '') +
-            items.map(oneBtn).join('') + '</div>';
+            items.map(function(it){ return oneBtn(it, dayIso); }).join('') + '</div>';
         }
       }
       html += '</div>';

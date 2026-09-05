@@ -94,11 +94,11 @@
       const day = String(dayName || '').trim();
       if(!PORTAL_WEEK_REVIEW_VALID_DAYS.has(day)) return;
       opts = opts || {};
-      const isoOpt = opts.portalReviewDate ? String(opts.portalReviewDate).trim() : '';
+      const isoOpt = opts.portalReviewDate ? String(opts.portalReviewDate).trim().slice(0, 10) : '';
       /* Close term sheet first so the UI is never stuck behind it during date navigation. */
       if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
-      closeClientGeneralSheet();
-      document.body.style.overflow = '';
+      if(typeof closeClientGeneralSheet === 'function') closeClientGeneralSheet();
+      try{ document.body.style.overflow = ''; }catch(_){}
       const hasJudgementOpt = Object.prototype.hasOwnProperty.call(opts, 'portalTermJudgementAllowed');
       let termJudgementAllowed = hasJudgementOpt ? !!opts.portalTermJudgementAllowed : true;
       const todayKey = typeof portalTermLocalYmdFromMs === 'function' ? portalTermLocalYmdFromMs(Date.now()) : '';
@@ -133,8 +133,10 @@
         }
         portalFinishWeekDayReviewFlow(day, isoOpt, usedDateLock, termJudgementAllowed);
       };
-      /* Open the day immediately — do not wait on schedule_overrides (wide hydrate used to stall Term taps). */
-      if(typeof requestAnimationFrame === 'function'){
+      /* Admin Changes / override taps use sync so the day paints before chrome re-renders. */
+      if(opts.sync){
+        finish();
+      }else if(typeof requestAnimationFrame === 'function'){
         requestAnimationFrame(function(){ setTimeout(finish, 0); });
       } else {
         setTimeout(finish, 0);
@@ -161,17 +163,22 @@
       }
     }
     try{ window.portalOpenWeekDayReviewFlow = portalOpenWeekDayReviewFlow; }catch(_){}
-    /** System notification (roster override): open the affected calendar day in Today / week anchor. */
+    /** Admin Changes / roster override: open that calendar day on the dashboard Today board. */
     window.portalNavigateDashboardToOverrideDate = function portalNavigateDashboardToOverrideDate(isoYmd){
       try{
-        const iso = String(isoYmd || '').trim();
+        const iso = String(isoYmd || '').trim().slice(0, 10);
         if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
         const dt = typeof portalParseIsoDateLocal === 'function' ? portalParseIsoDateLocal(iso) : null;
         if(!dt) return false;
         const dayName = dt.toLocaleDateString('en-GB', { weekday: 'long' });
         if(typeof PORTAL_WEEK_REVIEW_VALID_DAYS !== 'undefined' && !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dayName)) return false;
+        if(typeof portalSetReviewFlowOrigin === 'function') portalSetReviewFlowOrigin('dashboard');
         if(typeof portalOpenWeekDayReviewFlow === 'function'){
-          portalOpenWeekDayReviewFlow(dayName, { portalReviewDate: iso });
+          portalOpenWeekDayReviewFlow(dayName, {
+            portalReviewDate: iso,
+            portalTermJudgementAllowed: true,
+            sync: true
+          });
           return true;
         }
       }catch(_){}
