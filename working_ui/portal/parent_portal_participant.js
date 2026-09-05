@@ -573,7 +573,7 @@
     else if (/^aquatic\b/i.test(s)) {
       /* Pool sessions are 30' bands unless the source already carried a duration. */
       if (!dur) dur = "30' ";
-      base = dur + "AQUATIC ACTIVITY";
+      base = dur + "Aquatic Activity";
     }
     else if (/climb/i.test(s)) base = dur + "Climbing";
     else if (/day\s*centre/i.test(s)) base = dur + "Day centre";
@@ -3344,10 +3344,30 @@
     return m ? String(m[1]).trim() + " – " + String(m[2]).trim() : s;
   }
 
-  /** Venue line for hub cards — never leave Multi/Climbing without a place row. */
+  /** Venue line for hub cards — programme defaults beat a generic SwimFarm preferred venue. */
   function hubOpsDisplayPlace(s, data) {
+    var lab = String((s && (s.rawLabel || s.label)) || "").toLowerCase();
     var venue = String((s && s.venue) || "").trim();
     var area = String((s && s.area) || "").trim();
+    var placeBlob = (venue + " " + area).toLowerCase();
+
+    /* Climbing → Westway; Multi → Hub Room; Aquatic → SwimFarm (or Acton/Northolt). */
+    if (/climb/.test(lab)) {
+      if (/westway/.test(placeBlob) && venue && !/^swimfarm$/i.test(venue)) return venue;
+      return "Westway";
+    }
+    if (/multi/.test(lab)) {
+      if (/hub/.test(placeBlob)) return "Hub Room";
+      return "Hub Room";
+    }
+    if (/aquatic|swim/.test(lab) && !/multi/.test(lab)) {
+      if (/acton/.test(placeBlob)) return "Acton";
+      if (/northolt/.test(placeBlob)) return "Northolt";
+      if (/swimfarm|swim\s*farm/.test(placeBlob)) return "SwimFarm";
+      if (venue && !/hub|westway/i.test(venue)) return venue;
+      return "SwimFarm";
+    }
+
     if (venue && area && area.toLowerCase() !== venue.toLowerCase()) {
       return venue + " · " + area;
     }
@@ -3356,20 +3376,6 @@
     var g = (data && data.general) || {};
     var preferred = String(g.preferred_venue || g.venue || "").trim();
     if (preferred) return preferred;
-    var lab = String((s && (s.rawLabel || s.label)) || "").toLowerCase();
-    var day = String((s && s.day) || "").toLowerCase();
-    var sunday =
-      /\bsunday\b/.test(day) ||
-      (s && s.isTomorrow && new Date().getDay() === 6) ||
-      (s && s.iso && String(s.iso).slice(0, 10) && (function () {
-        try {
-          var p = String(s.iso).split("-");
-          return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay() === 0;
-        } catch (_e) {
-          return false;
-        }
-      })());
-    if (sunday && (/multi|climb|aquatic|swim|bespoke/.test(lab) || !lab)) return "SwimFarm";
     if (/acton/.test(lab)) return "Acton";
     if (/northolt/.test(lab)) return "Northolt";
     if (/swimfarm|swim\s*farm/.test(lab)) return "SwimFarm";
