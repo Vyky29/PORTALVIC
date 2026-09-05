@@ -6960,15 +6960,9 @@
             : members.length === 2
               ? " pp-team-grid--2"
               : " pp-team-grid--1";
-      var sinceLabel =
-        typeof global.PortalParentTeam !== "undefined" && global.PortalParentTeam.TEAM_FEEDBACK_SINCE
-          ? global.PortalParentTeam.TEAM_FEEDBACK_SINCE
-          : "2026-06-01";
       var bodyHtml = members.length
         ? '<div class="pp-team-grid' + colClass + '">' + members.map(teamMemberCardHtml).join("") + "</div>"
-        : '<p class="pp-muted">No instructors on file yet for sessions since ' +
-          esc(sinceLabel.slice(0, 10).split("-").reverse().join("/")) +
-          ".</p>";
+        : '<p class="pp-muted">No instructors listed yet for this term. They appear here once places and session staff are confirmed.</p>';
       var noteHtml = changeNote
         ? '<div class="pp-team-change-note" role="status">' +
           "<strong>Recent instructor change</strong>" +
@@ -6982,7 +6976,7 @@
         hubBackButtonHtml(data) +
         "</div>" +
         '<div class="pp-pax-subview-body">' +
-        '<p class="pp-muted pp-team-intro">Instructors from recent sessions. If someone is covering after a change, they appear here with an <strong>Instructor change</strong> badge — show this to your child so they know who to expect.</p>' +
+        '<p class="pp-muted pp-team-intro">Instructors for this term\'s sessions. If someone is covering after a change, they appear here with an <strong>Instructor change</strong> badge — show this to your child so they know who to expect.</p>' +
         noteHtml +
         bodyHtml +
         "</div></div>";

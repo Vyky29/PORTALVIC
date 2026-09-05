@@ -42,6 +42,8 @@
     fadi_ab: "fadi",
     cyrus_mahdavi: "cyrus",
     cyrus_ma: "cyrus",
+    zaid_alfadhl: "zaid",
+    zaid_al: "zaid",
   };
 
   var CLIENT_INFO_SHEET_ALIASES = {

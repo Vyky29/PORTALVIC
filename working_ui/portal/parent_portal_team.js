@@ -1,11 +1,12 @@
 /**
- * Parent portal — participant team (instructors with feedback since 1 Jun 2026).
- * Demo map from roster; replaced by API team[] when live data is wired.
+ * Parent portal — participant team (instructors for this term + covers/overrides).
+ * Demo map is last-resort only when API/roster has not yet returned anyone.
  */
 (function (global) {
   "use strict";
 
-  var TEAM_FEEDBACK_SINCE = "2026-06-01";
+  /** Autumn 2026/27 term start — align with PARENT_SESSION_TERM_START_ISO. */
+  var TEAM_FEEDBACK_SINCE = "2026-09-05";
 
   var STAFF_CATALOG = {
   "roberto": {
@@ -63,6 +64,16 @@
     ],
     "avatar_url": "/portal/staff_photos/godsway.png",
     "bio": "Godsway is friendly, upbeat and very reliable. He builds strong rapport with families and keeps sessions positive, active and well organised from start to finish."
+  },
+  "emanuel": {
+    "name": "Emanuel",
+    "nationality": "English",
+    "flag": "🇬🇧",
+    "speaks": [
+      "English"
+    ],
+    "avatar_url": "/portal/staff_photos/emanuel.png",
+    "bio": "Emanuel is warm, organised and great at keeping Hub sessions clear and calm. He helps children settle quickly and makes the room feel safe and structured."
   },
   "javier": {
     "name": "Javier",
@@ -570,10 +581,9 @@
     "roberto"
   ],
   "zaid": [
-    "bismark",
+    "javier",
     "carlos",
-    "giuseppe",
-    "javier"
+    "emanuel"
   ],
   "zakariya": [
     "aurora",
@@ -735,7 +745,16 @@
       return "";
     }
 
-    if (/westway/.test(venue)) return "sandra";
+    if (/westway/.test(venue)) {
+      var namedW = staffKeyFromFeedbackName(slot.instructor || slot.staff || "");
+      if (namedW && STAFF_CATALOG[namedW]) return namedW;
+      return "sandra";
+    }
+    if (/swimfarm|hub/.test(venue) || /multi/.test(kind + " " + String(slot.service || slot.label || ""))) {
+      var namedSf = staffKeyFromFeedbackName(slot.instructor || slot.staff || "");
+      if (namedSf && STAFF_CATALOG[namedSf]) return namedSf;
+      return "";
+    }
     return "";
   }
 
@@ -858,14 +877,16 @@
     if (!out.length) {
       teamFromSessions(data).forEach(addCard);
     }
-    /* Trial / new place: standing pool instructors before any session feedback. */
+    /* Standing / booked slots for this term before any session feedback. */
     if (!out.length) {
       teamFromStandingPool(data).forEach(addCard);
     }
-    /* Roster demo map fills gaps (and covers empty live team) for known children */
-    demoKeysForParticipant(data).forEach(function (key) {
-      addCard(catalogMember(key));
-    });
+    /* Demo map only as last resort — never pad live team with prior-term names. */
+    if (!out.length) {
+      demoKeysForParticipant(data).forEach(function (key) {
+        addCard(catalogMember(key));
+      });
+    }
     out.sort(function (a, b) {
       return String(a.name || "").localeCompare(String(b.name || ""));
     });

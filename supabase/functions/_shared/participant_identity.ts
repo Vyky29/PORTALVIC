@@ -87,6 +87,9 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   kacem_eiji: "eiji",
   hazem_kei_belhadj: "hazem",
   hazem_kei_be: "hazem",
+  // Portal "Zaid Alfadhl" vs roster / team map "zaid"
+  zaid_alfadhl: "zaid",
+  zaid_al: "zaid",
   hazem_kei: "hazem",
 };
 

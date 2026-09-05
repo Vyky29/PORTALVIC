@@ -94,7 +94,8 @@ function parseSections(raw: unknown): Set<DetailSection> {
   return out.size ? out : all;
 }
 
-const TEAM_FEEDBACK_SINCE = "2026-06-01";
+/** Parent Team: this academic term only (not prior summer / prior years). */
+const TEAM_TERM_START_ISO = PARENT_SESSION_TERM_START_ISO;
 
 function staffKeyFromName(raw: string): string {
   let k = String(raw || "")
@@ -111,13 +112,23 @@ function staffKeyFromName(raw: string): string {
   return k;
 }
 
+function isPlaceholderStaffName(raw: string): boolean {
+  const s = clean(raw, 80).toLowerCase();
+  if (!s) return true;
+  return (
+    /no\s*participant|open\s*slot|hold\s*waitlist|cover\s*needed|tbc|tba|vacant|unassigned/.test(s) ||
+    s === "open" ||
+    s === "extra"
+  );
+}
+
 function upsertTeamMember(
   map: Map<string, Record<string, unknown>>,
   key: string,
   patch: Record<string, unknown>,
 ) {
   const k = String(key || "").trim().toLowerCase();
-  if (!k) return;
+  if (!k || isPlaceholderStaffName(k)) return;
   const prev = map.get(k) || {
     staff_key: k,
     name: "",
@@ -126,11 +137,16 @@ function upsertTeamMember(
   };
   const name =
     clean(patch.name, 80) || clean(prev.name, 80) || k.charAt(0).toUpperCase() + k.slice(1);
+  const nextRole =
+    clean(prev.role, 40) === "cover" || clean(patch.role, 40) === "cover"
+      ? "cover"
+      : clean(patch.role, 40) || clean(prev.role, 40) || "instructor";
   map.set(k, {
     ...prev,
     ...patch,
     staff_key: k,
     name,
+    role: nextRole,
     avatar_url:
       clean(patch.avatar_url, 200) ||
       clean(prev.avatar_url, 200) ||
@@ -138,18 +154,144 @@ function upsertTeamMember(
   });
 }
 
-/** Instructors from feedback + covering staff from schedule_overrides. */
+function addStandingInstructorNames(
+  map: Map<string, Record<string, unknown>>,
+  raw: unknown,
+) {
+  const text = clean(raw, 120);
+  if (!text || isPlaceholderStaffName(text)) return;
+  for (const part of text.split(/[,/&+]|\band\b|\s+·\s+/i)) {
+    const name = clean(part, 80);
+    if (!name || isPlaceholderStaffName(name)) continue;
+    const key = staffKeyFromName(name);
+    if (!key) continue;
+    upsertTeamMember(map, key, {
+      name: feedbackAuthorFirstName(name) || name,
+      role: "instructor",
+    });
+  }
+}
+
+/**
+ * Standing instructors for this child from live roster + service-line snapshot
+ * (who delivers their sessions this term), before any session feedback exists.
+ */
+async function loadStandingInstructorsForTeam(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  identityInput: {
+    contactId?: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+  },
+  lookupNames: string[],
+  map: Map<string, Record<string, unknown>>,
+) {
+  const slugs = [
+    ...new Set(
+      expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput))
+        .map((s) => slugifyParticipantKey(s))
+        .filter(Boolean),
+    ),
+  ];
+  const memberSlugs = slugs.filter((s) => s !== "acat" && s !== "acat_group");
+  const lookupKeys = memberSlugs.length ? memberSlugs : slugs;
+  if (lookupKeys.length) {
+    const rawKeys = [
+      ...new Set(
+        lookupKeys.flatMap((k) => {
+          const dashed = k.replace(/_/g, "-");
+          return [k, dashed, `${k}-nhs`, `${dashed}-nhs`, `${k}_nhs`];
+        }),
+      ),
+    ];
+    try {
+      const { data } = await supabase
+        .from("portal_participant_service_lines")
+        .select("sessions")
+        .in("client_key", rawKeys)
+        .limit(12);
+      for (const row of data || []) {
+        const sessions = Array.isArray(row.sessions) ? row.sessions : [];
+        for (const slot of sessions) {
+          if (!slot || typeof slot !== "object") continue;
+          const s = slot as Record<string, unknown>;
+          const svc = clean(s.service || s.serviceType, 80);
+          if (/crash|intensiv/i.test(svc)) continue;
+          addStandingInstructorNames(map, s.instructor || s.instructors);
+        }
+      }
+    } catch (e) {
+      console.warn("[parent-portal-participant-detail] team service_lines", e);
+    }
+  }
+
+  const names = [
+    ...new Set(
+      [...lookupNames.slice(0, 6), identityInput.displayName || "", identityInput.firstName || ""]
+        .map((n) => clean(n, 80))
+        .filter(Boolean),
+    ),
+  ];
+  if (!names.length) return;
+
+  const queries = names.map((nm) =>
+    supabase
+      .from("portal_roster_rows")
+      .select("client_name, service, instructors, status, session_date")
+      .eq("status", "active")
+      .ilike("client_name", nm.includes(" ") ? nm : `${nm}%`)
+      .limit(80),
+  );
+  const results = await Promise.all(queries);
+  const seen = new Set<string>();
+  for (const { data } of results) {
+    for (const row of data || []) {
+      if (!row) continue;
+      if (!participantIdentityMatches(identityInput, String(row.client_name || ""), "")) continue;
+      const svc = clean(row.service, 80);
+      if (/crash|intensiv/i.test(svc)) continue;
+      const date = isoFromAny(row.session_date);
+      const key = [
+        clean(row.client_name, 80),
+        svc,
+        clean(row.instructors, 80),
+        date,
+      ]
+        .join("|")
+        .toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      addStandingInstructorNames(map, row.instructors);
+    }
+  }
+}
+
+/**
+ * Instructors who deliver this child's sessions this term + covering staff from overrides.
+ * Does not include prior-term / summer feedback authors.
+ */
 async function buildParentTeam(
   // deno-lint-ignore no-explicit-any
   supabase: any,
   clientSlugs: string[],
   feedbackRows: Record<string, unknown>[],
+  identityInput: {
+    contactId?: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+  },
+  lookupNames: string[],
 ): Promise<Record<string, unknown>[]> {
   const map = new Map<string, Record<string, unknown>>();
 
+  await loadStandingInstructorsForTeam(supabase, identityInput, lookupNames, map);
+
   for (const row of feedbackRows || []) {
     const date = isoFromAny(row.session_date);
-    if (!date || date < TEAM_FEEDBACK_SINCE) continue;
+    if (!date || date < TEAM_TERM_START_ISO) continue;
     const name = clean(row.completed_by_name, 120);
     const key = staffKeyFromName(name);
     if (!key) continue;
@@ -167,7 +309,7 @@ async function buildParentTeam(
       .select("session_date, override_type, status, payload, anchor_staff_id, anchor_client_id")
       .eq("status", "active")
       .in("override_type", ["instructor_reassign", "client_replace_in_slot"])
-      .gte("session_date", PARENT_SESSION_TERM_START_ISO)
+      .gte("session_date", TEAM_TERM_START_ISO)
       .limit(300);
     if (error) {
       console.error("[parent-portal-participant-detail] team overrides", error.message);
@@ -195,8 +337,14 @@ async function buildParentTeam(
           });
         }
       } else if (ot === "client_replace_in_slot") {
+        /* Child placed into an instructor's slot (trial / makeup) — show that instructor. */
         const staffSlug = clean(ov.anchor_staff_id, 80);
-        if (staffSlug && (pl.open_slot_makeup || pl.parent_portal_makeup || toClient)) {
+        if (staffSlug && toClient && slugSet.has(toClient)) {
+          upsertTeamMember(map, staffKeyFromName(staffSlug) || staffSlug.toLowerCase(), {
+            name: staffSlug,
+            role: "instructor",
+          });
+        } else if (staffSlug && (pl.open_slot_makeup || pl.parent_portal_makeup || toClient)) {
           upsertTeamMember(map, staffKeyFromName(staffSlug) || staffSlug.toLowerCase(), {
             name: staffSlug,
             role: "cover",
@@ -1709,12 +1857,18 @@ Deno.serve(async (req) => {
         .from("session_feedback")
         .select("session_date, completed_by_name, client_id")
         .in("client_id", clientSlugs)
-        .gte("session_date", TEAM_FEEDBACK_SINCE)
+        .gte("session_date", TEAM_TERM_START_ISO)
         .order("session_date", { ascending: false })
         .limit(80);
       fbForTeam = fbLite || [];
     }
-    teamOut = await buildParentTeam(supabase, clientSlugs, fbForTeam);
+    teamOut = await buildParentTeam(
+      supabase,
+      clientSlugs,
+      fbForTeam,
+      identityInput,
+      lookupNames,
+    );
   }
 
   let weeklyNotes: Record<string, unknown>[] = [];
