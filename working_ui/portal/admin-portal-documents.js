@@ -160,6 +160,9 @@
         path: exPath,
         storageBucket: 'documents',
         size: null,
+        amount: r.expense_amount != null && Number.isFinite(Number(r.expense_amount))
+          ? Number(r.expense_amount)
+          : null,
         created: r.created_at || deriveCreatedFromName(exName, exPath),
         source: 'portal',
         isPaid: !!r.is_paid || !!r.expense_admin_paid_at,
@@ -354,6 +357,32 @@
     if (x < 1024) return x + ' B';
     if (x < 1048576) return (x / 1024).toFixed(1) + ' KB';
     return (x / 1048576).toFixed(1) + ' MB';
+  }
+
+  function formatMoney(n) {
+    var x = Number(n);
+    if (!Number.isFinite(x)) return '—';
+    try {
+      return new Intl.NumberFormat('en-GB', {
+        style: 'currency',
+        currency: 'GBP'
+      }).format(x);
+    } catch (_e) {
+      return '£' + x.toFixed(2);
+    }
+  }
+
+  function amountOrSizeCell(it) {
+    if (it.type === 'expense') {
+      if (it.amount != null && Number.isFinite(Number(it.amount))) {
+        return formatMoney(it.amount);
+      }
+      if (it.details && it.details.expense_amount != null) {
+        return formatMoney(it.details.expense_amount);
+      }
+      return '—';
+    }
+    return formatBytes(it.size);
   }
 
   function countByType(items, type) {
@@ -557,6 +586,10 @@
   function renderTable(items) {
     var tbody = document.getElementById('portalDocumentsTbody');
     if (!tbody) return;
+    var th = document.getElementById('portalDocumentsAmountSizeTh');
+    if (th) {
+      th.textContent = state.filter === 'expense' ? 'Amount' : 'Amount / size';
+    }
     global._portalDocumentsCurrent = items;
     if (!items.length) {
       tbody.innerHTML =
@@ -585,7 +618,7 @@
           '<td><span class="portal-documents-type-pill portal-documents-type-pill--' + esc(it.type) + '">' + esc(typeLabel) + '</span></td>' +
           '<td><div class="portal-forms-cell-main">' + esc(it.name) + '</div><div class="portal-forms-cell-sub">' + rowMetaHtml(it) + '</div></td>' +
           '<td style="white-space:nowrap">' + esc(formatDate(it.created)) + '</td>' +
-          '<td style="white-space:nowrap">' + esc(formatBytes(it.size)) + '</td>' +
+          '<td style="white-space:nowrap">' + esc(amountOrSizeCell(it)) + '</td>' +
           '<td style="white-space:nowrap">' + actionHtml + '</td></tr>'
         );
       })
@@ -1037,7 +1070,7 @@
       '<div class="portal-documents-listcol">' +
       '<div class="portal-forms-table-wrap">' +
       '<table class="portal-forms-table portal-forms-table--full-detail">' +
-      '<thead><tr><th>Type</th><th>Name / details</th><th>Uploaded</th><th>Size</th><th>View</th></tr></thead>' +
+      '<thead><tr><th>Type</th><th>Name / details</th><th>Uploaded</th><th id="portalDocumentsAmountSizeTh">Amount</th><th>View</th></tr></thead>' +
       '<tbody id="portalDocumentsTbody"><tr><td colspan="5" class="muted" style="padding:16px">Loading…</td></tr></tbody>' +
       '</table></div></div>' +
       '<aside class="portal-documents-preview" id="portalDocumentsPreview" hidden>' +

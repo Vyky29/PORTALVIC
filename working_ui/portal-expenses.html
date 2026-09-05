@@ -404,7 +404,7 @@
 
   <script type="module">
     async function portalImportDocumentsModule(tag) {
-      const v = "20260518-bridge-hub-first";
+      const v = "20260905-expense-amount";
       const custom =
         typeof window !== "undefined" && window.PORTAL_DOCUMENTS_BASE
           ? String(window.PORTAL_DOCUMENTS_BASE).trim().replace(/\/$/, "")
@@ -1089,6 +1089,7 @@
           title: `${empDisplay && empDisplay !== "-" ? empDisplay + " · " : ""}${monthTag}'s Expenses`,
           related_date: relatedDate,
           source_page: "expenses",
+          expense_amount: payload.total,
         });
         if (typeof window.portalShowSubmitSuccessBanner === "function") {
           window.portalShowSubmitSuccessBanner("Expenses submitted successfully.");
