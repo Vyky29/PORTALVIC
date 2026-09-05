@@ -791,6 +791,17 @@
         s = s.replace(/\bEMANUEL\b/gi, "RAUL");
       }
     }
+    /* Tue 8 + 15 Sep: Aurora day off → Javier covers her Acton Aquatic book. */
+    if (
+      (iso === "2026-09-08" || iso === "2026-09-15") &&
+      day === "tuesday" &&
+      isAquaticService(service)
+    ) {
+      /* Callers may omit venue; standing Tue Aurora aquatic is Acton-only. */
+      if (!meta.venue || isActonVenue(meta.venue)) {
+        s = s.replace(/\bAURORA\b/gi, "JAVIER");
+      }
+    }
     return s;
   }
 

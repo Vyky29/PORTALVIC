@@ -131,6 +131,7 @@ function resolvedInstructorsForRow(row, iso, source) {
   return resolveInstructorsForSessionDate(row && row.instructors, iso, source || rosterSource(), {
     service: row && row.service,
     day: row && row.day,
+    venue: row && row.venue,
   });
 }
 

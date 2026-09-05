@@ -859,7 +859,7 @@
         row.instructors,
         sessionDate,
         source,
-        { service: row.service, day: row.day }
+        { service: row.service, day: row.day, venue: row.venue }
       );
       const targets = instructorProfileKeysForRow(instructorsResolved, profiles);
       if (!targets.some((k) => normalizePersonId(k) === wanted)) return;
