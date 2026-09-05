@@ -2076,6 +2076,25 @@
         // change types (absences, trials, cancellations, new participants…) in
         // their scope still surface as before.
         if(t === 'instructor_reassign') return false;
+        // Ops viewers (Victor / Javi / Raul) use Team of the Day club-wide —
+        // they must NOT get every instructor's "New participant — … On your
+        // roster" card (e.g. Patrick on Carlos). That alert is for the
+        // anchored instructor only.
+        try{
+          const leadCtx = typeof window.portalLeadTeamShiftContext === 'function'
+            ? window.portalLeadTeamShiftContext()
+            : null;
+          if(leadCtx && String(leadCtx.leadKey || '') === 'ops'){
+            const P = window.PortalParticipantsSheet;
+            if(P && typeof P.overrideIsTermNewParticipant === 'function'
+              && P.overrideIsTermNewParticipant(row)) return false;
+            let plOps = row.payload;
+            if(typeof plOps === 'string'){
+              try{ plOps = JSON.parse(plOps); }catch(_){ plOps = null; }
+            }
+            if(plOps && plOps.term_new_participant === true) return false;
+          }
+        }catch(_){}
         return true;
       }
       return false;
