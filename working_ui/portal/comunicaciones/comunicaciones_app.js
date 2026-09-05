@@ -153,6 +153,14 @@ function staffPhotoKeyFromLabel(name) {
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
   if (!n) return "";
+  /* Group / role titles — never map to /portal/staff_photos/{stem}.png */
+  if (
+    /\b(all\s*)?ceos?\b/.test(n) ||
+    /\bgroup\b/.test(n) ||
+    /^(admins?|directors?|leads?|staff|team|ops)\b/.test(n)
+  ) {
+    return "";
+  }
   if (/palankas|\bjavi\b/.test(n) && !/javier/.test(n)) return "javi";
   if (/luliya|lulia|\baida\b/.test(n)) return "luliya";
   if (/michelle/.test(n)) return "michelle";
@@ -161,12 +169,31 @@ function staffPhotoKeyFromLabel(name) {
   if (/sevitha/.test(n)) return "sevitha";
   if (/kyei/.test(n) || /^john\b/.test(n)) return "john";
   const first = (n.split(/\s+/)[0] || "").replace(/[^a-z0-9]/g, "");
+  if (
+    !first ||
+    /^(ceo|ceos|all|allceos|group|team|admin|admins|director|directors|staff|leads|lead|ops)$/.test(
+      first
+    )
+  ) {
+    return "";
+  }
   return first;
 }
 
 function resolveCommsAvatarUrl(url, name) {
   const raw = String(url || "").trim();
-  if (raw) return raw;
+  if (raw) {
+    const m = raw.match(/\/portal\/staff_photos\/([^/?#.]+)/i);
+    if (
+      m &&
+      /^(ceo|ceos|all|allceos|group|team|admin|admins|director|directors|staff|leads|lead|ops)$/i.test(
+        m[1]
+      )
+    ) {
+      return "";
+    }
+    return raw;
+  }
   const key = staffPhotoKeyFromLabel(name);
   if (!key) return "";
   return "/portal/staff_photos/" + key + ".png";
@@ -366,7 +393,7 @@ function inboxRow(it) {
     esc(it.conversation_id) +
     '">' +
     '<span class="comms-item-av-wrap">' +
-    avatarHtml(it.avatar_url, commsStaffLabel(it.display_name)) +
+    avatarHtml(it.kind === "group" ? "" : it.avatar_url, commsStaffLabel(it.display_name)) +
     presenceDot(presenceOfItem(it)) +
     "</span>" +
     '<span class="comms-item-text"><strong>' +
