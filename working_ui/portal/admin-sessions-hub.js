@@ -3895,11 +3895,97 @@
     var units = groupSlotsForFeedback(slots);
     var out = [];
     for (var i = 0; i < units.length; i++) {
-      var rep = pickOverviewRepresentativeSlot(hub, units[i]);
+      var unit = units[i];
+      var expanded = expandOverviewSlotsForSwimMergeUnit(hub, unit);
+      if (expanded && expanded.length) {
+        for (var ei = 0; ei < expanded.length; ei++) out.push(expanded[ei]);
+        continue;
+      }
+      var rep = pickOverviewRepresentativeSlot(hub, unit);
       if (!rep) continue;
       out.push(rep);
     }
     return dedupeOverviewDisplaySlots(out);
+  }
+
+  /**
+   * Trial swim (e.g. Zaid+Javier): show Aquatic 9–9.30 and Multi 9.30–10.15 as two rows;
+   * one feedback_merge_group still validates both.
+   * Term swim (e.g. Yusuf+Roberto): AA omitted — one Multi row stretched 9–10.15.
+   */
+  function expandOverviewSlotsForSwimMergeUnit(hub, unit) {
+    var slots = unit && unit.slots ? unit.slots : [];
+    if (slots.length < 2) return null;
+    var mergeId = "";
+    var uk = clean(unit && unit.key);
+    if (uk.indexOf("|merge|") >= 0) mergeId = uk.split("|merge|").pop() || "";
+    if (!mergeId) {
+      for (var mi = 0; mi < slots.length; mi++) {
+        mergeId =
+          clean(slots[mi].feedback_merge_group) || feedbackMergeGroupForSlot(slots[mi]) || "";
+        if (mergeId) break;
+      }
+    }
+    if (
+      mergeId !== "zaid_javier_sun_swim" &&
+      mergeId !== "yusuf_ah_roberto_sun_swim" &&
+      mergeId !== "cyrus_javier_wed_swim"
+    ) {
+      return null;
+    }
+    var visible = [];
+    var omittedAquatic = null;
+    var multiPool = null;
+    for (var si = 0; si < slots.length; si++) {
+      var s = slots[si];
+      if (shouldOmitOverviewSlot(hub, s)) {
+        if (isAquaticService(s.service)) omittedAquatic = s;
+        continue;
+      }
+      visible.push(s);
+      if (isMultiActivityService(s.service) && isSwimInstructorPoolAreaKind(slotAreaKind(s))) {
+        multiPool = s;
+      }
+    }
+    if (visible.length >= 2) {
+      /* Trial / split: keep every visible band (AA + Multi). */
+      visible.sort(function (a, b) {
+        return (a.time_start || "").localeCompare(b.time_start || "");
+      });
+      return visible;
+    }
+    if (visible.length === 1 && multiPool && visible[0] === multiPool) {
+      /*
+       * Term UX (Yusuf / Cyrus): AA omitted in overview — one Multi row covering AA+MA.
+       * Prefer omitted sibling times; else sundayFeedbackMerges rule start.
+       */
+      var aqStart = omittedAquatic ? clean(omittedAquatic.time_start) : "";
+      if (!aqStart) {
+        var rules = feedbackMergeRules();
+        for (var ri = 0; ri < rules.length; ri++) {
+          if (clean(rules[ri].mergeKey) !== mergeId) continue;
+          var rslots = rules[ri].slots || [];
+          for (var rj = 0; rj < rslots.length; rj++) {
+            if (!isAquaticService(rslots[rj].service)) continue;
+            var ptAq = parseTimeSlot(rslots[rj].time_slot, multiPool.day);
+            aqStart = (ptAq && ptAq.start) || "";
+            break;
+          }
+          break;
+        }
+      }
+      if (!aqStart) return null;
+      var maEnd = clean(multiPool.time_end) || "10:15";
+      if (clean(multiPool.time_start) === aqStart) return null;
+      var merged = Object.assign({}, multiPool);
+      merged.time_start = aqStart;
+      merged.time_end = maEnd;
+      merged.time_slot =
+        rosterTimeSlotLabelFromBounds(aqStart, maEnd, multiPool.day) ||
+        clean(multiPool.time_slot);
+      return [merged];
+    }
+    return null;
   }
 
   /** Prefer a visible roster row when merge groups hide duplicate aquatic blocks (e.g. Yusuf + Roberto). */
@@ -5788,11 +5874,15 @@
       unitAbsent[units[ui].key] = hub.feedbackUnitAbsent(units[ui]);
     }
     var displaySlots = overviewDisplaySlotsFromUnits(hub, slots);
-    var total = displaySlots.length;
+    var total = 0;
     var rosterDone = 0;
+    var seenUnit = Object.create(null);
     for (var di = 0; di < displaySlots.length; di++) {
       var slot = displaySlots[di];
       var ukey = feedbackUnitKey(slot);
+      if (!ukey || seenUnit[ukey]) continue;
+      seenUnit[ukey] = true;
+      total++;
       if (unitAbsent[ukey] || hub.slotIsAbsent(slot)) {
         rosterDone++;
         continue;

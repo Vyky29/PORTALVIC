@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 56;
+  var SOURCE_VERSION = 57;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -929,6 +929,57 @@
     return null;
   }
 
+  function normSundayMultiTimeSlot(raw) {
+    return String(raw || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+      .replace(/:/g, ".");
+  }
+
+  /**
+   * Autumn Sunday Javier pool book (LOCAL EXTRA / DATE_EXTRA truth):
+   * - Zaid: Small Pool 9.30–10.15 (not summer 10.15–11 that overlapped Hub)
+   * - Jack S: Big Pool 10.15–11 (after Hub 9.30)
+   * Aquatic 9–9.30 for Zaid is injected separately (trial split in Sessions Overview).
+   */
+  function enforceAutumnSundayJavierPoolBook(row) {
+    if (!row || !isMultiActivityService(row.service)) return null;
+    if (normalizeDowKey(row.day) !== "sunday") return null;
+    if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return null;
+    if (!/\bjavier\b/i.test(String(row.instructors || ""))) return null;
+    var cn = String(row.client_name || "").trim();
+    var slot = normSundayMultiTimeSlot(row.time_slot);
+    var area = String(row.area || "").toLowerCase();
+    if (/^zaid\b/i.test(cn) && /small\s*pool/i.test(area)) {
+      if (slot === "10.15 to 11" || slot.indexOf("10.15 to 11") === 0) {
+        return { time_slot: "9.30 to 10.15" };
+      }
+    }
+    if (/^jack\s*s\b/i.test(cn) && /big\s*pool/i.test(area)) {
+      if (slot === "9.30 to 10.15" || slot.indexOf("9.30 to 10.15") === 0) {
+        return { time_slot: "10.15 to 11" };
+      }
+    }
+    return null;
+  }
+
+  /** Standing-template Aquatic 9–9.30 so Zaid+Javier sundayFeedbackMerges can resolve. */
+  function autumnSundayZaidJavierAquaticStandingRows() {
+    return [
+      {
+        client_name: "Zaid",
+        day: "Sunday",
+        instructors: "JAVIER",
+        service: "Aquatic Activity",
+        area: "Small Pool",
+        time_slot: "9 to 9.30",
+        venue: "SwimFarm",
+        session_date: "2026-07-12",
+      },
+    ];
+  }
+
   var YOUSSEF_ACTON_OPEN_430_ROWS = [
     {
       client_name: "No participant",
@@ -1332,6 +1383,11 @@
         out.push(swapped);
         return;
       }
+      var javierPoolPatch = enforceAutumnSundayJavierPoolBook(r);
+      if (javierPoolPatch) {
+        out.push(Object.assign({}, r, javierPoolPatch));
+        return;
+      }
       /* Standing Tue/Wed often omit Youssef 4–4.30 — treat CLOSED / NO CLIENT as open too. */
       if (
         isAquaticService(r.service) &&
@@ -1451,6 +1507,9 @@
       out.push(Object.assign({}, row));
     });
     autumnSundayClimbingStandingRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    autumnSundayZaidJavierAquaticStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     /* Sep 6 Hub cover is applied once in resolveCanonicalRosterRows (after DB rows). */
