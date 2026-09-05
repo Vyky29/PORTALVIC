@@ -1909,13 +1909,11 @@
     return (
       '<a class="pp-hub-shortcut pp-hub-shortcut--book-portal" href="' +
       esc(bookingPortalHref({ intent: "trial" })) +
-      '" rel="noopener noreferrer" aria-label="Booking page">' +
-      '<span class="pp-hub-shortcut__ico" aria-hidden="true">' +
-      icoFn(
-        '<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8l4 4-4 4"/>',
-      ) +
+      '" rel="noopener noreferrer" aria-label="Booking Portal">' +
+      '<span class="pp-hub-shortcut__ico pp-hub-shortcut__ico--club-logo" aria-hidden="true">' +
+      '<img class="pp-hub-shortcut__logo" src="/portal/F-02-1.png" alt="" width="22" height="22" decoding="async" />' +
       "</span>" +
-      '<span class="pp-hub-shortcut__label">Booking page</span></a>'
+      '<span class="pp-hub-shortcut__label">Booking Portal</span></a>'
     );
   }
 
@@ -2291,7 +2289,7 @@
         "</svg>"
       );
     };
-    var first = firstNameOf(data) || "Participant";
+    var firstPos = firstNamePossessive(data);
     return (
       '<section class="pp-hub-shortcuts" aria-label="Quick access">' +
       '<p class="pp-pax-info-section-label">Quick access</p>' +
@@ -2307,7 +2305,7 @@
       (hasAchievementPhotos(data) ? photosShortcutBtnHtml(ico) : "") +
       hubShortcutBtn(
         "calendar",
-        first + " Calendar",
+        firstPos + " Calendar",
         ico(
           '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
         ),
@@ -2315,7 +2313,7 @@
       ) +
       hubShortcutBtn(
         "booking",
-        first + " Booking",
+        firstPos + " Bookings",
         ico(
           '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/>',
         ),
