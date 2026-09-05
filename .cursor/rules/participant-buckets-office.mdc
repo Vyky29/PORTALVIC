@@ -1,0 +1,35 @@
+---
+description: Participant bucket labels — CLIENT / REGISTERED / LEADS / OLD / WAITING (office language)
+alwaysApply: true
+---
+
+# Participant buckets (office language)
+
+Use **only** these five labels when talking to Victor or labelling office UI about families / kids. Do **not** say “former”, “formal”, “alumni”, “ex-client”, or “interested” unless mapping to these.
+
+| Label | Meaning |
+|-------|---------|
+| **CLIENT** | On services now — has Autumn 2026/27 (or current term) slots / standing seats. Appear in Sessions, LOCAL board, MADRE as named participants. |
+| **REGISTERED** | Completed the **registration form**, but have **never** been clients (never had a paid/confirmed service seat with us). |
+| **LEADS** | Enquired and got **OTP**, but did **not** finish registration. |
+| **OLD** | Were clients (had services with us) but **from September 2026** they have **no slots**. Not in Sessions as booked kids. |
+| **WAITING** | Registered and want a service that is **full** — on the wait / waiting list for a place. |
+
+## Mapping (code / old wording → bucket)
+
+- `active_client` / on roster / in services → **CLIENT**
+- `registered` / registration submitted, never seated → **REGISTERED**
+- OTP started, registration incomplete → **LEADS**
+- Aug15 unpaid release / no Sep+ seats (e.g. Karo, Kareena, Shire) → **OLD** (not “former”)
+- Waitlist / full service queue → **WAITING**
+
+## Sessions / standing
+
+- **CLIENT** only on Autumn Sessions roster and LOCAL named seats.
+- **OLD** / **REGISTERED** / **LEADS** / **WAITING** must not appear as booked Sessions feedback units (open seats = No participant).
+- Rule companion: `.cursor/rules/former-clients-not-in-sessions.mdc` (those three are **OLD**).
+
+## When unsure
+
+Ask which bucket before inventing a sixth label. A person can move buckets over time (e.g. LEADS → REGISTERED → WAITING → CLIENT, or CLIENT → OLD).
+---
