@@ -87,7 +87,7 @@
     "source": "staff_dashboard_spreadsheet_bundle.js + clients_info_embed.js",
     "termTo": "2026-07-31",
     "approved": false,
-    "revision": 429,
+    "revision": 431,
     "seededAt": "2026-06-22T13:36:19.674296+00:00",
     "services": [
       "Aquatic Activity",
@@ -215,14 +215,14 @@
       "2026-07-13"
     ],
     "lastManualReconcileNote": "reconcile_live_madre_from_local.py: applied local roster edits (3-way vs 48d823ae)",
-    "reenrol_release_changed": 1,
+    "reenrol_release_changed": 3,
     "mondayTemplateCopiedFrom": "2026-06-22",
     "reenrol_release_deadline": "2026-07-22",
     "unpaid_aug15_release_due": "2026-08-15",
     "madre_pre_sept_restore_at": "2026-07-23T16:41:19.032Z",
     "reenrol_release_live_from": "2026-07-23",
     "reenrol_release_mia_acton": 0,
-    "reenrol_release_applied_at": "2026-09-03T11:59:34.204Z",
+    "reenrol_release_applied_at": "2026-09-05T09:45:05.442Z",
     "madre_pre_sept_restore_note": "Restored NO PARTICIPANT → bundle names for sessionDate < 2026-09-01 after reenrol release wiped summer history.",
     "unpaid_aug15_release_changed": 6,
     "unpaid_aug15_release_contacts": [
@@ -22049,6 +22049,7 @@
       "note": "Cleanup: Scott climb all staff → open; dedupe Erik Multi to one hub + one pool instructor"
     },
     "rev 419: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)",
-    "rev 429: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)"
+    "rev 429: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)",
+    "rev 431: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)"
   ]
 }
