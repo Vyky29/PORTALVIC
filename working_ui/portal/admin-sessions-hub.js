@@ -928,15 +928,28 @@
    * Dated week rows on their calendar day; autumn also projects summer standing onto the
    * calendar date and merges sparse portal_roster_rows overlays (new bookings). Undated
    * templates only when this client has no dated rows that week.
+   *
+   * Week-1 DC (Tue 1 – Fri 4 Sep): LOCAL board is authoritative — do NOT project the
+   * Jul standing Day Centre snap (Fadi / Roberto+Youssef Thu) onto those dates.
    */
   function rosterRowAppliesOnDate(rosterRows, r, isoDate, wd) {
     if (clean(r.day) !== wd) return false;
     var sd = rosterRowSessionDate(r);
     var project = hubUsesAutumnStandingProjection(isoDate);
     var standIso = project ? hubLatestStandingIsoForDow(rosterRows, wd) : "";
+    var canon = global.PortalRosterCanonical;
+    var week1Dc =
+      canon && typeof canon.isAutumnWeek1DcIso === "function" && canon.isAutumnWeek1DcIso(isoDate);
+    var isDcStanding =
+      canon && typeof canon.isAutumnDcStandingTemplateRow === "function"
+        ? canon.isAutumnDcStandingTemplateRow(r)
+        : /day\s*centre/i.test(String((r && r.service) || "")) &&
+          /^2026-07-1[3-7]$/.test(String(sd || ""));
+    if (week1Dc && isDcStanding) return false;
     if (sd) {
       if (sd === isoDate) return true;
       if (project && standIso && standIso !== isoDate && sd === standIso) {
+        if (week1Dc && /day\s*centre/i.test(String((r && r.service) || ""))) return false;
         if (clientHasDatedRosterInWeek(rosterRows, r.client_name, isoDate)) return false;
         return true;
       }
@@ -944,6 +957,7 @@
     }
     var cid = canonicalClientSlug(r.client_name);
     if (!cid) return true;
+    if (week1Dc && /day\s*centre/i.test(String((r && r.service) || ""))) return false;
     if (clientHasDatedRosterInWeek(rosterRows, r.client_name, isoDate)) return false;
     for (var i = 0; i < rosterRows.length; i++) {
       var o = rosterRows[i];

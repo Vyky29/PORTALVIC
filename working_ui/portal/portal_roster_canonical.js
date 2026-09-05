@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 54;
+  var SOURCE_VERSION = 55;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -351,6 +351,12 @@
   function isAutumnWeek1DcIso(iso) {
     var d = normIso(iso);
     return d >= "2026-09-01" && d <= "2026-09-04";
+  }
+
+  /** True when this Day Centre row is the Jul standing snap used for Mon 7+ projection. */
+  function isAutumnDcStandingTemplateRow(row) {
+    if (!row || !isDayCentreService(row.service)) return false;
+    return isAutumnStandingTemplateIso(row.session_date);
   }
 
   function isTuesdayActonAquaticStandingRow(row) {
@@ -1614,6 +1620,8 @@
     WEEKEND_STANDING_ISO: WEEKEND_STANDING_ISO,
     AUTUMN_DAY_CENTRE_BOARD: AUTUMN_DAY_CENTRE_BOARD,
     WEEK1_DC_BOARD: WEEK1_DC_BOARD,
+    isAutumnWeek1DcIso: isAutumnWeek1DcIso,
+    isAutumnDcStandingTemplateRow: isAutumnDcStandingTemplateRow,
     AUTUMN_NO_SESSION_STAFF_KEYS: AUTUMN_NO_SESSION_STAFF_KEYS,
     AUTUMN_TERM_FROM_ISO: AUTUMN_TERM_FROM_ISO,
     AUTUMN_STANDING_TEMPLATE_ISO_SET: AUTUMN_STANDING_TEMPLATE_ISO_SET,
