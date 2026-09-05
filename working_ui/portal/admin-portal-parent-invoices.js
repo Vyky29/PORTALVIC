@@ -560,41 +560,28 @@
     var reenrolPay = String(inv.reenrol_payment_method_code || '').toLowerCase();
     var hint = String(inv.payment_method_hint || '').toLowerCase();
     var via = String(inv.paid_via || '').toLowerCase();
-    if (reenrolPay === 'own_way_flexible') return 'Own way';
-    if (hint === 'la_funded') return 'LA funded';
-    if (
-      reenrolPay === 'gocardless' ||
-      via === 'gocardless' ||
-      hint === 'gocardless' ||
-      inv.gocardless_url
-    ) {
-      return 'GoCardless';
-    }
+    /* Settled payment channel wins over re-enrol preference / stale hint. */
     if (
       via === 'apple_pay' ||
       via === 'apple' ||
+      via === 'stripe' ||
+      via === 'card' ||
       hint === 'apple_pay' ||
+      hint === 'stripe' ||
       /apple\s*pay/.test(via) ||
       /apple\s*pay/.test(hint)
     ) {
       return 'Apple Pay';
     }
-    if (hint === 'payment_link' || inv.payment_link_url) {
-      return 'Payment link';
+    if (via === 'gocardless' || hint === 'gocardless' || inv.gocardless_url || reenrolPay === 'gocardless') {
+      return 'GoCardless';
     }
-    if (via === 'stripe' || via === 'card') {
-      return 'Payment link';
-    }
-    if (
-      reenrolPay === 'bank_transfer' ||
-      reenrolPay === 'own_way_flexible' ||
-      via === 'tide' ||
-      via === 'bank' ||
-      hint === 'bank_transfer'
-    ) {
-      return 'Bank Transfer';
-    }
+    if (via === 'tide' || via === 'bank') return 'Bank Transfer';
     if (via === 'admin') return 'Admin / Office';
+    if (hint === 'la_funded') return 'LA funded';
+    if (reenrolPay === 'own_way_flexible') return 'Own way';
+    if (hint === 'payment_link' || inv.payment_link_url) return 'Payment link';
+    if (reenrolPay === 'bank_transfer' || hint === 'bank_transfer') return 'Bank Transfer';
     return 'Bank Transfer';
   }
 
@@ -1270,14 +1257,11 @@
     return '';
   }
 
-  /** YYYY-MM-DD of when the family completed re-enrolment (local calendar day). */
-  function reenrolDateKey(inv) {
-    var raw = String(
-      (inv && (inv.reenrolment_submitted_at || inv.created_at || inv.document_created_at)) || '',
-    ).trim();
+  /** YYYY-MM-DD from a timestamp (local calendar day when time is present). */
+  function isoDayKeyFromRaw(rawIn) {
+    var raw = String(rawIn || '').trim();
     if (!raw) return '';
     if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
-      /* Prefer local calendar day from the timestamp when time is present. */
       try {
         var d0 = new Date(raw);
         if (!isNaN(d0.getTime()) && /T|\d{2}:\d{2}/.test(raw)) {
@@ -1301,8 +1285,36 @@
     }
   }
 
+  /**
+   * Day accordion key: latest of re-enrol / invoice create / ready / paid.
+   * New INV-Ps (trial Apple Pay, office ACAT Jacks) must surface on the day they
+   * were minted or paid — not stay buried under a July re-enrol date.
+   */
+  function invoiceActivityDateKey(inv) {
+    if (!inv) return '';
+    var best = '';
+    var candidates = [
+      inv.paid_at,
+      inv.ready_at,
+      inv.created_at,
+      inv.document_created_at,
+      inv.reenrolment_submitted_at,
+      inv.updated_at,
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+      var k = isoDayKeyFromRaw(candidates[i]);
+      if (k && (!best || String(k) > String(best))) best = k;
+    }
+    return best;
+  }
+
+  /** @deprecated use invoiceActivityDateKey — kept for any older call sites. */
+  function reenrolDateKey(inv) {
+    return invoiceActivityDateKey(inv);
+  }
+
   function formatReenrolDayLabel(isoDate) {
-    if (!isoDate) return 'No re-enrolment date';
+    if (!isoDate) return 'No activity date';
     var p = String(isoDate).split('-');
     if (p.length < 3) return String(isoDate);
     try {
@@ -1385,7 +1397,7 @@
   }
 
   /**
-   * Nested: re-enrolment / invoice day → participants.
+   * Nested: latest invoice activity day → participants.
    * Newest days first; undated at the end.
    * Same contact keeps ALL their invoices together under their latest day
    * (so Summer crash + Autumn term both show under Patrick, not split across days).
@@ -1397,7 +1409,7 @@
     byContact.forEach(function (g) {
       var best = '';
       (g.invoices || []).forEach(function (inv) {
-        var k = reenrolDateKey(inv);
+        var k = invoiceActivityDateKey(inv);
         if (!k) return;
         if (!best || String(k) > String(best)) best = k;
       });
@@ -1426,7 +1438,7 @@
         });
       });
       return {
-        day: key === '_none' ? 'No re-enrolment date' : formatReenrolDayLabel(key),
+        day: key === '_none' ? 'No activity date' : formatReenrolDayLabel(key),
         day_key: key,
         participants: participants,
         invoice_count: invN,
@@ -2227,7 +2239,7 @@
   }
 
   function dayAccordionHtml(dayGroup) {
-    var day = dayGroup.day || 'No re-enrolment date';
+    var day = dayGroup.day || 'No activity date';
     var dayKey = dayGroup.day_key || '';
     var participants = dayGroup.participants || [];
     var paxN = dayGroup.participant_count != null ? dayGroup.participant_count : participants.length;
@@ -2244,7 +2256,6 @@
             return inv.created_via !== 'la_office_auto';
           }).length;
     var sub =
-      'Re-enrolled · ' +
       String(paxN) +
       ' participant' +
       (paxN === 1 ? '' : 's') +
@@ -3435,7 +3446,7 @@
       methodFilterChip('gc', 'GoCardless', 'gc') +
       methodFilterChip('own_way', 'Own way', 'own') +
       methodFilterChip('la', 'LA funded', 'la') +
-      methodFilterChip('link', 'Payment link', 'link') +
+      methodFilterChip('link', 'Apple Pay / link', 'link') +
       '</div></div>' +
       '<details style="margin:0 0 14px;padding:12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;max-width:100%;min-width:0">' +
       '<summary style="cursor:pointer;font-weight:700">Match Tide bank CSV</summary>' +
