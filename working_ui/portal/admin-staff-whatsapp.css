@@ -42,23 +42,34 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
   min-width:0;
   max-width:100%;
 }
-/* Compact page head so list/composer stay on screen */
+/* Compact page head so list/composer stay on screen — never grow empty space under intro */
 #workspace:has(#portalStaffWaAdmin) > .admin-page-head{
-  flex:0 0 auto;
-  margin-bottom:6px;
+  flex:0 0 auto !important;
+  margin-bottom:6px !important;
   gap:8px 12px;
   min-width:0;
+  min-height:0 !important;
+  height:auto !important;
   max-width:100%;
   box-sizing:border-box;
+  align-content:flex-start;
+  align-items:flex-start;
+}
+#workspace:has(#portalStaffWaAdmin) > .admin-page-head .admin-page-head__main{
+  flex:0 0 auto !important;
+  min-height:0;
 }
 #workspace:has(#portalStaffWaAdmin) > .admin-page-head .admin-page-head__intro{
-  flex:1 1 14rem;
-  max-width:min(100%,32rem);
+  flex:0 0 auto !important;
+  max-width:100% !important;
+  width:100%;
   font-size:12px;
   line-height:1.35;
   text-align:left;
   min-width:0;
+  min-height:0;
   overflow-wrap:break-word;
+  margin:0 !important;
 }
 #workspace:has(#portalStaffWaAdmin) > .admin-page-head .admin-page-head__title{
   font-size:clamp(1.05rem,2vw,1.3rem);
@@ -77,6 +88,8 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
   max-width:100%;
   display:flex;
   flex-direction:column;
+  justify-content:flex-start;
+  align-items:stretch;
   overflow:hidden;
   box-sizing:border-box;
 }
@@ -96,6 +109,8 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
   grid-template-columns:minmax(200px,280px) minmax(0,1fr);
   grid-template-rows:minmax(0,1fr);
   align-items:stretch;
+  align-content:stretch;
+  justify-content:stretch;
   gap:12px;
   flex:1 1 0;
   min-height:0; /* must shrink — do NOT use 100dvh min-height here */
@@ -327,25 +342,38 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
       max(6px, env(safe-area-inset-bottom, 0px))
       max(10px, env(safe-area-inset-left, 0px)) !important;
   }
+  /* Flex (not % grid) so list/chat pin under the intro — no mid-screen dead zone */
   .portal-staff-wa-admin__layout{
-    grid-template-columns:minmax(0,1fr);
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    align-items:stretch;
     width:100%;
     max-width:100%;
     gap:8px;
+    flex:1 1 0;
+    min-height:0;
   }
   .portal-staff-wa-admin__list{
+    flex:1 1 0;
     max-height:none;
     width:100%;
     max-width:100%;
+    height:auto;
+    min-height:0;
     overflow-x:hidden;
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
   }
   .portal-staff-wa-admin__chat{
     display:none;
+    flex:1 1 0;
     min-height:0;
+    height:auto;
+    max-height:none;
     width:100%;
     max-width:100%; /* inside padded workspace — never 100vw */
+    align-self:stretch;
   }
   .portal-staff-wa-admin__thread{
     max-height:none;
@@ -363,8 +391,9 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
   .portal-staff-wa-admin--thread > .portal-staff-wa-admin__count{
     display:none;
   }
-  #workspace:has(#portalStaffWaAdmin .portal-staff-wa-admin--thread) > .admin-page-head .admin-page-head__intro{
-    display:none;
+  /* Class is on #portalStaffWaAdmin itself — not a descendant */
+  #workspace:has(#portalStaffWaAdmin.portal-staff-wa-admin--thread) > .admin-page-head .admin-page-head__intro{
+    display:none !important;
   }
   .portal-staff-wa-admin__back{
     display:inline-flex;
@@ -380,6 +409,7 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
     max-height:min(48dvh, 380px);
     padding:8px 10px;
     gap:6px;
+    flex:0 0 auto;
   }
   .portal-staff-wa-admin__tools{
     width:100%;
@@ -405,11 +435,11 @@ body:has(#portalStaffWaAdmin) .topbar-tools-grid{
   .portal-staff-wa-admin__composer--tpl .portal-staff-wa-admin__tpl-preview{
     display:none !important;
   }
-  #workspace:has(#portalStaffWaAdmin .portal-staff-wa-admin--thread) > .admin-page-head{
-    margin-bottom:4px;
+  #workspace:has(#portalStaffWaAdmin.portal-staff-wa-admin--thread) > .admin-page-head{
+    margin-bottom:4px !important;
     gap:4px;
   }
-  #workspace:has(#portalStaffWaAdmin .portal-staff-wa-admin--thread) > .admin-page-head .admin-page-head__title{
+  #workspace:has(#portalStaffWaAdmin.portal-staff-wa-admin--thread) > .admin-page-head .admin-page-head__title{
     font-size:1rem;
   }
 }
