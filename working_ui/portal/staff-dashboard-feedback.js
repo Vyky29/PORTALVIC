@@ -1887,8 +1887,9 @@
           dateIso = String(typeof portalViewCalendarDateKey === 'function' ? portalViewCalendarDateKey() : '').trim();
         }catch(_){}
         if(/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) u.searchParams.set('date', dateIso);
+        let vkind = '';
         try{
-          let vkind = String(opts.kind || '').trim().toLowerCase();
+          vkind = String(opts.kind || '').trim().toLowerCase();
           if(vkind === 'opening') vkind = 'open';
           if(vkind === 'closing') vkind = 'close';
           if(!vkind && typeof portalVenueTimeWindowsForUser === 'function'){
@@ -1919,6 +1920,14 @@
             service = String(window.dashboardData.service || (window.dashboardData.morning && window.dashboardData.morning.service) || '').trim();
           }
           if(service && service !== '—') u.searchParams.set('service', service);
+        }catch(_){}
+        try{
+          const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+          const sched = typeof window !== 'undefined' ? window.PortalVenueReportSchedule : null;
+          const needVideo = sched && typeof sched.portalVenueReportRequiresWalkthroughVideo === 'function'
+            ? sched.portalVenueReportRequiresWalkthroughVideo(sid, typeof portalVenueScheduleCtx === 'function' ? portalVenueScheduleCtx() : {}, vkind || '')
+            : false;
+          if(needVideo) u.searchParams.set('video', '1');
         }catch(_){}
         return portalAppendStaffMobileVerticalParam(u.href);
       }catch(_){

@@ -168,6 +168,8 @@
       closeEnd: mins(15, 30),
       serviceStart: mins(8, 45),
       serviceEnd: mins(15, 15),
+      /** Opening + closing each need an in-app walkthrough video (internal Storage). */
+      requireWalkthroughVideo: true,
     },
     berta: {
       venue: "SwimFarm",
@@ -240,6 +242,7 @@
           venue: SUNDAY.roberto.venue,
           label: SUNDAY.roberto.label,
           openEnd: SUNDAY.roberto.openEnd,
+          requireWalkthroughVideo: !!SUNDAY.roberto.requireWalkthroughVideo,
         };
       }
       if (id === "berta" && staffOnVenueRoster(id, dayName, "swimfarm", sessionsModel)) {
@@ -342,6 +345,7 @@
           venue: SUNDAY.roberto.venue,
           label: SUNDAY.roberto.label,
           closeEnd: SUNDAY.roberto.closeEnd,
+          requireWalkthroughVideo: !!SUNDAY.roberto.requireWalkthroughVideo,
         };
       }
     }
@@ -432,14 +436,37 @@
       .slice(0, 64);
   }
 
+  function portalVenueDutyRequiresWalkthroughVideo(duty) {
+    return !!(duty && duty.requireWalkthroughVideo);
+  }
+
+  /** True when this staff's opening and/or closing duty for the view needs a walkthrough video. */
+  function portalVenueReportRequiresWalkthroughVideo(staffId, ctx, kind) {
+    var duty = portalVenueReportDutyForStaff(staffId, ctx);
+    var k = String(kind || "").trim().toLowerCase();
+    if (k === "open" || k === "opening") {
+      return portalVenueDutyRequiresWalkthroughVideo(duty.opening);
+    }
+    if (k === "close" || k === "closing") {
+      return portalVenueDutyRequiresWalkthroughVideo(duty.closing);
+    }
+    return (
+      portalVenueDutyRequiresWalkthroughVideo(duty.opening) ||
+      portalVenueDutyRequiresWalkthroughVideo(duty.closing)
+    );
+  }
+
   var api = {
     OPEN_GRACE_MIN: OPEN_GRACE_MIN,
     CLOSE_GRACE_MIN: CLOSE_GRACE_MIN,
     DAY_CENTRE: DAY_CENTRE,
+    SUNDAY: SUNDAY,
     portalVenueReportDutyForStaff: portalVenueReportDutyForStaff,
     portalVenueReportScopeApplies: portalVenueReportScopeApplies,
     portalVenueTimeWindowsForStaff: portalVenueTimeWindowsForStaff,
     portalVenueLocalScopeSlug: portalVenueLocalScopeSlug,
+    portalVenueDutyRequiresWalkthroughVideo: portalVenueDutyRequiresWalkthroughVideo,
+    portalVenueReportRequiresWalkthroughVideo: portalVenueReportRequiresWalkthroughVideo,
     staffOnDayCentreRoster: staffOnDayCentreRoster,
     staffHasRosterOnDay: staffHasRosterOnDay,
     staffOnVenueRoster: staffOnVenueRoster,

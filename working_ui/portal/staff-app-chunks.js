@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260905-admin-changes-nav";
+  var VER = "20260905-roberto-venue-video";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260903-tue-acat-ikram",

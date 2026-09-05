@@ -495,6 +495,85 @@
       filter: brightness(1.06);
       transform: translateY(-1px);
     }
+    .venue-walkthrough {
+      margin-top: 1.25rem;
+      padding: 14px;
+      border: 1px solid #d7e2ee;
+      border-radius: 16px;
+      background: #f7fafc;
+      min-width: 0;
+    }
+    .venue-walkthrough[hidden] { display: none !important; }
+    .venue-walkthrough__title {
+      margin: 0 0 6px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #173247;
+    }
+    .venue-walkthrough__hint {
+      margin: 0 0 12px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: #5b6473;
+      overflow-wrap: break-word;
+    }
+    .venue-walkthrough__stage {
+      position: relative;
+      width: 100%;
+      min-width: 0;
+      aspect-ratio: 3 / 4;
+      max-height: min(52vh, 420px);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0f1c28;
+    }
+    .venue-walkthrough__stage video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #0f1c28;
+    }
+    .venue-walkthrough__stage video[hidden] { display: none !important; }
+    .venue-walkthrough__status {
+      margin: 10px 0 0;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #314555;
+      min-height: 1.2em;
+      overflow-wrap: break-word;
+    }
+    .venue-walkthrough__actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .venue-walkthrough__actions button {
+      min-width: 0;
+      min-height: 44px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid #c5d3e2;
+      background: #fff;
+      color: #173247;
+      font: 700 13px inherit;
+      cursor: pointer;
+    }
+    .venue-walkthrough__actions button.primary {
+      background: linear-gradient(135deg, #2f7dd1 0%, #1d5fad 100%);
+      border-color: transparent;
+      color: #fff;
+    }
+    .venue-walkthrough__actions button.danger {
+      background: linear-gradient(135deg, #e35d5d 0%, #c03939 100%);
+      border-color: transparent;
+      color: #fff;
+    }
+    .venue-walkthrough__actions button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
 
     @media (max-width: 768px) {
       body {
@@ -601,6 +680,24 @@
       </div>
         </div>
 
+        <section class="venue-walkthrough" id="venueWalkthroughPanel" hidden aria-label="Venue walkthrough video">
+          <h2 class="venue-walkthrough__title">Walkthrough video <span class="req">*</span></h2>
+          <p class="venue-walkthrough__hint" id="venueWalkthroughHint">
+            Record a short walkthrough of the venue before you open or close. The video stays internal with venue reviews.
+          </p>
+          <div class="venue-walkthrough__stage">
+            <video id="venueWalkthroughLive" playsinline muted autoplay></video>
+            <video id="venueWalkthroughPlayback" playsinline controls hidden></video>
+          </div>
+          <p class="venue-walkthrough__status" id="venueWalkthroughStatus" role="status" aria-live="polite">Camera ready when you tap Start camera.</p>
+          <div class="venue-walkthrough__actions">
+            <button type="button" class="primary" id="venueWalkthroughStartCam">Start camera</button>
+            <button type="button" class="danger" id="venueWalkthroughRecord" disabled>Record</button>
+            <button type="button" id="venueWalkthroughStop" disabled>Stop</button>
+            <button type="button" id="venueWalkthroughRetake" disabled>Retake</button>
+          </div>
+        </section>
+
         <button type="submit" class="submit-btn">Submit</button>
         <div class="venue-review-back-wrap">
           <button type="button" class="venue-review-back" id="venueReviewBackBtn" aria-label="Back to dashboard">← Back to dashboard</button>
@@ -614,6 +711,6 @@
   </script>
   <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
   <!-- Front-end + Supabase insert: portal-shared-js/venue_review_app.js -->
-  <script type="module" src="/portal-shared-js/venue_review_app.js?v=20260628-venue-open-close-split"></script>
+  <script type="module" src="/portal-shared-js/venue_review_app.js?v=20260905-roberto-venue-video"></script>
 </body>
 </html>

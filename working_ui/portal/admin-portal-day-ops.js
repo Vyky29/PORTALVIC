@@ -1431,10 +1431,16 @@
     if (venueTbody) {
       if (!venue.length) {
         venueTbody.innerHTML =
-          '<tr><td colspan="6"><div class="submission-state">No venue reviews yet.</div></td></tr>';
+          '<tr><td colspan="7"><div class="submission-state">No venue reviews yet.</div></td></tr>';
       } else {
         venueTbody.innerHTML = venue
           .map(function (r) {
+            var videoPath = String((r && r.video_storage_path) || '').trim();
+            var videoCell = videoPath
+              ? ('<button type="button" class="portal-forms-view-btn" data-venue-video-path="' +
+                esc(videoPath) +
+                '" aria-label="Play venue walkthrough video">Play</button>')
+              : '—';
             return (
               '<tr class="portal-forms-static-row">' +
               '<td class="cell-wrap col-venue-name">' +
@@ -1452,6 +1458,9 @@
               '<td class="cell-wrap col-issues-detail">' +
               esc(cellText(r.issues_reported)) +
               '</td>' +
+              '<td>' +
+              videoCell +
+              '</td>' +
               '<td><div class="portal-forms-cell-main">' +
               esc(cellText(r.submitted_by_name)) +
               '</div></td>' +
@@ -1462,6 +1471,36 @@
       }
     }
     ensurePortalFormsShellClicks();
+    try {
+      if (venueTbody && !venueTbody.__venueVideoBound) {
+        venueTbody.__venueVideoBound = true;
+        venueTbody.addEventListener('click', function (ev) {
+          var btn = ev.target && ev.target.closest ? ev.target.closest('[data-venue-video-path]') : null;
+          if (!btn) return;
+          ev.preventDefault();
+          var path = String(btn.getAttribute('data-venue-video-path') || '').trim();
+          if (!path) return;
+          void (async function () {
+            try {
+              var box = global.__PORTAL_SUPABASE__;
+              var client = box && box.client ? box.client : null;
+              if (!client || !client.storage) {
+                alert('Sign in required to play venue videos.');
+                return;
+              }
+              var signed = await client.storage.from('venue-review-videos').createSignedUrl(path, 3600);
+              if (signed.error || !(signed.data && signed.data.signedUrl)) {
+                throw signed.error || new Error('Could not create play link');
+              }
+              window.open(signed.data.signedUrl, '_blank', 'noopener,noreferrer');
+            } catch (errPlay) {
+              console.error(errPlay);
+              alert('Could not open the venue video.');
+            }
+          })();
+        });
+      }
+    } catch (_vidBind) {}
   }
 
   global.PortalDayOps = {

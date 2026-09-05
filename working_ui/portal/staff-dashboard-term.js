@@ -1457,12 +1457,39 @@
         termLate = false;
       }
       const shift = portalTodayShiftSessions();
-      /* Venue reminders disabled (Jul 2026): the venue review is now only done ad-hoc
-         when a venue isn't right, so staff are no longer nagged about opening/closing
-         checks. The venue tool stays available for anyone whose header profile includes
-         it (portal_swimming_instructor_menus.js). */
+      /* Venue reminders: only duties that require a walkthrough video (Roberto Sunday
+         open/close). Other venue checks stay ad-hoc via the Venue Report tool. */
       let venueOpenNeed = false;
       let venueCloseNeed = false;
+      try{
+        if(portalVenueClockAppliesToCurrentView()){
+          const openDone = portalVenueFlagIsDone('open');
+          const closeDone = portalVenueFlagIsDone('close');
+          const w = portalVenueTimeWindowsForUser();
+          const m = portalMinutesNow();
+          if(w){
+            const openNeedsVideo = !!(w.opening && w.opening.requireWalkthroughVideo);
+            const closeNeedsVideo = !!(w.closing && w.closing.requireWalkthroughVideo);
+            if(openNeedsVideo && w.openEnd != null){
+              venueOpenNeed = !openDone && m > w.openEnd;
+            }
+            if(typeof portalPoolStaffSkipVenueOpeningRow === 'function' && portalPoolStaffSkipVenueOpeningRow()){
+              venueOpenNeed = false;
+            }
+            if(closeNeedsVideo && w.closeEnd != null){
+              venueCloseNeed = !closeDone && m > w.closeEnd;
+            }
+            if(typeof portalPoolStaffSkipVenueClosingRow === 'function' && portalPoolStaffSkipVenueClosingRow()){
+              venueCloseNeed = false;
+            }
+            if(!w.opening) venueOpenNeed = false;
+            if(!w.closing) venueCloseNeed = false;
+          }
+        }
+      }catch(_venRem){
+        venueOpenNeed = false;
+        venueCloseNeed = false;
+      }
       const rosterAttention = typeof portalStaffRosterOverrideAttentionState === 'function'
         ? portalStaffRosterOverrideAttentionState()
         : { need: false, primaryIso: '', count: 0, rosterOverrideDayGroups: [] };
@@ -1756,7 +1783,7 @@
         rows.push(
           '<button type="button" class="setup-row setup-row--work-venue setup-row--portal-op" data-action="open-venue-report" data-portal-venue-kind="open" aria-label="Open venue opening report">' +
           '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/></svg></span>' +
-          '<span class="setup-row-text"><strong>Venue Report — Opening</strong><span class="setup-row-sub">Opening check still incomplete (late).</span></span>' +
+          '<span class="setup-row-text"><strong>Venue Report — Opening</strong><span class="setup-row-sub">Opening check + walkthrough video still incomplete (late).</span></span>' +
           '<span class="setup-row-chev" aria-hidden="true">›</span></button>' +
           '<div class="setup-row setup-row--work-venue setup-row--portal-op setup-row--venue-done-only" role="group">' +
           '<span class="setup-row-text setup-row-text--venue-done"><span class="setup-row-sub">Already submitted?</span></span>' +
@@ -1767,7 +1794,7 @@
         rows.push(
           '<button type="button" class="setup-row setup-row--work-venue setup-row--portal-op" data-action="open-venue-report" data-portal-venue-kind="close" aria-label="Open venue closing report">' +
           '<span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/></svg></span>' +
-          '<span class="setup-row-text"><strong>Venue Report — Closing</strong><span class="setup-row-sub">Closing check still incomplete (late).</span></span>' +
+          '<span class="setup-row-text"><strong>Venue Report — Closing</strong><span class="setup-row-sub">Closing check + walkthrough video still incomplete (late).</span></span>' +
           '<span class="setup-row-chev" aria-hidden="true">›</span></button>' +
           '<div class="setup-row setup-row--work-venue setup-row--portal-op setup-row--venue-done-only" role="group">' +
           '<span class="setup-row-text setup-row-text--venue-done"><span class="setup-row-sub">Already submitted?</span></span>' +
