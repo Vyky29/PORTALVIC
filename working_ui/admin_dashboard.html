@@ -71,7 +71,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260905-buckets"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260906-day-board-stable" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260906-overview-yield" />
   <script src="/portal/portal_staff_display_names.js?v=20260902-luliya-display"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260828-hours-weeknav" />
@@ -21699,7 +21699,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260906-day-board-stable';
+    var PORTAL_ADMIN_HUB_BUILD = '20260906-overview-yield';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -21751,7 +21751,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var fh = window.PortalDayOps && window.PortalDayOps.getFeedbackHub && window.PortalDayOps.getFeedbackHub();
         var th = window.PortalDayOps && window.PortalDayOps.getTrackingHub && window.PortalDayOps.getTrackingHub();
         if(fh && String(h.clientQ || '').trim()) fh.clientSearch = String(h.clientQ).trim();
-        /* Keep Overview + Register on the same selected day / week. */
+        /* Keep Overview + Register on the same selected day / week — do NOT wipe caches
+           or force a second full render (refreshTab already painted; invalidate freezes). */
         if(th && fh){
           try{
             if(h.selectedIso){
@@ -21762,15 +21763,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               th.weekStart = h.weekAnchorIso;
               fh.weekStart = h.weekAnchorIso;
             }
-            if(typeof th.invalidateComputeCaches === 'function') th.invalidateComputeCaches();
-            if(typeof fh.invalidateComputeCaches === 'function') fh.invalidateComputeCaches();
           }catch(_syncDay){}
         }
-        if(showTrack && th && typeof th.render === 'function'){
-          th.render();
+        if(showTrack && th){
+          var ovRoot = $('adminSessionsHubRoot');
+          var alreadyPainted = ovRoot && ovRoot.querySelector('.ash-panels, [data-ash-overview-body], .ash-day-board, .ash-table--overview');
+          if(!alreadyPainted && typeof th.render === 'function') th.render();
+          else if(alreadyPainted && typeof th.scheduleOverviewBodyPaint === 'function' && !ovRoot.querySelector('.ash-day-board, .ash-table--overview tbody tr')){
+            th.scheduleOverviewBodyPaint();
+          }
         }
         if(showFb && fh && typeof fh.render === 'function'){
-          fh.render();
+          var fbRoot = $('adminSessionFeedbacksRoot');
+          var fbPainted = fbRoot && fbRoot.querySelector('.ash-panels');
+          if(!fbPainted) fh.render();
         }
         sessionsHubStampRefresh();
         portalAdminApplyPendingActivityAlertFocus(h.tab);
