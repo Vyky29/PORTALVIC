@@ -738,7 +738,6 @@ async function pingIncomingMessage(row) {
     if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
   } catch (_vis) {}
   if (watchingConversation(row.conversation_id)) return;
-  playCommsCue();
   showLivePing(row);
 }
 

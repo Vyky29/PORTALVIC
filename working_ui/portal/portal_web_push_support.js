@@ -137,7 +137,7 @@
     }
     global.__PORTAL_SW_REG_PROMISE__ = (async function () {
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-notif-open-fix", global.location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-39", global.location.href).href;
         var scopeBase = new URL("./", global.location.href).href;
         var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
         global.__PORTAL_SW_REG__ = reg;
@@ -320,6 +320,43 @@
   global.portalPushSyncAuthUserToServiceWorker = portalPushSyncAuthUserToServiceWorker;
   global.portalPushIsForCurrentUser = portalPushIsForCurrentUser;
   global.portalCurrentPushAuthUserId = portalCurrentPushAuthUserId;
+
+  function portalPostToServiceWorker(msg) {
+    try {
+      if (!global.navigator || !global.navigator.serviceWorker) return;
+      if (global.navigator.serviceWorker.controller) {
+        global.navigator.serviceWorker.controller.postMessage(msg);
+      }
+      void global.navigator.serviceWorker.ready.then(function (reg) {
+        if (reg && reg.active) reg.active.postMessage(msg);
+      });
+    } catch (_e) {}
+  }
+
+  function portalSyncClientVisibilityToSw() {
+    var vis = false;
+    try {
+      vis = !!(global.document && global.document.visibilityState === "visible");
+    } catch (_v) {}
+    portalPostToServiceWorker({ type: "portal-client-visibility", visible: vis });
+  }
+
+  if (!global.__PORTAL_SW_VIS_HEARTBEAT__) {
+    global.__PORTAL_SW_VIS_HEARTBEAT__ = true;
+    portalSyncClientVisibilityToSw();
+    global.setInterval(portalSyncClientVisibilityToSw, 5000);
+    try {
+      document.addEventListener("visibilitychange", portalSyncClientVisibilityToSw);
+      global.addEventListener("pageshow", portalSyncClientVisibilityToSw);
+      global.addEventListener("focus", portalSyncClientVisibilityToSw);
+      global.addEventListener("pagehide", function () {
+        portalPostToServiceWorker({ type: "portal-client-visibility", visible: false });
+      });
+      global.addEventListener("freeze", function () {
+        portalPostToServiceWorker({ type: "portal-client-visibility", visible: false });
+      });
+    } catch (_b) {}
+  }
 
   async function portalSendLocalTestNotification(opts) {
     opts = opts || {};

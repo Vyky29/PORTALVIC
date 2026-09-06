@@ -951,6 +951,26 @@
     }
   }
 
+  function closeCommsOsBanners() {
+    try {
+      if (!global.navigator || !global.navigator.serviceWorker) return;
+      void global.navigator.serviceWorker.ready.then(function (reg) {
+        if (!reg || typeof reg.getNotifications !== "function") return;
+        return reg.getNotifications().then(function (list) {
+          (list || []).forEach(function (n) {
+            var open = String((n && n.data && n.data.portalOpen) || "");
+            var tag = String((n && n.tag) || "");
+            if (open === "communications" || tag.indexOf("comms-msg") === 0) {
+              try {
+                n.close();
+              } catch (_c) {}
+            }
+          });
+        });
+      });
+    } catch (_e) {}
+  }
+
   function showCommsOsBanner(title, body, convId) {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
     var url = commsUrlWith(convId ? { conv: convId } : lastToastMode ? { mode: lastToastMode } : {});
@@ -1013,6 +1033,7 @@
       showCommsOsBanner(title, preview, lastToastConv);
       return;
     }
+    closeCommsOsBanners();
     messageToastCount += 1;
     var el = ensureMessageToast();
     var titleEl = document.getElementById("portalCommsMsgToastTitle");
@@ -1026,13 +1047,6 @@
     try {
       el.removeAttribute("hidden");
     } catch (_sh) {}
-    try {
-      if (typeof global.portalPlayAlertCue === "function") {
-        global.portalPlayAlertCue({ vibrate: [180, 80, 180] });
-      } else if (global.navigator && global.navigator.vibrate) {
-        global.navigator.vibrate([180, 80, 180]);
-      }
-    } catch (_cue) {}
     if (messageToastTimer) global.clearTimeout(messageToastTimer);
     messageToastTimer = global.setTimeout(hideMessageToast, 8000);
   }
@@ -1572,7 +1586,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-notif-open-fix", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-39", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
     } catch (_sw) {}

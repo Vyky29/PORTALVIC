@@ -8,6 +8,7 @@
  * v20260904-comms-push (Communications message + incoming-call banners)
  * v20260905-comms-36 (Home screen PWA numeric badge via Badging API)
  * v20260906-notif-open-fix (never navigate PWA to bare / — blank screen on iOS)
+ * v20260906-comms-inapp-39 (OS logo banner only when portal is backgrounded / locked)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
@@ -33,6 +34,8 @@ var PORTAL_ALERT_VIBRATE = [200, 80, 200, 80, 280, 100, 200];
 var PORTAL_CALL_VIBRATE = [500, 180, 500, 180, 700, 180, 500];
 /** Auth user id stamped by the page after login — used to drop pushes meant for someone else. */
 var portalPushUserId = '';
+/** iOS often returns no clients during `push`. Page heartbeat covers that. */
+var portalForegroundUntil = 0;
 var PORTAL_BADGE_CACHE = 'portal-app-badge-v1';
 var portalStoredAppBadge = 0;
 
@@ -187,11 +190,21 @@ function portalHasVisiblePortalClient() {
   });
 }
 
+function portalTreatAsForeground() {
+  if (Date.now() < portalForegroundUntil) return Promise.resolve(true);
+  return portalHasVisiblePortalClient();
+}
+
 self.addEventListener('message', function (event) {
   var d = event.data;
   if (!d || !d.type) return;
   if (d.type === 'portal-push-set-user') {
     portalPushUserId = String(d.userId || '').trim();
+    return;
+  }
+  if (d.type === 'portal-client-visibility') {
+    if (d.visible) portalForegroundUntil = Date.now() + 16000;
+    else portalForegroundUntil = 0;
     return;
   }
   if (d.type === 'portal-set-app-badge') {
@@ -316,7 +329,7 @@ self.addEventListener('push', function (event) {
   var isCommsPush = portalOpen === 'communications' || portalOpen === 'communications_call';
   var isFamilyPush = portalOpen === 'family_messages';
   event.waitUntil(
-    portalHasVisiblePortalClient().then(function (hasVisibleClient) {
+    portalTreatAsForeground().then(function (hasVisibleClient) {
       var tasks = [
         portalNotifyOpenClients(title, body, portalOpen, callData, chatData, {
           senderUserId: senderUserId,
