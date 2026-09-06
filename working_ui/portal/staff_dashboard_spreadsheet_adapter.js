@@ -554,6 +554,12 @@
     steven_ce: "steven",
     yusuf: "yusuf_ah",
     yusef: "yusuf_ah",
+    /* One CLIENT — never show Zaid Alfadhl as a different person. */
+    zaid_alfadhl: "zaid",
+    zaid_al: "zaid",
+    trial_zaid: "zaid",
+    trial_zaid_alfadhl: "zaid",
+    trial_zaid_al: "zaid",
     // Worker display label is "Eddie Mc"; collapse its slug back to the roster id "eddie".
     eddie_mc: "eddie",
     rayyan_fi: "rayyan_f",
@@ -582,8 +588,11 @@
   }
 
   function canonicalParticipantClientId(nameRaw) {
-    const slug = slugify(String(nameRaw || "").trim());
+    var slug = slugify(String(nameRaw || "").trim());
     if (!slug) return slug;
+    slug = slug
+      .replace(/^(trial|makeup|make_up|cover)_+/g, "")
+      .replace(/_+(trial|makeup|make_up)$/g, "");
     return rosterParticipantSlugAlias(slug);
   }
 
@@ -603,6 +612,8 @@
     put("eddie", "Eddie Mc");
     put("rayyan_f", "Rayyan F");
     put("rayyan_fi", "Rayyan F");
+    put("zaid", "Zaid");
+    put("zaid_alfadhl", "Zaid");
     try {
       const rows =
         typeof window !== "undefined" && Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)
@@ -640,12 +651,23 @@
 
   /** Canonical worker-facing label for dashboards and session_feedback.client_name. */
   function resolveWorkerDisplayName(nameRaw, clientIdRaw) {
+    var rawIn = String(nameRaw || "").trim();
+    var trialMark =
+      /^(trial|makeup|make[\s_-]*up)\s*[-–—:]\s*/i.test(rawIn) ||
+      /\(\s*trial\s*\)\s*$/i.test(rawIn);
+    var coreName = rawIn
+      .replace(/^(trial|makeup|make[\s_-]*up)\s*[-–—:]\s*/i, "")
+      .replace(/\s*\(\s*trial\s*\)\s*$/i, "")
+      .trim();
     const cid = rosterParticipantSlugAlias(
-      slugify(String(clientIdRaw || "").trim()) || slugify(String(nameRaw || "").trim())
+      slugify(String(clientIdRaw || "").trim()) || slugify(coreName || rawIn)
     );
     const map = workerDisplayNameBySlug();
+    if (cid === "zaid") {
+      return trialMark ? "Zaid (Trial)" : "Zaid";
+    }
     if (cid && map[cid]) return map[cid];
-    const name = String(nameRaw || "").trim();
+    const name = coreName || rawIn;
     if (name && !isParticipantCatalogExcludedName(name)) return name;
     if (cid) {
       return cid.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());

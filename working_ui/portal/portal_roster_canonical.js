@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 61;
+  var SOURCE_VERSION = 62;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1016,6 +1016,49 @@
     return null;
   }
 
+  /**
+   * Autumn Sunday Roberto Big Pool (LOCAL): Yusuf Ah is one Multi card 9–10.15.
+   * Summer snap often stored Aquatic 9–9.30 + Multi 9.30–10.15 — staff Today then
+   * showed only the Multi half when the aquatic slice was missing/omitted.
+   */
+  function enforceAutumnSundayRobertoYusufPoolBook(row) {
+    if (!row || !isMultiActivityService(row.service)) return null;
+    if (normalizeDowKey(row.day) !== "sunday") return null;
+    if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return null;
+    if (!/\broberto\b/i.test(String(row.instructors || ""))) return null;
+    var cn = String(row.client_name || "").trim();
+    if (!/^yusuf\b/i.test(cn)) return null;
+    var area = String(row.area || "").toLowerCase();
+    if (area && area.indexOf("big") < 0) return null;
+    var slot = normSundayMultiTimeSlot(row.time_slot);
+    if (
+      slot === "9 to 10.15" ||
+      slot.indexOf("9 to 10.15") === 0
+    ) {
+      return null;
+    }
+    if (
+      slot === "9.30 to 10.15" ||
+      slot.indexOf("9.30 to 10.15") === 0 ||
+      slot === "9 to 9.30" ||
+      slot.indexOf("9 to 9.30") === 0
+    ) {
+      return { time_slot: "9 to 10.15" };
+    }
+    return null;
+  }
+
+  /** Drop summer Aquatic 9–9.30 Yusuf+Roberto — LOCAL is Multi Big Pool 9–10.15 only. */
+  function isAutumnSundayYusufRobertoAquaticSlice(row) {
+    if (!row || !isAquaticService(row.service)) return false;
+    if (normalizeDowKey(row.day) !== "sunday") return false;
+    if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return false;
+    if (!/\broberto\b/i.test(String(row.instructors || ""))) return false;
+    if (!/^yusuf\b/i.test(String(row.client_name || "").trim())) return false;
+    var slot = normSundayMultiTimeSlot(row.time_slot);
+    return slot === "9 to 9.30" || slot.indexOf("9 to 9.30") === 0;
+  }
+
   /** Standing-template Aquatic 9–9.30 so Zaid+Javier sundayFeedbackMerges can resolve. */
   function autumnSundayZaidJavierAquaticStandingRows() {
     return [
@@ -1438,6 +1481,14 @@
       var javierPoolPatch = enforceAutumnSundayJavierPoolBook(r);
       if (javierPoolPatch) {
         out.push(Object.assign({}, r, javierPoolPatch));
+        return;
+      }
+      if (isAutumnSundayYusufRobertoAquaticSlice(r)) {
+        return;
+      }
+      var yusufRobertoPatch = enforceAutumnSundayRobertoYusufPoolBook(r);
+      if (yusufRobertoPatch) {
+        out.push(Object.assign({}, r, yusufRobertoPatch));
         return;
       }
       var hubJackZaidPatch = enforceAutumnSundayJackSZaidHubBook(r);

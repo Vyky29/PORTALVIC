@@ -331,7 +331,11 @@
       }
       if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return iso;
       if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return iso;
-      if(portalStaffHasDatedRowsForIso(iso, sid)) return iso;
+      /*
+       * Autumn: do NOT pin matchIso to the calendar day when a sparse dated overlay
+       * exists (e.g. Javier Sun trial Zaid). Standing Sunday must still project;
+       * dated rows merge via rowIso === calendar iso in the matcher below.
+       */
       const snap = portalStaffStandingWeekdaySnapArgs(iso);
       if(portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through)){
         const anchor = new Date(iso + 'T12:00:00');
@@ -339,6 +343,47 @@
         return portalBestStaffRosterIsoForWeekday(model, sid, w, anchor) || '';
       }
       return iso;
+    }
+    /** Canonical client slug for Today merge (Zaid Alfadhl → zaid). */
+    function portalTodayClientSlugCanon(raw){
+      var s = String(raw || '').trim().toLowerCase();
+      if(!s) return '';
+      try{
+        var A = window.StaffDashboardSpreadsheetAdapter;
+        if(A && typeof A.canonicalParticipantClientId === 'function'){
+          return String(A.canonicalParticipantClientId(s) || s).trim().toLowerCase();
+        }
+        if(A && typeof A.rosterParticipantSlugAlias === 'function'){
+          var slug = s.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+          return String(A.rosterParticipantSlugAlias(slug) || slug).trim().toLowerCase();
+        }
+      }catch(_){}
+      return s.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    }
+    /** Same client + same programme family already has a dated row on this calendar day. */
+    function portalStaffClientHasDatedSameProgrammeOnIso(isoYmd, standingSession){
+      const iso = normaliseIsoDate(isoYmd);
+      if(!iso || !standingSession) return false;
+      const cid = portalTodayClientSlugCanon(standingSession.clientId || standingSession.clientName || '');
+      if(!cid || cid === 'available' || cid === 'closed') return false;
+      if(/^(no[_\s-]?participant|no[_\s-]?client|open[_\s-]?slot)$/i.test(cid)) return false;
+      const sid = String(standingSession.staffId || '').trim().toLowerCase();
+      const standSvc = String(standingSession.rosterService || standingSession.activity || standingSession.service || '').toLowerCase();
+      const standMulti = standSvc.indexOf('multi') >= 0;
+      const standAquatic = standSvc.indexOf('aquatic') >= 0 || standSvc.indexOf('swim') >= 0;
+      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+      return model.some(function(row){
+        if(!portalStaffKeysMatch(row.staffId, sid)) return false;
+        if(normaliseIsoDate(row.session_date || row.sessionDate) !== iso) return false;
+        const rcid = portalTodayClientSlugCanon(row.clientId || row.clientName || '');
+        if(!rcid || rcid !== cid) return false;
+        const rSvc = String(row.rosterService || row.activity || row.service || '').toLowerCase();
+        const rowMulti = rSvc.indexOf('multi') >= 0;
+        if(standMulti || rowMulti) return standMulti && rowMulti;
+        const rowAquatic = rSvc.indexOf('aquatic') >= 0 || rSvc.indexOf('swim') >= 0;
+        if(standAquatic || rowAquatic) return standAquatic && rowAquatic;
+        return !!(standSvc && rSvc && standSvc === rSvc);
+      });
     }
     function portalClientFirstSessionDateIso(clientKey){
       const P = window.PortalParticipantsSheet;
@@ -499,14 +544,23 @@
         }
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
         if(portalIsoIsAutumnWeek1Dc(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
-        if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return rowIso === iso;
+        /* Dated overlay for this calendar day (trial / cover) always applies. */
+        if(rowIso === iso) return true;
+        if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return false;
         /* Outside summer dated window: Day Centre → Autumn board snap (not June ACAT weeks). */
-        if(!portalStaffHasDatedRowsForIso(iso, sid) && portalSessionIsDayCentreService(s)){
+        if(portalSessionIsDayCentreService(s)){
           const dcSnap = portalDayCentreStandingSnapIso(w);
-          if(dcSnap) return rowIso === dcSnap;
+          if(dcSnap){
+            if(rowIso !== dcSnap) return false;
+            if(portalStaffClientHasDatedSameProgrammeOnIso(iso, s)) return false;
+            return true;
+          }
         }
         const matchIso = portalStaffRosterMatchIsoForCalendar(iso, w, sid);
-        return !!(iso && matchIso && rowIso === matchIso);
+        if(!(iso && matchIso && rowIso === matchIso)) return false;
+        /* Sparse dated booking for same client/programme replaces that standing seat only. */
+        if(matchIso !== iso && portalStaffClientHasDatedSameProgrammeOnIso(iso, s)) return false;
+        return true;
       }
       if(iso === '2026-09-06' && portalSessionIsSundaySwimfarmHubMulti(s)) return false;
       if(portalStaffHasDatedRowsForIso(iso, sid)) return false;
@@ -2979,7 +3033,7 @@
             time,
             kind: 'client',
             clientId: effClientId,
-            name: portalParticipantDisplayName(c.name || nameFromReplace || effClientId),
+            name: portalParticipantDisplayName(c.name || nameFromReplace || effClientId, effClientId),
             activity,
             areaLabel,
             poolLocationLabel,

@@ -636,10 +636,23 @@
       var lab = String(name || '').trim();
       return /\(\s*trial\b/i.test(lab) || /\btrial\s+\d{1,2}[\/\.-]\d{1,2}/i.test(lab);
     }
-    function portalParticipantDisplayName(raw){
+    function portalParticipantDisplayName(raw, clientId){
       var s = String(raw || '').trim();
-      if(!s) return s;
-      var stripped = s.replace(/\s*\(\s*trial[^)]*\)\s*/gi, ' ').replace(/\s+/g, ' ').trim();
+      var cid = String(clientId || '').trim();
+      if(!s && !cid) return s;
+      try{
+        var A = window.StaffDashboardSpreadsheetAdapter;
+        if(A && typeof A.resolveWorkerDisplayName === 'function'){
+          var resolved = A.resolveWorkerDisplayName(s || cid, cid || s);
+          if(resolved) s = String(resolved).trim();
+        }
+      }catch(_){}
+      /* Card title stays short (Zaid); Trial/New Participant chip carries the trial mark. */
+      var stripped = s
+        .replace(/^(trial|makeup|make[\s_-]*up)\s*[-–—:]\s*/i, '')
+        .replace(/\s*\(\s*trial[^)]*\)\s*/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       return stripped || s;
     }
     function portalTodayClientNotesForSession(s){

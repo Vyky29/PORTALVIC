@@ -4067,13 +4067,13 @@
     .override--absent{background:linear-gradient(180deg,rgba(255,248,225,.96) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(200,160,40,.55)}
     .override--closed{background:linear-gradient(180deg,rgba(255,235,238,.95) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(183,28,28,.45)}
     .override--replace{background:linear-gradient(180deg,rgba(252,228,236,.95) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(194,24,91,.32)}
-    .override--trial{background:#f5f0ff;border-color:rgba(167,139,250,.45)}
+    .override--trial{background:linear-gradient(180deg,rgba(255,233,168,.45) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(201,162,39,.45)}
     .override--instructor{background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(25,118,210,.32)}
     .override--slot-open{background:linear-gradient(180deg,rgba(224,242,254,.92) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(8,145,178,.38)}
     .portal-sched-ov-badge.override--absent{background:rgba(212,140,38,.14);color:#a56a12;border-color:rgba(212,140,38,.34)}
     .portal-sched-ov-badge.override--closed{background:rgba(183,28,28,.13);color:#9b1f1f;border-color:rgba(183,28,28,.32)}
     .portal-sched-ov-badge.override--replace{background:rgba(194,24,91,.13);color:#a81f63;border-color:rgba(194,24,91,.3)}
-    .portal-sched-ov-badge.override--trial{background:#f3e8ff;color:#7c3aed;border-color:rgba(124,58,237,.32)}
+    .portal-sched-ov-badge.override--trial{background:rgba(249,191,46,.18);color:#92400e;border-color:rgba(201,162,39,.42)}
     .portal-sched-ov-badge.override--instructor{background:rgba(45,132,179,.12);color:#2d84b3;border-color:rgba(45,132,179,.28)}
     .portal-sched-ov-badge.override--slot-open{background:rgba(8,145,178,.14);color:#0e7490;border-color:rgba(8,145,178,.32)}
     .portal-sched-ov-badge.override--updated{background:rgba(37,99,235,.12);color:#1d4ed8;border-color:rgba(37,99,235,.28)}
@@ -4192,8 +4192,8 @@
       border-color:rgba(136,14,79,.72);
     }
     .session-card--ov-trial{
-      background:#f5f0ff;
-      border-color:rgba(167,139,250,.5);
+      background:linear-gradient(180deg,rgba(255,233,168,.55) 0%,rgba(255,255,255,.98) 100%);
+      border-color:rgba(201,162,39,.48);
     }
     .section-card--today .session-card.session-card--ov-pink,
     .section-card--today .session-card.override--replace{
@@ -4201,8 +4201,8 @@
     }
     .section-card--today .session-card.session-card--ov-trial,
     .section-card--today .session-card.override--trial{
-      background:#f5f0ff;
-      border-color:#c4b5fd;
+      background:linear-gradient(180deg,rgba(255,233,168,.55) 0%,rgba(255,255,255,.98) 100%);
+      border-color:rgba(201,162,39,.55);
     }
     .session-card--ov-blue{
       background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);
@@ -4234,7 +4234,7 @@
     }
     .session-card.override--closed{background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);border-color:rgba(123,18,18,.78)}
     .session-card.override--replace{background:rgba(252,233,241,.92);border-color:rgba(136,14,79,.72)}
-    .session-card.override--trial{background:#f5f0ff;border-color:rgba(167,139,250,.5)}
+    .session-card.override--trial{background:linear-gradient(180deg,rgba(255,233,168,.55) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(201,162,39,.5)}
     .section-card--today .session-card.override--replace.session-card--review-needed{
       background:var(--reviewOrangeBg);
       border-color:var(--reviewOrangeBorder);
@@ -5904,10 +5904,10 @@
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 8px rgba(194,24,91,.22);
     }
     .portal-session-slot-chip--trial{
-      color:#fff;
-      background:linear-gradient(145deg,#8b5cf6,#7c3aed);
-      border:1px solid rgba(109,40,217,.55);
-      box-shadow:0 0 0 1px rgba(255,255,255,.42) inset,0 2px 8px rgba(124,58,237,.28);
+      color:#172232;
+      background:linear-gradient(145deg,#ffe9a8,var(--sen-gold));
+      border:1px solid rgba(180,130,20,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.55) inset,0 2px 8px rgba(201,162,39,.28);
       text-transform:none;
     }
     .portal-session-slot-chip--trial > span{
@@ -7142,10 +7142,10 @@
       border:1px solid rgba(140,24,70,.34);
     }
     .week-override-tag--trial{
-      color:#fff;
-      -webkit-text-fill-color:#fff;
-      background:linear-gradient(145deg,#8b5cf6,#7c3aed);
-      border:1px solid rgba(109,40,217,.55);
+      color:#172232;
+      -webkit-text-fill-color:#172232;
+      background:linear-gradient(145deg,#ffe9a8,var(--sen-gold));
+      border:1px solid rgba(180,130,20,.45);
     }
     .week-override-tag--absent{
       color:#fff;
@@ -7222,8 +7222,8 @@
       border-color:rgba(194,24,91,.32);
     }
     .calendar-day--tomorrow.calendar-day--tomorrow-ov-trial{
-      background:linear-gradient(180deg,#f5f0ff 0%,#ede9fe 100%);
-      border-color:rgba(124,58,237,.32);
+      background:linear-gradient(180deg,#fff8e8 0%,#ffefc2 100%);
+      border-color:rgba(201,162,39,.42);
     }
     .calendar-day--tomorrow.calendar-day--tomorrow-ov-pending{
       background:linear-gradient(180deg,#fff8f0 0%,#fff0e0 100%);
@@ -7334,14 +7334,14 @@
       min-width:0;
     }
     .calendar-day-tomorrow-middle .tomorrow-trial-pill{
-      color:#fff;
-      background:linear-gradient(180deg,#a78bfa,#7c3aed);
-      border:1px solid rgba(91,33,182,.34);
-      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(124,58,237,.22);
+      color:#172232;
+      background:linear-gradient(180deg,#ffe9a8,var(--sen-gold));
+      border:1px solid rgba(180,130,20,.42);
+      box-shadow:0 0 0 1px rgba(255,255,255,.55) inset,0 2px 10px rgba(201,162,39,.22);
     }
     .calendar-day-tomorrow-override .tomorrow-trial-pill > span,
     .calendar-day-tomorrow-middle .tomorrow-trial-pill > span{
-      color:#fff;
+      color:#172232;
       font-size:inherit;
       font-weight:inherit;
       letter-spacing:inherit;
