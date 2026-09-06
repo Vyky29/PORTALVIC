@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 70;
+  var SOURCE_VERSION = 71;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -822,8 +822,8 @@
 
   /**
    * Sun 6: drop any dated Javier SwimFarm pool/aquatic rows then re-inject LOCAL book
-   * (Zaid trial 9–9.30 + Multi 9.30–10.15 …). Standing Jul rows are blocked from
-   * projecting onto Sep 6 in admin-sessions-hub rosterRowAppliesOnDate.
+   * (Zaid trial 9–9.30 + Multi 9.30–10.15 …). Standing Autumn Sunday (13 Sep) is
+   * separate — never project summer weeks onto workers.
    */
   function scrubAndEnsureSep6JavierPool(rows) {
     var out = [];
@@ -841,6 +841,96 @@
       out.push(r);
     });
     autumnSundaySep6JavierPoolRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
+  /**
+   * LOCAL EXTRA Sunday standing pool (SwimFarm) — Autumn truth, stamped 13 Sep.
+   * Sun 6 DATE_EXTRA overlay is applied separately (Yusuf↔Simon swap).
+   */
+  function autumnSundayStandingPoolRows() {
+    var iso = WEEKEND_STANDING_ISO.sunday;
+    function mapBook(staff, seats) {
+      return seats.map(function (slot) {
+        return {
+          client_name: slot.client_name,
+          day: "Sunday",
+          instructors: staff,
+          service: slot.service,
+          area: slot.area,
+          time_slot: slot.time_slot,
+          venue: "SwimFarm",
+          session_date: iso,
+        };
+      });
+    }
+    var roberto = [
+      { client_name: "Yusuf Ah", service: "Aquatic Activity", area: "Big Pool", time_slot: "9 to 9.30" },
+      { client_name: "Yusuf Ah", service: "Multi-Activity", area: "Big Pool", time_slot: "9.30 to 10.15" },
+      { client_name: "Samer", service: "Multi-Activity", area: "Big Pool", time_slot: "10.15 to 11" },
+      { client_name: "Gabriel", service: "Multi-Activity", area: "Big Pool", time_slot: "11 to 11.45" },
+      { client_name: "Arthur Mo", service: "Multi-Activity", area: "Big Pool", time_slot: "11.45 to 12.30" },
+      { client_name: "Amaar Ah", service: "Multi-Activity", area: "Big Pool", time_slot: "12.30 to 1.15" },
+      { client_name: "Adaam Ah", service: "Multi-Activity", area: "Big Pool", time_slot: "1.15 to 2" },
+      { client_name: "Rodin", service: "Aquatic Activity", area: "Big Pool", time_slot: "2 to 2.30" },
+      { client_name: "Yoan", service: "Aquatic Activity", area: "Big Pool", time_slot: "2.30 to 3" },
+    ];
+    var aurora = [
+      { client_name: "Simon", service: "Aquatic Activity", area: "Small Pool", time_slot: "9 to 9.30" },
+      { client_name: "Adam Ab", service: "Multi-Activity", area: "Small Pool", time_slot: "9.30 to 10.15" },
+      { client_name: "Jack W", service: "Multi-Activity", area: "Big Pool", time_slot: "10.15 to 11" },
+      { client_name: "Arthur Ma", service: "Multi-Activity", area: "Small Pool", time_slot: "11 to 11.45" },
+      { client_name: "Cyrus", service: "Multi-Activity", area: "Small Pool", time_slot: "11.45 to 12.30" },
+      { client_name: "Aydaan Ah", service: "Multi-Activity", area: "Big Pool", time_slot: "12.30 to 1.15" },
+      { client_name: "Erik", service: "Multi-Activity", area: "Big Pool", time_slot: "1.15 to 2" },
+      { client_name: "Zakariya", service: "Aquatic Activity", area: "Big Pool", time_slot: "2 to 2.30" },
+      { client_name: "Faris", service: "Aquatic Activity", area: "Big Pool", time_slot: "2.30 to 3" },
+    ];
+    var javier = [
+      { client_name: "Zaid (Trial)", service: "Aquatic Activity", area: "Small Pool", time_slot: "9 to 9.30" },
+      { client_name: "Zaid", service: "Multi-Activity", area: "Small Pool", time_slot: "9.30 to 10.15" },
+      { client_name: "Jack S", service: "Multi-Activity", area: "Big Pool", time_slot: "10.15 to 11" },
+      { client_name: "Hazem", service: "Multi-Activity", area: "Big Pool", time_slot: "11 to 11.45" },
+      { client_name: "Eiji", service: "Multi-Activity", area: "Big Pool", time_slot: "11.45 to 12.30" },
+      { client_name: "Rayyan F", service: "Multi-Activity", area: "Small Pool", time_slot: "12.30 to 1.15" },
+      { client_name: "Haneef", service: "Multi-Activity", area: "Small Pool", time_slot: "1.15 to 2" },
+      { client_name: "Max", service: "Aquatic Activity", area: "Big Pool", time_slot: "2 to 2.30" },
+      { client_name: "Shaan", service: "Aquatic Activity", area: "Big Pool", time_slot: "2.30 to 3" },
+    ];
+    return mapBook("ROBERTO", roberto)
+      .concat(mapBook("AURORA", aurora))
+      .concat(mapBook("JAVIER", javier));
+  }
+
+  function isSundaySwimfarmPoolStaffRow(r) {
+    if (!r) return false;
+    if (!/\b(aurora|roberto|javier)\b/i.test(String(r.instructors || ""))) return false;
+    if (!/swimfarm/i.test(String(r.venue || "SwimFarm"))) return false;
+    if (/hub/i.test(String(r.area || ""))) return false;
+    if (!(isMultiActivityService(r.service) || isAquaticService(r.service))) return false;
+    var day = normalizeDowKey(r.day);
+    if (day === "sunday") return true;
+    var d = normIso(r.session_date);
+    if (!d) return false;
+    try {
+      var dt = new Date(d + "T12:00:00");
+      return !isNaN(dt.getTime()) && dt.getDay() === 0;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /** Drop summer/legacy Sunday pool books; inject LOCAL EXTRA standing (13 Sep stamp). */
+  function scrubAndEnsureAutumnSundayPoolStanding(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isSundaySwimfarmPoolStaffRow(r)) return;
+      out.push(r);
+    });
+    autumnSundayStandingPoolRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     return out;
@@ -1343,7 +1433,7 @@
         area: "Big Pool",
         time_slot: "9 to 9.30",
         venue: "SwimFarm",
-        session_date: "2026-07-12",
+        session_date: WEEKEND_STANDING_ISO.sunday,
       },
     ];
   }
@@ -1378,7 +1468,7 @@
         area: "Small Pool",
         time_slot: "9 to 9.30",
         venue: "SwimFarm",
-        session_date: "2026-07-12",
+        session_date: WEEKEND_STANDING_ISO.sunday,
       },
     ];
   }
@@ -1509,10 +1599,11 @@
   /**
    * Autumn Sunday Westway climbing (60' books).
    * Scott de Wolff not renewing — 12–1 open. Alex 2–3 + 3–4 open. Patrick 3–4 Carlos.
+   * Stamp = first standing Autumn Sunday (13 Sep), never a summer week.
    */
   var WEEKEND_STANDING_ISO = {
-    saturday: "2026-07-11",
-    sunday: "2026-07-12",
+    saturday: "2026-09-12",
+    sunday: "2026-09-13",
   };
 
   var AUTUMN_SUNDAY_CLIMBING_BOARD = [
@@ -1634,17 +1725,17 @@
 
   /**
    * Autumn template stamp dates (NOT summer truth).
-   * Rows are stamped on these ISOs so weekday snap can find Autumn LOCAL boards.
-   * Real summer history (other May–Jul dates) must not remain in the resolved roster.
+   * Weekend stamps are real Autumn Sundays (12–13 Sep).
+   * Weekday DC stamps remain Jul 13–17 until those boards move to Sep weekdays.
    */
   var AUTUMN_TERM_FROM_ISO = "2026-09-01";
   /** While applying Autumn patches, drop summer DC/Hub rows in this window before re-injecting LOCAL boards. */
   var AUTUMN_DC_REPLACE_FROM = "2026-06-01";
   var AUTUMN_DC_REPLACE_THROUGH = "2026-07-19";
   var AUTUMN_STANDING_TEMPLATE_ISO_SET = {
-    "2026-07-11": 1 /* Sat weekend standing */,
-    "2026-07-12": 1 /* Sun Multi/Climb standing */,
-    "2026-07-13": 1 /* Mon */,
+    "2026-09-12": 1 /* Sat weekend standing */,
+    "2026-09-13": 1 /* Sun Multi/Climb/pool standing */,
+    "2026-07-13": 1 /* Mon DC stamp (temporary) */,
     "2026-07-14": 1 /* Tue */,
     "2026-07-15": 1 /* Wed */,
     "2026-07-16": 1 /* Thu */,
@@ -2131,6 +2222,7 @@
     merged = scrubDepartedAutumnInstructorRows(merged);
     merged = applyAutumnWeek1DayCentre(merged);
     merged = scrubAndEnsureSep6HubCover(merged);
+    merged = scrubAndEnsureAutumnSundayPoolStanding(merged);
     merged = scrubAndEnsureSep6JavierPool(merged);
     merged = scrubAndEnsureSep6AuroraRobertoPool(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);

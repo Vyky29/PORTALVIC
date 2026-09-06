@@ -526,6 +526,29 @@
         if(iso === '2026-09-06' && portalSessionIsSundaySwimfarmHubMulti(s) && rowIso !== iso){
           return false;
         }
+        /* Autumn Sundays: never invent from summer weeks (pre-Sep). */
+        if(iso >= '2026-09-01' && rowIso && rowIso < '2026-09-01'){
+          const svcS = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
+          const venueS = String((s && s.venue) || '').toLowerCase();
+          const areaS = String((s && (s.rosterArea || s.area || '')) || '').toLowerCase();
+          const sunWorker =
+            (/climb/.test(svcS) && venueS.indexOf('westway') >= 0) ||
+            ((svcS.indexOf('multi') >= 0 || /aquatic|swim/.test(svcS)) &&
+              (!venueS || venueS.indexOf('swimfarm') >= 0));
+          if(sunWorker) return false;
+        }
+        /* Sun 6 is fully dated — do not project standing 13 Sep onto it. */
+        if(iso === '2026-09-06' && rowIso && rowIso !== iso){
+          const svcS = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
+          const venueS = String((s && s.venue) || 'swimfarm').toLowerCase();
+          if(
+            (/climb/.test(svcS) && venueS.indexOf('westway') >= 0) ||
+            ((svcS.indexOf('multi') >= 0 || /aquatic|swim/.test(svcS)) &&
+              venueS.indexOf('swimfarm') >= 0)
+          ){
+            return false;
+          }
+        }
         /* Standing Multi for Hub staff with empty area must also stay off Sun 6. */
         if(iso === '2026-09-06' && rowIso && rowIso !== iso){
           const svc = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
@@ -541,7 +564,7 @@
         }
         /*
          * Sun 6: Aurora/Roberto pool (Yusuf↔Simon Aquatic) + Javier pool (Zaid trial)
-         * are dated LOCAL only — never project Jul standing onto that day.
+         * are dated LOCAL only — never project standing onto that day.
          */
         if(iso === '2026-09-06' && rowIso && rowIso !== iso){
           const svc = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();

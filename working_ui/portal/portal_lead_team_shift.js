@@ -514,6 +514,16 @@ function isSep6OwnedSwimfarmPoolRow(row) {
   return /multi/i.test(svc) || /aquatic|swim/i.test(svc);
 }
 
+function isAutumnSundayWorkerBoardRow(row) {
+  if (!row) return false;
+  const svc = String(row.service || row.activity || row.rosterService || "");
+  const venue = String(row.venue || "");
+  if (/climb/i.test(svc) && /westway/i.test(venue)) return true;
+  if (!/swimfarm/i.test(venue || "SwimFarm")) return false;
+  if (/hub/i.test(String(row.area || ""))) return /multi/i.test(svc);
+  return /multi/i.test(svc) || /aquatic|swim/i.test(svc);
+}
+
 function rosterRowMatchesIso(row, iso) {
   if (!row || !iso) return false;
   const wd = weekdayFromIso(iso);
@@ -521,20 +531,32 @@ function rosterRowMatchesIso(row, iso) {
   const rowDay = String(row.day || "").trim();
   if (rowIso === iso) return true;
   /*
-   * Do not project Jul standing Aurora+Simon (or Roberto Yusuf / Javier pool)
-   * onto Sun 6 — dated scrub owns that day (Overview already blocks this).
+   * Autumn Sundays: never invent from summer weeks (pre-Sep). Worker boards use
+   * LOCAL Autumn stamps (13 Sep+) or exact calendar-dated rows only.
    */
-  if (iso === "2026-09-06" && isSep6OwnedSwimfarmPoolRow(row) && rowIso !== iso) return false;
+  if (iso >= "2026-09-01" && rowIso && rowIso < "2026-09-01" && isAutumnSundayWorkerBoardRow(row)) {
+    return false;
+  }
+  /*
+   * Sun 6 is fully dated LOCAL — do not project standing 13 Sep (or any other Sunday).
+   */
+  if (iso === "2026-09-06" && rowIso && rowIso !== iso && isAutumnSundayWorkerBoardRow(row)) {
+    return false;
+  }
   if (iso === "2026-09-06" && isSep6OwnedSwimfarmPoolRow(row) && !rowIso) return false;
   if (rowDay && wd && rowDay !== wd) return false;
-  /* Standing Services snaps (Jul week) project onto Autumn calendar weekdays. */
+  /* Standing Services snaps project onto Autumn calendar weekdays. */
   try {
     const PRC = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
     const wdKey = String(wd || "").toLowerCase();
     const dcMap = PRC && PRC.DAY_CENTRE_STANDING_ISO;
     if (dcMap && wdKey && dcMap[wdKey] && rowIso === dcMap[wdKey]) return true;
     const weMap = PRC && PRC.WEEKEND_STANDING_ISO;
-    if (weMap && wdKey && weMap[wdKey] && rowIso === weMap[wdKey]) return true;
+    /* Standing Sunday stamp may project onto later Sundays only — never onto earlier ones. */
+    if (weMap && wdKey && weMap[wdKey] && rowIso === weMap[wdKey]) {
+      if (iso >= "2026-09-01" && iso < rowIso) return false;
+      return true;
+    }
   } catch (_) {}
   try {
     if (typeof window !== "undefined" && typeof window.portalSessionSpreadsheetRowMatchesCalendarDate === "function") {
