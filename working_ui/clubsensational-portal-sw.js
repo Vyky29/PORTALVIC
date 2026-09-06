@@ -8,7 +8,7 @@
  * v20260904-comms-push (Communications message + incoming-call banners)
  * v20260905-comms-36 (Home screen PWA numeric badge via Badging API)
  * v20260906-notif-open-fix (never navigate PWA to bare / — blank screen on iOS)
- * v20260906-comms-inapp-45 (Cache heartbeat: no OS logo while PWA is open)
+ * v20260906-comms-inapp-46 (in-app mailbox in Cache when PWA is open)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
@@ -226,6 +226,20 @@ function portalTreatAsForeground() {
   });
 }
 
+function portalWritePendingInapp(payload) {
+  return caches
+    .open('portal-comms-inapp-v1')
+    .then(function (c) {
+      return c.put(
+        'pending',
+        new Response(JSON.stringify(payload || {}), {
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+    })
+    .catch(function () {});
+}
+
 function portalCloseCommsOsBanners() {
   return self.registration.getNotifications().then(function (list) {
     (list || []).forEach(function (n) {
@@ -416,6 +430,19 @@ self.addEventListener('push', function (event) {
          the OS logo toaster — only postMessage for the in-app COMMS card. */
       if ((isCommsPush || isFamilyPush) && hasVisibleClient) {
         tasks.push(portalCloseCommsOsBanners());
+        tasks.push(
+          portalWritePendingInapp({
+            at: Date.now(),
+            title: title,
+            body: body,
+            portalOpen: portalOpen,
+            senderUserId: senderUserId,
+            conversationId:
+              (chatData && (chatData.conversationId || chatData.conversation_id)) ||
+              (callData && (callData.conversationId || callData.conversation_id)) ||
+              '',
+          })
+        );
       } else {
         tasks.unshift(self.registration.showNotification(title, notifyOpts));
       }

@@ -487,6 +487,10 @@
 
   async function hasAuthSession(c) {
     try {
+      var box0 = supabaseBox();
+      if (box0 && box0.session && box0.session.user && box0.session.access_token) return true;
+    } catch (_b0) {}
+    try {
       if (c && c.auth && typeof c.auth.getSession === "function") {
         var gs = await c.auth.getSession();
         if (gs && gs.data && gs.data.session && gs.data.session.user) return true;
@@ -1067,6 +1071,49 @@
     persistUnreadCount(next);
   }
 
+  var lastPendingInappAt = 0;
+  var PORTAL_INAPP_CACHE = "portal-comms-inapp-v1";
+
+  function consumePendingInappAlert() {
+    if (isCommsAppPage()) return;
+    if (!global.caches || typeof global.caches.open !== "function") return;
+    void global.caches
+      .open(PORTAL_INAPP_CACHE)
+      .then(function (c) {
+        return c.match("pending");
+      })
+      .then(function (r) {
+        if (!r) return null;
+        return r.json();
+      })
+      .then(function (d) {
+        if (!d || !d.at) return;
+        var at = Number(d.at) || 0;
+        if (at <= lastPendingInappAt) return;
+        lastPendingInappAt = at;
+        void global.caches.open(PORTAL_INAPP_CACHE).then(function (c) {
+          return c.delete("pending");
+        });
+        if (String(d.portalOpen || "") === "communications_call") return;
+        var row = {
+          message_type: "text",
+          body: d.body || "New message",
+          sender_context: String(d.title || "").toUpperCase() === "ADMIN" ? "ADMINISTRATION" : "PERSONAL",
+          performed_by_user_id: d.senderUserId || "",
+          sender_user_id: d.senderUserId || "",
+          conversation_id: d.conversationId || "",
+          _alertTitle: d.title || "Communications",
+          _alertMode: String(d.title || "").toUpperCase() === "ADMIN" ? "administration" : "personal",
+          _fromName: String(d.title || "").toUpperCase() === "ADMIN" ? "" : d.title || "",
+        };
+        if (isOwnCommsRow(row)) return;
+        bumpUnreadFromIncoming(row);
+        void maybeShowMessageToast(row);
+        void refreshUnread({ light: true });
+      })
+      .catch(function () {});
+  }
+
   async function conversationAlertMeta(row) {
     if (row && row._alertMode) {
       return {
@@ -1198,10 +1245,10 @@
     }
     /* OS logo toaster is the service worker's job when the portal is away.
        This page only paints the internal COMMS card. */
-    if (!commsPageIsActive()) return;
+    if (document.hidden) return;
     closeCommsOsBanners();
     var meta = await conversationAlertMeta(row);
-    if (!commsPageIsActive()) return;
+    if (document.hidden) return;
     lastToastMode = meta.mode || "personal";
     lastToastConv = String(row.conversation_id || lastToastConv || "");
     var preview = previewMessageBody(row);
@@ -1806,7 +1853,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-45", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-46", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
     } catch (_sw) {}
@@ -2126,6 +2173,15 @@
       try {
         if (document.visibilityState === "visible") void refreshUnread({ light: true });
       } catch (_p) {}
-    }, 15000);
+    }, 4000);
+  }
+  if (!global.__PORTAL_COMMS_INAPP_POLL__) {
+    global.__PORTAL_COMMS_INAPP_POLL__ = true;
+    consumePendingInappAlert();
+    global.setInterval(function () {
+      try {
+        if (document.visibilityState === "visible") consumePendingInappAlert();
+      } catch (_i) {}
+    }, 800);
   }
 })(typeof window !== "undefined" ? window : this);
