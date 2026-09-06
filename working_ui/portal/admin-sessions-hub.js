@@ -9214,42 +9214,24 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         .join("");
     }
 
-    var topHtml = "";
-    if (swimKeys.length || supportKeys.length) {
-      topHtml =
-        '<div class="ash-day-board__row ash-day-board__row--top">' +
-        (swimKeys.length
-          ? '<div class="ash-day-board__group ash-day-board__group--swim" style="--ash-db-cols:' +
-            esc(String(Math.max(swimKeys.length, 1))) +
-            '">' +
-            renderCols(swimKeys) +
-            "</div>"
-          : "") +
-        (supportKeys.length
-          ? '<div class="ash-day-board__group ash-day-board__group--support" style="--ash-db-cols:' +
-            esc(String(Math.max(supportKeys.length, 1))) +
-            '">' +
-            renderCols(supportKeys) +
-            "</div>"
-          : "") +
-        "</div>";
+    /*
+     * One grid, max 3 columns per row (e.g. Sun 6: 8 staff → 3 + 3 + 2)
+     * so cards stay readable — not swim|support side-by-side as 6 skinny cols.
+     */
+    var allKeys = swimKeys.concat(supportKeys).concat(climbKeys);
+    if (!allKeys.length) {
+      return (
+        '<div class="ash-day-board" data-ash-day-board="1">' +
+        '<div class="ash-db-empty">' +
+        esc(this.bundleError || "No roster slots for this day.") +
+        "</div></div>"
+      );
     }
-    var climbHtml = "";
-    if (climbKeys.length) {
-      climbHtml =
-        '<div class="ash-day-board__row ash-day-board__row--climb">' +
-        '<div class="ash-day-board__group ash-day-board__group--climb" style="--ash-db-cols:' +
-        esc(String(Math.max(climbKeys.length, 1))) +
-        '">' +
-        renderCols(climbKeys) +
-        "</div></div>";
-    }
-
     return (
       '<div class="ash-day-board" data-ash-day-board="1">' +
-      topHtml +
-      climbHtml +
-      "</div>"
+      '<div class="ash-day-board__group ash-day-board__group--all" style="--ash-db-cols:3">' +
+      renderCols(allKeys) +
+      "</div></div>"
     );
   };
 
