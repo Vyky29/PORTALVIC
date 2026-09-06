@@ -454,6 +454,8 @@
     /* Same child, fuller / trial-labelled names in overrides vs short roster ids. */
     yossi_sium: "yossi",
     yossi_si: "yossi",
+    yosiyas: "yossi",
+    yosiyas_sium: "yossi",
     zaid_alfadhl: "zaid",
     zaid_al: "zaid",
   };

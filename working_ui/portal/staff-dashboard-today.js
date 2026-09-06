@@ -2222,11 +2222,10 @@
         const start = typeof portalCanonicalHmToken === 'function'
           ? portalCanonicalHmToken(base.start || skParts[1] || '')
           : String(base.start || skParts[1] || '').trim();
-        const end = typeof portalCanonicalHmToken === 'function'
-          ? portalCanonicalHmToken(base.end || '')
-          : String(base.end || '').trim();
-        const venue = portalNormKeyStr(it.sessionVenue != null ? it.sessionVenue : base.venue);
-        return [cid, start, end, venue].join('|');
+        /* Same CLIENT (e.g. Yossi vs Yossi Sium) — collapse on person + start.
+         * Do not require end/venue match: standing board vs admin slot_update often differ. */
+        const staff = portalNormKeyStr(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : base.staffId);
+        return [cid, start, staff].join('|');
       }
       return String(it.sessionKey || '').trim();
     }
@@ -2313,11 +2312,28 @@
     }
     function portalMergeDuplicateTodayClientCard(existing, incoming){
       if(!existing || !incoming) return existing || incoming;
-      const keep = portalTodayItemFeedbackPriority(incoming) > portalTodayItemFeedbackPriority(existing)
-        ? incoming
-        : existing;
-      const drop = keep === incoming ? existing : incoming;
+      /* Prefer the admin-updated / override card, but keep short office name (Yossi not Yossi Sium). */
+      const existingHasOv = !!(existing.__portalScheduleOverride || existing.portalOverrideAlertPill || existing.portalRosterTimeUpdated);
+      const incomingHasOv = !!(incoming.__portalScheduleOverride || incoming.portalOverrideAlertPill || incoming.portalRosterTimeUpdated);
+      let keep = existing;
+      let drop = incoming;
+      if(incomingHasOv && !existingHasOv){
+        keep = incoming;
+        drop = existing;
+      } else if(existingHasOv && !incomingHasOv){
+        keep = existing;
+        drop = incoming;
+      } else if(portalTodayItemFeedbackPriority(incoming) > portalTodayItemFeedbackPriority(existing)){
+        keep = incoming;
+        drop = existing;
+      }
       if(keep === drop) return keep;
+      try{
+        const shortName = typeof portalParticipantDisplayName === 'function'
+          ? portalParticipantDisplayName(keep.name || drop.name, keep.clientId || drop.clientId)
+          : '';
+        if(shortName) keep = Object.assign({}, keep, { name: shortName });
+      }catch(_){}
       if(drop && drop.sessionKey && keep.sessionKey && drop.sessionKey !== keep.sessionKey){
         const mem = typeof getSessionReviewRecord === 'function' ? getSessionReviewRecord(drop) : null;
         if(mem && typeof sessionReviewMapMemory === 'object' && sessionReviewMapMemory){

@@ -46,6 +46,8 @@
     zaid_al: "zaid",
     yossi_sium: "yossi",
     yossi_si: "yossi",
+    yosiyas: "yossi",
+    yosiyas_sium: "yossi",
   };
 
   var CLIENT_INFO_SHEET_ALIASES = {

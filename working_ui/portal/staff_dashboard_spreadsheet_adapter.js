@@ -560,6 +560,11 @@
     trial_zaid: "zaid",
     trial_zaid_alfadhl: "zaid",
     trial_zaid_al: "zaid",
+    /* Same CLIENT — rebooked as Yossi Sium after losing place; office unified to Yossi. */
+    yossi_sium: "yossi",
+    yossi_si: "yossi",
+    yosiyas: "yossi",
+    yosiyas_sium: "yossi",
     // Worker display label is "Eddie Mc"; collapse its slug back to the roster id "eddie".
     eddie_mc: "eddie",
     rayyan_fi: "rayyan_f",
@@ -614,6 +619,9 @@
     put("rayyan_fi", "Rayyan F");
     put("zaid", "Zaid");
     put("zaid_alfadhl", "Zaid");
+    put("yossi", "Yossi");
+    put("yossi_sium", "Yossi");
+    put("yosiyas", "Yossi");
     try {
       const rows =
         typeof window !== "undefined" && Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)
@@ -665,6 +673,9 @@
     const map = workerDisplayNameBySlug();
     if (cid === "zaid") {
       return trialMark ? "Zaid (Trial)" : "Zaid";
+    }
+    if (cid === "yossi") {
+      return "Yossi";
     }
     if (cid && map[cid]) return map[cid];
     const name = coreName || rawIn;

@@ -90,9 +90,11 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   // Portal "Zaid Alfadhl" vs roster / team map "zaid"
   zaid_alfadhl: "zaid",
   zaid_al: "zaid",
-  // Portal / override "Yossi Sium" vs roster "Yossi"
+  // Portal / override "Yossi Sium" / "Yosiyas" vs roster "Yossi"
   yossi_sium: "yossi",
   yossi_si: "yossi",
+  yosiyas: "yossi",
+  yosiyas_sium: "yossi",
   hazem_kei: "hazem",
 };
 
