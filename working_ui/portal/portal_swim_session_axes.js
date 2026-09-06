@@ -218,7 +218,7 @@
   function isAquaticService(service) {
     var s = clean(service).toLowerCase();
     if (!s) return false;
-    // Multi / Splash & Connect: exclusive No swimming vs Swimming choice (not always aquatic).
+    // Multi / Splash & Connect are not pure aquatic (no main-form swim axes by default).
     if (isMultiActivityService(s)) return false;
     if (isDayCentreService(s)) return false;
     return (
@@ -558,17 +558,18 @@
     var block = ensureOptionalSwimBlock(root);
     if (!block) return false;
     var pureAquatic = !!opts.aquaticFullMode || isAquaticService(service);
-    var dual = isDayCentreSwimEligible(clientName, service);
-    var exclusive = !pureAquatic && !dual && isMultiActivityService(service);
-    var showChoice = dual || exclusive;
+    /* Optional "Swimming today?" is Day Centre only (Fadi / Ikram / Emanuel / Timi).
+     * Multi-Activity must not show this choice. */
+    var dual = !pureAquatic && isDayCentreSwimEligible(clientName, service);
+    var showChoice = dual;
 
     block.hidden = !showChoice;
-    block.setAttribute("data-swim-choice-mode", dual ? "dual" : exclusive ? "exclusive" : "");
+    block.setAttribute("data-swim-choice-mode", dual ? "dual" : "");
     block.querySelectorAll(".fb-dc-swim__note--dual").forEach(function (el) {
       el.hidden = !dual;
     });
     block.querySelectorAll(".fb-dc-swim__note--exclusive").forEach(function (el) {
-      el.hidden = !exclusive;
+      el.hidden = true;
     });
 
     if (!showChoice) {
@@ -581,11 +582,9 @@
       return false;
     }
 
-    // Dual Day Centre (Fadi / Ikram / Emanuel / Timi): always keep classic main axes.
-    // Exclusive Multi: also keep classic main axes (one feedback form for everyone).
-    if (dual || exclusive) applyFeedbackFormMode(root, false);
-    wireOptionalSwimToggle(block, root, dual ? "dual" : "exclusive");
-    refreshSwimChoice(block, root, dual ? "dual" : "exclusive");
+    applyFeedbackFormMode(root, false);
+    wireOptionalSwimToggle(block, root, "dual");
+    refreshSwimChoice(block, root, "dual");
     return true;
   }
 
