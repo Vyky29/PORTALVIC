@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 62;
+  var SOURCE_VERSION = 63;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -806,13 +806,18 @@
         s = s.replace(/\bAURORA\b/gi, "JAVI");
       }
     }
-    /* Sun 13 Sep + 4 Oct: Aurora day off → Luliya covers her SwimFarm pool book. */
+    /* Autumn Sundays: Aurora cannot work → Luliya covers her SwimFarm pool book. */
     if (
-      (iso === "2026-09-13" || iso === "2026-10-04") &&
       day === "sunday" &&
       (isMultiActivityService(service) || isAquaticService(service))
     ) {
-      s = s.replace(/\bAURORA\b/gi, "LULIYA");
+      var venueSun = String((meta && meta.venue) || "").trim().toLowerCase();
+      if (!venueSun || venueSun.indexOf("swimfarm") >= 0) {
+        var areaSun = String((meta && meta.area) || "").trim().toLowerCase();
+        if (areaSun.indexOf("hub") < 0) {
+          s = s.replace(/\bAURORA\b/gi, "LULIYA");
+        }
+      }
     }
     return s;
   }
@@ -1057,6 +1062,23 @@
     if (!/^yusuf\b/i.test(String(row.client_name || "").trim())) return false;
     var slot = normSundayMultiTimeSlot(row.time_slot);
     return slot === "9 to 9.30" || slot.indexOf("9 to 9.30") === 0;
+  }
+
+  /**
+   * Standing Sunday SwimFarm pool: Aurora → Luliya (Aurora cannot work Sundays).
+   * Hub Multi stays under Hub staff — never rewrite Hub seats.
+   */
+  function remapAutumnSundayAuroraPoolToLuliya(row) {
+    if (!row) return null;
+    if (normalizeDowKey(row.day) !== "sunday") return null;
+    if (!isMultiActivityService(row.service) && !isAquaticService(row.service)) return null;
+    if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return null;
+    if (/hub/i.test(String(row.area || ""))) return null;
+    var raw = String(row.instructors || "").trim();
+    if (!/\baurora\b/i.test(raw)) return null;
+    var mapped = raw.replace(/\bAURORA\b/gi, "LULIYA");
+    if (mapped === raw) return null;
+    return { instructors: mapped };
   }
 
   /** Standing-template Aquatic 9–9.30 so Zaid+Javier sundayFeedbackMerges can resolve. */
@@ -1489,6 +1511,11 @@
       var yusufRobertoPatch = enforceAutumnSundayRobertoYusufPoolBook(r);
       if (yusufRobertoPatch) {
         out.push(Object.assign({}, r, yusufRobertoPatch));
+        return;
+      }
+      var auroraSunPatch = remapAutumnSundayAuroraPoolToLuliya(r);
+      if (auroraSunPatch) {
+        out.push(Object.assign({}, r, auroraSunPatch));
         return;
       }
       var hubJackZaidPatch = enforceAutumnSundayJackSZaidHubBook(r);
