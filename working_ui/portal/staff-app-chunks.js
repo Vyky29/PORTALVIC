@@ -12,7 +12,7 @@
     "/portal/term_from_timetable.js?v=20260906-cyrus-first-sun",
     "/portal/term_calendar_dashboard_shared.js?v=20260903-tue-acat-ikram",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260906-yusuf-aurora-swap",
-    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-zaid-yusuf-9",
+    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short",
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp",

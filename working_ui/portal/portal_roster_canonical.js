@@ -1460,7 +1460,7 @@
     { staff: "ROBERTO", name: "Tom", time: "4 to 4.30" },
     { staff: "ROBERTO", name: "Yassir", time: "4.30 to 5" },
     { staff: "ROBERTO", name: "Yossi", time: "5 to 5.30" },
-    { staff: "ROBERTO", name: "Yunis Hussein", time: "5.30 to 6" },
+    { staff: "ROBERTO", name: "Yunis", time: "5.30 to 6" },
     { staff: "ROBERTO", name: "Maiyar", time: "6 to 6.30" },
     { staff: "ROBERTO", name: "Joelle", time: "5.30 to 6.30" },
     { staff: "SIMON", name: "Elijah", time: "4 to 4.30" },

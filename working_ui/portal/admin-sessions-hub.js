@@ -461,6 +461,7 @@
     yossi_si: "yossi",
     yosiyas: "yossi",
     yosiyas_sium: "yossi",
+    yunis_hussein: "yunis",
     zaid_alfadhl: "zaid",
     zaid_al: "zaid",
   };
@@ -3935,6 +3936,9 @@
     if (isClimbingService(slot.service) && (slot.portalOverrideTrialTag || /^trial\b/i.test(clean(slot.client_name)))) {
       score -= 4;
     }
+    /* Prefer admin Updated / dated fold over bare standing twin (Yossi vs Yossi Sium). */
+    if (slot.portalRosterTimeUpdated || slot.__portalScheduleOverride) score += 8;
+    if (overrideIsSlotUpdateType(slot.__portalScheduleOverride)) score += 4;
     var resolved = resolveRosterClientName(slot.client_name);
     if (resolved && clean(slot.client_name) === resolved) score += 1;
     if (/^trial\b/i.test(clean(slot.client_name))) score -= 2;
@@ -3961,7 +3965,12 @@
       }
     }
     return order.map(function (o) {
-      return o.slot;
+      var s = o.slot;
+      var shortNm = dayBoardParticipantDisplayName(s && s.client_name);
+      if (shortNm && shortNm !== clean(s.client_name)) {
+        return Object.assign({}, s, { client_name: shortNm });
+      }
+      return s;
     });
   }
 
@@ -8499,6 +8508,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
      * Do NOT apply overviewOmitRosterSlots / swim-merge duplicate omit here.
      * Those hide Zaid Aquatic 9–9.30 (and Yusuf aquatic) for feedback merging —
      * staffing board must show the trial card separately from Multi 9.30–10.15.
+     * DO collapse same CLIENT name variants (Yossi / Yossi Sium) after filters.
      */
     var displaySlots = scopedSlots.filter(function (s) {
       try {
@@ -8513,6 +8523,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         return true;
       }
     });
+    displaySlots = dedupeOverviewDisplaySlots(displaySlots);
     displaySlots.sort(function (a, b) {
       var ta = clean(a && a.time_start) || "";
       var tb = clean(b && b.time_start) || "";
@@ -9078,25 +9089,45 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return chips.length ? '<div class="ash-db-card__chips">' + chips.join(" ") + "</div>" : "";
   }
 
+  function dayBoardParticipantDisplayName(raw) {
+    var s = clean(raw);
+    if (!s) return s;
+    try {
+      var A = global.StaffDashboardSpreadsheetAdapter;
+      if (A && typeof A.resolveWorkerDisplayName === "function") {
+        var resolved = A.resolveWorkerDisplayName(s, s);
+        if (resolved) return clean(resolved);
+      }
+    } catch (_dn) {}
+    try {
+      if (typeof global.portalParticipantDisplayName === "function") {
+        var p = global.portalParticipantDisplayName(s);
+        if (p) return clean(p);
+      }
+    } catch (_p) {}
+    return s;
+  }
+
   function htmlDayBoardCard(hub, slot, st, esc) {
     var band = dayBoardServiceBand(slot);
-    var name = clean(slot.client_name) || "No participant";
+    var name = dayBoardParticipantDisplayName(slot.client_name) || "No participant";
     if (st.makeupDisp) {
       var mkName =
-        (st.makeupDisp.makeupSlot && clean(st.makeupDisp.makeupSlot.client_name)) ||
-        clean(overrideReplacementClientName(overridePayloadObj(st.makeupDisp.ov))) ||
-        "MakeUp";
-      name = mkName + " (was " + clean(slot.client_name) + ")";
+        dayBoardParticipantDisplayName(
+          (st.makeupDisp.makeupSlot && st.makeupDisp.makeupSlot.client_name) ||
+            overrideReplacementClientName(overridePayloadObj(st.makeupDisp.ov))
+        ) || "MakeUp";
+      name = mkName + " (was " + (dayBoardParticipantDisplayName(slot.client_name) || clean(slot.client_name)) + ")";
     } else if (st.isOpenSlot) {
       name = rosterOpenSlotDisplayLabel();
     } else if (st.isTrial && clean(slot.client_name)) {
       /* Name is just the child; Trial mark lives on the service band + chip. */
       name =
-        clean(slot.client_name)
+        dayBoardParticipantDisplayName(slot.client_name)
           .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
           .replace(/^trial\s*[-·:]?\s*/i, "")
           .replace(/\s+/g, " ")
-          .trim() || clean(slot.client_name);
+          .trim() || dayBoardParticipantDisplayName(slot.client_name);
     }
     var venue = clean(slot.venue);
     var area = clean(slot.area);

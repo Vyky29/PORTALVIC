@@ -126,6 +126,83 @@
     );
   }
 
+  /** Same CLIENT across name variants (Yossi / Yossi Sium) — prefer adapter aliases. */
+  function canonicalClientSlug(name) {
+    try {
+      var A = global.StaffDashboardSpreadsheetAdapter;
+      if (A && typeof A.canonicalParticipantClientId === "function") {
+        return String(A.canonicalParticipantClientId(name) || "").trim();
+      }
+    } catch (_) {}
+    var s = String(name || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    s = s
+      .replace(/^(trial|makeup|make_up|cover)_+/g, "")
+      .replace(/_+(trial|makeup|make_up)$/g, "");
+    var aliases = {
+      yossi_sium: "yossi",
+      yossi_si: "yossi",
+      yosiyas: "yossi",
+      yosiyas_sium: "yossi",
+      yunis_hussein: "yunis",
+      zaid_alfadhl: "zaid",
+      zaid_al: "zaid",
+    };
+    return aliases[s] || s;
+  }
+
+  function officeShortClientName(nameRaw) {
+    try {
+      var A = global.StaffDashboardSpreadsheetAdapter;
+      if (A && typeof A.resolveWorkerDisplayName === "function") {
+        var short = A.resolveWorkerDisplayName(nameRaw, nameRaw);
+        if (short) return String(short).trim();
+      }
+    } catch (_) {}
+    return String(nameRaw || "").trim();
+  }
+
+  function findDatedAliasMatch(standingRow, datedMap) {
+    if (!standingRow || !datedMap) return null;
+    var sk = datedSlotKey(standingRow);
+    if (datedMap[sk]) return datedMap[sk];
+    var iso = normIso(standingRow.session_date);
+    var cid = canonicalClientSlug(standingRow.client_name);
+    if (!iso || !cid || isNoClientName(standingRow.client_name)) return null;
+    var day = String(standingRow.day || weekdayLongFromIso(iso) || "").trim();
+    var bounds = slotBoundsKey(standingRow.time_slot, day);
+    for (var k in datedMap) {
+      if (!Object.prototype.hasOwnProperty.call(datedMap, k)) continue;
+      var d = datedMap[k];
+      if (normIso(d.session_date) !== iso) continue;
+      if (canonicalClientSlug(d.client_name) !== cid) continue;
+      if (slotBoundsKey(d.time_slot, d.day || day) !== bounds) continue;
+      if (!instructorSetsOverlap(d.instructors, standingRow.instructors)) continue;
+      return d;
+    }
+    return null;
+  }
+
+  function outHasSameClientSlot(outRows, row) {
+    var iso = normIso(row && row.session_date);
+    var cid = canonicalClientSlug(row && row.client_name);
+    if (!iso || !cid || isNoClientName(row && row.client_name)) return false;
+    var day = String((row && row.day) || weekdayLongFromIso(iso) || "").trim();
+    var bounds = slotBoundsKey(row.time_slot, day);
+    for (var i = 0; i < outRows.length; i++) {
+      var o = outRows[i];
+      if (normIso(o.session_date) !== iso) continue;
+      if (canonicalClientSlug(o.client_name) !== cid) continue;
+      if (slotBoundsKey(o.time_slot, o.day || day) !== bounds) continue;
+      if (!instructorSetsOverlap(o.instructors, row.instructors)) continue;
+      return true;
+    }
+    return false;
+  }
+
   function openedSlotKey(iso, row) {
     var day = String(row.day || weekdayLongFromIso(iso) || "").trim();
     return [
@@ -279,7 +356,7 @@
       var row = dated[sk];
       var iso = normIso(row.session_date);
       if (!iso || isNoClientName(row.client_name)) return;
-      var ck = iso + "|" + String(row.client_name || "").toLowerCase();
+      var ck = iso + "|" + canonicalClientSlug(row.client_name);
       clientDayActive[ck] = row;
     });
 
@@ -298,14 +375,13 @@
 
     base.forEach(function (r) {
       var iso = normIso(r.session_date);
-      var sk = datedSlotKey(r);
       var dayLabel = String(r.day || weekdayLongFromIso(iso) || "").toLowerCase();
       if (iso && !rowEligibleForSessionDate(r, iso)) {
         rememberOpenedSlot(iso, r, dayLabel);
         return;
       }
       if (iso) {
-        var clientDayKey = iso + "|" + String(r.client_name || "").toLowerCase();
+        var clientDayKey = iso + "|" + canonicalClientSlug(r.client_name);
         var moved = clientDayActive[clientDayKey];
         if (
           moved &&
@@ -317,7 +393,7 @@
           return;
         }
       }
-      if (cancelledDated[sk]) {
+      if (cancelledDated[datedSlotKey(r)]) {
         rememberOpenedSlot(iso, r, dayLabel);
         return;
       }
@@ -328,18 +404,25 @@
         instructors: r.instructors,
         venue: r.venue,
       });
-      if (!dated[sk] && cancelledTemplates[tk]) {
+      if (!dated[datedSlotKey(r)] && !findDatedAliasMatch(r, dated) && cancelledTemplates[tk]) {
         rememberOpenedSlot(iso, r, dayLabel);
         return;
       }
-      if (dated[sk]) {
+      var datedHit = findDatedAliasMatch(r, dated);
+      if (datedHit) {
+        var shortNm = officeShortClientName(r.client_name || datedHit.client_name);
         out.push(
           markRosterTimeUpdated(
-            Object.assign({}, r, dated[sk], { session_date: iso, day: r.day || dated[sk].day }),
+            Object.assign({}, r, datedHit, {
+              session_date: iso,
+              day: r.day || datedHit.day,
+              client_name: shortNm || datedHit.client_name || r.client_name,
+            }),
             r
           )
         );
-        seenDated[sk] = true;
+        seenDated[datedSlotKey(datedHit)] = true;
+        seenDated[datedSlotKey(r)] = true;
         return;
       }
       if (iso) {
@@ -365,9 +448,9 @@
 
     function markOccupied(row) {
       if (!row || isNoClientName(row.client_name)) return;
-      var iso = normIso(row.session_date);
-      if (!iso || !row.time_slot) return;
-      occupiedSlots[openedSlotKey(iso, row)] = true;
+      var isoOcc = normIso(row.session_date);
+      if (!isoOcc || !row.time_slot) return;
+      occupiedSlots[openedSlotKey(isoOcc, row)] = true;
     }
 
     out.forEach(markOccupied);
@@ -378,13 +461,22 @@
     Object.keys(dated).forEach(function (sk) {
       if (seenDated[sk]) return;
       var row = dated[sk];
-      var iso = normIso(row.session_date);
-      if (iso && !rowEligibleForSessionDate(row, iso)) return;
+      var isoAdd = normIso(row.session_date);
+      if (isoAdd && !rowEligibleForSessionDate(row, isoAdd)) return;
       if (isNoClientName(row.client_name)) {
-        var iso = normIso(row.session_date);
-        if (iso && occupiedSlots[openedSlotKey(iso, row)]) return;
+        if (isoAdd && occupiedSlots[openedSlotKey(isoAdd, row)]) return;
       }
-      out.push(Object.assign({}, row, { __portal_roster_time_updated: true }));
+      /* Same CLIENT already on standing (e.g. Yossi vs Yossi Sium) — do not dual-card. */
+      if (outHasSameClientSlot(out, row)) {
+        seenDated[sk] = true;
+        return;
+      }
+      out.push(
+        Object.assign({}, row, {
+          client_name: officeShortClientName(row.client_name) || row.client_name,
+          __portal_roster_time_updated: true,
+        })
+      );
       seenDated[sk] = true;
     });
 

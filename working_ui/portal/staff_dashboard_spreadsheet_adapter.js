@@ -565,6 +565,8 @@
     yossi_si: "yossi",
     yosiyas: "yossi",
     yosiyas_sium: "yossi",
+    /* Office short label — never show full surname on boards. */
+    yunis_hussein: "yunis",
     // Worker display label is "Eddie Mc"; collapse its slug back to the roster id "eddie".
     eddie_mc: "eddie",
     rayyan_fi: "rayyan_f",
@@ -622,6 +624,8 @@
     put("yossi", "Yossi");
     put("yossi_sium", "Yossi");
     put("yosiyas", "Yossi");
+    put("yunis", "Yunis");
+    put("yunis_hussein", "Yunis");
     try {
       const rows =
         typeof window !== "undefined" && Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)
@@ -676,6 +680,9 @@
     }
     if (cid === "yossi") {
       return "Yossi";
+    }
+    if (cid === "yunis") {
+      return "Yunis";
     }
     if (cid && map[cid]) return map[cid];
     const name = coreName || rawIn;
