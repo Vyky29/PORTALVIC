@@ -5595,12 +5595,24 @@
     return false;
   };
 
-  AdminSessionsHub.prototype.slotFeedbackComplete = function (slot) {
-    if (slot && !slot.portalOverrideMakeUpTag) {
+  AdminSessionsHub.prototype.slotFeedbackComplete = function (slot, _seen) {
+    if (!slot) return false;
+    var guard = _seen || Object.create(null);
+    var guardKey =
+      clean(slot.session_date) +
+      "|" +
+      clean(slot.client_name) +
+      "|" +
+      clean(slot.time_start || slot.time_slot) +
+      "|" +
+      (slot.portalOverrideMakeUpTag ? "mk" : "r");
+    if (guard[guardKey]) return false;
+    guard[guardKey] = true;
+    if (!slot.portalOverrideMakeUpTag) {
       var disp = makeupOverrideDisplacingSlot(this, slot);
       if (disp && disp.makeupSlot) {
         if (this.slotIsAbsent(disp.makeupSlot)) return true;
-        return this.slotFeedbackComplete(disp.makeupSlot);
+        return this.slotFeedbackComplete(disp.makeupSlot, guard);
       }
     }
     if (this.acatGroupCoversSlot(slot)) return true;
@@ -8418,8 +8430,45 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return list;
   };
 
+  /** Who works / who sits — no feedback resolution (Overview staffing guide). */
+  AdminSessionsHub.prototype.staffingDisplayContextForDay = function (iso) {
+    var hub = this;
+    iso = clean(iso) || hub.selectedDay;
+    var slots = hub.expandSlotsForDate(iso);
+    var scopedSlots = slots.filter(function (s) {
+      return !isTeflonDemoRosterSlot(s) && hub.slotPassesOverviewFilters(s);
+    });
+    /* Light omit: skip absorbed make-up duplicates without full feedback unit graph. */
+    var displaySlots = scopedSlots.filter(function (s) {
+      try {
+        return !shouldOmitOverviewSlot(hub, s);
+      } catch (_om) {
+        return true;
+      }
+    });
+    displaySlots.sort(function (a, b) {
+      var ta = clean(a && a.time_start) || "";
+      var tb = clean(b && b.time_start) || "";
+      if (ta !== tb) return ta < tb ? -1 : 1;
+      var ca = clean(a && a.client_name) || "";
+      var cb = clean(b && b.client_name) || "";
+      return ca.localeCompare(cb, "en", { sensitivity: "base" });
+    });
+    return {
+      iso: iso,
+      units: [],
+      unitComplete: {},
+      unitAbsent: {},
+      displaySlots: displaySlots,
+    };
+  };
+
   AdminSessionsHub.prototype.trackingDisplayContextForDay = function (iso) {
     var hub = this;
+    /* Overview tab = staffing guide only. */
+    if (hub.tab === "tracking") {
+      return hub.staffingDisplayContextForDay(iso);
+    }
     iso = clean(iso) || hub.selectedDay;
     var slots = hub.expandSlotsForDate(iso);
     var units = hub.getFeedbackUnitsForDate(iso);
@@ -8728,10 +8777,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   }
 
   function overviewSlotBoardState(hub, slot, unitComplete, unitAbsent) {
-    var ukey = feedbackUnitKey(slot);
-    var fbDone = !!(unitComplete && unitComplete[ukey]) || hub.slotFeedbackComplete(slot);
-    var isAbsent = !!(unitAbsent && unitAbsent[ukey]) || hub.slotIsAbsent(slot);
-    var isCancelled = hub.slotHasCancellation(slot);
+    /* Staffing guide only — no feedback matching (that froze Overview on 1000+ rows). */
     var slotOv = hub.overrideForSlot(slot);
     if (slot.__portalShadowingOverride) slotOv = slot.__portalShadowingOverride;
     var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
@@ -8747,41 +8793,25 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var isOpenSlot = kind === "open";
     var isClosed = kind === "closed";
     var isDuty = slotIsStaffDutyNoFeedback(slot) || kind === "staff_duty" || kind === "manager";
-    var makeupDisp = isOpenSlot ? null : makeupOverrideDisplacingSlot(hub, slot);
-    var fbKind = "na";
-    if (makeupDisp) {
-      var mkSlotDisp = makeupDisp.makeupSlot;
-      var mkAbsentDisp = mkSlotDisp ? hub.slotIsAbsent(mkSlotDisp) : false;
-      var mkDoneDisp = mkSlotDisp ? hub.slotFeedbackComplete(mkSlotDisp) : false;
-      fbKind = mkAbsentDisp ? "absent" : mkDoneDisp ? "done" : "wait";
-    } else if (isOpenSlot || isClosed || isDuty) {
-      fbKind = "na";
-    } else if (isCancelled) {
-      fbKind = "cancelled";
-    } else if (isAbsent) {
-      fbKind = "absent";
-    } else if (fbDone) {
-      fbKind = "done";
-    } else {
-      fbKind = "wait";
+    var makeupDisp = null;
+    try {
+      makeupDisp = isOpenSlot ? null : makeupOverrideDisplacingSlot(hub, slot);
+    } catch (_mk) {
+      makeupDisp = null;
     }
     var tone = "client";
     if (isClosed) tone = "closed";
     else if (isOpenSlot) tone = "open";
     else if (isDuty) tone = "duty";
     else if (isTrial) tone = "trial";
-    else if (isAbsent || fbKind === "absent") tone = "absent";
-    else if (isCancelled) tone = "cancelled";
     else if (isCoverNeeded) tone = "cover";
     else if (isMakeup || makeupDisp) tone = "makeup";
-    else if (fbKind === "done") tone = "done";
-    else if (fbKind === "wait") tone = "wait";
     else if (isDayCentreService(slot.service)) tone = "dc";
     return {
-      ukey: ukey,
-      fbDone: fbDone,
-      isAbsent: isAbsent,
-      isCancelled: isCancelled,
+      ukey: "",
+      fbDone: false,
+      isAbsent: false,
+      isCancelled: false,
       slotOv: slotOv,
       isUpdated: isUpdated,
       isShadowing: isShadowing,
@@ -8793,25 +8823,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       isClosed: isClosed,
       isDuty: isDuty,
       makeupDisp: makeupDisp,
-      fbKind: fbKind,
+      fbKind: "na",
       tone: tone,
     };
   }
 
   function htmlDayBoardFbBadge(st, esc) {
-    if (st.fbKind === "done") {
-      return '<span class="ash-db-badge ash-db-badge--done">Feedback done</span>';
-    }
-    if (st.fbKind === "absent") {
-      return '<span class="ash-db-badge ash-db-badge--absent">Absent</span>';
-    }
-    if (st.fbKind === "cancelled") {
-      return '<span class="ash-db-badge ash-db-badge--cancel">Cancelled</span>';
-    }
-    if (st.fbKind === "wait") {
-      return '<span class="ash-db-badge ash-db-badge--wait">Feedback pending</span>';
-    }
-    return '<span class="ash-db-badge ash-db-badge--na">' + esc("N/A") + "</span>";
+    /* Overview is a staffing board — feedback status lives on Register / Session Feedback. */
+    return "";
   }
 
   function htmlDayBoardOverrideBadges(hub, slot, st, esc) {
@@ -9004,17 +9023,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             return htmlDayBoardCard(hub, it.slot, it.st, esc);
           })
           .join("");
-        var pending = 0;
-        for (var n = 0; n < items.length; n++) {
-          if (items[n].st.fbKind === "wait") pending++;
-        }
         return (
           '<section class="ash-db-col">' +
           '<h4 class="ash-db-col__staff">' +
           esc(labelByKey[key]) +
           '<span class="ash-db-col__meta">' +
           esc(String(items.length)) +
-          (pending ? " · " + pending + " pending" : "") +
+          " seat" +
+          (items.length === 1 ? "" : "s") +
           "</span></h4>" +
           '<div class="ash-db-col__slots">' +
           (cards || '<p class="ash-db-empty">No seats</p>') +
@@ -9190,51 +9206,90 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var useBoard = hub.overviewLayout !== "table";
     /* Shell first — board/table body fills via scheduleOverviewBodyPaint (keeps tab responsive). */
     return (
-      this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
-      this.htmlOverviewFeedbackLoadHint() +
+      this.htmlFeedbackWeekDaysRow({ overviewPicker: true, staffingGuide: true }) +
+      '<p class="ash-feedback-filter-hint" role="status">' +
+      esc("Staffing board — who works and which seats today. Feedback status is on Register / Session Feedback.") +
+      "</p>" +
       this.overviewFilterRowHtml() +
       '<div class="ash-table-title-row">' +
       '<h3 class="ash-table-title">' +
       esc(formatLongDate(this.selectedDay)) +
       ' <span class="ash-badge ash-badge--booked">' +
-      esc(useBoard ? "Day board" : "Roster") +
+      esc(useBoard ? "Who works" : "Roster") +
       "</span></h3>" +
       this.htmlOverviewLayoutToggle() +
       "</div>" +
       '<div data-ash-overview-body class="ash-overview-body">' +
       '<p class="ash-feedback-filter-hint" role="status">Building day board…</p>' +
-      "</div>" +
-      this.htmlOverviewTermWeekLog({ lazy: true })
+      "</div>"
     );
   };
 
   AdminSessionsHub.prototype.htmlTrackingBody = function () {
     var hub = this;
-    var esc = this.escapeHtml;
     if (hubDayIsClubClosed(hub, this.selectedDay)) return "";
-    var ctx = hub.trackingDisplayContextForDay(this.selectedDay);
+    var ctx = hub.staffingDisplayContextForDay(this.selectedDay);
     var displaySlots = ctx.displaySlots;
-    var unitComplete = ctx.unitComplete;
-    var unitAbsent = ctx.unitAbsent;
     var useBoard = hub.overviewLayout !== "table";
-    var body = useBoard
-      ? hub.htmlDayBoard(displaySlots, unitComplete, unitAbsent)
-      : hub.htmlTrackingTableBody(displaySlots, unitComplete, unitAbsent);
-    var missing = hub.htmlOverviewMissingFeedbackBlock(this.selectedDay, ctx);
-    var countHint = htmlOverviewSessionCountHint(
-      hub,
-      this.selectedDay,
-      displaySlots.filter(function (s) {
-        return !isTeflonDemoRosterSlot(s);
-      }),
-      esc
-    );
+    return useBoard
+      ? hub.htmlDayBoard(displaySlots, {}, {})
+      : hub.htmlTrackingTableBodyStaffing(displaySlots);
+  };
+
+  AdminSessionsHub.prototype.htmlTrackingTableBodyStaffing = function (displaySlots) {
+    var esc = this.escapeHtml;
+    var hub = this;
+    var rows = (displaySlots || [])
+      .map(function (slot) {
+        var st = overviewSlotBoardState(hub, slot, {}, {});
+        var name = clean(slot.client_name) || "No participant";
+        if (st.makeupDisp) {
+          var mkName =
+            (st.makeupDisp.makeupSlot && clean(st.makeupDisp.makeupSlot.client_name)) ||
+            clean(overrideReplacementClientName(overridePayloadObj(st.makeupDisp.ov))) ||
+            "MakeUp";
+          name = mkName + " (was " + clean(slot.client_name) + ")";
+        } else if (st.isOpenSlot) {
+          name = rosterOpenSlotDisplayLabel();
+        } else if (st.isTrial && clean(slot.client_name)) {
+          name = "Trial · " + clean(slot.client_name);
+        }
+        return (
+          "<tr>" +
+          '<td class="ash-td-center">' +
+          esc(dayBoardServiceBand(slot)) +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          esc(dayBoardInstructorsForSlot(slot).map(dayBoardStaffLabel).join(", ")) +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          esc(name) +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          esc(clean(slot.venue) || "—") +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          esc(rosterTimeDisplay(slot) || clean(slot.time_slot) || "—") +
+          "</td>" +
+          '<td class="ash-td-center">' +
+          (htmlDayBoardOverrideBadges(hub, slot, st, esc) || "—") +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+    if (!rows) {
+      rows =
+        '<tr><td colspan="6"><div class="ash-empty">' +
+        (this.bundleError ? esc(this.bundleError) : "No roster slots for this day.") +
+        "</div></td></tr>";
+    }
     return (
-      (missing || "") +
-      (countHint
-        ? '<p class="ash-feedback-filter-hint" role="status">' + countHint + "</p>"
-        : "") +
-      body
+      '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><thead><tr>' +
+      '<th class="ash-td-center">Service</th><th class="ash-td-center">Instructor</th><th class="ash-td-center">Participant</th><th class="ash-td-center">Venue</th><th class="ash-td-center">Time</th><th class="ash-td-center">Notes</th>' +
+      "</tr></thead><tbody data-ash-client-filter-tbody>" +
+      rows +
+      "</tbody></table></div>"
     );
   };
 
@@ -9256,15 +9311,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '<p class="ash-bundle-warn" role="alert"><strong>Day board failed.</strong> ' +
           hub.escapeHtml((err && err.message) || String(err)) +
           " Try Table layout or Refresh.</p>";
-        return;
       }
-      /* Fill week-strip ratios after the selected day is visible. */
-      setTimeout(function () {
-        if (hub._overviewPaintToken !== token) return;
-        try {
-          hub.refreshOverviewWeekStripStats();
-        } catch (_ws) {}
-      }, 0);
     };
     if (typeof global.requestAnimationFrame === "function") {
       global.requestAnimationFrame(function () {
@@ -9276,49 +9323,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   };
 
   AdminSessionsHub.prototype.refreshOverviewWeekStripStats = function () {
-    var hub = this;
-    var root = hub.root;
-    if (!root) return;
-    var cards = root.querySelectorAll(".ash-day-row--feedback [data-ash-day]");
-    if (!cards || !cards.length) return;
-    for (var i = 0; i < cards.length; i++) {
-      (function (btn) {
-        var iso = btn.getAttribute("data-ash-day");
-        if (!iso || hubDayIsClubClosed(hub, iso)) return;
-        setTimeout(function () {
-          if (hub.tab !== "tracking") return;
-          var ds;
-          try {
-            ds = hub.dayStats(iso);
-          } catch (_e) {
-            return;
-          }
-          var total = ds && ds.total ? ds.total : 0;
-          var done = ds && ds.done ? ds.done : 0;
-          var innerPct = 0;
-          if (total) {
-            innerPct = Math.round((100 * done) / total);
-            if (done > 0 && innerPct < 12) innerPct = 12;
-          }
-          var bar = btn.querySelector(".ash-day-card__bar");
-          if (bar) bar.style.setProperty("--ash-pct", String(innerPct));
-          btn.classList.remove(
-            "ash-day-card--pending-stats",
-            "ash-day-card--none",
-            "ash-day-card--partial",
-            "ash-day-card--complete"
-          );
-          if (total && done === 0) btn.classList.add("ash-day-card--none");
-          else if (total && done < total) btn.classList.add("ash-day-card--partial");
-          else if (total && done >= total) btn.classList.add("ash-day-card--complete");
-          var full = btn.querySelector(".ash-day-card__count-full");
-          var short = btn.querySelector(".ash-day-card__count-short");
-          var label = done + "/" + total;
-          if (full) full.textContent = label;
-          if (short) short.textContent = label;
-        }, i * 40);
-      })(cards[i]);
-    }
+    /* No-op: Overview is a staffing guide, not feedback progress. */
   };
 
   AdminSessionsHub.prototype.htmlRosterSessionsBreakdown = function (iso) {
@@ -9762,8 +9767,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         else if (ds.total && ds.done < ds.total) stateCls = " ash-day-card--partial";
         else if (ds.total && ds.done >= ds.total) stateCls = " ash-day-card--complete";
         var countHtml =
-          opts.overviewPicker && !opts.computeOverviewDayStats
-            ? htmlAshRatioCount(esc, "…")
+          opts.staffingGuide || (opts.overviewPicker && !opts.computeOverviewDayStats)
+            ? '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Day</span><span class="ash-day-card__count-short" aria-hidden="true">Day</span></span>'
             : htmlAshRatioCount(esc, ds.done + "/" + ds.total);
         var roCls = hub.opts && hub.opts.readOnlyOverview ? " ash-day-card--readonly" : "";
         return (
@@ -9797,10 +9802,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         );
       })
       .join("");
+    var weekTitle = opts.staffingGuide
+      ? "Who works this week"
+      : "Feedback progress";
     return (
       '<div class="ash-week-sticky-anchor"><div class="ash-feedback-week">' +
       '<div class="ash-feedback-week__head">' +
-      '<h4 class="ash-feedback-week__title">Feedback progress <span class="ash-metric-term">(' +
+      '<h4 class="ash-feedback-week__title">' +
+      esc(weekTitle) +
+      ' <span class="ash-metric-term">(' +
       esc(weekLabel) +
       ")</span></h4>" +
       htmlWeekNavButtons(this, { shortLabels: true }) +
