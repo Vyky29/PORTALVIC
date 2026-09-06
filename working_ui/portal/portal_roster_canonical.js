@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 76;
+  var SOURCE_VERSION = 77;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -663,6 +663,97 @@
     return out;
   }
 
+  /**
+   * Mon 7 Sep 2026: Raul OFF — Victor covers Timi / Emanuel DC + Tinashe Hub Bespoke.
+   * Dated so Today / Overview match LOCAL DATE_EXTRA (standing Mondays stay Raul / Victor OFF).
+   */
+  function autumnMondaySep7VictorCoverRows() {
+    var dc = [
+      { client_name: "Timi", time_slot: "11 to 1" },
+      { client_name: "Emanuel", time_slot: "1 to 4" },
+    ].map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Monday",
+        instructors: "VICTOR",
+        service: "Day Centre",
+        area: "Hub Room",
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-07",
+      };
+    });
+    var hub = {
+      client_name: "Tinashe",
+      day: "Monday",
+      instructors: "VICTOR",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.15 to 6.15",
+      venue: "SwimFarm",
+      session_date: "2026-09-07",
+    };
+    return dc.concat([hub]);
+  }
+
+  /** Mon 7 Sep: Sandra OFF — Javi covers Westway Physical (Ayaan / Serine). */
+  function autumnMondaySep7JaviPhysicalCoverRows() {
+    return [
+      {
+        client_name: "Ayaan",
+        day: "Monday",
+        instructors: "JAVI",
+        service: "Physical Activity",
+        area: "Gym",
+        time_slot: "4 to 5",
+        venue: "Westway",
+        session_date: "2026-09-07",
+      },
+      {
+        client_name: "Serine",
+        day: "Monday",
+        instructors: "JAVI",
+        service: "Physical Activity",
+        area: "Gym",
+        time_slot: "5 to 6",
+        venue: "Westway",
+        session_date: "2026-09-07",
+      },
+    ];
+  }
+
+  /** Drop Raul/Sandra Mon 7 dated seats if any; inject Victor + Javi cover rows. */
+  function scrubAndEnsureSep7VictorRaulCover(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (normIso(r.session_date) !== "2026-09-07") {
+        out.push(r);
+        return;
+      }
+      var inst = String(r.instructors || "");
+      var isRaulOnly = /\braul\b/i.test(inst) && !/\bvictor\b/i.test(inst);
+      var isSandraOnly = /\bsandra\b/i.test(inst) && !/\bjavi\b/i.test(inst);
+      var isDc = isDayCentreService(r.service);
+      var isTin =
+        isBespokeService(r.service) &&
+        /^tinashe\b/i.test(String(r.client_name || "").trim());
+      var isWestwayPa =
+        isPhysicalActivityService(r.service) &&
+        /westway/i.test(String(r.venue || ""));
+      if (isRaulOnly && (isDc || isTin)) return;
+      if (isSandraOnly && isWestwayPa) return;
+      out.push(r);
+    });
+    autumnMondaySep7VictorCoverRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    autumnMondaySep7JaviPhysicalCoverRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
   function rowDedupeKey(row) {
     return [
       String(row.session_date || "").trim().slice(0, 10),
@@ -1162,6 +1253,18 @@
       if (iso && iso >= "2026-09-01" && iso < "2026-09-14" && day === "monday") {
         s = s.replace(/\bEMANUEL\b/gi, "RAUL");
       }
+      /* Mon 7 Sep only: Raul OFF → Victor covers Tinashe (with Godsway + John). */
+      if (iso === "2026-09-07" && day === "monday") {
+        s = s.replace(/\bRAUL\b/gi, "VICTOR");
+      }
+    }
+    /* Mon 7 Sep: Raul OFF → Victor covers Day Centre (Timi + Emanuel). */
+    if (
+      iso === "2026-09-07" &&
+      day === "monday" &&
+      isDayCentreService(service)
+    ) {
+      s = s.replace(/\bRAUL\b/gi, "VICTOR");
     }
     /* Mon 7 Sep: Sandra day off → Javi Palankas covers Westway Physical (Ayaan / Serine). */
     if (
@@ -2309,6 +2412,7 @@
     merged = scrubAndEnsureAutumnSundayPoolStanding(merged);
     merged = scrubAndEnsureSep6JavierPool(merged);
     merged = scrubAndEnsureSep6AuroraRobertoPool(merged);
+    merged = scrubAndEnsureSep7VictorRaulCover(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);
     /* After all Autumn patches: no summer history weeks left to snap onto Sep+. */
     merged = purgeSummerHistoryOutsideAutumnTemplates(merged);

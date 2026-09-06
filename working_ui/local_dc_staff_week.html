@@ -311,7 +311,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260906-sat-acton-v76"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260907-raul-victor-v77"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -325,7 +325,10 @@
   var STANDING_ONLY = false;
   /* Validated admin day offs (staff_unavailability) — paint on this board for ops preview. */
   var STAFF_DAY_OFF = {
-    "2026-09-07": { Sandra: "Time off requested · Javi Palankas covers Westway Physical" },
+    "2026-09-07": {
+      Sandra: "Time off requested · Javi Palankas covers Westway Physical",
+      Raul: "Time off requested · Victor covers DC + Tinashe",
+    },
     "2026-09-08": { Aurora: "Time off requested" },
     "2026-09-13": { Aurora: "Time off requested" },
     "2026-09-15": { Aurora: "Time off requested" },
@@ -338,7 +341,7 @@
     { dow: "friday", iso: "2026-09-04", phase: "w1", hint: "Week 1 · Fadi off · Victor/Raul Timi 11-1 · Youssef OFF (starts Sat)" },
     { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Week 1 · first Saturday" },
     { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · Hub: Berta Lead + Jack W…Aydaan · John = Emanuel book · Godsway · Aurora Yusuf Aquatic 9–9.30 · Roberto Simon Aquatic 9–9.30 + Yusuf Multi 9.30–10.15 (2 feedbacks) · Youssef OFF · Emanuel OFF" },
-    { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Emanuel interview 4pm · Godsway/John/Raul Tinashe · Victor OFF · Sandra OFF · Javi Palankas covers Westway Physical (Ayaan 4–5 / Serine 5–6)" },
+    { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Raul OFF · Victor covers Timi 11-1 + Emanuel 1-4 + Tinashe with Godsway/John · Emanuel interview 4pm · Sandra OFF · Javi Palankas covers Westway Physical (Ayaan 4–5 / Serine 5–6)" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing · Aurora OFF · Javi Palankas covers Aurora Acton book (Adam Mahmmoud / Junaid / Aydaan Ah / Anas) · Javier keeps his own book" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Emanuel shadowing · Godsway/John/Raul Tinashe" },
     { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton AS Simon; Aurora from 4.30" },
@@ -706,6 +709,17 @@
       ],
     },
     "2026-09-07": {
+      /* Raul OFF → Victor covers full Monday board (DC Timi/Emanuel + Hub Tinashe). */
+      Victor: [
+        { name: "Timi", time: "11 to 1", band: "Day Centre", area: "SwimFarm · Hub Room" },
+        { name: "Emanuel", time: "1 to 4", band: "Day Centre", area: "SwimFarm · Hub Room" },
+        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+      ],
+      /* Sandra OFF → Javi Palankas covers Westway Physical. */
+      Javi: [
+        { name: "Ayaan", time: "4 to 5", band: "After school", area: "Westway · Physical · cover (Sandra)" },
+        { name: "Serine", time: "5 to 6", band: "After school", area: "Westway · Physical · cover (Sandra)" },
+      ],
       Emanuel: [
         { name: "Interview", time: "4 to 5", band: "Interview", area: "SwimFarm · Hub", kind: "interview" },
       ],
@@ -955,6 +969,8 @@
       return "OFF (day off requested)";
     }
     if (iso === "2026-09-07" && staffName === "Emanuel") return "4 to 5";
+    if (iso === "2026-09-07" && staffName === "Victor") return "11 to 4 · 4.15 to 6.15";
+    if (iso === "2026-09-07" && staffName === "Raul") return "OFF (Victor covers)";
     if ((iso === "2026-09-09" || iso === "2026-09-11") && staffName === "Emanuel") return "4.15 to 6.15";
     if (iso === "2026-09-13" && staffName === "Emanuel") return "9.15 to 2.15";
     if (iso === "2026-09-06" && staffName === "Emanuel") return "";
@@ -1688,7 +1704,14 @@
       });
     }
     if (dk === "monday") {
-      return MONDAY_COL_ORDER.filter(function (s) {
+      var monOrder = MONDAY_COL_ORDER.slice();
+      /* Mon 7: Victor covers Raul — show Victor column (standing Mondays use Dan in his slot). */
+      if (day.iso === "2026-09-07" && monOrder.indexOf("Victor") < 0) {
+        var ri = monOrder.indexOf("Raul");
+        if (ri >= 0) monOrder.splice(ri, 0, "Victor");
+        else monOrder.splice(4, 0, "Victor");
+      }
+      return monOrder.filter(function (s) {
         return boardClients(day, s).length > 0;
       });
     }
@@ -1827,9 +1850,11 @@
             ? "Leader · no clients"
             : dk === "tuesday" && staff === "Raul"
             ? "OFF (Victor covers DC)"
-            : dk === "monday" && staff === "Victor"
+            : dk === "monday" && staff === "Victor" && day.iso !== "2026-09-07"
               ? "OFF (Mondays)"
-              : day.phase === "w1" && dk === "thursday"
+              : dk === "monday" && staff === "Raul" && day.iso === "2026-09-07"
+                ? "OFF (Victor covers DC + Tinashe)"
+            : day.phase === "w1" && dk === "thursday"
                 ? "OFF (Fadi not in · Week 1)"
                 : day.phase === "w1" && dk === "friday" && staff === "Youssef"
                   ? "OFF (starts Saturday)"
