@@ -1084,6 +1084,38 @@ function formatLeadTeamTimeCompact(timeSlot) {
     .replace(/\s+/g, "");
 }
 
+function leadTeamClientCanon(name) {
+  try {
+    const A =
+      typeof window !== "undefined" ? window.StaffDashboardSpreadsheetAdapter : null;
+    if (A && typeof A.canonicalParticipantClientId === "function") {
+      const c = String(A.canonicalParticipantClientId(name) || "").trim();
+      if (c) return c;
+    }
+  } catch (_) {}
+  try {
+    const P =
+      typeof window !== "undefined" ? window.PortalParticipantIdentity : null;
+    if (P && typeof P.canonicalClientId === "function") {
+      const c = String(P.canonicalClientId(name) || "").trim();
+      if (c) return c;
+    }
+  } catch (_2) {}
+  return normKey(name);
+}
+
+function leadTeamClientLabel(name) {
+  try {
+    const A =
+      typeof window !== "undefined" ? window.StaffDashboardSpreadsheetAdapter : null;
+    if (A && typeof A.resolveWorkerDisplayName === "function") {
+      const d = String(A.resolveWorkerDisplayName(name, name) || "").trim();
+      if (d) return d;
+    }
+  } catch (_) {}
+  return String(name || "").trim();
+}
+
 /**
  * One column per instructor on shift: each client stacked with time/area lines.
  * Prefers each worker's own roster column over co-listed duplicates.
@@ -1109,10 +1141,15 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
     if (!rosterRowMatchesIso(row, iso)) return;
     const slot = rosterRowToSlot(row, iso);
     if (!portalLeadSlotInScope(slot, ctx.scopes)) return;
-    const client = String(row.client_name || "").trim();
-    if (isDutyClientName(client)) return;
+    const clientRaw = String(row.client_name || "").trim();
+    if (isDutyClientName(clientRaw)) return;
+    const clientKey = leadTeamClientCanon(clientRaw);
+    const client = leadTeamClientLabel(clientRaw) || clientRaw;
     const time = String(row.time_slot || "").trim();
     if (!time) return;
+    const rowIso = String(row.session_date || row.sessionDate || "")
+      .trim()
+      .slice(0, 10);
     const instructorKeys = staffKeysFromInstructorLabel(
       resolvedInstructorsForRow(row, iso, src)
     );
@@ -1123,12 +1160,14 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
       if (!byStaff[k]) return;
       const entry = {
         client: client,
+        clientKey: clientKey,
         time: time,
         area: String(row.area || row.pool_note || "").trim(),
         service: String(row.service || "").trim(),
         startMin: parseSlotStartMinutes(time),
         duration: slotDurationMinutes(time),
         ownOnly: ownOnly,
+        rowIso: rowIso,
         segments: leadTeamSynthesizeSegments(
           client,
           row.service,
@@ -1138,20 +1177,30 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
         ),
       };
       const existingIdx = byStaff[k].findIndex(function (x) {
-        return normKey(x.client) === normKey(client);
+        return (
+          String(x.clientKey || "") === clientKey &&
+          Number(x.startMin) === Number(entry.startMin)
+        );
       });
       if (existingIdx < 0) {
         byStaff[k].push(entry);
         return;
       }
       const prev = byStaff[k][existingIdx];
-      // Prefer the worker's own column slot over a co-listed peer row; then widest window.
+      // Prefer own column; calendar-dated LOCAL over standing snap; then widest window.
       const take =
         (entry.ownOnly && !prev.ownOnly) ||
-        (entry.ownOnly === prev.ownOnly && entry.duration > prev.duration) ||
         (entry.ownOnly === prev.ownOnly &&
+          entry.rowIso === iso &&
+          prev.rowIso !== iso) ||
+        (entry.ownOnly === prev.ownOnly &&
+          entry.rowIso === prev.rowIso &&
+          entry.duration > prev.duration) ||
+        (entry.ownOnly === prev.ownOnly &&
+          entry.rowIso === prev.rowIso &&
           entry.duration === prev.duration &&
-          entry.startMin < prev.startMin);
+          /small\s*pool/i.test(entry.area) &&
+          !/small\s*pool/i.test(prev.area));
       if (take) byStaff[k][existingIdx] = entry;
     });
   });

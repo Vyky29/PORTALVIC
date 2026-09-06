@@ -150,6 +150,10 @@
       yunis_hussein: "yunis",
       zaid_alfadhl: "zaid",
       zaid_al: "zaid",
+      rayyan_fi: "rayyan_f",
+      abodi_p: "abodi_pa",
+      adam_pi: "adam_p",
+      amar_ra: "amar_rai",
     };
     return aliases[s] || s;
   }
