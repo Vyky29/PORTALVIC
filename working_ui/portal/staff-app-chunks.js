@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260905-zaid-910";
+  var VER = "20260906-joelle-2to1";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260906-aurora-on-6",
