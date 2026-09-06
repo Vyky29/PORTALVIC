@@ -86,11 +86,25 @@ const SATURDAY_ACTON_REAL: Feedback2030Slot[] = [
 ];
 
 export const STAFF_USERNAME_ALIASES: Record<string, string> = {
-  javier: "javi",
+  /* Never collapse swimming Javier Marquez (javier) into CEO Javi Palankas (javi). */
+  javier: "javier",
+  javiermarquez: "javier",
   javi: "javi",
+  javipalankas: "javi",
+  palankas: "javi",
+  javiarranz: "javi",
   youssef: "youssef",
   yusuf: "youssef",
 };
+
+/** True when keys are the distinct Javier Marquez vs Javi Palankas pair. */
+export function isJaviJavierCollision(a: string, b: string): boolean {
+  const x = normalizeStaffKey(a);
+  const y = normalizeStaffKey(b);
+  const ax = STAFF_USERNAME_ALIASES[x] || x;
+  const ay = STAFF_USERNAME_ALIASES[y] || y;
+  return (ax === "javi" && ay === "javier") || (ax === "javier" && ay === "javi");
+}
 
 export function normalizeStaffKey(raw: string): string {
   return String(raw || "")
@@ -262,10 +276,12 @@ function namesMatchInstructor(completedBy: string, instructor: string): boolean 
   const a = normalizeStaffKey(firstNameOf(completedBy));
   const b = normalizeStaffKey(firstNameOf(instructor));
   if (!a || !b) return false;
+  if (isJaviJavierCollision(a, b)) return false;
   if (a === b) return true;
-  if (STAFF_USERNAME_ALIASES[a] && STAFF_USERNAME_ALIASES[a] === STAFF_USERNAME_ALIASES[b]) {
-    return true;
-  }
+  const aa = STAFF_USERNAME_ALIASES[a] || a;
+  const bb = STAFF_USERNAME_ALIASES[b] || b;
+  if (aa === bb) return true;
+  /* Prefix match is unsafe for javi/javier — already excluded above. */
   if (a.startsWith(b) || b.startsWith(a)) return true;
   return false;
 }
@@ -368,9 +384,11 @@ export function profileMatchesStaffKey(
   const alias = STAFF_USERNAME_ALIASES[want] || want;
   const un = normalizeStaffKey(String(profile.username || ""));
   const fn = normalizeStaffKey(firstNameOf(String(profile.full_name || "")));
-  if (un && (un === want || un === alias || want.startsWith(un) || un.startsWith(want))) {
-    return true;
-  }
-  if (fn && (fn === want || fn === alias || STAFF_USERNAME_ALIASES[fn] === alias)) return true;
+  const unAlias = STAFF_USERNAME_ALIASES[un] || un;
+  const fnAlias = STAFF_USERNAME_ALIASES[fn] || fn;
+  if (un && isJaviJavierCollision(un, want)) return false;
+  if (fn && isJaviJavierCollision(fn, want)) return false;
+  if (un && (un === want || un === alias || unAlias === alias)) return true;
+  if (fn && (fn === want || fn === alias || fnAlias === alias)) return true;
   return false;
 }

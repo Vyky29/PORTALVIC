@@ -78,7 +78,7 @@ function firstName(raw: string): string {
 }
 
 const GREET: Record<string, string> = {
-  javi: "Javier",
+  javi: "Javi",
   javier: "Javier",
 };
 
