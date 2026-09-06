@@ -1819,24 +1819,26 @@
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 1px;
-      font-size: 10px;
+      gap: 2px;
+      font-size: 12px;
       min-width: 0;
       text-align: right;
     }
     .ash-db-seg__time {
-      font-weight: 700;
+      font-weight: 800;
       color: #314555;
       white-space: nowrap;
+      font-size: 13px;
     }
     .ash-db-seg__area {
-      font-weight: 600;
+      font-weight: 700;
       color: var(--muted);
       overflow-wrap: anywhere;
       word-break: break-word;
       min-width: 0;
       max-width: 100%;
-      line-height: 1.15;
+      line-height: 1.2;
+      font-size: 12px;
     }
     .ash-db-card--open {
       background: #fef9c3;
