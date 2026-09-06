@@ -120,10 +120,12 @@
       box-shadow: 0 0 0 2px rgba(45, 132, 179, 0.25);
     }
     .ash-week-sticky-anchor {
+      /* Sticky week strip — do NOT set overflow on this node (Chrome can crash on scroll
+         when sticky + overflow-x share the same element). Scroll the inner week block. */
       position: sticky;
       top: 0;
       z-index: 25;
-      background: linear-gradient(180deg, #f8fafc 92%, rgba(248, 250, 252, 0));
+      background: #f8fafc;
       padding-bottom: 10px;
       margin-bottom: 8px;
     }
@@ -262,7 +264,7 @@
     .ash-day-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
     .ash-day-row--week { margin-top: 2px; }
     @media (max-width: 900px) {
-      .ash-week-sticky-anchor,
+      /* overflow only on inner week chrome — never on .ash-week-sticky-anchor */
       .ash-week-block,
       .ash-feedback-week {
         overflow-x: auto;
@@ -364,7 +366,6 @@
       border-width: 2px;
       box-shadow: inset 0 0 0 2px var(--ash-day-col, #3b82f6);
     }
-    body.admin-touch-compact .ash-week-sticky-anchor,
     body.admin-touch-compact .ash-week-block,
     body.admin-touch-compact .ash-feedback-week {
       overflow-x: auto;
