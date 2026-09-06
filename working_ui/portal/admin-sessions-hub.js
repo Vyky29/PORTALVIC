@@ -4227,7 +4227,17 @@
       typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
         ? window.portalStaffDisplayName(n)
         : canonicalInstructorFilterName(n);
-    return '<span class="ash-pill">' + esc(title) + "</span>";
+    var color = ashStaffChipColor(n);
+    var styleAttr = color
+      ? ' style="--ash-staff-bg:' +
+        color.bg +
+        ";--ash-staff-fg:" +
+        color.fg +
+        ";--ash-staff-bd:" +
+        color.bd +
+        '"'
+      : "";
+    return '<span class="ash-pill ash-pill--staff"' + styleAttr + ">" + esc(title) + "</span>";
   }
 
   function formatInstructorPillCoverNeeded(name) {
@@ -4246,6 +4256,40 @@
         ? window.portalStaffDisplayName(n)
         : canonicalInstructorFilterName(n);
     return '<span class="ash-pill ash-pill--out">' + esc(title) + "</span>";
+  }
+
+  /**
+   * Same stable per-instructor palette as Schedule & Covers (schedStaffChipColor).
+   * Hash the roster key so Youssef / Roberto / etc. keep one colour across boards.
+   */
+  var ASH_STAFF_CHIP_PALETTE = [
+    { bg: "#dbeafe", fg: "#1e3a8a", bd: "rgba(30,58,138,.32)" },
+    { bg: "#fce7f3", fg: "#9d174d", bd: "rgba(157,23,77,.32)" },
+    { bg: "#fef3c7", fg: "#92400e", bd: "rgba(146,64,14,.32)" },
+    { bg: "#d1fae5", fg: "#065f46", bd: "rgba(6,95,70,.32)" },
+    { bg: "#e0e7ff", fg: "#3730a3", bd: "rgba(55,48,163,.32)" },
+    { bg: "#ffedd5", fg: "#9a3412", bd: "rgba(154,52,18,.32)" },
+    { bg: "#cffafe", fg: "#155e75", bd: "rgba(21,94,117,.32)" },
+    { bg: "#f3e8ff", fg: "#6b21a8", bd: "rgba(107,33,168,.32)" },
+    { bg: "#ecfccb", fg: "#3f6212", bd: "rgba(63,98,18,.32)" },
+    { bg: "#ffe4e6", fg: "#9f1239", bd: "rgba(159,18,57,.32)" },
+    { bg: "#e2e8f0", fg: "#334155", bd: "rgba(51,65,85,.32)" },
+    { bg: "#fae8ff", fg: "#86198f", bd: "rgba(134,25,143,.32)" },
+    { bg: "#ccfbf1", fg: "#115e59", bd: "rgba(17,94,89,.32)" },
+    { bg: "#fde68a", fg: "#78350f", bd: "rgba(120,53,15,.32)" },
+    { bg: "#bfdbfe", fg: "#1e40af", bd: "rgba(30,64,175,.32)" },
+    { bg: "#fecdd3", fg: "#9f1239", bd: "rgba(159,18,57,.28)" },
+  ];
+
+  function ashStaffChipColor(rosterKey) {
+    var k = canonicalStaffMatchKey(rosterKey) || slugify(clean(rosterKey));
+    if (!k) return null;
+    var h = 2166136261;
+    for (var i = 0; i < k.length; i++) {
+      h ^= k.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return ASH_STAFF_CHIP_PALETTE[Math.abs(h) % ASH_STAFF_CHIP_PALETTE.length];
   }
 
   /** One display label per instructor for filter dropdowns (roster may mix LULIYA / Luliya). */
@@ -7236,6 +7280,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var slots = scopedSlots(unit);
       if (!slots.length) continue;
       var rep = slots[0];
+      if (
+        isOpenRosterSlot(rep.client_name) ||
+        rosterSlotKind(rep.client_name) === "closed" ||
+        slotIsStaffDutyNoFeedback(rep)
+      ) {
+        continue;
+      }
       if (hub.feedbackUnitAbsent(unit) || hub.slotIsAbsent(rep)) {
         var afb =
           hub.findAbsentFeedbackForSlot(rep) || hub.syntheticAbsentDisplayRow(rep);
@@ -7322,6 +7373,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var out = [];
     for (var i = 0; i < displaySlots.length; i++) {
       var slot = displaySlots[i];
+      /* Open / closed / duty seats are staffing seats — never awaiting client feedback. */
+      if (
+        isOpenRosterSlot(slot.client_name) ||
+        rosterSlotKind(slot.client_name) === "closed" ||
+        slotIsStaffDutyNoFeedback(slot)
+      ) {
+        continue;
+      }
       var ukey = feedbackUnitKey(slot);
       var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
       var isCancelledSubmitted = hub.slotCancellationCountsAsSubmitted(slot);
@@ -7462,20 +7521,40 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     if (fb && fb._ashAwaitingSlot && fb.slot) {
       var awaitSlot = fb.slot;
+      var awaitOpen =
+        isOpenRosterSlot(awaitSlot.client_name) ||
+        rosterSlotKind(awaitSlot.client_name) === "closed" ||
+        slotIsStaffDutyNoFeedback(awaitSlot);
       var awaitSvc = clean(awaitSlot.service) || "\u2014";
       var awaitTime = awaitSlot.time_slot
         ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(awaitSlot)) + "</div>"
         : "";
       var awaitDate = formatFbDateShort(awaitSlot.session_date || awaitSlot.date);
+      var awaitPaxPill = htmlParticipantPill(awaitSlot.client_name, esc, awaitSlot);
       var awaitParticipantServiceCell =
-        '<td class="ash-cell-participant-service"><span class="ash-pill ash-pill--client">' +
-        esc(awaitSlot.client_name) +
-        '</span><div class="ash-cell-service">' +
+        '<td class="ash-cell-participant-service">' +
+        awaitPaxPill +
+        '<div class="ash-cell-service">' +
         esc(awaitSvc) +
         "</div>" +
         (awaitDate ? '<div class="ash-cell-sub">' + esc(awaitDate) + "</div>" : "") +
         awaitTime +
         "</td>";
+      var awaitPaxOnlyCell = "<td>" + awaitPaxPill + "</td><td>" + esc(awaitSvc) + awaitTime + "</td>";
+      if (awaitOpen) {
+        var awaitInstOpen = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
+        return (
+          '<tr class="ash-fb-row ash-fb-row--open-seat">' +
+          (variant === "register" ? awaitParticipantServiceCell : awaitPaxOnlyCell) +
+          '<td colspan="' +
+          awaitMidColspan +
+          '" class="ash-td-center"><span class="ash-muted">N/A</span></td>' +
+          '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
+          awaitInstOpen +
+          "</div></td>" +
+          "</tr>"
+        );
+      }
       if (hub.slotIsAbsent(awaitSlot)) {
         var absentRow =
           hub.findAbsentFeedbackForSlot(awaitSlot) ||
@@ -7484,14 +7563,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var awaitInstAbsent = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
         return (
           '<tr class="ash-fb-row ash-fb-row--awaiting">' +
-          (variant === "register"
-            ? awaitParticipantServiceCell
-            : '<td><span class="ash-pill ash-pill--client">' +
-              esc(awaitSlot.client_name) +
-              "</span></td><td>" +
-              esc(awaitSvc) +
-              awaitTime +
-              "</td>") +
+          (variant === "register" ? awaitParticipantServiceCell : awaitPaxOnlyCell) +
           '<td colspan="' + awaitMidColspan + '" class="ash-td-center">' +
           rosterFeedbackStatusHtml(true, false) +
           "</td>" +
@@ -7504,14 +7576,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var awaitInst = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
       return (
         '<tr class="ash-fb-row ash-fb-row--awaiting">' +
-        (variant === "register"
-          ? awaitParticipantServiceCell
-          : '<td><span class="ash-pill ash-pill--client">' +
-            esc(awaitSlot.client_name) +
-            "</span></td><td>" +
-            esc(awaitSvc) +
-            awaitTime +
-            "</td>") +
+        (variant === "register" ? awaitParticipantServiceCell : awaitPaxOnlyCell) +
         '<td colspan="' + awaitMidColspan + '" class="ash-td-center">' +
         rosterFeedbackStatusHtml(false, false) +
         "</td>" +
@@ -7665,7 +7730,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "</td>";
     var reviewedByCell =
       '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
-      esc(fb.completed_by_name || "\u2014") +
+      (clean(fb.completed_by_name) ? formatInstructorPill(fb.completed_by_name) : "\u2014") +
       '</div><div class="ash-cell-sub">' +
       esc(reviewDate) +
       (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
@@ -8993,7 +9058,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<div class="ash-db-col__head">' +
       dayBoardStaffPhotoHtml(label, esc) +
       '<h4 class="ash-db-col__staff">' +
-      esc(label) +
+      formatInstructorPill(label) +
       "</h4>" +
       '<span class="ash-db-col__meta">' +
       esc(String(n)) +
@@ -9162,24 +9227,26 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   function htmlDayBoardCard(hub, slot, st, esc) {
     var band = dayBoardServiceBand(slot);
-    var name = dayBoardParticipantDisplayName(slot.client_name) || "No participant";
+    var nameHtml;
     if (st.makeupDisp) {
       var mkName =
         dayBoardParticipantDisplayName(
           (st.makeupDisp.makeupSlot && st.makeupDisp.makeupSlot.client_name) ||
             overrideReplacementClientName(overridePayloadObj(st.makeupDisp.ov))
         ) || "MakeUp";
-      name = mkName + " (was " + (dayBoardParticipantDisplayName(slot.client_name) || clean(slot.client_name)) + ")";
-    } else if (st.isOpenSlot) {
-      name = rosterOpenSlotDisplayLabel();
-    } else if (st.isTrial && clean(slot.client_name)) {
-      /* Name is just the child; Trial mark lives on the service band + chip. */
-      name =
-        dayBoardParticipantDisplayName(slot.client_name)
-          .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
-          .replace(/^trial\s*[-·:]?\s*/i, "")
-          .replace(/\s+/g, " ")
-          .trim() || dayBoardParticipantDisplayName(slot.client_name);
+      nameHtml =
+        '<span class="ash-pill ash-pill--makeup">' +
+        esc(mkName) +
+        '</span><span class="ash-pill ash-pill--out" title="Original seat">' +
+        esc(dayBoardParticipantDisplayName(slot.client_name) || clean(slot.client_name) || "\u2014") +
+        "</span>";
+    } else if (st.isOpenSlot || st.isClosed || st.isDuty || st.isTrial) {
+      nameHtml = htmlParticipantPill(slot.client_name, esc, slot);
+    } else {
+      nameHtml =
+        '<span class="ash-db-card__name-text">' +
+        esc(dayBoardParticipantDisplayName(slot.client_name) || "\u2014") +
+        "</span>";
     }
     var venue = clean(slot.venue);
     var area = clean(slot.area);
@@ -9214,7 +9281,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "<div>" +
       bandRow +
       '<div class="ash-db-card__name">' +
-      esc(name) +
+      nameHtml +
       "</div>" +
       (venue ? '<span class="ash-db-card__venue">' + esc(venue) + "</span>" : "") +
       htmlDayBoardFbBadge(st, esc) +
@@ -10301,7 +10368,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           cellNoteHtml(noteText) +
           "</td>" +
           '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
-          esc(fb.completed_by_name || "\u2014") +
+          (clean(fb.completed_by_name) ? formatInstructorPill(fb.completed_by_name) : "\u2014") +
           '</div><div class="ash-cell-sub">' +
           esc(reviewDate) +
           (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +

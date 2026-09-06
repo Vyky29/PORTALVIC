@@ -1075,9 +1075,14 @@
       border: 1px solid rgba(91, 33, 182, 0.35);
     }
     .ash-pill--no-participant {
-      background: #fb923c;
-      color: #fff;
-      border: 1px solid rgba(15, 23, 42, 0.06);
+      background: linear-gradient(180deg, #fff4df 0%, #fef3c7 100%);
+      color: #78350f;
+      border: 1px solid rgba(244, 183, 64, 0.42);
+    }
+    .ash-pill--staff {
+      background: var(--ash-staff-bg, #ecfdf5);
+      color: var(--ash-staff-fg, #15803d);
+      border: 1px solid var(--ash-staff-bd, rgba(21, 128, 61, 0.28));
     }
     .ash-badge--available,
     .ash-badge--open-slot {
@@ -1733,6 +1738,23 @@
       min-width: 0;
       text-align: center;
     }
+    .ash-db-col__staff .ash-pill {
+      font-size: 13px;
+      max-width: 100%;
+      margin: 0;
+    }
+    .ash-db-card__name .ash-pill {
+      font-size: 12px;
+      margin: 0 4px 2px 0;
+      vertical-align: middle;
+    }
+    .ash-db-card__name-text {
+      font-weight: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
     .ash-db-col__meta {
       display: block;
       margin: 0;
@@ -1854,7 +1876,7 @@
       font-size: 12px;
     }
     .ash-db-card--open {
-      background: #fef9c3;
+      background: #fffbeb;
       border-color: #fde68a;
     }
     .ash-db-card--open .ash-db-card__name { color: #854d0e; }
