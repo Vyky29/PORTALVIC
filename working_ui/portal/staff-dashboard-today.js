@@ -539,6 +539,25 @@
             return false;
           }
         }
+        /*
+         * Sun 6: Aurora/Roberto pool (Yusuf↔Simon Aquatic) + Javier pool (Zaid trial)
+         * are dated LOCAL only — never project Jul standing onto that day.
+         */
+        if(iso === '2026-09-06' && rowIso && rowIso !== iso){
+          const svc = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
+          const venue = String((s && s.venue) || 'swimfarm').toLowerCase();
+          const area = String((s && (s.rosterArea || s.area || '')) || '').toLowerCase();
+          const inst = String((s && (s.instructors || s.instructor || s.staffId)) || '').toLowerCase();
+          const poolSvc = svc.indexOf('multi') >= 0 || /aquatic|swim/.test(svc);
+          if(
+            poolSvc &&
+            venue.indexOf('swimfarm') >= 0 &&
+            area.indexOf('hub') < 0 &&
+            /\b(aurora|roberto|javier)\b/.test(inst)
+          ){
+            return false;
+          }
+        }
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
         if(portalIsoIsAutumnWeek1Dc(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
         /* Dated overlay for this calendar day (trial / cover) always applies. */
@@ -560,6 +579,20 @@
         return true;
       }
       if(iso === '2026-09-06' && portalSessionIsSundaySwimfarmHubMulti(s)) return false;
+      if(iso === '2026-09-06'){
+        const svcU = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
+        const venueU = String((s && s.venue) || 'swimfarm').toLowerCase();
+        const areaU = String((s && (s.rosterArea || s.area || '')) || '').toLowerCase();
+        const instU = String((s && (s.instructors || s.instructor || s.staffId)) || '').toLowerCase();
+        if(
+          (svcU.indexOf('multi') >= 0 || /aquatic|swim/.test(svcU)) &&
+          venueU.indexOf('swimfarm') >= 0 &&
+          areaU.indexOf('hub') < 0 &&
+          /\b(aurora|roberto|javier)\b/.test(instU)
+        ){
+          return false;
+        }
+      }
       if(portalStaffHasDatedRowsForIso(iso, sid)) return false;
       const snap = portalStaffStandingWeekdaySnapArgs(iso);
       if(portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through)) return false;

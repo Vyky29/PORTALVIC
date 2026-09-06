@@ -504,12 +504,28 @@ function rosterRowToSlot(row, iso) {
   };
 }
 
+/** Sun 6 pool books are dated LOCAL only (Aurora/Roberto swap + Javier trial). */
+function isSep6OwnedSwimfarmPoolRow(row) {
+  const inst = String((row && (row.instructors || row.instructor || row.staffId)) || "");
+  if (!/\b(aurora|roberto|javier)\b/i.test(inst)) return false;
+  if (/hub/i.test(String((row && row.area) || ""))) return false;
+  if (!/swimfarm/i.test(String((row && row.venue) || "SwimFarm"))) return false;
+  const svc = String((row && (row.service || row.activity || row.rosterService)) || "");
+  return /multi/i.test(svc) || /aquatic|swim/i.test(svc);
+}
+
 function rosterRowMatchesIso(row, iso) {
   if (!row || !iso) return false;
   const wd = weekdayFromIso(iso);
   const rowIso = String(row.session_date || row.sessionDate || "").trim().slice(0, 10);
   const rowDay = String(row.day || "").trim();
   if (rowIso === iso) return true;
+  /*
+   * Do not project Jul standing Aurora+Simon (or Roberto Yusuf / Javier pool)
+   * onto Sun 6 — dated scrub owns that day (Overview already blocks this).
+   */
+  if (iso === "2026-09-06" && isSep6OwnedSwimfarmPoolRow(row) && rowIso !== iso) return false;
+  if (iso === "2026-09-06" && isSep6OwnedSwimfarmPoolRow(row) && !rowIso) return false;
   if (rowDay && wd && rowDay !== wd) return false;
   /* Standing Services snaps (Jul week) project onto Autumn calendar weekdays. */
   try {
