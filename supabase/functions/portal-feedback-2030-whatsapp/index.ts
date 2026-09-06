@@ -33,7 +33,10 @@ import {
 } from "../_shared/portal_feedback_2030_match.ts";
 
 const DEDUPE_TABLE = "portal_feedback_2030_wa_sent";
-const PORTAL_URL = "https://www.clubsensational.org/staff_dashboard.html";
+/** Staff app host (Vercel). Override with PORTAL_STAFF_DASHBOARD_URL if needed. */
+const PORTAL_URL =
+  String(Deno.env.get("PORTAL_STAFF_DASHBOARD_URL") || "").trim() ||
+  "https://clubsensational-staff.vercel.app/staff_dashboard.html";
 const SKIP_USERNAMES = new Set(["victor"]);
 
 function resolveWave(raw, london) {
