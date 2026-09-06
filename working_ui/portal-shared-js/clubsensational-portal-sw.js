@@ -8,7 +8,7 @@
  * v20260904-comms-push (Communications message + incoming-call banners)
  * v20260905-comms-36 (Home screen PWA numeric badge via Badging API)
  * v20260906-notif-open-fix (never navigate PWA to bare / — blank screen on iOS)
- * v20260906-comms-aviso-42 (in-app COMMS card while portal open; OS logo only when away)
+ * v20260906-comms-inapp-45 (Cache heartbeat: no OS logo while PWA is open)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
@@ -36,6 +36,7 @@ var PORTAL_CALL_VIBRATE = [500, 180, 500, 180, 700, 180, 500];
 var portalPushUserId = '';
 /** iOS often returns no clients during `push`. Page heartbeat covers that. */
 var portalForegroundUntil = 0;
+var PORTAL_FG_CACHE = 'portal-fg-v1';
 var PORTAL_BADGE_CACHE = 'portal-app-badge-v1';
 var portalStoredAppBadge = 0;
 
@@ -179,6 +180,34 @@ function portalNotifyOpenClients(title, body, portalOpen, callData, chatData, me
   });
 }
 
+function portalWriteForegroundUntil(until) {
+  portalForegroundUntil = Math.max(0, Number(until) || 0);
+  return caches
+    .open(PORTAL_FG_CACHE)
+    .then(function (c) {
+      return c.put('until', new Response(String(portalForegroundUntil)));
+    })
+    .catch(function () {});
+}
+
+function portalReadForegroundUntil() {
+  return caches
+    .open(PORTAL_FG_CACHE)
+    .then(function (c) {
+      return c.match('until').then(function (r) {
+        if (!r) return portalForegroundUntil;
+        return r.text().then(function (t) {
+          var n = parseInt(t, 10) || 0;
+          if (n > portalForegroundUntil) portalForegroundUntil = n;
+          return portalForegroundUntil;
+        });
+      });
+    })
+    .catch(function () {
+      return portalForegroundUntil;
+    });
+}
+
 function portalHasVisiblePortalClient() {
   return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
     if (!clientList || !clientList.length) return false;
@@ -191,8 +220,29 @@ function portalHasVisiblePortalClient() {
 }
 
 function portalTreatAsForeground() {
-  if (Date.now() < portalForegroundUntil) return Promise.resolve(true);
-  return portalHasVisiblePortalClient();
+  return portalReadForegroundUntil().then(function (until) {
+    if (Date.now() < until) return true;
+    return portalHasVisiblePortalClient();
+  });
+}
+
+function portalCloseCommsOsBanners() {
+  return self.registration.getNotifications().then(function (list) {
+    (list || []).forEach(function (n) {
+      var open = String((n && n.data && n.data.portalOpen) || '');
+      var tag = String((n && n.tag) || '');
+      if (
+        open === 'communications' ||
+        open === 'communications_call' ||
+        open === 'family_messages' ||
+        tag.indexOf('comms') === 0
+      ) {
+        try {
+          n.close();
+        } catch (e) {}
+      }
+    });
+  });
 }
 
 self.addEventListener('message', function (event) {
@@ -207,8 +257,13 @@ self.addEventListener('message', function (event) {
     return;
   }
   if (d.type === 'portal-client-visibility') {
-    if (d.visible) portalForegroundUntil = Date.now() + 45000;
-    else portalForegroundUntil = 0;
+    if (d.visible) {
+      portalForegroundUntil = Date.now() + 12000;
+      event.waitUntil(portalWriteForegroundUntil(portalForegroundUntil));
+    } else {
+      portalForegroundUntil = 0;
+      event.waitUntil(portalWriteForegroundUntil(0));
+    }
     return;
   }
   if (d.type === 'portal-close-comms-notifications') {
@@ -356,9 +411,12 @@ self.addEventListener('push', function (event) {
           targetUserId: targetUserId,
         }),
       ];
-      /* COMMS / Family aviso interno covers the open PWA. Aviso del sistema
-         (logo + vibrate) only when locked, another app, or the PWA is in the background. */
-      if (!((isCommsPush || isFamilyPush) && hasVisibleClient)) {
+      /* iOS: clients.matchAll is often empty during push. Foreground is a
+         Cache heartbeat from the open PWA. If we are in the PWA, never show
+         the OS logo toaster — only postMessage for the in-app COMMS card. */
+      if ((isCommsPush || isFamilyPush) && hasVisibleClient) {
+        tasks.push(portalCloseCommsOsBanners());
+      } else {
         tasks.unshift(self.registration.showNotification(title, notifyOpts));
       }
       if (!hasVisibleClient) {

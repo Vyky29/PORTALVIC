@@ -337,17 +337,17 @@ function applyModeButtons() {
 
 function persistUnreadForPortal() {
   const counts = state.unreadCounts || {};
+  if (!state.inboxSumByMode) state.inboxSumByMode = { personal: 0, administration: 0 };
   let inboxSum = 0;
   const items = (state.inbox && state.inbox.items) || [];
   for (let i = 0; i < items.length; i++) {
     inboxSum += Math.max(0, Number(items[i] && items[i].unread) || 0);
   }
+  state.inboxSumByMode[state.mode] = inboxSum;
   const n = Math.max(
     0,
-    Number(counts.personal) || 0,
-    Number(counts.administration) || 0,
-    Number(counts.total) || 0,
-    inboxSum
+    Number(state.inboxSumByMode.personal) || 0,
+    Number(state.inboxSumByMode.administration) || 0
   );
   let uid = "";
   try {
@@ -368,6 +368,15 @@ function persistUnreadForPortal() {
     localStorage.setItem(key, String(n));
     localStorage.setItem("portal_comms_unread_n", String(n));
   } catch (_l) {}
+  try {
+    if (!window.__PORTAL_COMMS_UNREAD_BC__) {
+      window.__PORTAL_COMMS_UNREAD_BC__ = new BroadcastChannel("portal-comms-unread");
+    }
+    window.__PORTAL_COMMS_UNREAD_BC__.postMessage({ n: n });
+  } catch (_bc) {}
+  if (typeof window.portalCommsPaintUnread === "function") {
+    window.portalCommsPaintUnread(n);
+  }
 }
 
 function itemByConversation(id) {
@@ -584,6 +593,7 @@ async function hydrateFiles(root) {
 async function loadInbox() {
   const data = await rpc("communication_inbox", { p_mode: state.mode });
   state.inbox = data || { items: [] };
+  if (!state.inboxSumByMode) state.inboxSumByMode = { personal: 0, administration: 0 };
   try {
     const snap = await rpc("communication_presence_snapshot");
     if (snap) state.presence = snap;
@@ -592,6 +602,16 @@ async function loadInbox() {
     const counts = await rpc("communication_unread_counts");
     if (counts && typeof counts === "object") state.unreadCounts = counts;
   } catch (_c) {}
+  try {
+    const other = state.mode === "administration" ? "personal" : "administration";
+    const otherData = await rpc("communication_inbox", { p_mode: other });
+    const otherItems = (otherData && otherData.items) || [];
+    let otherSum = 0;
+    for (let i = 0; i < otherItems.length; i++) {
+      otherSum += Math.max(0, Number(otherItems[i] && otherItems[i].unread) || 0);
+    }
+    state.inboxSumByMode[other] = otherSum;
+  } catch (_o) {}
   applyModeButtons();
   renderInbox();
 }

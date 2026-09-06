@@ -168,6 +168,37 @@
     }
   }
 
+  function publishUnreadCount(n) {
+    persistUnreadCount(n);
+    try {
+      if (!global.__PORTAL_COMMS_UNREAD_BC__) {
+        global.__PORTAL_COMMS_UNREAD_BC__ = new BroadcastChannel("portal-comms-unread");
+      }
+      global.__PORTAL_COMMS_UNREAD_BC__.postMessage({ n: Math.max(0, Number(n) || 0) });
+    } catch (_bc) {}
+  }
+
+  function bindUnreadCountBridge() {
+    if (global.__PORTAL_COMMS_UNREAD_BRIDGE__) return;
+    global.__PORTAL_COMMS_UNREAD_BRIDGE__ = true;
+    try {
+      var bc = new BroadcastChannel("portal-comms-unread");
+      global.__PORTAL_COMMS_UNREAD_BC__ = bc;
+      bc.onmessage = function (ev) {
+        var n = Math.max(0, Number(ev && ev.data && ev.data.n) || 0);
+        applyUnreadBadge(n);
+        persistUnreadCount(n);
+      };
+    } catch (_bc) {}
+    try {
+      global.addEventListener("storage", function (ev) {
+        var k = String((ev && ev.key) || "");
+        if (k.indexOf("portal_comms_unread_n") !== 0) return;
+        applyUnreadBadge(Math.max(0, Number(ev.newValue) || 0));
+      });
+    } catch (_st) {}
+  }
+
   function cachedUnreadCount() {
     var keys = [unreadStorageKey(), "portal_comms_unread_n"];
     var max = 0;
@@ -441,7 +472,7 @@
     else if (next >= unreadHoldMin) unreadHoldUntil = 0;
     if (!fromAuthedRpc && next === 0) next = Math.max(next, cachedUnreadCount());
     applyUnreadBadge(next);
-    if (fromAuthedRpc) persistUnreadCount(next);
+    if (fromAuthedRpc) publishUnreadCount(next);
   }
 
   function scheduleUnreadRetry() {
@@ -670,7 +701,7 @@
             scheduleUnreadRetry();
             return lastUnreadCount;
           }
-          var inboxFallback = light ? 0 : await inboxUnreadMax(c);
+          var inboxFallback = await inboxUnreadMax(c);
           applyUnreadFromServer(
             Math.max(0, Number(res.data) || 0, inboxFallback),
             true
@@ -725,13 +756,8 @@
           }
           lastPersonalCount = parsed.personal;
           lastAdminCount = parsed.administration;
-          var inboxSum = light ? 0 : await inboxUnreadMax(c);
-          var n = Math.max(
-            parsed.total,
-            parsed.personal,
-            parsed.administration,
-            inboxSum
-          );
+          var inboxSum = await inboxUnreadMax(c);
+          var n = Math.max(inboxSum, parsed.personal, parsed.administration);
           applyUnreadFromServer(n, true);
           updateCommsLaunchLinks(
             parsed.personal > 0 || inboxSum > 0 || n > 0 ? "personal" : ""
@@ -1780,7 +1806,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-chip-44", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-45", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
     } catch (_sw) {}
@@ -2014,6 +2040,7 @@
 
   function boot() {
     try {
+      bindUnreadCountBridge();
       ensurePortalPushSw();
       bindIncomingPushMessages();
       bindIntrinsicCommsAlerts();

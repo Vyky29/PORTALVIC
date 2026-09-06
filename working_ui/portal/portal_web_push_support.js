@@ -137,7 +137,7 @@
     }
     global.__PORTAL_SW_REG_PROMISE__ = (async function () {
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-chip-44", global.location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-45", global.location.href).href;
         var scopeBase = new URL("./", global.location.href).href;
         var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
         global.__PORTAL_SW_REG__ = reg;
@@ -344,9 +344,21 @@
   }
 
   var portalPageForeground = true;
+  var PORTAL_FG_CACHE = "portal-fg-v1";
+
+  function portalWriteForegroundCache(visible) {
+    var until = visible ? String(Date.now() + 12000) : "0";
+    try {
+      if (!global.caches || typeof global.caches.open !== "function") return;
+      void global.caches.open(PORTAL_FG_CACHE).then(function (c) {
+        return c.put("until", new Response(until, { headers: { "Content-Type": "text/plain" } }));
+      });
+    } catch (_e) {}
+  }
 
   function portalSetPageForeground(on) {
     portalPageForeground = !!on;
+    portalWriteForegroundCache(portalPageForeground);
     portalPostToServiceWorker({ type: "portal-client-visibility", visible: portalPageForeground });
   }
 
@@ -362,7 +374,7 @@
   if (!global.__PORTAL_SW_VIS_HEARTBEAT__) {
     global.__PORTAL_SW_VIS_HEARTBEAT__ = true;
     portalSetPageForeground(true);
-    global.setInterval(portalSyncClientVisibilityToSw, 3000);
+    global.setInterval(portalSyncClientVisibilityToSw, 2000);
     try {
       document.addEventListener("visibilitychange", function () {
         if (document.visibilityState === "visible") portalSetPageForeground(true);
@@ -590,7 +602,7 @@
     var standalone =
       typeof portalIsStandalonePwa === "function" ? portalIsStandalonePwa() : false;
     var buildKey = "portal_web_push_build";
-    var buildVal = "20260906-comms-chip-44";
+    var buildVal = "20260906-comms-inapp-45";
     var prevBuild = persistGet(buildKey);
     if (
       env.isIOS &&
