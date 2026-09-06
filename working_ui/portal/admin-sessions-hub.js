@@ -8739,25 +8739,127 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   /** Preferred column order (LOCAL weekday / weekend staff). Unknown staff append A-Z. */
   var DAY_BOARD_STAFF_PREF = [
     "Roberto",
-    "Michelle",
+    "Javier",
+    "Aurora",
     "Luliya",
-    "Victor",
-    "Raul",
+    "Dan",
     "Youssef",
+    "Michelle",
+    "Simon",
     "Berta",
+    "Godsway",
     "John",
+    "Emanuel",
+    "Raul",
+    "Victor",
     "Bismark",
     "Giuseppe",
-    "Javier",
     "Carlos",
     "Alex",
-    "Aurora",
-    "Dan",
-    "Emanuel",
-    "Godsway",
     "Sandra",
     "Sevitha",
   ];
+
+  /** Board layout bands: swimming instructors | support workers, climbing below. */
+  var DAY_BOARD_SWIM = {
+    roberto: 1,
+    javier: 1,
+    aurora: 1,
+    luliya: 1,
+    dan: 1,
+    youssef: 1,
+    simon: 1,
+    michelle: 1,
+    angel: 1,
+    andres: 1,
+  };
+  var DAY_BOARD_SUPPORT = {
+    berta: 1,
+    godsway: 1,
+    john: 1,
+    emanuel: 1,
+    raul: 1,
+    victor: 1,
+    sandra: 1,
+    sevitha: 1,
+    giuseppe: 1,
+    bismark: 1,
+  };
+  var DAY_BOARD_CLIMB = {
+    alex: 1,
+    carlos: 1,
+  };
+
+  function dayBoardStaffRole(staffKey, items) {
+    var k = String(staffKey || "").toLowerCase();
+    if (DAY_BOARD_CLIMB[k]) return "climbing";
+    if (DAY_BOARD_SWIM[k]) return "swimming";
+    if (DAY_BOARD_SUPPORT[k]) return "support";
+    var climbN = 0;
+    var hubN = 0;
+    var poolN = 0;
+    (items || []).forEach(function (it) {
+      var s = it && it.slot;
+      if (!s) return;
+      if (isClimbingService(s.service)) climbN += 1;
+      else if (/hub/i.test(clean(s.area))) hubN += 1;
+      else poolN += 1;
+    });
+    if (climbN >= hubN && climbN >= poolN && climbN > 0) return "climbing";
+    if (hubN > poolN) return "support";
+    return "swimming";
+  }
+
+  function dayBoardStaffPhotoHtml(label, esc) {
+    try {
+      if (typeof global.portalStaffAvatarInnerHtml === "function") {
+        return global.portalStaffAvatarInnerHtml(label, {
+          displayName: label,
+          esc: esc,
+          className: "portal-roster-avatar portal-roster-avatar--staff ash-db-col__photo",
+        });
+      }
+    } catch (_ph) {}
+    var initials = String(label || "?")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(function (p) {
+        return p.charAt(0);
+      })
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?";
+    return (
+      '<span class="portal-roster-avatar portal-roster-avatar--staff ash-db-col__photo" aria-hidden="true">' +
+      esc(initials) +
+      "</span>"
+    );
+  }
+
+  function dayBoardColHtml(hub, key, label, items, esc) {
+    var cards = items
+      .map(function (it) {
+        return htmlDayBoardCard(hub, it.slot, it.st, esc);
+      })
+      .join("");
+    return (
+      '<section class="ash-db-col">' +
+      '<div class="ash-db-col__head">' +
+      dayBoardStaffPhotoHtml(label, esc) +
+      '<h4 class="ash-db-col__staff">' +
+      esc(label) +
+      "</h4>" +
+      '<span class="ash-db-col__meta">' +
+      esc(String(items.length)) +
+      " seat" +
+      (items.length === 1 ? "" : "s") +
+      "</span></div>" +
+      '<div class="ash-db-col__slots">' +
+      (cards || '<p class="ash-db-empty">No seats</p>') +
+      "</div></section>"
+    );
+  }
 
   function dayBoardServiceBand(slot) {
     var svc = clean(slot && slot.service);
@@ -9014,56 +9116,87 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         byKey[key].push({ slot: slot, st: st });
       }
     }
-    var keys = Object.keys(byKey);
-    keys.sort(function (a, b) {
-      var la = labelByKey[a] || a;
-      var lb = labelByKey[b] || b;
-      var ia = -1;
-      var ib = -1;
-      for (var p = 0; p < DAY_BOARD_STAFF_PREF.length; p++) {
-        if (dayBoardStaffKey(DAY_BOARD_STAFF_PREF[p]) === a) ia = p;
-        if (dayBoardStaffKey(DAY_BOARD_STAFF_PREF[p]) === b) ib = p;
-      }
-      if (ia >= 0 && ib >= 0) return ia - ib;
-      if (ia >= 0) return -1;
-      if (ib >= 0) return 1;
-      return la.localeCompare(lb, "en", { sensitivity: "base" });
+    function sortStaffKeys(list) {
+      return list.slice().sort(function (a, b) {
+        var la = labelByKey[a] || a;
+        var lb = labelByKey[b] || b;
+        var ia = -1;
+        var ib = -1;
+        for (var p = 0; p < DAY_BOARD_STAFF_PREF.length; p++) {
+          if (dayBoardStaffKey(DAY_BOARD_STAFF_PREF[p]) === a) ia = p;
+          if (dayBoardStaffKey(DAY_BOARD_STAFF_PREF[p]) === b) ib = p;
+        }
+        if (ia >= 0 && ib >= 0) return ia - ib;
+        if (ia >= 0) return -1;
+        if (ib >= 0) return 1;
+        return la.localeCompare(lb, "en", { sensitivity: "base" });
+      });
+    }
+    function sortedItems(key) {
+      return byKey[key].slice().sort(function (x, y) {
+        var tx = clean(x.slot.time_start || x.slot.time_slot);
+        var ty = clean(y.slot.time_start || y.slot.time_slot);
+        if (tx !== ty) return tx < ty ? -1 : 1;
+        return clean(x.slot.client_name).localeCompare(clean(y.slot.client_name));
+      });
+    }
+    var swimKeys = [];
+    var supportKeys = [];
+    var climbKeys = [];
+    Object.keys(byKey).forEach(function (key) {
+      var role = dayBoardStaffRole(key, byKey[key]);
+      if (role === "climbing") climbKeys.push(key);
+      else if (role === "support") supportKeys.push(key);
+      else swimKeys.push(key);
     });
-    var colsHtml = keys
-      .map(function (key) {
-        var items = byKey[key].slice().sort(function (x, y) {
-          var tx = clean(x.slot.time_start || x.slot.time_slot);
-          var ty = clean(y.slot.time_start || y.slot.time_slot);
-          if (tx !== ty) return tx < ty ? -1 : 1;
-          return clean(x.slot.client_name).localeCompare(clean(y.slot.client_name));
-        });
-        var cards = items
-          .map(function (it) {
-            return htmlDayBoardCard(hub, it.slot, it.st, esc);
-          })
-          .join("");
-        return (
-          '<section class="ash-db-col">' +
-          '<h4 class="ash-db-col__staff">' +
-          esc(labelByKey[key]) +
-          '<span class="ash-db-col__meta">' +
-          esc(String(items.length)) +
-          " seat" +
-          (items.length === 1 ? "" : "s") +
-          "</span></h4>" +
-          '<div class="ash-db-col__slots">' +
-          (cards || '<p class="ash-db-empty">No seats</p>') +
-          "</div></section>"
-        );
-      })
-      .join("");
+    swimKeys = sortStaffKeys(swimKeys);
+    supportKeys = sortStaffKeys(supportKeys);
+    climbKeys = sortStaffKeys(climbKeys);
+
+    function renderCols(keys) {
+      return keys
+        .map(function (key) {
+          return dayBoardColHtml(hub, key, labelByKey[key], sortedItems(key), esc);
+        })
+        .join("");
+    }
+
+    var topHtml = "";
+    if (swimKeys.length || supportKeys.length) {
+      topHtml =
+        '<div class="ash-day-board__row ash-day-board__row--top">' +
+        (swimKeys.length
+          ? '<div class="ash-day-board__group ash-day-board__group--swim" style="--ash-db-cols:' +
+            esc(String(Math.max(swimKeys.length, 1))) +
+            '">' +
+            renderCols(swimKeys) +
+            "</div>"
+          : "") +
+        (supportKeys.length
+          ? '<div class="ash-day-board__group ash-day-board__group--support" style="--ash-db-cols:' +
+            esc(String(Math.max(supportKeys.length, 1))) +
+            '">' +
+            renderCols(supportKeys) +
+            "</div>"
+          : "") +
+        "</div>";
+    }
+    var climbHtml = "";
+    if (climbKeys.length) {
+      climbHtml =
+        '<div class="ash-day-board__row ash-day-board__row--climb">' +
+        '<div class="ash-day-board__group ash-day-board__group--climb" style="--ash-db-cols:' +
+        esc(String(Math.max(climbKeys.length, 1))) +
+        '">' +
+        renderCols(climbKeys) +
+        "</div></div>";
+    }
+
     return (
       '<div class="ash-day-board" data-ash-day-board="1">' +
-      '<div class="ash-day-board__cols" style="--ash-db-cols:' +
-      esc(String(Math.min(keys.length, 6))) +
-      '">' +
-      colsHtml +
-      "</div></div>"
+      topHtml +
+      climbHtml +
+      "</div>"
     );
   };
 

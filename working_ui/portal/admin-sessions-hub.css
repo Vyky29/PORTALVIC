@@ -1643,21 +1643,40 @@
     .ash-day-board {
       margin: 0 0 16px;
       min-width: 0;
-    }
-    .ash-day-board__cols {
       display: grid;
-      grid-template-columns: repeat(var(--ash-db-cols, 4), minmax(0, 1fr));
+      gap: 10px;
+    }
+    .ash-day-board__row {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+      width: 100%;
+    }
+    .ash-day-board__row--top {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      align-items: start;
+    }
+    .ash-day-board__row--climb {
+      justify-items: center;
+    }
+    .ash-day-board__group {
+      display: grid;
+      grid-template-columns: repeat(var(--ash-db-cols, 3), minmax(0, 1fr));
       gap: 8px;
       min-width: 0;
       width: 100%;
     }
-    @media (max-width: 1200px) {
-      .ash-day-board__cols {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+    .ash-day-board__group--climb {
+      max-width: min(100%, 520px);
+      width: 100%;
+    }
+    @media (max-width: 1100px) {
+      .ash-day-board__row--top {
+        grid-template-columns: 1fr;
       }
     }
     @media (max-width: 720px) {
-      .ash-day-board__cols {
+      .ash-day-board__group {
         grid-template-columns: 1fr;
       }
     }
@@ -1666,24 +1685,64 @@
       overflow: hidden;
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 6px;
+      padding: 8px 6px 6px;
       background: #f8fbfe;
     }
+    .ash-db-col__head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 4px;
+      margin: 0 0 8px;
+      min-width: 0;
+    }
+    .ash-db-col__photo,
+    .ash-db-col__head .portal-roster-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #dbe7f5;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      position: relative;
+      box-sizing: border-box;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px rgba(15, 45, 80, 0.12);
+    }
+    .ash-db-col__head .portal-roster-avatar__img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
     .ash-db-col__staff {
-      margin: 0 0 6px;
+      margin: 0;
       font-size: 12px;
       font-weight: 800;
       color: var(--navy);
       line-height: 1.25;
       overflow-wrap: anywhere;
       min-width: 0;
+      text-align: center;
     }
     .ash-db-col__meta {
       display: block;
-      margin-top: 1px;
+      margin: 0;
       font-size: 10px;
       font-weight: 700;
       color: var(--muted);
+      text-align: center;
     }
     .ash-db-col__slots {
       display: grid;

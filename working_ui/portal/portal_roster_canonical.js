@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 68;
+  var SOURCE_VERSION = 69;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1035,9 +1035,9 @@
   }
 
   /**
-   * Autumn Sunday Roberto Big Pool (LOCAL): Yusuf Ah is one Multi card 9–10.15.
-   * Summer snap often stored Aquatic 9–9.30 + Multi 9.30–10.15 — staff Today then
-   * showed only the Multi half when the aquatic slice was missing/omitted.
+   * Autumn Sunday Roberto Big Pool: Yusuf is Aquatic 9–9.30 + Multi 9.30–10.15
+   * (same pattern as Zaid/Javier). Feedback merge still paints both as one unit.
+   * Collapse any summer "9 to 10.15" Multi back to Multi 9.30–10.15.
    */
   function enforceAutumnSundayRobertoYusufPoolBook(row) {
     if (!row || !isMultiActivityService(row.service)) return null;
@@ -1049,32 +1049,26 @@
     var area = String(row.area || "").toLowerCase();
     if (area && area.indexOf("big") < 0) return null;
     var slot = normSundayMultiTimeSlot(row.time_slot);
-    if (
-      slot === "9 to 10.15" ||
-      slot.indexOf("9 to 10.15") === 0
-    ) {
-      return null;
-    }
-    if (
-      slot === "9.30 to 10.15" ||
-      slot.indexOf("9.30 to 10.15") === 0 ||
-      slot === "9 to 9.30" ||
-      slot.indexOf("9 to 9.30") === 0
-    ) {
-      return { time_slot: "9 to 10.15" };
+    if (slot === "9 to 10.15" || slot.indexOf("9 to 10.15") === 0) {
+      return { time_slot: "9.30 to 10.15" };
     }
     return null;
   }
 
-  /** Drop summer Aquatic 9–9.30 Yusuf+Roberto — LOCAL is Multi Big Pool 9–10.15 only. */
-  function isAutumnSundayYusufRobertoAquaticSlice(row) {
-    if (!row || !isAquaticService(row.service)) return false;
-    if (normalizeDowKey(row.day) !== "sunday") return false;
-    if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return false;
-    if (!/\broberto\b/i.test(String(row.instructors || ""))) return false;
-    if (!/^yusuf\b/i.test(String(row.client_name || "").trim())) return false;
-    var slot = normSundayMultiTimeSlot(row.time_slot);
-    return slot === "9 to 9.30" || slot.indexOf("9 to 9.30") === 0;
+  /** Standing-template Aquatic 9–9.30 Yusuf+Roberto (pairs with Multi 9.30–10.15). */
+  function autumnSundayYusufRobertoAquaticStandingRows() {
+    return [
+      {
+        client_name: "Yusuf Ah",
+        day: "Sunday",
+        instructors: "ROBERTO",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "9 to 9.30",
+        venue: "SwimFarm",
+        session_date: "2026-07-12",
+      },
+    ];
   }
 
   /**
@@ -1520,9 +1514,6 @@
         out.push(Object.assign({}, r, javierPoolPatch));
         return;
       }
-      if (isAutumnSundayYusufRobertoAquaticSlice(r)) {
-        return;
-      }
       var yusufRobertoPatch = enforceAutumnSundayRobertoYusufPoolBook(r);
       if (yusufRobertoPatch) {
         out.push(Object.assign({}, r, yusufRobertoPatch));
@@ -1667,6 +1658,9 @@
       out.push(Object.assign({}, row));
     });
     autumnSundayZaidJavierAquaticStandingRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    autumnSundayYusufRobertoAquaticStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     /* Sep 6 Hub cover is applied once in resolveCanonicalRosterRows (after DB rows). */
