@@ -8442,10 +8442,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var scopedSlots = slots.filter(function (s) {
       return !isTeflonDemoRosterSlot(s) && hub.slotPassesOverviewFilters(s);
     });
-    /* Light omit: skip absorbed make-up duplicates without full feedback unit graph. */
+    /*
+     * Do NOT apply overviewOmitRosterSlots / swim-merge duplicate omit here.
+     * Those hide Zaid Aquatic 9–9.30 (and Yusuf aquatic) for feedback merging —
+     * staffing board must show the trial card separately from Multi 9.30–10.15.
+     */
     var displaySlots = scopedSlots.filter(function (s) {
       try {
-        return !shouldOmitOverviewSlot(hub, s);
+        if (makeupSlotAbsorbedByDisplacedRow(hub, s)) return false;
+        if (shouldOmitMislabelledTrialClimbing(s)) return false;
+        var cfg = acatGroupCoverageConfig();
+        if (cfg && slotMatchesAcatCoverage(s, cfg) && cfg.always_hide_individual_rows === true) {
+          return false;
+        }
+        return true;
       } catch (_om) {
         return true;
       }
@@ -8751,12 +8761,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   function dayBoardServiceBand(slot) {
     var svc = clean(slot && slot.service);
+    var trialNamed =
+      /\(\s*trial\s*\)/i.test(clean(slot && slot.client_name)) ||
+      /^trial\b/i.test(clean(slot && slot.client_name));
+    var isTrialBand =
+      hubSlotShowsTrialChip(slot, slot && slot.__portalScheduleOverride) || trialNamed;
     if (isDayCentreService(svc)) return "Day Centre";
     if (isClimbingService(svc)) return "CLIMB";
     if (isMultiActivityService(svc)) return "MULTI";
-    if (/aquatic|swim/i.test(svc)) return "AQUATIC";
+    if (/aquatic|swim/i.test(svc)) return isTrialBand ? "AQUATIC · Trial" : "AQUATIC";
     if (/bespoke/i.test(svc)) return "BESPOKE";
-    if (hubSlotShowsTrialChip(slot, slot && slot.__portalScheduleOverride)) {
+    if (isTrialBand) {
       return (svc ? svc : "AQUATIC") + " · Trial";
     }
     return svc || "Session";
@@ -8791,7 +8806,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       overrideIsInstructorCoverNeededType(slotOv) ||
       (slot.__portalScheduleOverride &&
         overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride));
-    var isTrial = hubSlotShowsTrialChip(slot, slotOv);
+    var isTrial =
+      hubSlotShowsTrialChip(slot, slotOv) ||
+      /\(\s*trial\s*\)/i.test(clean(slot.client_name)) ||
+      /^trial\b/i.test(clean(slot.client_name)) ||
+      (canonicalClientSlug(slot.client_name) === "zaid" &&
+        isAquaticService(slot.service) &&
+        /9\s*to\s*9\.?30/i.test(clean(slot.time_slot) || clean(slot.time_start)));
     var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
     var kind = rosterSlotKind(slot.client_name);
     var isOpenSlot = kind === "open";
@@ -8887,7 +8908,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     } else if (st.isOpenSlot) {
       name = rosterOpenSlotDisplayLabel();
     } else if (st.isTrial && clean(slot.client_name)) {
-      name = "Trial · " + clean(slot.client_name);
+      var trialName = clean(slot.client_name)
+        .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
+        .replace(/^trial\s*[-·:]?\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      name = "Trial · " + (trialName || clean(slot.client_name));
     }
     var venue = clean(slot.venue);
     var area = clean(slot.area);

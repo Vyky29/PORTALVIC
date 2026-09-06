@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 67;
+  var SOURCE_VERSION = 68;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1096,11 +1096,11 @@
     return { instructors: mapped };
   }
 
-  /** Standing-template Aquatic 9–9.30 so Zaid+Javier sundayFeedbackMerges can resolve. */
+  /** Standing-template Aquatic 9–9.30 trial — LOCAL Javier pool (separate from Multi 9.30–10.15). */
   function autumnSundayZaidJavierAquaticStandingRows() {
     return [
       {
-        client_name: "Zaid",
+        client_name: "Zaid (Trial)",
         day: "Sunday",
         instructors: "JAVIER",
         service: "Aquatic Activity",
