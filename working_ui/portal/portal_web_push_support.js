@@ -211,42 +211,65 @@
   global.portalPersistSet = global.portalPersistSet || persistSet;
   global.portalIsStandalonePwa = portalIsStandalonePwa;
 
-  /** Short beep + vibrate so the user gets feedback even when the OS silences banners. */
-  function portalPlayAlertCue(opts) {
-    opts = opts || {};
-    var pattern = opts.vibrate || [200, 80, 200, 80, 280];
-    try {
-      if (global.navigator && global.navigator.vibrate) {
-        global.navigator.vibrate(pattern);
-      }
-    } catch (_v) {}
+  /** Short beep + optional vibrate so the in-app COMMS card is heard inside the PWA. */
+  var lastAlertCueAt = 0;
+  function portalUnlockAlertAudio() {
     try {
       var AC = global.AudioContext || global.webkitAudioContext;
       if (!AC) return;
       var ctx = global.__PORTAL_ALERT_AUDIO_CTX__ || new AC();
       global.__PORTAL_ALERT_AUDIO_CTX__ = ctx;
       if (ctx.state === "suspended") {
-        void ctx.resume();
+        var p = ctx.resume();
+        if (p && typeof p.catch === "function") p.catch(function () {});
       }
+    } catch (_u) {}
+  }
+  function portalPlayAlertCue(opts) {
+    opts = opts || {};
+    var nowMs = Date.now();
+    if (nowMs - lastAlertCueAt < 800) return;
+    lastAlertCueAt = nowMs;
+    if (opts.vibrate !== false) {
+      var pattern = opts.vibrate || [200, 80, 200, 80, 280];
+      try {
+        if (global.navigator && global.navigator.vibrate && pattern && pattern.length) {
+          global.navigator.vibrate(pattern);
+        }
+      } catch (_v) {}
+    }
+    try {
+      portalUnlockAlertAudio();
+      var ctx = global.__PORTAL_ALERT_AUDIO_CTX__;
+      if (!ctx) return;
       var now = ctx.currentTime;
-      function beep(at, freq, dur) {
+      function beep(at, freq, dur, vol) {
         var o = ctx.createOscillator();
         var g = ctx.createGain();
         o.type = "sine";
         o.frequency.value = freq;
         g.gain.setValueAtTime(0.0001, at);
-        g.gain.exponentialRampToValueAtTime(0.18, at + 0.02);
+        g.gain.exponentialRampToValueAtTime(vol, at + 0.018);
         g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
         o.connect(g);
         g.connect(ctx.destination);
         o.start(at);
         o.stop(at + dur + 0.02);
       }
-      beep(now, 880, 0.12);
-      beep(now + 0.16, 1175, 0.14);
+      beep(now, 880, 0.13, 0.2);
+      beep(now + 0.15, 1175, 0.16, 0.18);
     } catch (_a) {}
   }
   global.portalPlayAlertCue = portalPlayAlertCue;
+  global.portalUnlockAlertAudio = portalUnlockAlertAudio;
+  if (!global.__PORTAL_ALERT_AUDIO_UNLOCK__) {
+    global.__PORTAL_ALERT_AUDIO_UNLOCK__ = true;
+    try {
+      document.addEventListener("pointerdown", portalUnlockAlertAudio, true);
+      document.addEventListener("touchstart", portalUnlockAlertAudio, { capture: true, passive: true });
+      global.addEventListener("pageshow", portalUnlockAlertAudio);
+    } catch (_b) {}
+  }
 
   var portalHomeBadgeParts = { comms: 0, family: 0, staffWa: 0 };
 

@@ -1317,6 +1317,11 @@
     } catch (_sh) {}
     if (messageToastTimer) global.clearTimeout(messageToastTimer);
     messageToastTimer = global.setTimeout(hideMessageToast, 15000);
+    try {
+      if (typeof global.portalPlayAlertCue === "function") {
+        global.portalPlayAlertCue({ vibrate: false });
+      }
+    } catch (_cue) {}
   }
 
   function documentIsVisible() {
