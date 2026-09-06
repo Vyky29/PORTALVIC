@@ -748,6 +748,36 @@
     function portalSessionAddSplitNames(raw){
       return String(raw || '').split(/[,;|/]+/).map(function(p){ return p.trim(); }).filter(Boolean);
     }
+    /**
+     * Standing 2:1 aquatic pairs — show "With X (2:1 support)" under the client name
+     * on each co-instructor's Today card (e.g. Joelle Thu Acton: Aurora + Roberto).
+     */
+    function portalTwoToOneSupportLabelForSession(sessionRow, viewerStaffId, clientId){
+      const cid = String(clientId || (sessionRow && sessionRow.clientId) || '').trim().toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_');
+      const sid = String(viewerStaffId || (sessionRow && sessionRow.staffId) || '').trim().toLowerCase()
+        .replace(/[^a-z0-9]+/g, '');
+      if(!cid || !sid) return '';
+      const day = String((sessionRow && sessionRow.day) || '').trim().toLowerCase();
+      const venue = String((sessionRow && sessionRow.venue) || '').trim().toLowerCase();
+      const pairs = [
+        {
+          client: 'joelle',
+          days: { thursday: 1 },
+          staff: { aurora: 'Roberto', roberto: 'Aurora' }
+        }
+      ];
+      for(let i = 0; i < pairs.length; i++){
+        const p = pairs[i];
+        if(cid !== p.client && cid.indexOf(p.client + '_') !== 0) continue;
+        if(p.days && day && !p.days[day]) continue;
+        if(venue && venue.indexOf('acton') < 0) continue;
+        const other = p.staff[sid];
+        if(other) return 'With ' + other + ' (2:1 support)';
+      }
+      return '';
+    }
+    try{ window.portalTwoToOneSupportLabelForSession = portalTwoToOneSupportLabelForSession; }catch(_){}
     function portalSessionAddPeopleChips(kind, payload, ov, sessionDateIso){
       payload = payload && typeof payload === 'object' ? payload : {};
       const trainer = String(payload.trainer || '').trim();
@@ -1571,12 +1601,16 @@
         : (item.kind === 'home'
           ? `<span class="session-meta-name session-meta-name--home"><span>${escapeHtml(item.name)}</span></span>`
           : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`);
+      const supportSub = String(item.portalTwoToOneSupportLabel || '').trim();
+      const supportLine = supportSub
+        ? '<span class="session-meta-support">' + escapeHtml(supportSub) + '</span>'
+        : '';
       const meetingChipsRow = todaySessionStackedPeopleChipsRowHtml(item);
       const chip = meetingChipsRow ? '' : todaySessionChipBelowNameHtml(item);
       const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
       const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
       const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
-      const namePart = `<span class="session-name-stack">${nameCore}${chipsRow}</span>`;
+      const namePart = `<span class="session-name-stack">${nameCore}${supportLine}${chipsRow}</span>`;
       const rightColInner = `<span class="session-right-note">${todaySessionThirdRowInnerHtml(item)}</span>`;
       return `<div class="session-card-body">${timeStack}<div class="session-line session-line--name">${namePart}</div><div class="session-line session-line--symbol">${rightColInner}</div></div>`;
     }

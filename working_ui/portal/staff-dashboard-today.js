@@ -3026,6 +3026,9 @@
           const generalBody = hasReplaceOv && anchorNotesForMakeup
             ? clientGeneralBodyForMakeupSession(anchorNotesForMakeup, c, s, activity, viewDay, supportHidePoolNote)
             : clientGeneralBodyFromNotes(c, s);
+          const twoToOneLabel = typeof portalTwoToOneSupportLabelForSession === 'function'
+            ? portalTwoToOneSupportLabelForSession(s, s.staffId, effClientId)
+            : '';
           return Object.assign({
             time,
             kind: 'client',
@@ -3048,6 +3051,7 @@
             sessionKey,
             sessionStartTs,
             sessionEndTs,
+            portalTwoToOneSupportLabel: twoToOneLabel,
             portalOverrideMakeUpTag: (hasReplaceOv || replacedVisual) && !isTrialOv,
             portalOverrideTrialTag: isTrialOv,
             portalOverrideCardTone: isMakeUpCard ? 'pink' : (slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : '')),

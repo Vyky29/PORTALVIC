@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 65;
+  var SOURCE_VERSION = 66;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1186,7 +1186,7 @@
    * Standing Thu Acton AS: Roberto / Simon / Javier / Aurora (no Luliya).
    * Elijah + Yuri with Simon; Aurora CLOSED 4–4.30 (starts 4.30). Eiji aquatic withdrawn.
    * Simon works 4–6.30 — gap 4.30–5 is open (No participant), not Closed.
-   * Yunis + Maiyar with Roberto; Joelle 5.30–6.30 with Aurora + Simon.
+   * Yunis + Maiyar with Roberto; Joelle 5.30–6.30 with Aurora + Roberto (2:1 support).
    */
   var AUTUMN_ACTON_THURSDAY_BOARD = [
     { staff: "ROBERTO", name: "Tom", time: "4 to 4.30" },
@@ -1194,10 +1194,10 @@
     { staff: "ROBERTO", name: "Yossi", time: "5 to 5.30" },
     { staff: "ROBERTO", name: "Yunis Hussein", time: "5.30 to 6" },
     { staff: "ROBERTO", name: "Maiyar", time: "6 to 6.30" },
+    { staff: "ROBERTO", name: "Joelle", time: "5.30 to 6.30" },
     { staff: "SIMON", name: "Elijah", time: "4 to 4.30" },
     { staff: "SIMON", name: "No participant", time: "4.30 to 5" },
     { staff: "SIMON", name: "Yuri", time: "5 to 5.30" },
-    { staff: "SIMON", name: "Joelle", time: "5.30 to 6.30" },
     { staff: "JAVIER", name: "Ayman", time: "4 to 5" },
     { staff: "JAVIER", name: "Khalid Ab", time: "5 to 5.30" },
     /* Mohamed (Anab / Yusuf) — office arranged Thu 5.30–6.30; booking may still be finishing. */

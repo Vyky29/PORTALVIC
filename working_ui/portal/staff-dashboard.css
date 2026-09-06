@@ -5730,6 +5730,16 @@
       flex:1 1 auto;
       gap:3px;
     }
+    .section-card--today .session-meta-support{
+      display:block;
+      font-size:11px;
+      font-weight:650;
+      line-height:1.25;
+      color:#5b6470;
+      text-align:center;
+      overflow-wrap:anywhere;
+      max-width:100%;
+    }
     .section-card--today .session-line--name .session-name-stack > .portal-sched-ov-badge{
       margin-left:0;
       max-width:100%;
