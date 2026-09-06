@@ -289,6 +289,7 @@
     if (pay === 'pending_confirmation') return 'pending confirmation';
     if (pay === 'awaiting_office_payment') return 'awaiting office confirmation';
     if (pay === 'void') return 'void';
+    if (pay === 'unpaid') return 'outstanding';
     return pay.replace(/_/g, ' ');
   }
 
@@ -312,7 +313,7 @@
         '</span>'
       );
     }
-    /* Green = paid; soft green = partial (flexi half paid); orange = unpaid only. */
+    /* Green = paid; soft green = partial (flexi half paid); orange = outstanding. */
     var payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other';
     if (pay === 'paid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--paid';
     else if (pay === 'unpaid') payCls = 'pp-inv-acc__pay-chip pp-inv-acc__pay-chip--unpaid';
@@ -497,9 +498,10 @@
         var due = formatDate(r.due_date);
         var dueIso = instalmentDueIso(r.due_date);
         /* Flexi: next unpaid is "Due" in the collect window (due ≤ +7 days).
-           Far-future next half (e.g. Oct while collecting Aug) stays Scheduled. */
+           Far-future next half (e.g. Oct while collecting Aug) stays Scheduled.
+           One-off Autumn ACAT (Kate / Kamy / Jack W sibling): outstanding once ready. */
         var isNextUnpaid = st !== 'paid' && i === firstUnpaidIdx;
-        var isCurrentDue = isNextUnpaid && instalmentIsCollectingNow(dueIso);
+        var isCurrentDue = isNextUnpaid && invoiceCollectingNow(inv);
         var isScheduledNext = isNextUnpaid && !isCurrentDue;
         var isLaterHidden = st !== 'paid' && firstUnpaidIdx >= 0 && i > firstUnpaidIdx;
         var tone =
@@ -513,7 +515,7 @@
         var stLab = st === 'paid'
           ? 'Paid'
           : isCurrentDue
-            ? 'Due'
+            ? 'Outstanding'
             : isScheduledNext
               ? 'Scheduled'
               : 'Hidden';
@@ -525,6 +527,7 @@
         if (st === 'paid' && paidAtShow) meta.push(formatDate(paidAtShow));
         if (st === 'paid' && paidViaShow) meta.push(String(paidViaShow));
         if (isScheduledNext || isLaterHidden) meta.push('not due yet');
+        if (isCurrentDue && invoiceIsOneOffTermBill(inv)) meta.push('outstanding');
         return (
           '<li class="pp-inv-acc__inst-row" style="min-width:0;margin:0 0 4px;padding:6px 8px;border:1px solid;border-radius:8px;' +
           tone +
@@ -1520,10 +1523,47 @@
   }
 
   /** True when office should chase payment now (due window), not future AUTO terms. */
+  function invoiceIsOneOffTermBill(inv) {
+    var rows = scheduleRows(inv);
+    if (rows.length >= 2) return false;
+    var bt = String((inv && inv.billing_term) || '')
+      .trim()
+      .toLowerCase();
+    if (bt === 'spring' || bt === 'summer') return false;
+    var blob = [
+      inv && inv.reference_text,
+      inv && inv.title,
+      inv && inv.subtitle,
+      inv && inv.line_description,
+      inv && inv.notes,
+      inv && inv.ready_by,
+    ]
+      .map(function (x) {
+        return String(x || '').toLowerCase();
+      })
+      .join(' ');
+    /* Future spring/summer AUTO drafts — keep Hidden until their collect window. */
+    if (/\bspring\s*27\b|\bspring term\b/.test(blob) && !/\bautumn\b/.test(blob)) return false;
+    if (/\bsummer\s*27\b|\bsummer term\b/.test(blob) && !/\bautumn\b/.test(blob) && !/\bcrash\b/.test(blob)) {
+      return false;
+    }
+    return true;
+  }
+
   function invoiceCollectingNow(inv) {
     var pay = String((inv && inv.payment_status) || 'unpaid').toLowerCase();
     if (pay === 'paid' || pay === 'void') return false;
     if (pay === 'pending_confirmation') return true;
+    /*
+     * One-off Autumn place bills (ACAT £700 Kate / Kamy / Jack Walker sibling):
+     * outstanding as soon as the share is ready — do not park as Hidden until ≤7 days.
+     */
+    if (
+      invoiceIsOneOffTermBill(inv) &&
+      String((inv && inv.share_status) || '').toLowerCase() === 'ready'
+    ) {
+      return true;
+    }
     var next = nextUnpaidInstalment(inv);
     if (next) {
       return instalmentIsCollectingNow(instalmentDueIso(next.due_date));
@@ -1584,9 +1624,23 @@
       if (inv.xero_push_status === 'failed') xeroFail += 1;
       else if (inv.created_via === 'portal' || inv.created_via === 'reenrolment') xeroMissing += 1;
     });
+    /*
+     * Contact place: Multi paid + open ACAT sibling (Jack Walker £1560 + £700) →
+     * partially paid, not "1 paid" alone / unpaid chip noise.
+     */
+    if (paid > 0 && unpaid > 0) {
+      partial = Math.max(partial, 1);
+      unpaid = 0;
+    }
     var chips = [];
     if (unpaid) {
-      chips.push(summaryFilterChip('unpaid', unpaid + ' unpaid', 'unpaid'));
+      chips.push(
+        summaryFilterChip(
+          'unpaid',
+          unpaid === 1 ? '1 outstanding' : unpaid + ' outstanding',
+          'unpaid',
+        ),
+      );
     }
     if (partial) {
       chips.push(
