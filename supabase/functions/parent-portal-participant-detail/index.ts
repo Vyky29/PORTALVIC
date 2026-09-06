@@ -1788,11 +1788,16 @@ Deno.serve(async (req) => {
 
     if (hubRows.length) {
       const statuses = hubRows.map(effectivePayStatus);
+      const hasPaid = statuses.some((st) => st === "paid");
+      const hasUnpaid = statuses.some((st) => st === "unpaid");
+      const hasPartial = statuses.some((st) => st === "partial");
+      const hasPending = statuses.some((st) => st === "pending_confirmation");
       if (statuses.every((st) => st === "paid")) hubPayStateFromShares = "settled";
-      else if (statuses.some((st) => st === "unpaid")) hubPayStateFromShares = "unpaid";
-      else if (statuses.some((st) => st === "pending_confirmation")) {
-        hubPayStateFromShares = "pending";
-      } else if (statuses.some((st) => st === "partial")) hubPayStateFromShares = "partial";
+      /* Multi paid + ACAT sibling still due (Jack Stratton £700) → partially paid. */
+      else if (hasPaid && (hasUnpaid || hasPartial)) hubPayStateFromShares = "partial";
+      else if (hasUnpaid) hubPayStateFromShares = "unpaid";
+      else if (hasPending) hubPayStateFromShares = "pending";
+      else if (hasPartial) hubPayStateFromShares = "partial";
       else hubPayStateFromShares = "unpaid";
     }
   }

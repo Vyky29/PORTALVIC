@@ -1369,7 +1369,7 @@
     }
     if (pay === "partial") {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--partial" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — first instalment paid; later half still due">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--partial" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — part paid; balance still due">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
         "<span>Re-enrolled (partially paid)</span>" +
         "</span>"
@@ -1505,17 +1505,26 @@
   function termInvoicesHubPayState(term) {
     if (!term || !term.length) return null;
     if (term.every(isInvoiceFullyPaid)) return "settled";
+    var hasPaid = false;
     var hasUnpaid = false;
     var hasPartial = false;
     var hasPending = false;
     for (var i = 0; i < term.length; i++) {
       var st = invoiceEffectivePayStatus(term[i]);
-      if (st === "paid" || st === "void" || st === "cancelled") continue;
+      if (st === "void" || st === "cancelled") continue;
+      if (st === "paid") {
+        hasPaid = true;
+        continue;
+      }
       if (st === "pending_confirmation") hasPending = true;
       else if (st === "partial") hasPartial = true;
       else hasUnpaid = true;
     }
-    /* Worst open status wins: unpaid > pending confirm > partial. */
+    /*
+     * Paid Multi + open ACAT sibling (Jack Stratton £1560 paid / £700 due) → partial,
+     * not unpaid. Same when one flexi half is paid.
+     */
+    if (hasPaid && (hasUnpaid || hasPartial)) return "partial";
     if (hasUnpaid) return "unpaid";
     if (hasPending) return "pending";
     if (hasPartial) return "partial";
@@ -1718,7 +1727,9 @@
             ? "pp-hub-term-block--unpaid"
             : state === "pending"
               ? "pp-hub-term-block--pending"
-              : "pp-hub-term-block--settled",
+              : state === "partial"
+                ? "pp-hub-term-block--partial"
+                : "pp-hub-term-block--settled",
       );
       var acc = block.querySelector(".pp-hub-ops__term-accordion");
       if (acc) {
@@ -5842,10 +5853,10 @@
   function renderSessions(host, data, opts, viewOpts) {
     viewOpts = viewOpts || {};
     if (!sessionProgressEnabled(data)) {
-      host.innerHTML = subviewShell(
-        data,
-        "sessions",
-        '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
+    host.innerHTML = subviewShell(
+      data,
+      "sessions",
+      '<h3 class="pp-pax-subview-title">Sessions Overview</h3>' +
           '<p class="pp-muted">Session overview and stats are not shown for this participant.</p>',
       );
       bindBack(host, data, opts);
@@ -5921,8 +5932,8 @@
     }
 
     var autumnReady = Promise.resolve({
-      sessions: data.sessions || [],
-      attendance_summary: data.attendance_summary || null,
+        sessions: data.sessions || [],
+        attendance_summary: data.attendance_summary || null,
     });
     var summerReady = Promise.resolve(null);
     if (showSummer && opts && typeof opts.loadSection === "function") {

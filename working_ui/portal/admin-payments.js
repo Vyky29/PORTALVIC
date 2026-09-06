@@ -6367,6 +6367,10 @@
          */
         if (isOfficeSplitAutumnSibling(inv)) {
           row._officeSplitSiblingUnpaid = true;
+          /* Keep sibling face so the Multi row can show Partial (£700 ACAT still due). */
+          if (amt > 0) {
+            row._officeSplitSiblingOut = Math.max(Number(row._officeSplitSiblingOut) || 0, amt);
+          }
           return;
         }
         /* Outstanding: catalogue autumn still unpaid (don't stack instalment GBP). */
@@ -6522,17 +6526,30 @@
         row.payment_status = "Outstanding";
       }
       /*
-       * Paid Multi-only re-enrol when ACAT aquatic lives on a separate office INV-P
-       * (Jack Stratton INV-P-0115 £1560 paid; INV-P-0445 £700 tracked separately).
+       * Paid Multi + unpaid office ACAT sibling (Jack Stratton INV-P-0115 £1560 paid;
+       * INV-P-0445 £700 open) → Partially paid with sibling still outstanding.
        */
       if (row._officeSplitSiblingUnpaid && Number(row._amountPaid) > 0) {
         var paidOnly = Math.round(Number(row._amountPaid) * 100) / 100;
-        row.payment_status = "Paid";
-        row.amount_out = 0;
-        row._amountAutumn = paidOnly;
-        row.amount = paidOnly;
-        row.amount_billed = paidOnly;
-        row._officeSplitPaidOnly = true;
+        var siblingOut = Math.round(Number(row._officeSplitSiblingOut) * 100) / 100;
+        if (siblingOut > 0) {
+          var placeFace = Math.round((paidOnly + siblingOut) * 100) / 100;
+          row.payment_status = "Partial";
+          row.amount_out = siblingOut;
+          row._amountPaid = paidOnly;
+          row._amountAutumn = placeFace;
+          row.amount = placeFace;
+          row.amount_billed = placeFace;
+          /* Avoid inventing a Paid ACAT Day Centre half from Multi cash. */
+          row._officeSplitPaidOnly = true;
+        } else {
+          row.payment_status = "Paid";
+          row.amount_out = 0;
+          row._amountAutumn = paidOnly;
+          row.amount = paidOnly;
+          row.amount_billed = paidOnly;
+          row._officeSplitPaidOnly = true;
+        }
       }
       row.sheet = classifyPayGroup({
         sheet: row.sheet,
