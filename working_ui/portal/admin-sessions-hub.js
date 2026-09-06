@@ -4237,10 +4237,7 @@
     if (/^cover[\s_]*needed$/i.test(n) || canonicalStaffMatchKey(n) === "coverneeded") {
       return '<span class="ash-pill ash-pill--cover-needed">COVER NEEDED</span>';
     }
-    var title =
-      typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
-        ? window.portalStaffDisplayName(n)
-        : canonicalInstructorFilterName(n);
+    var title = staffPillFirstName(n);
     var color = ashStaffChipColor(n);
     var styleAttr = color
       ? ' style="--ash-staff-bg:' +
@@ -4265,11 +4262,26 @@
   function formatInstructorPillOut(name) {
     var n = clean(name);
     if (!n) return "";
-    var title =
-      typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function"
-        ? window.portalStaffDisplayName(n)
-        : canonicalInstructorFilterName(n);
+    var title = staffPillFirstName(n);
     return '<span class="ash-pill ash-pill--out">' + esc(title) + "</span>";
+  }
+
+  /** Chip / Reviewed-by label: first name only (no surname from staff profiles). */
+  function staffPillFirstName(name) {
+    var n = clean(name);
+    if (!n) return "";
+    var key = canonicalStaffMatchKey(n);
+    if (key === "luliya") return "Luliya";
+    if (key === "javi") return "Javi";
+    if (key === "javier") return "Javier";
+    var title = "";
+    if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
+      title = clean(window.portalStaffDisplayName(n));
+    }
+    if (!title) title = canonicalInstructorFilterName(n) || n;
+    var first = title.split(/\s+/)[0] || title;
+    if (/^[A-Z]{2,}$/.test(first)) return first.charAt(0) + first.slice(1).toLowerCase();
+    return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
   }
 
   /**
@@ -9036,7 +9048,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   }
 
   function dayBoardStaffLabel(raw) {
-    return canonicalInstructorFilterName(raw) || clean(raw) || "Staff";
+    return staffPillFirstName(raw) || clean(raw) || "Staff";
   }
 
   function dayBoardStaffKey(raw) {
