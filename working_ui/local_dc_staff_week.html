@@ -311,7 +311,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260906-luliya-cover-v64"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260906-aurora-on-6-v65"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-zaid-yusuf-9"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -325,7 +325,6 @@
   var STANDING_ONLY = false;
   /* Validated admin day offs (staff_unavailability) — paint on this board for ops preview. */
   var STAFF_DAY_OFF = {
-    "2026-09-06": { Aurora: "Time off · Luliya covers pool" },
     "2026-09-08": { Aurora: "Time off requested" },
     "2026-09-13": { Aurora: "Time off requested" },
     "2026-09-15": { Aurora: "Time off requested" },
@@ -337,7 +336,7 @@
     { dow: "thursday", iso: "2026-09-03", phase: "w1", hint: "Week 1 · Fadi off · Roberto + Youssef OFF" },
     { dow: "friday", iso: "2026-09-04", phase: "w1", hint: "Week 1 · Fadi off · Victor/Raul Timi 11-1 · Youssef OFF (starts Sat)" },
     { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Week 1 · first Saturday" },
-    { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · Aurora OFF · Luliya covers Aurora pool · Hub: Berta Lead + Jack W…Aydaan · John = Emanuel book · Godsway · Youssef OFF · Emanuel OFF" },
+    { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · Hub: Berta Lead + Jack W…Aydaan · John = Emanuel book (Zaid…Rayyan F) · Godsway · Aurora on pool · Youssef OFF · Emanuel OFF" },
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Emanuel interview 4pm · Godsway/John/Raul Tinashe · Victor OFF · Sandra OFF (validated day off · not on this board)" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing · Aurora OFF · Javi Palankas covers Aurora Acton book (Adam Mahmmoud / Junaid / Aydaan Ah / Anas) · Javier keeps his own book" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Emanuel shadowing · Godsway/John/Raul Tinashe" },
@@ -648,20 +647,9 @@
   var DATE_EXTRA = {
     "2026-09-06": {
       /* Emanuel + Youssef off. John covers Emanuel Hub book. Berta Lead keeps former John Hub book.
-       * Aurora OFF → Luliya covers her SwimFarm pool book (this date only).
+       * Aurora ON pool (standing). Luliya covers Aurora only on 13 Sep / 4 Oct.
        * Javier: TWO cards — Aquatic trial 9–9.30 + Multi 9.30–10.15 (one feedback validates both).
        * Admin Sessions Overview: one Javier swim row 9–10.15. Jack S: Hub then pool. */
-      Luliya: [
-        { name: "Simon", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool · cover (Aurora)" },
-        { name: "Adam Ab", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
-        { name: "Jack W", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
-        { name: "Arthur Ma", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
-        { name: "Cyrus", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
-        { name: "Aydaan Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
-        { name: "Erik", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
-        { name: "Zakariya", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool · cover (Aurora)" },
-        { name: "Faris", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool · cover (Aurora)" },
-      ],
       Javier: [
         { name: "Zaid (Trial)", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool", kind: "trial" },
         { name: "Zaid", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },

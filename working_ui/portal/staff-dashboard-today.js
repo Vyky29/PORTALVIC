@@ -307,17 +307,14 @@
       const wd = anchor.getDay();
       return worked.indexOf(wd) >= 0;
     }
-    /** Catch-up / extra term days prefer exact YYYY-MM-DD roster rows when present.
-     * If the extra day has no dated rows (e.g. John Sun 6 Sep Hub cover), fall back to
-     * standing weekday snap so clients still paint. */
+    /** Catch-up days only: force exact YYYY-MM-DD roster rows.
+     * Do NOT treat sparse dated overlays / extras as exact-only — that hid
+     * Simon's Thu book when Joelle alone had a slot_update dated row. */
     function portalStaffUsesExactRosterIsoOnDate(isoYmd, staffId){
       const iso = normaliseIsoDate(isoYmd);
       const sid = String(staffId || '').trim().toLowerCase();
       if(!iso || !sid) return false;
       if(typeof portalTermIsCatchUpFeedbackDate === 'function' && portalTermIsCatchUpFeedbackDate(iso, sid)) return true;
-      if(typeof portalTermStaffExtraCalendarDates === 'function' && portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0){
-        return portalStaffHasDatedRowsForIso(iso, sid);
-      }
       return false;
     }
     /** Match dated roster snapshot when calendar day has no rows (same rule as day sheet). */
