@@ -538,6 +538,17 @@
       var rule = rules[i];
       if (rule.day && String(rule.day).trim() !== dw) continue;
       if (slugClient(rule.client_name) !== cid) continue;
+      var except = rule.exceptSessionDates;
+      if (Array.isArray(except) && except.length && iso) {
+        var skip = false;
+        for (var ei = 0; ei < except.length; ei++) {
+          if (String(except[ei] || "").trim().slice(0, 10) === iso) {
+            skip = true;
+            break;
+          }
+        }
+        if (skip) continue;
+      }
       if (!staffMatchesMergeInstructors(rule.instructors, staffId, { sessionDateIso: iso, clientSlug: cid }))
         continue;
       var sub = rule.slots || [];

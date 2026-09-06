@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260712-emanuel-victor";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260906-yusuf-aurora-swap";
   // Optional "Notes" (relevant_information) only became a genuinely separate,
   // worker-written optional field on 7 Jul 2026. Before that date,
   // relevant_information was the AI "internal relevant" split of the feedback and
@@ -1028,6 +1028,20 @@
         if (
           isoDate === "2026-09-06" &&
           /\bjavier\b/i.test(String((r && r.instructors) || "")) &&
+          /swimfarm/i.test(String((r && r.venue) || "SwimFarm")) &&
+          !/hub/i.test(String((r && r.area) || "")) &&
+          (/multi/i.test(String((r && r.service) || "")) ||
+            /aquatic|swim/i.test(String((r && r.service) || "")))
+        ) {
+          return false;
+        }
+        /*
+         * Sun 6 Sep Aurora/Roberto pool owned by scrubAndEnsureSep6AuroraRobertoPool
+         * (Yusuf↔Simon Aquatic swap). Do not project Jul standing pool onto that day.
+         */
+        if (
+          isoDate === "2026-09-06" &&
+          /\b(aurora|roberto)\b/i.test(String((r && r.instructors) || "")) &&
           /swimfarm/i.test(String((r && r.venue) || "SwimFarm")) &&
           !/hub/i.test(String((r && r.area) || "")) &&
           (/multi/i.test(String((r && r.service) || "")) ||
@@ -2781,6 +2795,13 @@
     }
     if (rule.time_slot && clean(slot.time_slot) !== clean(rule.time_slot)) return false;
     if (rule.service && serviceKey(slot.service) !== serviceKey(rule.service)) return false;
+    var except = rule.exceptSessionDates;
+    if (Array.isArray(except) && except.length) {
+      var iso = clean(slot.session_date).slice(0, 10);
+      for (var ei = 0; ei < except.length; ei++) {
+        if (clean(except[ei]).slice(0, 10) === iso) return false;
+      }
+    }
     return true;
   }
 
@@ -3041,11 +3062,23 @@
   function feedbackMergeGroupForSlot(slot) {
     var rules = feedbackMergeRules();
     var wd = slot.day || weekdayLongFromIso(slot.session_date);
+    var slotIso = clean(slot.session_date).slice(0, 10);
     for (var i = 0; i < rules.length; i++) {
       var rule = rules[i];
       if (rule.day && clean(rule.day) !== wd) continue;
       if (canonicalClientSlug(rule.client_name) !== canonicalClientSlug(slot.client_name)) continue;
       if (!instructorRuleMatches(rule.instructors, slot.instructors)) continue;
+      var exceptMerge = rule.exceptSessionDates;
+      if (Array.isArray(exceptMerge) && exceptMerge.length && slotIso) {
+        var skipMerge = false;
+        for (var em = 0; em < exceptMerge.length; em++) {
+          if (clean(exceptMerge[em]).slice(0, 10) === slotIso) {
+            skipMerge = true;
+            break;
+          }
+        }
+        if (skipMerge) continue;
+      }
       var sub = rule.slots || [];
       for (var j = 0; j < sub.length; j++) {
         if (

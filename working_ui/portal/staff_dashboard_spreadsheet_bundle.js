@@ -297,6 +297,9 @@
       "client_name": "Yusuf Ah",
       "instructors": "ROBERTO",
       "mergeKey": "yusuf_ah_roberto_sun_swim",
+      "exceptSessionDates": [
+        "2026-09-06"
+      ],
       "slots": [
         {
           "time_slot": "9 to 9.30",
@@ -336,7 +339,10 @@
       "weekday": "Sunday",
       "client_slug": "yusuf_ah",
       "time_slot": "9 to 9.30",
-      "service": "Aquatic Activity"
+      "service": "Aquatic Activity",
+      "exceptSessionDates": [
+        "2026-09-06"
+      ]
     },
     {
       "weekday": "Sunday",

@@ -1,0 +1,27 @@
+---
+description: Re-enable portal alerts/notifications after Autumn rota fixes are signed off
+alwaysApply: true
+---
+
+# Alerts / notifications — paused during rota fix
+
+Victor asked to **turn alerts and notifications back on** once the Autumn rota / Sessions Overview / staff Sunday books are fully signed off.
+
+## Do not activate yet
+
+Do **not** re-enable or re-wire push / bell / family alerts until Victor explicitly says the rota is done (or "activa las alertas").
+
+## When he asks to activate
+
+1. Confirm what was paused (admin bell realtime, staff/lead push, parent family alerts, outstanding-feedback nag, etc.).
+2. Restore the live paths; smoke-test admin badge + staff test alert + one parent path if relevant.
+3. Delete or update this rule after reactivation ships.
+
+## Sunday staff portals (already wired with Overview)
+
+Same LOCAL truth as Sessions Overview Day board:
+
+- **Roberto** (standing Sundays): Yusuf Aquatic 9–9.30 + Multi 9.30–10.15 — two Today cards, `yusuf_ah_roberto_sun_swim` merge (one feedback paints both).
+- **Sun 6 Sep only**: Aurora Yusuf Aquatic 9–9.30 · Roberto Simon Aquatic 9–9.30 + Yusuf Multi 9.30–10.15 — **two Yusuf feedbacks** (merge off that day).
+- **Javier**: Zaid Aquatic trial 9–9.30 + Multi 9.30–10.15 — two Today cards, `zaid_javier_sun_swim` merge.
+- Hub / climb books unchanged (Berta, Godsway, John Sep 6, Alex, Carlos; Aurora pool as above on Sep 6).

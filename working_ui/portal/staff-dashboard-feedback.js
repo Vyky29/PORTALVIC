@@ -361,6 +361,14 @@
           const m = merges[i];
           if(m.day && String(m.day).trim() !== day) continue;
           if(portalSlugifyClientKey(m.client_name) !== slug) continue;
+          const except = Array.isArray(m.exceptSessionDates) ? m.exceptSessionDates : [];
+          if(except.length && iso){
+            let skip = false;
+            for(let ei = 0; ei < except.length; ei++){
+              if(String(except[ei] || '').trim().slice(0, 10) === iso){ skip = true; break; }
+            }
+            if(skip) continue;
+          }
           const sub = Array.isArray(m.slots) ? m.slots : [];
           for(let j = 0; j < sub.length; j++){
             const sl = sub[j];
@@ -405,6 +413,14 @@
           if(r.client_slug && portalSlugifyClientKey(r.client_slug) !== slug) continue;
           if(r.time_slot && String(r.time_slot).trim() !== ts) continue;
           if(r.service && String(r.service).trim() !== svc) continue;
+          const exceptOmit = Array.isArray(r.exceptSessionDates) ? r.exceptSessionDates : [];
+          if(exceptOmit.length && iso){
+            let skipOmit = false;
+            for(let eo = 0; eo < exceptOmit.length; eo++){
+              if(String(exceptOmit[eo] || '').trim().slice(0, 10) === iso){ skipOmit = true; break; }
+            }
+            if(skipOmit) continue;
+          }
           /* Keep AA+MA pairs visible on Today (Yusuf/Roberto, Zaid/Javier) — one feedback still covers both. */
           if(
             (slug === 'zaid' || slug === 'yusuf_ah' || slug === 'yusuf') &&

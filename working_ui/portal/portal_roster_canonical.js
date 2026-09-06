@@ -843,6 +843,170 @@
   }
 
   /**
+   * Sun 6 one-off: Aurora Yusuf Aquatic 9–9.30 (Small); Roberto Simon Aquatic 9–9.30 (Big)
+   * + Yusuf Multi 9.30–10.15 with Roberto. Full LOCAL DATE_EXTRA books for both staff.
+   * Different instructors → two Yusuf feedbacks (no AA↔MA merge that day).
+   */
+  function autumnSundaySep6AuroraRobertoPoolRows() {
+    var roberto = [
+      {
+        client_name: "Simon",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "9 to 9.30",
+      },
+      {
+        client_name: "Yusuf Ah",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "9.30 to 10.15",
+      },
+      {
+        client_name: "Samer",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "10.15 to 11",
+      },
+      {
+        client_name: "Gabriel",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "11 to 11.45",
+      },
+      {
+        client_name: "Arthur Mo",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "11.45 to 12.30",
+      },
+      {
+        client_name: "Amaar Ah",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "12.30 to 1.15",
+      },
+      {
+        client_name: "Adaam Ah",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "1.15 to 2",
+      },
+      {
+        client_name: "Rodin",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2 to 2.30",
+      },
+      {
+        client_name: "Yoan",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2.30 to 3",
+      },
+    ].map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "ROBERTO",
+        service: slot.service,
+        area: slot.area,
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+    var aurora = [
+      {
+        client_name: "Yusuf Ah",
+        service: "Aquatic Activity",
+        area: "Small Pool",
+        time_slot: "9 to 9.30",
+      },
+      {
+        client_name: "Adam Ab",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "9.30 to 10.15",
+      },
+      {
+        client_name: "Jack W",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "10.15 to 11",
+      },
+      {
+        client_name: "Arthur Ma",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "11 to 11.45",
+      },
+      {
+        client_name: "Cyrus",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "11.45 to 12.30",
+      },
+      {
+        client_name: "Aydaan Ah",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "12.30 to 1.15",
+      },
+      {
+        client_name: "Erik",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "1.15 to 2",
+      },
+      {
+        client_name: "Zakariya",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2 to 2.30",
+      },
+      {
+        client_name: "Faris",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2.30 to 3",
+      },
+    ].map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "AURORA",
+        service: slot.service,
+        area: slot.area,
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+    return roberto.concat(aurora);
+  }
+
+  function scrubAndEnsureSep6AuroraRobertoPool(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (
+        normIso(r.session_date) === "2026-09-06" &&
+        /\b(aurora|roberto)\b/i.test(String(r.instructors || "")) &&
+        /swimfarm/i.test(String(r.venue || "SwimFarm")) &&
+        !/hub/i.test(String(r.area || "")) &&
+        (isMultiActivityService(r.service) || isAquaticService(r.service))
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnSundaySep6AuroraRobertoPoolRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
+  /**
    * Autumn Sunday Hub Multi standing remaps (snap-date agnostic).
    * Standing Jul week may still store Hub books under BERTA / GIUSEPPE / JOHN etc.
    * - BISMARK → GODSWAY; GIUSEPPE → EMANUEL
@@ -1952,6 +2116,7 @@
     merged = applyAutumnWeek1DayCentre(merged);
     merged = scrubAndEnsureSep6HubCover(merged);
     merged = scrubAndEnsureSep6JavierPool(merged);
+    merged = scrubAndEnsureSep6AuroraRobertoPool(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);
     /* After all Autumn patches: no summer history weeks left to snap onto Sep+. */
     merged = purgeSummerHistoryOutsideAutumnTemplates(merged);
