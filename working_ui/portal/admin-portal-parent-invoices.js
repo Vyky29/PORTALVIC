@@ -2405,7 +2405,6 @@
       '.pp-inv-acc__pay-chip--other{color:#4a6578;background:#eef2f5;border-color:#d5dee6}' +
       '.pp-inv-acc__item--lost>summary{background:#fef2f2;border-color:#fecaca}' +
       '.pp-inv-acc__item--lost .pp-inv-acc__name{color:#991b1b}' +
-      '.pp-inv-acc__card--lost{border-color:#fca5a5;background:#fef2f2}' +
       '.pp-inv-acc__status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}' +
       '.pp-inv-acc__xero{font-size:11px;color:#64748b}' +
       '.pp-inv-acc__xero--ok{color:#1e40af}' +
@@ -2413,8 +2412,11 @@
       '.pp-inv-acc__body{border-top:1px solid #e8eef3;padding:12px;background:#fafcfd;min-width:0}' +
       '.pp-inv-acc__cards{display:flex;flex-direction:column;gap:10px;min-width:0}' +
       '.pp-inv-acc__card{border:1px solid #e2eaf0;border-radius:8px;padding:10px;background:#fff;min-width:0}' +
+      /* Soft green (paid / partial) and soft red (lost slot) — modifiers after base card. */
       '.pp-inv-acc__card--paid{border-color:#86efac;background:#f0fdf4}' +
       '.pp-inv-acc__card--partial{border-color:#a7f3d0;background:#f7fef9}' +
+      '.pp-inv-acc__card--lost{border-color:#f87171;background:#fef2f2}' +
+      '.pp-inv-acc__card--lost .pp-inv-acc__grid{min-width:0}' +
       '.pp-inv-acc__filter-chip{-webkit-appearance:none;appearance:none;margin:0;cursor:pointer;font:inherit;line-height:inherit}' +
       '.pp-inv-acc__filter-chip:hover{filter:brightness(.97)}' +
       'button.pp-inv-acc__pay-chip--paid,.pp-inv-acc__pay-chip--paid{color:#047857;background-color:#bbf7d0;background:#bbf7d0;border:1px solid #34d399}' +
