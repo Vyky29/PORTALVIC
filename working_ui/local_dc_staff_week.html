@@ -296,7 +296,7 @@
     Hub Tinashe Mon/Wed = <strong>Godsway + John + Raul</strong> (paid 4.15-6.15). Victor off Mondays. Fri Tinashe = <strong>Roberto</strong> (21h PT).
     Sundays: <strong>Berta Leader + Hub book (Jack W…Aydaan)</strong> · Godsway · Emanuel (from 20 Sep). <strong>John Sunday = 6 Sep only</strong> (Emanuel cover book).
     <strong>From Mon 14 Sep</strong> = Emanuel also on Mon/Wed/Fri Tinashe + Sunday MA @ £18 Level 1 SW.
-    <strong>Day offs (validated admin):</strong> Sandra Mon 7 (not on this AS/DC board) · Aurora Tue 8 / Sun 13 / Tue 15 / Sun 4 Oct — painted here; live COVER NEEDED stays in Schedule &amp; Covers.
+    <strong>Day offs (validated admin):</strong> Sandra Mon 7 (Javi Palankas covers Westway Physical) · Aurora Tue 8 / Sun 13 / Tue 15 / Sun 4 Oct — painted here; live COVER NEEDED stays in Schedule &amp; Covers until cover assigned.
     <strong>Stripe/paid:</strong> finish-booking folds MADRE + schedule_overrides; after editing this file, commit/push + run <code>office-madre-sync-local-board-mon-fri.mjs</code> when standing seats change.
   </p>
   <p class="note" id="jumpNote" style="margin-top:8px">
@@ -311,7 +311,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260906-alex-climb-34-v73"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260906-sandra-javi-v74"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -325,6 +325,7 @@
   var STANDING_ONLY = false;
   /* Validated admin day offs (staff_unavailability) — paint on this board for ops preview. */
   var STAFF_DAY_OFF = {
+    "2026-09-07": { Sandra: "Time off requested · Javi Palankas covers Westway Physical" },
     "2026-09-08": { Aurora: "Time off requested" },
     "2026-09-13": { Aurora: "Time off requested" },
     "2026-09-15": { Aurora: "Time off requested" },
@@ -337,7 +338,7 @@
     { dow: "friday", iso: "2026-09-04", phase: "w1", hint: "Week 1 · Fadi off · Victor/Raul Timi 11-1 · Youssef OFF (starts Sat)" },
     { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Week 1 · first Saturday" },
     { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · Hub: Berta Lead + Jack W…Aydaan · John = Emanuel book · Godsway · Aurora Yusuf Aquatic 9–9.30 · Roberto Simon Aquatic 9–9.30 + Yusuf Multi 9.30–10.15 (2 feedbacks) · Youssef OFF · Emanuel OFF" },
-    { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Emanuel interview 4pm · Godsway/John/Raul Tinashe · Victor OFF · Sandra OFF (validated day off · not on this board)" },
+    { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Emanuel interview 4pm · Godsway/John/Raul Tinashe · Victor OFF · Sandra OFF · Javi Palankas covers Westway Physical (Ayaan 4–5 / Serine 5–6)" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing · Aurora OFF · Javi Palankas covers Aurora Acton book (Adam Mahmmoud / Junaid / Aydaan Ah / Anas) · Javier keeps his own book" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Emanuel shadowing · Godsway/John/Raul Tinashe" },
     { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton AS Simon; Aurora from 4.30" },

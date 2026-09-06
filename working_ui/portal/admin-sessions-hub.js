@@ -844,7 +844,19 @@
 
   function rosterRowToSlot(isoDate, wd, r) {
     var slot = parseTimeSlot(r.time_slot, wd);
-    var instructors = parseInstructors(applySundayInstructorOverride(isoDate, r.instructors));
+    var instRaw = applySundayInstructorOverride(isoDate, r.instructors);
+    try {
+      var canon = global.PortalRosterCanonical;
+      if (canon && typeof canon.resolveAutumnInstructorsForCalendarDate === "function") {
+        instRaw = canon.resolveAutumnInstructorsForCalendarDate(instRaw, isoDate, {
+          service: r.service,
+          venue: r.venue,
+          area: r.area,
+          day: wd,
+        });
+      }
+    } catch (_remap) {}
+    var instructors = parseInstructors(instRaw);
     var slotRow = {
       session_date: isoDate,
       day: wd,
@@ -856,7 +868,7 @@
       venue: clean(r.venue),
       area: clean(r.area),
       instructors: instructors,
-      instructor_label: instructors.join(", ") || clean(r.instructors),
+      instructor_label: instructors.join(", ") || clean(instRaw) || clean(r.instructors),
       session_key: buildSessionKey(isoDate, r),
       __portal_roster_row_id: r.__portal_roster_row_id || null,
       portalRosterTimeUpdated: !!r.__portal_roster_time_updated,
@@ -4218,6 +4230,7 @@
       return window.portalStaffDisplayName(n);
     }
     if (canonicalStaffMatchKey(n) === "luliya") return "Luliya";
+    if (canonicalStaffMatchKey(n) === "javi") return "Javi Palankas";
     if (/^[A-Z]{2,}$/.test(n)) {
       return n.charAt(0) + n.slice(1).toLowerCase();
     }
@@ -8850,6 +8863,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     "Carlos",
     "Alex",
     "Sandra",
+    "Javi",
     "Sevitha",
   ];
 
@@ -8874,6 +8888,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     raul: 1,
     victor: 1,
     sandra: 1,
+    javi: 1,
     sevitha: 1,
     giuseppe: 1,
     bismark: 1,

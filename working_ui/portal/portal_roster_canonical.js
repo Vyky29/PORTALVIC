@@ -684,6 +684,10 @@
     return /multi[\s-]*activity/i.test(String(service || ""));
   }
 
+  function isPhysicalActivityService(service) {
+    return /physical|fitness/i.test(String(service || ""));
+  }
+
   /** Sun 6 Sep 2026: Emanuel off — John covers his Hub Multi book (dated so Today matches). */
   var SEP6_2026_JOHN_EMANUEL_HUB_MULTI = [
     { client_name: "Jack S", time_slot: "9.30 to 10.15" },
@@ -1067,6 +1071,17 @@
       /* Mon 1–13 Sep: Emanuel not on Tinashe yet → Raul with Godsway + John. */
       if (iso && iso >= "2026-09-01" && iso < "2026-09-14" && day === "monday") {
         s = s.replace(/\bEMANUEL\b/gi, "RAUL");
+      }
+    }
+    /* Mon 7 Sep: Sandra day off → Javi Palankas covers Westway Physical (Ayaan / Serine). */
+    if (
+      iso === "2026-09-07" &&
+      day === "monday" &&
+      isPhysicalActivityService(service)
+    ) {
+      var venuePa = String((meta && meta.venue) || "").trim().toLowerCase();
+      if (!venuePa || venuePa.indexOf("westway") >= 0) {
+        s = s.replace(/\bSANDRA\b/gi, "JAVI");
       }
     }
     /* Tue 8 + 15 Sep: Aurora day off → Javi Palankas covers her Acton Aquatic book
