@@ -9009,11 +9009,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return "";
   }
 
-  function htmlDayBoardOverrideBadges(hub, slot, st, esc) {
+  function htmlDayBoardOverrideBadges(hub, slot, st, esc, opts) {
+    opts = opts || {};
     var chips = [];
     if (st.makeupDisp) {
       chips.push('<span class="override-chip override--replace">MakeUp</span>');
-    } else if (st.isTrial) {
+    } else if (st.isTrial && !opts.trialOnBand) {
       chips.push('<span class="override-chip override--trial">Trial</span>');
     } else if (st.isMakeup) {
       chips.push('<span class="override-chip override--replace">MakeUp</span>');
@@ -9059,12 +9060,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     } else if (st.isOpenSlot) {
       name = rosterOpenSlotDisplayLabel();
     } else if (st.isTrial && clean(slot.client_name)) {
-      var trialName = clean(slot.client_name)
-        .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
-        .replace(/^trial\s*[-·:]?\s*/i, "")
-        .replace(/\s+/g, " ")
-        .trim();
-      name = "Trial · " + (trialName || clean(slot.client_name));
+      /* Name is just the child; Trial mark lives on the service band + chip. */
+      name =
+        clean(slot.client_name)
+          .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
+          .replace(/^trial\s*[-·:]?\s*/i, "")
+          .replace(/\s+/g, " ")
+          .trim() || clean(slot.client_name);
     }
     var venue = clean(slot.venue);
     var area = clean(slot.area);
@@ -9083,20 +9085,27 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       rightBits +=
         '<div class="ash-db-seg"><span class="ash-db-seg__area">' + esc(area) + "</span></div>";
     }
+    var bandRow =
+      '<div class="ash-db-card__band-row">' +
+      '<span class="ash-db-card__band">' +
+      esc(band) +
+      "</span>" +
+      (st.isTrial && !st.makeupDisp
+        ? ' <span class="override-chip override--trial">Trial</span>'
+        : "") +
+      "</div>";
     return (
       '<article class="ash-db-card ash-db-card--' +
       esc(st.tone) +
       (st.isCoverNeeded ? " ash-db-card--cover-needed" : "") +
       '">' +
       "<div>" +
-      '<span class="ash-db-card__band">' +
-      esc(band) +
-      "</span>" +
+      bandRow +
       '<div class="ash-db-card__name">' +
       esc(name) +
       "</div>" +
       (venue ? '<span class="ash-db-card__venue">' + esc(venue) + "</span>" : "") +
-      htmlDayBoardOverrideBadges(hub, slot, st, esc) +
+      htmlDayBoardOverrideBadges(hub, slot, st, esc, { trialOnBand: !!st.isTrial }) +
       htmlDayBoardFbBadge(st, esc) +
       "</div>" +
       "<div>" +
@@ -9448,7 +9457,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         } else if (st.isOpenSlot) {
           name = rosterOpenSlotDisplayLabel();
         } else if (st.isTrial && clean(slot.client_name)) {
-          name = "Trial · " + clean(slot.client_name);
+          name =
+            clean(slot.client_name)
+              .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
+              .replace(/^trial\s*[-·:]?\s*/i, "")
+              .replace(/\s+/g, " ")
+              .trim() || clean(slot.client_name);
         }
         return (
           "<tr>" +

@@ -1762,6 +1762,23 @@
       min-width: 0;
       box-sizing: border-box;
     }
+    .ash-db-card__band-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      margin: 0 0 1px;
+    }
+    .ash-db-card__band-row .ash-db-card__band {
+      margin: 0;
+    }
+    .ash-db-card__band-row .override-chip {
+      margin-left: 0;
+      font-size: 9px;
+      padding: 1px 6px;
+      flex: 0 0 auto;
+    }
     .ash-db-card__band {
       display: block;
       font-size: 9px;
@@ -1770,6 +1787,8 @@
       text-transform: uppercase;
       color: var(--muted);
       margin: 0 0 1px;
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
     .ash-db-card__name {
       font-weight: 800;
