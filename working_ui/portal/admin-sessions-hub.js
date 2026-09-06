@@ -947,10 +947,23 @@
     return !!(s && s >= HUB_STANDING_CRASH_FROM);
   }
 
-  /** Latest pre-crash summer ISO for this weekday in the roster (standing truth). */
+  /** Latest standing snap ISO for this weekday (summer Jul window, else Autumn weekend stamps). */
   function hubLatestStandingIsoForDow(rosterRows, wd) {
     var want = clean(wd);
     if (!want || !rosterRows || !rosterRows.length) return "";
+    var canon = global.PortalRosterCanonical;
+    var weekendKey = String(want || "").trim().toLowerCase();
+    if (canon && canon.WEEKEND_STANDING_ISO && canon.WEEKEND_STANDING_ISO[weekendKey]) {
+      var stamp = String(canon.WEEKEND_STANDING_ISO[weekendKey] || "").slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(stamp)) {
+        for (var j = 0; j < rosterRows.length; j++) {
+          var rj = rosterRows[j];
+          if (rosterRowSessionDate(rj) !== stamp) continue;
+          var dj = clean(rj.day) || weekdayLongFromIso(stamp);
+          if (dj === want) return stamp;
+        }
+      }
+    }
     var best = "";
     for (var i = 0; i < rosterRows.length; i++) {
       var r = rosterRows[i];
@@ -1024,7 +1037,7 @@
         /*
          * Sun 6 Sep Hub Multi is fully owned by scrubAndEnsureSep6HubCover (John + Berta books).
          * Do not also project summer standing Hub Multi onto that day.
-         * Pool Multi + Climbing standing must still project (MA = two feedbacks per 90').
+         * Pool Multi still projects unless blocked below; climb is dated via scrubAndEnsureSep6Climbing.
          */
         if (
           isoDate === "2026-09-06" &&
@@ -1060,6 +1073,17 @@
           !/hub/i.test(String((r && r.area) || "")) &&
           (/multi/i.test(String((r && r.service) || "")) ||
             /aquatic|swim/i.test(String((r && r.service) || "")))
+        ) {
+          return false;
+        }
+        /*
+         * Sun 6 Sep Westway climb owned by scrubAndEnsureSep6Climbing (dated LOCAL book).
+         * Do not also project 13 Sep standing climb (would duplicate opens / miss Sep-6-only truth).
+         */
+        if (
+          isoDate === "2026-09-06" &&
+          /climb/i.test(String((r && r.service) || "")) &&
+          /westway/i.test(String((r && r.venue) || ""))
         ) {
           return false;
         }

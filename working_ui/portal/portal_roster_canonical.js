@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 71;
+  var SOURCE_VERSION = 75;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1631,6 +1631,11 @@
 
   function autumnSundayClimbingStandingRows() {
     var iso = WEEKEND_STANDING_ISO.sunday;
+    return autumnSundayClimbingRowsForIso(iso);
+  }
+
+  function autumnSundayClimbingRowsForIso(iso) {
+    var stamp = normIso(iso) || WEEKEND_STANDING_ISO.sunday;
     return AUTUMN_SUNDAY_CLIMBING_BOARD.map(function (slot) {
       return {
         client_name: slot.name,
@@ -1640,9 +1645,31 @@
         area: "Wall",
         time_slot: slot.time,
         venue: "Westway",
-        session_date: iso,
+        session_date: stamp,
       };
     });
+  }
+
+  /**
+   * Sun 6 Sep Westway climb (LOCAL EXTRA Alex/Carlos) — dated for that day.
+   * Standing stamp stays 13 Sep for later Sundays; do not leave Sep 6 on July-only projection.
+   */
+  function scrubAndEnsureSep6Climbing(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (
+        isSundayWestwayClimbingStandingRow(r) &&
+        normIso(r.session_date) === "2026-09-06"
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnSundayClimbingRowsForIso("2026-09-06").forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
   }
 
   function isSundayWestwayClimbingStandingRow(row) {
@@ -2222,6 +2249,7 @@
     merged = scrubDepartedAutumnInstructorRows(merged);
     merged = applyAutumnWeek1DayCentre(merged);
     merged = scrubAndEnsureSep6HubCover(merged);
+    merged = scrubAndEnsureSep6Climbing(merged);
     merged = scrubAndEnsureAutumnSundayPoolStanding(merged);
     merged = scrubAndEnsureSep6JavierPool(merged);
     merged = scrubAndEnsureSep6AuroraRobertoPool(merged);
