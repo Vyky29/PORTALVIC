@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
       type: kind,
       conversationId: String(record.conversation_id || ""),
     };
-    ttl = 45;
+    ttl = 180;
     urgency = "high";
   } else if (table === "communication_group_members") {
     const userId = String(record.user_id || "").trim();
@@ -255,7 +255,7 @@ Deno.serve(async (req) => {
     const result = await sendPushPayloadToUserIds(admin, [rid], pushPayload, {
       TTL: ttl,
       urgency,
-      topic: tag.slice(0, 32),
+      topic: portalOpen === "communications_call" ? "" : tag.slice(0, 32),
       excludeUserIds: senderUserId ? [senderUserId] : [],
     });
     sent += result.sent || 0;

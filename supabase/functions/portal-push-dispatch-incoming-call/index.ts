@@ -420,9 +420,8 @@ Deno.serve(async (req) => {
       },
     });
     const result = await sendPushPayloadToUserIds(admin, [userId], pushPayload, {
-      TTL: 90,
+      TTL: 180,
       urgency: "high",
-      topic: `call-${String(callData.room || messageId).slice(0, 24)}`,
     });
     sent += result.sent;
     failed += result.failed;

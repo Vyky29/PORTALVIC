@@ -1113,7 +1113,19 @@
         void global.caches.open(PORTAL_INAPP_CACHE).then(function (c) {
           return c.delete("pending");
         });
-        if (String(d.portalOpen || "") === "communications_call") return;
+        if (String(d.portalOpen || "") === "communications_call") {
+          var pendingCallId = String(d.callId || "").trim();
+          if (pendingCallId) {
+            showIncomingOverlay({
+              id: pendingCallId,
+              type: d.callType || "AUDIO",
+              status: "calling",
+              initiated_by: d.senderUserId || "",
+              conversation_id: d.conversationId || "",
+            });
+          }
+          return;
+        }
         var row = {
           message_type: "text",
           body: d.body || "New message",
@@ -1878,7 +1890,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-48", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-49", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).then(function (reg) {
         try {
@@ -1888,8 +1900,8 @@
         global.__PORTAL_SW_CTRL_BOUND__ = true;
         global.navigator.serviceWorker.addEventListener("controllerchange", function () {
           try {
-            if (sessionStorage.getItem("portal_sw_reloaded_48") === "1") return;
-            sessionStorage.setItem("portal_sw_reloaded_48", "1");
+            if (sessionStorage.getItem("portal_sw_reloaded_49") === "1") return;
+            sessionStorage.setItem("portal_sw_reloaded_49", "1");
           } catch (_s) {}
           global.location.reload();
         });

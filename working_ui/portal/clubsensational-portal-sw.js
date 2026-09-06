@@ -8,7 +8,7 @@
  * v20260904-comms-push (Communications message + incoming-call banners)
  * v20260905-comms-36 (Home screen PWA numeric badge via Badging API)
  * v20260906-notif-open-fix (never navigate PWA to bare / — blank screen on iOS)
- * v20260906-comms-inapp-48 (OS logo when PWA is away / screen off)
+ * v20260906-comms-inapp-49 (always OS banner for incoming calls)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
@@ -253,11 +253,11 @@ function portalCloseCommsOsBanners() {
     (list || []).forEach(function (n) {
       var open = String((n && n.data && n.data.portalOpen) || '');
       var tag = String((n && n.tag) || '');
+      if (open === 'communications_call' || open === 'incoming_call') return;
       if (
         open === 'communications' ||
-        open === 'communications_call' ||
         open === 'family_messages' ||
-        tag.indexOf('comms') === 0
+        (tag.indexOf('comms') === 0 && tag.indexOf('comms-call') !== 0)
       ) {
         try {
           n.close();
@@ -422,38 +422,42 @@ self.addEventListener('push', function (event) {
     data: { url: url, portalOpen: portalOpen, call: callData, chat: chatData },
   };
   if (vibrate) notifyOpts.vibrate = vibrate;
-  var isCommsPush = portalOpen === 'communications' || portalOpen === 'communications_call';
+  var isCallPush = portalOpen === 'communications_call' || portalOpen === 'incoming_call';
+  var isCommsMessagePush = portalOpen === 'communications';
   var isFamilyPush = portalOpen === 'family_messages';
   event.waitUntil(
     portalTreatAsForeground().then(function (hasVisibleClient) {
+      var pending = {
+        at: Date.now(),
+        title: title,
+        body: body,
+        portalOpen: portalOpen,
+        senderUserId: senderUserId,
+        conversationId:
+          (chatData && (chatData.conversationId || chatData.conversation_id)) ||
+          (callData && (callData.conversationId || callData.conversation_id)) ||
+          '',
+        callId: (callData && (callData.callId || callData.id)) || '',
+        callType: (callData && callData.type) || '',
+      };
       var tasks = [
         portalNotifyOpenClients(title, body, portalOpen, callData, chatData, {
           senderUserId: senderUserId,
           targetUserId: targetUserId,
         }),
       ];
-      /* Skip the iOS logo only if the PWA has been on-screen for a few
-         seconds. Away, locked, or just-unlocked queued pushes must use
-         showNotification so the banner + vibration actually fire. */
-      if ((isCommsPush || isFamilyPush) && hasVisibleClient) {
+      /* Calls always use the iOS logo toaster. A locked phone cannot show
+         the in-app overlay; skipping showNotification drops the ring. */
+      if (isCallPush) {
+        tasks.unshift(self.registration.showNotification(title, notifyOpts));
+        tasks.push(portalWritePendingInapp(pending));
+      } else if ((isCommsMessagePush || isFamilyPush) && hasVisibleClient) {
         tasks.push(portalCloseCommsOsBanners());
-        tasks.push(
-          portalWritePendingInapp({
-            at: Date.now(),
-            title: title,
-            body: body,
-            portalOpen: portalOpen,
-            senderUserId: senderUserId,
-            conversationId:
-              (chatData && (chatData.conversationId || chatData.conversation_id)) ||
-              (callData && (callData.conversationId || callData.conversation_id)) ||
-              '',
-          })
-        );
+        tasks.push(portalWritePendingInapp(pending));
       } else {
         tasks.unshift(self.registration.showNotification(title, notifyOpts));
       }
-      if (!hasVisibleClient) {
+      if (!hasVisibleClient || isCallPush) {
         tasks.push(
           appBadgeCount != null ? portalPaintAppBadge(appBadgeCount) : portalBumpAppBadge()
         );
