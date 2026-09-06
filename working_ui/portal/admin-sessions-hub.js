@@ -464,6 +464,8 @@
     yunis_hussein: "yunis",
     zaid_alfadhl: "zaid",
     zaid_al: "zaid",
+    /* Feedback sometimes stores Saib; roster / LOCAL use Saaib. */
+    saib: "saaib",
   };
 
   function canonicalClientSlug(name) {
@@ -5397,12 +5399,22 @@
     var hub = this;
     var list = this.payload.session_feedback || [];
     var n = 0;
+    var daySlots = null;
+    function dayHasRosterSeats() {
+      if (daySlots) return daySlots.length > 0;
+      daySlots = hub.expandSlotsForDate(iso) || [];
+      return daySlots.length > 0;
+    }
     for (var i = 0; i < list.length; i++) {
       var fb = list[i];
       if (feedbackSessionDate(fb) !== iso) continue;
-      if (!hub.feedbackAllowedOnCalendarDay(fb)) continue;
       if (isTeflonDemoFeedbackRow(hub, fb)) continue;
       if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) continue;
+      /*
+       * Roster-day match (Tom Thu / Gabriel Sun) only when the day has seats.
+       * Empty Autumn days (e.g. Sat Acton before standing stamp) still count submitted FB.
+       */
+      if (dayHasRosterSeats() && !hub.feedbackAllowedOnCalendarDay(fb)) continue;
       n++;
     }
     return n;

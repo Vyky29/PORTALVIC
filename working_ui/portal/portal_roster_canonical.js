@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 75;
+  var SOURCE_VERSION = 76;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1606,6 +1606,57 @@
     sunday: "2026-09-13",
   };
 
+  /**
+   * Autumn Saturday Acton aquatic (LOCAL weekend board) — Youssef 9.30–1.
+   * Stamp = first standing Autumn Saturday (12 Sep). Projects onto Sat 5 Sep+ via
+   * WEEKEND_STANDING_ISO.saturday (summer Sat history is purged).
+   */
+  var AUTUMN_SATURDAY_ACTON_BOARD = [
+    { name: "No participant", time: "9.30 to 10" },
+    { name: "No participant", time: "10 to 10.30" },
+    { name: "Emani", time: "10.30 to 11" },
+    { name: "No participant", time: "11 to 11.30" },
+    { name: "No participant", time: "11.30 to 12" },
+    { name: "Saaib", time: "12 to 12.30" },
+    { name: "No participant", time: "12.30 to 1" },
+  ];
+
+  function autumnSaturdayActonStandingRows() {
+    var iso = WEEKEND_STANDING_ISO.saturday;
+    return AUTUMN_SATURDAY_ACTON_BOARD.map(function (slot) {
+      return {
+        client_name: slot.name,
+        day: "Saturday",
+        instructors: "YOUSSEF",
+        service: "Aquatic Activity",
+        area: "Teaching Pool",
+        time_slot: slot.time,
+        venue: "Acton",
+        session_date: iso,
+      };
+    });
+  }
+
+  function isSaturdayActonAquaticStandingRow(row) {
+    if (!row || !isAquaticService(row.service) || !isActonVenue(row.venue)) return false;
+    var day = normalizeDowKey(row.day);
+    var d = normIso(row.session_date);
+    if (day !== "saturday") {
+      if (!d) return false;
+      try {
+        var dt = new Date(d + "T12:00:00");
+        if (isNaN(dt.getTime()) || dt.getDay() !== 6) return false;
+      } catch (_) {
+        return false;
+      }
+    }
+    /* Undated + summer history — rebuild from AUTUMN_SATURDAY_ACTON_BOARD. Keep dated Sep+ MADRE. */
+    if (!d) return true;
+    if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
+    if (d === WEEKEND_STANDING_ISO.saturday) return true;
+    return false;
+  }
+
   var AUTUMN_SUNDAY_CLIMBING_BOARD = [
     { staff: "ALEX", name: "Eiji", time: "10 to 11" },
     { staff: "ALEX", name: "Yusef", time: "11 to 12" },
@@ -1845,6 +1896,8 @@
       if (isThursdayActonAquaticStandingRow(r)) return;
       /* Drop summer/live Sun Westway climbing — rebuild from AUTUMN_SUNDAY_CLIMBING_BOARD. */
       if (isSundayWestwayClimbingStandingRow(r)) return;
+      /* Drop summer/live Sat Acton aquatic — rebuild from AUTUMN_SATURDAY_ACTON_BOARD. */
+      if (isSaturdayActonAquaticStandingRow(r)) return;
       if (isDayCentreService(r.service)) {
         var dkDc = normalizeDowKey(r.day);
         if (
@@ -2051,6 +2104,9 @@
       out.push(Object.assign({}, row));
     });
     autumnSundayClimbingStandingRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    autumnSaturdayActonStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     autumnSundayZaidJavierAquaticStandingRows().forEach(function (row) {
