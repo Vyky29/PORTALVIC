@@ -379,16 +379,48 @@ export function profileMatchesStaffKey(
   profile: { username?: string | null; full_name?: string | null },
   staffKey: string,
 ): boolean {
+  return profileStaffKeyMatchRank(profile, staffKey) > 0;
+}
+
+/**
+ * Higher = better. Prefer exact username (javier) over first-name / alias collisions.
+ * Returns 0 when the profile must not receive this staff's debt (e.g. Javi vs Javier).
+ */
+export function profileStaffKeyMatchRank(
+  profile: { username?: string | null; full_name?: string | null },
+  staffKey: string,
+): number {
   const want = normalizeStaffKey(staffKey);
-  if (!want) return false;
+  if (!want) return 0;
   const alias = STAFF_USERNAME_ALIASES[want] || want;
   const un = normalizeStaffKey(String(profile.username || ""));
   const fn = normalizeStaffKey(firstNameOf(String(profile.full_name || "")));
   const unAlias = STAFF_USERNAME_ALIASES[un] || un;
   const fnAlias = STAFF_USERNAME_ALIASES[fn] || fn;
-  if (un && isJaviJavierCollision(un, want)) return false;
-  if (fn && isJaviJavierCollision(fn, want)) return false;
-  if (un && (un === want || un === alias || unAlias === alias)) return true;
-  if (fn && (fn === want || fn === alias || fnAlias === alias)) return true;
-  return false;
+  if (un && isJaviJavierCollision(un, want)) return 0;
+  if (fn && isJaviJavierCollision(fn, want)) return 0;
+  if (un && un === want) return 100;
+  if (un && un === alias) return 90;
+  if (un && unAlias === alias) return 80;
+  if (fn && fn === want) return 50;
+  if (fn && fn === alias) return 40;
+  if (fn && fnAlias === alias) return 30;
+  return 0;
+}
+
+/** Pick the best staff_profiles row for a roster debt key (never Javi for Javier). */
+export function resolveProfileForStaffKey<T extends { username?: string | null; full_name?: string | null }>(
+  profiles: T[] | null | undefined,
+  staffKey: string,
+): T | null {
+  let best: T | null = null;
+  let bestRank = 0;
+  for (const p of profiles || []) {
+    const rank = profileStaffKeyMatchRank(p, staffKey);
+    if (rank > bestRank) {
+      bestRank = rank;
+      best = p;
+    }
+  }
+  return best;
 }

@@ -25,7 +25,7 @@ import {
   datedFallbackSlots,
   mergeFeedback2030Slots,
   outstandingByStaff,
-  profileMatchesStaffKey,
+  resolveProfileForStaffKey,
   slotsFromMadre,
   slotsFromRosterRows,
   type Feedback2030KeyRow,
@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
 
   const targets = [];
   for (const debt of debts) {
-    const profile = (profiles || []).find((p) => profileMatchesStaffKey(p, debt.staffKey));
+    const profile = resolveProfileForStaffKey(profiles || [], debt.staffKey);
     const username = String(profile?.username || debt.staffKey).toLowerCase();
     if (SKIP_USERNAMES.has(username)) continue;
     const phone = profile?.phone_e164
