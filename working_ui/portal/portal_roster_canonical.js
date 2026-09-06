@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 63;
+  var SOURCE_VERSION = 64;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -806,8 +806,10 @@
         s = s.replace(/\bAURORA\b/gi, "JAVI");
       }
     }
-    /* Autumn Sundays: Aurora cannot work → Luliya covers her SwimFarm pool book. */
+    /* Sun 6 Sep + 13 Sep + 4 Oct only: Aurora day off → Luliya covers SwimFarm pool book.
+     * Not a standing Sunday change — Aurora keeps other Sundays. */
     if (
+      (iso === "2026-09-06" || iso === "2026-09-13" || iso === "2026-10-04") &&
       day === "sunday" &&
       (isMultiActivityService(service) || isAquaticService(service))
     ) {
@@ -1065,11 +1067,13 @@
   }
 
   /**
-   * Standing Sunday SwimFarm pool: Aurora → Luliya (Aurora cannot work Sundays).
-   * Hub Multi stays under Hub staff — never rewrite Hub seats.
+   * Dated cover Sundays only (6 Sep / 13 Sep / 4 Oct): Aurora pool → Luliya.
+   * Standing template rows stay AURORA; calendar remap applies on those dates.
    */
   function remapAutumnSundayAuroraPoolToLuliya(row) {
     if (!row) return null;
+    var iso = normIso(row.session_date);
+    if (iso !== "2026-09-06" && iso !== "2026-09-13" && iso !== "2026-10-04") return null;
     if (normalizeDowKey(row.day) !== "sunday") return null;
     if (!isMultiActivityService(row.service) && !isAquaticService(row.service)) return null;
     if (!/swimfarm/i.test(String(row.venue || "SwimFarm"))) return null;

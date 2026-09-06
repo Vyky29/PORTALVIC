@@ -311,7 +311,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260906-luliya-sun-v63"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260906-luliya-cover-v64"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-zaid-yusuf-9"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -325,13 +325,11 @@
   var STANDING_ONLY = false;
   /* Validated admin day offs (staff_unavailability) — paint on this board for ops preview. */
   var STAFF_DAY_OFF = {
-    "2026-09-06": { Aurora: "Cannot work Sundays · Luliya covers pool" },
+    "2026-09-06": { Aurora: "Time off · Luliya covers pool" },
     "2026-09-08": { Aurora: "Time off requested" },
-    "2026-09-13": { Aurora: "Cannot work Sundays · Luliya covers pool" },
+    "2026-09-13": { Aurora: "Time off requested" },
     "2026-09-15": { Aurora: "Time off requested" },
-    "2026-09-20": { Aurora: "Cannot work Sundays · Luliya covers pool" },
-    "2026-09-27": { Aurora: "Cannot work Sundays · Luliya covers pool" },
-    "2026-10-04": { Aurora: "Cannot work Sundays · Luliya covers pool" },
+    "2026-10-04": { Aurora: "Time off requested" },
   };
   var DAYS = [
     { dow: "tuesday", iso: "2026-09-01", phase: "w1", hint: "Week 1 · Fadi off · Roberto/Michelle/Luliya Ikram" },
@@ -351,7 +349,7 @@
     { dow: "tuesday", iso: "2026-09-15", phase: "w3", hint: "Aurora OFF · Javi Palankas covers Aurora Acton book (same as Tue 8) · Javier keeps his own book" },
     { dow: "wednesday", iso: "2026-09-16", phase: "w3", hint: "Emanuel + Godsway/John/Raul Tinashe" },
     { dow: "friday", iso: "2026-09-18", phase: "w3", hint: "Emanuel + Roberto Tinashe" },
-    { dow: "sunday", iso: "2026-09-20", phase: "w3", hint: "Aurora OFF · Luliya covers Aurora pool · Emanuel Sunday Multi MA (standing)" },
+    { dow: "sunday", iso: "2026-09-20", phase: "w3", hint: "Emanuel Sunday Multi MA (standing)" },
     { dow: "sunday", iso: "2026-10-04", phase: "w3", hint: "Aurora OFF · Luliya covers Aurora pool book" },
   ];
   var DAY_LABEL = {
@@ -540,8 +538,7 @@
         { name: "Rodin", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
         { name: "Yoan", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
       ],
-      Luliya: [
-        /* Standing Sundays: Aurora cannot work · Luliya keeps this SwimFarm pool book. */
+      Aurora: [
         { name: "Simon", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool" },
         { name: "Adam Ab", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
         { name: "Jack W", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool" },
@@ -651,8 +648,20 @@
   var DATE_EXTRA = {
     "2026-09-06": {
       /* Emanuel + Youssef off. John covers Emanuel Hub book. Berta Lead keeps former John Hub book.
+       * Aurora OFF → Luliya covers her SwimFarm pool book (this date only).
        * Javier: TWO cards — Aquatic trial 9–9.30 + Multi 9.30–10.15 (one feedback validates both).
        * Admin Sessions Overview: one Javier swim row 9–10.15. Jack S: Hub then pool. */
+      Luliya: [
+        { name: "Simon", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool · cover (Aurora)" },
+        { name: "Adam Ab", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
+        { name: "Jack W", time: "10.15 to 11", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
+        { name: "Arthur Ma", time: "11 to 11.45", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
+        { name: "Cyrus", time: "11.45 to 12.30", band: "Weekend", area: "SwimFarm · Multi · Small Pool · cover (Aurora)" },
+        { name: "Aydaan Ah", time: "12.30 to 1.15", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
+        { name: "Erik", time: "1.15 to 2", band: "Weekend", area: "SwimFarm · Multi · Big Pool · cover (Aurora)" },
+        { name: "Zakariya", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool · cover (Aurora)" },
+        { name: "Faris", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool · cover (Aurora)" },
+      ],
       Javier: [
         { name: "Zaid (Trial)", time: "9 to 9.30", band: "Weekend", area: "SwimFarm · Aquatic · Small Pool", kind: "trial" },
         { name: "Zaid", time: "9.30 to 10.15", band: "Weekend", area: "SwimFarm · Multi · Small Pool" },
@@ -773,8 +782,9 @@
 
   var SUNDAY_STAFF_ORDER = [
     /* Pool swimming, Hub Multi books (Berta Lead + clients, John cover, Godsway), Climb.
-     * Standing Sundays: Luliya holds Aurora's SwimFarm pool book (Aurora OFF Sundays). */
+     * Luliya appears when covering Aurora (Sun 6 / 13 Sep / 4 Oct DATE_EXTRA). */
     "Roberto",
+    "Aurora",
     "Luliya",
     "Javier",
     "Berta",
@@ -929,8 +939,6 @@
     if (iso && STAFF_DAY_OFF[iso] && STAFF_DAY_OFF[iso][staffName]) {
       return "OFF (day off requested)";
     }
-    /* Standing: Aurora cannot work Sundays — Luliya holds the SwimFarm pool book. */
-    if (staffName === "Aurora" && dk === "sunday") return "OFF";
     if (iso === "2026-09-07" && staffName === "Emanuel") return "4 to 5";
     if ((iso === "2026-09-09" || iso === "2026-09-11") && staffName === "Emanuel") return "4.15 to 6.15";
     if (iso === "2026-09-13" && staffName === "Emanuel") return "9.15 to 2.15";
