@@ -962,20 +962,26 @@
     var employee = String(conv.employee_id || "");
     var initiated = String(row.initiated_by || "");
     if (t === "ADMIN_STAFF") {
+      var adminAction = String(row.type || "").toUpperCase() === "VIDEO"
+        ? "Incoming video call from ADMIN"
+        : "Incoming call from ADMIN";
       if (employee === uid) {
         return {
           forMe: true,
           mode: "personal",
-          title: String(row.type || "").toUpperCase() === "VIDEO" ? "Incoming video call" : "Incoming call",
-          subtitle: "ADMIN is calling you",
+          title: adminAction,
+          subtitle: "Tap to answer",
         };
       }
       if (initiated && initiated === employee) {
+        var workerName = (await staffFirstNameForUserId(initiated)) || "Worker";
         return {
           forMe: true,
           mode: "administration",
-          title: String(row.type || "").toUpperCase() === "VIDEO" ? "Incoming video call" : "Incoming call",
-          subtitle: "Worker calling ADMIN",
+          title: String(row.type || "").toUpperCase() === "VIDEO"
+            ? "Incoming video call from " + workerName
+            : "Incoming call from " + workerName,
+          subtitle: "Tap to answer",
         };
       }
       return { forMe: false };
@@ -984,11 +990,14 @@
       var a = String(conv.peer_a || "");
       var b = String(conv.peer_b || "");
       if (a !== uid && b !== uid) return { forMe: false };
+      var peerName = (await staffFirstNameForUserId(initiated)) || "Communications";
       return {
         forMe: true,
         mode: "personal",
-        title: String(row.type || "").toUpperCase() === "VIDEO" ? "Incoming video call" : "Incoming call",
-        subtitle: "Communications",
+        title: String(row.type || "").toUpperCase() === "VIDEO"
+          ? "Incoming video call from " + peerName
+          : "Incoming call from " + peerName,
+        subtitle: "Tap to answer",
       };
     }
     if (t === "GROUP") {
@@ -1530,7 +1539,7 @@
     if (global.PortalCommsCalls) return Promise.resolve(global.PortalCommsCalls);
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260904-comms-30";
+      s.src = "/portal/comunicaciones/portal_comms_calls.js?v=20260906-comms-inapp-51";
       s.onload = function () {
         if (global.PortalCommsCalls) resolve(global.PortalCommsCalls);
         else reject(new Error("Call service failed to load."));

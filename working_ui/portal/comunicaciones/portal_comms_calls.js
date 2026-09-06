@@ -78,8 +78,8 @@
         return {
           forMe: true,
           mode: "personal",
-          title: title,
-          subtitle: "ADMIN is calling you",
+          title: video ? "Incoming video call from ADMIN" : "Incoming call from ADMIN",
+          subtitle: "Tap to answer",
           peerLabel: "ADMIN",
         };
       }
@@ -88,7 +88,7 @@
           forMe: true,
           mode: "administration",
           title: title,
-          subtitle: "Worker calling ADMIN",
+          subtitle: "Tap to answer",
           peerLabel: "Worker",
         };
       }
@@ -98,7 +98,7 @@
       var a = String(conv.peer_a || "");
       var b = String(conv.peer_b || "");
       if (a !== uid && b !== uid) return { forMe: false };
-      return { forMe: true, mode: "personal", title: title, subtitle: "Communications", peerLabel: "Incoming call" };
+      return { forMe: true, mode: "personal", title: title, subtitle: "Tap to answer", peerLabel: "Incoming call" };
     }
     if (t === "GROUP") {
       return {
@@ -115,7 +115,25 @@
   async function describeIncomingAsync(client, row, meId) {
     if (row && row.ring_mode) return describeIncoming(row, meId, null);
     var conv = await loadConversation(client, row && row.conversation_id);
-    return describeIncoming(row, meId, conv);
+    var info = describeIncoming(row, meId, conv);
+    if (!info.forMe || !client) return info;
+    var t = String((conv && conv.type) || "").toUpperCase();
+    var video = String((row && row.type) || "").toUpperCase() === "VIDEO";
+    var initiated = String((row && row.initiated_by) || "");
+    if (t !== "PEER" && t !== "CEO_PEER" && !(t === "ADMIN_STAFF" && initiated && initiated === String((conv && conv.employee_id) || ""))) {
+      return info;
+    }
+    try {
+      var lab = await client.rpc("communication_staff_label", { p_user_id: initiated });
+      var raw = lab && !lab.error ? lab.data : "";
+      var nm = String(raw || "").replace(/\s+/g, " ").trim().split(" ")[0] || "";
+      if (nm && !/^admin$/i.test(nm) && !/^administraci/i.test(nm)) {
+        info.title = video ? "Incoming video call from " + nm : "Incoming call from " + nm;
+        info.peerLabel = nm;
+        info.subtitle = "Tap to answer";
+      }
+    } catch (_n) {}
+    return info;
   }
 
   function loadJitsiScript(src) {

@@ -44,6 +44,46 @@ function firstPushName(raw: unknown): string {
   return t.split(" ")[0] || t;
 }
 
+async function staffFirstPushName(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<string> {
+  const id = String(userId || "").trim();
+  if (!id) return "";
+  try {
+    const { data: label } = await admin.rpc("communication_staff_label", { p_user_id: id });
+    const n = firstPushName(label);
+    if (n) return n;
+  } catch (_rpc) {}
+  const { data: prof } = await admin
+    .from("staff_profiles")
+    .select("full_name,username")
+    .eq("id", id)
+    .maybeSingle();
+  return firstPushName(prof?.full_name || prof?.username || "");
+}
+
+async function callIsFromAdmin(
+  admin: ReturnType<typeof createClient>,
+  conversationId: string,
+  initiatorId: string,
+): Promise<boolean> {
+  const convId = String(conversationId || "").trim();
+  const initiator = String(initiatorId || "").trim();
+  if (!convId) return false;
+  const { data: conv } = await admin
+    .from("communication_conversations")
+    .select("type,employee_id")
+    .eq("id", convId)
+    .maybeSingle();
+  if (!conv) return false;
+  const t = String(conv.type || "").toUpperCase();
+  if (t !== "ADMIN_STAFF") return false;
+  const employee = String(conv.employee_id || "").trim();
+  if (!employee) return true;
+  return initiator !== employee;
+}
+
 function withQuery(base: string, params: Record<string, string>): string {
   const root = String(base || "").trim();
   try {
@@ -133,23 +173,7 @@ Deno.serve(async (req) => {
     const conv = String(record.conversation_id || "").trim();
     senderUserId = String(record.performed_by_user_id || record.sender_user_id || "").trim();
     if (ctx !== "ADMINISTRATION" && senderUserId) {
-      let nm = "";
-      try {
-        const { data: label } = await admin.rpc("communication_staff_label", {
-          p_user_id: senderUserId,
-        });
-        nm = firstPushName(label);
-      } catch (_rpc) {
-        nm = "";
-      }
-      if (!nm) {
-        const { data: prof } = await admin
-          .from("staff_profiles")
-          .select("full_name,username")
-          .eq("id", senderUserId)
-          .maybeSingle();
-        nm = firstPushName(prof?.full_name || prof?.username || "");
-      }
+      const nm = await staffFirstPushName(admin, senderUserId);
       if (nm) title = nm;
     }
     url = withQuery(openUrl, conv ? { conv } : {});
@@ -167,17 +191,27 @@ Deno.serve(async (req) => {
     }
     recipientIds = ((ids as string[]) || []).map(String).filter(Boolean);
     const kind = String(record.type || "AUDIO").toUpperCase();
-    title = kind === "VIDEO" ? "Incoming video call" : "Incoming call";
-    body = "Communications";
+    const action = kind === "VIDEO" ? "Incoming video call" : "Incoming call";
     const initiator = String(record.initiated_by || "").trim();
-    if (initiator) {
-      const { data: prof } = await admin
-        .from("staff_profiles")
-        .select("full_name,username")
-        .eq("id", initiator)
-        .maybeSingle();
-      const nm = String(prof?.full_name || prof?.username || "").trim();
-      if (nm) body = nm;
+    senderUserId = initiator;
+    const fromAdmin = await callIsFromAdmin(
+      admin,
+      String(record.conversation_id || ""),
+      initiator,
+    );
+    if (fromAdmin) {
+      title = "Incoming call from ADMIN";
+      if (kind === "VIDEO") title = "Incoming video call from ADMIN";
+      body = "Tap to answer";
+    } else {
+      const nm = await staffFirstPushName(admin, initiator);
+      if (nm) {
+        title = kind === "VIDEO" ? "Incoming video call from " + nm : "Incoming call from " + nm;
+        body = "Tap to answer";
+      } else {
+        title = action;
+        body = "Tap to answer";
+      }
     }
     url = withQuery(openUrl, { call: sourceId });
     portalOpen = "communications_call";
