@@ -1987,27 +1987,61 @@
         : portalNormKeyStr(pl.covering_staff_name);
       var cov = fromId || fromName || '';
       /*
-       * Sun 6 Sep 2026: Emanuel Hub Multi (Zaid…Rayyan F) → John.
+       * Sun 6 Sep 2026: Emanuel Hub Multi (Jack S…Rayyan F) → John.
        * Keep cover as John even if an old override still names Youssef.
        */
       try{
         var iso = normaliseIsoDate(ov && ov.session_date);
-        var cid = String(ov && ov.anchor_client_id || '').trim().toLowerCase();
+        var cid = portalTodayClientSlugCanon(ov && ov.anchor_client_id);
         var anchor = typeof portalCanonicalStaffKeyForMatch === 'function'
           ? portalCanonicalStaffKeyForMatch(ov && ov.anchor_staff_id)
           : portalNormKeyStr(ov && ov.anchor_staff_id);
-        var emanuelBook = {
-          zaid: 1, jack_s: 1, jacks: 1, samer: 1, eiji: 1, hazem: 1, haneef: 1, rayyan_f: 1, rayyanf: 1
-        };
         if(
           iso === '2026-09-06' &&
-          emanuelBook[cid] &&
+          portalSep6EmanuelHubBookClient(cid) &&
           (anchor === 'emanuel' || anchor === 'giuseppe' || anchor === 'youssef' || cov === 'youssef')
         ){
           return 'john';
         }
       }catch(_fix){}
       return cov;
+    }
+
+    /** LOCAL Sun 6 John cover of Emanuel Hub book (not summer Zaid-first Hub times). */
+    function portalSep6EmanuelHubBookClient(cid){
+      var k = portalTodayClientSlugCanon(cid);
+      return !!(k && {
+        zaid: 1,
+        jack_s: 1,
+        jacks: 1,
+        eiji: 1,
+        hazem: 1,
+        haneef: 1,
+        rayyan_f: 1,
+        rayyanf: 1
+      }[k]);
+    }
+
+    /**
+     * Old Emanuel→cover overrides still store summer Hub clocks (Zaid 9.30, Jack S 10.15).
+     * Autumn LOCAL: Jack S Hub 9.30–10.15, Zaid Hub 10.15–11 (Zaid 9.30 pool is Javier).
+     */
+    function portalNormSep6JohnEmanuelHubCoverWindow(ov){
+      var iso = normaliseIsoDate(ov && ov.session_date);
+      if(iso !== '2026-09-06') return null;
+      var cid = portalTodayClientSlugCanon(ov && ov.anchor_client_id);
+      if(!portalSep6EmanuelHubBookClient(cid)) return null;
+      var book = {
+        jack_s: { start: '09:30', end: '10:15' },
+        jacks: { start: '09:30', end: '10:15' },
+        zaid: { start: '10:15', end: '11:00' },
+        eiji: { start: '11:00', end: '11:45' },
+        hazem: { start: '11:45', end: '12:30' },
+        haneef: { start: '12:30', end: '13:15' },
+        rayyan_f: { start: '13:15', end: '14:00' },
+        rayyanf: { start: '13:15', end: '14:00' }
+      };
+      return book[cid] || null;
     }
     /** True when this instructor_reassign hands the slot to `staffId` (they are the cover). */
     function portalInstructorReassignCoverIsStaff(ov, staffId){
@@ -3083,26 +3117,36 @@
       const extra = [];
       portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey).forEach(function(ov){
         const cov = portalInstructorCoverStaffKeyFromOverride(ov) || portalNormKeyStr(staffId);
+        const hubWinFix = portalNormSep6JohnEmanuelHubCoverWindow(ov);
         const baseFound = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord) || {
           day: anchorDayWord,
-          start: portalHmFromDbTime(ov.anchor_start) || '09:00',
-          end: portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00',
+          start: (hubWinFix && hubWinFix.start) || portalHmFromDbTime(ov.anchor_start) || '09:00',
+          end: (hubWinFix && hubWinFix.end) || portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00',
           venue: ov.anchor_venue || '',
           clientId: String(ov.anchor_client_id || '').toLowerCase(),
           staffId: String(ov.anchor_staff_id || '').trim().toLowerCase(),
           status: 'Scheduled',
           activity: String(portalScheduleOverridePayload(ov).activity || portalScheduleOverridePayload(ov).service || 'Swimming').trim() || 'Swimming',
-          rosterService: String(portalScheduleOverridePayload(ov).service || '').trim(),
+          rosterService: String(portalScheduleOverridePayload(ov).service || '').trim() || 'Multi-Activity',
           session_date: sessionDateKey
         };
-        const coverWinStart = portalHmFromDbTime(ov.anchor_start) || baseFound.start;
-        const coverWinEnd = portalHmFromDbTime(ov.anchor_end) || baseFound.end || coverWinStart;
+        const coverWinStart = (hubWinFix && hubWinFix.start) || portalHmFromDbTime(ov.anchor_start) || baseFound.start;
+        const coverWinEnd = (hubWinFix && hubWinFix.end) || portalHmFromDbTime(ov.anchor_end) || baseFound.end || coverWinStart;
         /* Always pin the card to the override window (coalesced halves → one 60' card). */
         const base = Object.assign({}, baseFound, {
           start: coverWinStart,
           end: coverWinEnd,
           clientId: String(ov.anchor_client_id || baseFound.clientId || '').toLowerCase() || baseFound.clientId
         });
+        if(hubWinFix){
+          base.rosterArea = base.rosterArea || 'Hub Room';
+          base.area = base.area || 'Hub Room';
+          if(!base.venue || String(base.venue).toLowerCase().indexOf('swimfarm') < 0) base.venue = 'SwimFarm';
+          if(!base.rosterService || String(base.rosterService).toLowerCase().indexOf('multi') < 0){
+            base.rosterService = 'Multi-Activity';
+            base.activity = 'Multi-Activity';
+          }
+        }
         const s = Object.assign({}, base, { staffId: cov });
         let st2 = sessionModelStatus(s);
         /* Admin absence / cancellation on a covered slot can be anchored to EITHER the
@@ -3400,6 +3444,7 @@
         if(!Array.isArray(primaryItems) || !Array.isArray(extraItems) || !extraItems.length) return extraItems || [];
         const seenExact = Object.create(null);
         const occupied = [];
+        const hubClientsOnDay = Object.create(null);
         primaryItems.forEach(function(it){
           const k = portalTodayItemClientSlotDedupeKey(it);
           if(k) seenExact[k] = true;
@@ -3410,6 +3455,10 @@
           ) || String(it.clientId || '').trim().toLowerCase();
           if(!cid || cid === 'available' || cid === 'closed') return;
           occupied.push({ clientId: cid, win: portalTodayItemSlotWindow(it), dedupeKey: k });
+          const base = it.__portalBaseSession || {};
+          if(portalSessionIsSundaySwimfarmHubMulti(base) || portalSessionIsSundaySwimfarmHubMulti(it)){
+            hubClientsOnDay[cid] = true;
+          }
         });
         const kept = [];
         extraItems.forEach(function(it){
@@ -3427,6 +3476,18 @@
           ) || String(it.clientId || '').trim().toLowerCase();
           if(!cid || cid === 'available' || cid === 'closed'){
             kept.push(it);
+            return;
+          }
+          /*
+           * Sun Hub: if LOCAL/dated roster already has this client on Hub Multi today,
+           * drop cover injects (old summer clocks e.g. Zaid 9.30 on John).
+           */
+          const baseEx = it.__portalBaseSession || {};
+          if(
+            hubClientsOnDay[cid] &&
+            (portalSessionIsSundaySwimfarmHubMulti(baseEx) || portalSessionIsSundaySwimfarmHubMulti(it) ||
+              portalSep6EmanuelHubBookClient(cid))
+          ){
             return;
           }
           for(let i = 0; i < occupied.length; i++){
