@@ -30,7 +30,12 @@
 
   var BERTA_MA_SCOPES = [
     { weekdays: ["Wednesday"], serviceKeys: ["multi"], venues: ["acton"], programmeWide: true },
-    { weekdays: ["Sunday"], serviceKeys: ["multi"], venues: ["swimfarm"], programmeWide: true },
+    {
+      weekdays: ["Sunday"],
+      serviceKeys: ["multi", "aquatic"],
+      venues: ["swimfarm"],
+      programmeWide: true,
+    },
   ];
 
   var MICHELLE_DC_SCOPES = [

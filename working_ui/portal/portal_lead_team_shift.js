@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260906-cyrus-sun";
+} from "./portal_lead_session_scope.js?v=20260906-berta-sun-aquatic";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",

@@ -129,7 +129,10 @@ const BERTA_SCOPES = [
     id: "sunday-ma-swimfarm",
     label: "Sunday — Multi-Activity (SwimFarm)",
     weekdays: ["Sunday"],
-    serviceKeys: ["multi"],
+    /* Multi Hub + Aquatic pool (morning 1:1s / trials) so Lead Team on shift
+     * shows Javier's trial and Aurora / Roberto / Javier aquatic clients.
+     * Today cards stay own-roster only (no programmeWideRoster). */
+    serviceKeys: ["multi", "aquatic"],
     venues: ["swimfarm"],
     leadTeamBanner: true,
   },
