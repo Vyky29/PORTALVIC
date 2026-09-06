@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 77;
+  var SOURCE_VERSION = 78;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -664,36 +664,16 @@
   }
 
   /**
-   * Mon 7 Sep 2026: Raul OFF — Victor covers Timi / Emanuel DC + Tinashe Hub Bespoke.
-   * Dated so Today / Overview match LOCAL DATE_EXTRA (standing Mondays stay Raul / Victor OFF).
+   * Mon 7 Sep 2026: Raul OFF — Victor covers his seats.
+   * Do NOT inject a Victor-only Tinashe / Emanuel dated row: Overview suppresses
+   * standing same-client Bespoke/DC for the week when a dated row exists, which
+   * dropped Godsway + John (and Roberto's Emanuel 11–1). Remap + schedule_overrides
+   * paint Raul→Victor; keep standing co-instructors.
+   * Dated rows here are only Westway Physical (Sandra→Javi) — those clients have
+   * no other standing instructors that day.
    */
   function autumnMondaySep7VictorCoverRows() {
-    var dc = [
-      { client_name: "Timi", time_slot: "11 to 1" },
-      { client_name: "Emanuel", time_slot: "1 to 4" },
-    ].map(function (slot) {
-      return {
-        client_name: slot.client_name,
-        day: "Monday",
-        instructors: "VICTOR",
-        service: "Day Centre",
-        area: "Hub Room",
-        time_slot: slot.time_slot,
-        venue: "SwimFarm",
-        session_date: "2026-09-07",
-      };
-    });
-    var hub = {
-      client_name: "Tinashe",
-      day: "Monday",
-      instructors: "VICTOR",
-      service: "Bespoke Programme",
-      area: "Hub Room",
-      time_slot: "4.15 to 6.15",
-      venue: "SwimFarm",
-      session_date: "2026-09-07",
-    };
-    return dc.concat([hub]);
+    return [];
   }
 
   /** Mon 7 Sep: Sandra OFF — Javi covers Westway Physical (Ayaan / Serine). */
@@ -722,7 +702,7 @@
     ];
   }
 
-  /** Drop Raul/Sandra Mon 7 dated seats if any; inject Victor + Javi cover rows. */
+  /** Drop Raul/Sandra Mon 7 dated seats if any; inject Javi Physical cover rows. */
   function scrubAndEnsureSep7VictorRaulCover(rows) {
     var out = [];
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
@@ -743,10 +723,15 @@
         /westway/i.test(String(r.venue || ""));
       if (isRaulOnly && (isDc || isTin)) return;
       if (isSandraOnly && isWestwayPa) return;
+      /* Stale Victor-only Tinashe dated row (pre-fix) — drop so Godsway/John project. */
+      if (
+        isTin &&
+        /\bvictor\b/i.test(inst) &&
+        !/\b(godsway|john)\b/i.test(inst)
+      ) {
+        return;
+      }
       out.push(r);
-    });
-    autumnMondaySep7VictorCoverRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
     });
     autumnMondaySep7JaviPhysicalCoverRows().forEach(function (row) {
       out.push(Object.assign({}, row));
