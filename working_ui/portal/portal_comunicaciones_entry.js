@@ -175,7 +175,15 @@
       "flex:0 0 auto!important;min-width:18px!important;height:18px!important;margin:0 0 0 4px!important;" +
       "padding:0 5px!important;border-radius:999px!important;background:#dc2626!important;color:#fff!important;" +
       "font-size:11px!important;font-weight:800!important;line-height:18px!important;opacity:1!important;" +
-      "visibility:visible!important;z-index:2!important;text-decoration:none!important}";
+      "visibility:visible!important;z-index:2!important;text-decoration:none!important}" +
+      /* Only if the inner badge node is missing/hidden — avoid double numbers. */
+      "#topbarStaffWaBtn[data-comms-count]:not(:has([data-comms-unread]:not(.is-empty)))::after{" +
+      "content:attr(data-comms-count);display:inline-flex!important;align-items:center;justify-content:center;" +
+      "flex:0 0 auto!important;min-width:18px!important;height:18px!important;margin:0 0 0 4px!important;" +
+      "padding:0 5px!important;border-radius:999px!important;background:#dc2626!important;color:#fff!important;" +
+      "font-size:11px!important;font-weight:800!important;line-height:18px!important}" +
+      "#topbarStaffWaBtn:not([data-comms-count])::after," +
+      "#topbarStaffWaBtn:has([data-comms-unread]:not(.is-empty))::after{content:none!important;display:none!important}";
     (document.head || document.documentElement).appendChild(st);
   }
 
@@ -355,21 +363,37 @@
 
   async function hasAuthSession(c) {
     try {
-      var box = supabaseBox();
-      if (box && box.session && box.session.user && box.session.user.id) return true;
-    } catch (_b) {}
-    try {
       if (c && c.auth && typeof c.auth.getSession === "function") {
         var gs = await c.auth.getSession();
         if (gs && gs.data && gs.data.session && gs.data.session.user) return true;
       }
     } catch (_s) {}
+    try {
+      var box = supabaseBox();
+      var sess = box && box.session;
+      if (
+        c &&
+        c.auth &&
+        sess &&
+        sess.access_token &&
+        typeof c.auth.setSession === "function"
+      ) {
+        await c.auth.setSession({
+          access_token: sess.access_token,
+          refresh_token: sess.refresh_token || "",
+        });
+        var gs2 = await c.auth.getSession();
+        if (gs2 && gs2.data && gs2.data.session && gs2.data.session.user) return true;
+      }
+    } catch (_box) {}
     return false;
   }
 
-  async function inboxUnreadTotal(c) {
+  async function inboxUnreadTotal(c, mode) {
     try {
-      var inboxRes = await c.rpc("communication_inbox", { p_mode: "personal" });
+      var inboxRes = await c.rpc("communication_inbox", {
+        p_mode: mode || "personal",
+      });
       if (inboxRes && inboxRes.error) return 0;
       var data = inboxRes && inboxRes.data;
       if (typeof data === "string") {
@@ -434,7 +458,10 @@
             scheduleUnreadRetry();
             return lastUnreadCount;
           }
-          applyUnreadFromServer(Math.max(0, Number(res.data) || 0, await inboxUnreadTotal(c)));
+          var inboxFallback = await inboxUnreadTotal(c, "personal");
+          applyUnreadFromServer(
+            Math.max(0, Number(res.data) || 0, inboxFallback)
+          );
         } else {
           var parsed = parseUnreadCounts(countsRes && countsRes.data);
           if (
@@ -477,10 +504,22 @@
           }
           lastPersonalCount = parsed.personal;
           lastAdminCount = parsed.administration;
-          var inboxSum = await inboxUnreadTotal(c);
-          var n = Math.max(parsed.total, parsed.personal, inboxSum);
+          /*
+           * Prefer the same source as the Communications inbox list (per-thread
+           * unread). RPC totals can lag or return 0 when the client JWT is stale
+           * even though box.session looked signed-in.
+           */
+          var inboxSum = await inboxUnreadTotal(c, "personal");
+          var n = Math.max(
+            parsed.total,
+            parsed.personal,
+            parsed.administration,
+            inboxSum
+          );
           applyUnreadFromServer(n);
-          updateCommsLaunchLinks(parsed.personal > 0 || n > 0 ? "personal" : "");
+          updateCommsLaunchLinks(
+            parsed.personal > 0 || inboxSum > 0 || n > 0 ? "personal" : ""
+          );
         }
         return lastUnreadCount;
       } catch (_e) {
@@ -1507,23 +1546,36 @@
     if (!btn) return;
     var lab = btn.querySelector(".topbar-staff-wa-btn__label, .topbar-tool-label");
     var ico = btn.querySelector(".topbar-staff-wa-btn__ico, .topbar-tool-btn__ico");
+    /* classList only — never wipe className (that dropped unread / host flags). */
     if (inGrid) {
-      btn.className = "topbar-tool-btn topbar-tool-btn--staff-wa";
-      if (ico) ico.className = "topbar-tool-btn__ico";
+      btn.classList.add("topbar-tool-btn", "topbar-tool-btn--staff-wa");
+      btn.classList.remove("topbar-staff-wa-btn");
+      if (ico) {
+        ico.classList.add("topbar-tool-btn__ico");
+        ico.classList.remove("topbar-staff-wa-btn__ico");
+      }
       if (lab) {
-        lab.className = "topbar-tool-label";
+        lab.classList.add("topbar-tool-label");
+        lab.classList.remove("topbar-staff-wa-btn__label");
         lab.textContent = "COMMS";
       }
     } else {
-      btn.className = "topbar-staff-wa-btn";
-      if (ico) ico.className = "topbar-staff-wa-btn__ico";
+      btn.classList.add("topbar-staff-wa-btn");
+      btn.classList.remove("topbar-tool-btn", "topbar-tool-btn--staff-wa");
+      if (ico) {
+        ico.classList.add("topbar-staff-wa-btn__ico");
+        ico.classList.remove("topbar-tool-btn__ico");
+      }
       if (lab) {
-        lab.className = "topbar-staff-wa-btn__label";
+        lab.classList.add("topbar-staff-wa-btn__label");
+        lab.classList.remove("topbar-tool-label");
         lab.textContent = "COMMS";
       }
     }
-    if (lastUnreadCount > 0) {
-      btn.classList.add(inGrid ? "topbar-tool-btn--staff-wa-unread" : "topbar-staff-wa-btn--unread");
+    btn.classList.toggle("topbar-tool-btn--staff-wa-unread", inGrid && lastUnreadCount > 0);
+    btn.classList.toggle("topbar-staff-wa-btn--unread", !inGrid && lastUnreadCount > 0);
+    if (!btn.hasAttribute("data-comms-unread-host")) {
+      btn.setAttribute("data-comms-unread-host", "");
     }
     paintCornerBadge(btn, lastUnreadCount);
   }
