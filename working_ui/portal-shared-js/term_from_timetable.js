@@ -102,7 +102,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {},
   "termStaffLateSubmissionBypassProfileKeys": [],
   "termClientFirstSessionDate": {
-    "cyrus": "2026-09-09"
+    "cyrus": "2026-09-06"
   },
   "termHalfTermWeekStarts": [
     "2026-10-26"

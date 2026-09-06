@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260904-berta-sun-only";
+} from "./portal_lead_session_scope.js?v=20260906-cyrus-sun";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -233,6 +233,24 @@ function filterSundayMaTeam(keys, leadKey) {
       return !PROGRAMME_LEAD_KEYS.has(k);
     })
   );
+}
+
+/** LOCAL offs / term shift dates — do not show staff who are not working that day. */
+function staffExpectedOnTeamIso(staffKey, iso) {
+  const k = normKey(staffKey);
+  const day = String(iso || "").trim().slice(0, 10);
+  if (!k || !day) return true;
+  if (day === "2026-09-06" && (k === "youssef" || k === "emanuel")) return false;
+  if (day === "2026-09-13" && (k === "john" || k === "aurora")) return false;
+  try {
+    const t = typeof window !== "undefined" ? window.PORTAL_TERM_FROM_TIMETABLE : null;
+    const dates =
+      t && t.termStaffShiftDatesByProfileKey ? t.termStaffShiftDatesByProfileKey[k] : null;
+    if (Array.isArray(dates) && dates.length) {
+      return dates.indexOf(day) >= 0;
+    }
+  } catch (_) {}
+  return true;
 }
 
 /** Standing Hub Tinashe with John: Godsway + Raul (LOCAL EXTRA start; no date split). */
@@ -581,6 +599,7 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey, iso);
   memberKeys = memberKeys.filter(function (k) {
     if (!k || k === ctx.leadKey) return false;
+    if (!staffExpectedOnTeamIso(k, iso)) return false;
     /* Sunday MA: keep peer Leader (Berta/John) on the team strip. */
     if (
       dayKind === "sunday_ma_swimfarm" &&
@@ -594,8 +613,9 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   });
   /* Seed expected Hub Multi support when standing rows did not resolve yet (Berta is Sunday Lead). */
   if (dayKind === "sunday_ma_swimfarm" && ctx.leadKey === "berta") {
-    const seeds = iso === "2026-09-06" ? ["godsway", "john", "berta"] : ["godsway", "emanuel"];
+    const seeds = iso === "2026-09-06" ? ["godsway", "john"] : ["godsway", "emanuel"];
     seeds.forEach(function (k) {
+      if (!staffExpectedOnTeamIso(k, iso)) return;
       if (memberKeys.indexOf(k) < 0) memberKeys.push(k);
     });
   }

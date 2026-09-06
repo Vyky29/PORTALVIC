@@ -9,7 +9,7 @@
   var VER = "20260906-joelle-2to1";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260906-aurora-on-6",
+    "/portal/term_from_timetable.js?v=20260906-cyrus-first-sun",
     "/portal/term_calendar_dashboard_shared.js?v=20260903-tue-acat-ikram",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260905-zaid-910",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-zaid-yusuf-9",
@@ -57,7 +57,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260904-berta-sun-only",
+    "/portal/portal_lead_team_shift.js?v=20260906-cyrus-youssef-off",
   ];
 
   var TIER_IDLE = [

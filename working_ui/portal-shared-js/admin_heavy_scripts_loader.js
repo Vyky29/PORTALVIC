@@ -6,7 +6,7 @@
 
   var SETS = {
     roster: [
-      "/portal/term_from_timetable.js?v=20260906-aurora-on-6",
+      "/portal/term_from_timetable.js?v=20260906-cyrus-first-sun",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260905-zaid-910",
       "/portal/clients_info_embed.js?v=20260707-social-workers",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-zaid-yusuf-9",
