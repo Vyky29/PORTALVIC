@@ -3474,7 +3474,7 @@
       '<button type="button" class="btn btn--sm" data-inv-filter="all">All</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="la_auto">Auto re-enrolled</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="ready">Shared</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Ready unpaid</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="unpaid">Outstanding</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="partial">Partially paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="paid">Paid</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-filter="pending">Pending confirmation</button>' +
