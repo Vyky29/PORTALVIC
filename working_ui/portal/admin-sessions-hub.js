@@ -4935,6 +4935,40 @@
     for (var n = 0; n < list.length; n++) {
       list[n] = enrichAbsentMarkFromKey(list[n]);
     }
+    /*
+     * Collapse duplicates: quick_marks + attendance "No" feedback often both exist
+     * for the same session with different portal_session_key shapes.
+     */
+    var collapsed = [];
+    var seenId = Object.create(null);
+    function markIdentityKeys(m) {
+      var keys = [];
+      var sd = clean(m.session_date) || absentMarkDateIso(m);
+      var sk = normalizePortalSessionKey(clean(m.portal_session_key));
+      if (sk && sd) keys.push("sk|" + String(sk).toLowerCase() + "|" + sd);
+      var cid = canonicalClientSlug(m.client_name) || slugify(m.client_name);
+      var tk = normTimeKey(m.session_time);
+      var svc = slugify(m.service || "");
+      if (sd && cid) keys.push("ct|" + sd + "|" + cid + "|" + (tk || "") + "|" + svc);
+      var dk = absentDedupeKey(m);
+      if (dk) keys.push("dk|" + dk);
+      return keys;
+    }
+    for (var c = 0; c < list.length; c++) {
+      var mCollapse = list[c];
+      var idKeys = markIdentityKeys(mCollapse);
+      var already = false;
+      for (var ki = 0; ki < idKeys.length; ki++) {
+        if (seenId[idKeys[ki]]) {
+          already = true;
+          break;
+        }
+      }
+      if (already) continue;
+      for (var kj = 0; kj < idKeys.length; kj++) seenId[idKeys[kj]] = true;
+      collapsed.push(mCollapse);
+    }
+    list = collapsed;
     for (var n2 = 0; n2 < list.length; n2++) {
       var m2 = list[n2];
       var aliasFb = {
@@ -5345,7 +5379,8 @@
         clean(mark.service) +
         (clean(mark.session_time) ? " \u2013 " + clean(mark.session_time) : "");
     }
-    var staff = clean(mark.staff_name) || "Staff";
+    var staffRaw = clean(mark.staff_name) || "Staff";
+    var staff = staffPillFirstName(staffRaw) || staffRaw;
     var whenParts = mark.created_at ? absentMarkedWhenParts(mark.created_at) : { date: "\u2014", time: "" };
     return {
       client: client,
