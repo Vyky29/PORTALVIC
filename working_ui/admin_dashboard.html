@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260906-overview-day-truth" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260906-overview-fluid" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -71,7 +71,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260905-buckets"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260906-filter-selects" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260906-overview-fluid" />
   <script src="/portal/portal_staff_display_names.js?v=20260902-luliya-display"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260828-hours-weeknav" />
@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260906-dc-swim-only"></script>
   <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260906-overview-day-truth"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260906-overview-fluid"></script>
   <script src="/portal/admin-portal-documents.js?v=20260905-expense-amount"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260905-buckets"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260813-office-phone-create"></script>
@@ -151,7 +151,7 @@
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
   <script src="/portal/cfk-app.js?v=20260817-services-one-board"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
-  <script src="/portal/admin-scheduling-module.js?v=20260906-overview-day-truth"></script>
+  <script src="/portal/admin-scheduling-module.js?v=20260906-overview-fluid"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -383,7 +383,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260809-roster-gix"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260906-overview-fluid"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260716-cancel-selfserve"></script>
@@ -5468,7 +5468,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           adminMergeSpreadsheetSessionsForSlotLookup.invalidate();
         }
       }catch(_inv){}
-      if(opts.refreshScheduling && String(state.view || '') === 'scheduling' && typeof refreshSchedulingModule === 'function'){
+      if(opts.refreshScheduling && String(state.view || '') === 'scheduling' && typeof refreshSchedulingModuleDebounced === 'function'){
+        refreshSchedulingModuleDebounced();
+      }else if(opts.refreshScheduling && String(state.view || '') === 'scheduling' && typeof refreshSchedulingModule === 'function'){
         void refreshSchedulingModule();
       }
     }
@@ -14581,13 +14583,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         var ovPanel = $('c4kHubPanelOverview');
         var overviewVisible = !!(ovPanel && !ovPanel.hidden && String(state.view || '') === 'c4k_sessions');
-        if(th && typeof th.render === 'function' && (overviewVisible || opts.forceOverviewRender)){
-          th.render();
+        if(th && (overviewVisible || opts.forceOverviewRender)){
+          if(typeof th.softRefreshOverview === 'function' && typeof th.overviewSurfaceReady === 'function' && th.overviewSurfaceReady()){
+            th.softRefreshOverview();
+          }else if(typeof th.render === 'function'){
+            th.render();
+          }
         }else if(String(state.view || '') === 'c4k_sessions' && typeof sessionsHubRefreshActiveTab === 'function'){
           try{ void sessionsHubRefreshActiveTab(); }catch(_hubTab){}
         }
       }catch(_hubSync){}
-      if(opts.refreshScheduling && String(state.view || '') === 'scheduling' && typeof refreshSchedulingModule === 'function'){
+      if(opts.refreshScheduling && String(state.view || '') === 'scheduling' && typeof refreshSchedulingModuleDebounced === 'function'){
+        try{ refreshSchedulingModuleDebounced(); }catch(_sched){}
+      }else if(opts.refreshScheduling && String(state.view || '') === 'scheduling' && typeof refreshSchedulingModule === 'function'){
         try{ await refreshSchedulingModule(); }catch(_sched){}
       }
     }
@@ -16730,6 +16738,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         tr.style.display = rowMatchesStaff(tr) ? '' : 'none';
       });
     }
+    var _schedRefreshDebTimer = null;
+    var _schedRefreshDebOpts = null;
+    function refreshSchedulingModuleDebounced(opts){
+      _schedRefreshDebOpts = Object.assign({}, _schedRefreshDebOpts || {}, opts || {});
+      if(_schedRefreshDebTimer) clearTimeout(_schedRefreshDebTimer);
+      _schedRefreshDebTimer = setTimeout(function(){
+        _schedRefreshDebTimer = null;
+        var runOpts = _schedRefreshDebOpts || {};
+        _schedRefreshDebOpts = null;
+        void refreshSchedulingModule(runOpts);
+      }, 450);
+    }
+    window.refreshSchedulingModuleDebounced = refreshSchedulingModuleDebounced;
     async function refreshSchedulingModule(opts){
       opts = opts || {};
       if(window.portalAdminLoadScriptSet && !adminSpreadsheetAdapterAvailable()){
@@ -21735,7 +21756,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260906-day-picker-date';
+    var PORTAL_ADMIN_HUB_BUILD = '20260906-overview-fluid';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -21805,7 +21826,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var ovRoot = $('adminSessionsHubRoot');
           var alreadyPainted = ovRoot && ovRoot.querySelector('.ash-panels, [data-ash-overview-body], .ash-day-board, .ash-table--overview');
           if(!alreadyPainted && typeof th.render === 'function') th.render();
-          else if(alreadyPainted && typeof th.scheduleOverviewBodyPaint === 'function' && !ovRoot.querySelector('.ash-day-board, .ash-table--overview tbody tr')){
+          else if(alreadyPainted && typeof th.softRefreshOverview === 'function'){
+            th.softRefreshOverview();
+          }else if(alreadyPainted && typeof th.scheduleOverviewBodyPaint === 'function' && !ovRoot.querySelector('.ash-day-board, .ash-table--overview tbody tr')){
             th.scheduleOverviewBodyPaint();
           }
         }

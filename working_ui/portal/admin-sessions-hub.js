@@ -5400,9 +5400,17 @@
     if (global.__PORTAL_ASH_ROSTER_SOURCE_LISTENER__) return;
     global.__PORTAL_ASH_ROSTER_SOURCE_LISTENER__ = true;
     // The roster source can fire several times in quick succession (initial load
-    // + live MADRE refresh + portal_roster_rows). Each full hub render over ~865
-    // feedback rows costs ~1-2s, so coalesce bursts into a single render.
+    // + live MADRE refresh + portal_roster_rows). Full hub.render() wipes the DOM
+    // and feels like multi-refresh; coalesce into one soft Overview body paint.
     var deb = null;
+    function softOrFull(hub) {
+      if (!hub) return;
+      if (hub.tab === "tracking" && typeof hub.softRefreshOverview === "function") {
+        hub.softRefreshOverview();
+      } else if (typeof hub.render === "function") {
+        hub.render();
+      }
+    }
     function runRosterUpdate() {
       if (!global.document) return;
       var roots = global.document.querySelectorAll(".admin-sessions-hub-root");
@@ -5413,11 +5421,10 @@
         hub.refreshRosterRowsFromResolvedSource();
         var visible = hub.root && hub.root.isConnected && hubRootIsVisible(hub.root);
         if (visible) {
-          /* Overview staffing board: re-paint when roster changes. Feedback hubs need live FB. */
-          if (hub.tab === "tracking") hub.render();
+          if (hub.tab === "tracking") softOrFull(hub);
           else {
             needFeedbackRefresh = true;
-            hub.render();
+            softOrFull(hub);
           }
         }
       }
@@ -5438,7 +5445,18 @@
         } catch (e) {
           console.warn("[AdminSessionsHub] roster update", e);
         }
-      }, 800);
+      }, 1000);
+    });
+    global.addEventListener("portal:staff-roster-live-ready", function () {
+      if (deb) clearTimeout(deb);
+      deb = setTimeout(function () {
+        deb = null;
+        try {
+          runRosterUpdate();
+        } catch (e) {
+          console.warn("[AdminSessionsHub] roster live-ready", e);
+        }
+      }, 50);
     });
   }
 
@@ -6415,6 +6433,10 @@
     hub.invalidateComputeCaches();
     if (hub.opts && typeof hub.opts.onViewFiltersChange === "function") {
       hub.opts.onViewFiltersChange(hub);
+    }
+    if (hub.tab === "tracking" && typeof hub.softRefreshOverview === "function" && hub.overviewSurfaceReady()) {
+      hub.softRefreshOverview();
+      return;
     }
     if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
     else hub.render();
@@ -8257,7 +8279,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (dayBtn) {
         hub.selectedDay = dayBtn.getAttribute("data-ash-day");
         if (hub.mode === "feedback") hub.feedbackMetricsDay = hub.selectedDay;
-        if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
+        if (
+          hub.tab === "tracking" &&
+          typeof hub.softRefreshOverview === "function" &&
+          hub.overviewSurfaceReady()
+        ) {
+          hub.softRefreshOverview();
+        } else if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
         else hub.render();
         hub.scrollToWeekPicker();
         return;
@@ -8434,8 +8462,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   };
 
   AdminSessionsHub.prototype.renderPanels = function () {
-    this.indexAbsentMarks();
-    this.indexFeedback();
+    /* Overview staffing board does not need feedback indexes (1000+ rows). */
+    if (this.tab !== "tracking") {
+      this.indexAbsentMarks();
+      this.indexFeedback();
+    }
     var shell = this.root.querySelector(".ash-panels") || this.root.querySelector(".ash-panels--feedback-only");
     if (!shell) return;
     try {
@@ -9574,6 +9605,80 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     );
   };
 
+  AdminSessionsHub.prototype.overviewSurfaceReady = function () {
+    var root = this.root;
+    if (!root) return false;
+    return !!(
+      root.querySelector("[data-ash-overview-body]") ||
+      root.querySelector(".ash-day-board") ||
+      root.querySelector(".ash-table--overview")
+    );
+  };
+
+  AdminSessionsHub.prototype.overviewRosterReadyToPaint = function () {
+    if (typeof global.portalStaffRosterLiveReady === "function" && global.portalStaffRosterLiveReady()) {
+      return true;
+    }
+    if (global.__PORTAL_STAFF_ROSTER_LIVE_READY__) return true;
+    if (!this._overviewWaitStartedAt) this._overviewWaitStartedAt = Date.now();
+    /* Do not block forever if Supabase never answers. */
+    if (Date.now() - this._overviewWaitStartedAt > 10000) return true;
+    var inflight =
+      typeof global.portalStaffRosterRefreshInFlight === "function" &&
+      global.portalStaffRosterRefreshInFlight();
+    if (inflight) return false;
+    /* Bundle already has a full day and live refresh is not running — paint. */
+    try {
+      var n = (this.expandSlotsForDate(this.selectedDay) || []).length;
+      if (n >= 8) return true;
+      /* Avoid caching a sparse day while we wait for live MADRE. */
+      if (this._slotsByIso) delete this._slotsByIso[String(this.selectedDay || "").substring(0, 10)];
+    } catch (_n) {}
+    return false;
+  };
+
+  AdminSessionsHub.prototype.syncOverviewChromeSelection = function () {
+    var hub = this;
+    var root = hub.root;
+    if (!root) return;
+    var day = hub.selectedDay;
+    var cards = root.querySelectorAll("[data-ash-day]");
+    for (var i = 0; i < cards.length; i++) {
+      var el = cards[i];
+      var iso = el.getAttribute("data-ash-day");
+      var on = iso === day;
+      el.classList.toggle("ash-day-card--sel", on);
+      el.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    var title = root.querySelector(".ash-table-title-row .ash-table-title");
+    if (title) {
+      var badge = title.querySelector(".ash-badge");
+      title.innerHTML =
+        hub.escapeHtml(formatLongDate(day)) +
+        " " +
+        (badge
+          ? badge.outerHTML
+          : '<span class="ash-badge ash-badge--booked">Who works</span>');
+    }
+  };
+
+  /**
+   * Update Overview without wiping week strip / filters (avoids multi-refresh flicker).
+   */
+  AdminSessionsHub.prototype.softRefreshOverview = function () {
+    if (this.tab !== "tracking") {
+      this.render();
+      return;
+    }
+    if (!this.overviewSurfaceReady()) {
+      this.render();
+      return;
+    }
+    this.invalidateComputeCaches();
+    this.syncOverviewChromeSelection();
+    this.scheduleOverviewBodyPaint();
+  };
+
   AdminSessionsHub.prototype.scheduleOverviewBodyPaint = function () {
     var hub = this;
     var root = hub.root;
@@ -9584,6 +9689,27 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (hub.tab !== "tracking") return;
       var mount = root.querySelector("[data-ash-overview-body]");
       if (!mount) return;
+      if (!hub.overviewRosterReadyToPaint()) {
+        mount.innerHTML =
+          '<p class="ash-feedback-filter-hint" role="status">Building day board…</p>';
+        if (!hub._overviewReadyListenerBound) {
+          hub._overviewReadyListenerBound = true;
+          var onReady = function () {
+            hub._overviewReadyListenerBound = false;
+            global.removeEventListener("portal:staff-roster-live-ready", onReady);
+            if (hub.tab === "tracking") hub.scheduleOverviewBodyPaint();
+          };
+          global.addEventListener("portal:staff-roster-live-ready", onReady);
+          setTimeout(function () {
+            if (hub._overviewPaintToken === token && hub.tab === "tracking") {
+              hub._overviewReadyListenerBound = false;
+              global.removeEventListener("portal:staff-roster-live-ready", onReady);
+              hub.scheduleOverviewBodyPaint();
+            }
+          }, 1200);
+        }
+        return;
+      }
       try {
         mount.innerHTML = hub.htmlTrackingBody();
       } catch (err) {
@@ -10729,8 +10855,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   };
 
   AdminSessionsHub.prototype.render = function () {
-    this.indexAbsentMarks();
-    this.indexFeedback();
+    var skipHeavyIndex = this.tab === "tracking" && this.opts && this.opts.externalTabs;
+    if (!skipHeavyIndex) {
+      this.indexAbsentMarks();
+      this.indexFeedback();
+    }
     var warn = this.bundleError
       ? '<p class="ash-bundle-warn">' + esc(this.bundleError) + "</p>"
       : "";
@@ -10758,6 +10887,26 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       return;
     }
     if (this.opts && this.opts.externalTabs) {
+      /* Soft path: keep week strip + filters; only refresh day board (no flicker). */
+      if (
+        this.tab === "tracking" &&
+        !this._forceFullOverviewRender &&
+        typeof this.softRefreshOverview === "function" &&
+        this.overviewSurfaceReady()
+      ) {
+        var panels = this.root.querySelector(".ash-panels");
+        if (panels) {
+          var tip = this.root.querySelector(":scope > .ash-feedback-filter-hint, :scope > .ash-bundle-warn");
+          if (warn) {
+            if (!tip) {
+              this.root.insertAdjacentHTML("afterbegin", warn);
+            }
+          }
+          this.softRefreshOverview();
+          return;
+        }
+      }
+      this._forceFullOverviewRender = false;
       this.root.innerHTML = warn + '<div class="ash-panels"></div>';
       this.renderPanels();
       return;

@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260906-overview-day-truth';
+  var PORTAL_DAY_OPS_BUILD = '20260906-overview-fluid';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -851,6 +851,15 @@
 
   function reRenderHub(hub) {
     if (!hub || !hub.root || !hub.root.isConnected) return;
+    if (
+      hub.tab === 'tracking' &&
+      typeof hub.softRefreshOverview === 'function' &&
+      typeof hub.overviewSurfaceReady === 'function' &&
+      hub.overviewSurfaceReady()
+    ) {
+      hub.softRefreshOverview();
+      return;
+    }
     if (typeof hub.render === 'function') {
       hub.render();
     } else if (typeof hub.renderPanels === 'function') {
@@ -893,7 +902,15 @@
               ? trackingHub
               : null;
         syncHubViewFilters(changedHub, other);
-        reRenderHub(other);
+        /* Only re-paint the sibling hub when that panel is actually visible. */
+        if (
+          other &&
+          other.root &&
+          other.root.isConnected &&
+          other.root.offsetParent !== null
+        ) {
+          reRenderHub(other);
+        }
       }
     };
   }
@@ -982,6 +999,9 @@
     try {
       await global.portalRefreshPortalRosterRowsFromSupabase(client);
       refreshHubRosterFromLiveSource();
+      try {
+        global.__PORTAL_STAFF_ROSTER_LIVE_READY__ = true;
+      } catch (_ready) {}
       console.log('[PortalDayOps] live MADRE + portal_roster_rows refreshed');
     } catch (eRoster) {
       console.warn('[PortalDayOps] live roster refresh failed', eRoster);

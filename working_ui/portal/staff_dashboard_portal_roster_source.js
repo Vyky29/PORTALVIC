@@ -10,6 +10,22 @@
     } catch (_) {}
   }
 
+  function markStaffRosterLiveReady() {
+    if (typeof window === "undefined") return;
+    try {
+      window.__PORTAL_STAFF_ROSTER_LIVE_READY__ = true;
+      window.dispatchEvent(new CustomEvent("portal:staff-roster-live-ready"));
+    } catch (_) {}
+  }
+
+  window.portalStaffRosterLiveReady = function () {
+    return !!(typeof window !== "undefined" && window.__PORTAL_STAFF_ROSTER_LIVE_READY__);
+  };
+
+  window.portalStaffRosterRefreshInFlight = function () {
+    return !!REFRESH_INFLIGHT;
+  };
+
   function resolveStaffDashboardSource() {
     var canon = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
     if (canon && typeof canon.resolveCanonicalStaffDashboardSource === "function") {
@@ -56,6 +72,7 @@
       })
       .then(function (rows) {
         refreshStaffDashboardSourceFromPortal();
+        markStaffRosterLiveReady();
         return rows;
       })
       .finally(function () {
