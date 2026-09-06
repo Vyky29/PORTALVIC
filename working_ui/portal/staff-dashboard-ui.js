@@ -5770,7 +5770,7 @@
     (function portalRegisterStaffServiceWorkerEarly(){
       if(!('serviceWorker' in navigator)) return;
       try{
-        var swUrl = new URL('clubsensational-portal-sw.js?v=20260906-comms-inapp-39', window.location.href).href;
+        var swUrl = new URL('clubsensational-portal-sw.js?v=20260906-comms-sync-41', window.location.href).href;
         var scopeBase = new URL('./', window.location.href).href;
         navigator.serviceWorker.register(swUrl, { scope: scopeBase }).then(function(reg){
           window.__PORTAL_SW_REG__ = reg;

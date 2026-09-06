@@ -137,7 +137,7 @@
     }
     global.__PORTAL_SW_REG_PROMISE__ = (async function () {
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-39", global.location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-sync-41", global.location.href).href;
         var scopeBase = new URL("./", global.location.href).href;
         var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
         global.__PORTAL_SW_REG__ = reg;
@@ -333,27 +333,48 @@
     } catch (_e) {}
   }
 
+  var portalPageForeground = true;
+
+  function portalSetPageForeground(on) {
+    portalPageForeground = !!on;
+    portalPostToServiceWorker({ type: "portal-client-visibility", visible: portalPageForeground });
+  }
+
+  function portalPageIsForeground() {
+    return portalPageForeground;
+  }
+  global.portalPageIsForeground = portalPageIsForeground;
+
   function portalSyncClientVisibilityToSw() {
-    var vis = false;
-    try {
-      vis = !!(global.document && global.document.visibilityState === "visible");
-    } catch (_v) {}
-    portalPostToServiceWorker({ type: "portal-client-visibility", visible: vis });
+    portalPostToServiceWorker({ type: "portal-client-visibility", visible: portalPageForeground });
   }
 
   if (!global.__PORTAL_SW_VIS_HEARTBEAT__) {
     global.__PORTAL_SW_VIS_HEARTBEAT__ = true;
-    portalSyncClientVisibilityToSw();
-    global.setInterval(portalSyncClientVisibilityToSw, 5000);
+    portalSetPageForeground(true);
+    global.setInterval(portalSyncClientVisibilityToSw, 3000);
     try {
-      document.addEventListener("visibilitychange", portalSyncClientVisibilityToSw);
-      global.addEventListener("pageshow", portalSyncClientVisibilityToSw);
-      global.addEventListener("focus", portalSyncClientVisibilityToSw);
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "visible") portalSetPageForeground(true);
+      });
+      global.addEventListener("pageshow", function () {
+        portalSetPageForeground(true);
+      });
+      global.addEventListener("focus", function () {
+        portalSetPageForeground(true);
+      });
+      document.addEventListener(
+        "pointerdown",
+        function () {
+          portalSetPageForeground(true);
+        },
+        true
+      );
       global.addEventListener("pagehide", function () {
-        portalPostToServiceWorker({ type: "portal-client-visibility", visible: false });
+        portalSetPageForeground(false);
       });
       global.addEventListener("freeze", function () {
-        portalPostToServiceWorker({ type: "portal-client-visibility", visible: false });
+        portalSetPageForeground(false);
       });
     } catch (_b) {}
   }

@@ -8,7 +8,7 @@
  * v20260904-comms-push (Communications message + incoming-call banners)
  * v20260905-comms-36 (Home screen PWA numeric badge via Badging API)
  * v20260906-notif-open-fix (never navigate PWA to bare / — blank screen on iOS)
- * v20260906-comms-inapp-39 (OS logo banner only when portal is backgrounded / locked)
+ * v20260906-comms-sync-41 (staff COMMS live unread + in-app toast while PWA is open)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
@@ -203,7 +203,7 @@ self.addEventListener('message', function (event) {
     return;
   }
   if (d.type === 'portal-client-visibility') {
-    if (d.visible) portalForegroundUntil = Date.now() + 16000;
+    if (d.visible) portalForegroundUntil = Date.now() + 45000;
     else portalForegroundUntil = 0;
     return;
   }

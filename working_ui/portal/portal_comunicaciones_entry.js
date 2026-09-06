@@ -89,6 +89,7 @@
   var unreadRetryTimer = null;
   var unreadRefreshQueued = false;
   var unreadChannel = null;
+  var commsUiActive = true;
   var COMMS_ICO =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>';
 
@@ -420,13 +421,13 @@
     });
   }
 
-  function applyUnreadFromServer(n) {
+  function applyUnreadFromServer(n, fromAuthedRpc) {
     var next = Math.max(0, Number(n) || 0);
     if (Date.now() < unreadHoldUntil && next < unreadHoldMin) next = unreadHoldMin;
     else if (next >= unreadHoldMin) unreadHoldUntil = 0;
-    next = Math.max(next, cachedUnreadCount());
+    if (!fromAuthedRpc && next === 0) next = Math.max(next, cachedUnreadCount());
     applyUnreadBadge(next);
-    persistUnreadCount(next);
+    if (fromAuthedRpc) persistUnreadCount(next);
   }
 
   function scheduleUnreadRetry() {
@@ -462,7 +463,53 @@
         if (gs2 && gs2.data && gs2.data.session && gs2.data.session.user) return true;
       }
     } catch (_box) {}
+    try {
+      if (!c || !c.auth || typeof c.auth.setSession !== "function") return false;
+      var persisted = readPersistedAuthSession();
+      if (!persisted || !persisted.access_token) return false;
+      await c.auth.setSession({
+        access_token: persisted.access_token,
+        refresh_token: persisted.refresh_token || "",
+      });
+      var gs3 = await c.auth.getSession();
+      if (gs3 && gs3.data && gs3.data.session && gs3.data.session.user) {
+        try {
+          var box2 = supabaseBox() || {};
+          box2.client = c;
+          box2.session = gs3.data.session;
+          global.__PORTAL_SUPABASE__ = box2;
+        } catch (_b2) {}
+        return true;
+      }
+    } catch (_p) {}
     return false;
+  }
+
+  function readPersistedAuthSession() {
+    var stores = [];
+    try {
+      if (global.localStorage) stores.push(global.localStorage);
+    } catch (_l) {}
+    try {
+      if (global.sessionStorage) stores.push(global.sessionStorage);
+    } catch (_s) {}
+    for (var s = 0; s < stores.length; s++) {
+      var store = stores[s];
+      try {
+        for (var i = 0; i < store.length; i++) {
+          var k = store.key(i);
+          if (!k || !/^sb-.*-auth-token/i.test(k)) continue;
+          var raw = store.getItem(k);
+          if (!raw) continue;
+          var data = JSON.parse(raw);
+          if (data && data.access_token && data.user) return data;
+          if (data && data.currentSession && data.currentSession.access_token && data.currentSession.user) {
+            return data.currentSession;
+          }
+        }
+      } catch (_e) {}
+    }
+    return null;
   }
 
   async function inboxUnreadTotal(c, mode) {
@@ -568,6 +615,8 @@
         }
         if (!(await hasAuthSession(c))) {
           scheduleUnreadRetry();
+          var cachedWhileWaiting = cachedUnreadCount();
+          if (cachedWhileWaiting > 0 && lastUnreadCount === 0) applyUnreadBadge(cachedWhileWaiting);
           return lastUnreadCount;
         }
         var countsRes = await c.rpc("communication_unread_counts");
@@ -579,7 +628,8 @@
           }
           var inboxFallback = await inboxUnreadMax(c);
           applyUnreadFromServer(
-            Math.max(0, Number(res.data) || 0, inboxFallback)
+            Math.max(0, Number(res.data) || 0, inboxFallback),
+            true
           );
         } else {
           var parsed = parseUnreadCounts(countsRes && countsRes.data);
@@ -641,7 +691,7 @@
             parsed.administration,
             inboxSum
           );
-          applyUnreadFromServer(n);
+          applyUnreadFromServer(n, true);
           updateCommsLaunchLinks(
             parsed.personal > 0 || inboxSum > 0 || n > 0 ? "personal" : ""
           );
@@ -677,10 +727,20 @@
     }
   }
 
+  var unreadChannelAuthed = false;
+
   function subscribeUnreadRealtime() {
     var c = client();
     if (!c || typeof c.channel !== "function") return;
-    if (unreadChannel) return;
+    var authed = !!myUserId();
+    if (unreadChannel && unreadChannelAuthed === authed && authed) return;
+    if (unreadChannel) {
+      try {
+        c.removeChannel(unreadChannel);
+      } catch (_rm0) {}
+      unreadChannel = null;
+    }
+    unreadChannelAuthed = authed;
     try {
       unreadChannel = c
         .channel("portal-comms-unread-badge")
@@ -1043,7 +1103,7 @@
       }
     }
     var title = hideAdminAuthor ? "ADMIN" : who || meta.title || "Communications";
-    if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+    if (!commsPageIsActive()) {
       showCommsOsBanner(title, preview, lastToastConv);
       return;
     }
@@ -1063,6 +1123,19 @@
     } catch (_sh) {}
     if (messageToastTimer) global.clearTimeout(messageToastTimer);
     messageToastTimer = global.setTimeout(hideMessageToast, 8000);
+  }
+
+  function commsPageIsActive() {
+    try {
+      if (typeof global.portalPageIsForeground === "function") {
+        return !!global.portalPageIsForeground();
+      }
+    } catch (_p) {}
+    return commsUiActive;
+  }
+
+  function setCommsUiActive(on) {
+    commsUiActive = !!on;
   }
 
   function subscribeIfNotifyGranted() {
@@ -1600,7 +1673,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-39", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-sync-41", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
     } catch (_sw) {}
@@ -1882,11 +1955,27 @@
       watchIncomingCalls();
     });
     document.addEventListener("visibilitychange", function () {
+      setCommsUiActive(document.visibilityState === "visible");
       if (document.visibilityState === "visible") {
         void refreshUnread();
         if (!isCommsAppPage()) void pollRingingCalls();
       }
     });
+    global.addEventListener("pageshow", function () {
+      setCommsUiActive(true);
+    });
+    global.addEventListener("focus", function () {
+      setCommsUiActive(true);
+    });
+    global.addEventListener("pagehide", function () {
+      setCommsUiActive(false);
+    });
+    global.addEventListener("freeze", function () {
+      setCommsUiActive(false);
+    });
+    document.addEventListener("pointerdown", function () {
+      setCommsUiActive(true);
+    }, true);
   } catch (_e2) {}
   if (!global.__PORTAL_COMMS_UNREAD_POLL__) {
     global.__PORTAL_COMMS_UNREAD_POLL__ = true;

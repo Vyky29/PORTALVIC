@@ -1604,7 +1604,7 @@ async function portalBootstrapLoadStaffProfile(supabase, session, authEmailGate)
 
 export async function bootstrapDashboardSupabase(_opts) {
   if (typeof window !== "undefined") {
-    if (window.__PORTAL_SUPABASE__?.client) return;
+    if (window.__PORTAL_SUPABASE__?.client && window.__PORTAL_SUPABASE__?.session?.user?.id) return;
     if (window.__PORTAL_SUPABASE_BOOT_INFLIGHT__) {
       return window.__PORTAL_SUPABASE_BOOT_INFLIGHT__;
     }
@@ -1647,7 +1647,8 @@ export async function bootstrapDashboardSupabase(_opts) {
     page === "office" ||
     page === "ceo" ||
     page === "lead" ||
-    page === "choose"
+    page === "choose" ||
+    page === "staff"
       ? 4500
       : 2800;
 
@@ -1750,6 +1751,57 @@ export async function bootstrapDashboardSupabase(_opts) {
         } catch {
           /* ignore */
         }
+        if (typeof document !== "undefined" && document.documentElement) {
+          document.documentElement.classList.add("portal-auth-ready");
+        }
+        window.dispatchEvent(
+          new CustomEvent("portal:supabase-ready", { detail: window.__PORTAL_SUPABASE__ })
+        );
+        void (async function recoverStaffSession() {
+          for (let i = 0; i < 10; i++) {
+            await new Promise((r) => setTimeout(r, 800));
+            if (window.__PORTAL_SUPABASE__?.session?.user?.id) return;
+            try {
+              let {
+                data: { session: recovered },
+              } = await supabase.auth.getSession();
+              if (!recovered?.user?.id) {
+                const persisted = portalReadPersistedSupabaseSession();
+                if (persisted?.access_token) {
+                  await supabase.auth.setSession({
+                    access_token: persisted.access_token,
+                    refresh_token: persisted.refresh_token || "",
+                  });
+                  ({
+                    data: { session: recovered },
+                  } = await supabase.auth.getSession());
+                }
+              }
+              if (!recovered?.user?.id) continue;
+              let recoveredProfile = null;
+              try {
+                recoveredProfile = await portalBootstrapLoadStaffProfile(
+                  supabase,
+                  recovered,
+                  String(recovered.user?.email || "").trim()
+                );
+              } catch {
+                recoveredProfile = null;
+              }
+              window.__PORTAL_SUPABASE__ = {
+                client: supabase,
+                session: recovered,
+                staff_profile: recoveredProfile || null,
+              };
+              window.dispatchEvent(
+                new CustomEvent("portal:supabase-ready", { detail: window.__PORTAL_SUPABASE__ })
+              );
+              return;
+            } catch {
+              /* keep trying */
+            }
+          }
+        })();
       }
       return;
     }
