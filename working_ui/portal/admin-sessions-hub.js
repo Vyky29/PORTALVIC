@@ -4311,14 +4311,23 @@
     var n = clean(name);
     if (!n) return "";
     if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
-      return window.portalStaffDisplayName(n);
+      var portal = window.portalStaffDisplayName(n);
+      if (portal) return portal;
     }
     if (canonicalStaffMatchKey(n) === "luliya") return "Luliya";
     if (canonicalStaffMatchKey(n) === "javi") return "Javi Palankas";
     if (/^[A-Z]{2,}$/.test(n)) {
       return n.charAt(0) + n.slice(1).toLowerCase();
     }
-    return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+    /* Title-case words: "alex stone" / "Alex stone" → "Alex Stone" */
+    return n
+      .split(/\s+/)
+      .map(function (w) {
+        if (!w) return "";
+        if (/^[A-Z]{2,}$/.test(w)) return w.charAt(0) + w.slice(1).toLowerCase();
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      })
+      .join(" ");
   }
 
   function uniqueInstructorFilterNames(rawLabels) {
@@ -4327,8 +4336,20 @@
     for (var i = 0; i < list.length; i++) {
       var raw = clean(list[i]);
       if (!raw) continue;
-      var key = raw.toLowerCase();
-      if (!byKey[key]) byKey[key] = canonicalInstructorFilterName(raw);
+      var key = canonicalStaffMatchKey(raw) || raw.toLowerCase();
+      if (!key) continue;
+      var label = canonicalInstructorFilterName(raw);
+      var prev = byKey[key];
+      if (!prev) {
+        byKey[key] = label;
+        continue;
+      }
+      /* Prefer fuller label (roster first name + feedback surname → keep surname). */
+      var prevParts = prev.split(/\s+/).length;
+      var nextParts = label.split(/\s+/).length;
+      if (nextParts > prevParts || (nextParts === prevParts && label.length > prev.length)) {
+        byKey[key] = label;
+      }
     }
     return Object.keys(byKey)
       .map(function (k) {
