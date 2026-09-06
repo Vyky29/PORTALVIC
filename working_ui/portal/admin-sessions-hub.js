@@ -9009,12 +9009,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return "";
   }
 
-  function htmlDayBoardOverrideBadges(hub, slot, st, esc, opts) {
-    opts = opts || {};
+  function htmlDayBoardOverrideChipList(hub, slot, st, esc) {
     var chips = [];
     if (st.makeupDisp) {
       chips.push('<span class="override-chip override--replace">MakeUp</span>');
-    } else if (st.isTrial && !opts.trialOnBand) {
+    } else if (st.isTrial) {
       chips.push('<span class="override-chip override--trial">Trial</span>');
     } else if (st.isMakeup) {
       chips.push('<span class="override-chip override--replace">MakeUp</span>');
@@ -9045,6 +9044,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (st.isCancelled && !st.makeupDisp) {
       chips.push('<span class="override-chip override--cancelled">Cancelled</span>');
     }
+    return chips;
+  }
+
+  function htmlDayBoardOverrideBadges(hub, slot, st, esc) {
+    var chips = htmlDayBoardOverrideChipList(hub, slot, st, esc);
     return chips.length ? '<div class="ash-db-card__chips">' + chips.join(" ") + "</div>" : "";
   }
 
@@ -9085,14 +9089,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       rightBits +=
         '<div class="ash-db-seg"><span class="ash-db-seg__area">' + esc(area) + "</span></div>";
     }
+    var bandChips = htmlDayBoardOverrideChipList(hub, slot, st, esc);
     var bandRow =
       '<div class="ash-db-card__band-row">' +
       '<span class="ash-db-card__band">' +
       esc(band) +
       "</span>" +
-      (st.isTrial && !st.makeupDisp
-        ? ' <span class="override-chip override--trial">Trial</span>'
-        : "") +
+      (bandChips.length ? " " + bandChips.join(" ") : "") +
       "</div>";
     return (
       '<article class="ash-db-card ash-db-card--' +
@@ -9105,7 +9108,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       esc(name) +
       "</div>" +
       (venue ? '<span class="ash-db-card__venue">' + esc(venue) + "</span>" : "") +
-      htmlDayBoardOverrideBadges(hub, slot, st, esc, { trialOnBand: !!st.isTrial }) +
       htmlDayBoardFbBadge(st, esc) +
       "</div>" +
       "<div>" +
