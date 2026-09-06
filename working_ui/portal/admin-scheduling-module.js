@@ -86,7 +86,7 @@
   function viewHtml() {
     return (
       '<h1 class="page-title">Sessions · Schedule &amp; Covers</h1>' +
-      '<p class="page-intro">See who is scheduled, record overrides, and review the change log for one date. ' +
+      '<p class="page-intro">Day changes here update the same truth as <strong>Sessions Overview</strong> (covers, trials, absents). Use Overview to check the board; use this page to make the change. ' +
       '<a href="admin_roster_guide.html" target="_blank" rel="noopener" style="font-weight:700">Roster flow guide (English, with diagrams)</a> — which tool to use for term vs one-day changes.</p>' +
       moduleInnerHtml()
     );

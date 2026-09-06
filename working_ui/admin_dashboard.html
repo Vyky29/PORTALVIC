@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260905-buckets" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260906-overview-day-truth" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260906-dc-swim-only"></script>
   <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260906-board-only"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260906-overview-day-truth"></script>
   <script src="/portal/admin-portal-documents.js?v=20260905-expense-amount"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260905-buckets"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260813-office-phone-create"></script>
@@ -151,7 +151,7 @@
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
   <script src="/portal/cfk-app.js?v=20260817-services-one-board"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
-  <script src="/portal/admin-scheduling-module.js?v=20260704-search-combo"></script>
+  <script src="/portal/admin-scheduling-module.js?v=20260906-overview-day-truth"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -14199,8 +14199,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }else{
         sched.lastMsg = 'Change undone for this slot.';
       }
-      adminInvalidateSessionsHubLiveCaches();
       var demoId = slot && slot.demoId;
+      var clientUndo = getSchedSupabaseClient();
+      await portalSyncOverviewDayTruth(clientUndo, { refreshScheduling: false, forceOverviewRender: false });
       await refreshSchedulingModule();
       var slot2 = demoId ? sched.slotsById[demoId] : null;
       if(slot2) openSchedSlotDrawer(slot2);
@@ -14344,8 +14345,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       closeSchedDrawer();
       sched.lastMsg = participantName + ' moved to ' + (targetSlot.anchorTimeLabel || normTimeShort(targetSlot.anchorStart)) + ' · ' + String(targetSlot.venue || '') + '.';
       try{ if(typeof portalAdminToast === 'function') portalAdminToast(sched.lastMsg); }catch(_toast){}
-      adminInvalidateSessionsHubLiveCaches();
-      await schedRefreshRosterSourcesAfterOverride(client);
+      await portalSyncOverviewDayTruth(client, { refreshScheduling: false, forceOverviewRender: false });
       await refreshSchedulingModule();
       }finally{
         if(saveBtn){
@@ -14540,18 +14540,58 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return false;
     }
     async function schedRefreshRosterSourcesAfterOverride(client){
+      await portalSyncOverviewDayTruth(client, { refreshScheduling: true });
+    }
+    /**
+     * After Schedule & Covers / Validate day / day-ops writes: pull the same live
+     * roster + overrides Overview uses, so Sessions Overview stays the board you look at.
+     */
+    async function portalSyncOverviewDayTruth(client, opts){
+      opts = opts || {};
+      try{
+        if(window.PortalMadreFold && typeof window.PortalMadreFold.invalidateLiveMadreCache === 'function'){
+          window.PortalMadreFold.invalidateLiveMadreCache();
+        }
+      }catch(_m){}
+      try{ window.PORTAL_ROSTER_ROWS_CACHE = null; }catch(_rows){}
+      try{ adminInvalidateSessionsHubLiveCaches(); }catch(_hubCache){}
       try{
         if(client && typeof window.portalRefreshPortalRosterRowsFromSupabase === 'function'){
           await window.portalRefreshPortalRosterRowsFromSupabase(client);
         }else if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
           window.portalRefreshStaffDashboardSourceFromPortal();
         }
-        portalInvalidateAdminSlotsCache();
-        if(typeof window.portalNotifyAdminRosterDataChanged === 'function'){
-          window.portalNotifyAdminRosterDataChanged({ refreshScheduling: true });
-        }
       }catch(_rf){}
+      portalInvalidateAdminSlotsCache();
+      try{
+        if(typeof window.portalNotifyAdminRosterDataChanged === 'function'){
+          window.portalNotifyAdminRosterDataChanged({
+            refreshScheduling: opts.refreshScheduling === true && String(state.view || '') === 'scheduling'
+          });
+        }
+      }catch(_n){}
+      try{
+        var th = window.PortalDayOps && window.PortalDayOps.getTrackingHub && window.PortalDayOps.getTrackingHub();
+        if(th){
+          if(typeof th.invalidateComputeCaches === 'function') th.invalidateComputeCaches();
+          if(typeof th.refreshRosterRowsFromResolvedSource === 'function') th.refreshRosterRowsFromResolvedSource();
+        }
+        if(window.PortalDayOps && typeof window.PortalDayOps.ensurePayload === 'function'){
+          await window.PortalDayOps.ensurePayload({ force: true });
+        }
+        var ovPanel = $('c4kHubPanelOverview');
+        var overviewVisible = !!(ovPanel && !ovPanel.hidden && String(state.view || '') === 'c4k_sessions');
+        if(th && typeof th.render === 'function' && (overviewVisible || opts.forceOverviewRender)){
+          th.render();
+        }else if(String(state.view || '') === 'c4k_sessions' && typeof sessionsHubRefreshActiveTab === 'function'){
+          try{ void sessionsHubRefreshActiveTab(); }catch(_hubTab){}
+        }
+      }catch(_hubSync){}
+      if(opts.refreshScheduling && String(state.view || '') === 'scheduling' && typeof refreshSchedulingModule === 'function'){
+        try{ await refreshSchedulingModule(); }catch(_sched){}
+      }
     }
+    window.portalSyncOverviewDayTruth = portalSyncOverviewDayTruth;
     async function saveSchedOverrideFromDrawer(){
       var msgEl = $('schedFormErr');
       if(msgEl) msgEl.textContent = '';
@@ -14767,12 +14807,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             source_module: 'schedule_overrides'
           });
         }
-        adminInvalidateSessionsHubLiveCaches();
-        await schedRefreshRosterSourcesAfterOverride(client);
+        await portalSyncOverviewDayTruth(client, { refreshScheduling: false, forceOverviewRender: false });
         await refreshSchedulingModule();
-        if(state.view === 'c4k_sessions'){
-          try{ void sessionsHubRefreshActiveTab(); }catch(_hub){}
-        }
       }catch(postErr){
         console.warn('[portal] override saved; post-save refresh failed', postErr);
         sched.lastMsg = 'Override saved. Refresh if the table still looks stale.';
@@ -20472,7 +20508,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       { id:'pickup', label:'Pick up', iconId:'scheduling', mode:'panelPickup' }
     ];
     var SESSIONS_HUB_HEAD_META = {
-      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Who works each day — LOCAL-style board by worker (covers / trials). Feedback status is on Register.' },
+      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Day truth you look at — covers, trials and absents from Schedule & Covers / bookings land here. Feedback status is on Register.' },
       feedback:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it — engagement, emotions, independence, narrative and notes.' },
       positive:{ iconId:'c4k_reviews', tone:'positive', title:'SESSION FEEDBACK', sub:'Raw session feedback next to the parent-safe filtered version generated on review.' },
       relevant:{ iconId:'c4k_relevant', tone:'relevant', title:'NOTES', sub:'Internal notes — informational only, with an option to email CEOs or other staff.' },
@@ -21699,7 +21735,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260906-sandra-javi';
+    var PORTAL_ADMIN_HUB_BUILD = '20260906-overview-day-truth';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -23393,16 +23429,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             );
           }catch(_a){}
           try{
-            if(typeof adminInvalidateSessionsHubLiveCaches === 'function') adminInvalidateSessionsHubLiveCaches();
+            var clientSd = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+            if(typeof portalSyncOverviewDayTruth === 'function'){
+              await portalSyncOverviewDayTruth(clientSd, { refreshScheduling: true, forceOverviewRender: true });
+            }else{
+              if(typeof adminInvalidateSessionsHubLiveCaches === 'function') adminInvalidateSessionsHubLiveCaches();
+              if(window.PortalMadreFold && typeof window.PortalMadreFold.invalidateLiveMadreCache === 'function'){
+                window.PortalMadreFold.invalidateLiveMadreCache();
+              }
+            }
           }catch(_c){}
           try{
             if(typeof refreshSchedulingModule === 'function') await refreshSchedulingModule();
           }catch(_r){}
-          try{
-            if(window.PortalMadreFold && typeof window.PortalMadreFold.invalidateLiveMadreCache === 'function'){
-              window.PortalMadreFold.invalidateLiveMadreCache();
-            }
-          }catch(_m){}
         }
         await portalSdLoad();
         return true;

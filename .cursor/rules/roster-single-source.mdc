@@ -11,7 +11,8 @@
 
 ## Day-of exceptions (not a second roster)
 
-- `schedule_overrides` — cover, cancel, session_add on the day.
+- `schedule_overrides` — cover, cancel, session_add on the day. **Sessions Overview** paints these (look-here board; see `overview-day-truth.mdc`).
+- After admin day writes, `portalSyncOverviewDayTruth` refreshes MADRE / roster / Overview caches.
 - `sundayDateOverrides.replaceInstructor` — dated Sunday instructor swaps (Westway covers, hub lead pair, Giuseppe→Luliya). Applied by admin + staff **in addition to** `portal_roster_rows` overlay.
 
 ## Do not use for roster rows

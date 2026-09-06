@@ -1,0 +1,33 @@
+---
+description: Sessions Overview is the day board Victor looks at; Schedule & Covers and bookings update that same truth.
+alwaysApply: true
+---
+
+# Sessions Overview = day truth you look at
+
+Victor's day-to-day surface is **Sessions Overview** (admin Sessions hub → overview day board). Same role LOCAL had as the board he watches.
+
+## How to change the day
+
+| Where | What it writes | Overview sees it via |
+|-------|----------------|----------------------|
+| **Schedule & Covers** | `schedule_overrides` (+ MADRE fold) | Hub expand + override paint |
+| **Validate day** | `staff_unavailability` + COVER NEEDED overrides | Same |
+| **Finish booking / trial paid** | dated `portal_roster_rows` + trial override + MADRE fold | Same |
+| **Edit term slot** | `portal_roster_rows` (rest of term) | Roster refresh |
+| **Cursor / machine** | `portal_roster_canonical.js` and/or LOCAL port | Deploy + refresh |
+
+After portal day writes, call **`portalSyncOverviewDayTruth`** (admin dashboard) so MADRE / roster / override caches and the Overview board stay current.
+
+## LOCAL vs Overview
+
+- **LOCAL** (`local_dc_staff_week.html`) = Autumn **authoring** for standing / week-1 / dated EXTRA before overrides. Still commit+push when it changes; port into `portal_roster_canonical.js`.
+- **Overview** = **runtime look-here** board (canonical + MADRE + `portal_roster_rows` + `schedule_overrides`).
+- Do **not** make Overview read LOCAL HTML in the browser.
+- Prefer day exceptions via Schedule & Covers (overrides) instead of new one-off hardcodes in canonical for every cover.
+
+## Agent habits
+
+1. When Victor says something is wrong on the day board, check **Overview** first, then Schedule & Covers / overrides / dated roster rows — not a second parallel truth.
+2. After implementing Schedule / Validate / booking day writes, ensure Overview refresh is wired (do not leave caches stale).
+3. Keep alerts paused until Victor asks to reactivate (see `reactivate-alerts-after-rota.mdc`).

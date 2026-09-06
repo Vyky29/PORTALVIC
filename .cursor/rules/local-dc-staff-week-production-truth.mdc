@@ -1,11 +1,13 @@
 ---
-description: local_dc_staff_week.html is production roster truth; always commit and push when it changes.
+description: LOCAL HTML is Autumn authoring; Overview is look-here; always commit/push LOCAL + canonical ports.
 alwaysApply: true
 ---
 
-# LOCAL DC staff week = production truth (before overrides)
+# LOCAL DC staff week = Autumn authoring truth (before overrides)
 
-`working_ui/local_dc_staff_week.html` is the **authoritative Autumn board** for week-1 DC, standing start dates, weekend/after-school phases, and Sep-specific covers **before** day-of `schedule_overrides`.
+`working_ui/local_dc_staff_week.html` is the **authoritative Autumn board draft** for week-1 DC, standing start dates, weekend/after-school phases, and Sep-specific covers **before** day-of `schedule_overrides`.
+
+**Day-to-day look-here surface for Victor:** **Sessions Overview** (see `overview-day-truth.mdc`). LOCAL is not opened in production admin; changes must be ported into `portal_roster_canonical.js` (and day ops preferably via Schedule & Covers) so Overview matches.
 
 ## When this file changes
 
@@ -29,14 +31,13 @@ Never park week-1 / `DATE_EXTRA` / phase painting behind `STANDING_ONLY = true` 
 
 ## Day offs vs LOCAL board
 
-- Admin **Validate day** writes `staff_unavailability` (+ optional COVER NEEDED `schedule_overrides`). That is live truth for staff Today / Schedule & Covers.
+- Admin **Validate day** writes `staff_unavailability` (+ optional COVER NEEDED `schedule_overrides`). That is live truth for staff Today / Schedule & Covers / Overview.
 - Paint validated offs on `local_dc_staff_week.html` via `STAFF_DAY_OFF` so the LOCAL cards match what you approved (Sandra may be note-only if she is not on this AS/DC board).
 - Do **not** expect Validate day to rewrite LOCAL HTML by itself.
 
 ## Stripe / Mark paid → roster
 
-- Finish-booking paid (Stripe / bank) runs `syncOpsAfterFinishBookingPaid` → MADRE fold + trial `schedule_overrides`.
-- LOCAL board still needs a matching seat edit (e.g. DATE_EXTRA / EXTRA open → named trial) when you want the card preview to show the paid place.
+- Finish-booking paid (Stripe / bank) runs `syncOpsAfterFinishBookingPaid` → MADRE fold + trial `schedule_overrides` (+ dated `portal_roster_rows`). Overview should show the trial without editing LOCAL; LOCAL card preview is optional.
 
 ## Related files
 
