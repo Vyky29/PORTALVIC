@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 66;
+  var SOURCE_VERSION = 67;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -729,7 +729,19 @@
         session_date: "2026-09-06",
       };
     });
-    return john.concat(berta);
+    var godsway = AUTUMN_SUNDAY_HUB_GODSWAY.map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "GODSWAY",
+        service: "Multi-Activity",
+        area: "Hub Room",
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+    return john.concat(berta).concat(godsway);
   }
 
   /**
@@ -1681,6 +1693,16 @@
     { client_name: "Rayyan F", time_slot: "1.15 to 2" },
   ];
 
+  /** LOCAL EXTRA Sunday Hub Multi — Godsway book (Samer…Amaar Ah). */
+  var AUTUMN_SUNDAY_HUB_GODSWAY = [
+    { client_name: "Samer", time_slot: "9.30 to 10.15" },
+    { client_name: "Yusuf Ah", time_slot: "10.15 to 11" },
+    { client_name: "Arthur Mo", time_slot: "11 to 11.45" },
+    { client_name: "Gabriel", time_slot: "11.45 to 12.30" },
+    { client_name: "Adaam Ah", time_slot: "12.30 to 1.15" },
+    { client_name: "Amaar Ah", time_slot: "1.15 to 2" },
+  ];
+
   function isSundaySwimfarmHubMultiRow(r) {
     if (!r || !isMultiActivityService(r.service)) return false;
     if (!/swimfarm/i.test(String(r.venue || "SwimFarm"))) return false;
@@ -1696,10 +1718,12 @@
       }
     }
     if (!sunday) return false;
-    /* Prefer Hub, but also treat Berta/John/Emanuel/Giuseppe Sunday Multi as Hub books
+    /* Prefer Hub, but also treat known Hub staff Sunday Multi as Hub books
        (summer rows sometimes omit area and escaped the scrub). */
     if (/hub/i.test(String(r.area || ""))) return true;
-    return /\b(john|emanuel|giuseppe|berta)\b/i.test(String(r.instructors || ""));
+    return /\b(john|emanuel|giuseppe|berta|godsway|bismark|bismarck)\b/i.test(
+      String(r.instructors || "")
+    );
   }
 
   function autumnSundayStandingHubRows() {
@@ -1718,17 +1742,15 @@
         };
       });
     }
-    return mapBook("BERTA", AUTUMN_SUNDAY_HUB_BERTA).concat(
-      mapBook("EMANUEL", AUTUMN_SUNDAY_HUB_EMANUEL)
-    );
+    return mapBook("BERTA", AUTUMN_SUNDAY_HUB_BERTA)
+      .concat(mapBook("EMANUEL", AUTUMN_SUNDAY_HUB_EMANUEL))
+      .concat(mapBook("GODSWAY", AUTUMN_SUNDAY_HUB_GODSWAY));
   }
 
   /**
    * Sunday Hub Multi = LOCAL only.
-   * Drop legacy summer/DB Sunday Multi for Berta / John / Emanuel / Giuseppe (with or
-   * without Hub in area — empty area previously left Jack S under Berta after JOHN→BERTA).
-   * Re-inject: standing Berta Lead + Emanuel; Sun 6 dated John cover + Berta Lead.
-   * Godsway Hub + Javier/Aurora/Roberto pool Multi are kept.
+   * Drop legacy summer/DB Sunday Multi for Hub books (with or without Hub in area).
+   * Re-inject: standing Berta Lead + Godsway + Emanuel; Sun 6 dated John cover + Berta + Godsway.
    */
   function scrubAndEnsureSep6HubCover(rows) {
     var out = [];
@@ -1736,7 +1758,7 @@
       if (!r) return;
       if (isSundaySwimfarmHubMultiRow(r)) {
         var inst = String(r.instructors || "");
-        if (/\b(john|emanuel|giuseppe|berta)\b/i.test(inst)) return;
+        if (/\b(john|emanuel|giuseppe|berta|godsway|bismark|bismarck)\b/i.test(inst)) return;
       }
       out.push(r);
     });
