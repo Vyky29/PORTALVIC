@@ -4580,11 +4580,10 @@
     } catch (e) {
       this._reviewedKeys = {};
     }
-    /* LOCAL-style day board is default; table kept for dense filter work. */
+    /* Overview is always the staffing day board (no Table layout). */
     this.overviewLayout = "board";
     try {
-      var lay = localStorage.getItem("ash_overview_layout_v1");
-      if (lay === "table" || lay === "board") this.overviewLayout = lay;
+      localStorage.removeItem("ash_overview_layout_v1");
     } catch (_lay) {}
     this.weekStart = mondayOfWeek(isoToday());
     this.selectedDay = isoToday();
@@ -4630,7 +4629,8 @@
     );
   };
 
-  AdminSessionsHub.prototype.setPayload = function (payload) {
+  AdminSessionsHub.prototype.setPayload = function (payload, setOpts) {
+    setOpts = setOpts || {};
     this.payload = payload || {};
     if (
       (!this.payload.schedule_overrides || !this.payload.schedule_overrides.length) &&
@@ -4665,6 +4665,10 @@
     // different day. Preserve whatever day/range the user is currently viewing.
     if (this.mode === "feedback" && !this._feedbackDateRangeReady) {
       this.initFeedbackDateRange();
+    }
+    if (setOpts.quiet) {
+      if (this.opts && this.opts.externalTabs) this.indexFeedback();
+      return;
     }
     if (this.opts && this.opts.externalTabs) {
       this.indexFeedback();
@@ -5242,15 +5246,23 @@
     function runRosterUpdate() {
       if (!global.document) return;
       var roots = global.document.querySelectorAll(".admin-sessions-hub-root");
+      var needFeedbackRefresh = false;
       for (var i = 0; i < roots.length; i++) {
         var hub = roots[i]._ashHubInstance;
         if (!hub || typeof hub.refreshRosterRowsFromResolvedSource !== "function") continue;
         hub.refreshRosterRowsFromResolvedSource();
-        // Only re-render hubs whose panel is actually on screen — hidden tabs
-        // re-render lazily when the admin opens them.
-        if (hub.root && hub.root.isConnected && hubRootIsVisible(hub.root)) hub.render();
+        var visible = hub.root && hub.root.isConnected && hubRootIsVisible(hub.root);
+        if (visible) {
+          /* Overview staffing board: re-paint when roster changes. Feedback hubs need live FB. */
+          if (hub.tab === "tracking") hub.render();
+          else {
+            needFeedbackRefresh = true;
+            hub.render();
+          }
+        }
       }
       if (
+        needFeedbackRefresh &&
         global.PortalDayOps &&
         typeof global.PortalDayOps.refreshSessionFeedback === "function"
       ) {
@@ -5266,7 +5278,7 @@
         } catch (e) {
           console.warn("[AdminSessionsHub] roster update", e);
         }
-      }, 350);
+      }, 800);
     });
   }
 
@@ -8008,15 +8020,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       var layoutBtn = t.closest("[data-ash-overview-layout]");
       if (layoutBtn) {
-        var nextLay = layoutBtn.getAttribute("data-ash-overview-layout");
-        if (nextLay === "table" || nextLay === "board") {
-          hub.overviewLayout = nextLay;
-          try {
-            localStorage.setItem("ash_overview_layout_v1", nextLay);
-          } catch (_ls) {}
-          if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
-          else hub.render();
-        }
+        /* Table layout removed — Overview is board-only. */
         return;
       }
       var tabBtn = t.closest("[data-ash-tab]");
@@ -8926,18 +8930,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   }
 
   AdminSessionsHub.prototype.htmlOverviewLayoutToggle = function () {
-    var esc = this.escapeHtml;
-    var lay = this.overviewLayout === "table" ? "table" : "board";
-    return (
-      '<div class="ash-db-layout" role="group" aria-label="Overview layout">' +
-      '<button type="button" class="ash-db-layout__btn' +
-      (lay === "board" ? " is-active" : "") +
-      '" data-ash-overview-layout="board">Day board</button>' +
-      '<button type="button" class="ash-db-layout__btn' +
-      (lay === "table" ? " is-active" : "") +
-      '" data-ash-overview-layout="table">Table</button>' +
-      "</div>"
-    );
+    return "";
   };
 
   AdminSessionsHub.prototype.htmlDayBoard = function (displaySlots, unitComplete, unitAbsent) {
@@ -9203,8 +9196,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '<div class="ash-empty">Club closed \u2014 no sessions on this date.</div></td></tr></tbody></table></div>'
       );
     }
-    var useBoard = hub.overviewLayout !== "table";
-    /* Shell first — board/table body fills via scheduleOverviewBodyPaint (keeps tab responsive). */
+    var useBoard = true;
+    /* Shell first — board body fills via scheduleOverviewBodyPaint (keeps tab responsive). */
     return (
       this.htmlFeedbackWeekDaysRow({ overviewPicker: true, staffingGuide: true }) +
       '<p class="ash-feedback-filter-hint" role="status">' +
@@ -9215,9 +9208,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<h3 class="ash-table-title">' +
       esc(formatLongDate(this.selectedDay)) +
       ' <span class="ash-badge ash-badge--booked">' +
-      esc(useBoard ? "Who works" : "Roster") +
+      esc("Who works") +
       "</span></h3>" +
-      this.htmlOverviewLayoutToggle() +
       "</div>" +
       '<div data-ash-overview-body class="ash-overview-body">' +
       '<p class="ash-feedback-filter-hint" role="status">Building day board…</p>' +
@@ -9229,11 +9221,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var hub = this;
     if (hubDayIsClubClosed(hub, this.selectedDay)) return "";
     var ctx = hub.staffingDisplayContextForDay(this.selectedDay);
-    var displaySlots = ctx.displaySlots;
-    var useBoard = hub.overviewLayout !== "table";
-    return useBoard
-      ? hub.htmlDayBoard(displaySlots, {}, {})
-      : hub.htmlTrackingTableBodyStaffing(displaySlots);
+    return hub.htmlDayBoard(ctx.displaySlots, {}, {});
   };
 
   AdminSessionsHub.prototype.htmlTrackingTableBodyStaffing = function (displaySlots) {

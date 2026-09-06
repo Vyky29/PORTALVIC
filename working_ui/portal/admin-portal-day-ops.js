@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260723-lead-view-by-id';
+  var PORTAL_DAY_OPS_BUILD = '20260906-overview-no-autorefresh';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -263,10 +263,9 @@
       feedbackHub.setPayload(payload);
       if (typeof feedbackHub.render === 'function') feedbackHub.render();
     }
+    /* Overview is a staffing board — do not re-paint on every feedback poll/realtime tick. */
     if (trackingHub && typeof trackingHub.setPayload === 'function') {
-      trackingHub.setPayload(payload);
-      if (typeof trackingHub.render === 'function') trackingHub.render();
-      else if (typeof trackingHub.renderPanels === 'function') trackingHub.renderPanels();
+      trackingHub.setPayload(payload, { quiet: true });
     }
     exposePortalAdminDebugGlobals();
     portalDayOpsRenderLiveLoadStatus();
@@ -1660,8 +1659,8 @@
             if (enrichWait) {
               await promiseWithTimeout(enrichWait, ENRICH_WAIT_MS, null);
               if (th && typeof th.setPayload === 'function') {
-                th.setPayload(payload);
-                reRenderHub(th);
+                /* Quiet: keep Overview stable; feedback land on Register hub only. */
+                th.setPayload(payload, { quiet: true });
               }
             }
             if (tabId === 'incidents' || tabId === 'cancellations' || tabId === 'lead' || tabId === 'venue') {
@@ -1672,9 +1671,9 @@
               if (deferWait) {
                 await promiseWithTimeout(deferWait, ENRICH_WAIT_MS, null);
                 if (th && typeof th.setPayload === 'function') {
-                  th.setPayload(payload);
-                  reRenderHub(th);
+                  th.setPayload(payload, { quiet: true });
                 }
+                if (tabId !== 'overview') reRenderHub(th);
               }
             }
           } catch (_enrichWait) {}
