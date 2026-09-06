@@ -671,7 +671,13 @@
       godsway: { hourly_rate: 18, role_label: "Support Worker 1" },
       giuseppe: { hourly_rate: 20, role_label: "Support Worker 2" },
       bismark: { hourly_rate: 23, role_label: "Support Worker 3" },
-      john: { hourly_rate: 25, role_label: "Support Worker" },
+      john: {
+        hourly_rate: 25,
+        role_label: "Support Worker 2",
+        primaryRole: "Support Worker",
+        roleRates: { "Support Worker": 25 },
+        roleScales: { "Support Worker": "Scale 2" },
+      },
       berta: { hourly_rate: 30, role_label: "Service Lead" },
       emanuel: { hourly_rate: 18, role_label: "Support Worker 1" },
       luliya: {
@@ -2744,9 +2750,12 @@
         lulia: 1,
         aurora: 1,
         dan: 1,
-        javier: 1
+        javier: 1,
+        john: 1,
       };
       if (forceKeys[key] && fb.roleRates && typeof fb.roleRates === "object") {
+        /* Authoritative map replaces DB roles (avoids stale Service Lead £30 next to John £25). */
+        state.roleRates = {};
         Object.keys(fb.roleRates).forEach((role) => {
           state.roleRates[role] = Number(fb.roleRates[role]);
         });
