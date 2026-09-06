@@ -25,6 +25,7 @@
     "deploy:feedback-narrative-filter": "supabase functions deploy portal-feedback-narrative-filter --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
     "deploy:feedback-narrative-validate": "supabase functions deploy portal-feedback-narrative-validate --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
     "deploy:feedback-narrative": "supabase functions deploy portal-feedback-narrative-validate --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-feedback-narrative-filter --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
+    "apply:feedback-2030-wa": "node database/local-vault/apply-feedback-2030-wa-cron.mjs",
     "deploy:incoming-call-push": "supabase functions deploy portal-push-dispatch-incoming-call --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
     "deploy:family-push": "supabase functions deploy portal-push-subscribe-family --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-push-dispatch-parent-notify --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb && supabase functions deploy portal-parent-notify-send --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
     "deploy:cancellation-submit": "supabase functions deploy portal-cancellation-submit --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
