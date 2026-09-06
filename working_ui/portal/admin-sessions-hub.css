@@ -1833,3 +1833,28 @@
       border-radius: 10px;
       background: #fff;
     }
+    .ash-overview-log {
+      margin: 12px 0 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .ash-overview-log__summary {
+      cursor: pointer;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      list-style: none;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ash-overview-log__summary::-webkit-details-marker {
+      display: none;
+    }
+    .ash-overview-log__body {
+      padding: 0 8px 10px;
+      min-width: 0;
+    }

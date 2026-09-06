@@ -782,14 +782,14 @@
   } catch (_buildLog) {}
 
   function hubScriptNeedsReload() {
-    if (global.AdminSessionsHub) return false;
     var tagged = document.querySelector('script[data-admin-sessions-hub="1"]');
     var build = portalHubBuildToken();
-    if (tagged && build && tagged.src.indexOf(build) === -1) return true;
+    if (tagged && build && tagged.src && tagged.src.indexOf(build) === -1) return true;
+    if (!global.AdminSessionsHub) return false;
     if (
-      global.AdminSessionsHub &&
-      (!global.AdminSessionsHub.prototype ||
-        typeof global.AdminSessionsHub.prototype.htmlOverviewFeedbackLoadHint !== 'function')
+      !global.AdminSessionsHub.prototype ||
+      typeof global.AdminSessionsHub.prototype.htmlOverviewFeedbackLoadHint !== 'function' ||
+      typeof global.AdminSessionsHub.prototype.htmlDayBoard !== 'function'
     ) {
       return true;
     }
