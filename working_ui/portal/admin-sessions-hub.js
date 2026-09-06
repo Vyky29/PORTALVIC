@@ -9248,11 +9248,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     /*
-     * One grid, max 3 columns per row (e.g. Sun 6: 8 staff → 3 + 3 + 2)
-     * so cards stay readable — not swim|support side-by-side as 6 skinny cols.
+     * Row 1: swimming instructors + hub support (typically 6 on Sunday).
+     * Row 2: climbing only (typically Alex + Carlos) — same 6-track grid so
+     * card width matches the row above (not stretched to half-width).
      */
-    var allKeys = swimKeys.concat(supportKeys).concat(climbKeys);
-    if (!allKeys.length) {
+    var poolKeys = swimKeys.concat(supportKeys);
+    if (!poolKeys.length && !climbKeys.length) {
       return (
         '<div class="ash-day-board" data-ash-day-board="1">' +
         '<div class="ash-db-empty">' +
@@ -9260,12 +9261,21 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         "</div></div>"
       );
     }
-    return (
-      '<div class="ash-day-board" data-ash-day-board="1">' +
-      '<div class="ash-day-board__group ash-day-board__group--all" style="--ash-db-cols:3">' +
-      renderCols(allKeys) +
-      "</div></div>"
-    );
+    var html = '<div class="ash-day-board" data-ash-day-board="1">';
+    if (poolKeys.length) {
+      html +=
+        '<div class="ash-day-board__group ash-day-board__group--pool">' +
+        renderCols(poolKeys) +
+        "</div>";
+    }
+    if (climbKeys.length) {
+      html +=
+        '<div class="ash-day-board__group ash-day-board__group--climb" aria-label="Climbing">' +
+        renderCols(climbKeys) +
+        "</div>";
+    }
+    html += "</div>";
+    return html;
   };
 
   AdminSessionsHub.prototype.htmlTrackingTableBody = function (displaySlots, unitComplete, unitAbsent) {

@@ -1644,22 +1644,34 @@
       margin: 0 0 16px;
       min-width: 0;
       display: grid;
-      gap: 12px;
+      gap: 14px;
     }
     .ash-day-board__group {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
       min-width: 0;
       width: 100%;
     }
-    @media (max-width: 1100px) {
-      .ash-day-board__group {
+    /* Climbing shares the same 6-track width so the 2 cards match row-1 card width. */
+    .ash-day-board__group--climb {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    @media (max-width: 1400px) {
+      .ash-day-board__group,
+      .ash-day-board__group--climb {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 900px) {
+      .ash-day-board__group,
+      .ash-day-board__group--climb {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
-    @media (max-width: 720px) {
-      .ash-day-board__group {
+    @media (max-width: 560px) {
+      .ash-day-board__group,
+      .ash-day-board__group--climb {
         grid-template-columns: 1fr;
       }
     }
@@ -1668,7 +1680,7 @@
       overflow: hidden;
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 12px 10px 10px;
+      padding: 10px 8px 8px;
       background: #f8fbfe;
     }
     .ash-db-col__head {
@@ -1735,13 +1747,13 @@
     }
     .ash-db-card {
       display: grid;
-      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr);
-      gap: 5px 8px;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr);
+      gap: 4px 6px;
       align-items: start;
       background: #fff;
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 8px 9px;
+      padding: 7px 7px;
       min-width: 0;
       box-sizing: border-box;
     }
