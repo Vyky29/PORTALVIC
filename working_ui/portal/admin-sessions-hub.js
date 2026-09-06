@@ -3249,39 +3249,53 @@
     var label = cfg.label;
     var val = clean(cfg.value);
     var opts = cfg.options || [];
-    var display = "";
-    if (val) {
-      for (var i = 0; i < opts.length; i++) {
-        if (opts[i] === val || completedByMatchesInstructor(opts[i], val)) {
-          display = opts[i];
-          break;
-        }
-      }
-      if (!display) display = val;
-    }
     var ph = cfg.placeholder || "All " + String(label || "").toLowerCase() + "s";
-    return (
+    var html =
       '<label class="ash-filter-label">' +
       esc(label) +
-      '<div class="ash-filter-combo" id="' +
+      '<select id="' +
       id +
-      'Combo">' +
-      '<input type="hidden" id="' +
-      id +
-      '" value="' +
-      esc(val) +
-      '" />' +
-      '<input type="text" class="ash-input ash-input--instructor ash-filter-combo__inp" id="' +
-      id +
-      'Input" value="' +
-      esc(display) +
-      '" placeholder="' +
+      '" class="ash-input ash-input--filter-select" aria-label="' +
+      esc(label) +
+      '">' +
+      '<option value="">' +
       esc(ph) +
-      '" autocomplete="off" spellcheck="false" aria-autocomplete="list" />' +
-      '<div class="ash-filter-suggest" id="' +
-      id +
-      'Suggest" role="listbox" hidden></div></div></label>'
-    );
+      "</option>";
+    var seen = Object.create(null);
+    if (val) seen[String(val).toLowerCase()] = true;
+    for (var i = 0; i < opts.length; i++) {
+      var n = clean(opts[i]);
+      if (!n) continue;
+      var key = n.toLowerCase();
+      if (seen[key]) continue;
+      seen[key] = true;
+      var selected = false;
+      if (val) {
+        if (n === val) selected = true;
+        else if (
+          id === "ashInstructorFilter" &&
+          typeof completedByMatchesInstructor === "function" &&
+          completedByMatchesInstructor(n, val)
+        ) {
+          selected = true;
+        }
+      }
+      html +=
+        '<option value="' +
+        esc(n) +
+        '"' +
+        (selected ? " selected" : "") +
+        ">" +
+        esc(n) +
+        "</option>";
+    }
+    if (val && !seen[String(val).toLowerCase()]) {
+      /* Keep a stale filter visible until cleared. */
+      html +=
+        '<option value="' + esc(val) + '" selected>' + esc(val) + "</option>";
+    }
+    html += "</select></label>";
+    return html;
   }
 
   /** Acton aquatic: same client twice same day (e.g. Eiji 17:30 + 18:00) needs two feedbacks when instructors differ. */
@@ -6213,6 +6227,12 @@
       var n = clean(rows[i].completed_by_name);
       if (n) raw.push(n);
     }
+    var overview = this.overviewFilterOptionsForDay(dayIso);
+    if (overview && overview.instructors) {
+      for (var j = 0; j < overview.instructors.length; j++) {
+        raw.push(overview.instructors[j]);
+      }
+    }
     return uniqueInstructorFilterNames(raw);
   };
 
@@ -8398,136 +8418,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   AdminSessionsHub.prototype.bindAshFilterCombos = function () {
     var hub = this;
-    var comboApi = global.PortalAdminSearchCombo;
     ["ashClientFilter", "ashInstructorFilter", "ashServiceFilter"].forEach(function (baseId) {
-      function optionsForCombo() {
-        if (baseId === "ashClientFilter") {
-          return hub.clientFilterOptionsForDay(hub.selectedDay);
-        }
-        if (baseId === "ashInstructorFilter") {
-          if (hub.tab === "feedback" || hub.mode === "feedback") {
-            return hub.instructorFilterOptionsForDay(hub.selectedDay);
-          }
-          return (hub.overviewFilterOptionsForDay(hub.selectedDay) || {}).instructors || [];
-        }
-        return (hub.overviewFilterOptionsForDay(hub.selectedDay) || {}).services || [];
-      }
-
-      function allLabelForCombo() {
-        if (baseId === "ashClientFilter") return "All participants";
-        if (baseId === "ashInstructorFilter") return "All instructors";
-        return "All services";
-      }
-
-      function setFilterValue(val) {
-        var next = val || "";
+      var sel = document.getElementById(baseId);
+      if (!sel || String(sel.tagName || "").toLowerCase() !== "select") return;
+      if (sel.getAttribute("data-ash-filter-bound") === "1") return;
+      sel.setAttribute("data-ash-filter-bound", "1");
+      sel.addEventListener("change", function () {
+        var next = clean(sel.value);
         if (baseId === "ashClientFilter") hub.clientSearch = next;
         else if (baseId === "ashInstructorFilter") hub.instructorFilter = next;
         else hub.serviceFilter = next;
-      }
-
-      function currentFilterValue() {
-        if (baseId === "ashClientFilter") return hub.clientSearch;
-        if (baseId === "ashInstructorFilter") return hub.instructorFilter;
-        return hub.serviceFilter;
-      }
-
-      if (comboApi) {
-        comboApi.ensure({
-          id: baseId,
-          placeholder: allLabelForCombo(),
-          allLabel: allLabelForCombo(),
-          maxVisible: 24,
-          onChange: function (val) {
-            setFilterValue(val);
-            hub.refreshClientFilterView();
-          },
-        });
-        comboApi.setOptions(baseId, optionsForCombo(), { keepValue: true });
-        var cur = currentFilterValue();
-        if (cur) comboApi.setValue(baseId, cur, cur);
-        return;
-      }
-
-      var hid = document.getElementById(baseId);
-      var inp = document.getElementById(baseId + "Input");
-      var sug = document.getElementById(baseId + "Suggest");
-      if (!inp || !hid || !sug || inp.getAttribute("data-ash-filter-bound") === "1") return;
-      inp.setAttribute("data-ash-filter-bound", "1");
-
-      function renderSuggest(query) {
-        sug.replaceChildren();
-        var qt = String(query || "").trim().toLowerCase();
-        var opts = optionsForCombo();
-        var matches = [];
-        if (!qt) matches = opts.slice(0, 24);
-        else {
-          for (var i = 0; i < opts.length; i++) {
-            if (String(opts[i] || "").toLowerCase().indexOf(qt) !== -1) matches.push(opts[i]);
-            if (matches.length >= 24) break;
-          }
-        }
-        var clearBtn = document.createElement("button");
-        clearBtn.type = "button";
-        clearBtn.className = "ash-filter-suggest__btn ash-filter-suggest__btn--all";
-        clearBtn.textContent = allLabelForCombo();
-        clearBtn.addEventListener("mousedown", function (ev) {
-          ev.preventDefault();
-          hid.value = "";
-          inp.value = "";
-          sug.hidden = true;
-          setFilterValue("");
-          hub.refreshClientFilterView();
-        });
-        sug.appendChild(clearBtn);
-        matches.forEach(function (label) {
-          var btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "ash-filter-suggest__btn";
-          btn.textContent = label;
-          btn.addEventListener("mousedown", function (ev) {
-            ev.preventDefault();
-            hid.value = label;
-            inp.value = label;
-            sug.hidden = true;
-            setFilterValue(label);
-            hub.refreshClientFilterView();
-          });
-          sug.appendChild(btn);
-        });
-        if (!matches.length && !qt) {
-          var empty = document.createElement("div");
-          empty.className = "portal-search-combo__empty muted";
-          empty.textContent = opts.length ? "Type to search" : "No options loaded";
-          sug.appendChild(empty);
-        }
-        sug.hidden = false;
-      }
-
-      inp.addEventListener("input", function () {
-        hid.value = "";
-        setFilterValue("");
-        renderSuggest(inp.value);
-      });
-      inp.addEventListener("focus", function () {
-        renderSuggest(inp.value);
-      });
-      inp.addEventListener("keydown", function (ev) {
-        if (ev.key === "Escape") {
-          sug.hidden = true;
-          return;
-        }
-        if (ev.key !== "Enter") return;
-        var first = sug.querySelector(".ash-filter-suggest__btn:not(.ash-filter-suggest__btn--all)");
-        if (first) {
-          ev.preventDefault();
-          first.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-        }
-      });
-      inp.addEventListener("blur", function () {
-        setTimeout(function () {
-          sug.hidden = true;
-        }, 160);
+        hub.refreshClientFilterView();
       });
     });
   };
