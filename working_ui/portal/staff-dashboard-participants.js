@@ -4504,10 +4504,19 @@
         if(org.length) return org;
       }
       var today = [];
-      if(typeof dashboardData !== 'undefined' && dashboardData && Array.isArray(dashboardData.today)){
+      /*
+       * Prefer a non-empty Today list. An empty array often means "still syncing /
+       * awaiting overrides" — rebuild from the Laura model so Session photos still
+       * shows dated cover seats (e.g. John Hub Multi on Sun 6 Sep).
+       */
+      if(typeof dashboardData !== 'undefined' && dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length){
         today = dashboardData.today;
       } else if(typeof buildSelectedDayViewFromLauraModel === 'function'){
-        today = buildSelectedDayViewFromLauraModel() || [];
+        try{
+          today = buildSelectedDayViewFromLauraModel() || [];
+        }catch(_rebuild){
+          today = [];
+        }
       }
       var seen = Object.create(null);
       var out = [];
