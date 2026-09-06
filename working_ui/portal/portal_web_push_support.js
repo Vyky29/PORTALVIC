@@ -137,13 +137,23 @@
     }
     global.__PORTAL_SW_REG_PROMISE__ = (async function () {
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-sync-41", global.location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-aviso-42", global.location.href).href;
         var scopeBase = new URL("./", global.location.href).href;
         var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
         global.__PORTAL_SW_REG__ = reg;
         try {
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: "SKIP_WAITING" });
+          }
+        } catch (_w) {}
+        try {
           await reg.update();
         } catch (_u) {}
+        try {
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: "SKIP_WAITING" });
+          }
+        } catch (_w2) {}
         return reg;
       } catch (e) {
         console.warn("[portal] service worker register", e);
@@ -577,7 +587,7 @@
     var standalone =
       typeof portalIsStandalonePwa === "function" ? portalIsStandalonePwa() : false;
     var buildKey = "portal_web_push_build";
-    var buildVal = "20260619-portal-only-v1";
+    var buildVal = "20260906-comms-aviso-42";
     var prevBuild = persistGet(buildKey);
     if (
       env.isIOS &&

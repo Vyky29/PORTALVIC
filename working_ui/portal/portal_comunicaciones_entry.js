@@ -918,11 +918,13 @@
       st.id = "portalCommsMsgToastCss";
       st.textContent =
         "#btnComunicaciones,#topbarStaffWaBtn{overflow:visible!important}" +
-        "#portalCommsMsgToast{position:fixed;left:12px;right:12px;top:max(12px,env(safe-area-inset-top));z-index:2147482500;display:flex;gap:10px;align-items:center;max-width:28rem;margin:0 auto;padding:12px 12px 12px 14px;border-radius:16px;background:#173247;color:#fff;box-shadow:0 12px 32px rgba(15,23,42,.35);border:1px solid rgba(255,255,255,.14);min-width:0}" +
+        "#portalCommsMsgToast{position:fixed;left:12px;right:12px;top:max(12px,env(safe-area-inset-top));z-index:2147482500;display:flex;gap:10px;align-items:center;max-width:28rem;margin:0 auto;padding:12px 12px 12px 14px;border-radius:16px;background:#173247;color:#fff;border:1px solid rgba(255,255,255,.14);min-width:0}" +
+        "body.staff-dashboard #portalCommsMsgToast{top:auto;bottom:max(88px,calc(20px + env(safe-area-inset-bottom,0px)))}" +
         "#portalCommsMsgToast[hidden]{display:none!important}" +
         "#portalCommsMsgToast .portal-comms-toast-copy{min-width:0;flex:1}" +
-        "#portalCommsMsgToast strong{display:block;font-size:13px;line-height:1.25;overflow-wrap:anywhere}" +
-        "#portalCommsMsgToast span{display:block;margin-top:2px;font-size:12px;color:rgba(255,255,255,.78);overflow-wrap:anywhere;max-height:2.6em;overflow:hidden}" +
+        "#portalCommsMsgToast .portal-comms-toast-kicker{display:block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#e8c547;margin:0 0 2px}" +
+        "#portalCommsMsgToast strong{display:block;font-size:15px;line-height:1.25;overflow-wrap:anywhere}" +
+        "#portalCommsMsgToast .portal-comms-toast-body{display:block;margin-top:2px;font-size:12px;color:rgba(255,255,255,.78);overflow-wrap:anywhere;max-height:2.6em;overflow:hidden}" +
         "#portalCommsMsgToastOpen{flex:0 0 auto;padding:8px 12px;border:0;border-radius:999px;background:#16a34a;color:#fff;font:inherit;font-size:12px;font-weight:800;cursor:pointer}";
       (document.head || document.documentElement).appendChild(st);
     }
@@ -932,7 +934,7 @@
     el.setAttribute("role", "status");
     el.setAttribute("aria-live", "polite");
     el.innerHTML =
-      '<div class="portal-comms-toast-copy"><strong id="portalCommsMsgToastTitle">Communications</strong><span id="portalCommsMsgToastBody">New message</span></div>' +
+      '<div class="portal-comms-toast-copy"><span class="portal-comms-toast-kicker">COMMS</span><strong id="portalCommsMsgToastTitle">ADMIN</strong><span class="portal-comms-toast-body" id="portalCommsMsgToastBody">New message</span></div>' +
       '<button type="button" id="portalCommsMsgToastOpen">Open</button>';
     (document.body || document.documentElement).appendChild(el);
     el.addEventListener("click", function (ev) {
@@ -1027,21 +1029,34 @@
 
   function closeCommsOsBanners() {
     try {
-      if (!global.navigator || !global.navigator.serviceWorker) return;
-      void global.navigator.serviceWorker.ready.then(function (reg) {
-        if (!reg || typeof reg.getNotifications !== "function") return;
-        return reg.getNotifications().then(function (list) {
-          (list || []).forEach(function (n) {
-            var open = String((n && n.data && n.data.portalOpen) || "");
-            var tag = String((n && n.tag) || "");
-            if (open === "communications" || tag.indexOf("comms-msg") === 0) {
-              try {
-                n.close();
-              } catch (_c) {}
+      if (global.navigator && global.navigator.serviceWorker) {
+        try {
+          if (global.navigator.serviceWorker.controller) {
+            global.navigator.serviceWorker.controller.postMessage({
+              type: "portal-close-comms-notifications",
+            });
+          }
+        } catch (_pm) {}
+        void global.navigator.serviceWorker.ready.then(function (reg) {
+          try {
+            if (reg && reg.active) {
+              reg.active.postMessage({ type: "portal-close-comms-notifications" });
             }
+          } catch (_a) {}
+          if (!reg || typeof reg.getNotifications !== "function") return;
+          return reg.getNotifications().then(function (list) {
+            (list || []).forEach(function (n) {
+              var open = String((n && n.data && n.data.portalOpen) || "");
+              var tag = String((n && n.tag) || "");
+              if (open === "communications" || tag.indexOf("comms") === 0) {
+                try {
+                  n.close();
+                } catch (_c) {}
+              }
+            });
           });
         });
-      });
+      }
     } catch (_e) {}
   }
 
@@ -1087,7 +1102,12 @@
     if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(row)) {
       return;
     }
+    /* OS logo toaster is the service worker's job when the portal is away.
+       This page only paints the internal COMMS card. */
+    if (!commsPageIsActive()) return;
+    closeCommsOsBanners();
     var meta = await conversationAlertMeta(row);
+    if (!commsPageIsActive()) return;
     lastToastMode = meta.mode || "personal";
     lastToastConv = String(row.conversation_id || lastToastConv || "");
     var preview = previewMessageBody(row);
@@ -1096,17 +1116,13 @@
     var who = "";
     if (!hideAdminAuthor) {
       who = firstStaffName(
-        row._fromName || row.performed_by_name || row.sender_display || ""
+        row._fromName || row.performed_by_name || row.sender_display || row._alertTitle || ""
       );
       if (!who) {
         who = await staffFirstNameForUserId(row.performed_by_user_id || row.sender_user_id);
       }
     }
     var title = hideAdminAuthor ? "ADMIN" : who || meta.title || "Communications";
-    if (!commsPageIsActive()) {
-      showCommsOsBanner(title, preview, lastToastConv);
-      return;
-    }
     closeCommsOsBanners();
     messageToastCount += 1;
     var el = ensureMessageToast();
@@ -1673,7 +1689,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-sync-41", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-aviso-42", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
     } catch (_sw) {}
@@ -1700,25 +1716,23 @@
             });
           }
         }
-        if (d.type === "portal-push-received" && open === "communications") {
+          if (d.type === "portal-push-received" && open === "communications") {
           if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(d)) {
             return;
           }
           if (isOwnCommsRow({ performed_by_user_id: d.senderUserId || "", sender_user_id: d.senderUserId || "" })) {
             return;
           }
-          var toastEl = document.getElementById("portalCommsMsgToast");
-          if (!toastEl || toastEl.hidden) {
-            maybeShowMessageToast({
-              message_type: "text",
-              body: d.body || "New message",
-              sender_context: String(d.title || "").toUpperCase() === "ADMIN" ? "ADMINISTRATION" : "PERSONAL",
-              performed_by_user_id: d.senderUserId || "",
-              _alertTitle: d.title || "Communications",
-              _alertMode: String(d.title || "").toUpperCase() === "ADMIN" ? "administration" : "personal",
-              _fromName: String(d.title || "").toUpperCase() === "ADMIN" ? "" : d.title || "",
-            });
-          }
+          closeCommsOsBanners();
+          maybeShowMessageToast({
+            message_type: "text",
+            body: d.body || "New message",
+            sender_context: String(d.title || "").toUpperCase() === "ADMIN" ? "ADMINISTRATION" : "PERSONAL",
+            performed_by_user_id: d.senderUserId || "",
+            _alertTitle: d.title || "Communications",
+            _alertMode: String(d.title || "").toUpperCase() === "ADMIN" ? "administration" : "personal",
+            _fromName: String(d.title || "").toUpperCase() === "ADMIN" ? "" : d.title || "",
+          });
           void refreshUnread();
         }
         if (d.type === "portal-notification-click" && (open === "communications" || open === "communications_call")) {
