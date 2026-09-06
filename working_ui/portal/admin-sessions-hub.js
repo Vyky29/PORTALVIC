@@ -670,7 +670,8 @@
     var h = parseInt(hour, 10);
     if (!Number.isFinite(h)) return hour;
     if (day === "Sunday") {
-      if (h >= 13 && h <= 15) return h - 12;
+      /* Climb ends 4pm → 16:00; show "3 to 4" not "3 to 16". */
+      if (h >= 13 && h <= 19) return h - 12;
       return h;
     }
     if (h >= 13 && h <= 21) return h - 12;

@@ -1493,7 +1493,7 @@
 
   /**
    * Autumn Sunday Westway climbing (60' books).
-   * Scott de Wolff not renewing — 12–1 open. Alex 2–3 open. Patrick 3–4 Carlos.
+   * Scott de Wolff not renewing — 12–1 open. Alex 2–3 + 3–4 open. Patrick 3–4 Carlos.
    */
   var WEEKEND_STANDING_ISO = {
     saturday: "2026-07-11",
@@ -1506,6 +1506,7 @@
     { staff: "ALEX", name: "No participant", time: "12 to 1" },
     { staff: "ALEX", name: "Rodin", time: "1 to 2" },
     { staff: "ALEX", name: "No participant", time: "2 to 3" },
+    { staff: "ALEX", name: "No participant", time: "3 to 4" },
     { staff: "CARLOS", name: "Hazem", time: "10 to 11" },
     { staff: "CARLOS", name: "Zaid", time: "11 to 12" },
     { staff: "CARLOS", name: "Serine", time: "12 to 1" },
