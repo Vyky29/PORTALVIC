@@ -115,7 +115,9 @@ export function formatTrialSessionReference(input: {
   const sessionDate = resolveSessionDateIso({
     dateIso: input.sessionDateIso,
     day,
+    time: time,
     asOfIso: input.asOfIso,
+    bookingKind: "trial",
   });
   const datePart = sessionDate
     ? formatUkDateWithWeekday(sessionDate)

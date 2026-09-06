@@ -114,6 +114,7 @@ export async function foldValidatedReservationOntoMadre(
     iso = resolveSessionDateIso({
       dateIso: null,
       day: clean(row.day_label, 20),
+      time: clean(row.time_label, 80),
       asOfIso: asOf,
       bookingKind: /booking_kind\s*=\s*trial/i.test(String(row.notes || ""))
         ? "trial"

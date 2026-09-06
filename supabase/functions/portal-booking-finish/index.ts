@@ -649,6 +649,7 @@ Deno.serve(async (req) => {
   const sessionDateIso = resolveSessionDateIso({
     dateIso: reservation?.date_iso ? String(reservation.date_iso).slice(0, 10) : null,
     day,
+    time: timeLabel,
     asOfIso: todayIso,
     bookingKind: portalBookingKind,
   });

@@ -1,0 +1,24 @@
+---
+description: Booking / trial session lead times (weekday 2h, weekend Friday 18:00).
+alwaysApply: true
+---
+
+# Booking lead times (trials + weekend places)
+
+Europe/London. Implemented in `supabase/functions/_shared/portal_booking_context.ts` (`resolveSessionDateIso`) and mirrored on `working_ui/bookingportal.html`.
+
+## Weekday (Mon–Fri) — trials
+
+- Same-day trial is allowed if the session **starts at least 2 hours** after now (staff notice).
+- If less than 2 hours (or time unknown), bump to the **same weekday next week**.
+
+## Weekend (Sat / Sun) — trial **or** term
+
+- Admin last working day is **Friday**. Weekend places must be booked by **Friday before 18:00**.
+- After Friday 18:00 (and all day Sat/Sun):
+  - Saturday slot → **next Saturday**
+  - Sunday slot → **next Sunday** (cannot book this Sunday from Saturday)
+
+## Do not
+
+- Reintroduce “2 calendar days before” as the trial rule.

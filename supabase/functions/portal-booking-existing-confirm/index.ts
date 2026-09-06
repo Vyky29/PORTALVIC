@@ -367,6 +367,7 @@ Deno.serve(async (req) => {
   const resolvedDateIso = resolveSessionDateIso({
     dateIso: bookingRequest.date_iso,
     day: bookingRequest.day,
+    time: bookingRequest.time,
     asOfIso: calendarDateIsoInLondon(),
     bookingKind: bookingRequest.booking_kind,
   });

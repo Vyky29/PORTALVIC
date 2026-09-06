@@ -129,8 +129,16 @@ export function nextWeekdayOnOrAfter(
   return null;
 }
 
-/** Trials need office time to brief the instructor — not same-day / next-day. */
-export const TRIAL_MIN_LEAD_DAYS = 2;
+/**
+ * Booking lead rules (Europe/London):
+ * - Weekday trial: same day OK if session starts ≥ 2 hours from now (staff notice).
+ * - Sat/Sun (trial or term): must be booked by the Friday before 18:00.
+ *   After that cutoff, next bookable Sat/Sun is the following weekend.
+ */
+export const TRIAL_WEEKDAY_MIN_LEAD_HOURS = 2;
+export const WEEKEND_ADMIN_FRIDAY_CUTOFF_HOUR = 18;
+/** @deprecated Use weekday 2h + Friday 18:00 weekend rules. */
+export const TRIAL_MIN_LEAD_DAYS = 0;
 
 export function calendarDateIsoInLondon(now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -150,18 +158,129 @@ export function addDaysIso(iso: string, days: number): string | null {
   return dt.toISOString().slice(0, 10);
 }
 
-/** Earliest calendar day a trial session may land (London today + lead days). */
-export function earliestTrialSessionFloorIso(asOfIso?: string | null): string {
-  const asOf =
-    clean(asOfIso, 10) && /^\d{4}-\d{2}-\d{2}$/.test(clean(asOfIso, 10))
-      ? clean(asOfIso, 10)
-      : calendarDateIsoInLondon();
-  return addDaysIso(asOf, TRIAL_MIN_LEAD_DAYS) || asOf;
+export function weekdayIndexFromIso(iso: string): number {
+  const base = String(iso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(base)) return -1;
+  const [y, m, d] = base.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
+export function londonClockParts(now: Date = new Date()): {
+  iso: string;
+  hour: number;
+  minute: number;
+} {
+  const iso = calendarDateIsoInLondon(now);
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  let hour = 0;
+  let minute = 0;
+  for (const p of parts) {
+    if (p.type === "hour") hour = Number(p.value) || 0;
+    if (p.type === "minute") minute = Number(p.value) || 0;
+  }
+  return { iso, hour, minute };
+}
+
+/** Start minutes from labels like "9:00–9:30", "2 to 3", "14:00". */
+export function parseSessionStartMinutes(
+  timeLabel: string | null | undefined,
+): number | null {
+  const s = clean(timeLabel, 80).toLowerCase();
+  if (!s) return null;
+  const range = s.match(
+    /(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\s*(?:[-–—]|to)\s*(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i,
+  );
+  const one = range ? null : s.match(/(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i);
+  const hRaw = range ? Number(range[1]) : one ? Number(one[1]) : NaN;
+  const mRaw = range ? Number(range[2] || 0) : one ? Number(one[2] || 0) : 0;
+  const ap = String((range ? range[3] : one ? one[3] : "") || "").toLowerCase();
+  if (!Number.isFinite(hRaw)) return null;
+  let hh = hRaw;
+  if (ap === "pm" && hh < 12) hh += 12;
+  if (ap === "am" && hh === 12) hh = 0;
+  if (!ap && hh >= 1 && hh <= 8) hh += 12;
+  if (hh < 0 || hh > 23 || mRaw < 0 || mRaw > 59) return null;
+  return hh * 60 + mRaw;
+}
+
+export function isWeekendDayName(dayName: string | null | undefined): boolean {
+  const d = String(dayName || "").trim().toLowerCase();
+  return d === "saturday" || d === "sunday";
+}
+
+/** Friday before a Sat/Sun session (admin last working day for that weekend). */
+export function fridayBeforeWeekendSessionIso(sessionIso: string): string | null {
+  const wd = weekdayIndexFromIso(sessionIso);
+  if (wd === 6) return addDaysIso(sessionIso, -1);
+  if (wd === 0) return addDaysIso(sessionIso, -2);
+  return null;
+}
+
+/** True once Friday 18:00 London has passed for that weekend session. */
+export function weekendSessionPastAdminCutoff(
+  sessionIso: string,
+  now: Date = new Date(),
+): boolean {
+  const friday = fridayBeforeWeekendSessionIso(sessionIso);
+  if (!friday) return false;
+  const clock = londonClockParts(now);
+  if (clock.iso > friday) return true;
+  if (clock.iso < friday) return false;
+  return clock.hour >= WEEKEND_ADMIN_FRIDAY_CUTOFF_HOUR;
+}
+
+export function bumpToNextWeekSameWeekday(iso: string): string | null {
+  return addDaysIso(iso, 7);
+}
+
+/**
+ * After Friday 18:00, this weekend's Sat/Sun are closed for new bookings;
+ * advance week by week until the Friday cutoff is still ahead.
+ */
+export function applyWeekendAdminCutoff(
+  sessionIso: string,
+  now: Date = new Date(),
+): string {
+  let iso = String(sessionIso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  for (let i = 0; i < 12; i++) {
+    if (!weekendSessionPastAdminCutoff(iso, now)) return iso;
+    const next = bumpToNextWeekSameWeekday(iso);
+    if (!next) return iso;
+    iso = next;
+  }
+  return iso;
+}
+
+/** Same-day weekday trial needs ≥ 2 hours before session start. */
+export function trialSameDayNeedsLeadBump(
+  sessionIso: string,
+  timeLabel: string | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  const clock = londonClockParts(now);
+  if (String(sessionIso || "").slice(0, 10) !== clock.iso) return false;
+  const start = parseSessionStartMinutes(timeLabel);
+  if (start == null) return true;
+  const nowMins = clock.hour * 60 + clock.minute;
+  return start < nowMins + TRIAL_WEEKDAY_MIN_LEAD_HOURS * 60;
 }
 
 export function isTrialBookingKind(kind: string | null | undefined): boolean {
   const k = String(kind || "").trim().toLowerCase();
   return k === "trial" || k === "trial_session" || k === "taster";
+}
+
+/** @deprecated Prefer resolveSessionDateIso with bookingKind + time. */
+export function earliestTrialSessionFloorIso(asOfIso?: string | null): string {
+  return clean(asOfIso, 10) && /^\d{4}-\d{2}-\d{2}$/.test(clean(asOfIso, 10))
+    ? clean(asOfIso, 10)
+    : calendarDateIsoInLondon();
 }
 
 /** Autumn 26/27 first bookable session by weekday (matches term_from_timetable + roster). */
@@ -179,24 +298,54 @@ export function firstBookableSessionFloorIso(
 export function resolveSessionDateIso(input: {
   dateIso?: string | null;
   day?: string | null;
+  time?: string | null;
   asOfIso?: string | null;
   bookingKind?: string | null;
+  now?: Date;
 }): string | null {
+  const now = input.now instanceof Date && !Number.isNaN(input.now.getTime())
+    ? input.now
+    : new Date();
   const termFloor = firstBookableSessionFloorIso(input.day);
-  const trial =
-    isTrialBookingKind(input.bookingKind) ? earliestTrialSessionFloorIso(input.asOfIso) : null;
-  let floor = termFloor;
-  if (trial && (!floor || trial > floor)) floor = trial;
+  const asOf = clean(input.asOfIso, 10) || calendarDateIsoInLondon(now);
+  const trial = isTrialBookingKind(input.bookingKind);
 
+  let candidate: string | null = null;
   const direct = clean(input.dateIso, 10);
   if (/^\d{4}-\d{2}-\d{2}$/.test(direct)) {
-    if (floor && direct < floor) return nextWeekdayOnOrAfter(input.day, floor);
-    return direct;
+    candidate = direct;
+    if (termFloor && candidate < termFloor) {
+      candidate = nextWeekdayOnOrAfter(input.day, termFloor);
+    }
+  } else {
+    const base = termFloor && asOf < termFloor ? termFloor : asOf;
+    candidate = nextWeekdayOnOrAfter(input.day, base);
   }
-  const asOf = clean(input.asOfIso, 10) || calendarDateIsoInLondon();
-  const base = floor && asOf < floor ? floor : asOf;
-  const from = floor && base < floor ? floor : base;
-  return nextWeekdayOnOrAfter(input.day, from);
+  if (!candidate) return null;
+
+  const weekend =
+    isWeekendDayName(input.day) ||
+    weekdayIndexFromIso(candidate) === 0 ||
+    weekdayIndexFromIso(candidate) === 6;
+
+  if (weekend) {
+    candidate = applyWeekendAdminCutoff(candidate, now);
+  } else if (trial && trialSameDayNeedsLeadBump(candidate, input.time, now)) {
+    candidate = bumpToNextWeekSameWeekday(candidate) || candidate;
+  }
+
+  if (termFloor && candidate < termFloor) {
+    candidate = nextWeekdayOnOrAfter(input.day, termFloor) || candidate;
+    if (
+      isWeekendDayName(input.day) ||
+      weekdayIndexFromIso(candidate) === 0 ||
+      weekdayIndexFromIso(candidate) === 6
+    ) {
+      candidate = applyWeekendAdminCutoff(candidate, now);
+    }
+  }
+
+  return candidate;
 }
 
 async function sha256Hex(value: string): Promise<string> {

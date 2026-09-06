@@ -8,7 +8,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders } from "../_shared/parent_portal_auth.ts";
 import type { MadreDoc } from "../_shared/portal_madre_fold_logic.ts";
 import { buildWeeklyOfferFromMadre, applyBookingSlotHoldsToOffer } from "../_shared/portal_booking_seat_helper.ts";
-import { resolveSessionDateIso } from "../_shared/portal_booking_context.ts";
+import { resolveSessionDateIso, calendarDateIsoInLondon } from "../_shared/portal_booking_context.ts";
 import { ensureReenrolUnconfirmedReleasedOnMadre } from "../_shared/portal_reenrol_release_madre.ts";
 import { runUnpaidAug15PlaceRelease } from "../_shared/portal_reenrol_release_unpaid_aug15.ts";
 import {
@@ -466,12 +466,16 @@ Deno.serve(async (req) => {
     activeHolds,
   );
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = calendarDateIsoInLondon();
   const weeklySlotsPublic = weekly.slots.map((slot) => {
     const { bookedKeys: _bk, ...pub } = slot;
     return {
       ...pub,
-      dateIso: resolveSessionDateIso({ day: slot.day, asOfIso: todayIso }),
+      dateIso: resolveSessionDateIso({
+        day: slot.day,
+        time: slot.timeLabel || null,
+        asOfIso: todayIso,
+      }),
     };
   });
 

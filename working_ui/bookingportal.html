@@ -2001,20 +2001,117 @@
         return dt.toISOString().slice(0, 10);
       }
 
-      /** Trials need 2 calendar days' notice so office can brief the instructor. */
-      function trialSessionDateIso(dayName, preferredIso) {
+      function londonClockParts() {
+        var now = new Date();
+        var iso = londonTodayIso();
+        var hour = 0;
+        var minute = 0;
+        try {
+          var parts = new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Europe/London",
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23",
+          }).formatToParts(now);
+          for (var i = 0; i < parts.length; i++) {
+            if (parts[i].type === "hour") hour = Number(parts[i].value) || 0;
+            if (parts[i].type === "minute") minute = Number(parts[i].value) || 0;
+          }
+        } catch (_e) {
+          hour = now.getHours();
+          minute = now.getMinutes();
+        }
+        return { iso: iso, hour: hour, minute: minute };
+      }
+
+      function parseSessionStartMinutes(timeLabel) {
+        var s = String(timeLabel || "").trim().toLowerCase();
+        if (!s) return null;
+        var range = s.match(
+          /(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\s*(?:[-–—]|to)\s*(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i
+        );
+        var one = range ? null : s.match(/(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i);
+        var hRaw = range ? Number(range[1]) : one ? Number(one[1]) : NaN;
+        var mRaw = range ? Number(range[2] || 0) : one ? Number(one[2] || 0) : 0;
+        var ap = String((range ? range[3] : one ? one[3] : "") || "").toLowerCase();
+        if (!Number.isFinite(hRaw)) return null;
+        var hh = hRaw;
+        if (ap === "pm" && hh < 12) hh += 12;
+        if (ap === "am" && hh === 12) hh = 0;
+        if (!ap && hh >= 1 && hh <= 8) hh += 12;
+        if (hh < 0 || hh > 23 || mRaw < 0 || mRaw > 59) return null;
+        return hh * 60 + mRaw;
+      }
+
+      function nextWeekdayOnOrAfter(dayName, asOfIso) {
         var days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
         var target = days.indexOf(String(dayName || "").trim().toLowerCase());
-        var floor = addDaysIso(londonTodayIso(), 2);
-        if (!floor || target < 0) return preferredIso || "";
-        var start = preferredIso && preferredIso >= floor ? preferredIso : floor;
-        var p = start.split("-").map(Number);
+        var base = String(asOfIso || "").slice(0, 10);
+        if (target < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(base)) return "";
+        var p = base.split("-").map(Number);
         var dt = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
         for (var i = 0; i < 8; i++) {
           if (dt.getUTCDay() === target) return dt.toISOString().slice(0, 10);
           dt.setUTCDate(dt.getUTCDate() + 1);
         }
-        return preferredIso || "";
+        return "";
+      }
+
+      function fridayBeforeWeekend(iso) {
+        var p = String(iso || "").slice(0, 10).split("-").map(Number);
+        if (p.length !== 3) return "";
+        var wd = new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay();
+        if (wd === 6) return addDaysIso(iso, -1);
+        if (wd === 0) return addDaysIso(iso, -2);
+        return "";
+      }
+
+      function weekendPastFridayCutoff(sessionIso) {
+        var friday = fridayBeforeWeekend(sessionIso);
+        if (!friday) return false;
+        var clock = londonClockParts();
+        if (clock.iso > friday) return true;
+        if (clock.iso < friday) return false;
+        return clock.hour >= 18;
+      }
+
+      /**
+       * Weekday trial: same day with ≥2h notice.
+       * Sat/Sun (trial or term): Friday before 18:00, else next weekend.
+       */
+      function resolveBookableSessionDateIso(dayName, preferredIso, opts) {
+        opts = opts || {};
+        var bookingKind = String(opts.bookingKind || "term").trim().toLowerCase();
+        var timeLabel = opts.timeLabel || "";
+        var days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        var day = String(dayName || "").trim().toLowerCase();
+        var weekend = day === "saturday" || day === "sunday";
+        var today = londonTodayIso();
+        var candidate = preferredIso && /^\d{4}-\d{2}-\d{2}$/.test(preferredIso)
+          ? preferredIso
+          : nextWeekdayOnOrAfter(dayName, today);
+        if (!candidate) return preferredIso || "";
+        if (days.indexOf(day) < 0) return candidate;
+
+        if (weekend) {
+          for (var w = 0; w < 12; w++) {
+            if (!weekendPastFridayCutoff(candidate)) break;
+            candidate = addDaysIso(candidate, 7) || candidate;
+          }
+          return candidate;
+        }
+
+        if (bookingKind === "trial") {
+          var clock = londonClockParts();
+          if (candidate === clock.iso) {
+            var start = parseSessionStartMinutes(timeLabel);
+            var nowMins = clock.hour * 60 + clock.minute;
+            if (start == null || start < nowMins + 120) {
+              candidate = addDaysIso(candidate, 7) || candidate;
+            }
+          }
+        }
+        return candidate;
       }
 
       function registrationUrlForSlot(slot, opts) {
@@ -2036,10 +2133,10 @@
         if (slot.bookingMode) q.set("booking_mode", slot.bookingMode);
         if (slot.weekId) q.set("week_id", slot.weekId);
         if (slot.blockId) q.set("block_id", slot.blockId);
-        var dateIso = slot.dateIso || "";
-        if (bookingKind === "trial") {
-          dateIso = trialSessionDateIso(slot.day, dateIso) || dateIso;
-        }
+        var dateIso = resolveBookableSessionDateIso(slot.day, slot.dateIso || "", {
+          bookingKind: bookingKind,
+          timeLabel: slot.timeLabel || "",
+        });
         if (dateIso) q.set("date", dateIso);
         q.set("booking_kind", bookingKind);
         try {
@@ -2132,7 +2229,7 @@
             '"><strong>Book term place</strong><span>Secure the standing place for the rest of the term or year. After registration, complete funding, term or year choice, and payment in the booking flow.</span></button>' +
             '<button type="button" class="sheet__choice" data-book-kind="trial" data-slot-id="' +
             esc(slot.id) +
-            '"><strong>Book a trial</strong><span>One session (at least 2 days ahead so we can brief the instructor). After registration, pay by card, Apple Pay, or bank transfer (30-minute hold)' +
+            '"><strong>Book a trial</strong><span>One session. Weekdays: same day OK with at least 2 hours\' notice for staff. Weekends: book by Friday 6pm (otherwise the next Saturday or Sunday). After registration, pay by card, Apple Pay, or bank transfer (30-minute hold)' +
             (price ? " · " + esc(price) : "") +
             ".</span></button>";
         }
