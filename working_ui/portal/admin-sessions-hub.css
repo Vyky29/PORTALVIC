@@ -1644,12 +1644,12 @@
       margin: 0 0 16px;
       min-width: 0;
       display: grid;
-      gap: 10px;
+      gap: 12px;
     }
     .ash-day-board__group {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
+      gap: 12px;
       min-width: 0;
       width: 100%;
     }
@@ -1667,8 +1667,8 @@
       min-width: 0;
       overflow: hidden;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 6px 6px;
+      border-radius: 12px;
+      padding: 12px 10px 10px;
       background: #f8fbfe;
     }
     .ash-db-col__head {
@@ -1677,15 +1677,15 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      gap: 4px;
-      margin: 0 0 8px;
+      gap: 6px;
+      margin: 0 0 10px;
       min-width: 0;
       width: 100%;
     }
     .ash-db-col__photo,
     .ash-db-col__head .portal-roster-avatar {
-      width: 44px;
-      height: 44px;
+      width: 52px;
+      height: 52px;
       border-radius: 999px;
       flex: 0 0 auto;
       display: inline-flex;
@@ -1694,7 +1694,7 @@
       overflow: hidden;
       background: #dbe7f5;
       color: var(--navy);
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 800;
       letter-spacing: 0.02em;
       position: relative;
@@ -1712,7 +1712,7 @@
     }
     .ash-db-col__staff {
       margin: 0;
-      font-size: 12px;
+      font-size: 15px;
       font-weight: 800;
       color: var(--navy);
       line-height: 1.25;
@@ -1723,25 +1723,25 @@
     .ash-db-col__meta {
       display: block;
       margin: 0;
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--muted);
       text-align: center;
     }
     .ash-db-col__slots {
       display: grid;
-      gap: 5px;
+      gap: 7px;
       min-width: 0;
     }
     .ash-db-card {
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-      gap: 4px 6px;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr);
+      gap: 5px 8px;
       align-items: start;
       background: #fff;
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 5px 6px;
+      border-radius: 10px;
+      padding: 8px 9px;
       min-width: 0;
       box-sizing: border-box;
     }
@@ -1749,24 +1749,24 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       min-width: 0;
-      margin: 0 0 1px;
+      margin: 0 0 2px;
     }
     .ash-db-card__band-row .ash-db-card__band {
       margin: 0;
     }
     .ash-db-card__band-row .override-chip {
       margin-left: 0;
-      font-size: 9px;
-      padding: 1px 6px;
+      font-size: 11px;
+      padding: 2px 8px;
       flex: 0 0 auto;
     }
     .ash-db-card__band {
       display: block;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
       text-transform: uppercase;
       color: var(--muted);
       margin: 0 0 1px;
@@ -1775,16 +1775,16 @@
     }
     .ash-db-card__name {
       font-weight: 800;
-      font-size: 12px;
-      line-height: 1.2;
+      font-size: 15px;
+      line-height: 1.25;
       overflow-wrap: anywhere;
       min-width: 0;
       color: var(--text);
     }
     .ash-db-card__venue {
       display: block;
-      margin-top: 2px;
-      font-size: 10px;
+      margin-top: 3px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--muted);
       overflow-wrap: anywhere;
@@ -1793,14 +1793,14 @@
     .ash-db-card__chips {
       display: flex;
       flex-wrap: wrap;
-      gap: 3px;
+      gap: 4px;
       margin-top: 4px;
       min-width: 0;
     }
     .ash-db-card__chips .override-chip {
       margin-left: 0;
-      font-size: 9px;
-      padding: 1px 6px;
+      font-size: 11px;
+      padding: 2px 8px;
     }
     .ash-db-badge {
       display: inline-block;
