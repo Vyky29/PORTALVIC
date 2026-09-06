@@ -980,20 +980,25 @@
     return best;
   }
 
-  /** True when this client has a dated roster row in-week for the same feedback family
-   *  (and for Multi, same hub/pool area). Dated Hub must not hide standing Pool / Climbing. */
+  /**
+   * True when this client already has a *same-calendar-day* dated roster row for the
+   * same feedback family (and for Multi, same hub/pool area). Used so a dated cover
+   * on that day replaces standing projection for that day only.
+   * Do NOT scan the whole week — a Mon 7 dated Emanuel/Tinashe cover must not wipe
+   * Fri standing Emanuel / Roberto Tinashe / Victor+Raul DC.
+   */
   function clientHasDatedRosterInWeekSameFamily(rosterRows, standingRow, isoDate) {
     var cid = canonicalClientSlug(standingRow && standingRow.client_name);
     if (!cid || !rosterRows || !rosterRows.length) return false;
-    var ws = mondayOfWeek(isoDate);
-    var we = addDaysIso(ws, 6);
+    var dayIso = String(isoDate || "").trim().substring(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dayIso)) return false;
     var standSvc = clean(standingRow && standingRow.service);
     var standMulti = isMultiActivityService(standSvc);
     var standArea = standMulti ? slotAreaKind(standingRow) : "";
     for (var i = 0; i < rosterRows.length; i++) {
       var o = rosterRows[i];
       var sd = rosterRowSessionDate(o);
-      if (!sd || sd < ws || sd > we) continue;
+      if (!sd || sd !== dayIso) continue;
       if (canonicalClientSlug(o.client_name) !== cid) continue;
       var oSvc = clean(o.service);
       if (!standSvc || !oSvc) continue;
