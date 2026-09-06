@@ -1580,10 +1580,24 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   text-overflow:clip !important;
   white-space:nowrap !important;
 }
-#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label,
-#topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-label{
-  color:#fff !important;
+#topbarStaffWaBtn .comms-badge,
+#topbarStaffWaBtn .topbar-staff-wa-btn__badge:not(.is-empty),
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn .comms-badge{
+  position:static !important;
+  display:inline-flex !important;
+  align-items:center;
+  justify-content:center;
   flex:0 0 auto !important;
-  max-width:none !important;
-  overflow:visible !important;
+  top:auto !important;
+  right:auto !important;
+  min-width:20px !important;
+  height:20px !important;
+  margin:0 0 0 4px !important;
+  padding:0 6px !important;
+  border-radius:999px !important;
+  background:#dc2626 !important;
+  color:#fff !important;
+  font-size:11px !important;
+  font-weight:800 !important;
+  line-height:20px !important;
 }

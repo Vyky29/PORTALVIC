@@ -332,6 +332,42 @@ function applyModeButtons() {
       badge.remove();
     }
   });
+  persistUnreadForPortal();
+}
+
+function persistUnreadForPortal() {
+  const counts = state.unreadCounts || {};
+  let inboxSum = 0;
+  const items = (state.inbox && state.inbox.items) || [];
+  for (let i = 0; i < items.length; i++) {
+    inboxSum += Math.max(0, Number(items[i] && items[i].unread) || 0);
+  }
+  const n = Math.max(
+    0,
+    Number(counts.personal) || 0,
+    Number(counts.administration) || 0,
+    Number(counts.total) || 0,
+    inboxSum
+  );
+  let uid = "";
+  try {
+    uid = String(
+      (window.__PORTAL_SUPABASE__ &&
+        window.__PORTAL_SUPABASE__.session &&
+        window.__PORTAL_SUPABASE__.session.user &&
+        window.__PORTAL_SUPABASE__.session.user.id) ||
+        ""
+    ).trim();
+  } catch (_e) {}
+  const key = uid ? "portal_comms_unread_n:" + uid : "portal_comms_unread_n";
+  try {
+    sessionStorage.setItem(key, String(n));
+    sessionStorage.setItem("portal_comms_unread_n", String(n));
+  } catch (_s) {}
+  try {
+    localStorage.setItem(key, String(n));
+    localStorage.setItem("portal_comms_unread_n", String(n));
+  } catch (_l) {}
 }
 
 function itemByConversation(id) {

@@ -136,13 +136,49 @@
   }
 
   function unreadLabel(n) {
-    if (n > 99) return "99+";
-    return String(n);
+    var v = Math.max(0, Number(n) || 0);
+    if (v > 9) return "9+";
+    return String(v);
   }
 
-  function commsButtonLabel(count) {
-    var n = Math.max(0, Number(count) || 0);
-    return n > 0 ? "COMMS " + unreadLabel(n) : "COMMS";
+  function commsButtonLabel(_count) {
+    return "COMMS";
+  }
+
+  function unreadStorageKey() {
+    var uid = "";
+    try {
+      var box = supabaseBox();
+      uid = String((box && box.session && box.session.user && box.session.user.id) || "").trim();
+    } catch (_e) {}
+    return uid ? "portal_comms_unread_n:" + uid : "portal_comms_unread_n";
+  }
+
+  function persistUnreadCount(n) {
+    var v = String(Math.max(0, Number(n) || 0));
+    var keys = [unreadStorageKey(), "portal_comms_unread_n"];
+    for (var i = 0; i < keys.length; i++) {
+      try {
+        sessionStorage.setItem(keys[i], v);
+      } catch (_s) {}
+      try {
+        localStorage.setItem(keys[i], v);
+      } catch (_l) {}
+    }
+  }
+
+  function cachedUnreadCount() {
+    var keys = [unreadStorageKey(), "portal_comms_unread_n"];
+    var max = 0;
+    for (var i = 0; i < keys.length; i++) {
+      try {
+        max = Math.max(max, Number(sessionStorage.getItem(keys[i])) || 0);
+      } catch (_s) {}
+      try {
+        max = Math.max(max, Number(localStorage.getItem(keys[i])) || 0);
+      } catch (_l) {}
+    }
+    return max;
   }
 
   function firstStaffName(raw) {
@@ -201,38 +237,21 @@
       "#topbarStaffWaBtn.topbar-tool-btn--staff-wa{display:inline-flex!important;flex-direction:row!important;" +
       "align-items:center!important;justify-content:center!important;grid-template-rows:none!important;" +
       "grid-template-columns:none!important;overflow:visible!important;max-width:none!important}" +
-      "#commsBadge.is-empty,.topbar-staff-wa-btn__badge.is-empty,.portal-comms-corner-badge.is-empty{display:none!important}" +
+      "#commsBadge.is-empty,.topbar-staff-wa-btn__badge.is-empty,.portal-comms-corner-badge.is-empty,.comms-badge.is-empty{display:none!important}" +
       "#btnComunicaciones.admin-icon-btn--has-alerts,#btnComunicaciones.portal-comms-has-unread{" +
       "border-color:#dc2626!important;background:#fff5f5!important;" +
       "box-shadow:0 0 0 2px rgba(220,38,38,.55)!important;animation:portalCommsBtnPulse 1.1s ease infinite}" +
       "@keyframes portalCommsBtnPulse{0%,100%{box-shadow:0 0 0 2px rgba(220,38,38,.45)}50%{box-shadow:0 0 0 6px rgba(220,38,38,.2)}}" +
-      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
-      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
-      "#topbarToolsGridRight > .topbar-tool-cell--staff-wa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
-      ".topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread{" +
-      "background:#dc2626!important;border-color:#991b1b!important;color:#fff!important;" +
-      "box-shadow:0 0 0 2px rgba(220,38,38,.35),0 2px 8px rgba(220,38,38,.35)!important}" +
-      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label," +
-      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-staff-wa-btn__label," +
-      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label{" +
-      "color:#fff!important;max-width:none!important;overflow:visible!important;flex:0 1 auto!important}" +
-      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico," +
-      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{" +
-      "color:#fff!important}" +
-      /* Number sits in the gold/red chip (flex item), not an absolute corner that parents clip. */
+      /* Same red number chip as inside Communications (.comms-badge / .comms-ctx-unread). */ +
+      "#topbarStaffWaBtn .comms-badge," +
+      "#topbarStaffWaBtn .comms-ctx-unread," +
       "#topbarStaffWaBtn .topbar-staff-wa-btn__badge:not(.is-empty)," +
       "#topbarStaffWaBtn [data-comms-unread]:not(.is-empty){" +
       "position:static!important;display:inline-flex!important;align-items:center;justify-content:center;" +
-      "flex:0 0 auto!important;min-width:18px!important;height:18px!important;margin:0 0 0 4px!important;" +
-      "padding:0 5px!important;border-radius:999px!important;background:#dc2626!important;color:#fff!important;" +
-      "font-size:11px!important;font-weight:800!important;line-height:18px!important;opacity:1!important;" +
-      "visibility:visible!important;z-index:2!important;text-decoration:none!important}" +
-      /* Only if the inner badge node is missing/hidden — avoid double numbers. */
-      "#topbarStaffWaBtn[data-comms-count]:not(:has([data-comms-unread]:not(.is-empty)))::after{" +
-      "content:attr(data-comms-count);display:inline-flex!important;align-items:center;justify-content:center;" +
-      "flex:0 0 auto!important;min-width:18px!important;height:18px!important;margin:0 0 0 4px!important;" +
-      "padding:0 5px!important;border-radius:999px!important;background:#dc2626!important;color:#fff!important;" +
-      "font-size:11px!important;font-weight:800!important;line-height:18px!important}" +
+      "flex:0 0 auto!important;min-width:20px!important;height:20px!important;margin:0 0 0 4px!important;" +
+      "padding:0 6px!important;border-radius:999px!important;background:#dc2626!important;color:#fff!important;" +
+      "font-size:11px!important;font-weight:800!important;line-height:20px!important;opacity:1!important;" +
+      "visibility:visible!important;z-index:2!important;text-decoration:none!important;top:auto!important;right:auto!important}" +
       "#topbarStaffWaBtn:not([data-comms-count])::after," +
       "#topbarStaffWaBtn:has([data-comms-unread]:not(.is-empty))::after{content:none!important;display:none!important}";
     (document.head || document.documentElement).appendChild(st);
@@ -251,11 +270,11 @@
   var STAFF_BADGE_ON =
     "display:inline-flex!important;align-items:center;justify-content:center;" +
     "position:static!important;top:auto!important;right:auto!important;left:auto!important;bottom:auto!important;" +
-    "z-index:2!important;min-width:18px!important;height:18px!important;width:auto!important;" +
-    "padding:0 5px!important;margin:0 0 0 4px!important;border:0!important;border-radius:999px!important;" +
+    "z-index:2!important;min-width:20px!important;height:20px!important;width:auto!important;" +
+    "padding:0 6px!important;margin:0 0 0 4px!important;border:0!important;border-radius:999px!important;" +
     "background:#dc2626!important;color:#fff!important;font-size:11px!important;font-weight:800!important;" +
-    "line-height:18px!important;letter-spacing:0!important;text-align:center!important;" +
-    "box-shadow:0 0 0 1px rgba(255,255,255,.9)!important;" +
+    "line-height:20px!important;letter-spacing:0!important;text-align:center!important;" +
+    "box-shadow:none!important;" +
     "pointer-events:none!important;opacity:1!important;visibility:visible!important;" +
     "flex:0 0 auto!important;transform:none!important;text-decoration:none!important";
   var CORNER_BADGE_OFF = "display:none!important";
@@ -286,28 +305,22 @@
         n += 1;
       }
     } catch (_p) {}
-    if (staffHost) host.removeAttribute("data-comms-count");
-    else if (count > 0) host.setAttribute("data-comms-count", unreadLabel(count));
+    if (count > 0) host.setAttribute("data-comms-count", unreadLabel(count));
     else host.removeAttribute("data-comms-count");
     var badge =
-      host.querySelector("#commsBadge, .topbar-staff-wa-btn__badge, [data-comms-unread], .portal-comms-corner-badge") ||
+      host.querySelector("#commsBadge, .comms-badge, .comms-ctx-unread, .topbar-staff-wa-btn__badge, [data-comms-unread], .portal-comms-corner-badge") ||
       null;
-    if (!badge && !staffHost) {
+    if (!badge) {
       badge = document.createElement("span");
-      badge.className = "portal-comms-corner-badge topbar-staff-wa-btn__badge";
+      badge.className = staffHost
+        ? "comms-badge comms-ctx-unread topbar-staff-wa-btn__badge"
+        : "portal-comms-corner-badge topbar-staff-wa-btn__badge";
       badge.setAttribute("data-comms-unread", "");
       host.appendChild(badge);
     }
     if (staffHost) {
-      if (badge) {
-        badge.classList.add("is-empty");
-        badge.textContent = count > 0 ? unreadLabel(count) : "0";
-        badge.style.cssText = CORNER_BADGE_OFF;
-        badge.setAttribute("aria-hidden", "true");
-      }
-      return;
+      badge.classList.add("comms-badge", "comms-ctx-unread", "topbar-staff-wa-btn__badge");
     }
-    if (!badge) return;
     try {
       badge.removeAttribute("hidden");
     } catch (_h) {}
@@ -341,16 +354,14 @@
     var btn = document.getElementById("topbarStaffWaBtn");
     if (btn) {
       btn.classList.toggle("topbar-staff-wa-btn--unread", lastUnreadCount > 0);
-      btn.classList.toggle("topbar-tool-btn--staff-wa-unread", lastUnreadCount > 0);
+      btn.classList.remove("topbar-tool-btn--staff-wa-unread");
       paintCornerBadge(btn, lastUnreadCount);
-      var lab = lastUnreadCount > 0 ? "Communications (" + lastUnreadCount + ")" : "Communications";
-      btn.setAttribute("aria-label", lab);
+      btn.setAttribute(
+        "aria-label",
+        lastUnreadCount > 0 ? "Communications (" + lastUnreadCount + ")" : "Communications"
+      );
       var labelEl = btn.querySelector(".topbar-staff-wa-btn__label, .topbar-tool-label");
-      if (labelEl) {
-        labelEl.textContent = commsButtonLabel(lastUnreadCount);
-        labelEl.style.setProperty("overflow", "visible", "important");
-        labelEl.style.setProperty("max-width", "none", "important");
-      }
+      if (labelEl) labelEl.textContent = "COMMS";
     }
     var adminBtn = document.getElementById("btnComunicaciones");
     if (adminBtn) {
@@ -413,7 +424,9 @@
     var next = Math.max(0, Number(n) || 0);
     if (Date.now() < unreadHoldUntil && next < unreadHoldMin) next = unreadHoldMin;
     else if (next >= unreadHoldMin) unreadHoldUntil = 0;
+    next = Math.max(next, cachedUnreadCount());
     applyUnreadBadge(next);
+    persistUnreadCount(next);
   }
 
   function scheduleUnreadRetry() {
@@ -895,6 +908,7 @@
     unreadHoldMin = next;
     unreadHoldUntil = Date.now() + 25000;
     applyUnreadBadge(next);
+    persistUnreadCount(next);
   }
 
   async function conversationAlertMeta(row) {
@@ -1712,8 +1726,8 @@
         lab.textContent = commsButtonLabel(lastUnreadCount);
       }
     }
-    btn.classList.toggle("topbar-tool-btn--staff-wa-unread", inGrid && lastUnreadCount > 0);
-    btn.classList.toggle("topbar-staff-wa-btn--unread", !inGrid && lastUnreadCount > 0);
+    btn.classList.remove("topbar-tool-btn--staff-wa-unread");
+    btn.classList.toggle("topbar-staff-wa-btn--unread", lastUnreadCount > 0);
     if (!btn.hasAttribute("data-comms-unread-host")) {
       btn.setAttribute("data-comms-unread-host", "");
     }
@@ -1826,6 +1840,8 @@
       }
       ensureIncomingOverlay();
       ensureUnreadBadgeCss();
+      var cached = cachedUnreadCount();
+      if (cached > 0) applyUnreadBadge(cached);
       watchIncomingCalls();
       subscribeUnreadRealtime();
       var key = "";
