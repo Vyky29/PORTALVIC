@@ -140,6 +140,52 @@
     return String(n);
   }
 
+  function commsButtonLabel(count) {
+    var n = Math.max(0, Number(count) || 0);
+    return n > 0 ? "COMMS " + unreadLabel(n) : "COMMS";
+  }
+
+  function firstStaffName(raw) {
+    var t = String(raw || "").replace(/\s+/g, " ").trim();
+    if (!t) return "";
+    if (/^admin$/i.test(t) || /^administraci[oó]n$/i.test(t)) return "ADMIN";
+    return t.split(" ")[0] || t;
+  }
+
+  var staffNameCache = {};
+
+  async function staffFirstNameForUserId(id) {
+    var uid = String(id || "").trim();
+    if (!uid) return "";
+    if (Object.prototype.hasOwnProperty.call(staffNameCache, uid)) {
+      return staffNameCache[uid];
+    }
+    var c = client();
+    if (!c) return "";
+    var name = "";
+    try {
+      if (typeof c.rpc === "function") {
+        var rpcRes = await c.rpc("communication_staff_label", { p_user_id: uid });
+        if (!(rpcRes && rpcRes.error)) {
+          name = firstStaffName((rpcRes && rpcRes.data) || "");
+        }
+      }
+    } catch (_r) {}
+    if (!name && typeof c.from === "function") {
+      try {
+        var res = await c
+          .from("staff_profiles")
+          .select("full_name,username")
+          .eq("id", uid)
+          .maybeSingle();
+        var row = res && res.data;
+        name = firstStaffName((row && (row.full_name || row.username)) || "");
+      } catch (_e) {}
+    }
+    staffNameCache[uid] = name;
+    return name;
+  }
+
   function ensureUnreadBadgeCss() {
     if (typeof document === "undefined") return;
     var st = document.getElementById("portalCommsUnreadBadgeCss");
@@ -153,21 +199,26 @@
       "#btnComunicaciones,.admin-icon-btn--chat,#topbarStaffWaBtn,[data-comms-unread-host]," +
       "#topbarStaffWaBtn.topbar-tool-btn{position:relative!important;isolation:isolate!important;overflow:visible!important}" +
       "#topbarStaffWaBtn.topbar-tool-btn--staff-wa{display:inline-flex!important;flex-direction:row!important;" +
-      "align-items:center!important;justify-content:center!important;grid-template-rows:none!important;overflow:visible!important}" +
+      "align-items:center!important;justify-content:center!important;grid-template-rows:none!important;" +
+      "grid-template-columns:none!important;overflow:visible!important;max-width:none!important}" +
       "#commsBadge.is-empty,.topbar-staff-wa-btn__badge.is-empty,.portal-comms-corner-badge.is-empty{display:none!important}" +
       "#btnComunicaciones.admin-icon-btn--has-alerts,#btnComunicaciones.portal-comms-has-unread{" +
       "border-color:#dc2626!important;background:#fff5f5!important;" +
       "box-shadow:0 0 0 2px rgba(220,38,38,.55)!important;animation:portalCommsBtnPulse 1.1s ease infinite}" +
       "@keyframes portalCommsBtnPulse{0%,100%{box-shadow:0 0 0 2px rgba(220,38,38,.45)}50%{box-shadow:0 0 0 6px rgba(220,38,38,.2)}}" +
-      /* 3 IDs so this beats the gold flank pill (`#grid > #cell > .btn`). */
+      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
       "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
-      "#topbarToolsGridRight > .topbar-tool-cell--staff-wa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread{" +
+      "#topbarToolsGridRight > .topbar-tool-cell--staff-wa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread," +
+      ".topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread{" +
       "background:#dc2626!important;border-color:#991b1b!important;color:#fff!important;" +
       "box-shadow:0 0 0 2px rgba(220,38,38,.35),0 2px 8px rgba(220,38,38,.35)!important}" +
-      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label," +
-      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-staff-wa-btn__label{color:#fff!important}" +
-      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico," +
-      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{color:#fff!important}" +
+      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label," +
+      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-staff-wa-btn__label," +
+      "#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label{" +
+      "color:#fff!important;max-width:none!important;overflow:visible!important;flex:0 1 auto!important}" +
+      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico," +
+      "#topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{" +
+      "color:#fff!important}" +
       /* Number sits in the gold/red chip (flex item), not an absolute corner that parents clip. */
       "#topbarStaffWaBtn .topbar-staff-wa-btn__badge:not(.is-empty)," +
       "#topbarStaffWaBtn [data-comms-unread]:not(.is-empty){" +
@@ -235,17 +286,28 @@
         n += 1;
       }
     } catch (_p) {}
-    if (count > 0) host.setAttribute("data-comms-count", unreadLabel(count));
+    if (staffHost) host.removeAttribute("data-comms-count");
+    else if (count > 0) host.setAttribute("data-comms-count", unreadLabel(count));
     else host.removeAttribute("data-comms-count");
     var badge =
       host.querySelector("#commsBadge, .topbar-staff-wa-btn__badge, [data-comms-unread], .portal-comms-corner-badge") ||
       null;
-    if (!badge) {
+    if (!badge && !staffHost) {
       badge = document.createElement("span");
       badge.className = "portal-comms-corner-badge topbar-staff-wa-btn__badge";
       badge.setAttribute("data-comms-unread", "");
       host.appendChild(badge);
     }
+    if (staffHost) {
+      if (badge) {
+        badge.classList.add("is-empty");
+        badge.textContent = count > 0 ? unreadLabel(count) : "0";
+        badge.style.cssText = CORNER_BADGE_OFF;
+        badge.setAttribute("aria-hidden", "true");
+      }
+      return;
+    }
+    if (!badge) return;
     try {
       badge.removeAttribute("hidden");
     } catch (_h) {}
@@ -285,8 +347,9 @@
       btn.setAttribute("aria-label", lab);
       var labelEl = btn.querySelector(".topbar-staff-wa-btn__label, .topbar-tool-label");
       if (labelEl) {
-        labelEl.textContent = "COMMS";
+        labelEl.textContent = commsButtonLabel(lastUnreadCount);
         labelEl.style.setProperty("overflow", "visible", "important");
+        labelEl.style.setProperty("max-width", "none", "important");
       }
     }
     var adminBtn = document.getElementById("btnComunicaciones");
@@ -414,6 +477,49 @@
     }
   }
 
+  async function inboxUnreadMax(c) {
+    var personal = await inboxUnreadTotal(c, "personal");
+    var administration = await inboxUnreadTotal(c, "administration");
+    return Math.max(personal, administration);
+  }
+
+  async function latestUnreadInboxHint(c, mode) {
+    try {
+      var inboxRes = await c.rpc("communication_inbox", {
+        p_mode: mode || "administration",
+      });
+      if (inboxRes && inboxRes.error) return null;
+      var data = inboxRes && inboxRes.data;
+      if (typeof data === "string") {
+        try {
+          data = JSON.parse(data);
+        } catch (_j) {
+          data = {};
+        }
+      }
+      var items = (data && data.items) || (Array.isArray(data) ? data : []);
+      var best = null;
+      var bestAt = "";
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        if (!it || !(Number(it.unread) > 0)) continue;
+        var at = String((it.last && it.last.at) || "");
+        if (!best || at > bestAt) {
+          best = it;
+          bestAt = at;
+        }
+      }
+      if (!best) return null;
+      return {
+        name: firstStaffName(best.display_name || ""),
+        body: String((best.last && best.last.body) || "New message").replace(/\s+/g, " ").trim() || "New message",
+        conversation_id: String(best.conversation_id || ""),
+      };
+    } catch (_e) {
+      return null;
+    }
+  }
+
   function parseUnreadCounts(raw) {
     var data = raw;
     if (typeof data === "string") {
@@ -458,7 +564,7 @@
             scheduleUnreadRetry();
             return lastUnreadCount;
           }
-          var inboxFallback = await inboxUnreadTotal(c, "personal");
+          var inboxFallback = await inboxUnreadMax(c);
           applyUnreadFromServer(
             Math.max(0, Number(res.data) || 0, inboxFallback)
           );
@@ -469,18 +575,21 @@
             parsed.personal > lastPersonalCount &&
             !isCommsAppPage()
           ) {
+            var personalHint = await latestUnreadInboxHint(c, "personal");
             lastToastMode = "personal";
-            lastToastConv = "";
+            lastToastConv = (personalHint && personalHint.conversation_id) || "";
             maybeShowMessageToast({
               message_type: "text",
-              body:
+              body: (personalHint && personalHint.body) || (
                 parsed.personal === 1
                   ? "New message in My account"
-                  : parsed.personal + " unread in My account",
+                  : parsed.personal + " unread in My account"
+              ),
               sender_context: "PERSONAL",
               performed_by_user_id: "",
-              _alertTitle: "My account",
+              _alertTitle: (personalHint && personalHint.name) || "My account",
               _alertMode: "personal",
+              _fromName: (personalHint && personalHint.name) || "",
             });
           }
           if (
@@ -488,18 +597,21 @@
             parsed.administration > lastAdminCount &&
             !isCommsAppPage()
           ) {
+            var adminHint = await latestUnreadInboxHint(c, "administration");
             lastToastMode = "administration";
-            lastToastConv = "";
+            lastToastConv = (adminHint && adminHint.conversation_id) || "";
             maybeShowMessageToast({
               message_type: "text",
-              body:
+              body: (adminHint && adminHint.body) || (
                 parsed.administration === 1
-                  ? "New message in ADMIN"
-                  : parsed.administration + " unread in ADMIN",
-              sender_context: "ADMINISTRATION",
+                  ? "New message"
+                  : parsed.administration + " new messages"
+              ),
+              sender_context: "PERSONAL",
               performed_by_user_id: "",
-              _alertTitle: "ADMIN",
+              _alertTitle: (adminHint && adminHint.name) || "ADMIN",
               _alertMode: "administration",
+              _fromName: (adminHint && adminHint.name) || "",
             });
           }
           lastPersonalCount = parsed.personal;
@@ -509,7 +621,7 @@
            * unread). RPC totals can lag or return 0 when the client JWT is stale
            * even though box.session looked signed-in.
            */
-          var inboxSum = await inboxUnreadTotal(c, "personal");
+          var inboxSum = await inboxUnreadMax(c);
           var n = Math.max(
             parsed.total,
             parsed.personal,
@@ -885,7 +997,20 @@
     lastToastMode = meta.mode || "personal";
     lastToastConv = String(row.conversation_id || lastToastConv || "");
     var preview = previewMessageBody(row);
+    var ctx = String(row.sender_context || "").toUpperCase();
+    var hideAdminAuthor = ctx === "ADMINISTRATION" || ctx === "ADMIN";
+    var who = "";
+    if (!hideAdminAuthor) {
+      who = firstStaffName(
+        row._fromName || row.performed_by_name || row.sender_display || ""
+      );
+      if (!who) {
+        who = await staffFirstNameForUserId(row.performed_by_user_id || row.sender_user_id);
+      }
+    }
+    var title = hideAdminAuthor ? "ADMIN" : who || meta.title || "Communications";
     if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+      showCommsOsBanner(title, preview, lastToastConv);
       return;
     }
     messageToastCount += 1;
@@ -894,7 +1019,7 @@
     var bodyEl = document.getElementById("portalCommsMsgToastBody");
     if (titleEl) {
       titleEl.textContent =
-        messageToastCount > 1 ? meta.title + " (" + messageToastCount + " new)" : meta.title;
+        messageToastCount > 1 ? title + " (" + messageToastCount + " new)" : title;
     }
     if (bodyEl) bodyEl.textContent = preview;
     el.hidden = false;
@@ -1490,6 +1615,7 @@
               performed_by_user_id: d.senderUserId || "",
               _alertTitle: d.title || "Communications",
               _alertMode: String(d.title || "").toUpperCase() === "ADMIN" ? "administration" : "personal",
+              _fromName: String(d.title || "").toUpperCase() === "ADMIN" ? "" : d.title || "",
             });
           }
           void refreshUnread();
@@ -1557,7 +1683,7 @@
       if (lab) {
         lab.classList.add("topbar-tool-label");
         lab.classList.remove("topbar-staff-wa-btn__label");
-        lab.textContent = "COMMS";
+        lab.textContent = commsButtonLabel(lastUnreadCount);
       }
     } else {
       btn.classList.add("topbar-staff-wa-btn");
@@ -1569,7 +1695,7 @@
       if (lab) {
         lab.classList.add("topbar-staff-wa-btn__label");
         lab.classList.remove("topbar-tool-label");
-        lab.textContent = "COMMS";
+        lab.textContent = commsButtonLabel(lastUnreadCount);
       }
     }
     btn.classList.toggle("topbar-tool-btn--staff-wa-unread", inGrid && lastUnreadCount > 0);

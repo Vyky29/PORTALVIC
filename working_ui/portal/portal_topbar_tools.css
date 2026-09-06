@@ -223,7 +223,7 @@
 .topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa .topbar-tool-label{
   flex:0 1 auto;
   min-width:0;
-  max-width:100%;
+  max-width:none;
   height:auto !important;
   min-height:0 !important;
   max-height:none !important;
@@ -232,10 +232,29 @@
   line-height:1;
   letter-spacing:0;
   color:#173247 !important;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  overflow:visible;
+  text-overflow:clip;
   white-space:nowrap;
   text-align:center;
+}
+.topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn.topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread{
+  background:#dc2626 !important;
+  border-color:#991b1b !important;
+  color:#fff !important;
+  overflow:visible !important;
+  max-width:none !important;
+  box-shadow:0 0 0 2px rgba(220,38,38,.35),0 2px 8px rgba(220,38,38,.35) !important;
+}
+.topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread .topbar-tool-label,
+.topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread .topbar-staff-wa-btn__label{
+  color:#fff !important;
+  max-width:none !important;
+  overflow:visible !important;
+  flex:0 0 auto !important;
+}
+.topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico,
+.topbar-tools-grid--flank-2col > .topbar-tool-cell--staff-wa .topbar-tool-btn--staff-wa.topbar-tool-btn--staff-wa-unread .topbar-tool-btn__ico svg{
+  color:#fff !important;
 }
 
 /* Right stack (4+admin / 5+admin): single column matching left 4-icon height */
@@ -1549,7 +1568,7 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
 #topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-label{
   flex:0 1 auto !important;
   width:auto !important;
-  max-width:100% !important;
+  max-width:none !important;
   height:auto !important;
   min-height:0 !important;
   max-height:none !important;
@@ -1560,4 +1579,11 @@ body.dock-context-menu .topbar-tool-btn--participants:focus-visible{
   overflow:visible !important;
   text-overflow:clip !important;
   white-space:nowrap !important;
+}
+#topbarToolsGridRight > #topbarToolCellStaffWa > #topbarStaffWaBtn.topbar-tool-btn--staff-wa-unread .topbar-tool-label,
+#topbarToolsGridRight > #topbarToolCellStaffWa .topbar-tool-btn--staff-wa-unread .topbar-tool-label{
+  color:#fff !important;
+  flex:0 0 auto !important;
+  max-width:none !important;
+  overflow:visible !important;
 }

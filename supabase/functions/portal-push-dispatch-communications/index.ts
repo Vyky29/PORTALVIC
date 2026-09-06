@@ -35,6 +35,15 @@ function communicationsOpenUrl(): string {
   return staff ? `${staff.replace(/\/$/, "")}/comunicaciones.html` : "";
 }
 
+function firstPushName(raw: unknown): string {
+  const t = String(raw || "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  if (/^admin$/i.test(t) || /^administraci[oó]n$/i.test(t) || /^communications$/i.test(t)) {
+    return "";
+  }
+  return t.split(" ")[0] || t;
+}
+
 function withQuery(base: string, params: Record<string, string>): string {
   const root = String(base || "").trim();
   try {
@@ -123,6 +132,26 @@ Deno.serve(async (req) => {
     title = ctx === "ADMINISTRATION" ? "ADMIN" : "Communications";
     const conv = String(record.conversation_id || "").trim();
     senderUserId = String(record.performed_by_user_id || record.sender_user_id || "").trim();
+    if (ctx !== "ADMINISTRATION" && senderUserId) {
+      let nm = "";
+      try {
+        const { data: label } = await admin.rpc("communication_staff_label", {
+          p_user_id: senderUserId,
+        });
+        nm = firstPushName(label);
+      } catch (_rpc) {
+        nm = "";
+      }
+      if (!nm) {
+        const { data: prof } = await admin
+          .from("staff_profiles")
+          .select("full_name,username")
+          .eq("id", senderUserId)
+          .maybeSingle();
+        nm = firstPushName(prof?.full_name || prof?.username || "");
+      }
+      if (nm) title = nm;
+    }
     url = withQuery(openUrl, conv ? { conv } : {});
     tag = `comms-msg-${sourceId.slice(0, 24)}`;
     chatData = conv ? { conversationId: conv } : null;
