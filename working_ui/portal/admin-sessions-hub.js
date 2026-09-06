@@ -8912,19 +8912,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   function dayBoardServiceBand(slot) {
     var svc = clean(slot && slot.service);
-    var trialNamed =
-      /\(\s*trial\s*\)/i.test(clean(slot && slot.client_name)) ||
-      /^trial\b/i.test(clean(slot && slot.client_name));
-    var isTrialBand =
-      hubSlotShowsTrialChip(slot, slot && slot.__portalScheduleOverride) || trialNamed;
     if (isDayCentreService(svc)) return "Day Centre";
     if (isClimbingService(svc)) return "CLIMB";
     if (isMultiActivityService(svc)) return "MULTI";
-    if (/aquatic|swim/i.test(svc)) return isTrialBand ? "AQUATIC · Trial" : "AQUATIC";
+    if (/aquatic|swim/i.test(svc)) return "AQUATIC";
     if (/bespoke/i.test(svc)) return "BESPOKE";
-    if (isTrialBand) {
-      return (svc ? svc : "AQUATIC") + " · Trial";
-    }
+    /* Trial mark is the chip beside the band — do not also append "· Trial" in the label. */
     return svc || "Session";
   }
 
