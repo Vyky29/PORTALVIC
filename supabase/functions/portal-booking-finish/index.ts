@@ -42,6 +42,7 @@ import {
   extractBookingRequest,
   reservationFieldsFromBookingRequest,
   resolveSessionDateIso,
+  calendarDateIsoInLondon,
 } from "../_shared/portal_booking_context.ts";
 import {
   BOOKING_PAY_HOLD_MINUTES,
@@ -643,11 +644,13 @@ Deno.serve(async (req) => {
     venue,
     formType,
   });
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = calendarDateIsoInLondon();
+  const portalBookingKind = bookingKindFromContext(reservation, doc);
   const sessionDateIso = resolveSessionDateIso({
     dateIso: reservation?.date_iso ? String(reservation.date_iso).slice(0, 10) : null,
     day,
     asOfIso: todayIso,
+    bookingKind: portalBookingKind,
   });
   // Pro-rata from first attended session (or today if they already missed that date).
   const proRataAsOf =
@@ -663,7 +666,6 @@ Deno.serve(async (req) => {
   });
   const term = inferBillingTerm();
   const serviceKey = inferServiceKey(serviceName, timeLabel);
-  const portalBookingKind = bookingKindFromContext(reservation, doc);
   const detailLine = [day, timeLabel, venue].filter(Boolean).join(" · ");
 
   const quotePlans = [

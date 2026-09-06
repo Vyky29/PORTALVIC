@@ -1979,6 +1979,44 @@
         return false;
       }
 
+      function londonTodayIso() {
+        try {
+          return new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Europe/London",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(new Date());
+        } catch (_e) {
+          return new Date().toISOString().slice(0, 10);
+        }
+      }
+
+      function addDaysIso(iso, days) {
+        var base = String(iso || "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(base)) return "";
+        var p = base.split("-").map(Number);
+        var dt = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+        dt.setUTCDate(dt.getUTCDate() + days);
+        return dt.toISOString().slice(0, 10);
+      }
+
+      /** Trials need 2 calendar days' notice so office can brief the instructor. */
+      function trialSessionDateIso(dayName, preferredIso) {
+        var days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        var target = days.indexOf(String(dayName || "").trim().toLowerCase());
+        var floor = addDaysIso(londonTodayIso(), 2);
+        if (!floor || target < 0) return preferredIso || "";
+        var start = preferredIso && preferredIso >= floor ? preferredIso : floor;
+        var p = start.split("-").map(Number);
+        var dt = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+        for (var i = 0; i < 8; i++) {
+          if (dt.getUTCDay() === target) return dt.toISOString().slice(0, 10);
+          dt.setUTCDate(dt.getUTCDate() + 1);
+        }
+        return preferredIso || "";
+      }
+
       function registrationUrlForSlot(slot, opts) {
         opts = opts || {};
         var bookingKind = String(opts.bookingKind || "term").trim().toLowerCase();
@@ -1998,7 +2036,11 @@
         if (slot.bookingMode) q.set("booking_mode", slot.bookingMode);
         if (slot.weekId) q.set("week_id", slot.weekId);
         if (slot.blockId) q.set("block_id", slot.blockId);
-        if (slot.dateIso) q.set("date", slot.dateIso);
+        var dateIso = slot.dateIso || "";
+        if (bookingKind === "trial") {
+          dateIso = trialSessionDateIso(slot.day, dateIso) || dateIso;
+        }
+        if (dateIso) q.set("date", dateIso);
         q.set("booking_kind", bookingKind);
         try {
           if (window.PortalBookingLeadGate) {
@@ -2090,7 +2132,7 @@
             '"><strong>Book term place</strong><span>Secure the standing place for the rest of the term or year. After registration, complete funding, term or year choice, and payment in the booking flow.</span></button>' +
             '<button type="button" class="sheet__choice" data-book-kind="trial" data-slot-id="' +
             esc(slot.id) +
-            '"><strong>Book a trial</strong><span>One session. After registration, pay by card, Apple Pay, or bank transfer (30-minute hold)' +
+            '"><strong>Book a trial</strong><span>One session (at least 2 days ahead so we can brief the instructor). After registration, pay by card, Apple Pay, or bank transfer (30-minute hold)' +
             (price ? " · " + esc(price) : "") +
             ".</span></button>";
         }

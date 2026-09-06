@@ -115,6 +115,9 @@ export async function foldValidatedReservationOntoMadre(
       dateIso: null,
       day: clean(row.day_label, 20),
       asOfIso: asOf,
+      bookingKind: /booking_kind\s*=\s*trial/i.test(String(row.notes || ""))
+        ? "trial"
+        : "term",
     }) || "";
     if (/^\d{4}-\d{2}-\d{2}$/.test(iso) && !clean(row.date_iso, 12)) {
       await admin

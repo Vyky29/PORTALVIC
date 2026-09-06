@@ -22,6 +22,10 @@ import { sendFinishBookingAfterRegistration } from "../_shared/portal_booking_fi
 import { saveParticipantAvatarWithArchive } from "../_shared/participant_avatar.ts";
 
 import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
+import {
+  calendarDateIsoInLondon,
+  resolveSessionDateIso,
+} from "../_shared/portal_booking_context.ts";
 
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const BUCKET = "participant-documents";
@@ -360,6 +364,13 @@ Deno.serve(async (req) => {
     }
   }
 
+  const resolvedDateIso = resolveSessionDateIso({
+    dateIso: bookingRequest.date_iso,
+    day: bookingRequest.day,
+    asOfIso: calendarDateIsoInLondon(),
+    bookingKind: bookingRequest.booking_kind,
+  });
+
   const pdfBytes = buildStubPdf([
     "clubSENsational — Existing client place request",
     `Submitted: ${now.toLocaleString("en-GB")}`,
@@ -381,6 +392,7 @@ Deno.serve(async (req) => {
     ]
       .filter(Boolean)
       .join(" · ")}`,
+    `First session date: ${resolvedDateIso || bookingRequest.date_iso || "—"}`,
     `Slot id: ${bookingRequest.slot_id}`,
     "",
     photoBytes ? "Photo: updated with this request." : "Photo: already on file.",
@@ -469,7 +481,7 @@ Deno.serve(async (req) => {
       booking_mode: bookingRequest.booking_mode,
       week_id: bookingRequest.week_id,
       block_id: bookingRequest.block_id,
-      date_iso: bookingRequest.date_iso,
+      date_iso: resolvedDateIso || bookingRequest.date_iso,
       document_id: docRow.id,
       participant_name: child.display_name,
       parent_name: clean(lead.parent_name, 120) || null,

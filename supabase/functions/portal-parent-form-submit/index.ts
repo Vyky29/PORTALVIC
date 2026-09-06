@@ -10,6 +10,8 @@ import {
   extractBookingRequest,
   loadPendingBookingFromLeadSession,
   loadPendingBookingForEmail,
+  calendarDateIsoInLondon,
+  resolveSessionDateIso,
   type PortalBookingRequest,
 } from "../_shared/portal_booking_context.ts";
 import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
@@ -512,6 +514,13 @@ Deno.serve(async (req) => {
           .ilike("parent_email", parentEmail);
       }
 
+      const resolvedDateIso = resolveSessionDateIso({
+        dateIso: bookingRequest.date_iso,
+        day: bookingRequest.day,
+        asOfIso: calendarDateIsoInLondon(),
+        bookingKind: bookingRequest.booking_kind,
+      });
+
       const { data: holdRow, error: holdErr } = await admin
         .from("portal_booking_slot_reservations")
         .insert({
@@ -525,7 +534,7 @@ Deno.serve(async (req) => {
           booking_mode: bookingRequest.booking_mode,
           week_id: bookingRequest.week_id,
           block_id: bookingRequest.block_id,
-          date_iso: bookingRequest.date_iso,
+          date_iso: resolvedDateIso || bookingRequest.date_iso,
           document_id: row.id,
           participant_name: participantName,
           parent_name: parentName,

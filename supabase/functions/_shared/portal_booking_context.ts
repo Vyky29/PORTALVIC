@@ -129,6 +129,41 @@ export function nextWeekdayOnOrAfter(
   return null;
 }
 
+/** Trials need office time to brief the instructor — not same-day / next-day. */
+export const TRIAL_MIN_LEAD_DAYS = 2;
+
+export function calendarDateIsoInLondon(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+export function addDaysIso(iso: string, days: number): string | null {
+  const base = String(iso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(base)) return null;
+  const [y, m, d] = base.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
+/** Earliest calendar day a trial session may land (London today + lead days). */
+export function earliestTrialSessionFloorIso(asOfIso?: string | null): string {
+  const asOf =
+    clean(asOfIso, 10) && /^\d{4}-\d{2}-\d{2}$/.test(clean(asOfIso, 10))
+      ? clean(asOfIso, 10)
+      : calendarDateIsoInLondon();
+  return addDaysIso(asOf, TRIAL_MIN_LEAD_DAYS) || asOf;
+}
+
+export function isTrialBookingKind(kind: string | null | undefined): boolean {
+  const k = String(kind || "").trim().toLowerCase();
+  return k === "trial" || k === "trial_session" || k === "taster";
+}
+
 /** Autumn 26/27 first bookable session by weekday (matches term_from_timetable + roster). */
 export function firstBookableSessionFloorIso(
   dayName: string | null | undefined,
@@ -145,16 +180,23 @@ export function resolveSessionDateIso(input: {
   dateIso?: string | null;
   day?: string | null;
   asOfIso?: string | null;
+  bookingKind?: string | null;
 }): string | null {
-  const floor = firstBookableSessionFloorIso(input.day);
+  const termFloor = firstBookableSessionFloorIso(input.day);
+  const trial =
+    isTrialBookingKind(input.bookingKind) ? earliestTrialSessionFloorIso(input.asOfIso) : null;
+  let floor = termFloor;
+  if (trial && (!floor || trial > floor)) floor = trial;
+
   const direct = clean(input.dateIso, 10);
   if (/^\d{4}-\d{2}-\d{2}$/.test(direct)) {
     if (floor && direct < floor) return nextWeekdayOnOrAfter(input.day, floor);
     return direct;
   }
-  const asOf = clean(input.asOfIso, 10) || new Date().toISOString().slice(0, 10);
+  const asOf = clean(input.asOfIso, 10) || calendarDateIsoInLondon();
   const base = floor && asOf < floor ? floor : asOf;
-  return nextWeekdayOnOrAfter(input.day, base);
+  const from = floor && base < floor ? floor : base;
+  return nextWeekdayOnOrAfter(input.day, from);
 }
 
 async function sha256Hex(value: string): Promise<string> {
