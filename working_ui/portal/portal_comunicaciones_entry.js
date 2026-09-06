@@ -601,6 +601,31 @@
     };
   }
 
+  function settleWithin(promise, ms, fallback) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var timer = global.setTimeout(function () {
+        if (done) return;
+        done = true;
+        resolve(fallback);
+      }, Math.max(400, Number(ms) || 1800));
+      Promise.resolve(promise).then(
+        function (value) {
+          if (done) return;
+          done = true;
+          global.clearTimeout(timer);
+          resolve(value);
+        },
+        function () {
+          if (done) return;
+          done = true;
+          global.clearTimeout(timer);
+          resolve(fallback);
+        }
+      );
+    });
+  }
+
   async function refreshUnread() {
     if (fetchInFlight) {
       unreadRefreshQueued = true;
@@ -613,7 +638,7 @@
           scheduleUnreadRetry();
           return lastUnreadCount;
         }
-        if (!(await hasAuthSession(c))) {
+        if (!(await settleWithin(hasAuthSession(c), 1800, false))) {
           scheduleUnreadRetry();
           var cachedWhileWaiting = cachedUnreadCount();
           if (cachedWhileWaiting > 0 && lastUnreadCount === 0) applyUnreadBadge(cachedWhileWaiting);
@@ -729,11 +754,26 @@
 
   var unreadChannelAuthed = false;
 
-  function subscribeUnreadRealtime() {
+  function bindAuthRealtime(c) {
+    if (global.__PORTAL_COMMS_AUTH_RT__) return;
+    if (!c || !c.auth || typeof c.auth.onAuthStateChange !== "function") return;
+    global.__PORTAL_COMMS_AUTH_RT__ = true;
+    try {
+      c.auth.onAuthStateChange(function () {
+        subscribeUnreadRealtime(true);
+        void refreshUnread();
+      });
+    } catch (_a) {
+      global.__PORTAL_COMMS_AUTH_RT__ = false;
+    }
+  }
+
+  function subscribeUnreadRealtime(force) {
     var c = client();
     if (!c || typeof c.channel !== "function") return;
+    bindAuthRealtime(c);
     var authed = !!myUserId();
-    if (unreadChannel && unreadChannelAuthed === authed && authed) return;
+    if (!force && unreadChannel && unreadChannelAuthed === authed && authed) return;
     if (unreadChannel) {
       try {
         c.removeChannel(unreadChannel);
@@ -775,7 +815,9 @@
               c.removeChannel(unreadChannel);
             } catch (_rm) {}
             unreadChannel = null;
-            global.setTimeout(subscribeUnreadRealtime, 2500);
+            global.setTimeout(function () {
+              subscribeUnreadRealtime(true);
+            }, 2500);
           }
         });
     } catch (_rt) {
@@ -1138,10 +1180,22 @@
       el.removeAttribute("hidden");
     } catch (_sh) {}
     if (messageToastTimer) global.clearTimeout(messageToastTimer);
-    messageToastTimer = global.setTimeout(hideMessageToast, 8000);
+    messageToastTimer = global.setTimeout(hideMessageToast, 12000);
+  }
+
+  function documentIsVisible() {
+    try {
+      if (document.hidden) return false;
+      return document.visibilityState === "visible";
+    } catch (_e) {
+      return true;
+    }
   }
 
   function commsPageIsActive() {
+    /* iOS can fire pagehide while the PWA is still on screen. If the document
+       is visible, show the in-app COMMS card + chip; do not wait for leave/enter. */
+    if (documentIsVisible()) return true;
     try {
       if (typeof global.portalPageIsForeground === "function") {
         return !!global.portalPageIsForeground();
@@ -1689,7 +1743,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-aviso-42", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-chip-43", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
     } catch (_sw) {}
@@ -1720,19 +1774,24 @@
           if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(d)) {
             return;
           }
-          if (isOwnCommsRow({ performed_by_user_id: d.senderUserId || "", sender_user_id: d.senderUserId || "" })) {
-            return;
-          }
-          closeCommsOsBanners();
-          maybeShowMessageToast({
+          var pushRow = {
             message_type: "text",
             body: d.body || "New message",
             sender_context: String(d.title || "").toUpperCase() === "ADMIN" ? "ADMINISTRATION" : "PERSONAL",
             performed_by_user_id: d.senderUserId || "",
+            sender_user_id: d.senderUserId || "",
+            conversation_id:
+              (d.chat && (d.chat.conversationId || d.chat.conversation_id)) || "",
             _alertTitle: d.title || "Communications",
             _alertMode: String(d.title || "").toUpperCase() === "ADMIN" ? "administration" : "personal",
             _fromName: String(d.title || "").toUpperCase() === "ADMIN" ? "" : d.title || "",
-          });
+          };
+          if (isOwnCommsRow(pushRow)) {
+            return;
+          }
+          closeCommsOsBanners();
+          bumpUnreadFromIncoming(pushRow);
+          maybeShowMessageToast(pushRow);
           void refreshUnread();
         }
         if (d.type === "portal-notification-click" && (open === "communications" || open === "communications_call")) {
@@ -1930,7 +1989,7 @@
       var cached = cachedUnreadCount();
       if (cached > 0) applyUnreadBadge(cached);
       watchIncomingCalls();
-      subscribeUnreadRealtime();
+      subscribeUnreadRealtime(true);
       var key = "";
       if (typeof global.resolveTopbarStaffKey === "function") {
         key = global.resolveTopbarStaffKey() || "";
@@ -1969,20 +2028,23 @@
       watchIncomingCalls();
     });
     document.addEventListener("visibilitychange", function () {
-      setCommsUiActive(document.visibilityState === "visible");
-      if (document.visibilityState === "visible") {
+      setCommsUiActive(documentIsVisible());
+      if (documentIsVisible()) {
+        subscribeUnreadRealtime(true);
         void refreshUnread();
         if (!isCommsAppPage()) void pollRingingCalls();
       }
     });
     global.addEventListener("pageshow", function () {
       setCommsUiActive(true);
+      subscribeUnreadRealtime(true);
+      void refreshUnread();
     });
     global.addEventListener("focus", function () {
       setCommsUiActive(true);
     });
     global.addEventListener("pagehide", function () {
-      setCommsUiActive(false);
+      if (!documentIsVisible()) setCommsUiActive(false);
     });
     global.addEventListener("freeze", function () {
       setCommsUiActive(false);

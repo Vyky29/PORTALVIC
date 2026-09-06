@@ -15,17 +15,17 @@
     bootstrapDashboardSupabase({ page: "admin" });
   </script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
-  <script src="/portal/portal_web_push_support.js?v=20260906-comms-aviso-42"></script>
+  <script src="/portal/portal_web_push_support.js?v=20260906-comms-chip-43"></script>
   <script src="/portal/portal_ensure_web_push.js?v=20260619-denied-help"></script>
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260906-comms-inapp-39"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
-  <script src="/portal/portal_comunicaciones_entry.js?v=20260906-comms-aviso-42"></script>
+  <script src="/portal/portal_comunicaciones_entry.js?v=20260906-comms-chip-43"></script>
   <script>
     /* Register push SW on admin so Send test alert / background push work. */
     (function () {
       if (!("serviceWorker" in navigator)) return;
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-aviso-42", location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-chip-43", location.href).href;
         var scopeBase = new URL("./", location.href).href;
         navigator.serviceWorker.register(swUrl, { scope: scopeBase }).then(function (reg) {
           window.__PORTAL_SW_REG__ = reg;
@@ -156,7 +156,7 @@
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260906-yossi-dedupe"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260906-sat-acton-v76"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260907-raul-victor-v77"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>

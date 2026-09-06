@@ -137,7 +137,7 @@
     }
     global.__PORTAL_SW_REG_PROMISE__ = (async function () {
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-aviso-42", global.location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-chip-43", global.location.href).href;
         var scopeBase = new URL("./", global.location.href).href;
         var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
         global.__PORTAL_SW_REG__ = reg;
@@ -381,6 +381,9 @@
         true
       );
       global.addEventListener("pagehide", function () {
+        try {
+          if (document.visibilityState === "visible") return;
+        } catch (_v) {}
         portalSetPageForeground(false);
       });
       global.addEventListener("freeze", function () {
@@ -587,7 +590,7 @@
     var standalone =
       typeof portalIsStandalonePwa === "function" ? portalIsStandalonePwa() : false;
     var buildKey = "portal_web_push_build";
-    var buildVal = "20260906-comms-aviso-42";
+    var buildVal = "20260906-comms-chip-43";
     var prevBuild = persistGet(buildKey);
     if (
       env.isIOS &&
