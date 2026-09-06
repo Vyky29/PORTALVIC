@@ -8,7 +8,7 @@
  * v20260904-comms-push (Communications message + incoming-call banners)
  * v20260905-comms-36 (Home screen PWA numeric badge via Badging API)
  * v20260906-notif-open-fix (never navigate PWA to bare / — blank screen on iOS)
- * v20260906-comms-inapp-47 (inbox poll paints COMMS chip + in-app card)
+ * v20260906-comms-inapp-48 (OS logo when PWA is away / screen off)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
@@ -36,7 +36,10 @@ var PORTAL_CALL_VIBRATE = [500, 180, 500, 180, 700, 180, 500];
 var portalPushUserId = '';
 /** iOS often returns no clients during `push`. Page heartbeat covers that. */
 var portalForegroundUntil = 0;
+var portalForegroundSince = 0;
 var PORTAL_FG_CACHE = 'portal-fg-v1';
+var PORTAL_FG_TTL_MS = 3500;
+var PORTAL_FG_MIN_VISIBLE_MS = 2500;
 var PORTAL_BADGE_CACHE = 'portal-app-badge-v1';
 var portalStoredAppBadge = 0;
 
@@ -180,49 +183,54 @@ function portalNotifyOpenClients(title, body, portalOpen, callData, chatData, me
   });
 }
 
-function portalWriteForegroundUntil(until) {
+function portalWriteForegroundState(until, since) {
   portalForegroundUntil = Math.max(0, Number(until) || 0);
+  portalForegroundSince = Math.max(0, Number(since) || 0);
   return caches
     .open(PORTAL_FG_CACHE)
     .then(function (c) {
-      return c.put('until', new Response(String(portalForegroundUntil)));
+      return Promise.all([
+        c.put('until', new Response(String(portalForegroundUntil))),
+        c.put('since', new Response(String(portalForegroundSince))),
+      ]);
     })
     .catch(function () {});
 }
 
-function portalReadForegroundUntil() {
+function portalParseCacheNumber(r, fallback) {
+  if (!r) return Promise.resolve(fallback);
+  return r.text().then(function (t) {
+    var n = parseInt(t, 10);
+    return Number.isFinite(n) ? n : fallback;
+  });
+}
+
+function portalReadForegroundState() {
   return caches
     .open(PORTAL_FG_CACHE)
     .then(function (c) {
-      return c.match('until').then(function (r) {
-        if (!r) return portalForegroundUntil;
-        return r.text().then(function (t) {
-          var n = parseInt(t, 10) || 0;
-          if (n > portalForegroundUntil) portalForegroundUntil = n;
-          return portalForegroundUntil;
+      return Promise.all([c.match('until'), c.match('since')]).then(function (pair) {
+        return Promise.all([
+          portalParseCacheNumber(pair[0], portalForegroundUntil),
+          portalParseCacheNumber(pair[1], portalForegroundSince),
+        ]).then(function (vals) {
+          portalForegroundUntil = vals[0];
+          portalForegroundSince = vals[1];
+          return { until: portalForegroundUntil, since: portalForegroundSince };
         });
       });
     })
     .catch(function () {
-      return portalForegroundUntil;
+      return { until: portalForegroundUntil, since: portalForegroundSince };
     });
 }
 
-function portalHasVisiblePortalClient() {
-  return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
-    if (!clientList || !clientList.length) return false;
-    for (var i = 0; i < clientList.length; i++) {
-      var client = clientList[i];
-      if (client && client.visibilityState === 'visible') return true;
-    }
-    return false;
-  });
-}
-
 function portalTreatAsForeground() {
-  return portalReadForegroundUntil().then(function (until) {
-    if (Date.now() < until) return true;
-    return portalHasVisiblePortalClient();
+  return portalReadForegroundState().then(function (st) {
+    var now = Date.now();
+    if (!st.until || now >= st.until) return false;
+    if (!st.since || now - st.since < PORTAL_FG_MIN_VISIBLE_MS) return false;
+    return true;
   });
 }
 
@@ -272,11 +280,10 @@ self.addEventListener('message', function (event) {
   }
   if (d.type === 'portal-client-visibility') {
     if (d.visible) {
-      portalForegroundUntil = Date.now() + 12000;
-      event.waitUntil(portalWriteForegroundUntil(portalForegroundUntil));
+      var since = Math.max(0, Number(d.since) || Date.now());
+      event.waitUntil(portalWriteForegroundState(Date.now() + PORTAL_FG_TTL_MS, since));
     } else {
-      portalForegroundUntil = 0;
-      event.waitUntil(portalWriteForegroundUntil(0));
+      event.waitUntil(portalWriteForegroundState(0, 0));
     }
     return;
   }
@@ -425,9 +432,9 @@ self.addEventListener('push', function (event) {
           targetUserId: targetUserId,
         }),
       ];
-      /* iOS: clients.matchAll is often empty during push. Foreground is a
-         Cache heartbeat from the open PWA. If we are in the PWA, never show
-         the OS logo toaster — only postMessage for the in-app COMMS card. */
+      /* Skip the iOS logo only if the PWA has been on-screen for a few
+         seconds. Away, locked, or just-unlocked queued pushes must use
+         showNotification so the banner + vibration actually fire. */
       if ((isCommsPush || isFamilyPush) && hasVisibleClient) {
         tasks.push(portalCloseCommsOsBanners());
         tasks.push(

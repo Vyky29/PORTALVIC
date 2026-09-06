@@ -137,7 +137,7 @@
     }
     global.__PORTAL_SW_REG_PROMISE__ = (async function () {
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-47", global.location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-48", global.location.href).href;
         var scopeBase = new URL("./", global.location.href).href;
         var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
         global.__PORTAL_SW_REG__ = reg;
@@ -146,8 +146,8 @@
             global.__PORTAL_SW_CTRL_BOUND__ = true;
             global.navigator.serviceWorker.addEventListener("controllerchange", function () {
               try {
-                if (sessionStorage.getItem("portal_sw_reloaded_47") === "1") return;
-                sessionStorage.setItem("portal_sw_reloaded_47", "1");
+                if (sessionStorage.getItem("portal_sw_reloaded_48") === "1") return;
+                sessionStorage.setItem("portal_sw_reloaded_48", "1");
               } catch (_s) {}
               global.location.reload();
             });
@@ -355,63 +355,85 @@
     } catch (_e) {}
   }
 
-  var portalPageForeground = true;
+  var portalPageForeground = false;
+  var portalVisibleSince = 0;
   var PORTAL_FG_CACHE = "portal-fg-v1";
+  var PORTAL_FG_TTL_MS = 3500;
+
+  function portalDocumentIsOnScreen() {
+    try {
+      if (document.hidden) return false;
+      return document.visibilityState === "visible";
+    } catch (_e) {
+      return false;
+    }
+  }
 
   function portalWriteForegroundCache(visible) {
-    var until = visible ? String(Date.now() + 12000) : "0";
+    var now = Date.now();
+    if (visible) {
+      if (!portalVisibleSince) portalVisibleSince = now;
+    } else {
+      portalVisibleSince = 0;
+    }
+    var until = visible ? String(now + PORTAL_FG_TTL_MS) : "0";
+    var since = visible ? String(portalVisibleSince) : "0";
     try {
       if (!global.caches || typeof global.caches.open !== "function") return;
       void global.caches.open(PORTAL_FG_CACHE).then(function (c) {
-        return c.put("until", new Response(until, { headers: { "Content-Type": "text/plain" } }));
+        return Promise.all([
+          c.put("until", new Response(until, { headers: { "Content-Type": "text/plain" } })),
+          c.put("since", new Response(since, { headers: { "Content-Type": "text/plain" } })),
+        ]);
       });
     } catch (_e) {}
   }
 
   function portalSetPageForeground(on) {
-    portalPageForeground = !!on;
-    portalWriteForegroundCache(portalPageForeground);
-    portalPostToServiceWorker({ type: "portal-client-visibility", visible: portalPageForeground });
+    var next = !!on && portalDocumentIsOnScreen();
+    portalPageForeground = next;
+    portalWriteForegroundCache(next);
+    portalPostToServiceWorker({
+      type: "portal-client-visibility",
+      visible: next,
+      since: portalVisibleSince,
+    });
   }
 
   function portalPageIsForeground() {
-    return portalPageForeground;
+    return portalPageForeground && portalDocumentIsOnScreen();
   }
   global.portalPageIsForeground = portalPageIsForeground;
 
   function portalSyncClientVisibilityToSw() {
-    portalPostToServiceWorker({ type: "portal-client-visibility", visible: portalPageForeground });
+    portalSetPageForeground(portalDocumentIsOnScreen());
   }
 
   if (!global.__PORTAL_SW_VIS_HEARTBEAT__) {
     global.__PORTAL_SW_VIS_HEARTBEAT__ = true;
-    portalSetPageForeground(true);
+    portalSyncClientVisibilityToSw();
     global.setInterval(portalSyncClientVisibilityToSw, 2000);
     try {
       document.addEventListener("visibilitychange", function () {
-        if (document.visibilityState === "visible") portalSetPageForeground(true);
+        portalSyncClientVisibilityToSw();
       });
       global.addEventListener("pageshow", function () {
-        portalSetPageForeground(true);
+        portalSyncClientVisibilityToSw();
       });
-      global.addEventListener("focus", function () {
-        portalSetPageForeground(true);
-      });
-      document.addEventListener(
-        "pointerdown",
-        function () {
-          portalSetPageForeground(true);
-        },
-        true
-      );
       global.addEventListener("pagehide", function () {
-        try {
-          if (document.visibilityState === "visible") return;
-        } catch (_v) {}
-        portalSetPageForeground(false);
+        portalVisibleSince = 0;
+        portalPageForeground = false;
+        portalWriteForegroundCache(false);
+        portalPostToServiceWorker({ type: "portal-client-visibility", visible: false, since: 0 });
       });
       global.addEventListener("freeze", function () {
-        portalSetPageForeground(false);
+        portalVisibleSince = 0;
+        portalPageForeground = false;
+        portalWriteForegroundCache(false);
+        portalPostToServiceWorker({ type: "portal-client-visibility", visible: false, since: 0 });
+      });
+      global.addEventListener("focus", function () {
+        portalSyncClientVisibilityToSw();
       });
     } catch (_b) {}
   }
@@ -614,7 +636,7 @@
     var standalone =
       typeof portalIsStandalonePwa === "function" ? portalIsStandalonePwa() : false;
     var buildKey = "portal_web_push_build";
-    var buildVal = "20260906-comms-inapp-47";
+    var buildVal = "20260906-comms-inapp-48";
     var prevBuild = persistGet(buildKey);
     if (
       env.isIOS &&
