@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 69;
+  var SOURCE_VERSION = 70;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -742,6 +742,104 @@
       };
     });
     return john.concat(berta).concat(godsway);
+  }
+
+  /** Sun 6 Sep: Javier pool book (LOCAL DATE_EXTRA) — Aquatic Zaid trial + Multi, dated so projection cannot drop the trial. */
+  function autumnSundaySep6JavierPoolRows() {
+    var seats = [
+      {
+        client_name: "Zaid (Trial)",
+        service: "Aquatic Activity",
+        area: "Small Pool",
+        time_slot: "9 to 9.30",
+      },
+      {
+        client_name: "Zaid",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "9.30 to 10.15",
+      },
+      {
+        client_name: "Jack S",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "10.15 to 11",
+      },
+      {
+        client_name: "Hazem",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "11 to 11.45",
+      },
+      {
+        client_name: "Eiji",
+        service: "Multi-Activity",
+        area: "Big Pool",
+        time_slot: "11.45 to 12.30",
+      },
+      {
+        client_name: "Rayyan F",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "12.30 to 1.15",
+      },
+      {
+        client_name: "Haneef",
+        service: "Multi-Activity",
+        area: "Small Pool",
+        time_slot: "1.15 to 2",
+      },
+      {
+        client_name: "Max",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2 to 2.30",
+      },
+      {
+        client_name: "Shaan",
+        service: "Aquatic Activity",
+        area: "Big Pool",
+        time_slot: "2.30 to 3",
+      },
+    ];
+    return seats.map(function (slot) {
+      return {
+        client_name: slot.client_name,
+        day: "Sunday",
+        instructors: "JAVIER",
+        service: slot.service,
+        area: slot.area,
+        time_slot: slot.time_slot,
+        venue: "SwimFarm",
+        session_date: "2026-09-06",
+      };
+    });
+  }
+
+  /**
+   * Sun 6: drop any dated Javier SwimFarm pool/aquatic rows then re-inject LOCAL book
+   * (Zaid trial 9–9.30 + Multi 9.30–10.15 …). Standing Jul rows are blocked from
+   * projecting onto Sep 6 in admin-sessions-hub rosterRowAppliesOnDate.
+   */
+  function scrubAndEnsureSep6JavierPool(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (
+        normIso(r.session_date) === "2026-09-06" &&
+        /\bjavier\b/i.test(String(r.instructors || "")) &&
+        /swimfarm/i.test(String(r.venue || "SwimFarm")) &&
+        !/hub/i.test(String(r.area || "")) &&
+        (isMultiActivityService(r.service) || isAquaticService(r.service))
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnSundaySep6JavierPoolRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
   }
 
   /**
@@ -1853,6 +1951,7 @@
     merged = scrubDepartedAutumnInstructorRows(merged);
     merged = applyAutumnWeek1DayCentre(merged);
     merged = scrubAndEnsureSep6HubCover(merged);
+    merged = scrubAndEnsureSep6JavierPool(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);
     /* After all Autumn patches: no summer history weeks left to snap onto Sep+. */
     merged = purgeSummerHistoryOutsideAutumnTemplates(merged);

@@ -1015,6 +1015,21 @@
         ) {
           return false;
         }
+        /*
+         * Sun 6 Sep Javier pool is owned by scrubAndEnsureSep6JavierPool (dated LOCAL book
+         * including Zaid Aquatic trial 9–9.30). Do not also project Jul standing pool rows
+         * (would miss Rayyan Fi / trial or duplicate Multi).
+         */
+        if (
+          isoDate === "2026-09-06" &&
+          /\bjavier\b/i.test(String((r && r.instructors) || "")) &&
+          /swimfarm/i.test(String((r && r.venue) || "SwimFarm")) &&
+          !/hub/i.test(String((r && r.area) || "")) &&
+          (/multi/i.test(String((r && r.service) || "")) ||
+            /aquatic|swim/i.test(String((r && r.service) || "")))
+        ) {
+          return false;
+        }
         if (clientHasDatedRosterInWeekSameFamily(rosterRows, r, isoDate)) return false;
         return true;
       }
