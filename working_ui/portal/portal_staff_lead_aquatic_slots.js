@@ -550,9 +550,8 @@
     return "";
   }
 
-  /** Aquatic + Multi-Activity (e.g. Yusuf Sun with Roberto) → one Today card + one feedback.
-   * Zaid+Javier trial: keep TWO cards (Aquatic trial + Multi) but same merge key so one
-   * feedback validates both. Admin Overview still shows one 9–10.15 row.
+  /** Aquatic + Multi-Activity → shared feedback unit.
+   * Yusuf+Roberto and Zaid+Javier: TWO Today cards (AA + MA); one feedback validates both.
    */
   function mergeTodayFeedbackMergeGroups(items, iso, dayWord, staffId) {
     if (!items || !items.length) return items || [];
@@ -588,8 +587,8 @@
         out.push(only);
         return;
       }
-      /* Trial swim: two visible cards, shared feedback unit. */
-      if (mg === "zaid_javier_sun_swim") {
+      /* Trial / Sunday swim pairs: two visible cards, shared feedback unit (AA↔MA). */
+      if (mg === "zaid_javier_sun_swim" || mg === "yusuf_ah_roberto_sun_swim") {
         list.sort(function (a, b) {
           return (a.sessionStartTs || 0) - (b.sessionStartTs || 0);
         });
@@ -611,10 +610,9 @@
       var startHm = hmFromBaseSession(rep.__portalBaseSession).start;
       var endHm = hmFromBaseSession(last.__portalBaseSession).end;
       /*
-       * Yusuf Sun with swim instructor: staff card is one block 9–10.15
-       * (hub from 10.15 is another instructor).
+       * Legacy Yusuf key (if still present): one block 9–10.15.
        */
-      if (mg === "yusuf_ah_roberto_9am" || mg === "yusuf_ah_roberto_sun_swim") {
+      if (mg === "yusuf_ah_roberto_9am") {
         endHm = "10:15";
       }
       var merged = Object.assign({}, rep);

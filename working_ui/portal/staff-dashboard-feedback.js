@@ -405,6 +405,14 @@
           if(r.client_slug && portalSlugifyClientKey(r.client_slug) !== slug) continue;
           if(r.time_slot && String(r.time_slot).trim() !== ts) continue;
           if(r.service && String(r.service).trim() !== svc) continue;
+          /* Keep AA+MA pairs visible on Today (Yusuf/Roberto, Zaid/Javier) — one feedback still covers both. */
+          if(
+            (slug === 'zaid' || slug === 'yusuf_ah' || slug === 'yusuf') &&
+            /aquatic/i.test(svc) &&
+            /9\s*to\s*9\.?30/i.test(ts)
+          ){
+            return false;
+          }
           if(!portalStaffOwnsSundayFeedbackMergeSlot(s, day, iso)) return false;
           return true;
         }

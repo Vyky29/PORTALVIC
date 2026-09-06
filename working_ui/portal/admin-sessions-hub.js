@@ -190,12 +190,17 @@
       else if (dsFb.total && dsFb.done < dsFb.total) stateCls = " ash-day-card--partial";
       else if (dsFb.total && dsFb.done >= dsFb.total) stateCls = " ash-day-card--complete";
     } else if (hub.tab === "tracking") {
-      var dsTrack = hub.dayStats(iso);
+      /* Overview: each board seat = 1 session = 1 feedback. Swim AA+MA pairs count as 2;
+       * slotFeedbackComplete still paints both when either half is submitted. */
+      var dsTrack =
+        typeof hub.staffingSessionStats === "function"
+          ? hub.staffingSessionStats(iso)
+          : hub.dayStats(iso);
       if (dsTrack.total) {
         innerPct = Math.round((100 * dsTrack.done) / dsTrack.total);
         if (dsTrack.done > 0 && innerPct < 12) innerPct = 12;
       }
-      countStrong = dsTrack.done + "/" + dsTrack.total;
+      countStrong = dsTrack.total ? dsTrack.done + "/" + dsTrack.total : "0";
       countLabel = "feedbacks";
       var stateClsTrack = "";
       if (dsTrack.total && dsTrack.done === 0) stateClsTrack = " ash-day-card--none";
@@ -8492,6 +8497,34 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     };
   };
 
+  /**
+   * Overview week strip / progress: count each staffing seat as one session (= one feedback).
+   * sundayFeedbackMerges (Yusuf/Zaid AA+MA) still share completion — one submit paints both.
+   */
+  AdminSessionsHub.prototype.staffingSessionStats = function (iso) {
+    var hub = this;
+    iso = clean(iso) || hub.selectedDay;
+    var ctx = hub.staffingDisplayContextForDay(iso);
+    var slots = (ctx && ctx.displaySlots) || [];
+    var total = 0;
+    var done = 0;
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (!s || isTeflonDemoRosterSlot(s)) continue;
+      if (slotIsStaffDutyNoFeedback(s)) continue;
+      var kind = rosterSlotKind(s.client_name);
+      if (kind === "open" || kind === "closed" || kind === "manager" || kind === "home") continue;
+      if (!isRosterClient(s.client_name)) continue;
+      total++;
+      try {
+        if (hub.slotIsAbsent(s) || hub.slotCancellationCountsAsSubmitted(s) || hub.slotFeedbackComplete(s)) {
+          done++;
+        }
+      } catch (_fb) {}
+    }
+    return { total: total, done: done };
+  };
+
   AdminSessionsHub.prototype.trackingDisplayContextForDay = function (iso) {
     var hub = this;
     /* Overview tab = staffing guide only. */
@@ -8853,6 +8886,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   }
 
   function dayBoardColHtml(hub, key, label, items, esc) {
+    var n = items.length;
     var cards = items
       .map(function (it) {
         return htmlDayBoardCard(hub, it.slot, it.st, esc);
@@ -8866,12 +8900,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       esc(label) +
       "</h4>" +
       '<span class="ash-db-col__meta">' +
-      esc(String(items.length)) +
-      " seat" +
-      (items.length === 1 ? "" : "s") +
+      esc(String(n)) +
+      " session" +
+      (n === 1 ? "" : "s") +
       "</span></div>" +
       '<div class="ash-db-col__slots">' +
-      (cards || '<p class="ash-db-empty">No seats</p>') +
+      (cards || '<p class="ash-db-empty">No sessions</p>') +
       "</div></section>"
     );
   }

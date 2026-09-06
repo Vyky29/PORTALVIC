@@ -1697,6 +1697,7 @@
       gap: 4px;
       margin: 0 0 8px;
       min-width: 0;
+      width: 100%;
     }
     .ash-db-col__photo,
     .ash-db-col__head .portal-roster-avatar {
