@@ -349,7 +349,12 @@
     }
   }
 
+  var paintingBadge = false;
+
   function applyUnreadBadge(count) {
+    if (paintingBadge) return;
+    paintingBadge = true;
+    try {
     lastUnreadCount = Math.max(0, Number(count) || 0);
     paintDataUnreadNodes(lastUnreadCount);
     var btn = document.getElementById("topbarStaffWaBtn");
@@ -398,6 +403,9 @@
       );
     } catch (_ev) {}
     watchBadgeHosts();
+    } finally {
+      paintingBadge = false;
+    }
   }
 
   function watchBadgeHosts() {
@@ -405,10 +413,16 @@
     global.__PORTAL_COMMS_BADGE_OBS__ = true;
     var t = 0;
     var obs = new MutationObserver(function () {
-      if (t) return;
+      if (t || paintingBadge) return;
       t = global.setTimeout(function () {
         t = 0;
-        if (lastUnreadCount > 0) applyUnreadBadge(lastUnreadCount);
+        if (!(lastUnreadCount > 0) || paintingBadge) return;
+        var host = document.getElementById("topbarStaffWaBtn") || document.getElementById("btnComunicaciones");
+        var badge = host && host.querySelector("[data-comms-unread]");
+        if (badge && !badge.classList.contains("is-empty") && badge.textContent === unreadLabel(lastUnreadCount)) {
+          return;
+        }
+        applyUnreadBadge(lastUnreadCount);
       }, 80);
     });
     ["adminTopbar", "topbarToolCellStaffWa", "btnComunicaciones", "topbarStaffWaBtn"].forEach(function (id) {
@@ -438,6 +452,8 @@
     }, 1500);
   }
 
+  var sessionHydrateTried = false;
+
   async function hasAuthSession(c) {
     try {
       if (c && c.auth && typeof c.auth.getSession === "function") {
@@ -445,6 +461,8 @@
         if (gs && gs.data && gs.data.session && gs.data.session.user) return true;
       }
     } catch (_s) {}
+    if (sessionHydrateTried) return false;
+    sessionHydrateTried = true;
     try {
       var box = supabaseBox();
       var sess = box && box.session;
@@ -626,7 +644,8 @@
     });
   }
 
-  async function refreshUnread() {
+  async function refreshUnread(opts) {
+    var light = !!(opts && opts.light);
     if (fetchInFlight) {
       unreadRefreshQueued = true;
       return fetchInFlight;
@@ -651,7 +670,7 @@
             scheduleUnreadRetry();
             return lastUnreadCount;
           }
-          var inboxFallback = await inboxUnreadMax(c);
+          var inboxFallback = light ? 0 : await inboxUnreadMax(c);
           applyUnreadFromServer(
             Math.max(0, Number(res.data) || 0, inboxFallback),
             true
@@ -659,6 +678,7 @@
         } else {
           var parsed = parseUnreadCounts(countsRes && countsRes.data);
           if (
+            !light &&
             lastPersonalCount >= 0 &&
             parsed.personal > lastPersonalCount &&
             !isCommsAppPage()
@@ -681,6 +701,7 @@
             });
           }
           if (
+            !light &&
             lastAdminCount >= 0 &&
             parsed.administration > lastAdminCount &&
             !isCommsAppPage()
@@ -704,12 +725,7 @@
           }
           lastPersonalCount = parsed.personal;
           lastAdminCount = parsed.administration;
-          /*
-           * Prefer the same source as the Communications inbox list (per-thread
-           * unread). RPC totals can lag or return 0 when the client JWT is stale
-           * even though box.session looked signed-in.
-           */
-          var inboxSum = await inboxUnreadMax(c);
+          var inboxSum = light ? 0 : await inboxUnreadMax(c);
           var n = Math.max(
             parsed.total,
             parsed.personal,
@@ -753,14 +769,17 @@
   }
 
   var unreadChannelAuthed = false;
+  var realtimeUnsubscribing = false;
+  var realtimeReconnectTimer = null;
 
   function bindAuthRealtime(c) {
     if (global.__PORTAL_COMMS_AUTH_RT__) return;
     if (!c || !c.auth || typeof c.auth.onAuthStateChange !== "function") return;
     global.__PORTAL_COMMS_AUTH_RT__ = true;
     try {
-      c.auth.onAuthStateChange(function () {
-        subscribeUnreadRealtime(true);
+      c.auth.onAuthStateChange(function (event) {
+        if (event !== "SIGNED_IN") return;
+        subscribeUnreadRealtime(false);
         void refreshUnread();
       });
     } catch (_a) {
@@ -775,10 +794,12 @@
     var authed = !!myUserId();
     if (!force && unreadChannel && unreadChannelAuthed === authed && authed) return;
     if (unreadChannel) {
+      realtimeUnsubscribing = true;
       try {
         c.removeChannel(unreadChannel);
       } catch (_rm0) {}
       unreadChannel = null;
+      realtimeUnsubscribing = false;
     }
     unreadChannelAuthed = authed;
     try {
@@ -793,7 +814,7 @@
             bumpUnreadFromIncoming(row);
             void maybeShowMessageToast(row);
             global.setTimeout(function () {
-              void refreshUnread();
+              void refreshUnread({ light: true });
             }, 900);
           }
         )
@@ -805,19 +826,24 @@
             var uid = myUserId();
             if (uid && String(row.user_id || "") !== uid) return;
             unreadHoldUntil = 0;
-            void refreshUnread();
+            void refreshUnread({ light: true });
           }
         )
         .subscribe(function (status) {
           if (status === "SUBSCRIBED") return;
+          if (realtimeUnsubscribing) return;
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
             try {
+              realtimeUnsubscribing = true;
               c.removeChannel(unreadChannel);
             } catch (_rm) {}
             unreadChannel = null;
-            global.setTimeout(function () {
-              subscribeUnreadRealtime(true);
-            }, 2500);
+            realtimeUnsubscribing = false;
+            if (realtimeReconnectTimer) return;
+            realtimeReconnectTimer = global.setTimeout(function () {
+              realtimeReconnectTimer = null;
+              subscribeUnreadRealtime(false);
+            }, 8000);
           }
         });
     } catch (_rt) {
@@ -1624,7 +1650,13 @@
     if (incomingCallChannel) return;
     var c = client();
     if (!c || typeof c.channel !== "function") {
-      global.setTimeout(subscribeIncomingCalls, 1500);
+      if (!global.__PORTAL_COMMS_CALL_WAIT__) {
+        global.__PORTAL_COMMS_CALL_WAIT__ = true;
+        global.setTimeout(function () {
+          global.__PORTAL_COMMS_CALL_WAIT__ = false;
+          subscribeIncomingCalls();
+        }, 2500);
+      }
       return;
     }
     try {
@@ -1656,18 +1688,22 @@
             void pollRingingCalls();
             return;
           }
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
             try {
               c.removeChannel(incomingCallChannel);
             } catch (_rm) {}
             incomingCallChannel = null;
-            global.setTimeout(subscribeIncomingCalls, 2500);
           }
         });
     } catch (_rt) {
       incomingCallChannel = null;
-      global.setTimeout(subscribeIncomingCalls, 2500);
     }
+  }
+
+  function ringingCallIsFresh(row) {
+    var started = Date.parse(String((row && row.started_at) || "")) || 0;
+    if (!started) return true;
+    return Date.now() - started < 90000;
   }
 
   async function fallbackCallingRows(c) {
@@ -1683,6 +1719,7 @@
       var info = await incomingCallTarget(raw[i]);
       if (info.pending) continue;
       if (!info.forMe) continue;
+      if (!ringingCallIsFresh(raw[i])) continue;
       raw[i].ring_mode = info.mode;
       raw[i].ring_title = info.title;
       raw[i].ring_subtitle = info.subtitle;
@@ -1699,7 +1736,7 @@
       var rows = [];
       var rpcRes = await c.rpc("communication_ringing_for_me");
       if (rpcRes && !rpcRes.error && Array.isArray(rpcRes.data)) {
-        rows = rpcRes.data;
+        rows = rpcRes.data.filter(ringingCallIsFresh);
       } else {
         rows = await fallbackCallingRows(c);
       }
@@ -1736,14 +1773,14 @@
           if (isCommsAppPage()) return;
           if (document.visibilityState === "visible") void pollRingingCalls();
         } catch (_p) {}
-      }, 1500);
+      }, 8000);
     }
   }
 
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-chip-43", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-chip-44", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
     } catch (_sw) {}
@@ -1989,7 +2026,7 @@
       var cached = cachedUnreadCount();
       if (cached > 0) applyUnreadBadge(cached);
       watchIncomingCalls();
-      subscribeUnreadRealtime(true);
+      subscribeUnreadRealtime(false);
       var key = "";
       if (typeof global.resolveTopbarStaffKey === "function") {
         key = global.resolveTopbarStaffKey() || "";
@@ -2017,28 +2054,31 @@
     boot();
   }
   try {
-    global.addEventListener("portal:staff-profile-ready", boot);
-    global.addEventListener("portal:supabase-ready", function () {
-      if (isCommsAppPage()) {
-        void refreshUnread();
-        return;
-      }
-      boot();
+    global.addEventListener("portal:staff-profile-ready", function () {
+      subscribeUnreadRealtime(false);
       void refreshUnread();
-      watchIncomingCalls();
+      if (!isCommsAppPage()) {
+        ensureButton(currentStaffKey());
+        watchIncomingCalls();
+      }
+    });
+    global.addEventListener("portal:supabase-ready", function () {
+      subscribeUnreadRealtime(false);
+      void refreshUnread();
+      if (!isCommsAppPage()) watchIncomingCalls();
     });
     document.addEventListener("visibilitychange", function () {
       setCommsUiActive(documentIsVisible());
       if (documentIsVisible()) {
-        subscribeUnreadRealtime(true);
-        void refreshUnread();
+        subscribeUnreadRealtime(false);
+        void refreshUnread({ light: true });
         if (!isCommsAppPage()) void pollRingingCalls();
       }
     });
     global.addEventListener("pageshow", function () {
       setCommsUiActive(true);
-      subscribeUnreadRealtime(true);
-      void refreshUnread();
+      subscribeUnreadRealtime(false);
+      void refreshUnread({ light: true });
     });
     global.addEventListener("focus", function () {
       setCommsUiActive(true);
@@ -2057,8 +2097,8 @@
     global.__PORTAL_COMMS_UNREAD_POLL__ = true;
     global.setInterval(function () {
       try {
-        if (document.visibilityState === "visible") void refreshUnread();
+        if (document.visibilityState === "visible") void refreshUnread({ light: true });
       } catch (_p) {}
-    }, 3000);
+    }, 15000);
   }
 })(typeof window !== "undefined" ? window : this);
