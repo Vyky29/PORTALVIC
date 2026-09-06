@@ -1,10 +1,12 @@
-// @ts-nocheck — 20:30 Europe/London WhatsApp to staff with incomplete same-day feedback.
+// @ts-nocheck — 20:00 then 20:30 Europe/London WhatsApp if same-day feedback still open.
 //
 // Secrets: SUPABASE_*, META_WHATSAPP_*, PORTAL_STAFF_WHATSAPP_TEMPLATE,
 //   PORTAL_PUSH_WEBHOOK_SECRET (header x-portal-webhook-secret)
 //
-// Cron: 30 19,20 * * * UTC — runs only when London clock is 20:25–20:40.
-// Manual: POST {"force":true} or {"dryRun":true,"force":true}
+// Cron:
+//   0 19,20 * * * UTC  body {wave:"2000"}  — 20:00 London
+//   30 19,20 * * * UTC body {wave:"2030"}  — 20:30 London (only if still outstanding)
+// Manual: POST {"force":true,"wave":"2000"} or {"dryRun":true,"force":true,"wave":"2030"}
 //
 // Deploy: supabase functions deploy portal-feedback-2030-whatsapp --no-verify-jwt
 
@@ -31,9 +33,23 @@ import {
 } from "../_shared/portal_feedback_2030_match.ts";
 
 const DEDUPE_TABLE = "portal_feedback_2030_wa_sent";
-const KIND = "feedback_2030_wa";
 const PORTAL_URL = "https://www.clubsensational.org/staff_dashboard.html";
 const SKIP_USERNAMES = new Set(["victor"]);
+
+function resolveWave(raw, london) {
+  const w = String(raw || "").trim();
+  if (w === "2000" || w === "2030") return w;
+  if (london.hour === 20 && london.minute >= 25) return "2030";
+  if (london.hour === 20) return "2000";
+  return "";
+}
+
+function inLondonWaveWindow(wave, london) {
+  if (london.hour !== 20) return false;
+  if (wave === "2000") return london.minute <= 12;
+  if (wave === "2030") return london.minute >= 25 && london.minute <= 45;
+  return false;
+}
 
 function londonParts(d = new Date()) {
   const parts = new Intl.DateTimeFormat("en-GB", {
@@ -74,14 +90,18 @@ function greetName(username: string, fullName: string, fallback: string): string
   return first;
 }
 
-function buildBody(first: string, pending: number, sample: string[]): string {
+function buildBody(first, pending, sample, wave) {
   const n = Math.max(1, pending);
   const list = sample.slice(0, 3).join(", ");
   const more = n > 3 ? ` (+${n - 3} more)` : "";
+  const timeLine =
+    wave === "2030"
+      ? "Final reminder: 30 minutes left - the day closes at 9:00pm."
+      : "You have one hour - the day closes at 9:00pm.";
   return (
     `Hi ${first},\n\n` +
     `Today's session feedback is not complete yet (${n} left${list ? ": " + list + more : ""}).\n\n` +
-    `You have 30 minutes - the day closes at 9:00pm. Please send them now in the Staff Portal (Today):\n` +
+    `${timeLine} Please send them now in the Staff Portal (Today):\n` +
     `${PORTAL_URL}\n\n` +
     `After 9:00pm today's hours stay on hold until the office releases them.\n\n` +
     `Thank you,\nclubSENsational office`
@@ -105,21 +125,32 @@ Deno.serve(async (req) => {
   let force = false;
   let dryRun = false;
   let sessionDate = "";
+  let bodyWave = "";
   try {
     const body = await req.json();
     force = body?.force === true;
     dryRun = body?.dryRun === true;
     sessionDate = String(body?.sessionDate || "").trim().slice(0, 10);
+    bodyWave = String(body?.wave || "").trim();
   } catch {
     /* cron empty body */
   }
 
   const london = londonParts();
-  const inWindow = london.hour === 20 && london.minute >= 25 && london.minute <= 40;
-  if (!force && !inWindow) {
+  const wave = resolveWave(bodyWave, london);
+  if (!wave) {
     return jsonPushResponse({
       skipped: true,
-      reason: "outside London 20:30 window",
+      reason: "unknown wave",
+      londonHour: london.hour,
+      londonMinute: london.minute,
+    });
+  }
+  if (!force && !inLondonWaveWindow(wave, london)) {
+    return jsonPushResponse({
+      skipped: true,
+      reason: "outside London window for wave " + wave,
+      wave,
       londonHour: london.hour,
       londonMinute: london.minute,
     });
@@ -222,6 +253,7 @@ Deno.serve(async (req) => {
     return jsonPushResponse({
       ok: true,
       dryRun: true,
+      wave,
       shiftDate: iso,
       slotCount: slots.length,
       targets: targets.map((t) => ({
@@ -234,6 +266,7 @@ Deno.serve(async (req) => {
     });
   }
 
+  const kind = wave === "2030" ? "feedback_2030_wa" : "feedback_2000_wa";
   const sent = [];
   const skipped = [];
   for (const t of targets) {
@@ -246,12 +279,13 @@ Deno.serve(async (req) => {
       .select("id")
       .eq("session_date", iso)
       .eq("staff_user_id", t.profileId)
+      .eq("wave", wave)
       .maybeSingle();
     if (prior) {
       skipped.push({ username: t.username, reason: "already_sent" });
       continue;
     }
-    const body = buildBody(t.staffLabel, t.pending, t.sample);
+    const body = buildBody(t.staffLabel, t.pending, t.sample, wave);
     const templateBody = flattenWhatsappTemplateBody(body);
     const result = await sendParentMobileMessage(t.phone, templateBody, {
       kind: "staff_contact_update",
@@ -259,19 +293,20 @@ Deno.serve(async (req) => {
     await admin.from("portal_staff_notify_log").insert({
       sent_by_user_id: null,
       sent_by_email: "system@clubsensational.org",
-      kind: KIND,
+      kind: kind,
       channel: "whatsapp",
       staff_profile_id: t.profileId,
       staff_username: t.username,
       staff_display_name: t.staffLabel,
       staff_phone: t.phone,
-      subject: `Feedback reminder — ${iso} 20:30`,
+      subject: `Feedback reminder - ${iso} ${wave === "2030" ? "20:30" : "20:00"}`,
       body_text: body,
       whatsapp_status: result.ok ? "sent" : "failed",
       whatsapp_message_id: result.ok ? result.id : null,
       error_detail: result.ok ? null : result.error,
       meta: {
-        campaign: KIND,
+        campaign: kind,
+        wave,
         session_date: iso,
         pending: t.pending,
         sample: t.sample,
@@ -283,6 +318,7 @@ Deno.serve(async (req) => {
         session_date: iso,
         staff_user_id: t.profileId,
         pending_count: t.pending,
+        wave,
       });
       sent.push({ username: t.username, pending: t.pending, id: result.id });
     } else {
@@ -293,6 +329,7 @@ Deno.serve(async (req) => {
 
   return jsonPushResponse({
     ok: true,
+    wave,
     shiftDate: iso,
     slotCount: slots.length,
     sent: sent.length,
