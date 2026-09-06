@@ -570,7 +570,7 @@
       var inboxRes = await c.rpc("communication_inbox", {
         p_mode: mode || "personal",
       });
-      if (inboxRes && inboxRes.error) return 0;
+      if (inboxRes && inboxRes.error) return { ok: false, n: 0 };
       var data = inboxRes && inboxRes.data;
       if (typeof data === "string") {
         try {
@@ -584,16 +584,73 @@
       for (var i = 0; i < items.length; i++) {
         sum += Math.max(0, Number(items[i] && items[i].unread) || 0);
       }
-      return sum;
+      return { ok: true, n: sum };
     } catch (_e) {
-      return 0;
+      return { ok: false, n: 0 };
     }
   }
 
   async function inboxUnreadMax(c) {
     var personal = await inboxUnreadTotal(c, "personal");
     var administration = await inboxUnreadTotal(c, "administration");
-    return Math.max(personal, administration);
+    if (!personal.ok && !administration.ok) return -1;
+    return Math.max(personal.ok ? personal.n : 0, administration.ok ? administration.n : 0);
+  }
+
+  function commsAuthedClient() {
+    var box = supabaseBox();
+    return box && box.client ? box.client : null;
+  }
+
+  function startCommsLiveWatch() {
+    if (isCommsAppPage()) return;
+    if (global.__PORTAL_COMMS_LIVE_WATCH__) return;
+    global.__PORTAL_COMMS_LIVE_WATCH__ = true;
+    var lastLiveN = -1;
+    var ticking = false;
+    async function tick() {
+      if (ticking || document.hidden) return;
+      var c = commsAuthedClient();
+      if (!c || !c.rpc) return;
+      ticking = true;
+      try {
+        if (!global.__PORTAL_COMMS_LIVE_RT__) {
+          global.__PORTAL_COMMS_LIVE_RT__ = true;
+          subscribeUnreadRealtime(true);
+        }
+        var personal = await inboxUnreadTotal(c, "personal");
+        var administration = await inboxUnreadTotal(c, "administration");
+        if (!personal.ok && !administration.ok) return;
+        var n = Math.max(personal.ok ? personal.n : 0, administration.ok ? administration.n : 0);
+        if (lastLiveN >= 0 && n > lastLiveN) {
+          var mode = personal.ok && personal.n >= (administration.ok ? administration.n : 0) ? "personal" : "administration";
+          var hint = await latestUnreadInboxHint(c, mode);
+          lastToastMode = mode;
+          lastToastConv = (hint && hint.conversation_id) || "";
+          void maybeShowMessageToast({
+            message_type: "text",
+            body: (hint && hint.body) || "New message",
+            sender_context: mode === "administration" ? "ADMINISTRATION" : "PERSONAL",
+            performed_by_user_id: "",
+            _alertTitle: (hint && hint.name) || (mode === "administration" ? "ADMIN" : "COMMS"),
+            _alertMode: mode,
+            _fromName: (hint && hint.name) || "",
+          });
+        }
+        lastLiveN = n;
+        lastPersonalCount = personal.ok ? personal.n : lastPersonalCount;
+        lastAdminCount = administration.ok ? administration.n : lastAdminCount;
+        applyUnreadFromServer(n, true);
+        updateCommsLaunchLinks(personal.ok && personal.n > 0 ? "personal" : "");
+      } catch (_t) {
+      } finally {
+        ticking = false;
+      }
+    }
+    void tick();
+    global.setInterval(function () {
+      void tick();
+    }, 2000);
   }
 
   async function latestUnreadInboxHint(c, mode) {
@@ -687,86 +744,43 @@
     }
     fetchInFlight = (async function () {
       try {
-        var c = client();
+        var c = commsAuthedClient();
         if (!c || !c.rpc) {
           scheduleUnreadRetry();
           return lastUnreadCount;
         }
-        if (!(await settleWithin(hasAuthSession(c), 1800, false))) {
+        var personal = await inboxUnreadTotal(c, "personal");
+        var administration = await inboxUnreadTotal(c, "administration");
+        if (!personal.ok && !administration.ok) {
           scheduleUnreadRetry();
-          var cachedWhileWaiting = cachedUnreadCount();
-          if (cachedWhileWaiting > 0 && lastUnreadCount === 0) applyUnreadBadge(cachedWhileWaiting);
           return lastUnreadCount;
         }
-        var countsRes = await c.rpc("communication_unread_counts");
-        if (countsRes && countsRes.error) {
-          var res = await c.rpc("communication_unread_count");
-          if (res.error) {
-            scheduleUnreadRetry();
-            return lastUnreadCount;
-          }
-          var inboxFallback = await inboxUnreadMax(c);
-          applyUnreadFromServer(
-            Math.max(0, Number(res.data) || 0, inboxFallback),
-            true
-          );
-        } else {
-          var parsed = parseUnreadCounts(countsRes && countsRes.data);
-          if (
-            !light &&
-            lastPersonalCount >= 0 &&
-            parsed.personal > lastPersonalCount &&
-            !isCommsAppPage()
-          ) {
-            var personalHint = await latestUnreadInboxHint(c, "personal");
-            lastToastMode = "personal";
-            lastToastConv = (personalHint && personalHint.conversation_id) || "";
-            maybeShowMessageToast({
-              message_type: "text",
-              body: (personalHint && personalHint.body) || (
-                parsed.personal === 1
-                  ? "New message in My account"
-                  : parsed.personal + " unread in My account"
-              ),
-              sender_context: "PERSONAL",
-              performed_by_user_id: "",
-              _alertTitle: (personalHint && personalHint.name) || "My account",
-              _alertMode: "personal",
-              _fromName: (personalHint && personalHint.name) || "",
-            });
-          }
-          if (
-            !light &&
-            lastAdminCount >= 0 &&
-            parsed.administration > lastAdminCount &&
-            !isCommsAppPage()
-          ) {
-            var adminHint = await latestUnreadInboxHint(c, "administration");
-            lastToastMode = "administration";
-            lastToastConv = (adminHint && adminHint.conversation_id) || "";
-            maybeShowMessageToast({
-              message_type: "text",
-              body: (adminHint && adminHint.body) || (
-                parsed.administration === 1
-                  ? "New message"
-                  : parsed.administration + " new messages"
-              ),
-              sender_context: "PERSONAL",
-              performed_by_user_id: "",
-              _alertTitle: (adminHint && adminHint.name) || "ADMIN",
-              _alertMode: "administration",
-              _fromName: (adminHint && adminHint.name) || "",
-            });
-          }
-          lastPersonalCount = parsed.personal;
-          lastAdminCount = parsed.administration;
-          var inboxSum = await inboxUnreadMax(c);
-          var n = Math.max(inboxSum, parsed.personal, parsed.administration);
-          applyUnreadFromServer(n, true);
-          updateCommsLaunchLinks(
-            parsed.personal > 0 || inboxSum > 0 || n > 0 ? "personal" : ""
-          );
+        var inboxSum = Math.max(personal.ok ? personal.n : 0, administration.ok ? administration.n : 0);
+        if (
+          !light &&
+          !global.__PORTAL_COMMS_LIVE_WATCH__ &&
+          lastUnreadCount >= 0 &&
+          inboxSum > lastUnreadCount &&
+          !isCommsAppPage()
+        ) {
+          var mode = personal.ok && personal.n >= (administration.ok ? administration.n : 0) ? "personal" : "administration";
+          var hint = await latestUnreadInboxHint(c, mode);
+          lastToastMode = mode;
+          lastToastConv = (hint && hint.conversation_id) || "";
+          void maybeShowMessageToast({
+            message_type: "text",
+            body: (hint && hint.body) || "New message",
+            sender_context: mode === "administration" ? "ADMINISTRATION" : "PERSONAL",
+            performed_by_user_id: "",
+            _alertTitle: (hint && hint.name) || (mode === "administration" ? "ADMIN" : "COMMS"),
+            _alertMode: mode,
+            _fromName: (hint && hint.name) || "",
+          });
         }
+        lastPersonalCount = personal.ok ? personal.n : lastPersonalCount;
+        lastAdminCount = administration.ok ? administration.n : lastAdminCount;
+        applyUnreadFromServer(inboxSum, true);
+        updateCommsLaunchLinks(personal.ok && personal.n > 0 ? "personal" : "");
         return lastUnreadCount;
       } catch (_e) {
         scheduleUnreadRetry();
@@ -818,7 +832,7 @@
   }
 
   function subscribeUnreadRealtime(force) {
-    var c = client();
+    var c = commsAuthedClient();
     if (!c || typeof c.channel !== "function") return;
     bindAuthRealtime(c);
     var authed = !!myUserId();
@@ -1016,8 +1030,8 @@
       st.id = "portalCommsMsgToastCss";
       st.textContent =
         "#btnComunicaciones,#topbarStaffWaBtn{overflow:visible!important}" +
-        "#portalCommsMsgToast{position:fixed;left:12px;right:12px;top:max(12px,env(safe-area-inset-top));z-index:2147482500;display:flex;gap:10px;align-items:center;max-width:28rem;margin:0 auto;padding:12px 12px 12px 14px;border-radius:16px;background:#173247;color:#fff;border:1px solid rgba(255,255,255,.14);min-width:0}" +
-        "body.staff-dashboard #portalCommsMsgToast{top:auto;bottom:max(88px,calc(20px + env(safe-area-inset-bottom,0px)))}" +
+        "#portalCommsMsgToast{position:fixed;left:12px;right:12px;top:max(12px,env(safe-area-inset-top));z-index:2147482500;display:none;gap:10px;align-items:center;max-width:28rem;margin:0 auto;padding:12px 12px 12px 14px;border-radius:16px;background:#173247;color:#fff;border:1px solid rgba(255,255,255,.14);min-width:0;box-shadow:0 8px 28px rgba(0,0,0,.35)}" +
+        "#portalCommsMsgToast.is-show{display:flex!important}" +
         "#portalCommsMsgToast[hidden]{display:none!important}" +
         "#portalCommsMsgToast .portal-comms-toast-copy{min-width:0;flex:1}" +
         "#portalCommsMsgToast .portal-comms-toast-kicker{display:block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#e8c547;margin:0 0 2px}" +
@@ -1056,7 +1070,12 @@
     }
     messageToastCount = 0;
     var el = document.getElementById("portalCommsMsgToast");
-    if (el) el.hidden = true;
+    if (!el) return;
+    el.hidden = true;
+    el.classList.remove("is-show");
+    try {
+      el.style.display = "none";
+    } catch (_d) {}
   }
 
   function bumpUnreadFromIncoming(row) {
@@ -1240,7 +1259,11 @@
     var type = String(row.message_type || "text").toLowerCase();
     if (type === "system" || type === "call") return;
     if (isOwnCommsRow(row)) return;
-    if (typeof global.portalPushIsForCurrentUser === "function" && !global.portalPushIsForCurrentUser(row)) {
+    if (
+      !row._alertMode &&
+      typeof global.portalPushIsForCurrentUser === "function" &&
+      !global.portalPushIsForCurrentUser(row)
+    ) {
       return;
     }
     /* OS logo toaster is the service worker's job when the portal is away.
@@ -1275,11 +1298,13 @@
     }
     if (bodyEl) bodyEl.textContent = preview;
     el.hidden = false;
+    el.classList.add("is-show");
     try {
       el.removeAttribute("hidden");
+      el.style.display = "flex";
     } catch (_sh) {}
     if (messageToastTimer) global.clearTimeout(messageToastTimer);
-    messageToastTimer = global.setTimeout(hideMessageToast, 12000);
+    messageToastTimer = global.setTimeout(hideMessageToast, 15000);
   }
 
   function documentIsVisible() {
@@ -1853,9 +1878,22 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-46", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-47", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
-      global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
+      global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).then(function (reg) {
+        try {
+          if (reg && reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        } catch (_w) {}
+        if (global.__PORTAL_SW_CTRL_BOUND__) return;
+        global.__PORTAL_SW_CTRL_BOUND__ = true;
+        global.navigator.serviceWorker.addEventListener("controllerchange", function () {
+          try {
+            if (sessionStorage.getItem("portal_sw_reloaded_47") === "1") return;
+            sessionStorage.setItem("portal_sw_reloaded_47", "1");
+          } catch (_s) {}
+          global.location.reload();
+        });
+      }).catch(function () {});
     } catch (_sw) {}
   }
 
@@ -2101,6 +2139,7 @@
       if (cached > 0) applyUnreadBadge(cached);
       watchIncomingCalls();
       subscribeUnreadRealtime(false);
+      startCommsLiveWatch();
       var key = "";
       if (typeof global.resolveTopbarStaffKey === "function") {
         key = global.resolveTopbarStaffKey() || "";
@@ -2130,6 +2169,7 @@
   try {
     global.addEventListener("portal:staff-profile-ready", function () {
       subscribeUnreadRealtime(false);
+      startCommsLiveWatch();
       void refreshUnread();
       if (!isCommsAppPage()) {
         ensureButton(currentStaffKey());
@@ -2138,20 +2178,21 @@
     });
     global.addEventListener("portal:supabase-ready", function () {
       subscribeUnreadRealtime(false);
+      startCommsLiveWatch();
       void refreshUnread();
       if (!isCommsAppPage()) watchIncomingCalls();
     });
     document.addEventListener("visibilitychange", function () {
       setCommsUiActive(documentIsVisible());
       if (documentIsVisible()) {
-        subscribeUnreadRealtime(false);
+        startCommsLiveWatch();
         void refreshUnread({ light: true });
         if (!isCommsAppPage()) void pollRingingCalls();
       }
     });
     global.addEventListener("pageshow", function () {
       setCommsUiActive(true);
-      subscribeUnreadRealtime(false);
+      startCommsLiveWatch();
       void refreshUnread({ light: true });
     });
     global.addEventListener("focus", function () {
@@ -2167,14 +2208,6 @@
       setCommsUiActive(true);
     }, true);
   } catch (_e2) {}
-  if (!global.__PORTAL_COMMS_UNREAD_POLL__) {
-    global.__PORTAL_COMMS_UNREAD_POLL__ = true;
-    global.setInterval(function () {
-      try {
-        if (document.visibilityState === "visible") void refreshUnread({ light: true });
-      } catch (_p) {}
-    }, 4000);
-  }
   if (!global.__PORTAL_COMMS_INAPP_POLL__) {
     global.__PORTAL_COMMS_INAPP_POLL__ = true;
     consumePendingInappAlert();
