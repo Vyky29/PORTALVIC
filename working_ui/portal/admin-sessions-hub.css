@@ -329,6 +329,21 @@
     body.admin-touch-compact .ash-day-card--feedback .ash-day-card__dt {
       display: none !important;
     }
+    body.admin-touch-compact .ash-day-card--day-picker .ash-day-card__dt {
+      display: block !important;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+    body.admin-touch-compact .ash-day-card--day-picker {
+      padding: 8px 4px 10px;
+    }
+    body.admin-touch-compact .ash-day-card--day-picker .ash-day-card__top {
+      margin-bottom: 0;
+    }
+    body.admin-touch-compact .ash-day-card--day-picker .ash-day-card__bar {
+      display: none !important;
+    }
     body.admin-touch-compact .ash-day-card--feedback .ash-day-card__wd-full,
     body.admin-touch-compact .ash-day-card--week .ash-day-card__wd-full {
       display: none !important;
@@ -593,6 +608,28 @@
       font-size: 11px;
       font-weight: 600;
       color: var(--muted);
+    }
+    /* Overview "Who works this week": date is the main signal; no fake progress bar. */
+    .ash-day-card--day-picker {
+      padding: 12px 8px 14px;
+    }
+    .ash-day-card--day-picker .ash-day-card__top {
+      margin-bottom: 0;
+      gap: 4px;
+    }
+    .ash-day-card--day-picker .ash-day-card__dt {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+    .ash-day-card--day-picker.ash-day-card--closed .ash-day-card__count {
+      margin-top: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     .ash-day-card--feedback .ash-day-card__bar {
       height: 8px;

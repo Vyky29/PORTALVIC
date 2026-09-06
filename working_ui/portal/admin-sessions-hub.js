@@ -10104,12 +10104,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var dayAttr = opts.overviewPicker ? "data-ash-day" : "data-ash-feedback-metric-day";
     var weekLabel =
       formatShortDate(this.weekStart) + " \u2013 " + formatShortDate(addDaysIso(this.weekStart, 6));
+    /* Overview day picker is staffing nav only — no fake feedback bar / Day label. */
+    var dayPickerOnly = !!(opts.staffingGuide || (opts.overviewPicker && !opts.computeOverviewDayStats));
     var cards = days
       .map(function (iso, idx) {
         var metricSel = hub.selectedDay === iso ? " ash-day-card--sel" : "";
+        var pickerCls = dayPickerOnly ? " ash-day-card--day-picker" : "";
         if (hubDayIsClubClosed(hub, iso)) {
           return (
             "<button type=\"button\" class=\"ash-day-card ash-day-card--feedback ash-day-card--closed" +
+            pickerCls +
             metricSel +
             '" ' +
             dayAttr +
@@ -10122,13 +10126,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             htmlWeekdayLabel(iso, esc) +
             '<span class="ash-day-card__dt">' +
             esc(formatShortDate(iso)) +
-            '</span></div>' +
-            '<div class="ash-day-card__bar" style="--ash-pct:0;--ash-col:#dc2626"></div>' +
-            '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Closed</span>' +
-            '<span class="ash-day-card__count-short" aria-hidden="true">Closed</span></span></button>'
+            "</span></div>" +
+            (dayPickerOnly
+              ? '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Closed</span><span class="ash-day-card__count-short" aria-hidden="true">Closed</span></span>'
+              : '<div class="ash-day-card__bar" style="--ash-pct:0;--ash-col:#dc2626"></div>' +
+                '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Closed</span>' +
+                '<span class="ash-day-card__count-short" aria-hidden="true">Closed</span></span>') +
+            "</button>"
           );
         }
-        /* Overview day picker: skip dayStats (7× expandSlots freezes the tab). Fill ratios later. */
+        /* Overview day picker: skip dayStats (7× expandSlots freezes the tab). */
         var ds =
           opts.overviewPicker && !opts.computeOverviewDayStats
             ? { total: 0, done: 0 }
@@ -10142,17 +10149,24 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         var stateCls = "";
         if (opts.overviewPicker && !opts.computeOverviewDayStats) {
-          stateCls = " ash-day-card--pending-stats";
+          stateCls = "";
         } else if (ds.total && ds.done === 0) stateCls = " ash-day-card--none";
         else if (ds.total && ds.done < ds.total) stateCls = " ash-day-card--partial";
         else if (ds.total && ds.done >= ds.total) stateCls = " ash-day-card--complete";
-        var countHtml =
-          opts.staffingGuide || (opts.overviewPicker && !opts.computeOverviewDayStats)
-            ? '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Day</span><span class="ash-day-card__count-short" aria-hidden="true">Day</span></span>'
-            : htmlAshRatioCount(esc, ds.done + "/" + ds.total);
+        var countHtml = dayPickerOnly
+          ? ""
+          : htmlAshRatioCount(esc, ds.done + "/" + ds.total);
+        var barHtml = dayPickerOnly
+          ? ""
+          : '<div class="ash-day-card__bar" style="--ash-pct:' +
+            innerPct +
+            ";--ash-col:" +
+            col +
+            '"></div>';
         var roCls = hub.opts && hub.opts.readOnlyOverview ? " ash-day-card--readonly" : "";
         return (
           '<button type="button" class="ash-day-card ash-day-card--feedback' +
+          pickerCls +
           metricSel +
           stateCls +
           roCls +
@@ -10171,12 +10185,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           htmlWeekdayLabel(iso, esc) +
           '<span class="ash-day-card__dt">' +
           esc(formatShortDate(iso)) +
-          '</span></div>' +
-          '<div class="ash-day-card__bar" style="--ash-pct:' +
-          innerPct +
-          ";--ash-col:" +
-          col +
-          '"></div>' +
+          "</span></div>" +
+          barHtml +
           countHtml +
           "</button>"
         );
