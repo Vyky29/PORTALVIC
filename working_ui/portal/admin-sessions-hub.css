@@ -1602,3 +1602,234 @@
     .ash-table--missing-fb td,
     .ash-table--missing-fb th { font-size: 12px; }
     .ash-near-miss { font-size: 11px; color: #b45309; overflow-wrap: anywhere; }
+
+    /* LOCAL-style day board (Sessions Overview) */
+    .ash-table-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
+      margin: 0 0 10px;
+      min-width: 0;
+    }
+    .ash-table-title-row .ash-table-title {
+      margin: 0;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .ash-db-layout {
+      display: inline-flex;
+      flex: 0 0 auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .ash-db-layout__btn {
+      border: 0;
+      background: transparent;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .ash-db-layout__btn.is-active {
+      background: var(--navy);
+      color: #fff;
+    }
+    .ash-day-board {
+      margin: 0 0 16px;
+      min-width: 0;
+    }
+    .ash-day-board__cols {
+      display: grid;
+      grid-template-columns: repeat(var(--ash-db-cols, 4), minmax(0, 1fr));
+      gap: 8px;
+      min-width: 0;
+      width: 100%;
+    }
+    @media (max-width: 1200px) {
+      .ash-day-board__cols {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 720px) {
+      .ash-day-board__cols {
+        grid-template-columns: 1fr;
+      }
+    }
+    .ash-db-col {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 6px;
+      background: #f8fbfe;
+    }
+    .ash-db-col__staff {
+      margin: 0 0 6px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
+    .ash-db-col__meta {
+      display: block;
+      margin-top: 1px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .ash-db-col__slots {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+    .ash-db-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+      gap: 4px 6px;
+      align-items: start;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 6px;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .ash-db-card__band {
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 1px;
+    }
+    .ash-db-card__name {
+      font-weight: 800;
+      font-size: 12px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+      min-width: 0;
+      color: var(--text);
+    }
+    .ash-db-card__venue {
+      display: block;
+      margin-top: 2px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
+    .ash-db-card__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      margin-top: 4px;
+      min-width: 0;
+    }
+    .ash-db-card__chips .override-chip {
+      margin-left: 0;
+      font-size: 9px;
+      padding: 1px 6px;
+    }
+    .ash-db-badge {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+    .ash-db-badge--done { color: #166534; }
+    .ash-db-badge--wait { color: #c2410c; }
+    .ash-db-badge--absent { color: #9a3412; }
+    .ash-db-badge--cancel { color: #b91c1c; }
+    .ash-db-badge--na { color: var(--muted); }
+    .ash-db-seg {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 1px;
+      font-size: 10px;
+      min-width: 0;
+      text-align: right;
+    }
+    .ash-db-seg__time {
+      font-weight: 700;
+      color: #314555;
+      white-space: nowrap;
+    }
+    .ash-db-seg__area {
+      font-weight: 600;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      min-width: 0;
+      max-width: 100%;
+      line-height: 1.15;
+    }
+    .ash-db-card--open {
+      background: #fef9c3;
+      border-color: #fde68a;
+    }
+    .ash-db-card--open .ash-db-card__name { color: #854d0e; }
+    .ash-db-card--closed {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    .ash-db-card--trial {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .ash-db-card--trial .ash-db-card__name { color: #1e40af; }
+    .ash-db-card--makeup {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+    }
+    .ash-db-card--absent {
+      background: #fff7ed;
+      border-color: #fdba74;
+    }
+    .ash-db-card--cancelled {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+    .ash-db-card--cover,
+    .ash-db-card--cover-needed {
+      background: #fff1f2;
+      border-color: #fda4af;
+      box-shadow: inset 3px 0 0 #e11d48;
+    }
+    .ash-db-card--done {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .ash-db-card--wait {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+    .ash-db-card--dc {
+      border-left: 3px solid #2d84b3;
+    }
+    .ash-db-card--duty {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .ash-db-empty {
+      margin: 8px 0;
+      padding: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: #fff;
+    }

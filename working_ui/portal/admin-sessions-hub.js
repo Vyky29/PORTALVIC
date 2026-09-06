@@ -4569,6 +4569,12 @@
     } catch (e) {
       this._reviewedKeys = {};
     }
+    /* LOCAL-style day board is default; table kept for dense filter work. */
+    this.overviewLayout = "board";
+    try {
+      var lay = localStorage.getItem("ash_overview_layout_v1");
+      if (lay === "table" || lay === "board") this.overviewLayout = lay;
+    } catch (_lay) {}
     this.weekStart = mondayOfWeek(isoToday());
     this.selectedDay = isoToday();
     this.feedbackMetricsDay = null;
@@ -7921,6 +7927,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         return;
       }
+      var layoutBtn = t.closest("[data-ash-overview-layout]");
+      if (layoutBtn) {
+        var nextLay = layoutBtn.getAttribute("data-ash-overview-layout");
+        if (nextLay === "table" || nextLay === "board") {
+          hub.overviewLayout = nextLay;
+          try {
+            localStorage.setItem("ash_overview_layout_v1", nextLay);
+          } catch (_ls) {}
+          if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
+          else hub.render();
+        }
+        return;
+      }
       var tabBtn = t.closest("[data-ash-tab]");
       if (tabBtn) {
         hub.tab = tabBtn.getAttribute("data-ash-tab");
@@ -8607,56 +8626,351 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     );
   };
 
-  AdminSessionsHub.prototype.htmlTracking = function () {
-    var esc = this.escapeHtml;
-    var hub = this;
-    if (hubDayIsClubClosed(hub, this.selectedDay)) {
-      return (
-        this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
-        this.overviewFilterRowHtml() +
-        '<h3 class="ash-table-title">' +
-        esc(formatLongDate(this.selectedDay)) +
-        ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Closed</span></h3>' +
-        /* closed day — no count hint */
-        '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="9">' +
-        '<div class="ash-empty">Club closed \u2014 no sessions on this date.</div></td></tr></tbody></table></div>'
+  /** Preferred column order (LOCAL weekday / weekend staff). Unknown staff append A-Z. */
+  var DAY_BOARD_STAFF_PREF = [
+    "Roberto",
+    "Michelle",
+    "Luliya",
+    "Victor",
+    "Raul",
+    "Youssef",
+    "Berta",
+    "John",
+    "Bismark",
+    "Giuseppe",
+    "Javier",
+    "Carlos",
+    "Alex",
+    "Aurora",
+    "Dan",
+    "Emanuel",
+    "Godsway",
+    "Sandra",
+    "Sevitha",
+  ];
+
+  function dayBoardServiceBand(slot) {
+    var svc = clean(slot && slot.service);
+    if (isDayCentreService(svc)) return "Day Centre";
+    if (isClimbingService(svc)) return "CLIMB";
+    if (isMultiActivityService(svc)) return "MULTI";
+    if (/aquatic|swim/i.test(svc)) return "AQUATIC";
+    if (/bespoke/i.test(svc)) return "BESPOKE";
+    if (hubSlotShowsTrialChip(slot, slot && slot.__portalScheduleOverride)) {
+      return (svc ? svc : "AQUATIC") + " · Trial";
+    }
+    return svc || "Session";
+  }
+
+  function dayBoardStaffLabel(raw) {
+    return canonicalInstructorFilterName(raw) || clean(raw) || "Staff";
+  }
+
+  function dayBoardStaffKey(raw) {
+    return canonicalStaffMatchKey(raw) || slugify(clean(raw)) || "staff";
+  }
+
+  /** Instructors that own a visible column for this slot (cover / reassign already on slot). */
+  function dayBoardInstructorsForSlot(slot) {
+    var list = slotInstructors(slot);
+    if (!list.length && clean(slot && slot.instructor_label)) {
+      list = parseInstructors(slot.instructor_label);
+    }
+    if (!list.length) list = ["Unassigned"];
+    return list;
+  }
+
+  function overviewSlotBoardState(hub, slot, unitComplete, unitAbsent) {
+    var ukey = feedbackUnitKey(slot);
+    var fbDone = !!(unitComplete && unitComplete[ukey]) || hub.slotFeedbackComplete(slot);
+    var isAbsent = !!(unitAbsent && unitAbsent[ukey]) || hub.slotIsAbsent(slot);
+    var isCancelled = hub.slotHasCancellation(slot);
+    var slotOv = hub.overrideForSlot(slot);
+    if (slot.__portalShadowingOverride) slotOv = slot.__portalShadowingOverride;
+    var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
+    var isShadowing = hubSlotShowsShadowingChip(slot);
+    var isInstructorReassign = hubSlotShowsInstructorReassignChip(slot, slotOv);
+    var isCoverNeeded =
+      overrideIsInstructorCoverNeededType(slotOv) ||
+      (slot.__portalScheduleOverride &&
+        overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride));
+    var isTrial = hubSlotShowsTrialChip(slot, slotOv);
+    var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
+    var kind = rosterSlotKind(slot.client_name);
+    var isOpenSlot = kind === "open";
+    var isClosed = kind === "closed";
+    var isDuty = slotIsStaffDutyNoFeedback(slot) || kind === "staff_duty" || kind === "manager";
+    var makeupDisp = isOpenSlot ? null : makeupOverrideDisplacingSlot(hub, slot);
+    var fbKind = "na";
+    if (makeupDisp) {
+      var mkSlotDisp = makeupDisp.makeupSlot;
+      var mkAbsentDisp = mkSlotDisp ? hub.slotIsAbsent(mkSlotDisp) : false;
+      var mkDoneDisp = mkSlotDisp ? hub.slotFeedbackComplete(mkSlotDisp) : false;
+      fbKind = mkAbsentDisp ? "absent" : mkDoneDisp ? "done" : "wait";
+    } else if (isOpenSlot || isClosed || isDuty) {
+      fbKind = "na";
+    } else if (isCancelled) {
+      fbKind = "cancelled";
+    } else if (isAbsent) {
+      fbKind = "absent";
+    } else if (fbDone) {
+      fbKind = "done";
+    } else {
+      fbKind = "wait";
+    }
+    var tone = "client";
+    if (isClosed) tone = "closed";
+    else if (isOpenSlot) tone = "open";
+    else if (isDuty) tone = "duty";
+    else if (isTrial) tone = "trial";
+    else if (isAbsent || fbKind === "absent") tone = "absent";
+    else if (isCancelled) tone = "cancelled";
+    else if (isCoverNeeded) tone = "cover";
+    else if (isMakeup || makeupDisp) tone = "makeup";
+    else if (fbKind === "done") tone = "done";
+    else if (fbKind === "wait") tone = "wait";
+    else if (isDayCentreService(slot.service)) tone = "dc";
+    return {
+      ukey: ukey,
+      fbDone: fbDone,
+      isAbsent: isAbsent,
+      isCancelled: isCancelled,
+      slotOv: slotOv,
+      isUpdated: isUpdated,
+      isShadowing: isShadowing,
+      isInstructorReassign: isInstructorReassign,
+      isCoverNeeded: isCoverNeeded,
+      isTrial: isTrial,
+      isMakeup: isMakeup,
+      isOpenSlot: isOpenSlot,
+      isClosed: isClosed,
+      isDuty: isDuty,
+      makeupDisp: makeupDisp,
+      fbKind: fbKind,
+      tone: tone,
+    };
+  }
+
+  function htmlDayBoardFbBadge(st, esc) {
+    if (st.fbKind === "done") {
+      return '<span class="ash-db-badge ash-db-badge--done">Feedback done</span>';
+    }
+    if (st.fbKind === "absent") {
+      return '<span class="ash-db-badge ash-db-badge--absent">Absent</span>';
+    }
+    if (st.fbKind === "cancelled") {
+      return '<span class="ash-db-badge ash-db-badge--cancel">Cancelled</span>';
+    }
+    if (st.fbKind === "wait") {
+      return '<span class="ash-db-badge ash-db-badge--wait">Feedback pending</span>';
+    }
+    return '<span class="ash-db-badge ash-db-badge--na">' + esc("N/A") + "</span>";
+  }
+
+  function htmlDayBoardOverrideBadges(hub, slot, st, esc) {
+    var chips = [];
+    if (st.makeupDisp) {
+      chips.push('<span class="override-chip override--replace">MakeUp</span>');
+    } else if (st.isTrial) {
+      chips.push('<span class="override-chip override--trial">Trial</span>');
+    } else if (st.isMakeup) {
+      chips.push('<span class="override-chip override--replace">MakeUp</span>');
+    }
+    if (st.isShadowing) {
+      chips.push(
+        '<span class="override-chip override--shadowing">' +
+          esc(hubOverrideLabel(slot.__portalShadowingOverride) || "Shadowing") +
+          "</span>"
       );
     }
-    var slots = this.expandSlotsForDate(this.selectedDay);
-    var units = this.getFeedbackUnitsForDate(this.selectedDay);
-    var unitComplete = {};
-    var unitAbsent = {};
-    for (var u = 0; u < units.length; u++) {
-      unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
-      unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
+    if (st.isCoverNeeded) {
+      chips.push('<span class="override-chip override--cover-needed">COVER NEEDED</span>');
+    } else if (st.isInstructorReassign) {
+      chips.push(
+        '<span class="override-chip override--instructor">' +
+          esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Cover") +
+          "</span>"
+      );
     }
-    var scopedSlots = slots.filter(function (s) {
-      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
-    });
-    var displaySlots = hub.sortOverviewSlotsForDisplay(
-      overviewDisplaySlotsFromUnits(hub, scopedSlots).filter(function (s) {
-        return hub.slotPassesOverviewFilters(s);
-      }),
-      unitComplete,
-      unitAbsent
+    if (st.isUpdated && !st.isCoverNeeded && !st.isInstructorReassign) {
+      chips.push(
+        '<span class="override-chip override--updated">' +
+          esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Updated") +
+          "</span>"
+      );
+    }
+    if (st.isCancelled && !st.makeupDisp) {
+      chips.push('<span class="override-chip override--cancelled">Cancelled</span>');
+    }
+    return chips.length ? '<div class="ash-db-card__chips">' + chips.join(" ") + "</div>" : "";
+  }
+
+  function htmlDayBoardCard(hub, slot, st, esc) {
+    var band = dayBoardServiceBand(slot);
+    var name = clean(slot.client_name) || "No participant";
+    if (st.makeupDisp) {
+      var mkName =
+        (st.makeupDisp.makeupSlot && clean(st.makeupDisp.makeupSlot.client_name)) ||
+        clean(overrideReplacementClientName(overridePayloadObj(st.makeupDisp.ov))) ||
+        "MakeUp";
+      name = mkName + " (was " + clean(slot.client_name) + ")";
+    } else if (st.isOpenSlot) {
+      name = rosterOpenSlotDisplayLabel();
+    } else if (st.isTrial && clean(slot.client_name)) {
+      name = "Trial · " + clean(slot.client_name);
+    }
+    var venue = clean(slot.venue);
+    var area = clean(slot.area);
+    var timeLabel = rosterTimeDisplay(slot) || clean(slot.time_slot) || "";
+    var rightBits = "";
+    if (timeLabel) {
+      rightBits +=
+        '<div class="ash-db-seg"><span class="ash-db-seg__time">' +
+        esc(timeLabel) +
+        "</span>";
+      if (area) {
+        rightBits += '<span class="ash-db-seg__area">' + esc(area) + "</span>";
+      }
+      rightBits += "</div>";
+    } else if (area) {
+      rightBits +=
+        '<div class="ash-db-seg"><span class="ash-db-seg__area">' + esc(area) + "</span></div>";
+    }
+    return (
+      '<article class="ash-db-card ash-db-card--' +
+      esc(st.tone) +
+      (st.isCoverNeeded ? " ash-db-card--cover-needed" : "") +
+      '">' +
+      "<div>" +
+      '<span class="ash-db-card__band">' +
+      esc(band) +
+      "</span>" +
+      '<div class="ash-db-card__name">' +
+      esc(name) +
+      "</div>" +
+      (venue ? '<span class="ash-db-card__venue">' + esc(venue) + "</span>" : "") +
+      htmlDayBoardOverrideBadges(hub, slot, st, esc) +
+      htmlDayBoardFbBadge(st, esc) +
+      "</div>" +
+      "<div>" +
+      rightBits +
+      "</div>" +
+      "</article>"
     );
+  }
+
+  AdminSessionsHub.prototype.htmlOverviewLayoutToggle = function () {
+    var esc = this.escapeHtml;
+    var lay = this.overviewLayout === "table" ? "table" : "board";
+    return (
+      '<div class="ash-db-layout" role="group" aria-label="Overview layout">' +
+      '<button type="button" class="ash-db-layout__btn' +
+      (lay === "board" ? " is-active" : "") +
+      '" data-ash-overview-layout="board">Day board</button>' +
+      '<button type="button" class="ash-db-layout__btn' +
+      (lay === "table" ? " is-active" : "") +
+      '" data-ash-overview-layout="table">Table</button>' +
+      "</div>"
+    );
+  };
+
+  AdminSessionsHub.prototype.htmlDayBoard = function (displaySlots, unitComplete, unitAbsent) {
+    var esc = this.escapeHtml;
+    var hub = this;
+    if (!displaySlots || !displaySlots.length) {
+      return (
+        '<div class="ash-db-empty">' +
+        esc(this.bundleError || "No roster slots for this day.") +
+        "</div>"
+      );
+    }
+    var byKey = Object.create(null);
+    var labelByKey = Object.create(null);
+    for (var i = 0; i < displaySlots.length; i++) {
+      var slot = displaySlots[i];
+      var st = overviewSlotBoardState(hub, slot, unitComplete, unitAbsent);
+      var insts = dayBoardInstructorsForSlot(slot);
+      /* Day Centre / bespoke shared: show under each listed worker (LOCAL columns).
+         Other services: primary instructor only so aquatic doubles do not fan out. */
+      var targets = insts;
+      if (
+        !isDayCentreService(slot.service) &&
+        !isBespokeSharedFeedbackSlot(slot) &&
+        insts.length > 1
+      ) {
+        targets = [insts[0]];
+      }
+      for (var j = 0; j < targets.length; j++) {
+        var raw = targets[j];
+        var key = dayBoardStaffKey(raw);
+        if (!byKey[key]) byKey[key] = [];
+        labelByKey[key] = dayBoardStaffLabel(raw);
+        byKey[key].push({ slot: slot, st: st });
+      }
+    }
+    var keys = Object.keys(byKey);
+    keys.sort(function (a, b) {
+      var la = labelByKey[a] || a;
+      var lb = labelByKey[b] || b;
+      var ia = -1;
+      var ib = -1;
+      for (var p = 0; p < DAY_BOARD_STAFF_PREF.length; p++) {
+        if (dayBoardStaffKey(DAY_BOARD_STAFF_PREF[p]) === a) ia = p;
+        if (dayBoardStaffKey(DAY_BOARD_STAFF_PREF[p]) === b) ib = p;
+      }
+      if (ia >= 0 && ib >= 0) return ia - ib;
+      if (ia >= 0) return -1;
+      if (ib >= 0) return 1;
+      return la.localeCompare(lb, "en", { sensitivity: "base" });
+    });
+    var colsHtml = keys
+      .map(function (key) {
+        var items = byKey[key].slice().sort(function (x, y) {
+          var tx = clean(x.slot.time_start || x.slot.time_slot);
+          var ty = clean(y.slot.time_start || y.slot.time_slot);
+          if (tx !== ty) return tx < ty ? -1 : 1;
+          return clean(x.slot.client_name).localeCompare(clean(y.slot.client_name));
+        });
+        var cards = items
+          .map(function (it) {
+            return htmlDayBoardCard(hub, it.slot, it.st, esc);
+          })
+          .join("");
+        var pending = 0;
+        for (var n = 0; n < items.length; n++) {
+          if (items[n].st.fbKind === "wait") pending++;
+        }
+        return (
+          '<section class="ash-db-col">' +
+          '<h4 class="ash-db-col__staff">' +
+          esc(labelByKey[key]) +
+          '<span class="ash-db-col__meta">' +
+          esc(String(items.length)) +
+          (pending ? " · " + pending + " pending" : "") +
+          "</span></h4>" +
+          '<div class="ash-db-col__slots">' +
+          (cards || '<p class="ash-db-empty">No seats</p>') +
+          "</div></section>"
+        );
+      })
+      .join("");
+    return (
+      '<div class="ash-day-board" data-ash-day-board="1">' +
+      '<div class="ash-day-board__cols" style="--ash-db-cols:' +
+      esc(String(Math.min(keys.length, 6))) +
+      '">' +
+      colsHtml +
+      "</div></div>"
+    );
+  };
+
+  AdminSessionsHub.prototype.htmlTrackingTableBody = function (displaySlots, unitComplete, unitAbsent) {
+    var esc = this.escapeHtml;
+    var hub = this;
     var rows = displaySlots
       .map(function (slot) {
-        var ukey = feedbackUnitKey(slot);
-        var fbDone = unitComplete[ukey] || hub.slotFeedbackComplete(slot);
-        var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
-        var isCancelled = hub.slotHasCancellation(slot);
-        var slotOv = hub.overrideForSlot(slot);
-        if (slot.__portalShadowingOverride) slotOv = slot.__portalShadowingOverride;
-        var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
-        var isShadowing = hubSlotShowsShadowingChip(slot);
-        var isInstructorReassign = hubSlotShowsInstructorReassignChip(slot, slotOv);
-        var isCoverNeeded = overrideIsInstructorCoverNeededType(slotOv) ||
-          (slot.__portalScheduleOverride && overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride));
-        var isTrial = hubSlotShowsTrialChip(slot, slotOv);
-        var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
-        var isOpenSlot = isOpenRosterSlot(slot.client_name);
-        var makeupDisp = isOpenSlot ? null : makeupOverrideDisplacingSlot(hub, slot);
+        var st = overviewSlotBoardState(hub, slot, unitComplete, unitAbsent);
+        var makeupDisp = st.makeupDisp;
         var fbCell;
         if (makeupDisp) {
           var mkSlotDisp = makeupDisp.makeupSlot;
@@ -8665,56 +8979,61 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           fbCell = mkAbsentDisp
             ? '<span class="ash-status ash-status--absent">Submitted (Absent)</span>'
             : rosterFeedbackStatusHtml(false, mkDoneDisp);
-        } else if (isOpenSlot) {
+        } else if (st.isOpenSlot) {
           fbCell = '<span class="ash-muted">N/A</span>';
-        } else if (isTrial) {
-          fbCell = rosterFeedbackStatusHtml(false, fbDone);
-        } else if (isAbsent) {
-          fbCell = rosterFeedbackStatusHtml(true, fbDone);
-        } else if (isCancelled) {
+        } else if (st.isTrial) {
+          fbCell = rosterFeedbackStatusHtml(false, st.fbDone);
+        } else if (st.isAbsent) {
+          fbCell = rosterFeedbackStatusHtml(true, st.fbDone);
+        } else if (st.isCancelled) {
           fbCell = '<span class="ash-status ash-status--absent">Cancelled</span>';
         } else {
           fbCell = rosterFeedbackStatusHtml(
             false,
-            fbDone,
-            fbDone ? "" : awaitingFeedbackTitleForSlot(hub, slot)
+            st.fbDone,
+            st.fbDone ? "" : awaitingFeedbackTitleForSlot(hub, slot)
           );
         }
         var statusCell = makeupDisp
           ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
-          : isOpenSlot
+          : st.isOpenSlot
           ? htmlOpenSlotStatusBadge(esc)
-          : isTrial
+          : st.isTrial
             ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--trial">Trial</span>'
-          : isCancelled
+          : st.isCancelled
           ? '<span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Cancelled</span>'
-          : isAbsent
+          : st.isAbsent
             ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
-            : isMakeup
+            : st.isMakeup
               ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
-              : isShadowing
+              : st.isShadowing
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--shadowing">' +
                   esc(hubOverrideLabel(slot.__portalShadowingOverride)) +
                   "</span>"
-              : isCoverNeeded
+              : st.isCoverNeeded
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--cover-needed">COVER NEEDED</span>'
-              : isInstructorReassign
+              : st.isInstructorReassign
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--instructor">' +
-                  esc(slotOv ? hubOverrideLabel(slotOv) : "Changed instructor") +
+                  esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Changed instructor") +
                   "</span>"
-              : isUpdated
+              : st.isUpdated
                 ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--updated">' +
-                  esc(isUpdated && slotOv ? hubOverrideLabel(slotOv) : "Updated") +
+                  esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Updated") +
                   "</span>"
                 : '<span class="ash-badge ash-badge--booked">Booked</span>';
         var svcLabel =
           clean(slot.service) ||
-          (hubSlotIsMakeup(slot) ? inferOverrideSlotService(slot.__portalScheduleOverride, overridePayloadObj(slot.__portalScheduleOverride)) : "") ||
+          (hubSlotIsMakeup(slot)
+            ? inferOverrideSlotService(
+                slot.__portalScheduleOverride,
+                overridePayloadObj(slot.__portalScheduleOverride)
+              )
+            : "") ||
           "\u2014";
         var svc =
           esc(svcLabel) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(slot)) + "</div>" : "");
-        var inst = hubInstructorCellHtml(slot, slotOv);
+        var inst = hubInstructorCellHtml(slot, st.slotOv);
         var venue = clean(slot.venue) || "\u2014";
         var notes = clean(slot.area) || "\u2014";
         var participantCell;
@@ -8735,7 +9054,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         return (
           '<tr class="' +
-          (isCoverNeeded ? "ash-row--cover-needed" : "") +
+          (st.isCoverNeeded ? "ash-row--cover-needed" : "") +
           '">' +
           '<td class="ash-td-center">' +
           svc +
@@ -8762,7 +9081,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           yesNoCell(hub.slotHasIncident(slot)) +
           "</td>" +
           '<td class="ash-td-center">' +
-          yesNoCell(isCancelled) +
+          yesNoCell(st.isCancelled) +
           "</td>" +
           "</tr>"
         );
@@ -8775,26 +9094,77 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         (this.bundleError ? esc(this.bundleError) : "No roster slots for this day.") +
         "</div></td></tr>";
     }
-
     return (
-      this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
-      this.htmlOverviewFeedbackLoadHint() +
-      this.htmlOverviewMissingFeedbackBlock(this.selectedDay) +
-      this.overviewFilterRowHtml() +
-      '<h3 class="ash-table-title">' +
-      esc(formatLongDate(this.selectedDay)) +
-      ' <span class="ash-badge ash-badge--booked">Roster</span>' +
-      htmlOverviewSessionCountHint(hub, this.selectedDay, displaySlots.filter(function (s) {
-        return !isTeflonDemoRosterSlot(s);
-      }), esc) +
-      "</h3>" +
       '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><thead><tr>' +
       '<th class="ash-td-center">Service</th><th class="ash-td-center">Instructor</th><th class="ash-td-center">Participant</th><th class="ash-td-center">Venue</th><th class="ash-td-center">Notes</th><th class="ash-td-center">Status</th><th class="ash-td-center">Feedback</th>' +
       TH_ICON_INCIDENT +
       TH_ICON_CANCELLATION +
       "</tr></thead><tbody data-ash-client-filter-tbody>" +
       rows +
-      "</tbody></table></div>" +
+      "</tbody></table></div>"
+    );
+  };
+
+  AdminSessionsHub.prototype.htmlTracking = function () {
+    var esc = this.escapeHtml;
+    var hub = this;
+    if (hubDayIsClubClosed(hub, this.selectedDay)) {
+      return (
+        this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
+        this.overviewFilterRowHtml() +
+        '<h3 class="ash-table-title">' +
+        esc(formatLongDate(this.selectedDay)) +
+        ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Closed</span></h3>' +
+        '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="9">' +
+        '<div class="ash-empty">Club closed \u2014 no sessions on this date.</div></td></tr></tbody></table></div>'
+      );
+    }
+    var slots = this.expandSlotsForDate(this.selectedDay);
+    var units = this.getFeedbackUnitsForDate(this.selectedDay);
+    var unitComplete = {};
+    var unitAbsent = {};
+    for (var u = 0; u < units.length; u++) {
+      unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
+      unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
+    }
+    var scopedSlots = slots.filter(function (s) {
+      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
+    });
+    var displaySlots = hub.sortOverviewSlotsForDisplay(
+      overviewDisplaySlotsFromUnits(hub, scopedSlots).filter(function (s) {
+        return hub.slotPassesOverviewFilters(s);
+      }),
+      unitComplete,
+      unitAbsent
+    );
+    var useBoard = hub.overviewLayout !== "table";
+    var body = useBoard
+      ? hub.htmlDayBoard(displaySlots, unitComplete, unitAbsent)
+      : hub.htmlTrackingTableBody(displaySlots, unitComplete, unitAbsent);
+
+    return (
+      this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
+      this.htmlOverviewFeedbackLoadHint() +
+      this.htmlOverviewMissingFeedbackBlock(this.selectedDay) +
+      this.overviewFilterRowHtml() +
+      '<div class="ash-table-title-row">' +
+      '<h3 class="ash-table-title">' +
+      esc(formatLongDate(this.selectedDay)) +
+      ' <span class="ash-badge ash-badge--booked">' +
+      esc(useBoard ? "Day board" : "Roster") +
+      "</span>" +
+      htmlOverviewSessionCountHint(
+        hub,
+        this.selectedDay,
+        displaySlots.filter(function (s) {
+          return !isTeflonDemoRosterSlot(s);
+        }),
+        esc
+      ) +
+      "</h3>" +
+      this.htmlOverviewLayoutToggle() +
+      "</div>" +
+      body +
       this.htmlOverviewTermWeekLog()
     );
   };

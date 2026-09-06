@@ -71,7 +71,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260905-buckets"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260903-cover-needed" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260906-day-board" />
   <script src="/portal/portal_staff_display_names.js?v=20260902-luliya-display"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260828-hours-weeknav" />
@@ -20472,7 +20472,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       { id:'pickup', label:'Pick up', iconId:'scheduling', mode:'panelPickup' }
     ];
     var SESSIONS_HUB_HEAD_META = {
-      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'All sessions per day and their status (awaiting feedback, submitted…).' },
+      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'LOCAL-style day board per worker — feedback and override status for the selected day.' },
       feedback:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it — engagement, emotions, independence, narrative and notes.' },
       positive:{ iconId:'c4k_reviews', tone:'positive', title:'SESSION FEEDBACK', sub:'Raw session feedback next to the parent-safe filtered version generated on review.' },
       relevant:{ iconId:'c4k_relevant', tone:'relevant', title:'NOTES', sub:'Internal notes — informational only, with an option to email CEOs or other staff.' },
@@ -21699,7 +21699,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260905-zaid-910';
+    var PORTAL_ADMIN_HUB_BUILD = '20260906-day-board';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
