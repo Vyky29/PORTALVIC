@@ -86,36 +86,16 @@ const SATURDAY_ACTON_REAL: Feedback2030Slot[] = [
 ];
 
 /**
- * Autumn 26/27 Monday standing (from Mon 7 Sep). MADRE in Portal is still summer-dated,
- * and portal_roster_rows standing stamps are skipped by the Edge Function day fetch —
- * without this fallback the 20:00/20:30 WhatsApp only sees thin dated rows (e.g. Youssef open seat).
+ * Live MADRE row is still term_key summer-2026, but Autumn 26/27 standing seats
+ * are authored on week 2026-07-13 (Mon–Fri). Calendar days from Sep 2026 must
+ * read that standing week by weekday — not the summer Jun–Jul week ranges.
  */
-const AUTUMN_MONDAY_STANDING: Feedback2030Slot[] = [
-  { staff: "MICHELLE", client: "Ikram", time: "11 to 4", service: "Day Centre" },
-  { staff: "LULIYA", client: "Ikram", time: "11 to 3", service: "Day Centre" },
-  { staff: "ROBERTO", client: "Emanuel", time: "11 to 1", service: "Day Centre" },
-  { staff: "ROBERTO", client: "Fadi", time: "1 to 3", service: "Day Centre" },
-  { staff: "RAUL", client: "Timi", time: "11 to 1", service: "Day Centre" },
-  { staff: "RAUL", client: "Emanuel", time: "1 to 4", service: "Day Centre" },
-  { staff: "YOUSSEF", client: "Fadi", time: "12.30 to 3", service: "Day Centre" },
-  { staff: "GODSWAY", client: "Tinashe", time: "4.30 to 6", service: "Bespoke Programme" },
-  { staff: "JOHN", client: "Tinashe", time: "4.30 to 6", service: "Bespoke Programme" },
-  { staff: "RAUL", client: "Tinashe", time: "4.30 to 6", service: "Bespoke Programme" },
-  { staff: "DAN", client: "Muhammad (trial)", time: "4.30 to 5", service: "Aquatic Activity" },
-  { staff: "DAN", client: "Amar Rai", time: "5 to 5.30", service: "Aquatic Activity" },
-  { staff: "DAN", client: "Amar Rai", time: "5.30 to 6", service: "Aquatic Activity" },
-  { staff: "DAN", client: "Adaam Ah", time: "6 to 6.30", service: "Aquatic Activity" },
-  { staff: "LULIYA", client: "Gemma", time: "5 to 5.30", service: "Aquatic Activity" },
-  { staff: "LULIYA", client: "Zayana", time: "5.30 to 6", service: "Aquatic Activity" },
-  { staff: "LULIYA", client: "Yamik", time: "6 to 6.30", service: "Aquatic Activity" },
-  { staff: "ROBERTO", client: "Adam P", time: "4.30 to 5", service: "Aquatic Activity" },
-  { staff: "ROBERTO", client: "Steven", time: "5 to 5.30", service: "Aquatic Activity" },
-  { staff: "ROBERTO", client: "Mario", time: "5.30 to 6.30", service: "Aquatic Activity" },
-  { staff: "YOUSSEF", client: "Eddie Mc", time: "4.30 to 5", service: "Aquatic Activity" },
-  { staff: "YOUSSEF", client: "Abodi Pa", time: "5.30 to 6.30", service: "Aquatic Activity" },
-  { staff: "SANDRA", client: "Ayaan", time: "4 to 5", service: "Physical Activity" },
-  { staff: "SANDRA", client: "Serine", time: "5 to 6", service: "Physical Activity" },
-];
+const AUTUMN_TERM_FROM = "2026-09-01";
+const AUTUMN_STANDING_WEEK_START = "2026-07-13";
+const AUTUMN_STANDING_WEEK_END = "2026-07-17";
+
+/** Prefer autumn-2026 when cut over; until then summer-2026 holds Autumn standing. */
+export const FEEDBACK_2030_MADRE_TERM_KEYS = ["autumn-2026", "summer-2026"] as const;
 
 export const STAFF_USERNAME_ALIASES: Record<string, string> = {
   /* Never collapse swimming Javier Marquez (javier) into CEO Javi Palankas (javi). */
@@ -179,18 +159,6 @@ export function datedFallbackSlots(iso: string): Feedback2030Slot[] {
   if (iso === "2026-09-06") return SUNDAY_2026_09_06.slice();
   const wd = weekdayLongUtcNoon(iso);
   if (wd === "Saturday") return SATURDAY_ACTON_REAL.slice();
-  /* Autumn term Mondays — until MADRE / roster rows carry Sep+ standing for the WA cron. */
-  if (wd === "Monday" && iso >= "2026-09-01" && iso <= "2026-12-31") {
-    const rows = AUTUMN_MONDAY_STANDING.map((s) => ({ ...s }));
-    /* Mon 7 Sep: Raul OFF → Victor; Sandra OFF → Javi Physical. */
-    if (iso === "2026-09-07") {
-      for (const s of rows) {
-        if (normalizeStaffKey(s.staff) === "raul") s.staff = "VICTOR";
-        if (normalizeStaffKey(s.staff) === "sandra") s.staff = "JAVI";
-      }
-    }
-    return rows;
-  }
   return [];
 }
 
@@ -204,21 +172,63 @@ type MadreLike = {
 
 function asStaffCols(staff: unknown): Array<{ staffKey?: string; staffName?: string; days?: unknown[] }> {
   if (!staff) return [];
-  if (Array.isArray(staff)) return staff as Array<{ staffKey?: string; staffName?: string; days?: unknown[] }>;
+  if (Array.isArray(staff)) {
+    return (staff as Array<{ staffKey?: string; staffName?: string; days?: unknown[] }>).filter(Boolean);
+  }
   if (typeof staff === "object") {
-    return Object.values(staff as Record<string, { staffKey?: string; staffName?: string; days?: unknown[] }>);
+    return Object.values(
+      staff as Record<string, { staffKey?: string; staffName?: string; days?: unknown[] }>,
+    ).filter(Boolean);
   }
   return [];
+}
+
+function weekCoversIso(start: string, end: string, iso: string): boolean {
+  if (start && iso < start) return false;
+  if (end && iso > end) return false;
+  if (!start && !end) return true;
+  return !!(start || end) ? (!start || iso >= start) && (!end || iso <= end) : true;
+}
+
+function isAutumnStandingWeek(start: string, end: string): boolean {
+  return start === AUTUMN_STANDING_WEEK_START ||
+    (start <= AUTUMN_STANDING_WEEK_START && (!end || end >= AUTUMN_STANDING_WEEK_END));
+}
+
+/** Day-of cover remaps that Overview / canonical already paint for Autumn. */
+export function remapAutumnFeedback2030Slots(
+  slots: Feedback2030Slot[],
+  iso: string,
+): Feedback2030Slot[] {
+  if (!slots.length) return slots;
+  return slots.map((s) => {
+    let staff = s.staff;
+    const day = weekdayLongUtcNoon(iso).toLowerCase();
+    const svc = String(s.service || "");
+    if (iso === "2026-09-07" && day === "monday") {
+      if (normalizeStaffKey(staff) === "raul") staff = "VICTOR";
+      if (
+        normalizeStaffKey(staff) === "sandra" &&
+        /physical/i.test(svc)
+      ) {
+        staff = "JAVI";
+      }
+    }
+    return staff === s.staff ? s : { ...s, staff };
+  });
 }
 
 export function slotsFromMadre(doc: MadreLike | null | undefined, iso: string): Feedback2030Slot[] {
   const out: Feedback2030Slot[] = [];
   const wd = weekdayLongUtcNoon(iso);
+  const autumnCalendar = iso >= AUTUMN_TERM_FROM;
   for (const week of doc?.weeks || []) {
     const start = String(week.start || "").slice(0, 10);
     const end = String(week.end || "").slice(0, 10);
-    if (start && iso < start) continue;
-    if (end && iso > end) continue;
+    const coversIso = weekCoversIso(start, end, iso);
+    const useAutumnStanding =
+      autumnCalendar && !coversIso && isAutumnStandingWeek(start, end);
+    if (!coversIso && !useAutumnStanding) continue;
     for (const col of asStaffCols(week.staff)) {
       const staff = String(col.staffName || col.staffKey || "").trim();
       if (!staff) continue;
@@ -227,8 +237,12 @@ export function slotsFromMadre(doc: MadreLike | null | undefined, iso: string): 
         const d = day && typeof day === "object" ? (day as Record<string, unknown>) : {};
         const dIso = String(d.sessionDate || "").slice(0, 10);
         const dWd = String(d.weekday || "").trim();
-        if (dIso && dIso !== iso) continue;
-        if (!dIso && dWd && dWd.toLowerCase() !== wd.toLowerCase()) continue;
+        if (useAutumnStanding) {
+          if (dWd && dWd.toLowerCase() !== wd.toLowerCase()) continue;
+        } else {
+          if (dIso && dIso !== iso) continue;
+          if (!dIso && dWd && dWd.toLowerCase() !== wd.toLowerCase()) continue;
+        }
         const slots = Array.isArray(d.slots) ? d.slots : [];
         for (const sl of slots) {
           const s = sl && typeof sl === "object" ? (sl as Record<string, unknown>) : {};
@@ -245,7 +259,7 @@ export function slotsFromMadre(doc: MadreLike | null | undefined, iso: string): 
       }
     }
   }
-  return out;
+  return remapAutumnFeedback2030Slots(out, iso);
 }
 
 export function slotsFromRosterRows(

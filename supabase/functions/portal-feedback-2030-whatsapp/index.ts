@@ -23,6 +23,7 @@ import {
 } from "../_shared/portal_parent_messaging.ts";
 import {
   datedFallbackSlots,
+  FEEDBACK_2030_MADRE_TERM_KEYS,
   mergeFeedback2030Slots,
   outstandingByStaff,
   resolveProfileForStaffKey,
@@ -83,6 +84,7 @@ function firstName(raw: string): string {
 const GREET: Record<string, string> = {
   javi: "Javi",
   javier: "Javier",
+  luliya: "Luliya",
 };
 
 function greetName(username: string, fullName: string, fallback: string): string {
@@ -186,15 +188,25 @@ Deno.serve(async (req) => {
     .is("session_date", null)
     .ilike("day", weekday);
 
-  const { data: madreRow } = await admin
-    .from("portal_madre_document")
-    .select("document")
-    .limit(1)
-    .maybeSingle();
+  /** Autumn 2026 standing lives on summer-2026 until autumn-2026 term_key is cut over. */
+  let madreDoc = null;
+  let madreTermKey = "";
+  for (const termKey of FEEDBACK_2030_MADRE_TERM_KEYS) {
+    const { data: madreRow } = await admin
+      .from("portal_madre_document")
+      .select("term_key, document")
+      .eq("term_key", termKey)
+      .maybeSingle();
+    if (madreRow?.document) {
+      madreDoc = madreRow.document;
+      madreTermKey = String(madreRow.term_key || termKey);
+      break;
+    }
+  }
 
   const slots = mergeFeedback2030Slots([
     datedFallbackSlots(iso),
-    slotsFromMadre(madreRow?.document || null, iso),
+    slotsFromMadre(madreDoc, iso),
     slotsFromRosterRows([...(datedRoster || []), ...(templateRoster || [])], iso),
   ]);
 
@@ -258,6 +270,7 @@ Deno.serve(async (req) => {
       dryRun: true,
       wave,
       shiftDate: iso,
+      madreTermKey: madreTermKey || null,
       slotCount: slots.length,
       targets: targets.map((t) => ({
         username: t.username,
