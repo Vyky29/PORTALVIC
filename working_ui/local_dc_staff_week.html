@@ -311,7 +311,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260907-feedback-lead-15-v83"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260908-tue-dc-v84"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -342,7 +342,7 @@
     { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Week 1 · first Saturday" },
     { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · Hub: Berta Lead + Jack W…Aydaan · John = Emanuel book · Godsway · Aurora Yusuf Aquatic 9–9.30 · Roberto Simon Aquatic 9–9.30 + Yusuf Multi 9.30–10.15 (2 feedbacks) · Youssef OFF · Emanuel OFF" },
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Raul OFF · Victor covers Timi 11-1 + Emanuel 1-4 + Tinashe with Godsway/John · Emanuel interview 4pm · Sandra OFF · Javi Palankas covers Westway Physical (Ayaan 4–5 / Serine 5–6)" },
-    { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "Standing · Aurora OFF · Javi Palankas covers Aurora Acton book (Adam Mahmmoud / Junaid / Aydaan Ah / Anas) · Javier keeps his own book" },
+    { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "DC: Michelle Manager 11-3 + Ikram 3-4 · Roberto+Luliya Ikram 11-3 · Raul Fadi 12.30-3 + Ikram 3-4 · Victor Cyrus 3.30-5 · Aurora OFF · Javi covers Aurora Acton" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Emanuel shadowing · Godsway/John/Raul Tinashe" },
     { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton AS Simon; Aurora from 4.30" },
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Emanuel shadowing Tinashe · Roberto + Tinashe 4.15-6.15" },
@@ -439,6 +439,10 @@
         { name: "Junaid", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Aydaan Ah", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
         { name: "Anas", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
+      ],
+      /* Victor Tue Hub Bespoke (not DC). */
+      Victor: [
+        { name: "Cyrus", time: "3.30 to 5", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
     },
     wednesday: {
@@ -890,7 +894,8 @@
       Roberto: "11 to 3 · 4 to 6.30",
       Luliya: "11 to 3 · 4 to 6.30",
       Michelle: "10.45 to 4.15",
-      Victor: "12.30 to 3 · 3.30 to 5",
+      Raul: "12.30 to 4",
+      Victor: "3.30 to 5",
       Javier: "4 to 6.30",
       Aurora: "4.30 to 6.30",
       Javi: "4.30 to 6.30",
@@ -1856,8 +1861,8 @@
         var emptyLabel =
           dk === "sunday" && staff === "Berta"
             ? "Leader · no clients"
-            : dk === "tuesday" && staff === "Raul"
-            ? "OFF (Victor covers DC)"
+            : dk === "tuesday" && staff === "Victor" && !(clients && clients.length)
+            ? "Cyrus Bespoke 3.30–5 (Hub)"
             : dk === "monday" && staff === "Victor" && day.iso !== "2026-09-07"
               ? "OFF (Mondays)"
               : dk === "monday" && staff === "Raul" && day.iso === "2026-09-07"

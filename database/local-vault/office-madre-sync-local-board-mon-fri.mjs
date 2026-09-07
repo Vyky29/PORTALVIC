@@ -217,19 +217,26 @@ function rebuildTuesday(week) {
   const raul = findStaff(week, "raul");
   const youssef = findStaff(week, "youssef");
 
-  setDcDay(roberto, "Tuesday", [
-    { time: "11 to 12", client: "ACAT", instr: "ROBERTO" },
-    { time: "12.30 to 3", client: "Fadi", instr: "ROBERTO" },
+  setDcDay(roberto, "Tuesday", [{ time: "11 to 3", client: "Ikram", instr: "ROBERTO" }]);
+  setDcDay(michelle, "Tuesday", [
+    { time: "11 to 3", client: "Manager", instr: "MICHELLE", area: "Hub · Manager" },
+    { time: "3 to 4", client: "Ikram", instr: "MICHELLE" },
   ]);
-  setDcDay(michelle, "Tuesday", [{ time: "11 to 4", client: "Ikram", instr: "MICHELLE" }]);
   setDcDay(luliya, "Tuesday", [{ time: "11 to 3", client: "Ikram", instr: "LULIYA" }]);
-  setDcDay(victor, "Tuesday", [
-    { time: "12.30 to 3", client: "Fadi", instr: "VICTOR" },
-    { time: "3 to 4", client: "Ikram", instr: "VICTOR" },
+  setDcDay(raul, "Tuesday", [
+    { time: "12.30 to 3", client: "Fadi", instr: "RAUL" },
+    { time: "3 to 4", client: "Ikram", instr: "RAUL" },
   ]);
-  setDcDay(raul, "Tuesday", []);
+  setDcDay(victor, "Tuesday", []);
   setDcDay(youssef, "Tuesday", []);
-  note("Tue DC = local Autumn (Roberto ACAT 11-12 + Fadi 12.30-3; Michelle Ikram 11-4; Raul OFF)");
+  if (victor) {
+    const d = ensureDay(victor, "Tuesday");
+    clearDayServices(d, (sl) => /cyrus/i.test(String(sl.client_name || "")) && /bespoke/i.test(sl.service || ""));
+    d.slots.push(bespoke("3.30 to 5", "Cyrus", "VICTOR"));
+  }
+  note(
+    "Tue DC = Michelle Manager 11-3 + Ikram 3-4; Roberto+Luliya Ikram 11-3; Raul Fadi 12.30-3 + Ikram 3-4; Victor Cyrus Bespoke 3.30-5",
+  );
 }
 
 function rebuildWednesday(week) {
