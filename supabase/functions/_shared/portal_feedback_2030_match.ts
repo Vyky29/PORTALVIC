@@ -85,6 +85,38 @@ const SATURDAY_ACTON_REAL: Feedback2030Slot[] = [
   { staff: "YOUSSEF", client: "Saaib", time: "12 to 12.30", service: "Aquatic Activity" },
 ];
 
+/**
+ * Autumn 26/27 Monday standing (from Mon 7 Sep). MADRE in Portal is still summer-dated,
+ * and portal_roster_rows standing stamps are skipped by the Edge Function day fetch —
+ * without this fallback the 20:00/20:30 WhatsApp only sees thin dated rows (e.g. Youssef open seat).
+ */
+const AUTUMN_MONDAY_STANDING: Feedback2030Slot[] = [
+  { staff: "MICHELLE", client: "Ikram", time: "11 to 4", service: "Day Centre" },
+  { staff: "LULIYA", client: "Ikram", time: "11 to 3", service: "Day Centre" },
+  { staff: "ROBERTO", client: "Emanuel", time: "11 to 1", service: "Day Centre" },
+  { staff: "ROBERTO", client: "Fadi", time: "1 to 3", service: "Day Centre" },
+  { staff: "RAUL", client: "Timi", time: "11 to 1", service: "Day Centre" },
+  { staff: "RAUL", client: "Emanuel", time: "1 to 4", service: "Day Centre" },
+  { staff: "YOUSSEF", client: "Fadi", time: "12.30 to 3", service: "Day Centre" },
+  { staff: "GODSWAY", client: "Tinashe", time: "4.30 to 6", service: "Bespoke Programme" },
+  { staff: "JOHN", client: "Tinashe", time: "4.30 to 6", service: "Bespoke Programme" },
+  { staff: "RAUL", client: "Tinashe", time: "4.30 to 6", service: "Bespoke Programme" },
+  { staff: "DAN", client: "Muhammad (trial)", time: "4.30 to 5", service: "Aquatic Activity" },
+  { staff: "DAN", client: "Amar Rai", time: "5 to 5.30", service: "Aquatic Activity" },
+  { staff: "DAN", client: "Amar Rai", time: "5.30 to 6", service: "Aquatic Activity" },
+  { staff: "DAN", client: "Adaam Ah", time: "6 to 6.30", service: "Aquatic Activity" },
+  { staff: "LULIYA", client: "Gemma", time: "5 to 5.30", service: "Aquatic Activity" },
+  { staff: "LULIYA", client: "Zayana", time: "5.30 to 6", service: "Aquatic Activity" },
+  { staff: "LULIYA", client: "Yamik", time: "6 to 6.30", service: "Aquatic Activity" },
+  { staff: "ROBERTO", client: "Adam P", time: "4.30 to 5", service: "Aquatic Activity" },
+  { staff: "ROBERTO", client: "Steven", time: "5 to 5.30", service: "Aquatic Activity" },
+  { staff: "ROBERTO", client: "Mario", time: "5.30 to 6.30", service: "Aquatic Activity" },
+  { staff: "YOUSSEF", client: "Eddie Mc", time: "4.30 to 5", service: "Aquatic Activity" },
+  { staff: "YOUSSEF", client: "Abodi Pa", time: "5.30 to 6.30", service: "Aquatic Activity" },
+  { staff: "SANDRA", client: "Ayaan", time: "4 to 5", service: "Physical Activity" },
+  { staff: "SANDRA", client: "Serine", time: "5 to 6", service: "Physical Activity" },
+];
+
 export const STAFF_USERNAME_ALIASES: Record<string, string> = {
   /* Never collapse swimming Javier Marquez (javier) into CEO Javi Palankas (javi). */
   javier: "javier",
@@ -147,6 +179,18 @@ export function datedFallbackSlots(iso: string): Feedback2030Slot[] {
   if (iso === "2026-09-06") return SUNDAY_2026_09_06.slice();
   const wd = weekdayLongUtcNoon(iso);
   if (wd === "Saturday") return SATURDAY_ACTON_REAL.slice();
+  /* Autumn term Mondays — until MADRE / roster rows carry Sep+ standing for the WA cron. */
+  if (wd === "Monday" && iso >= "2026-09-01" && iso <= "2026-12-31") {
+    const rows = AUTUMN_MONDAY_STANDING.map((s) => ({ ...s }));
+    /* Mon 7 Sep: Raul OFF → Victor; Sandra OFF → Javi Physical. */
+    if (iso === "2026-09-07") {
+      for (const s of rows) {
+        if (normalizeStaffKey(s.staff) === "raul") s.staff = "VICTOR";
+        if (normalizeStaffKey(s.staff) === "sandra") s.staff = "JAVI";
+      }
+    }
+    return rows;
+  }
   return [];
 }
 
