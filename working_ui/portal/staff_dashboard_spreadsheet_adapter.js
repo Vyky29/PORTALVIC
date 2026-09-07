@@ -904,26 +904,13 @@
       const targets = instructorProfileKeysForRow(instructorsResolved, profiles);
       if (!targets.some((k) => normalizePersonId(k) === wanted)) return;
 
-      const nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
-      const nameLower = nameRaw.toLowerCase();
-      const isClosed = nameLower === "closed";
-      const isOpenSlot =
-        !nameRaw ||
-        nameLower === "no client" ||
-        nameLower === "no participant" ||
-        nameLower === "noclient" ||
-        nameLower === "no_participant";
+      let nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
       // Fictitious office holds stay off the worker dashboard (waitlist probe seats).
       if (isOfficeHoldWaitlistClient(nameRaw)) return;
       const timeSlotLabel = String(row.time_slot || "").trim();
       const rosterService = String(row.service || "").trim();
       const rosterArea =
         row.area !== undefined && row.area !== null ? String(row.area).trim() : "";
-      const isHomeSlot =
-        nameLower === "casa" ||
-        nameLower === "home" ||
-        String(rosterArea || "").trim().toUpperCase() === "HOME";
-      const isManagerSlot = nameLower === "manager";
       const venue = String(row.venue || "").trim();
       const day = String(row.day || "").trim();
 
@@ -949,7 +936,52 @@
           startIso = String(startIso || "").trim().slice(0, 10);
           if (/^\d{4}-\d{2}-\d{2}$/.test(startIso) && sessionDate < startIso) return;
         }
+        /* OLD / released: keep the seat as No participant (available), do not paint the name. */
+        const goneMap =
+          (typeof window !== "undefined" &&
+            window.STAFF_DASHBOARD_SOURCE &&
+            window.STAFF_DASHBOARD_SOURCE.clientRosterGoneFromDates) ||
+          null;
+        if (goneMap) {
+          const slugG = nameRaw.toLowerCase();
+          let goneIso = goneMap[nameRaw] || goneMap[slugG] || "";
+          if (!goneIso) {
+            for (const gk of Object.keys(goneMap)) {
+              const gkl = String(gk).trim().toLowerCase();
+              /* Exact Joel, never Joelle. */
+              if (gkl === "joel") {
+                if (slugG === "joel" || slugG.indexOf("joel ") === 0) {
+                  goneIso = goneMap[gk];
+                  break;
+                }
+                continue;
+              }
+              if (gkl === slugG || slugG.indexOf(gkl + " ") === 0) {
+                goneIso = goneMap[gk];
+                break;
+              }
+            }
+          }
+          goneIso = String(goneIso || "").trim().slice(0, 10);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(goneIso) && sessionDate >= goneIso) {
+            nameRaw = "No participant";
+          }
+        }
       }
+
+      const nameLower = String(nameRaw || "").toLowerCase();
+      const isClosed = nameLower === "closed";
+      const isOpenSlot =
+        !nameRaw ||
+        nameLower === "no client" ||
+        nameLower === "no participant" ||
+        nameLower === "noclient" ||
+        nameLower === "no_participant";
+      const isHomeSlot =
+        nameLower === "casa" ||
+        nameLower === "home" ||
+        String(rosterArea || "").trim().toUpperCase() === "HOME";
+      const isManagerSlot = nameLower === "manager";
 
       const selfKey =
         targets.find((k) => normalizePersonId(k) === wanted) ||

@@ -2325,8 +2325,8 @@
   }
 
   /**
-   * Unpaid Aug15 release (live from 16 Aug 2026): Karo, Kareena, Shire are former
-   * clients — never keep their names on Autumn standing / Sessions roster seats.
+   * OLD / released clients — never keep their names on Autumn Sessions seats.
+   * Exact Joel only (never Joelle). Aug15 unpaid: Karo, Kareena, Shire.
    */
   function isAug15ReleasedFormerClient(name) {
     var n = String(name || "")
@@ -2339,17 +2339,30 @@
     return false;
   }
 
-  function scrubAug15ReleasedFormerClientRows(rows) {
+  /** Joel Hibbert-Nixon — not continuing Autumn 26/27 (exact Joel / Joel …, never Joelle). */
+  function isOldJoelNotContinuing(name) {
+    var n = String(name || "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+    return n === "joel" || n.indexOf("joel ") === 0;
+  }
+
+  function scrubReleasedFormerClientRows(rows) {
     var out = [];
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
-      if (!isAug15ReleasedFormerClient(r.client_name)) {
-        out.push(r);
+      if (isAug15ReleasedFormerClient(r.client_name) || isOldJoelNotContinuing(r.client_name)) {
+        out.push(Object.assign({}, r, { client_name: "No participant" }));
         return;
       }
-      out.push(Object.assign({}, r, { client_name: "No participant" }));
+      out.push(r);
     });
     return out;
+  }
+
+  function scrubAug15ReleasedFormerClientRows(rows) {
+    return scrubReleasedFormerClientRows(rows);
   }
 
   /**
