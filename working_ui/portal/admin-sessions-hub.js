@@ -1630,10 +1630,24 @@
 
   /** Collapse staff aliases (luliya/lulia/aida, javi/javier) so override anchors bind to roster names. */
   function canonicalStaffMatchKey(value) {
-    var k = clean(value).toLowerCase().split(/\s+/)[0] || "";
+    var raw = clean(value).toLowerCase();
+    var joined = raw.replace(/[^a-z0-9]+/g, "");
+    var k = raw.split(/\s+/)[0] || "";
     if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "luliya";
-    if (k === "javiermarquez") return "javier";
-    if (k === "javiarranz" || k === "javiarranzescorial" || k === "palankas" || k === "palankasarranz") return "javi";
+    if (k === "javiermarquez" || joined === "javiermarquez") return "javier";
+    if (
+      k === "javiarranz" ||
+      k === "javiarranzescorial" ||
+      k === "palankas" ||
+      k === "palankasarranz" ||
+      joined === "javiarranz" ||
+      joined === "javiarranzescorial" ||
+      joined === "palankas" ||
+      joined === "palankasarranz" ||
+      joined === "palankasarranzescorial"
+    ) {
+      return "javi";
+    }
     return k;
   }
 
@@ -3254,7 +3268,21 @@
     if (tokens[0] && (tokens[0] === inst || inst.indexOf(tokens[0]) >= 0 || tokens[0].indexOf(inst) >= 0)) {
       return true;
     }
-    if ((inst === "luliya" || inst === "lulia") && (by.indexOf("luliya") >= 0 || by.indexOf("lulia") >= 0 || by.indexOf("aida") >= 0)) {
+    /* Javi Palankas submits as "Palankas Arranz Escorial" — first token / joined surname → javi. */
+    var byKey = canonicalStaffMatchKey(by);
+    var instKey = canonicalStaffMatchKey(inst);
+    if (byKey && instKey && byKey === instKey) return true;
+    if (tokens[0]) {
+      var t0Key = canonicalStaffMatchKey(tokens[0]);
+      if (t0Key && instKey && t0Key === instKey) return true;
+    }
+    var byJoined = by.replace(/[^a-z0-9]+/g, "");
+    var byJoinedKey = canonicalStaffMatchKey(byJoined);
+    if (byJoinedKey && instKey && byJoinedKey === instKey) return true;
+    if (
+      (instKey === "luliya" || inst === "luliya" || inst === "lulia") &&
+      (by.indexOf("luliya") >= 0 || by.indexOf("lulia") >= 0 || by.indexOf("aida") >= 0)
+    ) {
       return true;
     }
     return false;
