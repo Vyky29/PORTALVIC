@@ -2099,6 +2099,20 @@
       };
       return book[cid] || null;
     }
+    /**
+     * Hub Bespoke Tinashe: covers sometimes store the paid staff band (4.15-6.15)
+     * instead of the client session (4.30-6). Prefer the client-facing window.
+     */
+    function portalNormTinasheBespokeCoverWindow(ov){
+      var cid = portalTodayClientSlugCanon(ov && ov.anchor_client_id);
+      if(cid !== 'tinashe') return null;
+      var start = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov && ov.anchor_start) : '';
+      var end = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov && ov.anchor_end) : '';
+      var lab = String(ov && ov.anchor_time_slot_label || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      var staffBand = (start === '16:15' && end === '18:15') || lab === '4.15 to 6.15';
+      if(!staffBand) return null;
+      return { start: '16:30', end: '18:00', service: 'Bespoke Programme' };
+    }
     /** True when this instructor_reassign hands the slot to `staffId` (they are the cover). */
     function portalInstructorReassignCoverIsStaff(ov, staffId){
       const t = String(ov && ov.override_type || '').trim();
@@ -3174,26 +3188,43 @@
       portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey).forEach(function(ov){
         const cov = portalInstructorCoverStaffKeyFromOverride(ov) || portalNormKeyStr(staffId);
         const hubWinFix = portalNormSep6JohnEmanuelHubCoverWindow(ov);
+        const tinWinFix = portalNormTinasheBespokeCoverWindow(ov);
+        const winFix = hubWinFix || tinWinFix;
+        const coverCid = portalTodayClientSlugCanon(ov && ov.anchor_client_id);
+        const inferredService = (tinWinFix && tinWinFix.service)
+          || (coverCid === 'tinashe' ? 'Bespoke Programme' : '')
+          || ((coverCid === 'timi' || coverCid === 'emanuel') ? 'Day Centre' : '')
+          || String(portalScheduleOverridePayload(ov).activity || portalScheduleOverridePayload(ov).service || '').trim();
         const baseFound = portalFindSpreadsheetSessionMatchingOverride(ov, anchorDayWord) || {
           day: anchorDayWord,
-          start: (hubWinFix && hubWinFix.start) || portalHmFromDbTime(ov.anchor_start) || '09:00',
-          end: (hubWinFix && hubWinFix.end) || portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00',
+          start: (winFix && winFix.start) || portalHmFromDbTime(ov.anchor_start) || '09:00',
+          end: (winFix && winFix.end) || portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00',
           venue: ov.anchor_venue || '',
           clientId: String(ov.anchor_client_id || '').toLowerCase(),
           staffId: String(ov.anchor_staff_id || '').trim().toLowerCase(),
           status: 'Scheduled',
-          activity: String(portalScheduleOverridePayload(ov).activity || portalScheduleOverridePayload(ov).service || 'Swimming').trim() || 'Swimming',
-          rosterService: String(portalScheduleOverridePayload(ov).service || '').trim() || 'Multi-Activity',
+          activity: inferredService || 'Swimming',
+          rosterService: inferredService || 'Multi-Activity',
           session_date: sessionDateKey
         };
-        const coverWinStart = (hubWinFix && hubWinFix.start) || portalHmFromDbTime(ov.anchor_start) || baseFound.start;
-        const coverWinEnd = (hubWinFix && hubWinFix.end) || portalHmFromDbTime(ov.anchor_end) || baseFound.end || coverWinStart;
-        /* Always pin the card to the override window (coalesced halves → one 60' card). */
+        /* Prefer client-facing window from roster / Hub fixes over paid staff-band anchors. */
+        const coverWinStart = (winFix && winFix.start)
+          || (baseFound && baseFound.start)
+          || portalHmFromDbTime(ov.anchor_start)
+          || '09:00';
+        const coverWinEnd = (winFix && winFix.end)
+          || (baseFound && baseFound.end)
+          || portalHmFromDbTime(ov.anchor_end)
+          || coverWinStart;
         const base = Object.assign({}, baseFound, {
           start: coverWinStart,
           end: coverWinEnd,
           clientId: String(ov.anchor_client_id || baseFound.clientId || '').toLowerCase() || baseFound.clientId
         });
+        if(inferredService && (!base.rosterService || /multi|swimming/i.test(String(base.rosterService)))){
+          base.rosterService = inferredService;
+          base.activity = inferredService;
+        }
         if(hubWinFix){
           base.rosterArea = base.rosterArea || 'Hub Room';
           base.area = base.area || 'Hub Room';
@@ -3202,6 +3233,13 @@
             base.rosterService = 'Multi-Activity';
             base.activity = 'Multi-Activity';
           }
+        }
+        if(tinWinFix || coverCid === 'tinashe'){
+          base.rosterArea = base.rosterArea || 'Hub Room';
+          base.area = base.area || 'Hub Room';
+          if(!base.venue || String(base.venue).toLowerCase().indexOf('swimfarm') < 0) base.venue = 'SwimFarm';
+          base.rosterService = 'Bespoke Programme';
+          base.activity = 'Bespoke Programme';
         }
         const s = Object.assign({}, base, { staffId: cov });
         let st2 = sessionModelStatus(s);
@@ -3386,7 +3424,9 @@
           time,
           kind: 'client',
           clientId: effCoverId,
-          name: c.name || nameFromReplaceC || effCoverId,
+          name: typeof portalParticipantDisplayName === 'function'
+            ? portalParticipantDisplayName(c.name || nameFromReplaceC || effCoverId, effCoverId)
+            : (c.name || nameFromReplaceC || effCoverId),
           activity,
           areaLabel,
           poolLocationLabel,

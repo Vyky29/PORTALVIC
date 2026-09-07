@@ -1,7 +1,7 @@
 /**
  * Mon 7 Sep 2026: Raul OFF — Victor covers full Monday board.
  *   Day Centre: Timi 11–1, Emanuel 1–4 (anchor Raul → covering Victor)
- *   Hub Bespoke: Tinashe 4.15–6.15 (anchor Raul → covering Victor)
+ *   Hub Bespoke: Tinashe 4.30–6 (client session; staff paid band is 4.15–6.15)
  *   staff_unavailability: Raul day off
  *
  * Dry-run (default):
@@ -42,6 +42,7 @@ const SLOTS = [
     start: "11:00:00",
     end: "13:00:00",
     venue: "SwimFarm",
+    service: "Day Centre",
   },
   {
     client: "emanuel",
@@ -49,13 +50,15 @@ const SLOTS = [
     start: "13:00:00",
     end: "16:00:00",
     venue: "SwimFarm",
+    service: "Day Centre",
   },
   {
     client: "tinashe",
-    label: "4.15 to 6.15",
-    start: "16:15:00",
-    end: "18:15:00",
+    label: "4.30 to 6",
+    start: "16:30:00",
+    end: "18:00:00",
     venue: "SwimFarm",
+    service: "Bespoke Programme",
   },
 ];
 
@@ -127,6 +130,8 @@ async function main() {
         covering_staff_id: "victor",
         covering_staff_name: victor.full_name || "Victor",
         portal_session_key: portalSessionKey(DATE, startHHMM, s.client),
+        service: s.service || null,
+        activity: s.service || null,
       },
       reason: `Victor covers Raul — ${s.client} ${s.label} ${DATE}`,
       status: "active",
@@ -181,12 +186,11 @@ async function main() {
   for (const row of overrideRows) {
     const { data: existing, error: exErr } = await sb
       .from("schedule_overrides")
-      .select("id, status, payload")
+      .select("id, status, payload, anchor_start")
       .eq("session_date", DATE)
       .eq("override_type", "instructor_reassign")
       .eq("anchor_staff_id", "raul")
       .eq("anchor_client_id", row.anchor_client_id)
-      .eq("anchor_start", row.anchor_start)
       .eq("status", "active");
     if (exErr) throw exErr;
 
@@ -197,15 +201,17 @@ async function main() {
         .update({
           payload: row.payload,
           reason: row.reason,
+          anchor_start: row.anchor_start,
           anchor_end: row.anchor_end,
           anchor_venue: row.anchor_venue,
           anchor_time_slot_label: row.anchor_time_slot_label,
-          spreadsheet_revision: REVISION,
+          spreadsheet_revision: REVISION + "-client-window",
+          updated_by: actor.id,
           updated_at: new Date().toISOString(),
         })
         .eq("id", keep.id);
       if (upErr) throw upErr;
-      console.log("Updated override", row.anchor_client_id, keep.id);
+      console.log("Updated override", row.anchor_client_id, keep.id, row.anchor_time_slot_label);
       for (const dup of existing.slice(1)) {
         const { error: cancelErr } = await sb
           .from("schedule_overrides")

@@ -626,6 +626,8 @@
     put("yosiyas", "Yossi");
     put("yunis", "Yunis");
     put("yunis_hussein", "Yunis");
+    put("tinashe", "Tinashe");
+    put("tinashe_nekati", "Tinashe");
     try {
       const rows =
         typeof window !== "undefined" && Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)
@@ -686,7 +688,13 @@
     }
     if (cid && map[cid]) return map[cid];
     const name = coreName || rawIn;
-    if (name && !isParticipantCatalogExcludedName(name)) return name;
+    if (name && !isParticipantCatalogExcludedName(name)) {
+      /* Slug-only labels (e.g. cover override anchor_client_id "tinashe") → Title Case. */
+      if (/^[a-z0-9]+(?:[_\s-][a-z0-9]+)*$/.test(name) && name === name.toLowerCase()) {
+        return name.replace(/[_\s-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      }
+      return name;
+    }
     if (cid) {
       return cid.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     }

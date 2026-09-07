@@ -1937,12 +1937,37 @@
       }
       return out;
     }
+    /** Paid staff band ↔ client-facing session clocks (e.g. Hub Bespoke 4.15-6.15 vs Tinashe 4.30-6). */
+    var PORTAL_STAFF_BAND_TIME_EQUIV = {
+      '16:15': '16:30',
+      '16:30': '16:15',
+      '18:00': '18:15',
+      '18:15': '18:00',
+      '09:15': '09:30',
+      '09:30': '09:15',
+      '10:00': '10:15',
+      '10:15': '10:00',
+      '10:45': '11:00',
+      '11:00': '10:45',
+      '11:30': '11:45',
+      '11:45': '11:30',
+      '12:15': '12:30',
+      '12:30': '12:15',
+      '13:00': '13:15',
+      '13:15': '13:00'
+    };
+    function portalStaffBandTimeEquiv(hm){
+      var t = portalCanonicalHmToken(hm);
+      return t ? (PORTAL_STAFF_BAND_TIME_EQUIV[t] || '') : '';
+    }
     function portalTimeAnchorsMatch(dbT, sheetT){
       const left = normaliseTimeForOverrideMatch(dbT);
       const right = normaliseTimeForOverrideMatch(sheetT);
       if(!left.length || !right.length) return false;
       for(let i = 0; i < left.length; i++){
         if(right.indexOf(left[i]) !== -1) return true;
+        const eq = portalStaffBandTimeEquiv(left[i]);
+        if(eq && right.indexOf(eq) !== -1) return true;
       }
       return false;
     }
@@ -1991,6 +2016,13 @@
       const a = portalNormSlotLabelLoose(lab);
       const b = portalNormSlotLabelLoose(sLab);
       if(a === b) return true;
+      /* Staff paid band vs client session (Tinashe Hub Bespoke). */
+      if(
+        (a === '4.15 to 6.15' && (b === '4.30 to 6' || b === '4.30 to 6.00')) ||
+        (b === '4.15 to 6.15' && (a === '4.30 to 6' || a === '4.30 to 6.00'))
+      ){
+        return true;
+      }
       const startA = a.split(/\s+to\s+/)[0];
       const startB = b.split(/\s+to\s+/)[0];
       if(startA && startB && startA === startB) return true;
