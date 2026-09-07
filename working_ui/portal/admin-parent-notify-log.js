@@ -3166,6 +3166,27 @@
   }
 
   function familyWho(row) {
+    var meta = (row && row.meta) || {};
+    if (typeof meta === "string") {
+      try {
+        meta = JSON.parse(meta);
+      } catch (_j) {
+        meta = {};
+      }
+    }
+    var office = String((meta && meta.office_parent_name) || "").trim();
+    if (office) {
+      var of = office.split(/\s+/)[0] || office;
+      return of.charAt(0).toUpperCase() + of.slice(1);
+    }
+    var phone = String((row && row.from_phone) || "").trim();
+    if (phone) {
+      var dirHit = findContactForThread({ phone: phone }, state.contactDirectory);
+      if (dirHit && dirHit.parent) {
+        var dp = String(dirHit.parent).trim().split(/\s+/)[0] || "";
+        if (dp) return dp.charAt(0).toUpperCase() + dp.slice(1);
+      }
+    }
     var raw = String((row && row.contact_name) || "Parent").trim() || "Parent";
     var first = raw.split(/\s+/)[0] || raw;
     return first.charAt(0).toUpperCase() + first.slice(1);

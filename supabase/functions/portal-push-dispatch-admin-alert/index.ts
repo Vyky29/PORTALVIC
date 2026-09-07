@@ -26,6 +26,7 @@
 // so push works without manual Dashboard webhook setup.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { resolveOfficeParentAlertName } from "../_shared/parent_portal_messages.ts";
 import {
   adminPushOpenBase,
   clampPushBody,
@@ -418,7 +419,7 @@ Deno.serve(async (req) => {
     return jsonPushResponse({ skipped: true, reason: "event" });
   }
 
-  const record = payload.record;
+  let record = payload.record;
   if (!record || typeof record !== "object") {
     return jsonPushResponse({ skipped: true, reason: "no record" });
   }
@@ -476,6 +477,17 @@ Deno.serve(async (req) => {
       groupTitle = String(grp?.title ?? grp?.slug ?? "CEO chat").trim();
     }
     }
+  }
+
+  if (table === "portal_parent_whatsapp_inbound") {
+    try {
+      const officeName = await resolveOfficeParentAlertName(
+        admin,
+        String(record.from_phone || ""),
+        String(record.contact_name || ""),
+      );
+      record = { ...record, contact_name: officeName };
+    } catch (_n) {}
   }
 
   const alert = buildAlert(table, record, { authorName, groupTitle });

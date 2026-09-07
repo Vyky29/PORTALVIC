@@ -234,6 +234,60 @@ export function unreadOutboundCountByContact(
   return out;
 }
 
+export function firstParentAlertName(raw: string): string {
+  const t = String(raw || "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  const first = t.split(/\s+/)[0] || t;
+  return first.charAt(0).toUpperCase() + first.slice(1);
+}
+
+/** Office parent/carer name on file for this WhatsApp number (not the Meta profile name). */
+export async function resolveOfficeParentAlertName(
+  admin: SupabaseClient,
+  phone: string,
+  fallbackWaName?: string | null,
+): Promise<string> {
+  const wa = firstParentAlertName(String(fallbackWaName || "")) || "Parent";
+  const last10 = parentPhoneLast10(phone);
+  if (!last10) return wa;
+  try {
+    const { data } = await admin
+      .from("portal_parent_contacts")
+      .select("parent_display, parent_first_name, mobile, in_class")
+      .not("mobile", "is", null)
+      .ilike("mobile", `%${last10}`)
+      .limit(40);
+    const hits: { name: string; inClass: boolean }[] = [];
+    for (const row of data || []) {
+      if (parentPhoneLast10(String(row.mobile || "")) !== last10) continue;
+      const n =
+        String(row.parent_first_name || "").trim() ||
+        String(row.parent_display || "").trim().split(/\s+/)[0] ||
+        "";
+      if (n) hits.push({ name: n, inClass: row.in_class === true });
+    }
+    if (hits.length) {
+      const preferred = hits.find((h) => h.inClass) || hits[0];
+      return firstParentAlertName(preferred.name) || wa;
+    }
+  } catch (_e) {}
+  try {
+    const { data: logs } = await admin
+      .from("portal_parent_notify_log")
+      .select("parent_name, parent_phone")
+      .not("parent_name", "is", null)
+      .ilike("parent_phone", `%${last10}`)
+      .order("created_at", { ascending: false })
+      .limit(12);
+    for (const row of logs || []) {
+      if (parentPhoneLast10(String(row.parent_phone || "")) !== last10) continue;
+      const n = String(row.parent_name || "").trim();
+      if (n) return firstParentAlertName(n);
+    }
+  } catch (_l) {}
+  return wa;
+}
+
 export function applyUnreadFlagsToMessages(
   messages: ParentPortalMessageRow[],
   readAtIso: string,

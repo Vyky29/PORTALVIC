@@ -16,6 +16,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { normalizeParentPhoneE164 } from "../_shared/portal_parent_messaging.ts";
+import { resolveOfficeParentAlertName } from "../_shared/parent_portal_messages.ts";
 import { findStaffLeaderByPhone } from "../_shared/portal_staff_whatsapp.ts";
 import { notifyAdminsStaffWhatsappReply } from "../_shared/portal_staff_whatsapp_admin_push.ts";
 import { notifyAdminsParentWhatsappInbound } from "../_shared/portal_parent_whatsapp_admin_push.ts";
@@ -343,6 +344,13 @@ async function storeInboundMessages(
       continue;
     }
 
+    let officeParentName = contactName;
+    try {
+      officeParentName = await resolveOfficeParentAlertName(admin, phone, contactName);
+    } catch (_n) {
+      officeParentName = contactName;
+    }
+
     const row = {
       wa_message_id: waMessageId,
       from_phone: phone,
@@ -356,6 +364,7 @@ async function storeInboundMessages(
       meta: {
         phone_number_id: metaPhoneId || null,
         display_phone_number: str(value.metadata?.display_phone_number, 40) || null,
+        office_parent_name: officeParentName || null,
       },
       raw_payload: msg as Record<string, unknown>,
     };
@@ -375,7 +384,7 @@ async function storeInboundMessages(
     await notifyAdminsParentWhatsappInbound({
       id: String(parentInserted.id),
       from_phone: String(parentInserted.from_phone || phone),
-      contact_name: String(parentInserted.contact_name || contactName || ""),
+      contact_name: String(officeParentName || parentInserted.contact_name || contactName || ""),
       body_text: String(parentInserted.body_text || bodyText || ""),
       message_type: String(parentInserted.message_type || row.message_type || "text"),
       created_at: String(parentInserted.created_at || new Date().toISOString()),
