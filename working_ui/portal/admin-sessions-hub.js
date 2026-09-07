@@ -1877,10 +1877,16 @@
   }
 
   function hubSlotShowsTrialChip(slot, slotOv) {
-    return overrideIsTrialType(slotOv) || !!(slot && slot.portalOverrideTrialTag);
+    if (overrideIsTrialType(slotOv) || !!(slot && slot.portalOverrideTrialTag)) return true;
+    var nm = clean(slot && slot.client_name);
+    if (/\(\s*trial\s*\)/i.test(nm) || /^trial\b/i.test(nm)) return true;
+    return false;
   }
 
   function hubSlotShowsUpdatedChip(slot, slotOv) {
+    /* Trial / MakeUp chips win over Updated (slot_update often accompanies trial folds). */
+    if (hubSlotShowsTrialChip(slot, slotOv)) return false;
+    if (hubSlotShowsMakeupChip(slot, slotOv)) return false;
     if (overrideIsSlotUpdateType(slotOv)) return true;
     return !!(slot && slot.portalRosterTimeUpdated);
   }
@@ -2033,7 +2039,10 @@
     if (!slot) return false;
     if (slot.portalOverrideTrialTag) return true;
     var ov = slot.__portalScheduleOverride;
-    return overrideIsTrialType(ov);
+    if (overrideIsTrialType(ov)) return true;
+    var nm = clean(slot.client_name);
+    if (/\(\s*trial\s*\)/i.test(nm) || /^trial\b/i.test(nm)) return true;
+    return false;
   }
 
   /** Active overrides from the loaded admin hub payload (makeup slot counting + matching). */
@@ -2564,6 +2573,11 @@
     var esc = escFn || esc;
     if (slotOpt && hubSlotIsTrial(slotOpt)) {
       var trialName = clean(name) || "Trial";
+      trialName = trialName
+        .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
+        .replace(/^trial\s*[-·:]?\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim() || "Trial";
       return '<span class="ash-pill ash-pill--trial">Trial · ' + esc(trialName) + "</span>";
     }
     var kind = rosterSlotKind(name);
@@ -9238,7 +9252,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           "</span>"
       );
     }
-    if (st.isUpdated && !st.isCoverNeeded && !st.isInstructorReassign) {
+    if (st.isUpdated && !st.isCoverNeeded && !st.isInstructorReassign && !st.isTrial && !st.isMakeup && !st.isAbsent) {
       chips.push(
         '<span class="override-chip override--updated">' +
           esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Updated") +
@@ -9300,7 +9314,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '</span><span class="ash-pill ash-pill--out" title="Original seat">' +
         esc(dayBoardParticipantDisplayName(slot.client_name) || clean(slot.client_name) || "\u2014") +
         "</span>";
-    } else if (st.isOpenSlot || st.isClosed || st.isDuty || st.isTrial) {
+    } else if (st.isTrial) {
+      var tName =
+        dayBoardParticipantDisplayName(slot.client_name) || clean(slot.client_name) || "";
+      tName = tName
+        .replace(/\s*\(\s*trial\s*\)\s*/gi, " ")
+        .replace(/^trial\s*[-·:]?\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      nameHtml =
+        '<span class="ash-db-card__name-text">' +
+        esc(tName || "Trial") +
+        "</span>";
+    } else if (st.isOpenSlot || st.isClosed || st.isDuty) {
       nameHtml = htmlParticipantPill(slot.client_name, esc, slot);
     } else {
       nameHtml =
