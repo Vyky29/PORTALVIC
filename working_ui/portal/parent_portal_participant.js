@@ -3115,16 +3115,15 @@
   }
 
   /** True when this 26/27 date is before the service kind starts.
-   *  Day Centre from 1 Sep; weekend after-school from 5 Sep; weekday after-school from 8 Sep (week 2).
-   *  New Autumn starters (and explicit validated booking dates) may begin week 1 from Mon 7 Sep. */
+   *  Day Centre from 1 Sep; weekend from 5 Sep; weekday after-school from Mon 7 Sep
+   *  (Tue 1–Fri 4 Sep were Day Centre week-1 only — no AS those days). */
   function jsDowFromIso(iso) {
     var p = String(iso || "").split("-");
     if (p.length !== 3) return -1;
     return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay();
   }
 
-  var NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM = "2026-09-08";
-  var NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM_NEW_STARTER = "2026-09-07";
+  var NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM = "2026-09-07";
 
   function hasExplicitBookedIso(data, iso) {
     var want = String(iso || "").slice(0, 10);
@@ -3192,10 +3191,7 @@
     if (dow === 0 || dow === 6) {
       return iso < NEXT_YEAR_AFTERSCHOOL_FROM;
     }
-    var weekdayFrom = isNewAutumnStarter(data)
-      ? NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM_NEW_STARTER
-      : NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM;
-    return iso < weekdayFrom;
+    return iso < NEXT_YEAR_WEEKDAY_AFTERSCHOOL_FROM;
   }
 
   function currentYearTermToIso(data) {
