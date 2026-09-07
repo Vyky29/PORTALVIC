@@ -3175,19 +3175,21 @@
       }
     }
     var office = String((meta && meta.office_parent_name) || "").trim();
-    if (office) {
-      var of = office.split(/\s+/)[0] || office;
-      return of.charAt(0).toUpperCase() + of.slice(1);
-    }
+    if (office) return office;
     var phone = String((row && row.from_phone) || "").trim();
     if (phone) {
       var dirHit = findContactForThread({ phone: phone }, state.contactDirectory);
-      if (dirHit && dirHit.parent) {
-        var dp = String(dirHit.parent).trim().split(/\s+/)[0] || "";
+      if (dirHit) {
+        var dp = String(dirHit.parent || "").trim().split(/\s+/)[0] || "";
+        var dc = String(dirHit.child || "").trim().split(/\s+/)[0] || "";
+        if (dp && dc && dp.toLowerCase() !== dc.toLowerCase()) {
+          return dp.charAt(0).toUpperCase() + dp.slice(1) + " (" + (dc.charAt(0).toUpperCase() + dc.slice(1)) + ")";
+        }
         if (dp) return dp.charAt(0).toUpperCase() + dp.slice(1);
       }
     }
     var raw = String((row && row.contact_name) || "Parent").trim() || "Parent";
+    if (raw.indexOf("(") >= 0) return raw;
     var first = raw.split(/\s+/)[0] || raw;
     return first.charAt(0).toUpperCase() + first.slice(1);
   }

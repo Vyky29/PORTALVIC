@@ -306,9 +306,7 @@ function buildAlert(
   }
 
   if (table === "portal_parent_whatsapp_inbound") {
-    const rawWho = String(record.contact_name ?? "Parent").trim() || "Parent";
-    const first = rawWho.split(/\s+/)[0] || rawWho;
-    const who = first.charAt(0).toUpperCase() + first.slice(1);
+    const who = String(record.contact_name ?? "Parent").trim() || "Parent";
     const msgType = String(record.message_type ?? "text").toLowerCase();
     let preview = clampPushBody(String(record.body_text ?? ""), 120);
     if (msgType === "audio") preview = "Voice note";

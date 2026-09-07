@@ -241,6 +241,13 @@ export function firstParentAlertName(raw: string): string {
   return first.charAt(0).toUpperCase() + first.slice(1);
 }
 
+export function formatParentAlertLabel(parentName: string, childName?: string | null): string {
+  const p = firstParentAlertName(parentName);
+  const c = firstParentAlertName(String(childName || ""));
+  if (p && c && c.toLowerCase() !== p.toLowerCase()) return p + " (" + c + ")";
+  return p || c || "";
+}
+
 /** Office parent/carer name on file for this WhatsApp number (not the Meta profile name). */
 export async function resolveOfficeParentAlertName(
   admin: SupabaseClient,
@@ -253,36 +260,44 @@ export async function resolveOfficeParentAlertName(
   try {
     const { data } = await admin
       .from("portal_parent_contacts")
-      .select("parent_display, parent_first_name, mobile, in_class")
+      .select("parent_display, parent_first_name, child_display, child_first_name, mobile, in_class")
       .not("mobile", "is", null)
       .ilike("mobile", `%${last10}`)
       .limit(40);
-    const hits: { name: string; inClass: boolean }[] = [];
+    const hits: { parent: string; child: string; inClass: boolean }[] = [];
     for (const row of data || []) {
       if (parentPhoneLast10(String(row.mobile || "")) !== last10) continue;
-      const n =
+      const parent =
         String(row.parent_first_name || "").trim() ||
         String(row.parent_display || "").trim().split(/\s+/)[0] ||
         "";
-      if (n) hits.push({ name: n, inClass: row.in_class === true });
+      const child =
+        String(row.child_first_name || "").trim() ||
+        String(row.child_display || "").trim().split(/\s+/)[0] ||
+        "";
+      if (parent || child) hits.push({ parent, child, inClass: row.in_class === true });
     }
     if (hits.length) {
-      const preferred = hits.find((h) => h.inClass) || hits[0];
-      return firstParentAlertName(preferred.name) || wa;
+      const preferred = hits.find((h) => h.inClass && h.parent) || hits.find((h) => h.inClass) || hits[0];
+      const labelled = formatParentAlertLabel(preferred.parent, preferred.child);
+      if (labelled) return labelled;
     }
   } catch (_e) {}
   try {
     const { data: logs } = await admin
       .from("portal_parent_notify_log")
-      .select("parent_name, parent_phone")
+      .select("parent_name, client_display, parent_phone")
       .not("parent_name", "is", null)
       .ilike("parent_phone", `%${last10}`)
       .order("created_at", { ascending: false })
       .limit(12);
     for (const row of logs || []) {
       if (parentPhoneLast10(String(row.parent_phone || "")) !== last10) continue;
-      const n = String(row.parent_name || "").trim();
-      if (n) return firstParentAlertName(n);
+      const labelled = formatParentAlertLabel(
+        String(row.parent_name || ""),
+        String(row.client_display || ""),
+      );
+      if (labelled) return labelled;
     }
   } catch (_l) {}
   return wa;
