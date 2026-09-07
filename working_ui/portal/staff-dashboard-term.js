@@ -2215,10 +2215,12 @@
       }
       return '';
     }
-    /** Day Centre participants: their feedback turns orange / "ready to judge" 30 min BEFORE the
-     *  session ends (e.g. ends 3:00pm → judgeable from 2:30pm). Every other service stays gated on
-     *  the real end time. Detected from the roster row service ("Day Centre"). */
+    /** Feedback unlock lead before session end:
+     *  - Day Centre: 30 min (e.g. ends 3:00 → from 2:30)
+     *  - Everyone else: 15 min (e.g. Tinashe ends 6:00 → from 5:45)
+     */
     const DAY_CENTRE_FEEDBACK_LEAD_MS = 30 * 60 * 1000;
+    const DEFAULT_FEEDBACK_LEAD_MS = 15 * 60 * 1000;
     function portalRosterSessionIsDayCentre(s){
       if(!s) return false;
       if(/day\s*centre/i.test(String(s.rosterService || ''))) return true;
@@ -2247,6 +2249,9 @@
       if(/day\s*centre/i.test(String(item.service || ''))) return true;
       return portalRosterSessionIsDayCentre(item.__portalBaseSession);
     }
+    function portalFeedbackLeadMsForItem(item){
+      return portalFeedbackItemIsDayCentre(item) ? DAY_CENTRE_FEEDBACK_LEAD_MS : DEFAULT_FEEDBACK_LEAD_MS;
+    }
     function isSessionEndedForFeedback(item){
       if(STAFF_DASH_FORCE_SESSIONS_ENDED) return true;
       try{
@@ -2267,9 +2272,13 @@
         }catch(_){}
         return false;
       }
-      const lead = portalFeedbackItemIsDayCentre(item) ? DAY_CENTRE_FEEDBACK_LEAD_MS : 0;
+      const lead = portalFeedbackLeadMsForItem(item);
       return Date.now() >= (t - lead);
     }
+    try{ window.portalFeedbackLeadMsForItem = portalFeedbackLeadMsForItem; }catch(_){}
+    try{ window.isSessionEndedForFeedback = isSessionEndedForFeedback; }catch(_){}
+    try{ window.DEFAULT_FEEDBACK_LEAD_MS = DEFAULT_FEEDBACK_LEAD_MS; }catch(_){}
+    try{ window.DAY_CENTRE_FEEDBACK_LEAD_MS = DAY_CENTRE_FEEDBACK_LEAD_MS; }catch(_){}
     /**
      * True when this weekday (current week strip) still has a replace / make-up slot
      * whose end time is in the future — week row may use pink + “Make Up” tag.

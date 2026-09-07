@@ -2433,8 +2433,16 @@
         if(!cid || cid === 'closed' || cid === 'available') continue;
         const endMs = buildSessionEndMsForCalendarDate(y, mo, da, s.end);
         if(!Number.isFinite(endMs)) continue;
-        const lead = typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)
-          ? DAY_CENTRE_FEEDBACK_LEAD_MS : 0;
+        const lead = typeof window.portalFeedbackLeadMsForItem === 'function'
+          ? window.portalFeedbackLeadMsForItem({
+              __portalBaseSession: s,
+              dayCentre: typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s)
+            })
+          : (typeof window.DAY_CENTRE_FEEDBACK_LEAD_MS === 'number'
+            && typeof portalRosterSessionIsDayCentre === 'function'
+            && portalRosterSessionIsDayCentre(s)
+              ? window.DAY_CENTRE_FEEDBACK_LEAD_MS
+              : (typeof window.DEFAULT_FEEDBACK_LEAD_MS === 'number' ? window.DEFAULT_FEEDBACK_LEAD_MS : 15 * 60 * 1000));
         if(nowMs < (endMs - lead)) return true;
       }
       return false;
@@ -4280,7 +4288,7 @@
         ? (rec.absent ? 'Absence recorded (feedback not required)' : 'Cancellation recorded (before start — counts as submitted)')
         : (rec.feedbackDone ? 'Feedback already recorded'
           : (cancelNeedsFb && !ended ? 'Session cancelled during the session — submit feedback when the session ends'
-            : ((!bypass && !ended) ? 'Available after the session ends' : 'Open session feedback form')));
+            : ((!bypass && !ended) ? 'Available from 15 minutes before the session ends' : 'Open session feedback form')));
       abs.disabled = actionsDisabledByOverride || terminal || !!rec.feedbackDone || cancelNeedsFb || (!bypass && !ended);
       abs.title = actionsDisabledByOverride
         ? 'Disabled: session already resolved by Admin as Absent'
