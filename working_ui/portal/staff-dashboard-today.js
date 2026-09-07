@@ -2013,12 +2013,12 @@
     }
     function portalScheduleOverrideInstructorCoverSlotKey(ov){
       if(!ov) return '';
+      /* One cover card per client/venue/day — do not split staff-band vs client-window clocks
+         (e.g. Tinashe 16:15-18:15 paid band vs 16:30-18:00 session). */
       return [
         normaliseIsoDate(ov.session_date),
         portalNormKeyStr(ov.anchor_staff_id),
         String(ov.anchor_client_id || '').trim().toLowerCase(),
-        portalHmFromDbTime(ov.anchor_start) || '',
-        portalHmFromDbTime(ov.anchor_end) || '',
         portalNormKeyStr(ov.anchor_venue)
       ].join('|');
     }
