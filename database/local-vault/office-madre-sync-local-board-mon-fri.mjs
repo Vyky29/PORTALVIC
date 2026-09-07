@@ -217,9 +217,13 @@ function rebuildTuesday(week) {
   const raul = findStaff(week, "raul");
   const youssef = findStaff(week, "youssef");
 
-  setDcDay(roberto, "Tuesday", [{ time: "11 to 3", client: "Ikram", instr: "ROBERTO" }]);
+  setDcDay(roberto, "Tuesday", [
+    { time: "11 to 12", client: "ACAT", instr: "ROBERTO" },
+    { time: "12 to 3", client: "Ikram", instr: "ROBERTO" },
+  ]);
   setDcDay(michelle, "Tuesday", [
-    { time: "11 to 3", client: "Manager", instr: "MICHELLE", area: "Hub · Manager" },
+    { time: "11 to 12", client: "Ikram", instr: "MICHELLE" },
+    { time: "12 to 3", client: "Manager", instr: "MICHELLE", area: "Hub · Manager" },
     { time: "3 to 4", client: "Ikram", instr: "MICHELLE" },
   ]);
   setDcDay(luliya, "Tuesday", [{ time: "11 to 3", client: "Ikram", instr: "LULIYA" }]);
@@ -235,7 +239,7 @@ function rebuildTuesday(week) {
     d.slots.push(bespoke("3.30 to 5", "Cyrus", "VICTOR"));
   }
   note(
-    "Tue DC = Michelle Manager 11-3 + Ikram 3-4; Roberto+Luliya Ikram 11-3; Raul Fadi 12.30-3 + Ikram 3-4; Victor Cyrus Bespoke 3.30-5",
+    "Tue DC = Roberto ACAT 11-12 + Ikram 12-3; Michelle Ikram 11-12 / Manager 12-3 / Ikram 3-4; Luliya Ikram 11-3; Raul Fadi 12.30-3 + Ikram 3-4; Victor Cyrus Bespoke 3.30-5",
   );
 }
 

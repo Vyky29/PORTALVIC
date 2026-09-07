@@ -68,12 +68,19 @@
       { staff: "Youssef", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
     ],
     tuesday: [
-      { staff: "Roberto", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      /* Michelle Tue: Manager 11–3, then Ikram 3–4. */
+      {
+        staff: "Roberto",
+        clients: [
+          { name: "ACAT", time: "11 to 12" },
+          { name: "Ikram", time: "12 to 3" },
+        ],
+      },
+      /* Michelle Tue: Ikram 11–12, Manager 12–3, Ikram 3–4. */
       {
         staff: "Michelle",
         clients: [
-          { name: "Manager", time: "11 to 3" },
+          { name: "Ikram", time: "11 to 12" },
+          { name: "Manager", time: "12 to 3" },
           { name: "Ikram", time: "3 to 4" },
         ],
       },
@@ -1967,8 +1974,8 @@
    * - Luliya: DC Ikram Mon/Tue/Wed 11–3 + Fri 11-4; pool Mon/Wed Northolt 4.30–6.30,
    *   Tue Acton 4–6.30 (not Thu — Simon covers Thu Acton AS)
    * - Roberto Wed DC: Emanuel 11–12.30 + Fadi 12.30–3 (ends 15:00; no Emanuel 3–4)
-   * - Tue DC: Michelle Manager 11–3 + Ikram 3–4; Roberto+Luliya Ikram 11–3;
-   *   Raul Fadi 12.30–3 + Ikram 3–4; Victor Cyrus Bespoke 3.30–5 (not DC)
+   * - Tue DC: Roberto ACAT 11–12 + Ikram 12–3; Michelle Ikram 11–12 / Manager 12–3 / Ikram 3–4;
+   *   Luliya Ikram 11–3; Raul Fadi 12.30–3 + Ikram 3–4; Victor Cyrus Bespoke 3.30–5 (not DC)
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
    * - Fri DC: Victor+Raul Emanuel 1–4 (after Timi); Michelle+Luliya Ikram to 16:00;
    *   Youssef Fadi ends 15:00 (Acton from 16:00 — no Emanuel 3–4)
