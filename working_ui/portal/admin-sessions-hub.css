@@ -1131,6 +1131,7 @@
     .ash-pill--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
     .ash-pill--out { background: #fef2f2; color: #b91c1c; border: 1px solid rgba(220, 38, 38, 0.22); }
     .ash-pill--makeup { background: #dcfce7; color: #15803d; border: 1px solid rgba(22, 163, 74, 0.28); }
+    .ash-pill--absent { background: #fee2e2; color: #991b1b; border: 1px solid rgba(185, 28, 28, 0.35); }
     .ash-instructor-reassign { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; max-width: 100%; min-width: 0; }
     .ash-instructor-reassign--cover-needed { gap: 6px; }
     .ash-pill--cover-needed {
@@ -1166,6 +1167,9 @@
     .override--instructor { background: rgba(249,191,46,.18); color: #92400e; border: 1px solid rgba(200,165,45,.42); }
     .override--shadowing { background: rgba(14,165,233,.14); color: #0369a1; border: 1px solid rgba(14,165,233,.35); }
     .override--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
+    .override--replace { background: #dcfce7; color: #15803d; border: 1px solid rgba(22, 163, 74, 0.28); }
+    .override--absent { background: #fee2e2; color: #b91c1c; border: 1px solid rgba(185, 28, 28, 0.35); }
+    .override--cancelled { background: #ffedd5; color: #c2410c; border: 1px solid rgba(194, 65, 12, 0.32); }
     .ash-status--wait { color: #c2410c; font-weight: 700; font-size: 12px; }
     .ash-status__compact { display: none; }
     @media (max-width: 900px) {
@@ -1941,9 +1945,11 @@
       border-color: #ddd6fe;
     }
     .ash-db-card--absent {
-      background: #fff7ed;
-      border-color: #fdba74;
+      background: #fef2f2;
+      border-color: #fca5a5;
+      box-shadow: inset 3px 0 0 #dc2626;
     }
+    .ash-db-card--absent .ash-db-card__name { color: #991b1b; }
     .ash-db-card--cancelled {
       background: #fef2f2;
       border-color: #fecaca;

@@ -1854,6 +1854,8 @@
   function hubOverrideLabel(ov) {
     if (!ov) return "";
     if (overrideIsShadowingSessionAdd(ov)) return "Shadowing";
+    if (overrideIsAbsentType(ov) || overrideFeedbackResolution(ov) === "absent") return "Absent";
+    if (overrideIsCancelledType(ov) || overrideFeedbackResolution(ov) === "cancelled") return "Cancelled";
     if (overrideIsSlotUpdateType(ov)) return "Updated";
     if (overrideIsInstructorCoverNeededType(ov)) return "COVER NEEDED";
     if (overrideIsInstructorReassignType(ov)) return "Changed instructor";
@@ -9127,11 +9129,29 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return list;
   }
 
+  function overviewSlotBoardIsAbsent(hub, slot, slotOv) {
+    /* Staffing board: override / resolution only — avoid full feedback scans. */
+    if (overrideIsAbsentType(slotOv) || overrideFeedbackResolution(slotOv) === "absent") {
+      return true;
+    }
+    if (slot && slot.__portalScheduleOverride) {
+      var so = slot.__portalScheduleOverride;
+      if (overrideIsAbsentType(so) || overrideFeedbackResolution(so) === "absent") return true;
+    }
+    try {
+      if (hub && typeof hub.overrideForSlotByType === "function") {
+        if (hub.overrideForSlotByType(slot, overrideIsAbsentType)) return true;
+      }
+    } catch (_a) {}
+    return false;
+  }
+
   function overviewSlotBoardState(hub, slot, unitComplete, unitAbsent) {
     /* Staffing guide only — no feedback matching (that froze Overview on 1000+ rows). */
     var slotOv = hub.overrideForSlot(slot);
     if (slot.__portalShadowingOverride) slotOv = slot.__portalShadowingOverride;
-    var isUpdated = hubSlotShowsUpdatedChip(slot, slotOv);
+    var isAbsent = overviewSlotBoardIsAbsent(hub, slot, slotOv);
+    var isUpdated = !isAbsent && hubSlotShowsUpdatedChip(slot, slotOv);
     var isShadowing = hubSlotShowsShadowingChip(slot);
     var isInstructorReassign = hubSlotShowsInstructorReassignChip(slot, slotOv);
     var isCoverNeeded =
@@ -9160,6 +9180,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (isClosed) tone = "closed";
     else if (isOpenSlot) tone = "open";
     else if (isDuty) tone = "duty";
+    else if (isAbsent) tone = "absent";
     else if (isTrial) tone = "trial";
     else if (isCoverNeeded) tone = "cover";
     else if (isMakeup || makeupDisp) tone = "makeup";
@@ -9167,7 +9188,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return {
       ukey: "",
       fbDone: false,
-      isAbsent: false,
+      isAbsent: isAbsent,
       isCancelled: false,
       slotOv: slotOv,
       isUpdated: isUpdated,
@@ -9192,7 +9213,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   function htmlDayBoardOverrideChipList(hub, slot, st, esc) {
     var chips = [];
-    if (st.makeupDisp) {
+    if (st.isAbsent) {
+      chips.push('<span class="override-chip override--absent">Absent</span>');
+    } else if (st.makeupDisp) {
       chips.push('<span class="override-chip override--replace">MakeUp</span>');
     } else if (st.isTrial) {
       chips.push('<span class="override-chip override--trial">Trial</span>');
@@ -9255,7 +9278,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   function htmlDayBoardCard(hub, slot, st, esc) {
     var band = dayBoardServiceBand(slot);
     var nameHtml;
-    if (st.makeupDisp) {
+    if (st.isAbsent) {
+      var absName =
+        dayBoardParticipantDisplayName(slot.client_name) || clean(slot.client_name) || "";
+      nameHtml =
+        '<span class="ash-pill ash-pill--absent">' +
+        esc("Absent") +
+        "</span>" +
+        (absName
+          ? '<span class="ash-db-card__name-text" title="Participant">' + esc(absName) + "</span>"
+          : "");
+    } else if (st.makeupDisp) {
       var mkName =
         dayBoardParticipantDisplayName(
           (st.makeupDisp.makeupSlot && st.makeupDisp.makeupSlot.client_name) ||
@@ -9651,6 +9684,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             clean(overrideReplacementClientName(overridePayloadObj(st.makeupDisp.ov))) ||
             "MakeUp";
           name = mkName + " (was " + clean(slot.client_name) + ")";
+        } else if (st.isAbsent) {
+          name =
+            "Absent" +
+            (clean(slot.client_name) ? " (" + clean(slot.client_name) + ")" : "");
         } else if (st.isOpenSlot) {
           name = rosterOpenSlotDisplayLabel();
         } else if (st.isTrial && clean(slot.client_name)) {
