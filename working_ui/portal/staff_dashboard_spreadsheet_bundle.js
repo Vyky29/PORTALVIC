@@ -266,7 +266,11 @@
   "clientRosterGoneFromDates": {
     "Karo": "2026-08-16",
     "Kareena": "2026-08-16",
-    "Shire": "2026-08-16"
+    "Shire": "2026-08-16",
+    "Abodi Pa": "2026-09-08",
+    "Abodi P": "2026-09-08",
+    "Aboodi Patel": "2026-09-08",
+    "Abodi": "2026-09-08"
   },
   "clientWeekdaysOnly": {
     "Emanuel": [

@@ -1094,6 +1094,28 @@
         ) {
           return false;
         }
+        /*
+         * Mon 7 Sep Abodi last Acton Aquatic (dated canonical). Standing seat is already
+         * No participant after cancel — do not also project the open onto today.
+         */
+        if (
+          isoDate === "2026-09-07" &&
+          /youssef/i.test(String((r && r.instructors) || "")) &&
+          /acton/i.test(String((r && r.venue) || "")) &&
+          /aquatic|swim/i.test(String((r && r.service) || ""))
+        ) {
+          var abodiSlot = String((r && r.time_slot) || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          if (
+            abodiSlot === "5.30 to 6.30" ||
+            abodiSlot === "5:30 to 6:30" ||
+            abodiSlot.indexOf("5.30 to 6.30") === 0
+          ) {
+            return false;
+          }
+        }
         if (clientHasDatedRosterInWeekSameFamily(rosterRows, r, isoDate)) return false;
         return true;
       }

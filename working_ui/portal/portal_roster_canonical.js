@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 78;
+  var SOURCE_VERSION = 79;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -702,7 +702,23 @@
     ];
   }
 
-  /** Drop Raul/Sandra Mon 7 dated seats if any; inject Javi Physical cover rows. */
+  /** Mon 7 Sep: Abodi last Acton Aquatic session (parent cancel; seat open from Mon 14). */
+  function autumnMondaySep7AbodiLastSessionRows() {
+    return [
+      {
+        client_name: "Abodi Pa",
+        day: "Monday",
+        instructors: "YOUSSEF",
+        service: "Aquatic Activity",
+        area: "Teaching Pool",
+        time_slot: "5.30 to 6.30",
+        venue: "Acton",
+        session_date: "2026-09-07",
+      },
+    ];
+  }
+
+  /** Drop Raul/Sandra Mon 7 dated seats if any; inject Javi Physical + Abodi last session. */
   function scrubAndEnsureSep7VictorRaulCover(rows) {
     var out = [];
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
@@ -734,6 +750,9 @@
       out.push(r);
     });
     autumnMondaySep7JaviPhysicalCoverRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    autumnMondaySep7AbodiLastSessionRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     return out;

@@ -162,7 +162,9 @@ function rebuildMonday(week) {
     d.slots.push(aquatic("Acton", "4 to 4.30", "CLOSED", "YOUSSEF"));
     d.slots.push(aquatic("Acton", "4.30 to 5", "Eddie Mc", "YOUSSEF"));
     d.slots.push(aquatic("Acton", "5 to 5.30", "NO PARTICIPANT", "YOUSSEF"));
-    d.slots.push(aquatic("Acton", "5.30 to 6.30", "Abodi Pa", "YOUSSEF"));
+    d.slots.push(aquatic("Acton", "5.30 to 6.30", "NO PARTICIPANT", "YOUSSEF"));
+    /* Abodi cancelled after Mon 7 Sep 2026 — last day via canonical dated row +
+     * clientRosterGoneFromDates; standing seat stays open. */
   }
   if (luliya) {
     const d = ensureDay(luliya, "Monday");
