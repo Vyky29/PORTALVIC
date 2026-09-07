@@ -749,8 +749,8 @@
       return String(raw || '').split(/[,;|/]+/).map(function(p){ return p.trim(); }).filter(Boolean);
     }
     /**
-     * Standing 2:1 aquatic pairs — show "With X (2:1 support)" under the client name
-     * on each co-instructor's Today card (e.g. Joelle Thu Acton: Aurora + Roberto).
+     * Standing 2:1 aquatic pairs — show "With X (2:1)" under the client name
+     * on each co-instructor's Today card (e.g. Joelle Thu Acton: Aurora + Simon).
      */
     function portalTwoToOneSupportLabelForSession(sessionRow, viewerStaffId, clientId){
       const cid = String(clientId || (sessionRow && sessionRow.clientId) || '').trim().toLowerCase()
@@ -764,7 +764,7 @@
         {
           client: 'joelle',
           days: { thursday: 1 },
-          staff: { aurora: 'Roberto', roberto: 'Aurora' }
+          staff: { aurora: 'Simon', simon: 'Aurora' }
         }
       ];
       for(let i = 0; i < pairs.length; i++){
@@ -773,7 +773,7 @@
         if(p.days && day && !p.days[day]) continue;
         if(venue && venue.indexOf('acton') < 0) continue;
         const other = p.staff[sid];
-        if(other) return 'With ' + other + ' (2:1 support)';
+        if(other) return 'With ' + other + ' (2:1)';
       }
       return '';
     }
