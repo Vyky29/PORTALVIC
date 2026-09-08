@@ -30,4 +30,4 @@ After portal day writes, call **`portalSyncOverviewDayTruth`** (admin dashboard)
 
 1. When Victor says something is wrong on the day board, check **Overview** first, then Schedule & Covers / overrides / dated roster rows — not a second parallel truth.
 2. After implementing Schedule / Validate / booking day writes, ensure Overview refresh is wired (do not leave caches stale).
-3. Keep alerts paused until Victor asks to reactivate (see `reactivate-alerts-after-rota.mdc`).
+3. Alerts / notifications (admin bell, staff/lead push, parent family alerts, outstanding-feedback nag) are **live** again after Autumn rota sign-off (reactivated 8 Sep 2026).

@@ -1,0 +1,19 @@
+---
+description: Portal alerts/notifications are live (post Autumn rota)
+alwaysApply: true
+---
+
+# Alerts / notifications — LIVE
+
+Victor reactivated alerts on **8 Sep 2026** after Autumn rota / Overview sign-off and the Javier Zaid AA↔MA feedback merge fix.
+
+## Live lanes (do not mute without explicit ask)
+
+- Admin activity bell + realtime (late / cancel / incident / wellbeing)
+- Staff / lead Web Push + in-tab reminders (schedule override, announcements, outstanding feedback)
+- Parent family Web Push / notify paths
+- Outstanding-feedback nag + late feedback digests (cron)
+
+## If Victor asks to pause again
+
+Document the pause in a new rule and only then add a real kill switch if needed — do not silently leave policy-only pauses.
