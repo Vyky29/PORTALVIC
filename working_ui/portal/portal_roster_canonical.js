@@ -834,7 +834,7 @@
    * Adam Mahmmoud → Roberto 4.30–5 · Junaid → Roberto 5.30–6 (+30') ·
    * Aydaan Ah → Luliya 5.30–6 · Anas was on Javier then moved with his book.
    * Javier Marquez OFF same day: Ayman 4–4.30 → Roberto; Ayman 4.30–5 + Linda / Rayan Ta → Javi Palankas.
-   * Anas: absent Tue 8 (was cover→Luliya); makeup Thu 10 Aurora+Simon 2:1 6–6.30.
+   * Anas: absent Tue 8 (was cover→Luliya); makeup Thu 10 Aurora only 6–6.30 (Simon leaves at 6).
    */
   function autumnTuesdaySep8ActonRedistributeRows() {
     var iso = "2026-09-08";
@@ -901,8 +901,8 @@
   }
 
   /**
-   * Thu 10 Sep: Joelle ends 6 (early leave last half) → Anas makeup 2:1 Aurora + Simon 6–6.30.
-   * Maiyar stays with Roberto.
+   * Thu 10 Sep: Joelle ends 6 (early leave last half) → Anas makeup Aurora only 6–6.30
+   * (Simon leaves at 6 Thursdays). Maiyar stays with Roberto.
    */
   function autumnThursdaySep10AnasMakeupRows() {
     var iso = "2026-09-10";
@@ -920,13 +920,14 @@
         };
       });
     }
-    var half = [
-      { name: "Joelle", time: "5.30 to 6" },
-      { name: "Anas", time: "6 to 6.30" },
-    ];
     return []
-      .concat(mapBook("AURORA", half))
-      .concat(mapBook("SIMON", half));
+      .concat(
+        mapBook("AURORA", [
+          { name: "Joelle", time: "5.30 to 6" },
+          { name: "Anas", time: "6 to 6.30" },
+        ]),
+      )
+      .concat(mapBook("SIMON", [{ name: "Joelle", time: "5.30 to 6" }]));
   }
 
   function scrubAndEnsureSep10AnasMakeup(rows) {
@@ -945,13 +946,12 @@
       ) {
         return;
       }
-      /* Drop standing Joelle 5.30–6.30 on Aurora/Simon for this date (replaced by half + Anas). */
+      /* Drop standing Joelle blocks on Aurora/Simon for this date (replaced by half + Anas). */
       if (
         isAquaticService(r.service) &&
         /acton/i.test(String(r.venue || "")) &&
         /\b(aurora|simon)\b/i.test(String(r.instructors || "")) &&
-        /^joelle\b/i.test(String(r.client_name || "").trim()) &&
-        /5\.30\s*to\s*6\.30/i.test(String(r.time_slot || ""))
+        /^joelle\b/i.test(String(r.client_name || "").trim())
       ) {
         return;
       }
@@ -1934,8 +1934,8 @@
   /**
    * Standing Thu Acton AS: Roberto / Simon / Javier / Aurora (no Luliya).
    * Elijah + Yuri with Simon; Aurora CLOSED 4–4.30 (starts 4.30). Eiji aquatic withdrawn.
-   * Simon works 4–6.30 — gap 4.30–5 is open (No participant), not Closed.
-   * Yunis + Maiyar with Roberto; Joelle 5.30–6.30 with Aurora + Simon (2:1 support).
+   * Simon works 4–6 (leaves at 6) — gap 4.30–5 is open (No participant), not Closed.
+   * Yunis + Maiyar with Roberto; Joelle 5.30–6.30 with Aurora (Simon 2:1 only until 6).
    */
   var AUTUMN_ACTON_THURSDAY_BOARD = [
     { staff: "ROBERTO", name: "Tom", time: "4 to 4.30" },
@@ -1946,14 +1946,15 @@
     { staff: "SIMON", name: "Elijah", time: "4 to 4.30" },
     { staff: "SIMON", name: "No participant", time: "4.30 to 5" },
     { staff: "SIMON", name: "Yuri", time: "5 to 5.30" },
-    { staff: "SIMON", name: "Joelle", time: "5.30 to 6.30" },
+    { staff: "SIMON", name: "Joelle", time: "5.30 to 6" },
     { staff: "JAVIER", name: "Ayman", time: "4 to 5" },
     { staff: "JAVIER", name: "Khalid Ab", time: "5 to 5.30" },
     /* Mohamed (Anab / Yusuf) — office arranged Thu 5.30–6.30; booking may still be finishing. */
     { staff: "JAVIER", name: "Mohamed", time: "5.30 to 6.30" },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30" },
     { staff: "AURORA", name: "Aqsa", time: "4.30 to 5.30" },
-    { staff: "AURORA", name: "Joelle", time: "5.30 to 6.30" },
+    { staff: "AURORA", name: "Joelle", time: "5.30 to 6" },
+    { staff: "AURORA", name: "Joelle", time: "6 to 6.30" },
   ];
 
   function autumnActonThursdayStandingRows() {

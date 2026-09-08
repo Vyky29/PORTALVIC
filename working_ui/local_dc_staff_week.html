@@ -311,7 +311,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260908-tinashe-bismark"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260908-simon-thu-leaves-6"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -350,7 +350,7 @@
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Raul OFF · Victor covers Timi 11-1 + Emanuel 1-4 + Tinashe with Godsway/John · Emanuel interview 4pm · Sandra OFF · Javi Palankas covers Westway Physical (Ayaan 4–5 / Serine 5–6)" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "DC: Roberto ACAT 11-12 + Ikram 12-3 · Michelle Ikram 11-12 / Manager 12-3 / Ikram 3-4 · Luliya Ikram 11-3 · Raul Fadi 12.30-3 + Ikram 3-4 · Victor Cyrus 3.30-5 · Aurora OFF · Javier OFF · Acton: Ayman Roberto 4-4.30 then Javi Palankas 4.30-5 · Adam+Junaid Roberto · Aydaan Luliya · Linda/Rayan Ta/Anas Javi Palankas" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Fadi absent · Victor OFF · Roberto Emanuel 11-4 · Michelle/Luliya Ikram · Raul Ikram 3-4 (no Tinashe) · Tinashe = Godsway + John + Bismark · Emanuel shadowing Tinashe" },
-    { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Fadi DC cancelled · Youssef OFF · Roberto no DC (Acton AS on) · Joelle last half · Anas makeup 6-6.30 2:1 Aurora+Simon (Maiyar stays Roberto)" },
+    { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Fadi DC cancelled · Youssef OFF · Roberto no DC (Acton AS on) · Joelle last half · Anas makeup 6-6.30 Aurora only (Simon leaves at 6; Maiyar stays Roberto)" },
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Tinashe = Bismark + Roberto + Emanuel 4.15-6.15" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
     { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Hub: Berta Lead + Jack W…Aydaan · Godsway · Emanuel shadow · Aurora OFF · Luliya covers Aurora pool · Zaid Aquatic trial only (Multi not trial) · John OFF" },
@@ -492,7 +492,7 @@
     thursday: {
       /* Autumn Acton AS: Simon (not Luliya). No Youssef PM. Hazem+Eiji withdrew Aquatic.
        * Elijah → Simon 4–4.30; Yuri → Simon 5–5.30; Aurora CLOSED 4–4.30 (starts 4.30).
-       * Yunis + Maiyar → Roberto; Joelle 5.30–6.30 with Aurora + Simon (2:1 support). */
+       * Yunis + Maiyar → Roberto; Joelle 5.30–6.30 Aurora (Simon 2:1 until 6, then free). */
       Roberto: [
         { name: "Tom", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Yassir", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic" },
@@ -504,7 +504,7 @@
         { name: "Elijah", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic" },
         { name: "No participant", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic", kind: "open" },
         { name: "Yuri", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Joelle", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic · 2:1 with Aurora" },
+        { name: "Joelle", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic · 2:1 with Aurora" },
       ],
       Javier: [
         { name: "Ayman", time: "4 to 5", band: "After school", area: "Acton · Aquatic" },
@@ -515,7 +515,8 @@
       Aurora: [
         { name: "Closed", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "closed" },
         { name: "Aqsa", time: "4.30 to 5.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Joelle", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic · 2:1 with Simon" },
+        { name: "Joelle", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic · 2:1 with Simon" },
+        { name: "Joelle", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic" },
       ],
     },
     friday: {
@@ -779,14 +780,13 @@
       ],
     },
     "2026-09-10": {
-      /* Joelle early leave last half → Anas makeup 2:1 Aurora+Simon 6–6.30 (Maiyar stays Roberto). */
+      /* Joelle early leave last half → Anas makeup Aurora only 6–6.30 (Simon leaves at 6). */
       Aurora: [
         { name: "Joelle", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic · 2:1 with Simon" },
-        { name: "Anas", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic · makeup (Tue 8) · 2:1 with Simon" },
+        { name: "Anas", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic · makeup (Tue 8)" },
       ],
       Simon: [
         { name: "Joelle", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic · 2:1 with Aurora" },
-        { name: "Anas", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic · makeup (Tue 8) · 2:1 with Aurora" },
       ],
     },
     "2026-09-15": {
@@ -955,7 +955,7 @@
     thursday: {
       Roberto: "12.15 to 3.15 · 4 to 6.30",
       Youssef: "12.30 to 3",
-      Simon: "4 to 6.30",
+      Simon: "4 to 6",
       Javier: "4 to 6.30",
       Aurora: "4.30 to 6.30",
     },
