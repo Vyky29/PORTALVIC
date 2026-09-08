@@ -76,6 +76,17 @@
     "avatar_url": "/portal/staff_photos/javier.png",
     "bio": "Javier is confident in the pool and clear with structure. He explains activities step by step and helps children grow their water skills with patience and praise."
   },
+  "javi": {
+    "name": "Javi Palankas",
+    "nationality": "Spanish",
+    "flag": "🇪🇸",
+    "speaks": [
+      "Spanish",
+      "English"
+    ],
+    "avatar_url": "/portal/staff_photos/javi.png",
+    "bio": "Javi Palankas is warm, clear and steady in the water. He helps children settle quickly and keeps sessions structured, encouraging and fun."
+  },
   "raul": {
     "name": "Raul",
     "nationality": "Spanish",
@@ -625,17 +636,19 @@
   }
 
   function staffKeyFromFeedbackName(name) {
-    var k = String(name || "")
+    var raw = String(name || "")
       .trim()
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, " ");
-    if (!k) return "";
+      .replace(/[\u0300-\u036f]/g, "");
+    if (!raw) return "";
+    /* Javi Palankas (roster id javi) vs Javier Marquez (javier) — never collapse. */
+    if (/palankas|arranz/.test(raw)) return "javi";
+    if (/marquez/.test(raw)) return "javier";
+    var k = raw.replace(/[^a-z0-9]+/g, " ");
     k = k.split(/\s+/)[0] || "";
     if (k === "yousef" || k === "yusef") k = "youssef";
     if (k === "lulia") k = "luliya";
-    if (k === "javi") k = "javier";
     return k;
   }
 
@@ -818,6 +831,7 @@
     dan: 1,
     giuseppe: 1,
     godsway: 1,
+    javi: 1,
     javier: 1,
     john: 1,
     luliya: 1,
@@ -838,7 +852,6 @@
     var k = String(key || "")
       .trim()
       .toLowerCase();
-    if (k === "javi") k = "javier";
     if (k === "lulia") k = "luliya";
     if (k === "yousef" || k === "yusef") k = "youssef";
     if (k === "emanuel" || k === "emmanuel") k = "john";
