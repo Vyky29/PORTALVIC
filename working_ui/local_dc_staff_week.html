@@ -296,13 +296,13 @@
     Hub Tinashe Mon/Wed = <strong>Godsway + John + Raul</strong> (paid 4.15-6.15). Victor off Mondays. Fri Tinashe = <strong>Roberto</strong> (21h PT).
     Sundays: <strong>Berta Leader + Hub book (Jack W…Aydaan)</strong> · Godsway · Emanuel (from 20 Sep). <strong>John Sunday = 6 Sep only</strong> (Emanuel cover book).
     <strong>From Mon 14 Sep</strong> = Emanuel also on Mon/Wed/Fri Tinashe + Sunday MA @ £18 Level 1 SW.
-    <strong>Day offs (validated admin):</strong> Sandra Mon 7 (Javi Palankas covers Westway Physical) · Aurora Tue 8 (Acton redistribute — Javi free) / Sun 13 / Tue 15 / Sun 4 Oct — painted here; live COVER NEEDED stays in Schedule &amp; Covers until cover assigned.
+    <strong>Day offs (validated admin):</strong> Sandra Mon 7 (Javi Palankas covers Westway Physical) · Aurora Tue 8 (Acton redistribute) · Javier Marquez Tue 8 (Ayman→Roberto 4–4.30; Linda/Rayan Ta/Anas→Javi Palankas) · Aurora Sun 13 / Tue 15 / Sun 4 Oct — painted here; live COVER NEEDED stays in Schedule &amp; Covers until cover assigned.
     <strong>Stripe/paid:</strong> finish-booking folds MADRE + schedule_overrides; after editing this file, commit/push + run <code>office-madre-sync-local-board-mon-fri.mjs</code> when standing seats change.
   </p>
   <p class="note" id="jumpNote" style="margin-top:8px">
     Jump:
     <a href="#day-2026-09-06">Sun 6</a> ·
-    <a href="#day-2026-09-08">Tue 8 (Acton redistribute · Javi free)</a> ·
+    <a href="#day-2026-09-08">Tue 8 (Acton · Aurora + Javier OFF)</a> ·
     <a href="#day-2026-09-10">Thu 10 (Mohamed)</a> ·
     <a href="#day-2026-09-13">Sun 13 (Luliya + Zaid aquatic trial)</a> ·
     <a href="#day-2026-09-15">Tue 15</a> ·
@@ -311,7 +311,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260908-junaid-lane-se"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260908-javier-off-javi-cover"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -329,7 +329,7 @@
       Sandra: "Time off requested · Javi Palankas covers Westway Physical",
       Raul: "Time off requested · Victor covers DC + Tinashe",
     },
-    "2026-09-08": { Aurora: "Time off requested" },
+    "2026-09-08": { Aurora: "Time off requested", Javier: "Time off requested · Ayman→Roberto; Linda/Rayan Ta/Anas→Javi Palankas" },
     "2026-09-13": { Aurora: "Time off requested" },
     "2026-09-15": { Aurora: "Time off requested" },
     "2026-10-04": { Aurora: "Time off requested" },
@@ -342,7 +342,7 @@
     { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Week 1 · first Saturday" },
     { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · Hub: Berta Lead + Jack W…Aydaan · John = Emanuel book · Godsway · Aurora Yusuf Aquatic 9–9.30 · Roberto Simon Aquatic 9–9.30 + Yusuf Multi 9.30–10.15 (2 feedbacks) · Youssef OFF · Emanuel OFF" },
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Raul OFF · Victor covers Timi 11-1 + Emanuel 1-4 + Tinashe with Godsway/John · Emanuel interview 4pm · Sandra OFF · Javi Palankas covers Westway Physical (Ayaan 4–5 / Serine 5–6)" },
-    { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "DC: Roberto ACAT 11-12 + Ikram 12-3 · Michelle Ikram 11-12 / Manager 12-3 / Ikram 3-4 · Luliya Ikram 11-3 · Raul Fadi 12.30-3 + Ikram 3-4 · Victor Cyrus 3.30-5 · Aurora OFF · Acton: Adam+Junaid Roberto / Aydaan Luliya / Anas Javier · Javi free" },
+    { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "DC: Roberto ACAT 11-12 + Ikram 12-3 · Michelle Ikram 11-12 / Manager 12-3 / Ikram 3-4 · Luliya Ikram 11-3 · Raul Fadi 12.30-3 + Ikram 3-4 · Victor Cyrus 3.30-5 · Aurora OFF · Javier OFF · Acton: Ayman Roberto 4-4.30 · Adam+Junaid Roberto · Aydaan Luliya · Linda/Rayan Ta/Anas Javi Palankas" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Emanuel shadowing · Godsway/John/Raul Tinashe" },
     { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Standing · Acton AS Simon; Aurora from 4.30" },
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Emanuel shadowing Tinashe · Roberto + Tinashe 4.15-6.15" },
@@ -743,11 +743,12 @@
         { name: "Adaam Ah", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic" },
       ],
     },
-    /* Tue 8 Acton: Aurora OFF — redistribute her book so Javi Palankas is free.
-     * Adam → Roberto 4.30–5 · Junaid → Roberto 5.30–6 (half hour later) · Aydaan → Luliya · Anas → Javier. */
+    /* Tue 8 Acton: Aurora OFF + Javier Marquez OFF.
+     * Aurora redistribute: Adam→Roberto 4.30–5 · Junaid→Roberto 5.30–6 · Aydaan→Luliya.
+     * Javier book: Ayman 4–4.30→Roberto · Linda / Rayan Ta / Anas→Javi Palankas. */
     "2026-09-08": {
       Roberto: [
-        { name: "No participant", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
+        { name: "Ayman", time: "4 to 4.30", band: "After school", area: "Acton · Aquatic · cover (Javier)" },
         { name: "Adam Mahmmoud", time: "4.30 to 5", band: "After school", area: "Acton · Aquatic · Teaching Pool · cover (Aurora)" },
         { name: "Logan", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
         { name: "Junaid", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic · Lane (SE) · cover (Aurora · +30')" },
@@ -759,11 +760,10 @@
         { name: "Aydaan Ah", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic · Lane (SE) · cover (Aurora)" },
         { name: "No participant", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
-      Javier: [
-        { name: "Ayman", time: "4 to 5", band: "After school", area: "Acton · Aquatic" },
-        { name: "Linda", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic" },
-        { name: "Rayan Ta", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic" },
-        { name: "Anas", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic · cover (Aurora)" },
+      Javi: [
+        { name: "Linda", time: "5 to 5.30", band: "After school", area: "Acton · Aquatic · cover (Javier)" },
+        { name: "Rayan Ta", time: "5.30 to 6", band: "After school", area: "Acton · Aquatic · cover (Javier)" },
+        { name: "Anas", time: "6 to 6.30", band: "After school", area: "Acton · Aquatic · cover (Javier / was Aurora)" },
       ],
     },
     "2026-09-15": {

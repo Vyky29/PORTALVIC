@@ -767,10 +767,10 @@
   }
 
   /**
-   * Tue 8 Sep: Aurora OFF — redistribute Acton Aquatic so Javi Palankas is free.
+   * Tue 8 Sep: Aurora OFF — redistribute Acton Aquatic.
    * Adam Mahmmoud → Roberto 4.30–5 · Junaid → Roberto 5.30–6 (+30') ·
-   * Aydaan Ah → Luliya 5.30–6 · Anas → Javier 6–6.30.
-   * Full books for Roberto / Luliya / Javier (LOCAL DATE_EXTRA truth).
+   * Aydaan Ah → Luliya 5.30–6 · Anas was on Javier then moved with his book.
+   * Javier Marquez OFF same day: Ayman 4–4.30 → Roberto; Linda / Rayan Ta / Anas → Javi Palankas.
    */
   function autumnTuesdaySep8ActonRedistributeRows() {
     var iso = "2026-09-08";
@@ -790,7 +790,7 @@
     }
     /* Pool notes follow Summer (Adam Teaching Pool; Junaid + Aydaan Lane SE). */
     var roberto = [
-      { name: "No participant", time: "4 to 4.30", area: "Lane (DE)" },
+      { name: "Ayman", time: "4 to 4.30", area: "Lane (DE)" },
       { name: "Adam Mahmmoud", time: "4.30 to 5", area: "Teaching Pool" },
       { name: "Logan", time: "5 to 5.30", area: "Lane (DE)" },
       { name: "Junaid", time: "5.30 to 6", area: "Lane (SE)" },
@@ -802,8 +802,7 @@
       { name: "Aydaan Ah", time: "5.30 to 6", area: "Lane (SE)" },
       { name: "No participant", time: "6 to 6.30", area: "Lane (DE)" },
     ];
-    var javier = [
-      { name: "Ayman", time: "4 to 5", area: "Lane (DE)" },
+    var javiPalankas = [
       { name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
       { name: "Rayan Ta", time: "5.30 to 6", area: "Lane (DE)" },
       { name: "Anas", time: "6 to 6.30", area: "Lane (DE)" },
@@ -811,7 +810,7 @@
     return []
       .concat(mapBook("ROBERTO", roberto))
       .concat(mapBook("LULIYA", luliya))
-      .concat(mapBook("JAVIER", javier));
+      .concat(mapBook("JAVI", javiPalankas));
   }
 
   function scrubAndEnsureSep8ActonRedistribute(rows) {
@@ -1361,9 +1360,9 @@
       }
     }
     /* Tue 15 Sep only: Aurora day off → Javi Palankas covers her Acton Aquatic book
-     * (not Javier the swim instructor — he keeps Ayman / Linda / Rayan Ta).
-     * Tue 8 Sep: redistribute (Adam/Junaid→Roberto, Aydaan→Luliya, Anas→Javier) via
-     * scrubAndEnsureSep8ActonRedistribute — Javi free that day. */
+     * (not Javier the swim instructor — he keeps Ayman / Linda / Rayan Ta on standing Tuesdays).
+     * Tue 8 Sep: Javier Marquez also OFF — his Acton book goes to Roberto (Ayman 4–4.30) +
+     * Javi Palankas (Linda / Rayan Ta / Anas) via scrubAndEnsureSep8ActonRedistribute. */
     if (iso === "2026-09-15" && day === "tuesday" && isAquaticService(service)) {
       if (!meta.venue || isActonVenue(meta.venue)) {
         s = s.replace(/\bAURORA\b/gi, "JAVI");
