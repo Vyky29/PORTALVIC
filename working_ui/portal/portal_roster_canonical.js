@@ -311,7 +311,7 @@
 
   /**
    * Standing Tue Acton AS (from Mon 7 Sep): Roberto / Aurora / Javier / Luliya.
-   * Logan + Richard → Roberto; Serine → Luliya; no Youssef.
+   * Serine → Roberto 4.30–5.30; Logan → Luliya 5–5.30; Richard → Roberto; no Youssef.
    */
   /**
    * Acton Tue pool notes: match Summer where known (Junaid + Aydaan = Lane SE;
@@ -319,13 +319,13 @@
    */
   var AUTUMN_ACTON_TUESDAY_BOARD = [
     { staff: "ROBERTO", name: "No participant", time: "4 to 4.30", area: "Lane (DE)" },
-    { staff: "ROBERTO", name: "No participant", time: "4.30 to 5", area: "Lane (DE)" },
-    { staff: "ROBERTO", name: "Logan", time: "5 to 5.30", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "Serine", time: "4.30 to 5.30", area: "Lane (DE)" },
     { staff: "ROBERTO", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
     { staff: "ROBERTO", name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
     /* On shift from 4 — empty seat is open (No participant), never Closed. */
     { staff: "LULIYA", name: "No participant", time: "4 to 4.30", area: "Lane (DE)" },
-    { staff: "LULIYA", name: "Serine", time: "4.30 to 5.30", area: "Lane (DE)" },
+    { staff: "LULIYA", name: "No participant", time: "4.30 to 5", area: "Lane (DE)" },
+    { staff: "LULIYA", name: "Logan", time: "5 to 5.30", area: "Lane (DE)" },
     { staff: "LULIYA", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
     { staff: "LULIYA", name: "No participant", time: "6 to 6.30", area: "Lane (DE)" },
     /* Invoice INV-P-0139: Aquatic 60' Tue 4–5 Acton (same as Thu). */
@@ -2104,7 +2104,7 @@
    * - Multi-Activity: Bismark→Godsway; Giuseppe→Emanuel; John keeps Hub book;
    *   Berta Sunday = Leader (no Multi clients); Sun 6 only: Emanuel→Youssef (Emanuel off)
    * - Acton Mon: Angel → Roberto (Adam P / Steven / Mario)
-   * - Acton Tue: Roberto / Aurora / Javier / Luliya (Logan+Richard Roberto; Serine Luliya; no Youssef)
+   * - Acton Tue: Roberto / Aurora / Javier / Luliya (Serine Roberto; Logan Luliya; Richard Roberto; no Youssef)
    * - Acton Thu: Roberto / Simon / Javier / Aurora (Luliya OFF; Simon keeps Elijah / Yuri)
    * - Northolt Mon/Wed: replace summer (Roberto/Dan) with Services Autumn Dan+Luliya book
    * - Luliya: DC Ikram Mon/Tue/Wed 11–3 + Fri 11-4; pool Mon/Wed Northolt 4.30–6.30,
