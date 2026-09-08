@@ -749,14 +749,16 @@
     if (!inv || inv.created_via === 'la_office_auto') return false;
     var pay = String(inv.payment_status || '').toLowerCase();
     if (pay === 'void') return false;
-    /* Explicit GC tracker rows (Maiyar/Linda office scripts) — always hide. */
+    /* Real term keepers have 2+ schedule rows — never hide, even if consolidate
+       stamped "Consolidated payment tracker: <own id>" on the keeper notes
+       (Linda / Rodin / Max / Richard / Arthur showed 0 invoices / Summer-only). */
+    if (scheduleRows(inv).length >= 2) return false;
+    /* Explicit GC tracker / single-slice rows (Maiyar/Linda office scripts). */
     if (isGcInstalmentTrackerInvoice(inv)) return true;
     /* Paid slices are kept for audit but not shown once marked paid either if matched. */
     var due = String(inv.due_date || inv.next_instalment_due || '').slice(0, 10);
     var amt = Number(inv.amount_gbp) || 0;
     if (!due || !(amt > 0.009)) return false;
-    /* Real term invoices have 2+ instalments — never treat as shadow. */
-    if (scheduleRows(inv).length >= 2) return false;
     var key = instalmentMatchKey(due, amt);
     var id = String(inv.id || '');
     var list = siblings || [];
