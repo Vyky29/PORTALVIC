@@ -2,7 +2,7 @@
  * Align portal_madre_document (summer-2026) with Autumn standing truth so
  * staff / admin / booking / parent all read the same seats.
  *
- * - Sun climbing: Scott out → open 12–1; Alex open 2–3; Carlos open 2–3 (60')
+ * - Sun climbing: Scott out → open 12–1; Alex open 2–3 + 3–4; Carlos open 2–3 (60')
  * - Sun Multi: Erik on Berta/John hub 12.30–1.15 + Aurora/Dan pool 1.15–2
  * - Standing week 13–17 Jul: Acton Tue/Thu boards (Luliya open 4; Simon open 4.30;
  *   Javier Rayan Ta / Kareena; Roberto Yossi; Karo; clear Youssef/Simon Tue Acton)
@@ -166,7 +166,7 @@ function patchSundayClimbing(week) {
         (/^2\s*to\s*2\.?30\b/i.test(normTime(sl.time_slot)) ||
           /^2\.?30\s*to\s*3\b/i.test(normTime(sl.time_slot))),
     );
-    for (const time of ["12 to 1", "2 to 3"]) {
+    for (const time of ["12 to 1", "2 to 3", "3 to 4"]) {
       const hit = (day.slots || []).find(
         (sl) =>
           /climb/i.test(sl.service || "") &&
@@ -310,9 +310,9 @@ function patchStandingTuesdayActon(week) {
   ]);
   replaceActonAquatic(aurora, "AURORA", [
     ["4 to 4.30", "CLOSED", "Lane (DE)"],
-    ["4.30 to 5", "NO PARTICIPANT", "Lane (DE)"],
-    ["5 to 5.30", "Junaid", "Lane (DE)"],
-    ["5.30 to 6", "Aydaan Ah", "Lane (DE)"],
+    ["4.30 to 5", "Adam Mahmmoud", "Teaching Pool"],
+    ["5 to 5.30", "Junaid", "Lane (SE)"],
+    ["5.30 to 6", "Aydaan Ah", "Lane (SE)"],
     ["6 to 6.30", "Anas", "Lane (DE)"],
   ]);
 

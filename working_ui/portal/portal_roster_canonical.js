@@ -313,28 +313,32 @@
    * Standing Tue Acton AS (from Mon 7 Sep): Roberto / Aurora / Javier / Luliya.
    * Logan + Richard → Roberto; Serine → Luliya; no Youssef.
    */
+  /**
+   * Acton Tue pool notes: match Summer where known (Junaid + Aydaan = Lane SE;
+   * Adam Mahmmoud = Teaching Pool). Other seats keep Acton Lane (DE) default.
+   */
   var AUTUMN_ACTON_TUESDAY_BOARD = [
-    { staff: "ROBERTO", name: "No participant", time: "4 to 4.30" },
-    { staff: "ROBERTO", name: "No participant", time: "4.30 to 5" },
-    { staff: "ROBERTO", name: "Logan", time: "5 to 5.30" },
-    { staff: "ROBERTO", name: "No participant", time: "5.30 to 6" },
-    { staff: "ROBERTO", name: "Richard", time: "6 to 6.30" },
+    { staff: "ROBERTO", name: "No participant", time: "4 to 4.30", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "No participant", time: "4.30 to 5", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "Logan", time: "5 to 5.30", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
     /* On shift from 4 — empty seat is open (No participant), never Closed. */
-    { staff: "LULIYA", name: "No participant", time: "4 to 4.30" },
-    { staff: "LULIYA", name: "Serine", time: "4.30 to 5.30" },
-    { staff: "LULIYA", name: "No participant", time: "5.30 to 6" },
-    { staff: "LULIYA", name: "No participant", time: "6 to 6.30" },
+    { staff: "LULIYA", name: "No participant", time: "4 to 4.30", area: "Lane (DE)" },
+    { staff: "LULIYA", name: "Serine", time: "4.30 to 5.30", area: "Lane (DE)" },
+    { staff: "LULIYA", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
+    { staff: "LULIYA", name: "No participant", time: "6 to 6.30", area: "Lane (DE)" },
     /* Invoice INV-P-0139: Aquatic 60' Tue 4–5 Acton (same as Thu). */
-    { staff: "JAVIER", name: "Ayman", time: "4 to 5" },
-    { staff: "JAVIER", name: "Linda", time: "5 to 5.30" },
-    { staff: "JAVIER", name: "Rayan Ta", time: "5.30 to 6" },
+    { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (DE)" },
+    { staff: "JAVIER", name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
+    { staff: "JAVIER", name: "Rayan Ta", time: "5.30 to 6", area: "Lane (DE)" },
     /* Kareena unpaid Aug15 release — open seat (LOCAL truth). */
-    { staff: "JAVIER", name: "No participant", time: "6 to 6.30" },
-    { staff: "AURORA", name: "Closed", time: "4 to 4.30" },
-    { staff: "AURORA", name: "Adam Mahmmoud", time: "4.30 to 5" },
-    { staff: "AURORA", name: "Junaid", time: "5 to 5.30" },
-    { staff: "AURORA", name: "Aydaan Ah", time: "5.30 to 6" },
-    { staff: "AURORA", name: "Anas", time: "6 to 6.30" },
+    { staff: "JAVIER", name: "No participant", time: "6 to 6.30", area: "Lane (SE)" },
+    { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
+    { staff: "AURORA", name: "Adam Mahmmoud", time: "4.30 to 5", area: "Teaching Pool" },
+    { staff: "AURORA", name: "Junaid", time: "5 to 5.30", area: "Lane (SE)" },
+    { staff: "AURORA", name: "Aydaan Ah", time: "5.30 to 6", area: "Lane (SE)" },
+    { staff: "AURORA", name: "Anas", time: "6 to 6.30", area: "Lane (DE)" },
   ];
 
   function autumnActonTuesdayStandingRows() {
@@ -345,7 +349,7 @@
         day: "Tuesday",
         instructors: slot.staff,
         service: "Aquatic Activity",
-        area: "Teaching Pool",
+        area: slot.area || "Lane (DE)",
         time_slot: slot.time,
         venue: "Acton",
         session_date: iso,
@@ -777,31 +781,32 @@
           day: "Tuesday",
           instructors: staff,
           service: "Aquatic Activity",
-          area: "Teaching Pool",
+          area: slot.area || "Lane (DE)",
           time_slot: slot.time,
           venue: "Acton",
           session_date: iso,
         };
       });
     }
+    /* Pool notes follow Summer (Adam Teaching Pool; Junaid + Aydaan Lane SE). */
     var roberto = [
-      { name: "No participant", time: "4 to 4.30" },
-      { name: "Adam Mahmmoud", time: "4.30 to 5" },
-      { name: "Logan", time: "5 to 5.30" },
-      { name: "Junaid", time: "5.30 to 6" },
-      { name: "Richard", time: "6 to 6.30" },
+      { name: "No participant", time: "4 to 4.30", area: "Lane (DE)" },
+      { name: "Adam Mahmmoud", time: "4.30 to 5", area: "Teaching Pool" },
+      { name: "Logan", time: "5 to 5.30", area: "Lane (DE)" },
+      { name: "Junaid", time: "5.30 to 6", area: "Lane (SE)" },
+      { name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
     ];
     var luliya = [
-      { name: "No participant", time: "4 to 4.30" },
-      { name: "Serine", time: "4.30 to 5.30" },
-      { name: "Aydaan Ah", time: "5.30 to 6" },
-      { name: "No participant", time: "6 to 6.30" },
+      { name: "No participant", time: "4 to 4.30", area: "Lane (DE)" },
+      { name: "Serine", time: "4.30 to 5.30", area: "Lane (DE)" },
+      { name: "Aydaan Ah", time: "5.30 to 6", area: "Lane (SE)" },
+      { name: "No participant", time: "6 to 6.30", area: "Lane (DE)" },
     ];
     var javier = [
-      { name: "Ayman", time: "4 to 5" },
-      { name: "Linda", time: "5 to 5.30" },
-      { name: "Rayan Ta", time: "5.30 to 6" },
-      { name: "Anas", time: "6 to 6.30" },
+      { name: "Ayman", time: "4 to 5", area: "Lane (DE)" },
+      { name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
+      { name: "Rayan Ta", time: "5.30 to 6", area: "Lane (DE)" },
+      { name: "Anas", time: "6 to 6.30", area: "Lane (DE)" },
     ];
     return []
       .concat(mapBook("ROBERTO", roberto))
