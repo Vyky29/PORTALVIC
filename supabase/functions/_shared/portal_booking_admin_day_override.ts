@@ -41,6 +41,8 @@ export function resolveBookableSessionWithAdminOverrides(
     asOfIso?: string | null;
     bookingKind?: string | null;
     now?: Date;
+    /** Standing open seats on this band; staff covers do not defer while opens remain. */
+    standingOpenSeats?: number | null;
   },
   overrides: AdminDayOverrideProbe[],
 ) {

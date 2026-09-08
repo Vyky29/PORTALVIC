@@ -360,14 +360,15 @@ export type AdminDayOverrideProbe = {
   anchor_client_id?: string | null;
 };
 
-const ADMIN_DAY_OVERRIDE_BLOCKS_NEW_START = new Set([
+/**
+ * Overrides that consume a bookable open seat for that calendar day.
+ * Staff covers / reassigns do not — parents can still start if another open
+ * remains on the same venue + time band (e.g. Aurora Closed cover while
+ * Luliya/Roberto stay No participant).
+ */
+const ADMIN_DAY_OVERRIDE_CONSUMES_OPEN = new Set([
   "client_replace_in_slot",
-  "instructor_reassign",
-  "instructor_cover_needed",
-  "slot_clear_client",
   "slot_close",
-  "slot_update",
-  "slot_open",
 ]);
 
 function normalizeVenueToken(raw: string | null | undefined): string {
@@ -391,8 +392,52 @@ function hmTokenFromDbOrLabel(raw: string | null | undefined): string {
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
-/** True when an active day override sits on the same venue + start band as the bookable slot. */
-export function adminDayOverrideBlocksNewBookingStart(
+function normalizeClientToken(raw: string | null | undefined): string {
+  return String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+/** Closed / non-bookable MADRE labels — never defer a new booking start. */
+function isClosedOrOfficeHoldClient(raw: string | null | undefined): boolean {
+  const cid = normalizeClientToken(raw);
+  return (
+    cid === "closed" ||
+    cid === "no_client" ||
+    cid === "casa" ||
+    cid === "home" ||
+    cid === "manager" ||
+    cid === "off"
+  );
+}
+
+function overrideMatchesVenueTimeBand(
+  ov: AdminDayOverrideProbe,
+  opts: { venue?: string | null; timeLabel?: string | null },
+): { matched: boolean; hasBandHints: boolean } {
+  const slotVenue = normalizeVenueToken(opts.venue);
+  const ovVenue = normalizeVenueToken(ov.anchor_venue);
+  const slotStart = hmTokenFromDbOrLabel(opts.timeLabel);
+  const ovStart =
+    hmTokenFromDbOrLabel(ov.anchor_start) ||
+    hmTokenFromDbOrLabel(ov.anchor_time_slot_label);
+  const hasBandHints = !!(slotVenue || slotStart);
+  if (slotVenue && ovVenue && slotVenue !== ovVenue) {
+    return { matched: false, hasBandHints };
+  }
+  if (slotStart && ovStart && slotStart !== ovStart) {
+    return { matched: false, hasBandHints };
+  }
+  return { matched: true, hasBandHints };
+}
+
+/**
+ * True when an active day override consumes a bookable open on this venue +
+ * start band (not staff cover / Closed-only rows).
+ */
+export function adminDayOverrideConsumesBookableOpen(
   ov: AdminDayOverrideProbe,
   opts: {
     sessionIso: string;
@@ -406,49 +451,68 @@ export function adminDayOverrideBlocksNewBookingStart(
     return false;
   }
   const t = String(ov.override_type || "").trim();
-  if (!ADMIN_DAY_OVERRIDE_BLOCKS_NEW_START.has(t)) return false;
+  if (!ADMIN_DAY_OVERRIDE_CONSUMES_OPEN.has(t)) return false;
+  if (isClosedOrOfficeHoldClient(ov.anchor_client_id)) return false;
 
-  const slotVenue = normalizeVenueToken(opts.venue);
-  const ovVenue = normalizeVenueToken(ov.anchor_venue);
-  if (slotVenue && ovVenue && slotVenue !== ovVenue) return false;
+  const { matched, hasBandHints } = overrideMatchesVenueTimeBand(ov, opts);
+  if (!matched) return false;
 
-  const slotStart = hmTokenFromDbOrLabel(opts.timeLabel);
-  const ovStart =
-    hmTokenFromDbOrLabel(ov.anchor_start) ||
-    hmTokenFromDbOrLabel(ov.anchor_time_slot_label);
-  if (slotStart && ovStart && slotStart !== ovStart) return false;
-
-  // Without time/venue we only block when the override is clearly a day fill of an open seat.
-  if (!slotStart && !slotVenue) {
-    const cid = String(ov.anchor_client_id || "").trim().toLowerCase();
+  // Without time/venue we only count a clear day-fill of an open seat.
+  if (!hasBandHints) {
+    const cid = normalizeClientToken(ov.anchor_client_id);
     return (
       t === "client_replace_in_slot" &&
-      (!cid || cid === "available" || cid === "open" || cid === "no_participant")
+      (cid === "available" || cid === "open" || cid === "no_participant")
     );
   }
   return true;
 }
 
+/** @deprecated Prefer adminDayOverrideConsumesBookableOpen + standing open budget. */
+export function adminDayOverrideBlocksNewBookingStart(
+  ov: AdminDayOverrideProbe,
+  opts: {
+    sessionIso: string;
+    venue?: string | null;
+    timeLabel?: string | null;
+  },
+): boolean {
+  return adminDayOverrideConsumesBookableOpen(ov, opts);
+}
+
 export function applyAdminDayOverrideStartBump(
   sessionIso: string,
   overrides: AdminDayOverrideProbe[],
-  opts?: { venue?: string | null; timeLabel?: string | null },
+  opts?: {
+    venue?: string | null;
+    timeLabel?: string | null;
+    /** Standing open seats on this venue+time band (MADRE No participant). */
+    standingOpenSeats?: number | null;
+  },
 ): { iso: string; bumped: boolean; reason: string | null } {
   let iso = String(sessionIso || "").slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
     return { iso, bumped: false, reason: null };
   }
   const list = Array.isArray(overrides) ? overrides : [];
+  const openBudget = opts?.standingOpenSeats;
+  const hasOpenBudget =
+    typeof openBudget === "number" && Number.isFinite(openBudget);
   let bumped = false;
   for (let i = 0; i < 12; i++) {
-    const hit = list.some((ov) =>
-      adminDayOverrideBlocksNewBookingStart(ov, {
+    const fills = list.filter((ov) =>
+      adminDayOverrideConsumesBookableOpen(ov, {
         sessionIso: iso,
         venue: opts?.venue,
         timeLabel: opts?.timeLabel,
       })
     );
-    if (!hit) break;
+    // Staff covers / Closed rows never fill. Only bump when open seats for
+    // that band are exhausted that day (or any fill when open count unknown).
+    const shouldBump = hasOpenBudget
+      ? fills.length >= Math.max(0, openBudget as number)
+      : fills.length > 0;
+    if (!shouldBump) break;
     const next = bumpToNextWeekSameWeekday(iso);
     if (!next || next === iso) break;
     iso = next;
@@ -474,12 +538,13 @@ export function adminDayOverrideStartParentMessage(bumpedIso: string): string {
 }
 
 /**
- * resolveSessionDateIso + bump when the candidate day already has an admin
- * Schedule & Covers override on that venue/time band.
+ * resolveSessionDateIso + bump only when that day exhausts bookable opens
+ * on the venue/time band (not staff covers / Closed rows).
  */
 export function resolveSessionDateIsoWithAdminDayOverrides(
   input: Parameters<typeof resolveSessionDateIso>[0] & {
     venue?: string | null;
+    standingOpenSeats?: number | null;
   },
   overrides: AdminDayOverrideProbe[],
 ): {
@@ -494,6 +559,7 @@ export function resolveSessionDateIsoWithAdminDayOverrides(
   const bumped = applyAdminDayOverrideStartBump(base, overrides, {
     venue: input.venue,
     timeLabel: input.time,
+    standingOpenSeats: input.standingOpenSeats,
   });
   return {
     iso: bumped.iso,

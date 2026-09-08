@@ -18,8 +18,10 @@ Europe/London. Implemented in `supabase/functions/_shared/portal_booking_context
 
 - Day overrides that fill or rearrange a seat for **that calendar day** must **not** remove the standing place from Booking Portal capacity (term seat stays **available** for future weeks).
 - Parents may still book that place.
-- If the resolved first session would fall on a day that already has an active admin override on that venue/time band, **bump the first session to the same weekday next week** and tell the parent they start next week — not the overridden day / not this week's occurrence.
-- Applies when admin overrides the same day and a parent then books while lead time would otherwise allow that day.
+- First-session bump only when that day's overrides **consume bookable opens** on the same venue + start band (`client_replace_in_slot`, `slot_close`).
+- Do **not** bump for staff `instructor_reassign` / `instructor_cover_needed`, nor for overrides on **Closed** (or other non-bookable) anchors — e.g. Aurora Closed cover while Luliya/Roberto stay No participant at the same hour.
+- When standing open count is known, bump only if fills that day **exhaust** those opens; if at least one open remains, first session can stay on that day.
+- Parent message when bumped: start next week for that weekday — not the overridden day.
 
 ## Do not
 

@@ -26,6 +26,8 @@ export type OfferSlot = {
   sortTime: string;
   capacity: number;
   taken: number;
+  /** Standing NO PARTICIPANT lines on this band (Closed excluded). */
+  openSeats?: number;
   referenceDate: string | null;
   /** Instructor keys on the reference open/booked band (office Assign prefill). */
   instructors?: string[];
@@ -392,6 +394,10 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
         cap,
         uniqueTaken > 0 ? uniqueTaken : Math.max(fragMax, Math.min(cap, fragSum)),
       );
+      const openSeats = useParts.reduce(
+        (n, s) => n + Math.max(0, Number(s.openSeats) || 0),
+        0,
+      );
       rest.push({
         id: slotId("multi", "SwimFarm", "Sunday", band.start, band.label),
         serviceId: "multi",
@@ -401,6 +407,7 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
         sortTime: band.start,
         capacity: cap,
         taken,
+        openSeats,
         referenceDate: ref,
         bookedKeys: [...keys],
         instructors: [
@@ -446,6 +453,7 @@ function ensureClimbingSundayOpenBand(slots: OfferSlot[]): OfferSlot[] {
       sortTime: "15:00",
       capacity: 2,
       taken: 0,
+      openSeats: 2,
       referenceDate: ref,
     },
   ];
@@ -614,6 +622,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       sortTime,
       capacity: cap,
       taken,
+      openSeats: Math.max(0, Number(capacityBucket.open) || 0),
       referenceDate: ref,
       instructors: [...latestBucket.instructors].sort(),
       bookedKeys: [...capacityBucket.bookedKeys],

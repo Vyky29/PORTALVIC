@@ -483,6 +483,7 @@ Deno.serve(async (req) => {
         time: slot.timeLabel || null,
         venue: slot.venue || null,
         asOfIso: todayIso,
+        standingOpenSeats: Number(slot.openSeats) || 0,
       },
       adminDayOverrides,
     );
