@@ -2302,6 +2302,57 @@
       padding: 10px 12px;
       font-size: 14px;
     }
+    /* Unpaid invoice pay CTA — glow until office marks paid / processed */
+    .pp-btn--needs-pay,
+    .pp-invoice-pay-pair__btn--needs-pay,
+    .pp-invoice-card__btn-full.pp-btn--needs-pay {
+      animation: pp-invoice-needs-pay-pulse 1.2s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(45, 132, 179, 0.55);
+      position: relative;
+      z-index: 1;
+    }
+    .pp-btn--needs-pay.pp-btn--sec,
+    .pp-invoice-pay-pair__btn--needs-pay {
+      background: linear-gradient(135deg, #2d84b3, #1d6a94);
+      color: #fff;
+      border-color: transparent;
+      font-weight: 800;
+    }
+    .pp-btn--needs-pay.pp-btn--gc-setup-needed {
+      box-shadow: 0 0 0 0 rgba(180, 83, 9, 0.5);
+      animation-name: pp-invoice-needs-pay-pulse-amber;
+    }
+    @keyframes pp-invoice-needs-pay-pulse {
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(45, 132, 179, 0.55);
+        filter: brightness(1);
+      }
+      50% {
+        box-shadow: 0 0 0 8px rgba(45, 132, 179, 0);
+        filter: brightness(1.08);
+      }
+    }
+    @keyframes pp-invoice-needs-pay-pulse-amber {
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(180, 83, 9, 0.55);
+        filter: brightness(1);
+      }
+      50% {
+        box-shadow: 0 0 0 8px rgba(180, 83, 9, 0);
+        filter: brightness(1.06);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .pp-btn--needs-pay,
+      .pp-invoice-pay-pair__btn--needs-pay,
+      .pp-invoice-card__btn-full.pp-btn--needs-pay {
+        animation: none;
+        outline: 2px solid #2d84b3;
+        outline-offset: 2px;
+      }
+    }
     /* Green "I've paid / validate" — pulse like unpaid Invoices hub shortcut */
     .pp-btn--paid-report {
       background: linear-gradient(135deg, #15803d, #166534);
@@ -5465,7 +5516,7 @@
   <script src="/portal/portal_parent_history_pdf.js?v=20260902-history-pdf-noblack"></script>
   <script src="/portal/parent_portal_team.js?v=20260905-team-photo-only"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260828-trial-iso-cal"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260907-weekday-as-from-mon7"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260908-pay-btn-glow"></script>
   <script src="/portal/parent_portal_app.js?v=20260905-family-push-36"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

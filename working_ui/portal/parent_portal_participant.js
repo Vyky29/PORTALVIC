@@ -8883,7 +8883,7 @@
       var extraActs = "";
       if (canSetupGc) {
         extraActs +=
-          '<button type="button" class="pp-btn pp-btn--gc-setup-needed pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
+          '<button type="button" class="pp-btn pp-btn--gc-setup-needed pp-btn--needs-pay pp-invoice-card__btn-full" data-pp-setup-gocardless="' +
           esc(inv.id) +
           '" aria-label="Set up Direct Payment — action required">' +
           invoiceBtnLabel("gocardless", "Set up Direct Payment") +
@@ -8891,7 +8891,7 @@
       }
       if (!canSetupGc && gc && !isGcInvoice) {
         extraActs +=
-          '<a class="pp-btn pp-btn--primary pp-invoice-card__btn-full" href="' +
+          '<a class="pp-btn pp-btn--primary pp-btn--needs-pay pp-invoice-card__btn-full" href="' +
           esc(gc) +
           '" target="_blank" rel="noopener noreferrer">' +
           invoiceBtnLabel("gocardless", "Pay with GoCardless") +
@@ -8899,7 +8899,7 @@
       }
       if (pl) {
         extraActs +=
-          '<a class="pp-btn pp-btn--ghost pp-invoice-card__btn-full" href="' +
+          '<a class="pp-btn pp-btn--primary pp-btn--needs-pay pp-invoice-card__btn-full" href="' +
           esc(pl) +
           '" target="_blank" rel="noopener noreferrer">' +
           invoiceBtnLabel(
@@ -8924,9 +8924,9 @@
     var payPairHtml = "";
     if (showDraftFlow && (canPay || showBankPanel)) {
       var payBtn = canPay
-        ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-pay-pair__btn" data-pp-pay-invoice="' +
+        ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-pay-pair__btn pp-invoice-pay-pair__btn--needs-pay pp-btn--needs-pay" data-pp-pay-invoice="' +
           esc(inv.id) +
-          '">' +
+          '" aria-label="Pay now — invoice unpaid">' +
           invoiceBtnLabel(
             "card",
             "Card / Apple Pay" + (cardCharge ? " · " + esc(cardCharge) : ""),
