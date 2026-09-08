@@ -495,6 +495,24 @@ verify_jwt = false
 [functions.portal-admin-onboarding-draft-export]
 verify_jwt = false
 
+[functions.portal-staff-onboarding-doc-upload]
+verify_jwt = false
+
+[functions.portal-staff-onboarding-invite]
+verify_jwt = false
+
+[functions.portal-staff-onboarding-draft-load]
+verify_jwt = false
+
+[functions.portal-staff-onboarding-draft-save]
+verify_jwt = false
+
+[functions.portal-staff-onboarding-session-touch]
+verify_jwt = false
+
+[functions.portal-staff-onboarding-status]
+verify_jwt = false
+
 [functions.portal-admin-parent-feedback-generate]
 verify_jwt = false
 

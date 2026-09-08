@@ -3018,7 +3018,9 @@
         starterChecklistCompleted: false,
         onboardingCompleted: false,
         readyToStart: false,
-        onboardingNotes: ""
+        onboardingNotes: "",
+        portalUserId: "",
+        inviteSentAt: ""
       };
     }
 
@@ -3039,6 +3041,8 @@
       return {
         id: "cand_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
         name: name.trim(),
+        email: "",
+        phone: "",
         dateOfBirth: "",
         cvStoragePath: "",
         cvFileName: "",
@@ -3056,6 +3060,8 @@
 
     function ensureCandidateShape(candidate) {
       const nowIso = new Date().toISOString();
+      candidate.email = candidate.email || "";
+      candidate.phone = candidate.phone || "";
       candidate.dateOfBirth = candidate.dateOfBirth || "";
       candidate.cvStoragePath = candidate.cvStoragePath || "";
       candidate.cvFileName = candidate.cvFileName || "";
@@ -3621,6 +3627,8 @@
 
       const candidateName = document.getElementById("candidateName");
       const candidateDob = document.getElementById("candidateDob");
+      const candidateEmail = document.getElementById("candidateEmail");
+      const candidatePhone = document.getElementById("candidatePhone");
 
       const callInterviewerName = document.getElementById("callInterviewerName");
       const callDate = document.getElementById("callDate");
@@ -3685,6 +3693,8 @@
       }
       candidate.name = name;
       candidate.dateOfBirth = candidateDob ? candidateDob.value : "";
+      candidate.email = candidateEmail ? String(candidateEmail.value || "").trim() : (candidate.email || "");
+      candidate.phone = candidatePhone ? String(candidatePhone.value || "").trim() : (candidate.phone || "");
 
       candidate.callInterview.interviewerName = callInterviewerName ? callInterviewerName.value.trim() : "";
       candidate.callInterview.date = callDate.value;
@@ -3913,12 +3923,72 @@
       updateCandidateFromForm(true);
     }
 
-    function triggerReadyForOnboardingNotification(candidate) {
-      // Placeholder hook: email/app notification workflow can be connected here later.
-      console.log("Ready for onboarding notification trigger:", candidate.id);
+    async function triggerReadyForOnboardingNotification(candidate) {
+      const email = String((candidate && candidate.email) || "").trim().toLowerCase();
+      const fullName = String((candidate && candidate.name) || "").trim();
+      const phone = String((candidate && candidate.phone) || "").trim();
+      const role = String(
+        (candidate && candidate.onboarding && candidate.onboarding.role) || "Support Worker"
+      ).trim() || "Support Worker";
+      if (!email || email.indexOf("@") < 0) {
+        return { ok: false, error: "email_required" };
+      }
+      try {
+        const sb = typeof getSupabase === "function" ? getSupabase() : supabaseClient;
+        if (!sb || !sb.auth) {
+          return { ok: false, error: "not_signed_in" };
+        }
+        const sessRes = await sb.auth.getSession();
+        const token =
+          (sessRes &&
+            sessRes.data &&
+            sessRes.data.session &&
+            sessRes.data.session.access_token) ||
+          "";
+        if (!token) return { ok: false, error: "not_signed_in" };
+        let url = "https://cklpnwhlqsulpmkipmqb.supabase.co";
+        let anon = "";
+        try {
+          const mod = await import(PORTAL_SUPABASE_CLIENT_MODULE);
+          if (mod && typeof mod.getSupabaseUrl === "function") url = mod.getSupabaseUrl() || url;
+          if (mod && typeof mod.getSupabaseAnonKey === "function") anon = mod.getSupabaseAnonKey() || "";
+        } catch (_e) {
+          /* use defaults */
+        }
+        if (!anon) {
+          try {
+            anon = String((sb && sb.supabaseKey) || "").trim();
+          } catch (_e2) {}
+        }
+        const res = await fetch(String(url).replace(/\/$/, "") + "/functions/v1/portal-staff-onboarding-invite", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token,
+            apikey: anon || token
+          },
+          body: JSON.stringify({
+            candidate_id: candidate.id,
+            email: email,
+            phone: phone,
+            full_name: fullName,
+            role: role
+          })
+        });
+        const body = await res.json().catch(function () {
+          return {};
+        });
+        if (!res.ok || !body.ok) {
+          return { ok: false, error: (body && body.error) || "invite_failed", detail: body };
+        }
+        return body;
+      } catch (e) {
+        console.warn("[interview] onboarding invite", e);
+        return { ok: false, error: "invite_failed", detail: String(e && e.message || e) };
+      }
     }
 
-    function completeFaceOutcome() {
+    async function completeFaceOutcome() {
       if (!currentCandidateId) return;
       const statusEl = document.getElementById("faceStatusValue");
       const unsuccessfulReasonEl = document.getElementById("faceUnsuccessfulReason");
@@ -3950,10 +4020,42 @@
       if (!candidate) return;
       ensureCandidateShape(candidate);
 
+      if (status === "successful-ready" || status === "successful") {
+        const email = String(candidate.email || "").trim();
+        if (!email || email.indexOf("@") < 0) {
+          alert("Add the candidate email before marking Ready for onboarding. We use it to create their Portal login.");
+          const emailEl = document.getElementById("candidateEmail");
+          if (emailEl) emailEl.focus();
+          return;
+        }
+      }
+
       candidate.faceToFaceInterview.outcomeCompletedAt = new Date().toISOString();
+      let inviteNote = "";
       if (status === "successful-ready" || status === "successful") {
         candidate.onboarding.readyToStart = true;
-        triggerReadyForOnboardingNotification(candidate);
+        const invite = await triggerReadyForOnboardingNotification(candidate);
+        if (invite && invite.ok) {
+          candidate.onboarding.welcomeEmailSent = true;
+          candidate.onboarding.portalUserId = invite.user_id || candidate.onboarding.portalUserId || "";
+          candidate.onboarding.inviteSentAt = new Date().toISOString();
+          inviteNote = invite.email_sent
+            ? " Onboarding invite email sent."
+            : (invite.temporary_password
+              ? " Account created; email not sent — temporary password: " + invite.temporary_password
+              : " Account created; email delivery failed — check logs.");
+          addHistoryEntry(
+            candidate,
+            "Onboarding invite sent to " + String(candidate.email || "").trim() +
+              (invite.email_sent ? "" : " (email delivery issue)")
+          );
+        } else {
+          inviteNote =
+            " Outcome saved, but invite failed" +
+            (invite && invite.error ? " (" + invite.error + ")" : "") +
+            ". You can retry by completing Ready again after fixing email/login.";
+          addHistoryEntry(candidate, "Onboarding invite failed: " + ((invite && invite.error) || "unknown"));
+        }
       } else {
         candidate.onboarding.readyToStart = false;
       }
@@ -3963,7 +4065,7 @@
       saveCandidates(candidate.id).catch(function () {});
       renderSearchResults(filterCandidates(searchInput.value.trim()));
       renderCandidateDetail(candidate.id);
-      alert("Outcome completed and saved.");
+      alert("Outcome completed and saved." + inviteNote);
     }
 
     function renderRoleCertificates(role) {
@@ -4584,6 +4686,16 @@
                 </div>
 
                 <div class="field full">
+                  <label for="candidateEmail">Email (for onboarding invite)</label>
+                  <input id="candidateEmail" class="input" type="email" autocomplete="email" placeholder="name@example.com" value="${escapeHtml(candidate.email || "")}" />
+                </div>
+
+                <div class="field full">
+                  <label for="candidatePhone">Mobile (optional)</label>
+                  <input id="candidatePhone" class="input" type="tel" autocomplete="tel" placeholder="+44…" value="${escapeHtml(candidate.phone || "")}" />
+                </div>
+
+                <div class="field full">
                   <label for="candidateDob">Date of birth</label>
                   <input id="candidateDob" class="input" type="date" data-input-type="date" value="${escapeHtml(candidate.dateOfBirth || "")}" />
                 </div>
@@ -4697,7 +4809,7 @@
             <div class="section-head">
               <div>
                 <h3>Stage 2 · Face to Face Interview</h3>
-                <p>This stage becomes active when the call interview is marked as successful. Question set depends on the Role above - Day Centre Support Worker uses the Day Centre bank; other roles use the standard face-to-face questions.</p>
+                <p>This stage becomes active when the call interview is marked as successful. Day Centre Support Worker uses the Day Centre question bank. Other roles use the general Stage 2 set (organisation, experience, session scenarios, problem-solving).</p>
               </div>
             </div>
             <div class="section-body">

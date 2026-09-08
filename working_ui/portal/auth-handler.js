@@ -977,7 +977,7 @@ function bindLogin() {
 
   async function fetchStaffProfileByUsernameAliases(supabase, authEmail) {
     const selectCols =
-      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
+      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality, portal_staff_access, onboarding_applicant";
     const candidates = portalStaffProfileUsernameCandidates(authEmail);
     if (!candidates.length) return null;
     const { data, error } = await supabase
@@ -994,7 +994,7 @@ function bindLogin() {
 
   async function fetchStaffProfile(supabase, userId) {
     const selectCols =
-      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
+      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality, portal_staff_access, onboarding_applicant";
     async function loadViaRpc() {
       const rpc = await supabase.rpc("portal_get_session_staff_profile");
       if (rpc.error) {
@@ -1563,7 +1563,7 @@ function portalBootstrapStaffProfileUsernameCandidates(authEmail) {
 
 async function portalBootstrapLoadStaffProfile(supabase, session, authEmailGate) {
   const selectCols =
-    "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
+    "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality, portal_staff_access, onboarding_applicant";
   const execStub = portalExecutiveBootstrapProfileStub(session, authEmailGate);
   const load = async function loadProfile() {
     const rpc = await supabase.rpc("portal_get_session_staff_profile");
