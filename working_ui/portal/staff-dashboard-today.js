@@ -581,6 +581,22 @@
             return false;
           }
         }
+        /*
+         * Tue 8: Acton Aquatic redistributed (Adam/Junaid Roberto, Aydaan Luliya, Anas Javier).
+         * Dated LOCAL only — never project Jul standing Aurora/Javi book onto that day.
+         */
+        if(iso === '2026-09-08' && rowIso && rowIso !== iso){
+          const svcA = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
+          const venueA = String((s && s.venue) || '').toLowerCase();
+          const instA = String((s && (s.instructors || s.instructor || s.staffId)) || '').toLowerCase();
+          if(
+            /aquatic|swim/.test(svcA) &&
+            venueA.indexOf('acton') >= 0 &&
+            /\b(roberto|luliya|lulia|javier|aurora|javi)\b/.test(instA)
+          ){
+            return false;
+          }
+        }
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
         if(portalIsoIsAutumnWeek1Dc(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
         /* Dated overlay for this calendar day (trial / cover) always applies. */

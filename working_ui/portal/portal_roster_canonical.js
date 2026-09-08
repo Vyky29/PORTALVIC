@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 79;
+  var SOURCE_VERSION = 80;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -762,6 +762,76 @@
     return out;
   }
 
+  /**
+   * Tue 8 Sep: Aurora OFF — redistribute Acton Aquatic so Javi Palankas is free.
+   * Adam Mahmmoud → Roberto 4.30–5 · Junaid → Roberto 5.30–6 (+30') ·
+   * Aydaan Ah → Luliya 5.30–6 · Anas → Javier 6–6.30.
+   * Full books for Roberto / Luliya / Javier (LOCAL DATE_EXTRA truth).
+   */
+  function autumnTuesdaySep8ActonRedistributeRows() {
+    var iso = "2026-09-08";
+    function mapBook(staff, slots) {
+      return slots.map(function (slot) {
+        return {
+          client_name: slot.name,
+          day: "Tuesday",
+          instructors: staff,
+          service: "Aquatic Activity",
+          area: "Teaching Pool",
+          time_slot: slot.time,
+          venue: "Acton",
+          session_date: iso,
+        };
+      });
+    }
+    var roberto = [
+      { name: "No participant", time: "4 to 4.30" },
+      { name: "Adam Mahmmoud", time: "4.30 to 5" },
+      { name: "Logan", time: "5 to 5.30" },
+      { name: "Junaid", time: "5.30 to 6" },
+      { name: "Richard", time: "6 to 6.30" },
+    ];
+    var luliya = [
+      { name: "No participant", time: "4 to 4.30" },
+      { name: "Serine", time: "4.30 to 5.30" },
+      { name: "Aydaan Ah", time: "5.30 to 6" },
+      { name: "No participant", time: "6 to 6.30" },
+    ];
+    var javier = [
+      { name: "Ayman", time: "4 to 5" },
+      { name: "Linda", time: "5 to 5.30" },
+      { name: "Rayan Ta", time: "5.30 to 6" },
+      { name: "Anas", time: "6 to 6.30" },
+    ];
+    return []
+      .concat(mapBook("ROBERTO", roberto))
+      .concat(mapBook("LULIYA", luliya))
+      .concat(mapBook("JAVIER", javier));
+  }
+
+  function scrubAndEnsureSep8ActonRedistribute(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (normIso(r.session_date) !== "2026-09-08") {
+        out.push(r);
+        return;
+      }
+      if (
+        isAquaticService(r.service) &&
+        /acton/i.test(String(r.venue || "")) &&
+        /\b(roberto|luliya|lulia|javier|aurora|javi)\b/i.test(String(r.instructors || ""))
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnTuesdaySep8ActonRedistributeRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
   function rowDedupeKey(row) {
     return [
       String(row.session_date || "").trim().slice(0, 10),
@@ -1285,13 +1355,11 @@
         s = s.replace(/\bSANDRA\b/gi, "JAVI");
       }
     }
-    /* Tue 8 + 15 Sep: Aurora day off → Javi Palankas covers her Acton Aquatic book
-     * (not Javier the swim instructor — he keeps Ayman / Linda / Rayan Ta). */
-    if (
-      (iso === "2026-09-08" || iso === "2026-09-15") &&
-      day === "tuesday" &&
-      isAquaticService(service)
-    ) {
+    /* Tue 15 Sep only: Aurora day off → Javi Palankas covers her Acton Aquatic book
+     * (not Javier the swim instructor — he keeps Ayman / Linda / Rayan Ta).
+     * Tue 8 Sep: redistribute (Adam/Junaid→Roberto, Aydaan→Luliya, Anas→Javier) via
+     * scrubAndEnsureSep8ActonRedistribute — Javi free that day. */
+    if (iso === "2026-09-15" && day === "tuesday" && isAquaticService(service)) {
       if (!meta.venue || isActonVenue(meta.venue)) {
         s = s.replace(/\bAURORA\b/gi, "JAVI");
       }
@@ -2436,6 +2504,7 @@
     merged = scrubAndEnsureSep6JavierPool(merged);
     merged = scrubAndEnsureSep6AuroraRobertoPool(merged);
     merged = scrubAndEnsureSep7VictorRaulCover(merged);
+    merged = scrubAndEnsureSep8ActonRedistribute(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);
     /* After all Autumn patches: no summer history weeks left to snap onto Sep+. */
     merged = purgeSummerHistoryOutsideAutumnTemplates(merged);

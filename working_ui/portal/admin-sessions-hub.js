@@ -1116,6 +1116,18 @@
             return false;
           }
         }
+        /*
+         * Tue 8 Sep Acton Aquatic owned by scrubAndEnsureSep8ActonRedistribute
+         * (Aurora book → Roberto / Luliya / Javier; Javi free). Do not project Jul standing.
+         */
+        if (
+          isoDate === "2026-09-08" &&
+          /acton/i.test(String((r && r.venue) || "")) &&
+          /aquatic|swim/i.test(String((r && r.service) || "")) &&
+          /\b(roberto|luliya|lulia|javier|aurora|javi)\b/i.test(String((r && r.instructors) || ""))
+        ) {
+          return false;
+        }
         if (clientHasDatedRosterInWeekSameFamily(rosterRows, r, isoDate)) return false;
         return true;
       }
