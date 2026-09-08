@@ -251,7 +251,18 @@ export async function ensurePostTrialOfferAfterPaid(
   const phone = clean(reservation.parent_phone, 40);
   const email = clean(reservation.parent_email, 120);
 
-  // Soft-hold: same slot blocked until EOD (term capacity). Parents may still book another slot.
+  // Soft-hold: same slot blocked until EOD. Drop trial hold from capacity first
+  // so the parent is not blocked by their own trial + soft hold (= FULL).
+  const trialHoldCut = new Date().toISOString();
+  await admin
+    .from("portal_booking_slot_reservations")
+    .update({
+      hold_expires_at: trialHoldCut,
+      updated_at: trialHoldCut,
+    })
+    .eq("id", reservationId)
+    .ilike("notes", "%booking_kind=trial%");
+
   let softHoldId: string | null = null;
   if (slotId) {
     const { data: hold, error: holdErr } = await admin
