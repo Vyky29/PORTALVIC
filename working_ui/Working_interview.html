@@ -2379,10 +2379,8 @@
       };
     }
 
-    async function resolveInterviewCvUrl(candidate) {
+    async function resolveInterviewCvSignedUrl(candidate) {
       if (!candidate) return "";
-      const key = String(candidate.id || "");
-      if (key && localCvObjectUrls[key]) return localCvObjectUrls[key];
       const path = String(candidate.cvStoragePath || "").trim();
       if (!path) return "";
       const sb = getSupabase();
@@ -2396,6 +2394,13 @@
       } catch (_e) {
         return "";
       }
+    }
+
+    async function resolveInterviewCvUrl(candidate) {
+      if (!candidate) return "";
+      const key = String(candidate.id || "");
+      if (key && localCvObjectUrls[key]) return localCvObjectUrls[key];
+      return resolveInterviewCvSignedUrl(candidate);
     }
 
     function candidateHasCv(candidate) {
@@ -2413,7 +2418,34 @@
       if (mime === "application/pdf" || /\.pdf$/i.test(blob)) {
         return "pdf";
       }
+      if (
+        mime.indexOf("wordprocessingml") >= 0 ||
+        mime === "application/msword" ||
+        mime === "application/rtf" ||
+        mime === "text/rtf" ||
+        /\.(docx?|rtf)$/i.test(blob)
+      ) {
+        return "office";
+      }
       return "other";
+    }
+
+    function isBrowserFetchableHttpUrl(url) {
+      return /^https?:\/\//i.test(String(url || ""));
+    }
+
+    function officeOnlineEmbedUrl(fileUrl) {
+      return (
+        "https://view.officeapps.live.com/op/embed.aspx?src=" +
+        encodeURIComponent(String(fileUrl || ""))
+      );
+    }
+
+    function officeOnlineViewUrl(fileUrl) {
+      return (
+        "https://view.officeapps.live.com/op/view.aspx?src=" +
+        encodeURIComponent(String(fileUrl || ""))
+      );
     }
 
     async function mountCandidateCvPreview(candidate) {
@@ -2426,20 +2458,21 @@
       const fileLabel = String((candidate && candidate.cvFileName) || "CV").trim() || "CV";
       if (titleEl) titleEl.textContent = candidateHasCv(candidate) ? fileLabel : "CV preview";
 
-      function wireActions(url) {
+      function wireActions(downloadUrl, openUrl) {
+        const openHref = openUrl || downloadUrl || "";
         if (openBtn) {
-          openBtn.disabled = !url;
+          openBtn.disabled = !openHref;
           openBtn.onclick = function () {
-            if (!url) return;
-            window.open(url, "_blank", "noopener,noreferrer");
+            if (!openHref) return;
+            window.open(openHref, "_blank", "noopener,noreferrer");
           };
         }
         if (dlBtn) {
-          dlBtn.disabled = !url;
+          dlBtn.disabled = !downloadUrl;
           dlBtn.onclick = function () {
-            if (!url) return;
+            if (!downloadUrl) return;
             const a = document.createElement("a");
-            a.href = url;
+            a.href = downloadUrl;
             a.download = fileLabel;
             a.target = "_blank";
             a.rel = "noopener";
@@ -2453,38 +2486,56 @@
       if (!candidateHasCv(candidate)) {
         bodyEl.innerHTML =
           '<div class="candidate-cv-preview-empty">No CV on file yet. Upload a PDF, Word file, or photo on the left and it will open here.</div>';
-        wireActions("");
+        wireActions("", "");
         return;
       }
 
       bodyEl.innerHTML =
         '<div class="candidate-cv-preview-empty">Opening CV…</div>';
-      wireActions("");
+      wireActions("", "");
 
-      const url = await resolveInterviewCvUrl(candidate);
-      if (!url) {
+      const kind = cvPreviewKind(candidate);
+      /* Word/Office need a public https signed URL for the online viewer (blob: will not work). */
+      const signedUrl = await resolveInterviewCvSignedUrl(candidate);
+      const localOrSigned = await resolveInterviewCvUrl(candidate);
+      const fileUrl = kind === "office" ? signedUrl || localOrSigned : localOrSigned || signedUrl;
+      if (!fileUrl) {
         bodyEl.innerHTML =
-          '<div class="candidate-cv-preview-empty">Could not load the CV preview. Use Open when a link is available, or replace the file.</div>';
+          '<div class="candidate-cv-preview-empty">Could not load the CV. Try Open / Download, or replace the file.</div>';
         return;
       }
       if (String(currentCandidateId || "") !== String(candidate.id || "")) return;
 
-      const kind = cvPreviewKind(candidate);
       if (kind === "image") {
         bodyEl.innerHTML =
           '<img id="candidateCvPreviewImg" alt="CV photo preview" />';
         const img = document.getElementById("candidateCvPreviewImg");
-        if (img) img.src = url;
+        if (img) img.src = fileUrl;
+        wireActions(fileUrl, fileUrl);
       } else if (kind === "pdf") {
         bodyEl.innerHTML =
           '<iframe id="candidateCvPreviewFrame" title="CV preview"></iframe>';
         const frame = document.getElementById("candidateCvPreviewFrame");
-        if (frame) frame.src = url;
+        if (frame) frame.src = fileUrl;
+        wireActions(fileUrl, fileUrl);
+      } else if (kind === "office" && isBrowserFetchableHttpUrl(signedUrl || fileUrl)) {
+        const remote = signedUrl || fileUrl;
+        const embedUrl = officeOnlineEmbedUrl(remote);
+        const viewUrl = officeOnlineViewUrl(remote);
+        bodyEl.innerHTML =
+          '<iframe id="candidateCvPreviewFrame" title="CV Word preview"></iframe>';
+        const frame = document.getElementById("candidateCvPreviewFrame");
+        if (frame) frame.src = embedUrl;
+        wireActions(remote, viewUrl);
+      } else if (kind === "office") {
+        bodyEl.innerHTML =
+          '<div class="candidate-cv-preview-empty">Word CV is on file. Use <strong>Open</strong> to view it (same as the old Open CV), or Download a copy.</div>';
+        wireActions(fileUrl, fileUrl);
       } else {
         bodyEl.innerHTML =
-          '<div class="candidate-cv-preview-empty">Inline preview is not available for this file type (e.g. Word). Use Open or Download.</div>';
+          '<div class="candidate-cv-preview-empty">This file type has no inline preview. Use Open or Download.</div>';
+        wireActions(fileUrl, fileUrl);
       }
-      wireActions(url);
     }
 
     function candidateCvMetaHtml(candidate) {
@@ -2507,9 +2558,15 @@
         alert("No CV uploaded for this candidate yet.");
         return;
       }
-      const url = await resolveInterviewCvUrl(candidate);
+      const kind = cvPreviewKind(candidate);
+      const signedUrl = await resolveInterviewCvSignedUrl(candidate);
+      const url = signedUrl || (await resolveInterviewCvUrl(candidate));
       if (!url) {
         alert("Could not open the CV. Check connection and try again.");
+        return;
+      }
+      if (kind === "office" && isBrowserFetchableHttpUrl(signedUrl || url)) {
+        window.open(officeOnlineViewUrl(signedUrl || url), "_blank", "noopener,noreferrer");
         return;
       }
       window.open(url, "_blank", "noopener,noreferrer");
@@ -5067,7 +5124,7 @@
                     <div class="cv-actions">
                       <input id="replaceCandidateCv" class="input" type="file" accept=".pdf,.doc,.docx,image/*,.heic,.heif" />
                     </div>
-                    <p class="question-helper" style="margin-top:8px;">Required when creating a candidate. PDF or photo previews on the right; Word opens in a new tab.</p>
+                    <p class="question-helper" style="margin-top:8px;">Required when creating a candidate. PDF, photo, and Word open on the right. Use Open if you need a full-size view.</p>
                   </div>
                 </div>
 
