@@ -3111,17 +3111,9 @@
       return age;
     }
 
-    function candidateDobMetaHtml(candidate) {
-      const dobRaw = candidate && candidate.dateOfBirth;
-      const dobLabel = formatDobDisplay(dobRaw);
-      const age = ageFromDob(dobRaw);
-      if (!dobLabel && age == null) {
-        return '<div class="candidate-meta">Date of birth: Not set</div>';
-      }
-      const bits = [];
-      if (age != null) bits.push("Age: " + age);
-      if (dobLabel) bits.push("Date of birth: " + dobLabel);
-      return '<div class="candidate-meta">' + escapeHtml(bits.join(" · ")) + "</div>";
+    function candidateDobMetaHtml() {
+      /* DOB is collected on onboarding forms, not in Working interview. */
+      return "";
     }
 
     function formatDateTime(iso) {
@@ -3626,7 +3618,6 @@
       ensureCandidateShape(candidate);
 
       const candidateName = document.getElementById("candidateName");
-      const candidateDob = document.getElementById("candidateDob");
       const candidateEmail = document.getElementById("candidateEmail");
       const candidatePhone = document.getElementById("candidatePhone");
 
@@ -3692,7 +3683,6 @@
         }
       }
       candidate.name = name;
-      candidate.dateOfBirth = candidateDob ? candidateDob.value : "";
       candidate.email = candidateEmail ? String(candidateEmail.value || "").trim() : (candidate.email || "");
       candidate.phone = candidatePhone ? String(candidatePhone.value || "").trim() : (candidate.phone || "");
 
@@ -4675,7 +4665,7 @@
             <div class="section-head">
               <div>
                 <h3>Candidate Details</h3>
-                <p>Update the candidate name and date of birth if needed.</p>
+                <p>Update name, email, and mobile if needed.</p>
               </div>
             </div>
             <div class="section-body">
@@ -4693,11 +4683,6 @@
                 <div class="field full">
                   <label for="candidatePhone">Mobile (optional)</label>
                   <input id="candidatePhone" class="input" type="tel" autocomplete="tel" placeholder="+44…" value="${escapeHtml(candidate.phone || "")}" />
-                </div>
-
-                <div class="field full">
-                  <label for="candidateDob">Date of birth</label>
-                  <input id="candidateDob" class="input" type="date" data-input-type="date" value="${escapeHtml(candidate.dateOfBirth || "")}" />
                 </div>
 
                 <div class="field full">

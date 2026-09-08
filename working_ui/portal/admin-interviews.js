@@ -336,18 +336,8 @@
 
   function nameCellHtml(c) {
     var name = esc(c.name || "—");
-    var dobLabel = formatDobShort(c.dateOfBirth);
-    var age = ageFromDob(c.dateOfBirth);
+    /* DOB / age belong on onboarding forms, not the interview list. */
     var meta = "";
-    if (age != null || dobLabel) {
-      var bits = [];
-      if (age != null) bits.push("Age " + age);
-      if (dobLabel) bits.push(dobLabel);
-      meta =
-        '<div class="muted" style="margin-top:4px;font-size:12px;line-height:1.35">' +
-        esc(bits.join(" · ")) +
-        "</div>";
-    }
     return "<strong>" + name + "</strong>" + meta;
   }
 
