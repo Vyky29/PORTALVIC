@@ -1451,7 +1451,14 @@
     if (String(ov && ov.status || "active").trim() !== "active") return false;
     if (t === "slot_close") return true;
     var p = overridePayloadObj(ov);
-    return t === "slot_clear_client" && !!p.cancelled_by_admin;
+    if (t !== "slot_clear_client" || !p.cancelled_by_admin) return false;
+    /* Day reassign / seat move: clear source seat, not a true cancel (Junaid→Roberto Tue 8). */
+    if (p.day_reassign === true || p.not_makeup === true) return false;
+    var kind = clean(p.booking_kind || p.session_kind || p.replace_kind || p.clear_kind).toLowerCase();
+    if (kind === "day_reassign" || kind === "instructor_day_cover" || kind === "slot_move") {
+      return false;
+    }
+    return true;
   }
 
   function overrideFeedbackResolution(ov) {
@@ -1936,7 +1943,9 @@
 
   function hubSlotShowsMakeupChip(slot, slotOv) {
     if (hubSlotShowsTrialChip(slot, slotOv)) return false;
-    return overrideIsReplaceType(slotOv) || !!(slot && slot.portalOverrideMakeUpTag);
+    /* Day-reassign replaces are seat moves, not MakeUp. */
+    if (overrideIsMakeupReplaceType(slotOv)) return true;
+    return !!(slot && slot.portalOverrideMakeUpTag && !overrideIsDayReassignReplace(slotOv));
   }
 
   function hubSlotShowsInstructorReassignChip(slot, slotOv) {

@@ -2789,13 +2789,16 @@
       if(P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(row)) return 'new_shift';
       const t = String(row && row.override_type || '').trim();
       if(t === 'client_absence_announced') return 'absent';
-      if(t === 'client_replace_in_slot') return portalOverrideIsTrial(row) ? 'trial' : 'makeup';
+      if(t === 'client_replace_in_slot') return portalOverrideIsTrial(row)
+        ? 'trial'
+        : (portalOverrideIsDayReassignReplace(row) ? 'client_moved' : 'makeup');
       if(t === 'slot_open') return 'slot_opened';
       if(t === 'slot_clear_client'){
         let pl = null;
         try{
           pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
         }catch(_){ pl = null; }
+        if(pl && (pl.day_reassign === true || pl.not_makeup === true)) return 'client_moved';
         if(pl && pl.cancelled_by_admin) return 'cancelled';
         if(pl && pl.client_move) return 'client_moved';
       }

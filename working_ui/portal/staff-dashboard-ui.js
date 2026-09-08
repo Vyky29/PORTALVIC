@@ -1423,11 +1423,16 @@
           const t = String(ov && ov.override_type || '').trim();
           if(t === 'client_replace_in_slot'){
             if(portalOverrideIsTrial(ov)) out.hasTrial = true;
-            else out.hasMakeUp = true;
+            else if(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(ov)){
+              out.hasUpdated = true;
+            }else{
+              out.hasMakeUp = true;
+            }
           }
           if(t === 'client_absence_announced') out.hasAbsentAnnounced = true;
           if(t === 'slot_clear_client'){
             if(ov && ov.payload && ov.payload.cancelled_by_admin
+              && !(ov.payload.day_reassign === true || ov.payload.not_makeup === true)
               && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
                 && portalStaffHasRequestedTimeOffOnDate(iso, sid))){
               out.hasCancelled = true;
@@ -1546,12 +1551,16 @@
         if(String(ov.status || 'active') !== 'active') return;
         if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(sessionDateIso)) return;
         const t = String(ov.override_type || '').trim();
-        const tEff = (t === 'slot_clear_client' && ov.payload && ov.payload.cancelled_by_admin) ? 'slot_clear_client_cancelled' : t;
+        const pl = ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
+        const dayMoveClear = !!(pl.day_reassign === true || pl.not_makeup === true);
+        const tEff = (t === 'slot_clear_client' && pl.cancelled_by_admin && !dayMoveClear)
+          ? 'slot_clear_client_cancelled'
+          : t;
         if(!tEff || tEff === 'override_void') return;
         const anchorSid = String(ov.anchor_staff_id || '').trim().toLowerCase();
         const coverSid = typeof portalInstructorCoverStaffKeyFromOverride === 'function'
           ? portalInstructorCoverStaffKeyFromOverride(ov)
-          : String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
+          : String(pl.covering_staff_id || '').trim().toLowerCase();
         const applies = tEff === 'instructor_reassign'
           ? (anchorSid === sid || coverSid === sid)
           : (anchorSid === sid);
@@ -1571,6 +1580,9 @@
       if(best.type === 'client_replace_in_slot'){
         if(portalOverrideIsTrial(best.ov)){
           return { tone: 'trial', label: 'Trial', priority: 3, type: best.type };
+        }
+        if(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(best.ov)){
+          return { tone: 'admin', label: 'Seat move', priority: 2, type: best.type };
         }
         return { tone: 'pink', label: 'Make Up', priority: 3, type: best.type };
       }
@@ -4295,13 +4307,13 @@
         : terminal
         ? (rec.absent ? 'Absence recorded' : 'Cancellation already recorded')
         : (cancelNeedsFb ? 'Cancellation recorded during session — submit feedback instead'
-          : (rec.feedbackDone ? 'Feedback already recorded; absence unavailable' : ((!bypass && !ended) ? 'Available after the session ends' : 'Mark this session as absent (feedback not required)')));
+          : (rec.feedbackDone ? 'Feedback already recorded; absence unavailable' : ((!bypass && !ended) ? 'Available from 15 minutes before the session ends' : 'Mark this session as absent (feedback not required)')));
       inc.disabled = actionsDisabledByOverride || terminal || (!bypass && !ended);
       inc.title = actionsDisabledByOverride
         ? 'Disabled: session already resolved by Admin as Absent'
         : terminal
         ? 'Session closed (absence or cancellation)'
-        : ((!bypass && !ended) ? 'Available after the session ends' : 'Record an incident (row stays orange)');
+        : ((!bypass && !ended) ? 'Available from 15 minutes before the session ends' : 'Record an incident (row stays orange)');
       /* Cancel available once the slot has a client — before or after start (timing chosen on the form). */
       can.disabled = actionsDisabledByOverride || terminal || cancelNeedsFb || (!bypass && sessionModelStatus(item) === 'Available');
       can.title = actionsDisabledByOverride

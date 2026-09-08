@@ -3011,7 +3011,9 @@
             }, meta);
           }
           if(ov && ov.override_type === 'slot_clear_client' && !replaceOvSameSlot){
-            const isCancelledByAdmin = !!(ov.payload && ov.payload.cancelled_by_admin);
+            const plClear = ov.payload || {};
+            const isDayReassignClear = !!(plClear.day_reassign === true || plClear.not_makeup === true);
+            const isCancelledByAdmin = !!(plClear.cancelled_by_admin) && !isDayReassignClear;
             if(isCancelledByAdmin
               && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
                 && sessionDateKey
@@ -3293,7 +3295,9 @@
           st2 = 'Scheduled';
         }
         if(slotOv && slotOv.override_type === 'slot_clear_client'){
-          const isCancelledByAdmin = !!(slotOv.payload && slotOv.payload.cancelled_by_admin);
+          const plClear = slotOv.payload || {};
+          const isDayReassignClear = !!(plClear.day_reassign === true || plClear.not_makeup === true);
+          const isCancelledByAdmin = !!(plClear.cancelled_by_admin) && !isDayReassignClear;
           if(isCancelledByAdmin
             && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
               && sessionDateKey
