@@ -991,17 +991,48 @@
     return null;
   }
 
+  /** Sunday SwimFarm / named merge (Zaid+Javier, Yusuf+Roberto, Cyrus Wed): one submit covers AA+MA. */
+  function submittedKeyLooksLikeLeadAquaticUnit(pk) {
+    const parts = String(pk || "")
+      .trim()
+      .split("|")
+      .map(function (p) {
+        return String(p || "").trim();
+      })
+      .filter(Boolean);
+    if (parts.length < 3 || !/^\d{4}-\d{2}-\d{2}$/.test(parts[0])) return false;
+    const last = slug(parts[parts.length - 1]);
+    if (last !== "aquatic") return false;
+    if (parts.length === 3) {
+      return !normalizeHmToken(parts[1]) && !!slug(parts[1]);
+    }
+    if (parts.length === 4 && normalizeHmToken(parts[2])) {
+      return !normalizeHmToken(parts[1]) && !!slug(parts[1]);
+    }
+    return false;
+  }
+
   function submittedSundaySwimfarmSiblingCovers(iso, staffId, s, clientNotesById) {
-    if (!isSundaySwimfarmAquaticOrMultiSession(s, iso)) return false;
-    const wantStart = normalizeHmToken(s.start);
+    const wantStart = normalizeHmToken(s && s.start);
     if (!wantStart) return false;
     const mergeStarts = sundayMergeAllowedStartsForSession(iso, s, clientNotesById);
+    const inNamedMerge = !!(mergeStarts && mergeStarts.has(wantStart));
+    if (!inNamedMerge && !isSundaySwimfarmAquaticOrMultiSession(s, iso)) return false;
     const rosterKey = rosterKeyForSession(s, clientNotesById);
     return submittedRowsForStaffDate(iso, staffId).some(function (r) {
       if (submittedRowMarksAbsent(r)) return false;
       const rKey = slug(r && r.clientName);
       if (!rosterKey || !rKey || !clientSlugTokensEquivalent(rosterKey, rKey)) return false;
       const pk = String((r.portalSessionKey || r.portal_session_key) || "").trim();
+      /* DATE|client|aquatic (Javier Zaid 9-9.30) covers Multi 9.30 in the same merge. */
+      if (inNamedMerge && submittedKeyLooksLikeLeadAquaticUnit(pk)) return true;
+      if (
+        inNamedMerge &&
+        /^\d{4}-\d{2}-\d{2}\|merge\|/i.test(pk) &&
+        submittedMergeKeyCoversRosterSession(pk, iso, s, clientNotesById)
+      ) {
+        return true;
+      }
       const rStart = portalRowTimeTokenFromKey(pk);
       if (!rStart) return false;
       if (rStart === wantStart) return true;

@@ -1089,6 +1089,32 @@ function portalTimedKeyCoversMergeCardRosterKey(submittedKey, mergeRosterKey, me
   return allowed.has(sTime);
 }
 
+/**
+ * Lead aquatic unit (DATE|client|aquatic) covers Today merge cards for that client
+ * (Zaid AA 9–9.30 → also clears Multi 9.30 via zaid_javier_sun_swim).
+ */
+function portalLeadAquaticKeyCoversMergeCardRosterKey(submittedKey, mergeRosterKey, mergeRules) {
+  const s = String(submittedKey || "").trim();
+  const r = String(mergeRosterKey || "").trim();
+  if (!portalSubmittedKeyIsLeadAquaticUnit(s) || !r) return false;
+  const m = r.match(/^(\d{4}-\d{2}-\d{2})\|merge\|(.+)$/i);
+  if (!m) return false;
+  const date = m[1];
+  const mergeKey = String(m[2] || "").trim();
+  if (s.split("|")[0] !== date) return false;
+  const sSlugs = portalFeedbackParticipantSlugTokensFromKey(s);
+  if (!sSlugs.length) return false;
+  const rules = Array.isArray(mergeRules) ? mergeRules : [];
+  const rule = rules.find((x) => String(x && x.mergeKey ? x.mergeKey : "").trim() === mergeKey);
+  if (!rule) return false;
+  const clientSlug = portalSlugifyFeedbackName(rule.client_name);
+  if (!clientSlug) return false;
+  if (!sSlugs.some((ss) => portalClientSlugTokensEquivalent(ss, clientSlug))) return false;
+  const wd = portalLondonWeekdayLongFromIso(date);
+  if (rule.day && String(rule.day).trim() !== wd) return false;
+  return true;
+}
+
 /** Participant client slug tokens only (excludes aquatic, day_centre, pool area, …). */
 function portalFeedbackParticipantSlugTokensFromKey(key) {
   return clientSlugTokensFromPortalSessionKey(key).filter(
@@ -1274,7 +1300,10 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   }
   /* Timed DB key → Today merged card (date|merge|…). */
   if (portalSubmittedKeyIsMergeFeedback(r)) {
-    return portalTimedKeyCoversMergeCardRosterKey(s, r, opts.feedbackMergeRules);
+    return (
+      portalTimedKeyCoversMergeCardRosterKey(s, r, opts.feedbackMergeRules) ||
+      portalLeadAquaticKeyCoversMergeCardRosterKey(s, r, opts.feedbackMergeRules)
+    );
   }
   const rParts = r.split("|");
   const sParts = s.split("|");
