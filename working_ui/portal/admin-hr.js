@@ -1353,7 +1353,7 @@
     }
     client
       .from("employment_contracts")
-      .select("id, contract_reference, status, role, completed_at, employee_signed_at, document_id, documents(file_url, title)")
+      .select("id, contract_reference, status, role, completed_at, employee_signed_at, document_id")
       .eq("user_id", uid)
       .order("created_at", { ascending: false })
       .then(function (res) {
@@ -1362,34 +1362,56 @@
           return;
         }
         var rows = res.data || [];
-        if (msgEl) msgEl.hidden = true;
-        if (!rows.length) {
-          listEl.hidden = true;
-          if (msgEl) {
-            msgEl.hidden = false;
-            msgEl.textContent = "No employment contracts sent via the Portal yet.";
+        var docIds = rows.map(function (c) { return c.document_id ? String(c.document_id) : ""; }).filter(Boolean);
+        var attachAndRender = function (byId) {
+          if (msgEl) msgEl.hidden = true;
+          if (!rows.length) {
+            listEl.hidden = true;
+            if (msgEl) {
+              msgEl.hidden = false;
+              msgEl.textContent = "No employment contracts sent via the Portal yet.";
+            }
+            return;
           }
+          listEl.hidden = false;
+          listEl.innerHTML = rows.map(function (c) {
+            var ref = esc(c.contract_reference || "Contract");
+            var role = c.role ? esc(c.role) : "";
+            var when = fmtDate(c.employee_signed_at || c.completed_at);
+            var status = contractStatusLabel(c.status);
+            var doc = c.document_id && byId ? byId[String(c.document_id)] : null;
+            var filePath = doc && doc.file_url ? String(doc.file_url) : "";
+            var pdfBtn = filePath
+              ? '<button type="button" class="hr-contract-pdf" data-hr-contract-pdf="' + esc(filePath) + '">View PDF</button>'
+              : (c.status === "completed" ? '<span class="hr-contract-meta">PDF pending</span>' : "");
+            return '<div class="hr-contract-row" data-hr-contract-id="' + esc(c.id) + '">'
+              + '<b>' + ref + '</b>'
+              + (role ? '<span class="hr-contract-meta">' + role + '</span>' : "")
+              + '<span class="hr-contract-meta">' + esc(status) + (when ? " · " + esc(when) : "") + '</span>'
+              + pdfBtn
+              + '</div>';
+          }).join("");
+          bindEmploymentContractPdfButtons(screen);
+        };
+        if (!docIds.length) {
+          attachAndRender({});
           return;
         }
-        listEl.hidden = false;
-        listEl.innerHTML = rows.map(function (c) {
-          var ref = esc(c.contract_reference || "Contract");
-          var role = c.role ? esc(c.role) : "";
-          var when = fmtDate(c.employee_signed_at || c.completed_at);
-          var status = contractStatusLabel(c.status);
-          var doc = c.documents && !Array.isArray(c.documents) ? c.documents : (Array.isArray(c.documents) ? c.documents[0] : null);
-          var filePath = doc && doc.file_url ? String(doc.file_url) : "";
-          var pdfBtn = filePath
-            ? '<button type="button" class="hr-contract-pdf" data-hr-contract-pdf="' + esc(filePath) + '">View PDF</button>'
-            : (c.status === "completed" ? '<span class="hr-contract-meta">PDF pending</span>' : "");
-          return '<div class="hr-contract-row" data-hr-contract-id="' + esc(c.id) + '">'
-            + '<b>' + ref + '</b>'
-            + (role ? '<span class="hr-contract-meta">' + role + '</span>' : "")
-            + '<span class="hr-contract-meta">' + esc(status) + (when ? " · " + esc(when) : "") + '</span>'
-            + pdfBtn
-            + '</div>';
-        }).join("");
-        bindEmploymentContractPdfButtons(screen);
+        client
+          .from("documents")
+          .select("id, file_url, title")
+          .in("id", docIds)
+          .then(function (docRes) {
+            var byId = {};
+            if (!docRes.error) {
+              (docRes.data || []).forEach(function (d) {
+                if (d && d.id) byId[String(d.id)] = d;
+              });
+            } else {
+              try { console.warn("[hr] contract documents:", docRes.error.message); } catch (_) {}
+            }
+            attachAndRender(byId);
+          });
       });
   }
 

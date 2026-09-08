@@ -884,7 +884,7 @@
     templateData.CONTRACT_REFERENCE = contractReference;
 
     try {
-      const mod = await import("./hr-contract-publish.js?v=20260625-recent-actions");
+      const mod = await import("./hr-contract-publish.js?v=20260908-list-docs");
       const result = await mod.portalPublishEmploymentContract(auth.supabase, auth.user.id, {
         contractReference,
         templateData,
@@ -898,7 +898,7 @@
       $("sendSuccess").classList.add("visible");
       $("signingUrlInput").value = result.portalSignUrl || "";
       $("sendEmailNote").textContent =
-        "Published on the employee Portal dashboard (same as an announcement). They sign at contract_sign; PDF goes to My Documents.";
+        "Published on the employee Portal dashboard. Their required policies and procedures update from this contract's roles and venues (multi-role = combined list). They sign at contract_sign; PDF goes to My Documents.";
 
       saveToLocalStorage({
         contractReference,
@@ -912,6 +912,17 @@
         signedStatus: "Awaiting employee",
         signingUrl: result.portalSignUrl
       });
+      try {
+        window.dispatchEvent(
+          new CustomEvent("portal:employment-contract-published", {
+            detail: {
+              contractId: result.contractId,
+              staffUserId: result.staffUserId,
+              roles: getSelectedRoles(),
+            },
+          })
+        );
+      } catch (_) {}
       renderRecent();
       loadRecentFromSupabase();
     } catch (err) {
@@ -1007,7 +1018,7 @@
       const ref = btn.getAttribute("data-contract-ref") || "this contract";
       const auth = portalClient();
       if (!auth) return;
-      const mod = await import("./hr-contract-publish.js?v=20260625-recent-actions");
+      const mod = await import("./hr-contract-publish.js?v=20260908-list-docs");
       if (action === "download") {
         btn.disabled = true;
         try {
@@ -1043,18 +1054,28 @@
 
   async function loadRecentFromSupabase() {
     const auth = portalClient();
-    if (!auth) return;
+    const tbody = $("recentBody");
+    const noRecent = $("noRecent");
+    if (!tbody) return;
+    if (!auth) {
+      if (noRecent) {
+        noRecent.style.display = "block";
+        noRecent.textContent = "Sign in to load recent contracts.";
+      }
+      return;
+    }
     try {
-      const mod = await import("./hr-contract-publish.js?v=20260625-recent-actions");
+      const mod = await import("./hr-contract-publish.js?v=20260908-list-docs");
       const rows = await mod.portalListEmploymentContracts(auth.supabase);
-      const tbody = $("recentBody");
-      const noRecent = $("noRecent");
       tbody.innerHTML = "";
       if (!rows.length) {
-        noRecent.style.display = "block";
+        if (noRecent) {
+          noRecent.style.display = "block";
+          noRecent.textContent = "No contracts generated yet.";
+        }
         return;
       }
-      noRecent.style.display = "none";
+      if (noRecent) noRecent.style.display = "none";
       rows.forEach((row) => {
         const tr = document.createElement("tr");
         const date = row.completed_at || row.sent_at || row.created_at;
@@ -1077,7 +1098,14 @@
           "</td>";
         tbody.appendChild(tr);
       });
-    } catch (_) {}
+    } catch (err) {
+      console.warn("[hr-contract] recent list", err);
+      if (noRecent) {
+        noRecent.style.display = "block";
+        noRecent.textContent =
+          "Could not load contracts: " + ((err && err.message) || "unknown error");
+      }
+    }
   }
 
   function renderRecent() {

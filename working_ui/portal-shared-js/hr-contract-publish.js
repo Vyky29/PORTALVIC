@@ -114,15 +114,37 @@ export async function portalPublishEmploymentContract(supabase, authUserId, opts
 }
 
 export async function portalListEmploymentContracts(supabase) {
+  // No PostgREST embed on documents — there is no FK from employment_contracts.document_id.
   const { data, error } = await supabase
     .from("employment_contracts")
     .select(
-      "id, contract_reference, employee_name, employee_email, role, scale, status, created_at, sent_at, completed_at, user_id, announcement_id, document_id, documents(file_url, title)"
+      "id, contract_reference, employee_name, employee_email, role, scale, status, created_at, sent_at, completed_at, user_id, announcement_id, document_id"
     )
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw error;
-  return data || [];
+  const rows = data || [];
+  const docIds = rows
+    .map((r) => (r && r.document_id ? String(r.document_id) : ""))
+    .filter(Boolean);
+  if (!docIds.length) return rows;
+
+  const { data: docs, error: docErr } = await supabase
+    .from("documents")
+    .select("id, file_url, title")
+    .in("id", docIds);
+  if (docErr) {
+    console.warn("[hr-contract] documents lookup", docErr.message || docErr);
+    return rows;
+  }
+  const byId = {};
+  (docs || []).forEach((d) => {
+    if (d && d.id) byId[String(d.id)] = d;
+  });
+  return rows.map((r) => {
+    const doc = r.document_id ? byId[String(r.document_id)] : null;
+    return Object.assign({}, r, { documents: doc || null });
+  });
 }
 
 function portalSupabaseUrl() {
