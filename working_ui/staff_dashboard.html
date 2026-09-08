@@ -10,6 +10,7 @@
     Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ debe ser la MISMA cadena que el secret Supabase VAPID_PUBLIC_KEY (la privada solo en Edge Secrets).
     En Elementor: bloque «HTML personalizado» encima del iframe con <script>window.__PORTAL_VAPID_PUBLIC_KEY__="…";</script>
     Edge Functions: portal-push-subscribe · portal-push-dispatch-schedule-override · webhook DB en schedule_overrides + header x-portal-webhook-secret.
+    Eligible push types: makeup / absence / slot_open / instructor_reassign (cover worker).
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/staff_dashboard.html en producción.
   -->
   <script>

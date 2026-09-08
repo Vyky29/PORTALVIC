@@ -8,11 +8,15 @@ const corsHeaders: Record<string, string> = {
     "authorization, x-client-info, apikey, content-type, x-portal-webhook-secret",
 };
 
-/** Push only to anchor_staff_id (slot instructor). No push for cancel / instructor change / move. */
+/** Push to the instructor whose live book changes.
+ * - makeup / absence / slot_open → anchor_staff_id
+ * - instructor_reassign → covering_staff_id (the worker who gains the session)
+ * No push for cancel / void / COVER NEEDED placeholders. */
 const ELIGIBLE = new Set([
   "client_replace_in_slot",
   "client_absence_announced",
   "slot_open",
+  "instructor_reassign",
 ]);
 
 function rosterKeyFromProfile(username: string, fullName: string): string {
@@ -41,6 +45,14 @@ function payloadObj(record: Record<string, unknown>): Record<string, unknown> {
   return raw as Record<string, unknown>;
 }
 
+function prettyClientLabel(raw: string): string {
+  return String(raw || "")
+    .trim()
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function replacementDisplayName(record: Record<string, unknown>): string {
   const pl = payloadObj(record);
   const a = String(pl.to_client_name ?? "").trim();
@@ -55,7 +67,20 @@ function clientDisplayName(record: Record<string, unknown>): string {
     pl.to_client_name ?? pl.replacement_client_name ?? "",
   ).trim();
   if (fromPayload) return fromPayload;
-  return String(record.anchor_client_id ?? "").trim();
+  return prettyClientLabel(String(record.anchor_client_id ?? "").trim());
+}
+
+function coverRosterKey(record: Record<string, unknown>): string {
+  const pl = payloadObj(record);
+  const fromId = normSpreadsheetKey(String(pl.covering_staff_id ?? ""));
+  if (fromId && fromId !== "coverneeded" && fromId !== "cover_needed") {
+    return fromId;
+  }
+  const fromName = normSpreadsheetKey(String(pl.covering_staff_name ?? ""));
+  if (fromName && fromName !== "coverneeded" && !fromName.includes("coverneeded")) {
+    return fromName;
+  }
+  return "";
 }
 
 function pushCopy(
@@ -91,6 +116,19 @@ function pushCopy(
       title: "Slot reopened",
       body:
         "A closed block was reopened on your roster. Open that day in the portal to review your schedule.",
+    };
+  }
+  if (t === "instructor_reassign") {
+    const when = record
+      ? String(record.anchor_time_slot_label || "").trim()
+      : "";
+    const venue = record ? String(record.anchor_venue || "").trim() : "";
+    const bits = [who || "A participant", "is now on your roster (cover)"];
+    if (when) bits.push(`· ${when}`);
+    if (venue) bits.push(`· ${venue}`);
+    return {
+      title: who ? `Cover: ${who}` : "Cover session",
+      body: bits.join(" ") + ".",
     };
   }
   return { title: "Schedule update", body: "Your roster was updated." };
@@ -217,8 +255,20 @@ Deno.serve(async (req) => {
     });
   }
 
-  const anchorRosterKey = normSpreadsheetKey(String(record.anchor_staff_id ?? ""));
-  if (!anchorRosterKey) {
+  /** instructor_reassign → covering worker; other eligible types → anchor. */
+  let targetRosterKey = "";
+  if (overrideType === "instructor_reassign") {
+    targetRosterKey = coverRosterKey(record as Record<string, unknown>);
+    if (!targetRosterKey) {
+      return new Response(
+        JSON.stringify({ skipped: true, reason: "no covering staff" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+  } else {
+    targetRosterKey = normSpreadsheetKey(String(record.anchor_staff_id ?? ""));
+  }
+  if (!targetRosterKey) {
     return new Response(JSON.stringify({ ok: true, sent: 0, targets: 0 }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -239,7 +289,7 @@ Deno.serve(async (req) => {
   const targetUserIds = new Set<string>();
   for (const p of profiles as StaffProfile[]) {
     const rk = rosterKeyFromProfile(p.username ?? "", p.full_name ?? "");
-    if (rk === anchorRosterKey) targetUserIds.add(p.id);
+    if (rk === targetRosterKey) targetUserIds.add(p.id);
   }
 
   if (!targetUserIds.size) {
