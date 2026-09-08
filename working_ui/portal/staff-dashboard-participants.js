@@ -1879,6 +1879,8 @@
         if(String(r.status || 'active') !== 'active') return false;
         if(String(r.override_type || '').trim() !== 'client_replace_in_slot') return false;
         if(!portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id)) return false;
+        /* Same-day seat move (day_reassign) is not MakeUp — participant still attends. */
+        if(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(r)) return false;
         return portalScheduleOverrideMatchesSessionWindow(r, s, iso);
       });
       all.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
@@ -3722,18 +3724,24 @@
       const out = [];
       items.forEach(function(it){
         if(it && it.portalOverrideMakeUpTag){
+          const replaceOv = it.__portalScheduleOverride;
+          /* Day reassign / seat move: participant still attends — never invent Absent. */
+          if(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(replaceOv)){
+            out.push(it);
+            return;
+          }
           const base = it.__portalBaseSession;
           const origId = base ? String(base.clientId || '').trim().toLowerCase() : '';
           if(base && origId && !seen[origId] && !portalScheduleOverrideAnchorIsOpenSlot(origId)){
             let absentOv = portalScheduleOverrideForSessionByType(base, sessionDateKey, 'client_absence_announced');
             /* MakeUp alone means the original did not attend — synthesise Absent from the replace override. */
             if(!absentOv){
-              absentOv = it.__portalScheduleOverride
+              absentOv = replaceOv
                 || (typeof portalReplaceMakeupOverrideForSession === 'function'
                   ? portalReplaceMakeupOverrideForSession(base, sessionDateKey)
                   : null);
             }
-            if(absentOv){
+            if(absentOv && !(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(absentOv))){
               const absentItem = portalBuildAdminAbsentSessionItem(base, sessionDateKey, viewDay, anchor, absentOv, supportHidePoolNote);
               if(absentItem){
                 seen[origId] = true;
@@ -3817,8 +3825,6 @@
       if(!iso) return items;
       return items.map(function(it){
         if(!it || it.kind !== 'client') return it;
-        /* Keep synthesised Absent cards for the original participant — do not turn them into MakeUp. */
-        if(String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT') return it;
         let ov = it.__portalScheduleOverride;
         const base = it.__portalBaseSession;
         if((!ov || String(ov.override_type || '').trim() !== 'client_replace_in_slot') && base){
@@ -3830,8 +3836,43 @@
               : null)
             || ov;
         }
+        /* Drop fake Absent invented from day_reassign / seat-move replaces. */
+        if(String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT'
+          && ov && portalOverrideIsDayReassignReplace(ov)
+          && String(ov.override_type || '').trim() === 'client_replace_in_slot'){
+          return Object.assign({}, it, {
+            noSessionFeedbackRequired: false,
+            actionsDisabled: false,
+            portalOverrideSuppressReviewOrange: false,
+            portalOverrideCardTone: '',
+            portalOverrideAlertPill: '',
+            portalOverrideMakeUpTag: false,
+            portalOverrideSymbolText: '',
+            scheduleAdminAdjusted: true,
+            portalOverrideHideAdminBadge: false,
+            general: String(it.general || '').replace(/^Absent\.\s*/i, '').trim(),
+            __portalScheduleOverride: ov
+          });
+        }
+        /* Keep real admin Absent cards — do not turn them into MakeUp. */
+        if(String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT') return it;
         if(!ov || String(ov.override_type || '').trim() !== 'client_replace_in_slot') return it;
         if(portalOverrideIsTrial(ov)) return it;
+        /* Day reassign: keep Updated by admin — never force MakeUp (that also spawned fake Absent). */
+        if(portalOverrideIsDayReassignReplace(ov)){
+          const pill = String(it.portalOverrideAlertPill || '').trim().toUpperCase();
+          return Object.assign({}, it, {
+            portalOverrideMakeUpTag: false,
+            portalOverrideTrialTag: false,
+            portalOverrideCardTone: (pill === 'UPDATED' || it.portalRosterTimeUpdated) ? 'blue' : (it.portalOverrideCardTone === 'pink' ? '' : it.portalOverrideCardTone),
+            portalOverrideSymbolText: '',
+            scheduleAdminAdjusted: true,
+            portalOverrideHideAdminBadge: false,
+            portalOverrideAlertPill: pill === 'ABSENT' || pill === 'CANCELLED' ? '' : (it.portalOverrideAlertPill || ''),
+            __portalScheduleOverride: ov,
+            __portalBaseSession: base || it.__portalBaseSession
+          });
+        }
         const repId = portalOverrideReplacementClientId(ov.payload);
         const repName = portalOverrideReplacementClientName(ov.payload);
         let anchorBase = base;
@@ -3971,6 +4012,7 @@
     }
     function portalBuildMakeupTodayCardFromOverride(base, ov, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote){
       if(!base || !ov) return null;
+      if(portalOverrideIsDayReassignReplace(ov)) return null;
       const s = Object.assign({}, base, { __portalBaseSession: base });
       const activity = (s.activity || 'Swimming').trim();
       const time = rosterSlotTimeLabel(s);
@@ -4091,6 +4133,17 @@
           const repName = portalOverrideReplacementClientName(replaceOvLoose.payload);
           const anchorId = String(base.clientId || '').trim().toLowerCase();
           const curId = String(it.clientId || '').trim().toLowerCase();
+          if(portalOverrideIsDayReassignReplace(replaceOvLoose)){
+            return Object.assign({}, it, {
+              portalOverrideMakeUpTag: false,
+              portalOverrideTrialTag: false,
+              portalOverrideSymbolText: '',
+              portalOverrideAlertPill: String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT' ? '' : it.portalOverrideAlertPill,
+              scheduleAdminAdjusted: true,
+              portalOverrideHideAdminBadge: false,
+              __portalScheduleOverride: replaceOvLoose
+            });
+          }
           if(repId && anchorId && curId === anchorId && !it.portalOverrideMakeUpTag){
             const repNotes = portalClientNotesLookup(repId) || (repName ? { name: repName } : null);
             const anchorNotes = portalClientNotesLookup(anchorId) || { name: '' };
