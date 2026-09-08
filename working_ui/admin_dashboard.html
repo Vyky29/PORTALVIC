@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260908-sched-cover-match" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260908-cover-chain-pills" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
@@ -16298,23 +16298,72 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return '<span class="sched-pax-pill '+toneCls+'"'+styleAttr+'>'+lab+'</span>';
     }
+    function schedInstructorCoverSlug(ov){
+      if(!ov || !ov.payload) return '';
+      return normalizeSchedAnchorStaffId(ov.payload.covering_staff_id) ||
+        String(ov.payload.covering_staff_id || '').trim().toLowerCase();
+    }
+    function schedInstructorPriorCoverEntries(ov){
+      var out = [];
+      var payload = (ov && ov.payload) || {};
+      var seen = Object.create(null);
+      function push(id, name){
+        var slug = normalizeSchedAnchorStaffId(id) || String(id || '').trim().toLowerCase();
+        if(!slug || slug === 'cover_needed' || seen[slug]) return;
+        seen[slug] = true;
+        out.push({
+          slug: slug,
+          name: String(name || '').trim() || schedStaffDisplayName(slug, slug)
+        });
+      }
+      if(Array.isArray(payload.prior_covering_staff_ids)){
+        for(var i = 0; i < payload.prior_covering_staff_ids.length; i++){
+          var pid = payload.prior_covering_staff_ids[i];
+          var pname = Array.isArray(payload.prior_covering_staff_names)
+            ? payload.prior_covering_staff_names[i]
+            : '';
+          push(pid, pname);
+        }
+      }
+      if(payload.prior_covering_staff_id){
+        push(payload.prior_covering_staff_id, payload.prior_covering_staff_name);
+      }
+      return out;
+    }
     function schedInstructorCellHtml(slot, ov, schedIso){
       var ovType = ov ? String(ov.override_type || '').trim() : '';
       if(ov && (ovType === 'instructor_reassign' || ovType === 'instructor_cover_needed')){
-        var coverSlug = normalizeSchedAnchorStaffId(ov.payload && ov.payload.covering_staff_id) ||
-          String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
+        var coverSlug = schedInstructorCoverSlug(ov);
         var coverName = String(ov.payload && (ov.payload.covering_staff_name || ov.payload.to_staff_name) || '').trim();
-        var origLab = String(slot.staffName || '').trim() || schedStaffDisplayName(slot.staffRosterId, slot.staffRosterId);
+        /* Prefer explicit display_from (term book) when set; else override anchor.
+           Never use painted slot.staffRosterId — that is already the cover. */
+        var origSlug = normalizeSchedAnchorStaffId(
+          ov.payload && (ov.payload.display_from_staff_id || ov.payload.chain_from_staff_id)
+        ) || normalizeSchedAnchorStaffId(ov.anchor_staff_id) ||
+          normalizeSchedAnchorStaffId(slot.staffRosterId);
+        var origLab = String(
+          (ov.payload && (ov.payload.display_from_staff_name || ov.payload.chain_from_staff_name)) || ''
+        ).trim() || schedStaffDisplayName(origSlug, String(ov.anchor_staff_id || slot.staffName || '').trim());
+        var skipPriorChain = !!(ov.payload && (ov.payload.display_from_staff_id || ov.payload.chain_from_staff_id));
         var coverNeeded = ovType === 'instructor_cover_needed' || coverSlug === 'cover_needed' ||
           /^cover[\s_]*needed$/i.test(coverName);
         var replLab = coverNeeded ? 'COVER NEEDED' : (coverName || schedStaffDisplayName(coverSlug, coverSlug));
+        var prior = skipPriorChain ? [] : schedInstructorPriorCoverEntries(ov).filter(function(p){
+          return p.slug !== origSlug && p.slug !== coverSlug;
+        });
+        var pills = [];
+        pills.push(schedStaffPillHtml(origLab, origSlug, schedIso, 'out'));
+        for(var pi = 0; pi < prior.length; pi++){
+          pills.push('<span class="sched-pax-pill-sep">/</span>');
+          pills.push(schedStaffPillHtml(prior[pi].name, prior[pi].slug, schedIso, 'out'));
+        }
+        pills.push('<span class="sched-pax-pill-sep">/</span>');
+        pills.push(coverNeeded
+          ? '<span class="sched-pax-pill sched-pax-pill--cover-needed">COVER NEEDED</span>'
+          : schedStaffPillHtml(replLab, coverSlug, schedIso, 'in'));
         return (
           '<div class="sched-pax-pill-row' + (coverNeeded ? ' sched-pax-pill-row--cover-needed' : '') + '">' +
-          schedStaffPillHtml(origLab, slot.staffRosterId, schedIso, 'out') +
-          '<span class="sched-pax-pill-sep">/</span>' +
-          (coverNeeded
-            ? '<span class="sched-pax-pill sched-pax-pill--cover-needed">COVER NEEDED</span>'
-            : schedStaffPillHtml(replLab, coverSlug, schedIso, 'in')) +
+          pills.join('') +
           '</div>'
         );
       }
