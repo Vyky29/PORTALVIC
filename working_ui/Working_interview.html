@@ -792,6 +792,10 @@
       border:1px solid var(--line);
       border-radius:16px;
       background:#fff;
+      min-width:0;
+      max-width:100%;
+      box-sizing:border-box;
+      overflow:hidden;
     }
     .check-card:has(.question-controls),
     .check-card:has(.question-row),
@@ -958,38 +962,59 @@
       color:var(--muted);
       font-style:italic;
     }
+    .question-audio{
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      box-sizing:border-box;
+      overflow:hidden;
+    }
     .question-audio .audio-wrap{
       display:flex;
-      flex-wrap:wrap;
-      align-items:center;
-      gap:10px 12px;
+      flex-direction:column;
+      align-items:stretch;
+      gap:8px;
       position:relative;
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      box-sizing:border-box;
     }
     .question-audio .audio-controls-row{
       display:flex;
+      flex-wrap:wrap;
       align-items:center;
-      gap:10px;
-      flex:1 1 100%;
+      gap:8px 10px;
+      width:100%;
+      max-width:100%;
       min-width:0;
+      box-sizing:border-box;
     }
     .question-audio .audio-progress-wrap{
-      flex:1 1 120px;
+      flex:1 1 160px;
       min-width:0;
+      max-width:100%;
       display:flex;
       align-items:center;
       gap:8px;
+      box-sizing:border-box;
     }
     .question-audio .audio-seek{
-      flex:1;
+      flex:1 1 auto;
       min-width:0;
       max-width:100%;
+      width:100%;
       height:6px;
       accent-color:var(--blue);
     }
     .question-audio .audio-time{
+      flex:0 0 auto;
       font-size:12px;
+      font-variant-numeric:tabular-nums;
       color:var(--muted);
       white-space:nowrap;
+      min-width:5.5em;
+      text-align:right;
     }
     .question-audio audio{
       position:absolute;
@@ -999,6 +1024,7 @@
       pointer-events:none;
     }
     .question-audio .audio-play-pause{
+      flex:0 0 auto;
       padding:8px 14px;
       font-size:14px;
       border:1px solid var(--line);
@@ -1013,7 +1039,10 @@
     }
     .question-audio .audio-speed{
       display:flex;
+      flex:0 0 auto;
+      flex-wrap:wrap;
       gap:6px;
+      min-width:0;
     }
     .question-audio .audio-speed button{
       padding:6px 10px;
@@ -1027,6 +1056,11 @@
     .question-audio .audio-speed button:hover{
       border-color:var(--blue);
       color:var(--blue);
+    }
+    .question-audio .audio-speed button.is-active{
+      border-color:var(--blue);
+      color:var(--blue);
+      background:var(--blueSoft);
     }
 
     .subsection{
@@ -1530,7 +1564,7 @@
 <body>
   <div id="recordingIndicator" class="recording-indicator" aria-live="polite" aria-atomic="true">
     <span class="dot"></span>
-    <span>Recording in progress...</span>
+    <span>Recording <span id="recordingIndicatorTime">0:00</span></span>
   </div>
   <div id="saveToast" class="save-toast" role="alertdialog" aria-modal="true" aria-labelledby="saveToastTitle" aria-describedby="saveToastBody" hidden>
     <div class="save-toast__msg">
@@ -3429,6 +3463,58 @@
       return m || "audio/webm";
     }
 
+    function knownAudioDurationSec(section, questionId) {
+      if (!section) return 0;
+      const raw =
+        questionId === "callNotes"
+          ? section.callNotesAudioDurationSec
+          : section[questionId + "AudioDurationSec"];
+      const n = Number(raw);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    }
+
+    function storeAudioDurationSec(section, questionId, sec) {
+      if (!section) return;
+      const n = Number(sec);
+      if (!Number.isFinite(n) || n <= 0) return;
+      const rounded = Math.round(n * 10) / 10;
+      if (questionId === "callNotes") section.callNotesAudioDurationSec = rounded;
+      else section[questionId + "AudioDurationSec"] = rounded;
+    }
+
+    function formatAudioTime(sec) {
+      const n = Number(sec);
+      if (!Number.isFinite(n) || n < 0) return "0:00";
+      const total = Math.floor(n + 0.0001);
+      const m = Math.floor(total / 60);
+      const s = total % 60;
+      return m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
+    function audioPlayerInnerHtml(questionId, src, path, knownDurationSec) {
+      const pathAttr = path ? ` data-audio-path="${escapeHtml(path)}"` : "";
+      const srcAttr = src ? ` src="${escapeHtml(src)}"` : "";
+      const dur = Number(knownDurationSec);
+      const hasKnown = Number.isFinite(dur) && dur > 0;
+      const durAttr = hasKnown ? ` data-known-duration="${dur}"` : "";
+      const initialTotal = hasKnown ? formatAudioTime(dur) : "--:--";
+      return `<div class="audio-wrap">
+          <audio preload="auto" data-question="${escapeHtml(questionId)}"${pathAttr}${srcAttr}${durAttr}></audio>
+          <div class="audio-controls-row">
+            <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
+            <div class="audio-progress-wrap">
+              <input type="range" class="audio-seek" min="0" max="100" value="0" step="0.1" title="Seek" />
+              <span class="audio-time">0:00 / ${initialTotal}</span>
+            </div>
+            <span class="audio-speed">
+              <button type="button" data-speed="1" class="is-active">1×</button>
+              <button type="button" data-speed="1.5">1.5×</button>
+              <button type="button" data-speed="2">2×</button>
+            </span>
+          </div>
+        </div>`;
+    }
+
     function renderQuestionAudio(face, questionId, candidateId) {
       const audio = (face && face[questionId + "Audio"]) ? face[questionId + "Audio"] : "";
       const path = (face && face[questionId + "AudioPath"]) ? face[questionId + "AudioPath"] : "";
@@ -3443,24 +3529,9 @@
         : audio
           ? `data:${escapeHtml(mime)};base64,${audio}`
           : "";
-      const pathAttr = path ? ` data-audio-path="${escapeHtml(path)}"` : "";
-      const srcAttr = src ? ` src="${escapeHtml(src)}"` : "";
+      const known = knownAudioDurationSec(face, questionId);
       return `<div class="question-audio" id="${escapeHtml(wrapId)}">
-        <div class="audio-wrap">
-          <audio preload="metadata" data-question="${escapeHtml(questionId)}"${pathAttr}${srcAttr}></audio>
-          <div class="audio-controls-row">
-            <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
-            <div class="audio-progress-wrap">
-              <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
-              <span class="audio-time">0:00 / 0:00</span>
-            </div>
-            <span class="audio-speed">
-              <button type="button" data-speed="1">1×</button>
-              <button type="button" data-speed="1.5">1.5×</button>
-              <button type="button" data-speed="2">2×</button>
-            </span>
-          </div>
-        </div>
+        ${audioPlayerInnerHtml(questionId, src, path, known)}
       </div>`;
     }
 
@@ -3521,27 +3592,21 @@
 
     function renderCallNotesAudio(call) {
       const audio = (call && call.callNotesAudio) ? call.callNotesAudio : "";
+      const path = (call && call.callNotesAudioPath) ? call.callNotesAudioPath : "";
       const mime = (call && call.callNotesAudioMime) ? call.callNotesAudioMime : "audio/webm";
       const wrapId = "wrap-callNotes";
-      if (!audio) {
+      const localUrl = localAudioObjectUrls[localAudioKey(currentCandidateId, "callNotes")] || "";
+      if (!audio && !path && !localUrl) {
         return `<div class="question-audio" id="${wrapId}"><span class="audio-placeholder">No recording</span></div>`;
       }
+      const src = localUrl
+        ? localUrl
+        : audio
+          ? `data:${escapeHtml(mime)};base64,${audio}`
+          : "";
+      const known = knownAudioDurationSec(call, "callNotes");
       return `<div class="question-audio" id="${wrapId}">
-        <div class="audio-wrap">
-          <audio preload="metadata" data-question="callNotes" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
-          <div class="audio-controls-row">
-            <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
-            <div class="audio-progress-wrap">
-              <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
-              <span class="audio-time">0:00 / 0:00</span>
-            </div>
-            <span class="audio-speed">
-              <button type="button" data-speed="1">1×</button>
-              <button type="button" data-speed="1.5">1.5×</button>
-              <button type="button" data-speed="2">2×</button>
-            </span>
-          </div>
-        </div>
+        ${audioPlayerInnerHtml("callNotes", src, path, known)}
       </div>`;
     }
 
@@ -4390,12 +4455,43 @@
       });
     }
 
-    let recordState = { stream: null, recorder: null, btn: null, questionId: null, candidateId: null };
+    let recordState = {
+      stream: null,
+      recorder: null,
+      btn: null,
+      questionId: null,
+      candidateId: null,
+      startedAt: 0,
+      tickTimer: null
+    };
+
+    function clearRecordingTick() {
+      if (recordState.tickTimer) {
+        clearInterval(recordState.tickTimer);
+        recordState.tickTimer = null;
+      }
+      const timeEl = document.getElementById("recordingIndicatorTime");
+      if (timeEl) timeEl.textContent = "0:00";
+    }
+
+    function startRecordingTick() {
+      clearRecordingTick();
+      recordState.startedAt = Date.now();
+      const tick = function () {
+        const timeEl = document.getElementById("recordingIndicatorTime");
+        if (!timeEl || !recordState.startedAt) return;
+        const sec = (Date.now() - recordState.startedAt) / 1000;
+        timeEl.textContent = formatAudioTime(sec);
+      };
+      tick();
+      recordState.tickTimer = setInterval(tick, 250);
+    }
 
     function updateRecordingIndicator(isRecording) {
       const indicator = document.getElementById("recordingIndicator");
       if (!indicator) return;
       indicator.classList.toggle("active", !!isRecording);
+      if (!isRecording) clearRecordingTick();
     }
 
     function stopCurrentRecording() {
@@ -4413,7 +4509,7 @@
       /* do not clear questionId here – onstop needs it to update the correct wrap */
     }
 
-    function updateAudioWrap(questionId, base64, mimeType, targetCandidateId) {
+    function updateAudioWrap(questionId, base64, mimeType, targetCandidateId, durationSec) {
       const candidateId = targetCandidateId || currentCandidateId;
       const candidate = findCandidateById(candidateId);
       if (!candidate) return;
@@ -4421,32 +4517,34 @@
       const wrap = currentCandidateId === candidateId ? document.getElementById(wrapId) : null;
       if (questionId === "callNotes") {
         candidate.callInterview = candidate.callInterview || {};
-        candidate.callInterview.callNotesAudio = base64 || "";
+        if (base64 !== undefined && base64 !== null) {
+          candidate.callInterview.callNotesAudio = base64 || "";
+        }
         candidate.callInterview.callNotesAudioMime = mimeType || "audio/webm";
+        storeAudioDurationSec(candidate.callInterview, "callNotes", durationSec);
         const call = candidate.callInterview;
         const audio = (call && call.callNotesAudio) ? call.callNotesAudio : "";
+        const path = (call && call.callNotesAudioPath) ? call.callNotesAudioPath : "";
         const mime = (call && call.callNotesAudioMime) ? call.callNotesAudioMime : "audio/webm";
         if (!wrap) return;
-        if (!audio) {
+        const localUrl = localAudioObjectUrls[localAudioKey(candidateId, "callNotes")] || "";
+        if (!audio && !path && !localUrl) {
           wrap.innerHTML = '<span class="audio-placeholder">No recording</span>';
           return;
         }
-        wrap.innerHTML = `<div class="audio-wrap">
-          <audio preload="metadata" data-question="callNotes" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
-          <div class="audio-controls-row">
-            <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
-            <div class="audio-progress-wrap">
-              <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
-              <span class="audio-time">0:00 / 0:00</span>
-            </div>
-            <span class="audio-speed">
-              <button type="button" data-speed="1">1×</button>
-              <button type="button" data-speed="1.5">1.5×</button>
-              <button type="button" data-speed="2">2×</button>
-            </span>
-          </div>
-        </div>`;
+        const src = localUrl
+          ? localUrl
+          : audio
+            ? `data:${escapeHtml(mime)};base64,${audio}`
+            : "";
+        wrap.innerHTML = audioPlayerInnerHtml(
+          "callNotes",
+          src,
+          path,
+          knownAudioDurationSec(call, "callNotes")
+        );
         initAudioSpeedInWrap(wrap);
+        if (!src && path) void hydrateAudioElements(wrap, candidateId);
         return;
       }
       const storeOnCall = isCallScreeningAudioQuestion(questionId);
@@ -4454,8 +4552,11 @@
         ? (candidate.callInterview = candidate.callInterview || {})
         : (candidate.faceToFaceInterview = candidate.faceToFaceInterview || {});
       if (!section) return;
-      section[questionId + "Audio"] = base64 || "";
+      if (base64 !== undefined && base64 !== null) {
+        section[questionId + "Audio"] = base64 || "";
+      }
       section[questionId + "AudioMime"] = mimeType || "audio/webm";
+      storeAudioDurationSec(section, questionId, durationSec);
       const audio = section[questionId + "Audio"] || "";
       const path = section[questionId + "AudioPath"] || "";
       const mime = getAudioMime(section, questionId);
@@ -4470,25 +4571,14 @@
         : audio
           ? `data:${escapeHtml(mime)};base64,${audio}`
           : "";
-      const pathAttr = path ? ` data-audio-path="${escapeHtml(path)}"` : "";
-      const srcAttr = src ? ` src="${src}"` : "";
-      wrap.innerHTML = `<div class="audio-wrap">
-        <audio preload="metadata" data-question="${escapeHtml(questionId)}"${pathAttr}${srcAttr}></audio>
-        <div class="audio-controls-row">
-          <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
-          <div class="audio-progress-wrap">
-            <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
-            <span class="audio-time">0:00 / 0:00</span>
-          </div>
-          <span class="audio-speed">
-            <button type="button" data-speed="1">1×</button>
-            <button type="button" data-speed="1.5">1.5×</button>
-            <button type="button" data-speed="2">2×</button>
-          </span>
-        </div>
-      </div>`;
+      wrap.innerHTML = audioPlayerInnerHtml(
+        questionId,
+        src,
+        path,
+        knownAudioDurationSec(section, questionId)
+      );
       initAudioSpeedInWrap(wrap);
-      if (!src && path) hydrateAudioElements(wrap, candidateId);
+      if (!src && path) void hydrateAudioElements(wrap, candidateId);
     }
 
     async function hydrateAudioElements(root, candidateId) {
@@ -4504,26 +4594,89 @@
         if (!path) continue;
         const face = { [qid + "AudioPath"]: path };
         const src = await resolveInterviewAudioSrc(face, qid, candidateId);
-        if (src) audioEl.setAttribute("src", src);
+        if (src) {
+          audioEl.setAttribute("src", src);
+          try { audioEl.load(); } catch (_e) {}
+          const wrap = audioEl.closest(".audio-wrap");
+          if (wrap && wrap.dataset.audioWired === "1") {
+            discoverWebmDuration(audioEl);
+          } else {
+            initAudioSpeedInWrap(wrap || audioEl.parentElement);
+          }
+        }
       }
     }
 
-    function formatAudioTime(sec) {
-      if (!isFinite(sec) || isNaN(sec)) return "0:00";
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
-      return m + ":" + (s < 10 ? "0" : "") + s;
+    function resolvePlaybackDuration(audio) {
+      if (!audio) return 0;
+      const native = Number(audio.duration);
+      if (Number.isFinite(native) && native > 0) return native;
+      const known = Number(audio.dataset.knownDuration || 0);
+      if (Number.isFinite(known) && known > 0) return known;
+      const heard = Number(audio.dataset.heardMax || 0);
+      if (Number.isFinite(heard) && heard > 0) return heard;
+      return 0;
     }
 
-    function initAudioSpeedInWrap(wrap) {
+    function discoverWebmDuration(audio) {
+      if (!audio) return;
+      const native = Number(audio.duration);
+      if (Number.isFinite(native) && native > 0) {
+        audio.dataset.knownDuration = String(native);
+        return;
+      }
+      if (audio.dataset.durationHack === "1") return;
+      audio.dataset.durationHack = "1";
+      const onTimeUpdate = function () {
+        const d = Number(audio.duration);
+        if (Number.isFinite(d) && d > 0) {
+          audio.dataset.knownDuration = String(d);
+          try { audio.currentTime = 0; } catch (_e) {}
+          audio.removeEventListener("timeupdate", onTimeUpdate);
+        }
+      };
+      audio.addEventListener("timeupdate", onTimeUpdate);
+      try {
+        audio.currentTime = 1e101;
+      } catch (_e) {
+        audio.removeEventListener("timeupdate", onTimeUpdate);
+      }
+    }
+
+    function initAudioSpeedInWrap(root) {
+      if (!root) return;
+      const wrap =
+        root.classList && root.classList.contains("audio-wrap")
+          ? root
+          : root.querySelector(".audio-wrap");
+      if (!wrap || wrap.dataset.audioWired === "1") return;
+      wrap.dataset.audioWired = "1";
       const audio = wrap.querySelector("audio");
       const playBtn = wrap.querySelector(".audio-play-pause");
       const seekEl = wrap.querySelector(".audio-seek");
       const timeEl = wrap.querySelector(".audio-time");
+
+      function refreshTimeUi() {
+        if (!audio || !timeEl) return;
+        const cur = Number(audio.currentTime) || 0;
+        if (cur > 0) {
+          const prev = Number(audio.dataset.heardMax || 0);
+          if (cur > prev) audio.dataset.heardMax = String(cur);
+        }
+        const total = resolvePlaybackDuration(audio);
+        if (seekEl) {
+          const p = total > 0 ? Math.min(100, (cur / total) * 100) : 0;
+          seekEl.value = String(p);
+        }
+        timeEl.textContent =
+          formatAudioTime(cur) + " / " + (total > 0 ? formatAudioTime(total) : "--:--");
+      }
+
       if (playBtn && audio) {
         playBtn.addEventListener("click", () => {
           if (audio.paused) {
-            audio.play();
+            const p = audio.play();
+            if (p && typeof p.catch === "function") p.catch(function () {});
             playBtn.textContent = "❚❚";
           } else {
             audio.pause();
@@ -4532,26 +4685,46 @@
         });
         audio.addEventListener("play", () => { playBtn.textContent = "❚❚"; });
         audio.addEventListener("pause", () => { playBtn.textContent = "▶"; });
-        audio.addEventListener("ended", () => { playBtn.textContent = "▶"; });
+        audio.addEventListener("ended", () => {
+          playBtn.textContent = "▶";
+          const total = resolvePlaybackDuration(audio);
+          if (total > 0) audio.dataset.knownDuration = String(total);
+          refreshTimeUi();
+        });
       }
       if (audio && seekEl && timeEl) {
         audio.addEventListener("loadedmetadata", () => {
-          seekEl.max = 100;
-          timeEl.textContent = formatAudioTime(0) + " / " + formatAudioTime(audio.duration);
+          discoverWebmDuration(audio);
+          refreshTimeUi();
         });
-        audio.addEventListener("timeupdate", () => {
-          const p = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
-          seekEl.value = String(p);
-          timeEl.textContent = formatAudioTime(audio.currentTime) + " / " + formatAudioTime(audio.duration);
+        audio.addEventListener("durationchange", () => {
+          const d = Number(audio.duration);
+          if (Number.isFinite(d) && d > 0) audio.dataset.knownDuration = String(d);
+          refreshTimeUi();
         });
+        audio.addEventListener("timeupdate", refreshTimeUi);
         seekEl.addEventListener("input", () => {
+          const total = resolvePlaybackDuration(audio);
           const p = Number(seekEl.value) / 100;
-          if (audio.duration) audio.currentTime = p * audio.duration;
+          if (total > 0) {
+            try { audio.currentTime = p * total; } catch (_e) {}
+          }
         });
+        if (audio.readyState >= 1) {
+          discoverWebmDuration(audio);
+          refreshTimeUi();
+        } else {
+          try { audio.load(); } catch (_e) {}
+          refreshTimeUi();
+        }
       }
       wrap.querySelectorAll(".audio-speed button").forEach(btn => {
         btn.addEventListener("click", () => {
-          if (audio) audio.playbackRate = Number(btn.getAttribute("data-speed") || 1);
+          if (!audio) return;
+          audio.playbackRate = Number(btn.getAttribute("data-speed") || 1);
+          wrap.querySelectorAll(".audio-speed button").forEach(function (b) {
+            b.classList.toggle("is-active", b === btn);
+          });
         });
       });
     }
@@ -4571,7 +4744,7 @@
       }
     }
 
-    async function persistRecordingWithUpload(candidateId, questionId, blob, mimeType) {
+    async function persistRecordingWithUpload(candidateId, questionId, blob, mimeType, durationSec) {
       const candidate = findCandidateById(candidateId);
       if (!candidate) return;
       const key = localAudioKey(candidateId, questionId);
@@ -4603,6 +4776,7 @@
           candidate.callInterview.callNotesAudio = inlineBase64;
         }
         candidate.callInterview.callNotesAudioMime = mimeType || "audio/webm";
+        storeAudioDurationSec(candidate.callInterview, "callNotes", durationSec);
       } else if (isCallScreeningAudioQuestion(questionId)) {
         candidate.callInterview = candidate.callInterview || {};
         if (up.ok) {
@@ -4612,6 +4786,7 @@
           candidate.callInterview[questionId + "Audio"] = inlineBase64;
         }
         candidate.callInterview[questionId + "AudioMime"] = mimeType || "audio/webm";
+        storeAudioDurationSec(candidate.callInterview, questionId, durationSec);
       } else {
         candidate.faceToFaceInterview = candidate.faceToFaceInterview || {};
         if (up.ok) {
@@ -4621,6 +4796,7 @@
           candidate.faceToFaceInterview[questionId + "Audio"] = inlineBase64;
         }
         candidate.faceToFaceInterview[questionId + "AudioMime"] = mimeType || "audio/webm";
+        storeAudioDurationSec(candidate.faceToFaceInterview, questionId, durationSec);
       }
       if (!up.ok) {
         setSyncUi(
@@ -4631,7 +4807,7 @@
           up.error || ""
         );
       }
-      updateAudioWrap(questionId, inlineBase64, mimeType || "audio/webm", candidateId);
+      updateAudioWrap(questionId, inlineBase64, mimeType || "audio/webm", candidateId, durationSec);
       persistCandidateAfterRecording(candidateId);
     }
 
@@ -4725,6 +4901,9 @@
             recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
             recorder.onstop = () => {
               const usedMime = (recorder.mimeType || chosenMime || "audio/webm").split(";")[0];
+              const elapsedSec = recordState.startedAt
+                ? Math.max(0.1, (Date.now() - recordState.startedAt) / 1000)
+                : 0;
               stream.getTracks().forEach(t => t.stop());
               if (recordState.btn) recordState.btn.classList.remove("recording");
               recordState.stream = null;
@@ -4735,6 +4914,7 @@
               const recordingCandidateId = recordState.candidateId;
               recordState.questionId = null;
               recordState.candidateId = null;
+              recordState.startedAt = 0;
               if (qid) {
                 if (chunks.length > 0) {
                   const blob = new Blob(chunks, { type: recorder.mimeType || chosenMime || "audio/webm" });
@@ -4742,10 +4922,11 @@
                     recordingCandidateId,
                     qid,
                     blob,
-                    usedMime
+                    usedMime,
+                    elapsedSec
                   );
                 } else {
-                  updateAudioWrap(qid, "", usedMime, recordingCandidateId);
+                  updateAudioWrap(qid, "", usedMime, recordingCandidateId, elapsedSec);
                   persistCandidateAfterRecording(recordingCandidateId);
                 }
               }
@@ -4757,6 +4938,7 @@
             recordState.questionId = questionId;
             recordState.candidateId = currentCandidateId;
             btn.classList.add("recording");
+            startRecordingTick();
             updateRecordingIndicator(true);
           } catch (err) {
             alert("Se necesita acceso al micrófono para grabar.");
