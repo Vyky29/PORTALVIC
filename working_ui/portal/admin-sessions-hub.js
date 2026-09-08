@@ -5542,8 +5542,12 @@
 
   AdminSessionsHub.prototype.refreshRosterRowsFromResolvedSource = function () {
     try {
-      if (typeof global.portalResolveStaffDashboardSource === "function") {
-        global.portalResolveStaffDashboardSource();
+      var resolved =
+        typeof global.portalResolveStaffDashboardSource === "function"
+          ? global.portalResolveStaffDashboardSource()
+          : null;
+      if (resolved && typeof resolved === "object") {
+        global.STAFF_DASHBOARD_SOURCE = resolved;
       }
       var src = global.STAFF_DASHBOARD_SOURCE;
       this.invalidateComputeCaches();

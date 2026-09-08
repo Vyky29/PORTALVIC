@@ -216,6 +216,8 @@ function rebuildTuesday(week) {
   const victor = findStaff(week, "victor");
   const raul = findStaff(week, "raul");
   const youssef = findStaff(week, "youssef");
+  const javier = findStaff(week, "javier");
+  const aurora = findStaff(week, "aurora");
 
   setDcDay(roberto, "Tuesday", [
     { time: "11 to 12", client: "ACAT", instr: "ROBERTO" },
@@ -241,6 +243,47 @@ function rebuildTuesday(week) {
   note(
     "Tue DC = Roberto ACAT 11-12 + Ikram 12-3; Michelle Ikram 11-12 / Manager 12-3 / Ikram 3-4; Luliya Ikram 11-3; Raul Fadi 12.30-3 + Ikram 3-4; Victor Cyrus Bespoke 3.30-5",
   );
+
+  /* Autumn Acton AS standing: Serine→Roberto; Logan→Luliya; Richard→Roberto. */
+  if (roberto) {
+    const d = ensureDay(roberto, "Tuesday");
+    clearDayServices(d, isActonAquatic);
+    d.slots.push(aquatic("Acton", "4 to 4.30", "NO PARTICIPANT", "ROBERTO"));
+    d.slots.push(aquatic("Acton", "4.30 to 5.30", "Serine", "ROBERTO"));
+    d.slots.push(aquatic("Acton", "5.30 to 6", "NO PARTICIPANT", "ROBERTO"));
+    d.slots.push(aquatic("Acton", "6 to 6.30", "Richard", "ROBERTO"));
+  }
+  if (luliya) {
+    const d = ensureDay(luliya, "Tuesday");
+    clearDayServices(d, isActonAquatic);
+    d.slots.push(aquatic("Acton", "4 to 4.30", "NO PARTICIPANT", "LULIYA"));
+    d.slots.push(aquatic("Acton", "4.30 to 5", "NO PARTICIPANT", "LULIYA"));
+    d.slots.push(aquatic("Acton", "5 to 5.30", "Logan", "LULIYA"));
+    d.slots.push(aquatic("Acton", "5.30 to 6", "NO PARTICIPANT", "LULIYA"));
+    d.slots.push(aquatic("Acton", "6 to 6.30", "NO PARTICIPANT", "LULIYA"));
+  }
+  if (javier) {
+    const d = ensureDay(javier, "Tuesday");
+    clearDayServices(d, isActonAquatic);
+    d.slots.push(aquatic("Acton", "4 to 5", "Ayman", "JAVIER"));
+    d.slots.push(aquatic("Acton", "5 to 5.30", "Linda", "JAVIER", "Lane (SE)"));
+    d.slots.push(aquatic("Acton", "5.30 to 6", "Rayan Ta", "JAVIER"));
+    d.slots.push(aquatic("Acton", "6 to 6.30", "NO PARTICIPANT", "JAVIER", "Lane (SE)"));
+  }
+  if (aurora) {
+    const d = ensureDay(aurora, "Tuesday");
+    clearDayServices(d, isActonAquatic);
+    d.slots.push(aquatic("Acton", "4 to 4.30", "CLOSED", "AURORA"));
+    d.slots.push(aquatic("Acton", "4.30 to 5", "Adam Mahmmoud", "AURORA", "Teaching Pool"));
+    d.slots.push(aquatic("Acton", "5 to 5.30", "Junaid", "AURORA", "Lane (SE)"));
+    d.slots.push(aquatic("Acton", "5.30 to 6", "Aydaan Ah", "AURORA", "Lane (SE)"));
+    d.slots.push(aquatic("Acton", "6 to 6.30", "Anas", "AURORA"));
+  }
+  if (youssef) {
+    const d = ensureDay(youssef, "Tuesday");
+    clearDayServices(d, isActonAquatic);
+  }
+  note("Tue Acton AS = Serine Roberto 4.30-5.30; Logan Luliya 5-5.30; Richard Roberto; Aurora Anas 6-6.30");
 }
 
 function rebuildWednesday(week) {
