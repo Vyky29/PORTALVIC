@@ -9,6 +9,10 @@ import { parentPortalCorsHeaders } from "../_shared/parent_portal_auth.ts";
 import type { MadreDoc } from "../_shared/portal_madre_fold_logic.ts";
 import { buildWeeklyOfferFromMadre, applyBookingSlotHoldsToOffer } from "../_shared/portal_booking_seat_helper.ts";
 import { resolveSessionDateIso, calendarDateIsoInLondon } from "../_shared/portal_booking_context.ts";
+import {
+  loadAdminDayOverridesForBookingWindow,
+  resolveBookableSessionWithAdminOverrides,
+} from "../_shared/portal_booking_admin_day_override.ts";
 import { ensureReenrolUnconfirmedReleasedOnMadre } from "../_shared/portal_reenrol_release_madre.ts";
 import { runUnpaidAug15PlaceRelease } from "../_shared/portal_reenrol_release_unpaid_aug15.ts";
 import {
@@ -467,15 +471,30 @@ Deno.serve(async (req) => {
   );
 
   const todayIso = calendarDateIsoInLondon();
+  const adminDayOverrides = await loadAdminDayOverridesForBookingWindow(supabase, {
+    fromIso: todayIso,
+    daysAhead: 28,
+  });
   const weeklySlotsPublic = weekly.slots.map((slot) => {
     const { bookedKeys: _bk, ...pub } = slot;
+    const resolved = resolveBookableSessionWithAdminOverrides(
+      {
+        day: slot.day,
+        time: slot.timeLabel || null,
+        venue: slot.venue || null,
+        asOfIso: todayIso,
+      },
+      adminDayOverrides,
+    );
     return {
       ...pub,
-      dateIso: resolveSessionDateIso({
+      dateIso: resolved.iso || resolveSessionDateIso({
         day: slot.day,
         time: slot.timeLabel || null,
         asOfIso: todayIso,
       }),
+      startDeferredForAdminOverride: !!resolved.bumpedForAdminDayOverride,
+      startDeferredMessage: resolved.parentMessage || null,
     };
   });
 

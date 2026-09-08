@@ -1,8 +1,3 @@
----
-description: Booking / trial session lead times (weekday 2h, weekend Friday 18:00).
-alwaysApply: true
----
-
 # Booking lead times (trials + weekend places)
 
 Europe/London. Implemented in `supabase/functions/_shared/portal_booking_context.ts` (`resolveSessionDateIso`) and mirrored on `working_ui/bookingportal.html`.
@@ -19,6 +14,13 @@ Europe/London. Implemented in `supabase/functions/_shared/portal_booking_context
   - Saturday slot → **next Saturday**
   - Sunday slot → **next Sunday** (cannot book this Sunday from Saturday)
 
+## Same-day admin Schedule & Covers override (trial **or** term)
+
+- Day overrides that fill or rearrange a seat for **that calendar day** must **not** remove the standing place from Booking Portal capacity (term seat stays **available** for future weeks).
+- Parents may still book that place.
+- If the resolved first session would fall on a day that already has an active admin override on that venue/time band, **bump the first session to the same weekday next week** and tell the parent they start next week — not the overridden day / not this week's occurrence.
+- Applies when admin overrides the same day and a parent then books while lead time would otherwise allow that day.
+
 ## Do not
 
-- Reintroduce “2 calendar days before” as the trial rule.
+- Reintroduce "2 calendar days before" as the trial rule.

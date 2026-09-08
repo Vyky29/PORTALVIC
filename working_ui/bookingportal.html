@@ -2078,6 +2078,7 @@
       /**
        * Weekday trial: same day with ≥2h notice.
        * Sat/Sun (trial or term): Friday before 18:00, else next weekend.
+       * If the offer already deferred for an admin day override, keep that date.
        */
       function resolveBookableSessionDateIso(dayName, preferredIso, opts) {
         opts = opts || {};
@@ -2112,6 +2113,18 @@
           }
         }
         return candidate;
+      }
+
+      function adminOverrideStartNote(slot) {
+        if (!slot) return "";
+        if (slot.startDeferredMessage) return String(slot.startDeferredMessage);
+        if (slot.startDeferredForAdminOverride) {
+          return (
+            "This place is still available for the term. Because of a schedule change on that day, " +
+            "your first session will be the following week for that weekday (not the overridden day)."
+          );
+        }
+        return "";
       }
 
       function registrationUrlForSlot(slot, opts) {
@@ -2220,17 +2233,27 @@
           " · " +
           venueName(slot.venue) +
           (price ? " · " + price + " / session" : "");
+        var deferNote = adminOverrideStartNote(slot);
+        if (deferNote) {
+          body.textContent += " — " + deferNote;
+        }
         if (mail) mail.hidden = true;
         if (choices) {
           choices.hidden = false;
+          var termHint = deferNote
+            ? deferNote
+            : "Secure the standing place for the rest of the term or year. After registration, complete funding, term or year choice, and payment in the booking flow.";
           choices.innerHTML =
             '<button type="button" class="sheet__choice sheet__choice--pri" data-book-kind="term" data-slot-id="' +
             esc(slot.id) +
-            '"><strong>Book term place</strong><span>Secure the standing place for the rest of the term or year. After registration, complete funding, term or year choice, and payment in the booking flow.</span></button>' +
+            '"><strong>Book term place</strong><span>' +
+            esc(termHint) +
+            "</span></button>" +
             '<button type="button" class="sheet__choice" data-book-kind="trial" data-slot-id="' +
             esc(slot.id) +
             '"><strong>Book a trial</strong><span>One session. Weekdays: same day OK with at least 2 hours\' notice for staff. Weekends: book by Friday 6pm (otherwise the next Saturday or Sunday). After registration, pay by card, Apple Pay, or bank transfer (30-minute hold)' +
             (price ? " · " + esc(price) : "") +
+            (deferNote ? ". " + esc(deferNote) : "") +
             ".</span></button>";
         }
         action.hidden = false;

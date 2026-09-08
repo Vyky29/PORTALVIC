@@ -45,6 +45,10 @@ import {
   calendarDateIsoInLondon,
 } from "../_shared/portal_booking_context.ts";
 import {
+  loadAdminDayOverridesForBookingWindow,
+  resolveBookableSessionWithAdminOverrides,
+} from "../_shared/portal_booking_admin_day_override.ts";
+import {
   BOOKING_PAY_HOLD_MINUTES,
   BOOKING_SLOT_HOLD_STATUSES,
   bookingActiveHoldExpiresFilter,
@@ -646,13 +650,30 @@ Deno.serve(async (req) => {
   });
   const todayIso = calendarDateIsoInLondon();
   const portalBookingKind = bookingKindFromContext(reservation, doc);
-  const sessionDateIso = resolveSessionDateIso({
-    dateIso: reservation?.date_iso ? String(reservation.date_iso).slice(0, 10) : null,
-    day,
-    time: timeLabel,
-    asOfIso: todayIso,
-    bookingKind: portalBookingKind,
+  const adminDayOverrides = await loadAdminDayOverridesForBookingWindow(admin, {
+    fromIso: todayIso,
+    daysAhead: 28,
   });
+  const resolvedSession = resolveBookableSessionWithAdminOverrides(
+    {
+      dateIso: reservation?.date_iso ? String(reservation.date_iso).slice(0, 10) : null,
+      day,
+      time: timeLabel,
+      venue,
+      asOfIso: todayIso,
+      bookingKind: portalBookingKind,
+    },
+    adminDayOverrides,
+  );
+  const sessionDateIso =
+    resolvedSession.iso ||
+    resolveSessionDateIso({
+      dateIso: reservation?.date_iso ? String(reservation.date_iso).slice(0, 10) : null,
+      day,
+      time: timeLabel,
+      asOfIso: todayIso,
+      bookingKind: portalBookingKind,
+    });
   // Pro-rata from first attended session (or today if they already missed that date).
   const proRataAsOf =
     sessionDateIso && sessionDateIso > todayIso ? sessionDateIso : todayIso;

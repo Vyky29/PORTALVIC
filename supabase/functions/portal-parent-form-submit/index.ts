@@ -14,6 +14,10 @@ import {
   resolveSessionDateIso,
   type PortalBookingRequest,
 } from "../_shared/portal_booking_context.ts";
+import {
+  loadAdminDayOverridesForBookingWindow,
+  resolveBookableSessionWithAdminOverrides,
+} from "../_shared/portal_booking_admin_day_override.ts";
 import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
 
 const corsHeaders: Record<string, string> = {
@@ -514,13 +518,29 @@ Deno.serve(async (req) => {
           .ilike("parent_email", parentEmail);
       }
 
-      const resolvedDateIso = resolveSessionDateIso({
-        dateIso: bookingRequest.date_iso,
-        day: bookingRequest.day,
-        time: bookingRequest.time,
-        asOfIso: calendarDateIsoInLondon(),
-        bookingKind: bookingRequest.booking_kind,
-      });
+      const resolvedWithOv = resolveBookableSessionWithAdminOverrides(
+        {
+          dateIso: bookingRequest.date_iso,
+          day: bookingRequest.day,
+          time: bookingRequest.time,
+          venue: bookingRequest.venue,
+          asOfIso: calendarDateIsoInLondon(),
+          bookingKind: bookingRequest.booking_kind,
+        },
+        await loadAdminDayOverridesForBookingWindow(admin, {
+          fromIso: calendarDateIsoInLondon(),
+          daysAhead: 28,
+        }),
+      );
+      const resolvedDateIso =
+        resolvedWithOv.iso ||
+        resolveSessionDateIso({
+          dateIso: bookingRequest.date_iso,
+          day: bookingRequest.day,
+          time: bookingRequest.time,
+          asOfIso: calendarDateIsoInLondon(),
+          bookingKind: bookingRequest.booking_kind,
+        });
 
       const { data: holdRow, error: holdErr } = await admin
         .from("portal_booking_slot_reservations")

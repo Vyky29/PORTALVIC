@@ -348,6 +348,162 @@ export function resolveSessionDateIso(input: {
   return candidate;
 }
 
+/** Minimal override shape for same-day admin bump checks. */
+export type AdminDayOverrideProbe = {
+  session_date?: string | null;
+  override_type?: string | null;
+  status?: string | null;
+  anchor_venue?: string | null;
+  anchor_start?: string | null;
+  anchor_end?: string | null;
+  anchor_time_slot_label?: string | null;
+  anchor_client_id?: string | null;
+};
+
+const ADMIN_DAY_OVERRIDE_BLOCKS_NEW_START = new Set([
+  "client_replace_in_slot",
+  "instructor_reassign",
+  "instructor_cover_needed",
+  "slot_clear_client",
+  "slot_close",
+  "slot_update",
+  "slot_open",
+]);
+
+function normalizeVenueToken(raw: string | null | undefined): string {
+  return String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function hmTokenFromDbOrLabel(raw: string | null | undefined): string {
+  const s = String(raw || "").trim().toLowerCase();
+  if (!s) return "";
+  const db = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?/);
+  if (db) {
+    return `${String(Number(db[1])).padStart(2, "0")}:${db[2]}`;
+  }
+  const mins = parseSessionStartMinutes(s);
+  if (mins == null) return "";
+  const hh = Math.floor(mins / 60);
+  const mm = mins % 60;
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
+/** True when an active day override sits on the same venue + start band as the bookable slot. */
+export function adminDayOverrideBlocksNewBookingStart(
+  ov: AdminDayOverrideProbe,
+  opts: {
+    sessionIso: string;
+    venue?: string | null;
+    timeLabel?: string | null;
+  },
+): boolean {
+  if (String(ov.status || "active") !== "active") return false;
+  const ovIso = String(ov.session_date || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ovIso) || ovIso !== opts.sessionIso) {
+    return false;
+  }
+  const t = String(ov.override_type || "").trim();
+  if (!ADMIN_DAY_OVERRIDE_BLOCKS_NEW_START.has(t)) return false;
+
+  const slotVenue = normalizeVenueToken(opts.venue);
+  const ovVenue = normalizeVenueToken(ov.anchor_venue);
+  if (slotVenue && ovVenue && slotVenue !== ovVenue) return false;
+
+  const slotStart = hmTokenFromDbOrLabel(opts.timeLabel);
+  const ovStart =
+    hmTokenFromDbOrLabel(ov.anchor_start) ||
+    hmTokenFromDbOrLabel(ov.anchor_time_slot_label);
+  if (slotStart && ovStart && slotStart !== ovStart) return false;
+
+  // Without time/venue we only block when the override is clearly a day fill of an open seat.
+  if (!slotStart && !slotVenue) {
+    const cid = String(ov.anchor_client_id || "").trim().toLowerCase();
+    return (
+      t === "client_replace_in_slot" &&
+      (!cid || cid === "available" || cid === "open" || cid === "no_participant")
+    );
+  }
+  return true;
+}
+
+export function applyAdminDayOverrideStartBump(
+  sessionIso: string,
+  overrides: AdminDayOverrideProbe[],
+  opts?: { venue?: string | null; timeLabel?: string | null },
+): { iso: string; bumped: boolean; reason: string | null } {
+  let iso = String(sessionIso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    return { iso, bumped: false, reason: null };
+  }
+  const list = Array.isArray(overrides) ? overrides : [];
+  let bumped = false;
+  for (let i = 0; i < 12; i++) {
+    const hit = list.some((ov) =>
+      adminDayOverrideBlocksNewBookingStart(ov, {
+        sessionIso: iso,
+        venue: opts?.venue,
+        timeLabel: opts?.timeLabel,
+      })
+    );
+    if (!hit) break;
+    const next = bumpToNextWeekSameWeekday(iso);
+    if (!next || next === iso) break;
+    iso = next;
+    bumped = true;
+  }
+  return {
+    iso,
+    bumped,
+    reason: bumped ? "admin_day_override" : null,
+  };
+}
+
+export function adminDayOverrideStartParentMessage(bumpedIso: string): string {
+  const when = String(bumpedIso || "").slice(0, 10);
+  const whenBit = /^\d{4}-\d{2}-\d{2}$/.test(when)
+    ? ` Your first session will be from ${when} (next week for that weekday).`
+    : " Your first session will be the following week for that weekday.";
+  return (
+    "This place is still available for the term." +
+    " Because of a schedule change on that day, you cannot start on the overridden day." +
+    whenBit
+  );
+}
+
+/**
+ * resolveSessionDateIso + bump when the candidate day already has an admin
+ * Schedule & Covers override on that venue/time band.
+ */
+export function resolveSessionDateIsoWithAdminDayOverrides(
+  input: Parameters<typeof resolveSessionDateIso>[0] & {
+    venue?: string | null;
+  },
+  overrides: AdminDayOverrideProbe[],
+): {
+  iso: string | null;
+  bumpedForAdminDayOverride: boolean;
+  parentMessage: string | null;
+} {
+  const base = resolveSessionDateIso(input);
+  if (!base) {
+    return { iso: null, bumpedForAdminDayOverride: false, parentMessage: null };
+  }
+  const bumped = applyAdminDayOverrideStartBump(base, overrides, {
+    venue: input.venue,
+    timeLabel: input.time,
+  });
+  return {
+    iso: bumped.iso,
+    bumpedForAdminDayOverride: bumped.bumped,
+    parentMessage: bumped.bumped
+      ? adminDayOverrideStartParentMessage(bumped.iso)
+      : null,
+  };
+}
+
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);

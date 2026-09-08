@@ -564,14 +564,36 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     const svdLatest = latestBySvd.get(`${serviceId}|${venue}|${day}`) || ref;
     // Drop one-off times that no longer appear on the latest roster day for this weekday.
     if (ref < svdLatest) continue;
-    const bucket = dateMap.get(ref)!;
-    const lineCount = bucket.booked + bucket.open;
+    const latestBucket = dateMap.get(ref)!;
+    /*
+     * Capacity from the standing-openest snapshot for this band — not only the
+     * latest calendar date. Same-day Schedule & Covers fills (e.g. day reassign
+     * onto an open seat) must not hide the term place from Booking Portal.
+     */
+    let capacityBucket = latestBucket;
+    let bestOpen = latestBucket.open;
+    for (const iso of dates) {
+      const b = dateMap.get(iso);
+      if (!b) continue;
+      if (b.open > bestOpen) {
+        bestOpen = b.open;
+        capacityBucket = b;
+      }
+    }
+    const lineCount = Math.max(
+      latestBucket.booked + latestBucket.open,
+      capacityBucket.booked + capacityBucket.open,
+    );
+    const instructorCount = Math.max(
+      latestBucket.instructors.size,
+      capacityBucket.instructors.size,
+    );
     const cap = displayCapacity(
       serviceId,
       venue,
       day,
       lineCount,
-      bucket.instructors.size,
+      instructorCount,
     );
     /*
      * Aquatic is 1:1 per instructor line. Prefer booked line count over unique
@@ -580,8 +602,8 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
      */
     const takenRaw =
       serviceId === "aquatic"
-        ? bucket.booked
-        : bucket.bookedKeys.size || bucket.booked;
+        ? capacityBucket.booked
+        : capacityBucket.bookedKeys.size || capacityBucket.booked;
     const taken = Math.min(takenRaw, cap);
     slots.push({
       id: slotId(serviceId, venue, day, sortTime, timeLabel),
@@ -593,8 +615,8 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       capacity: cap,
       taken,
       referenceDate: ref,
-      instructors: [...bucket.instructors].sort(),
-      bookedKeys: [...bucket.bookedKeys],
+      instructors: [...latestBucket.instructors].sort(),
+      bookedKeys: [...capacityBucket.bookedKeys],
     });
   }
 

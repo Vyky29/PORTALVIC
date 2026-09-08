@@ -26,6 +26,10 @@ import {
   calendarDateIsoInLondon,
   resolveSessionDateIso,
 } from "../_shared/portal_booking_context.ts";
+import {
+  loadAdminDayOverridesForBookingWindow,
+  resolveBookableSessionWithAdminOverrides,
+} from "../_shared/portal_booking_admin_day_override.ts";
 
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const BUCKET = "participant-documents";
@@ -364,13 +368,29 @@ Deno.serve(async (req) => {
     }
   }
 
-  const resolvedDateIso = resolveSessionDateIso({
-    dateIso: bookingRequest.date_iso,
-    day: bookingRequest.day,
-    time: bookingRequest.time,
-    asOfIso: calendarDateIsoInLondon(),
-    bookingKind: bookingRequest.booking_kind,
-  });
+  const resolvedWithOv = resolveBookableSessionWithAdminOverrides(
+    {
+      dateIso: bookingRequest.date_iso,
+      day: bookingRequest.day,
+      time: bookingRequest.time,
+      venue: bookingRequest.venue,
+      asOfIso: calendarDateIsoInLondon(),
+      bookingKind: bookingRequest.booking_kind,
+    },
+    await loadAdminDayOverridesForBookingWindow(admin, {
+      fromIso: calendarDateIsoInLondon(),
+      daysAhead: 28,
+    }),
+  );
+  const resolvedDateIso =
+    resolvedWithOv.iso ||
+    resolveSessionDateIso({
+      dateIso: bookingRequest.date_iso,
+      day: bookingRequest.day,
+      time: bookingRequest.time,
+      asOfIso: calendarDateIsoInLondon(),
+      bookingKind: bookingRequest.booking_kind,
+    });
 
   const pdfBytes = buildStubPdf([
     "clubSENsational — Existing client place request",
