@@ -42,7 +42,7 @@
    * Order = board column order. Times match MADRE-style "11 to 1" / "12.30 to 3".
    * Cyrus (Victor Tue 3.30-5) is Bespoke — not listed here; see CYRUS_BESPOKE_ROW.
    * Youssef Acton days (Mon/Thu): DC ends 15:00 then pool from 16:00.
-   * Friday: Roberto DC 11-3 then Hub Bespoke Tinashe 4.15-6.15 (in his 21h PT band);
+   * Friday: Roberto DC 11-3 then Hub Bespoke Tinashe 4.15-6.15 with Bismark + Emanuel (from Fri 11);
    * Youssef DC through 16:00 then Acton aquatic.
    */
   var AUTUMN_DAY_CENTRE_BOARD = {
@@ -171,8 +171,10 @@
   };
 
   /**
-   * Autumn 26/27 Hub afternoon Bespoke — same staff as LOCAL EXTRA standing start
-   * (Godsway / John / Raul Mon+Wed 4.15-6.15; Fri Roberto; Tinashe booked).
+   * Autumn 26/27 Hub afternoon Bespoke — LOCAL EXTRA standing (from Wed 9 Sep 2026):
+   * Mon: Godsway / John / Raul / Bismark (+ Emanuel from Mon 14);
+   * Wed: Godsway / John / Bismark (Raul off Tinashe; + Emanuel from 14);
+   * Fri: Bespoke Bismark / Roberto / Emanuel (from Fri 11).
    * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30-5 only).
    */
   var AUTUMN_BESPOKE_HUB_ROWS = [
@@ -208,6 +210,26 @@
     },
     {
       client_name: "Tinashe",
+      day: "Monday",
+      instructors: "BISMARK",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.30 to 6",
+      venue: "SwimFarm",
+      session_date: "2026-07-13",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Monday",
+      instructors: "EMANUEL",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.30 to 6",
+      venue: "SwimFarm",
+      session_date: "2026-07-13",
+    },
+    {
+      client_name: "Tinashe",
       day: "Wednesday",
       instructors: "GODSWAY",
       service: "Bespoke Programme",
@@ -229,6 +251,27 @@
     {
       client_name: "Tinashe",
       day: "Wednesday",
+      instructors: "BISMARK",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.30 to 6",
+      venue: "SwimFarm",
+      session_date: "2026-07-15",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Wednesday",
+      instructors: "EMANUEL",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.30 to 6",
+      venue: "SwimFarm",
+      session_date: "2026-07-15",
+    },
+    /* Pre-Wed-9 history: Raul still on Wed template; stripped from 2026-09-09 via remap. */
+    {
+      client_name: "Tinashe",
+      day: "Wednesday",
       instructors: "RAUL",
       service: "Bespoke Programme",
       area: "Hub Room",
@@ -240,6 +283,26 @@
       client_name: "Tinashe",
       day: "Friday",
       instructors: "ROBERTO",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.30 to 6",
+      venue: "SwimFarm",
+      session_date: "2026-07-17",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Friday",
+      instructors: "BISMARK",
+      service: "Bespoke Programme",
+      area: "Hub Room",
+      time_slot: "4.30 to 6",
+      venue: "SwimFarm",
+      session_date: "2026-07-17",
+    },
+    {
+      client_name: "Tinashe",
+      day: "Friday",
+      instructors: "EMANUEL",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.30 to 6",
@@ -1395,14 +1458,67 @@
       }
     }
     if (isBespokeService(service)) {
-      /* Mon 1–13 Sep: Emanuel not on Tinashe yet → Raul with Godsway + John. */
+      var clientTin = String((meta && meta.clientName) || (meta && meta.client_name) || "")
+        .trim()
+        .toLowerCase();
+      var isTinashe = /^tinashe\b/.test(clientTin) || clientTin === "tinashe";
+      /* Mon 1–13 Sep: Emanuel not on Tinashe yet → drop Emanuel seat (Raul stays). */
       if (iso && iso >= "2026-09-01" && iso < "2026-09-14" && day === "monday") {
-        s = s.replace(/\bEMANUEL\b/gi, "RAUL");
+        if (/\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark|victor)\b/i.test(s)) {
+          s = "";
+        } else {
+          s = s.replace(/\bEMANUEL\b/gi, "");
+        }
+      }
+      /* Wed: Emanuel on Tinashe from Mon 14 only. */
+      if (iso && iso < "2026-09-14" && day === "wednesday") {
+        if (/\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark)\b/i.test(s)) {
+          s = "";
+        } else {
+          s = s.replace(/\bEMANUEL\b/gi, "");
+        }
+      }
+      /* Fri: Emanuel on Tinashe from Fri 11 Sep. */
+      if (iso && iso < "2026-09-11" && day === "friday") {
+        if (/\bemanuel\b/i.test(s) && !/\b(roberto|bismark)\b/i.test(s)) {
+          s = "";
+        } else {
+          s = s.replace(/\bEMANUEL\b/gi, "");
+        }
+      }
+      /* Bismark: Wed/Fri from 9 Sep; Mon from 14 Sep. */
+      if (isTinashe && iso) {
+        if (day === "monday" && iso < "2026-09-14") {
+          if (/\bbismark\b|\bbismarck\b/i.test(s) && !/\b(godsway|john|raul|emanuel|victor)\b/i.test(s)) {
+            s = "";
+          } else {
+            s = s.replace(/\bBISMARK\b/gi, "").replace(/\bBISMARCK\b/gi, "");
+          }
+        }
+        if ((day === "wednesday" || day === "friday") && iso < "2026-09-09") {
+          if (/\bbismark\b|\bbismarck\b/i.test(s) && !/\b(godsway|john|raul|roberto|emanuel)\b/i.test(s)) {
+            s = "";
+          } else {
+            s = s.replace(/\bBISMARK\b/gi, "").replace(/\bBISMARCK\b/gi, "");
+          }
+        }
+        /* Wed from 9 Sep: Raul off Tinashe (keeps DC). */
+        if (day === "wednesday" && iso >= "2026-09-09") {
+          if (/\braul\b/i.test(s) && !/\b(godsway|john|bismark|emanuel)\b/i.test(s)) {
+            s = "";
+          } else {
+            s = s.replace(/\bRAUL\b/gi, "");
+          }
+        }
       }
       /* Mon 7 Sep only: Raul OFF → Victor covers Tinashe (with Godsway + John). */
       if (iso === "2026-09-07" && day === "monday") {
         s = s.replace(/\bRAUL\b/gi, "VICTOR");
       }
+      s = String(s || "")
+        .replace(/^[,\s/|]+|[,\s/|]+$/g, "")
+        .replace(/\s*,\s*,+/g, ",")
+        .trim();
     }
     /* Mon 7 Sep: Raul OFF → Victor covers Day Centre (Timi + Emanuel). */
     if (
@@ -2128,7 +2244,7 @@
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
    * - Fri DC: Victor+Raul Emanuel 1–4 (after Timi); Michelle+Luliya Ikram to 16:00;
    *   Youssef Fadi ends 15:00 (Acton from 16:00 — no Emanuel 3–4)
-   * - Acton Fri: Roberto → Youssef (Adam Pi / Amaar); Hub Fri Tinashe: Roberto (21h PT band)
+   * - Acton Fri: Roberto → Youssef (Adam Pi / Amaar); Hub Fri Tinashe: Bismark + Roberto + Emanuel (from Fri 11)
    * - Victor OFF Mondays (DC)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    * - Acton Thu AS: Simon (Elijah 4–4.30, Yuri 5–5.30); Aurora CLOSED 4–4.30
