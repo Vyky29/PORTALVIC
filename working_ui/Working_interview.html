@@ -350,6 +350,92 @@
       min-width:0;
     }
 
+    .candidate-details-split{
+      display:flex;
+      gap:16px;
+      align-items:stretch;
+      min-width:0;
+    }
+    .candidate-details-fields{
+      flex:1 1 0;
+      min-width:0;
+    }
+    .candidate-cv-preview{
+      flex:0 0 400px;
+      max-width:46%;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height:440px;
+      min-width:0;
+    }
+    .candidate-cv-preview-head{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-bottom:1px solid var(--line);
+      min-width:0;
+      background:#f8fafc;
+    }
+    .candidate-cv-preview-title{
+      flex:1;
+      min-width:0;
+      font-weight:700;
+      font-size:13px;
+      color:var(--ink);
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .candidate-cv-preview-body{
+      flex:1;
+      min-height:360px;
+      background:#f1f5f9;
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
+      overflow:hidden;
+      position:relative;
+    }
+    .candidate-cv-preview-body iframe,
+    .candidate-cv-preview-body img{
+      width:100%;
+      height:100%;
+      min-height:360px;
+      border:0;
+      background:#fff;
+      object-fit:contain;
+      display:block;
+    }
+    .candidate-cv-preview-empty{
+      margin:auto;
+      padding:20px;
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+      max-width:16rem;
+      overflow-wrap:break-word;
+    }
+    .candidate-cv-preview-foot{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      justify-content:flex-end;
+      padding:10px 12px;
+      border-top:1px solid var(--line);
+      background:#fff;
+      min-width:0;
+    }
+    .candidate-cv-replace{
+      margin-top:14px;
+      min-width:0;
+    }
+
     .status-pill{
       display:inline-flex;
       align-items:center;
@@ -1245,6 +1331,15 @@
       .stage-bar,
       .check-grid{
         grid-template-columns:1fr;
+      }
+
+      .candidate-details-split{
+        flex-direction:column;
+      }
+      .candidate-cv-preview{
+        flex:1 1 auto;
+        max-width:none;
+        width:100%;
       }
 
       .info-grid .field{
@@ -2271,6 +2366,91 @@
 
     function candidateHasCv(candidate) {
       return !!(candidate && String(candidate.cvStoragePath || "").trim());
+    }
+
+    function cvPreviewKind(candidate) {
+      const mime = String((candidate && candidate.cvMime) || "").toLowerCase();
+      const name = String((candidate && candidate.cvFileName) || "").toLowerCase();
+      const path = String((candidate && candidate.cvStoragePath) || "").toLowerCase();
+      const blob = name || path;
+      if (mime.indexOf("image/") === 0 || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(blob)) {
+        return "image";
+      }
+      if (mime === "application/pdf" || /\.pdf$/i.test(blob)) {
+        return "pdf";
+      }
+      return "other";
+    }
+
+    async function mountCandidateCvPreview(candidate) {
+      const titleEl = document.getElementById("candidateCvPreviewTitle");
+      const bodyEl = document.getElementById("candidateCvPreviewBody");
+      const openBtn = document.getElementById("candidateCvPreviewOpen");
+      const dlBtn = document.getElementById("candidateCvPreviewDownload");
+      if (!bodyEl) return;
+
+      const fileLabel = String((candidate && candidate.cvFileName) || "CV").trim() || "CV";
+      if (titleEl) titleEl.textContent = candidateHasCv(candidate) ? fileLabel : "CV preview";
+
+      function wireActions(url) {
+        if (openBtn) {
+          openBtn.disabled = !url;
+          openBtn.onclick = function () {
+            if (!url) return;
+            window.open(url, "_blank", "noopener,noreferrer");
+          };
+        }
+        if (dlBtn) {
+          dlBtn.disabled = !url;
+          dlBtn.onclick = function () {
+            if (!url) return;
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileLabel;
+            a.target = "_blank";
+            a.rel = "noopener";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          };
+        }
+      }
+
+      if (!candidateHasCv(candidate)) {
+        bodyEl.innerHTML =
+          '<div class="candidate-cv-preview-empty">No CV on file yet. Upload a PDF, Word file, or photo on the left and it will open here.</div>';
+        wireActions("");
+        return;
+      }
+
+      bodyEl.innerHTML =
+        '<div class="candidate-cv-preview-empty">Opening CV…</div>';
+      wireActions("");
+
+      const url = await resolveInterviewCvUrl(candidate);
+      if (!url) {
+        bodyEl.innerHTML =
+          '<div class="candidate-cv-preview-empty">Could not load the CV preview. Use Open when a link is available, or replace the file.</div>';
+        return;
+      }
+      if (String(currentCandidateId || "") !== String(candidate.id || "")) return;
+
+      const kind = cvPreviewKind(candidate);
+      if (kind === "image") {
+        bodyEl.innerHTML =
+          '<img id="candidateCvPreviewImg" alt="CV photo preview" />';
+        const img = document.getElementById("candidateCvPreviewImg");
+        if (img) img.src = url;
+      } else if (kind === "pdf") {
+        bodyEl.innerHTML =
+          '<iframe id="candidateCvPreviewFrame" title="CV preview"></iframe>';
+        const frame = document.getElementById("candidateCvPreviewFrame");
+        if (frame) frame.src = url;
+      } else {
+        bodyEl.innerHTML =
+          '<div class="candidate-cv-preview-empty">Inline preview is not available for this file type (e.g. Word). Use Open or Download.</div>';
+      }
+      wireActions(url);
     }
 
     function candidateCvMetaHtml(candidate) {
@@ -4665,51 +4845,62 @@
             <div class="section-head">
               <div>
                 <h3>Candidate Details</h3>
-                <p>Update name, email, and mobile if needed.</p>
+                <p>Update name, email, and mobile if needed. CV opens on the right.</p>
               </div>
             </div>
             <div class="section-body">
-              <div class="info-grid">
-                <div class="field full">
-                  <label for="candidateName">Candidate name</label>
-                  <input id="candidateName" class="input" type="text" value="${escapeHtml(candidate.name)}" />
-                </div>
+              <div class="candidate-details-split">
+                <div class="candidate-details-fields">
+                  <div class="info-grid">
+                    <div class="field full">
+                      <label for="candidateName">Candidate name</label>
+                      <input id="candidateName" class="input" type="text" value="${escapeHtml(candidate.name)}" />
+                    </div>
 
-                <div class="field full">
-                  <label for="candidateEmail">Email (for onboarding invite)</label>
-                  <input id="candidateEmail" class="input" type="email" autocomplete="email" placeholder="name@example.com" value="${escapeHtml(candidate.email || "")}" />
-                </div>
+                    <div class="field full">
+                      <label for="candidateEmail">Email (for onboarding invite)</label>
+                      <input id="candidateEmail" class="input" type="email" autocomplete="email" placeholder="name@example.com" value="${escapeHtml(candidate.email || "")}" />
+                    </div>
 
-                <div class="field full">
-                  <label for="candidatePhone">Mobile (optional)</label>
-                  <input id="candidatePhone" class="input" type="tel" autocomplete="tel" placeholder="+44…" value="${escapeHtml(candidate.phone || "")}" />
-                </div>
+                    <div class="field full">
+                      <label for="candidatePhone">Mobile (optional)</label>
+                      <input id="candidatePhone" class="input" type="tel" autocomplete="tel" placeholder="+44…" value="${escapeHtml(candidate.phone || "")}" />
+                    </div>
 
-                <div class="field full">
-                  <label>CV (document or photo)</label>
-                  <div class="cv-actions">
-                    ${
-                      candidateHasCv(candidate)
-                        ? `<button type="button" class="btn btn-primary" id="openCandidateCvBtn">Open CV</button>
-                           <span class="candidate-meta">${escapeHtml(candidate.cvFileName || "CV on file")}</span>`
-                        : `<span class="candidate-meta">No CV on file yet.</span>`
-                    }
-                    <input id="replaceCandidateCv" class="input" type="file" accept=".pdf,.doc,.docx,image/*,.heic,.heif" />
+                    <div class="field full">
+                      <label for="onboardingRole">Role</label>
+                      <select id="onboardingRole" class="select">
+                        <option value="">Select role</option>
+                        <option value="Swimming Instructor" ${(selectedRole === "Swimming Instructor" || selectedRole === "Swimming Teacher") ? "selected" : ""}>Swimming Instructor</option>
+                        <option value="Climbing Instructor" ${(selectedRole === "Climbing Instructor" || selectedRole === "Climbing Teacher") ? "selected" : ""}>Climbing Instructor</option>
+                        <option value="Fitness Instructor" ${selectedRole === "Fitness Instructor" ? "selected" : ""}>Fitness Instructor</option>
+                        <option value="Support Worker" ${selectedRole === "Support Worker" ? "selected" : ""}>Support Worker</option>
+                        <option value="Day Centre Support Worker" ${selectedRole === "Day Centre Support Worker" ? "selected" : ""}>Day Centre Support Worker</option>
+                      </select>
+                    </div>
                   </div>
-                  <p class="question-helper" style="margin-top:8px;">Required when creating a candidate. You can replace it here before or during the interview.</p>
+
+                  <div class="field candidate-cv-replace">
+                    <label for="replaceCandidateCv">CV file (replace)</label>
+                    <div class="cv-actions">
+                      <input id="replaceCandidateCv" class="input" type="file" accept=".pdf,.doc,.docx,image/*,.heic,.heif" />
+                    </div>
+                    <p class="question-helper" style="margin-top:8px;">Required when creating a candidate. PDF or photo previews on the right; Word opens in a new tab.</p>
+                  </div>
                 </div>
 
-                <div class="field full">
-                  <label for="onboardingRole">Role</label>
-                  <select id="onboardingRole" class="select">
-                    <option value="">Select role</option>
-                    <option value="Swimming Instructor" ${(selectedRole === "Swimming Instructor" || selectedRole === "Swimming Teacher") ? "selected" : ""}>Swimming Instructor</option>
-                    <option value="Climbing Instructor" ${(selectedRole === "Climbing Instructor" || selectedRole === "Climbing Teacher") ? "selected" : ""}>Climbing Instructor</option>
-                    <option value="Fitness Instructor" ${selectedRole === "Fitness Instructor" ? "selected" : ""}>Fitness Instructor</option>
-                    <option value="Support Worker" ${selectedRole === "Support Worker" ? "selected" : ""}>Support Worker</option>
-                    <option value="Day Centre Support Worker" ${selectedRole === "Day Centre Support Worker" ? "selected" : ""}>Day Centre Support Worker</option>
-                  </select>
-                </div>
+                <aside class="candidate-cv-preview" aria-label="CV preview">
+                  <div class="candidate-cv-preview-head">
+                    <span class="candidate-cv-preview-title" id="candidateCvPreviewTitle">CV preview</span>
+                  </div>
+                  <div class="candidate-cv-preview-body" id="candidateCvPreviewBody">
+                    <div class="candidate-cv-preview-empty">Loading…</div>
+                  </div>
+                  <div class="candidate-cv-preview-foot">
+                    <button type="button" class="btn" id="candidateCvPreviewOpen" disabled>Open</button>
+                    <button type="button" class="btn btn-primary" id="candidateCvPreviewDownload" disabled>Download</button>
+                  </div>
+                </aside>
               </div>
             </div>
           </section>
@@ -4967,12 +5158,7 @@
       }
       scheduleAutoSave();
       document.getElementById("deleteCandidateBtn").addEventListener("click", deleteCurrentCandidate);
-      const openCvBtn = document.getElementById("openCandidateCvBtn");
-      if (openCvBtn) {
-        openCvBtn.addEventListener("click", function () {
-          void openCandidateCv(id);
-        });
-      }
+      void mountCandidateCvPreview(candidate);
       mainContent.querySelectorAll("[data-open-cv]").forEach(function (btn) {
         btn.addEventListener("click", function (ev) {
           ev.preventDefault();
