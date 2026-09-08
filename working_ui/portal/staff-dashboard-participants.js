@@ -3613,6 +3613,10 @@
         ov = portalReplaceOverrideForSessionAnchor(s, iso);
       }
       if(!ov || portalOverrideIsTrial(ov)) return null;
+      const pl = ov.payload || {};
+      if(pl.day_reassign === true || pl.not_makeup === true) return null;
+      const kind = String(pl.booking_kind || pl.session_kind || pl.replace_kind || '').trim().toLowerCase();
+      if(kind === 'day_reassign' || kind === 'instructor_day_cover' || kind === 'slot_move') return null;
       const repId = portalOverrideReplacementClientId(ov.payload);
       const anchorId = String(s.clientId || '').trim().toLowerCase();
       if(!repId || !anchorId || repId === anchorId) return null;

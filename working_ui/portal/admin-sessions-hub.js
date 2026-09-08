@@ -1599,11 +1599,24 @@
     );
   }
 
+  /** Day ops seat move (not a parent-absence makeup). */
+  function overrideIsDayReassignReplace(ov) {
+    if (!overrideIsReplaceType(ov)) return false;
+    var p = overridePayloadObj(ov);
+    if (p.day_reassign === true || p.not_makeup === true) return true;
+    var kind = clean(p.booking_kind || p.session_kind || p.replace_kind).toLowerCase();
+    return kind === "day_reassign" || kind === "instructor_day_cover" || kind === "slot_move";
+  }
+
   function overrideIsTrialType(ov) {
     if (!ov || !overrideIsReplaceType(ov)) return false;
     var p = overridePayloadObj(ov);
     if (p.is_trial === true || clean(p.booking_kind).toLowerCase() === "trial") return true;
     return clean(p.session_kind).toLowerCase() === "trial";
+  }
+
+  function overrideIsMakeupReplaceType(ov) {
+    return overrideIsReplaceType(ov) && !overrideIsTrialType(ov) && !overrideIsDayReassignReplace(ov);
   }
 
   function overrideAnchorIsOpenSlot(anchorClientId) {
@@ -1758,7 +1771,7 @@
         area: area,
         instructors: staffLabel,
       }),
-      portalOverrideMakeUpTag: !overrideIsTrialType(ov),
+      portalOverrideMakeUpTag: overrideIsMakeupReplaceType(ov),
       portalOverrideTrialTag: overrideIsTrialType(ov),
       __portalScheduleOverride: ov,
     };
@@ -1886,7 +1899,8 @@
     if (overrideIsInstructorCoverNeededType(ov)) return "COVER NEEDED";
     if (overrideIsInstructorReassignType(ov)) return "Changed instructor";
     if (overrideIsTrialType(ov)) return "Trial";
-    if (overrideIsReplaceType(ov)) return "MakeUp";
+    if (overrideIsDayReassignReplace(ov)) return "Moved";
+    if (overrideIsMakeupReplaceType(ov)) return "MakeUp";
     return String(ov.override_type || "").trim() || "Override";
   }
 
@@ -1896,7 +1910,8 @@
     if (overrideIsInstructorCoverNeededType(ov)) return "override--cover-needed";
     if (overrideIsInstructorReassignType(ov)) return "override--instructor";
     if (overrideIsTrialType(ov)) return "override--trial";
-    if (overrideIsReplaceType(ov)) return "override--replace";
+    if (overrideIsDayReassignReplace(ov)) return "override--instructor";
+    if (overrideIsMakeupReplaceType(ov)) return "override--replace";
     if (overrideIsAbsentType(ov)) return "override--absent";
     if (overrideIsCancelledType(ov)) return "override--cancelled";
     return "";
@@ -2035,7 +2050,7 @@
     if (slot.portalOverrideTrialTag) return false;
     if (slot.portalOverrideMakeUpTag) return true;
     var ov = slot.__portalScheduleOverride;
-    return !!(ov && overrideIsReplaceType(ov) && !overrideIsTrialType(ov));
+    return !!(ov && overrideIsMakeupReplaceType(ov));
   }
 
   /** Make-up row satisfied when same client already has aquatic feedback that day (e.g. Roberto 5–5.30). */
