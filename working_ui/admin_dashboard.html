@@ -23444,29 +23444,77 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
+        /* Drop role tags like "(swimming)" / "- swimming" from disruption display names. */
+        .replace(/\([^)]*\)/g, ' ')
+        .replace(/\b(swimming|climbing|hub|day\s*centre|support|worker|instructor|lead)\b/g, ' ')
         .replace(/[^a-z0-9]+/g, '')
         .trim();
+    }
+    function portalSdCanonStaffKey(v){
+      var k = portalSdNormStaffKey(v);
+      if(!k) return '';
+      if(typeof normalizeSchedAnchorStaffId === 'function'){
+        var n = normalizeSchedAnchorStaffId(k);
+        if(n) k = n;
+      }
+      /* Match roster short ids used by Schedule & Covers / Sessions. */
+      if(k === 'javiermarquez' || k.indexOf('javiermarquez') === 0) return 'javier';
+      if(k === 'auroragarcia' || k.indexOf('auroragarcia') === 0) return 'aurora';
+      if(k === 'robertomartinez' || (k.indexOf('roberto') === 0 && k.length > 7)) return 'roberto';
+      if(k === 'lulia' || k === 'aida' || k === 'lulya' || k.indexOf('luliya') === 0) return 'luliya';
+      if(k === 'yousef' || k === 'yusef' || k === 'yousseff' || k.indexOf('youssef') === 0) return 'youssef';
+      if(k === 'javiarranz' || k === 'palankas' || k.indexOf('javiarranz') === 0) return 'javi';
+      return k;
     }
     function portalSdStaffKeysForReport(report){
       var keys = [];
       var seen = Object.create(null);
       function push(v){
-        var k = portalSdNormStaffKey(v);
+        var k = portalSdCanonStaffKey(v);
         if(!k || seen[k]) return;
-        if(k === 'lulia' || k === 'aida' || k === 'lulya') k = 'luliya';
-        if(seen[k]) return;
         seen[k] = true;
         keys.push(k);
+        /* Also keep first-token short form when full name was supplied. */
+        var first = String(v || '').trim().split(/\s+/)[0] || '';
+        var fk = portalSdCanonStaffKey(first);
+        if(fk && !seen[fk]){
+          seen[fk] = true;
+          keys.push(fk);
+        }
       }
       if(!report) return keys;
       push(report.submitted_by_name);
-      var first = String(report.submitted_by_name || '').trim().split(/\s+/)[0] || '';
-      push(first);
-      try{
-        var box = window.__PORTAL_SUPABASE__;
-        /* username often resolves later via validate edge; also match roster first name */
-      }catch(_e){}
+      push(report.staff_name);
+      push(report.staff_username);
+      push(report.username);
       return keys;
+    }
+    function portalSdSlotStaffKeys(sl){
+      var keys = [];
+      var seen = Object.create(null);
+      function push(v){
+        var k = portalSdCanonStaffKey(v);
+        if(!k || seen[k]) return;
+        seen[k] = true;
+        keys.push(k);
+      }
+      if(!sl) return keys;
+      push(sl.staffRosterId);
+      push(sl.staffName);
+      if(sl.allInstructors && sl.allInstructors.length){
+        for(var i = 0; i < sl.allInstructors.length; i++){
+          push(sl.allInstructors[i] && sl.allInstructors[i].staffRosterId);
+          push(sl.allInstructors[i] && sl.allInstructors[i].staffName);
+        }
+      }
+      return keys;
+    }
+    function portalSdStaffKeysOverlap(wantKeys, slotKeys){
+      if(!wantKeys || !wantKeys.length || !slotKeys || !slotKeys.length) return false;
+      for(var i = 0; i < wantKeys.length; i++){
+        if(slotKeys.indexOf(wantKeys[i]) >= 0) return true;
+      }
+      return false;
     }
     /** Booked spreadsheet slots for this staff on the disruption date (for COVER NEEDED overrides). */
     function portalSdCollectCoverSlots(report){
@@ -23474,18 +23522,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return [];
       var wantKeys = portalSdStaffKeysForReport(report);
       if(!wantKeys.length) return [];
+      try{
+        if(typeof portalInvalidateAdminSlotsCache === 'function') portalInvalidateAdminSlotsCache();
+      }catch(_inv){}
       var slots = [];
       try{
         if(typeof slotsForSelectedDate === 'function'){
           slots = slotsForSelectedDate(iso) || [];
         }
       }catch(_e){ slots = []; }
+      var venueWant = String(report && (report.venue || report.session_venue) || '').trim().toLowerCase();
       var out = [];
       for(var i = 0; i < slots.length; i++){
         var sl = slots[i];
         if(!sl) continue;
-        var sid = portalSdNormStaffKey(sl.staffRosterId || sl.staffName || '');
-        if(wantKeys.indexOf(sid) < 0) continue;
+        if(!portalSdStaffKeysOverlap(wantKeys, portalSdSlotStaffKeys(sl))) continue;
+        if(venueWant){
+          var sv = String(sl.venue || '').trim().toLowerCase();
+          if(sv && sv.indexOf(venueWant) < 0 && venueWant.indexOf(sv) < 0) continue;
+        }
         var cid = String(sl.clientSlug || '').trim().toLowerCase();
         if(!cid || cid === 'available' || cid === 'closed' || cid === 'noparticipant' || cid === 'no_participant') continue;
         if(cid === 'manager' || cid === 'home') continue;
