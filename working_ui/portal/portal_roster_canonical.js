@@ -1423,10 +1423,23 @@
         s = s.replace(/\bSANDRA\b/gi, "JAVI");
       }
     }
+    /* Wed 9 Sep: Fadi absent + Victor OFF — remap DC instructors for Today/Overview strip. */
+    if (iso === "2026-09-09" && day === "wednesday" && isDayCentreService(service)) {
+      var clientWed9 = String((meta && meta.clientName) || (meta && meta.client_name) || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+      if (!clientWed9 && meta && meta.client_id) clientWed9 = String(meta.client_id).toLowerCase();
+      if (/^emanuel\b/.test(clientWed9) || clientWed9 === "emanuel") {
+        s = "ROBERTO";
+      } else if (/^ikram\b/.test(clientWed9) || clientWed9 === "ikram") {
+        /* Michelle 11-4 + Luliya 11-3 stay; Raul takes 3-4 (Victor's block). */
+        if (/\bvictor\b/i.test(s)) s = s.replace(/\bVICTOR\b/gi, "RAUL");
+      } else if (/^fadi\b/.test(clientWed9) || clientWed9 === "fadi") {
+        s = s; /* absence handled via overrides */
+      }
+    }
     /* Tue 15 Sep only: Aurora day off → Javi Palankas covers her Acton Aquatic book
-     * (not Javier the swim instructor — he keeps Ayman / Linda / Rayan Ta on standing Tuesdays).
-     * Tue 8 Sep: Javier Marquez also OFF — his Acton book goes to Roberto (Ayman 4–4.30) +
-     * Javi Palankas (Ayman 4.30–5 / Linda / Rayan Ta); Anas absent (makeup Thu Aurora). */
     if (iso === "2026-09-15" && day === "tuesday" && isAquaticService(service)) {
       if (!meta.venue || isActonVenue(meta.venue)) {
         s = s.replace(/\bAURORA\b/gi, "JAVI");

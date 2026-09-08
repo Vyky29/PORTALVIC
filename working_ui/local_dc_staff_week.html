@@ -311,7 +311,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260908-serine-roberto-logan-luliya"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260908-wed9-fadi-victor-off"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -330,6 +330,9 @@
       Raul: "Time off requested · Victor covers DC + Tinashe",
     },
     "2026-09-08": { Aurora: "Time off requested", Javier: "Time off requested · Ayman→Roberto 4–4.30 + Javi 4.30–5; Linda/Rayan Ta/Anas→Javi Palankas" },
+    "2026-09-09": {
+      Victor: "Time off requested · Roberto Emanuel 11-4 · Raul Ikram 3-4 · Fadi absent",
+    },
     "2026-09-13": { Aurora: "Time off requested" },
     "2026-09-15": { Aurora: "Time off requested" },
     "2026-10-04": { Aurora: "Time off requested" },
@@ -343,7 +346,7 @@
     { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · Hub: Berta Lead + Jack W…Aydaan · John = Emanuel book · Godsway · Aurora Yusuf Aquatic 9–9.30 · Roberto Simon Aquatic 9–9.30 + Yusuf Multi 9.30–10.15 (2 feedbacks) · Youssef OFF · Emanuel OFF" },
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Raul OFF · Victor covers Timi 11-1 + Emanuel 1-4 + Tinashe with Godsway/John · Emanuel interview 4pm · Sandra OFF · Javi Palankas covers Westway Physical (Ayaan 4–5 / Serine 5–6)" },
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "DC: Roberto ACAT 11-12 + Ikram 12-3 · Michelle Ikram 11-12 / Manager 12-3 / Ikram 3-4 · Luliya Ikram 11-3 · Raul Fadi 12.30-3 + Ikram 3-4 · Victor Cyrus 3.30-5 · Aurora OFF · Javier OFF · Acton: Ayman Roberto 4-4.30 then Javi Palankas 4.30-5 · Adam+Junaid Roberto · Aydaan Luliya · Linda/Rayan Ta/Anas Javi Palankas" },
-    { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Emanuel shadowing · Godsway/John/Raul Tinashe" },
+    { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Fadi absent · Victor OFF · Roberto Emanuel 11-4 · Michelle/Luliya Ikram · Raul Ikram 3-4 + Tinashe · Emanuel shadowing Tinashe" },
     { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Joelle last half off · Anas makeup 6-6.30 2:1 Aurora+Simon (Maiyar stays Roberto)" },
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Emanuel shadowing Tinashe · Roberto + Tinashe 4.15-6.15" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
@@ -787,6 +790,8 @@
       ],
     },
     "2026-09-09": {
+      /* Fadi absent · Victor OFF · DC painted via WED9_DC_BOARD in boardClients.
+       * Keep Emanuel Hub shadow only here. Raul Tinashe comes from EXTRA standing. */
       Emanuel: [
         {
           name: "Shadowing · Tinashe",
@@ -1221,7 +1226,26 @@
         : PRC && PRC.AUTUMN_DAY_CENTRE_BOARD;
     var out = [];
     var isWeekend = dayKey === "saturday" || dayKey === "sunday";
-    if (!isWeekend && board && board[dayKey]) {
+    /* Wed 9 Sep: Fadi absent + Victor OFF — one-day DC board (not standing). */
+    var WED9_DC_BOARD = {
+      Roberto: [{ name: "Emanuel", time: "11 to 4" }],
+      Michelle: [{ name: "Ikram", time: "11 to 4" }],
+      Luliya: [{ name: "Ikram", time: "11 to 3" }],
+      Raul: [{ name: "Ikram", time: "3 to 4" }],
+      Victor: [],
+      Youssef: [],
+    };
+    if (!isWeekend && iso === "2026-09-09" && Object.prototype.hasOwnProperty.call(WED9_DC_BOARD, staffName)) {
+      (WED9_DC_BOARD[staffName] || []).forEach(function (c) {
+        out.push({
+          name: c.name,
+          time: c.time,
+          band: "Day Centre",
+          area: null,
+          dc: true,
+        });
+      });
+    } else if (!isWeekend && board && board[dayKey]) {
       var col = (board[dayKey] || []).find(function (c) {
         return String(c.staff || "").toLowerCase() === staffName.toLowerCase();
       });

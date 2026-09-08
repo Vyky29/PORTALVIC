@@ -855,6 +855,8 @@
           venue: r.venue,
           area: r.area,
           day: wd,
+          client_name: r.client_name,
+          clientName: r.client_name,
         });
       }
     } catch (_remap) {}
