@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260908-updated-admin-chip";
+  var VER = "20260908-anas-thu-simon-aurora";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260906-cyrus-first-sun",
@@ -16,7 +16,7 @@
     "/portal/portal_staff_feedback_data_loader.js?v=20260702-feedback-jun25",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp",
-      "/portal/portal_roster_canonical.js?v=20260908-anas-thu-aurora",
+      "/portal/portal_roster_canonical.js?v=20260908-anas-thu-simon-aurora",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",

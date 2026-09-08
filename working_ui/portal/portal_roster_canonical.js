@@ -771,7 +771,7 @@
    * Adam Mahmmoud → Roberto 4.30–5 · Junaid → Roberto 5.30–6 (+30') ·
    * Aydaan Ah → Luliya 5.30–6 · Anas was on Javier then moved with his book.
    * Javier Marquez OFF same day: Ayman 4–4.30 → Roberto; Ayman 4.30–5 + Linda / Rayan Ta → Javi Palankas.
-   * Anas: absent Tue 8 (was cover→Luliya); makeup Thu 10 Aurora 6–6.30.
+   * Anas: absent Tue 8 (was cover→Luliya); makeup Thu 10 Aurora+Simon 2:1 6–6.30.
    */
   function autumnTuesdaySep8ActonRedistributeRows() {
     var iso = "2026-09-08";
@@ -832,6 +832,69 @@
       out.push(r);
     });
     autumnTuesdaySep8ActonRedistributeRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
+  }
+
+  /**
+   * Thu 10 Sep: Joelle ends 6 (early leave last half) → Anas makeup 2:1 Aurora + Simon 6–6.30.
+   * Maiyar stays with Roberto.
+   */
+  function autumnThursdaySep10AnasMakeupRows() {
+    var iso = "2026-09-10";
+    function mapBook(staff, slots) {
+      return slots.map(function (slot) {
+        return {
+          client_name: slot.name,
+          day: "Thursday",
+          instructors: staff,
+          service: "Aquatic Activity",
+          area: "Lane (DE)",
+          time_slot: slot.time,
+          venue: "Acton",
+          session_date: iso,
+        };
+      });
+    }
+    var half = [
+      { name: "Joelle", time: "5.30 to 6" },
+      { name: "Anas", time: "6 to 6.30" },
+    ];
+    return []
+      .concat(mapBook("AURORA", half))
+      .concat(mapBook("SIMON", half));
+  }
+
+  function scrubAndEnsureSep10AnasMakeup(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (normIso(r.session_date) !== "2026-09-10") {
+        out.push(r);
+        return;
+      }
+      if (
+        isAquaticService(r.service) &&
+        /acton/i.test(String(r.venue || "")) &&
+        /\b(aurora|simon)\b/i.test(String(r.instructors || "")) &&
+        /^(joelle|anas)\b/i.test(String(r.client_name || "").trim())
+      ) {
+        return;
+      }
+      /* Drop standing Joelle 5.30–6.30 on Aurora/Simon for this date (replaced by half + Anas). */
+      if (
+        isAquaticService(r.service) &&
+        /acton/i.test(String(r.venue || "")) &&
+        /\b(aurora|simon)\b/i.test(String(r.instructors || "")) &&
+        /^joelle\b/i.test(String(r.client_name || "").trim()) &&
+        /5\.30\s*to\s*6\.30/i.test(String(r.time_slot || ""))
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnThursdaySep10AnasMakeupRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     return out;
@@ -2510,6 +2573,7 @@
     merged = scrubAndEnsureSep6AuroraRobertoPool(merged);
     merged = scrubAndEnsureSep7VictorRaulCover(merged);
     merged = scrubAndEnsureSep8ActonRedistribute(merged);
+    merged = scrubAndEnsureSep10AnasMakeup(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);
     /* After all Autumn patches: no summer history weeks left to snap onto Sep+. */
     merged = purgeSummerHistoryOutsideAutumnTemplates(merged);

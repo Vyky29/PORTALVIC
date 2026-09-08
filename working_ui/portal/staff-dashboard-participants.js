@@ -765,6 +765,12 @@
           client: 'joelle',
           days: { thursday: 1 },
           staff: { aurora: 'Simon', simon: 'Aurora' }
+        },
+        {
+          /* Thu 10 Sep Anas makeup uses Joelle's last half 2:1 pair */
+          client: 'anas',
+          days: { thursday: 1 },
+          staff: { aurora: 'Simon', simon: 'Aurora' }
         }
       ];
       for(let i = 0; i < pairs.length; i++){
