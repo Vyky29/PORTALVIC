@@ -22,7 +22,9 @@ import {
   sendParentMobileMessage,
 } from "../_shared/portal_parent_messaging.ts";
 import {
+  applyScheduleOverridesToFeedback2030Slots,
   datedFallbackSlots,
+  dropSlotsForUnavailableStaff,
   FEEDBACK_2030_MADRE_TERM_KEYS,
   mergeFeedback2030Slots,
   outstandingByStaff,
@@ -30,7 +32,9 @@ import {
   slotsFromMadre,
   slotsFromRosterRows,
   type Feedback2030KeyRow,
+  type Feedback2030OverrideRow,
   type Feedback2030Row,
+  type Feedback2030UnavailabilityRow,
 } from "../_shared/portal_feedback_2030_match.ts";
 
 const DEDUPE_TABLE = "portal_feedback_2030_wa_sent";
@@ -204,11 +208,32 @@ Deno.serve(async (req) => {
     }
   }
 
-  const slots = mergeFeedback2030Slots([
+  const { data: overrideRows } = await admin
+    .from("schedule_overrides")
+    .select(
+      "override_type, status, anchor_staff_id, anchor_client_id, anchor_time_slot_label, payload",
+    )
+    .eq("session_date", iso)
+    .eq("status", "active");
+  const { data: offRows } = await admin
+    .from("staff_unavailability")
+    .select("name_key, staff_name")
+    .eq("off_date", iso);
+
+  let slots = mergeFeedback2030Slots([
     datedFallbackSlots(iso),
     slotsFromMadre(madreDoc, iso),
     slotsFromRosterRows([...(datedRoster || []), ...(templateRoster || [])], iso),
   ]);
+  /* Covers / clears / absences: nag the worker who ran the session, not the original book. */
+  slots = applyScheduleOverridesToFeedback2030Slots(
+    slots,
+    (overrideRows || []) as Feedback2030OverrideRow[],
+  );
+  slots = dropSlotsForUnavailableStaff(
+    slots,
+    (offRows || []) as Feedback2030UnavailabilityRow[],
+  );
 
   const { data: feedbackRows } = await admin
     .from("session_feedback")

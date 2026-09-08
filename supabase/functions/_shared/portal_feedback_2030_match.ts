@@ -330,6 +330,277 @@ function clientsClose(a: string, b: string): boolean {
   if (sb === "zaidalfadhl" && (sa === "zaid" || sa === "zaid_trial")) return true;
   return false;
 }
+
+export type Feedback2030OverrideRow = {
+  override_type?: string | null;
+  status?: string | null;
+  anchor_staff_id?: string | null;
+  anchor_client_id?: string | null;
+  anchor_time_slot_label?: string | null;
+  payload?: Record<string, unknown> | null;
+};
+
+export type Feedback2030UnavailabilityRow = {
+  name_key?: string | null;
+  staff_name?: string | null;
+};
+
+const SKIP_FEEDBACK_STAFF =
+  /^(cover[_ ]?needed|home|manager|off|day[_ ]?off|available|closed|na)$/i;
+
+function canonStaffKey(raw: string): string {
+  const k = normalizeStaffKey(raw);
+  if (!k) return "";
+  return STAFF_USERNAME_ALIASES[k] || k;
+}
+
+function staffKeysMatch(a: string, b: string): boolean {
+  const x = canonStaffKey(a);
+  const y = canonStaffKey(b);
+  if (!x || !y) return false;
+  if (isJaviJavierCollision(x, y)) return false;
+  return x === y;
+}
+
+/** First clock in a slot label → minutes from midnight (keeps 9 / 16 as written). */
+function feedbackClockMinutes(raw: string): number | null {
+  const s = String(raw || "").trim().toLowerCase();
+  if (!s) return null;
+  const withMin = s.match(/(\d{1,2})[:.](\d{2})/);
+  if (withMin) return Number(withMin[1]) * 60 + Number(withMin[2]);
+  const hourOnly = s.match(/^(\d{1,2})(?=\s*(?:to|-|–|$))/);
+  if (hourOnly) return Number(hourOnly[1]) * 60;
+  return null;
+}
+
+/** 4.30 ↔ 16.30; soft match within 30m for 60' books vs half-slot covers. */
+function feedbackTimesCompatible(a: string, b: string): boolean {
+  const ta = String(a || "").trim();
+  const tb = String(b || "").trim();
+  if (!ta || !tb) return true;
+  const ma = feedbackClockMinutes(ta);
+  const mb = feedbackClockMinutes(tb);
+  if (ma == null || mb == null) return true;
+  if (ma === mb) return true;
+  const diff = Math.abs(ma - mb);
+  if (diff === 12 * 60) return true;
+  const folded = Math.min(diff, Math.abs(diff - 720), Math.abs(diff + 720));
+  return folded <= 30;
+}
+
+function clientMatchesOverride(
+  slotClient: string,
+  anchorClientId: string,
+  payload?: Record<string, unknown> | null,
+): boolean {
+  const anchor = String(anchorClientId || "").trim();
+  if (anchor && clientsClose(slotClient, anchor)) return true;
+  const names = [
+    payload?.client_name,
+    payload?.to_client_name,
+    payload?.replacement_client_name,
+    payload?.covering_client_name,
+  ];
+  for (const n of names) {
+    if (n && clientsClose(slotClient, String(n))) return true;
+  }
+  return false;
+}
+
+function isUsableCoverStaff(raw: string): boolean {
+  const t = String(raw || "").trim();
+  if (!t) return false;
+  return !SKIP_FEEDBACK_STAFF.test(slugClient(t).replace(/_/g, " ")) &&
+    !SKIP_FEEDBACK_STAFF.test(t);
+}
+
+/**
+ * Apply live day ops so feedback debt follows the cover, not the original book.
+ * - instructor_reassign: drop anchor/absent staff slot; add covering staff
+ * - slot_clear_client: drop cleared seat on anchor
+ * - client_absence_announced: drop that client seat
+ * - client_replace_in_slot: ensure replacement client sits with anchor (cover) staff
+ */
+export function applyScheduleOverridesToFeedback2030Slots(
+  slots: Feedback2030Slot[],
+  overrides: Feedback2030OverrideRow[] | null | undefined,
+): Feedback2030Slot[] {
+  const active = (overrides || []).filter((o) =>
+    String(o.status || "active").trim().toLowerCase() === "active"
+  );
+  if (!active.length) return slots;
+
+  let next = slots.slice();
+
+  const dropMatching = (pred: (s: Feedback2030Slot) => boolean): void => {
+    next = next.filter((s) => !pred(s));
+  };
+
+  const upsertCover = (
+    staff: string,
+    client: string,
+    time: string,
+    service: string,
+    area?: string,
+  ) => {
+    if (!isUsableCoverStaff(staff) || !isRealFeedbackClient(client)) return;
+    const candidate: Feedback2030Slot = {
+      staff: String(staff).trim(),
+      client: String(client).trim(),
+      time: String(time || "").trim(),
+      service: String(service || "").trim(),
+      area: area ? String(area).trim() || undefined : undefined,
+    };
+    if (
+      next.some((s) =>
+        staffKeysMatch(s.staff, candidate.staff) &&
+        clientsClose(s.client, candidate.client) &&
+        feedbackTimesCompatible(s.time, candidate.time)
+      )
+    ) {
+      return;
+    }
+    next.push(candidate);
+  };
+
+  for (const ov of active) {
+    const ot = String(ov.override_type || "").trim();
+    const pl = (ov.payload && typeof ov.payload === "object")
+      ? ov.payload as Record<string, unknown>
+      : {};
+    const anchorStaff = String(ov.anchor_staff_id || "").trim();
+    const absentStaff = String(pl.absent_staff_id || "").trim() || anchorStaff;
+    const anchorClient = String(ov.anchor_client_id || "").trim();
+    const timeLab = String(ov.anchor_time_slot_label || "").trim();
+    const svc = String(pl.service || pl.activity || pl.roster_service || "").trim();
+
+    if (ot === "instructor_reassign") {
+      const cover = String(pl.covering_staff_id || pl.covering_staff_name || "").trim();
+      const clientName = String(
+        pl.client_name || pl.to_client_name || pl.replacement_client_name || anchorClient || "",
+      ).trim();
+      let removedClientLabel = "";
+      dropMatching((s) => {
+        const staffHit =
+          staffKeysMatch(s.staff, absentStaff) || staffKeysMatch(s.staff, anchorStaff);
+        if (!staffHit) return false;
+        if (
+          !clientMatchesOverride(s.client, anchorClient, pl) &&
+          !(clientName && clientsClose(s.client, clientName))
+        ) {
+          return false;
+        }
+        if (!feedbackTimesCompatible(s.time, timeLab)) return false;
+        if (isRealFeedbackClient(s.client)) removedClientLabel = s.client;
+        return true;
+      });
+      if (cover && isUsableCoverStaff(cover)) {
+        const label = removedClientLabel ||
+          (isRealFeedbackClient(clientName) ? clientName : "") ||
+          anchorClient;
+        /* Prefer username id (javi) over display name so debt collapses to one key. */
+        const coverStaffLabel = /^[a-z0-9_]+$/i.test(cover)
+          ? cover
+          : String(pl.covering_staff_name || cover);
+        upsertCover(
+          coverStaffLabel,
+          label,
+          timeLab,
+          svc,
+          String(pl.area || "").trim() || undefined,
+        );
+      }
+      continue;
+    }
+
+    if (ot === "slot_clear_client") {
+      dropMatching((s) => {
+        if (anchorStaff && !staffKeysMatch(s.staff, anchorStaff)) return false;
+        if (!clientMatchesOverride(s.client, anchorClient, pl)) return false;
+        return feedbackTimesCompatible(s.time, timeLab);
+      });
+      continue;
+    }
+
+    if (ot === "client_absence_announced") {
+      /* Drop every seat for that client+time (standing book and cover). */
+      dropMatching((s) => {
+        if (!clientMatchesOverride(s.client, anchorClient, pl)) return false;
+        return feedbackTimesCompatible(s.time, timeLab);
+      });
+      continue;
+    }
+
+    if (ot === "client_replace_in_slot") {
+      const toClient = String(
+        pl.to_client_name || pl.replacement_client_name || pl.to_client_id ||
+          pl.replacement_client_id || "",
+      ).trim();
+      if (!toClient || !isRealFeedbackClient(toClient)) continue;
+      const coverStaff = String(
+        pl.covering_staff_name || pl.covering_staff_id || anchorStaff || "",
+      ).trim();
+      if (!coverStaff) continue;
+      dropMatching((s) => {
+        if (!staffKeysMatch(s.staff, coverStaff) && !staffKeysMatch(s.staff, anchorStaff)) {
+          return false;
+        }
+        if (!feedbackTimesCompatible(s.time, timeLab)) return false;
+        const openish = !isRealFeedbackClient(s.client) ||
+          clientsClose(s.client, anchorClient) ||
+          /^(available|open|no[_ ]participant)$/i.test(slugClient(s.client));
+        return openish || clientsClose(s.client, toClient);
+      });
+      upsertCover(coverStaff, toClient, timeLab, svc, String(pl.area || "").trim() || undefined);
+    }
+  }
+
+  return softDedupeFeedback2030Slots(mergeFeedback2030Slots([next]));
+}
+
+/** Collapse 4.30 vs 16.30 / JAVI vs Javi Palankas duplicates for the same seat. */
+export function softDedupeFeedback2030Slots(slots: Feedback2030Slot[]): Feedback2030Slot[] {
+  const out: Feedback2030Slot[] = [];
+  for (const s of slots) {
+    if (
+      out.some((o) =>
+        staffKeysMatch(o.staff, s.staff) &&
+        clientsClose(o.client, s.client) &&
+        feedbackTimesCompatible(o.time, s.time)
+      )
+    ) {
+      continue;
+    }
+    out.push(s);
+  }
+  return out;
+}
+
+/**
+ * Day-off staff must not receive outstanding-feedback WhatsApps for standing books
+ * that were covered via overrides / dated roster.
+ */
+export function dropSlotsForUnavailableStaff(
+  slots: Feedback2030Slot[],
+  offRows: Feedback2030UnavailabilityRow[] | null | undefined,
+): Feedback2030Slot[] {
+  const rows = offRows || [];
+  if (!rows.length) return slots;
+  return slots.filter((s) => {
+    const sk = canonStaffKey(s.staff);
+    if (!sk) return true;
+    for (const r of rows) {
+      /* Prefer staff_name first-name (handles javi vs javier). Avoid name_key prefix traps. */
+      const fn = canonStaffKey(firstNameOf(String(r.staff_name || "")));
+      if (fn && staffKeysMatch(fn, sk)) return false;
+      const nk = normalizeStaffKey(String(r.name_key || ""));
+      if (!fn && nk && (nk === sk || (STAFF_USERNAME_ALIASES[nk] || nk) === sk)) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
 function namesMatchInstructor(completedBy: string, instructor: string): boolean {
   const a = normalizeStaffKey(firstNameOf(completedBy));
   const b = normalizeStaffKey(firstNameOf(instructor));
@@ -413,7 +684,8 @@ export function outstandingByStaff(
   const map = new Map<string, Feedback2030StaffDebt>();
   for (const slot of slots) {
     if (slotIsResolved(slot, iso, ctx)) continue;
-    const key = normalizeStaffKey(slot.staff);
+    if (!isUsableCoverStaff(slot.staff)) continue;
+    const key = canonStaffKey(slot.staff);
     if (!key) continue;
     let row = map.get(key);
     if (!row) {
