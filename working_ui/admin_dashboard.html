@@ -10151,8 +10151,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(String(o.session_date) !== String(slot.sessionDate)) return false;
       if(String(o.status || 'active') !== 'active') return false;
       if(String(o.anchor_venue || '').trim().toLowerCase() !== String(slot.venue || '').trim().toLowerCase()) return false;
-      if(normalizeSchedAnchorStaffId(o.anchor_staff_id) !== normalizeSchedAnchorStaffId(slot.staffRosterId)) return false;
       var oType = String(o.override_type || '').trim();
+      var slotStaff = normalizeSchedAnchorStaffId(slot.staffRosterId);
+      var anchorStaff = normalizeSchedAnchorStaffId(o.anchor_staff_id);
+      var staffOk = !!(slotStaff && anchorStaff && slotStaff === anchorStaff);
+      /* Cover seats: dated/canonical roster already shows covering staff + client.
+         instructor_reassign stays anchored on the absent instructor — still paint
+         Changed by / override chip on the cover's row. */
+      if(!staffOk && (oType === 'instructor_reassign' || oType === 'instructor_cover_needed')){
+        var coverStaff = normalizeSchedAnchorStaffId(o.payload && o.payload.covering_staff_id);
+        staffOk = !!(coverStaff && slotStaff && coverStaff === slotStaff);
+      }
+      if(!staffOk) return false;
       var timeExact = normTimeShort(o.anchor_start) === normTimeShort(slot.anchorStart)
         && normTimeShort(o.anchor_end) === normTimeShort(slot.anchorEnd);
       if(oType === 'client_replace_in_slot' && schedIsOpenSlotSlug(o.anchor_client_id)){
@@ -10162,6 +10172,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var sCid = adminCanonicalClientSlug(slot.clientSlug || slot.clientDisplay || '');
       if(oType === 'client_replace_in_slot' && schedIsOpenSlotSlug(sCid)){
         return timeExact;
+      }
+      /* Day reassign onto a named seat: override still anchors on available/open,
+         but the painted row already shows the replacement client. */
+      if(oType === 'client_replace_in_slot' && timeExact){
+        var repCid = adminCanonicalClientSlug(
+          (o.payload && (o.payload.to_client_id || o.payload.replacement_client_id)) || ''
+        );
+        if(repCid && sCid && repCid === sCid) return true;
       }
       if(oCid && sCid && oCid !== sCid) return false;
       if(oType === 'client_absence_announced'){
@@ -13783,6 +13801,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var payload = ov.payload || {};
       if(t === 'slot_clear_client' && payload && payload.client_move) return 'Moved out';
       if(t === 'client_replace_in_slot' && payload && payload.client_move) return 'Moved in';
+      if(t === 'client_replace_in_slot' && (
+        payload.day_reassign === true ||
+        payload.not_makeup === true ||
+        String(payload.replace_kind || payload.booking_kind || '').toLowerCase() === 'day_reassign' ||
+        String(payload.replace_kind || '').toLowerCase() === 'slot_move'
+      )) return 'Day reassign';
       if(t === 'client_replace_in_slot' && schedOverrideIsTrial(ov)) return 'Trial';
       if(t === 'slot_clear_client' && payload && payload.cancelled_by_admin) return 'Cancelled';
       return schedOverrideTypeLabel(t);
@@ -13796,6 +13820,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(k === 'slot_close') return 'override--cancelled';
       if(k === 'slot_open') return 'override--slot-open';
       if((k === 'client_replace_in_slot' || k === 'replace_participant') && schedOverrideIsTrial(ov)) return 'override--trial';
+      if((k === 'client_replace_in_slot' || k === 'replace_participant') && (
+        payload.day_reassign === true ||
+        payload.not_makeup === true ||
+        String(payload.replace_kind || payload.booking_kind || '').toLowerCase() === 'day_reassign' ||
+        String(payload.replace_kind || '').toLowerCase() === 'slot_move'
+      )) return 'override--instructor';
       if(k === 'client_replace_in_slot' || k === 'replace_participant') return 'override--makeup';
       if(k === 'instructor_cover_needed') return 'override--cover-needed';
       if(k === 'instructor_reassign') return 'override--instructor';
