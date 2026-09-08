@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260908-junaid-not-makeup";
+  var VER = "20260908-updated-admin-chip";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260906-cyrus-first-sun",
@@ -49,7 +49,7 @@
     "/portal/staff-dashboard-calendar.js?v=" + VER,
     "/portal/staff-dashboard-term.js?v=" + VER,
     "/portal/staff-dashboard-participants.js?v=" + VER,
-    "/portal/staff-dashboard-today.js?v=20260908-acton-redistribute",
+    "/portal/staff-dashboard-today.js?v=20260908-updated-admin-chip",
     "/portal/staff-dashboard-ui.js?v=" + VER,
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
@@ -71,7 +71,7 @@
     "/portal/staff-dashboard-calendar.js?v=" + VER,
     "/portal/staff-dashboard-term.js?v=" + VER,
     "/portal/staff-dashboard-participants.js?v=" + VER,
-    "/portal/staff-dashboard-today.js?v=20260908-acton-redistribute",
+    "/portal/staff-dashboard-today.js?v=20260908-updated-admin-chip",
     "/portal/staff-dashboard-ui.js?v=" + VER,
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,

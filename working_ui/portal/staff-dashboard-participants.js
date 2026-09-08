@@ -3601,6 +3601,49 @@
       }
       return best;
     }
+    /** Day move / instructor cover replace — not a MakeUp (participant still attends). */
+    function portalOverrideIsDayReassignReplace(ov){
+      if(!ov || String(ov.override_type || '').trim() !== 'client_replace_in_slot') return false;
+      if(portalOverrideIsTrial(ov)) return false;
+      const pl = ov.payload || {};
+      if(pl.day_reassign === true || pl.not_makeup === true) return true;
+      const kind = String(pl.booking_kind || pl.session_kind || pl.replace_kind || '').trim().toLowerCase();
+      return kind === 'day_reassign' || kind === 'instructor_day_cover' || kind === 'slot_move';
+    }
+    try{ window.portalOverrideIsDayReassignReplace = portalOverrideIsDayReassignReplace; }catch(_){}
+    /**
+     * instructor_reassign anchored on the absent instructor, but this viewer is the cover
+     * and already has the client on their dated/canonical roster — attach that override so
+     * Today can paint "Updated by admin" (and yellow) without needing a duplicate inject card.
+     */
+    function portalCoverInstructorReassignForViewerSession(s, sessionDateIso, viewerStaffId){
+      const iso = normaliseIsoDate(sessionDateIso);
+      const me = typeof portalCanonicalStaffKeyForMatch === 'function'
+        ? portalCanonicalStaffKeyForMatch(viewerStaffId)
+        : portalNormKeyStr(viewerStaffId);
+      if(!iso || !s || !me) return null;
+      const cid = String(s.clientId || '').trim().toLowerCase();
+      if(!cid || portalScheduleOverrideAnchorIsOpenSlot(cid)) return null;
+      const all = portalScheduleOverrideRowsAll();
+      let best = null;
+      for(let i = 0; i < all.length; i++){
+        const r = all[i];
+        if(String(r.status || 'active') !== 'active') continue;
+        if(String(r.override_type || '').trim() !== 'instructor_reassign') continue;
+        if(normaliseIsoDate(r.session_date) !== iso) continue;
+        const pl = r.payload || {};
+        const cover = typeof portalCanonicalStaffKeyForMatch === 'function'
+          ? portalCanonicalStaffKeyForMatch(pl.covering_staff_id || pl.covering_staff_name)
+          : portalNormKeyStr(pl.covering_staff_id || pl.covering_staff_name);
+        if(!cover || cover !== me) continue;
+        if(!portalRosterClientIdsMatch(r.anchor_client_id, cid)) continue;
+        if(portalNormKeyStr(r.anchor_venue) !== portalNormKeyStr(s.venue)) continue;
+        if(!portalScheduleOverrideAnchorTimesMatchSession(r, s, 'instructor_reassign')) continue;
+        if(!best || new Date(r.created_at || 0) > new Date(best.created_at || 0)) best = r;
+      }
+      return best;
+    }
+    try{ window.portalCoverInstructorReassignForViewerSession = portalCoverInstructorReassignForViewerSession; }catch(_){}
     /** Active MakeUp replace on this roster anchor (replacement ≠ anchor client). */
     function portalReplaceMakeupOverrideForSession(s, sessionDateIso){
       if(!s || !sessionDateIso) return null;
@@ -3613,10 +3656,7 @@
         ov = portalReplaceOverrideForSessionAnchor(s, iso);
       }
       if(!ov || portalOverrideIsTrial(ov)) return null;
-      const pl = ov.payload || {};
-      if(pl.day_reassign === true || pl.not_makeup === true) return null;
-      const kind = String(pl.booking_kind || pl.session_kind || pl.replace_kind || '').trim().toLowerCase();
-      if(kind === 'day_reassign' || kind === 'instructor_day_cover' || kind === 'slot_move') return null;
+      if(portalOverrideIsDayReassignReplace(ov)) return null;
       const repId = portalOverrideReplacementClientId(ov.payload);
       const anchorId = String(s.clientId || '').trim().toLowerCase();
       if(!repId || !anchorId || repId === anchorId) return null;

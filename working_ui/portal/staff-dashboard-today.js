@@ -2717,6 +2717,9 @@
             const anchorReplace = portalReplaceOverrideForSessionAnchor(s, sessionDateKey);
             if(anchorReplace) ov = anchorReplace;
           }
+          if(!ov && typeof portalCoverInstructorReassignForViewerSession === 'function'){
+            ov = portalCoverInstructorReassignForViewerSession(s, sessionDateKey, staffId);
+          }
           const manualOv = String(s && s.override || '').trim().toUpperCase();
           const replaceNotSameCalendarDay = !!(ov && ov.override_type === 'client_replace_in_slot' && typeof portalCalendarDateIsSelectedDashboardDay === 'function' && !portalCalendarDateIsSelectedDashboardDay(sessionDateKey));
           const sessionVenue = String(s.venue || '').trim() || '—';
@@ -3155,7 +3158,9 @@
           const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effClientId);
           const isTrialOv = (hasReplaceOv && portalOverrideIsTrial(ov)) || portalRosterParticipantNameLooksTrial(c.name || nameFromReplace);
           const replacedVisual = manualOv === 'REPLACED';
-          const isMakeUpCard = !isTrialOv && (hasReplaceOv || replacedVisual);
+          const isDayReassignReplace = hasReplaceOv && typeof portalOverrideIsDayReassignReplace === 'function'
+            && portalOverrideIsDayReassignReplace(ov);
+          const isMakeUpCard = !isTrialOv && !isDayReassignReplace && (hasReplaceOv || replacedVisual);
           const makeUpPink = isMakeUpCard;
           const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
             && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
@@ -3188,7 +3193,7 @@
             sessionStartTs,
             sessionEndTs,
             portalTwoToOneSupportLabel: twoToOneLabel,
-            portalOverrideMakeUpTag: (hasReplaceOv || replacedVisual) && !isTrialOv,
+            portalOverrideMakeUpTag: isMakeUpCard,
             portalOverrideTrialTag: isTrialOv,
             portalOverrideCardTone: isMakeUpCard ? 'pink' : (slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : '')),
             portalOverrideSymbolText: isTrialOv ? 'Trial' : (isMakeUpCard ? 'Make Up' : ''),
@@ -3552,6 +3557,40 @@
         const venue = portalNormKeyStr(it && it.sessionVenue != null ? it.sessionVenue : base.venue);
         return [cid, start, end, venue].join('|');
       }
+      function portalPaintPrimaryWithCoverAdminAdjust(primaryItems, coverItem, dedupeKey){
+        if(!Array.isArray(primaryItems) || !coverItem) return;
+        const covOv = coverItem.__portalScheduleOverride;
+        for(let pi = 0; pi < primaryItems.length; pi++){
+          const pit = primaryItems[pi];
+          if(!pit || pit.kind !== 'client') continue;
+          const pk = portalTodayItemClientSlotDedupeKey(pit);
+          if(dedupeKey && pk && pk === dedupeKey){
+            pit.scheduleAdminAdjusted = true;
+            if(!pit.portalOverrideHideAdminBadge) pit.portalOverrideHideAdminBadge = false;
+            if(covOv && !pit.__portalScheduleOverride) pit.__portalScheduleOverride = covOv;
+            return;
+          }
+        }
+        const covCid = portalCanonicalTodayClientKey(
+          coverItem.clientId,
+          coverItem.clientName || coverItem.name
+        ) || String(coverItem.clientId || '').trim().toLowerCase();
+        const covWin = portalTodayItemSlotWindow(coverItem);
+        for(let pj = 0; pj < primaryItems.length; pj++){
+          const pit2 = primaryItems[pj];
+          if(!pit2 || pit2.kind !== 'client') continue;
+          const pCid = portalCanonicalTodayClientKey(
+            pit2.clientId,
+            pit2.clientName || pit2.name
+          ) || String(pit2.clientId || '').trim().toLowerCase();
+          if(!covCid || pCid !== covCid) continue;
+          if(!portalTodaySlotWindowsOverlap(portalTodayItemSlotWindow(pit2), covWin)) continue;
+          pit2.scheduleAdminAdjusted = true;
+          if(!pit2.portalOverrideHideAdminBadge) pit2.portalOverrideHideAdminBadge = false;
+          if(covOv && !pit2.__portalScheduleOverride) pit2.__portalScheduleOverride = covOv;
+          return;
+        }
+      }
       function portalDedupeInstructorCoverExtras(primaryItems, extraItems){
         if(!Array.isArray(primaryItems) || !Array.isArray(extraItems) || !extraItems.length) return extraItems || [];
         const seenExact = Object.create(null);
@@ -3580,7 +3619,11 @@
             return;
           }
           const k = portalTodayItemClientSlotDedupeKey(it);
-          if(k && seenExact[k]) return;
+          if(k && seenExact[k]){
+            /* Dated roster already shows the cover seat — keep one card, paint Updated by admin. */
+            portalPaintPrimaryWithCoverAdminAdjust(primaryItems, it, k);
+            return;
+          }
           const win = portalTodayItemSlotWindow(it);
           const cid = portalCanonicalTodayClientKey(
             it.clientId,
@@ -3605,8 +3648,14 @@
           for(let i = 0; i < occupied.length; i++){
             const o = occupied[i];
             if(o.clientId !== cid) continue;
-            if(k && o.dedupeKey && k === o.dedupeKey) return;
-            if(portalTodaySlotWindowsOverlap(o.win, win)) return;
+            if(k && o.dedupeKey && k === o.dedupeKey){
+              portalPaintPrimaryWithCoverAdminAdjust(primaryItems, it, k);
+              return;
+            }
+            if(portalTodaySlotWindowsOverlap(o.win, win)){
+              portalPaintPrimaryWithCoverAdminAdjust(primaryItems, it, o.dedupeKey || k);
+              return;
+            }
           }
           /* Also collapse duplicate cover injects against each other (same client overlap). */
           for(let j = 0; j < kept.length; j++){
