@@ -56,6 +56,15 @@ const COVERS = [
     area: "Lane (DE)",
   },
   {
+    client: "ayman",
+    label: "4.30 to 5",
+    start: "16:30:00",
+    end: "17:00:00",
+    coverId: "javi",
+    coverName: "Javi Palankas",
+    area: "Lane (DE)",
+  },
+  {
     client: "linda",
     label: "5 to 5.30",
     start: "17:00:00",
@@ -137,6 +146,12 @@ const DATED_ROWS = [
     client_name: "No participant",
     instructors: "LULIYA",
     time_slot: "6 to 6.30",
+    area: "Lane (DE)",
+  },
+  {
+    client_name: "Ayman",
+    instructors: "JAVI",
+    time_slot: "4.30 to 5",
     area: "Lane (DE)",
   },
   {
