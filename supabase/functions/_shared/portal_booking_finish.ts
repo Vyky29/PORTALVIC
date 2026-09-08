@@ -35,6 +35,7 @@ import {
   stripeGrossUpFromGbp,
 } from "./stripe_checkout.ts";
 import { foldValidatedReservationOntoMadre, preferredInstructorForReservation } from "./portal_booking_fold_madre.ts";
+import { ensurePostTrialOfferAfterPaid } from "./portal_post_trial_offers.ts";
 import { unitPriceFor } from "./reenrolment_catalog.ts";
 import { resolvePortalInvoiceOwnerUserId } from "./portal_create_family_invoice.ts";
 import {
@@ -1409,6 +1410,12 @@ export async function syncOpsAfterFinishBookingPaid(
     notes.push(
       await ensureTrialScheduleOverride(admin, reservation, participantName || "Participant"),
     );
+    try {
+      notes.push(await ensurePostTrialOfferAfterPaid(admin, reservation));
+    } catch (e) {
+      notes.push("post_trial_offer_error");
+      console.warn("[syncOpsAfterFinishBookingPaid] post_trial", e);
+    }
   }
 
   return { ok: true, notes };

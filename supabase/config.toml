@@ -677,6 +677,9 @@ verify_jwt = false
 [functions.portal-cron-booking-pay-hold]
 verify_jwt = false
 
+[functions.portal-cron-post-trial-offers]
+verify_jwt = false
+
 [functions.portal-cron-gocardless-fail-grace]
 verify_jwt = false
 
