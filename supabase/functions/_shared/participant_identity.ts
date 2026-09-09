@@ -50,8 +50,8 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   fadi_ab: "fadi",
   cyrus_mahdavi: "cyrus",
   cyrus_ma: "cyrus",
-  // Canonical roster slug is "emanuel" (legal spelling). Legacy double-m maps here.
-  emmanuel: "emanuel",
+  // DC client roster id is "emanuel" (one m). ONLY map known Dodson / gap ids —
+  // never bare "emmanuel" (would steal Day Centre "Emanuel" onto new Emmanuel *Abate*).
   emmanuel_dodson: "emanuel",
   emmanuel_do: "emanuel",
   emanuel_dodson: "emanuel",
@@ -271,7 +271,37 @@ export function resolveParticipantClientSlugs(input: ParticipantIdentityInput): 
     }
   }
 
-  return [...out].filter(Boolean);
+  let list = [...out].filter(Boolean);
+  /*
+   * Emmanuel Abate (new aquatic twin) must never resolve to DC roster "emanuel"
+   * (Emanuel / Emanuel Dodson). Surname Abate scopes the identity.
+   */
+  const lastSlug = slugifyParticipantKey(lastName || "");
+  const displaySlug = slugifyParticipantKey(
+    stripParentheticalNicknames(input.displayName || ""),
+  );
+  if (
+    lastSlug === "abate" ||
+    /(^|_)abate$/.test(displaySlug) ||
+    displaySlug.includes("abate_")
+  ) {
+    list = list.filter((s) => {
+      const c = rosterParticipantSlugAlias(s);
+      return c !== "emanuel" && s !== "emanuel" && s !== "emmanuel";
+    });
+    const full = slugifyParticipantKey(
+      `${firstClean || firstRaw} ${lastName}`.trim() || input.displayName || "",
+    );
+    if (full) list.push(full);
+    if (!list.includes("emmanuel_abate") && /emmanuel/.test(displaySlug + lastSlug)) {
+      list.push("emmanuel_abate");
+    }
+    if (!list.includes("christian_abate") && /christian/.test(displaySlug)) {
+      list.push("christian_abate");
+    }
+  }
+
+  return [...new Set(list)].filter(Boolean);
 }
 
 export function isAcatMemberIdentity(input: ParticipantIdentityInput): boolean {
@@ -369,9 +399,20 @@ export function participantIdentityMatches(
   if (wantSlug && gotSlug && wantSlug === gotSlug) return true;
 
   const first = normalizeParticipantLookupName(input.firstName || "");
+  const last = normalizeParticipantLookupName(
+    input.lastName ||
+      String(input.displayName || "")
+        .trim()
+        .split(/\s+/)
+        .slice(1)
+        .join(" "),
+  );
   if (first) {
     const gotParts = normalizeParticipantLookupName(rowName).split(" ").filter(Boolean);
+    // Single-token roster names (e.g. "Emanuel") must not match a different surname
+    // (e.g. portal "Emmanuel Abate").
     if (gotParts.length === 1 && gotParts[0] === first) {
+      if (last) return false;
       const rowSlug = slugifyParticipantKey(rowClientId || rowName);
       const firstSlug = slugifyParticipantKey(input.firstName || "");
       if (rowSlug === firstSlug || slugs.some((s) => s === rowSlug || s === rosterParticipantSlugAlias(rowSlug))) {

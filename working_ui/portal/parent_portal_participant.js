@@ -3010,15 +3010,32 @@
     var finished = isIsoSessionFinished(d.iso, data);
     d.past = finished;
     if (finished) d.isNext = false;
+    var paidFrom = participantPaidFromIso(data);
+    if (paidFrom && d.iso < paidFrom) {
+      d.notBooked = true;
+      d.isNext = false;
+    }
     return d;
   }
 
   /**
-   * Earliest date this child should show on hub session chips.
-   * Uses registration_date from parent-portal-participant-detail when set
-   * (late joiners must not see projected weekdays from term start).
+   * Earliest paid / booked session for this child (invoice / reservation).
+   * Mid-term joiners: earlier weekday chips stay on the board but paint red.
+   */
+  function participantPaidFromIso(data) {
+    var p = (data && data.participant) || {};
+    var booked = String(p.booked_from || p.bookedFrom || "").trim().slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(booked)) return booked;
+    return "";
+  }
+
+  /**
+   * Earliest date this child should show on hub session chips as a paid place.
+   * Prefer booked_from over registration_date (registration can be earlier than pay start).
    */
   function participantSessionStartIso(data) {
+    var paid = participantPaidFromIso(data);
+    if (paid) return paid;
     var p = (data && data.participant) || {};
     var iso = String(p.registration_date || p.registrationDate || "").trim().slice(0, 10);
     if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
@@ -3028,7 +3045,12 @@
   /** Raise a term window start so chips never begin before the child joined. */
   function chipWindowFromIso(termFromIso, data) {
     var from = String(termFromIso || "").trim().slice(0, 10);
-    var start = participantSessionStartIso(data);
+    /* Board may start at term open; paid_from only gates blue vs red (notBooked). */
+    var reg = "";
+    var p = (data && data.participant) || {};
+    var regIso = String(p.registration_date || p.registrationDate || "").trim().slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(regIso)) reg = regIso;
+    var start = reg || participantSessionStartIso(data);
     if (start && (!from || start > from)) return start;
     return from;
   }
@@ -3928,6 +3950,14 @@
       return {
         tone: "cancelled",
         title: "Cancelled — " + d.iso,
+        icon: CHIP_X_SVG,
+      };
+    }
+    // Mid-term join: weekday before paid start (e.g. 8 / 15 Sep when place starts 22).
+    if (d.notBooked) {
+      return {
+        tone: "unconfirmed",
+        title: "Not included in paid place — " + d.iso,
         icon: CHIP_X_SVG,
       };
     }

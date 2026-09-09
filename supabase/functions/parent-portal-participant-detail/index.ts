@@ -1683,7 +1683,7 @@ Deno.serve(async (req) => {
     const { data: parentShares } = await supabase
       .from("portal_parent_invoice_share")
       .select(
-        "invoice_number, reference_text, line_description, billing_term, due_date, next_instalment_due, payment_method_hint, payment_status, amount_gbp, amount_paid_gbp, payment_schedule, share_status",
+        "invoice_number, reference_text, line_description, billing_term, due_date, next_instalment_due, payment_method_hint, payment_status, amount_gbp, amount_paid_gbp, payment_schedule, share_status, line_items, quantity",
       )
       .eq("contact_id", contactId)
       .eq("share_status", "ready")
@@ -1933,6 +1933,8 @@ Deno.serve(async (req) => {
     kind?: string;
   }> = [];
   let isTrialOnlyPlace = false;
+  /** First paid / held term session (hub chips before this stay red — not in the paid place). */
+  let bookedFromIso: string | null = null;
   if (wantGeneral && !isFormerClient) {
     const todayIso = new Date().toISOString().slice(0, 10);
     const nameCandidates = [
@@ -1969,9 +1971,8 @@ Deno.serve(async (req) => {
         )
         .in("document_id", docIds)
         .in("status", ["validated", "held", "confirmed", "paid"])
-        .gte("date_iso", todayIso)
         .order("date_iso", { ascending: true })
-        .limit(12);
+        .limit(24);
       bookedRows = Array.isArray(data) ? data : [];
     }
     if (!bookedRows.length && nameCandidates.length) {
@@ -1981,10 +1982,9 @@ Deno.serve(async (req) => {
           "date_iso, day_label, service_name, time_label, venue, status, participant_name, parent_email, document_id, notes",
         )
         .in("status", ["validated", "held", "confirmed", "paid"])
-        .gte("date_iso", todayIso)
         .ilike("participant_name", nameCandidates[0])
         .order("date_iso", { ascending: true })
-        .limit(12);
+        .limit(24);
       bookedRows = (data || []).filter((row) => {
         const pname = clean(row.participant_name, 80).toLowerCase();
         const nameOk = nameCandidates.some(
@@ -1996,11 +1996,71 @@ Deno.serve(async (req) => {
       });
     }
 
+    for (const row of bookedRows) {
+      const iso = clean(row.date_iso, 12).slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+      const trialish = /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(
+        String(row.notes || ""),
+      );
+      if (!trialish && (!bookedFromIso || iso < bookedFromIso)) bookedFromIso = iso;
+    }
+
+    /* Invoice line "Dates: 22, 29 Sept; …" — first paid autumn date if reservation missing. */
+    if (!bookedFromIso) {
+      const { data: dateShares } = await supabase
+        .from("portal_parent_invoice_share")
+        .select("line_items, billing_term, payment_status, share_status")
+        .eq("contact_id", contactId)
+        .eq("share_status", "ready")
+        .limit(20);
+      for (const sh of dateShares || []) {
+        if (clean(sh.payment_status, 40).toLowerCase() === "void") continue;
+        const items = Array.isArray(sh.line_items) ? sh.line_items : [];
+        for (const it of items) {
+          const dates = String((it as { dates?: unknown })?.dates || "");
+          const m = dates.match(
+            /Dates:\s*(\d{1,2})\s*,?\s*[^;]*?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)/i,
+          );
+          if (!m) continue;
+          const dayN = Number(m[1]);
+          const mon = m[2].toLowerCase().slice(0, 3);
+          const monMap: Record<string, string> = {
+            jan: "01",
+            feb: "02",
+            mar: "03",
+            apr: "04",
+            may: "05",
+            jun: "06",
+            jul: "07",
+            aug: "08",
+            sep: "09",
+            oct: "10",
+            nov: "11",
+            dec: "12",
+          };
+          const monKey = mon.startsWith("sep") ? "sep" : mon;
+          const mm = monMap[monKey];
+          if (!mm || !dayN) continue;
+          const year = Number(mm) >= 9 ? "2026" : "2027";
+          const iso =
+            year + "-" + mm + "-" + String(dayN).padStart(2, "0");
+          if (/^\d{4}-\d{2}-\d{2}$/.test(iso) && (!bookedFromIso || iso < bookedFromIso)) {
+            bookedFromIso = iso;
+          }
+        }
+      }
+    }
+
+    const futureBooked = bookedRows.filter((row) => {
+      const iso = clean(row.date_iso, 12).slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso >= todayIso;
+    });
+
     const hasTrialReservation = bookedRows.some((row) =>
       /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(String(row.notes || "")),
     );
 
-    upcomingBookedSessions = bookedRows
+    upcomingBookedSessions = futureBooked
       .map((row) => {
         const iso = clean(row.date_iso, 12).slice(0, 10);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
@@ -2061,6 +2121,11 @@ Deno.serve(async (req) => {
         postcode: contactRow?.postcode && contactRow.postcode !== "—" ? contactRow.postcode : null,
         /** When set, hub session chips start on/after this date (not full-term weekday projection). */
         registration_date: registrationDateIso,
+        /**
+         * First paid term session (reservation / invoice). Dates before this on the
+         * weekday board paint red — not included in the 12-session mid-term place.
+         */
+        booked_from: bookedFromIso,
         avatar_url: avatar.avatar_url,
         has_avatar: !!(avatar.avatar_url || participant.avatar_storage_path),
       },
