@@ -475,10 +475,11 @@ Deno.serve(async (req) => {
     fromIso: todayIso,
     daysAhead: 28,
   });
-  const url = new URL(req.url);
+  /* Do not shadow `url` (SUPABASE_URL) — that broke the public offer boot. */
+  const reqUrl = new URL(req.url);
   const includeStaff =
-    url.searchParams.get("include_staff") === "1" ||
-    url.searchParams.get("office") === "1";
+    reqUrl.searchParams.get("include_staff") === "1" ||
+    reqUrl.searchParams.get("office") === "1";
   const weeklySlotsPublic = weekly.slots.map((slot) => {
     const {
       bookedKeys: _bk,
