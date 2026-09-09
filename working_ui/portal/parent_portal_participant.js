@@ -2612,6 +2612,14 @@
           if (opts && typeof opts.openContactDetails === "function") opts.openContactDetails();
         });
       });
+      sheetBody.querySelectorAll("[data-pp-hub-sign-out]").forEach(function (el) {
+        if (el.__ppBoundSignOut) return;
+        el.__ppBoundSignOut = true;
+        el.addEventListener("click", function () {
+          closeHubMenuSheet();
+          if (opts && typeof opts.signOut === "function") opts.signOut();
+        });
+      });
     }
     var chromeActions = doc.querySelector(".pp-participant-head-actions");
     if (chromeActions) bindHubOpenButtons(host, data, opts, chromeActions);
@@ -2810,6 +2818,17 @@
           (msgUnread > 0 ? " pp-pax-info-btn--has-unread" : ""),
         unreadBadge: msgBadge,
       }) +
+      "</div>" +
+      '<p class="pp-pax-info-section-label pp-pax-info-section-label--account">Account</p>' +
+      '<div class="pp-pax-info-row pp-pax-info-row--account">' +
+      '<button type="button" class="pp-pax-info-btn pp-pax-info-btn--logout" data-pp-hub-sign-out aria-label="Log out">' +
+      '<span class="pp-pax-info-btn-stack">' +
+      '<span class="pp-pax-info-icon-plate" aria-hidden="true">' +
+      '<svg class="pp-pax-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>' +
+      "</span>" +
+      '<span class="pp-pax-info-caption">Log out</span>' +
+      '<span class="pp-pax-info-subcaption">Sign out of Family Portal</span>' +
+      "</span></button>" +
       "</div></div>"
     );
   }

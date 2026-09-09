@@ -216,6 +216,12 @@
           }
         });
       },
+      signOut: function () {
+        clearSession();
+        setStep("identify");
+        hideNotice($("ppNotice"));
+        hideNotice($("ppParticipantNotice"));
+      },
       saveGeneralInfo: function (fields) {
         return fetch(fn("parent-portal-general-info-save"), {
           method: "POST",

@@ -609,9 +609,13 @@
       gap: 2px;
       flex-shrink: 0;
       margin: 0;
-      padding: 6px 8px;
-      min-width: 48px;
-      min-height: 48px;
+      padding: 4px 3px;
+      width: 56px;
+      height: 52px;
+      min-width: 56px;
+      max-width: 56px;
+      min-height: 52px;
+      max-height: 52px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--white);
@@ -619,6 +623,7 @@
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       box-sizing: border-box;
+      overflow: hidden;
     }
     .pp-hub-menu-btn[hidden],
     .pp-hub-chrome-btn[hidden] { display: none !important; }
@@ -665,16 +670,13 @@
       color: var(--ink);
       white-space: nowrap;
     }
-    /* Same chrome size as Refresh — longer label may widen slightly, not a big pill. */
-    .pp-hub-chrome-btn--all-children {
-      min-width: 48px;
-      max-width: 72px;
-    }
+    /* Same fixed box as Menu / Messages / Refresh (two-line label fits inside). */
     .pp-hub-chrome-btn--all-children .pp-hub-chrome-btn__label {
       white-space: normal;
       text-align: center;
       line-height: 1.05;
-      max-width: 4.6em;
+      font-size: 9px;
+      max-width: 100%;
     }
     .pp-hub-menu-sheet {
       position: fixed;
@@ -3686,6 +3688,10 @@
       background: linear-gradient(90deg, rgba(124, 58, 237, 0.12), rgba(124, 58, 237, 0.02));
       border-left-color: #7c3aed;
     }
+    .pp-pax-info-section-label--account {
+      background: linear-gradient(90deg, rgba(71, 85, 105, 0.12), rgba(71, 85, 105, 0.02));
+      border-left-color: #475569;
+    }
     .pp-hub-shortcuts {
       margin: 10px 0 4px;
       min-width: 0;
@@ -4283,6 +4289,7 @@
     .pp-pax-info-btn--sessions .pp-pax-info-icon-plate { background: #eaf5fb; color: #1f6a94; }
     .pp-pax-info-btn--achievements .pp-pax-info-icon-plate { background: #ecfdf5; color: #047857; }
     .pp-pax-info-btn--swim .pp-pax-info-icon-plate { background: #e0f7fa; color: #0e7490; }
+    .pp-pax-info-btn--logout .pp-pax-info-icon-plate { background: #fef2f2; color: #b91c1c; }
     .pp-pax-info-btn--accent .pp-pax-info-icon-plate { background: #fff6e5; color: #b7791f; }
     .pp-pax-info-btn--messages .pp-pax-info-caption,
     .pp-pax-info-btn--absence .pp-pax-info-caption,
@@ -5534,8 +5541,8 @@
   <script src="/portal/portal_parent_history_pdf.js?v=20260902-history-pdf-noblack"></script>
   <script src="/portal/parent_portal_team.js?v=20260908-team-unchanged-logan"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260828-trial-iso-cal"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260909-no-sib-pills"></script>
-  <script src="/portal/parent_portal_app.js?v=20260909-all-children-chrome"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260909-menu-logout"></script>
+  <script src="/portal/parent_portal_app.js?v=20260909-menu-logout"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
