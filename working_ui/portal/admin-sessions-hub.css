@@ -1908,6 +1908,25 @@
     .ash-db-col__frame {
       color: inherit;
     }
+    .ash-db-col__hrs-block {
+      display: inline;
+    }
+    .ash-db-col__hrs-and,
+    .ash-db-col__hrs-slash {
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .ash-db-col__hrs-slash {
+      margin: 0 0.12em;
+    }
+    .ash-db-col__hrs-ok {
+      color: #15803d;
+      font-weight: 800;
+    }
+    .ash-db-col__hrs-gap {
+      color: #b91c1c;
+      font-weight: 800;
+    }
     .ash-db-col__paid {
       display: inline;
       margin-left: 0.35em;

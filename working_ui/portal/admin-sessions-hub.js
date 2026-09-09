@@ -9430,23 +9430,26 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return ranges.join(" & ") + " (" + durs.join("/") + ")";
   }
 
+  function minutesRangeOverlap(a0, a1, b0, b1) {
+    var lo = Math.max(a0, b0);
+    var hi = Math.min(a1, b1);
+    return hi > lo ? hi - lo : 0;
+  }
+
   /**
    * Hours this column works on the selected Overview day.
    * Away / day-off cards are skipped (remaining work only). COVER mirror cards count.
    *
-   * Frame (muted): full card clock including open seats — e.g. 4-6.30 (2.5h).
-   * Paid (green): real-client minutes only. Incomplete afternoon AS cards (opens/gaps)
-   * floor at 1.5h — e.g. Javier 1.5h clients → 1'5h; Youssef 1h client → 1'5h min.
+   * Per block: full clock in red when the book has opens/gaps; paid (green) is real-client
+   * minutes. Incomplete afternoon AS floors at 1.5h. Trailing total = paid (green).
+   * e.g. Luliya 11-3 (4h) & 4.30-6.30 (2h / 1'5h) 5'5h
+   *      Javier 4-6.30 (2'5h / 1'5h) 1'5h
    */
   function dayBoardStaffWorkHoursParts(items, staffKey) {
     var frameRanges = [];
+    var seats = [];
     var dayWord = "";
     var AFTERNOON_FROM = 15 * 60;
-    var clientMinsAll = 0;
-    var afternoonClientMins = 0;
-    var afternoonOpen = false;
-    var afternoonClientCount = 0;
-    var afternoonClients = Object.create(null);
 
     for (var i = 0; i < (items || []).length; i++) {
       var it = items[i];
@@ -9466,65 +9469,91 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         !!st.isClosed;
       var isDuty = kind === "staff_duty" || kind === "manager" || !!st.isDuty;
       var isCancelled = !!st.isCancelled;
-      var isAfternoon = b.start >= AFTERNOON_FROM || b.end > AFTERNOON_FROM;
-
-      if (isOpen && isAfternoon) afternoonOpen = true;
-      if (isOpen || isDuty || isCancelled) continue;
-
-      var seatMins = b.end - b.start;
-      if (!(seatMins > 0)) continue;
-      clientMinsAll += seatMins;
-      if (isAfternoon) {
-        var aStart = Math.max(b.start, AFTERNOON_FROM);
-        var aMins = b.end - aStart;
-        if (aMins > 0) afternoonClientMins += aMins;
-        var slug =
-          canonicalClientSlug(it.slot.client_name) ||
-          clean(it.slot.client_name).toLowerCase();
-        if (slug && !afternoonClients[slug]) {
-          afternoonClients[slug] = true;
-          afternoonClientCount += 1;
-        }
-      }
+      seats.push({
+        start: b.start,
+        end: b.end,
+        isOpen: isOpen,
+        isClient: !isOpen && !isDuty && !isCancelled && b.end > b.start,
+      });
     }
 
     var frameBlocks = mergeContiguousWorkBlocks(frameRanges, 15);
     var frameLabel = formatWorkBlocksHoursLabel(frameBlocks, dayWord);
-    if (!frameLabel) return { frame: "", paid: "", title: "" };
+    if (!frameLabel) return { frame: "", paid: "", title: "", blocks: [], showPaidTotal: false };
 
-    var frameMins = 0;
-    var afternoonFrameMins = 0;
-    for (var f = 0; f < frameBlocks.length; f++) {
-      frameMins += frameBlocks[f].end - frameBlocks[f].start;
-      if (frameBlocks[f].end <= AFTERNOON_FROM) continue;
-      afternoonFrameMins +=
-        frameBlocks[f].end - Math.max(frameBlocks[f].start, AFTERNOON_FROM);
-    }
-
-    var paidMins = clientMinsAll;
     var isSunday = String(dayWord || "").toLowerCase() === "sunday";
-    if (!isSunday && afternoonClientMins > 0) {
-      var incompleteAfternoon =
-        afternoonOpen || afternoonClientMins + 1 < afternoonFrameMins;
-      var adjustedAfternoon = afternoonClientMins;
-      if (incompleteAfternoon && adjustedAfternoon < 90) {
-        adjustedAfternoon = 90;
+    var outBlocks = [];
+    var paidMinsTotal = 0;
+    var frameMinsTotal = 0;
+    var anyIncomplete = false;
+
+    for (var f = 0; f < frameBlocks.length; f++) {
+      var block = frameBlocks[f];
+      var frameMins = block.end - block.start;
+      if (!(frameMins > 0)) continue;
+      frameMinsTotal += frameMins;
+      var clientMins = 0;
+      var hasOpen = false;
+      for (var s = 0; s < seats.length; s++) {
+        var seat = seats[s];
+        var ov = minutesRangeOverlap(seat.start, seat.end, block.start, block.end);
+        if (ov <= 0) continue;
+        if (seat.isOpen) hasOpen = true;
+        if (seat.isClient) clientMins += ov;
       }
-      paidMins = clientMinsAll - afternoonClientMins + adjustedAfternoon;
+      var isAfternoon = block.start >= AFTERNOON_FROM || block.end > AFTERNOON_FROM;
+      var paidMins = clientMins;
+      var incomplete = hasOpen || clientMins + 1 < frameMins;
+      if (!isSunday && isAfternoon && incomplete && paidMins > 0 && paidMins < 90) {
+        paidMins = 90;
+      }
+      if (Math.round(paidMins / 30) * 30 >= Math.round(frameMins / 30) * 30) {
+        incomplete = false;
+        paidMins = frameMins;
+      }
+      paidMinsTotal += paidMins;
+      if (incomplete) anyIncomplete = true;
+      var a = rosterHmTokenFrom24(minutesOfDayToHm(block.start), dayWord);
+      var c = rosterHmTokenFrom24(minutesOfDayToHm(block.end), dayWord);
+      if (!a || !c) continue;
+      outBlocks.push({
+        range: a + "-" + c,
+        frameDur: formatSpanishHourDuration(frameMins),
+        paidDur: formatSpanishHourDuration(paidMins),
+        incomplete: incomplete,
+      });
     }
 
     var paidLabel = "";
-    if (paidMins > 0 && Math.round(paidMins / 30) * 30 !== Math.round(frameMins / 30) * 30) {
-      paidLabel = formatSpanishHourDuration(paidMins);
+    if (anyIncomplete && paidMinsTotal > 0) {
+      paidLabel = formatSpanishHourDuration(paidMinsTotal);
+    } else if (
+      paidMinsTotal > 0 &&
+      Math.round(paidMinsTotal / 30) * 30 !== Math.round(frameMinsTotal / 30) * 30
+    ) {
+      paidLabel = formatSpanishHourDuration(paidMinsTotal);
     }
 
     var title = frameLabel + (paidLabel ? " · paid " + paidLabel : "");
-    return { frame: frameLabel, paid: paidLabel, title: title };
+    return {
+      frame: frameLabel,
+      paid: paidLabel,
+      title: title,
+      blocks: outBlocks,
+      showPaidTotal: !!paidLabel,
+    };
   }
 
   function dayBoardStaffWorkHoursLabel(items, staffKey) {
     var parts = dayBoardStaffWorkHoursParts(items, staffKey);
     if (!parts.frame) return "";
+    if (parts.blocks && parts.blocks.length) {
+      var bits = parts.blocks.map(function (bk) {
+        if (bk.incomplete) return bk.range + " (" + bk.frameDur + "/" + bk.paidDur + ")";
+        return bk.range + " (" + bk.paidDur + ")";
+      });
+      return bits.join(" & ") + (parts.paid ? " " + parts.paid : "");
+    }
     return parts.frame + (parts.paid ? " " + parts.paid : "");
   }
 
@@ -9561,14 +9590,43 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     var metaHtml = "";
     if (hoursParts.frame) {
+      var hoursInner = "";
+      var blocks = hoursParts.blocks || [];
+      if (blocks.length) {
+        hoursInner = blocks
+          .map(function (bk, idx) {
+            var durHtml;
+            if (bk.incomplete) {
+              durHtml =
+                '<span class="ash-db-col__hrs-gap">' +
+                esc(bk.frameDur) +
+                "</span>" +
+                '<span class="ash-db-col__hrs-slash">/</span>' +
+                '<span class="ash-db-col__hrs-ok">' +
+                esc(bk.paidDur) +
+                "</span>";
+            } else {
+              durHtml = '<span class="ash-db-col__hrs-ok">' + esc(bk.paidDur) + "</span>";
+            }
+            return (
+              (idx ? '<span class="ash-db-col__hrs-and"> &amp; </span>' : "") +
+              '<span class="ash-db-col__hrs-block">' +
+              esc(bk.range) +
+              " (" +
+              durHtml +
+              ")</span>"
+            );
+          })
+          .join("");
+      } else {
+        hoursInner = '<span class="ash-db-col__frame">' + esc(hoursParts.frame) + "</span>";
+      }
       metaHtml =
         '<span class="ash-db-col__meta" title="' +
         esc(hoursParts.title || hoursParts.frame) +
         '">' +
-        '<span class="ash-db-col__frame">' +
-        esc(hoursParts.frame) +
-        "</span>" +
-        (hoursParts.paid
+        hoursInner +
+        (hoursParts.showPaidTotal && hoursParts.paid
           ? '<span class="ash-db-col__paid" title="Paid hours">' +
             esc(hoursParts.paid) +
             "</span>"
