@@ -739,9 +739,13 @@
       font-size: 0.88rem;
     }
     .slot__state {
+      min-width: 0;
+      max-width: 42%;
       font-size: 0.82rem;
       font-weight: 700;
-      white-space: nowrap;
+      text-align: right;
+      line-height: 1.25;
+      overflow-wrap: break-word;
     }
     .slot__state.is-open { color: var(--ok); }
     .slot__state.is-full { color: var(--warn); }
@@ -1954,6 +1958,20 @@
         return Math.max(0, cap - taken) <= 0;
       }
 
+      function slotSpacesLeft(slot) {
+        if (api && typeof api.seatsLeft === "function") return Math.max(0, Number(api.seatsLeft(slot)) || 0);
+        var cap = Number(slot.capacity) || 0;
+        var taken = Number(slot.taken) || 0;
+        return Math.max(0, cap - taken);
+      }
+
+      function slotOpenLabel(slot) {
+        var n = slotSpacesLeft(slot);
+        if (n <= 0) return "Places · Book";
+        var unit = n === 1 ? "space" : "spaces";
+        return n + " " + unit + " - Book now";
+      }
+
       function slotsFor(serviceId) {
         if (api && typeof api.filterSlots === "function") {
           return api.filterSlots({ serviceId: serviceId });
@@ -2024,7 +2042,7 @@
           (showVenue ? "<span>" + esc(venueName(s.venue)) + "</span>" : "") +
           "</div>" +
           '<div class="slot__state ' + (full ? "is-full" : "is-open") + '">' +
-          (full ? "Full · Join list" : "Places · Book") +
+          (full ? "Full · Join list" : slotOpenLabel(s)) +
           "</div></button>"
         );
       }

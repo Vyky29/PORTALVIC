@@ -1237,13 +1237,31 @@ async function upsertServiceLinesForPaidBooking(
     weeks: opts.isTrial ? 1 : undefined,
     isTrial: opts.isTrial || undefined,
   };
+  const sessionKey = (s: Record<string, unknown>) =>
+    [
+      clean(s.day, 40).toLowerCase(),
+      clean(s.timeSlot, 80).toLowerCase().replace(/[–—]/g, "-").replace(/\s+/g, ""),
+      clean(s.venue, 80).toLowerCase(),
+      clean(s.service, 120).toLowerCase(),
+    ].join("|");
+  const { data: existingLine } = await admin
+    .from("portal_participant_service_lines")
+    .select("sessions")
+    .eq("client_key", clientKey)
+    .maybeSingle();
+  const prevSessions = Array.isArray(existingLine?.sessions)
+    ? (existingLine.sessions as Record<string, unknown>[])
+    : [];
+  const nextKey = sessionKey(session as unknown as Record<string, unknown>);
+  const merged = prevSessions.filter((s) => sessionKey(s || {}) !== nextKey);
+  merged.push(session);
   const { error } = await admin.from("portal_participant_service_lines").upsert(
     {
       client_key: clientKey,
       client_name: child,
       client_name_norm: child.toLowerCase(),
-      sessions: [session],
-      services_count: 1,
+      sessions: merged,
+      services_count: merged.length,
       source: opts.isTrial
         ? `booking_finish_trial_${clean(opts.contactId, 40) || "x"}`
         : `booking_finish_${clean(opts.contactId, 40) || "x"}`,
