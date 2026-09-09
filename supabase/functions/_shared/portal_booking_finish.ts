@@ -1124,23 +1124,41 @@ async function findFinishTokenForInvoice(
     .eq("invoice_share_id", invId)
     .order("created_at", { ascending: false })
     .limit(8);
-  if (error || !rows?.length) return null;
-  const open = rows.find((r) =>
-    [
-      "awaiting_payment",
-      "awaiting_gocardless",
-      "awaiting_office_payment",
-      "choices_saved",
-      "scope_saved",
-      "funding_saved",
-      "pending",
-      "la_office",
-    ].includes(String(r.status || "")),
+  if (!error && rows?.length) {
+    const open = rows.find((r) =>
+      [
+        "awaiting_payment",
+        "awaiting_gocardless",
+        "awaiting_office_payment",
+        "choices_saved",
+        "scope_saved",
+        "funding_saved",
+        "pending",
+        "la_office",
+      ].includes(String(r.status || "")),
+    );
+    if (open) return open as CompletionTokenRow;
+    const completed = rows.find((r) => String(r.status) === "completed");
+    if (completed) return completed as CompletionTokenRow;
+    return rows[0] as CompletionTokenRow;
+  }
+
+  // Fallback: invoice notes stamp the finish token id when share_id was cleared by a resend.
+  const { data: inv } = await admin
+    .from("portal_parent_invoice_share")
+    .select("notes")
+    .eq("id", invId)
+    .maybeSingle();
+  const noteTok = String(inv?.notes || "").match(
+    /\btoken\s+([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i,
   );
-  if (open) return open as CompletionTokenRow;
-  const completed = rows.find((r) => String(r.status) === "completed");
-  if (completed) return completed as CompletionTokenRow;
-  return rows[0] as CompletionTokenRow;
+  if (!noteTok?.[1]) return null;
+  const { data: byNote } = await admin
+    .from("portal_booking_completion_tokens")
+    .select("*")
+    .eq("id", noteTok[1])
+    .maybeSingle();
+  return (byNote as CompletionTokenRow) || null;
 }
 
 function parseClockToSqlTime(raw: string): string | null {

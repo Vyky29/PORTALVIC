@@ -340,11 +340,22 @@ async function loadContext(
 function bookingKindFromContext(
   reservation: Record<string, unknown> | null,
   doc: Record<string, unknown> | null,
+  choices?: Record<string, unknown> | null,
 ): "trial" | "term" {
-  const notes = String(reservation?.notes || "");
-  if (/booking_kind\s*=\s*trial/i.test(notes)) {
+  const scope = String(choices?.booking_scope || choices?.booking_kind || "")
+    .trim()
+    .toLowerCase();
+  if (
+    scope === "trial" ||
+    scope === "trial_session" ||
+    scope === "taster"
+  ) {
     return "trial";
   }
+  if (scope === "term" || scope === "rest_of_term" || scope === "full_term") {
+    return "term";
+  }
+
   const payload = doc?.payload_json;
   if (payload && typeof payload === "object" && !Array.isArray(payload)) {
     const br = (payload as Record<string, unknown>).booking_request;
@@ -355,7 +366,16 @@ function bookingKindFromContext(
       if (kind === "trial" || kind === "trial_session" || kind === "taster") {
         return "trial";
       }
+      if (kind === "term") return "term";
     }
+  }
+
+  const notes = String(reservation?.notes || "");
+  if (/booking_kind\s*=\s*trial/i.test(notes) || /\btrial_(stripe|bank)/i.test(notes)) {
+    return "trial";
+  }
+  if (/booking_kind\s*=\s*term/i.test(notes)) {
+    return "term";
   }
   return "term";
 }
@@ -684,13 +704,44 @@ Deno.serve(async (req) => {
       : "";
     const holdPast =
       !!holdExpRaw && new Date(holdExpRaw).getTime() < Date.now();
+    // Never kill the link when Stripe/bank already paid — webhook may still be catching up.
+    let invoiceAlreadyPaid = false;
+    if (token.invoice_share_id) {
+      const { data: invPaid } = await admin
+        .from("portal_parent_invoice_share")
+        .select("payment_status")
+        .eq("id", token.invoice_share_id)
+        .maybeSingle();
+      invoiceAlreadyPaid =
+        String(invPaid?.payment_status || "").toLowerCase() === "paid";
+    } else if (token.id) {
+      const { data: paidByNote } = await admin
+        .from("portal_parent_invoice_share")
+        .select("id, payment_status")
+        .ilike("notes", `%token ${token.id}%`)
+        .eq("payment_status", "paid")
+        .limit(1)
+        .maybeSingle();
+      if (paidByNote?.id) {
+        invoiceAlreadyPaid = true;
+        await admin
+          .from("portal_booking_completion_tokens")
+          .update({
+            invoice_share_id: String(paidByNote.id),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", token.id);
+        token.invoice_share_id = String(paidByNote.id);
+      }
+    }
     const seatReleased =
-      resStatus === "expired" ||
-      resStatus === "released" ||
-      (holdPast &&
-        (resStatus === "awaiting_payment" ||
-          resStatus === "validated" ||
-          resStatus === "pending"));
+      !invoiceAlreadyPaid &&
+      (resStatus === "expired" ||
+        resStatus === "released" ||
+        (holdPast &&
+          (resStatus === "awaiting_payment" ||
+            resStatus === "validated" ||
+            resStatus === "pending")));
     if (seatReleased) {
       try {
         await runBookingPayHoldMaintenance(admin);
@@ -732,7 +783,11 @@ Deno.serve(async (req) => {
     formType,
   });
   const todayIso = calendarDateIsoInLondon();
-  const portalBookingKind = bookingKindFromContext(reservation, doc);
+  const earlyChoices =
+    token.choices_json && typeof token.choices_json === "object"
+      ? token.choices_json as Record<string, unknown>
+      : {};
+  const portalBookingKind = bookingKindFromContext(reservation, doc, earlyChoices);
   const adminDayOverrides = await loadAdminDayOverridesForBookingWindow(admin, {
     fromIso: todayIso,
     daysAhead: 28,
@@ -1141,15 +1196,17 @@ Deno.serve(async (req) => {
 
     const plan = planOnly;
     const now = new Date().toISOString();
+    const payPlanColumn = plan === "stripe_instant" ? null : plan;
     await admin
       .from("portal_booking_completion_tokens")
       .update({
         funding_code: funding,
-        pay_plan: plan,
+        pay_plan: payPlanColumn,
         status: "choices_saved",
         choices_json: {
           funding_code: funding,
           booking_scope: scope,
+          booking_kind: scope === "trial_session" ? "trial" : "term",
           pay_plan: plan,
           saved_at: now,
         },
@@ -1442,11 +1499,14 @@ Deno.serve(async (req) => {
     }
 
     const now = new Date().toISOString();
+    // Column check allows gocardless_monthly|flexi_bank|one_off_bank only until
+    // migration 20260909190000 — keep stripe_instant in choices_json, null on column.
+    const payPlanColumn = plan === "stripe_instant" ? null : plan;
     await admin
       .from("portal_booking_completion_tokens")
       .update({
         funding_code: funding,
-        pay_plan: plan,
+        pay_plan: payPlanColumn,
         invoice_share_id: invoiceId || null,
         contact_id: ensured.contactId,
         parent_person_id: ensured.parentPersonId,
@@ -1454,6 +1514,7 @@ Deno.serve(async (req) => {
         choices_json: {
           funding_code: funding,
           booking_scope: scope,
+          booking_kind: scope === "trial_session" ? "trial" : "term",
           pay_plan: plan,
           scope_label: scopeLabel,
           saved_at: now,

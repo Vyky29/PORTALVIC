@@ -483,7 +483,19 @@
     var termLabel = p.term_label || data.term_label || data.term || "Term";
 
     var priceRows = "";
-    if (unit != null || termSessions != null || termTotal != null) {
+    if (data.is_trial_intent || data.booking_kind === "trial" || data.booking_scope === "trial_session") {
+      var trialGbp =
+        (p && p.trial_session_gbp != null ? p.trial_session_gbp : null) ||
+        unit ||
+        data.unit_price_gbp;
+      priceRows =
+        '<div class="card-inner" style="margin-top:10px">' +
+        "<div><strong>Booking</strong> Trial session (1 only)</div>" +
+        "<div><strong>Pay now</strong> " +
+        esc(money(trialGbp)) +
+        "</div>" +
+        "</div>";
+    } else if (unit != null || termSessions != null || termTotal != null) {
       priceRows =
         '<div class="card-inner" style="margin-top:10px">' +
         "<div><strong>Price per session</strong> " +
@@ -1048,6 +1060,26 @@
     }
     if (data.status === "awaiting_payment" && data.invoice) {
       showInvoice(data);
+      return;
+    }
+
+    // Office / prior choices already locked trial — never show term £900 pricing flow.
+    if (
+      (data.is_trial_intent ||
+        data.booking_kind === "trial" ||
+        data.booking_scope === "trial_session") &&
+      (data.status === "awaiting_payment" ||
+        data.status === "choices_saved" ||
+        data.status === "scope_saved")
+    ) {
+      data.booking_scope = "trial_session";
+      if (!data.funding_code) data.funding_code = "privately_funded";
+      if (data.invoice) {
+        showInvoice(data);
+        return;
+      }
+      setStep("fbStepPay");
+      showPayChannel(data);
       return;
     }
 

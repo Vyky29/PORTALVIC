@@ -42,7 +42,7 @@ const PRESERVE_NOTE_KEYS = [
   "support_regulated",
 ] as const;
 
-/** Keep ops tags when rewriting reservation notes. */
+/** Keep ops tags when rewriting reservation notes. Next parts win on same key. */
 export function mergeReservationNotes(
   previous: unknown,
   nextParts: Array<string | null | undefined>,
@@ -57,7 +57,8 @@ export function mergeReservationNotes(
   const next = nextParts.map((p) => clean(p, 80)).filter(Boolean);
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const part of [...kept, ...next]) {
+  // Apply next first so explicit updates (e.g. booking_kind=trial) override stale kept tags.
+  for (const part of [...next, ...kept]) {
     const k = part.split("=")[0]?.toLowerCase() || part.toLowerCase();
     if (seen.has(k)) continue;
     seen.add(k);
