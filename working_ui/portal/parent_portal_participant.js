@@ -8830,7 +8830,9 @@
       );
     }
     return (
-      '<div class="pp-invoice-pay">' +
+      '<div class="pp-invoice-pay" id="pp-invoice-bank-' +
+      esc(String((inv && inv.id) || "")) +
+      '">' +
       '<p class="pp-invoice-pay__title">Pay by bank transfer (Tide)</p>' +
       '<dl class="pp-invoice-pay__dl">' +
       "<div><dt>Payee</dt><dd>" +
@@ -8909,15 +8911,16 @@
     var gcPending = !!(inv && inv.gocardless_pending_collection);
     var isGcInvoice =
       String((inv && inv.payment_method_hint) || "").toLowerCase() === "gocardless";
+    // Only office→funder (la_funded). VAT-exempt Direct Payments / ACAT still pay via
+    // bank transfer in the parent hub — do not treat vat_mode=exempt as hide-pay.
     var isLaInvoice =
-      String((inv && inv.payment_method_hint) || "").toLowerCase() === "la_funded" ||
-      String((inv && inv.vat_mode) || "").toLowerCase() === "exempt";
+      String((inv && inv.payment_method_hint) || "").toLowerCase() === "la_funded";
     var pl = isGcInvoice || isLaInvoice
       ? ""
       : String((inv && inv.payment_link_url) || "").trim();
     var surcharge = String((inv && inv.payment_link_surcharge_note) || "").trim();
     var suggestedRef = String((inv && inv.suggested_reference) || "").trim();
-    // Direct Payment (mandate) / LA funded: no Tide / card pay CTAs.
+    // Direct Payment (mandate) / LA funder-billed: no Tide / card pay CTAs.
     if (isGcInvoice || isLaInvoice) {
       canReport = false;
       canPay = false;
@@ -9088,8 +9091,17 @@
     }
     var payPairHtml = "";
     if (showDraftFlow && (canPay || showBankPanel)) {
+      var bankBtn = showBankPanel
+        ? '<button type="button" class="pp-btn pp-btn--primary pp-invoice-pay-pair__btn pp-invoice-pay-pair__btn--needs-pay pp-btn--needs-pay" data-pp-scroll-bank="' +
+          esc(inv.id) +
+          '" aria-label="Pay by bank transfer — preferred, no fee">' +
+          invoiceBtnLabel("bank", "Bank transfer (no fee)") +
+          "</button>"
+        : "";
       var payBtn = canPay
-        ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-pay-pair__btn pp-invoice-pay-pair__btn--needs-pay pp-btn--needs-pay" data-pp-pay-invoice="' +
+        ? '<button type="button" class="pp-btn pp-btn--sec pp-invoice-pay-pair__btn' +
+          (showBankPanel ? "" : " pp-invoice-pay-pair__btn--needs-pay pp-btn--needs-pay") +
+          '" data-pp-pay-invoice="' +
           esc(inv.id) +
           '" aria-label="Pay now — invoice unpaid">' +
           invoiceBtnLabel(
@@ -9099,10 +9111,12 @@
           "</button>"
         : "";
       payPairHtml =
-        (payBtn ? '<div class="pp-invoice-pay-pair">' + payBtn + "</div>" : "") +
-        '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">After you pay by bank transfer, open <strong>Messages</strong> (or WhatsApp / email <a href="' +
+        (bankBtn || payBtn
+          ? '<div class="pp-invoice-pay-pair">' + bankBtn + payBtn + "</div>"
+          : "") +
+        '<p class="pp-muted pp-invoice-pay__note pp-invoice-pay__notify">Prefer <strong>bank transfer</strong> (Tide details above). After you transfer, open <strong>Messages</strong> (or WhatsApp / email <a href="' +
         esc(OFFICE_CONTACT_MAILTO) +
-        '">info@clubsensational.org</a>) and tell us you have paid. A photo is optional. There is no "I\'ve paid" button - the office checks Tide and marks the invoice paid.</p>';
+        '">info@clubsensational.org</a>) and tell us you have paid. A photo is optional. The office checks Tide and marks the invoice paid.</p>';
     }
     return (
       '<article class="pp-invoice-card pp-invoice-card--' +
@@ -9193,7 +9207,7 @@
       (isPaid
         ? ""
         : isLaInvoice
-          ? '<p class="pp-muted pp-invoice-pay__note">LA funded (VAT exempt) — the office invoices the local authority / funded provision. No parent card or bank transfer is needed here.</p>'
+          ? '<p class="pp-muted pp-invoice-pay__note">LA / NHS funded — the office invoices the local authority or funder. No parent card or bank transfer is needed here.</p>'
           : "") +
       (isPaid
         ? ""
@@ -9538,6 +9552,26 @@
                       : "Could not start card payment — please try bank transfer or contact the office.");
               showNotice("error", msg);
             });
+        });
+      });
+
+      listHost.querySelectorAll("[data-pp-scroll-bank]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-pp-scroll-bank");
+          var panel = id
+            ? listHost.querySelector("#pp-invoice-bank-" + id)
+            : null;
+          if (panel && typeof panel.scrollIntoView === "function") {
+            try {
+              panel.scrollIntoView({ behavior: "smooth", block: "center" });
+            } catch (_e) {
+              panel.scrollIntoView(true);
+            }
+          }
+          showNotice(
+            "ok",
+            "Bank transfer details are above — Tide payee, sort code, and account. After you transfer, message the office so they can confirm.",
+          );
         });
       });
 

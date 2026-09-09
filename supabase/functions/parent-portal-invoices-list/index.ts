@@ -321,6 +321,7 @@ Deno.serve(async (req) => {
       paid_at: share.paid_at || null,
       paid_via: share.paid_via || null,
       suggested_reference: suggestedRef,
+      vat_mode: clean(share.vat_mode, 20) || null,
       bank_transfer:
         hideManualPay || sequenceLocked || !(openForPay || status === "pending_confirmation")
           ? null
