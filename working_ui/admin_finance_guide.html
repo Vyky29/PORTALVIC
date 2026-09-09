@@ -275,7 +275,7 @@
       <ul class="toc">
         <li><a href="#big-picture" data-lang="en">1. Big picture</a><a href="#big-picture" data-lang="es">1. Visión general</a></li>
         <li><a href="#where" data-lang="en">2. Where to click</a><a href="#where" data-lang="es">2. Dónde hacer clic</a></li>
-        <li><a href="#reenroll" data-lang="en">3. Re-enrolments</a><a href="#reenroll" data-lang="es">3. Re-enrolments</a></li>
+        <li><a href="#reenroll" data-lang="en">3. Re-enrolments &amp; Bookings</a><a href="#reenroll" data-lang="es">3. Re-enrolments &amp; Bookings</a></li>
         <li><a href="#crash" data-lang="en">4. New / crash booking</a><a href="#crash" data-lang="es">4. Cliente nuevo / crash</a></li>
         <li><a href="#manual" data-lang="en">5. Manual &amp; LA invoices</a><a href="#manual" data-lang="es">5. Facturas manuales y LA</a></li>
         <li><a href="#pay" data-lang="en">6. How parents pay</a><a href="#pay" data-lang="es">6. Cómo pagan los padres</a></li>
@@ -356,8 +356,8 @@
             <td data-lang="es">INV-P manual para una familia, o subir un PDF</td>
           </tr>
           <tr>
-            <td data-lang="en"><strong>Re-enrolments</strong></td>
-            <td data-lang="es"><strong>Re-enrolments</strong></td>
+            <td data-lang="en"><strong>Re-enrolments &amp; Bookings</strong></td>
+            <td data-lang="es"><strong>Re-enrolments &amp; Bookings</strong></td>
             <td data-lang="en">Main list: unpaid / pending / paid, Tide CSV, Push Xero, holds</td>
             <td data-lang="es">Lista principal: impagos / pending / paid, Tide CSV, Push Xero, holds</td>
           </tr>
@@ -381,8 +381,8 @@
 
     <!-- 3 -->
     <section class="card" id="reenroll">
-      <h2 data-lang="en">3. Re-enrolments (existing families)</h2>
-      <h2 data-lang="es">3. Re-enrolments (familias existentes)</h2>
+      <h2 data-lang="en">3. Re-enrolments &amp; Bookings (existing families and new Booking Portal places)</h2>
+      <h2 data-lang="es">3. Re-enrolments &amp; Bookings (familias existentes y plazas nuevas del Booking Portal)</h2>
       <p data-lang="en">Parent pays their chosen plan for the next year / term. Portal creates the instalment invoices automatically on <strong>first submit</strong> (parent-pays families only — not LA office / funder invoice).</p>
       <p data-lang="es">El padre elige el plan del próximo año / término. Portal crea las facturas a plazos solos en el <strong>primer envío</strong> (solo familias que pagan ellos — no LA / funder).</p>
 
@@ -392,13 +392,13 @@
         <li>Parent opens hub → <span class="k">Re-enrolment</span> → chooses plan → submits.</li>
         <li>Portal creates INV-P rows (e.g. Autumn / Spring / Summer instalments) already shared to Invoices.</li>
         <li>Parent pays each due invoice (card, GC, bank, or credit).</li>
-        <li>Office watches Finance → <span class="k">Re-enrolments</span>: chase unpaid, confirm bank, check Xero.</li>
+        <li>Office watches Finance → <span class="k">Re-enrolments &amp; Bookings</span>: chase unpaid, confirm bank, check Xero.</li>
       </ol>
       <ol data-lang="es">
         <li>Padre abre hub → <span class="k">Re-enrolment</span> → elige plan → envía.</li>
         <li>Portal crea filas INV-P (p. ej. Autumn / Spring / Summer) ya compartidas en Invoices.</li>
         <li>El padre paga cada factura cuando toca (tarjeta, GC, banco o crédito).</li>
-        <li>Oficina mira Finance → <span class="k">Re-enrolments</span>: cobra impagos, confirma banco, revisa Xero.</li>
+        <li>Oficina mira Finance → <span class="k">Re-enrolments &amp; Bookings</span>: cobra impagos, confirma banco, revisa Xero.</li>
       </ol>
 
       <div class="ex" data-lang="en">
@@ -464,14 +464,14 @@
         1) Dad books Wed–Fri crash online.<br />
         2) INV-P-0201 created for £450; email with PDF; 2-hour hold starts.<br />
         3) He pays Card / Apple Pay → Stripe webhook marks PAID → place confirmed.<br />
-        4) Office sees the row under Finance → Re-enrolments / Payments (Summer crash). No Tide step needed.
+        4) Office sees the row under Finance → Re-enrolments &amp; Bookings / Payments (Summer crash). No Tide step needed.
       </div>
       <div class="ex" data-lang="es">
         <strong>Ejemplo — familia nueva, crash SwimFarm Week 1</strong><br />
         1) El padre reserva crash mié–vie online.<br />
         2) Se crea INV-P-0201 de £450; email con PDF; hold de 2 horas.<br />
         3) Paga Card / Apple Pay → webhook Stripe marca PAID → plaza confirmada.<br />
-        4) Oficina ve la fila en Finance → Re-enrolments / Payments (Summer crash). No hace falta Tide.
+        4) Oficina ve la fila en Finance → Re-enrolments &amp; Bookings / Payments (Summer crash). No hace falta Tide.
       </div>
     </section>
 
@@ -576,14 +576,14 @@
       <h2 data-lang="en">7. Suggested office daily routine</h2>
       <h2 data-lang="es">7. Rutina diaria sugerida de oficina</h2>
       <ol data-lang="en">
-        <li>Open Finance → <span class="k">Re-enrolments</span> → filter <span class="k">Pending confirmation</span>.</li>
+        <li>Open Finance → <span class="k">Re-enrolments &amp; Bookings</span> → filter <span class="k">Pending confirmation</span>.</li>
         <li>Export Tide inbound CSV → <span class="k">Match Tide bank CSV</span> → <span class="k">Upload &amp; score</span> → Confirm strong matches; review medium.</li>
         <li>Filter <span class="k">Ready unpaid</span> / <span class="k">Buffer low</span> → chase parents (Remind / Soft hold if needed).</li>
         <li>Filter <span class="k">Paid not in Xero</span> → <span class="k">Push paid to Xero</span> for any leftovers / failures.</li>
         <li>In Xero bank feed, OK suggested matches (or leave to JAX if enabled).</li>
       </ol>
       <ol data-lang="es">
-        <li>Abre Finance → <span class="k">Re-enrolments</span> → filtro <span class="k">Pending confirmation</span>.</li>
+        <li>Abre Finance → <span class="k">Re-enrolments &amp; Bookings</span> → filtro <span class="k">Pending confirmation</span>.</li>
         <li>Exporta CSV de Tide → <span class="k">Match Tide bank CSV</span> → <span class="k">Upload &amp; score</span> → Confirm strong; revisa medium.</li>
         <li>Filtro <span class="k">Ready unpaid</span> / <span class="k">Buffer low</span> → cobra a padres (Remind / Soft hold si hace falta).</li>
         <li>Filtro <span class="k">Paid not in Xero</span> → <span class="k">Push paid to Xero</span> para restos / fallos.</li>
@@ -641,8 +641,8 @@
     <section class="card" id="cheat">
       <h2 data-lang="en">9. Cheat sheet — buttons</h2>
       <h2 data-lang="es">9. Chuleta — botones</h2>
-      <p data-lang="en"><strong>Re-enrolments filters:</strong> All · Auto re-enrolled · Shared · Ready unpaid · Paid · Pending confirmation · Buffer low · Paid not in Xero · Hidden</p>
-      <p data-lang="es"><strong>Filtros Re-enrolments:</strong> All · Auto re-enrolled · Shared · Ready unpaid · Paid · Pending confirmation · Buffer low · Paid not in Xero · Hidden</p>
+      <p data-lang="en"><strong>Re-enrolments &amp; Bookings filters:</strong> All · Auto re-enrolled · Shared · Ready unpaid · Paid · Pending confirmation · Buffer low · Paid not in Xero · Hidden</p>
+      <p data-lang="es"><strong>Filtros Re-enrolments &amp; Bookings:</strong> All · Auto re-enrolled · Shared · Ready unpaid · Paid · Pending confirmation · Buffer low · Paid not in Xero · Hidden</p>
       <p data-lang="en"><strong>Per row:</strong> PDF · Share / Hide · Confirm paid · Mark paid · Mark unpaid · Soft hold · Remind · Hold 1 session · Release hold</p>
       <p data-lang="es"><strong>Por fila:</strong> PDF · Share / Hide · Confirm paid · Mark paid · Mark unpaid · Soft hold · Remind · Hold 1 session · Release hold</p>
       <p data-lang="en"><strong>Tide panel:</strong> Upload &amp; score · Refresh matches · Confirm · Ignore</p>

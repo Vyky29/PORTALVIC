@@ -39,7 +39,7 @@
         'Bucket <strong>REGISTERED</strong>: registration form completed, never been a CLIENT. ' +
         '<strong>New-client registration</strong> — PDF + photo (FYI). No Accept gate; parents finish funding/payment later via the finish-booking link. ' +
         '<strong>Place</strong> is live only (REGISTERED only / WAITING / Pay hold / Awaiting Tide / In class / Did not finish). Chosen slot is not listed here - it arrives in the pay-hold / I\'ve paid office alerts. ' +
-        'After bank transfer, parent WhatsApps or emails office (must send the message - tap alone does not change admin) → check Tide → <strong>Mark paid</strong> in Re-enrolments → PIN. ' +
+        'After bank transfer, parent WhatsApps or emails office (must send the message - tap alone does not change admin) → check Tide → <strong>Mark paid</strong> in Re-enrolments &amp; Bookings → PIN. ' +
         '<strong>Mark reviewed</strong> = you opened the PDF; <strong>Resend finish link</strong> if they lost it. ' +
         'Climbing forms: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_climbing_registrations">Climbing registrations</button>. ' +
         'Annual consents: <button type="button" class="btn btn--ghost btn--sm" data-view-target="portal_parent_consents">Parent consents</button>.',

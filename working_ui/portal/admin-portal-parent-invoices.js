@@ -3462,10 +3462,10 @@
   function reenrolmentsEmbedHtml() {
     return (
       '<div class="card" style="margin-bottom:14px">' +
-      '<div class="card-h"><h3>Re-enrolments &amp; shared invoices</h3>' +
+      '<div class="card-h"><h3>Re-enrolments &amp; Bookings</h3>' +
       '<span class="pp-inv-acc__pay-chip pp-inv-acc__pay-chip--other" id="portalParentInvoicesMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;width:100%;max-width:none;text-align:left;overflow-wrap:break-word">Track instalments after re-enrolment. <strong>Year 25/26</strong> = summer crash / intensive (day centre). <strong>Year 26/27 · Autumn / Spring / Summer</strong> = re-enrol terms. Merged crash lines (e.g. Patrick) stay on Autumn for the family bill, but crash £ counts in Year 25/26 for Raul/Victor; Sunday climbing stays afterschools/weekends. Use filters to switch booked totals. <strong>Push to Xero</strong> creates the full ACCREC (<em>awaiting payment</em>) for <em>paid</em> or <em>partial</em> Portal INV-Ps. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
+      '<p class="muted" style="margin:0 0 10px;width:100%;max-width:none;text-align:left;overflow-wrap:break-word">Track instalments after re-enrolment and Booking Portal finish-booking. <strong>Year 25/26</strong> = summer crash / intensive (day centre). <strong>Year 26/27 · Autumn / Spring / Summer</strong> = re-enrol and new booking terms. Merged crash lines (e.g. Patrick) stay on Autumn for the family bill, but crash £ counts in Year 25/26 for Raul/Victor; Sunday climbing stays afterschools/weekends. Use filters to switch booked totals. <strong>Push to Xero</strong> creates the full ACCREC (<em>awaiting payment</em>) for <em>paid</em> or <em>partial</em> Portal INV-Ps. <a href="/admin_finance_guide.html" target="_blank" rel="noopener">Finance guide (EN/ES)</a>.</p>' +
       '<div class="toolbar" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;align-items:center">' +
       '<span class="muted" style="font-size:12px;font-weight:700">Amount</span>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-inv-amount="year_2526">Year 25/26</button>' +
