@@ -31,7 +31,7 @@ Never park week-1 / `DATE_EXTRA` / phase painting behind `STANDING_ONLY = true` 
 
 ## Day offs — DB owns live truth
 
-- Admin **Validate day** and **HR Add day off** write `staff_unavailability` (+ COVER NEEDED `schedule_overrides` when booked slots exist). That is live truth for Overview / Staff Today / parents (Cover TBC).
+- Admin **Validate day** and **HR Add day off** write `staff_unavailability` (+ COVER NEEDED `schedule_overrides` when booked slots exist). That is live truth for Overview / Staff Today only — parents do not see instructor day offs.
 - Do **not** add new day-off hardcodes in LOCAL/canonical when DB + overrides can own them.
 - Optional: paint historical offs on LOCAL via `STAFF_DAY_OFF` only when authoring a board draft — not required for Overview.
 - Do **not** expect Validate day to rewrite LOCAL HTML by itself.

@@ -13,8 +13,6 @@ export type ParentAttendanceSummary = {
   absent_dates: string[];
   /** Club cancel / slot_close on the child's seat (chip red — no WhatsApp required). */
   cancelled_dates: string[];
-  /** instructor_cover_needed on the child's seat — session still on, instructor TBD. */
-  cover_tbc_dates: string[];
 };
 
 export type ParentAttendanceFeedbackRow = {
@@ -168,28 +166,6 @@ export function scheduleOverrideCountsAsCancelledForClient(
   return type === "slot_close" || type === "client_cancelled";
 }
 
-/** Cover still needed for the child's instructor — session stays on calendar. */
-export function scheduleOverrideCountsAsCoverTbcForClient(
-  ov: ParentScheduleOverrideRow,
-  clientSlugs: Set<string>,
-  termStartIso = PARENT_SESSION_TERM_START_ISO,
-): boolean {
-  const status = cleanStr(ov.status, 20).toLowerCase();
-  if (status && status !== "active") return false;
-  const iso = isoFromSessionDate(ov.session_date);
-  if (!iso || iso < termStartIso) return false;
-  if (overrideIsTrial(ov.payload)) return false;
-
-  const anchor = rosterParticipantSlugAlias(slugifyParticipantKey(cleanStr(ov.anchor_client_id, 80)));
-  if (!anchor || !clientSlugs.has(anchor) || isOpenSlotAnchor(anchor)) return false;
-
-  const type = cleanStr(ov.override_type, 80);
-  if (type !== "instructor_cover_needed") return false;
-  const p = payloadObject(ov.payload);
-  if (p.cover_needed === false) return false;
-  return true;
-}
-
 export function buildParentAttendanceSummary(
   feedbackRows: ParentAttendanceFeedbackRow[],
   overrideRows: ParentScheduleOverrideRow[],
@@ -202,7 +178,6 @@ export function buildParentAttendanceSummary(
   const attendedSlots = new Set<string>();
   const absentSlots = new Set<string>();
   const cancelledDates = new Set<string>();
-  const coverTbcDates = new Set<string>();
 
   for (const row of feedbackRows || []) {
     const iso = isoFromSessionDate(row.session_date);
@@ -226,10 +201,6 @@ export function buildParentAttendanceSummary(
     if (scheduleOverrideCountsAsCancelledForClient(ov, slugSet, termStartIso)) {
       const iso = isoFromSessionDate(ov.session_date);
       if (iso) cancelledDates.add(iso);
-    }
-    if (scheduleOverrideCountsAsCoverTbcForClient(ov, slugSet, termStartIso)) {
-      const iso = isoFromSessionDate(ov.session_date);
-      if (iso) coverTbcDates.add(iso);
     }
     if (!scheduleOverrideCountsAsMissedForClient(ov, slugSet, termStartIso)) continue;
     const iso = isoFromSessionDate(ov.session_date);
@@ -256,7 +227,6 @@ export function buildParentAttendanceSummary(
     makeup_absent: makeupAbsent,
     absent_dates: absentDates,
     cancelled_dates: [...cancelledDates].sort(),
-    cover_tbc_dates: [...coverTbcDates].sort(),
   };
 }
 

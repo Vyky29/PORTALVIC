@@ -25,10 +25,9 @@ After portal day writes, call **`portalSyncOverviewDayTruth`** so MADRE / roster
 ## Parents (term chips)
 
 - `slot_close` / club cancel → cancelled chip (no WhatsApp required)
-- `instructor_cover_needed` on the child's seat → **Cover TBC** (session still on)
-- `instructor_reassign` → Team cover name
+- `instructor_reassign` → Team cover name (only when a real cover is assigned)
 - Client absence / replace → absent chips
-- Unrelated staff day offs that do not touch the child's slots → do not show
+- **Do not** show instructor day offs / COVER NEEDED / Cover TBC on the parent hub — that is office/staff only
 
 ## LOCAL vs Overview
 
