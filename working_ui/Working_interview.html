@@ -4215,13 +4215,55 @@
       updateCandidateFromForm(true);
     }
 
+    /** staff_profiles CHECK slugs — never send display labels like "Support Worker". */
+    function mapOnboardingRoleToStaffRole(raw) {
+      var trimmed = String(raw || "").trim();
+      var lower = trimmed.toLowerCase().replace(/\s+/g, " ");
+      var allowed = { support: 1, swimming: 1, fitness: 1, climbing: 1, manager: 1, admin: 1 };
+      if (allowed[lower]) return lower;
+      var aliases = {
+        "support worker": "support",
+        "day centre support worker": "support",
+        "specialist support worker": "support",
+        "specialist support worker — hub & community": "support",
+        "specialist support worker - hub & community": "support",
+        "specialist support worker — session lead": "support",
+        "specialist support worker - session lead": "support",
+        "service lead": "support",
+        "programme lead": "support",
+        "swimming instructor": "swimming",
+        "swimming teacher": "swimming",
+        "specialist support worker — swimming": "swimming",
+        "specialist support worker - swimming": "swimming",
+        "climbing instructor": "climbing",
+        "climbing teacher": "climbing",
+        "specialist support worker — climbing": "climbing",
+        "specialist support worker - climbing": "climbing",
+        "fitness instructor": "fitness",
+        "pt / fitness instructor": "fitness",
+        "specialist support worker — fitness": "fitness",
+        "specialist support worker - fitness": "fitness",
+        administrator: "admin",
+        admin: "admin",
+        manager: "manager"
+      };
+      if (aliases[lower]) return aliases[lower];
+      if (/swim/.test(lower)) return "swimming";
+      if (/climb/.test(lower)) return "climbing";
+      if (/fitness|\bpt\b/.test(lower)) return "fitness";
+      if (/manager/.test(lower)) return "manager";
+      if (/admin/.test(lower)) return "admin";
+      return "support";
+    }
+
     async function triggerReadyForOnboardingNotification(candidate) {
       const email = String((candidate && candidate.email) || "").trim().toLowerCase();
       const fullName = String((candidate && candidate.name) || "").trim();
       const phone = String((candidate && candidate.phone) || "").trim();
-      const role = String(
+      const roleLabel = String(
         (candidate && candidate.onboarding && candidate.onboarding.role) || "Support Worker"
       ).trim() || "Support Worker";
+      const role = mapOnboardingRoleToStaffRole(roleLabel);
       if (!email || email.indexOf("@") < 0) {
         return { ok: false, error: "email_required" };
       }

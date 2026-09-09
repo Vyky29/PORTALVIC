@@ -6,6 +6,7 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 import {
+  normalizeParentPhoneE164,
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
 } from "../_shared/portal_parent_messaging.ts";
@@ -41,6 +42,74 @@ function normalizeStaffKey(value: string): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "");
+}
+
+/** Values allowed by staff_profiles_staff_role_allowed CHECK. */
+const STAFF_ROLE_CHECK = new Set([
+  "support",
+  "swimming",
+  "fitness",
+  "climbing",
+  "manager",
+  "admin",
+]);
+
+const STAFF_ROLE_DISPLAY_TO_CHECK: Record<string, string> = {
+  "support worker": "support",
+  "day centre support worker": "support",
+  "specialist support worker": "support",
+  "specialist support worker — hub & community": "support",
+  "specialist support worker - hub & community": "support",
+  "specialist support worker — session lead": "support",
+  "specialist support worker - session lead": "support",
+  "service lead": "support",
+  "programme lead": "support",
+  "swimming instructor": "swimming",
+  "swimming teacher": "swimming",
+  "specialist support worker — swimming": "swimming",
+  "specialist support worker - swimming": "swimming",
+  "climbing instructor": "climbing",
+  "climbing teacher": "climbing",
+  "specialist support worker — climbing": "climbing",
+  "specialist support worker - climbing": "climbing",
+  "fitness instructor": "fitness",
+  "pt / fitness instructor": "fitness",
+  "specialist support worker — fitness": "fitness",
+  "specialist support worker - fitness": "fitness",
+  administrator: "admin",
+  admin: "admin",
+  manager: "manager",
+};
+
+const STAFF_ROLE_CHECK_TO_DISPLAY: Record<string, string> = {
+  support: "Support Worker",
+  swimming: "Swimming Instructor",
+  fitness: "Fitness Instructor",
+  climbing: "Climbing Instructor",
+  manager: "Manager",
+  admin: "Administrator",
+};
+
+/** Map interview / form labels to the CHECK slug stored on staff_profiles. */
+function mapStaffRoleToCheck(raw: string): string {
+  const trimmed = String(raw || "").trim();
+  const lower = trimmed.toLowerCase().replace(/\s+/g, " ");
+  if (STAFF_ROLE_CHECK.has(lower)) return lower;
+  if (STAFF_ROLE_DISPLAY_TO_CHECK[lower]) return STAFF_ROLE_DISPLAY_TO_CHECK[lower];
+  if (/swim/.test(lower)) return "swimming";
+  if (/climb/.test(lower)) return "climbing";
+  if (/fitness|\bpt\b/.test(lower)) return "fitness";
+  if (/manager/.test(lower)) return "manager";
+  if (/admin/.test(lower)) return "admin";
+  return "support";
+}
+
+function staffRoleDisplayLabel(raw: string, slug: string): string {
+  const trimmed = String(raw || "").trim();
+  if (trimmed && !STAFF_ROLE_CHECK.has(trimmed.toLowerCase())) {
+    return trimmed;
+  }
+  return STAFF_ROLE_CHECK_TO_DISPLAY[slug] || trimmed || "Support Worker";
 }
 
 /** Admins / CEOs, or interview-capable staff (Michelle + programme leads). */
@@ -155,7 +224,9 @@ Deno.serve(async (req) => {
   const email = String(body.email || "").trim().toLowerCase();
   const phone = String(body.phone || "").trim();
   const fullName = String(body.full_name || "").trim();
-  const role = String(body.role || "Support Worker").trim() || "Support Worker";
+  const roleRaw = String(body.role || "Support Worker").trim() || "Support Worker";
+  const staffRole = mapStaffRoleToCheck(roleRaw);
+  const roleLabel = staffRoleDisplayLabel(roleRaw, staffRole);
   const candidateId = String(body.candidate_id || "").trim();
 
   if (!email || !email.includes("@")) {
@@ -240,19 +311,18 @@ Deno.serve(async (req) => {
   }
 
   const now = new Date().toISOString();
-  const phoneDigits = phone.replace(/\D/g, "");
+  const phoneE164 = normalizeParentPhoneE164(phone) || phone || null;
   const { error: profileErr } = await admin.from("staff_profiles").upsert(
     {
       id: userId,
       full_name: fullName,
       username,
       app_role: "staff",
-      staff_role: role || "onboarding",
+      staff_role: staffRole,
       dashboard_route: "staff_dashboard.html",
       is_active: true,
       onboarding_applicant: true,
-      phone_e164: phone || null,
-      phone_lookup: phoneDigits.slice(-10) || null,
+      phone_e164: phoneE164,
       email_personal: email,
       updated_at: now,
     },
@@ -273,7 +343,7 @@ Deno.serve(async (req) => {
   const subject = "clubSENsational — your onboarding portal login";
   const text =
     `Hi ${fullName.split(/\s+/)[0] || fullName},\n\n` +
-    `You are ready for onboarding as ${role}.\n\n` +
+    `You are ready for onboarding as ${roleLabel}.\n\n` +
     `1) Sign in: ${loginUrl}\n` +
     `   Email: ${email}\n` +
     `   Temporary password: ${tempPassword}\n\n` +
@@ -286,14 +356,19 @@ Deno.serve(async (req) => {
   let emailOk = false;
   let emailError: string | null = null;
   if (smtp) {
-    const mail = await sendParentEmailViaSmtp({
-      to: email,
-      subject,
-      text,
-      smtp,
-    });
-    emailOk = !!mail.ok;
-    emailError = mail.ok ? null : String(mail.error || "send_failed");
+    try {
+      const mail = await sendParentEmailViaSmtp({
+        config: smtp,
+        to: email,
+        subject,
+        bodyText: text,
+      });
+      emailOk = !!mail.ok;
+      emailError = mail.ok ? null : String(mail.error || "send_failed");
+    } catch (e) {
+      emailError = String(e);
+      console.error("[portal-staff-onboarding-invite] smtp", e);
+    }
   } else {
     emailError = "smtp_not_configured";
     console.warn("[portal-staff-onboarding-invite] SMTP not configured; password logged for ops");
@@ -306,7 +381,7 @@ Deno.serve(async (req) => {
       kind: "staff_onboarding_invite",
       channel: "email",
       parent_email: email,
-      parent_phone: phone || null,
+      parent_phone: phoneE164,
       parent_name: fullName,
       subject,
       body_text: text.replace(tempPassword, "[redacted]"),
@@ -318,6 +393,8 @@ Deno.serve(async (req) => {
         created,
         hub_url: hubUrl,
         email_ok: emailOk,
+        staff_role: staffRole,
+        role_label: roleLabel,
       },
     });
   } catch (e) {
