@@ -162,9 +162,6 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
     }
-    @media (max-width: 800px) {
-      .dates-grid { grid-template-columns: 1fr; }
-    }
     .date-card {
       display: flex;
       flex-direction: column;
@@ -251,6 +248,96 @@
       flex-wrap: wrap;
       gap: 10px;
       margin-top: 16px;
+    }
+
+    /* Mobile: Our Dates is informative only - keep it short so services lead. */
+    @media (max-width: 800px) {
+      .dates-block {
+        margin: 0 0 14px;
+      }
+      .dates-block .section-head {
+        margin: 0 0 8px;
+        gap: 4px;
+      }
+      .dates-block .section-head h2 {
+        font-size: 1.05rem;
+        line-height: 1.2;
+      }
+      .dates-block .section-head p {
+        margin: 2px 0 0;
+        font-size: 0.78rem;
+        line-height: 1.35;
+      }
+      .dates-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .date-card {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 6px;
+        padding: 10px 6px;
+        box-shadow: none;
+        min-width: 0;
+      }
+      .date-card__top {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        width: 100%;
+        min-width: 0;
+      }
+      .date-card__icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+      }
+      .date-card__icon svg {
+        width: 15px;
+        height: 15px;
+      }
+      .date-card__season {
+        padding: 2px 6px;
+        font-size: 9px;
+        letter-spacing: 0.04em;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .date-card strong {
+        flex: 0 0 auto;
+        width: 100%;
+        min-width: 0;
+        font-size: 0.78rem;
+        line-height: 1.2;
+        text-align: center;
+        overflow-wrap: break-word;
+      }
+      /* Hide long term blurbs on small screens - calendar CTA covers detail. */
+      .date-card > span {
+        display: none;
+      }
+      .dates-actions {
+        margin-top: 8px;
+        gap: 8px;
+        justify-content: center;
+      }
+      .dates-actions .btn-cal {
+        min-height: 36px;
+        padding: 6px 12px;
+        font-size: 0.82rem;
+        gap: 6px;
+      }
+      .dates-actions .btn-cal__icon {
+        width: 15px;
+        height: 15px;
+      }
     }
 
     .mosaic {
@@ -1316,7 +1403,7 @@
 </head>
 <body>
   <header class="top">
-    <a class="top__brand" href="/bookingportal.html">
+    <a class="top__brand" href="https://www.clubsensational.org/" target="_blank" rel="noopener">
       <img src="/portal/F-02-1.png" alt="" width="42" height="42" />
       <span>clubSENsational</span>
     </a>
@@ -1378,7 +1465,7 @@
         </article>
       </div>
       <div class="dates-actions">
-        <a class="btn-cal btn-cal--solid" href="/timetable.html">
+        <a class="btn-cal btn-cal--solid" href="/portal/day-centre-calendar-2026-27-section.html">
           <svg class="btn-cal__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
             <rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
             <path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -2211,10 +2298,9 @@
           window.PortalBookingLeadGate.openGate();
           return;
         }
-        if (bookingIntentFromUrl() === "trial") {
-          goToRegistration(slot, { bookingKind: "trial" });
-          return;
-        }
+        /* Always show term vs trial. URL intent=trial used to skip this sheet for every
+           slot after a Family Portal handoff, so parents never saw the choice. */
+        var preferTrial = bookingIntentFromUrl() === "trial";
         var svc = api.serviceById(slot.serviceId);
         var action = document.getElementById("actionSheet");
         var title = document.getElementById("sheetTitle");
@@ -2243,18 +2329,24 @@
           var termHint = deferNote
             ? deferNote
             : "Secure the standing place for the rest of the term or year. After registration, complete funding, term or year choice, and payment in the booking flow.";
-          choices.innerHTML =
-            '<button type="button" class="sheet__choice sheet__choice--pri" data-book-kind="term" data-slot-id="' +
+          var termBtn =
+            '<button type="button" class="sheet__choice' +
+            (preferTrial ? "" : " sheet__choice--pri") +
+            '" data-book-kind="term" data-slot-id="' +
             esc(slot.id) +
             '"><strong>Book term place</strong><span>' +
             esc(termHint) +
-            "</span></button>" +
-            '<button type="button" class="sheet__choice" data-book-kind="trial" data-slot-id="' +
+            "</span></button>";
+          var trialBtn =
+            '<button type="button" class="sheet__choice' +
+            (preferTrial ? " sheet__choice--pri" : "") +
+            '" data-book-kind="trial" data-slot-id="' +
             esc(slot.id) +
             '"><strong>Book a trial</strong><span>One session. Weekdays: same day OK with at least 2 hours\' notice for staff. Weekends: book by Friday 6pm (otherwise the next Saturday or Sunday). After registration, pay by card, Apple Pay, or bank transfer (30-minute hold)' +
             (price ? " · " + esc(price) : "") +
             (deferNote ? ". " + esc(deferNote) : "") +
             ".</span></button>";
+          choices.innerHTML = preferTrial ? trialBtn + termBtn : termBtn + trialBtn;
         }
         action.hidden = false;
       }
