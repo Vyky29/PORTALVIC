@@ -9161,18 +9161,25 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   function dayBoardColHtml(hub, key, label, items, esc) {
     var n = items.length;
+    var dayIso = String((hub && hub.selectedDay) || "").slice(0, 10);
+    var away = !!(dayIso && hubStaffAwayOnIso(hub, dayIso, label || key));
     var cards = items
       .map(function (it) {
         return htmlDayBoardCard(hub, it.slot, it.st, esc);
       })
       .join("");
     return (
-      '<section class="ash-db-col">' +
+      '<section class="ash-db-col' +
+      (away ? " ash-db-col--day-off" : "") +
+      '">' +
       '<div class="ash-db-col__head">' +
       dayBoardStaffPhotoHtml(label, esc) +
       '<h4 class="ash-db-col__staff">' +
       formatInstructorPill(label) +
       "</h4>" +
+      (away
+        ? '<span class="ash-db-col__dayoff" title="Staff unavailability">Day off</span>'
+        : "") +
       '<span class="ash-db-col__meta">' +
       esc(String(n)) +
       " session" +
@@ -9182,6 +9189,60 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (cards || '<p class="ash-db-empty">No sessions</p>') +
       "</div></section>"
     );
+  }
+
+  function hubStaffUnavailabilityRows(hub) {
+    var rows = (hub && hub.payload && hub.payload.staff_unavailability) || [];
+    if ((!rows || !rows.length) && typeof global !== "undefined" && global.__PORTAL_STAFF_UNAVAILABILITY__) {
+      rows = global.__PORTAL_STAFF_UNAVAILABILITY__;
+    }
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  /** True when staff_unavailability marks this worker off on iso (name_key / staff_name). */
+  function hubStaffAwayOnIso(hub, iso, staffRaw) {
+    var want = String(iso || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(want)) return false;
+    var staffKey = canonicalStaffMatchKey(staffRaw) || dayBoardStaffKey(staffRaw);
+    if (!staffKey || staffKey === "coverneeded") return false;
+    var rows = hubStaffUnavailabilityRows(hub);
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r) continue;
+      if (String(r.off_date || "").slice(0, 10) !== want) continue;
+      var nk = canonicalStaffMatchKey(r.name_key || "") || dayBoardStaffKey(r.name_key || "");
+      var sn = canonicalStaffMatchKey(r.staff_name || "") || dayBoardStaffKey(r.staff_name || "");
+      if (nk && nk === staffKey) return true;
+      if (sn && sn === staffKey) return true;
+      if (dayBoardStaffKey(r.name_key || r.staff_name || "") === dayBoardStaffKey(staffRaw)) return true;
+    }
+    return false;
+  }
+
+  /** Slot still under an away instructor with no cover / COVER NEEDED override yet. */
+  function hubSlotShowsStaffDayOff(hub, slot) {
+    if (!hub || !slot) return false;
+    var iso = String(slot.session_date || (hub && hub.selectedDay) || "").slice(0, 10);
+    if (!iso) return false;
+    if (slot.portalInstructorReassigned) {
+      if (
+        slot.__portalScheduleOverride &&
+        overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride)
+      ) {
+        return false;
+      }
+      if (
+        slot.__portalScheduleOverride &&
+        String(slot.__portalScheduleOverride.override_type || "").trim() === "instructor_reassign"
+      ) {
+        return false;
+      }
+    }
+    var list = normalizeInstructorList(slot.portalOriginalInstructors || slot.instructors);
+    for (var i = 0; i < list.length; i++) {
+      if (hubStaffAwayOnIso(hub, iso, list[i])) return true;
+    }
+    return false;
   }
 
   function dayBoardServiceBand(slot) {
@@ -9242,6 +9303,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       overrideIsInstructorCoverNeededType(slotOv) ||
       (slot.__portalScheduleOverride &&
         overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride));
+    var isStaffDayOff = !isCoverNeeded && hubSlotShowsStaffDayOff(hub, slot);
     var isTrial =
       hubSlotShowsTrialChip(slot, slotOv) ||
       /\(\s*trial\s*\)/i.test(clean(slot.client_name)) ||
@@ -9267,6 +9329,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     else if (isAbsent) tone = "absent";
     else if (isTrial) tone = "trial";
     else if (isCoverNeeded) tone = "cover";
+    else if (isStaffDayOff) tone = "dayoff";
     else if (isMakeup || makeupDisp) tone = "makeup";
     else if (isDayCentreService(slot.service)) tone = "dc";
     return {
@@ -9279,6 +9342,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       isShadowing: isShadowing,
       isInstructorReassign: isInstructorReassign,
       isCoverNeeded: isCoverNeeded,
+      isStaffDayOff: isStaffDayOff,
       isTrial: isTrial,
       isMakeup: isMakeup,
       isOpenSlot: isOpenSlot,
@@ -9321,6 +9385,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Cover") +
           "</span>"
       );
+    } else if (st.isStaffDayOff) {
+      chips.push('<span class="override-chip override--day-off">Day off</span>');
     }
     if (st.isUpdated && !st.isCoverNeeded && !st.isInstructorReassign && !st.isTrial && !st.isMakeup && !st.isAbsent) {
       chips.push(
@@ -9483,6 +9549,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           isAbsent: false,
           isCancelled: false,
           isCoverNeeded: false,
+          isStaffDayOff: false,
           isInstructorReassign: false,
           isUpdated: false,
           isShadowing: false,

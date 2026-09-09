@@ -4005,6 +4005,13 @@
         icon: CHIP_X_SVG,
       };
     }
+    if (st === "cover_tbc") {
+      return {
+        tone: "cover_tbc",
+        title: "Cover TBC — " + d.iso,
+        icon: "",
+      };
+    }
     // Mid-term join: weekday before paid start (e.g. 8 / 15 Sep when place starts 22).
     if (d.notBooked) {
       return {
@@ -4108,22 +4115,25 @@
 
   function dateChipSpanHtml(d, statusByIso) {
     if (!d || !d.iso) return "";
-          var meta = termChipToneMeta(d, statusByIso);
+    var meta = termChipToneMeta(d, statusByIso);
     var label = String(d.shortLabel || formatTermChipLabel(d.iso) || d.iso || "").trim();
+    if (meta.tone === "cover_tbc") {
+      label = "Cover TBC · " + label;
+    }
     if (!label) return "";
-          return (
-            '<span class="pp-hub-ops__date-chip pp-hub-ops__date-chip--' +
-            meta.tone +
-            '" role="listitem" data-pp-term-iso="' +
-            esc(d.iso) +
-            '" title="' +
-            esc(meta.title) +
-            '">' +
-            meta.icon +
-            "<span>" +
+    return (
+      '<span class="pp-hub-ops__date-chip pp-hub-ops__date-chip--' +
+      meta.tone +
+      '" role="listitem" data-pp-term-iso="' +
+      esc(d.iso) +
+      '" title="' +
+      esc(meta.title) +
+      '">' +
+      meta.icon +
+      "<span>" +
       esc(label) +
-            "</span></span>"
-          );
+      "</span></span>"
+    );
   }
 
   /** Confirmed / held summer crash days for this child (hub chips). */
@@ -4367,7 +4377,7 @@
     if (!hideCompleted) return list || [];
     return (list || []).filter(function (d) {
       var st = statusByIso[d.iso] || "";
-      if (st === "absent" || st === "cancelled") return true;
+      if (st === "absent" || st === "cancelled" || st === "cover_tbc") return true;
       var meta = termChipToneMeta(d, statusByIso);
       return meta.tone !== "done";
     });
@@ -4408,7 +4418,7 @@
     );
   }
 
-  /** Blue / green / red key for date chips (hub + booking). */
+  /** Blue / green / red / amber key for date chips (hub + booking). */
   function termChipColorLegendHtml() {
     return (
       '<ul class="pp-hub-ops__chip-legend" aria-label="Date colour key">' +
@@ -4418,6 +4428,9 @@
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--green" aria-hidden="true"></span>' +
       '<span class="pp-hub-ops__chip-legend__text"><strong>Green</strong> — completed</span></li>' +
+      '<li class="pp-hub-ops__chip-legend__item">' +
+      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--amber" aria-hidden="true"></span>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Amber</strong> — Cover TBC (session still on)</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--red" aria-hidden="true"></span>' +
       '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — absent, cancelled, or not re-enrolled for 2026/27</span></li>' +
@@ -5229,6 +5242,23 @@
       function (iso) {
         var d = String(iso || "").slice(0, 10);
         if (d) statusByIso[d] = "absent";
+      },
+    );
+    // Club cancel from schedule_overrides (slot_close) — do not wait for WhatsApp notify.
+    ((data && data.attendance_summary && data.attendance_summary.cancelled_dates) || []).forEach(
+      function (iso) {
+        var d = String(iso || "").slice(0, 10);
+        if (!d) return;
+        if (statusByIso[d] !== "absent") statusByIso[d] = "cancelled";
+      },
+    );
+    // COVER NEEDED on this child's seat — session still on.
+    ((data && data.attendance_summary && data.attendance_summary.cover_tbc_dates) || []).forEach(
+      function (iso) {
+        var d = String(iso || "").slice(0, 10);
+        if (!d) return;
+        if (statusByIso[d] === "absent" || statusByIso[d] === "cancelled") return;
+        statusByIso[d] = "cover_tbc";
       },
     );
     ((data && data.sessions) || []).forEach(function (s) {

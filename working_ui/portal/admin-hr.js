@@ -1631,12 +1631,162 @@
           details: { off_date: dateStr, reason: reason || null }, source: "staffhr",
         });
       }
-      deps.toast("Day off added.");
-      render();
-      openPerson(nameKey);
+      return writeCoverNeededForDayOff(client, nameKey, displayName, dateStr).then(function (coverCount) {
+        deps.toast(
+          coverCount > 0
+            ? "Day off added · " + coverCount + " COVER NEEDED"
+            : "Day off added."
+        );
+        try {
+          if (typeof global.portalSyncOverviewDayTruth === "function") {
+            return global.portalSyncOverviewDayTruth(client, {
+              refreshScheduling: true,
+              forceOverviewRender: true,
+            });
+          }
+        } catch (_sync) {}
+      }).then(function () {
+        render();
+        openPerson(nameKey);
+      });
     }).catch(function (err) {
       setPersonMsg(screen, "Could not save day off: " + ((err && err.message) || err));
     });
+  }
+
+  /** Same COVER NEEDED rows Validate day writes when booked slots exist for the worker. */
+  function writeCoverNeededForDayOff(client, nameKey, displayName, dateStr) {
+    var slots = [];
+    try {
+      if (typeof global.portalCollectCoverSlotsForStaffDayOff === "function") {
+        slots = global.portalCollectCoverSlotsForStaffDayOff(dateStr, nameKey, displayName) || [];
+      }
+    } catch (_col) {
+      slots = [];
+    }
+    if (!slots.length) return Promise.resolve(0);
+
+    function toPgTime(t) {
+      var s = String(t == null ? "" : t).trim();
+      if (!s) return "";
+      var m = s.match(/^(\d{1,2}):(\d{2})/);
+      if (!m) return "";
+      return String(Number(m[1])).padStart(2, "0") + ":" + m[2] + ":00";
+    }
+
+    var anchorKey = String(nameKey || "").trim().toLowerCase() || "staff";
+    var writes = slots.map(function (raw) {
+      var clientId = String(raw.anchor_client_id || "").trim().toLowerCase();
+      if (!clientId) return Promise.resolve(false);
+      var start = toPgTime(raw.anchor_start || "");
+      var end = toPgTime(raw.anchor_end || "") || start;
+      if (!start) return Promise.resolve(false);
+      var payload = {
+        cover_needed: true,
+        covering_staff_id: "cover_needed",
+        covering_staff_name: "COVER NEEDED",
+        absent_staff_id: anchorKey,
+        absent_staff_name: displayName || anchorKey,
+        source: "hr_day_off",
+        notify_parents: false,
+        service: raw.programme || null,
+        area: raw.area || null,
+      };
+      return client
+        .from("schedule_overrides")
+        .select("id, payload")
+        .eq("session_date", dateStr)
+        .eq("anchor_staff_id", anchorKey)
+        .eq("anchor_start", start)
+        .eq("override_type", "instructor_cover_needed")
+        .eq("status", "active")
+        .then(function (priorRes) {
+          var cancelIds = [];
+          (priorRes.data || []).forEach(function (p) {
+            var pl = p && p.payload && typeof p.payload === "object" ? p.payload : {};
+            if (pl.source === "hr_day_off" || !pl.disruption_report_id) {
+              cancelIds.push(p.id);
+            }
+          });
+          var cancelP = cancelIds.length
+            ? client.from("schedule_overrides").update({ status: "cancelled" }).in("id", cancelIds)
+            : Promise.resolve({ error: null });
+          return cancelP.then(function () {
+            return client.from("schedule_overrides").insert({
+              session_date: dateStr,
+              anchor_staff_id: anchorKey,
+              anchor_start: start,
+              anchor_end: end,
+              anchor_venue: raw.anchor_venue || null,
+              anchor_client_id: clientId,
+              anchor_time_slot_label: raw.anchor_time_slot_label || null,
+              override_type: "instructor_cover_needed",
+              payload: payload,
+              reason:
+                "HR day off — " +
+                (displayName || anchorKey) +
+                " · COVER NEEDED",
+              status: "active",
+              superseded_by: null,
+              spreadsheet_revision: "hr-day-off",
+            });
+          });
+        })
+        .then(function (ins) {
+          if (ins && ins.error) {
+            try {
+              console.warn("[hr] cover_needed insert", ins.error.message || ins.error);
+            } catch (_) {}
+            return false;
+          }
+          return true;
+        })
+        .catch(function (err) {
+          try {
+            console.warn("[hr] cover_needed", err);
+          } catch (_) {}
+          return false;
+        });
+    });
+
+    return Promise.all(writes).then(function (flags) {
+      return flags.filter(Boolean).length;
+    });
+  }
+
+  function cancelHrCoverNeededForDayOff(client, nameKey, dateStr) {
+    var anchorKey = String(nameKey || "").trim().toLowerCase();
+    if (!anchorKey || !dateStr) return Promise.resolve(0);
+    return client
+      .from("schedule_overrides")
+      .select("id, payload")
+      .eq("session_date", dateStr)
+      .eq("anchor_staff_id", anchorKey)
+      .eq("override_type", "instructor_cover_needed")
+      .eq("status", "active")
+      .then(function (res) {
+        if (res.error) throw res.error;
+        var ids = [];
+        (res.data || []).forEach(function (p) {
+          var pl = p && p.payload && typeof p.payload === "object" ? p.payload : {};
+          if (pl.source === "hr_day_off" || !pl.disruption_report_id) ids.push(p.id);
+        });
+        if (!ids.length) return 0;
+        return client
+          .from("schedule_overrides")
+          .update({ status: "cancelled" })
+          .in("id", ids)
+          .then(function (u) {
+            if (u.error) throw u.error;
+            return ids.length;
+          });
+      })
+      .catch(function (err) {
+        try {
+          console.warn("[hr] cancel cover_needed", err);
+        } catch (_) {}
+        return 0;
+      });
   }
 
   function removeOff(nameKey, displayName, id, screen) {
@@ -1658,9 +1808,21 @@
           details: { off_date: rec.off_date }, source: "staffhr",
         });
       }
-      deps.toast("Day off removed.");
-      render();
-      openPerson(nameKey);
+      var offIso = rec && rec.off_date ? String(rec.off_date).slice(0, 10) : "";
+      return cancelHrCoverNeededForDayOff(client, nameKey, offIso).then(function () {
+        deps.toast("Day off removed.");
+        try {
+          if (typeof global.portalSyncOverviewDayTruth === "function") {
+            return global.portalSyncOverviewDayTruth(client, {
+              refreshScheduling: true,
+              forceOverviewRender: true,
+            });
+          }
+        } catch (_sync) {}
+      }).then(function () {
+        render();
+        openPerson(nameKey);
+      });
     }).catch(function (err) {
       setPersonMsg(screen, "Could not remove day off: " + ((err && err.message) || err));
     });

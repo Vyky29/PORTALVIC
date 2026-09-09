@@ -1740,6 +1740,10 @@
       padding: 10px 8px 8px;
       background: #f8fbfe;
     }
+    .ash-db-col--day-off {
+      background: rgba(220, 38, 38, 0.06);
+      border-color: rgba(185, 28, 28, 0.35);
+    }
     .ash-db-col__head {
       display: flex;
       flex-direction: column;
@@ -1750,6 +1754,26 @@
       margin: 0 0 10px;
       min-width: 0;
       width: 100%;
+    }
+    .ash-db-col__dayoff {
+      display: inline-block;
+      margin: 0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #b91c1c;
+      background: rgba(220, 38, 38, 0.12);
+      border: 1px solid rgba(185, 28, 28, 0.28);
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+    .override-chip.override--day-off {
+      color: #b91c1c;
+      background: rgba(220, 38, 38, 0.12);
+      border-color: rgba(185, 28, 28, 0.28);
     }
     .ash-db-col__photo,
     .ash-db-col__head .portal-roster-avatar {

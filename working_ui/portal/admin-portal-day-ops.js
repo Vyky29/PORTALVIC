@@ -15,6 +15,7 @@
     venue_reviews: [],
     cancellation_reports: [],
     schedule_overrides: [],
+    staff_unavailability: [],
     session_quick_marks: []
   };
   var loadInFlight = null;
@@ -23,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260906-overview-fluid';
+  var PORTAL_DAY_OPS_BUILD = '20260909-overview-unavail';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -184,6 +185,8 @@
       lead_session_reports: [],
       venue_reviews: [],
       cancellation_reports: [],
+      schedule_overrides: [],
+      staff_unavailability: [],
       session_quick_marks: []
     };
   }
@@ -201,6 +204,13 @@
       if (Array.isArray(cachedInc) && cachedInc.length) {
         if (!payload.incident_reports || !payload.incident_reports.length) {
           payload.incident_reports = cachedInc.slice();
+        }
+      }
+      var cachedOff = global.__PORTAL_STAFF_UNAVAILABILITY__;
+      if (Array.isArray(cachedOff) && cachedOff.length) {
+        var curOff = (payload.staff_unavailability || []).length;
+        if (!curOff || cachedOff.length > curOff) {
+          payload.staff_unavailability = cachedOff.slice();
         }
       }
     } catch (_syncOv) {}
@@ -245,6 +255,7 @@
     mergeArrayField('venue_reviews', j.venue_reviews);
     mergeArrayField('cancellation_reports', j.cancellation_reports);
     mergeArrayField('schedule_overrides', j.schedule_overrides);
+    mergeArrayField('staff_unavailability', j.staff_unavailability);
     mergeArrayField('session_quick_marks', j.session_quick_marks);
     mergeArrayField('parent_feedback_shares', j.parent_feedback_shares);
     try {
@@ -252,6 +263,11 @@
         global.__PORTAL_LEAD_SESSION_REPORTS__ = payload.lead_session_reports;
       }
     } catch (_syncLead) {}
+    try {
+      if (Array.isArray(payload.staff_unavailability)) {
+        global.__PORTAL_STAFF_UNAVAILABILITY__ = payload.staff_unavailability.slice();
+      }
+    } catch (_syncOff) {}
   }
 
   function portalDayOpsAfterFeedbackPayloadMerge() {
@@ -448,6 +464,31 @@
     } catch (eOv2) {}
   }
 
+  async function fetchStaffUnavailabilityInto(out, client) {
+    if (!client) return;
+    var sinceOff = new Date();
+    sinceOff.setDate(sinceOff.getDate() - 14);
+    var untilOff = new Date();
+    untilOff.setDate(untilOff.getDate() + 120);
+    var sinceOffIso = sinceOff.toISOString().slice(0, 10);
+    var untilOffIso = untilOff.toISOString().slice(0, 10);
+    try {
+      var offRes = await client
+        .from('staff_unavailability')
+        .select('id, name_key, staff_name, staff_id, off_date, reason')
+        .gte('off_date', sinceOffIso)
+        .lte('off_date', untilOffIso)
+        .order('off_date', { ascending: true })
+        .limit(800);
+      if (!offRes.error) {
+        out.staff_unavailability = offRes.data || [];
+        try {
+          global.__PORTAL_STAFF_UNAVAILABILITY__ = (out.staff_unavailability || []).slice();
+        } catch (_g) {}
+      }
+    } catch (eOff) {}
+  }
+
   /** Fast path for Sessions overview — parallel, no incidents/lead/venue/DB feedback merge. */
   async function fetchOverviewSupabaseExtras() {
     var client = cfg.getClient && cfg.getClient();
@@ -467,6 +508,11 @@
       );
     } else if (client) {
       tasks.push(fetchScheduleOverridesInto(out, client));
+    }
+    if (client) {
+      tasks.push(fetchStaffUnavailabilityInto(out, client));
+    } else if (Array.isArray(global.__PORTAL_STAFF_UNAVAILABILITY__)) {
+      out.staff_unavailability = global.__PORTAL_STAFF_UNAVAILABILITY__.slice();
     }
     if (cfg.fetchSessionFeedback) {
       tasks.push(
@@ -545,6 +591,7 @@
       }
     } catch (_ovFallback) {}
     console.log('[PortalDayOps] schedule_overrides live rows:', (out.schedule_overrides || []).length);
+    console.log('[PortalDayOps] staff_unavailability live rows:', (out.staff_unavailability || []).length);
     return out;
   }
 
@@ -1774,6 +1821,7 @@
       try {
         if (typeof window !== 'undefined') {
           window.__PORTAL_SCHEDULE_OVERRIDES__ = null;
+          window.__PORTAL_STAFF_UNAVAILABILITY__ = null;
         }
       } catch (_eOv) {}
       try {

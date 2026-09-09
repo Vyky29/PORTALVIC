@@ -1,33 +1,44 @@
 ---
-description: Sessions Overview is the day board Victor looks at; Schedule & Covers and bookings update that same truth.
+description: Sessions Overview is the only day look-here; Schedule & Covers, day offs, and bookings update that same truth for admin, staff, and parents.
 alwaysApply: true
 ---
 
-# Sessions Overview = day truth you look at
+# Sessions Overview = only day look-here
 
-Victor's day-to-day surface is **Sessions Overview** (admin Sessions hub → overview day board). Same role LOCAL had as the board he watches.
+Victor's day-to-day surface is **Sessions Overview** (admin Sessions hub → week/day board). Do **not** open LOCAL for day-of checks.
+
+Standing term staff + booked kids repeat every week; **exceptions** come from `schedule_overrides` + `staff_unavailability` and must paint for **admin Overview**, **Staff Today**, and **parent term chips**.
 
 ## How to change the day
 
 | Where | What it writes | Overview sees it via |
 |-------|----------------|----------------------|
 | **Schedule & Covers** | `schedule_overrides` (+ MADRE fold) | Hub expand + override paint |
-| **Validate day** | `staff_unavailability` + COVER NEEDED overrides | Same |
+| **Validate day** | `staff_unavailability` + COVER NEEDED overrides | Same (+ Day off / COVER chrome) |
+| **HR Add day off** | `staff_unavailability` + COVER NEEDED when booked slots exist | Same (call `portalSyncOverviewDayTruth`) |
 | **Finish booking / trial paid** | dated `portal_roster_rows` + trial override + MADRE fold | Same |
 | **Edit term slot** | `portal_roster_rows` (rest of term) | Roster refresh |
-| **Cursor / machine** | `portal_roster_canonical.js` and/or LOCAL port | Deploy + refresh |
+| **Cursor / machine** | `portal_roster_canonical.js` (optional LOCAL port) | Deploy + refresh |
 
-After portal day writes, call **`portalSyncOverviewDayTruth`** (admin dashboard) so MADRE / roster / override caches and the Overview board stay current.
+After portal day writes, call **`portalSyncOverviewDayTruth`** so MADRE / roster / override / **staff_unavailability** caches and the Overview board stay current.
+
+## Parents (term chips)
+
+- `slot_close` / club cancel → cancelled chip (no WhatsApp required)
+- `instructor_cover_needed` on the child's seat → **Cover TBC** (session still on)
+- `instructor_reassign` → Team cover name
+- Client absence / replace → absent chips
+- Unrelated staff day offs that do not touch the child's slots → do not show
 
 ## LOCAL vs Overview
 
-- **LOCAL** (`local_dc_staff_week.html`) = Autumn **authoring** for standing / week-1 / dated EXTRA before overrides. Still commit+push when it changes; port into `portal_roster_canonical.js`.
-- **Overview** = **runtime look-here** board (canonical + MADRE + `portal_roster_rows` + `schedule_overrides`).
+- **Overview** = **only** runtime look-here (canonical + MADRE + `portal_roster_rows` + `schedule_overrides` + `staff_unavailability`).
+- **LOCAL** (`local_dc_staff_week.html`) = optional Autumn **authoring / machine port** only — not consulted day-to-day.
 - Do **not** make Overview read LOCAL HTML in the browser.
-- Prefer day exceptions via Schedule & Covers (overrides) instead of new one-off hardcodes in canonical for every cover.
+- Prefer day exceptions via Schedule & Covers / Validate / HR day off (DB) instead of new one-off hardcodes in LOCAL/canonical.
 
 ## Agent habits
 
-1. When Victor says something is wrong on the day board, check **Overview** first, then Schedule & Covers / overrides / dated roster rows — not a second parallel truth.
-2. After implementing Schedule / Validate / booking day writes, ensure Overview refresh is wired (do not leave caches stale).
+1. When Victor says something is wrong on the day board, check **Overview** first, then Schedule & Covers / overrides / unavailability / dated roster rows — never LOCAL as look-here.
+2. After Schedule / Validate / HR day off / booking day writes, ensure Overview refresh is wired (do not leave caches stale).
 3. Alerts / notifications (admin bell, staff/lead push, parent family alerts, outstanding-feedback nag) are **live** again after Autumn rota sign-off (reactivated 8 Sep 2026).

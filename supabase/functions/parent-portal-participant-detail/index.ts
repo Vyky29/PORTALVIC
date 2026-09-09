@@ -1310,6 +1310,8 @@ Deno.serve(async (req) => {
     total: 0,
     makeup_absent: 0,
     absent_dates: [] as string[],
+    cancelled_dates: [] as string[],
+    cover_tbc_dates: [] as string[],
   };
   /** Earliest slot_clear_client date (left mid-term) — used to paint later missed chips red. */
   let placeLeftFromIso = "";
@@ -1323,6 +1325,9 @@ Deno.serve(async (req) => {
         "client_replace_in_slot",
         "client_absence_announced",
         "slot_clear_client",
+        "slot_close",
+        "client_cancelled",
+        "instructor_cover_needed",
       ])
       .gte("session_date", feedbackTermStartIso)
       .lte("session_date", feedbackTermEndIso)

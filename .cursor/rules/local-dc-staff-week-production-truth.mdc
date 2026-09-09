@@ -1,13 +1,13 @@
 ---
-description: LOCAL HTML is Autumn authoring; Overview is look-here; always commit/push LOCAL + canonical ports.
+description: LOCAL HTML is optional Autumn authoring/port only; Overview is the only day look-here; commit/push when LOCAL + canonical change.
 alwaysApply: true
 ---
 
-# LOCAL DC staff week = Autumn authoring truth (before overrides)
+# LOCAL DC staff week = optional Autumn authoring (not look-here)
 
-`working_ui/local_dc_staff_week.html` is the **authoritative Autumn board draft** for week-1 DC, standing start dates, weekend/after-school phases, and Sep-specific covers **before** day-of `schedule_overrides`.
+`working_ui/local_dc_staff_week.html` is an **optional machine authoring draft** for week-1 DC, standing start dates, weekend/after-school phases, and Sep-specific covers **before** day-of `schedule_overrides`.
 
-**Day-to-day look-here surface for Victor:** **Sessions Overview** (see `overview-day-truth.mdc`). LOCAL is not opened in production admin; changes must be ported into `portal_roster_canonical.js` (and day ops preferably via Schedule & Covers) so Overview matches.
+**Only day look-here for Victor:** **Sessions Overview** (see `overview-day-truth.mdc`). LOCAL is not opened in production admin. Prefer live DB offs/covers (`staff_unavailability` + `schedule_overrides`) over new LOCAL/canonical hardcodes.
 
 ## When this file changes
 
@@ -17,7 +17,7 @@ alwaysApply: true
 2. Commit with a message that states what week/phase changed (e.g. week-1 DC, Sep 6 cover, standing from Mon 7).
 3. Push to origin so Vercel deploys `working_ui/`.
 
-Do **not** leave this file changed only on disk — production must stay in sync because MADRE, dashboards, and staff Today views derive from the same Autumn logic.
+Do **not** leave this file changed only on disk when you did use it to port standing logic — production roster still derives from `portal_roster_canonical.js`.
 
 ## Truth model (do not regress)
 
@@ -29,10 +29,11 @@ Do **not** leave this file changed only on disk — production must stay in sync
 
 Never park week-1 / `DATE_EXTRA` / phase painting behind `STANDING_ONLY = true` without explicit user request.
 
-## Day offs vs LOCAL board
+## Day offs — DB owns live truth
 
-- Admin **Validate day** writes `staff_unavailability` (+ optional COVER NEEDED `schedule_overrides`). That is live truth for staff Today / Schedule & Covers / Overview.
-- Paint validated offs on `local_dc_staff_week.html` via `STAFF_DAY_OFF` so the LOCAL cards match what you approved (Sandra may be note-only if she is not on this AS/DC board).
+- Admin **Validate day** and **HR Add day off** write `staff_unavailability` (+ COVER NEEDED `schedule_overrides` when booked slots exist). That is live truth for Overview / Staff Today / parents (Cover TBC).
+- Do **not** add new day-off hardcodes in LOCAL/canonical when DB + overrides can own them.
+- Optional: paint historical offs on LOCAL via `STAFF_DAY_OFF` only when authoring a board draft — not required for Overview.
 - Do **not** expect Validate day to rewrite LOCAL HTML by itself.
 
 ## Stripe / Mark paid → roster
