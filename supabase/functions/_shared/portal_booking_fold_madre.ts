@@ -48,6 +48,15 @@ export function preferredInstructorForReservation(row: {
   ) {
     return "Dan";
   }
+  /* Tue Acton 4-4.30 standing opens are Luliya + Roberto (Aurora Closed skipped). */
+  if (
+    /acton/.test(venue) &&
+    /^tue/.test(day) &&
+    /4(\.00)?\s*[-–to]+\s*4\.?30/.test(time) &&
+    !/climb/.test(service)
+  ) {
+    return "Luliya";
+  }
   /* Tue Acton 4.30-5 standing band is Aurora (Autumn AS pool). */
   if (
     /acton/.test(venue) &&
@@ -131,7 +140,9 @@ export async function foldValidatedReservationOntoMadre(
     return { ok: false, note: "incomplete_reservation" };
   }
 
-  const instructors = preferredInstructorForReservation(row);
+  const preferred = preferredInstructorForReservation(row);
+  /* portal_roster_rows.instructors is NOT NULL — never insert blank. */
+  const instructors = preferred || "Luliya";
   const { data: madreRow, error: loadErr } = await admin
     .from("portal_madre_document")
     .select("document, revision")
@@ -150,7 +161,7 @@ export async function foldValidatedReservationOntoMadre(
       client_name: client,
       day: clean(row.day_label, 20),
       time_slot: timeSlot,
-      instructors: instructors || undefined,
+      instructors,
       service: clean(row.service_name, 80) || "Aquatic Activity",
       venue: clean(row.venue, 80),
       replace_open: true,
@@ -203,7 +214,7 @@ export async function foldValidatedReservationOntoMadre(
         .update({
           day: dayLabel,
           time_slot: timeSlot,
-          instructors: instructors || null,
+          instructors: instructors,
           service,
           venue,
           updated_by: actorId,
@@ -216,9 +227,13 @@ export async function foldValidatedReservationOntoMadre(
         client_name: client,
         day: dayLabel,
         time_slot: timeSlot,
-        instructors: instructors || null,
+        instructors: instructors,
         service,
-        area: /climb|westway/i.test(`${service} ${venue}`) ? "Wall" : "Teaching Pool",
+        area: /climb|westway/i.test(`${service} ${venue}`)
+          ? "Wall"
+          : /acton/i.test(venue)
+          ? "Lane (DE)"
+          : "Teaching Pool",
         venue,
         session_date: iso,
         status: "active",

@@ -381,12 +381,12 @@
    * Adam Mahmmoud = Teaching Pool). Other seats keep Acton Lane (DE) default.
    */
   var AUTUMN_ACTON_TUESDAY_BOARD = [
-    { staff: "ROBERTO", name: "No participant", time: "4 to 4.30", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "Christian Abate", time: "4 to 4.30", area: "Lane (DE)" },
     { staff: "ROBERTO", name: "Serine", time: "4.30 to 5.30", area: "Lane (DE)" },
     { staff: "ROBERTO", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
     { staff: "ROBERTO", name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
     /* On shift from 4 — empty seat is open (No participant), never Closed. */
-    { staff: "LULIYA", name: "No participant", time: "4 to 4.30", area: "Lane (DE)" },
+    { staff: "LULIYA", name: "Emmanuel Abate", time: "4 to 4.30", area: "Lane (DE)" },
     { staff: "LULIYA", name: "No participant", time: "4.30 to 5", area: "Lane (DE)" },
     { staff: "LULIYA", name: "Logan", time: "5 to 5.30", area: "Lane (DE)" },
     { staff: "LULIYA", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
