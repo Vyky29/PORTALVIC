@@ -888,19 +888,27 @@
     );
   }
 
-  /** Pay-hold expiry for parents: today + time only (no calendar date). */
+  /** Pay-hold expiry for parents: UK clock (Europe/London), never raw UTC. */
   function formatHoldExpiryTime(iso) {
-    var s = String(iso || "").trim();
-    if (!s) return "";
-    var m = s.match(/T(\d{2}:\d{2})/);
-    if (m) return "today " + m[1] + " UTC";
-    var d = new Date(s);
-    if (!Number.isNaN(d.getTime())) {
-      var hh = String(d.getUTCHours()).padStart(2, "0");
-      var mm = String(d.getUTCMinutes()).padStart(2, "0");
-      return "today " + hh + ":" + mm + " UTC";
-    }
-    return "";
+    var d = new Date(String(iso || "").trim());
+    if (Number.isNaN(d.getTime())) return "";
+    var tz = "Europe/London";
+    var hm = new Intl.DateTimeFormat("en-GB", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      hourCycle: "h23",
+    }).format(d);
+    var dayExp = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(d);
+    var dayNow = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
+    if (dayExp === dayNow) return "today " + hm;
+    var dayLabel = new Intl.DateTimeFormat("en-GB", {
+      timeZone: tz,
+      day: "numeric",
+      month: "short",
+    }).format(d);
+    return dayLabel + " " + hm;
   }
 
   function plansForChannel(channel, data) {

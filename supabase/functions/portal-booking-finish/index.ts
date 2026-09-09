@@ -823,8 +823,8 @@ Deno.serve(async (req) => {
       bank: tideBankDetailsFromEnv(),
       pay_hold_minutes: Number(savedChoices.pay_hold_minutes) || BOOKING_PAY_HOLD_MINUTES,
       pay_hold_expires_at:
-        savedChoices.pay_hold_expires_at ||
         reservation?.hold_expires_at ||
+        savedChoices.pay_hold_expires_at ||
         null,
       choices_json: savedChoices,
       gc_step2_unlocked: officePaidNotified(savedChoices),
