@@ -207,12 +207,14 @@
       },
       openContactDetails: function () {
         void loadHome({ skipAutoHub: true }).then(function () {
-          var contactCard = $("ppContactBlock");
-          if (!contactCard) return;
+          var cid = String(contactId || "").replace(/"/g, "");
+          var card = document.querySelector('#ppChildList [data-contact-id="' + cid + '"]');
+          var el = (card && card.querySelector(".pp-child-contact")) || card;
+          if (!el) return;
           try {
-            contactCard.scrollIntoView({ behavior: "smooth", block: "start" });
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
           } catch (_e) {
-            contactCard.scrollIntoView();
+            el.scrollIntoView();
           }
         });
       },
@@ -1290,6 +1292,29 @@
     );
   }
 
+  function childContactOnFileHtml(c) {
+    var email = String((c && c.email) || "").trim();
+    var mobile = String((c && c.mobile) || "").trim();
+    if (mobile === "—") mobile = "";
+    var addr = (c && c.address) || {};
+    var addrParts = [addr.line1, addr.line2, addr.city, addr.postcode].filter(function (p) {
+      p = String(p || "").trim();
+      return p && p !== "—";
+    });
+    if (!email && !mobile && !addrParts.length) return "";
+    return (
+      '<div class="pp-child-contact">' +
+      '<p class="pp-muted">Contact on file</p>' +
+      (email ? '<p class="pp-contact-line">' + esc(email) + "</p>" : "") +
+      (mobile ? '<p class="pp-contact-line">' + esc(mobile) + "</p>" : "") +
+      (addrParts.length
+        ? '<p class="pp-contact-line">' + esc(addrParts.join(", ")) + "</p>"
+        : "") +
+      '<p class="pp-muted pp-contact-note">To update your details, reply to a club message or email info@clubsensational.org.</p>' +
+      "</div>"
+    );
+  }
+
   function renderHome(data) {
     state.home = data;
     applyMessagingCounts(data);
@@ -1352,7 +1377,9 @@
               "</div>" +
               '<div class="pp-child-actions">' +
               childSessionsBtnHtml(c) +
-              "</div></div>" +
+              "</div>" +
+              childContactOnFileHtml(c) +
+              "</div>" +
               (photoMissing ? childPhotoMissingNoticeHtml() : "") +
               "</article>"
             );
@@ -1360,22 +1387,6 @@
           .join("");
       }
     }
-
-    var addr = parent.address || {};
-    var addrParts = [addr.line1, addr.line2, addr.city, addr.postcode].filter(function (p) {
-      p = String(p || "").trim();
-      return p && p !== "—";
-    });
-    $("ppContactBlock").innerHTML =
-      '<p class="pp-muted">Contact on file</p>' +
-      (parent.email ? '<p class="pp-contact-line">' + esc(parent.email) + "</p>" : "") +
-      (parent.mobile && parent.mobile !== "—"
-        ? '<p class="pp-contact-line">' + esc(parent.mobile) + "</p>"
-        : "") +
-      (addrParts.length
-        ? '<p class="pp-contact-line">' + esc(addrParts.join(", ")) + "</p>"
-        : "") +
-      '<p class="pp-muted pp-contact-note">To update your details, reply to a club message or email info@clubsensational.org.</p>';
   }
 
   async function loadParticipantDetail(contactId, openView) {

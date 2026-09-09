@@ -570,8 +570,7 @@
       gap: 12px;
       min-width: 0;
     }
-    #ppStepHome > .pp-card,
-    #ppStepHome > #ppContactBlock {
+    #ppStepHome > .pp-card {
       flex: 0 0 auto;
       min-height: 0;
       min-width: 0;
@@ -1039,6 +1038,31 @@
       font-size: 12px;
       line-height: 1.35;
       overflow-wrap: break-word;
+    }
+    .pp-child-contact {
+      grid-column: 1 / -1;
+      min-width: 0;
+      margin: 2px 0 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(23, 50, 71, 0.04);
+      border: 1px solid rgba(23, 50, 71, 0.08);
+      overflow-wrap: break-word;
+    }
+    .pp-child-contact > .pp-muted {
+      margin: 0 0 6px;
+    }
+    .pp-child-contact .pp-contact-line {
+      margin: 2px 0;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .pp-child-contact .pp-contact-note {
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.4;
     }
     .pp-child-photo {
       width: 80px;
@@ -5233,8 +5257,7 @@
         margin-right: 0;
         width: 100%;
       }
-      #ppStepHome > .pp-card,
-      #ppStepHome > #ppContactBlock {
+      #ppStepHome > .pp-card {
         margin-top: 0;
         height: auto;
       }
@@ -5289,18 +5312,15 @@
         grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
         gap: 14px;
       }
-      /*
-       * Desktop home: kids + PIN on the left, contact on the right.
-       * Do not assign every .pp-card to "kids" — that stacked PIN over participants.
-       */
+      /* Desktop home: participants then PIN. Contact lives inside each child card. */
       #ppStepHome {
         display: grid;
-        grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.65fr);
+        grid-template-columns: minmax(0, 1fr);
         grid-template-areas:
-          "head head"
-          "help help"
-          "kids contact"
-          "pin contact";
+          "head"
+          "help"
+          "kids"
+          "pin";
         align-items: start;
         gap: 16px;
       }
@@ -5308,10 +5328,6 @@
       #ppStepHome > .pp-help-sheet { grid-area: help; }
       #ppStepHome > #ppParticipantsCard { grid-area: kids; min-width: 0; }
       #ppStepHome > #ppPinCard { grid-area: pin; min-width: 0; align-self: start; }
-      #ppStepHome > #ppContactBlock {
-        grid-area: contact;
-        align-self: start;
-      }
     }
   </style>
 </head>
@@ -5436,8 +5452,6 @@
         <div id="ppChildList"></div>
       </div>
 
-      <div class="pp-card" id="ppContactBlock"></div>
-
       <div class="pp-card" id="ppPinCard">
         <h3 class="pp-section-title">
           <span class="pp-title-inner">
@@ -5542,7 +5556,7 @@
   <script src="/portal/parent_portal_team.js?v=20260908-team-unchanged-logan"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260828-trial-iso-cal"></script>
   <script src="/portal/parent_portal_participant.js?v=20260909-no-parent-cover-tbc"></script>
-  <script src="/portal/parent_portal_app.js?v=20260909-menu-logout"></script>
+  <script src="/portal/parent_portal_app.js?v=20260909-child-contact-on-file"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
   const { data: linkedRows, error: linkedErr } = await supabase
     .from("portal_parent_contacts")
     .select(
-      "contact_id, child_display, child_first_name, child_last_name, dob_iso, in_class, on_waiting_list, city, postcode",
+      "contact_id, child_display, child_first_name, child_last_name, dob_iso, in_class, on_waiting_list, email, mobile, address_line1, address_line2, city, postcode",
     )
     .eq("parent_person_id", parentPersonId)
     .order("child_display", { ascending: true });
@@ -118,6 +118,10 @@ Deno.serve(async (req) => {
       avatar_storage_path: p?.avatar_storage_path || null,
       city: row.city || null,
       postcode: row.postcode || null,
+      email: row.email || null,
+      mobile: row.mobile || null,
+      address_line1: row.address_line1 || null,
+      address_line2: row.address_line2 || null,
       child_display: row.child_display,
       child_first_name: row.child_first_name,
       child_last_name: row.child_last_name,
@@ -164,6 +168,14 @@ Deno.serve(async (req) => {
         portal_access: c.in_class === false ? "former" : "active",
         city: c.city || null,
         postcode: c.postcode || null,
+        email: c.email || null,
+        mobile: c.mobile || null,
+        address: {
+          line1: c.address_line1 || null,
+          line2: c.address_line2 || null,
+          city: c.city || null,
+          postcode: c.postcode || null,
+        },
         avatar_url: avatar.avatar_url,
         avatar_source: avatar.avatar_source,
         has_avatar: !!(avatar.avatar_url || c.avatar_storage_path),
