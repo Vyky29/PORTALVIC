@@ -22,7 +22,10 @@ export function isDayCentreService(service: string): boolean {
 }
 
 export function isBespokeSharedService(service: string): boolean {
-  return /bespoke.*shared|shared.*bespoke|bespoke_shared/i.test(String(service || ""));
+  const s = String(service || "");
+  if (/bespoke.*shared|shared.*bespoke|bespoke_shared/i.test(s)) return true;
+  /* Hub Tinashe-style books store service as "Bespoke Programme" + key |bespoke_shared. */
+  return /bespoke\s*programme/i.test(s);
 }
 
 export function feedbackAttendanceIsAbsent(attendance: unknown): boolean {

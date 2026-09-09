@@ -1,6 +1,7 @@
 /** Outstanding session-feedback units for the 20:30 WhatsApp nudge. */
 
 import {
+  isBespokeSharedService,
   isDayCentreService,
   rosterClientsMatch,
   slugClient,
@@ -107,6 +108,12 @@ export const STAFF_USERNAME_ALIASES: Record<string, string> = {
   javiarranz: "javi",
   youssef: "youssef",
   yusuf: "youssef",
+  luliya: "luliya",
+  lulia: "luliya",
+  aida: "luliya",
+  aidaluliya: "luliya",
+  emanuel: "emanuel",
+  emmanuel: "emanuel",
 };
 
 /** True when keys are the distinct Javier Marquez vs Javi Palankas pair. */
@@ -601,9 +608,9 @@ export function dropSlotsForUnavailableStaff(
     return true;
   });
 }
-function namesMatchInstructor(completedBy: string, instructor: string): boolean {
-  const a = normalizeStaffKey(firstNameOf(completedBy));
-  const b = normalizeStaffKey(firstNameOf(instructor));
+function staffKeysEquivalent(aRaw: string, bRaw: string): boolean {
+  const a = normalizeStaffKey(aRaw);
+  const b = normalizeStaffKey(bRaw);
   if (!a || !b) return false;
   if (isJaviJavierCollision(a, b)) return false;
   if (a === b) return true;
@@ -612,6 +619,38 @@ function namesMatchInstructor(completedBy: string, instructor: string): boolean 
   if (aa === bb) return true;
   /* Prefix match is unsafe for javi/javier — already excluded above. */
   if (a.startsWith(b) || b.startsWith(a)) return true;
+  return false;
+}
+
+function nameTokens(raw: string): string[] {
+  return String(raw || "")
+    .trim()
+    .split(/\s+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+function namesMatchInstructor(completedBy: string, instructor: string): boolean {
+  const byParts = nameTokens(completedBy);
+  const instParts = nameTokens(instructor);
+  if (!byParts.length || !instParts.length) return false;
+  for (const b of byParts) {
+    for (const i of instParts) {
+      if (staffKeysEquivalent(b, i)) return true;
+    }
+  }
+  return false;
+}
+
+function feedbackClearsSharedStaffUnit(slot: Feedback2030Slot, fb: Feedback2030Row): boolean {
+  if (isDayCentreService(slot.service) || isDayCentreService(String(fb.service || ""))) {
+    return true;
+  }
+  const pk = String(fb.portal_session_key || "");
+  if (/\|bespoke_shared(?:\||$)/i.test(pk)) return true;
+  if (isBespokeSharedService(slot.service) || isBespokeSharedService(String(fb.service || ""))) {
+    return true;
+  }
   return false;
 }
 
@@ -669,7 +708,7 @@ export function slotIsResolved(
     if (!clientsClose(slot.client, String(fb.client_name || ""))) {
       if (!keyTouchesClient(String(fb.portal_session_key || ""), slot.client)) continue;
     }
-    if (dc) return true;
+    if (dc || feedbackClearsSharedStaffUnit(slot, fb)) return true;
     const who = String(fb.completed_by_name || "");
     if (who && namesMatchInstructor(who, slot.staff)) return true;
   }
