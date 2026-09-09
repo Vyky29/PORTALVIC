@@ -4420,12 +4420,43 @@
     return false;
   }
 
-  /** Whole-year (or LA auto) bookings see Spring/Summer under Next session; term-by-term does not. */
+  /**
+   * Only the academic term that is current (or just finished, during a break).
+   * Future terms stay off the hub until that term begins — even for whole-year auto.
+   */
+  function hubActiveCalendarTerm(todayIso) {
+    var day = String(todayIso || isoDateLocal(new Date())).slice(0, 10);
+    var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
+    var terms = (cal && Array.isArray(cal.terms) ? cal.terms : []) || [];
+    if (!terms.length) return null;
+    var i;
+    for (i = 0; i < terms.length; i++) {
+      var t = terms[i];
+      var start = String((t && t.starts) || "").slice(0, 10);
+      var end = String((t && (t.mainTermEnds || t.ends || t.lastDay)) || "").slice(0, 10);
+      if (start && end && day >= start && day <= end) return t;
+    }
+    for (i = terms.length - 1; i >= 0; i--) {
+      var past = terms[i];
+      var endP = String((past && (past.mainTermEnds || past.ends || past.lastDay)) || "").slice(
+        0,
+        10,
+      );
+      if (!endP || day <= endP) continue;
+      var next = terms[i + 1];
+      var nextStart = next ? String(next.starts || "").slice(0, 10) : "";
+      if (!nextStart || day < nextStart) return past;
+    }
+    return terms[0];
+  }
+
+  /**
+   * Later terms (Spring / Summer while Autumn is current) stay hidden until that
+   * term is the active one. Whole-year auto re-enrol does not preview them early.
+   */
   function showLaterTermsOnHub(data) {
     if (isTrialOnlyBooking(data)) return false;
-    // Term-by-term bookings only see the current confirmed block; everyone else
-    // can see Later terms (incl. Summer history after term end / unconfirmed 26/27).
-    return !isTermByTermBooking(data);
+    return false;
   }
 
   /**
@@ -4784,9 +4815,13 @@
       var calNy = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
       var termsNy = (calNy && Array.isArray(calNy.terms) ? calNy.terms : []) || [];
       var suffix = accordionLabelSuffix || " Term 26/27";
+      var activeTerm = hubActiveCalendarTerm(isoDateLocal(new Date()));
+      var activeId = activeTerm && activeTerm.id ? String(activeTerm.id) : "";
       if (termsNy.length) {
         termsNy.forEach(function (t) {
           if (!t || !t.starts) return;
+          /* One term at a time on the hub — no Spring/Summer under Later terms early. */
+          if (activeId && String(t.id || "") !== activeId) return;
           var termEnd = t.mainTermEnds || t.ends || t.lastDay || "";
           if (!termEnd) return;
           var labelBase =
