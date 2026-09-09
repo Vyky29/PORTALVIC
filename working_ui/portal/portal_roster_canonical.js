@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 80;
+  var SOURCE_VERSION = 81;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -56,7 +56,7 @@
       },
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      /* Victor OFF Mondays (DC) */
+      /* Victor OFF Mondays and Thursdays (DC) */
       { staff: "Victor", clients: [] },
       {
         staff: "Raul",
@@ -85,13 +85,8 @@
         ],
       },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      {
-        staff: "Raul",
-        clients: [
-          { name: "Fadi", time: "12.30 to 3" },
-          { name: "Ikram", time: "3 to 4" },
-        ],
-      },
+      /* Raul OFF Tuesdays (no DC). Ikram 3-4 stays Michelle; Fadi cancelled while absent to 18 Sep. */
+      { staff: "Raul", clients: [] },
       /* Victor Tue: Cyrus Bespoke 3.30–5 (not DC) — see CYRUS_BESPOKE_ROW. */
       { staff: "Victor", clients: [] },
       { staff: "Youssef", clients: [] },
@@ -173,7 +168,8 @@
   /**
    * Autumn 26/27 Hub afternoon Bespoke — LOCAL EXTRA standing (from Wed 9 Sep 2026):
    * Mon: Godsway / John / Raul / Bismark (+ Emanuel from Mon 14);
-   * Wed: Godsway / John / Bismark (Raul off Tinashe; + Emanuel from 14);
+   * Wed: Godsway / Bismark / Emanuel (shadowing Bismark) from Wed 9; John when not off
+   *     (John day off Wed 9 + Wed 15); Raul off Tinashe Wed from 9;
    * Fri: Bespoke Bismark / Roberto / Emanuel (from Fri 11).
    * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30-5 only).
    */
@@ -1402,9 +1398,11 @@
 
   /**
    * Autumn Sunday Hub Multi standing remaps (snap-date agnostic).
-   * Standing Jul week may still store Hub books under BERTA / GIUSEPPE / JOHN etc.
-   * - BISMARK → GODSWAY; GIUSEPPE → EMANUEL
-   * - JOHN → BERTA (Berta Lead keeps that Hub book; John only works Sun 6 via dated cover)
+   * Standing books (already named): Emmanuel = Godsway summer; Godsway = Bismark summer;
+   * Berta Lead = John summer (John only worked Sun 6 via dated cover).
+   * Summer/DB leftovers still use old names:
+   * - BISMARK → GODSWAY; GIUSEPPE → EMANUEL; JOHN → BERTA
+   * Do NOT map GODSWAY→EMANUEL here — standing Godsway rows would steal Emmanuel's book.
    * Sun 6 Sep: dated autumnSundaySep6HubCoverRows give John the Emanuel book.
    */
   function remapAutumnMultiInstructorsStanding(instructorsRaw) {
@@ -1462,7 +1460,7 @@
         .trim()
         .toLowerCase();
       var isTinashe = /^tinashe\b/.test(clientTin) || clientTin === "tinashe";
-      /* Mon 1–13 Sep: Emanuel not on Tinashe yet → drop Emanuel seat (Raul stays). */
+      /* Mon 1–13 Sep: Emanuel not on Mon Tinashe yet → drop Emanuel seat (Raul stays). */
       if (iso && iso >= "2026-09-01" && iso < "2026-09-14" && day === "monday") {
         if (/\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark|victor)\b/i.test(s)) {
           s = "";
@@ -1470,8 +1468,8 @@
           s = s.replace(/\bEMANUEL\b/gi, "");
         }
       }
-      /* Wed: Emanuel on Tinashe from Mon 14 only. */
-      if (iso && iso < "2026-09-14" && day === "wednesday") {
+      /* Wed: Emanuel on Tinashe from Wed 9 (shadowing Bismark). */
+      if (iso && iso < "2026-09-09" && day === "wednesday") {
         if (/\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark)\b/i.test(s)) {
           s = "";
         } else {
@@ -1502,12 +1500,23 @@
             s = s.replace(/\bBISMARK\b/gi, "").replace(/\bBISMARCK\b/gi, "");
           }
         }
-        /* Wed from 9 Sep: Raul off Tinashe (keeps DC). */
+        /* Wed from 9 Sep: Raul off Tinashe (keeps DC when he has it). */
         if (day === "wednesday" && iso >= "2026-09-09") {
           if (/\braul\b/i.test(s) && !/\b(godsway|john|bismark|emanuel)\b/i.test(s)) {
             s = "";
           } else {
             s = s.replace(/\bRAUL\b/gi, "");
+          }
+        }
+        /* Wed 9 + Wed 15: John day off — Tinashe = Godsway + Bismark + Emanuel. */
+        if (
+          day === "wednesday" &&
+          (iso === "2026-09-09" || iso === "2026-09-15")
+        ) {
+          if (/\bjohn\b/i.test(s) && !/\b(godsway|bismark|emanuel)\b/i.test(s)) {
+            s = "";
+          } else {
+            s = s.replace(/\bJOHN\b/gi, "");
           }
         }
       }
@@ -1539,7 +1548,8 @@
         s = s.replace(/\bSANDRA\b/gi, "JAVI");
       }
     }
-    /* Wed 9 Sep: Fadi absent + Victor OFF — remap DC instructors for Today/Overview strip. */
+    /* Wed 9 Sep: Fadi absent — Victor has no DC after reshuffle (not a day-off request).
+     * Roberto covers full Emanuel; Raul takes Victor Ikram 3-4. */
     if (iso === "2026-09-09" && day === "wednesday" && isDayCentreService(service)) {
       var clientWed9 = String((meta && meta.clientName) || (meta && meta.client_name) || "")
         .trim()
@@ -1553,9 +1563,11 @@
         if (/\bvictor\b/i.test(s)) s = s.replace(/\bVICTOR\b/gi, "RAUL");
       } else if (/^fadi\b/.test(clientWed9) || clientWed9 === "fadi") {
         s = s; /* absence handled via overrides */
+      } else if (/\bvictor\b/i.test(s) && !/\b(roberto|raul|michelle|luliya)\b/i.test(s)) {
+        s = "";
       }
     }
-    /* Tue 15 Sep only: Aurora day off → Javi Palankas covers her Acton Aquatic book
+    /* Tue 15 Sep only: Aurora day off → Javi Palankas covers her Acton Aquatic book. */
     if (iso === "2026-09-15" && day === "tuesday" && isAquaticService(service)) {
       if (!meta.venue || isActonVenue(meta.venue)) {
         s = s.replace(/\bAURORA\b/gi, "JAVI");
@@ -1573,6 +1585,18 @@
         if (areaSun.indexOf("hub") < 0) {
           s = s.replace(/\bAURORA\b/gi, "LULIYA");
         }
+      }
+    }
+    /* Berta day off Sun 13 / 20 Sep / 4 Oct — Hub Lead book stays COVER NEEDED (no named cover yet). */
+    if (
+      (iso === "2026-09-13" || iso === "2026-09-20" || iso === "2026-10-04") &&
+      day === "sunday" &&
+      isMultiActivityService(service)
+    ) {
+      var areaBerta = String((meta && meta.area) || "").trim().toLowerCase();
+      if (areaBerta.indexOf("hub") >= 0 || /\bberta\b/i.test(s)) {
+        /* Keep Berta as anchor for COVER NEEDED paint — do not remap to another staff. */
+        s = s;
       }
     }
     return s;
@@ -2246,7 +2270,8 @@
    * - Fri DC: Victor+Raul Emanuel 1–4 (after Timi); Michelle+Luliya Ikram to 16:00;
    *   Youssef Fadi ends 15:00 (Acton from 16:00 — no Emanuel 3–4)
    * - Acton Fri: Roberto → Youssef (Adam Pi / Amaar); Hub Fri Tinashe: Bismark + Roberto + Emanuel (from Fri 11)
-   * - Victor OFF Mondays (DC)
+   * - Victor OFF Mondays and Thursdays (DC empty — do not show Overview column)
+   * - Raul OFF Tuesdays and Thursdays (DC empty — do not show Overview column)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
    * - Acton Thu AS: Simon (Elijah 4–4.30, Yuri 5–5.30); Aurora CLOSED 4–4.30
    */
@@ -2739,6 +2764,34 @@
     };
   }
 
+  /**
+   * Standing "does not work this weekday" — hide empty Overview columns.
+   * Victor: Mon + Thu. Raul: Tue + Thu.
+   */
+  function autumnStaffStandingOffOnIso(iso, staffRaw) {
+    var d = normIso(iso);
+    if (!d) return false;
+    var key = String(staffRaw || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+    if (!key) return false;
+    var dow = -1;
+    try {
+      var dt = new Date(d + "T12:00:00");
+      if (!isNaN(dt.getTime())) dow = dt.getDay();
+    } catch (_) {}
+    if (dow < 0) return false;
+    /* 0 Sun … 1 Mon 2 Tue 3 Wed 4 Thu 5 Fri 6 Sat */
+    if (key === "victor" || key.indexOf("victor") === 0) {
+      return dow === 1 || dow === 4;
+    }
+    if (key === "raul" || key.indexOf("raul") === 0) {
+      return dow === 2 || dow === 4;
+    }
+    return false;
+  }
+
   global.PortalRosterCanonical = {
     SOURCE_ID: SOURCE_ID,
     SOURCE_VERSION: SOURCE_VERSION,
@@ -2751,6 +2804,7 @@
     resolveAutumnInstructorsForCalendarDate: resolveAutumnInstructorsForCalendarDate,
     remapAutumnMultiInstructors: remapAutumnMultiInstructors,
     getCanonicalRosterMeta: getCanonicalRosterMeta,
+    autumnStaffStandingOffOnIso: autumnStaffStandingOffOnIso,
     buildDayCentreStaffBoard: buildDayCentreStaffBoard,
     autumnDayCentreStandingRows: autumnDayCentreStandingRows,
     DAY_CENTRE_STANDING_ISO: DAY_CENTRE_STANDING_ISO,

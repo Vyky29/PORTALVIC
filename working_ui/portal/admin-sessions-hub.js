@@ -9922,6 +9922,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         supportKeys.push(key);
         return;
       }
+      try {
+        var PRC = global.PortalRosterCanonical;
+        if (
+          PRC &&
+          typeof PRC.autumnStaffStandingOffOnIso === "function" &&
+          PRC.autumnStaffStandingOffOnIso(hub.selectedDay, labelByKey[key] || key)
+        ) {
+          return;
+        }
+      } catch (_off) {}
       var role = dayBoardStaffRole(key, byKey[key]);
       if (role === "climbing") climbKeys.push(key);
       else if (role === "support") supportKeys.push(key);
