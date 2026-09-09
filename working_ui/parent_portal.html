@@ -5278,18 +5278,29 @@
         grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
         gap: 14px;
       }
+      /*
+       * Desktop home: kids + PIN on the left, contact on the right.
+       * Do not assign every .pp-card to "kids" — that stacked PIN over participants.
+       */
       #ppStepHome {
         display: grid;
         grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.65fr);
         grid-template-areas:
           "head head"
-          "kids contact";
+          "help help"
+          "kids contact"
+          "pin contact";
         align-items: start;
         gap: 16px;
       }
       #ppStepHome > .pp-home-head { grid-area: head; }
-      #ppStepHome > .pp-card:not(#ppContactBlock) { grid-area: kids; }
-      #ppStepHome > #ppContactBlock { grid-area: contact; }
+      #ppStepHome > .pp-help-sheet { grid-area: help; }
+      #ppStepHome > #ppParticipantsCard { grid-area: kids; min-width: 0; }
+      #ppStepHome > #ppPinCard { grid-area: pin; min-width: 0; align-self: start; }
+      #ppStepHome > #ppContactBlock {
+        grid-area: contact;
+        align-self: start;
+      }
     }
   </style>
 </head>
@@ -5402,7 +5413,7 @@
         <p class="pp-muted">A short guide for new families is coming soon — how to find weekly notes, report absence, and read messages. For anything urgent, message the club from your child’s hub or email info@clubsensational.org.</p>
       </div>
 
-      <div class="pp-card">
+      <div class="pp-card" id="ppParticipantsCard">
         <h3 class="pp-section-title">
           <span class="pp-title-inner">
             <span class="pp-title-ico" aria-hidden="true">
