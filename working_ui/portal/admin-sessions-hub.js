@@ -9173,8 +9173,119 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     );
   }
 
+  function hmToMinutesOfDay(hm) {
+    var s = normTimeShort(hm);
+    var m = String(s || "").match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
+
+  function minutesOfDayToHm(mins) {
+    if (!Number.isFinite(mins) || mins < 0) return "";
+    var h = Math.floor(mins / 60) % 24;
+    var m = Math.round(mins % 60);
+    if (m === 60) {
+      h = (h + 1) % 24;
+      m = 0;
+    }
+    return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+  }
+
+  function coerceSlotHm(raw, wd) {
+    var s = clean(raw);
+    if (!s) return "";
+    var colon = normTimeShort(s);
+    if (/^\d{2}:\d{2}$/.test(colon)) return colon;
+    return normTimeKey(s, wd);
+  }
+
+  /** Start/end minutes for one roster card. Prefers time_start/time_end; falls back to time_slot. */
+  function slotWorkBoundsMinutes(slot) {
+    if (!slot) return null;
+    var wd = slot.day || weekdayLongFromIso(slot.session_date);
+    var raw = clean(slot.time_slot);
+    var pt = raw && /to|-/i.test(raw) ? parseTimeSlot(raw, wd) : null;
+    var startHm = coerceSlotHm(slot.time_start || (pt && pt.start) || "", wd);
+    var endHm = coerceSlotHm(slot.time_end || (pt && pt.end) || "", wd);
+    if (!startHm && raw) startHm = coerceSlotHm(raw, wd);
+    var startMin = hmToMinutesOfDay(startHm);
+    var endMin = hmToMinutesOfDay(endHm);
+    if (startMin == null) return null;
+    if (endMin == null || endMin <= startMin) endMin = startMin + 30;
+    return { start: startMin, end: endMin, day: wd };
+  }
+
+  /** Merge overlapping / touching client slots into work windows (gap <= 15 min stays one block). */
+  function mergeContiguousWorkBlocks(ranges, gapMins) {
+    var grace = Number.isFinite(gapMins) ? gapMins : 15;
+    var list = (ranges || [])
+      .filter(function (r) {
+        return r && Number.isFinite(r.start) && Number.isFinite(r.end) && r.end > r.start;
+      })
+      .slice()
+      .sort(function (a, b) {
+        return a.start - b.start || a.end - b.end;
+      });
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var cur = { start: list[i].start, end: list[i].end };
+      var last = out.length ? out[out.length - 1] : null;
+      if (last && cur.start <= last.end + grace) {
+        if (cur.end > last.end) last.end = cur.end;
+      } else {
+        out.push(cur);
+      }
+    }
+    return out;
+  }
+
+  /** Spanish-style duration: 2h, 4h, 1'5h (half hours). */
+  function formatSpanishHourDuration(mins) {
+    if (!Number.isFinite(mins) || mins <= 0) return "";
+    var rounded = Math.round(mins / 30) * 30;
+    if (rounded <= 0) rounded = 30;
+    var whole = Math.floor(rounded / 60);
+    var rem = rounded % 60;
+    if (rem === 0) return String(whole) + "h";
+    return (whole === 0 ? "0" : String(whole)) + "'5h";
+  }
+
+  function formatWorkBlocksHoursLabel(blocks, dayWord) {
+    if (!blocks || !blocks.length) return "";
+    var ranges = [];
+    var durs = [];
+    for (var i = 0; i < blocks.length; i++) {
+      var a = rosterHmTokenFrom24(minutesOfDayToHm(blocks[i].start), dayWord);
+      var b = rosterHmTokenFrom24(minutesOfDayToHm(blocks[i].end), dayWord);
+      if (!a || !b) continue;
+      ranges.push(a + "-" + b);
+      durs.push(formatSpanishHourDuration(blocks[i].end - blocks[i].start));
+    }
+    if (!ranges.length) return "";
+    return ranges.join(" & ") + " (" + durs.join("/") + ")";
+  }
+
+  /**
+   * Hours this column works on the selected Overview day.
+   * Away / day-off cards are skipped (remaining work only). COVER mirror cards count.
+   */
+  function dayBoardStaffWorkHoursLabel(items) {
+    var ranges = [];
+    var dayWord = "";
+    for (var i = 0; i < (items || []).length; i++) {
+      var it = items[i];
+      if (!it || !it.slot) continue;
+      var st = it.st || {};
+      if (st.boardPlace === "away" || st.isStaffDayOff) continue;
+      var b = slotWorkBoundsMinutes(it.slot);
+      if (!b) continue;
+      if (!dayWord) dayWord = b.day;
+      ranges.push(b);
+    }
+    return formatWorkBlocksHoursLabel(mergeContiguousWorkBlocks(ranges, 15), dayWord);
+  }
+
   function dayBoardColHtml(hub, key, label, items, esc) {
-    var n = items.length;
     var dayIso = String((hub && hub.selectedDay) || "").slice(0, 10);
     var isCoverCol = key === "coverneeded";
     var away =
@@ -9188,6 +9299,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
       }
     }
+    var hoursLabel = dayBoardStaffWorkHoursLabel(items);
     var cards = items
       .map(function (it) {
         return htmlDayBoardCard(hub, it.slot, it.st, esc);
@@ -9204,6 +9316,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     } else if (coverStaff) {
       headExtra = '<span class="override-chip override--instructor">Cover</span>';
     }
+    var metaHtml = hoursLabel
+      ? '<span class="ash-db-col__meta" title="' +
+        esc(hoursLabel) +
+        '">' +
+        esc(hoursLabel) +
+        "</span>"
+      : "";
     return (
       '<section class="ash-db-col' +
       (away ? " ash-db-col--day-off" : "") +
@@ -9215,11 +9334,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (isCoverCol ? esc("COVER NEEDED") : formatInstructorPill(label)) +
       "</h4>" +
       headExtra +
-      '<span class="ash-db-col__meta">' +
-      esc(String(n)) +
-      " session" +
-      (n === 1 ? "" : "s") +
-      "</span></div>" +
+      metaHtml +
+      "</div>" +
       '<div class="ash-db-col__slots">' +
       (cards || '<p class="ash-db-empty">No sessions</p>') +
       "</div></section>"
