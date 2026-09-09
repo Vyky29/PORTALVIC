@@ -2,8 +2,8 @@
  * Staff portal access modes. documents_only = My Documents (+ profile/contract sign) only.
  */
 
-/** Fallback until DB portal_staff_access is set (Giuseppe, Andres, Bismark — no availability Aug 2026). */
-const DOCUMENTS_ONLY_USERNAMES = new Set(["giuseppe", "andres", "bismark"]);
+/** Fallback until DB portal_staff_access is set (Giuseppe, Andres — no availability). */
+const DOCUMENTS_ONLY_USERNAMES = new Set(["giuseppe", "andres"]);
 
 const ALLOWED_PATH_RE =
   /(?:^|\/)(my_documents|staff_profile_update|staff_uniform|contract_sign|training_record_sign|login)(?:\.html)?(?:$|[?#])/i;
@@ -18,6 +18,7 @@ function usernameKey(profile) {
 
 export function portalStaffAccessMode(profile) {
   const mode = clean(profile && profile.portal_staff_access).toLowerCase();
+  if (mode === "full") return "full";
   if (mode === "documents_only") return "documents_only";
   if (DOCUMENTS_ONLY_USERNAMES.has(usernameKey(profile))) return "documents_only";
   return "full";

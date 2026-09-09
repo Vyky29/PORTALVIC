@@ -224,7 +224,7 @@
           return !!PRC.isAutumnNoSessionStaffKey(id);
         }
       }catch(_){}
-      return /^(angel|giuseppe|andres|andr[eé]s|bismark|bismarck)$/i.test(id);
+      return /^(angel|giuseppe|andres|andr[eé]s)$/i.test(id);
     }
     try{ window.portalStaffHasNoAutumnTermSessions = portalStaffHasNoAutumnTermSessions; }catch(_){}
     function portalStaffHasShiftOnCalendarDate(isoYmd, staffId){

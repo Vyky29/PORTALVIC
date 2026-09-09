@@ -30,7 +30,7 @@ import {
   portalStaffIsDocumentsOnly,
   portalStaffDocumentsOnlyHomeUrl,
   portalStaffDocumentsOnlyRedirect,
-} from "./portal_staff_access.js?v=20260827-docs-only";
+} from "./portal_staff_access.js?v=20260909-bismark-full";
 import {
   resolveDemoEmail,
   resolveCorporateAuthEmail,

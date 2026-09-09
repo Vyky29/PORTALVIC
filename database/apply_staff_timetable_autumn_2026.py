@@ -47,8 +47,8 @@ TERM_CLOSED_DATES = ["2026-08-31"] + [
     f"2026-12-{d:02d}" for d in range(18, 32)
 ]
 
-# Staff no longer on rota (Autumn 26/27).
-DEPARTED_STAFF = frozenset({"angel", "giuseppe", "bismark"})
+# Staff no longer on rota (Autumn 26/27). Bismark returned Hub Tinashe from Wed 9 Sep.
+DEPARTED_STAFF = frozenset({"angel", "giuseppe"})
 
 
 def slot(date_iso: str, day: str, staff: str, time_range: str, venue: str) -> dict:
@@ -86,6 +86,7 @@ def monday_template() -> list[tuple[str, str, str]]:
         _pairs("Sandra", "4-6", "Westway"),
         _pairs("Godsway", "4.15-6.15", "SwimFarm"),
         _pairs("John", "4.15-6.15", "SwimFarm"),
+        _pairs("Bismark", "4.15-6.15", "SwimFarm"),
         _pairs("Emanuel", "4.15-6.15", "SwimFarm"),
     ]
 
@@ -123,6 +124,7 @@ def wednesday_template() -> list[tuple[str, str, str]]:
         _pairs("Luliya", "4.30-6.30", "Northolt"),
         _pairs("Godsway", "4.15-6.15", "SwimFarm"),
         _pairs("John", "4.15-6.15", "SwimFarm"),
+        _pairs("Bismark", "4.15-6.15", "SwimFarm"),
         _pairs("Emanuel", "4.15-6.15", "SwimFarm"),
     ]
 
@@ -154,6 +156,7 @@ def friday_template() -> list[tuple[str, str, str]]:
         _pairs("Youssef", "4-6", "Acton"),
         # Fri Hub Bespoke in Roberto's 21h DC contract (Tinashe).
         _pairs("Roberto", "4.15-6.15", "SwimFarm"),
+        _pairs("Bismark", "4.15-6.15", "SwimFarm"),
     ]
 
 
@@ -220,6 +223,12 @@ def build_autumn_rows() -> list[dict]:
             for staff, tr, venue in fn():
                 if not _assignment_allowed(iso, tr):
                     continue
+                # Bismark Hub Tinashe: Wed/Fri from 9 Sep; Mon from 14 Sep.
+                if staff.lower() == "bismark":
+                    if day_name == "Monday" and iso < "2026-09-14":
+                        continue
+                    if day_name in ("Wednesday", "Friday") and iso < "2026-09-09":
+                        continue
                 rows.append(slot(iso, day_name, staff, tr, venue))
         cur += timedelta(days=1)
     rows.sort(key=lambda r: (r["date"], r["day"], r["staff_name"], r["time_range"]))
@@ -227,7 +236,7 @@ def build_autumn_rows() -> list[dict]:
 
 
 def filter_departed(cfg: dict) -> dict:
-    """Drop Angel / Giuseppe / Bismark from weekday and shift maps."""
+    """Drop Angel / Giuseppe from weekday and shift maps."""
     out = dict(cfg)
     for key in (
         "termStaffWeekdayIndicesByProfileKey",

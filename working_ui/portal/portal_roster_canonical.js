@@ -450,9 +450,9 @@
    * No Autumn Term 2026 sessions (LOCAL has no columns). Summer / MADRE leftovers
    * must not project onto Sep+ Today or Term calendars.
    */
-  var AUTUMN_NO_SESSION_STAFF_KEYS = ["angel", "giuseppe", "andres", "bismark"];
+  var AUTUMN_NO_SESSION_STAFF_KEYS = ["angel", "giuseppe", "andres"];
   var AUTUMN_NO_SESSION_INSTRUCTOR_RE =
-    /\b(angel|giuseppe|andres|andr[eé]s|bismark|bismarck)\b/i;
+    /\b(angel|giuseppe|andres|andr[eé]s)\b/i;
 
   function isAutumnNoSessionStaffKey(staffKey) {
     var id = String(staffKey || "")
