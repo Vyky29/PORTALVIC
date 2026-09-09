@@ -220,6 +220,31 @@
     return t.split(" ")[0] || t;
   }
 
+  function isAdminToastLabel(raw) {
+    return /^admin$/i.test(firstStaffName(raw));
+  }
+
+  function isGenericToastLabel(raw) {
+    var t = String(raw || "").replace(/\s+/g, " ").trim();
+    return !t || /^admin$/i.test(t) || /^comms$/i.test(t) || /^communications$/i.test(t);
+  }
+
+  /* Office inbox threads are with staff. The last unread is usually from the
+     worker (Bismark), not from ADMIN. Only treat it as ADMIN when the label is. */
+  function inboxHintToastRow(hint, mode) {
+    var name = firstStaffName((hint && hint.name) || "");
+    var fromStaff = !!(name && !isAdminToastLabel(name));
+    return {
+      message_type: "text",
+      body: (hint && hint.body) || "New message",
+      sender_context: fromStaff ? "PERSONAL" : "ADMINISTRATION",
+      performed_by_user_id: "",
+      _alertTitle: name || (mode === "administration" ? "ADMIN" : "COMMS"),
+      _alertMode: mode,
+      _fromName: fromStaff ? name : "",
+    };
+  }
+
   var staffNameCache = {};
 
   async function staffFirstNameForUserId(id) {
@@ -627,15 +652,7 @@
           var hint = await latestUnreadInboxHint(c, mode);
           lastToastMode = mode;
           lastToastConv = (hint && hint.conversation_id) || "";
-          void maybeShowMessageToast({
-            message_type: "text",
-            body: (hint && hint.body) || "New message",
-            sender_context: mode === "administration" ? "ADMINISTRATION" : "PERSONAL",
-            performed_by_user_id: "",
-            _alertTitle: (hint && hint.name) || (mode === "administration" ? "ADMIN" : "COMMS"),
-            _alertMode: mode,
-            _fromName: (hint && hint.name) || "",
-          });
+          void maybeShowMessageToast(inboxHintToastRow(hint, mode));
         }
         lastLiveN = n;
         lastPersonalCount = personal.ok ? personal.n : lastPersonalCount;
@@ -767,15 +784,7 @@
           var hint = await latestUnreadInboxHint(c, mode);
           lastToastMode = mode;
           lastToastConv = (hint && hint.conversation_id) || "";
-          void maybeShowMessageToast({
-            message_type: "text",
-            body: (hint && hint.body) || "New message",
-            sender_context: mode === "administration" ? "ADMINISTRATION" : "PERSONAL",
-            performed_by_user_id: "",
-            _alertTitle: (hint && hint.name) || (mode === "administration" ? "ADMIN" : "COMMS"),
-            _alertMode: mode,
-            _fromName: (hint && hint.name) || "",
-          });
+          void maybeShowMessageToast(inboxHintToastRow(hint, mode));
         }
         lastPersonalCount = personal.ok ? personal.n : lastPersonalCount;
         lastAdminCount = administration.ok ? administration.n : lastAdminCount;
@@ -1022,9 +1031,11 @@
   }
 
   function messageToastSender(row) {
+    var named = firstStaffName((row && (row._fromName || row.sender_display)) || "");
+    if (named && !/^admin$/i.test(named)) return named;
     var ctx = String((row && row.sender_context) || "").toUpperCase();
     if (ctx === "ADMINISTRATION" || ctx === "ADMIN") return "ADMIN";
-    return "Communications";
+    return named || "Communications";
   }
 
   function ensureMessageToast() {
@@ -1297,17 +1308,18 @@
     lastToastConv = String(row.conversation_id || lastToastConv || "");
     var preview = previewMessageBody(row);
     var ctx = String(row.sender_context || "").toUpperCase();
-    var hideAdminAuthor = ctx === "ADMINISTRATION" || ctx === "ADMIN";
-    var who = "";
-    if (!hideAdminAuthor) {
-      who = firstStaffName(
-        row._fromName || row.performed_by_name || row.sender_display || row._alertTitle || ""
-      );
-      if (!who) {
-        who = await staffFirstNameForUserId(row.performed_by_user_id || row.sender_user_id);
-      }
+    var named = firstStaffName(row._fromName || row.sender_display || "");
+    var alertNamed = firstStaffName(row._alertTitle || "");
+    if (!named && alertNamed && !isGenericToastLabel(alertNamed)) named = alertNamed;
+    var title;
+    if (named && !isAdminToastLabel(named)) {
+      title = named;
+    } else if (ctx === "ADMINISTRATION" || ctx === "ADMIN" || isAdminToastLabel(named) || isAdminToastLabel(alertNamed)) {
+      title = "ADMIN";
+    } else {
+      title = await staffFirstNameForUserId(row.performed_by_user_id || row.sender_user_id);
+      if (!title || isAdminToastLabel(title)) title = "COMMS";
     }
-    var title = hideAdminAuthor ? "ADMIN" : who || meta.title || "Communications";
     closeCommsOsBanners();
     messageToastCount += 1;
     var el = ensureMessageToast();
