@@ -9326,10 +9326,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   /**
    * Hours this column works on the selected Overview day.
    * Away / day-off cards are skipped (remaining work only). COVER mirror cards count.
+   *
+   * Afternoon after-school incomplete cards (Mon–Sat): if 2+ real clients and paid
+   * afternoon time is under 1.5h, pay minimum 1.5h (pad the clock end). 1.5 / 2 / 2.5
+   * already earned stay as-is. Open/closed seats do not count as clients.
    */
   function dayBoardStaffWorkHoursLabel(items) {
     var ranges = [];
     var dayWord = "";
+    var afternoonClients = Object.create(null);
+    var AFTERNOON_FROM = 15 * 60; /* 15:00 — after DC / into AS */
     for (var i = 0; i < (items || []).length; i++) {
       var it = items[i];
       if (!it || !it.slot) continue;
@@ -9338,9 +9344,57 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var b = slotWorkBoundsMinutes(it.slot);
       if (!b) continue;
       if (!dayWord) dayWord = b.day;
+      var kind = rosterSlotKind(it.slot.client_name);
+      var isRealClient =
+        kind !== "open" &&
+        kind !== "closed" &&
+        kind !== "staff_duty" &&
+        kind !== "manager" &&
+        !st.isOpenSlot &&
+        !st.isClosed &&
+        !st.isDuty;
+      if (isRealClient && b.start >= AFTERNOON_FROM) {
+        var slug =
+          canonicalClientSlug(it.slot.client_name) ||
+          clean(it.slot.client_name).toLowerCase();
+        if (slug) afternoonClients[slug] = true;
+      }
       ranges.push(b);
     }
-    return formatWorkBlocksHoursLabel(mergeContiguousWorkBlocks(ranges, 15), dayWord);
+    var blocks = mergeContiguousWorkBlocks(ranges, 15);
+    blocks = applyAfternoonIncompleteCardMinPaidHours(
+      blocks,
+      Object.keys(afternoonClients).length,
+      dayWord
+    );
+    return formatWorkBlocksHoursLabel(blocks, dayWord);
+  }
+
+  /**
+   * Incomplete afternoon AS card: 2 clients (30' or 60') → minimum 1.5h paid.
+   * Does not shrink longer books (2h / 2.5h stay). Sundays use their own Hub/pool bands.
+   */
+  function applyAfternoonIncompleteCardMinPaidHours(blocks, afternoonClientCount, dayWord) {
+    if (!blocks || !blocks.length) return blocks || [];
+    if (String(dayWord || "").toLowerCase() === "sunday") return blocks;
+    if (!(afternoonClientCount >= 2)) return blocks;
+    var AFTERNOON_FROM = 15 * 60;
+    var MIN_PAID = 90;
+    var afternoonMins = 0;
+    var lastIdx = -1;
+    for (var i = 0; i < blocks.length; i++) {
+      if (!blocks[i] || blocks[i].end <= AFTERNOON_FROM) continue;
+      var aStart = Math.max(blocks[i].start, AFTERNOON_FROM);
+      afternoonMins += blocks[i].end - aStart;
+      lastIdx = i;
+    }
+    if (lastIdx < 0 || afternoonMins >= MIN_PAID) return blocks;
+    var need = MIN_PAID - afternoonMins;
+    var out = blocks.slice();
+    out[lastIdx] = Object.assign({}, out[lastIdx], {
+      end: out[lastIdx].end + need,
+    });
+    return out;
   }
 
   function dayBoardColHtml(hub, key, label, items, esc) {
