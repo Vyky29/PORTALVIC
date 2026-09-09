@@ -1312,6 +1312,8 @@ async function ensurePaidBookingScheduleOverride(
       to_client_id: clientSlug,
       to_client_name: isTrial ? `${client} (Trial)` : client,
       finish_booking: true,
+      new_client: !isTrial,
+      term_new_participant: !isTrial,
     },
     reason: `Finish booking ${isTrial ? "trial" : "term"} · ${client} · ${venue} · ${timeLabel}`,
     status: "active",

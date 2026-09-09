@@ -1122,6 +1122,20 @@
         const who = typeof portalOverrideReplaceParticipantDisplayName === 'function'
           ? portalOverrideReplaceParticipantDisplayName(row)
           : '';
+        const Psheet = window.PortalParticipantsSheet;
+        const isNewClient = !!(Psheet && (
+          (typeof Psheet.overrideIsFinishBookingNewClient === 'function' && Psheet.overrideIsFinishBookingNewClient(row))
+          || (typeof Psheet.overrideIsTermNewParticipant === 'function' && Psheet.overrideIsTermNewParticipant(row))
+        ));
+        if(isNewClient){
+          if(who){
+            return {
+              title: 'New client: ' + who,
+              body: who + ' is now on your roster as a new client.'
+            };
+          }
+          return { title: 'New client', body: 'A new client was added to your roster.' };
+        }
         if(who){
           return {
             title: 'Make-up: ' + who,
@@ -7036,6 +7050,16 @@
                 if(ov && portalOverrideIsTrial(ov)){
                   futureOverrideTone = 'trial';
                   futureOverrideLabel = 'Trial';
+                } else if(ov && typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(ov)){
+                  futureOverrideTone = 'admin';
+                  futureOverrideLabel = '';
+                } else if(ov && window.PortalParticipantsSheet
+                  && ((typeof window.PortalParticipantsSheet.overrideIsFinishBookingNewClient === 'function'
+                    && window.PortalParticipantsSheet.overrideIsFinishBookingNewClient(ov))
+                    || (typeof window.PortalParticipantsSheet.overrideIsTermNewParticipant === 'function'
+                      && window.PortalParticipantsSheet.overrideIsTermNewParticipant(ov)))){
+                  futureOverrideTone = 'admin';
+                  futureOverrideLabel = 'New client';
                 } else {
                   futureOverrideTone = 'pink';
                   futureOverrideLabel = 'Make Up';

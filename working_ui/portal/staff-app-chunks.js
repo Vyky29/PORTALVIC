@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260908-junaid-day-reassign-not-cancelled";
+  var VER = "20260909-mohamed-new-client";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260906-cyrus-first-sun",
@@ -22,7 +22,7 @@
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
     "/portal/clients_info_embed.js?v=20260608-anas-ismail",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
-    "/portal/portal_participants_sheet.js?v=20260614-roster-day-group",
+    "/portal/portal_participants_sheet.js?v=20260909-mohamed-new-client",
     "/portal/portal_staff_lead_aquatic_slots.js?v=20260906-yusuf-zaid-dual",
     "/portal/portal_participant_identity.js?v=20260712-rayyan-f",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
@@ -49,7 +49,7 @@
     "/portal/staff-dashboard-calendar.js?v=" + VER,
     "/portal/staff-dashboard-term.js?v=" + VER,
     "/portal/staff-dashboard-participants.js?v=" + VER,
-    "/portal/staff-dashboard-today.js?v=20260908-junaid-day-reassign-not-cancelled",
+    "/portal/staff-dashboard-today.js?v=" + VER,
     "/portal/staff-dashboard-ui.js?v=" + VER,
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,
@@ -71,7 +71,7 @@
     "/portal/staff-dashboard-calendar.js?v=" + VER,
     "/portal/staff-dashboard-term.js?v=" + VER,
     "/portal/staff-dashboard-participants.js?v=" + VER,
-    "/portal/staff-dashboard-today.js?v=20260908-junaid-day-reassign-not-cancelled",
+    "/portal/staff-dashboard-today.js?v=" + VER,
     "/portal/staff-dashboard-ui.js?v=" + VER,
     "/portal/staff-dashboard-auth-bridge.js?v=" + VER,
     "/portal/staff-dashboard-rehydrate.js?v=" + VER,

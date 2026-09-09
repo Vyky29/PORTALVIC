@@ -13801,13 +13801,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var payload = ov.payload || {};
       if(t === 'slot_clear_client' && payload && payload.client_move) return 'Moved out';
       if(t === 'client_replace_in_slot' && payload && payload.client_move) return 'Moved in';
+      if(t === 'client_replace_in_slot' && schedOverrideIsTrial(ov)) return 'Trial';
+      if(t === 'client_replace_in_slot' && (
+        payload.finish_booking === true ||
+        payload.finish_booking === 'true' ||
+        payload.new_client === true ||
+        payload.term_new_participant === true
+      ) && !schedOverrideIsTrial(ov)) return 'New client';
       if(t === 'client_replace_in_slot' && (
         payload.day_reassign === true ||
         payload.not_makeup === true ||
         String(payload.replace_kind || payload.booking_kind || '').toLowerCase() === 'day_reassign' ||
         String(payload.replace_kind || '').toLowerCase() === 'slot_move'
       )) return 'Day reassign';
-      if(t === 'client_replace_in_slot' && schedOverrideIsTrial(ov)) return 'Trial';
       if(t === 'slot_clear_client' && payload && payload.cancelled_by_admin) return 'Cancelled';
       return schedOverrideTypeLabel(t);
     }
@@ -13820,6 +13826,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(k === 'slot_close') return 'override--cancelled';
       if(k === 'slot_open') return 'override--slot-open';
       if((k === 'client_replace_in_slot' || k === 'replace_participant') && schedOverrideIsTrial(ov)) return 'override--trial';
+      if((k === 'client_replace_in_slot' || k === 'replace_participant') && (
+        payload.finish_booking === true ||
+        payload.finish_booking === 'true' ||
+        payload.new_client === true ||
+        payload.term_new_participant === true
+      ) && !schedOverrideIsTrial(ov)) return 'override--updated';
       if((k === 'client_replace_in_slot' || k === 'replace_participant') && (
         payload.day_reassign === true ||
         payload.not_makeup === true ||

@@ -1887,6 +1887,9 @@
         if(!portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id)) return false;
         /* Same-day seat move (day_reassign) is not MakeUp — participant still attends. */
         if(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(r)) return false;
+        const Psheet = window.PortalParticipantsSheet;
+        if(Psheet && typeof Psheet.overrideIsFinishBookingNewClient === 'function' && Psheet.overrideIsFinishBookingNewClient(r)) return false;
+        if(Psheet && typeof Psheet.overrideIsTermNewParticipant === 'function' && Psheet.overrideIsTermNewParticipant(r)) return false;
         return portalScheduleOverrideMatchesSessionWindow(r, s, iso);
       });
       all.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
@@ -2780,6 +2783,7 @@
     }
     function portalOverrideQuickMenuKind(row){
       const P = window.PortalParticipantsSheet;
+      if(P && typeof P.overrideIsFinishBookingNewClient === 'function' && P.overrideIsFinishBookingNewClient(row)) return 'new_participant';
       if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(row)) return 'new_participant';
       if(portalOverrideIsInstructorCoverForLoggedInStaff(row)) return 'new_shift';
       if(P && typeof P.overrideIsRosterDayGroupRow === 'function' && P.overrideIsRosterDayGroupRow(row)){
@@ -2902,17 +2906,27 @@
         try{
           pl = row && row.payload && typeof row.payload === 'object' ? row.payload : JSON.parse(String(row && row.payload || ''));
         }catch(_){ pl = null; }
-        const who = String(pl && pl.to_client_name || '').trim()
+        const who = String(pl && pl.to_client_name || pl && pl.replacement_client_name || '').trim()
           || portalClientFirstNameTokenForOverride(row);
-        title = who ? ('New participant — ' + who) : 'New participant for the term';
-        sub = 'On your roster for the term. You will see them on their session days.';
+        const isoNav = normaliseIsoDate(row && row.session_date);
+        const datePart = isoNav && typeof portalOverrideCardDateParenLabel === 'function'
+          ? portalOverrideCardDateParenLabel(isoNav)
+          : '';
+        const isNewClient = !!(pl && (pl.finish_booking === true || pl.finish_booking === 'true' || pl.new_client === true));
+        const baseTitle = isNewClient ? 'NEW CLIENT' : 'New participant';
+        title = who
+          ? (baseTitle + ' - ' + who + (datePart ? (' ' + datePart) : ''))
+          : (baseTitle + (datePart ? (' ' + datePart) : ''));
+        sub = isNewClient && typeof portalOverrideQuickMenuDetailSub === 'function'
+          ? portalOverrideQuickMenuDetailSub(row, { includeService: false, includeVenue: true, includeNote: true })
+          : 'On your roster for the term. You will see them on their session days.';
         const P = window.PortalParticipantsSheet;
         const dismissId = P && typeof P.scheduleOverrideAttentionDismissKey === 'function'
           ? P.scheduleOverrideAttentionDismissKey(row)
           : '';
         return {
           id: dismissId || portalScheduleOverrideRowDismissKey(row),
-          iso: normaliseIsoDate(row && row.session_date),
+          iso: isoNav,
           title: title,
           sub: sub,
           kind: kind
@@ -3616,6 +3630,13 @@
     function portalOverrideIsDayReassignReplace(ov){
       if(!ov || String(ov.override_type || '').trim() !== 'client_replace_in_slot') return false;
       if(portalOverrideIsTrial(ov)) return false;
+      const P = window.PortalParticipantsSheet;
+      if(P && typeof P.overrideIsFinishBookingNewClient === 'function' && P.overrideIsFinishBookingNewClient(ov)){
+        return false;
+      }
+      if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(ov)){
+        return false;
+      }
       const pl = ov.payload || {};
       if(pl.day_reassign === true || pl.not_makeup === true) return true;
       const kind = String(pl.booking_kind || pl.session_kind || pl.replace_kind || '').trim().toLowerCase();
@@ -3668,6 +3689,13 @@
       }
       if(!ov || portalOverrideIsTrial(ov)) return null;
       if(portalOverrideIsDayReassignReplace(ov)) return null;
+      const P = window.PortalParticipantsSheet;
+      if(P && typeof P.overrideIsFinishBookingNewClient === 'function' && P.overrideIsFinishBookingNewClient(ov)){
+        return null;
+      }
+      if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(ov)){
+        return null;
+      }
       const repId = portalOverrideReplacementClientId(ov.payload);
       const anchorId = String(s.clientId || '').trim().toLowerCase();
       if(!repId || !anchorId || repId === anchorId) return null;
@@ -3867,6 +3895,18 @@
         if(String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'ABSENT') return it;
         if(!ov || String(ov.override_type || '').trim() !== 'client_replace_in_slot') return it;
         if(portalOverrideIsTrial(ov)) return it;
+        const Psheet = window.PortalParticipantsSheet;
+        if(Psheet && typeof Psheet.overrideIsFinishBookingNewClient === 'function' && Psheet.overrideIsFinishBookingNewClient(ov)){
+          return Object.assign({}, it, {
+            portalOverrideMakeUpTag: false,
+            portalOverrideTrialTag: false,
+            portalOverrideCardTone: it.portalOverrideCardTone === 'pink' ? '' : it.portalOverrideCardTone,
+            portalOverrideSymbolText: '',
+            portalOverrideAlertPill: String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'MAKE UP' ? '' : it.portalOverrideAlertPill,
+            scheduleAdminAdjusted: true,
+            __portalScheduleOverride: ov
+          });
+        }
         /* Day reassign: keep Updated by admin — never force MakeUp (that also spawned fake Absent). */
         if(portalOverrideIsDayReassignReplace(ov)){
           const pill = String(it.portalOverrideAlertPill || '').trim().toUpperCase();

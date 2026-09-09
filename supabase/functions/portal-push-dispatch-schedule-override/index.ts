@@ -83,6 +83,27 @@ function coverRosterKey(record: Record<string, unknown>): string {
   return "";
 }
 
+function flagTrue(v: unknown): boolean {
+  if (v === true || v === 1) return true;
+  const s = String(v ?? "").trim().toLowerCase();
+  return s === "true" || s === "1" || s === "yes";
+}
+
+function isTrialReplace(record?: Record<string, unknown>): boolean {
+  if (!record) return false;
+  const pl = payloadObj(record);
+  if (pl.is_trial === true) return true;
+  const k = String(pl.booking_kind || pl.session_kind || "").trim().toLowerCase();
+  return k === "trial";
+}
+
+function isFinishBookingNewClient(record?: Record<string, unknown>): boolean {
+  if (!record) return false;
+  if (isTrialReplace(record)) return false;
+  const pl = payloadObj(record);
+  return flagTrue(pl.finish_booking) || flagTrue(pl.new_client) || flagTrue(pl.term_new_participant);
+}
+
 function pushCopy(
   overrideType: string,
   record?: Record<string, unknown>,
@@ -92,6 +113,18 @@ function pushCopy(
   if (t === "client_replace_in_slot") {
     const full = record ? replacementDisplayName(record) : "";
     const name = full.trim() || who;
+    if (isFinishBookingNewClient(record)) {
+      if (name) {
+        return {
+          title: `New client: ${name}`,
+          body: `${name} is now on your roster as a new client.`,
+        };
+      }
+      return {
+        title: "New client",
+        body: "A new client was added to your roster.",
+      };
+    }
     if (name) {
       return {
         title: `Make-up: ${name}`,
