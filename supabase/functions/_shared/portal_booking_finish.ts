@@ -34,7 +34,15 @@ import {
   stripeCreateCheckoutSession,
   stripeGrossUpFromGbp,
 } from "./stripe_checkout.ts";
-import { foldValidatedReservationOntoMadre, preferredInstructorForReservation } from "./portal_booking_fold_madre.ts";
+import {
+  foldValidatedReservationOntoMadre,
+  preferredInstructorForReservation,
+} from "./portal_booking_fold_madre.ts";
+import {
+  extractInstructorFromNotes,
+  mergeReservationNotes,
+  pickOpenInstructorForBand,
+} from "./portal_booking_reservation_ops.ts";
 import { ensurePostTrialOfferAfterPaid } from "./portal_post_trial_offers.ts";
 import { unitPriceFor } from "./reenrolment_catalog.ts";
 import { resolvePortalInvoiceOwnerUserId } from "./portal_create_family_invoice.ts";
@@ -636,7 +644,11 @@ export async function prepareReservationsForFinishBooking(
           status: "released",
           released_at: nowIso,
           updated_at: nowIso,
-          notes: "auto_finish_link|booking_kind=trial|awaiting_stripe_pay",
+          notes: mergeReservationNotes(prevNotes, [
+            "auto_finish_link",
+            "booking_kind=trial",
+            "awaiting_stripe_pay",
+          ]),
         })
         .eq("id", hold.id)
         .eq("status", "pending");
@@ -652,7 +664,7 @@ export async function prepareReservationsForFinishBooking(
         updated_at: nowIso,
         // Fresh 30' clock when finish-booking link is minted (no multi-week soft hold).
         hold_expires_at: bookingPayHoldExpiresAt(),
-        notes: "auto_finish_link|pay_hold_30m",
+        notes: mergeReservationNotes(prevNotes, ["auto_finish_link", "pay_hold_30m"]),
       })
       .eq("id", hold.id)
       .eq("status", "pending");
@@ -1232,11 +1244,13 @@ async function upsertServiceLinesForPaidBooking(
   return "service_line_ok";
 }
 
-async function ensureTrialScheduleOverride(
+async function ensurePaidBookingScheduleOverride(
   admin: SupabaseClient,
   reservation: Record<string, unknown>,
   participantName: string,
+  opts?: { isTrial?: boolean },
 ): Promise<string> {
+  const isTrial = !!opts?.isTrial;
   const iso = clean(reservation.date_iso, 12).slice(0, 10);
   const venue = clean(reservation.venue, 80) || "Venue";
   const timeLabel = clean(reservation.time_label, 80);
@@ -1244,13 +1258,15 @@ async function ensureTrialScheduleOverride(
   if (!iso || !times) return "override_skip_time";
 
   let instructor = preferredInstructorForReservation(reservation);
-  if (!instructor) instructor = /westway|climb/i.test(`${venue} ${clean(reservation.service_name, 80)}`)
-    ? "Carlos"
-    : "";
+  if (!instructor) {
+    instructor = /westway|climb/i.test(`${venue} ${clean(reservation.service_name, 80)}`)
+      ? "Carlos"
+      : "";
+  }
   if (!instructor) return "override_skip_staff";
 
   const staffId = instructor.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-  const client = clean(participantName, 80) || "Trial";
+  const client = clean(participantName, 80) || (isTrial ? "Trial" : "Participant");
   const clientSlug = clientKeyFromName(client).replace(/-/g, "_");
   const actorId = await resolvePortalInvoiceOwnerUserId(admin);
   if (!actorId) return "override_skip_actor";
@@ -1268,7 +1284,13 @@ async function ensureTrialScheduleOverride(
     const p = row.payload && typeof row.payload === "object"
       ? (row.payload as Record<string, unknown>)
       : {};
-    return p.is_trial === true || String(p.booking_kind || "").toLowerCase() === "trial";
+    const name = String(p.replacement_client_name || p.to_client_name || "").toLowerCase();
+    if (name && name.indexOf(client.toLowerCase()) >= 0) return true;
+    if (isTrial) {
+      return p.is_trial === true || String(p.booking_kind || "").toLowerCase() === "trial";
+    }
+    return String(p.finish_booking || "") === "true" &&
+      String(p.replacement_client_id || p.to_client_id || "") === clientSlug;
   });
   if (already) return "override_exists";
 
@@ -1282,16 +1304,16 @@ async function ensureTrialScheduleOverride(
     anchor_time_slot_label: timeLabel,
     override_type: "client_replace_in_slot",
     payload: {
-      booking_kind: "trial",
-      is_trial: true,
-      session_kind: "trial",
+      booking_kind: isTrial ? "trial" : "term",
+      is_trial: isTrial,
+      session_kind: isTrial ? "trial" : "term",
       replacement_client_id: clientSlug,
-      replacement_client_name: `${client} (Trial)`,
+      replacement_client_name: isTrial ? `${client} (Trial)` : client,
       to_client_id: clientSlug,
-      to_client_name: `${client} (Trial)`,
+      to_client_name: isTrial ? `${client} (Trial)` : client,
       finish_booking: true,
     },
-    reason: `Finish booking trial · ${client} · ${venue} · ${timeLabel}`,
+    reason: `Finish booking ${isTrial ? "trial" : "term"} · ${client} · ${venue} · ${timeLabel}`,
     status: "active",
     spreadsheet_revision: "finish_booking_auto",
     created_by: actorId,
@@ -1306,7 +1328,8 @@ async function ensureTrialScheduleOverride(
 
 /**
  * After Stripe / bank Mark paid / Tide: lock seat, fold MADRE+roster,
- * service lines, trial override for staff dashboard / Scheduling & Cover.
+ * service lines, schedule override for staff dashboard / Scheduling & Cover.
+ * Stamps ops_synced only when critical steps succeed.
  */
 export async function syncOpsAfterFinishBookingPaid(
   admin: SupabaseClient,
@@ -1344,36 +1367,62 @@ export async function syncOpsAfterFinishBookingPaid(
     reservation = data;
   }
 
-  if (reservation?.id) {
-    const prevNotes = String(reservation.notes || "").trim();
-    const noteTag = isTrial
-      ? `trial_paid_${paidVia}|booking_kind=trial|ops_synced`
-      : `booking_paid_${paidVia}|ops_synced`;
-    await admin
-      .from("portal_booking_slot_reservations")
-      .update({
-        status: "validated",
-        validated_at: now,
-        hold_expires_at: holdFar,
-        released_at: null,
-        notes: [prevNotes.replace(/\|?pay_hold_30m/gi, ""), noteTag]
-          .filter(Boolean)
-          .join("|")
-          .slice(0, 500),
-        updated_at: now,
-      })
-      .eq("id", String(reservation.id));
-    notes.push("seat_validated");
-
-    try {
-      const fold = await foldValidatedReservationOntoMadre(admin, String(reservation.id));
-      notes.push(fold.ok ? `fold:${fold.note}` : `fold_fail:${fold.note}`);
-    } catch (e) {
-      notes.push("fold_error");
-      console.warn("[syncOpsAfterFinishBookingPaid] fold", e);
-    }
-  } else {
+  if (!reservation?.id) {
     notes.push("no_reservation");
+    return { ok: false, notes };
+  }
+
+  let instructor =
+    preferredInstructorForReservation(reservation) ||
+    extractInstructorFromNotes(reservation.notes);
+  if (!instructor) {
+    try {
+      instructor =
+        (await pickOpenInstructorForBand(admin, {
+          slotId: clean(reservation.slot_id, 160),
+          venue: clean(reservation.venue, 80),
+          day: clean(reservation.day_label, 20),
+          timeLabel: clean(reservation.time_label, 80),
+          excludeReservationId: String(reservation.id),
+        })) || "";
+    } catch (e) {
+      console.warn("[syncOpsAfterFinishBookingPaid] pick instructor", e);
+    }
+  }
+  if (!instructor) {
+    notes.push("missing_instructor");
+    return { ok: false, notes };
+  }
+
+  const prevNotes = String(reservation.notes || "").trim();
+  const payTag = isTrial
+    ? `trial_paid_${paidVia}`
+    : `booking_paid_${paidVia}`;
+  const notesBeforeSync = mergeReservationNotes(prevNotes, [
+    `instructor=${instructor}`,
+    payTag,
+    isTrial ? "booking_kind=trial" : null,
+  ]);
+  await admin
+    .from("portal_booking_slot_reservations")
+    .update({
+      status: "validated",
+      validated_at: now,
+      hold_expires_at: holdFar,
+      released_at: null,
+      notes: notesBeforeSync,
+      updated_at: now,
+    })
+    .eq("id", String(reservation.id));
+  notes.push("seat_validated");
+  reservation.notes = notesBeforeSync;
+
+  try {
+    const fold = await foldValidatedReservationOntoMadre(admin, String(reservation.id));
+    notes.push(fold.ok ? `fold:${fold.note}` : `fold_fail:${fold.note}`);
+  } catch (e) {
+    notes.push("fold_error");
+    console.warn("[syncOpsAfterFinishBookingPaid] fold", e);
   }
 
   let participantName = "";
@@ -1397,19 +1446,23 @@ export async function syncOpsAfterFinishBookingPaid(
     participantName = clean(c?.child_display, 120);
   }
 
-  notes.push(
-    await upsertServiceLinesForPaidBooking(admin, {
-      contactId: token.contact_id,
-      participantName: participantName || "Participant",
-      reservation,
-      isTrial,
-    }),
-  );
+  const svcNote = await upsertServiceLinesForPaidBooking(admin, {
+    contactId: token.contact_id,
+    participantName: participantName || "Participant",
+    reservation,
+    isTrial,
+  });
+  notes.push(svcNote);
 
-  if (isTrial && reservation) {
-    notes.push(
-      await ensureTrialScheduleOverride(admin, reservation, participantName || "Participant"),
-    );
+  const overrideNote = await ensurePaidBookingScheduleOverride(
+    admin,
+    reservation,
+    participantName || "Participant",
+    { isTrial },
+  );
+  notes.push(overrideNote);
+
+  if (isTrial) {
     try {
       notes.push(await ensurePostTrialOfferAfterPaid(admin, reservation));
     } catch (e) {
@@ -1418,7 +1471,33 @@ export async function syncOpsAfterFinishBookingPaid(
     }
   }
 
-  return { ok: true, notes };
+  const foldOk = notes.some((n) => n.startsWith("fold:") && !n.startsWith("fold_fail"));
+  const svcOk = svcNote === "service_line_ok";
+  const overrideOk =
+    overrideNote === "override_ok" ||
+    overrideNote === "override_exists" ||
+    overrideNote === "override_skip_time";
+  const criticalOk = foldOk && svcOk && overrideOk;
+
+  if (criticalOk) {
+    await admin
+      .from("portal_booking_slot_reservations")
+      .update({
+        notes: mergeReservationNotes(notesBeforeSync, ["ops_synced"]),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", String(reservation.id));
+    notes.push("ops_synced");
+  } else {
+    notes.push("ops_sync_incomplete");
+    console.warn(
+      "[syncOpsAfterFinishBookingPaid] incomplete",
+      String(reservation.id),
+      notes.join(","),
+    );
+  }
+
+  return { ok: criticalOk, notes };
 }
 
 /** After Stripe pays a trial invoice, mark the slot validated + sync ops. */

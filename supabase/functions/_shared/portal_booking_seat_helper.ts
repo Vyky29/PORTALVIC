@@ -31,6 +31,8 @@ export type OfferSlot = {
   referenceDate: string | null;
   /** Instructor keys on the reference open/booked band (office Assign prefill). */
   instructors?: string[];
+  /** Instructors with open seats on the capacity snapshot (office only — strip for parents). */
+  openInstructors?: string[];
   /** Internal: booked client keys for band merge (stripped before public JSON). */
   bookedKeys?: string[];
 };
@@ -417,6 +419,13 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
             ),
           ),
         ].sort(),
+        openInstructors: [
+          ...new Set(
+            useParts.flatMap((p) =>
+              Array.isArray(p.openInstructors) ? p.openInstructors : [],
+            ),
+          ),
+        ].sort(),
       });
     }
   }
@@ -463,6 +472,8 @@ type DayBucket = {
   booked: number;
   open: number;
   instructors: Set<string>;
+  /** Instructors with a NO PARTICIPANT line on this band (ops pick / office only). */
+  openInstructors: Set<string>;
   bookedKeys: Set<string>;
 };
 
@@ -535,6 +546,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
         booked: 0,
         open: 0,
         instructors: new Set(),
+        openInstructors: new Set(),
         bookedKeys: new Set(),
       };
       dateMap.set(iso, bucket);
@@ -547,6 +559,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       if (key) bucket.bookedKeys.add(key);
     } else {
       bucket.open += 1;
+      if (inst) bucket.openInstructors.add(inst.toUpperCase());
     }
 
     let vs = venueSets.get(serviceId);
@@ -625,6 +638,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       openSeats: Math.max(0, Number(capacityBucket.open) || 0),
       referenceDate: ref,
       instructors: [...latestBucket.instructors].sort(),
+      openInstructors: [...capacityBucket.openInstructors].sort(),
       bookedKeys: [...capacityBucket.bookedKeys],
     });
   }

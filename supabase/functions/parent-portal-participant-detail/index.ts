@@ -340,13 +340,19 @@ async function buildParentTeam(
         /* Child placed into an instructor's slot (trial / makeup) — show that instructor. */
         const staffSlug = clean(ov.anchor_staff_id, 80);
         if (staffSlug && toClient && slugSet.has(toClient)) {
+          const nice = staffSlug
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c: string) => c.toUpperCase());
           upsertTeamMember(map, staffKeyFromName(staffSlug) || staffSlug.toLowerCase(), {
-            name: staffSlug,
+            name: nice || staffSlug,
             role: "instructor",
           });
         } else if (staffSlug && (pl.open_slot_makeup || pl.parent_portal_makeup || toClient)) {
+          const nice = staffSlug
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c: string) => c.toUpperCase());
           upsertTeamMember(map, staffKeyFromName(staffSlug) || staffSlug.toLowerCase(), {
-            name: staffSlug,
+            name: nice || staffSlug,
             role: "cover",
           });
         }

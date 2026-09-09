@@ -665,7 +665,7 @@
       render();
       return Promise.resolve();
     }
-    var url = supabaseBase() + "/functions/v1/portal-booking-offer";
+    var url = supabaseBase() + "/functions/v1/portal-booking-offer?include_staff=1";
     return fetch(url, {
       method: "GET",
       headers: {

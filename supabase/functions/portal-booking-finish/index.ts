@@ -32,6 +32,7 @@ import {
   registrationSupportFromPayload,
   type CompletionTokenRow,
 } from "../_shared/portal_booking_finish.ts";
+import { mergeReservationNotes } from "../_shared/portal_booking_reservation_ops.ts";
 import { SESSION_COUNTS } from "../_shared/reenrolment_catalog.ts";
 import {
   gocardlessConfigured,
@@ -353,6 +354,7 @@ async function holdTrialSlotForPayment(
   }
 
   const planTag = payPlan === "one_off_bank" ? "trial_bank" : "trial_stripe_checkout";
+  const prevNotes = String(reservation?.notes || "");
   const { error: updErr } = await admin
     .from("portal_booking_slot_reservations")
     .update({
@@ -360,7 +362,11 @@ async function holdTrialSlotForPayment(
       hold_expires_at: holdExpiresIso,
       released_at: null,
       updated_at: new Date().toISOString(),
-      notes: `${planTag}|booking_kind=trial|pay_hold_30m`,
+      notes: mergeReservationNotes(prevNotes, [
+        planTag,
+        "booking_kind=trial",
+        "pay_hold_30m",
+      ]),
     })
     .eq("id", reservationId)
     .eq("document_id", documentId);
@@ -910,16 +916,12 @@ Deno.serve(async (req) => {
             status: "pending",
             hold_expires_at: null,
             updated_at: now,
-            notes: [
-              prevNotes.replace(/\|?pay_hold_30m/gi, ""),
-              "sw_nhs_referral",
-              "no_parent_pay",
-              "awaiting_office",
-              ratioTag,
-            ]
-              .filter(Boolean)
-              .join("|")
-              .slice(0, 500),
+            notes: mergeReservationNotes(prevNotes.replace(/\|?pay_hold_30m/gi, ""), [
+            "sw_nhs_referral",
+            "no_parent_pay",
+            "awaiting_office",
+            ratioTag,
+          ]),
           })
           .eq("id", String(reservation.id));
       }
@@ -1339,7 +1341,7 @@ Deno.serve(async (req) => {
           status: "awaiting_payment",
           hold_expires_at: payHoldExpires,
           updated_at: now,
-          notes: [prevNotes, "pay_hold_30m"].filter(Boolean).join("|").slice(0, 500),
+          notes: mergeReservationNotes(prevNotes, ["pay_hold_30m"]),
         })
         .eq("id", String(reservation.id));
     }
@@ -1408,7 +1410,10 @@ Deno.serve(async (req) => {
               status: "released",
               released_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-              notes: "trial_stripe_failed|booking_kind=trial",
+              notes: mergeReservationNotes(String(reservation.notes || ""), [
+                "trial_stripe_failed",
+                "booking_kind=trial",
+              ]),
             })
             .eq("id", String(reservation.id));
         }

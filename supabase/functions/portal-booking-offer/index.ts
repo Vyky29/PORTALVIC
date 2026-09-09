@@ -475,8 +475,17 @@ Deno.serve(async (req) => {
     fromIso: todayIso,
     daysAhead: 28,
   });
+  const url = new URL(req.url);
+  const includeStaff =
+    url.searchParams.get("include_staff") === "1" ||
+    url.searchParams.get("office") === "1";
   const weeklySlotsPublic = weekly.slots.map((slot) => {
-    const { bookedKeys: _bk, ...pub } = slot;
+    const {
+      bookedKeys: _bk,
+      instructors: _inst,
+      openInstructors: _openInst,
+      ...pub
+    } = slot;
     const resolved = resolveBookableSessionWithAdminOverrides(
       {
         day: slot.day,
@@ -487,7 +496,7 @@ Deno.serve(async (req) => {
       },
       adminDayOverrides,
     );
-    return {
+    const base = {
       ...pub,
       dateIso: resolved.iso || resolveSessionDateIso({
         day: slot.day,
@@ -496,6 +505,13 @@ Deno.serve(async (req) => {
       }),
       startDeferredForAdminOverride: !!resolved.bumpedForAdminDayOverride,
       startDeferredMessage: resolved.parentMessage || null,
+    };
+    /* Parents never see instructor identity until CLIENT (Participant's Team). */
+    if (!includeStaff) return base;
+    return {
+      ...base,
+      instructors: Array.isArray(slot.instructors) ? slot.instructors : [],
+      openInstructors: Array.isArray(slot.openInstructors) ? slot.openInstructors : [],
     };
   });
 

@@ -19,6 +19,10 @@ import {
   resolveBookableSessionWithAdminOverrides,
 } from "../_shared/portal_booking_admin_day_override.ts";
 import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
+import {
+  notesWithInstructor,
+  pickOpenInstructorForBand,
+} from "../_shared/portal_booking_reservation_ops.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -542,6 +546,23 @@ Deno.serve(async (req) => {
           bookingKind: bookingRequest.booking_kind,
         });
 
+      const ratio = sanitizePart(
+        String(payload.support_regulated || bookingRequest.support_regulated || ""),
+        20,
+      ).toLowerCase().replace(/\s+/g, "");
+      const seatsNeeded = ratio === "2to1" || ratio === "2:1" ? 2 : 1;
+      let instructorStamp: string | null = null;
+      try {
+        instructorStamp = await pickOpenInstructorForBand(admin, {
+          slotId: bookingRequest.slot_id,
+          venue: bookingRequest.venue,
+          day: bookingRequest.day,
+          timeLabel: bookingRequest.time,
+        });
+      } catch (e) {
+        console.warn("[portal-parent-form-submit] pick instructor", e);
+      }
+
       const { data: holdRow, error: holdErr } = await admin
         .from("portal_booking_slot_reservations")
         .insert({
@@ -564,21 +585,12 @@ Deno.serve(async (req) => {
           booking_session_token_hash: tokenHash,
           status: "pending",
           hold_expires_at: holdExpires,
-          notes: (() => {
-            const ratio = sanitizePart(
-              String(payload.support_regulated || bookingRequest.support_regulated || ""),
-              20,
-            ).toLowerCase().replace(/\s+/g, "");
-            const seatsNeeded = ratio === "2to1" || ratio === "2:1" ? 2 : 1;
-            return [
-              bookingRequest.booking_kind === "trial" ? "booking_kind=trial" : "booking_kind=term",
-              "pay_hold_30m",
-              ratio ? `support_regulated=${ratio}` : "",
-              `seats_needed=${seatsNeeded}`,
-            ]
-              .filter(Boolean)
-              .join("|");
-          })(),
+          notes: notesWithInstructor(null, instructorStamp, [
+            bookingRequest.booking_kind === "trial" ? "booking_kind=trial" : "booking_kind=term",
+            "pay_hold_30m",
+            ratio ? `support_regulated=${ratio}` : "",
+            `seats_needed=${seatsNeeded}`,
+          ]),
         })
         .select("id")
         .single();

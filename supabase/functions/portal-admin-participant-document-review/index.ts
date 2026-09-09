@@ -16,6 +16,7 @@ import {
   bookingRequestSummary,
   normalizePendingBookingRequest,
 } from "../_shared/portal_booking_context.ts";
+import { mergeReservationNotes } from "../_shared/portal_booking_reservation_ops.ts";
 
 function clean(v: unknown, max = 80): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -278,7 +279,11 @@ Deno.serve(async (req) => {
             status: "released",
             released_at: nowIso,
             updated_at: nowIso,
-            notes: "accepted_by_admin|booking_kind=trial|awaiting_stripe_pay",
+            notes: mergeReservationNotes(prevNotes, [
+              "accepted_by_admin",
+              "booking_kind=trial",
+              "awaiting_stripe_pay",
+            ]),
           })
           .eq("id", hold.id)
           .eq("status", "pending");
@@ -286,7 +291,7 @@ Deno.serve(async (req) => {
         else console.warn("[portal-admin-participant-document-review] trial release", rErr.message);
         continue;
       }
-      const nextNotes = "accepted_by_admin";
+      const nextNotes = mergeReservationNotes(prevNotes, ["accepted_by_admin"]);
       const { error: vErr } = await admin
         .from("portal_booking_slot_reservations")
         .update({

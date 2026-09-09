@@ -23,6 +23,10 @@ import { saveParticipantAvatarWithArchive } from "../_shared/participant_avatar.
 
 import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
 import {
+  notesWithInstructor,
+  pickOpenInstructorForBand,
+} from "../_shared/portal_booking_reservation_ops.ts";
+import {
   calendarDateIsoInLondon,
   resolveSessionDateIso,
 } from "../_shared/portal_booking_context.ts";
@@ -511,10 +515,20 @@ Deno.serve(async (req) => {
       booking_session_token_hash: tokenHash,
       status: "pending",
       hold_expires_at: holdExpires,
-      notes:
-        (bookingRequest.booking_kind === "trial"
-          ? "booking_kind=trial|"
-          : "booking_kind=term|") + "existing_client_confirm|pay_hold_30m",
+      notes: notesWithInstructor(
+        null,
+        await pickOpenInstructorForBand(admin, {
+          slotId: bookingRequest.slot_id,
+          venue: bookingRequest.venue,
+          day: bookingRequest.day,
+          timeLabel: bookingRequest.time,
+        }).catch(() => null),
+        [
+          bookingRequest.booking_kind === "trial" ? "booking_kind=trial" : "booking_kind=term",
+          "existing_client_confirm",
+          "pay_hold_30m",
+        ],
+      ),
     })
     .select("id")
     .single();

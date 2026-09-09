@@ -15,7 +15,7 @@ function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
-/** Prefer instructor= from notes; climbing Westway → Carlos; Northolt Mon 4.30–5 → Dan. */
+/** Prefer instructor= from notes; then band heuristics (ops fallback only). */
 export function preferredInstructorForReservation(row: {
   notes?: unknown;
   venue?: unknown;
@@ -24,8 +24,9 @@ export function preferredInstructorForReservation(row: {
   service_name?: unknown;
   activity?: unknown;
 }): string {
-  const notes = clean(row.notes, 400);
-  const fromNotes = notes.match(/\binstructor\s*=\s*([A-Za-z][A-Za-z\s.'-]{0,40})/i);
+  const fromNotes = String(row.notes || "").match(
+    /\binstructor\s*=\s*([A-Za-z][A-Za-z\s.'-]{0,40})/i,
+  );
   if (fromNotes && fromNotes[1]) return clean(fromNotes[1], 40);
 
   const venue = clean(row.venue, 80).toLowerCase();
@@ -141,8 +142,11 @@ export async function foldValidatedReservationOntoMadre(
   }
 
   const preferred = preferredInstructorForReservation(row);
-  /* portal_roster_rows.instructors is NOT NULL — never insert blank. */
-  const instructors = preferred || "Luliya";
+  /* portal_roster_rows.instructors is NOT NULL — require a real staff name. */
+  if (!preferred) {
+    return { ok: false, note: "missing_instructor" };
+  }
+  const instructors = preferred;
   const { data: madreRow, error: loadErr } = await admin
     .from("portal_madre_document")
     .select("document, revision")
