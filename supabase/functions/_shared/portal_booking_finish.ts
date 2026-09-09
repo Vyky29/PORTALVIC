@@ -426,19 +426,22 @@ export async function notifyParentFinishBooking(opts: {
   const slot = clean(opts.slotSummary, 200);
   const autoPay = opts.variant === "registration_submitted";
   const resendHold = opts.variant === "resend_pay_hold";
-  // Flat body for Meta contact_update template (newlines are stripped).
+  // Put the magic link FIRST so WhatsApp / Meta {{1}} truncation cannot cut the token
+  // (chopped ?t=… shows as "This link is not valid").
   const bodyText = resendHold
-    ? `clubSENsational: finish booking for ${participant} now. ` +
-      (slot ? `Place: ${slot}. ` : "") +
-      `Your place is held for 30 minutes only. Complete funding, payment and first instalment: ${link}`
+    ? `Complete booking now: ${link} ` +
+      `Place held 30 minutes for ${participant}` +
+      (slot ? ` — ${slot}` : "") +
+      `.`
     : autoPay
-      ? `clubSENsational received the registration for ${participant}. ` +
-        (slot ? `Place: ${slot}. ` : "") +
-        `Your place is held for 30 minutes. Complete booking and payment now: ${link}`
-      : `clubSENsational accepted the registration for ${participant}. ` +
-        (slot ? `Place: ${slot}. ` : "") +
-        `Finish booking (funding, payment, first instalment): ${link} ` +
-        `Place held 30 minutes. After the office confirms your payment we send your Parent Portal PIN.`;
+      ? `Complete booking and payment now: ${link} ` +
+        `Registration received for ${participant}` +
+        (slot ? ` — ${slot}` : "") +
+        `. Place held 30 minutes.`
+      : `Finish booking now: ${link} ` +
+        `Registration accepted for ${participant}` +
+        (slot ? ` — ${slot}` : "") +
+        `. Place held 30 minutes. After the office confirms payment we send your Parent Portal PIN.`;
 
   let emailOk = false;
   let waOk = false;
@@ -459,20 +462,21 @@ export async function notifyParentFinishBooking(opts: {
       bodyText: resendHold
         ? `Hi ${name},\n\n` +
           `Please finish booking for ${participant} now.\n\n` +
+          `${link}\n\n` +
           (slot ? `Place: ${slot}\n\n` : "") +
-          `Your place is held for 30 minutes only while you complete funding, payment and the first instalment:\n${link}\n\n` +
+          `Your place is held for 30 minutes only while you complete funding, payment and the first instalment.\n\n` +
           `If the window ends without payment, the seat returns to the Booking Portal.\n\n` +
           `After the office confirms your payment we send your Parent Portal PIN.\n\n— clubSENsational`
         : autoPay
           ? `Hi ${name},\n\n` +
             `Thank you — we received the registration for ${participant}.\n\n` +
-            (slot ? `Requested place: ${slot}\n\n` : "") +
             `Please complete booking and payment now:\n${link}\n\n` +
+            (slot ? `Requested place: ${slot}\n\n` : "") +
             `Your place is held for 30 minutes while you pay.\n\n— clubSENsational`
           : `Hi ${name},\n\n` +
             `clubSENsational has accepted the registration for ${participant}.\n\n` +
-            (slot ? `Requested place: ${slot}\n\n` : "") +
             `Please finish your booking:\n${link}\n\n` +
+            (slot ? `Requested place: ${slot}\n\n` : "") +
             `Your place is held for 30 minutes while you pay. After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\n— clubSENsational`,
     });
     emailOk = mail.ok;
