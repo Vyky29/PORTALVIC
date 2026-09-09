@@ -5,7 +5,7 @@
 // Sessions overview + parent-safe feedback + achievement photos for one linked child.
 //
 // Headers: x-parent-portal-session
-// Body: { contact_id: string, sections?: ("general"|"sessions"|"achievements"|"swim"|"weekly_notes")[] }
+// Body: { contact_id: string, sections?: ("general"|"sessions"|"achievements"|"swim"|"weekly_notes"|"team")[] }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders, parentPortalJsonInvalid } from "../_shared/parent_portal_auth.ts";
@@ -67,7 +67,13 @@ const PARENT_ACH_QUERY_LIMIT = 500;
 const PARENT_FEEDBACK_LIMIT = 60;
 const TERM_LABEL = "Autumn Term 2026/27";
 
-type DetailSection = "general" | "sessions" | "achievements" | "swim" | "weekly_notes";
+type DetailSection =
+  | "general"
+  | "sessions"
+  | "achievements"
+  | "swim"
+  | "weekly_notes"
+  | "team";
 
 function parseSections(raw: unknown): Set<DetailSection> {
   const all = new Set<DetailSection>([
@@ -76,6 +82,7 @@ function parseSections(raw: unknown): Set<DetailSection> {
     "achievements",
     "swim",
     "weekly_notes",
+    "team",
   ]);
   if (!Array.isArray(raw) || !raw.length) return all;
   const out = new Set<DetailSection>();
@@ -86,7 +93,8 @@ function parseSections(raw: unknown): Set<DetailSection> {
       t === "sessions" ||
       t === "achievements" ||
       t === "swim" ||
-      t === "weekly_notes"
+      t === "weekly_notes" ||
+      t === "team"
     ) {
       out.add(t as DetailSection);
     }
@@ -746,7 +754,14 @@ function sessionsFromReenrolKeptSlots(
 
 function buildServicesDetail(
   sessions: unknown,
-): Array<{ label: string; day: string; time: string; venue: string; area: string }> {
+): Array<{
+  label: string;
+  day: string;
+  time: string;
+  venue: string;
+  area: string;
+  instructor?: string;
+}> {
   const list = Array.isArray(sessions) ? sessions : [];
   type Group = {
     svc: string;
@@ -758,6 +773,7 @@ function buildServicesDetail(
     rawTime: string;
     venue: string;
     area: string;
+    instructor: string;
   };
   const groups = new Map<string, Group>();
 
@@ -781,11 +797,15 @@ function buildServicesDetail(
         rawTime: clean(s.timeSlot, 40),
         venue: "",
         area: "",
+        instructor: "",
       };
       groups.set(key, g);
     }
     if (!g.venue) g.venue = clean(s.venue, 80);
     if (!g.area) g.area = clean(s.area, 80);
+    if (!g.instructor) {
+      g.instructor = clean(s.instructor || s.instructors, 80);
+    }
     const tok = parseSlotTokens(s.timeSlot, day);
     if (tok) {
       if (tok.start != null && (g.startMin == null || tok.start < g.startMin)) {
@@ -817,12 +837,20 @@ function buildServicesDetail(
         time,
         venue: g.venue,
         area: g.area,
+        instructor: g.instructor,
         _order: DAY_ORDER[g.day.toLowerCase()] || 8,
         _start: g.startMin ?? 9999,
       };
     })
     .sort((a, b) => (a._order !== b._order ? a._order - b._order : a._start - b._start))
-    .map(({ label, day, time, venue, area }) => ({ label, day, time, venue, area }));
+    .map(({ label, day, time, venue, area, instructor }) => ({
+      label,
+      day,
+      time,
+      venue,
+      area,
+      ...(instructor ? { instructor } : {}),
+    }));
 }
 
 /**
@@ -1006,6 +1034,7 @@ Deno.serve(async (req) => {
   const wantAchievements = sections.has("achievements");
   const wantSwim = sections.has("swim");
   const wantWeeklyNotes = sections.has("weekly_notes");
+  const wantTeam = sections.has("team") || wantGeneral || wantSessions;
 
   const { data: linked } = await supabase
     .from("portal_parent_contacts")
@@ -1863,7 +1892,7 @@ Deno.serve(async (req) => {
   }
 
   let teamOut: Record<string, unknown>[] = [];
-  if (wantGeneral || wantSessions) {
+  if (wantTeam) {
     // Prefer feedback already loaded for sessions; otherwise a light pull for hub/team.
     let fbForTeam = rawFeedback;
     if (!fbForTeam.length && clientSlugs.length) {
@@ -2151,7 +2180,7 @@ Deno.serve(async (req) => {
         updated_at: generalUpdatedAt,
         editable: !isFormerClient,
       },
-      team: isFormerClient ? [] : teamOut,
+      ...(wantTeam ? { team: isFormerClient ? [] : teamOut } : {}),
       sessions: sessionsOut,
       attendance_summary: attendanceSummary,
       achievements: isFormerClient && !hasAchievementPhotos ? [] : achievements,

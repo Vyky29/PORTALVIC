@@ -22,9 +22,20 @@
     /* weekly_notes (etc.) still return empty default reenrolment / place_kind — do not wipe general. */
     var patchHasGeneral =
       !patchSections || patchSections.indexOf("general") >= 0;
-    if (Array.isArray(patch.sessions)) base.sessions = patch.sessions;
+    var patchHasSessions =
+      !patchSections || patchSections.indexOf("sessions") >= 0;
+    var patchHasTeam =
+      !patchSections ||
+      patchSections.indexOf("general") >= 0 ||
+      patchSections.indexOf("sessions") >= 0 ||
+      patchSections.indexOf("team") >= 0;
+    if (Array.isArray(patch.sessions) && (patchHasSessions || patch.sessions.length)) {
+      base.sessions = patch.sessions;
+    }
     if (Array.isArray(patch.achievements)) base.achievements = patch.achievements;
-    if (Array.isArray(patch.team)) base.team = patch.team;
+    if (Array.isArray(patch.team) && (patchHasTeam || patch.team.length)) {
+      base.team = patch.team;
+    }
     if (Array.isArray(patch.swim_term_reviews)) {
       base.swim_term_reviews = patch.swim_term_reviews;
       if (patch.swim_term_reviews.length) base.swim_term_review_available = true;

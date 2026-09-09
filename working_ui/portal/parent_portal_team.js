@@ -701,6 +701,10 @@
     var isTrial =
       kind === "trial" ||
       (data && (data.is_trial_booking === true || data.place_kind === "trial"));
+    var named = staffKeyFromFeedbackName(
+      slot.instructor || slot.staff || slot.instructors || "",
+    );
+    if (named && STAFF_CATALOG[named]) return named;
 
     if (/northolt/.test(venue) && dayTok === "mon") {
       /* Trial / first band 4.30–5 → Dan (see autumn crossref). */
@@ -742,20 +746,16 @@
     }
 
     if (/acton/.test(venue) && (dayTok === "tue" || dayTok === "thu")) {
-      /* Prefer named instructor when API sends it; else do not invent the full pool. */
-      var named = staffKeyFromFeedbackName(slot.instructor || slot.staff || "");
-      if (named && STAFF_CATALOG[named]) return named;
+      /* Named instructor already returned above when the slot has one. */
       return "";
     }
 
     if (/westway/.test(venue)) {
-      var namedW = staffKeyFromFeedbackName(slot.instructor || slot.staff || "");
-      if (namedW && STAFF_CATALOG[namedW]) return namedW;
+      if (named && STAFF_CATALOG[named]) return named;
       return "sandra";
     }
     if (/swimfarm|hub/.test(venue) || /multi/.test(kind + " " + String(slot.service || slot.label || ""))) {
-      var namedSf = staffKeyFromFeedbackName(slot.instructor || slot.staff || "");
-      if (namedSf && STAFF_CATALOG[namedSf]) return namedSf;
+      if (named && STAFF_CATALOG[named]) return named;
       return "";
     }
     return "";
@@ -791,28 +791,26 @@
     upcoming.forEach(function (s) {
       pushKey(standingInstructorKeyForBookedSlot(s, data));
     });
-    if (!keys.length) {
-      var detail =
-        data && data.general && Array.isArray(data.general.services_detail)
-          ? data.general.services_detail
-          : [];
-      detail.forEach(function (s) {
-        if (!s) return;
-        var label = String(s.label || s.service || "").toLowerCase();
-        if (label && !/aquatic|swim|pool/.test(label)) return;
-        pushKey(
-          standingInstructorKeyForBookedSlot(
-            {
-              venue: s.venue || s.area,
-              day: s.day,
-              time: s.time || s.time_slot || s.slot,
-              kind: data && data.place_kind === "trial" ? "trial" : "",
-            },
-            data,
-          ),
-        );
-      });
-    }
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    detail.forEach(function (s) {
+      if (!s) return;
+      pushKey(
+        standingInstructorKeyForBookedSlot(
+          {
+            venue: s.venue || s.area,
+            day: s.day,
+            time: s.time || s.time_slot || s.slot,
+            instructor: s.instructor || s.staff || s.instructors,
+            kind: data && data.place_kind === "trial" ? "trial" : "",
+            service: s.label || s.service,
+          },
+          data,
+        ),
+      );
+    });
     return keys.map(catalogMember).filter(Boolean);
   }
 
@@ -919,13 +917,8 @@
         addCard(Object.assign({ staff_key: key }, m));
       });
     }
-    if (!out.length) {
-      teamFromSessions(data).forEach(addCard);
-    }
-    /* Standing / booked slots for this term before any session feedback. */
-    if (!out.length) {
-      teamFromStandingPool(data).forEach(addCard);
-    }
+    teamFromSessions(data).forEach(addCard);
+    teamFromStandingPool(data).forEach(addCard);
     /* Demo map only as last resort — never pad live team with prior-term names. */
     if (!out.length) {
       demoKeysForParticipant(data).forEach(function (key) {

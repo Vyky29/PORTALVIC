@@ -7117,6 +7117,18 @@
     var base = teamMembers(data);
     paint(base, "");
 
+    if (
+      !base.length &&
+      opts &&
+      typeof opts.loadSection === "function"
+    ) {
+      void opts.loadSection("team", true).then(function (fresh) {
+        if (!host.isConnected) return;
+        var next = teamMembers(fresh || data);
+        if (next.length) paint(next, "");
+      });
+    }
+
     if (!opts || typeof opts.loadMessages !== "function") return;
     void opts
       .loadMessages({ markRead: false })
