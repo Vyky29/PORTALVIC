@@ -440,16 +440,18 @@
     .tile__media-pane:last-child img { object-position: 55% center; }
     .tile__media-label {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      top: 8px;
+      left: 8px;
+      right: auto;
+      bottom: auto;
+      transform: none;
       z-index: 3;
-      padding: 6px 12px;
+      padding: 5px 10px;
       border-radius: 999px;
       background: rgba(15, 35, 52, 0.82);
       border: 1px solid rgba(255, 255, 255, 0.35);
       color: #fff;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 800;
       letter-spacing: 0.06em;
       line-height: 1;
@@ -457,15 +459,11 @@
       pointer-events: none;
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
     }
-    .tile__media-label--land {
-      left: 25%;
-      right: auto;
-    }
+    .tile__media-label--land,
     .tile__media-label--swim {
-      left: 75%;
+      left: 8px;
       right: auto;
     }
-    .tile__media-pane .tile__media-label { display: none; }
     .svc-sheet__hero-split {
       position: absolute;
       inset: 0;
@@ -490,11 +488,11 @@
     }
     .svc-sheet__hero-split .tile__media-label {
       display: block;
-      top: 50%;
-      left: 50%;
+      top: 8px;
+      left: 8px;
       right: auto;
       bottom: auto;
-      transform: translate(-50%, -50%);
+      transform: none;
       max-width: none;
     }
     .tile__shade {
@@ -1870,13 +1868,13 @@
             '<span class="tile__media" aria-hidden="true">' +
             '<span class="tile__media-pane">' +
             '<img src="' + esc(PHOTOS.multi) + '" alt="" loading="lazy" />' +
+            '<span class="tile__media-label tile__media-label--land">DRY</span>' +
             "</span>" +
             '<span class="tile__media-pane">' +
             '<img src="' + esc(PHOTOS.multiSwim) + '" alt="" loading="lazy" />' +
+            '<span class="tile__media-label tile__media-label--swim">WET</span>' +
             "</span>" +
-            "</span>" +
-            '<span class="tile__media-label tile__media-label--land">DRY</span>' +
-            '<span class="tile__media-label tile__media-label--swim">WET</span>'
+            "</span>"
           );
         }
         var photo = PHOTOS[svcId] || PHOTOS.aquatic;
