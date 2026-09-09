@@ -240,6 +240,48 @@ function tokenExpired(token: CompletionTokenRow): boolean {
   return new Date(token.expires_at).getTime() < Date.now();
 }
 
+function invoiceLockedAgainstReplace(inv: Record<string, unknown> | null): boolean {
+  if (!inv) return false;
+  const pay = String(inv.payment_status || "").toLowerCase();
+  const paid = Number(inv.amount_paid_gbp || 0);
+  if (paid > 0) return true;
+  return pay === "paid" || pay === "partial" || pay === "pending_confirmation";
+}
+
+/** Infer whether an existing INV-P was minted for this finish-booking pay plan. */
+function existingInvoiceMatchesPayPlan(
+  inv: Record<string, unknown> | null,
+  plan: string,
+): boolean {
+  if (!inv) return false;
+  const hint = String(inv.payment_method_hint || "").toLowerCase();
+  const sched = Array.isArray(inv.payment_schedule)
+    ? (inv.payment_schedule as Array<Record<string, unknown>>)
+    : [];
+  const blob = sched
+    .map((r) => `${r.label || ""} ${r.collect_via || ""}`)
+    .join(" ")
+    .toLowerCase();
+  const hasGc = hint === "gocardless" || blob.includes("gocardless");
+  if (plan === "gocardless_monthly") return hasGc;
+  if (plan === "flexi_bank") {
+    return (
+      hint === "bank_transfer" &&
+      !hasGc &&
+      (sched.length === 2 || /flexi|1st half|2nd half/.test(blob))
+    );
+  }
+  if (plan === "own_way") return blob.includes("own way");
+  if (plan === "stripe_instant") {
+    return hint === "stripe" || hint === "card" || hint.includes("stripe");
+  }
+  if (plan === "one_off_bank") {
+    return hint === "bank_transfer" && !hasGc && !/flexi|own way/.test(blob) &&
+      sched.length <= 1;
+  }
+  return false;
+}
+
 async function loadContext(
   admin: ReturnType<typeof createClient>,
   token: CompletionTokenRow,
@@ -1138,27 +1180,83 @@ Deno.serve(async (req) => {
       const { data: existing } = await admin
         .from("portal_parent_invoice_share")
         .select(
-          "id, invoice_number, amount_gbp, amount_paid_gbp, payment_status, payment_schedule, payment_method_hint, gocardless_url, due_date",
+          "id, invoice_number, amount_gbp, amount_paid_gbp, payment_status, share_status, notes, payment_schedule, payment_method_hint, gocardless_url, due_date",
         )
         .eq("id", token.invoice_share_id)
         .maybeSingle();
-      const invSafe = redactGcUntilOfficeNotify(
-        existing as Record<string, unknown> | null,
-        savedChoices,
-      );
-      return json(200, {
-        ok: true,
-        already: true,
-        invoice: invSafe,
-        gocardless_url: invSafe?.gocardless_url || null,
-        bank: tideBankDetailsFromEnv(),
-        gc_step2_unlocked: officePaidNotified(savedChoices),
-        choices_json: savedChoices,
-        quote:
-          scope === "trial_session"
-            ? quotes.trial_one_off || null
-            : quotes[plan] || null,
-      });
+      const existingRow = (existing || null) as Record<string, unknown> | null;
+      const locked = invoiceLockedAgainstReplace(existingRow);
+      const matches = existingInvoiceMatchesPayPlan(existingRow, plan);
+      const hidden = String(existingRow?.share_status || "") === "hidden";
+
+      if (existingRow && (locked || (matches && !hidden))) {
+        const invSafe = redactGcUntilOfficeNotify(existingRow, savedChoices);
+        return json(200, {
+          ok: true,
+          already: true,
+          invoice: invSafe,
+          gocardless_url: invSafe?.gocardless_url || null,
+          bank: tideBankDetailsFromEnv(),
+          gc_step2_unlocked: officePaidNotified(savedChoices),
+          choices_json: savedChoices,
+          quote:
+            scope === "trial_session"
+              ? quotes.trial_one_off || null
+              : quotes[plan] || null,
+        });
+      }
+
+      if (existingRow && matches && hidden && !locked) {
+        const nowIso = new Date().toISOString();
+        await admin
+          .from("portal_parent_invoice_share")
+          .update({
+            share_status: "ready",
+            updated_at: nowIso,
+          })
+          .eq("id", String(existingRow.id));
+        const invSafe = redactGcUntilOfficeNotify(
+          { ...existingRow, share_status: "ready" },
+          savedChoices,
+        );
+        return json(200, {
+          ok: true,
+          already: true,
+          invoice: invSafe,
+          gocardless_url: invSafe?.gocardless_url || null,
+          bank: tideBankDetailsFromEnv(),
+          gc_step2_unlocked: officePaidNotified(savedChoices),
+          choices_json: savedChoices,
+          quote:
+            scope === "trial_session"
+              ? quotes.trial_one_off || null
+              : quotes[plan] || null,
+        });
+      }
+
+      if (existingRow && !matches && !locked) {
+        const nowIso = new Date().toISOString();
+        const prevNotes = String(existingRow.notes || "").trim();
+        await admin
+          .from("portal_parent_invoice_share")
+          .update({
+            payment_status: "void",
+            share_status: "hidden",
+            notes:
+              `${prevNotes ? `${prevNotes} · ` : ""}Superseded · parent changed pay plan to ${plan}`
+                .slice(0, 800),
+            updated_at: nowIso,
+          })
+          .eq("id", String(existingRow.id));
+        await admin
+          .from("portal_booking_completion_tokens")
+          .update({
+            invoice_share_id: null,
+            updated_at: nowIso,
+          })
+          .eq("id", token.id);
+        token.invoice_share_id = null;
+      }
     }
 
     const fundingLabel =
