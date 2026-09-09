@@ -9369,15 +9369,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
    * Hours this column works on the selected Overview day.
    * Away / day-off cards are skipped (remaining work only). COVER mirror cards count.
    *
-   * Afternoon after-school incomplete cards (Mon–Sat): if 2+ real clients and paid
-   * afternoon time is under 1.5h, pay minimum 1.5h (pad the clock end). 1.5 / 2 / 2.5
-   * already earned stay as-is. Open/closed seats do not count as clients.
+   * Frame (muted): full card clock including open seats — e.g. 4-6.30 (2.5h).
+   * Paid (green): real-client minutes only. Incomplete afternoon AS cards (opens/gaps)
+   * floor at 1.5h — e.g. Javier 1.5h clients → 1'5h; Youssef 1h client → 1'5h min.
    */
-  function dayBoardStaffWorkHoursLabel(items) {
-    var ranges = [];
+  function dayBoardStaffWorkHoursParts(items) {
+    var frameRanges = [];
     var dayWord = "";
+    var AFTERNOON_FROM = 15 * 60;
+    var clientMinsAll = 0;
+    var afternoonClientMins = 0;
+    var afternoonOpen = false;
+    var afternoonClientCount = 0;
     var afternoonClients = Object.create(null);
-    var AFTERNOON_FROM = 15 * 60; /* 15:00 — after DC / into AS */
+
     for (var i = 0; i < (items || []).length; i++) {
       var it = items[i];
       if (!it || !it.slot) continue;
@@ -9386,57 +9391,76 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var b = slotWorkBoundsMinutes(it.slot);
       if (!b) continue;
       if (!dayWord) dayWord = b.day;
+      frameRanges.push(b);
+
       var kind = rosterSlotKind(it.slot.client_name);
-      var isRealClient =
-        kind !== "open" &&
-        kind !== "closed" &&
-        kind !== "staff_duty" &&
-        kind !== "manager" &&
-        !st.isOpenSlot &&
-        !st.isClosed &&
-        !st.isDuty;
-      if (isRealClient && b.start >= AFTERNOON_FROM) {
+      var isOpen =
+        kind === "open" ||
+        !!st.isOpenSlot ||
+        kind === "closed" ||
+        !!st.isClosed;
+      var isDuty = kind === "staff_duty" || kind === "manager" || !!st.isDuty;
+      var isCancelled = !!st.isCancelled;
+      var isAfternoon = b.start >= AFTERNOON_FROM || b.end > AFTERNOON_FROM;
+
+      if (isOpen && isAfternoon) afternoonOpen = true;
+      if (isOpen || isDuty || isCancelled) continue;
+
+      var seatMins = b.end - b.start;
+      if (!(seatMins > 0)) continue;
+      clientMinsAll += seatMins;
+      if (isAfternoon) {
+        var aStart = Math.max(b.start, AFTERNOON_FROM);
+        var aMins = b.end - aStart;
+        if (aMins > 0) afternoonClientMins += aMins;
         var slug =
           canonicalClientSlug(it.slot.client_name) ||
           clean(it.slot.client_name).toLowerCase();
-        if (slug) afternoonClients[slug] = true;
+        if (slug && !afternoonClients[slug]) {
+          afternoonClients[slug] = true;
+          afternoonClientCount += 1;
+        }
       }
-      ranges.push(b);
     }
-    var blocks = mergeContiguousWorkBlocks(ranges, 15);
-    blocks = applyAfternoonIncompleteCardMinPaidHours(
-      blocks,
-      Object.keys(afternoonClients).length,
-      dayWord
-    );
-    return formatWorkBlocksHoursLabel(blocks, dayWord);
+
+    var frameBlocks = mergeContiguousWorkBlocks(frameRanges, 15);
+    var frameLabel = formatWorkBlocksHoursLabel(frameBlocks, dayWord);
+    if (!frameLabel) return { frame: "", paid: "", title: "" };
+
+    var frameMins = 0;
+    var afternoonFrameMins = 0;
+    for (var f = 0; f < frameBlocks.length; f++) {
+      frameMins += frameBlocks[f].end - frameBlocks[f].start;
+      if (frameBlocks[f].end <= AFTERNOON_FROM) continue;
+      afternoonFrameMins +=
+        frameBlocks[f].end - Math.max(frameBlocks[f].start, AFTERNOON_FROM);
+    }
+
+    var paidMins = clientMinsAll;
+    var isSunday = String(dayWord || "").toLowerCase() === "sunday";
+    if (!isSunday && afternoonClientMins > 0) {
+      var incompleteAfternoon =
+        afternoonOpen || afternoonClientMins + 1 < afternoonFrameMins;
+      var adjustedAfternoon = afternoonClientMins;
+      if (incompleteAfternoon && adjustedAfternoon < 90) {
+        adjustedAfternoon = 90;
+      }
+      paidMins = clientMinsAll - afternoonClientMins + adjustedAfternoon;
+    }
+
+    var paidLabel = "";
+    if (paidMins > 0 && Math.round(paidMins / 30) * 30 !== Math.round(frameMins / 30) * 30) {
+      paidLabel = formatSpanishHourDuration(paidMins);
+    }
+
+    var title = frameLabel + (paidLabel ? " · paid " + paidLabel : "");
+    return { frame: frameLabel, paid: paidLabel, title: title };
   }
 
-  /**
-   * Incomplete afternoon AS card: 2 clients (30' or 60') → minimum 1.5h paid.
-   * Does not shrink longer books (2h / 2.5h stay). Sundays use their own Hub/pool bands.
-   */
-  function applyAfternoonIncompleteCardMinPaidHours(blocks, afternoonClientCount, dayWord) {
-    if (!blocks || !blocks.length) return blocks || [];
-    if (String(dayWord || "").toLowerCase() === "sunday") return blocks;
-    if (!(afternoonClientCount >= 2)) return blocks;
-    var AFTERNOON_FROM = 15 * 60;
-    var MIN_PAID = 90;
-    var afternoonMins = 0;
-    var lastIdx = -1;
-    for (var i = 0; i < blocks.length; i++) {
-      if (!blocks[i] || blocks[i].end <= AFTERNOON_FROM) continue;
-      var aStart = Math.max(blocks[i].start, AFTERNOON_FROM);
-      afternoonMins += blocks[i].end - aStart;
-      lastIdx = i;
-    }
-    if (lastIdx < 0 || afternoonMins >= MIN_PAID) return blocks;
-    var need = MIN_PAID - afternoonMins;
-    var out = blocks.slice();
-    out[lastIdx] = Object.assign({}, out[lastIdx], {
-      end: out[lastIdx].end + need,
-    });
-    return out;
+  function dayBoardStaffWorkHoursLabel(items) {
+    var parts = dayBoardStaffWorkHoursParts(items);
+    if (!parts.frame) return "";
+    return parts.frame + (parts.paid ? " " + parts.paid : "");
   }
 
   function dayBoardColHtml(hub, key, label, items, esc) {
@@ -9453,7 +9477,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
       }
     }
-    var hoursLabel = dayBoardStaffWorkHoursLabel(items);
+    var hoursParts = dayBoardStaffWorkHoursParts(items);
     var cards = items
       .map(function (it) {
         return htmlDayBoardCard(hub, it.slot, it.st, esc);
@@ -9470,13 +9494,22 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     } else if (coverStaff) {
       headExtra = '<span class="override-chip override--instructor">Cover</span>';
     }
-    var metaHtml = hoursLabel
-      ? '<span class="ash-db-col__meta" title="' +
-        esc(hoursLabel) +
+    var metaHtml = "";
+    if (hoursParts.frame) {
+      metaHtml =
+        '<span class="ash-db-col__meta" title="' +
+        esc(hoursParts.title || hoursParts.frame) +
         '">' +
-        esc(hoursLabel) +
-        "</span>"
-      : "";
+        '<span class="ash-db-col__frame">' +
+        esc(hoursParts.frame) +
+        "</span>" +
+        (hoursParts.paid
+          ? '<span class="ash-db-col__paid" title="Paid hours">' +
+            esc(hoursParts.paid) +
+            "</span>"
+          : "") +
+        "</span>";
+    }
     return (
       '<section class="ash-db-col' +
       (away ? " ash-db-col--day-off" : "") +

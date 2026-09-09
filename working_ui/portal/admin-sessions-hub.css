@@ -1905,6 +1905,16 @@
       overflow-wrap: anywhere;
       word-break: break-word;
     }
+    .ash-db-col__frame {
+      color: inherit;
+    }
+    .ash-db-col__paid {
+      display: inline;
+      margin-left: 0.35em;
+      color: #15803d;
+      font-weight: 800;
+      white-space: nowrap;
+    }
     .ash-db-col__slots {
       display: grid;
       gap: 7px;
