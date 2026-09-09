@@ -582,9 +582,13 @@ export async function createPortalFamilyInvoice(
       : notes || bookingMarker;
   }
   const shareStatus = input.shareStatus === "hidden" ? "hidden" : "ready";
-  const paymentMethodHint =
+  let paymentMethodHint =
     input.paymentMethodHint ||
     (vatMode === "exempt" ? "la_funded" : "bank_transfer");
+  /* DB check: bank_transfer | gocardless | payment_link | la_funded | other — never "stripe". */
+  if (paymentMethodHint === "stripe" || paymentMethodHint === "card") {
+    paymentMethodHint = "payment_link";
+  }
   let clientIdLabel = clean(input.clientIdLabel, 80);
   let poLabel = clean(input.poLabel, 80);
   const now = new Date().toISOString();

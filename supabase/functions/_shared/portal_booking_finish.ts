@@ -1596,7 +1596,7 @@ export async function createFinishBookingStripeCheckout(
     .from("portal_parent_invoice_share")
     .update({
       stripe_checkout_session_id: created.id,
-      payment_method_hint: "stripe",
+      payment_method_hint: "payment_link",
       updated_at: new Date().toISOString(),
     })
     .eq("id", opts.invoiceShareId);

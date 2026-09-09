@@ -595,7 +595,7 @@ export function quoteNewClientTrialInvoice(args: {
   const mapRow = args.productMap?.get(serviceKey) || null;
   const plan: NewClientPayPlan =
     args.payPlan === "one_off_bank" ? "one_off_bank" : "stripe_instant";
-  const paymentMethodHint = plan === "one_off_bank" ? "bank_transfer" : "stripe";
+  const paymentMethodHint = plan === "one_off_bank" ? "bank_transfer" : "payment_link";
   const payLabel =
     plan === "one_off_bank"
       ? "Trial session · bank transfer (30 min hold)"

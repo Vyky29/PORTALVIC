@@ -273,7 +273,13 @@ function existingInvoiceMatchesPayPlan(
   }
   if (plan === "own_way") return blob.includes("own way");
   if (plan === "stripe_instant") {
-    return hint === "stripe" || hint === "card" || hint.includes("stripe");
+    return (
+      hint === "stripe" ||
+      hint === "card" ||
+      hint === "payment_link" ||
+      hint.includes("stripe") ||
+      hint.includes("payment_link")
+    );
   }
   if (plan === "one_off_bank") {
     return hint === "bank_transfer" && !hasGc && !/flexi|own way/.test(blob) &&

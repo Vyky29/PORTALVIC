@@ -1360,6 +1360,7 @@
       isTrial &&
       data.pay_plan !== "stripe_instant" &&
       inv.payment_method_hint !== "stripe" &&
+      inv.payment_method_hint !== "payment_link" &&
       (data.pay_plan === "one_off_bank" ||
         inv.payment_method_hint === "bank_transfer" ||
         (!checkoutUrl && data.bank));
@@ -1368,7 +1369,8 @@
       !isTrialBank &&
       (data.pay_plan === "stripe_instant" ||
         checkoutUrl ||
-        inv.payment_method_hint === "stripe");
+        inv.payment_method_hint === "stripe" ||
+        inv.payment_method_hint === "payment_link");
     var firstVia = String((first && first.collect_via) || "").toLowerCase();
     var gcBankFirst =
       data.pay_plan === "gocardless_monthly" &&
