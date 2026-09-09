@@ -32,7 +32,12 @@ import {
   registrationSupportFromPayload,
   type CompletionTokenRow,
 } from "../_shared/portal_booking_finish.ts";
-import { mergeReservationNotes } from "../_shared/portal_booking_reservation_ops.ts";
+import {
+  extractInstructorFromNotes,
+  instructorsHeldOnSlot,
+  mergeReservationNotes,
+  pickOpenInstructorForBand,
+} from "../_shared/portal_booking_reservation_ops.ts";
 import { SESSION_COUNTS } from "../_shared/reenrolment_catalog.ts";
 import {
   gocardlessConfigured,
@@ -388,17 +393,20 @@ async function holdTrialSlotForPayment(
   const reservationId = clean(reservation?.id, 80);
   if (!slotId || !reservationId) return { ok: false, error: "reservation_missing" };
 
-  const { count, error: countErr } = await admin
-    .from("portal_booking_slot_reservations")
-    .select("id", { count: "exact", head: true })
-    .eq("slot_id", slotId)
-    .in("status", [...BOOKING_SLOT_HOLD_STATUSES])
-    .or(bookingActiveHoldExpiresFilter())
-    .neq("document_id", documentId);
-  if (countErr) {
-    console.warn("[portal-booking-finish] trial slot count", countErr.message);
-  } else if ((count || 0) >= 2) {
-    return { ok: false, error: "slot_unavailable" };
+  const freeInstructor = await pickOpenInstructorForBand(admin, {
+    slotId,
+    venue: reservation?.venue != null ? String(reservation.venue) : null,
+    day: reservation?.day_label != null ? String(reservation.day_label) : null,
+    timeLabel: reservation?.time_label != null ? String(reservation.time_label) : null,
+    excludeReservationId: reservationId,
+  });
+  if (!freeInstructor) {
+    const stamped = extractInstructorFromNotes(reservation?.notes);
+    if (!stamped) return { ok: false, error: "slot_unavailable" };
+    const heldOthers = await instructorsHeldOnSlot(admin, slotId, reservationId);
+    if (heldOthers.some((h) => h.toLowerCase() === stamped.toLowerCase())) {
+      return { ok: false, error: "slot_unavailable" };
+    }
   }
 
   const planTag = payPlan === "one_off_bank" ? "trial_bank" : "trial_stripe_checkout";

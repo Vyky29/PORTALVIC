@@ -24,7 +24,7 @@ import { saveParticipantAvatarWithArchive } from "../_shared/participant_avatar.
 import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
 import {
   notesWithInstructor,
-  pickOpenInstructorForBand,
+  pickOpenInstructorsForBand,
 } from "../_shared/portal_booking_reservation_ops.ts";
 import {
   calendarDateIsoInLondon,
@@ -422,6 +422,28 @@ Deno.serve(async (req) => {
       bookingKind: bookingRequest.booking_kind,
     });
 
+  const seatsNeeded = 1;
+  let instructorStamp: string | null = null;
+  try {
+    const picked = await pickOpenInstructorsForBand(
+      admin,
+      {
+        slotId: bookingRequest.slot_id,
+        venue: bookingRequest.venue,
+        day: bookingRequest.day,
+        timeLabel: bookingRequest.time,
+      },
+      seatsNeeded,
+    );
+    instructorStamp = picked[0] || null;
+    if (!instructorStamp) {
+      return bookingLeadJson({ ok: false, error: "slot_unavailable" }, 409);
+    }
+  } catch (e) {
+    console.warn("[portal-booking-existing-confirm] seat check", e);
+    return bookingLeadJson({ ok: false, error: "slot_unavailable" }, 409);
+  }
+
   const pdfBytes = buildStubPdf([
     "clubSENsational — Existing client place request",
     `Submitted: ${now.toLocaleString("en-GB")}`,
@@ -543,12 +565,7 @@ Deno.serve(async (req) => {
       hold_expires_at: holdExpires,
       notes: notesWithInstructor(
         null,
-        await pickOpenInstructorForBand(admin, {
-          slotId: bookingRequest.slot_id,
-          venue: bookingRequest.venue,
-          day: bookingRequest.day,
-          timeLabel: bookingRequest.time,
-        }).catch(() => null),
+        instructorStamp,
         [
           bookingRequest.booking_kind === "trial" ? "booking_kind=trial" : "booking_kind=term",
           "existing_client_confirm",
@@ -560,6 +577,7 @@ Deno.serve(async (req) => {
     .single();
   if (holdErr) {
     console.warn("[portal-booking-existing-confirm] hold", holdErr.message);
+    return bookingLeadJson({ ok: false, error: "slot_unavailable" }, 409);
   }
 
   const nowIso = new Date().toISOString();

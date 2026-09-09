@@ -22,7 +22,7 @@ import {
 import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
 import {
   notesWithInstructor,
-  pickOpenInstructorForBand,
+  pickOpenInstructorsForBand,
 } from "../_shared/portal_booking_reservation_ops.ts";
 
 const corsHeaders: Record<string, string> = {
@@ -316,6 +316,36 @@ Deno.serve(async (req) => {
     payload = { ...payload, booking_request: bookingRequest };
   }
 
+  // Hard gate: never accept a registration onto a band with no free open seat
+  // (active pay holds keep the instructor until status is released/expired).
+  if (bookingRequest && formType === "client_registration") {
+    const ratioEarly = sanitizePart(
+      String(payload.support_regulated || bookingRequest.support_regulated || ""),
+      20,
+    )
+      .toLowerCase()
+      .replace(/\s+/g, "");
+    const seatsNeededEarly = ratioEarly === "2to1" || ratioEarly === "2:1" ? 2 : 1;
+    try {
+      const freeInstructors = await pickOpenInstructorsForBand(
+        adminEarly,
+        {
+          slotId: bookingRequest.slot_id,
+          venue: bookingRequest.venue,
+          day: bookingRequest.day,
+          timeLabel: bookingRequest.time,
+        },
+        seatsNeededEarly,
+      );
+      if (freeInstructors.length < seatsNeededEarly) {
+        return json(409, { ok: false, error: "slot_unavailable" });
+      }
+    } catch (e) {
+      console.warn("[portal-parent-form-submit] seat check", e);
+      return json(409, { ok: false, error: "slot_unavailable" });
+    }
+  }
+
   // Prefer structured SW fields; keep combined contact for older readers.
   const swName = sanitizePart(String(payload.social_worker_name || ""), 200);
   const swEmail = sanitizePart(String(payload.social_worker_email || ""), 200).toLowerCase();
@@ -562,14 +592,24 @@ Deno.serve(async (req) => {
       const seatsNeeded = ratio === "2to1" || ratio === "2:1" ? 2 : 1;
       let instructorStamp: string | null = null;
       try {
-        instructorStamp = await pickOpenInstructorForBand(admin, {
-          slotId: bookingRequest.slot_id,
-          venue: bookingRequest.venue,
-          day: bookingRequest.day,
-          timeLabel: bookingRequest.time,
-        });
+        const picked = await pickOpenInstructorsForBand(
+          admin,
+          {
+            slotId: bookingRequest.slot_id,
+            venue: bookingRequest.venue,
+            day: bookingRequest.day,
+            timeLabel: bookingRequest.time,
+          },
+          seatsNeeded,
+        );
+        instructorStamp = picked[0] || null;
+        if (!instructorStamp || picked.length < seatsNeeded) {
+          console.warn("[portal-parent-form-submit] slot_unavailable after race");
+          return json(409, { ok: false, error: "slot_unavailable" });
+        }
       } catch (e) {
         console.warn("[portal-parent-form-submit] pick instructor", e);
+        return json(409, { ok: false, error: "slot_unavailable" });
       }
 
       const { data: holdRow, error: holdErr } = await admin
@@ -606,6 +646,7 @@ Deno.serve(async (req) => {
 
       if (holdErr) {
         console.warn("[portal-parent-form-submit] slot reservation", holdErr.message);
+        return json(409, { ok: false, error: "slot_unavailable" });
       } else {
         reservationId = holdRow?.id ?? null;
         if (parentEmail) {

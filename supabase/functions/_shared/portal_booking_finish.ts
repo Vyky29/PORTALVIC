@@ -41,6 +41,7 @@ import {
 import {
   extractInstructorFromNotes,
   mergeReservationNotes,
+  notesWithInstructor,
   pickOpenInstructorForBand,
 } from "./portal_booking_reservation_ops.ts";
 import { ensurePostTrialOfferAfterPaid } from "./portal_post_trial_offers.ts";
@@ -678,13 +679,6 @@ export async function prepareReservationsForFinishBooking(
   return prepared;
 }
 
-/** Rough capacity for Booking Portal slots (aquatic pairs vs multi bands). */
-function approxSlotCapacity(slotId: string): number {
-  const s = String(slotId || "").toLowerCase();
-  if (s.includes("multi") || s.includes("swimfarm") || s.includes("day-centre")) return 6;
-  return 2;
-}
-
 /**
  * Office resend / remint: if the doc's seat was released or expired unpaid,
  * put it back on hold for 30' when the slot still has space.
@@ -743,18 +737,14 @@ export async function reholdReleasedReservationForFinishBooking(
   }
 
   const slotId = String(prior.slot_id);
-  const { count, error: countErr } = await admin
-    .from("portal_booking_slot_reservations")
-    .select("id", { count: "exact", head: true })
-    .eq("slot_id", slotId)
-    .in("status", [...BOOKING_SLOT_HOLD_STATUSES])
-    .or(bookingActiveHoldExpiresFilter())
-    .neq("id", String(prior.id));
-  if (countErr) {
-    console.warn("[reholdReleasedReservationForFinishBooking] count", countErr.message);
-  }
-  const cap = approxSlotCapacity(slotId);
-  if ((count || 0) >= cap) {
+  const freeForRehold = await pickOpenInstructorForBand(admin, {
+    slotId,
+    venue: prior.venue,
+    day: prior.day_label,
+    timeLabel: prior.time_label,
+    excludeReservationId: String(prior.id),
+  });
+  if (!freeForRehold) {
     return {
       ok: false,
       reservationId: String(prior.id),
@@ -784,7 +774,11 @@ export async function reholdReleasedReservationForFinishBooking(
       hold_expires_at: holdExpires,
       released_at: null,
       updated_at: nowIso,
-      notes: "auto_finish_link|pay_hold_30m|office_resend_rehold",
+      notes: notesWithInstructor(prevNotes, freeForRehold, [
+        "auto_finish_link",
+        "pay_hold_30m",
+        "office_resend_rehold",
+      ]),
     })
     .eq("id", String(prior.id));
   if (updErr) {

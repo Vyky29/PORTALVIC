@@ -54,6 +54,9 @@
     if (code === "child_exists" || code.indexOf("already exists") >= 0) {
       return "A participant with that name is already on file. If this is a twin or another child, use a different first name (the date of birth can be the same).";
     }
+    if (code === "slot_unavailable") {
+      return "That session place is no longer available (another family is finishing payment or it just filled). Go back to Booking Portal and choose another time, or contact the office.";
+    }
     if (code === "portal configuration missing.") {
       return "This page is missing Portal settings. Refresh and try again, or open family.clubsensational.org/parent/registration.";
     }

@@ -160,6 +160,9 @@
     if (c === "unauthorized") return "Your booking session expired. Go back to Booking Portal and unlock again.";
     if (c === "not_existing_client") return "This shortcut is for existing families. Use the full registration form.";
     if (c === "no_children_on_file") return "We could not find your child on file. Contact the office or use full registration.";
+    if (c === "slot_unavailable") {
+      return "That session place is no longer available. Go back to Booking Portal and choose another time, or contact the office.";
+    }
     if (c === "failed to fetch" || c.indexOf("network") >= 0) {
       return "Network error — stay on Wi‑Fi/4G and try again.";
     }

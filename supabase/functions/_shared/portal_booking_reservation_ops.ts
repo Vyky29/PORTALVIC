@@ -162,45 +162,76 @@ export async function instructorsHeldOnSlot(
   const out: string[] = [];
   for (const row of data || []) {
     if (excludeReservationId && String(row.id) === excludeReservationId) continue;
+    const st = String(row.status || "").toLowerCase();
     const exp = row.hold_expires_at ? Date.parse(String(row.hold_expires_at)) : NaN;
-    if (Number.isFinite(exp) && exp < now && String(row.status) !== "validated") continue;
+    if (Number.isFinite(exp) && exp < now) {
+      // Soft pending carts free when the clock ends. Pay-window rows keep the
+      // instructor stamp until expireUnpaidBookingPayHolds flips status.
+      if (st === "pending") continue;
+      if (st !== "awaiting_payment" && st !== "validated") continue;
+    }
     const inst = extractInstructorFromNotes(row.notes);
     if (inst) out.push(inst);
   }
   return out;
 }
 
+export type PickOpenInstructorOpts = {
+  slotId?: string | null;
+  venue?: string | null;
+  day?: string | null;
+  timeLabel?: string | null;
+  excludeReservationId?: string | null;
+};
+
 /**
- * Pick the open instructor for this booking band.
- * Prefer unused opens when another hold already claimed one on the same slot.
+ * Free open instructors on this band (MADRE opens minus active hold stamps).
+ * Never reuse an instructor already claimed by another hold.
  */
-export async function pickOpenInstructorForBand(
+export async function listFreeOpenInstructorsForBand(
   admin: SupabaseClient,
-  opts: {
-    slotId?: string | null;
-    venue?: string | null;
-    day?: string | null;
-    timeLabel?: string | null;
-    excludeReservationId?: string | null;
-  },
-): Promise<string | null> {
+  opts: PickOpenInstructorOpts,
+): Promise<string[]> {
   const { data: madreRow } = await admin
     .from("portal_madre_document")
     .select("document")
     .eq("term_key", MADRE_BOOKING_TERM_KEY)
     .maybeSingle();
-  if (!madreRow?.document) return null;
+  if (!madreRow?.document) return [];
 
   const opens = openInstructorsOnBandFromMadre(madreRow.document as MadreDoc, opts);
-  if (!opens.length) return null;
+  if (!opens.length) return [];
 
   const held = opts.slotId
     ? await instructorsHeldOnSlot(admin, opts.slotId, opts.excludeReservationId)
     : [];
   const heldSet = new Set(held.map((h) => h.toLowerCase()));
-  const free = opens.filter((o) => !heldSet.has(o.toLowerCase()));
-  const pick = (free.length ? free : opens)[0] || null;
-  return pick;
+  return opens.filter((o) => !heldSet.has(o.toLowerCase()));
+}
+
+/**
+ * Pick the open instructor for this booking band.
+ * Returns null when every MADRE open on the band is already held — never
+ * fall back to an instructor another family already claimed.
+ */
+export async function pickOpenInstructorForBand(
+  admin: SupabaseClient,
+  opts: PickOpenInstructorOpts,
+): Promise<string | null> {
+  const free = await listFreeOpenInstructorsForBand(admin, opts);
+  return free[0] || null;
+}
+
+/** Require N distinct free opens (e.g. 2to1). Empty = slot unavailable. */
+export async function pickOpenInstructorsForBand(
+  admin: SupabaseClient,
+  opts: PickOpenInstructorOpts,
+  seatsNeeded = 1,
+): Promise<string[]> {
+  const need = Math.max(1, Math.min(4, Math.floor(Number(seatsNeeded) || 1)));
+  const free = await listFreeOpenInstructorsForBand(admin, opts);
+  if (free.length < need) return [];
+  return free.slice(0, need);
 }
 
 export function notesWithInstructor(

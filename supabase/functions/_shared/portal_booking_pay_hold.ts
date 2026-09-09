@@ -43,16 +43,20 @@ export function bookingHoldStillActive(
   return t > nowMs;
 }
 
-export function filterActiveBookingHolds<T extends { hold_expires_at?: unknown }>(
-  holds: T[] | null | undefined,
-  nowMs = Date.now(),
-): T[] {
-  return (holds || []).filter((h) =>
-    bookingHoldStillActive(
+export function filterActiveBookingHolds<
+  T extends { hold_expires_at?: unknown; status?: unknown },
+>(holds: T[] | null | undefined, nowMs = Date.now()): T[] {
+  return (holds || []).filter((h) => {
+    const st = String(h.status || "").toLowerCase();
+    // Pay-window / validated rows keep the public seat until maintenance flips
+    // status (expireUnpaidBookingPayHolds). Do not free the offer on clock alone
+    // while status is still awaiting_payment — that double-sold Sunday Climbing.
+    if (st === "awaiting_payment" || st === "validated") return true;
+    return bookingHoldStillActive(
       h.hold_expires_at == null ? null : String(h.hold_expires_at),
       nowMs,
-    )
-  );
+    );
+  });
 }
 
 /** PostgREST filter: soft holds with no clock, or clock still open. */
