@@ -215,6 +215,7 @@
     var doneEl = document.getElementById("bcDone");
     var formEl = document.getElementById("bcForm");
     var fullRegLink = document.getElementById("bcFullReg");
+    var addSiblingLink = document.getElementById("bcAddSibling");
 
     if (slotEl) slotEl.textContent = slotSummary(br) || "Selected session";
 
@@ -222,6 +223,9 @@
       var q = qs();
       q.set("from", "bookingportal");
       fullRegLink.href = "/parent/registration?" + q.toString();
+      if (addSiblingLink) {
+        addSiblingLink.href = "/parent/registration?" + q.toString();
+      }
     }
 
     if (!br.slot_id) {

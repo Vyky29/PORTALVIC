@@ -4,6 +4,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { syncParentFormPhotoToParticipantAvatar } from "../_shared/participant_avatar.ts";
 import { ensureInterestedClientFromRegistration } from "../_shared/portal_interested_client.ts";
+import { resolveParentPortalSessionFromToken } from "../_shared/parent_portal_session.ts";
 import { notifyOfficeRegistrationSubmitted } from "../_shared/portal_booking_lead_office_notify.ts";
 import { sendFinishBookingAfterRegistration } from "../_shared/portal_booking_finish.ts";
 import {
@@ -295,6 +296,10 @@ Deno.serve(async (req) => {
     String(form.get("booking_lead_session") || req.headers.get("x-booking-lead-session") || ""),
     200,
   );
+  const parentPortalSessionToken = sanitizePart(
+    String(form.get("parent_portal_session") || req.headers.get("x-parent-portal-session") || ""),
+    200,
+  );
 
   const adminEarly = createClient(baseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -434,12 +439,16 @@ Deno.serve(async (req) => {
   if (formType === "client_registration") {
     try {
       const parentBits = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
+      const portalSess = parentPortalSessionToken
+        ? await resolveParentPortalSessionFromToken(admin, parentPortalSessionToken)
+        : null;
       await ensureInterestedClientFromRegistration(admin, {
         participantName,
         participantDob,
         parentName,
         parentEmail,
         parentPhone,
+        attachParentPersonId: portalSess?.parent_person_id || null,
         addressLine1: sanitizePart(String(parentBits.parent_address || parentBits.address || ""), 200) || null,
         postcode: sanitizePart(String(parentBits.parent_postcode || parentBits.postcode || ""), 20) || null,
         registrationDate: String(row.submitted_at || "").slice(0, 10) || null,

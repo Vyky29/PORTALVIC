@@ -393,6 +393,22 @@
     .pp-child-card {
       padding: 14px;
     }
+    .pp-add-sibling-wrap {
+      margin: 12px 0 0;
+      min-width: 0;
+    }
+    .pp-add-sibling-wrap .pp-btn {
+      width: 100%;
+      text-align: center;
+      overflow-wrap: break-word;
+      text-decoration: none;
+    }
+    .pp-add-sibling-note {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
     .pp-child-layout {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
@@ -5450,6 +5466,10 @@
           </span>
         </h3>
         <div id="ppChildList"></div>
+        <div class="pp-add-sibling-wrap">
+          <a id="ppAddParticipant" class="pp-btn pp-btn--sec" href="/parent/registration?from=portal&add_participant=1&return=/parent">Register another participant</a>
+          <p class="pp-add-sibling-note">Twins and triplets can share a date of birth. They stay on this family PIN. Each child can keep their own phone and email.</p>
+        </div>
       </div>
 
       <div class="pp-card" id="ppPinCard">
@@ -5556,7 +5576,7 @@
   <script src="/portal/parent_portal_team.js?v=20260908-team-unchanged-logan"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260828-trial-iso-cal"></script>
   <script src="/portal/parent_portal_participant.js?v=20260909-no-parent-cover-tbc"></script>
-  <script src="/portal/parent_portal_app.js?v=20260909-child-contact-on-file"></script>
+  <script src="/portal/parent_portal_app.js?v=20260909-sibling-reg"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {

@@ -51,6 +51,9 @@
     if (code === "pdf_upload_failed" || code === "photo_upload_failed" || code === "save_failed") {
       return "The club server could not store the form (" + raw + "). Please try again in a minute.";
     }
+    if (code === "child_exists" || code.indexOf("already exists") >= 0) {
+      return "A participant with that name is already on file. If this is a twin or another child, use a different first name (the date of birth can be the same).";
+    }
     if (code === "portal configuration missing.") {
       return "This page is missing Portal settings. Refresh and try again, or open family.clubsensational.org/parent/registration.";
     }
@@ -172,6 +175,17 @@
           "";
         if (leadTok) fd.append("booking_lead_session", String(leadTok));
       } catch (_eLead) {
+        /* ignore */
+      }
+      try {
+        var parentTok = "";
+        var rawSess = global.localStorage.getItem("clubsens_parent_portal_session_v1");
+        if (rawSess) {
+          var parsedSess = JSON.parse(rawSess);
+          parentTok = String((parsedSess && parsedSess.token) || "").trim();
+        }
+        if (parentTok) fd.append("parent_portal_session", parentTok);
+      } catch (_eParent) {
         /* ignore */
       }
       return fd;

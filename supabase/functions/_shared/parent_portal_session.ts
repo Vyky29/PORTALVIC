@@ -9,11 +9,11 @@ export type ParentPortalSession = {
   client_device?: string | null;
 };
 
-export async function resolveParentPortalSession(
-  req: Request,
+export async function resolveParentPortalSessionFromToken(
   supabase: SupabaseClient,
+  tokenRaw: unknown,
 ): Promise<ParentPortalSession | null> {
-  const token = String(req.headers.get("x-parent-portal-session") || "").trim();
+  const token = String(tokenRaw || "").trim();
   if (!/^[a-f0-9]{32,128}$/i.test(token)) return null;
 
   const tokenHash = await sha256Hex(token);
@@ -38,6 +38,16 @@ export async function resolveParentPortalSession(
     geo_bucket: sess.geo_bucket != null ? String(sess.geo_bucket) : null,
     client_device: sess.client_device != null ? String(sess.client_device) : null,
   };
+}
+
+export async function resolveParentPortalSession(
+  req: Request,
+  supabase: SupabaseClient,
+): Promise<ParentPortalSession | null> {
+  return resolveParentPortalSessionFromToken(
+    supabase,
+    req.headers.get("x-parent-portal-session"),
+  );
 }
 
 export function slugifyParticipantKey(raw: string): string {

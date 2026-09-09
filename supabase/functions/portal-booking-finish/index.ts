@@ -497,7 +497,28 @@ async function ensureContact(
     if (Number.isFinite(n) && n > 0 && n < 10000 && n > maxN) maxN = n;
   }
   const contactId = String(maxN + 1);
-  const parentPersonId = "portal-" + contactId;
+  const emailKey = clean(doc.parent_email, 200).toLowerCase();
+  const phoneKey = String(mobile || "").replace(/\D/g, "").slice(-10);
+  let parentPersonId = "";
+  if (emailKey) {
+    const { data: byEmail } = await admin
+      .from("portal_parent_contacts")
+      .select("parent_person_id")
+      .eq("email_norm", emailKey)
+      .limit(1)
+      .maybeSingle();
+    if (byEmail?.parent_person_id) parentPersonId = String(byEmail.parent_person_id);
+  }
+  if (!parentPersonId && phoneKey.length >= 10) {
+    const { data: byPhone } = await admin
+      .from("portal_parent_contacts")
+      .select("parent_person_id")
+      .eq("phone_lookup", phoneKey)
+      .limit(1)
+      .maybeSingle();
+    if (byPhone?.parent_person_id) parentPersonId = String(byPhone.parent_person_id);
+  }
+  if (!parentPersonId) parentPersonId = "portal-" + contactId;
   const parentNames = splitParentName(parentDisplay);
   const childParts = childDisplay.split(/\s+/).filter(Boolean);
   const childFirst = childParts[0] || childDisplay;

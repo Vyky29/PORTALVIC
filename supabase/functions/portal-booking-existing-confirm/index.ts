@@ -162,29 +162,55 @@ async function childrenForLeadEmail(
   email: string,
   mobile: string,
 ) {
+  const contactSelect =
+    "contact_id, parent_person_id, child_display, child_first_name, child_last_name, parent_display, email, mobile, dob_iso, in_class";
   const en = emailNorm(email);
   const phone = phoneLast10(mobile);
-  let rows: Array<Record<string, unknown>> = [];
+  let seed: Array<Record<string, unknown>> = [];
   if (en) {
     const { data } = await admin
       .from("portal_parent_contacts")
-      .select(
-        "contact_id, child_display, child_first_name, child_last_name, parent_display, email, mobile, dob_iso, in_class",
-      )
+      .select(contactSelect)
       .eq("email_norm", en)
       .limit(20);
-    rows = data || [];
+    seed = data || [];
   }
-  if (!rows.length && phone.length >= 10) {
+  if (phone.length >= 10) {
     const { data } = await admin
       .from("portal_parent_contacts")
-      .select(
-        "contact_id, child_display, child_first_name, child_last_name, parent_display, email, mobile, dob_iso, in_class",
-      )
+      .select(contactSelect)
       .eq("phone_lookup", phone)
       .limit(20);
-    rows = data || [];
+    const have = new Set(seed.map((r) => String(r.contact_id || "")));
+    for (const row of data || []) {
+      const cid = String(row.contact_id || "");
+      if (cid && !have.has(cid)) {
+        seed.push(row);
+        have.add(cid);
+      }
+    }
   }
+
+  const parentIds = [
+    ...new Set(seed.map((r) => String(r.parent_person_id || "").trim()).filter(Boolean)),
+  ];
+  let rows = seed;
+  if (parentIds.length) {
+    const { data: family } = await admin
+      .from("portal_parent_contacts")
+      .select(contactSelect)
+      .in("parent_person_id", parentIds)
+      .limit(40);
+    if (family?.length) rows = family;
+  }
+
+  const byContact = new Map<string, Record<string, unknown>>();
+  for (const r of rows) {
+    const cid = String(r.contact_id || "").trim();
+    if (cid && !byContact.has(cid)) byContact.set(cid, r);
+  }
+  rows = [...byContact.values()];
+
   const ids = rows.map((r) => String(r.contact_id || "")).filter(Boolean);
   const { data: parts } = ids.length
     ? await admin

@@ -261,17 +261,96 @@
     });
   }
 
+  function initAddParticipantMode(form, helpers, session, returnUrl) {
+    var bar = document.getElementById("portalRegBar");
+    var title = document.querySelector(".title-block h1");
+    var subtitle = document.querySelector(".title-block p");
+    var notice = document.getElementById("formNotice");
+    var submitBtn = document.getElementById("submitBtn");
+
+    global.__portalAddParticipant = true;
+    global.__portalAddParticipantReturn = returnUrl || "/parent";
+
+    if (bar) {
+      bar.hidden = false;
+      bar.innerHTML =
+        '<a class="portal-reg-back" href="' +
+        esc(returnUrl || "/parent") +
+        '">← Back to family portal</a>';
+    }
+    if (title) title.textContent = "Register another participant";
+    if (subtitle) {
+      subtitle.textContent =
+        "Add a twin, triplet, or sibling to the same family account (same PIN). They can share a date of birth. Each child can keep their own phone and email.";
+    }
+    if (notice) {
+      notice.innerHTML =
+        "Parent details below are from your account — change the phone or email if this child uses different contact details. Fill the participant section for the new child.";
+    }
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit form";
+    }
+
+    return fetch(fn("parent-portal-home-load"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey(),
+        Authorization: "Bearer " + anonKey(),
+        "x-parent-portal-session": session.token,
+      },
+      body: JSON.stringify({}),
+    })
+      .then(function (res) {
+        return res.json().then(function (j) {
+          if (!res.ok || !j.ok) throw new Error("load_failed");
+          var parent = j.parent || {};
+          var kids = Array.isArray(j.children) ? j.children : [];
+          var first = kids[0] || {};
+          setVal(form, "parent_name", parent.display_name);
+          setVal(form, "parent_email", parent.email || first.email);
+          setVal(form, "parent_phone", parent.mobile || first.mobile);
+          var addr = parent.address || {};
+          var line1 = addr.line1 || first.address_line1 || "";
+          var postcode = addr.postcode || first.postcode || "";
+          if (!line1 && first.address) {
+            line1 = first.address.line1 || "";
+            postcode = first.address.postcode || postcode;
+          }
+          setVal(form, "parent_address", line1);
+          setVal(form, "parent_postcode", postcode);
+        });
+      })
+      .catch(function () {
+        if (notice) {
+          notice.innerHTML =
+            "Could not load your family details — you can still fill the form. The new child will be added to this account when you are signed in.";
+        }
+      });
+  }
+
   function initPortalRegistrationMode(form, helpers) {
     var params = qs();
-    var fromPortal = params.get("from") === "portal" || !!params.get("contact_id");
+    var addParticipant =
+      params.get("add_participant") === "1" ||
+      params.get("add") === "1" ||
+      params.get("sibling") === "1";
+    var fromPortal = params.get("from") === "portal" || !!params.get("contact_id") || addParticipant;
     if (!fromPortal) return Promise.resolve(null);
 
     var contactId = params.get("contact_id") || params.get("contact") || "";
-    var returnUrl = params.get("return") || "/parent/app";
+    var returnUrl = params.get("return") || "/parent";
     var session = readSession();
-    if (!contactId || !session || !session.token) {
+    if (!session || !session.token) {
       return Promise.resolve(null);
     }
+
+    if (addParticipant && !contactId) {
+      return initAddParticipantMode(form, helpers, session, returnUrl);
+    }
+
+    if (!contactId) return Promise.resolve(null);
 
     var bar = document.getElementById("portalRegBar");
     var title = document.querySelector(".title-block h1");
