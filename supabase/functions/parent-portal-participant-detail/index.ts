@@ -1935,7 +1935,8 @@ Deno.serve(async (req) => {
   let isTrialOnlyPlace = false;
   /** First paid / held term session (hub chips before this stay red — not in the paid place). */
   let bookedFromIso: string | null = null;
-  if (wantGeneral && !isFormerClient) {
+  /* Always resolve for active clients — section-only loads must not wipe hub booked_from. */
+  if (!isFormerClient) {
     const todayIso = new Date().toISOString().slice(0, 10);
     const nameCandidates = [
       clean(displayName, 80),

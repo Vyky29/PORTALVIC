@@ -3026,7 +3026,30 @@
     var p = (data && data.participant) || {};
     var booked = String(p.booked_from || p.bookedFrom || "").trim().slice(0, 10);
     if (/^\d{4}-\d{2}-\d{2}$/.test(booked)) return booked;
-    return "";
+    /* Fallback if older API omit booked_from — earliest non-trial booking row. */
+    var lists = [];
+    if (Array.isArray(data && data.upcoming_booked_sessions)) {
+      lists.push(data.upcoming_booked_sessions);
+    }
+    if (
+      data &&
+      data.reenrolment &&
+      Array.isArray(data.reenrolment.upcoming_booked_sessions)
+    ) {
+      lists.push(data.reenrolment.upcoming_booked_sessions);
+    }
+    var min = "";
+    lists.forEach(function (list) {
+      list.forEach(function (row) {
+        if (!row) return;
+        var kind = String(row.kind || "").toLowerCase();
+        if (kind === "trial") return;
+        var iso = String(row.iso || row.date_iso || "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+        if (!min || iso < min) min = iso;
+      });
+    });
+    return min;
   }
 
   /**
@@ -3760,8 +3783,6 @@
     }
 
     var todayIso = isoDateLocal(new Date());
-    var nextList = findNextSessions(data, 1);
-    var nextIso = nextList[0] ? nextList[0].iso : "";
     var startParts = fromIso.split("-");
     var cursor = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
     var out = [];
@@ -3784,7 +3805,7 @@
                 shortLabel: formatTermChipLabel(iso),
                 past: iso < todayIso,
                 isToday: iso === todayIso,
-                isNext: !!nextIso && iso === nextIso,
+                isNext: false,
               },
               data,
             ),
@@ -3793,6 +3814,16 @@
       }
       cursor = addDaysLocal(cursor, 1);
     }
+    var nextIso = "";
+    for (var ni = 0; ni < out.length; ni++) {
+      if (!out[ni].past && !out[ni].notBooked) {
+        nextIso = out[ni].iso;
+        break;
+      }
+    }
+    out.forEach(function (d) {
+      d.isNext = !!nextIso && !d.notBooked && d.iso === nextIso;
+    });
     return out;
   }
 
@@ -3845,14 +3876,17 @@
       cursor = addDaysLocal(cursor, 1);
     }
     for (var i = 0; i < out.length; i++) {
-      if (!out[i].past) {
-        nextIso = out[i].iso;
+      annotateChipDate(out[i], data);
+    }
+    var nextIso = "";
+    for (var j = 0; j < out.length; j++) {
+      if (!out[j].past && !out[j].notBooked) {
+        nextIso = out[j].iso;
         break;
       }
     }
     out.forEach(function (d) {
-      d.isNext = !!nextIso && d.iso === nextIso;
-      annotateChipDate(d, data);
+      d.isNext = !!nextIso && !d.notBooked && d.iso === nextIso;
     });
     return out;
   }
@@ -4297,14 +4331,14 @@
     }
     var nextIso = "";
     for (var i = 0; i < out.length; i++) {
-      if (!out[i].past) {
+      if (!out[i].past && !out[i].notBooked) {
         nextIso = out[i].iso;
         break;
       }
     }
     if (nextIso) {
       out.forEach(function (d) {
-        d.isNext = d.iso === nextIso;
+        d.isNext = !d.notBooked && d.iso === nextIso;
       });
     }
     return out;
@@ -4940,13 +4974,13 @@
     }
     var nextIso = "";
     for (var i = 0; i < out.length; i++) {
-      if (!out[i].past) {
+      annotateChipDate(out[i], data);
+      if (!nextIso && !out[i].past && !out[i].notBooked) {
         nextIso = out[i].iso;
-        break;
       }
     }
     out.forEach(function (d) {
-      d.isNext = !!nextIso && d.iso === nextIso;
+      d.isNext = !!nextIso && !d.notBooked && d.iso === nextIso;
     });
     return out;
   }

@@ -91,7 +91,23 @@
       }
     }
     if (patch.participant && base.participant) {
+      /* Partial section loads return participant without booked_from — do not wipe. */
+      var prevBookedFrom = base.participant.booked_from;
+      var prevRegDate = base.participant.registration_date;
       Object.assign(base.participant, patch.participant);
+      if (
+        (patch.participant.booked_from == null || patch.participant.booked_from === "") &&
+        prevBookedFrom
+      ) {
+        base.participant.booked_from = prevBookedFrom;
+      }
+      if (
+        (patch.participant.registration_date == null ||
+          patch.participant.registration_date === "") &&
+        prevRegDate
+      ) {
+        base.participant.registration_date = prevRegDate;
+      }
     }
     return base;
   }
