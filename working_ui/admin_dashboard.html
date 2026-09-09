@@ -171,7 +171,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260904-comms-30" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260909-parent-booking-live" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
 </head>
@@ -388,7 +388,7 @@
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260716-cancel-selfserve"></script>
   <script type="module">
-    import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260704-presence-504";
+    import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260909-parent-booking-live";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
       try{
         mountPortalLivePresenceBar("portalLivePresenceBar");
@@ -30998,7 +30998,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var host = document.getElementById('portalLivePresenceBar');
       if(!host) return;
       window.__portalAdminPresenceBarMounted = true;
-      import('/portal/portal_live_presence.js?v=20260704-presence-504')
+      import('/portal/portal_live_presence.js?v=20260909-parent-booking-live')
         .then(function(mod){
           if(!mod || typeof mod.mountPortalLivePresenceBar !== 'function') return;
           mod.mountPortalLivePresenceBar('portalLivePresenceBar');
