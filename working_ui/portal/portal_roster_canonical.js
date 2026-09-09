@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 81;
+  var SOURCE_VERSION = 82;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -419,6 +419,212 @@
   function isAutumnWeek1DcIso(iso) {
     var d = normIso(iso);
     return d >= "2026-09-01" && d <= "2026-09-04";
+  }
+
+  /**
+   * Fadi (CLIENT) away until Mon 21 Sep 2026 — nobody should see him on DC mornings.
+   * Fri 11 – Fri 18: Victor's reshuffled DC boards (no Fadi). Mon 21 starts different.
+   */
+  var FADI_ABSENT_DC_UNTIL = "2026-09-21";
+  var FADI_ABSENT_DC_BOARD_FROM = "2026-09-11";
+  var FADI_ABSENT_DC_BOARD = {
+    monday: [
+      { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 3" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      { staff: "Youssef", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      {
+        staff: "Victor",
+        clients: [
+          { name: "Timi", time: "11 to 1" },
+          { name: "Emanuel", time: "3 to 4" },
+        ],
+      },
+      {
+        staff: "Michelle",
+        clients: [
+          { name: "Timi", time: "11 to 1" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+      {
+        staff: "Raul",
+        clients: [
+          { name: "Office", time: "11 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+    ],
+    tuesday: [
+      {
+        staff: "Roberto",
+        clients: [
+          { name: "ACAT", time: "11 to 12" },
+          { name: "Ikram", time: "12 to 3" },
+        ],
+      },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      {
+        staff: "Michelle",
+        clients: [
+          { name: "Ikram", time: "11 to 12" },
+          { name: "Manager", time: "12 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+      {
+        staff: "Victor",
+        clients: [
+          { name: "Office", time: "11 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+      { staff: "Raul", clients: [{ name: "Office", time: "11 to 4" }] },
+      { staff: "Youssef", clients: [] },
+    ],
+    wednesday: [
+      { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 4" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      {
+        staff: "Raul",
+        clients: [
+          { name: "Office", time: "11 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+      { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Victor", clients: [{ name: "Office", time: "11 to 4" }] },
+      { staff: "Youssef", clients: [] },
+    ],
+    thursday: [
+      { staff: "Roberto", clients: [] },
+      { staff: "Luliya", clients: [] },
+      { staff: "Michelle", clients: [] },
+      { staff: "Youssef", clients: [] },
+      { staff: "Raul", clients: [{ name: "Office", time: "11 to 4" }] },
+      { staff: "Victor", clients: [{ name: "Office", time: "11 to 4" }] },
+    ],
+    friday: [
+      { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 3" }] },
+      { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
+      { staff: "Youssef", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      {
+        staff: "Victor",
+        clients: [
+          { name: "Timi", time: "11 to 1" },
+          { name: "Emanuel", time: "3 to 4" },
+        ],
+      },
+      {
+        staff: "Michelle",
+        clients: [
+          { name: "Timi", time: "11 to 1" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
+      {
+        staff: "Raul",
+        clients: [
+          { name: "Timi", time: "11 to 1" },
+          { name: "Emanuel", time: "3 to 4" },
+        ],
+      },
+    ],
+  };
+
+  function isFadiAbsentDcWindowIso(iso) {
+    var d = normIso(iso);
+    return !!(d && d >= "2026-09-01" && d < FADI_ABSENT_DC_UNTIL);
+  }
+
+  function isFadiAbsentDcBoardIso(iso) {
+    var d = normIso(iso);
+    if (!d || d < FADI_ABSENT_DC_BOARD_FROM || d >= FADI_ABSENT_DC_UNTIL) return false;
+    try {
+      var dow = new Date(d + "T12:00:00").getDay();
+      return dow >= 1 && dow <= 5;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function fadiAbsentDcBoardDates() {
+    var out = [];
+    var cur = new Date(FADI_ABSENT_DC_BOARD_FROM + "T12:00:00");
+    var end = new Date(FADI_ABSENT_DC_UNTIL + "T12:00:00");
+    while (cur < end) {
+      var dow = cur.getDay();
+      if (dow >= 1 && dow <= 5) {
+        var y = cur.getFullYear();
+        var m = String(cur.getMonth() + 1).padStart(2, "0");
+        var day = String(cur.getDate()).padStart(2, "0");
+        out.push(y + "-" + m + "-" + day);
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return out;
+  }
+
+  function areaForDcClient(name) {
+    var n = String(name || "").trim().toLowerCase();
+    if (n === "manager") return "Hub · Manager";
+    if (n === "office") return "Hub · Office";
+    if (n === "acat") return "Hub · ACAT";
+    return "Hub Room";
+  }
+
+  function autumnFadiAbsentDayCentreRows() {
+    var out = [];
+    fadiAbsentDcBoardDates().forEach(function (iso) {
+      var dow = new Date(iso + "T12:00:00").getDay();
+      var dk =
+        dow === 1
+          ? "monday"
+          : dow === 2
+            ? "tuesday"
+            : dow === 3
+              ? "wednesday"
+              : dow === 4
+                ? "thursday"
+                : "friday";
+      var dayTitle = DOW_TITLE[dk] || dk;
+      (FADI_ABSENT_DC_BOARD[dk] || []).forEach(function (col) {
+        (col.clients || []).forEach(function (c) {
+          out.push({
+            client_name: c.name,
+            day: dayTitle,
+            instructors: String(col.staff || "").toUpperCase(),
+            service: "Day Centre",
+            area: areaForDcClient(c.name),
+            time_slot: c.time,
+            venue: "SwimFarm",
+            session_date: iso,
+          });
+        });
+      });
+    });
+    return out;
+  }
+
+  function applyFadiAbsentDayCentre(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var d = normIso(r.session_date);
+      if (isDayCentreService(r.service) && isFadiAbsentDcBoardIso(d)) return;
+      /* Drop any leftover Fadi DC seat stamped before return Mon 21. */
+      if (
+        isDayCentreService(r.service) &&
+        isFadiAbsentDcWindowIso(d) &&
+        /^fadi\b/i.test(String(r.client_name || "").trim())
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnFadiAbsentDayCentreRows().forEach(function (row) {
+      out.push(row);
+    });
+    return out;
   }
 
   /** True when this Day Centre row is the Jul standing snap used for Mon 7+ projection. */
@@ -2721,6 +2927,7 @@
     merged = applyAutumnActonTuesdayStanding(merged);
     merged = scrubDepartedAutumnInstructorRows(merged);
     merged = applyAutumnWeek1DayCentre(merged);
+    merged = applyFadiAbsentDayCentre(merged);
     merged = scrubAndEnsureSep6HubCover(merged);
     merged = scrubAndEnsureSep6Climbing(merged);
     merged = scrubAndEnsureAutumnSundayPoolStanding(merged);
@@ -2793,6 +3000,8 @@
   /**
    * Standing "does not work this weekday" — hide empty Overview columns.
    * Victor: Mon + Thu. Raul: Tue + Thu.
+   * Fri 11 – Fri 18 (Fadi away boards): Victor + Raul work Office those days;
+   * Roberto / Luliya / Michelle / Youssef are off Thursdays.
    */
   function autumnStaffStandingOffOnIso(iso, staffRaw) {
     var d = normIso(iso);
@@ -2809,6 +3018,23 @@
     } catch (_) {}
     if (dow < 0) return false;
     /* 0 Sun … 1 Mon 2 Tue 3 Wed 4 Thu 5 Fri 6 Sat */
+    if (isFadiAbsentDcBoardIso(d)) {
+      if (
+        key === "roberto" ||
+        key.indexOf("roberto") === 0 ||
+        key === "luliya" ||
+        key.indexOf("luliya") === 0 ||
+        key === "michelle" ||
+        key.indexOf("michelle") === 0 ||
+        key === "youssef" ||
+        key.indexOf("youssef") === 0
+      ) {
+        return dow === 4;
+      }
+      if (key === "victor" || key.indexOf("victor") === 0) return false;
+      if (key === "raul" || key.indexOf("raul") === 0) return false;
+      return false;
+    }
     if (key === "victor" || key.indexOf("victor") === 0) {
       return dow === 1 || dow === 4;
     }
@@ -2839,6 +3065,9 @@
     AUTUMN_DAY_CENTRE_BOARD: AUTUMN_DAY_CENTRE_BOARD,
     WEEK1_DC_BOARD: WEEK1_DC_BOARD,
     isAutumnWeek1DcIso: isAutumnWeek1DcIso,
+    FADI_ABSENT_DC_BOARD: FADI_ABSENT_DC_BOARD,
+    isFadiAbsentDcWindowIso: isFadiAbsentDcWindowIso,
+    isFadiAbsentDcBoardIso: isFadiAbsentDcBoardIso,
     isAutumnDcStandingTemplateRow: isAutumnDcStandingTemplateRow,
     AUTUMN_NO_SESSION_STAFF_KEYS: AUTUMN_NO_SESSION_STAFF_KEYS,
     AUTUMN_TERM_FROM_ISO: AUTUMN_TERM_FROM_ISO,

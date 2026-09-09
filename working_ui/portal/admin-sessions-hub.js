@@ -1040,16 +1040,41 @@
     var canon = global.PortalRosterCanonical;
     var week1Dc =
       canon && typeof canon.isAutumnWeek1DcIso === "function" && canon.isAutumnWeek1DcIso(isoDate);
+    var fadiAbsentDcBoard =
+      canon &&
+      typeof canon.isFadiAbsentDcBoardIso === "function" &&
+      canon.isFadiAbsentDcBoardIso(isoDate);
     var isDcStanding =
       canon && typeof canon.isAutumnDcStandingTemplateRow === "function"
         ? canon.isAutumnDcStandingTemplateRow(r)
         : /day\s*centre/i.test(String((r && r.service) || "")) &&
           /^2026-07-1[3-7]$/.test(String(sd || ""));
-    if (week1Dc && isDcStanding) return false;
+    if ((week1Dc || fadiAbsentDcBoard) && isDcStanding) return false;
+    if (
+      fadiAbsentDcBoard &&
+      /day\s*centre/i.test(String((r && r.service) || "")) &&
+      /^fadi\b/i.test(String((r && r.client_name) || "").trim())
+    ) {
+      return false;
+    }
+    if (
+      canon &&
+      typeof canon.isFadiAbsentDcWindowIso === "function" &&
+      canon.isFadiAbsentDcWindowIso(isoDate) &&
+      /day\s*centre/i.test(String((r && r.service) || "")) &&
+      /^fadi\b/i.test(String((r && r.client_name) || "").trim())
+    ) {
+      return false;
+    }
     if (sd) {
       if (sd === isoDate) return true;
       if (project && standIso && standIso !== isoDate && sd === standIso) {
-        if (week1Dc && /day\s*centre/i.test(String((r && r.service) || ""))) return false;
+        if (
+          (week1Dc || fadiAbsentDcBoard) &&
+          /day\s*centre/i.test(String((r && r.service) || ""))
+        ) {
+          return false;
+        }
         /*
          * Sun 6 Sep Hub Multi is fully owned by scrubAndEnsureSep6HubCover (John + Berta books).
          * Do not also project summer standing Hub Multi onto that day.
@@ -1144,7 +1169,12 @@
     }
     var cid = canonicalClientSlug(r.client_name);
     if (!cid) return true;
-    if (week1Dc && /day\s*centre/i.test(String((r && r.service) || ""))) return false;
+    if (
+      (week1Dc || fadiAbsentDcBoard) &&
+      /day\s*centre/i.test(String((r && r.service) || ""))
+    ) {
+      return false;
+    }
     if (clientHasDatedRosterInWeekSameFamily(rosterRows, r, isoDate)) return false;
     for (var i = 0; i < rosterRows.length; i++) {
       var o = rosterRows[i];
