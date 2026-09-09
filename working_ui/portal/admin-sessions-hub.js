@@ -846,11 +846,13 @@
 
   function rosterRowToSlot(isoDate, wd, r) {
     var slot = parseTimeSlot(r.time_slot, wd);
-    var instRaw = applySundayInstructorOverride(isoDate, r.instructors);
+    var origInstRaw = clean(r.instructors);
+    var instRaw = applySundayInstructorOverride(isoDate, origInstRaw);
+    var remappedEmpty = false;
     try {
       var canon = global.PortalRosterCanonical;
       if (canon && typeof canon.resolveAutumnInstructorsForCalendarDate === "function") {
-        instRaw = canon.resolveAutumnInstructorsForCalendarDate(instRaw, isoDate, {
+        var remapped = canon.resolveAutumnInstructorsForCalendarDate(instRaw, isoDate, {
           service: r.service,
           venue: r.venue,
           area: r.area,
@@ -858,8 +860,13 @@
           client_name: r.client_name,
           clientName: r.client_name,
         });
+        remapped = clean(remapped);
+        /* Intentional strip (e.g. John off Wed 9 Tinashe) — do not fall back to summer name. */
+        if (!remapped && instRaw) remappedEmpty = true;
+        instRaw = remapped;
       }
     } catch (_remap) {}
+    if (remappedEmpty) return null;
     var instructors = parseInstructors(instRaw);
     var slotRow = {
       session_date: isoDate,
@@ -872,7 +879,7 @@
       venue: clean(r.venue),
       area: clean(r.area),
       instructors: instructors,
-      instructor_label: instructors.join(", ") || clean(instRaw) || clean(r.instructors),
+      instructor_label: instructors.join(", ") || clean(instRaw),
       session_key: buildSessionKey(isoDate, r),
       __portal_roster_row_id: r.__portal_roster_row_id || null,
       portalRosterTimeUpdated: !!r.__portal_roster_time_updated,
@@ -6222,14 +6229,16 @@
         if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
         if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
         if (sunSwimOv && sunSwimOv.replaceSwimFarm && clean(r.venue) === "SwimFarm") continue;
-        out.push(rosterRowToSlot(isoDate, wd, r));
+        var slotRow = rosterRowToSlot(isoDate, wd, r);
+        if (slotRow) out.push(slotRow);
       }
       if (sunSwimOv && sunSwimOv.rows && sunSwimOv.rows.length) {
         for (var j = 0; j < sunSwimOv.rows.length; j++) {
           var orow = sunSwimOv.rows[j];
           if (!orow || !isRosterClient(orow.client_name)) continue;
           if (!clientAllowedOnDate(orow.client_name, isoDate)) continue;
-          out.push(rosterRowToSlot(isoDate, wd, orow));
+          var oSlot = rosterRowToSlot(isoDate, wd, orow);
+          if (oSlot) out.push(oSlot);
         }
       }
       out.sort(function (a, b) {
@@ -9212,7 +9221,56 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var endMin = hmToMinutesOfDay(endHm);
     if (startMin == null) return null;
     if (endMin == null || endMin <= startMin) endMin = startMin + 30;
-    return { start: startMin, end: endMin, day: wd };
+    return expandStaffPaidBandForHoursLabel(slot, { start: startMin, end: endMin, day: wd });
+  }
+
+  /**
+   * Participant seat times ≠ paid staff band for some books.
+   * Overview column hours must show who works (staff), not only the kid clock.
+   * - Tinashe Bespoke: kid 4.30–6 · staff 4.15–6.15
+   * - Sunday SwimFarm Hub Multi: kids 9.30–2 · Hub staff 9.15–2.15 (pad ends)
+   */
+  function expandStaffPaidBandForHoursLabel(slot, bounds) {
+    if (!slot || !bounds) return bounds;
+    var svc = clean(slot.service);
+    var client = clean(slot.client_name).toLowerCase();
+    var day = bounds.day || slot.day || "";
+    var area = clean(slot.area).toLowerCase();
+    var venue = clean(slot.venue).toLowerCase();
+
+    if (
+      isBespokeService(svc) &&
+      /^tinashe\b/.test(client) &&
+      bounds.start === 16 * 60 + 30 &&
+      bounds.end === 18 * 60
+    ) {
+      return { start: 16 * 60 + 15, end: 18 * 60 + 15, day: day };
+    }
+    /* Also catch label-only / slight drift around the client band. */
+    if (
+      isBespokeService(svc) &&
+      /^tinashe\b/.test(client) &&
+      bounds.start >= 16 * 60 + 20 &&
+      bounds.start <= 16 * 60 + 40 &&
+      bounds.end >= 17 * 60 + 50 &&
+      bounds.end <= 18 * 60 + 10
+    ) {
+      return { start: 16 * 60 + 15, end: 18 * 60 + 15, day: day };
+    }
+
+    if (
+      String(day).toLowerCase() === "sunday" &&
+      isMultiActivityService(svc) &&
+      /swimfarm/i.test(venue) &&
+      /hub/i.test(area)
+    ) {
+      return {
+        start: Math.max(0, bounds.start - 15),
+        end: bounds.end + 15,
+        day: day,
+      };
+    }
+    return bounds;
   }
 
   /** Merge overlapping / touching client slots into work windows (gap <= 15 min stays one block). */
