@@ -1999,9 +1999,22 @@
       var coverId = clean(p.covering_staff_id).toLowerCase();
       var coverName =
         clean(p.covering_staff_name || p.to_staff_name) || resolveStaffDisplayName(coverId);
-      if (!coverId && !coverName) return slot;
       var anchorId = clean(ov.anchor_staff_id).toLowerCase();
       if (anchorId && !staffIdMatchesInstructorWithSwimAliases(anchorId, slot.instructors)) return slot;
+      /* COVER NEEDED with no named cover yet — keep seat on original staff, attach override. */
+      if (!coverId && !coverName) {
+        if (!overrideIsInstructorCoverNeededType(ov)) return slot;
+        return Object.assign({}, slot, {
+          __portalScheduleOverride: ov,
+          portalCoverNeeded: true,
+        });
+      }
+      if (overrideIsInstructorCoverNeededType(ov)) {
+        return Object.assign({}, slot, {
+          __portalScheduleOverride: ov,
+          portalCoverNeeded: true,
+        });
+      }
       var origInst = slotInstructors(slot).slice();
       var effective = swapInstructorCoverInList(origInst, anchorId, coverName, coverId);
       var reassigned = Object.assign({}, slot, {
@@ -2012,6 +2025,7 @@
         portalOriginalInstructors: origInst,
         portalCoveringStaffId: coverId,
         portalCoveringStaffName: coverName || resolveStaffDisplayName(coverId),
+        portalCoverNeeded: false,
       });
       return reassigned;
     });
@@ -9162,24 +9176,45 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   function dayBoardColHtml(hub, key, label, items, esc) {
     var n = items.length;
     var dayIso = String((hub && hub.selectedDay) || "").slice(0, 10);
-    var away = !!(dayIso && hubStaffAwayOnIso(hub, dayIso, label || key));
+    var isCoverCol = key === "coverneeded";
+    var away =
+      !isCoverCol && !!(dayIso && hubStaffAwayOnIso(hub, dayIso, label || key));
+    var coverStaff = false;
+    if (!isCoverCol && !away) {
+      for (var ci = 0; ci < items.length; ci++) {
+        if (items[ci] && items[ci].st && items[ci].st.boardPlace === "cover") {
+          coverStaff = true;
+          break;
+        }
+      }
+    }
     var cards = items
       .map(function (it) {
         return htmlDayBoardCard(hub, it.slot, it.st, esc);
       })
       .join("");
+    var headExtra = "";
+    if (away) {
+      headExtra =
+        '<span class="ash-db-col__dayoff" title="Staff unavailability">Day off requested</span>';
+    } else if (isCoverCol) {
+      headExtra =
+        '<span class="ash-db-col__cover">COVER NEEDED</span>' +
+        '<p class="ash-db-col__cover-hint">Still open — assign in Schedule &amp; Covers</p>';
+    } else if (coverStaff) {
+      headExtra = '<span class="override-chip override--instructor">Cover</span>';
+    }
     return (
       '<section class="ash-db-col' +
       (away ? " ash-db-col--day-off" : "") +
+      (isCoverCol ? " ash-db-col--cover" : "") +
       '">' +
       '<div class="ash-db-col__head">' +
-      dayBoardStaffPhotoHtml(label, esc) +
+      dayBoardStaffPhotoHtml(isCoverCol ? "!" : label, esc) +
       '<h4 class="ash-db-col__staff">' +
-      formatInstructorPill(label) +
+      (isCoverCol ? esc("COVER NEEDED") : formatInstructorPill(label)) +
       "</h4>" +
-      (away
-        ? '<span class="ash-db-col__dayoff" title="Staff unavailability">Day off</span>'
-        : "") +
+      headExtra +
       '<span class="ash-db-col__meta">' +
       esc(String(n)) +
       " session" +
@@ -9291,19 +9326,47 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return false;
   }
 
+  function overviewSlotBoardIsCancelled(hub, slot, slotOv) {
+    if (overrideIsCancelledType(slotOv) || overrideFeedbackResolution(slotOv) === "cancelled") {
+      return true;
+    }
+    if (slot && slot.__portalScheduleOverride) {
+      var so = slot.__portalScheduleOverride;
+      if (overrideIsCancelledType(so) || overrideFeedbackResolution(so) === "cancelled") return true;
+    }
+    try {
+      if (hub && typeof hub.overrideForSlotByType === "function") {
+        if (hub.overrideForSlotByType(slot, overrideIsCancelledType)) return true;
+      }
+    } catch (_c) {}
+    return false;
+  }
+
   function overviewSlotBoardState(hub, slot, unitComplete, unitAbsent) {
     /* Staffing guide only — no feedback matching (that froze Overview on 1000+ rows). */
     var slotOv = hub.overrideForSlot(slot);
     if (slot.__portalShadowingOverride) slotOv = slot.__portalShadowingOverride;
-    var isAbsent = overviewSlotBoardIsAbsent(hub, slot, slotOv);
-    var isUpdated = !isAbsent && hubSlotShowsUpdatedChip(slot, slotOv);
+    var isCancelled = overviewSlotBoardIsCancelled(hub, slot, slotOv);
+    var isAbsent =
+      !isCancelled && overviewSlotBoardIsAbsent(hub, slot, slotOv);
+    var isUpdated = !isAbsent && !isCancelled && hubSlotShowsUpdatedChip(slot, slotOv);
     var isShadowing = hubSlotShowsShadowingChip(slot);
     var isInstructorReassign = hubSlotShowsInstructorReassignChip(slot, slotOv);
     var isCoverNeeded =
+      !!(slot && slot.portalCoverNeeded) ||
       overrideIsInstructorCoverNeededType(slotOv) ||
       (slot.__portalScheduleOverride &&
         overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride));
-    var isStaffDayOff = !isCoverNeeded && hubSlotShowsStaffDayOff(hub, slot);
+    var isRealCover =
+      !!(slot && slot.portalInstructorReassigned) &&
+      !isCoverNeeded &&
+      !!(slot.portalCoveringStaffName || slot.portalCoveringStaffId);
+    if (isRealCover) isCoverNeeded = false;
+    var isStaffDayOff = !isCoverNeeded && !isRealCover && hubSlotShowsStaffDayOff(hub, slot);
+    if (isCoverNeeded && hubSlotShowsStaffDayOff(hub, slot)) {
+      /* Away + COVER NEEDED: seat stays day-off on staff column; mirror uses cover chip. */
+      isStaffDayOff = true;
+    }
     var isTrial =
       hubSlotShowsTrialChip(slot, slotOv) ||
       /\(\s*trial\s*\)/i.test(clean(slot.client_name)) ||
@@ -9326,6 +9389,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (isClosed) tone = "closed";
     else if (isOpenSlot) tone = "open";
     else if (isDuty) tone = "duty";
+    else if (isCancelled) tone = "cancelled";
     else if (isAbsent) tone = "absent";
     else if (isTrial) tone = "trial";
     else if (isCoverNeeded) tone = "cover";
@@ -9336,12 +9400,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       ukey: "",
       fbDone: false,
       isAbsent: isAbsent,
-      isCancelled: false,
+      isCancelled: isCancelled,
       slotOv: slotOv,
       isUpdated: isUpdated,
       isShadowing: isShadowing,
       isInstructorReassign: isInstructorReassign,
       isCoverNeeded: isCoverNeeded,
+      isRealCover: isRealCover,
       isStaffDayOff: isStaffDayOff,
       isTrial: isTrial,
       isMakeup: isMakeup,
@@ -9351,6 +9416,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       makeupDisp: makeupDisp,
       fbKind: "na",
       tone: tone,
+      boardPlace: "",
+      coverForLabel: "",
+      coverFromLabel: "",
     };
   }
 
@@ -9359,9 +9427,27 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return "";
   }
 
+  function dayBoardShadowingChipLabel(slot) {
+    var obs =
+      clean(slot && slot.portalShadowingObserverName) ||
+      resolveStaffDisplayName(slot && slot.portalShadowingObserverId) ||
+      "";
+    var first = staffPillFirstName(obs) || dayBoardStaffLabel(obs);
+    if (first) return first + " Shadowing";
+    return hubOverrideLabel(slot && slot.__portalShadowingOverride) || "Shadowing";
+  }
+
+  function dayBoardCoverChipLabel(st) {
+    var forName = clean(st && (st.coverForLabel || st.coverFromLabel));
+    if (forName) return "Cover · " + forName;
+    return "Cover";
+  }
+
   function htmlDayBoardOverrideChipList(hub, slot, st, esc) {
     var chips = [];
-    if (st.isAbsent) {
+    if (st.isCancelled) {
+      chips.push('<span class="override-chip override--cancelled">Cancelled</span>');
+    } else if (st.isAbsent) {
       chips.push('<span class="override-chip override--absent">Absent</span>');
     } else if (st.makeupDisp) {
       chips.push('<span class="override-chip override--replace">MakeUp</span>');
@@ -9373,30 +9459,44 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (st.isShadowing) {
       chips.push(
         '<span class="override-chip override--shadowing">' +
-          esc(hubOverrideLabel(slot.__portalShadowingOverride) || "Shadowing") +
+          esc(dayBoardShadowingChipLabel(slot)) +
           "</span>"
       );
     }
-    if (st.isCoverNeeded) {
+    if (st.boardPlace === "mirror" || (st.isCoverNeeded && st.boardPlace !== "away" && st.boardPlace !== "cover")) {
       chips.push('<span class="override-chip override--cover-needed">COVER NEEDED</span>');
-    } else if (st.isInstructorReassign) {
+    } else if (st.boardPlace === "cover" || (st.isRealCover && st.boardPlace === "cover")) {
       chips.push(
         '<span class="override-chip override--instructor">' +
-          esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Cover") +
+          esc(dayBoardCoverChipLabel(st)) +
           "</span>"
       );
-    } else if (st.isStaffDayOff) {
+    } else if (st.boardPlace === "away" || st.isStaffDayOff) {
       chips.push('<span class="override-chip override--day-off">Day off</span>');
+    } else if (st.isInstructorReassign && !st.isCoverNeeded) {
+      chips.push(
+        '<span class="override-chip override--instructor">' +
+          esc(dayBoardCoverChipLabel(st) || (st.slotOv ? hubOverrideLabel(st.slotOv) : "Cover")) +
+          "</span>"
+      );
     }
-    if (st.isUpdated && !st.isCoverNeeded && !st.isInstructorReassign && !st.isTrial && !st.isMakeup && !st.isAbsent) {
+    if (
+      st.isUpdated &&
+      !st.isCoverNeeded &&
+      !st.isInstructorReassign &&
+      !st.isRealCover &&
+      !st.isTrial &&
+      !st.isMakeup &&
+      !st.isAbsent &&
+      !st.isCancelled &&
+      st.boardPlace !== "away" &&
+      st.boardPlace !== "mirror"
+    ) {
       chips.push(
         '<span class="override-chip override--updated">' +
           esc(st.slotOv ? hubOverrideLabel(st.slotOv) : "Updated") +
           "</span>"
       );
-    }
-    if (st.isCancelled && !st.makeupDisp) {
-      chips.push('<span class="override-chip override--cancelled">Cancelled</span>');
     }
     return chips;
   }
@@ -9428,28 +9528,22 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   function htmlDayBoardCard(hub, slot, st, esc) {
     var band = dayBoardServiceBand(slot);
     var nameHtml;
-    if (st.isAbsent) {
-      var absName =
-        dayBoardParticipantDisplayName(slot.client_name) || clean(slot.client_name) || "";
+    if (st.isAbsent || st.isCancelled) {
       nameHtml =
-        '<span class="ash-pill ash-pill--absent">' +
-        esc("Absent") +
-        "</span>" +
-        (absName
-          ? '<span class="ash-db-card__name-text" title="Participant">' + esc(absName) + "</span>"
-          : "");
+        '<span class="ash-db-card__name-text">' +
+        esc(
+          dayBoardParticipantDisplayName(slot.client_name) ||
+            clean(slot.client_name) ||
+            "\u2014"
+        ) +
+        "</span>";
     } else if (st.makeupDisp) {
       var mkName =
         dayBoardParticipantDisplayName(
           (st.makeupDisp.makeupSlot && st.makeupDisp.makeupSlot.client_name) ||
             overrideReplacementClientName(overridePayloadObj(st.makeupDisp.ov))
         ) || "MakeUp";
-      nameHtml =
-        '<span class="ash-pill ash-pill--makeup">' +
-        esc(mkName) +
-        '</span><span class="ash-pill ash-pill--out" title="Original seat">' +
-        esc(dayBoardParticipantDisplayName(slot.client_name) || clean(slot.client_name) || "\u2014") +
-        "</span>";
+      nameHtml = '<span class="ash-db-card__name-text">' + esc(mkName) + "</span>";
     } else if (st.isTrial) {
       var tName =
         dayBoardParticipantDisplayName(slot.client_name) || clean(slot.client_name) || "";
@@ -9473,44 +9567,44 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var venue = clean(slot.venue);
     var area = clean(slot.area);
     var timeLabel = rosterTimeDisplay(slot) || clean(slot.time_slot) || "";
-    var rightBits = "";
-    if (timeLabel) {
-      rightBits +=
-        '<div class="ash-db-seg"><span class="ash-db-seg__time">' +
-        esc(timeLabel) +
-        "</span>";
-      if (area) {
-        rightBits += '<span class="ash-db-seg__area">' + esc(area) + "</span>";
-      }
-      rightBits += "</div>";
-    } else if (area) {
-      rightBits +=
-        '<div class="ash-db-seg"><span class="ash-db-seg__area">' + esc(area) + "</span></div>";
+    if (st.boardPlace === "mirror" && st.coverFromLabel) {
+      timeLabel = (timeLabel ? timeLabel + " · " : "") + "from " + st.coverFromLabel;
+    } else if (st.boardPlace === "cover" && st.coverForLabel) {
+      timeLabel = (timeLabel ? timeLabel + " · " : "") + "covering " + st.coverForLabel;
     }
-    var bandChips = htmlDayBoardOverrideChipList(hub, slot, st, esc);
-    var bandRow =
-      '<div class="ash-db-card__band-row">' +
-      '<span class="ash-db-card__band">' +
-      esc(band) +
-      "</span>" +
-      (bandChips.length ? " " + bandChips.join(" ") : "") +
-      "</div>";
+    var whenHtml = "";
+    if (timeLabel || area) {
+      whenHtml =
+        '<div class="ash-db-card__when">' +
+        esc(timeLabel || "") +
+        (area && !/from |covering /i.test(timeLabel)
+          ? (timeLabel ? " · " : "") + esc(area)
+          : "") +
+        "</div>";
+    }
+    var chips = htmlDayBoardOverrideChipList(hub, slot, st, esc);
+    var chipsHtml = chips.length
+      ? '<div class="ash-db-card__chips">' + chips.join("") + "</div>"
+      : "";
+    var cardTone = st.tone;
+    if (st.boardPlace === "away" || st.isStaffDayOff) cardTone = "dayoff";
+    if (st.boardPlace === "mirror") cardTone = "cover";
     return (
       '<article class="ash-db-card ash-db-card--' +
-      esc(st.tone) +
-      (st.isCoverNeeded ? " ash-db-card--cover-needed" : "") +
+      esc(cardTone) +
+      (st.boardPlace === "away" || st.isStaffDayOff ? " ash-db-card--needs-cover" : "") +
+      (st.boardPlace === "mirror" ? " ash-db-card--cover-mirror" : "") +
+      (st.isCoverNeeded && st.boardPlace !== "away" ? " ash-db-card--cover-needed" : "") +
       '">' +
-      "<div>" +
-      bandRow +
+      '<div class="ash-db-card__band">' +
+      esc(band) +
+      "</div>" +
       '<div class="ash-db-card__name">' +
       nameHtml +
       "</div>" +
+      whenHtml +
       (venue ? '<span class="ash-db-card__venue">' + esc(venue) + "</span>" : "") +
-      htmlDayBoardFbBadge(st, esc) +
-      "</div>" +
-      "<div>" +
-      rightBits +
-      "</div>" +
+      chipsHtml +
       "</article>"
     );
   }
@@ -9531,6 +9625,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     var byKey = Object.create(null);
     var labelByKey = Object.create(null);
+    var COVER_KEY = "coverneeded";
+
+    function pushBoardItem(key, label, slot, st) {
+      if (!key) return;
+      if (!byKey[key]) byKey[key] = [];
+      labelByKey[key] = label || key;
+      byKey[key].push({ slot: slot, st: st });
+    }
+
+    function cloneBoardState(base, extra) {
+      var out = Object.assign({}, base || {}, extra || {});
+      return out;
+    }
+
     for (var i = 0; i < displaySlots.length; i++) {
       var slot = displaySlots[i];
       var st;
@@ -9549,16 +9657,106 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           isAbsent: false,
           isCancelled: false,
           isCoverNeeded: false,
+          isRealCover: false,
           isStaffDayOff: false,
           isInstructorReassign: false,
           isUpdated: false,
           isShadowing: false,
           slotOv: null,
+          boardPlace: "",
+          coverForLabel: "",
+          coverFromLabel: "",
         };
       }
+      var iso = String(slot.session_date || hub.selectedDay || "").slice(0, 10);
+      var origInsts = normalizeInstructorList(
+        slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
+          ? slot.portalOriginalInstructors
+          : dayBoardInstructorsForSlot(slot)
+      );
+      if (!origInsts.length) origInsts = ["Unassigned"];
+      var fromLabel = dayBoardStaffLabel(origInsts[0]);
+      var realCover = !!(st.isRealCover && (slot.portalCoveringStaffName || slot.portalCoveringStaffId));
+      var keepOnAway =
+        realCover &&
+        origInsts.some(function (raw) {
+          return hubStaffAwayOnIso(hub, iso, raw);
+        });
+      if (!keepOnAway && realCover && (st.isStaffDayOff || slot.portalCoverNeeded)) {
+        keepOnAway = true;
+      }
+
+      if (realCover) {
+        if (keepOnAway || hubStaffAwayOnIso(hub, iso, origInsts[0])) {
+          for (var oa = 0; oa < origInsts.length; oa++) {
+            pushBoardItem(
+              dayBoardStaffKey(origInsts[oa]),
+              dayBoardStaffLabel(origInsts[oa]),
+              slot,
+              cloneBoardState(st, {
+                boardPlace: "away",
+                isStaffDayOff: true,
+                isCoverNeeded: false,
+                isInstructorReassign: false,
+                isRealCover: false,
+                tone: "dayoff",
+              })
+            );
+          }
+        }
+        var coverRaw = slot.portalCoveringStaffName || slot.portalCoveringStaffId;
+        pushBoardItem(
+          dayBoardStaffKey(coverRaw),
+          dayBoardStaffLabel(coverRaw),
+          slot,
+          cloneBoardState(st, {
+            boardPlace: "cover",
+            coverForLabel: fromLabel,
+            isCoverNeeded: false,
+            isStaffDayOff: false,
+            isInstructorReassign: true,
+            isRealCover: true,
+            tone: st.isAbsent ? "absent" : st.isCancelled ? "cancelled" : st.isTrial ? "trial" : "client",
+          })
+        );
+        continue;
+      }
+
+      if (st.isStaffDayOff || st.isCoverNeeded) {
+        var awayPaint =
+          !!st.isStaffDayOff ||
+          origInsts.some(function (rawOff) {
+            return hubStaffAwayOnIso(hub, iso, rawOff);
+          });
+        for (var od = 0; od < origInsts.length; od++) {
+          pushBoardItem(
+            dayBoardStaffKey(origInsts[od]),
+            dayBoardStaffLabel(origInsts[od]),
+            slot,
+            cloneBoardState(st, {
+              boardPlace: awayPaint ? "away" : "host",
+              isStaffDayOff: awayPaint,
+              isCoverNeeded: !awayPaint,
+              tone: awayPaint ? "dayoff" : "cover",
+            })
+          );
+        }
+        pushBoardItem(
+          COVER_KEY,
+          "COVER NEEDED",
+          slot,
+          cloneBoardState(st, {
+            boardPlace: "mirror",
+            coverFromLabel: fromLabel,
+            isCoverNeeded: true,
+            isStaffDayOff: false,
+            tone: "cover",
+          })
+        );
+        continue;
+      }
+
       var insts = dayBoardInstructorsForSlot(slot);
-      /* Day Centre / bespoke shared: show under each listed worker (LOCAL columns).
-         Other services: primary instructor only so aquatic doubles do not fan out. */
       var targets = insts;
       if (
         !isDayCentreService(slot.service) &&
@@ -9569,14 +9767,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       for (var j = 0; j < targets.length; j++) {
         var raw = targets[j];
-        var key = dayBoardStaffKey(raw);
-        if (!byKey[key]) byKey[key] = [];
-        labelByKey[key] = dayBoardStaffLabel(raw);
-        byKey[key].push({ slot: slot, st: st });
+        pushBoardItem(dayBoardStaffKey(raw), dayBoardStaffLabel(raw), slot, cloneBoardState(st, {
+          boardPlace: "normal",
+        }));
       }
     }
     function sortStaffKeys(list) {
       return list.slice().sort(function (a, b) {
+        if (a === COVER_KEY) return 1;
+        if (b === COVER_KEY) return -1;
         var la = labelByKey[a] || a;
         var lb = labelByKey[b] || b;
         var ia = -1;
@@ -9603,6 +9802,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var supportKeys = [];
     var climbKeys = [];
     Object.keys(byKey).forEach(function (key) {
+      if (key === COVER_KEY) {
+        supportKeys.push(key);
+        return;
+      }
       var role = dayBoardStaffRole(key, byKey[key]);
       if (role === "climbing") climbKeys.push(key);
       else if (role === "support") supportKeys.push(key);
@@ -10428,6 +10631,39 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       formatShortDate(this.weekStart) + " \u2013 " + formatShortDate(addDaysIso(this.weekStart, 6));
     /* Overview day picker is staffing nav only — no fake feedback bar / Day label. */
     var dayPickerOnly = !!(opts.staffingGuide || (opts.overviewPicker && !opts.computeOverviewDayStats));
+
+    function overviewDayPickerFlagsHtml(iso) {
+      if (!dayPickerOnly) return "";
+      var flags = [];
+      var unavail = hubStaffUnavailabilityRows(hub);
+      var hasOff = false;
+      for (var u = 0; u < unavail.length; u++) {
+        if (String(unavail[u] && unavail[u].off_date || "").slice(0, 10) === iso) {
+          hasOff = true;
+          break;
+        }
+      }
+      var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+      var hasCoverNeeded = false;
+      for (var o = 0; o < ovs.length; o++) {
+        var ov = ovs[o];
+        if (!ov) continue;
+        if (String(ov.session_date || "").slice(0, 10) !== iso) continue;
+        if (overrideIsInstructorCoverNeededType(ov)) {
+          hasCoverNeeded = true;
+          break;
+        }
+      }
+      if (hasOff) {
+        flags.push('<span class="ash-day-flag ash-day-flag--staff">Day off req</span>');
+      }
+      if (hasCoverNeeded || hasOff) {
+        flags.push('<span class="ash-day-flag ash-day-flag--cover">COVER</span>');
+      }
+      if (!flags.length) return "";
+      return '<span class="ash-day-card__flags">' + flags.join("") + "</span>";
+    }
+
     var cards = days
       .map(function (iso, idx) {
         var metricSel = hub.selectedDay === iso ? " ash-day-card--sel" : "";
@@ -10510,12 +10746,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           "</span></div>" +
           barHtml +
           countHtml +
+          overviewDayPickerFlagsHtml(iso) +
           "</button>"
         );
       })
       .join("");
     var weekTitle = opts.staffingGuide
-      ? "Who works this week"
+      ? "Week (Mon-Sun)"
       : "Feedback progress";
     return (
       '<div class="ash-week-sticky-anchor"><div class="ash-feedback-week">' +

@@ -631,6 +631,37 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
+    .ash-day-card__flags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 3px;
+      margin-top: 6px;
+      min-width: 0;
+      width: 100%;
+    }
+    .ash-day-flag {
+      display: inline-block;
+      max-width: 100%;
+      padding: 1px 5px;
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+      line-height: 1.25;
+    }
+    .ash-day-flag--staff {
+      color: #b91c1c;
+      background: rgba(220, 38, 38, 0.14);
+      border: 1px solid rgba(185, 28, 28, 0.28);
+    }
+    .ash-day-flag--cover {
+      color: #9a3412;
+      background: rgba(234, 88, 12, 0.14);
+      border: 1px solid rgba(194, 65, 12, 0.28);
+    }
     .ash-day-card--feedback .ash-day-card__bar {
       height: 8px;
       margin-bottom: 8px;
@@ -1744,6 +1775,35 @@
       background: rgba(220, 38, 38, 0.06);
       border-color: rgba(185, 28, 28, 0.35);
     }
+    .ash-db-col--cover {
+      background: rgba(234, 88, 12, 0.05);
+      border-color: rgba(194, 65, 12, 0.28);
+    }
+    .ash-db-col__cover {
+      display: inline-block;
+      margin: 0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #9a3412;
+      background: rgba(234, 88, 12, 0.12);
+      border: 1px solid rgba(194, 65, 12, 0.28);
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+    .ash-db-col__cover-hint {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 600;
+      color: #9a3412;
+      line-height: 1.35;
+      text-align: center;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
     .ash-db-col__head {
       display: flex;
       flex-direction: column;
@@ -1845,43 +1905,51 @@
     }
     .ash-db-card {
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr);
-      gap: 4px 6px;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 3px;
       align-items: start;
       background: #fff;
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 7px 7px;
+      padding: 8px;
       min-width: 0;
       box-sizing: border-box;
     }
-    .ash-db-card__band-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 5px;
-      min-width: 0;
-      margin: 0 0 2px;
-    }
-    .ash-db-card__band-row .ash-db-card__band {
-      margin: 0;
-    }
-    .ash-db-card__band-row .override-chip {
-      margin-left: 0;
-      font-size: 11px;
-      padding: 2px 8px;
-      flex: 0 0 auto;
-    }
     .ash-db-card__band {
       display: block;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--muted);
-      margin: 0 0 1px;
+      margin: 0;
       min-width: 0;
       overflow-wrap: anywhere;
+    }
+    .ash-db-card__when {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
+    .ash-db-card--needs-cover {
+      background: rgba(220, 38, 38, 0.08);
+      border-color: rgba(185, 28, 28, 0.35);
+    }
+    .ash-db-card--needs-cover .ash-db-card__name,
+    .ash-db-card--needs-cover .ash-db-card__band,
+    .ash-db-card--needs-cover .ash-db-card__when {
+      color: #991b1b;
+    }
+    .ash-db-card--cover-mirror {
+      background: rgba(234, 88, 12, 0.08);
+      border-color: rgba(194, 65, 12, 0.35);
+    }
+    .ash-db-card--dayoff {
+      background: rgba(220, 38, 38, 0.08);
+      border-color: rgba(185, 28, 28, 0.28);
     }
     .ash-db-card__name {
       font-weight: 800;
