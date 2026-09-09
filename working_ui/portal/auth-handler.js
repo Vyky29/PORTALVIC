@@ -42,7 +42,7 @@ import {
   mergeStaffLoginEmailMap,
   PORTAL_EXECUTIVE_AUTH_EMAILS,
   PORTAL_STAFF_CODE_TO_ROSTER_KEY,
-} from "./auth-map.js?v=20260708-aida-login-alias";
+} from "./auth-map.js?v=20260909-onboarding-email-login";
 
 function portalLoginPromiseTimeout(promise, ms, message) {
   const waitMs = Math.max(1000, Number(ms) || 15000);
@@ -211,6 +211,14 @@ function portalPublishedLoginUrl() {
 }
 function portalPublishedChooseUrl() {
   return portalPublishedPageUrl("portal_choose.html", "PORTAL_CHOOSE_URL");
+}
+function portalPublishedOnboardingUrl() {
+  return portalPublishedPageUrl("onboarding_portal.html", "PORTAL_ONBOARDING_HUB_URL");
+}
+function portalProfileIsOnboardingApplicant(profile) {
+  if (!profile) return false;
+  const v = profile.onboarding_applicant;
+  return v === true || v === "true" || v === 1;
 }
 function portalPublishedOfficeUrl() {
   return portalPublishedPageUrl("office_portal.html", "PORTAL_OFFICE_DASHBOARD_URL");
@@ -840,10 +848,13 @@ function inferDashboardRoute(profile, authEmail) {
   if (portalStaffIsDocumentsOnly(profile)) {
     return portalStaffDocumentsOnlyHomeUrl();
   }
-  const effectiveRole = portalInferEffectiveRole(profile, authEmail);
   const fromWorkingUi =
     typeof window !== "undefined" &&
     window.location.pathname.toLowerCase().includes("/working_ui/");
+  if (portalProfileIsOnboardingApplicant(profile)) {
+    return fromWorkingUi ? "onboarding_portal.html" : portalPublishedOnboardingUrl();
+  }
+  const effectiveRole = portalInferEffectiveRole(profile, authEmail);
   if (portalIsProgrammeLeadUser(profile, authEmail)) {
     return fromWorkingUi ? "staff_dashboard.html" : portalPublishedStaffUrl();
   }

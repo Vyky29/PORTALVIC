@@ -243,7 +243,10 @@ export function resolveDemoEmail(rawUsername) {
     if (portalIsRegisteredPortalLoginEmail(resolved)) {
       return resolved;
     }
-    return null;
+    // Onboarding invites mint Auth users with personal emails that are not on
+    // the standing roster map. Let those emails through; Auth + staff_profiles
+    // decide whether the account is valid.
+    return resolved;
   }
 
   if (/^stf\d{3}@staff\.import\.pending$/.test(lower)) {
