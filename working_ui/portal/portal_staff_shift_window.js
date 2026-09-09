@@ -169,6 +169,28 @@
     return n === "berta" || n === "michelle";
   }
 
+  function isMichelleBandKey(v) {
+    return normKey(v) === "michelle";
+  }
+
+  /** Michelle Day Centre Mon/Tue/Wed/Fri: paid 10:45–16:15 (5.5h) even when clients are 11–4. */
+  function rowsAreMichelleDayCentre(rows, iso) {
+    var dayName = dayNameFromIso(iso);
+    if (dayName !== "Monday" && dayName !== "Tuesday" && dayName !== "Wednesday" && dayName !== "Friday") {
+      return false;
+    }
+    var list = Array.isArray(rows) ? rows : [];
+    if (!list.length) return false;
+    var anyDc = false;
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      if (!isMichelleBandKey(r && r.anchor_staff_id)) return false;
+      var svc = String(serviceLabelFromRow(r) || "").toLowerCase();
+      if (/day\s*centre/.test(svc) || /daycentre/.test(svc) || /day_centre/.test(svc)) anyDc = true;
+    }
+    return anyDc;
+  }
+
   /** Sunday Multi SwimFarm programme leads: fixed 9:00–2:30 (5.5h). */
   function rowsAreSundayMaLeadSwimfarm(rows, iso) {
     var dayName = dayNameFromIso(iso);
@@ -277,6 +299,9 @@
     }
     if (rowsAreSundayMaLeadSwimfarm(list, isoNorm)) {
       return formatBandLabel("09:00", "14:30");
+    }
+    if (rowsAreMichelleDayCentre(list, isoNorm)) {
+      return formatBandLabel("10:45", "16:15");
     }
     var dayName = dayNameFromIso(isoNorm);
     var minStart = Infinity;

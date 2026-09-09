@@ -9251,7 +9251,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   }
 
   /** Start/end minutes for one roster card. Prefers time_start/time_end; falls back to time_slot. */
-  function slotWorkBoundsMinutes(slot) {
+  function slotWorkBoundsMinutes(slot, staffKey) {
     if (!slot) return null;
     var wd = slot.day || weekdayLongFromIso(slot.session_date);
     var raw = clean(slot.time_slot);
@@ -9263,7 +9263,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var endMin = hmToMinutesOfDay(endHm);
     if (startMin == null) return null;
     if (endMin == null || endMin <= startMin) endMin = startMin + 30;
-    return expandStaffPaidBandForHoursLabel(slot, { start: startMin, end: endMin, day: wd });
+    return expandStaffPaidBandForHoursLabel(slot, { start: startMin, end: endMin, day: wd }, staffKey);
+  }
+
+  function nearMinutesOfDay(mins, target, slack) {
+    if (!Number.isFinite(mins) || !Number.isFinite(target)) return false;
+    return Math.abs(mins - target) <= (Number.isFinite(slack) ? slack : 10);
   }
 
   /**
@@ -9271,14 +9276,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
    * Overview column hours must show who works (staff), not only the kid clock.
    * - Tinashe Bespoke: kid 4.30–6 · staff 4.15–6.15
    * - Sunday SwimFarm Hub Multi: kids 9.30–2 · Hub staff 9.15–2.15 (pad ends)
+   * - Michelle Day Centre Mon/Tue/Wed/Fri: kids 11–4 · staff 10.45–4.15
    */
-  function expandStaffPaidBandForHoursLabel(slot, bounds) {
+  function expandStaffPaidBandForHoursLabel(slot, bounds, staffKey) {
     if (!slot || !bounds) return bounds;
     var svc = clean(slot.service);
     var client = clean(slot.client_name).toLowerCase();
     var day = bounds.day || slot.day || "";
+    var dayLc = String(day).toLowerCase();
     var area = clean(slot.area).toLowerCase();
     var venue = clean(slot.venue).toLowerCase();
+    var staff = canonicalStaffMatchKey(staffKey || "");
 
     if (
       isBespokeService(svc) &&
@@ -9301,7 +9309,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     if (
-      String(day).toLowerCase() === "sunday" &&
+      dayLc === "sunday" &&
       isMultiActivityService(svc) &&
       /swimfarm/i.test(venue) &&
       /hub/i.test(area)
@@ -9311,6 +9319,21 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         end: bounds.end + 15,
         day: day,
       };
+    }
+
+    /* Michelle DC: 15 min before 11 / after 4. Do not apply to Luliya on the same Ikram book. */
+    if (
+      staff === "michelle" &&
+      (dayLc === "monday" || dayLc === "tuesday" || dayLc === "wednesday" || dayLc === "friday") &&
+      (isDayCentreService(svc) || /manager/.test(area))
+    ) {
+      var start = bounds.start;
+      var end = bounds.end;
+      if (nearMinutesOfDay(start, 11 * 60, 10)) start = 10 * 60 + 45;
+      if (nearMinutesOfDay(end, 16 * 60, 10)) end = 16 * 60 + 15;
+      if (start !== bounds.start || end !== bounds.end) {
+        return { start: start, end: end, day: day };
+      }
     }
     return bounds;
   }
@@ -9373,7 +9396,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
    * Paid (green): real-client minutes only. Incomplete afternoon AS cards (opens/gaps)
    * floor at 1.5h — e.g. Javier 1.5h clients → 1'5h; Youssef 1h client → 1'5h min.
    */
-  function dayBoardStaffWorkHoursParts(items) {
+  function dayBoardStaffWorkHoursParts(items, staffKey) {
     var frameRanges = [];
     var dayWord = "";
     var AFTERNOON_FROM = 15 * 60;
@@ -9388,7 +9411,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (!it || !it.slot) continue;
       var st = it.st || {};
       if (st.boardPlace === "away" || st.isStaffDayOff) continue;
-      var b = slotWorkBoundsMinutes(it.slot);
+      var b = slotWorkBoundsMinutes(it.slot, staffKey);
       if (!b) continue;
       if (!dayWord) dayWord = b.day;
       frameRanges.push(b);
@@ -9457,8 +9480,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return { frame: frameLabel, paid: paidLabel, title: title };
   }
 
-  function dayBoardStaffWorkHoursLabel(items) {
-    var parts = dayBoardStaffWorkHoursParts(items);
+  function dayBoardStaffWorkHoursLabel(items, staffKey) {
+    var parts = dayBoardStaffWorkHoursParts(items, staffKey);
     if (!parts.frame) return "";
     return parts.frame + (parts.paid ? " " + parts.paid : "");
   }
@@ -9477,7 +9500,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
       }
     }
-    var hoursParts = dayBoardStaffWorkHoursParts(items);
+    var hoursParts = dayBoardStaffWorkHoursParts(items, key || label);
     var cards = items
       .map(function (it) {
         return htmlDayBoardCard(hub, it.slot, it.st, esc);
