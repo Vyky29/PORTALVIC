@@ -327,9 +327,16 @@ export function portalCanonicalStaffRosterKey(value) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "");
   if (!k) return "";
-  if (k === "lulia") return "luliya";
-  if (k === "lulya") return "luliya";
-  if (k === "aida" || k === "aidalulia" || k === "aidaluliyajemal") return "luliya";
+  if (
+    k === "lulia" ||
+    k === "lulya" ||
+    k === "aida" ||
+    k === "aidalulia" ||
+    k === "aidaluliya" ||
+    k === "aidaluliyajemal"
+  ) {
+    return "luliya";
+  }
   if (k === "yousef" || k === "yousseff" || k === "yusef" || k === "josep") return "youssef";
   if (k === "javiermarquez") return "javier";
   if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
@@ -357,7 +364,18 @@ export function portalStaffDisplayName(value) {
       .replace(/[^a-z0-9]+/g, "");
   const fromKey = (k) => {
     if (!k) return "";
-    if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "Luliya";
+    if (
+      k === "luliya" ||
+      k === "lulia" ||
+      k === "lulya" ||
+      k === "aida" ||
+      k === "aidaluliya" ||
+      k === "aidalulia" ||
+      k === "aidaluliyajemal" ||
+      k === "stf021"
+    ) {
+      return "Luliya";
+    }
     if (k === "javier" || k === "javiermarquez" || k === "stf010") return "Javier";
     if (
       k === "javi" ||
@@ -374,7 +392,9 @@ export function portalStaffDisplayName(value) {
   };
   let hit = fromKey(norm(raw));
   if (hit) return hit;
-  const firstTok = raw.split(/[,/&]|\band\b/i)[0].trim();
+  const firstTok = String(raw.split(/[,/&]|\band\b/i)[0] || "")
+    .trim()
+    .split(/\s+/)[0];
   hit = fromKey(norm(firstTok));
   if (hit) return hit;
   const canon = portalCanonicalStaffRosterKey(raw);
@@ -386,15 +406,32 @@ export function portalStaffDisplayName(value) {
       const prof = src && src.staffProfiles ? src.staffProfiles[canon] : null;
       const sn = prof && String(prof.staffName || "").trim();
       if (sn) {
-        hit = fromKey(norm(sn));
+        hit = fromKey(norm(sn)) || fromKey(norm(sn.split(/\s+/)[0]));
         if (hit) return hit;
-        if (sn.includes(" ")) return sn;
       }
     }
   } catch (_) {}
-  const label = firstTok || raw;
+  const label = firstTok || raw.split(/\s+/)[0] || raw;
+  hit = fromKey(norm(label));
+  if (hit) return hit;
   if (/^[A-Z]{2,}$/.test(label)) return label.charAt(0) + label.slice(1).toLowerCase();
   return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
+}
+
+/** First name only for session_feedback.completed_by_name. */
+export function portalStaffAuthorFirstName(value) {
+  const mapped = portalStaffDisplayName(value);
+  if (!mapped) return "";
+  if (/^javi palankas$/i.test(mapped)) return "Javi";
+  const first = String(mapped).trim().split(/\s+/)[0] || mapped;
+  if (
+    first.toLowerCase() === "aida" ||
+    first.toLowerCase() === "lulia" ||
+    first.toLowerCase() === "lulya"
+  ) {
+    return "Luliya";
+  }
+  return first;
 }
 
 /**

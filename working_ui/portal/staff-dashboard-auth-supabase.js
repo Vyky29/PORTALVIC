@@ -1,4 +1,4 @@
-import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalStaffDisplayName, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20260909-bismark-full";
+import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey, portalStaffDisplayName, portalStaffAuthorFirstName, portalCanAccessCeoDashboard, portalIsStaffHomeProgrammeLead, portalIsProgrammeLeadUser, portalIsAdminHomeExecutiveUser } from "/portal/auth-handler.js?v=20260909-luliya-first";
 import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260818-es-exec";
 import {
   portalEnforceStaffAppPilotGate,
@@ -9,6 +9,7 @@ window.__PORTAL_LOGOUT_FN__ = portalLogout;
 window.portalInferStaffKey = portalInferStaffKey;
 window.portalCanonicalStaffRosterKey = portalCanonicalStaffRosterKey;
 window.portalStaffDisplayName = portalStaffDisplayName;
+window.portalStaffAuthorFirstName = portalStaffAuthorFirstName;
 window.portalCanAccessCeoDashboard = portalCanAccessCeoDashboard;
 window.portalIsStaffHomeProgrammeLead = portalIsStaffHomeProgrammeLead;
 window.portalIsProgrammeLeadUser = portalIsProgrammeLeadUser;
@@ -60,11 +61,15 @@ if (window.dashboardData) {
       : null;
   if (!ghostEarly) {
     const displayName =
-      typeof window.portalTopbarDisplayNameFromAuth === "function"
+      (typeof portalStaffAuthorFirstName === "function"
+        ? portalStaffAuthorFirstName(
+            profile ? String(profile.username || profile.full_name || "").trim() : "",
+          )
+        : "") ||
+      (typeof window.portalTopbarDisplayNameFromAuth === "function"
         ? window.portalTopbarDisplayNameFromAuth(profile, session)
-        : profile
-          ? String(profile.full_name || profile.username || "").trim()
-          : "";
+        : "") ||
+      (profile ? String(profile.username || "").trim() : "");
     if (displayName) window.dashboardData.staffName = displayName;
   }
 }

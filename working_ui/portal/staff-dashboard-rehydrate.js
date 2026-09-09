@@ -273,14 +273,25 @@
               ""
           ).trim();
         } else {
+          var fromAuthor =
+            typeof window.portalStaffAuthorFirstName === "function"
+              ? window.portalStaffAuthorFirstName(
+                  String(
+                    (p && (p.username || p.full_name)) ||
+                      (profileForRoster && (profileForRoster.username || profileForRoster.full_name)) ||
+                      "",
+                  ),
+                )
+              : "";
           dashboardData.staffName =
-            typeof window.portalTopbarDisplayNameFromAuth === "function"
+            fromAuthor ||
+            (typeof window.portalTopbarDisplayNameFromAuth === "function"
               ? window.portalTopbarDisplayNameFromAuth(p || profileForRoster, session)
               : String(
-                  (profileForRoster && (profileForRoster.full_name || profileForRoster.username)) ||
-                    (p && (p.full_name || p.username)) ||
-                    ""
-                ).trim();
+                  (profileForRoster && (profileForRoster.username || profileForRoster.full_name)) ||
+                    (p && (p.username || p.full_name)) ||
+                    "",
+                ).trim());
         }
         dashboardData.portalIdentityResolved = true;
         try {

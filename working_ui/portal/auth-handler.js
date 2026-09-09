@@ -37,12 +37,13 @@ import {
   resolveStaffKeyFromAuthEmail,
   portalCanonicalStaffRosterKey,
   portalStaffDisplayName,
+  portalStaffAuthorFirstName,
   PORTAL_LOGIN_UNKNOWN_NAME_HELP,
   portalIsRegisteredPortalLoginEmail,
   mergeStaffLoginEmailMap,
   PORTAL_EXECUTIVE_AUTH_EMAILS,
   PORTAL_STAFF_CODE_TO_ROSTER_KEY,
-} from "./auth-map.js?v=20260909-onboarding-email-login";
+} from "./auth-map.js?v=20260909-luliya-first";
 
 function portalLoginPromiseTimeout(promise, ms, message) {
   const waitMs = Math.max(1000, Number(ms) || 15000);
@@ -320,7 +321,7 @@ export function portalInferStaffKey(profile, authEmail) {
   return "";
 }
 
-export { portalCanonicalStaffRosterKey, portalStaffDisplayName };
+export { portalCanonicalStaffRosterKey, portalStaffDisplayName, portalStaffAuthorFirstName };
 
 export function portalInferEffectiveRole(profile, authEmail) {
   const appRole = String(profile?.app_role || "").toLowerCase();

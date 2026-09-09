@@ -50,7 +50,9 @@
     if (!k) return "";
     if (k === "lulia") return "luliya";
     if (k === "lulya") return "luliya";
-    if (k === "aida") return "luliya";
+    if (k === "aida" || k === "aidalulia" || k === "aidaluliya" || k === "aidaluliyajemal") {
+      return "luliya";
+    }
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
     if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
@@ -164,6 +166,10 @@
     }
     if (!n && email && !portalRosterKeyFromAuthEmail(email)) {
       n = String(email.split("@")[0] || "").trim();
+    }
+    if (n && typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
+      var shown = String(window.portalStaffDisplayName(n) || "").trim();
+      if (shown) n = shown;
     }
     return n;
   }
