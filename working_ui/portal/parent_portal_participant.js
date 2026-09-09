@@ -1103,7 +1103,6 @@
     var needsPhoto = !isFormerClient(data) && participantNeedsPhoto(p, opts);
     var reenrolChip = isFormerClient(data) ? "" : hubReenrolledChipHtml(data);
     return (
-      hubSiblingsHtml(data, opts) +
       '<header class="pp-hub-hero' +
       (needsPhoto ? " pp-hub-hero--needs-photo" : "") +
       '">' +

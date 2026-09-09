@@ -1764,7 +1764,7 @@
       if (multi) {
         back.hidden = false;
         back.setAttribute("aria-label", "All children");
-        var label = back.querySelector("span");
+        var label = back.querySelector(".pp-hub-chrome-btn__label") || back.querySelector("span");
         if (label) label.textContent = "All children";
       } else {
         /* Single child: no family landing — Sign out lives on the hub chrome. */

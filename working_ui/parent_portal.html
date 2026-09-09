@@ -665,6 +665,17 @@
       color: var(--ink);
       white-space: nowrap;
     }
+    /* Same chrome size as Refresh — longer label may widen slightly, not a big pill. */
+    .pp-hub-chrome-btn--all-children {
+      min-width: 48px;
+      max-width: 72px;
+    }
+    .pp-hub-chrome-btn--all-children .pp-hub-chrome-btn__label {
+      white-space: normal;
+      text-align: center;
+      line-height: 1.05;
+      max-width: 4.6em;
+    }
     .pp-hub-menu-sheet {
       position: fixed;
       inset: 0;
@@ -4980,13 +4991,6 @@
       line-height: 1.2;
       color: var(--blue);
     }
-    .pp-back-home {
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      margin: 0 0 8px;
-    }
     .pp-back-home .pp-nav-ico,
     .pp-pax-back .pp-nav-ico {
       width: 18px;
@@ -5462,8 +5466,11 @@
             <svg class="pp-hub-menu-btn__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
             <span class="pp-hub-menu-btn__label">Menu</span>
           </button>
+          <button id="ppBackToHome" class="pp-hub-chrome-btn pp-hub-chrome-btn--all-children" type="button" hidden aria-label="All children">
+            <svg class="pp-hub-chrome-btn__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            <span class="pp-hub-chrome-btn__label">All children</span>
+          </button>
           <div class="pp-participant-head-titles" style="min-width:0">
-            <button id="ppBackToHome" class="pp-btn pp-btn--ghost pp-back-home" type="button" aria-label="All children"><svg class="pp-nav-ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>All children</span></button>
             <h2 id="ppParticipantTitle" class="pp-participant-title">
               <span class="pp-title-inner">
                 <span class="pp-title-ico" aria-hidden="true">
@@ -5527,8 +5534,8 @@
   <script src="/portal/portal_parent_history_pdf.js?v=20260902-history-pdf-noblack"></script>
   <script src="/portal/parent_portal_team.js?v=20260908-team-unchanged-logan"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260828-trial-iso-cal"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260909-hide-later-terms"></script>
-  <script src="/portal/parent_portal_app.js?v=20260909-christian-chips2"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260909-no-sib-pills"></script>
+  <script src="/portal/parent_portal_app.js?v=20260909-all-children-chrome"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
     if (window.ParentPortalApp && typeof window.ParentPortalApp.bootstrap === "function") {
