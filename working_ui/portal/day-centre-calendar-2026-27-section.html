@@ -493,7 +493,7 @@
   </style>
 
   <p class="dc-cal__back-wrap">
-    <a class="dc-cal__back" id="dcCalBackDashboard" href="../staff_dashboard.html">← Back to dashboard</a>
+    <a class="dc-cal__back" id="dcCalBackDashboard" href="/bookingportal">← Back to Booking Portal</a>
   </p>
 
   <header class="dc-cal__header">
@@ -1435,13 +1435,27 @@
         var back = document.getElementById("dcCalBackDashboard");
         if (back) {
           var path = String((location && location.pathname) || "").toLowerCase();
-          // Parent portal embeds this section — never send families to staff_dashboard (404 on marketing host).
+          var qs = new URLSearchParams((location && location.search) || "");
+          var from = String(qs.get("from") || "").toLowerCase();
+          var ref = String((document && document.referrer) || "").toLowerCase();
+          // Parent portal embeds this section — never send families to staff_dashboard.
           if (path.indexOf("parent_portal") >= 0 || path.indexOf("/parent/") >= 0) {
             var wrap = back.closest(".dc-cal__back-wrap");
             if (wrap) wrap.remove();
             else back.remove();
-          } else {
+          } else if (
+            from === "staff" ||
+            from === "admin" ||
+            ref.indexOf("staff_dashboard") >= 0 ||
+            ref.indexOf("admin_dashboard") >= 0 ||
+            ref.indexOf("ceo_dashboard") >= 0
+          ) {
+            back.textContent = "\u2190 Back to dashboard";
             back.href = new URL("../staff_dashboard.html", location.href).href;
+          } else {
+            // Public / Booking Portal entry (default) — never dump visitors into admin login.
+            back.textContent = "\u2190 Back to Booking Portal";
+            back.href = "/bookingportal";
           }
         }
       } catch (_) {}

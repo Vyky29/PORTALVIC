@@ -5070,7 +5070,7 @@
         e.stopPropagation();
         const calUrl = typeof portalCalendar202627SectionUrl === 'function'
           ? portalCalendar202627SectionUrl()
-          : '/portal/day-centre-calendar-2026-27-section.html';
+          : '/portal/day-centre-calendar-2026-27-section.html?from=staff';
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
         globalThis.location.assign(calUrl);
         return;
@@ -5103,7 +5103,7 @@
         e.preventDefault();
         const calUrl = typeof portalCalendar202627SectionUrl === 'function'
           ? portalCalendar202627SectionUrl()
-          : '/portal/day-centre-calendar-2026-27-section.html';
+          : '/portal/day-centre-calendar-2026-27-section.html?from=staff';
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
         globalThis.location.assign(calUrl);
         return;
