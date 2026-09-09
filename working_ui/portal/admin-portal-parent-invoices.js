@@ -626,6 +626,8 @@
     if (/one-off payment \(year\)/.test(short)) return 'yearly_1off';
     if (/monthly/.test(short)) return 'monthly_term';
     if (/one-off payment \(term\)|one per term/.test(short)) return 'term_3';
+    var cadence = String((inv && inv.reenrol_enrolment_cadence) || '').toLowerCase();
+    if (cadence === 'term_by_term' || cadence === 'termly') return 'term_3';
     return 'term_flexi';
   }
 
@@ -733,9 +735,14 @@
     var title = String(
       inv.document_title || inv.title || inv.related_client || '',
     );
-    if (/Consolidated payment tracker:\s*[0-9a-f-]{20,}/i.test(notes)) {
-      return true;
-    }
+    var trackerId = '';
+    var m = notes.match(/Consolidated payment tracker:\s*([0-9a-f-]{20,})/i);
+    if (m) trackerId = String(m[1] || '').toLowerCase();
+    var ownId = String(inv.id || '').toLowerCase();
+    /* Keeper rows were stamped with their own UUID. That is the real term INV-P
+       (Gemma INV-P-0067 term_3 / one schedule row), not a GC slice to hide. */
+    if (trackerId && ownId && trackerId === ownId) return false;
+    if (trackerId) return true;
     if (/\bGC\s*tracker\b/i.test(line + ' ' + notes + ' ' + ref + ' ' + title)) {
       return true;
     }
@@ -2134,6 +2141,7 @@
       return inv.created_via !== 'la_office_auto';
     });
     var n = realInvoices.length;
+    var metaInv = invoices[0] || (group.invoices && group.invoices[0]) || {};
     var contactId = esc(group.contact_id || '');
     var name = group.name || 'Participant';
     var cards = invoices
@@ -2174,15 +2182,15 @@
     var countLabel = group.is_la_office_auto && !n
       ? 'Auto re-enrolled · no INV-P'
       : String(n) + ' invoice' + (n === 1 ? '' : 's');
-    var fundNow = fundingCategoryLabel(invoices[0] || {});
+    var fundNow = fundingCategoryLabel(metaInv);
     var fundVal =
       fundNow === 'Funds from the LA'
         ? 'direct_payments'
         : fundNow === 'LA managed' || fundNow === 'NHS managed'
           ? 'la_managed'
           : 'private';
-    var payVal = paymentMethodSelectValue(invoices[0] || {});
-    var schedVal = paymentScheduleSelectValue(invoices[0] || {});
+    var payVal = paymentMethodSelectValue(metaInv);
+    var schedVal = paymentScheduleSelectValue(metaInv);
     var lostAll =
       (invoices || []).length > 0 && (invoices || []).every(function (inv) {
         return isLostSlotInvoice(inv) || inv.created_via === 'la_office_auto';
