@@ -56,7 +56,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/favicon.ico", "destination": "/portal/app-icon/icon-192.png" },
+    { "source": "/favicon.ico", "destination": "/portal/F-02-1.png" },
     { "source": "/heal", "destination": "/portal_heal.html" },
     { "source": "/portal-heal", "destination": "/portal_heal.html" },
     { "source": "/lead_dashboard.html", "destination": "/staff_dashboard.html" },
