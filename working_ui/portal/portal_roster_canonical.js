@@ -2765,6 +2765,32 @@
   }
 
   /**
+   * Hub Bespoke Tinashe template staff for a weekday (before date remaps).
+   * Used so Overview can still paint a day-off Tinashe card when remap strips them (John Wed 9/15).
+   */
+  function autumnHubBespokeStandingHasStaff(dayName, staffRaw) {
+    var wantDay = String(dayName || "")
+      .trim()
+      .toLowerCase();
+    var wantStaff = String(staffRaw || "")
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0]
+      .replace(/[^a-z0-9]+/g, "");
+    if (!wantDay || !wantStaff) return false;
+    for (var i = 0; i < AUTUMN_BESPOKE_HUB_ROWS.length; i++) {
+      var row = AUTUMN_BESPOKE_HUB_ROWS[i];
+      if (String(row.day || "").trim().toLowerCase() !== wantDay) continue;
+      var inst = String(row.instructors || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "");
+      if (inst === wantStaff || inst.indexOf(wantStaff) === 0) return true;
+    }
+    return false;
+  }
+
+  /**
    * Standing "does not work this weekday" — hide empty Overview columns.
    * Victor: Mon + Thu. Raul: Tue + Thu.
    */
@@ -2805,6 +2831,7 @@
     remapAutumnMultiInstructors: remapAutumnMultiInstructors,
     getCanonicalRosterMeta: getCanonicalRosterMeta,
     autumnStaffStandingOffOnIso: autumnStaffStandingOffOnIso,
+    autumnHubBespokeStandingHasStaff: autumnHubBespokeStandingHasStaff,
     buildDayCentreStaffBoard: buildDayCentreStaffBoard,
     autumnDayCentreStandingRows: autumnDayCentreStandingRows,
     DAY_CENTRE_STANDING_ISO: DAY_CENTRE_STANDING_ISO,

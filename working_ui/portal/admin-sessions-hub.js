@@ -1568,7 +1568,7 @@
 
   /**
    * Host = payload.trainer on the seat. Observer = anchor_staff_id on the seat.
-   * Co-workers on the same client (e.g. Godsway with Tinashe) must not match.
+   * Peers = other instructors on the same Tinashe/Hub book (Emanuel is shadowing the slot).
    */
   function shadowingOverrideRoleForSlot(slot, ov) {
     if (!shadowingOverrideSameSessionWindow(slot, ov)) return "";
@@ -1579,6 +1579,7 @@
     var isObserver = staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, insts);
     if (isHost) return "host";
     if (isObserver) return "observer";
+    if (insts.length) return "peer";
     return "";
   }
 
@@ -1616,7 +1617,7 @@
         slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
           ? normalizeInstructorList(slot.portalOriginalInstructors).slice()
           : slotInstructors(slot).slice();
-      if (role === "host") {
+      if (role === "host" || role === "peer") {
         return Object.assign({}, slot, {
           instructors: origInst,
           instructor_label: origInst.join(", "),
@@ -1981,8 +1982,19 @@
     /* Never paint Shadowing session_add as Updated (label would wrongly say Shadowing). */
     if (overrideIsShadowingSessionAdd(slotOv)) return false;
     if (slot && (slot.portalShadowingHost || slot.portalShadowingObserver)) return false;
+    /* Standing Hub Bespoke: kid 4.30–6 · staff 4.15–6.15 is not an admin update. */
+    if (hubSlotIsStandingTinasheStaffBand(slot)) return false;
     if (overrideIsSlotUpdateType(slotOv)) return true;
     return !!(slot && slot.portalRosterTimeUpdated);
+  }
+
+  /** Tinashe Hub Bespoke standing book — never an Updated chip (staff 4.15–6.15 vs kid 4.30–6). */
+  function hubSlotIsStandingTinasheStaffBand(slot) {
+    if (!slot || !isBespokeService(slot.service)) return false;
+    if (!/^tinashe\b/i.test(clean(slot.client_name))) return false;
+    var venue = clean(slot.venue).toLowerCase();
+    var area = clean(slot.area).toLowerCase();
+    return venue.indexOf("swimfarm") >= 0 || /hub/i.test(area);
   }
 
   function hubSlotShowsMakeupChip(slot, slotOv) {
@@ -9580,6 +9592,38 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return false;
   }
 
+  /**
+   * Standing Hub Bespoke seat remapped off this away worker (John Wed 9/15 Tinashe).
+   * Clone the live Tinashe card onto their day-off column instead of "No sessions".
+   */
+  function hubAwayStaffLostHubBespokeSlot(hub, iso, dayName, staffRaw, displaySlots) {
+    var PRC = global.PortalRosterCanonical;
+    if (!PRC || typeof PRC.autumnHubBespokeStandingHasStaff !== "function") return null;
+    if (!PRC.autumnHubBespokeStandingHasStaff(dayName, staffRaw)) return null;
+    if (typeof PRC.resolveAutumnInstructorsForCalendarDate === "function") {
+      var kept = PRC.resolveAutumnInstructorsForCalendarDate(staffRaw, iso, {
+        service: "Bespoke Programme",
+        client_name: "Tinashe",
+        clientName: "Tinashe",
+        day: dayName,
+        venue: "SwimFarm",
+        area: "Hub Room",
+      });
+      if (clean(kept)) return null;
+    }
+    var list = Array.isArray(displaySlots) ? displaySlots : [];
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      if (!s || !isBespokeService(s.service)) continue;
+      if (!/^tinashe\b/i.test(clean(s.client_name))) continue;
+      var area = clean(s.area).toLowerCase();
+      var venue = clean(s.venue).toLowerCase();
+      if (!/hub/i.test(area) && venue.indexOf("swimfarm") < 0) continue;
+      return s;
+    }
+    return null;
+  }
+
   /** Slot still under an away instructor with no cover / COVER NEEDED override yet. */
   function hubSlotShowsStaffDayOff(hub, slot) {
     if (!hub || !slot) return false;
@@ -9704,7 +9748,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var kind = rosterSlotKind(slot.client_name);
     var isOpenSlot = kind === "open";
     var isClosed = kind === "closed";
-    var isDuty = slotIsStaffDutyNoFeedback(slot) || kind === "staff_duty" || kind === "manager";
+    /* Shadowing a real client (Tinashe) is still a client card — not a duty pill. */
+    var isDuty =
+      kind === "staff_duty" ||
+      kind === "manager" ||
+      (slotIsStaffDutyNoFeedback(slot) && kind !== "client");
     var makeupDisp = null;
     try {
       makeupDisp = isOpenSlot ? null : makeupOverrideDisplacingSlot(hub, slot);
@@ -9857,7 +9905,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   function htmlDayBoardCard(hub, slot, st, esc) {
     var band = dayBoardServiceBand(slot);
     var nameHtml;
-    if (st.isAbsent || st.isCancelled) {
+    if (st.isAbsent || st.isCancelled || st.boardPlace === "away" || st.isStaffDayOff) {
       nameHtml =
         '<span class="ash-db-card__name-text">' +
         esc(
@@ -10103,10 +10151,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     /* Staff with day-off on this date but no remaining seats (e.g. John Wed 9 Tinashe
-     * remapped to Godsway+Bismark+Emanuel) still need a red column. */
+     * remapped to Godsway+Bismark+Emanuel) still need a red column — and the Tinashe card. */
     (function ensureAwayStaffColumns() {
       var iso = String(hub.selectedDay || "").slice(0, 10);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+      var dayName = weekdayLongFromIso(iso);
       var unavail = hubStaffUnavailabilityRows(hub);
       for (var u = 0; u < unavail.length; u++) {
         var row = unavail[u];
@@ -10116,7 +10165,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (!rawName) continue;
         var key = dayBoardStaffKey(rawName);
         if (!key || key === COVER_KEY) continue;
-        if (byKey[key]) continue;
+        if (byKey[key] && byKey[key].length) continue;
         try {
           var PRC = global.PortalRosterCanonical;
           if (
@@ -10127,6 +10176,32 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             continue;
           }
         } catch (_standOff) {}
+        var lostSlot = hubAwayStaffLostHubBespokeSlot(hub, iso, dayName, rawName, displaySlots);
+        if (lostSlot) {
+          var lostSt;
+          try {
+            lostSt = overviewSlotBoardState(hub, lostSlot, unitComplete, unitAbsent);
+          } catch (_lostSt) {
+            lostSt = { tone: "dayoff", boardPlace: "away" };
+          }
+          pushBoardItem(
+            key,
+            dayBoardStaffLabel(rawName),
+            lostSlot,
+            cloneBoardState(lostSt, {
+              boardPlace: "away",
+              isStaffDayOff: true,
+              isCoverNeeded: false,
+              isUpdated: false,
+              isShadowing: false,
+              isInstructorReassign: false,
+              isRealCover: false,
+              isCancelled: false,
+              tone: "dayoff",
+            })
+          );
+          continue;
+        }
         byKey[key] = [];
         labelByKey[key] = dayBoardStaffLabel(rawName);
       }

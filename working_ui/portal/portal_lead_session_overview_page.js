@@ -20,7 +20,7 @@ import {
   PORTAL_LEAD_SUMMER_TERM_START,
 } from "./portal_lead_session_scope.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260909-michelle-1045";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260909-tinashe-shadow";
 
 function portalProgrammeLeadHubUrl(profile, authEmail) {
   return "staff_dashboard.html";
