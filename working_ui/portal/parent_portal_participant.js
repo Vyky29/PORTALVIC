@@ -6629,7 +6629,8 @@
         (yearChips
           ? yearChips
           : '<p class="pp-muted">Day Centre dates will appear here once your weekdays are on the current roster.</p>');
-    } else if (!booking.submitted || !booking.items.length) {
+    } else if (needsReenrolCta(data)) {
+      /* July 2026 re-enrol window only — Summer clients confirming 26/27. */
       body =
         '<p class="pp-muted">You have not submitted re-enrolment choices for 2026/27 yet.</p>' +
         '<p class="pp-muted">Please respond by <strong>Wednesday 22 July 2026</strong>. From Thursday 23 July, unconfirmed places may be released to new clients.</p>' +
@@ -6638,6 +6639,33 @@
         esc(reenrolHref) +
         '">Open re-enrolment form</a>' +
         "</div>";
+    } else if (!booking.submitted || !booking.items.length) {
+      /*
+       * No July form submit — mid-term / Booking Portal places, or deadline passed.
+       * Never show the July deadline CTA after 22 July or when the place is already on file.
+       */
+      if (familyAcceptedNextYear(data)) {
+        note = "Your 2026/27 place for " + (firstNameOf(data) || "your child") + ".";
+        var svcDetail =
+          data && data.general && Array.isArray(data.general.services_detail)
+            ? data.general.services_detail
+            : [];
+        var svcBits = svcDetail
+          .map(function (s) {
+            return shortServiceChipLabel((s && (s.label || s.service)) || "") || "";
+          })
+          .filter(Boolean);
+        body =
+          '<p class="pp-muted">Your Autumn 2026/27 place is on file' +
+          (svcBits.length ? " (" + esc(svcBits.join(", ")) + ")" : "") +
+          ". Session dates are on the Hub schedule. The July re-enrolment form is closed.</p>";
+      } else {
+        note = "2026/27 place";
+        body =
+          '<p class="pp-muted">The July re-enrolment window closed on Wednesday 22 July 2026. Contact the office if you need a place for ' +
+          esc(firstNameOf(data) || "your child") +
+          ".</p>";
+      }
     } else {
       var activityItems = (booking.items || []).filter(isBookingActivityItem);
       body =
