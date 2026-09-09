@@ -541,6 +541,64 @@ body:has(#portalParentNotifyLogRoot) .admin-workspace {
   outline-offset: 2px;
 }
 
+.portal-pnlog-bubble--flash {
+  outline: 2px solid #2d84b3;
+  outline-offset: 2px;
+}
+
+.portal-pnlog-quote {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0 0 6px;
+  padding: 6px 8px;
+  border: 0;
+  border-left: 3px solid rgba(15, 61, 84, 0.45);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.06);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.portal-pnlog-bubble--in .portal-pnlog-quote {
+  border-left-color: rgba(138, 112, 0, 0.7);
+  background: rgba(92, 74, 0, 0.08);
+}
+
+.portal-pnlog-bubble--out .portal-pnlog-quote {
+  border-left-color: rgba(26, 95, 130, 0.65);
+  background: rgba(15, 61, 84, 0.08);
+}
+
+.portal-pnlog-quote__who {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-pnlog-quote__text {
+  font-size: 12px;
+  line-height: 1.35;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .portal-pnlog-chip--edited {
   background: rgba(15, 23, 42, 0.08);
 }

@@ -1523,6 +1523,44 @@
     return String(ev.row.whatsapp_message_id || "").trim();
   }
 
+  function eventContextWaId(ev) {
+    if (!ev || !ev.row) return "";
+    if (ev.dir === "in") return String(ev.row.context_wa_id || "").trim();
+    var meta = ev.row.meta && typeof ev.row.meta === "object" ? ev.row.meta : {};
+    return String(meta.context_wa_id || meta.correction_of_wa_id || "").trim();
+  }
+
+  function threadEventByWaIdMap(thread) {
+    var map = Object.create(null);
+    ((thread && thread.events) || []).forEach(function (ev) {
+      var id = eventWaMessageId(ev);
+      if (id) map[id] = ev;
+    });
+    return map;
+  }
+
+  function renderQuoteHtml(ev, byWaId) {
+    var ctxId = eventContextWaId(ev);
+    if (!ctxId || ctxId.indexOf("app:") === 0) return "";
+    if (ctxId === eventWaMessageId(ev)) return "";
+    var quoted = byWaId && byWaId[ctxId] ? byWaId[ctxId] : null;
+    var who = quoted ? (quoted.dir === "in" ? "parent" : "us") : "a previous message";
+    var preview = quoted ? replyPreviewForEvent(quoted) : "Tap to find original";
+    if (!quoted && ev.dir === "in") preview = "Previous message";
+    return (
+      '<button type="button" class="portal-pnlog-quote" data-quote-wa-id="' +
+      esc(ctxId) +
+      '" title="Show the message this replies to">' +
+      '<span class="portal-pnlog-quote__who">Replying to ' +
+      esc(who) +
+      "</span>" +
+      '<span class="portal-pnlog-quote__text">' +
+      esc(preview) +
+      "</span>" +
+      "</button>"
+    );
+  }
+
   function canReplyToEvent(ev) {
     var id = eventWaMessageId(ev);
     if (!id || id.indexOf("app:") === 0) return false;
@@ -1547,7 +1585,7 @@
     return "Message";
   }
 
-  function renderBubble(ev) {
+  function renderBubble(ev, byWaId) {
     var side = ev.dir === "in" ? "in" : "out";
     var metaBits = [];
     var errTip = "";
@@ -1573,6 +1611,7 @@
     var type = String(ev.messageType || "").toLowerCase();
     var isMediaPlaceholder =
       /^\[(sticker|image|video|audio|document)\]$/i.test(rawBody.trim());
+    var quoteHtml = isReaction ? "" : renderQuoteHtml(ev, byWaId);
     var contentHtml = "";
     if (isReaction) {
       contentHtml = '<div class="portal-pnlog-bubble__reaction">' + esc(rawBody) + "</div>";
@@ -1639,6 +1678,7 @@
       '"' +
       (waMid ? ' data-wa-id="' + esc(waMid) + '"' : "") +
       ">" +
+      quoteHtml +
       mediaHtml +
       contentHtml +
       errHtml +
@@ -1809,7 +1849,12 @@
     if (!t.events.length) {
       return '<p class="muted portal-pnlog-empty">No messages in this thread yet.</p>';
     }
-    return t.events.map(renderBubble).join("");
+    var byWaId = threadEventByWaIdMap(t);
+    return t.events
+      .map(function (ev) {
+        return renderBubble(ev, byWaId);
+      })
+      .join("");
   }
 
   function threadEventsSig(t) {
@@ -2623,6 +2668,32 @@
     host.setAttribute("data-chat-bound", "1");
 
     host.addEventListener("click", function (e) {
+      var quoteBtn = e.target.closest(".portal-pnlog-quote[data-quote-wa-id]");
+      if (quoteBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var quoteId = quoteBtn.getAttribute("data-quote-wa-id") || "";
+        var threadEl = document.getElementById("portalPnlogThread");
+        var hit = null;
+        if (threadEl && quoteId) {
+          var bubbles = threadEl.querySelectorAll(".portal-pnlog-bubble[data-wa-id]");
+          for (var qi = 0; qi < bubbles.length; qi++) {
+            if (bubbles[qi].getAttribute("data-wa-id") === quoteId) {
+              hit = bubbles[qi];
+              break;
+            }
+          }
+        }
+        if (!hit) {
+          cfg.toast("Original message is not in this thread view.", "err");
+          return;
+        }
+        hit.scrollIntoView({ block: "center", behavior: "smooth" });
+        hit.classList.remove("portal-pnlog-bubble--flash");
+        void hit.offsetWidth;
+        hit.classList.add("portal-pnlog-bubble--flash");
+        return;
+      }
       var back = e.target.closest("#portalPnlogBack");
       if (back) {
         e.preventDefault();
