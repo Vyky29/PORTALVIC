@@ -1549,12 +1549,13 @@
     return false;
   }
 
-  function shadowingOverrideMatchesSlot(slot, ov) {
+  /** Session window + venue + client for a shadowing session_add (staff role checked separately). */
+  function shadowingOverrideSameSessionWindow(slot, ov) {
     if (!slot || !overrideIsShadowingSessionAdd(ov)) return false;
     if (clean(ov.session_date) !== slot.session_date) return false;
-    var p = overridePayloadObj(ov);
-    var insts = slotInstructors(slot);
-    if (!trainerMatchesSlotInstructors(p.trainer, insts)) return false;
+    var oCid = canonicalClientSlug(ov.anchor_client_id);
+    var sCid = canonicalClientSlug(slot.client_name || slot.client_slug || slot.clientSlug);
+    if (oCid && sCid && oCid !== sCid) return false;
     var oVen = clean(ov.anchor_venue).toLowerCase();
     var sVen = clean(slot.venue).toLowerCase();
     if (oVen && sVen && oVen !== sVen) return false;
@@ -1563,6 +1564,26 @@
     var sStart = normTimeShort(slot.time_start || slot.anchor_start || slot.time_slot);
     var sEnd = normTimeShort(slot.time_end || slot.anchor_end || slot.time_start);
     return hmRangesOverlap(oStart, oEnd, sStart, sEnd);
+  }
+
+  /**
+   * Host = payload.trainer on the seat. Observer = anchor_staff_id on the seat.
+   * Co-workers on the same client (e.g. Godsway with Tinashe) must not match.
+   */
+  function shadowingOverrideRoleForSlot(slot, ov) {
+    if (!shadowingOverrideSameSessionWindow(slot, ov)) return "";
+    var p = overridePayloadObj(ov);
+    var insts = slotInstructors(slot);
+    var trainerRaw = clean(p.trainer || p.trainer_staff_id);
+    var isHost = !!(trainerRaw && trainerMatchesSlotInstructors(trainerRaw, insts));
+    var isObserver = staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, insts);
+    if (isHost) return "host";
+    if (isObserver) return "observer";
+    return "";
+  }
+
+  function shadowingOverrideMatchesSlot(slot, ov) {
+    return !!shadowingOverrideRoleForSlot(slot, ov);
   }
 
   function shadowingOverrideForSlot(hub, slot) {
@@ -1588,21 +1609,34 @@
     return slots.map(function (slot) {
       var ov = shadowingOverrideForSlot(hub, slot);
       if (!ov) return slot;
+      var role = shadowingOverrideRoleForSlot(slot, ov);
+      if (!role) return slot;
       var observerName = resolveStaffDisplayName(ov.anchor_staff_id);
       var origInst =
         slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
           ? normalizeInstructorList(slot.portalOriginalInstructors).slice()
           : slotInstructors(slot).slice();
+      if (role === "host") {
+        return Object.assign({}, slot, {
+          instructors: origInst,
+          instructor_label: origInst.join(", "),
+          portalInstructorReassigned: false,
+          portalCoveringStaffId: "",
+          portalCoveringStaffName: "",
+          portalShadowingHost: true,
+          portalShadowingObserver: false,
+          portalShadowingObserverName: observerName,
+          portalShadowingObserverId: clean(ov.anchor_staff_id).toLowerCase(),
+          portalOriginalInstructors: origInst,
+          __portalShadowingOverride: ov,
+        });
+      }
+      /* Observer column (Emanuel): mark Shadowing only — not a host chip. */
       return Object.assign({}, slot, {
-        instructors: origInst,
-        instructor_label: origInst.join(", "),
-        portalInstructorReassigned: false,
-        portalCoveringStaffId: "",
-        portalCoveringStaffName: "",
-        portalShadowingHost: true,
+        portalShadowingHost: false,
+        portalShadowingObserver: true,
         portalShadowingObserverName: observerName,
         portalShadowingObserverId: clean(ov.anchor_staff_id).toLowerCase(),
-        portalOriginalInstructors: origInst,
         __portalShadowingOverride: ov,
       });
     });
@@ -1944,6 +1978,9 @@
     /* Trial / MakeUp chips win over Updated (slot_update often accompanies trial folds). */
     if (hubSlotShowsTrialChip(slot, slotOv)) return false;
     if (hubSlotShowsMakeupChip(slot, slotOv)) return false;
+    /* Never paint Shadowing session_add as Updated (label would wrongly say Shadowing). */
+    if (overrideIsShadowingSessionAdd(slotOv)) return false;
+    if (slot && (slot.portalShadowingHost || slot.portalShadowingObserver)) return false;
     if (overrideIsSlotUpdateType(slotOv)) return true;
     return !!(slot && slot.portalRosterTimeUpdated);
   }
@@ -1956,12 +1993,13 @@
   }
 
   function hubSlotShowsInstructorReassignChip(slot, slotOv) {
-    if (slot && slot.portalShadowingHost) return false;
+    if (slot && (slot.portalShadowingHost || slot.portalShadowingObserver)) return false;
     return overrideIsInstructorReassignType(slotOv) || !!(slot && slot.portalInstructorReassigned);
   }
 
   function hubSlotShowsShadowingChip(slot) {
-    return !!(slot && slot.portalShadowingHost && slot.__portalShadowingOverride);
+    if (!slot || !slot.__portalShadowingOverride) return false;
+    return !!(slot.portalShadowingHost || slot.portalShadowingObserver);
   }
 
   function instructorReassignOverrideForSlot(hub, slot) {
@@ -6726,6 +6764,10 @@
     if (!slot || !ov) return false;
     if (clean(ov.session_date) !== slot.session_date) return false;
     if (String(ov.status || "active").trim() !== "active") return false;
+    /* Shadowing session_add: only trainer (host) or observer seat — not every co-worker. */
+    if (overrideIsShadowingSessionAdd(ov)) {
+      return !!shadowingOverrideRoleForSlot(slot, ov);
+    }
     var sCid = canonicalClientSlug(slot.client_name || slot.client_slug || slot.clientSlug);
     if (overrideIsReplaceType(ov)) {
       var repPayload = overridePayloadObj(ov);
@@ -9656,6 +9698,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   }
 
   function dayBoardShadowingChipLabel(slot) {
+    if (slot && slot.portalShadowingObserver && !slot.portalShadowingHost) {
+      return "Shadowing";
+    }
     var obs =
       clean(slot && slot.portalShadowingObserverName) ||
       resolveStaffDisplayName(slot && slot.portalShadowingObserverId) ||
@@ -10000,6 +10045,37 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }));
       }
     }
+
+    /* Staff with day-off on this date but no remaining seats (e.g. John Wed 9 Tinashe
+     * remapped to Godsway+Bismark+Emanuel) still need a red column. */
+    (function ensureAwayStaffColumns() {
+      var iso = String(hub.selectedDay || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+      var unavail = hubStaffUnavailabilityRows(hub);
+      for (var u = 0; u < unavail.length; u++) {
+        var row = unavail[u];
+        if (!row) continue;
+        if (String(row.off_date || "").slice(0, 10) !== iso) continue;
+        var rawName = clean(row.staff_name) || clean(row.name_key);
+        if (!rawName) continue;
+        var key = dayBoardStaffKey(rawName);
+        if (!key || key === COVER_KEY) continue;
+        if (byKey[key]) continue;
+        try {
+          var PRC = global.PortalRosterCanonical;
+          if (
+            PRC &&
+            typeof PRC.autumnStaffStandingOffOnIso === "function" &&
+            PRC.autumnStaffStandingOffOnIso(iso, rawName)
+          ) {
+            continue;
+          }
+        } catch (_standOff) {}
+        byKey[key] = [];
+        labelByKey[key] = dayBoardStaffLabel(rawName);
+      }
+    })();
+
     function sortStaffKeys(list) {
       return list.slice().sort(function (a, b) {
         if (a === COVER_KEY) return 1;
