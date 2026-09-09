@@ -1525,9 +1525,12 @@
 
   function eventContextWaId(ev) {
     if (!ev || !ev.row) return "";
-    if (ev.dir === "in") return String(ev.row.context_wa_id || "").trim();
     var meta = ev.row.meta && typeof ev.row.meta === "object" ? ev.row.meta : {};
-    return String(meta.context_wa_id || meta.correction_of_wa_id || "").trim();
+    if (ev.dir === "out") {
+      if (!meta.quoted_reply) return "";
+      return String(meta.context_wa_id || "").trim();
+    }
+    return "";
   }
 
   function threadEventByWaIdMap(thread) {
@@ -1652,24 +1655,6 @@
         '" data-reply-wa-id="' +
         esc(waMid) +
         '" title="Reply to this message (quote in WhatsApp)">Reply</button>';
-    }
-    if (
-      ev.dir === "out" &&
-      rawBody &&
-      !isMediaPlaceholder &&
-      !isReaction &&
-      !mediaHtml &&
-      ev.status !== "failed" &&
-      ev.id &&
-      waMid &&
-      !String(waMid).startsWith("app:")
-    ) {
-      actionHtml +=
-        '<button type="button" class="portal-pnlog-bubble__edit" data-edit-log-id="' +
-        esc(String(ev.id)) +
-        '" data-edit-wa-id="' +
-        esc(waMid) +
-        '" title="Send a quoted correction (WhatsApp cannot rewrite the old bubble)">Correct</button>';
     }
     return (
       '<div class="portal-pnlog-bubble portal-pnlog-bubble--' +
@@ -2527,26 +2512,20 @@
       return;
     }
     var contextWaId = "";
-    if (editing && editing.waMessageId) {
-      contextWaId = String(editing.waMessageId).trim();
-    } else if (
+    var quotedReply = false;
+    if (
       openSession &&
       state.replyTo &&
       state.replyTo.threadKey === t.key &&
       state.replyTo.waMessageId
     ) {
       contextWaId = String(state.replyTo.waMessageId).trim();
-    } else if (openSession) {
-      for (var i = t.events.length - 1; i >= 0; i--) {
-        if (!inboundOpensWhatsappSession(t.events[i]) || !t.events[i].row) continue;
-        contextWaId = String(
-          t.events[i].row.wa_message_id || t.events[i].row.context_wa_id || ""
-        ).trim();
-        if (contextWaId && contextWaId.indexOf("app:") !== 0) break;
-        contextWaId = "";
-      }
+      quotedReply = true;
     }
-    if (contextWaId.indexOf("app:") === 0) contextWaId = "";
+    if (contextWaId.indexOf("app:") === 0) {
+      contextWaId = "";
+      quotedReply = false;
+    }
     /* Cold outbound uses a Meta template; {{1}} must stay short (Meta #132005).
        Quote-corrections always use free-text with context (need open 24h window). */
     var coldTpl = activeColdTemplate();
@@ -2609,7 +2588,8 @@
       clientDisplay: ctx.clientDisplay || t.client || null,
       sessionDate: ctx.sessionDate || null,
       venue: ctx.venue || null,
-      contextWaId: contextWaId || null,
+      contextWaId: quotedReply ? contextWaId : null,
+      quotedReply: quotedReply,
     };
     if (editing && editing.waMessageId) {
       sendPayload.editWhatsappMessageId = editing.waMessageId;
@@ -2789,29 +2769,6 @@
             : "Message";
         }
         startReplyToMessage(replyWaId, preview || "Message", replySide);
-        return;
-      }
-      var editBtn = e.target.closest(".portal-pnlog-bubble__edit[data-edit-log-id]");
-      if (editBtn) {
-        e.preventDefault();
-        var editLogId = editBtn.getAttribute("data-edit-log-id") || "";
-        var editWaId = editBtn.getAttribute("data-edit-wa-id") || "";
-        var bubble = editBtn.closest(".portal-pnlog-bubble");
-        var textEl = bubble && bubble.querySelector(".portal-pnlog-bubble__text");
-        var bodyFromDom = textEl
-          ? String(textEl.innerText || textEl.textContent || "").trim()
-          : "";
-        var editThread = findThread(state.selectedKey);
-        var bodyFromEvent = "";
-        if (editThread && editThread.events) {
-          for (var ei = 0; ei < editThread.events.length; ei++) {
-            if (String(editThread.events[ei].id || "") === editLogId) {
-              bodyFromEvent = String(editThread.events[ei].body || "");
-              break;
-            }
-          }
-        }
-        startEditOutbound(editLogId, editWaId, bodyFromEvent || bodyFromDom);
         return;
       }
       var sendBtn = e.target.closest("#portalPnlogComposerSend");
