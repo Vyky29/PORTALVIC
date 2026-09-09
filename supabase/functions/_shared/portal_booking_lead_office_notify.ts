@@ -195,9 +195,14 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
     formType === "climbing_registration"
       ? "Climbing registration"
       : "Client registration";
+  const bookingSummary = String(opts.bookingSummary || "").trim();
+  const isExistingShort =
+    bookingSummary.toUpperCase().includes("EXISTING CLIENT");
   const holdLine = opts.slotHeld
-    ? "If they already held a session in Booking Portal, finish-booking will refresh a short pay hold - slot details arrive when they complete funding/payment or report paid."
-    : "";
+    ? "A short pay hold was opened on that session - finish-booking / Stripe or Mark paid confirms the seat."
+    : bookingSummary
+    ? "Requested session is above. Pay hold / invoice details follow when they finish funding or report paid."
+    : "If they already held a session in Booking Portal, finish-booking will refresh a short pay hold.";
   const reviewUrl = registrationReviewUrl();
   const pdfName =
     String(opts.pdfFilename || "").trim() ||
@@ -206,13 +211,17 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
   const smtp = readParentNotifySmtpConfig();
   const tos = officeNotifyEmails();
   if (smtp && tos.length) {
-    const subject = `${formLabel} submitted · ${participant} (${parent})`;
+    const subject = bookingSummary
+      ? `${formLabel} · ${participant} (${parent}) · ${bookingSummary}`
+      : `${formLabel} submitted · ${participant} (${parent})`;
     const lines = [
       `${formLabel} received - FYI only. The parent can finish payment now; you do not need to Accept before they pay.`,
       "Review the PDF in Documents when useful. Suitability / form checks are after payment.",
-      "Chosen session / pay-hold details are not the focus of this alert - they arrive when the parent completes finish-booking funding/payment or reports paid.",
     ];
-    if (String(opts.bookingSummary || "").toUpperCase().includes("EXISTING CLIENT")) {
+    if (bookingSummary) {
+      lines.push(`Requested session: ${bookingSummary}`);
+    }
+    if (isExistingShort) {
       lines.push(
         "(Existing client - short place request; questionnaire already on file.)",
       );
@@ -248,7 +257,15 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
     const html =
       `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.5;color:#0f172a">` +
       `<p><strong>${escapeHtml(formLabel)}</strong> received - <strong>FYI</strong>. Parent can pay now; no Accept gate before payment.</p>` +
-      `<p style="color:#64748b;font-size:13px">Session / pay-hold details come later (finish-booking funding/payment or parent reports paid).</p>` +
+      (bookingSummary
+        ? `<p style="margin:12px 0;padding:12px 14px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:10px">` +
+          `<strong>Requested session</strong><br/>` +
+          `<span style="font-size:16px;font-weight:700">${escapeHtml(bookingSummary)}</span>` +
+          `</p>`
+        : `<p style="color:#64748b;font-size:13px">No session attached to this form submit.</p>`) +
+      (isExistingShort
+        ? `<p style="color:#64748b;font-size:13px">Existing client - short place request (questionnaire already on file).</p>`
+        : "") +
       `<p>` +
       `Participant: <strong>${escapeHtml(participant)}</strong><br/>` +
       `Parent: ${escapeHtml(parent)}<br/>` +
@@ -309,11 +326,12 @@ export async function notifyOfficeRegistrationSubmitted(opts: {
         "doc=",
         opts.documentId,
         attachment ? "with-pdf" : "no-pdf",
+        bookingSummary ? `slot=${bookingSummary}` : "no-slot",
       );
     }
   } else {
     console.log(
-      `[registration-office-notify] doc=${opts.documentId} participant=${participant} parent=${parent} email=${email} tos=${tos.join(",") || "none"} smtp=${smtp ? "yes" : "no"}`,
+      `[registration-office-notify] doc=${opts.documentId} participant=${participant} parent=${parent} email=${email} tos=${tos.join(",") || "none"} smtp=${smtp ? "yes" : "no"} summary=${bookingSummary || "-"}`,
     );
   }
 
