@@ -658,6 +658,15 @@
     ].join("|");
   }
 
+  function formatVenueWithArea(venue, area) {
+    var v = String(venue || "").trim();
+    var a = String(area || "").trim();
+    if (!a) return v;
+    if (!v) return a;
+    if (a.toLowerCase().indexOf(v.toLowerCase()) === 0) return a;
+    return v + " · " + a;
+  }
+
   function renderSessionsBoard() {
     var rows = sessionRows();
     var order = [];
@@ -706,7 +715,7 @@
                   '</div><div class="ttl-card__meta">' +
                   esc(r.time_slot || "") +
                   " · " +
-                  esc(r.venue || "") +
+                  esc(formatVenueWithArea(r.venue, r.area)) +
                   "</div></button>"
                 );
               })

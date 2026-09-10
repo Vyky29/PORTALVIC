@@ -865,13 +865,20 @@
                 action: ed.action || "update",
               };
               var chipKind = ed.kind === "available" ? " available" : "";
+              var chipLabel = ed.label || ed.client_name || "Open";
+              var areaNote = String(ed.area || "").trim();
               return (
                 '<button type="button" class="asr-booked-chip' +
                 chipKind +
                 '" data-asr-term-edit="' +
                 esc(encodeTermEditPayload(payload)) +
-                '" title="Edit term slot">' +
-                esc(ed.label || ed.client_name || "Open") +
+                '" title="Edit term slot' +
+                (areaNote ? " · " + esc(areaNote) : "") +
+                '">' +
+                esc(chipLabel) +
+                (areaNote
+                  ? '<span class="asr-booked-chip__area">' + esc(areaNote) + "</span>"
+                  : "") +
                 "</button>"
               );
             })
