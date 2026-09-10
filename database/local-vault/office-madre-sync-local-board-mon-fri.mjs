@@ -178,7 +178,7 @@ function rebuildMonday(week) {
     const d = ensureDay(dan, "Monday");
     clearDayServices(d, isNortholtAquatic);
     d.slots.push(
-      Object.assign(aquatic("Northolt", "4.30 to 5", "Rayden Rana (trial)", "DAN"), {
+      Object.assign(aquatic("Northolt", "4.30 to 5", "Muhammad (trial)", "DAN"), {
         participant_info: "trial",
       }),
     );
@@ -186,7 +186,7 @@ function rebuildMonday(week) {
     d.slots.push(aquatic("Northolt", "5.30 to 6", "Amar Rai", "DAN"));
     d.slots.push(aquatic("Northolt", "6 to 6.30", "Adaam Ah", "DAN"));
   }
-  note("Mon AS Acton/Northolt = local EXTRA");
+  note("Mon AS Acton/Northolt = Autumn canonical (Luliya open 4.30-5 Northolt)");
 
   for (const [st, name] of [
     [godsway, "GODSWAY"],
@@ -244,11 +244,11 @@ function rebuildTuesday(week) {
     "Tue DC = Roberto ACAT 11-12 + Ikram 12-3; Michelle Ikram 11-12 / Manager 12-3 / Ikram 3-4; Luliya Ikram 11-3; Raul Fadi 12.30-3 + Ikram 3-4; Victor Cyrus Bespoke 3.30-5",
   );
 
-  /* Autumn Acton AS standing: Serine→Roberto; Logan→Luliya; Richard→Roberto. */
+  /* Autumn Acton AS: Abate twins seated 4–4.30; Serine/Logan/Richard; open Luliya + Roberto 5.30–6 + Luliya/Javier 6–6.30. */
   if (roberto) {
     const d = ensureDay(roberto, "Tuesday");
     clearDayServices(d, isActonAquatic);
-    d.slots.push(aquatic("Acton", "4 to 4.30", "NO PARTICIPANT", "ROBERTO"));
+    d.slots.push(aquatic("Acton", "4 to 4.30", "Christian Abate", "ROBERTO"));
     d.slots.push(aquatic("Acton", "4.30 to 5.30", "Serine", "ROBERTO"));
     d.slots.push(aquatic("Acton", "5.30 to 6", "NO PARTICIPANT", "ROBERTO"));
     d.slots.push(aquatic("Acton", "6 to 6.30", "Richard", "ROBERTO"));
@@ -256,7 +256,7 @@ function rebuildTuesday(week) {
   if (luliya) {
     const d = ensureDay(luliya, "Tuesday");
     clearDayServices(d, isActonAquatic);
-    d.slots.push(aquatic("Acton", "4 to 4.30", "NO PARTICIPANT", "LULIYA"));
+    d.slots.push(aquatic("Acton", "4 to 4.30", "Emmanuel Abate", "LULIYA"));
     d.slots.push(aquatic("Acton", "4.30 to 5", "NO PARTICIPANT", "LULIYA"));
     d.slots.push(aquatic("Acton", "5 to 5.30", "Logan", "LULIYA"));
     d.slots.push(aquatic("Acton", "5.30 to 6", "NO PARTICIPANT", "LULIYA"));
@@ -264,7 +264,13 @@ function rebuildTuesday(week) {
   }
   if (javier) {
     const d = ensureDay(javier, "Tuesday");
-    clearDayServices(d, isActonAquatic);
+    /* Drop orphan Acton lines without Aquatic service (e.g. bare 18–18.30). */
+    clearDayServices(
+      d,
+      (sl) =>
+        /acton/i.test(sl.venue || "") &&
+        (/aquatic/i.test(sl.service || "") || !String(sl.service || "").trim()),
+    );
     d.slots.push(aquatic("Acton", "4 to 5", "Ayman", "JAVIER"));
     d.slots.push(aquatic("Acton", "5 to 5.30", "Linda", "JAVIER", "Lane (SE)"));
     d.slots.push(aquatic("Acton", "5.30 to 6", "Rayan Ta", "JAVIER"));
@@ -283,7 +289,7 @@ function rebuildTuesday(week) {
     const d = ensureDay(youssef, "Tuesday");
     clearDayServices(d, isActonAquatic);
   }
-  note("Tue Acton AS = Serine Roberto 4.30-5.30; Logan Luliya 5-5.30; Richard Roberto; Aurora Anas 6-6.30");
+  note("Tue Acton AS = Abate twins 4-4.30; Serine Roberto; Logan Luliya; opens 4.30-5 / 5.30-6 / 6-6.30; Aurora Anas 6-6.30");
 }
 
 function rebuildWednesday(week) {
@@ -339,6 +345,7 @@ function rebuildWednesday(week) {
     d.slots.push(aquatic("Northolt", "4.30 to 5", "Tyson", "DAN"));
     d.slots.push(aquatic("Northolt", "5 to 5.30", "Ruben", "DAN"));
     d.slots.push(aquatic("Northolt", "5.30 to 6", "Amar Rai", "DAN"));
+    /* Mia Mesi — validated booking seat Northolt Wed 6–6.30 Dan (not standing open). */
     d.slots.push(aquatic("Northolt", "6 to 6.30", "Mia", "DAN"));
   }
   if (luliya) {
@@ -349,7 +356,7 @@ function rebuildWednesday(week) {
     d.slots.push(aquatic("Northolt", "5.30 to 6", "Amber", "LULIYA"));
     d.slots.push(aquatic("Northolt", "6 to 6.30", "NO PARTICIPANT", "LULIYA"));
   }
-  note("Wed AS Acton/Northolt = local EXTRA");
+  note("Wed AS Acton/Northolt = Autumn (Mia Dan 6-6.30; Luliya open 6-6.30)");
 
   for (const [st, name] of [
     [godsway, "GODSWAY"],
@@ -488,6 +495,74 @@ function rebuildSaturday(week) {
   note("Sat Acton = local EXTRA (Youssef)");
 }
 
+/** Autumn Sunday Westway climbing (canonical AUTUMN_SUNDAY_CLIMBING_BOARD). Stamp = 2026-07-12 offer template. */
+const SUNDAY_CLIMB_ISO = "2026-07-12";
+const AUTUMN_SUNDAY_CLIMBING = [
+  { staff: "alex", time: "10 to 11", client: "Eiji" },
+  { staff: "alex", time: "11 to 12", client: "Yusef" },
+  { staff: "alex", time: "12 to 1", client: "NO PARTICIPANT" },
+  { staff: "alex", time: "1 to 2", client: "Rodin" },
+  { staff: "alex", time: "2 to 3", client: "NO PARTICIPANT" },
+  { staff: "alex", time: "3 to 4", client: "NO PARTICIPANT" },
+  { staff: "carlos", time: "10 to 11", client: "Hazem" },
+  { staff: "carlos", time: "11 to 12", client: "Zaid" },
+  { staff: "carlos", time: "12 to 1", client: "Serine" },
+  { staff: "carlos", time: "1 to 2", client: "Zakariya" },
+  { staff: "carlos", time: "2 to 3", client: "NO PARTICIPANT" },
+  { staff: "carlos", time: "3 to 4", client: "Patrick" },
+];
+
+function isWestwayClimb(sl) {
+  return /westway/i.test(sl.venue || "") && /climb/i.test(sl.service || "");
+}
+
+function climbSlot(time, client, instructors) {
+  return {
+    area: "Wall",
+    venue: "Westway",
+    service: "Climbing Activity",
+    pool_note: "Wall",
+    time_slot: time,
+    client_name: client,
+    instructors,
+  };
+}
+
+function rebuildSundayClimbing(doc) {
+  const week =
+    (doc.weeks || []).find(
+      (w) =>
+        String(w.start || "").slice(0, 10) <= SUNDAY_CLIMB_ISO &&
+        String(w.end || "").slice(0, 10) >= SUNDAY_CLIMB_ISO,
+    ) ||
+    (doc.weeks || []).find((w) => String(w.start || "").slice(0, 10) === "2026-07-06");
+  if (!week) {
+    note(`no week for Sunday climb ${SUNDAY_CLIMB_ISO}`);
+    return;
+  }
+  const byStaff = new Map();
+  for (const row of AUTUMN_SUNDAY_CLIMBING) {
+    if (!byStaff.has(row.staff)) byStaff.set(row.staff, []);
+    byStaff.get(row.staff).push(row);
+  }
+  for (const [key, rows] of byStaff) {
+    const staff = findStaff(week, key);
+    if (!staff) {
+      note(`MISSING ${key} for Sunday climbing`);
+      continue;
+    }
+    const day = ensureDay(staff, "Sunday");
+    day.weekday = "Sunday";
+    day.sessionDate = SUNDAY_CLIMB_ISO;
+    clearDayServices(day, isWestwayClimb);
+    const instr = key.toUpperCase();
+    for (const row of rows) {
+      day.slots.push(climbSlot(row.time, row.client, instr));
+    }
+  }
+  note("Sun Westway climb = Autumn canonical (Alex open 12-1 / 2-3 / 3-4; Carlos open 2-3)");
+}
+
 const { data, error } = await sb
   .from("portal_madre_document")
   .select("term_key, revision, document, updated_at")
@@ -505,15 +580,16 @@ rebuildWednesday(week);
 rebuildThursday(week);
 rebuildFriday(week);
 rebuildSaturday(week);
+rebuildSundayClimbing(doc);
 
 const prevRev = data.revision;
 const nextRev = prevRev + 1;
 doc.meta = doc.meta || {};
 doc.meta.revision = nextRev;
 doc.meta.lastLiveFoldNote =
-  "office_sync:local_dc_staff_week standing weekdays 2026-09-03";
+  "office_sync:Autumn standing Places align Tue twins + Northolt + Sun climb 2026-09-10";
 (doc.revisionNotes = doc.revisionNotes || []).push(
-  `rev ${nextRev}: MADRE standing 2026-07-13 weekdays = local_dc_staff_week (Mon Victor OFF; Hub Mon/Wed Godsway/John/Raul; Fri Roberto Tinashe + Youssef Acton; DC Tue-Fri Autumn)`,
+  `rev ${nextRev}: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)`,
 );
 
 mkdirSync("database/local-vault/tmp", { recursive: true });

@@ -592,26 +592,24 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
      * Autumn Thu Acton (e.g. 5.30–6.30 / 6–6.30) after those seats were filled.
      * Same-day Schedule & Covers fills live on calendar dates; term Places still
      * come from the standing week (ref) until office folds that open seat.
+     *
+     * Capacity must cover booked + open seat lines. Instructor-only caps used to
+     * hide NO PARTICIPANT (e.g. Northolt Mon Luliya open beside a trial; Climbing
+     * Sun Alex 3–4 beside Patrick) when booked already equalled instructorCount.
      */
-    const lineCount = latestBucket.booked + latestBucket.open;
+    const openSeats = Math.max(0, Number(latestBucket.open) || 0);
+    const bookedLines = Math.max(0, Number(latestBucket.booked) || 0);
+    const lineCount = bookedLines + openSeats;
     const instructorCount = latestBucket.instructors.size;
-    const cap = displayCapacity(
-      serviceId,
-      venue,
-      day,
+    const cap = Math.max(
       lineCount,
-      instructorCount,
+      displayCapacity(serviceId, venue, day, lineCount, instructorCount),
     );
     /*
-     * Aquatic is 1:1 per instructor line. Prefer booked line count over unique
-     * client keys so a 2:1 client (same name on two staff) does not leave a
-     * phantom "places left" on the public offer.
+     * Public Places left = standing open seats (NO PARTICIPANT lines).
+     * Pending/validated slot holds may still increment `taken` afterward.
      */
-    const takenRaw =
-      serviceId === "aquatic"
-        ? latestBucket.booked
-        : latestBucket.bookedKeys.size || latestBucket.booked;
-    const taken = Math.min(takenRaw, cap);
+    const taken = Math.max(0, cap - openSeats);
     slots.push({
       id: slotId(serviceId, venue, day, sortTime, timeLabel),
       serviceId,
@@ -621,7 +619,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       sortTime,
       capacity: cap,
       taken,
-      openSeats: Math.max(0, Number(latestBucket.open) || 0),
+      openSeats,
       referenceDate: ref,
       instructors: [...latestBucket.instructors].sort(),
       openInstructors: [...latestBucket.openInstructors].sort(),
@@ -722,7 +720,10 @@ export function holdParticipantAlreadyOnOfferSlot(
   const first = holdKey.split(" ")[0] || "";
   if (first.length < 3) return false;
   for (const rk of roster) {
-    if (rk.startsWith(first + " ")) return true;
+    if (!rk) continue;
+    /* Hold "Mia Mesi" vs roster "Mia"; or roster "Rayyan Fi" vs hold "Rayyan". */
+    if (rk.startsWith(first + " ") || rk === first) return true;
+    if (holdKey.startsWith(rk + " ") && rk.length >= 3) return true;
   }
   return false;
 }
