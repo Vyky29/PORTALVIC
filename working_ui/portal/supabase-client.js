@@ -648,6 +648,8 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     if (!pk || seenOwnPk.has(pk)) continue;
     seenOwnPk.add(pk);
     ownFeedbackPortalKeys.push(pk);
+    /* One portal key can cover several roster halves (e.g. Stephanie 4.30+5.00).
+       Collect every match — do not stop at the first timed key. */
     for (const rk of rosterSessionKeys) {
       if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, ownMatchOpts)) {
         continue;
@@ -656,7 +658,6 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
         seenOwnRk.add(rk);
         ownFeedbackKeys.push(rk);
       }
-      break;
     }
   }
 
@@ -1566,6 +1567,16 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
       .map((k) => String(k || "").trim())
       .filter(Boolean)
   );
+  /* Expand portal keys onto every matching roster key before fan-out. Otherwise a
+     day-unit submit (date|client|aquatic) only greened the first 30' half and Term
+     kept the sibling half pending (Youssef · Stephanie Wed 9). */
+  for (const rk of portalOwnRosterKeysFromPortalFeedbackKeys(
+    packs.ownFeedbackPortalKeys,
+    rosterKeys,
+    opts
+  )) {
+    ownOnly.add(rk);
+  }
   const fanOutOpts = Object.assign({}, opts, {
     perStaffOwnFeedbackOnlyKeys: [...perStaffOwnOnly],
     ownFeedbackKeys: [...ownOnly],
