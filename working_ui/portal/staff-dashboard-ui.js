@@ -859,6 +859,7 @@
         });
         if (typeof window.__portalDbg === "function") {
           window.__portalDbg("C", "staff-dashboard-ui.js:renderToday", "today-paint", {
+            runId: "post-fix",
             count: (list || []).length,
             sig: String(todaySig || "").slice(0, 80),
             reuse: !!(todaySig && grid.getAttribute("data-today-cards-sig") === todaySig && grid.querySelector(".today-grid-rows")),

@@ -343,16 +343,17 @@
     // #region agent log
     (function () {
       function portalDbg(hid, loc, msg, data) {
+        var payload = data || {};
         fetch("http://127.0.0.1:7652/ingest/0adf76e0-3915-4113-a09a-6b6f251bb59d", {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "f1029b" },
           body: JSON.stringify({
             sessionId: "f1029b",
-            runId: "pre-fix",
+            runId: payload.runId || "post-fix",
             hypothesisId: hid,
             location: loc,
             message: msg,
-            data: data || {},
+            data: payload,
             timestamp: Date.now()
           })
         }).catch(function () {});
@@ -423,18 +424,71 @@
       }
       document.addEventListener("touchstart", onPointer, true);
       document.addEventListener("click", onPointer, true);
-      setTimeout(function () {
-        var scroll = document.getElementById("appBodyScroll");
-        portalDbg("B", "staff_dashboard.html:boot", "boot-hit-env", {
-          authReady: !!(document.documentElement && document.documentElement.classList.contains("portal-auth-ready")),
-          htmlClass: String((document.documentElement && document.documentElement.className) || "").slice(0, 180),
-          bodyClass: String((document.body && document.body.className) || "").slice(0, 180),
-          scrollPe: scroll ? String(window.getComputedStyle(scroll).pointerEvents) : "",
-          loader: !!document.getElementById("portal-auth-page-gate-loader"),
-          guard: !!document.getElementById("portalScreenshotGuard"),
-          backdropOpen: !!(document.getElementById("backdrop") && document.getElementById("backdrop").classList.contains("open"))
+      function ensureChip() {
+        var chip = document.getElementById("portalDbgChip");
+        if (!chip && document.body) {
+          chip = document.createElement("div");
+          chip.id = "portalDbgChip";
+          chip.setAttribute(
+            "style",
+            "position:fixed;left:6px;right:6px;bottom:6px;z-index:2147483646;font:10px/1.25 ui-monospace,monospace;background:rgba(255,255,255,.94);color:#111;padding:6px;border:1px solid #333;pointer-events:none;overflow:hidden;max-height:88px"
+          );
+          document.body.appendChild(chip);
+        }
+        return chip;
+      }
+      function autoProbe() {
+        var photo = document.getElementById("topbarToolAchievements");
+        var menu = document.getElementById("menuSheet");
+        var fadiCards = document.querySelectorAll("#todayGrid .session-card");
+        var fadi = [];
+        for (var i = 0; i < fadiCards.length; i++) {
+          var t = String(fadiCards[i].textContent || "");
+          if (/fadi/i.test(t)) {
+            fadi.push({
+              segs: fadiCards[i].classList.contains("session-card--segments"),
+              dc: /dc-pax-fadi/.test(fadiCards[i].className),
+              cancel: /cancelled/i.test(t)
+            });
+          }
+        }
+        var stack = [];
+        try {
+          if (photo) {
+            var r = photo.getBoundingClientRect();
+            var list = document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2) || [];
+            for (var j = 0; j < list.length && j < 4; j++) stack.push(describeEl(list[j]));
+          }
+        } catch (_p) {}
+        var menuDisp = "";
+        try {
+          menuDisp = menu ? String(window.getComputedStyle(menu).display || "") : "";
+        } catch (_m) {}
+        portalDbg("A", "staff_dashboard.html:probe", "photo-probe", {
+          runId: "post-fix",
+          stack: stack,
+          menuDisp: menuDisp,
+          menuOpen: !!(menu && menu.classList.contains("open")),
+          fadi: fadi,
+          opener: typeof window.portalOpenParticipantAchievements === "function"
         });
-      }, 2000);
+        try {
+          var chip = ensureChip();
+          if (chip) {
+            chip.textContent =
+              "photo:" +
+              (stack[0] || "-") +
+              " menu:" +
+              menuDisp +
+              " fadi:" +
+              fadi.length +
+              " segs:" +
+              (fadi[0] && fadi[0].segs ? "y" : "n");
+          }
+        } catch (_c2) {}
+      }
+      setTimeout(autoProbe, 2500);
+      setInterval(autoProbe, 4000);
     })();
     // #endregion
   </script>
@@ -1327,11 +1381,11 @@
   <script src="/portal/portal_ops_admin_display.js?v=20260630-sevitha-admin-fix"></script>
   <script src="/portal/portal_ops_admin_staff_ui.js?v=20260704-ops-admin-duty"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260910-amaar-last"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260907-tinashe-cover"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260910-staff-debug2"></script>
   <script src="/portal/portal_staff_feedback_data_loader.js?v=20260727-yusuf-merge-card"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260910-yunis-se"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260910-fadi-dc"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260910-staff-debug2"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260705-live-madre-autorefresh"></script>
@@ -1345,7 +1399,7 @@
   <script src="/portal/portal_participant_photos.js?v=20260910-reg-photo-slug"></script>
   <script src="/portal/portal_participant_avatars_hydrate.js?v=20260910-reg-photo-slug"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260904-michelle-interviews"></script>
-  <script src="/portal/portal_topbar_header.js?v=20260904-michelle-interviews"></script>
+  <script src="/portal/portal_topbar_header.js?v=20260910-staff-debug2"></script>
   <script src="/portal/portal_comunicaciones_entry.js?v=20260906-comms-inapp-52"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260704-area-note-fixed"></script>
@@ -1361,14 +1415,14 @@
   <script src="/portal/staff-dashboard-participants.js?v=20260910-berta-off-alerts"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260906-yusuf-aurora-swap"></script>
-  <script src="/portal/staff-dashboard-today.js?v=20260910-staff-debug1"></script>
-  <script src="/portal/staff-dashboard-ui.js?v=20260910-staff-debug1"></script>
+  <script src="/portal/staff-dashboard-today.js?v=20260910-staff-debug2"></script>
+  <script src="/portal/staff-dashboard-ui.js?v=20260910-staff-debug2"></script>
   <script src="/portal/portal_today_time_fit.js?v=20260706-time-one-line"></script>
   <script src="/portal/staff-dashboard-auth-bridge.js?v=20260625-lead-day-cards-nav"></script>
   <script src="/portal/staff-dashboard-rehydrate.js?v=20260909-luliya-first"></script>
   <script src="/portal/portal-logout-bind.js?v=20260712-no-photo-signout"></script>
   <script type="module" src="/portal/staff-dashboard-auth-supabase.js?v=20260910-staff-open"></script>
-  <script src="/portal/staff-dashboard-achievements-boot.js?v=20260705-ceo-gallery-topbar"></script>
+  <script src="/portal/staff-dashboard-achievements-boot.js?v=20260910-staff-debug2"></script>
     
   
   

@@ -691,7 +691,16 @@
     });
     /* Always paint Fadi Cancelled seats through Sun 20 (return Mon 21). */
     autumnFadiCancelledSeatRows().forEach(function (row) {
-      out.push(row);
+      var dup = out.some(function (r) {
+        if (!r || !isDayCentreService(r.service)) return false;
+        if (!/^fadi\b/i.test(String(r.client_name || "").trim())) return false;
+        if (normIso(r.session_date) !== normIso(row.session_date)) return false;
+        return (
+          String(r.instructors || "").toUpperCase() ===
+          String(row.instructors || "").toUpperCase()
+        );
+      });
+      if (!dup) out.push(row);
     });
     return out;
   }

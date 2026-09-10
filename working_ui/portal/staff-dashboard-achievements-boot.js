@@ -70,14 +70,18 @@
           }
         });
       }
+      function openParticipantAchievements(){
+        mountSheet();
+        configure();
+        if(typeof openSheet === 'function') openSheet('achievementsSheet');
+      }
+      try{ window.portalOpenParticipantAchievements = openParticipantAchievements; }catch(_){}
       function bindQuickMenu(){
         var btn = document.getElementById('quickMenuParticipantAchievements');
         if(!btn || btn.getAttribute('data-achievements-bound') === '1') return;
         btn.setAttribute('data-achievements-bound','1');
         btn.addEventListener('click', function(){
-          mountSheet();
-          configure();
-          if(typeof openSheet === 'function') openSheet('achievementsSheet');
+          openParticipantAchievements();
         });
       }
       function syncTopbarForPhotos(){

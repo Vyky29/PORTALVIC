@@ -11,6 +11,23 @@
         : String(b || '').trim().toLowerCase();
       return !!(ca && cb && ca === cb);
     }
+    /** Keep Day Centre SPECIAL layout (segments) on Cancelled / Absent cards. */
+    function portalTodayKeepDcSegments(s){
+      if(s && Array.isArray(s.segments) && s.segments.length) return s.segments;
+      var syn = (typeof window !== 'undefined' && typeof window.portalSynthesizeCombinedSegments === 'function')
+        ? window.portalSynthesizeCombinedSegments
+        : null;
+      if(!syn || !s) return undefined;
+      try{
+        var activity = String(s.activity || s.service || '').trim();
+        if(!/day\s*centre/i.test(activity)) return undefined;
+        var name = String(s.clientDisplay || s.clientName || s.clientId || '').trim().toLowerCase();
+        var timeLabel = typeof rosterSlotTimeLabel === 'function' ? rosterSlotTimeLabel(s) : String(s.time_slot || '');
+        var day = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+        var segs = syn(name, activity, timeLabel, day, s.rosterArea);
+        return (Array.isArray(segs) && segs.length) ? segs : undefined;
+      }catch(_){ return undefined; }
+    }
     function portalStaffClientSessionsOnCalendarDate(isoYmd, weekdayLong, staffId, modelOverride){
       const iso = normaliseIsoDate(isoYmd);
       const sid = String(staffId || '').trim().toLowerCase();
@@ -2946,6 +2963,7 @@
               showPoolSymbol: !!(poolLocationAbs || areaAbs),
               showSpecialty: showSpecAbs,
               specialtyLabel: specialtyInfoTitle(activity),
+              segments: portalTodayKeepDcSegments(s),
               general: `Absent. ${clientGeneralBodyFromNotes(cAbs, s)}`.trim(),
               specialty: showSpecAbs ? pickSpecialtyBody(cAbs, activity) : '',
               openSheet: true,
@@ -3009,6 +3027,7 @@
               showPoolSymbol: !!(poolLocationAbs || areaAbs),
               showSpecialty: showSpec,
               specialtyLabel: specialtyInfoTitle(activity),
+              segments: portalTodayKeepDcSegments(s),
               general: `Absent. ${clientGeneralBodyFromNotes(cAbs, s)}`.trim(),
               specialty: showSpec ? pickSpecialtyBody(cAbs, activity) : '',
               openSheet: true,
@@ -3049,6 +3068,7 @@
                 showPoolSymbol: !!(poolLocationCan || areaCan),
                 showSpecialty: showSpecCan,
                 specialtyLabel: specialtyInfoTitle(activity),
+                segments: portalTodayKeepDcSegments(s),
                 general: `Cancelled (Today). ${clientGeneralBodyFromNotes(cCan, s)}`.trim(),
                 specialty: showSpecCan ? pickSpecialtyBody(cCan, activity) : '',
                 openSheet: true,
@@ -3335,6 +3355,7 @@
               showPoolSymbol: !!(poolLocationCan || areaCan),
               showSpecialty: showSpecCan,
               specialtyLabel: specialtyInfoTitle(activityCan),
+              segments: portalTodayKeepDcSegments(s),
               general: `Cancelled (Today). ${clientGeneralBodyFromNotes(cCan, s)}`.trim(),
               specialty: showSpecCan ? pickSpecialtyBody(cCan, activityCan) : '',
               openSheet: true,
@@ -3408,6 +3429,7 @@
             showPoolSymbol: !!(poolLocationAbs || areaAbs),
             showSpecialty: showSpec,
             specialtyLabel: specialtyInfoTitle(activityA),
+            segments: portalTodayKeepDcSegments(s),
             general: `Absent. ${clientGeneralBodyFromNotes(cAbs, s)}`.trim(),
             specialty: showSpec ? pickSpecialtyBody(cAbs, activityA) : '',
             openSheet: true,
@@ -4650,6 +4672,7 @@
             };
           });
           window.__portalDbg("E", "staff-dashboard-today.js:syncToday", "today-rows", {
+            runId: "post-fix",
             n: (rows || []).length,
             fadi: fadiBuild,
             sid: String(id || ""),

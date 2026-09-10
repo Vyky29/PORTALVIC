@@ -1285,4 +1285,5 @@
     deriveMedicalAlertFromInfo: deriveMedicalAlertFromInfo,
   };
   window.portalDeriveMedicalAlertFromInfo = deriveMedicalAlertFromInfo;
+  window.portalSynthesizeCombinedSegments = portalSynthesizeCombinedSegments;
 })();
