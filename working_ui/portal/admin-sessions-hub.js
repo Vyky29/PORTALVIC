@@ -1086,22 +1086,6 @@
         : /day\s*centre/i.test(String((r && r.service) || "")) &&
           /^2026-07-1[3-7]$/.test(String(sd || ""));
     if ((week1Dc || fadiAbsentDcBoard) && isDcStanding) return false;
-    if (
-      fadiAbsentDcBoard &&
-      /day\s*centre/i.test(String((r && r.service) || "")) &&
-      /^fadi\b/i.test(String((r && r.client_name) || "").trim())
-    ) {
-      return false;
-    }
-    if (
-      canon &&
-      typeof canon.isFadiAbsentDcWindowIso === "function" &&
-      canon.isFadiAbsentDcWindowIso(isoDate) &&
-      /day\s*centre/i.test(String((r && r.service) || "")) &&
-      /^fadi\b/i.test(String((r && r.client_name) || "").trim())
-    ) {
-      return false;
-    }
     if (sd) {
       if (sd === isoDate) return true;
       if (project && standIso && standIso !== isoDate && sd === standIso) {

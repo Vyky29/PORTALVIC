@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 90;
+  var SOURCE_VERSION = 91;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -421,8 +421,9 @@
   }
 
   /**
-   * Fadi (CLIENT) away until Mon 21 Sep 2026 — nobody should see him on DC mornings.
-   * Fri 11 – Fri 18: Victor's reshuffled DC boards (no Fadi). Mon 21 starts different.
+   * Fadi (CLIENT) away until Mon 21 Sep 2026 — still paint his DC seats as Cancelled
+   * (Joelle pattern), not Absent and not No participant.
+   * Fri 11 – Fri 18: Victor's reshuffled DC boards (others cover); Fadi Cancelled overlays.
    */
   var FADI_ABSENT_DC_UNTIL = "2026-09-21";
   var FADI_ABSENT_DC_BOARD_FROM = "2026-09-11";
@@ -604,23 +605,83 @@
     return out;
   }
 
+  function autumnFadiCancelledSeatRows() {
+    var out = [];
+    var cur = new Date("2026-09-01T12:00:00");
+    var end = new Date(FADI_ABSENT_DC_UNTIL + "T12:00:00");
+    while (cur < end) {
+      var dow = cur.getDay();
+      if (dow >= 1 && dow <= 5) {
+        var y = cur.getFullYear();
+        var m = String(cur.getMonth() + 1).padStart(2, "0");
+        var dayNum = String(cur.getDate()).padStart(2, "0");
+        var iso = y + "-" + m + "-" + dayNum;
+        var dk =
+          dow === 1
+            ? "monday"
+            : dow === 2
+              ? "tuesday"
+              : dow === 3
+                ? "wednesday"
+                : dow === 4
+                  ? "thursday"
+                  : "friday";
+        var dayTitle = DOW_TITLE[dk] || dk;
+        (AUTUMN_DAY_CENTRE_BOARD[dk] || []).forEach(function (col) {
+          (col.clients || []).forEach(function (c) {
+            if (!/^fadi\b/i.test(String(c.name || "").trim())) return;
+            out.push({
+              client_name: "Fadi",
+              day: dayTitle,
+              instructors: String(col.staff || "").toUpperCase(),
+              service: "Day Centre",
+              area: "Hub Room",
+              time_slot: c.time,
+              venue: "SwimFarm",
+              session_date: iso,
+            });
+          });
+        });
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return out;
+  }
+
   function applyFadiAbsentDayCentre(rows) {
     var out = [];
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
       var d = normIso(r.session_date);
       if (isDayCentreService(r.service) && isFadiAbsentDcBoardIso(d)) return;
-      /* Drop any leftover Fadi DC seat stamped before return Mon 21. */
+      /* Drop stale No participant placeholders that hid Fadi Cancelled seats. */
       if (
         isDayCentreService(r.service) &&
         isFadiAbsentDcWindowIso(d) &&
-        /^fadi\b/i.test(String(r.client_name || "").trim())
+        /^no participant\b/i.test(String(r.client_name || "").trim()) &&
+        /swimfarm/i.test(String(r.venue || "")) &&
+        /\b(roberto|youssef|raul)\b/i.test(String(r.instructors || ""))
       ) {
-        return;
+        var openSlot = String(r.time_slot || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+        if (
+          openSlot.indexOf("12.30 to 3") === 0 ||
+          openSlot.indexOf("12:30 to 3") === 0 ||
+          openSlot === "1 to 3" ||
+          openSlot.indexOf("1 to 3") === 0
+        ) {
+          return;
+        }
       }
       out.push(r);
     });
     autumnFadiAbsentDayCentreRows().forEach(function (row) {
+      out.push(row);
+    });
+    /* Always paint Fadi Cancelled seats through Sun 20 (return Mon 21). */
+    autumnFadiCancelledSeatRows().forEach(function (row) {
       out.push(row);
     });
     return out;
