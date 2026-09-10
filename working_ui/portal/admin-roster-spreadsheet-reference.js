@@ -1407,7 +1407,7 @@
         (under
           ? '<span class="asr-head__svc">' + esc(under) + "</span>"
           : String(st).indexOf("swimfarm") >= 0
-            ? '<span class="asr-head__svc">Day Centre · Bespoke</span>'
+            ? '<span class="asr-head__svc">Bespoke · Day Centre</span>'
             : "") +
         "</span></span></th>";
     });
