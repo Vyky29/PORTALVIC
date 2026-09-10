@@ -11,8 +11,14 @@ const DEFAULT_SUPABASE_URL = "https://cklpnwhlqsulpmkipmqb.supabase.co";
 const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE";
 
 const STORAGE_KEY = "portal_staff_context";
-/** Last seen `staff_profiles.auth_session_generation` (localStorage — shared across portal tabs). */
+/** Last seen `staff_profiles.auth_session_generation` (localStorage — per auth user). */
 const PORTAL_AUTH_GEN_SESSION_KEY = "portalAuthSessionGenV1";
+
+function portalAuthGenStorageKey(userId) {
+  const id = String(userId || "").trim();
+  if (id) return PORTAL_AUTH_GEN_SESSION_KEY + ":" + id;
+  return PORTAL_AUTH_GEN_SESSION_KEY;
+}
 
 /** @type {import("@supabase/supabase-js").SupabaseClient | null} */
 let _client = null;
@@ -118,9 +124,9 @@ export function clearPortalStaffContext() {
   }
 }
 
-export function portalGetCachedAuthSessionGeneration() {
+export function portalGetCachedAuthSessionGeneration(userId) {
   try {
-    const raw = localStorage.getItem(PORTAL_AUTH_GEN_SESSION_KEY);
+    const raw = localStorage.getItem(portalAuthGenStorageKey(userId));
     if (raw == null || raw === "") return null;
     const n = Number(raw);
     return Number.isFinite(n) ? n : null;
@@ -129,17 +135,18 @@ export function portalGetCachedAuthSessionGeneration() {
   }
 }
 
-export function portalSetCachedAuthSessionGeneration(n) {
+export function portalSetCachedAuthSessionGeneration(n, userId) {
   try {
-    localStorage.setItem(PORTAL_AUTH_GEN_SESSION_KEY, String(Number(n) || 0));
+    localStorage.setItem(portalAuthGenStorageKey(userId), String(Number(n) || 0));
   } catch {
     /* ignore */
   }
 }
 
-export function portalClearCachedAuthSessionGeneration() {
+export function portalClearCachedAuthSessionGeneration(userId) {
   try {
-    localStorage.removeItem(PORTAL_AUTH_GEN_SESSION_KEY);
+    localStorage.removeItem(portalAuthGenStorageKey(userId));
+    if (userId) localStorage.removeItem(PORTAL_AUTH_GEN_SESSION_KEY);
   } catch {
     /* ignore */
   }
@@ -149,12 +156,13 @@ export function portalClearCachedAuthSessionGeneration() {
  * Call once after each successful password login. Other devices/tabs polling
  * `staff_profiles.auth_session_generation` will see a higher value and sign out.
  * @param {import("@supabase/supabase-js").SupabaseClient} supabase
+ * @param {string} [userId]
  */
-export async function portalBumpAuthSessionGeneration(supabase) {
+export async function portalBumpAuthSessionGeneration(supabase, userId) {
   const { data, error } = await supabase.rpc("portal_bump_auth_session_generation");
   if (error) throw error;
   const v = typeof data === "number" ? data : Number(data);
-  if (Number.isFinite(v)) portalSetCachedAuthSessionGeneration(v);
+  if (Number.isFinite(v)) portalSetCachedAuthSessionGeneration(v, userId);
   return v;
 }
 
@@ -1966,7 +1974,7 @@ export function bindPortalRemoteLogoutOnStaleAuthGeneration(supabase, userId, op
       .maybeSingle();
     if (error || !data) return;
     const remote = Number(data.auth_session_generation) || 0;
-    const cached = portalGetCachedAuthSessionGeneration();
+    const cached = portalGetCachedAuthSessionGeneration(userId);
     if (cached != null && remote > cached) {
       stopped = true;
       if (intervalId != null) clearInterval(intervalId);
@@ -1978,7 +1986,7 @@ export function bindPortalRemoteLogoutOnStaleAuthGeneration(supabase, userId, op
       window.location.href = loginUrl;
       return;
     }
-    portalSetCachedAuthSessionGeneration(remote);
+    portalSetCachedAuthSessionGeneration(remote, userId);
   }
 
   void tick();
@@ -2086,8 +2094,15 @@ export async function portalLogout() {
       /* ignore */
     }
   }
+  let uid = "";
+  try {
+    const box = typeof window !== "undefined" ? window.__PORTAL_SUPABASE__ : null;
+    uid = String((box && box.session && box.session.user && box.session.user.id) || "").trim();
+  } catch {
+    uid = "";
+  }
   clearPortalStaffContext();
-  portalClearCachedAuthSessionGeneration();
+  portalClearCachedAuthSessionGeneration(uid);
   try {
     const supabase = getSupabaseClient();
     const { error } = await supabase.auth.signOut({ scope: "local" });

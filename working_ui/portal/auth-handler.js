@@ -25,7 +25,7 @@ import {
   portalReadPersistedSupabaseAccessToken,
   portalReadPersistedSupabaseSession,
   bindPortalRemoteLogoutOnStaleAuthGeneration,
-} from "./supabase-client.js?v=20260707-login-cache";
+} from "./supabase-client.js?v=20260910-roberto-session";
 import {
   portalStaffIsDocumentsOnly,
   portalStaffDocumentsOnlyHomeUrl,
@@ -110,7 +110,7 @@ export {
   portalClearCachedAuthSessionGeneration,
   portalFetchSubmittedReviewSessionKeys,
   portalMergeReviewKeysIntoMemoryMap,
-} from "./supabase-client.js?v=20260707-login-cache";
+} from "./supabase-client.js?v=20260910-roberto-session";
 
 /** Bump to force a one-time sign-out + fresh login after a published portal build. */
 export const APP_VERSION = "2026-07-05-live-madre-logout-all";
@@ -1366,12 +1366,14 @@ function bindLogin() {
         /* signInWithPassword already stores the session; awaiting setSession can deadlock on GoTrue lock. */
         void portalEnsureSupabaseSession(supabase, data.session);
       }
-      void portalBumpAuthSessionGeneration(supabase).catch(function (bumpErr) {
+      try {
+        await portalBumpAuthSessionGeneration(supabase, data.user.id);
+      } catch (bumpErr) {
         console.warn(
           "[portal] portal_bump_auth_session_generation failed — apply migration 20260420_portal_auth_generation_and_review_select.sql?",
           bumpErr
         );
-      });
+      }
       portalPersistLoginRedirectIntent();
       let url = portalEmergencyRedirectUrl(email);
       if (!url) {
@@ -1990,12 +1992,13 @@ export async function bootstrapDashboardSupabase(_opts) {
 
     if (profile) {
       const gen = Number(profile.auth_session_generation) || 0;
+      const uid = String((session && session.user && session.user.id) || "").trim();
       if (isGhostDashboard || isGodModeAdmin || singleSessionExempt) {
         // Fresh tab can hold a stale generation cache; sync to server before single-session kick.
-        portalClearCachedAuthSessionGeneration();
-        portalSetCachedAuthSessionGeneration(gen);
+        portalClearCachedAuthSessionGeneration(uid);
+        portalSetCachedAuthSessionGeneration(gen, uid);
       } else {
-        const cached = portalGetCachedAuthSessionGeneration();
+        const cached = portalGetCachedAuthSessionGeneration(uid);
         if (cached != null && gen > cached) {
           try {
             await portalLogout();
@@ -2009,7 +2012,7 @@ export async function bootstrapDashboardSupabase(_opts) {
           window.location.href = kickUrl;
           return;
         }
-        portalSetCachedAuthSessionGeneration(gen);
+        portalSetCachedAuthSessionGeneration(gen, uid);
       }
     }
 
