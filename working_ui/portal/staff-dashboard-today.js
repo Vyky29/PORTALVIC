@@ -3113,7 +3113,7 @@
                 actionsDisabled: true,
                 detailsOpenAllowed: true,
                 portalOverrideSuppressReviewOrange: true,
-                portalOverrideCardTone: 'green',
+                portalOverrideCardTone: 'red',
                 portalOverrideAlertPill: 'CANCELLED',
                 __portalScheduleOverride: ov
               }, meta);
@@ -3270,7 +3270,7 @@
             portalTwoToOneSupportLabel: twoToOneLabel,
             portalOverrideMakeUpTag: isMakeUpCard,
             portalOverrideTrialTag: isTrialOv,
-            portalOverrideCardTone: fadiDcCancel ? 'green' : (isMakeUpCard ? 'pink' : (slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : ''))),
+            portalOverrideCardTone: fadiDcCancel ? 'red' : (isMakeUpCard ? 'pink' : (slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : ''))),
             portalOverrideSymbolText: isTrialOv ? 'Trial' : (isMakeUpCard ? 'Make Up' : ''),
             portalOverrideHideAdminBadge: false,
             portalOverrideAlertPill: fadiDcCancel ? 'CANCELLED' : (slotWasUpdated ? 'UPDATED' : ''),
@@ -3408,7 +3408,7 @@
               actionsDisabled: true,
               detailsOpenAllowed: true,
               portalOverrideSuppressReviewOrange: true,
-              portalOverrideCardTone: 'green',
+              portalOverrideCardTone: 'red',
               portalOverrideAlertPill: 'CANCELLED',
               scheduleAdminAdjusted: true,
               sessionVenue: String(s.venue || '').trim() || '—',
@@ -3618,6 +3618,26 @@
           __portalScheduleOverride: ov
         });
       });
+
+      function portalTodayItemIsCancelledCard(it){
+        if(!it) return false;
+        const pill = String(it.portalOverrideAlertPill || '').trim().toUpperCase();
+        if(pill === 'CANCELLED') return true;
+        const ov = it.__portalScheduleOverride || null;
+        if(ov){
+          const typ = String(ov.override_type || ov.overrideType || '').trim();
+          const pl = ov.payload || {};
+          if(typ === 'slot_clear_client' && pl && pl.cancelled_by_admin) return true;
+        }
+        const manual = String(
+          (it.__portalBaseSession && it.__portalBaseSession.override) || it.override || ''
+        ).trim().toUpperCase();
+        if(manual === 'CANCELLED') return true;
+        const gen = String(it.general || '').trim().toLowerCase();
+        if(/^cancelled\b/.test(gen)) return true;
+        return false;
+      }
+
       function portalTodayItemSortKey(it){
         const sk = String(it.sessionKey || '');
         const p = sk.split('|');
@@ -3829,6 +3849,13 @@
       if(portalStaffKeyIsLulia(staffId)){
         mergedToday = portalApplyLuliaIkramCutoffToTodayItems(mergedToday, staffId, sessionDateKey, anchor);
       }
+      /* Cancelled clients first (full red card), then normal time order. */
+      mergedToday = (Array.isArray(mergedToday) ? mergedToday.slice() : []).sort(function(a, b){
+        const aCan = portalTodayItemIsCancelledCard(a) ? 0 : 1;
+        const bCan = portalTodayItemIsCancelledCard(b) ? 0 : 1;
+        if(aCan !== bCan) return aCan - bCan;
+        return Number(normalizeTimeForSort(portalTodayItemSortKey(a))) - Number(normalizeTimeForSort(portalTodayItemSortKey(b)));
+      });
       return mergedToday;
     }
     var buildTodayFromLauraModel = buildSelectedDayViewFromLauraModel;

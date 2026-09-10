@@ -4261,12 +4261,27 @@
       box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
     }
     .session-card.override--portal-cancelled{
-      background:var(--reviewGreenBg);
-      border-color:var(--reviewGreenBorder);
-      box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
+      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
+      border-color:rgba(123,18,18,.78);
+      box-shadow:0 0 0 1px rgba(190,65,65,.14),0 8px 22px rgba(190,65,65,.12);
     }
-    .section-card--today .session-card.override--portal-cancelled:hover{
-      border-color:rgba(21,115,71,.45);
+    .section-card--today .session-card.override--portal-cancelled,
+    .section-card--today .session-card.override--portal-cancelled.session-card--review-done,
+    .section-card--today .session-card.override--portal-cancelled.session-card--review-cancelled,
+    .section-card--today .session-card.override--portal-cancelled.session-card--admin-adjusted,
+    .section-card--today .session-card.session-card--ov-red.override--portal-cancelled{
+      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
+      border-color:#b71c1c;
+      box-shadow:0 0 0 1px rgba(190,65,65,.14),0 8px 22px rgba(190,65,65,.12);
+    }
+    .section-card--today .session-card.override--portal-cancelled:hover,
+    .section-card--today .session-card.session-card--review-cancelled:hover{
+      border-color:rgba(190,65,65,.55);
+    }
+    .section-card--today .session-card.session-card--segments.override--portal-cancelled,
+    .section-card--today .session-card.session-card--segments.session-card--ov-red,
+    .section-card--today .session-card.session-card--segments.session-card--review-cancelled{
+      border-left-color:#b71c1c;
     }
     .session-card.override--closed{background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);border-color:rgba(123,18,18,.78)}
     .session-card.override--replace{background:rgba(252,233,241,.92);border-color:rgba(136,14,79,.72)}
@@ -6398,11 +6413,17 @@
     }
     .session-card.session-card--review-absent:hover{border-color:rgba(190,65,65,.55)}
     .session-card.session-card--review-cancelled{
-      background:var(--reviewLilacBg);
-      border-color:var(--reviewLilacBorder);
-      box-shadow:0 0 0 1px var(--reviewLilacGlow),0 8px 22px var(--reviewLilacGlow);
+      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
+      border-color:rgba(123,18,18,.78);
+      box-shadow:0 0 0 1px rgba(190,65,65,.14),0 8px 22px rgba(190,65,65,.12);
     }
-    .session-card.session-card--review-cancelled:hover{border-color:rgba(110,90,150,.48)}
+    .session-card.session-card--review-cancelled:hover{border-color:rgba(190,65,65,.55)}
+    .section-card--today .session-card.session-card--review-cancelled,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--review-cancelled{
+      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
+      border-color:#b71c1c;
+      box-shadow:0 0 0 1px rgba(190,65,65,.14),0 8px 22px rgba(190,65,65,.12);
+    }
     .session-card.session-card--review-done .session-cell--time,
     .session-card.session-card--review-done .session-line--time,
     .session-card.session-card--review-incident .session-cell--time,

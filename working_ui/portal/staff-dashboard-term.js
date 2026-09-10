@@ -2110,7 +2110,7 @@
       }
       const r = getEffectiveSessionReviewRecord(item) || {};
       if(r.absent) return 'session-card--review-done';
-      if(r.cancelled) return 'session-card--review-done';
+      if(r.cancelled) return 'session-card--review-cancelled';
       if(r.feedbackDone) return 'session-card--review-done';
       /* Hold Pending/orange until Supabase review merge finished — Day Centre shared keys
          arrive with portalServerResolvedRosterKeys and otherwise flip orange→green late. */
