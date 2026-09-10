@@ -3865,15 +3865,16 @@
       if(portalStaffKeyIsLulia(staffId)){
         mergedToday = portalApplyLuliaIkramCutoffToTodayItems(mergedToday, staffId, sessionDateKey, anchor);
       }
-      /* Time order; at the same clock Cancelled sits above the live / makeup card
-         (Fadi Cancelled then Ikram; Joelle Cancelled then Anas). */
+      /* Cancelled original first (Fadi Cancelled), then live / replacement by time
+         (Emanuel below Fadi even when Emanuel starts earlier). Same pattern as
+         Joelle Cancelled then Anas / Ikram. */
       mergedToday = (Array.isArray(mergedToday) ? mergedToday.slice() : []).sort(function(a, b){
-        const ta = Number(normalizeTimeForSort(portalTodayItemSortKey(a)));
-        const tb = Number(normalizeTimeForSort(portalTodayItemSortKey(b)));
-        if(ta !== tb) return ta - tb;
         const aCan = portalTodayItemIsCancelledCard(a) ? 0 : 1;
         const bCan = portalTodayItemIsCancelledCard(b) ? 0 : 1;
         if(aCan !== bCan) return aCan - bCan;
+        const ta = Number(normalizeTimeForSort(portalTodayItemSortKey(a)));
+        const tb = Number(normalizeTimeForSort(portalTodayItemSortKey(b)));
+        if(ta !== tb) return ta - tb;
         return 0;
       });
       return mergedToday;

@@ -2410,6 +2410,9 @@
       /* Admin-flagged outstanding day (e.g. Youssef 24 Jun PM swim slots) stays orange even when
          the assume-complete-through window or forced-complete map would otherwise green it. */
       if(staffId && key <= todayKey && portalTermStaffDayExplicitlyPending(key, staffId)) return 'late';
+      /* All-cancelled days (Fadi window Thursdays, club closed) must stay red — do not
+         let assume-complete / forced-complete paint them green. */
+      if(explicit === 'cancelled') return 'cancelled';
       if(staffId && typeof portalTermFeedbackAssumeComplete === 'function'
         && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
       /* Grandfather / forced-complete (Jun 1–7, Javier May catch-up) wins over stale fbMap late. */
@@ -2437,7 +2440,6 @@
       /* Validated / requested day off — never nag for session feedback on that date. */
       if(staffId && typeof portalStaffHasRequestedTimeOffOnDate === 'function'
         && portalStaffHasRequestedTimeOffOnDate(key, staffId)) return 'complete';
-      if(explicit === 'cancelled') return 'cancelled';
       if(explicit === 'late') return 'late';
       const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
       if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'pending';
@@ -3099,7 +3101,12 @@
           let cls = 'term-cal-day';
           let label;
           let dayFlagsOff = null;
-          const halfBlocksNav = half && !exportWorked && !extraCatchUp && !instructorCoverDay && !adminAddedShiftDay;
+          const termClosedDay = portalTermClosedDates().indexOf(isoKey) >= 0;
+          /* Club closed (e.g. Thu 3 Sep): always red — do not let export/cancelled-seat
+             pulses paint the cell blue as if it were a worked day. */
+          const halfBlocksNav = (half || termClosedDay)
+            && !extraCatchUp && !instructorCoverDay && !adminAddedShiftDay
+            && !(exportWorked && !termClosedDay);
           const staffRequestedAway = termStaffId
             && portalTermStaffAwayDatesFor(termStaffId).indexOf(isoKey) >= 0;
           const adminScheduleAdjusted = termStaffId
@@ -3114,7 +3121,9 @@
             continue;
           }
           if(halfBlocksNav){
-            const ovPulseHalf = portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWordRoster);
+            const ovPulseHalf = termClosedDay
+              ? ''
+              : portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWordRoster);
             dayFlagsOff = typeof portalDayOverrideBadgeFlags === 'function'
               ? portalDayOverrideBadgeFlags(dayWordRoster, isoKey)
               : null;
@@ -3127,7 +3136,6 @@
             }
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
             const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
-            const termClosedDay = portalTermClosedDates().indexOf(isoKey) >= 0;
             label = ovPulseHalf
               ? `${day}, schedule change — see quick menu`
               : (afterTermEnd

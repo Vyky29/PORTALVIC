@@ -305,29 +305,46 @@
       if(typeof portalTermDateForcedComplete === 'function' && portalTermDateForcedComplete(key, staffId)) return 'complete';
 
       /* All-cancelled (Fadi / Joelle-style) before assume-complete or pipeline-pending.
-         Cancelled sessions are feedback-exempt, so they must still count here or the
-         cell stays blue/green instead of a tappable cancelled day. */
+         Day is cancelled red only when every real client seat is cancelled — a worked
+         replacement / submitted client (Emanuel beside Fadi Cancelled) keeps the day green.
+         Do not treat feedbackDone as "skip" here: that falsely painted mixed days red. */
       const cancelList = relFb.length ? relFb : relAll;
       if(cancelList.length){
-        let allCancelled = true;
-        let anyApplicable = false;
+        let sawCancelled = false;
+        let sawNonCancelledClient = false;
         for(let i = 0; i < cancelList.length; i++){
           const s = cancelList[i];
           const flags = typeof portalRosterSessionFeedbackResolvedFlags === 'function'
             ? portalRosterSessionFeedbackResolvedFlags(s, key, staffId)
             : null;
-          const cancelled = !!(flags && flags.cancelled);
-          if(!cancelled
-            && typeof portalRosterSessionFeedbackExempt === 'function'
-            && portalRosterSessionFeedbackExempt(s, key, staffId)) continue;
-          anyApplicable = true;
-          if(!cancelled){
-            allCancelled = false;
-            break;
+          const st = typeof sessionModelStatus === 'function'
+            ? String(sessionModelStatus(s) || '').trim()
+            : String(s && s.status || '').trim();
+          const cid = String(s && s.clientId || '').trim().toLowerCase();
+          if(st === 'Available' || st === 'Closed' || st === 'Home') continue;
+          if(!cid || cid === 'available' || cid === 'closed' || cid === 'home') continue;
+          if(flags && flags.cancelled){
+            sawCancelled = true;
+            continue;
           }
+          /* Real client not cancelled: pending, submitted, absent, or open unit. */
+          sawNonCancelledClient = true;
+          break;
         }
-        if(anyApplicable && allCancelled) return 'cancelled';
-      }
+        if(sawCancelled && !sawNonCancelledClient){
+          /* Replacement / trial on the same day (Emanuel beside Fadi Cancelled) may live
+             only on the Today board path — treat as not all-cancelled. */
+          let hasReplacementWork = false;
+          try{
+            if(typeof portalDayOverrideBadgeFlags === 'function'){
+              const dayFlags = portalDayOverrideBadgeFlags(dw, key);
+              if(dayFlags && (dayFlags.hasMakeUp || dayFlags.hasTrial || dayFlags.hasNewShift)){
+                hasReplacementWork = true;
+              }
+            }
+          }catch(_){}
+          if(!hasReplacementWork) return 'cancelled';
+        }
 
       if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
       if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(key)) return 'complete';
