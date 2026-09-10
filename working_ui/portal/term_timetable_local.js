@@ -658,15 +658,6 @@
     ].join("|");
   }
 
-  function formatVenueWithArea(venue, area) {
-    var v = String(venue || "").trim();
-    var a = String(area || "").trim();
-    if (!a) return v;
-    if (!v) return a;
-    if (a.toLowerCase().indexOf(v.toLowerCase()) === 0) return a;
-    return v + " · " + a;
-  }
-
   function renderSessionsBoard() {
     var rows = sessionRows();
     var order = [];
@@ -714,9 +705,12 @@
                   esc(r.client_name || "") +
                   '</div><div class="ttl-card__meta">' +
                   esc(r.time_slot || "") +
-                  " · " +
-                  esc(formatVenueWithArea(r.venue, r.area)) +
-                  "</div></button>"
+                  (r.venue ? " · " + esc(String(r.venue).trim()) : "") +
+                  "</div>" +
+                  (String(r.area || "").trim()
+                    ? '<div class="ttl-card__area">' + esc(String(r.area).trim()) + "</div>"
+                    : "") +
+                  "</button>"
                 );
               })
               .join("") +
