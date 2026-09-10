@@ -440,7 +440,7 @@
       function autoProbe() {
         var photo = document.getElementById("topbarToolAchievements");
         var menu = document.getElementById("menuSheet");
-        var fadiCards = document.querySelectorAll("#todayGrid .session-card");
+        var fadiCards = document.querySelectorAll(".section-card--today .session-card, #todayGrid .session-card");
         var fadi = [];
         for (var i = 0; i < fadiCards.length; i++) {
           var t = String(fadiCards[i].textContent || "");
@@ -478,12 +478,12 @@
             chip.textContent =
               "photo:" +
               (stack[0] || "-") +
-              " menu:" +
-              menuDisp +
               " fadi:" +
               fadi.length +
               " segs:" +
-              (fadi[0] && fadi[0].segs ? "y" : "n");
+              (fadi[0] && fadi[0].segs ? "y" : "n") +
+              " can:" +
+              (fadi[0] && fadi[0].cancel ? "y" : "n");
           }
         } catch (_c2) {}
       }
@@ -1399,7 +1399,7 @@
   <script src="/portal/portal_participant_photos.js?v=20260910-reg-photo-slug"></script>
   <script src="/portal/portal_participant_avatars_hydrate.js?v=20260910-reg-photo-slug"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260904-michelle-interviews"></script>
-  <script src="/portal/portal_topbar_header.js?v=20260910-staff-debug2"></script>
+  <script src="/portal/portal_topbar_header.js?v=20260910-staff-debug3"></script>
   <script src="/portal/portal_comunicaciones_entry.js?v=20260906-comms-inapp-52"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260704-area-note-fixed"></script>
@@ -1415,14 +1415,14 @@
   <script src="/portal/staff-dashboard-participants.js?v=20260910-berta-off-alerts"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260906-yusuf-aurora-swap"></script>
-  <script src="/portal/staff-dashboard-today.js?v=20260910-staff-debug2"></script>
-  <script src="/portal/staff-dashboard-ui.js?v=20260910-staff-debug2"></script>
+  <script src="/portal/staff-dashboard-today.js?v=20260910-staff-debug3"></script>
+  <script src="/portal/staff-dashboard-ui.js?v=20260910-staff-debug3"></script>
   <script src="/portal/portal_today_time_fit.js?v=20260706-time-one-line"></script>
   <script src="/portal/staff-dashboard-auth-bridge.js?v=20260625-lead-day-cards-nav"></script>
   <script src="/portal/staff-dashboard-rehydrate.js?v=20260909-luliya-first"></script>
   <script src="/portal/portal-logout-bind.js?v=20260712-no-photo-signout"></script>
   <script type="module" src="/portal/staff-dashboard-auth-supabase.js?v=20260910-staff-open"></script>
-  <script src="/portal/staff-dashboard-achievements-boot.js?v=20260910-staff-debug2"></script>
+  <script src="/portal/staff-dashboard-achievements-boot.js?v=20260910-staff-debug3"></script>
     
   
   

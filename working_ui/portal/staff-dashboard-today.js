@@ -28,6 +28,22 @@
         return (Array.isArray(segs) && segs.length) ? segs : undefined;
       }catch(_){ return undefined; }
     }
+    /** Fadi DC seats stay Cancelled (Joelle pattern) through Sun 20 Sep 2026. */
+    function portalTodayIsFadiDcCancelledSeat(s, sessionDateKey){
+      if(!s) return false;
+      var blob = String(s.clientId || '') + ' ' + String(s.clientDisplay || '') + ' ' + String(s.clientName || '');
+      if(!/\bfadi\b/i.test(blob)) return false;
+      var activity = String(s.activity || s.service || s.rosterService || '').trim().toLowerCase();
+      if(!/day\s*centre/.test(activity)) return false;
+      var iso = String(sessionDateKey || s.session_date || s.sessionDate || '').trim().slice(0, 10);
+      try{
+        var canon = (typeof window !== 'undefined' && window.PortalRosterCanonical) ? window.PortalRosterCanonical : null;
+        if(canon && typeof canon.isFadiAbsentDcWindowIso === 'function'){
+          return !!canon.isFadiAbsentDcWindowIso(iso);
+        }
+      }catch(_){}
+      return !!(iso && iso >= '2026-09-01' && iso < '2026-09-21');
+    }
     function portalStaffClientSessionsOnCalendarDate(isoYmd, weekdayLong, staffId, modelOverride){
       const iso = normaliseIsoDate(isoYmd);
       const sid = String(staffId || '').trim().toLowerCase();
@@ -3206,6 +3222,11 @@
           const twoToOneLabel = typeof portalTwoToOneSupportLabelForSession === 'function'
             ? portalTwoToOneSupportLabelForSession(s, s.staffId, effClientId)
             : '';
+          const fadiDcCancel = !hasReplaceOv && !isMakeUpCard && !isTrialOv
+            && portalTodayIsFadiDcCancelledSeat(s, sessionDateKey);
+          const dcSegs = (!hasReplaceOv && Array.isArray(s.segments) && s.segments.length)
+            ? s.segments
+            : (fadiDcCancel ? portalTodayKeepDcSegments(s) : undefined);
           return Object.assign({
             time,
             kind: 'client',
@@ -3221,8 +3242,8 @@
             // Multi-part Day Centre block (morning centre + pool hour): rendered as a
             // combined card. Only present when the roster slot defines segments and the
             // slot isn't being replaced by an override.
-            segments: (!hasReplaceOv && Array.isArray(s.segments) && s.segments.length) ? s.segments : undefined,
-            general: generalBody,
+            segments: dcSegs,
+            general: fadiDcCancel ? (`Cancelled. ${generalBody}`).trim() : generalBody,
             specialty: showSpec ? pickSpecialtyBody(c, activity) : '',
             openSheet: true,
             sessionKey,
@@ -3231,10 +3252,14 @@
             portalTwoToOneSupportLabel: twoToOneLabel,
             portalOverrideMakeUpTag: isMakeUpCard,
             portalOverrideTrialTag: isTrialOv,
-            portalOverrideCardTone: isMakeUpCard ? 'pink' : (slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : '')),
+            portalOverrideCardTone: fadiDcCancel ? 'green' : (isMakeUpCard ? 'pink' : (slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : ''))),
             portalOverrideSymbolText: isTrialOv ? 'Trial' : (isMakeUpCard ? 'Make Up' : ''),
             portalOverrideHideAdminBadge: false,
-            portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
+            portalOverrideAlertPill: fadiDcCancel ? 'CANCELLED' : (slotWasUpdated ? 'UPDATED' : ''),
+            noSessionFeedbackRequired: !!fadiDcCancel,
+            actionsDisabled: !!fadiDcCancel,
+            detailsOpenAllowed: true,
+            portalOverrideSuppressReviewOrange: !!fadiDcCancel,
             portalRosterTimeUpdated: !!slotWasUpdated
           }, meta);
         })

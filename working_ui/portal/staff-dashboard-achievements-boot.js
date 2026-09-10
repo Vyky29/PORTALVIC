@@ -71,9 +71,28 @@
         });
       }
       function openParticipantAchievements(){
-        mountSheet();
-        configure();
-        if(typeof openSheet === 'function') openSheet('achievementsSheet');
+        function go(){
+          mountSheet();
+          configure();
+          var sheet = document.getElementById('achievementsSheet');
+          // #region agent log
+          try{
+            if(typeof window.__portalDbg === 'function'){
+              window.__portalDbg('D', 'staff-dashboard-achievements-boot.js:open', 'photo-open', {
+                runId: 'post-fix',
+                hasLib: !!window.PortalParticipantAchievements,
+                hasSheet: !!sheet
+              });
+            }
+          }catch(_){}
+          // #endregion
+          if(typeof openSheet === 'function') openSheet('achievementsSheet');
+        }
+        if(window.PortalParticipantAchievements){
+          go();
+          return;
+        }
+        whenLazyReady(go);
       }
       try{ window.portalOpenParticipantAchievements = openParticipantAchievements; }catch(_){}
       function bindQuickMenu(){
