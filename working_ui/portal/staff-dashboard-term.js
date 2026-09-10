@@ -345,6 +345,7 @@
           }catch(_){}
           if(!hasReplacementWork) return 'cancelled';
         }
+      }
 
       if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
       if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(key)) return 'complete';
@@ -394,8 +395,6 @@
           ? portalStaffFeedbackReviewUiReady(key)
           : (typeof portalStaffFeedbackPipelineReady === 'function' && portalStaffFeedbackPipelineReady());
         const overridesReadyRoster = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
-        /* Pending count already 0 and sessions not still running. Past days must not sit
-           blue waiting on pipeline/overrides — that caused Roberto Term to flip colours. */
         if(!reviewReadyRoster || !overridesReadyRoster){
           if(key < todayKey) return 'complete';
           return 'pending';
