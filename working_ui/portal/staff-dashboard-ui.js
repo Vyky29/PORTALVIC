@@ -774,10 +774,48 @@
       grid.style.setProperty('--today-row-pad-y', padY + 'px');
     }
 
+    function portalDeferReminderChromeFromPaint(){
+      if(typeof portalScheduleReminderChromeAfterAnnSync === 'function'){
+        portalScheduleReminderChromeAfterAnnSync();
+        return;
+      }
+      if(typeof syncPortalReminderChrome === 'function'){
+        setTimeout(function(){ syncPortalReminderChrome(); }, 0);
+      }
+    }
+    function portalDeferTermFeedbackRebuild(){
+      if(window.__PORTAL_TERM_REBUILD_DEFER__) return;
+      window.__PORTAL_TERM_REBUILD_DEFER__ = 1;
+      var go = function(){
+        window.__PORTAL_TERM_REBUILD_DEFER__ = 0;
+        try{
+          if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+            rebuildTermShiftAndFeedbackFromSessionModel();
+          }
+        }catch(_){}
+        try{
+          if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
+        }catch(_){}
+        try{
+          if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+        }catch(_){}
+        try{
+          if(typeof portalScheduleReminderChromeAfterAnnSync === 'function'){
+            portalScheduleReminderChromeAfterAnnSync();
+          }else if(typeof syncPortalReminderChrome === 'function'){
+            setTimeout(function(){ syncPortalReminderChrome(); }, 0);
+          }
+        }catch(_){}
+      };
+      if(typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 1500 });
+      else setTimeout(go, 0);
+    }
+    window.portalDeferTermFeedbackRebuild = portalDeferTermFeedbackRebuild;
+
     function renderToday(){
       const grid = $('#todayGrid');
       if(!grid){
-        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        if(typeof portalDeferReminderChromeFromPaint === 'function') portalDeferReminderChromeFromPaint();
         return;
       }
       const todayHeadingLabel = document.getElementById('todayHeadingLabel');
@@ -847,7 +885,7 @@
             if(typeof portalRefreshTodayNextParticipantPhotos === 'function'){
               portalRefreshTodayNextParticipantPhotos(grid);
             }
-            if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+            if(typeof portalDeferReminderChromeFromPaint === 'function') portalDeferReminderChromeFromPaint();
             if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
             return;
           }
@@ -870,7 +908,7 @@
         if(panelMode === 'sync' && typeof portalStaffScheduleTodaySyncRetry === 'function'){
           portalStaffScheduleTodaySyncRetry();
         }
-        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        if(typeof portalDeferReminderChromeFromPaint === 'function') portalDeferReminderChromeFromPaint();
         return;
       }
       const list = todayRows;
@@ -893,7 +931,7 @@
             escapeHtml: escapeHtml
           });
         }
-        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        if(typeof portalDeferReminderChromeFromPaint === 'function') portalDeferReminderChromeFromPaint();
         if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
         return;
       }
@@ -967,7 +1005,7 @@
           escapeHtml: escapeHtml
         });
       }
-      if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+      if(typeof portalDeferReminderChromeFromPaint === 'function') portalDeferReminderChromeFromPaint();
       if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
     }
 
@@ -2589,9 +2627,8 @@
       const iso = String(isoKey || '').trim().slice(0, 10);
       const dw = String(dayWord || '').trim();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return false;
-      const allowRebuild = !!(typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__);
-      const pending = typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
-        ? portalCountPendingSessionReviewsForCalendarDay(iso, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)
+      const pending = typeof portalCountPendingFromRosterRows === 'function'
+        ? portalCountPendingFromRosterRows(iso, dw, sessions, curDate, staffId)
         : 0;
       if(pending > 0) return false;
       if(typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
@@ -2601,11 +2638,8 @@
       if(staffId && typeof portalTermStaffDayExplicitlyPending === 'function'
         && portalTermStaffDayExplicitlyPending(iso, staffId)) return false;
       if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, staffId)) return true;
-      if(typeof portalTermTodayListClientFeedbackAllResolved === 'function'
-        && portalTermTodayListClientFeedbackAllResolved(iso, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)){
-        return true;
-      }
       const rel = Array.isArray(sessions) ? sessions : [];
+      if(rel.length && pending === 0) return true;
       if(typeof portalTermRosterHasRealClientSessions === 'function' && portalTermRosterHasRealClientSessions(rel, iso)) return false;
       return rel.length > 0;
     }

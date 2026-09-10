@@ -179,12 +179,10 @@
         if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
         dashboardData.week = buildWeekRows(sid);
         if (typeof window.portalApplyTermCalendarForStaff === "function") window.portalApplyTermCalendarForStaff(sid);
-        if (typeof rebuildTermShiftAndFeedbackFromSessionModel === "function") {
-          rebuildTermShiftAndFeedbackFromSessionModel();
-        }
         if (typeof renderToday === "function") renderToday();
         if (typeof renderLists === "function") renderLists();
         if (typeof renderMiniCounts === "function") renderMiniCounts();
+        if (typeof portalDeferTermFeedbackRebuild === "function") portalDeferTermFeedbackRebuild();
       }
       window.portalRebootstrapSessionsForPinnedStaff = portalRebootstrapSessionsForPinnedStaff;
       function portalStaffKeyForRotaFromProfile(p){
@@ -835,9 +833,10 @@
           if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(sid);
           dashboardData.week = buildWeekRows(sid);
           if (typeof window.portalApplyTermCalendarForStaff === "function") window.portalApplyTermCalendarForStaff(sid);
-          if (typeof rebuildTermShiftAndFeedbackFromSessionModel === "function") rebuildTermShiftAndFeedbackFromSessionModel();
           if (typeof renderToday === "function") renderToday();
           if (typeof renderMiniCounts === "function") renderMiniCounts();
+          if (typeof portalDeferTermFeedbackRebuild === "function") portalDeferTermFeedbackRebuild();
+          else if (typeof rebuildTermShiftAndFeedbackFromSessionModel === "function") rebuildTermShiftAndFeedbackFromSessionModel();
           if (typeof renderTermCalendarGrid === "function") renderTermCalendarGrid();
           try{
             var lockDay3 = String(window.__PORTAL_REVIEW_DAY_URL_LOCK || '').trim();

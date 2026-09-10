@@ -337,10 +337,16 @@
         if(minStart !== Infinity && termCalendarNowMs() < minStart) return 'pending';
       }
 
-      const pending = (typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
-        && PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw))
-        ? portalCountPendingSessionReviewsForCalendarDay(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)
-        : 0;
+      /* Roster rows only. Building the full Today board for every term day froze the
+         staff PWA (Roberto ~5s, no taps). Today-list is still used when the day sheet is open. */
+      let pending = 0;
+      if(PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw) && relFb.length && cur
+        && typeof portalCountPendingFromRosterRows === 'function'){
+        pending = portalCountPendingFromRosterRows(key, dw, relFb, cur, staffId);
+      } else if(typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
+        && PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)){
+        pending = portalCountPendingSessionReviewsForCalendarDay(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined);
+      }
 
       const stillRunning = typeof portalTermCalendarDayHasNotEndedClientSession === 'function'
         && portalTermCalendarDayHasNotEndedClientSession(key, dw, staffId, relFb.length ? relFb : relAll, cur);
@@ -360,6 +366,14 @@
       if(!hasRealClientForDay) return 'complete';
 
       if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
+      if(relFb.length){
+        const reviewReadyRoster = typeof portalStaffFeedbackReviewUiReady === 'function'
+          ? portalStaffFeedbackReviewUiReady(key)
+          : (typeof portalStaffFeedbackPipelineReady === 'function' && portalStaffFeedbackPipelineReady());
+        const overridesReadyRoster = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
+        if(!reviewReadyRoster || !overridesReadyRoster) return 'pending';
+        return 'complete';
+      }
       if(typeof portalTermTodayListClientFeedbackAllResolved === 'function'
         && portalTermTodayListClientFeedbackAllResolved(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)){
         return 'complete';
@@ -412,15 +426,40 @@
       }
       return item;
     }
-    /** Ended-session pending for a day — delegates to Today list (single source of truth). */
+    function portalCountPendingFromRosterRows(isoKey, dayWord, sessions, curDate, staffId){
+      const key = String(isoKey || '').trim().slice(0, 10);
+      const dw = String(dayWord || '').trim();
+      const sid = String(staffId || '').trim().toLowerCase();
+      const rel = Array.isArray(sessions) ? sessions : [];
+      const cur = curDate && !isNaN(curDate.getTime()) ? curDate : new Date(key + 'T12:00:00');
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(key) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return 0;
+      let pending = 0;
+      for(let i = 0; i < rel.length; i++){
+        const s = rel[i];
+        if(typeof portalRosterSessionFeedbackExempt === 'function'
+          && portalRosterSessionFeedbackExempt(s, key, sid)) continue;
+        const item = typeof portalMinimalReviewItemFromRosterRow === 'function'
+          ? portalMinimalReviewItemFromRosterRow(s, dw, key, cur)
+          : null;
+        if(!item || !item.sessionKey) continue;
+        if(item.noSessionFeedbackRequired) continue;
+        const started = typeof isSessionStartedForItem === 'function' && isSessionStartedForItem(item);
+        const ended = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
+        if(!started && !ended) continue;
+        const r = typeof getEffectiveSessionReviewRecord === 'function'
+          ? (getEffectiveSessionReviewRecord(item) || {})
+          : (typeof getSessionReviewRecord === 'function' ? (getSessionReviewRecord(item) || {}) : {});
+        if(r.feedbackDone || r.absent || r.cancelled) continue;
+        pending++;
+      }
+      return pending;
+    }
+    /** Ended-session pending for a day — roster rows (not a full Today rebuild). */
     function portalRosterEndedFeedbackPendingCount(isoKey, dayWord, staffId, sessions, curDate){
       const key = String(isoKey || '').trim().slice(0, 10);
       const dw = String(dayWord || '').trim();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(key) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return 0;
-      const allowRebuild = !!(typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__);
-      return typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
-        ? portalCountPendingSessionReviewsForCalendarDay(key, dw, allowRebuild ? { allowDuringRebuild: true } : undefined)
-        : 0;
+      return portalCountPendingFromRosterRows(key, dw, sessions, curDate, staffId);
     }
     /** Same rule as orange "review needed" rows: ended client sessions without register/feedback complete (see collectSessionReviewPendingStats). */
     function hasPendingReviews(){
@@ -1224,149 +1263,17 @@
           return _portalOutstandingFbCountCache.n;
         }
         if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()) return 0;
-        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
-          rebuildTermShiftAndFeedbackFromSessionModel();
+        /* Count outstanding days from the already-built term map. Never rebuild Today
+           per calendar day here — that froze every tap on the staff PWA. */
+        var fbMap = (dashboardData && dashboardData.termFeedbackByDate) ? dashboardData.termFeedbackByDate : {};
+        var keys = Object.keys(fbMap);
+        var count = 0;
+        for(var i = 0; i < keys.length; i++){
+          var k = keys[i];
+          if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(k)) continue;
+          if(!portalTermCalendarDayCountsForOutstanding(k, fbMap)) continue;
+          count += 1;
         }
-        const fbMap = (dashboardData && dashboardData.termFeedbackByDate) ? dashboardData.termFeedbackByDate : {};
-        const t = window.PORTAL_TERM_FROM_TIMETABLE;
-        const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-        const worked = Array.isArray(dashboardData.termWorkedWeekdays) ? dashboardData.termWorkedWeekdays.map(Number) : [];
-        if(!t || !t.firstDate || !t.lastDate || !staffId || !worked.length) return 0;
-        const baseRealFb = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
-        const nowMs = termCalendarNowMs();
-        const todayKey = portalTermLocalYmdFromMs(nowMs);
-        const fromIso = (window.PortalTermCalendarDashboard && typeof window.PortalTermCalendarDashboard.feedbackReminderFromIso === 'function')
-          ? window.PortalTermCalendarDashboard.feedbackReminderFromIso()
-          : String(dashboardData.termDashboardCalendarFrom || t.termResumeDate || '2026-06-01').slice(0, 10);
-        let count = 0;
-        const loopStart = (fromIso && fromIso > String(t.firstDate || '').slice(0, 10)) ? fromIso : String(t.firstDate).slice(0, 10);
-        const cur = new Date(String(loopStart) + 'T12:00:00');
-        const last = new Date(String(t.lastDate) + 'T12:00:00');
-        while(cur.getTime() <= last.getTime()){
-          const w = cur.getDay();
-          if(!worked.includes(w)){
-            cur.setDate(cur.getDate() + 1);
-            continue;
-          }
-          const dayWord = cur.toLocaleDateString('en-GB', { weekday: 'long' });
-          const key = termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
-          if(!portalFeedbackReminderDayInScope(key)){
-            cur.setDate(cur.getDate() + 1);
-            continue;
-          }
-          if(typeof portalTermFeedbackAssumeComplete === 'function'
-            && portalTermFeedbackAssumeComplete(key, staffId)){
-            cur.setDate(cur.getDate() + 1);
-            continue;
-          }
-          if(typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(key, staffId)){
-            cur.setDate(cur.getDate() + 1);
-            continue;
-          }
-          if(typeof getTermFeedbackStateForDay === 'function'){
-            const calSt = getTermFeedbackStateForDay(cur.getFullYear(), cur.getMonth(), cur.getDate());
-            if(calSt === 'complete' || calSt === 'cancelled'){
-              cur.setDate(cur.getDate() + 1);
-              continue;
-            }
-          }
-          /* Same source of truth as term calendar green cells — do not nag when the day is complete. */
-          if(!portalTermCalendarDayCountsForOutstanding(key, fbMap)){
-            cur.setDate(cur.getDate() + 1);
-            continue;
-          }
-          const isReal = function(s){
-            if(baseRealFb) return baseRealFb(s, key);
-            const st = String(s.status || '').toLowerCase();
-            if(st === 'closed' || st === 'available') return false;
-            const cid = String(s.clientId || '').toLowerCase();
-            return Boolean(cid && cid !== 'closed' && cid !== 'available');
-          };
-          const relFb = typeof portalTermFeedbackSessionsForDate === 'function'
-            ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
-            : [];
-          if(typeof portalTermDayFeedbackOutstandingResolved === 'function'
-            && portalTermDayFeedbackOutstandingResolved(key, dayWord, staffId, relFb, cur)){
-            cur.setDate(cur.getDate() + 1);
-            continue;
-          }
-          let dayCount = 0;
-          /* Feedback reminders fire only after the whole shift has ended (+15 min grace). */
-          const SHIFT_FEEDBACK_GRACE_MS = 15 * 60 * 1000;
-          let dayShiftEndMs = NaN;
-          for(let i = 0; i < relFb.length; i++){
-            const em = buildSessionEndMsForCalendarDate(cur.getFullYear(), cur.getMonth(), cur.getDate(), relFb[i].end);
-            if(Number.isFinite(em) && (!Number.isFinite(dayShiftEndMs) || em > dayShiftEndMs)) dayShiftEndMs = em;
-          }
-          const dayShiftEnded = Number.isFinite(dayShiftEndMs) && nowMs >= (dayShiftEndMs + SHIFT_FEEDBACK_GRACE_MS);
-          if(dayShiftEnded && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
-            dayCount = portalCountPendingSessionReviewsForCalendarDay(key, dayWord);
-          }
-          count += dayCount;
-          cur.setDate(cur.getDate() + 1);
-        }
-        /* Catch-up May days (before feedbackReminderFromIso) only appear via extra / catch-up calendar dates. */
-        (function(){
-          const preTermKeys = [];
-          const seenPre = Object.create(null);
-          function addPreTerm(iso){
-            const k = String(iso || '').trim().slice(0, 10);
-            if(!/^\d{4}-\d{2}-\d{2}$/.test(k) || seenPre[k]) return;
-            seenPre[k] = true;
-            preTermKeys.push(k);
-          }
-          if(typeof portalTermStaffExtraCalendarDates === 'function'){
-            portalTermStaffExtraCalendarDates(staffId).forEach(addPreTerm);
-          }
-          if(typeof portalTermStaffCatchUpFeedbackDates === 'function'){
-            portalTermStaffCatchUpFeedbackDates(staffId).forEach(addPreTerm);
-          }
-          const fromFloor = String(fromIso || '').slice(0, 10);
-          const mainLoopStart = String(loopStart || '').slice(0, 10);
-          const mainLoopEnd = String((t && t.lastDate) || '').slice(0, 10);
-          preTermKeys.forEach(function(key){
-            if(!key) return;
-            /* The main worked-weekday loop above already counted in-term days on a
-               worked weekday. Extra/cover dates land here so we can ALSO count:
-               (a) pre-term catch-up days (before the reminder floor), and
-               (b) in-term cover days on a NON-worked weekday — e.g. a Sunday cover
-               like Luliya's 28th — which the main loop skips. Skip only what the
-               main loop already handled, to avoid double counting. */
-            const kd = new Date(String(key) + 'T12:00:00');
-            const kwd = kd.getDay();
-            const inMainLoop = !!mainLoopStart && !!mainLoopEnd
-              && key >= mainLoopStart && key <= mainLoopEnd
-              && worked.indexOf(kwd) >= 0;
-            if(inMainLoop) return;
-            if(typeof portalTermDateForcedComplete === 'function' && portalTermDateForcedComplete(key, staffId)) return;
-            if(!portalFeedbackReminderDayInScope(key)) return;
-            if(!portalTermCalendarDayCountsForOutstanding(key, fbMap)) return;
-            const curExtra = new Date(String(key) + 'T12:00:00');
-            const dayWord = curExtra.toLocaleDateString('en-GB', { weekday: 'long' });
-            const isReal = function(s){
-              if(baseRealFb) return baseRealFb(s, key);
-              const st = String(s.status || '').toLowerCase();
-              if(st === 'closed' || st === 'available') return false;
-              const cid = String(s.clientId || '').toLowerCase();
-              return Boolean(cid && cid !== 'closed' && cid !== 'available');
-            };
-            const relFb = typeof portalTermFeedbackSessionsForDate === 'function'
-              ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
-              : [];
-            let dayCount = 0;
-            const SHIFT_FEEDBACK_GRACE_MS = 15 * 60 * 1000;
-            let dayShiftEndMs = NaN;
-            for(let i = 0; i < relFb.length; i++){
-              const em = buildSessionEndMsForCalendarDate(curExtra.getFullYear(), curExtra.getMonth(), curExtra.getDate(), relFb[i].end);
-              if(Number.isFinite(em) && (!Number.isFinite(dayShiftEndMs) || em > dayShiftEndMs)) dayShiftEndMs = em;
-            }
-            const dayShiftEnded = Number.isFinite(dayShiftEndMs) && nowMs >= (dayShiftEndMs + SHIFT_FEEDBACK_GRACE_MS);
-            if(dayShiftEnded && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
-              dayCount = portalCountPendingSessionReviewsForCalendarDay(key, dayWord);
-            }
-            count += dayCount;
-          });
-        })();
         var result = Math.max(0, count);
         _portalOutstandingFbCountCache = { key: fp, n: result, at: Date.now() };
         return result;
@@ -1422,7 +1329,11 @@
         };
       }
       try{
-        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function') rebuildTermShiftAndFeedbackFromSessionModel();
+        if(dashboardData.termFeedbackByDate && Object.keys(dashboardData.termFeedbackByDate).length){
+          /* Maps already built — chrome must not rebuild the whole term on every paint. */
+        } else if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+          rebuildTermShiftAndFeedbackFromSessionModel();
+        }
       }catch(e){}
       const setupPending = !!dashboardData.setupPending;
       const stats = collectSessionReviewPendingStats();
