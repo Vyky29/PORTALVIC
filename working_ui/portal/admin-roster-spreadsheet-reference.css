@@ -216,6 +216,7 @@
   border-collapse: collapse;
   font-size: 12px;
   min-width: max-content;
+  width: max-content;
 }
 .asr-grid th,
 .asr-grid td {
@@ -349,6 +350,14 @@
   background: #f9a8d4 !important;
   color: #9d174d !important;
 }
+.asr-hours th.asr-svc--aquatic-multi-activity {
+  background: #f472b6 !important;
+  color: #831843 !important;
+}
+.asr-hours th.asr-svc--multi-activity {
+  background: #fda4af !important;
+  color: #9f1239 !important;
+}
 .asr-hours th.asr-svc--aquatic-activity {
   background: #f9a8d4 !important;
   color: #9d174d !important;
@@ -356,6 +365,8 @@
 .asr-hours td.asr-sf-svc--bespoke { background: #fce7f3 !important; }
 .asr-hours td.asr-sf-svc--day-centre { background: #fff1f2 !important; }
 .asr-hours td.asr-sf-svc--aquatic-activity-and-multi-activity { background: #fdf2f8 !important; }
+.asr-hours td.asr-sf-svc--aquatic-multi-activity { background: #fce7f3 !important; }
+.asr-hours td.asr-sf-svc--multi-activity { background: #fff1f2 !important; }
 .asr-hours td.asr-sf-svc--aquatic-activity { background: #fdf2f8 !important; }
 .asr-hours .asr-svc-start {
   border-left: 3px solid #be185d;

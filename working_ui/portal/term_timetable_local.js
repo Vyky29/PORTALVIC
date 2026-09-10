@@ -149,6 +149,27 @@
     return "";
   }
 
+  /** Sunday SwimFarm: swim instructors vs support (by staff first name). */
+  var SUNDAY_SF_SWIM = {
+    aurora: 1,
+    berta: 1,
+    emanuel: 1,
+    emmanuel: 1,
+  };
+  var SUNDAY_SF_SUPPORT = {
+    godsway: 1,
+    javier: 1,
+    javi: 1,
+    roberto: 1,
+  };
+
+  function staffKeyFromHoursText(text) {
+    var m = String(text || "")
+      .trim()
+      .match(/^([A-Za-z]+)/);
+    return m ? m[1].toLowerCase() : "";
+  }
+
   function columnServiceFromCell(venueStyle, cell, dayName) {
     var st = String(venueStyle || "");
     if (st === "northolt" || st === "acton") return "Aquatic Activity";
@@ -165,7 +186,10 @@
     if (day === "sunday") {
       if (band === "day_centre" || band === "dc") return "Day Centre";
       if (band === "bespoke" || /\b4\.15-6\.15\b/.test(text)) return "Bespoke";
-      return "Aquatic Activity and Multi-Activity";
+      var who = staffKeyFromHoursText(text);
+      if (SUNDAY_SF_SUPPORT[who]) return "Multi-Activity";
+      if (SUNDAY_SF_SWIM[who]) return "Aquatic & Multi-Activity";
+      return "Aquatic & Multi-Activity";
     }
     if (/\b4\.15\s*-\s*6\.15\b/.test(text) || /\b4\.15-6\.15\b/.test(text)) {
       return "Bespoke";
@@ -204,7 +228,7 @@
       var weekendSat = String(dayName || "").toLowerCase() === "saturday";
       if (String(lab.style || "").indexOf("swimfarm") >= 0) {
         if (weekendSat) return "Aquatic Activity";
-        if (weekendSun) return "Aquatic Activity and Multi-Activity";
+        if (weekendSun) return "Aquatic & Multi-Activity";
         return "Day Centre";
       }
       return venueServiceUnderName(lab.style) || "";
@@ -247,8 +271,9 @@
     var s = String(svc || "");
     var st = String(venueStyle || "");
     if (st.indexOf("swimfarm") >= 0) {
-      if (s === "Bespoke") return 0;
-      if (s === "Day Centre") return 1;
+      if (s === "Bespoke" || s === "Aquatic & Multi-Activity") return 0;
+      if (s === "Day Centre" || s === "Multi-Activity") return 1;
+      if (s === "Aquatic Activity") return 0;
       return 2;
     }
     return 0;
