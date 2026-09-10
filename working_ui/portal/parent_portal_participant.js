@@ -108,7 +108,7 @@
     if (clientsInfoEmbedPromise) return clientsInfoEmbedPromise;
     clientsInfoEmbedPromise = new Promise(function (resolve) {
       var s = document.createElement("script");
-      s.src = "/portal/clients_info_embed.js?v=20260608-anas-ismail";
+      s.src = "/portal/clients_info_embed.js?v=20260910-joelle-406";
       s.async = true;
       s.onload = function () {
         resolve();

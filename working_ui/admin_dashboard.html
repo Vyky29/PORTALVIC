@@ -383,7 +383,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260906-overview-fluid"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260910-joelle-406"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260716-cancel-selfserve"></script>
@@ -1325,13 +1325,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function adminClientsInfoPortalRows(){
       return Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS) ? window.PORTAL_CLIENTS_INFO_ROWS : [];
     }
-    /** First Clients Info row whose <code>client_name</code> matches participant display name. */
-    function adminClientsInfoRowForClientDisplayName(displayName){
+    /** Strip <code>pp-</code> prefix from participant workspace ids → portal <code>contact_id</code>. */
+    function adminClientsInfoContactIdKey(contactIdOrPaxId){
+      var s = String(contactIdOrPaxId == null ? '' : contactIdOrPaxId).trim();
+      if(!s) return '';
+      if(/^pp-/i.test(s)) s = s.slice(3);
+      return s;
+    }
+    /**
+     * First Clients Info row for this participant.
+     * Prefer <code>contact_id</code> (e.g. Joelle = 406) when present on the embed row,
+     * then exact / booking name match on <code>client_name</code>.
+     */
+    function adminClientsInfoRowForClientDisplayName(displayName, contactId){
       var rows = adminClientsInfoPortalRows();
-      if(!rows.length || !String(displayName || '').trim()) return null;
+      if(!rows.length) return null;
+      var i;
+      var cid = adminClientsInfoContactIdKey(contactId);
+      if(cid){
+        for(i = 0; i < rows.length; i++){
+          if(String(rows[i].contact_id || '').trim() === cid) return rows[i];
+        }
+      }
+      if(!String(displayName || '').trim()) return null;
       var want = adminPortalNormalizedPersonName(displayName);
       if(!want) return null;
-      var i;
       for(i = 0; i < rows.length; i++){
         var cn = adminPortalNormalizedPersonName(String(rows[i].client_name || '').trim());
         if(cn && cn === want) return rows[i];
@@ -1697,15 +1715,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="muted" style="margin:0;font-size:13px;line-height:1.5;max-width:48rem;overflow-wrap:break-word">No row in <strong>Participants_Parents info (PORTAL).xlsx</strong> matches <strong>'+esc(nm)+'</strong>. Ask the family or pull ClassForKids contacts, add the row to the workbook, then run <code style="font-size:11px">database/export_participants_parents_portal_js.py</code>. See the <strong>gap list</strong> on <strong>Participants</strong> for everyone missing from this export.</p></div>'
       );
     }
-    /** Clients Info embed present but no row matched this drawer name. */
-    function adminParticipantClientsInfoMissingNoteHtml(displayName){
+    /** Clients Info embed present but no row matched this drawer name / contact. */
+    function adminParticipantClientsInfoMissingNoteHtml(displayName, contactId){
       if(adminClientsInfoPortalRows().length < 1) return '';
-      if(adminClientsInfoRowForClientDisplayName(displayName)) return '';
+      if(adminClientsInfoRowForClientDisplayName(displayName, contactId)) return '';
       var nm = String(displayName || '').trim() || 'this participant';
       return (
         '<div class="card card-pad" style="margin-bottom:12px;min-width:0;max-width:100%;border-left:4px solid #f59e0b">'+
         '<h4 style="margin:0 0 6px;font-size:14px;font-weight:800;color:var(--ink)">No Clients Info match</h4>'+
-        '<p class="muted" style="margin:0;font-size:13px;line-height:1.5;max-width:48rem;overflow-wrap:break-word">The embed is loaded but <strong>'+esc(nm)+'</strong> did not match any <code>client_name</code> in <strong>Clients Info (PORTAL).xlsx</strong> (names are often abbreviated there). Update the sheet or extend matching if needed.</p></div>'
+        '<p class="muted" style="margin:0;font-size:13px;line-height:1.5;max-width:48rem;overflow-wrap:break-word">The embed is loaded but <strong>'+esc(nm)+'</strong> did not match any <code>client_name</code> / <code>contact_id</code> in <strong>Clients Info (PORTAL)</strong> (names are often abbreviated there). Update the sheet or extend matching if needed.</p></div>'
       );
     }
     /** Names in admin directory and/or Clients Info that have no Participants_Parents row (only when that export is non-empty). */
@@ -18070,7 +18088,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       '</div></div>';
       var fc = od && od.familyContext ? od.familyContext : {};
       var pname = P && P.name ? String(P.name) : '';
-      var ciRowParticipant = pname ? adminClientsInfoRowForClientDisplayName(pname) : null;
+      var ciRowParticipant = (pname || (P && P.id))
+        ? adminClientsInfoRowForClientDisplayName(pname, P && P.id)
+        : null;
       var ciSectionsParticipant = ciRowParticipant && String(ciRowParticipant.client_info || '').trim()
         ? adminParseClientsInfoNumberedSections(String(ciRowParticipant.client_info))
         : {};
@@ -18292,7 +18312,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!p || !qid || qid === 'all') return true;
       var n = parseInt(qid, 10);
       if(!Number.isFinite(n) || n < 1) return false;
-      var ci = adminClientsInfoRowForClientDisplayName(p.name);
+      var ci = adminClientsInfoRowForClientDisplayName(p.name, p.id);
       if(!ci || !String(ci.client_info || '').trim()) return false;
       var sec = adminParseClientsInfoNumberedSections(String(ci.client_info));
       return !!(sec && sec[n] && String(sec[n]).trim());
@@ -18302,7 +18322,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!p || !qid || qid === 'all') return '';
       var n = parseInt(qid, 10);
       if(!Number.isFinite(n) || n < 1) return '';
-      var ci = adminClientsInfoRowForClientDisplayName(p.name);
+      var ci = adminClientsInfoRowForClientDisplayName(p.name, p.id);
       if(!ci || !String(ci.client_info || '').trim()) return '';
       var sec = adminParseClientsInfoNumberedSections(String(ci.client_info));
       return (sec && sec[n]) ? String(sec[n]).trim() : '';
@@ -29201,11 +29221,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var incN = aug.incidents != null && aug.incidents !== '' ? Number(aug.incidents) : c.incidents;
       if(!Number.isFinite(incN)) incN = c.incidents;
       var ppRow = adminParticipantsParentsRowForClientDisplayName(c.name);
-      var ciRow = adminClientsInfoRowForClientDisplayName(c.name);
+      var ciRow = adminClientsInfoRowForClientDisplayName(c.name, c.id || linkedCid);
       var ciCard = adminParticipantClientsInfoRegistrationCardHtml(ciRow);
       var ppCard = adminParticipantParentsCfContactsCardHtml(ppRow);
       var ppMissingBanner = adminParticipantParentsMissingCfBannerHtml(c.name);
-      var ciMissingBanner = adminParticipantClientsInfoMissingNoteHtml(c.name);
+      var ciMissingBanner = adminParticipantClientsInfoMissingNoteHtml(c.name, c.id || linkedCid);
       var portalSorted = adminPortalFeedbackSortedForDrawer(c.name);
       var usePortal = portalSorted.length > 0;
       var portalM = usePortal ? adminPortalFeedbackMetricsForDrawer(portalSorted) : null;

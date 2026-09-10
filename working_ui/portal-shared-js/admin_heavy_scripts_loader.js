@@ -8,7 +8,7 @@
     roster: [
       "/portal/term_from_timetable.js?v=20260909-bismark-full",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260905-zaid-910",
-      "/portal/clients_info_embed.js?v=20260707-social-workers",
+      "/portal/clients_info_embed.js?v=20260910-joelle-406",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp",

@@ -20,7 +20,7 @@
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
-    "/portal/clients_info_embed.js?v=20260608-anas-ismail",
+    "/portal/clients_info_embed.js?v=20260910-joelle-406",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
     "/portal/portal_participants_sheet.js?v=20260909-mohamed-new-client",
     "/portal/portal_staff_lead_aquatic_slots.js?v=20260906-yusuf-zaid-dual",
