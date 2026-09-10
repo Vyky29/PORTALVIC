@@ -744,6 +744,8 @@ function portalRobertoDcClientIsCancelledOnIso(iso, clientName) {
         return true;
       }
     } catch (_) {}
+    /* Fallback if canonical not mounted yet — Fadi DC absence until 21 Sep. */
+    if (day >= "2026-09-01" && day < "2026-09-21") return true;
   }
   try {
     const rows =

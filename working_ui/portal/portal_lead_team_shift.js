@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260910-roberto-dc-lead";
+} from "./portal_lead_session_scope.js?v=20260910-roberto-taps3";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -894,6 +894,13 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
   const now = Date.now();
   const minCreated = now - (opts.lookbackMs != null ? opts.lookbackMs : CHANGE_LOOKBACK_MS);
   const out = [];
+  const workingIsoCache = Object.create(null);
+  function leadWorkingOnIso(iso) {
+    if (workingIsoCache[iso] !== undefined) return workingIsoCache[iso];
+    const ok = portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes);
+    workingIsoCache[iso] = ok;
+    return ok;
+  }
 
   const seenOverrideIds = new Set();
 
@@ -906,7 +913,7 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
     if (leadViewerAwayOnIso(ctx.leadKey, iso)) return;
     if (isLeadTeamShiftDayDismissed(iso)) return;
     /* Roberto Thu: only team-shift alerts on days he is still DC lead (active client). */
-    if (!portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes)) return;
+    if (!leadWorkingOnIso(iso)) return;
     const ovId = String(ov.id || "").trim();
     if (ovId && seenOverrideIds.has(ovId)) return;
     if (!portalLeadOverrideRowAppliesToLeadScope(ov, ctx)) return;
@@ -1504,66 +1511,95 @@ export function portalSyncLeadTeamShiftUi() {
     const path = String((window.location && window.location.pathname) || "").toLowerCase();
     if (path.indexOf("staff_dashboard") < 0) return;
 
+    /*
+     * Coalesce: Today / overrides / rehydrate call this many times per second for Roberto.
+     * Stacking syncs starved iPhone taps (scroll still worked; clicks arrived ~10s late).
+     */
+    const nowMs = Date.now();
+    const lastAt = Number(window.__PORTAL_LEAD_TEAM_SYNC_AT__ || 0) || 0;
+    if (window.__PORTAL_LEAD_TEAM_SYNC_BUSY__) {
+      window.__PORTAL_LEAD_TEAM_SYNC_AGAIN__ = true;
+      return;
+    }
+    if (nowMs - lastAt < 900) {
+      if (window.__PORTAL_LEAD_TEAM_SYNC_TIMER__) return;
+      window.__PORTAL_LEAD_TEAM_SYNC_TIMER__ = setTimeout(function () {
+        try {
+          window.__PORTAL_LEAD_TEAM_SYNC_TIMER__ = 0;
+          portalSyncLeadTeamShiftUi();
+        } catch (_t) {}
+      }, 920);
+      return;
+    }
+    window.__PORTAL_LEAD_TEAM_SYNC_AT__ = nowMs;
+    window.__PORTAL_LEAD_TEAM_SYNC_BUSY__ = true;
+
     const todayHost = document.getElementById("portalLeadTeamTodayHost");
     const qmHost = document.getElementById("portalLeadTeamShiftQuickHost");
     const qmHeading = document.getElementById("portalLeadTeamShiftHeading");
-    const ctx = portalLeadTeamShiftContext();
-    if (!ctx) {
+    try {
+      const ctx = portalLeadTeamShiftContext();
+      if (!ctx) {
+        if (todayHost) {
+          todayHost.hidden = true;
+          todayHost.innerHTML = "";
+        }
+        if (qmHost) {
+          qmHost.hidden = true;
+          qmHost.innerHTML = "";
+        }
+        if (qmHeading) qmHeading.hidden = true;
+        return;
+      }
+
+      const iso = todayIsoYmd();
+      const workingToday = portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes);
+      const team = workingToday ? portalLeadTeamOnShiftForIso(iso, ctx) : null;
+      const showToday = !!team;
+
       if (todayHost) {
-        todayHost.hidden = true;
-        todayHost.innerHTML = "";
+        if (showToday) {
+          todayHost.innerHTML = renderTodayStrip(team);
+          todayHost.hidden = false;
+        } else {
+          todayHost.innerHTML = "";
+          todayHost.hidden = true;
+        }
       }
+
+      /*
+       * When Roberto is not DC lead today (client Cancelled), skip the heavy 7-day
+       * override walk — that scan + roster matching froze taps. Alerts only while lead.
+       */
+      let changes = [];
+      if (workingToday || ctx.leadKey !== "roberto") {
+        changes = portalLeadTeamShiftChanges(ctx);
+      }
+      const qmHtml = renderQuickMenuChanges(changes);
       if (qmHost) {
-        qmHost.hidden = true;
-        qmHost.innerHTML = "";
+        qmHost.innerHTML = qmHtml;
+        qmHost.hidden = !qmHtml;
       }
-      if (qmHeading) qmHeading.hidden = true;
-      return;
-    }
-
-    const iso = todayIsoYmd();
-    const team = portalLeadTeamOnShiftForIso(iso, ctx);
-    const showToday = !!team;
-
-    if (todayHost) {
-      if (showToday) {
-        todayHost.innerHTML = renderTodayStrip(team);
-        todayHost.hidden = false;
-      } else {
-        todayHost.innerHTML = "";
-        todayHost.hidden = true;
-      }
-    }
-
-    const changes = portalLeadTeamShiftChanges(ctx);
-    const qmHtml = renderQuickMenuChanges(changes);
-    if (qmHost) {
-      qmHost.innerHTML = qmHtml;
-      qmHost.hidden = !qmHtml;
-    }
-    if (qmHeading) qmHeading.hidden = !qmHtml;
-    /* Never force week/term chrome here. Roberto (and other team viewers) call this
-       on every Today paint; force:true rebuilt week+term and froze iPhone taps while
-       Youssef (no lead ctx) stayed fine. Signature-gated refresh is enough. */
-    try {
-      if (typeof window.portalRefreshPendingOverrideDaysCache === "function") {
-        window.portalRefreshPendingOverrideDaysCache();
-      }
-    } catch (_) {}
-    try {
-      var nowMs = Date.now();
-      var lastMs = Number(window.__PORTAL_LEAD_TEAM_CHROME_AT__ || 0) || 0;
-      if (nowMs - lastMs < 2500) return;
-      window.__PORTAL_LEAD_TEAM_CHROME_AT__ = nowMs;
-      if (typeof window.portalRefreshScheduleOverrideDayChrome === "function") {
+      if (qmHeading) qmHeading.hidden = !qmHtml;
+      /*
+       * Do NOT rebuild week/term chrome here. Override hydrate already paints pulses.
+       * Lead sync on every Today paint was freezing Roberto's iPhone (Youssef unaffected).
+       */
+    } finally {
+      window.__PORTAL_LEAD_TEAM_SYNC_BUSY__ = false;
+      if (window.__PORTAL_LEAD_TEAM_SYNC_AGAIN__) {
+        window.__PORTAL_LEAD_TEAM_SYNC_AGAIN__ = false;
         setTimeout(function () {
           try {
-            window.portalRefreshScheduleOverrideDayChrome();
-          } catch (_ch) {}
+            portalSyncLeadTeamShiftUi();
+          } catch (_a) {}
         }, 0);
       }
-    } catch (_) {}
+    }
   } catch (e) {
+    try {
+      window.__PORTAL_LEAD_TEAM_SYNC_BUSY__ = false;
+    } catch (_) {}
     try {
       console.warn("[portal] lead team shift sync", e);
     } catch (_) {}
