@@ -924,7 +924,16 @@
       if(!s) return false;
       if(/\|\|/.test(s)) return true;
       const low = s.toLowerCase();
-      return low.indexOf('|day_centre') >= 0 || low.indexOf('|bespoke_shared') >= 0;
+      if(low.indexOf('|day_centre') >= 0 || low.indexOf('|bespoke_shared') >= 0) return true;
+      /* Lead aquatic day-unit: date|client|aquatic (no HH:mm) covers timed Today cards. */
+      const parts = s.split('|').map(function(p){ return String(p || '').trim(); }).filter(Boolean);
+      if(
+        parts.length === 3 &&
+        /^\d{4}-\d{2}-\d{2}$/.test(parts[0]) &&
+        !/^\d{1,2}:\d{2}$/.test(parts[1]) &&
+        String(parts[2] || '').toLowerCase() === 'aquatic'
+      ) return true;
+      return false;
     }
     function portalReviewKeyParticipantSlugFromSessionKey(key){
       const parts = String(key || '').trim().split('|').map(function(p){
@@ -958,8 +967,9 @@
           if(matcher(s, t)){
             const stTimeM = portalReviewKeyTimeTokenFromSessionKey(s);
             const ttTimeM = portalReviewKeyTimeTokenFromSessionKey(t);
+            /* Timed↔timed must share the clock. Day-unit (no clock) already passed
+               matcher rules (lead aquatic date|client|aquatic → timed card, etc.). */
             if(stTimeM && ttTimeM) return stTimeM === ttTimeM;
-            if(!stTimeM && ttTimeM) return portalReviewStoredAbsentKeyIsSharedDayUnit(s);
             return true;
           }
         }catch(_m){}

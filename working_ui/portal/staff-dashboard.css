@@ -440,11 +440,17 @@
     .topbar-center--halo .topbar-staff-photo__edit--above-name{
       display:none !important;
     }
+    /* Beat header.topbar h1.topbar-name { flex:1 } so the name does not grow a
+       tall empty band under "Roberto" before the Today card. */
+    header.topbar .topbar-center--halo h1.topbar-name.topbar-name--under-halo,
     .topbar-center--halo .topbar-name--under-halo{
       margin-top:1px;
       line-height:1.05;
       font-size:clamp(15px, 4.2vw, 20px);
       flex:0 0 auto;
+      justify-content:flex-start;
+      min-height:0;
+      height:auto;
     }
     .avatar-wrap:hover{
       transform:scale(1.05);

@@ -485,6 +485,12 @@
   min-height:var(--topbar-row-h);
   align-items:stretch;
 }
+/* Staff halo flanks: height follows photo/tools, not a taller --topbar-row-h
+   (tools-6 formula was leaving empty band under the instructor name). */
+.topbar-lead.topbar-lead--halo-flanks{
+  min-height:0;
+  align-items:start;
+}
 .topbar-lead.topbar-lead--tools-6,
 .topbar-lead:has(.topbar-tools-grid--lead),
 .topbar-lead:has(.topbar-tools-grid--ceo-full){
@@ -503,6 +509,11 @@ header.topbar .topbar{
   padding-top:4px;
   padding-bottom:4px;
 }
+header.topbar:has(.topbar-lead--halo-flanks) .topbar,
+.topbar:has(.topbar-lead--halo-flanks){
+  padding-top:2px;
+  padding-bottom:0;
+}
 .topbar-lead .topbar-center{
   align-self:stretch;
   display:flex;
@@ -511,6 +522,13 @@ header.topbar .topbar{
   padding:0 !important;
   margin:0 !important;
   min-height:var(--topbar-row-h);
+}
+/* Halo flanks: hug photo+name so Today can sit just under the instructor name
+   (do not force --topbar-row-h empty space under the given name). */
+.topbar-lead.topbar-lead--halo-flanks .topbar-center--halo{
+  align-self:start;
+  justify-content:flex-start;
+  min-height:0;
 }
 .topbar-lead .topbar-left.topbar-left--name{
   align-self:stretch;
