@@ -278,7 +278,11 @@
       pointer-events:none !important;
       visibility:hidden !important;
     }
-    /* Closed sheets stay display:flex + inset:0; iOS still hits them. */
+    /* Fullscreen sheets cover the dimmer. If the dimmer stacks on top, Close dies. */
+    body:has(.sheet.sheet--fullscreen.open) #backdrop,
+    body:has(.sheet.sheet--fullscreen.open) #backdrop.open{
+      pointer-events:none !important;
+    }
     .sheet:not(.open),
     [id$="Sheet"]:not(.open){
       display:none !important;
@@ -299,18 +303,38 @@
             l.parentNode.removeChild(l);
           }
         } catch (e2) {}
+        var sheetOpen = false;
+        try {
+          sheetOpen = !!document.querySelector(".sheet.open");
+        } catch (e0) {}
         try {
           var b = document.getElementById("backdrop");
-          var sheetOpen = !!document.querySelector(".sheet.open");
+          var fsOpen = !!document.querySelector(".sheet.sheet--fullscreen.open");
           if (b && b.classList.contains("open") && !sheetOpen) {
             b.classList.remove("open");
             b.classList.remove("sheet-backdrop--focus");
           }
-          if (b && !b.classList.contains("open")) {
+          if (b && (fsOpen || !b.classList.contains("open"))) {
             b.style.pointerEvents = "none";
+          }
+          if (b && !b.classList.contains("open")) {
             b.style.removeProperty("display");
           }
         } catch (e3) {}
+        try {
+          var cam = document.getElementById("portalAchievementsCameraFullscreen");
+          var ach = document.getElementById("achievementsSheet");
+          if (cam && !cam.hidden && !(ach && ach.classList.contains("open"))) {
+            cam.hidden = true;
+            cam.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("portal-achievements-camera-open");
+          }
+          var viewer = document.getElementById("portalAchievementsGalleryViewer");
+          if (viewer && !viewer.hidden && !(ach && ach.classList.contains("open"))) {
+            viewer.hidden = true;
+            document.body.classList.remove("portal-achievements-viewer-open");
+          }
+        } catch (e3b) {}
         try {
           var annOpen = !!document.getElementById("announcementsSheet") &&
             document.getElementById("announcementsSheet").classList.contains("open");
@@ -453,6 +477,7 @@
           }
         }
         var stack = [];
+        var mid = [];
         try {
           if (photo) {
             var r = photo.getBoundingClientRect();
@@ -460,15 +485,32 @@
             for (var j = 0; j < list.length && j < 4; j++) stack.push(describeEl(list[j]));
           }
         } catch (_p) {}
+        try {
+          var mx = Math.round((window.innerWidth || 0) / 2);
+          var my = Math.round((window.innerHeight || 0) / 2);
+          var midList = document.elementsFromPoint(mx, my) || [];
+          for (var k = 0; k < midList.length && k < 4; k++) mid.push(describeEl(midList[k]));
+        } catch (_mid) {}
+        var openSheets = [];
+        try {
+          document.querySelectorAll(".sheet.open").forEach(function (s) {
+            openSheets.push(s.id || describeEl(s));
+          });
+        } catch (_os) {}
         var menuDisp = "";
+        var bd = document.getElementById("backdrop");
         try {
           menuDisp = menu ? String(window.getComputedStyle(menu).display || "") : "";
         } catch (_m) {}
         portalDbg("A", "staff_dashboard.html:probe", "photo-probe", {
           runId: "post-fix",
           stack: stack,
+          mid: mid,
           menuDisp: menuDisp,
           menuOpen: !!(menu && menu.classList.contains("open")),
+          openSheets: openSheets,
+          backdropOpen: !!(bd && bd.classList.contains("open")),
+          backdropPe: bd ? String(window.getComputedStyle(bd).pointerEvents) : "",
           fadi: fadi,
           opener: typeof window.portalOpenParticipantAchievements === "function"
         });
@@ -476,8 +518,10 @@
           var chip = ensureChip();
           if (chip) {
             chip.textContent =
-              "photo:" +
-              (stack[0] || "-") +
+              "mid:" +
+              (mid[0] || "-") +
+              " sheets:" +
+              (openSheets.join(",") || "none") +
               " fadi:" +
               fadi.length +
               " segs:" +
@@ -1406,7 +1450,7 @@
   <script src="/portal/portal_today_next_chips.js?v=20260903-photo-repair"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster"></script>
   <script type="module" src="/portal/portal_lead_team_shift.js?v=20260910-berta-off-alerts"></script>
-<script src="/portal/portal_sheet_back.js?v=20260824-participants-back-to-menu"></script>
+<script src="/portal/portal_sheet_back.js?v=20260910-staff-debug4"></script>
   <script src="/portal/staff-dashboard-dock-boot.js?v=20260712-no-photo-signout"></script>
   <script src="/portal/staff-dashboard-topbar.js?v=20260905-admin-changes-nav"></script>
   <script src="/portal/staff-dashboard-feedback.js?v=20260906-yusuf-aurora-swap"></script>
