@@ -688,9 +688,17 @@ export function portalLeadProgrammeLeadWorkingOnIso(leadKey, iso, scopes) {
     .trim()
     .slice(0, 10);
   if (!lk || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
-  /* Ops / Roberto team-banner days: show Team of the Day without fixed-session gate (Javi covers). */
+  /* Ops team-banner days: show Team of the Day without fixed-session gate. */
   if (lk === "ops") return portalLeadDayIsProgrammeWorkDay(day, scopes);
-  if (lk === "roberto" && portalLeadDayIsProgrammeWorkDay(day, scopes)) return true;
+  /*
+   * Roberto is Team Lead only for Thursday Day Centre when he still has an active
+   * DC client. If that client is Cancelled (e.g. Fadi away), he is not lead that day —
+   * no Team strip / lead-scope alerts (Acton aquatic alone does not make him lead).
+   */
+  if (lk === "roberto") {
+    if (!portalLeadDayIsProgrammeWorkDay(day, scopes)) return false;
+    return portalRobertoHasActiveDayCentreLeadSeat(day, scopes);
+  }
   try {
     const g = typeof globalThis !== "undefined" ? globalThis : null;
     if (g && typeof g.portalStaffHasShiftOnCalendarDate === "function") {
@@ -707,6 +715,93 @@ export function portalLeadProgrammeLeadWorkingOnIso(leadKey, iso, scopes) {
     }
   } catch (_) {}
   return false;
+}
+
+function portalRobertoDcClientLooksDutyOnly(name) {
+  const n = normKey(name);
+  return (
+    !n ||
+    n === "closed" ||
+    n === "available" ||
+    n === "noclient" ||
+    n === "noparticipant" ||
+    n === "office" ||
+    n === "manager" ||
+    n === "home" ||
+    n === "admin"
+  );
+}
+
+function portalRobertoDcClientIsCancelledOnIso(iso, clientName) {
+  const day = String(iso || "").trim().slice(0, 10);
+  const nm = String(clientName || "").trim();
+  if (!day || !nm) return true;
+  if (/^fadi\b/i.test(nm)) {
+    try {
+      const g = typeof globalThis !== "undefined" ? globalThis : null;
+      const canon = g && g.PortalRosterCanonical ? g.PortalRosterCanonical : null;
+      if (canon && typeof canon.isFadiAbsentDcWindowIso === "function" && canon.isFadiAbsentDcWindowIso(day)) {
+        return true;
+      }
+    } catch (_) {}
+  }
+  try {
+    const rows =
+      typeof globalThis !== "undefined" && Array.isArray(globalThis.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
+        ? globalThis.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
+        : [];
+    for (let i = 0; i < rows.length; i++) {
+      const ov = rows[i];
+      if (!ov || String(ov.status || "active") !== "active") continue;
+      if (String(ov.session_date || "").slice(0, 10) !== day) continue;
+      if (String(ov.override_type || "").trim() !== "slot_clear_client") continue;
+      if (normKey(ov.anchor_staff_id) !== "roberto") continue;
+      let pl = ov.payload;
+      if (typeof pl === "string") {
+        try {
+          pl = JSON.parse(pl);
+        } catch (_p) {
+          pl = {};
+        }
+      }
+      if (!(pl && pl.cancelled_by_admin)) continue;
+      const anchor = String(ov.anchor_client_id || "").trim();
+      const a = normKey(anchor);
+      const n = normKey(nm);
+      if (!a || !n) continue;
+      if (a === n || n.indexOf(a) === 0 || a.indexOf(n) === 0) return true;
+    }
+  } catch (_) {}
+  return false;
+}
+
+/** Roberto Thu DC lead seat: real Day Centre client that is not Cancelled. */
+function portalRobertoHasActiveDayCentreLeadSeat(iso, scopes) {
+  const day = String(iso || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  const wd = weekdayFromIso(day);
+  if (wd !== "Thursday") {
+    /* Sunday pool team banner keeps existing working check via scopes weekdays. */
+    return portalLeadProgrammeLeadOnRosterForIso("roberto", day, scopes);
+  }
+  const src =
+    typeof globalThis !== "undefined" && globalThis.STAFF_DASHBOARD_SOURCE
+      ? globalThis.STAFF_DASHBOARD_SOURCE
+      : null;
+  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  let sawActive = false;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !isDayCentreService(r.service)) continue;
+    if (!rosterRowAppliesOnIso(rows, r, day, wd)) continue;
+    if (!/\broberto\b/i.test(String(r.instructors || ""))) continue;
+    const nm = String(r.client_name || "").trim();
+    if (portalRobertoDcClientLooksDutyOnly(nm)) continue;
+    if (portalRobertoDcClientIsCancelledOnIso(day, nm)) continue;
+    sawActive = true;
+    break;
+  }
+  return sawActive;
 }
 
 function activeScopeUsesOwnClientsOnly(scopes, iso) {

@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260910-berta-off-alerts";
+} from "./portal_lead_session_scope.js?v=20260910-roberto-dc-lead";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -905,6 +905,8 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
     if (!iso) return;
     if (leadViewerAwayOnIso(ctx.leadKey, iso)) return;
     if (isLeadTeamShiftDayDismissed(iso)) return;
+    /* Roberto Thu: only team-shift alerts on days he is still DC lead (active client). */
+    if (!portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes)) return;
     const ovId = String(ov.id || "").trim();
     if (ovId && seenOverrideIds.has(ovId)) return;
     if (!portalLeadOverrideRowAppliesToLeadScope(ov, ctx)) return;

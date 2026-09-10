@@ -9010,6 +9010,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var ta = clean(a && a.time_start) || "";
       var tb = clean(b && b.time_start) || "";
       if (ta !== tb) return ta < tb ? -1 : 1;
+      /* Same clock: Cancelled seats before live / makeup (e.g. Joelle Cancelled above Anas). */
+      var aCan = 0;
+      var bCan = 0;
+      try {
+        aCan = hub.slotHasCancellation(a) ? 0 : 1;
+        bCan = hub.slotHasCancellation(b) ? 0 : 1;
+      } catch (_c) {}
+      if (aCan !== bCan) return aCan - bCan;
       var ca = clean(a && a.client_name) || "";
       var cb = clean(b && b.client_name) || "";
       return ca.localeCompare(cb, "en", { sensitivity: "base" });

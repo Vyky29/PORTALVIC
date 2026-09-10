@@ -1332,8 +1332,9 @@
   }
 
   /**
-   * Thu 10 Sep: Joelle 5.30–6 taught; 6–6.30 cancelled on Aurora (Cancelled chip) + Anas makeup.
-   * Simon 6–6.30 open today only (Joelle second half gone). Roberto keeps Maiyar.
+   * Thu 10 Sep: Joelle 5.30–6 taught; 6–6.30 Cancelled on Aurora AND Simon
+   * (same Cancelled chip — not No participant). Aurora also has Anas makeup 6–6.30.
+   * Roberto keeps Maiyar.
    */
   function autumnThursdaySep10AnasMakeupRows() {
     var iso = "2026-09-10";
@@ -1365,7 +1366,7 @@
       .concat(
         mapBook("SIMON", [
           { name: "Joelle", time: "5.30 to 6" },
-          { name: "No participant", time: "6 to 6.30", area: "Teaching Pool" },
+          { name: "Joelle", time: "6 to 6.30" },
         ]),
       );
   }
@@ -1377,8 +1378,8 @@
       var d = normIso(r.session_date);
       /*
        * Thu Acton Joelle / Anas on Aurora+Simon for 10 Sep is owned by the dated inject below.
-       * Drop standing Jul Joelle (and any dated Sep 10 copies) so Simon 6–6.30 open + Aurora
-       * Joelle Cancelled + Anas makeup win — Roberto Maiyar is untouched.
+       * Drop standing Jul Joelle (and any dated Sep 10 copies) so Aurora+Simon Joelle Cancelled
+       * + Aurora Anas makeup win — Roberto Maiyar is untouched.
        */
       if (
         isAquaticService(r.service) &&
