@@ -9308,6 +9308,26 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     "Sevitha",
   ];
 
+  /* Thursday pool: Roberto + Youssef (Day Centre pair) then Acton (Javier, Aurora, Simon). */
+  var DAY_BOARD_STAFF_PREF_THU_HEAD = ["Roberto", "Youssef", "Javier", "Aurora", "Simon"];
+
+  function dayBoardStaffPrefForIso(iso) {
+    var wd = weekdayLongFromIso(String(iso || "").slice(0, 10)).toLowerCase();
+    if (wd !== "thursday") return DAY_BOARD_STAFF_PREF;
+    var seen = Object.create(null);
+    var out = [];
+    function add(name) {
+      var k = dayBoardStaffKey(name);
+      if (!k || seen[k]) return;
+      seen[k] = 1;
+      out.push(name);
+    }
+    var i;
+    for (i = 0; i < DAY_BOARD_STAFF_PREF_THU_HEAD.length; i++) add(DAY_BOARD_STAFF_PREF_THU_HEAD[i]);
+    for (i = 0; i < DAY_BOARD_STAFF_PREF.length; i++) add(DAY_BOARD_STAFF_PREF[i]);
+    return out;
+  }
+
   /** Board layout bands: swimming instructors | support workers, climbing below. */
   var DAY_BOARD_SWIM = {
     roberto: 1,
@@ -9814,6 +9834,66 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return !!(ka && kb && ka === kb);
   }
 
+  /** Who is running this seat while `awayStaff` is on day-off requested. */
+  function dayBoardAwayCoverLabel(hub, slot, iso, awayStaff) {
+    var names = [];
+    var seen = Object.create(null);
+    function pushName(raw) {
+      var key = dayBoardStaffKey(raw);
+      var label = dayBoardStaffLabel(raw);
+      if (!key || key === "coverneeded" || !label) return;
+      if (dayBoardStaffKeysEqual(raw, awayStaff)) return;
+      if (hubStaffAwayOnIso(hub, iso, raw)) return;
+      if (seen[key]) return;
+      seen[key] = 1;
+      names.push(label);
+    }
+    var named = slot && (slot.portalCoveringStaffName || slot.portalCoveringStaffId);
+    if (named) {
+      var namedParts = normalizeInstructorList(named);
+      if (!namedParts.length) namedParts = [named];
+      for (var n = 0; n < namedParts.length; n++) pushName(namedParts[n]);
+    }
+    if (!names.length) {
+      try {
+        var PRC = global.PortalRosterCanonical;
+        if (PRC && typeof PRC.resolveAutumnInstructorsForCalendarDate === "function") {
+          var mapped = clean(
+            PRC.resolveAutumnInstructorsForCalendarDate(awayStaff, iso, {
+              service: slot && slot.service,
+              venue: slot && slot.venue,
+              area: slot && slot.area,
+              day: slot && slot.day,
+              client_name: slot && slot.client_name,
+              clientName: slot && slot.client_name,
+            })
+          );
+          if (mapped && !dayBoardStaffKeysEqual(mapped, awayStaff)) {
+            var mappedParts = normalizeInstructorList(mapped);
+            for (var m = 0; m < mappedParts.length; m++) pushName(mappedParts[m]);
+          }
+        }
+      } catch (_mapCover) {}
+    }
+    if (!names.length) {
+      var live = dayBoardInstructorsForSlot(slot);
+      for (var i = 0; i < live.length; i++) pushName(live[i]);
+    }
+    return names.join(" + ");
+  }
+
+  function awayColumnBoardState(st, coverByLabel) {
+    var out = Object.assign({}, st || {});
+    out.boardPlace = "away";
+    out.isStaffDayOff = true;
+    out.isCoverNeeded = !coverByLabel;
+    out.isInstructorReassign = false;
+    out.isRealCover = false;
+    out.coverByLabel = coverByLabel || "";
+    out.tone = "dayoff";
+    return out;
+  }
+
   /** True when this slot still belongs on the away worker's Overview column. */
   function hubSlotShouldStayOnAwayColumn(hub, slot, iso, staffRaw) {
     if (!hub || !slot || !staffRaw) return false;
@@ -10115,7 +10195,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           "</span>"
       );
     } else if (st.boardPlace === "away" || st.isStaffDayOff) {
-      chips.push('<span class="override-chip override--day-off">Day off</span>');
+      if (st.coverByLabel) {
+        chips.push(
+          '<span class="override-chip override--instructor">' +
+            esc("Cover · " + st.coverByLabel) +
+            "</span>"
+        );
+      } else {
+        chips.push('<span class="override-chip override--cover-needed">COVER NEEDED</span>');
+      }
     } else if (st.isInstructorReassign && !st.isCoverNeeded) {
       chips.push(
         '<span class="override-chip override--instructor">' +
@@ -10328,14 +10416,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           dayBoardStaffKey(awayOrig[oa]),
           dayBoardStaffLabel(awayOrig[oa]),
           slot,
-          cloneBoardState(st, {
-            boardPlace: "away",
-            isStaffDayOff: true,
-            isCoverNeeded: false,
-            isInstructorReassign: false,
-            isRealCover: false,
-            tone: "dayoff",
-          })
+          awayColumnBoardState(st, dayBoardAwayCoverLabel(hub, slot, iso, awayOrig[oa]))
         );
       }
 
@@ -10463,17 +10544,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             key,
             dayBoardStaffLabel(rawName),
             lost,
-            cloneBoardState(lostSt, {
-              boardPlace: "away",
-              isStaffDayOff: true,
-              isCoverNeeded: false,
-              isUpdated: false,
-              isShadowing: false,
-              isInstructorReassign: false,
-              isRealCover: false,
-              isCancelled: false,
-              tone: "dayoff",
-            })
+            awayColumnBoardState(
+              cloneBoardState(lostSt, {
+                isUpdated: false,
+                isShadowing: false,
+                isCancelled: false,
+              }),
+              dayBoardAwayCoverLabel(hub, lost, iso, rawName)
+            )
           );
           attached++;
         }
@@ -10490,17 +10568,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             key,
             dayBoardStaffLabel(rawName),
             lostSlot,
-            cloneBoardState(lostHubSt, {
-              boardPlace: "away",
-              isStaffDayOff: true,
-              isCoverNeeded: false,
-              isUpdated: false,
-              isShadowing: false,
-              isInstructorReassign: false,
-              isRealCover: false,
-              isCancelled: false,
-              tone: "dayoff",
-            })
+            awayColumnBoardState(
+              cloneBoardState(lostHubSt, {
+                isUpdated: false,
+                isShadowing: false,
+                isCancelled: false,
+              }),
+              dayBoardAwayCoverLabel(hub, lostSlot, iso, rawName)
+            )
           );
           continue;
         }
@@ -10510,6 +10585,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     })();
 
     function sortStaffKeys(list) {
+      var pref = dayBoardStaffPrefForIso(hub.selectedDay);
       return list.slice().sort(function (a, b) {
         if (a === COVER_KEY) return 1;
         if (b === COVER_KEY) return -1;
@@ -10517,9 +10593,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var lb = labelByKey[b] || b;
         var ia = -1;
         var ib = -1;
-        for (var p = 0; p < DAY_BOARD_STAFF_PREF.length; p++) {
-          if (dayBoardStaffKey(DAY_BOARD_STAFF_PREF[p]) === a) ia = p;
-          if (dayBoardStaffKey(DAY_BOARD_STAFF_PREF[p]) === b) ib = p;
+        for (var p = 0; p < pref.length; p++) {
+          if (dayBoardStaffKey(pref[p]) === a) ia = p;
+          if (dayBoardStaffKey(pref[p]) === b) ib = p;
         }
         if (ia >= 0 && ib >= 0) return ia - ib;
         if (ia >= 0) return -1;

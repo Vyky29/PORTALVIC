@@ -2019,6 +2019,8 @@
       margin-left: 0;
       font-size: 11px;
       padding: 2px 8px;
+      max-width: 100%;
+      overflow-wrap: anywhere;
     }
     .ash-db-badge {
       display: inline-block;
