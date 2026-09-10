@@ -587,28 +587,14 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     if (ref < svdLatest) continue;
     const latestBucket = dateMap.get(ref)!;
     /*
-     * Capacity from the standing-openest snapshot for this band — not only the
-     * latest calendar date. Same-day Schedule & Covers fills (e.g. day reassign
-     * onto an open seat) must not hide the term place from Booking Portal.
+     * Occupancy = latest standing snapshot for this band only.
+     * Do not pull "open" from older summer weeks: that left phantom Places on
+     * Autumn Thu Acton (e.g. 5.30–6.30 / 6–6.30) after those seats were filled.
+     * Same-day Schedule & Covers fills live on calendar dates; term Places still
+     * come from the standing week (ref) until office folds that open seat.
      */
-    let capacityBucket = latestBucket;
-    let bestOpen = latestBucket.open;
-    for (const iso of dates) {
-      const b = dateMap.get(iso);
-      if (!b) continue;
-      if (b.open > bestOpen) {
-        bestOpen = b.open;
-        capacityBucket = b;
-      }
-    }
-    const lineCount = Math.max(
-      latestBucket.booked + latestBucket.open,
-      capacityBucket.booked + capacityBucket.open,
-    );
-    const instructorCount = Math.max(
-      latestBucket.instructors.size,
-      capacityBucket.instructors.size,
-    );
+    const lineCount = latestBucket.booked + latestBucket.open;
+    const instructorCount = latestBucket.instructors.size;
     const cap = displayCapacity(
       serviceId,
       venue,
@@ -623,8 +609,8 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
      */
     const takenRaw =
       serviceId === "aquatic"
-        ? capacityBucket.booked
-        : capacityBucket.bookedKeys.size || capacityBucket.booked;
+        ? latestBucket.booked
+        : latestBucket.bookedKeys.size || latestBucket.booked;
     const taken = Math.min(takenRaw, cap);
     slots.push({
       id: slotId(serviceId, venue, day, sortTime, timeLabel),
@@ -635,11 +621,11 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       sortTime,
       capacity: cap,
       taken,
-      openSeats: Math.max(0, Number(capacityBucket.open) || 0),
+      openSeats: Math.max(0, Number(latestBucket.open) || 0),
       referenceDate: ref,
       instructors: [...latestBucket.instructors].sort(),
-      openInstructors: [...capacityBucket.openInstructors].sort(),
-      bookedKeys: [...capacityBucket.bookedKeys],
+      openInstructors: [...latestBucket.openInstructors].sort(),
+      bookedKeys: [...latestBucket.bookedKeys],
     });
   }
 

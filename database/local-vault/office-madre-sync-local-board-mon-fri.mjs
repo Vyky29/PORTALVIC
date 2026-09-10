@@ -403,7 +403,8 @@ function rebuildThursday(week) {
     d.slots.push(aquatic("Acton", "4 to 4.30", "Elijah", "SIMON"));
     d.slots.push(aquatic("Acton", "4.30 to 5", "NO PARTICIPANT", "SIMON"));
     d.slots.push(aquatic("Acton", "5 to 5.30", "Yuri", "SIMON"));
-    d.slots.push(aquatic("Acton", "5.30 to 6.30", "Joelle", "SIMON"));
+    /* Simon leaves at 6 — Joelle 2:1 only through 5.30–6 (not a 5.30–6.30 hour). */
+    d.slots.push(aquatic("Acton", "5.30 to 6", "Joelle", "SIMON"));
   }
   if (javier) {
     const d = ensureDay(javier, "Thursday");
@@ -417,9 +418,10 @@ function rebuildThursday(week) {
     clearDayServices(d, isActonAquatic);
     d.slots.push(aquatic("Acton", "4 to 4.30", "CLOSED", "AURORA"));
     d.slots.push(aquatic("Acton", "4.30 to 5.30", "Aqsa", "AURORA"));
-    d.slots.push(aquatic("Acton", "5.30 to 6.30", "Joelle", "AURORA"));
+    d.slots.push(aquatic("Acton", "5.30 to 6", "Joelle", "AURORA"));
+    d.slots.push(aquatic("Acton", "6 to 6.30", "Joelle", "AURORA"));
   }
-  note("Thu Acton AS = Yunis+Maiyar Roberto; Joelle 5.30-6.30 Aurora+Simon; Mohamed Javier 5.30-6.30");
+  note("Thu Acton AS = Yossi/Yunis/Maiyar Roberto; open only Simon 4.30-5; Joelle Simon+Aurora 5.30-6 + Aurora 6-6.30; Mohamed Javier");
 }
 
 function rebuildFriday(week) {

@@ -9,8 +9,8 @@
  *   template until autumn weeks exist in MADRE.
  *
  * Earlier summer history (older weeks) keeps real names for feedback.
- * Former office-hold lines (Thushyan / Yoan / Yossi / Mohammed) are opened
- * the same way (CLOSED → NO PARTICIPANT on template / autumn).
+ * Former office-hold lines (Thushyan / Mohammed) are opened the same way
+ * (CLOSED → NO PARTICIPANT on template / autumn). Yossi / Yoan are CLIENT again — do not release.
  *
  * Idempotent: safe to re-run. Admin can later set CLOSED / re-name slots.
  * Do not move participants between venues here — office handles venue changes.
@@ -52,7 +52,7 @@ type ReleaseRule =
 
 /**
  * Post-deadline releases for Autumn 26/27.
- * Former office holds (Thushyan / Yoan / Yossi / Mohammed) → NO PARTICIPANT.
+ * Former office holds (Thushyan / Mohammed) → NO PARTICIPANT.
  * Mia is never touched here.
  */
 export const REENROL_RELEASE_RULES: ReleaseRule[] = [
@@ -112,11 +112,8 @@ export const REENROL_RELEASE_RULES: ReleaseRule[] = [
   },
   // Yoan Bekele / Hanna — confirmed continuing Direct Payments (office reenrol 23 Jul + MADRE restore 10 Aug).
   // Do not auto-release.
-  {
-    kind: "all",
-    clients: ["Yossi", "yossi"],
-    reason: "office_hold_release",
-  },
+  // Yossi Sium — Autumn CLIENT on Roberto Thu Acton 5–5.30 (kept / rebooked). Do not auto-release
+  // or booking-offer reenrol ensure keeps opening a phantom Places seat.
   /* Roberto Thu Acton former office-hold "Mohammed" only — not Mohamed Yusuf (Anab). */
   {
     kind: "all",
@@ -171,13 +168,8 @@ const OFFICE_HOLD_OPEN_BANDS: Array<{
     service: /aquatic/i,
   },
   // Yoan Bekele restored 10 Aug 2026 (Hanna continuing DP) — do not open this band.
-  {
-    label: "Yossi",
-    staff: /^roberto$/i,
-    day: /thu/i,
-    time: /^(5\s*to\s*5\.30|17\s*to\s*17\.30)$/i,
-    venue: /acton/i,
-  },
+  // Yossi Sium — Autumn CLIENT on Roberto Thu Acton 5–5.30. Do not open this band
+  // (booking-offer ensure was wiping Yossi → NO PARTICIPANT every load).
   {
     label: "Mohammed",
     staff: /^roberto$/i,
