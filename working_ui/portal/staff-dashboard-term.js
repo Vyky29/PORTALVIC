@@ -2048,7 +2048,7 @@
       if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
         if(typeof syncPortalIosAlertPreviewStack === 'function') syncPortalIosAlertPreviewStack();
         if(typeof portalMaybeNotifyReminders === 'function') portalMaybeNotifyReminders(st);
-        if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
+        if(typeof window.portalSyncLeadTeamShiftUi === 'function') setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
       }catch(_){}
     }
 

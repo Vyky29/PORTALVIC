@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260910-pwa-off-joelle";
+  var VER = "20260910-youssef-term-cal";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260909-bismark-full",
@@ -57,7 +57,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260906-cyrus-youssef-off",
+    "/portal/portal_lead_team_shift.js?v=20260910-roberto-taps2",
   ];
 
   var TIER_IDLE = [

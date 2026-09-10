@@ -671,7 +671,7 @@
           window.portalSyncServiceLeadsQuickMenu();
         }
         if(typeof window.portalSyncLeadTeamShiftUi === 'function'){
-          window.portalSyncLeadTeamShiftUi();
+          setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
         }
         dashboardData.avatarFile = boot.avatarFile || dashboardData.avatarFile || "";
         if (typeof window.portalSyncTopbarStaffPhoto === "function") {

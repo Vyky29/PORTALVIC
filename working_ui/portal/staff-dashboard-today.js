@@ -981,7 +981,7 @@
           if(termSheetOpen) renderTermCalendarGrid({ force: true });
           else renderTermCalendarGrid();
         }
-        if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
+        if(typeof window.portalSyncLeadTeamShiftUi === 'function') setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
         if(typeof portalRefreshScheduleOverrideDayChrome === 'function') portalRefreshScheduleOverrideDayChrome({ forceTerm: termSheetOpen });
       }catch(_syncOv){}
       }finally{

@@ -1540,12 +1540,27 @@ export function portalSyncLeadTeamShiftUi() {
       qmHost.hidden = !qmHtml;
     }
     if (qmHeading) qmHeading.hidden = !qmHtml;
-    if (typeof window.portalRefreshPendingOverrideDaysCache === "function") {
-      window.portalRefreshPendingOverrideDaysCache();
-    }
-    if (typeof window.portalRefreshScheduleOverrideDayChrome === "function") {
-      window.portalRefreshScheduleOverrideDayChrome({ force: true });
-    }
+    /* Never force week/term chrome here. Roberto (and other team viewers) call this
+       on every Today paint; force:true rebuilt week+term and froze iPhone taps while
+       Youssef (no lead ctx) stayed fine. Signature-gated refresh is enough. */
+    try {
+      if (typeof window.portalRefreshPendingOverrideDaysCache === "function") {
+        window.portalRefreshPendingOverrideDaysCache();
+      }
+    } catch (_) {}
+    try {
+      var nowMs = Date.now();
+      var lastMs = Number(window.__PORTAL_LEAD_TEAM_CHROME_AT__ || 0) || 0;
+      if (nowMs - lastMs < 2500) return;
+      window.__PORTAL_LEAD_TEAM_CHROME_AT__ = nowMs;
+      if (typeof window.portalRefreshScheduleOverrideDayChrome === "function") {
+        setTimeout(function () {
+          try {
+            window.portalRefreshScheduleOverrideDayChrome();
+          } catch (_ch) {}
+        }, 0);
+      }
+    } catch (_) {}
   } catch (e) {
     try {
       console.warn("[portal] lead team shift sync", e);
