@@ -28,6 +28,7 @@ import {
   FEEDBACK_2030_MADRE_TERM_KEYS,
   mergeFeedback2030Slots,
   outstandingByStaff,
+  remapAutumnFeedback2030Slots,
   resolveProfileForStaffKey,
   slotsFromMadre,
   slotsFromRosterRows,
@@ -225,6 +226,7 @@ Deno.serve(async (req) => {
     slotsFromMadre(madreDoc, iso),
     slotsFromRosterRows([...(datedRoster || []), ...(templateRoster || [])], iso),
   ]);
+  slots = remapAutumnFeedback2030Slots(slots, iso);
   /* Covers / clears / absences: nag the worker who ran the session, not the original book. */
   slots = applyScheduleOverridesToFeedback2030Slots(
     slots,

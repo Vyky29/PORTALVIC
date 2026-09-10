@@ -222,6 +222,19 @@ export function remapAutumnFeedback2030Slots(
       }
     }
     return staff === s.staff ? s : { ...s, staff };
+  }).filter((s) => {
+    /* Thu 10 Sep: Joelle 6–6.30 cancelled (Aurora Cancelled + Anas makeup; Simon open).
+     * Clock parser can read "6 to 6.30" as 6.30 (390), not 6:00 — match the label too. */
+    if (iso !== "2026-09-10") return true;
+    if (!/^joelle\b/i.test(String(s.client || "").trim())) return true;
+    const t = String(s.time || "").trim().toLowerCase().replace(/[–—]/g, "-");
+    if (/\b6\s*(?:to|-)\s*6\s*[.:]?30\b/.test(t)) return false;
+    if (/\b18[:.]00\b/.test(t) && /\b18[:.]30\b/.test(t)) return false;
+    const m = feedbackClockMinutes(s.time);
+    if (m === 6 * 60 || m === 18 * 60 || m === 6 * 60 + 30 || m === 18 * 60 + 30) {
+      return false;
+    }
+    return true;
   });
 }
 
@@ -642,6 +655,29 @@ function namesMatchInstructor(completedBy: string, instructor: string): boolean 
   return false;
 }
 
+function isAquaticService(service: string): boolean {
+  const s = String(service || "");
+  if (isDayCentreService(s)) return false;
+  return /aquatic|swim/i.test(s);
+}
+
+function hmFromFeedbackKey(key: string): string {
+  const parts = String(key || "").split("|");
+  for (let i = 0; i < parts.length; i++) {
+    const p = String(parts[i] || "").trim();
+    if (/^\d{1,2}:\d{2}$/.test(p)) return p;
+  }
+  return "";
+}
+
+function aquaticTimesExactOr12h(slotTime: string, keyOrTime: string): boolean {
+  const ma = feedbackClockMinutes(slotTime);
+  const mb = feedbackClockMinutes(keyOrTime);
+  if (ma == null || mb == null) return false;
+  if (ma === mb) return true;
+  return Math.abs(ma - mb) === 12 * 60;
+}
+
 function feedbackClearsSharedStaffUnit(slot: Feedback2030Slot, fb: Feedback2030Row): boolean {
   if (isDayCentreService(slot.service) || isDayCentreService(String(fb.service || ""))) {
     return true;
@@ -650,6 +686,12 @@ function feedbackClearsSharedStaffUnit(slot: Feedback2030Slot, fb: Feedback2030R
   if (/\|bespoke_shared(?:\||$)/i.test(pk)) return true;
   if (isBespokeSharedService(slot.service) || isBespokeSharedService(String(fb.service || ""))) {
     return true;
+  }
+  /* 2:1 aquatic (Joelle Thu Acton): one submit clears both instructors on that half. */
+  if (isAquaticService(slot.service) || isAquaticService(String(fb.service || "")) || /\|aquatic(?:\||$)/i.test(pk)) {
+    const keyHm = hmFromFeedbackKey(pk);
+    if (keyHm) return aquaticTimesExactOr12h(slot.time, keyHm);
+    if (/\|aquatic(?:\||$)/i.test(pk) && !/\d{1,2}:\d{2}/.test(pk)) return true;
   }
   return false;
 }

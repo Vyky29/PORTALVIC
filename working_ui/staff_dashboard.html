@@ -368,19 +368,23 @@
     (function () {
       function portalDbg(hid, loc, msg, data) {
         var payload = data || {};
-        fetch("http://127.0.0.1:7652/ingest/0adf76e0-3915-4113-a09a-6b6f251bb59d", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "f1029b" },
-          body: JSON.stringify({
-            sessionId: "f1029b",
-            runId: payload.runId || "post-fix",
-            hypothesisId: hid,
-            location: loc,
-            message: msg,
-            data: payload,
-            timestamp: Date.now()
-          })
-        }).catch(function () {});
+        var host = "";
+        try { host = String(location.hostname || ""); } catch (_) {}
+        if (host === "127.0.0.1" || host === "localhost") {
+          fetch("http://127.0.0.1:7652/ingest/0adf76e0-3915-4113-a09a-6b6f251bb59d", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "f1029b" },
+            body: JSON.stringify({
+              sessionId: "f1029b",
+              runId: payload.runId || "post-fix",
+              hypothesisId: hid,
+              location: loc,
+              message: msg,
+              data: payload,
+              timestamp: Date.now()
+            })
+          }).catch(function () {});
+        }
       }
       window.__portalDbg = portalDbg;
       var lastTapMs = 0;
