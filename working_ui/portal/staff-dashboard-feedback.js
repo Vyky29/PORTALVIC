@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260908-zaid-aa-ma-merge';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260910-joelle-2to1';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -211,20 +211,35 @@
       if(act.indexOf('aquatic') >= 0 || act.indexOf('swimming') >= 0) return true;
       return false;
     }
-    /** Substitute cover, SwimFarm Sunday slots, climbing, Multi-Activity or Aquatic/teaching-pool
-        — only this staff's own Supabase rows may mark green. Day Centre and Bespoke shared remain
-        the only sessions a co-worker's submission validates. */
+    /** Substitute cover, SwimFarm Sunday slots, climbing, Multi-Activity or 1:1 Aquatic
+        — only this staff's own Supabase rows may mark green. Day Centre, Bespoke shared,
+        and 2:1 aquatic (same client + same clock, e.g. Joelle Aurora+Simon) are shared:
+        one worker's submit completes both instructors. */
     function portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso){
       if(portalSessionIsSundayInstructorCover(s)) return true;
       if(portalSessionIsSundaySwimfarmPerStaffFeedback(s, iso)) return true;
       const act = String((s && (s.activity || s.rosterService || s.service)) || '').toLowerCase();
       if(/day\s*centre/.test(act)) return false;
       if(typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s)) return false;
+      if(typeof portalAquaticSessionIsTwoToOneShared === 'function' && portalAquaticSessionIsTwoToOneShared(s, iso)){
+        // #region agent log
+        try{
+          if(typeof window.__portalDbg === 'function'){
+            window.__portalDbg('G', 'staff-dashboard-feedback.js:2to1', 'aquatic-2to1-shared', {
+              runId: 'post-fix',
+              cid: String((s && s.clientId) || '').slice(0, 24),
+              start: String((s && s.start) || '').slice(0, 8)
+            });
+          }
+        }catch(_){}
+        // #endregion
+        return false;
+      }
       if(act.indexOf('climbing') >= 0 || act.indexOf('climb') >= 0) return true;
       /* A support worker's Multi-Activity submission must not paint the instructor's teaching-pool
          (Aquatic) slot green, and vice-versa — each worker owns their own feedback for these. Only
-         Day Centre (anyone with the client during the 11am-4pm window) and Bespoke shared sessions
-         are validated by a co-worker's submission. */
+         Day Centre (anyone with the client during the 11am-4pm window), Bespoke shared, and 2:1
+         aquatic sessions are validated by a co-worker's submission. */
       if(/multi[-\s]?activity/.test(act)) return true;
       if(act.indexOf('aquatic') >= 0 || act.indexOf('swimming') >= 0) return true;
       /* Physical Activity (gym / fitness): each instructor owns their own feedback — a co-worker's

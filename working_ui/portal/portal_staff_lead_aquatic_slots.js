@@ -5,8 +5,10 @@
  * same instructor. Those appear as duplicate/consecutive rows but need ONE card and
  * ONE feedback on the instructor dashboard.
  *
- * When the same client has aquatic blocks with different instructors the same day,
- * each instructor keeps a separate card and feedback (admin overview counts both).
+ * When the same client has aquatic blocks with different instructors the same day
+ * at different times (split cover), each instructor keeps a separate card.
+ * Same client + same clock with two instructors (2:1, e.g. Joelle Thu Acton) is
+ * one feedback: either worker submitting completes both.
  */
 (function (global) {
   "use strict";
@@ -221,6 +223,87 @@
     if (aquaticInstructorCoverUnitsOnDate(iso, clientId, dayWord) > 1) return true;
     if (aquaticSlotCountForClientOnDate(iso, clientId, dayWord) <= 1) return false;
     return !aquaticSameInstructorAllSlotsOnDate(iso, clientId, dayWord);
+  }
+
+  function labelClockStartHm(raw) {
+    var t = String(raw || "").trim().toLowerCase().replace(/[–—]/g, "-");
+    var leadMin = t.match(/^(\d{1,2})[:.](\d{2})/);
+    if (leadMin) {
+      var h = Number(leadMin[1]);
+      var min = Number(leadMin[2]);
+      if (h >= 1 && h <= 7) h += 12;
+      return canonicalHmToken(h + ":" + String(min).padStart(2, "0"));
+    }
+    var leadH = t.match(/^(\d{1,2})(?=\s*(?:to|-|$))/);
+    if (leadH) {
+      var h2 = Number(leadH[1]);
+      if (h2 >= 1 && h <= 7) h2 += 12;
+      return canonicalHmToken(h2 + ":00");
+    }
+    return "";
+  }
+
+  function rowClockStartHm(r) {
+    var st = canonicalHmToken(r && (r.start || r.start_hm || r.start_time) || "");
+    if (st && /^\d{2}:\d{2}$/.test(st)) return st;
+    return labelClockStartHm(r && (r.time || r.time_slot || r.time_slot_label) || "");
+  }
+
+  function rowInstructorToken(r) {
+    return String((r && (r.instructors || r.staff || r.staff_name || r.staffId || r.instructor)) || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, "");
+  }
+
+  function aquaticTwoToOneStaffCountOnSlot(iso, clientId, startHm, dayWord) {
+    var cid = slugClient(clientId);
+    var want = canonicalHmToken(startHm);
+    if (!iso || !cid || !want) return 0;
+    var seen = Object.create(null);
+    var rows = rosterRows();
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!rowAppliesOnDate(r, iso, dayWord)) continue;
+      if (slugClient(r.client_name || r.clientId || r.client) !== cid) continue;
+      if (!rowIsAquatic(r)) continue;
+      var bookedName = String(r.client_name || r.client || "").trim().toLowerCase();
+      if (
+        !bookedName ||
+        bookedName === "closed" ||
+        bookedName === "no client" ||
+        bookedName === "noclient" ||
+        bookedName === "no_client" ||
+        bookedName === "no participant"
+      ) {
+        continue;
+      }
+      if (rowClockStartHm(r) !== want) continue;
+      var tok = rowInstructorToken(r);
+      if (tok) seen[tok] = true;
+    }
+    return Object.keys(seen).length;
+  }
+
+  /** Same client + same aquatic clock, two instructors (Joelle Thu Acton). One submit covers both. */
+  function aquaticSessionIsTwoToOneShared(s, iso) {
+    if (!s) return false;
+    if (s.__portalSundayInstructorCover) return false;
+    var day =
+      String((s && s.day) || "").trim() || weekdayLongFromIso(iso);
+    var venue = String((s && s.venue) || "").trim().toLowerCase();
+    if (day === "Sunday" && venue === "swimfarm") return false;
+    var activity = String((s && (s.activity || s.rosterService || s.service)) || "").trim();
+    if (!isAquaticActivity(activity)) return false;
+    try {
+      if (typeof global.portalTwoToOneSupportLabelForSession === "function") {
+        var lab = global.portalTwoToOneSupportLabelForSession(s, s.staffId, s.clientId);
+        if (lab) return true;
+      }
+    } catch (_) {}
+    var start =
+      canonicalHmToken((s && s.start) || "") || labelClockStartHm((s && s.time) || "");
+    return aquaticTwoToOneStaffCountOnSlot(iso, s.clientId || s.client, start, day) >= 2;
   }
 
   /** When per-slot aquatic feedback applies, only accept server keys for this card's start (legacy day keys → earliest slot only). */
@@ -781,6 +864,7 @@
   }
 
   global.portalStaffLeadIsAquaticActivity = isAquaticActivity;
+  global.portalAquaticSessionIsTwoToOneShared = aquaticSessionIsTwoToOneShared;
   global.portalStaffLeadAquaticSessionReviewKey = buildAquaticSessionReviewKey;
   global.portalStaffLeadClientNeedsPerSlotAquaticFeedback = clientNeedsPerSlotAquaticFeedbackOnDate;
   global.portalStaffLeadAquaticInstructorCoverUnitsOnDate = aquaticInstructorCoverUnitsOnDate;

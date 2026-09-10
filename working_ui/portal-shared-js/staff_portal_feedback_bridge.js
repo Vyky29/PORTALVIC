@@ -582,8 +582,8 @@
     return stKey.indexOf(rKey) >= 0 || rKey.indexOf(stKey) >= 0;
   }
 
-  /** Each worker owns their MA / aquatic (teaching pool) / climbing slots — a co-worker's
-      submission only validates Day Centre and Bespoke shared sessions. */
+  /** Each worker owns their MA / climbing / 1:1 aquatic slots — a co-worker's
+      submission only validates Day Centre, Bespoke shared, and 2:1 aquatic. */
   function rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso) {
     if (!s) return false;
     if (s.__portalSundayInstructorCover) return true;
@@ -592,6 +592,13 @@
       .toLowerCase();
     if (/day\s*centre/.test(act)) return false;
     if (isBespokeSharedRosterSession(s)) return false;
+    if (
+      typeof window !== "undefined" &&
+      typeof window.portalAquaticSessionIsTwoToOneShared === "function" &&
+      window.portalAquaticSessionIsTwoToOneShared(s, iso)
+    ) {
+      return false;
+    }
     if (/multi[-\s]?activity/.test(act)) return true;
     if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
     if (act.indexOf("aquatic") >= 0 || act.indexOf("swimming") >= 0) return true;

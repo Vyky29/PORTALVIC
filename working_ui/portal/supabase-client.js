@@ -910,6 +910,8 @@ function portalRosterKeyIsSharedFeedbackUnit(rosterKey) {
     .trim()
     .toLowerCase();
   if (last === "day_centre" || last === "bespoke_shared") return true;
+  /* 2:1 aquatic (Joelle): iso|client|HH:mm|aquatic is the same key on both instructors. */
+  if (last === "aquatic") return true;
   if (parts.length >= 3 && parts[1] === "") return true;
   return false;
 }
@@ -938,7 +940,6 @@ function portalRosterKeyIsPerSlotServiceUnit(rosterKey) {
   if (!rTime) return false;
   if (r.indexOf("climb") >= 0) return true;
   if (/multi[-\s]?activity/.test(r) || r.split("|").indexOf("multi") >= 0) return true;
-  if (/\|aquatic$/i.test(r) || /\|\d{1,2}:\d{2}\|aquatic/i.test(r)) return true;
   const parts = r.split("|").map((p) => String(p || "").trim().toLowerCase()).filter(Boolean);
   if (parts.length >= 4 && /^\d{4}-\d{2}-\d{2}$/.test(parts[0])) {
     const last = parts[parts.length - 1];

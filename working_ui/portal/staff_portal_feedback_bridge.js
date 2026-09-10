@@ -304,18 +304,17 @@
     return isDayCentreServiceLabel(st.service);
   }
 
-  /** Climbing / MA / per-slot Aquatic: each instructor+area unit is separate — not Day Centre / Bespoke / merge groups. */
+  /** Climbing / MA / 1:1 Aquatic: each instructor+area unit is separate — not Day Centre / Bespoke / 2:1 aquatic. */
   function statusRowNeedsPerStaffUnitFeedback(st) {
     if (!st) return false;
+    if (statusRowIsAquaticTwoToOneShared(st)) return false;
     if (statusRowServiceNeedsPerStaffUnitFeedback(st)) return true;
     if (isDayCentreStatusRow(st) || isBespokeStatusRow(st)) return false;
     if (String(st.feedbackMergeGroup || "").trim()) return false;
     const svc = String(st.service || "").toLowerCase();
     if (/multi[-\s]?activity/.test(svc)) return true;
     if (svc.indexOf("climbing") >= 0 || svc.indexOf("climb") >= 0) return true;
-    /* Aquatic / teaching-pool feedback is owned per worker (whether the unit key is per-slot or
-       day-level): an instructor's slot must not be validated by a support worker's submission on
-       the same client. Day Centre and Bespoke shared are the only shared units (handled above). */
+    /* Aquatic 1:1 is owned per worker. 2:1 (same client + clock) is shared — handled above. */
     if (svc.indexOf("aquatic") >= 0 || svc.indexOf("swimming") >= 0) return true;
     const uk = String(st.feedbackUnitKey || "");
     if (/multi[-\s]?activity|climbing|climb/.test(uk)) return true;
@@ -352,6 +351,53 @@
     }
     const cid = slug(String((s && s.clientId) || ""));
     return cid === "tinashe";
+  }
+
+  function submittedRowIsAquatic(r) {
+    const svc = String((r && r.service) || "").toLowerCase();
+    if (svc.indexOf("aquatic") >= 0 || svc.indexOf("swimming") >= 0) return true;
+    const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").toLowerCase();
+    return /\|aquatic(?:\||$)/.test(pk);
+  }
+
+  function statusRowIsAquaticTwoToOneShared(st, iso) {
+    if (!st) return false;
+    if (
+      typeof window === "undefined" ||
+      typeof window.portalAquaticSessionIsTwoToOneShared !== "function"
+    ) {
+      return false;
+    }
+    const uk = String(st.feedbackUnitKey || "").trim();
+    const date = (uk.split("|")[0] || iso || "").slice(0, 10);
+    const start = portalRowTimeTokenFromKey(uk);
+    return window.portalAquaticSessionIsTwoToOneShared(
+      {
+        activity: st.service,
+        rosterService: st.service,
+        service: st.service,
+        clientId: st.client || st.clientName,
+        start: start,
+        staffId: st.instructor,
+        venue: st.venue,
+      },
+      date
+    );
+  }
+
+  function aquaticStatusTimesAlign(st, r) {
+    const stHm =
+      portalRowTimeTokenFromKey(st && st.feedbackUnitKey) ||
+      normalizeHmToken((st && (st.start || st.timeSlot || st.time)) || "");
+    const rHm = portalRowTimeTokenFromKey(
+      (r && (r.portalSessionKey || r.portal_session_key)) || ""
+    );
+    if (!stHm || !rHm) return true;
+    if (stHm === rHm) return true;
+    const a = hmTokenToMinutes(stHm);
+    const b = hmTokenToMinutes(rHm);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+    return Math.abs(a - b) === 12 * 60;
   }
 
   function isBespokeSharedStatusRow(st) {
@@ -630,8 +676,8 @@
     return stKey.indexOf(rKey) >= 0 || rKey.indexOf(stKey) >= 0;
   }
 
-  /** Each worker owns their MA / aquatic (teaching pool) / climbing slots — a co-worker's
-      submission only validates Day Centre and Bespoke shared sessions. */
+  /** Each worker owns their MA / climbing / 1:1 aquatic slots — a co-worker's
+      submission only validates Day Centre, Bespoke shared, and 2:1 aquatic. */
   function rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso) {
     if (!s) return false;
     if (s.__portalSundayInstructorCover) return true;
@@ -640,6 +686,13 @@
       .toLowerCase();
     if (/day\s*centre/.test(act)) return false;
     if (isBespokeSharedRosterSession(s)) return false;
+    if (
+      typeof window !== "undefined" &&
+      typeof window.portalAquaticSessionIsTwoToOneShared === "function" &&
+      window.portalAquaticSessionIsTwoToOneShared(s, iso)
+    ) {
+      return false;
+    }
     if (/multi[-\s]?activity/.test(act)) return true;
     if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
     if (act.indexOf("aquatic") >= 0 || act.indexOf("swimming") >= 0) return true;
@@ -662,6 +715,16 @@
           submittedRowMatchesStatusClient(r, st) &&
           !submittedRowMarksAbsent(r) &&
           submittedRowIsBespoke(r)
+        );
+      });
+    }
+    if (statusRowIsAquaticTwoToOneShared(st, iso)) {
+      return submittedRowsForDateAll(iso).some(function (r) {
+        return (
+          submittedRowMatchesStatusClient(r, st) &&
+          !submittedRowMarksAbsent(r) &&
+          submittedRowIsAquatic(r) &&
+          aquaticStatusTimesAlign(st, r)
         );
       });
     }
