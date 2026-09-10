@@ -335,6 +335,10 @@
         return [
           String(row.sessionKey || ""),
           String(row.kind || ""),
+          String(row.name || ""),
+          String(row.time || ""),
+          String(row.areaLabel || ""),
+          String(row.poolLocationLabel || ""),
           String(row.portalOverrideAlertPill || ""),
           reviewCls,
           photo,

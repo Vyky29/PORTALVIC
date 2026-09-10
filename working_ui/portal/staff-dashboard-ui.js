@@ -733,7 +733,14 @@
         return;
       }
       const n = Math.min(9, count);
-      const scrollMode = n >= 7;
+      var narrowBoard = false;
+      try{
+        if(document.documentElement && document.documentElement.classList.contains('portal-standalone')) narrowBoard = true;
+        else if(window.matchMedia && window.matchMedia('(max-width: 720px)').matches) narrowBoard = true;
+        else if(grid && grid.getBoundingClientRect && grid.getBoundingClientRect().width <= 430) narrowBoard = true;
+      }catch(_){}
+      /* Phone PWA: 5–6 squeezed rows clip Cancelled / Submitted chips (Roberto Today). */
+      const scrollMode = n >= 7 || (narrowBoard && n >= 5);
       grid.classList.toggle('today-grid--session-scroll', scrollMode);
       grid.style.setProperty('--today-rows-fill', n === 1 ? '0.333333' : '1');
       grid.style.setProperty('--today-session-count', String(n));
