@@ -433,8 +433,20 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
   return rest;
 }
 
-/** Ensure Sunday Westway climbing publishes the open 3–4pm band (2 places). */
+/**
+ * Do not force-open Sunday 3–4. Alex’s late band stays office-gated until earlier
+ * Alex hours (12–1 and 2–3) are filled — see gateAlexClimbSundayThreeFour.
+ */
 function ensureClimbingSundayOpenBand(slots: OfferSlot[]): OfferSlot[] {
+  return slots;
+}
+
+/**
+ * Alex Sunday Westway climb 3–4: keep Fully booked on the public offer until
+ * his 12–1 and 2–3 open seats are gone (office opens 3–4 only after those fill).
+ * Overview can still show No participant on Alex 3–4.
+ */
+function gateAlexClimbSundayThreeFour(slots: OfferSlot[]): OfferSlot[] {
   const sunClimb = slots.filter(
     (s) =>
       s.serviceId === "climbing" &&
@@ -442,30 +454,38 @@ function ensureClimbingSundayOpenBand(slots: OfferSlot[]): OfferSlot[] {
       /westway/i.test(s.venue),
   );
   if (!sunClimb.length) return slots;
-  const hasThreeFour = sunClimb.some((s) => {
+
+  function bandOpen(midFrom: number, midTo: number): boolean {
+    return sunClimb.some((s) => {
+      const mid = slotMidMinutes(s);
+      if (mid < midFrom || mid >= midTo) return false;
+      return Math.max(0, Number(s.openSeats) || 0) > 0;
+    });
+  }
+
+  /* 12:00–13:00 and 14:00–15:00 still have Places → lock 15:00–16:00. */
+  const earlierStillOpen = bandOpen(12 * 60, 13 * 60) || bandOpen(14 * 60, 15 * 60);
+  if (!earlierStillOpen) return slots;
+
+  return slots.map((s) => {
+    if (
+      s.serviceId !== "climbing" ||
+      s.day !== "Sunday" ||
+      !/westway/i.test(s.venue)
+    ) {
+      return s;
+    }
     const mid = slotMidMinutes(s);
-    return mid >= 15 * 60 && mid < 16 * 60;
+    if (mid < 15 * 60 || mid >= 16 * 60) return s;
+    const cap = Math.max(1, Number(s.capacity) || 1);
+    return {
+      ...s,
+      openSeats: 0,
+      taken: cap,
+      /* Strip Alex from openInstructors so office Assign does not treat it as live Places. */
+      openInstructors: [],
+    };
   });
-  if (hasThreeFour) return slots;
-  const venue = sunClimb[0]!.venue;
-  const ref =
-    sunClimb.map((s) => s.referenceDate || "").filter(Boolean).sort().pop() ||
-    null;
-  return [
-    ...slots,
-    {
-      id: slotId("climbing", venue, "Sunday", "15:00", "3.00 – 4.00"),
-      serviceId: "climbing",
-      venue,
-      day: "Sunday",
-      timeLabel: "3.00 – 4.00",
-      sortTime: "15:00",
-      capacity: 2,
-      taken: 0,
-      openSeats: 2,
-      referenceDate: ref,
-    },
-  ];
 }
 
 type DayBucket = {
@@ -629,6 +649,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
 
   let folded = foldMultiActivityOfferSlots(slots);
   folded = ensureClimbingSundayOpenBand(folded);
+  folded = gateAlexClimbSundayThreeFour(folded);
   /* Day Centre + Bespoke are office-arranged only — never expose MADRE capacity as bookable slots. */
   folded = folded.filter((s) => s.serviceId !== "day_centre" && s.serviceId !== "bespoke");
   /* Defence in depth: Wed Multi stays off the public offer. */
