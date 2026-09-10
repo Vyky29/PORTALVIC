@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 87;
+  var SOURCE_VERSION = 88;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -766,6 +766,23 @@
       out.push(r);
     });
     autumnActonTuesdayStandingRows().forEach(function (row) {
+      out.push(applyStandingSlotAreaFromDb(row));
+    });
+    return out;
+  }
+
+  /**
+   * Re-inject Thu Acton AFTER portal_roster_rows merge.
+   * Standing stamp is 2026-07-16; summer dated rows for that ISO (e.g. Yunis Hussein
+   * Teaching Pool, Yossi Sium blank area) otherwise overwrite Autumn board pool notes.
+   */
+  function applyAutumnActonThursdayStanding(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (isThursdayActonAquaticStandingRow(r)) return;
+      out.push(r);
+    });
+    autumnActonThursdayStandingRows().forEach(function (row) {
       out.push(applyStandingSlotAreaFromDb(row));
     });
     return out;
@@ -3014,6 +3031,7 @@
     var withAutumn = applyAutumnStandingParticipantRows(base);
     var merged = opts.skipDb ? withAutumn.slice() : applyPortalRosterDbRows(withAutumn);
     merged = applyAutumnActonTuesdayStanding(merged);
+    merged = applyAutumnActonThursdayStanding(merged);
     merged = scrubDepartedAutumnInstructorRows(merged);
     merged = applyAutumnWeek1DayCentre(merged);
     merged = applyFadiAbsentDayCentre(merged);

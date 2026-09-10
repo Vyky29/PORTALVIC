@@ -415,12 +415,16 @@
       var datedHit = findDatedAliasMatch(r, dated);
       if (datedHit) {
         var shortNm = officeShortClientName(r.client_name || datedHit.client_name);
+        /* Do not let blank summer dated area wipe standing pool notes (e.g. Yossi). */
+        var datedArea = String(datedHit.area || "").trim();
+        var standArea = String(r.area || "").trim();
         out.push(
           markRosterTimeUpdated(
             Object.assign({}, r, datedHit, {
               session_date: iso,
               day: r.day || datedHit.day,
               client_name: shortNm || datedHit.client_name || r.client_name,
+              area: datedArea || standArea,
             }),
             r
           )
