@@ -151,7 +151,7 @@
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
   <script src="/portal/cfk-app.js?v=20260910-services-sandra"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
-  <script src="/portal/admin-scheduling-module.js?v=20260906-overview-fluid"></script>
+  <script src="/portal/admin-scheduling-module.js?v=20260910-mohamed-band"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -10251,17 +10251,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!staffOk) return false;
       var timeExact = normTimeShort(o.anchor_start) === normTimeShort(slot.anchorStart)
         && normTimeShort(o.anchor_end) === normTimeShort(slot.anchorEnd);
+      /* Aquatic Schedule expands 60′ seats to 30′ rows; finish-booking / new-client
+       * overrides often anchor the full band (e.g. Mohamed 5.30–6.30). Match by
+       * parent band or overlap so half-hour rows still receive the replacement. */
+      var timeOnBand = timeExact;
+      if(!timeOnBand && slot.parentAnchorStart && slot.parentAnchorEnd){
+        timeOnBand = normTimeShort(o.anchor_start) === normTimeShort(slot.parentAnchorStart)
+          && normTimeShort(o.anchor_end) === normTimeShort(slot.parentAnchorEnd);
+      }
+      if(!timeOnBand){
+        timeOnBand = schedTimeRangesOverlap(o.anchor_start, o.anchor_end, slot.anchorStart, slot.anchorEnd);
+      }
       if(oType === 'client_replace_in_slot' && schedIsOpenSlotSlug(o.anchor_client_id)){
-        return timeExact;
+        return timeOnBand;
       }
       var oCid = adminCanonicalClientSlug(o.anchor_client_id);
       var sCid = adminCanonicalClientSlug(slot.clientSlug || slot.clientDisplay || '');
       if(oType === 'client_replace_in_slot' && schedIsOpenSlotSlug(sCid)){
-        return timeExact;
+        return timeOnBand;
       }
       /* Day reassign onto a named seat: override still anchors on available/open,
          but the painted row already shows the replacement client. */
-      if(oType === 'client_replace_in_slot' && timeExact){
+      if(oType === 'client_replace_in_slot' && timeOnBand){
         var repCid = adminCanonicalClientSlug(
           (o.payload && (o.payload.to_client_id || o.payload.replacement_client_id)) || ''
         );
@@ -10271,7 +10282,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(oType === 'client_absence_announced'){
         return schedTimeRangesOverlap(o.anchor_start, o.anchor_end, slot.anchorStart, slot.anchorEnd);
       }
-      return timeExact;
+      return timeOnBand;
     }
     function schedOverridePickBestForSlot(matches){
       if(!matches || !matches.length) return null;
