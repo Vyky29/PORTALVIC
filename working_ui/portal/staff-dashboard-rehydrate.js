@@ -307,7 +307,7 @@
           dashboardData.portalAnnouncementAcksMerged &&
           typeof portalSyncAnnouncementsAndRemindersUi === "function"
         ) {
-          portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
+          portalSyncAnnouncementsAndRemindersUi({ force: true });
         } else if (typeof portalHydrateAnnouncementsFromSupabase === "function") {
           void portalHydrateAnnouncementsFromSupabase();
         }
@@ -714,7 +714,7 @@
           if(portalStaffFastBootEnabled()){
             void portalHydrateAnnouncementsFromSupabase().then(function(){
               if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
-                portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
+                portalSyncAnnouncementsAndRemindersUi({ force: true });
               }
             });
           }else{
@@ -723,11 +723,11 @@
               new Promise(function(r){ setTimeout(r, 5000); }),
             ]);
             if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
-              portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
+              portalSyncAnnouncementsAndRemindersUi({ force: true });
             }
           }
         }else if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
-          portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
+          portalSyncAnnouncementsAndRemindersUi({ force: true });
         }
         if(!portalStaffFastBootEnabled() && typeof window.portalApplyScheduleOverridesToSessionsModelSafe === "function"){
           try{

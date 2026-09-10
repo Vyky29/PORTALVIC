@@ -433,17 +433,10 @@
         };
         portalDbg("A", "staff_dashboard.html:tap", "tap-hit", data);
         try {
-          var chip = document.getElementById("portalDbgChip");
-          if (!chip && document.body) {
-            chip = document.createElement("div");
-            chip.id = "portalDbgChip";
-            chip.setAttribute(
-              "style",
-              "position:fixed;left:6px;right:6px;bottom:6px;z-index:2147483646;font:10px/1.25 ui-monospace,monospace;background:rgba(255,255,255,.94);color:#111;padding:6px;border:1px solid #333;pointer-events:none;overflow:hidden;max-height:72px"
-            );
-            document.body.appendChild(chip);
+          var chip = ensureChip();
+          if (chip) {
+            chip.dataset.tap = stack[0] || describeEl(ev.target) || "";
           }
-          if (chip) chip.textContent = stack.slice(0, 4).join(" > ") || describeEl(ev.target);
         } catch (_c) {}
       }
       document.addEventListener("touchstart", onPointer, true);
@@ -517,7 +510,8 @@
         try {
           var chip = ensureChip();
           if (chip) {
-            chip.textContent =
+            var base =
+              (window.__portalAnnSyncDbg ? String(window.__portalAnnSyncDbg) + " " : "") +
               "mid:" +
               (mid[0] || "-") +
               " sheets:" +
@@ -528,6 +522,8 @@
               (fadi[0] && fadi[0].segs ? "y" : "n") +
               " can:" +
               (fadi[0] && fadi[0].cancel ? "y" : "n");
+            chip.dataset.base = base;
+            chip.textContent = base + (chip.dataset.tap ? " tap:" + chip.dataset.tap : "");
           }
         } catch (_c2) {}
       }
@@ -1459,11 +1455,11 @@
   <script src="/portal/staff-dashboard-participants.js?v=20260910-berta-off-alerts"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260906-yusuf-aurora-swap"></script>
-  <script src="/portal/staff-dashboard-today.js?v=20260910-staff-debug3"></script>
-  <script src="/portal/staff-dashboard-ui.js?v=20260910-staff-debug3"></script>
+  <script src="/portal/staff-dashboard-today.js?v=20260910-staff-debug5"></script>
+  <script src="/portal/staff-dashboard-ui.js?v=20260910-staff-debug5"></script>
   <script src="/portal/portal_today_time_fit.js?v=20260706-time-one-line"></script>
   <script src="/portal/staff-dashboard-auth-bridge.js?v=20260625-lead-day-cards-nav"></script>
-  <script src="/portal/staff-dashboard-rehydrate.js?v=20260909-luliya-first"></script>
+  <script src="/portal/staff-dashboard-rehydrate.js?v=20260910-staff-debug5"></script>
   <script src="/portal/portal-logout-bind.js?v=20260712-no-photo-signout"></script>
   <script type="module" src="/portal/staff-dashboard-auth-supabase.js?v=20260910-staff-open"></script>
   <script src="/portal/staff-dashboard-achievements-boot.js?v=20260910-staff-debug3"></script>

@@ -5359,15 +5359,41 @@
       portalAnnouncementsSelectedKey = '';
       openSheet('announcementsSheet');
     }
+    var _portalAckMapCache = null;
+    var _portalAckMapCacheAt = 0;
+    var _portalAnnItemsMemo = null;
+    var _portalAnnItemsMemoAt = 0;
+    var _portalSignedRowsMemo = null;
+    var _portalSignedRowsMemoAt = 0;
+    function portalInvalidateAnnouncementUiMemos(){
+      _portalAckMapCache = null;
+      _portalAckMapCacheAt = 0;
+      _portalAnnItemsMemo = null;
+      _portalAnnItemsMemoAt = 0;
+      _portalSignedRowsMemo = null;
+      _portalSignedRowsMemoAt = 0;
+    }
     function portalAnnouncementAckMapLoad(){
       try{
+        var now = Date.now();
+        if(_portalAckMapCache && now - _portalAckMapCacheAt < 800) return _portalAckMapCache;
         const raw = localStorage.getItem(PORTAL_ANNOUNCEMENT_ACK_STORAGE);
-        if(!raw) return {};
+        if(!raw){
+          _portalAckMapCache = {};
+          _portalAckMapCacheAt = now;
+          return _portalAckMapCache;
+        }
         const o = JSON.parse(raw);
-        return o && typeof o === 'object' ? o : {};
+        _portalAckMapCache = o && typeof o === 'object' ? o : {};
+        _portalAckMapCacheAt = now;
+        return _portalAckMapCache;
       }catch(_){ return {}; }
     }
     function portalAnnouncementAckMapSave(map){
+      _portalAckMapCache = map || {};
+      _portalAckMapCacheAt = Date.now();
+      _portalAnnItemsMemo = null;
+      _portalSignedRowsMemo = null;
       try{ localStorage.setItem(PORTAL_ANNOUNCEMENT_ACK_STORAGE, JSON.stringify(map || {})); }catch(_){}
     }
     function portalAnnouncementSignatureKey(item){
@@ -5912,8 +5938,9 @@
           );
         }
         dashboardData.portalAnnouncementAcksMerged = true;
+        portalInvalidateAnnouncementUiMemos();
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
-          portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
+          portalSyncAnnouncementsAndRemindersUi({ force: true });
         }
       }catch(_){
       }finally{
@@ -5937,7 +5964,7 @@
           void portalHydrateAnnouncementsFromSupabase();
         }
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
-          portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
+          portalSyncAnnouncementsAndRemindersUi({ force: true });
         }
         if(typeof portalSyncAnnualProfileQuickMenuGroup === 'function'){
           portalSyncAnnualProfileQuickMenuGroup();
@@ -6097,6 +6124,8 @@
     }
     function portalActiveAnnouncementItems(){
       if(dashboardData && !dashboardData.portalIdentityResolved) return [];
+      var memoNow = Date.now();
+      if(_portalAnnItemsMemo && memoNow - _portalAnnItemsMemoAt < 400) return _portalAnnItemsMemo;
       const annAck = portalAnnouncementAckMapLoad();
       const remAck = portalReminderAckMapLoad();
       const ackContentSeen = portalAnnouncementAckContentFingerprints(annAck);
@@ -6183,7 +6212,7 @@
         return 0;
       });
       let sawProfileCampaign = false;
-      return items.filter(function(it){
+      const filtered = items.filter(function(it){
         if(
           typeof portalSignableItemIsAnnualProfileCampaign === 'function' &&
           portalSignableItemIsAnnualProfileCampaign(it)
@@ -6193,6 +6222,9 @@
         }
         return true;
       });
+      _portalAnnItemsMemo = filtered;
+      _portalAnnItemsMemoAt = memoNow;
+      return filtered;
     }
     function portalAnnouncementPendingItem(){
       const list = portalActiveAnnouncementItems();
@@ -6268,6 +6300,8 @@
       return out;
     }
     function portalSignedMessageHistoryRows(){
+      var signedMemoNow = Date.now();
+      if(_portalSignedRowsMemo && signedMemoNow - _portalSignedRowsMemoAt < 400) return _portalSignedRowsMemo;
       const ann = portalAnnouncementHistoryRows().map(function(r){
         return Object.assign({ kind: 'announcement' }, r);
       });
@@ -6361,9 +6395,12 @@
           prev.text = r.text;
         }
       });
-      return Object.keys(byContent).map(function(k){ return byContent[k]; }).sort(function(a, b){
+      const signedOut = Object.keys(byContent).map(function(k){ return byContent[k]; }).sort(function(a, b){
         return Number(b.signedAt || 0) - Number(a.signedAt || 0);
       });
+      _portalSignedRowsMemo = signedOut;
+      _portalSignedRowsMemoAt = signedMemoNow;
+      return signedOut;
     }
     function portalAnnouncementHistoryDateLabel(ms){
       if(!Number.isFinite(ms) || ms <= 0) return '';

@@ -234,7 +234,7 @@
               window.portalSyncAnnualProfileQuickMenuGroup();
             }
             if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
-              portalSyncAnnouncementsAndRemindersUi({ force: true, immediate: true });
+              portalSyncAnnouncementsAndRemindersUi({ force: true });
             }
           });
         }
@@ -445,20 +445,41 @@
       const cal = typeof portalCalendar202627NoticeItem === 'function' && portalCalendar202627NoticeItem() ? '1' : '0';
       return String(active) + '|' + String(signed) + '|' + merged + '|' + cal;
     }
+    function portalAnnSyncFullscreenOpen(){
+      try{
+        if(document.body && document.body.classList.contains('portal-achievements-camera-open')) return true;
+        return !!document.querySelector('.sheet.sheet--fullscreen.open');
+      }catch(_){ return false; }
+    }
     function portalSyncAnnouncementsAndRemindersUi(opts){
       opts = opts && typeof opts === 'object' ? opts : {};
       if(_portalAnnSyncTimer) clearTimeout(_portalAnnSyncTimer);
-      const delay = opts.immediate ? 0 : 90;
+      /* Never delay 0: Chrome recorded this timer blocking 2.6s and freezing Photo/Close. */
+      var delay = opts.immediate ? 80 : 90;
+      if(portalAnnSyncFullscreenOpen()) delay = Math.max(delay, 450);
       _portalAnnSyncTimer = setTimeout(function(){
         _portalAnnSyncTimer = null;
+        if(portalAnnSyncFullscreenOpen()){
+          portalSyncAnnouncementsAndRemindersUi({ force: !!opts.force });
+          return;
+        }
         portalSyncAnnouncementsAndRemindersUiCore(opts);
       }, delay);
     }
     function portalSyncAnnouncementsAndRemindersUiCore(opts){
       opts = opts && typeof opts === 'object' ? opts : {};
+      if(portalAnnSyncFullscreenOpen()){
+        portalSyncAnnouncementsAndRemindersUi({ force: !!opts.force });
+        return;
+      }
+      var nowMs = function(){
+        return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      };
+      var t0 = nowMs();
       const fp = portalAnnouncementsUiFingerprint();
-      const fpUnchanged = fp === _portalAnnUiLastFp && !opts.force;
-      if(!fpUnchanged){
+      var tFp = nowMs();
+      const dataUnchanged = fp === _portalAnnUiLastFp;
+      if(!dataUnchanged){
         if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
           const liveSet = portalLiveAnnouncementIdSet();
           if(Object.keys(liveSet).length > 0){
@@ -482,23 +503,53 @@
         if(typeof portalSeedDemoSignedAnnouncementArchivesIfNeeded === 'function') portalSeedDemoSignedAnnouncementArchivesIfNeeded();
         if(typeof portalEnsureAnnouncementDemoSeed === 'function') portalEnsureAnnouncementDemoSeed();
       }
-      const shouldRenderNotices = !fpUnchanged || !!opts.force;
+      var tPrune = nowMs();
+      const shouldRenderNotices = !dataUnchanged || !!opts.force;
       if(shouldRenderNotices){
-        if(!fpUnchanged) _portalAnnUiLastFp = fp;
+        if(!dataUnchanged) _portalAnnUiLastFp = fp;
         if(typeof renderNotices === 'function') renderNotices();
         else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         if(typeof syncSessionReviewReminderBanner === 'function') syncSessionReviewReminderBanner();
         if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
       }
+      var tRender = nowMs();
       const annSheet = document.getElementById('announcementsSheet');
       if(annSheet && annSheet.classList.contains('open') && typeof renderAnnouncementsSheetContent === 'function'){
         renderAnnouncementsSheetContent();
       }
-      if(typeof portalMaybeNotifyUnsignedAnnouncementPending === 'function'){
+      var sheetOpen = false;
+      try{ sheetOpen = !!document.querySelector('.sheet.open'); }catch(_){}
+      if(!sheetOpen && typeof portalMaybeNotifyUnsignedAnnouncementPending === 'function'){
         if(!dashboardData || dashboardData.portalAnnouncementAcksMerged !== false){
           portalMaybeNotifyUnsignedAnnouncementPending();
         }
       }
+      var tEnd = nowMs();
+      // #region agent log
+      try{
+        var timings = {
+          runId: 'post-fix',
+          total: Math.round(tEnd - t0),
+          fp: Math.round(tFp - t0),
+          prune: Math.round(tPrune - tFp),
+          render: Math.round(tRender - tPrune),
+          rest: Math.round(tEnd - tRender),
+          force: !!opts.force,
+          dataUnchanged: dataUnchanged,
+          sheetOpen: sheetOpen
+        };
+        window.__portalAnnSyncDbg = 'ann:' + timings.total + ' fp:' + timings.fp + ' pr:' + timings.prune + ' rn:' + timings.render;
+        if(typeof window.__portalDbg === 'function'){
+          window.__portalDbg('F', 'staff-dashboard-ui.js:annSync', 'ann-sync-ms', timings);
+        }
+        var chip = document.getElementById('portalDbgChip');
+        if(chip){
+          chip.dataset.ann = window.__portalAnnSyncDbg;
+          var keep = String(chip.dataset.base || '');
+          chip.textContent = window.__portalAnnSyncDbg + (keep ? ' ' + keep : '') + (chip.dataset.tap ? ' tap:' + chip.dataset.tap : '');
+        }
+      }catch(_){}
+      // #endregion
     }
     /** @deprecated internal */
     function portalSyncAnnouncementsAndRemindersUiImmediate(opts){
