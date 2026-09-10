@@ -7608,9 +7608,9 @@
     }
 
     .sheet-backdrop{
-      position:fixed;inset:0;background:rgba(11,18,32,.34);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:78
+      position:fixed;inset:0;background:rgba(11,18,32,.34);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:78;display:none
     }
-    .sheet-backdrop.open{opacity:1;pointer-events:auto}
+    .sheet-backdrop.open{display:block;opacity:1;pointer-events:auto}
 
     /* Setup (Reminder): modal centrado bajo avisos; fondo borroso; cerrar solo pulsando fuera */
     .sheet-backdrop.sheet-backdrop--focus.open{

@@ -21,8 +21,9 @@
 
     /* Whole portal above typical theme widgets (e.g. stray maps); overlays use higher z-index than this. */
     .admin-shell{display:flex;height:100dvh;max-height:100dvh;width:100%;min-width:0;position:relative;z-index:1000}
-    /* #modalBackdrop is a sibling of #adminShell (not inside flex) so fixed overlay cannot steal clicks over #workspace. */
-    #modalBackdrop.modal-backdrop:not(.open){pointer-events:none !important}
+    /* Closed full-viewport backdrops must be display:none. iOS still eats taps on
+       opacity:0 + inset:0 layers even with pointer-events:none. */
+    #modalBackdrop.modal-backdrop:not(.open){display:none !important;pointer-events:none !important}
     .admin-sidebar{
       width:var(--sidebarW);min-width:var(--sidebarW);background:var(--sidebar);color:#e2e8f0;
       display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid rgba(255,255,255,.06);
@@ -2751,8 +2752,8 @@
     .inp:focus,.sel:focus,.txa:focus{outline:2px solid rgba(45,132,179,.2);border-color:var(--blue)}
     .txa{width:100%;min-height:140px;border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;font-size:13px;resize:vertical}
 
-    .drawer-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:12000;opacity:0;pointer-events:none;transition:opacity .2s}
-    .drawer-backdrop.open{opacity:1;pointer-events:auto}
+    .drawer-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:12000;opacity:0;pointer-events:none;transition:opacity .2s;display:none}
+    .drawer-backdrop.open{display:block;opacity:1;pointer-events:auto}
     /* Participant profile: dim only main + top chrome — sidebar stays visible and clickable */
     #drawerBackdrop.drawer-backdrop--slice.open{
       inset:0 0 0 calc(var(--sidebarLayoutReserve, 260px));
@@ -3082,8 +3083,8 @@
     .cap-week-strip__swatch--booked{background:#3b82f6}
     .cap-week-strip__swatch--open{background:#14b8a6}
     .cap-week-strip__swatch--closed{background:#94a3b8}
-    .opwf-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:12200;opacity:0;pointer-events:none;transition:opacity .2s}
-    .opwf-backdrop.is-open{opacity:1;pointer-events:auto}
+    .opwf-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:12200;opacity:0;pointer-events:none;transition:opacity .2s;display:none}
+    .opwf-backdrop.is-open{display:block;opacity:1;pointer-events:auto}
     .opwf-drawer{
       position:fixed;top:0;right:0;width:min(100%,440px);max-width:100%;z-index:12300;min-height:100dvh;min-height:-webkit-fill-available;
       height:100dvh;box-sizing:border-box;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0);
@@ -3118,8 +3119,9 @@
     .quick-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center;min-width:0}
     .list-row{font-size:12px;color:var(--muted)}
 
-    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:12500;opacity:0;pointer-events:none;transition:opacity .2s;display:flex;align-items:center;justify-content:center;padding:20px}
-    .modal-backdrop.open{opacity:1;pointer-events:auto}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:12500;opacity:0;pointer-events:none;transition:opacity .2s;display:none;align-items:center;justify-content:center;padding:20px}
+    .modal-backdrop.open{display:flex;opacity:1;pointer-events:auto}
+    #modalBackdrop.modal-backdrop--register:not(.open){display:none !important;pointer-events:none !important;visibility:hidden !important}
     /* Register: full workspace sheet — same horizontal inset as the main column (--sidebarLayoutReserve).
        Lives inside #adminShell so z-index stacks with the rail; keep below .admin-sidebar rail hover (20050). */
     /* Layout does not depend on .open so removing .open during close never snaps to centered .modal-backdrop */
