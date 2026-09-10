@@ -17,6 +17,7 @@ import {
   normalizePendingBookingRequest,
 } from "../_shared/portal_booking_context.ts";
 import { mergeReservationNotes } from "../_shared/portal_booking_reservation_ops.ts";
+import { bookingPayHoldExpiresAt } from "../_shared/portal_booking_pay_hold.ts";
 
 function clean(v: unknown, max = 80): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -271,33 +272,20 @@ Deno.serve(async (req) => {
   } else {
     for (const hold of holds || []) {
       const prevNotes = String(hold.notes || "").trim();
-      const keepTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
-      if (keepTrial) {
-        const { error: rErr } = await admin
-          .from("portal_booking_slot_reservations")
-          .update({
-            status: "released",
-            released_at: nowIso,
-            updated_at: nowIso,
-            notes: mergeReservationNotes(prevNotes, [
-              "accepted_by_admin",
-              "booking_kind=trial",
-              "awaiting_stripe_pay",
-            ]),
-          })
-          .eq("id", hold.id)
-          .eq("status", "pending");
-        if (!rErr) reservationsValidated += 0;
-        else console.warn("[portal-admin-participant-document-review] trial release", rErr.message);
-        continue;
-      }
-      const nextNotes = mergeReservationNotes(prevNotes, ["accepted_by_admin"]);
+      const isTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
+      const nextNotes = mergeReservationNotes(prevNotes, [
+        "accepted_by_admin",
+        "pay_hold_30m",
+        isTrial ? "booking_kind=trial" : null,
+      ]);
       const { error: vErr } = await admin
         .from("portal_booking_slot_reservations")
         .update({
           status: "validated",
           validated_at: nowIso,
           updated_at: nowIso,
+          released_at: null,
+          hold_expires_at: bookingPayHoldExpiresAt(),
           notes: nextNotes,
         })
         .eq("id", hold.id)

@@ -680,16 +680,7 @@ Deno.serve(async (req) => {
   const rawToken = clean(body.token, 128);
   const token = await loadCompletionByRawToken(admin, rawToken);
   if (!token) return json(404, { ok: false, error: "invalid_token" });
-  if (token.status === "expired") {
-    return json(410, {
-      ok: false,
-      error: "token_expired",
-      reason: "pay_hold_lapsed",
-      message:
-        "The 30-minute payment window ended and that place went live again. Open Booking Portal to choose a slot and finish booking again.",
-    });
-  }
-  if (tokenExpired(token) && token.status !== "completed") {
+  if (tokenExpired(token) && token.status !== "completed" && token.status !== "expired") {
     return json(410, { ok: false, error: "token_expired" });
   }
 
@@ -699,11 +690,52 @@ Deno.serve(async (req) => {
   // Pay window ended → seat is live again. Mark token expired so parent must rebook.
   if (token.status !== "completed") {
     const resStatus = String(reservation?.status || "").toLowerCase();
+    const resNotes = String(reservation?.notes || "");
+    const trialParkedForPay =
+      resStatus === "released" &&
+      /awaiting_stripe_pay/i.test(resNotes) &&
+      /booking_kind\s*=\s*trial/i.test(resNotes);
     const holdExpRaw = reservation?.hold_expires_at
       ? String(reservation.hold_expires_at)
       : "";
     const holdPast =
       !!holdExpRaw && new Date(holdExpRaw).getTime() < Date.now();
+    let trialHoldRestored = false;
+    if (trialParkedForPay && !holdPast && reservation?.id) {
+      const holdFresh = bookingPayHoldExpiresAt();
+      await admin
+        .from("portal_booking_slot_reservations")
+        .update({
+          status: "validated",
+          released_at: null,
+          hold_expires_at: holdFresh,
+          updated_at: new Date().toISOString(),
+          notes: mergeReservationNotes(resNotes, ["pay_hold_30m", "trial_hold_restored"]),
+        })
+        .eq("id", String(reservation.id));
+      trialHoldRestored = true;
+      if (reservation) {
+        reservation.status = "validated";
+        reservation.hold_expires_at = holdFresh;
+      }
+      if (token.status === "expired") {
+        await admin
+          .from("portal_booking_completion_tokens")
+          .update({ status: "pending", updated_at: new Date().toISOString() })
+          .eq("id", token.id)
+          .eq("status", "expired");
+        token.status = "pending";
+      }
+    }
+    if (token.status === "expired") {
+      return json(410, {
+        ok: false,
+        error: "token_expired",
+        reason: "pay_hold_lapsed",
+        message:
+          "The 30-minute payment window ended and that place went live again. Open Booking Portal to choose a slot and finish booking again.",
+      });
+    }
     // Never kill the link when Stripe/bank already paid — webhook may still be catching up.
     let invoiceAlreadyPaid = false;
     if (token.invoice_share_id) {
@@ -736,6 +768,7 @@ Deno.serve(async (req) => {
     }
     const seatReleased =
       !invoiceAlreadyPaid &&
+      !trialHoldRestored &&
       (resStatus === "expired" ||
         resStatus === "released" ||
         (holdPast &&

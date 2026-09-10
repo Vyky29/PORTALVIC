@@ -641,35 +641,21 @@ export async function prepareReservationsForFinishBooking(
   let prepared = 0;
   for (const hold of holds || []) {
     const prevNotes = String(hold.notes || "").trim();
-    const keepTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
-    if (keepTrial) {
-      const { error: rErr } = await admin
-        .from("portal_booking_slot_reservations")
-        .update({
-          status: "released",
-          released_at: nowIso,
-          updated_at: nowIso,
-          notes: mergeReservationNotes(prevNotes, [
-            "auto_finish_link",
-            "booking_kind=trial",
-            "awaiting_stripe_pay",
-          ]),
-        })
-        .eq("id", hold.id)
-        .eq("status", "pending");
-      if (!rErr) prepared += 1;
-      else console.warn("[prepareReservationsForFinishBooking] trial release", rErr.message);
-      continue;
-    }
+    const isTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
     const { error: vErr } = await admin
       .from("portal_booking_slot_reservations")
       .update({
         status: "validated",
         validated_at: nowIso,
         updated_at: nowIso,
-        // Fresh 30' clock when finish-booking link is minted (no multi-week soft hold).
+        released_at: null,
+        // Fresh 30' clock when finish-booking link is minted (trial + term).
         hold_expires_at: bookingPayHoldExpiresAt(),
-        notes: mergeReservationNotes(prevNotes, ["auto_finish_link", "pay_hold_30m"]),
+        notes: mergeReservationNotes(prevNotes, [
+          "auto_finish_link",
+          "pay_hold_30m",
+          isTrial ? "booking_kind=trial" : null,
+        ]),
       })
       .eq("id", hold.id)
       .eq("status", "pending");
@@ -756,15 +742,6 @@ export async function reholdReleasedReservationForFinishBooking(
   const holdExpires = bookingPayHoldExpiresAt();
   const nowIso = new Date().toISOString();
   const prevNotes = String(prior.notes || "").trim();
-  const keepTrial = /booking_kind\s*=\s*trial/i.test(prevNotes);
-  if (keepTrial) {
-    return {
-      ok: false,
-      reservationId: String(prior.id),
-      holdExpiresAt: null,
-      error: "trial_needs_fresh_book",
-    };
-  }
 
   const { error: updErr } = await admin
     .from("portal_booking_slot_reservations")
