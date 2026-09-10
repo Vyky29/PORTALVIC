@@ -121,6 +121,25 @@
     if (id) PARTICIPANT_STORAGE_AVATARS.byId[id] = url;
     var nk = storageAvatarKey(displayName);
     if (nk) PARTICIPANT_STORAGE_AVATARS.byName[nk] = url;
+    /* Roster keys are often short (Joelle) while portal display is full (Joelle Atoui). */
+    if (
+      typeof global.PortalParticipantIdentity !== "undefined" &&
+      typeof global.PortalParticipantIdentity.canonicalClientId === "function"
+    ) {
+      var slug = String(
+        global.PortalParticipantIdentity.canonicalClientId(displayName) || "",
+      ).trim();
+      if (slug) {
+        PARTICIPANT_STORAGE_AVATARS.byId[slug] = url;
+        var slugName = slug.replace(/_/g, " ");
+        if (slugName) PARTICIPANT_STORAGE_AVATARS.byName[slugName] = url;
+      }
+    }
+    var parts = nk ? nk.split(/\s+/).filter(Boolean) : [];
+    if (parts.length >= 2) {
+      var short2 = parts[0] + " " + parts[1].slice(0, 2);
+      PARTICIPANT_STORAGE_AVATARS.byName[short2] = url;
+    }
   }
 
   function portalParticipantStorageAvatarUrl(contactId, displayName) {
@@ -128,6 +147,30 @@
     if (id && PARTICIPANT_STORAGE_AVATARS.byId[id]) return PARTICIPANT_STORAGE_AVATARS.byId[id];
     var nk = storageAvatarKey(displayName);
     if (nk && PARTICIPANT_STORAGE_AVATARS.byName[nk]) return PARTICIPANT_STORAGE_AVATARS.byName[nk];
+    if (
+      typeof global.PortalParticipantIdentity !== "undefined" &&
+      typeof global.PortalParticipantIdentity.canonicalClientId === "function"
+    ) {
+      var slug = String(
+        global.PortalParticipantIdentity.canonicalClientId(displayName || id) || "",
+      ).trim();
+      if (slug && PARTICIPANT_STORAGE_AVATARS.byId[slug]) {
+        return PARTICIPANT_STORAGE_AVATARS.byId[slug];
+      }
+      var slugName = slug.replace(/_/g, " ");
+      if (slugName && PARTICIPANT_STORAGE_AVATARS.byName[slugName]) {
+        return PARTICIPANT_STORAGE_AVATARS.byName[slugName];
+      }
+      var keys = Object.keys(PARTICIPANT_STORAGE_AVATARS.byName);
+      for (var i = 0; i < keys.length; i++) {
+        if (
+          global.PortalParticipantIdentity.canonicalClientId(keys[i]) === slug &&
+          PARTICIPANT_STORAGE_AVATARS.byName[keys[i]]
+        ) {
+          return PARTICIPANT_STORAGE_AVATARS.byName[keys[i]];
+        }
+      }
+    }
     return "";
   }
 

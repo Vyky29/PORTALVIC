@@ -466,13 +466,14 @@ Deno.serve(async (req) => {
   }
 
   /* Every completed Client Registration → Interested client record (not waitlist-only). */
+  let ensuredContactId: string | null = null;
   if (formType === "client_registration") {
     try {
       const parentBits = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
       const portalSess = parentPortalSessionToken
         ? await resolveParentPortalSessionFromToken(admin, parentPortalSessionToken)
         : null;
-      await ensureInterestedClientFromRegistration(admin, {
+      const ensured = await ensureInterestedClientFromRegistration(admin, {
         participantName,
         participantDob,
         parentName,
@@ -503,6 +504,7 @@ Deno.serve(async (req) => {
           `Registration document\t${row.id}`,
         ].filter(Boolean),
       });
+      if (ensured && ensured.contactId) ensuredContactId = String(ensured.contactId);
     } catch (ensureErr) {
       console.warn("[portal-parent-form-submit] ensure interested client", ensureErr);
     }
@@ -516,6 +518,7 @@ Deno.serve(async (req) => {
         participantDob,
         photoBytes,
         photoBlob?.type || "image/jpeg",
+        ensuredContactId,
       );
     } catch (syncErr) {
       console.warn("[portal-parent-form-submit] avatar sync", syncErr);

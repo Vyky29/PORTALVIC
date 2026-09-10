@@ -2476,7 +2476,9 @@
      * Turns prose like "1. Age: … 2. Medical: …" into readable rows (bold label + value).
      * If the pattern does not match, returns an escaped paragraph with line breaks preserved.
      */
-    function formatPortalClientInfoProseHtml(raw, emptyLabel){
+    function formatPortalClientInfoProseHtml(raw, emptyLabel, opts){
+      opts = opts || {};
+      const hideOtherNotes = opts.hideOtherNotes !== false;
       const emptyMsg = emptyLabel != null ? String(emptyLabel) : 'No general information available.';
       const t = String(raw == null ? '' : raw).trim();
       if(!t) return '<p class="client-general-fallback">' + escapeHtml(emptyMsg) + '</p>';
@@ -2496,7 +2498,12 @@
             rows.length = 0;
             break;
           }
-          const label = escapeHtml(m[2].trim());
+          const num = String(m[1] || '').trim();
+          const labelRaw = String(m[2] || '').trim();
+          if(hideOtherNotes && (num === '15' || /^other notes$/i.test(labelRaw))){
+            continue;
+          }
+          const label = escapeHtml(labelRaw);
           const val = escapeHtml(m[3].trim());
           rows.push(
             '<div class="client-general-info-row" role="listitem">' +
@@ -2508,12 +2515,29 @@
         if(rows.length >= 2){
           return '<div class="client-general-info-list" role="list">' + rows.join('') + '</div>';
         }
+        if(rows.length === 1){
+          return '<div class="client-general-info-list" role="list">' + rows.join('') + '</div>';
+        }
       }
       return '<p class="client-general-fallback">' + escapeHtml(t).replace(/\n/g, '<br>') + '</p>';
     }
+    /** Staff General Info: drop section 15 (parent / social worker / office contact notes). */
+    function stripStaffGeneralInfoOtherNotes(raw){
+      var t = String(raw == null ? '' : raw).replace(/\r\n|\r/g, '\n').trim();
+      if(!t) return '';
+      t = t.replace(/(?:^|\n)\s*15\.\s*Other Notes:\s*[\s\S]*$/i, '').trim();
+      t = t.replace(/(?:^|\n)\s*15\.\s*[^:\n]+:\s*[\s\S]*$/i, '').trim();
+      return t;
+    }
     function setClientInfoFormattedBody(elementId, raw, emptyLabel){
       const el = document.getElementById(elementId);
-      if(el) el.innerHTML = formatPortalClientInfoProseHtml(raw, emptyLabel);
+      if(!el) return;
+      var text = String(raw == null ? '' : raw);
+      var hideOther = elementId === 'clientGeneral' || elementId === 'clientGeneralSheet';
+      if(hideOther) text = stripStaffGeneralInfoOtherNotes(text);
+      el.innerHTML = formatPortalClientInfoProseHtml(text, emptyLabel, {
+        hideOtherNotes: hideOther,
+      });
     }
 
     const CLIENT_LIST_PSEUDO_IDS = ['closed', 'available', 'home', 'manager'];

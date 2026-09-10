@@ -1730,21 +1730,27 @@
       const cid = item && item.clientId ? String(item.clientId).trim() : '';
       const c = cid && typeof clientNotesById !== 'undefined' ? clientNotesById[cid] : null;
       const name = (item && item.name) || (c && c.name) || cid;
+      var raw = '';
       if(typeof portalParticipantGeneralInfoText === 'function'){
         const live = portalParticipantGeneralInfoText(cid, name);
-        if(live) return String(live).trim();
+        if(live) raw = String(live).trim();
       }
-      if(c && c.generalInfoSheet) return String(c.generalInfoSheet).trim();
-      try{
-        const Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
-        if(Adapter && typeof Adapter.lookupClientInfoText === 'function'){
-          const live = Adapter.lookupClientInfoText(cid, name);
-          if(live) return live;
-        }
-      }catch(_){}
-      if(item && item.general) return String(item.general).trim();
-      if(c && c.generalLead) return String(c.generalLead).trim();
-      return '';
+      if(!raw && c && c.generalInfoSheet) raw = String(c.generalInfoSheet).trim();
+      if(!raw){
+        try{
+          const Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
+          if(Adapter && typeof Adapter.lookupClientInfoText === 'function'){
+            const live = Adapter.lookupClientInfoText(cid, name);
+            if(live) raw = live;
+          }
+        }catch(_){}
+      }
+      if(!raw && item && item.general) raw = String(item.general).trim();
+      if(!raw && c && c.generalLead) raw = String(c.generalLead).trim();
+      if(typeof stripStaffGeneralInfoOtherNotes === 'function'){
+        return stripStaffGeneralInfoOtherNotes(raw);
+      }
+      return raw;
     }
     function portalApplyClientsInfoToNotes(){
       try{
