@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 85;
+  var SOURCE_VERSION = 86;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1016,6 +1016,49 @@
         session_date: "2026-09-07",
       },
     ];
+  }
+
+  /** Thu 10 Sep: Yassir last Acton Aquatic session (seat open from Thu 17). */
+  function autumnThursdaySep10YassirLastSessionRows() {
+    return [
+      {
+        client_name: "Yassir",
+        day: "Thursday",
+        instructors: "ROBERTO",
+        service: "Aquatic Activity",
+        area: "Teaching Pool",
+        time_slot: "4.30 to 5",
+        venue: "Acton",
+        session_date: "2026-09-10",
+      },
+    ];
+  }
+
+  /** Keep Yassir named on Thu 10; do not also leave a standing open twin that day. */
+  function scrubAndEnsureSep10YassirLastSession(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (normIso(r.session_date) !== "2026-09-10") {
+        out.push(r);
+        return;
+      }
+      var slot = String(r.time_slot || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      var isYassirBand =
+        /acton/i.test(String(r.venue || "")) &&
+        /aquatic|swim/i.test(String(r.service || "")) &&
+        /roberto/i.test(String(r.instructors || "")) &&
+        (slot === "4.30 to 5" || slot === "4:30 to 5" || slot.indexOf("4.30 to 5") === 0);
+      if (isYassirBand) return;
+      out.push(r);
+    });
+    autumnThursdaySep10YassirLastSessionRows().forEach(function (row) {
+      out.push(row);
+    });
+    return out;
   }
 
   /** Mon 7 Sep: Abodi last Acton Aquatic session (parent cancel; seat open from Mon 14). */
@@ -2212,7 +2255,8 @@
    */
   var AUTUMN_ACTON_THURSDAY_BOARD = [
     { staff: "ROBERTO", name: "Tom", time: "4 to 4.30", area: "Teaching Pool" },
-    { staff: "ROBERTO", name: "Yassir", time: "4.30 to 5", area: "Teaching Pool" },
+    /* Yassir last session Thu 10 Sep — standing open from Thu 17 (dated row keeps today). */
+    { staff: "ROBERTO", name: "No participant", time: "4.30 to 5", area: "Teaching Pool" },
     { staff: "ROBERTO", name: "Yossi", time: "5 to 5.30", area: "Lane (DE)" },
     { staff: "ROBERTO", name: "Yunis", time: "5.30 to 6", area: "Teaching Pool" },
     { staff: "ROBERTO", name: "Maiyar", time: "6 to 6.30", area: "Lane (DE)" },
@@ -2977,6 +3021,7 @@
     merged = scrubAndEnsureSep6JavierPool(merged);
     merged = scrubAndEnsureSep6AuroraRobertoPool(merged);
     merged = scrubAndEnsureSep7VictorRaulCover(merged);
+    merged = scrubAndEnsureSep10YassirLastSession(merged);
     merged = scrubAndEnsureSep8ActonRedistribute(merged);
     merged = scrubAndEnsureSep10AnasMakeup(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);

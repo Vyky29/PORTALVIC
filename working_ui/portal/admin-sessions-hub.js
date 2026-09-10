@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260906-yusuf-aurora-swap";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260910-yassir-last";
   // Optional "Notes" (relevant_information) only became a genuinely separate,
   // worker-written optional field on 7 Jul 2026. Before that date,
   // relevant_information was the AI "internal relevant" split of the feedback and
@@ -1163,6 +1163,28 @@
           /westway/i.test(String((r && r.venue) || ""))
         ) {
           return false;
+        }
+        /*
+         * Thu 10 Sep Yassir last Acton Aquatic (dated canonical). Standing seat is already
+         * No participant after cancel — do not also project the open onto today.
+         */
+        if (
+          isoDate === "2026-09-10" &&
+          /roberto/i.test(String((r && r.instructors) || "")) &&
+          /acton/i.test(String((r && r.venue) || "")) &&
+          /aquatic|swim/i.test(String((r && r.service) || ""))
+        ) {
+          var yassirSlot = String((r && r.time_slot) || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          if (
+            yassirSlot === "4.30 to 5" ||
+            yassirSlot === "4:30 to 5" ||
+            yassirSlot.indexOf("4.30 to 5") === 0
+          ) {
+            return false;
+          }
         }
         /*
          * Mon 7 Sep Abodi last Acton Aquatic (dated canonical). Standing seat is already

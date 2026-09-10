@@ -87,7 +87,7 @@
     "source": "staff_dashboard_spreadsheet_bundle.js + clients_info_embed.js",
     "termTo": "2026-07-31",
     "approved": false,
-    "revision": 548,
+    "revision": 549,
     "seededAt": "2026-06-22T13:36:19.674296+00:00",
     "services": [
       "Aquatic Activity",
@@ -15485,7 +15485,7 @@
                   "service": "Aquatic Activity",
                   "pool_note": "Lane (DE)",
                   "time_slot": "4.30 to 5",
-                  "client_name": "Yassir",
+                  "client_name": "NO PARTICIPANT",
                   "instructors": "ROBERTO"
                 },
                 {
@@ -22232,6 +22232,7 @@
     "rev 542: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)",
     "rev 546: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)",
     "rev 547: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)",
-    "rev 548: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)"
+    "rev 548: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)",
+    "rev 549: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)"
   ]
 }

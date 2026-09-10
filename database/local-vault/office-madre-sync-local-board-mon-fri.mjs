@@ -395,7 +395,7 @@ function rebuildThursday(week) {
     const d = ensureDay(roberto, "Thursday");
     clearDayServices(d, isActonAquatic);
     d.slots.push(aquatic("Acton", "4 to 4.30", "Tom", "ROBERTO"));
-    d.slots.push(aquatic("Acton", "4.30 to 5", "Yassir", "ROBERTO"));
+    d.slots.push(aquatic("Acton", "4.30 to 5", "NO PARTICIPANT", "ROBERTO"));
     d.slots.push(aquatic("Acton", "5 to 5.30", "Yossi", "ROBERTO"));
     d.slots.push(aquatic("Acton", "5.30 to 6", "Yunis Hussein", "ROBERTO"));
     d.slots.push(aquatic("Acton", "6 to 6.30", "Maiyar", "ROBERTO"));
@@ -424,7 +424,7 @@ function rebuildThursday(week) {
     d.slots.push(aquatic("Acton", "5.30 to 6", "Joelle", "AURORA"));
     d.slots.push(aquatic("Acton", "6 to 6.30", "Joelle", "AURORA"));
   }
-  note("Thu Acton AS = Yossi/Yunis/Maiyar Roberto; open only Simon 4.30-5; Joelle Simon+Aurora 5.30-6 + Aurora 6-6.30; Mohamed Javier");
+  note("Thu Acton AS = Yossi/Yunis/Maiyar Roberto; Yassir seat open (last session 10 Sep); open also Simon 4.30-5; Joelle Simon+Aurora 5.30-6 + Aurora 6-6.30; Mohamed Javier");
 }
 
 function rebuildFriday(week) {
