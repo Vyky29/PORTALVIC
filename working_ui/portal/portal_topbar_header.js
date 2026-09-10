@@ -635,26 +635,11 @@
     var btn = document.getElementById(quickMenuId);
     if (!btn) return false;
     var menuSheet = document.getElementById("menuSheet");
-    var menuDisp = "";
-    try {
-      menuDisp = menuSheet ? String(global.getComputedStyle(menuSheet).display || "") : "";
-    } catch (_d) {}
     var hiddenInClosedMenu = !!(
       menuSheet &&
       !menuSheet.classList.contains("open") &&
       menuSheet.contains(btn)
     );
-    // #region agent log
-    try {
-      if (typeof global.__portalDbg === "function") {
-        global.__portalDbg("D", "portal_topbar_header.js:triggerQM", "qm-trigger", {
-          qid: String(quickMenuId || ""),
-          hidden: hiddenInClosedMenu,
-          menuDisp: menuDisp
-        });
-      }
-    } catch (_dbgQm) {}
-    // #endregion
     /* iOS ignores .click() on nodes inside display:none closed #menuSheet. */
     if (quickMenuId === "quickMenuParticipantAchievements") {
       if (typeof global.portalOpenParticipantAchievements === "function") {

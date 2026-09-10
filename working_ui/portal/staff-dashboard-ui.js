@@ -477,12 +477,7 @@
         portalSyncAnnouncementsAndRemindersUi({ force: !!opts.force });
         return;
       }
-      var nowMs = function(){
-        return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-      };
-      var t0 = nowMs();
       const fp = portalAnnouncementsUiFingerprint();
-      var tFp = nowMs();
       const dataUnchanged = fp === _portalAnnUiLastFp;
       if(!dataUnchanged){
         if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
@@ -508,7 +503,6 @@
         if(typeof portalSeedDemoSignedAnnouncementArchivesIfNeeded === 'function') portalSeedDemoSignedAnnouncementArchivesIfNeeded();
         if(typeof portalEnsureAnnouncementDemoSeed === 'function') portalEnsureAnnouncementDemoSeed();
       }
-      var tPrune = nowMs();
       /* force must not rebuild the Quick menu: Chrome showed rn:2609-3649 with fp:0 pr:0. */
       if(!dataUnchanged){
         _portalAnnUiLastFp = fp;
@@ -516,7 +510,6 @@
         else if(typeof syncPortalReminderChrome === 'function'){ /* chrome deferred below */ }
         if(typeof syncSessionReviewReminderBanner === 'function') syncSessionReviewReminderBanner();
       }
-      var tNt = nowMs();
       const annSheet = document.getElementById('announcementsSheet');
       if(annSheet && annSheet.classList.contains('open') && typeof renderAnnouncementsSheetContent === 'function'){
         renderAnnouncementsSheetContent();
@@ -528,33 +521,6 @@
           portalMaybeNotifyUnsignedAnnouncementPending();
         }
       }
-      var tEnd = nowMs();
-      // #region agent log
-      try{
-        var timings = {
-          runId: 'post-fix',
-          total: Math.round(tEnd - t0),
-          fp: Math.round(tFp - t0),
-          prune: Math.round(tPrune - tFp),
-          notices: Math.round(tNt - tPrune),
-          rest: Math.round(tEnd - tNt),
-          force: !!opts.force,
-          dataUnchanged: dataUnchanged,
-          skippedRender: dataUnchanged,
-          sheetOpen: sheetOpen
-        };
-        window.__portalAnnSyncDbg = 'ann:' + timings.total + ' fp:' + timings.fp + ' pr:' + timings.prune + ' nt:' + timings.notices + (dataUnchanged ? ' skip' : '');
-        if(typeof window.__portalDbg === 'function'){
-          window.__portalDbg('F', 'staff-dashboard-ui.js:annSync', 'ann-sync-ms', timings);
-        }
-        var chip = document.getElementById('portalDbgChip');
-        if(chip){
-          chip.dataset.ann = window.__portalAnnSyncDbg;
-          var keep = String(chip.dataset.base || '');
-          chip.textContent = window.__portalAnnSyncDbg + (keep ? ' ' + keep : '') + (chip.dataset.tap ? ' tap:' + chip.dataset.tap : '');
-        }
-      }catch(_){}
-      // #endregion
       if(!dataUnchanged){
         portalScheduleReminderChromeAfterAnnSync();
       }
@@ -568,25 +534,8 @@
           portalScheduleReminderChromeAfterAnnSync();
           return;
         }
-        var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
-        var t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-        // #region agent log
-        try{
-          var ch = Math.round(t1 - t0);
-          window.__portalAnnSyncDbg = String(window.__portalAnnSyncDbg || '') + ' ch:' + ch;
-          if(typeof window.__portalDbg === 'function'){
-            window.__portalDbg('F', 'staff-dashboard-ui.js:annChrome', 'ann-chrome-ms', { runId: 'post-fix', ch: ch });
-          }
-          var chip = document.getElementById('portalDbgChip');
-          if(chip && window.__portalAnnSyncDbg){
-            chip.dataset.ann = window.__portalAnnSyncDbg;
-            var keep = String(chip.dataset.base || '');
-            chip.textContent = window.__portalAnnSyncDbg + (keep ? ' ' + keep : '') + (chip.dataset.tap ? ' tap:' + chip.dataset.tap : '');
-          }
-        }catch(_){}
-        // #endregion
       }, 400);
     }
     /** @deprecated internal */
@@ -932,32 +881,6 @@
             : '';
         })
         : '';
-      // #region agent log
-      try {
-        var fadiRows = (list || []).filter(function (it) {
-          return /fadi/i.test(String((it && (it.name || it.clientId)) || ""));
-        }).map(function (it) {
-          return {
-            name: String(it.name || ""),
-            kind: String(it.kind || ""),
-            segs: Array.isArray(it.segments) ? it.segments.length : 0,
-            ov: String((it.__portalScheduleOverride && it.__portalScheduleOverride.override_type) || ""),
-            key: String(it.sessionKey || "").slice(0, 80),
-            openSheet: it.openSheet
-          };
-        });
-        if (typeof window.__portalDbg === "function") {
-          window.__portalDbg("C", "staff-dashboard-ui.js:renderToday", "today-paint", {
-            runId: "post-fix",
-            count: (list || []).length,
-            sig: String(todaySig || "").slice(0, 80),
-            reuse: !!(todaySig && grid.getAttribute("data-today-cards-sig") === todaySig && grid.querySelector(".today-grid-rows")),
-            fadi: fadiRows,
-            names: (list || []).map(function (it) { return String(it && it.name || ""); })
-          });
-        }
-      } catch (_dbgToday) {}
-      // #endregion
       if(todaySig && grid.getAttribute('data-today-cards-sig') === todaySig && grid.querySelector('.today-grid-rows')){
         applyTodayGridSizing(grid, count);
         /* Same cards DOM — still repair photos (sheet open/close can abort img loads). */

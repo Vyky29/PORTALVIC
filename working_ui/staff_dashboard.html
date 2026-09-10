@@ -363,179 +363,6 @@
       setInterval(peel, 2000);
     })();
   </script>
-  <script>
-    // #region agent log
-    (function () {
-      function portalDbg(hid, loc, msg, data) {
-        var payload = data || {};
-        var host = "";
-        try { host = String(location.hostname || ""); } catch (_) {}
-        if (host === "127.0.0.1" || host === "localhost") {
-          fetch("http://127.0.0.1:7652/ingest/0adf76e0-3915-4113-a09a-6b6f251bb59d", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "f1029b" },
-            body: JSON.stringify({
-              sessionId: "f1029b",
-              runId: payload.runId || "post-fix",
-              hypothesisId: hid,
-              location: loc,
-              message: msg,
-              data: payload,
-              timestamp: Date.now()
-            })
-          }).catch(function () {});
-        }
-      }
-      window.__portalDbg = portalDbg;
-      var lastTapMs = 0;
-      function describeEl(el) {
-        if (!el || !el.tagName) return "";
-        return (
-          String(el.tagName) +
-          (el.id ? "#" + el.id : "") +
-          (el.className && String(el.className).slice
-            ? "." + String(el.className).trim().split(/\s+/).slice(0, 4).join(".")
-            : "")
-        );
-      }
-      function onPointer(ev) {
-        var now = Date.now();
-        if (now - lastTapMs < 250) return;
-        lastTapMs = now;
-        var x = ev.clientX;
-        var y = ev.clientY;
-        if (ev.touches && ev.touches[0]) {
-          x = ev.touches[0].clientX;
-          y = ev.touches[0].clientY;
-        }
-        var stack = [];
-        try {
-          var list = document.elementsFromPoint(x, y) || [];
-          for (var i = 0; i < list.length && i < 8; i++) stack.push(describeEl(list[i]));
-        } catch (_e) {}
-        var openSheets = [];
-        try {
-          document.querySelectorAll(".sheet.open").forEach(function (s) {
-            openSheets.push(s.id || describeEl(s));
-          });
-        } catch (_s) {}
-        var scroll = document.getElementById("appBodyScroll");
-        var backdrop = document.getElementById("backdrop");
-        var data = {
-          x: Math.round(x || 0),
-          y: Math.round(y || 0),
-          type: ev.type,
-          target: describeEl(ev.target),
-          stack: stack,
-          authReady: !!(document.documentElement && document.documentElement.classList.contains("portal-auth-ready")),
-          htmlClass: String((document.documentElement && document.documentElement.className) || "").slice(0, 180),
-          bodyClass: String((document.body && document.body.className) || "").slice(0, 180),
-          scrollPe: scroll ? String(window.getComputedStyle(scroll).pointerEvents) : "",
-          backdropOpen: !!(backdrop && backdrop.classList.contains("open")),
-          backdropPe: backdrop ? String(window.getComputedStyle(backdrop).pointerEvents) : "",
-          openSheets: openSheets
-        };
-        portalDbg("A", "staff_dashboard.html:tap", "tap-hit", data);
-        try {
-          var chip = ensureChip();
-          if (chip) {
-            chip.dataset.tap = stack[0] || describeEl(ev.target) || "";
-          }
-        } catch (_c) {}
-      }
-      document.addEventListener("touchstart", onPointer, true);
-      document.addEventListener("click", onPointer, true);
-      function ensureChip() {
-        var chip = document.getElementById("portalDbgChip");
-        if (!chip && document.body) {
-          chip = document.createElement("div");
-          chip.id = "portalDbgChip";
-          chip.setAttribute(
-            "style",
-            "position:fixed;left:6px;right:6px;bottom:6px;z-index:2147483646;font:10px/1.25 ui-monospace,monospace;background:rgba(255,255,255,.94);color:#111;padding:6px;border:1px solid #333;pointer-events:none;overflow:hidden;max-height:88px"
-          );
-          document.body.appendChild(chip);
-        }
-        return chip;
-      }
-      function autoProbe() {
-        var photo = document.getElementById("topbarToolAchievements");
-        var menu = document.getElementById("menuSheet");
-        var fadiCards = document.querySelectorAll(".section-card--today .session-card, #todayGrid .session-card");
-        var fadi = [];
-        for (var i = 0; i < fadiCards.length; i++) {
-          var t = String(fadiCards[i].textContent || "");
-          if (/fadi/i.test(t)) {
-            fadi.push({
-              segs: fadiCards[i].classList.contains("session-card--segments"),
-              dc: /dc-pax-fadi/.test(fadiCards[i].className),
-              cancel: /cancelled/i.test(t)
-            });
-          }
-        }
-        var stack = [];
-        var mid = [];
-        try {
-          if (photo) {
-            var r = photo.getBoundingClientRect();
-            var list = document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2) || [];
-            for (var j = 0; j < list.length && j < 4; j++) stack.push(describeEl(list[j]));
-          }
-        } catch (_p) {}
-        try {
-          var mx = Math.round((window.innerWidth || 0) / 2);
-          var my = Math.round((window.innerHeight || 0) / 2);
-          var midList = document.elementsFromPoint(mx, my) || [];
-          for (var k = 0; k < midList.length && k < 4; k++) mid.push(describeEl(midList[k]));
-        } catch (_mid) {}
-        var openSheets = [];
-        try {
-          document.querySelectorAll(".sheet.open").forEach(function (s) {
-            openSheets.push(s.id || describeEl(s));
-          });
-        } catch (_os) {}
-        var menuDisp = "";
-        var bd = document.getElementById("backdrop");
-        try {
-          menuDisp = menu ? String(window.getComputedStyle(menu).display || "") : "";
-        } catch (_m) {}
-        portalDbg("A", "staff_dashboard.html:probe", "photo-probe", {
-          runId: "post-fix",
-          stack: stack,
-          mid: mid,
-          menuDisp: menuDisp,
-          menuOpen: !!(menu && menu.classList.contains("open")),
-          openSheets: openSheets,
-          backdropOpen: !!(bd && bd.classList.contains("open")),
-          backdropPe: bd ? String(window.getComputedStyle(bd).pointerEvents) : "",
-          fadi: fadi,
-          opener: typeof window.portalOpenParticipantAchievements === "function"
-        });
-        try {
-          var chip = ensureChip();
-          if (chip) {
-            var base =
-              (window.__portalAnnSyncDbg ? String(window.__portalAnnSyncDbg) + " " : "") +
-              "mid:" +
-              (mid[0] || "-") +
-              " sheets:" +
-              (openSheets.join(",") || "none") +
-              " fadi:" +
-              fadi.length +
-              " segs:" +
-              (fadi[0] && fadi[0].segs ? "y" : "n") +
-              " can:" +
-              (fadi[0] && fadi[0].cancel ? "y" : "n");
-            chip.dataset.base = base;
-            chip.textContent = base + (chip.dataset.tap ? " tap:" + chip.dataset.tap : "");
-          }
-        } catch (_c2) {}
-      }
-      setTimeout(autoProbe, 2500);
-      setInterval(autoProbe, 4000);
-    })();
-    // #endregion
-  </script>
   <script defer src="/portal/portal_screenshot_guard.js?v=20260910-staff-open"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260910-staff-open" />
@@ -1443,7 +1270,7 @@
   <script src="/portal/portal_participant_photos.js?v=20260910-reg-photo-slug"></script>
   <script src="/portal/portal_participant_avatars_hydrate.js?v=20260910-reg-photo-slug"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260904-michelle-interviews"></script>
-  <script src="/portal/portal_topbar_header.js?v=20260910-staff-debug3"></script>
+  <script src="/portal/portal_topbar_header.js?v=20260910-no-dbg-chip"></script>
   <script src="/portal/portal_comunicaciones_entry.js?v=20260906-comms-inapp-52"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260704-area-note-fixed"></script>
@@ -1453,20 +1280,20 @@
 <script src="/portal/portal_sheet_back.js?v=20260910-staff-debug4"></script>
   <script src="/portal/staff-dashboard-dock-boot.js?v=20260712-no-photo-signout"></script>
   <script src="/portal/staff-dashboard-topbar.js?v=20260905-admin-changes-nav"></script>
-  <script src="/portal/staff-dashboard-feedback.js?v=20260910-joelle-2to1"></script>
+  <script src="/portal/staff-dashboard-feedback.js?v=20260910-no-dbg-chip"></script>
   <script src="/portal/staff-dashboard-calendar.js?v=20260905-admin-changes-nav"></script>
   <script src="/portal/staff-dashboard-term.js?v=20260910-no-other-notes"></script>
   <script src="/portal/staff-dashboard-participants.js?v=20260910-berta-off-alerts"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260910-joelle-2to1"></script>
-  <script src="/portal/staff-dashboard-today.js?v=20260910-staff-debug6"></script>
-  <script src="/portal/staff-dashboard-ui.js?v=20260910-staff-debug6"></script>
+  <script src="/portal/staff-dashboard-today.js?v=20260910-no-dbg-chip"></script>
+  <script src="/portal/staff-dashboard-ui.js?v=20260910-no-dbg-chip"></script>
   <script src="/portal/portal_today_time_fit.js?v=20260706-time-one-line"></script>
   <script src="/portal/staff-dashboard-auth-bridge.js?v=20260625-lead-day-cards-nav"></script>
   <script src="/portal/staff-dashboard-rehydrate.js?v=20260910-staff-debug5"></script>
   <script src="/portal/portal-logout-bind.js?v=20260712-no-photo-signout"></script>
   <script type="module" src="/portal/staff-dashboard-auth-supabase.js?v=20260910-staff-open"></script>
-  <script src="/portal/staff-dashboard-achievements-boot.js?v=20260910-staff-debug3"></script>
+  <script src="/portal/staff-dashboard-achievements-boot.js?v=20260910-no-dbg-chip"></script>
     
   
   

@@ -222,17 +222,6 @@
       if(/day\s*centre/.test(act)) return false;
       if(typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s)) return false;
       if(typeof portalAquaticSessionIsTwoToOneShared === 'function' && portalAquaticSessionIsTwoToOneShared(s, iso)){
-        // #region agent log
-        try{
-          if(typeof window.__portalDbg === 'function'){
-            window.__portalDbg('G', 'staff-dashboard-feedback.js:2to1', 'aquatic-2to1-shared', {
-              runId: 'post-fix',
-              cid: String((s && s.clientId) || '').slice(0, 24),
-              start: String((s && s.start) || '').slice(0, 8)
-            });
-          }
-        }catch(_){}
-        // #endregion
         return false;
       }
       if(act.indexOf('climbing') >= 0 || act.indexOf('climb') >= 0) return true;
