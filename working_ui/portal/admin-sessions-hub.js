@@ -6950,6 +6950,15 @@
       if (overrideIsInstructorReassignType(ov)) {
         if (!staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)) return false;
       }
+      /*
+       * slot_clear Cancelled on 2:1 Day Centre (Fadi · Roberto + Youssef): each
+       * override must bind to its own instructor column, not both seats.
+       */
+      if (overrideIsCancelledType(ov) && clean(ov.anchor_staff_id)) {
+        if (!staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)) {
+          return false;
+        }
+      }
     }
     var oVen = clean(ov.anchor_venue).toLowerCase();
     var sVen = clean(slot.venue).toLowerCase();

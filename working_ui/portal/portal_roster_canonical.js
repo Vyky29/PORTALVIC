@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 92;
+  var SOURCE_VERSION = 93;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -3242,7 +3242,8 @@
    * Standing "does not work this weekday" — hide empty Overview columns.
    * Victor: Mon + Thu. Raul: Tue + Thu.
    * Fri 11 – Fri 18 (Fadi away boards): Victor + Raul work Office those days;
-   * Roberto / Luliya / Michelle / Youssef are off Thursdays.
+   * Luliya / Michelle are off Thursdays (empty DC board).
+   * Roberto + Youssef still show Thu columns — Fadi Cancelled 2:1 overlay (not empty).
    */
   function autumnStaffStandingOffOnIso(iso, staffRaw) {
     var d = normIso(iso);
@@ -3260,15 +3261,20 @@
     if (dow < 0) return false;
     /* 0 Sun … 1 Mon 2 Tue 3 Wed 4 Thu 5 Fri 6 Sat */
     if (isFadiAbsentDcBoardIso(d)) {
+      /* Keep Roberto + Youssef visible for Fadi Cancelled seats on Thu. */
       if (
         key === "roberto" ||
         key.indexOf("roberto") === 0 ||
+        key === "youssef" ||
+        key.indexOf("youssef") === 0
+      ) {
+        return false;
+      }
+      if (
         key === "luliya" ||
         key.indexOf("luliya") === 0 ||
         key === "michelle" ||
-        key.indexOf("michelle") === 0 ||
-        key === "youssef" ||
-        key.indexOf("youssef") === 0
+        key.indexOf("michelle") === 0
       ) {
         return dow === 4;
       }
