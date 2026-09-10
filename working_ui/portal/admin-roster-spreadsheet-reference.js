@@ -1240,15 +1240,21 @@
     return "";
   }
 
-  function columnServiceFromCell(venueStyle, cell) {
+  function columnServiceFromCell(venueStyle, cell, dayName) {
     var st = String(venueStyle || "");
     if (st === "northolt" || st === "acton") return "Aquatic Activity";
     if (st === "westway") return "Climbing Activity";
     if (st.indexOf("swimfarm") < 0) return venueServiceUnderName(st) || "";
+    var day = String(dayName || "").toLowerCase();
     var band = String((cell && cell.band) || "")
       .toLowerCase()
       .trim();
     var text = String((cell && cell.text) || "");
+    if (day === "saturday" || day === "sunday") {
+      if (band === "day_centre" || band === "dc") return "Day Centre";
+      if (band === "bespoke" || /\b4\.15-6\.15\b/.test(text)) return "Bespoke";
+      return "Aquatic Activity and Multi-Activity";
+    }
     if (/\b4\.15\s*-\s*6\.15\b/.test(text) || /\b4\.15-6\.15\b/.test(text)) {
       return "Bespoke";
     }
@@ -1259,7 +1265,7 @@
     return "Day Centre";
   }
 
-  function inferColumnServices(groups, dates) {
+  function inferColumnServices(groups, dates, dayName) {
     var labels = flattenHoursVenueLabels(groups);
     return labels.map(function (lab, i) {
       var counts = Object.create(null);
@@ -1268,7 +1274,7 @@
         if (!cell) return;
         var raw = String(cell.text || "").trim();
         if (!raw && !(cell.band || "").trim()) return;
-        var svc = columnServiceFromCell(lab.style, cell);
+        var svc = columnServiceFromCell(lab.style, cell, dayName);
         if (!svc) return;
         counts[svc] = (counts[svc] || 0) + 1;
       });
@@ -1281,10 +1287,13 @@
         }
       });
       if (best) return best;
-      return (
-        venueServiceUnderName(lab.style) ||
-        (String(lab.style || "").indexOf("swimfarm") >= 0 ? "Day Centre" : "")
-      );
+      var weekend =
+        String(dayName || "").toLowerCase() === "saturday" ||
+        String(dayName || "").toLowerCase() === "sunday";
+      if (String(lab.style || "").indexOf("swimfarm") >= 0) {
+        return weekend ? "Aquatic Activity and Multi-Activity" : "Day Centre";
+      }
+      return venueServiceUnderName(lab.style) || "";
     });
   }
 
@@ -1330,8 +1339,8 @@
     return 0;
   }
 
-  function reorderColumnsByService(groups, dates) {
-    var columnServices = inferColumnServices(groups, dates);
+  function reorderColumnsByService(groups, dates, dayName) {
+    var columnServices = inferColumnServices(groups, dates, dayName);
     var order = [];
     var col = 0;
     (groups || []).forEach(function (g) {
@@ -1370,12 +1379,12 @@
     return { groups: groups, dates: newDates, columnServices: newServices };
   }
 
-  function renderHoursTableHtml(groups, dates, blockTitle, serviceFilter) {
+  function renderHoursTableHtml(groups, dates, blockTitle, serviceFilter, dayName) {
     if (!groups.length) {
       return '<p class="muted">No columns.</p>';
     }
     var sf = serviceFilter || "all";
-    var reordered = reorderColumnsByService(groups, dates);
+    var reordered = reorderColumnsByService(groups, dates, dayName);
     groups = reordered.groups;
     dates = reordered.dates;
     var columnServices = reordered.columnServices;
@@ -1473,7 +1482,8 @@
           block.venueGroups || [],
           block.dates || [],
           "",
-          state.hoursService
+          state.hoursService,
+          day
         );
       });
       return html;
@@ -1482,7 +1492,8 @@
       sheet.venueGroups || [],
       sheet.dates || [],
       "",
-      state.hoursService
+      state.hoursService,
+      day
     );
   }
 
