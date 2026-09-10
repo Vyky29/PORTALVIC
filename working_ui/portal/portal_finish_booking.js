@@ -370,6 +370,7 @@
       social_worker_email:
         demoState.social_worker_email || "sarah.kagaba@example.nhs.uk",
       completed: demoState.status === "completed",
+      pin_sent: false,
     };
   }
 
@@ -1016,12 +1017,36 @@
     var notice = document.getElementById("fbNotice");
 
     if (data.completed || data.status === "completed") {
+      var trialDone =
+        (data.booking_kind === "trial" ||
+          data.booking_scope === "trial_session" ||
+          data.is_trial_intent) &&
+        !data.pin_sent;
+      var doneTitle = document.getElementById("fbDoneTitle");
+      var doneCopy = document.getElementById("fbDoneCopy");
+      var donePortal = document.getElementById("fbDonePortal");
+      if (trialDone) {
+        if (doneTitle) doneTitle.textContent = "Booking completed";
+        if (doneCopy) {
+          doneCopy.textContent =
+            "Payment received. Check WhatsApp or email for the day, time, venue and instructor. Parent Portal login is for term places after the first payment.";
+        }
+        if (donePortal) donePortal.hidden = true;
+        showNotice(notice, "Booking completed. Session details are on WhatsApp / email.", "ok");
+      } else {
+        if (doneTitle) doneTitle.textContent = "You're in";
+        if (doneCopy) {
+          doneCopy.textContent =
+            "Payment confirmed. Check your email or WhatsApp for your Parent Portal PIN (sign in with your child's first name + PIN).";
+        }
+        if (donePortal) donePortal.hidden = false;
+        showNotice(
+          notice,
+          "Booking complete. Check email / WhatsApp for your Parent Portal PIN.",
+          "ok",
+        );
+      }
       setStep("fbStepDone");
-      showNotice(
-        notice,
-        "Booking complete. Check email / WhatsApp for your Parent Portal PIN.",
-        "ok",
-      );
       return;
     }
     if (data.status === "awaiting_office_payment") {
@@ -1838,9 +1863,15 @@
         showNotice(notice, "", "");
         bind(data);
         if (qs("stripe") === "1" && data.status === "awaiting_payment") {
+          var trialPay =
+            data.booking_kind === "trial" ||
+            data.booking_scope === "trial_session" ||
+            data.is_trial_intent;
           showNotice(
             notice,
-            "Payment received — confirming your booking. If your PIN is not here in a minute, refresh this page.",
+            trialPay
+              ? "Payment received - confirming your trial. Refresh in a minute for booking completed."
+              : "Payment received - confirming your booking. If your PIN is not here in a minute, refresh this page.",
             "ok",
           );
         } else if (qs("stripe_cancel") === "1") {

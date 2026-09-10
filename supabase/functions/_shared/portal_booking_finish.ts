@@ -1,12 +1,14 @@
 /**
- * Finish-booking after Accept: mint magic link, notify parent, complete PIN after pay
- * (bank/Stripe) or after GoCardless mandate setup (billing_requests.fulfilled).
+ * Finish-booking after Accept: mint magic link, notify parent.
+ * Term: Parent Portal PIN after first instalment / settle (bank/Stripe/GC mandate).
+ * Trial: booking-completed message only (no PIN) except an explicit office allowlist.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   maskEmailForLog,
   maskPhoneForLog,
   normalizeParentPhoneE164,
+  normalizePublicPhotoUrl,
   readParentNotifySmtpConfig,
   sendParentEmailViaSmtp,
   sendParentMobileMessage,
@@ -58,6 +60,14 @@ export const FINISH_TOKEN_TTL_DAYS = 14;
 /** Fallback only when service cannot be classified (legacy aquatic 30'). */
 export const DEFAULT_SESSION_GBP = 50;
 
+/** Danielle / Reggie trial (Sep 2026) - still mint Parent Portal PIN. */
+const TRIAL_PORTAL_PIN_DOCUMENT_IDS = new Set([
+  "c38e7fdb-cba5-4c6b-ac85-18217d1e8740",
+]);
+const TRIAL_PORTAL_PIN_EMAILS = new Set([
+  "mcmullan_danielle@icloud.com",
+]);
+
 export type CompletionTokenRow = {
   id: string;
   lead_id: string | null;
@@ -79,6 +89,62 @@ export type CompletionTokenRow = {
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function finishBookingTokenIsTrial(token: CompletionTokenRow): boolean {
+  const choices =
+    token.choices_json && typeof token.choices_json === "object"
+      ? token.choices_json
+      : {};
+  if (parseBookingScope(choices.booking_scope) === "trial_session") return true;
+  const kind = clean(choices.booking_kind, 40).toLowerCase();
+  return kind === "trial" || kind === "trial_session" || kind === "taster";
+}
+
+function finishTrialGetsPortalPin(
+  token: CompletionTokenRow,
+  contact?: { email?: unknown } | null,
+): boolean {
+  const docId = clean(token.document_id, 80).toLowerCase();
+  if (docId && TRIAL_PORTAL_PIN_DOCUMENT_IDS.has(docId)) return true;
+  const email = clean(contact?.email, 200).toLowerCase();
+  return !!email && TRIAL_PORTAL_PIN_EMAILS.has(email);
+}
+
+function instructorStaffPhotoUrl(instructorName: string): {
+  url: string;
+  name: string;
+} {
+  const name = clean(instructorName, 40);
+  const first = name.split(/\s+/)[0] || "";
+  let stem = first.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  if (stem === "lulia") stem = "luliya";
+  const rel = stem ? `/portal/staff_photos/${stem}.png` : "";
+  return { url: rel ? normalizePublicPhotoUrl(rel) : "", name };
+}
+
+function formatTrialSessionWhen(reservation: Record<string, unknown> | null): string {
+  if (!reservation) return "";
+  const day = clean(reservation.day_label, 40);
+  const time = clean(reservation.time_label, 80).replace(/[–—]/g, "-");
+  const iso = clean(reservation.date_iso, 12);
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const dateBit = m ? `${Number(m[3])} ${months[Number(m[2]) - 1]}` : "";
+  return [day, dateBit, time].filter(Boolean).join(" ");
 }
 
 /** First instalment collected by bank (mid-month GoCardless join). */
@@ -420,6 +486,8 @@ export async function notifyParentFinishBooking(opts: {
   admin?: SupabaseClient | null;
   /** registration_submitted = pay-now copy after form submit (no suitability wording) */
   variant?: "accepted" | "registration_submitted" | "resend_pay_hold";
+  /** Trial pay links must not promise a Parent Portal PIN. */
+  isTrial?: boolean;
 }): Promise<{ emailOk: boolean; waOk: boolean; waError?: string }> {
   const name = clean(opts.parentName, 120) || "Parent / carer";
   const participant = clean(opts.participantName, 120) || "your child";
@@ -427,6 +495,10 @@ export async function notifyParentFinishBooking(opts: {
   const slot = clean(opts.slotSummary, 200);
   const autoPay = opts.variant === "registration_submitted";
   const resendHold = opts.variant === "resend_pay_hold";
+  const trial = !!opts.isTrial;
+  const pinLine = trial
+    ? ""
+    : " After the office confirms payment we send your Parent Portal PIN.";
   // Put the magic link FIRST so WhatsApp / Meta {{1}} truncation cannot cut the token
   // (chopped ?t=… shows as "This link is not valid").
   const bodyText = resendHold
@@ -442,7 +514,8 @@ export async function notifyParentFinishBooking(opts: {
       : `Finish booking now: ${link} ` +
         `Registration accepted for ${participant}` +
         (slot ? ` — ${slot}` : "") +
-        `. Place held 30 minutes. After the office confirms payment we send your Parent Portal PIN.`;
+        `. Place held 30 minutes.` +
+        pinLine;
 
   let emailOk = false;
   let waOk = false;
@@ -467,7 +540,9 @@ export async function notifyParentFinishBooking(opts: {
           (slot ? `Place: ${slot}\n\n` : "") +
           `Your place is held for 30 minutes only while you complete funding, payment and the first instalment.\n\n` +
           `If the window ends without payment, the seat returns to the Booking Portal.\n\n` +
-          `After the office confirms your payment we send your Parent Portal PIN.\n\n— clubSENsational`
+          (trial
+            ? `After payment we send a booking-completed message with the day, time, venue and instructor.\n\n— clubSENsational`
+            : `After the office confirms your payment we send your Parent Portal PIN.\n\n— clubSENsational`)
         : autoPay
           ? `Hi ${name},\n\n` +
             `Thank you — we received the registration for ${participant}.\n\n` +
@@ -478,7 +553,9 @@ export async function notifyParentFinishBooking(opts: {
             `clubSENsational has accepted the registration for ${participant}.\n\n` +
             `Please finish your booking:\n${link}\n\n` +
             (slot ? `Requested place: ${slot}\n\n` : "") +
-            `Your place is held for 30 minutes while you pay. After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\n— clubSENsational`,
+            (trial
+              ? `Your place is held for 30 minutes while you pay. After payment we send a booking-completed message with the day, time, venue and instructor.\n\n— clubSENsational`
+              : `Your place is held for 30 minutes while you pay. After you pay, the office confirms the payment and then we send your Parent Portal PIN.\n\n— clubSENsational`),
     });
     emailOk = mail.ok;
     if (!mail.ok) console.warn("[finish-booking-notify] email", mail.error);
@@ -856,6 +933,25 @@ export async function sendFinishBookingAfterRegistration(
   let emailOk = false;
   let waOk = false;
   if (opts?.notify !== false) {
+    const br = extractBookingRequest(
+      (doc.payload_json && typeof doc.payload_json === "object"
+        ? doc.payload_json
+        : {}) as Record<string, unknown>,
+    );
+    const rawReq =
+      doc.payload_json &&
+      typeof doc.payload_json === "object" &&
+      !Array.isArray(doc.payload_json)
+        ? (doc.payload_json as Record<string, unknown>).booking_request
+        : null;
+    const rawKind =
+      rawReq && typeof rawReq === "object" && !Array.isArray(rawReq)
+        ? String((rawReq as Record<string, unknown>).booking_kind || "")
+          .toLowerCase()
+        : "";
+    const kind = String(br?.booking_kind || rawKind).toLowerCase();
+    const isTrial =
+      kind === "trial" || kind === "trial_session" || kind === "taster";
     const notify = await notifyParentFinishBooking({
       parentName: doc.parent_name,
       parentEmail: doc.parent_email,
@@ -865,6 +961,7 @@ export async function sendFinishBookingAfterRegistration(
       rawToken: minted.rawToken,
       admin,
       variant: opts?.variant || "registration_submitted",
+      isTrial,
     });
     emailOk = notify.emailOk;
     waOk = notify.waOk;
@@ -962,6 +1059,83 @@ export async function notifyParentPortalPin(opts: {
     emailOk,
     wa: waResult,
   });
+}
+
+export async function notifyParentTrialBookingCompleted(opts: {
+  parentName: string | null;
+  parentEmail: string | null;
+  parentPhone: string | null;
+  participantName: string;
+  reservation: Record<string, unknown> | null;
+  instructorName: string | null;
+  admin?: SupabaseClient | null;
+}): Promise<{ emailOk: boolean; waOk: boolean }> {
+  const name = clean(opts.parentName, 120) || "Parent / carer";
+  const participant = clean(opts.participantName, 120) || "your child";
+  const venue = opts.reservation ? clean(opts.reservation.venue, 80) : "";
+  const when = formatTrialSessionWhen(opts.reservation);
+  const instructor = clean(opts.instructorName, 40);
+  const photo = instructorStaffPhotoUrl(instructor);
+  const whenPart = when || "your booked time";
+  const venuePart = venue ? ` at ${venue}` : "";
+  const withWho = instructor ? `, with ${instructor}` : "";
+  const bodyText =
+    `Booking completed for ${participant}. Trial: ${whenPart}${venuePart}${withWho}. ` +
+    (photo.url
+      ? `Please show them the photo so they know who to expect. See you there.`
+      : `See you there.`);
+
+  let emailOk = false;
+  let waResult: { ok: boolean; id?: string; channel?: string; error?: string } = {
+    ok: false,
+  };
+
+  const smtp = readParentNotifySmtpConfig();
+  const email = clean(opts.parentEmail, 200);
+  if (smtp && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const mail = await sendParentEmailViaSmtp({
+      config: smtp,
+      to: email,
+      subject: `Booking completed · ${participant}`,
+      bodyText:
+        `Hi ${name},\n\n` +
+        `Booking completed for ${participant}.\n\n` +
+        `Trial: ${whenPart}${venuePart}${withWho}.\n\n` +
+        (photo.url
+          ? `Please show them the photo so they know who to expect.\n\n`
+          : "") +
+        `See you there.\n\n— clubSENsational`,
+      instructorPhotoUrl: photo.url || undefined,
+      instructorPhotoName: photo.name || undefined,
+    });
+    emailOk = mail.ok;
+    if (!mail.ok) console.warn("[finish-booking-trial] email", mail.error);
+  }
+
+  const phone = normalizeParentPhoneE164(String(opts.parentPhone || ""));
+  if (phone) {
+    const wa = await sendParentMobileMessage(phone, bodyText, {
+      kind: "instructor_change",
+      instructorPhotoUrl: photo.url || undefined,
+      instructorPhotoName: photo.name || undefined,
+    });
+    waResult = wa;
+    if (!wa.ok) console.warn("[finish-booking-trial] whatsapp", wa.error);
+  }
+
+  await logFinishBookingNotify(opts.admin, {
+    kind: "trial_booking_completed",
+    parentName: name,
+    parentEmail: email || null,
+    parentPhone: phone,
+    participantName: participant,
+    subject: `Booking completed · ${participant}`,
+    bodyText,
+    emailOk,
+    wa: waResult,
+  });
+
+  return { emailOk, waOk: waResult.ok };
 }
 
 /** After bank-first GC is confirmed paid, remind parent to complete Step 3 (mandate). */
@@ -1666,6 +1840,86 @@ async function completeFinishBookingWithPin(
     clean(token.parent_person_id, 80) || clean(contact?.parent_person_id, 80);
   const contactId = clean(inv.contact_id, 40) || clean(token.contact_id, 40);
 
+  if (finishBookingTokenIsTrial(token) && !finishTrialGetsPortalPin(token, contact)) {
+    const now = new Date().toISOString();
+    if (parentPersonId) {
+      const familyIds = await familyPersonIdsForParent(admin, parentPersonId);
+      const { data: existingCreds } = await admin
+        .from("portal_parent_portal_credentials")
+        .select("parent_person_id, pin_hash")
+        .in("parent_person_id", familyIds.length ? familyIds : [parentPersonId]);
+      const hasPin = (existingCreds || []).some((c) =>
+        String(c.pin_hash || "").trim().length > 0
+      );
+      if (hasPin) {
+        await activateContactInClassAfterPaidBooking(admin, contactId);
+      }
+    }
+    const sync = await syncOpsAfterFinishBookingPaid(admin, token as CompletionTokenRow, {
+      paidVia: "paid",
+    });
+    let reservation: Record<string, unknown> | null = null;
+    const reservationId = clean(token.reservation_id, 80);
+    if (reservationId) {
+      const { data } = await admin
+        .from("portal_booking_slot_reservations")
+        .select("*")
+        .eq("id", reservationId)
+        .maybeSingle();
+      reservation = data;
+    }
+    if (!reservation?.id && token.document_id) {
+      const { data } = await admin
+        .from("portal_booking_slot_reservations")
+        .select("*")
+        .eq("document_id", token.document_id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      reservation = data;
+    }
+    const instructor =
+      (reservation && preferredInstructorForReservation(reservation)) ||
+      (reservation ? extractInstructorFromNotes(reservation.notes) : "") ||
+      "";
+    try {
+      await notifyParentTrialBookingCompleted({
+        admin,
+        parentName: contact?.parent_display || null,
+        parentEmail: contact?.email || null,
+        parentPhone: contact?.mobile || null,
+        participantName: contact?.child_display || "Participant",
+        reservation,
+        instructorName: instructor || null,
+      });
+    } catch (e) {
+      console.warn(
+        "[finish-booking] trial completed notify",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
+    await admin
+      .from("portal_booking_completion_tokens")
+      .update({
+        status: "completed",
+        consumed_at: now,
+        updated_at: now,
+      })
+      .eq("id", token.id);
+    if (token.lead_id) {
+      await admin
+        .from("portal_booking_leads")
+        .update({
+          booking_status: "booking_completed",
+          last_activity_at: now,
+          updated_at: now,
+        })
+        .eq("id", token.lead_id);
+    }
+    console.log("[finish-booking] trial no portal", sync.notes.join("|"));
+    return { completed: true, pinSent: false, reason: "trial_no_portal" };
+  }
+
   // Office resend / mint can leave contact fields null — backfill before PIN.
   if (
     parentPersonId &&
@@ -1836,7 +2090,7 @@ export async function tryCompleteBookingAfterGocardlessMandateSetup(
   return { ...result, invoice_id: invId };
 }
 
-/** Mark family active in Parent Portal after Stripe/bank confirm (trial or term). */
+/** Mark family active in Parent Portal after term first payment (or existing PIN family). */
 async function activateContactInClassAfterPaidBooking(
   admin: SupabaseClient,
   contactId: string | null,

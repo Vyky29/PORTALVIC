@@ -58,7 +58,13 @@ export function normalizePublicPhotoUrl(raw: string): string {
 }
 
 export function parentNotifyKindsWithInstructorPhoto(): Set<string> {
-  return new Set(["instructor_change", "instructor_reassign", "makeup_scheduled"]);
+  return new Set([
+    "instructor_change",
+    "instructor_reassign",
+    "makeup_scheduled",
+    "trial_scheduled",
+    "trial_booking_completed",
+  ]);
 }
 
 export function maskPhoneForLog(phone: string): string {

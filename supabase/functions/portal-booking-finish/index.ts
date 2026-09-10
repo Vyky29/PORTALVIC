@@ -994,6 +994,7 @@ Deno.serve(async (req) => {
       choices_json: savedChoices,
       gc_step2_unlocked: officePaidNotified(savedChoices),
       completed: token.status === "completed",
+      pin_sent: !!token.pin_sent_at,
       place_released:
         token.status === "expired" ||
         token.status === "expired_unpaid" ||

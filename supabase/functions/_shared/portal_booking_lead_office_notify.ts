@@ -525,8 +525,8 @@ export async function notifyOfficeStripePaymentReceived(opts: {
     `\nOpen Admin → Finance → Re-enrolments to review the paid invoice (optional).\n` +
     (adminUrl ? `${adminUrl}\n\n` : "") +
     `No need to Mark paid — Stripe already updated the invoice.\n` +
-    `No office "Validate" step for PIN: for Finish booking / trial Apple Pay, ` +
-    `Parent Portal PIN is sent automatically to the parent (email + WhatsApp) when Stripe confirms payment.\n` +
+    `Term bookings: Parent Portal PIN is sent automatically when Stripe confirms the first instalment / settle.\n` +
+    `Trial bookings: parent gets a booking-completed message (day, time, venue, instructor). No PIN - portal is for term places only.\n` +
     `— clubSENsational portal`;
 
   if (smtp && tos.length) {

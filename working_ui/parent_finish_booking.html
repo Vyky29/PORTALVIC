@@ -246,14 +246,14 @@
     </div>
 
     <div id="fbStepDone" class="card" hidden>
-      <h2>You’re in</h2>
-      <p class="muted" style="margin:0 0 10px;overflow-wrap:break-word">
+      <h2 id="fbDoneTitle">You're in</h2>
+      <p class="muted" id="fbDoneCopy" style="margin:0 0 10px;overflow-wrap:break-word">
         Payment confirmed by the office. Check your email or WhatsApp for your Parent Portal PIN
-        (sign in with your child’s first name + PIN).
+        (sign in with your child's first name + PIN).
       </p>
-      <a class="btn btn--pri" href="/parent">Open Parent Portal</a>
+      <a class="btn btn--pri" id="fbDonePortal" href="/parent">Open Parent Portal</a>
     </div>
   </div>
-  <script src="/portal/portal_finish_booking.js?v=20260910-trial-stripe-only"></script>
+  <script src="/portal/portal_finish_booking.js?v=20260910-trial-no-pin"></script>
 </body>
 </html>
