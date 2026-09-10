@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <title>LOCAL · Term timetable — who works</title>
+  <script>
+    (function () {
+      try {
+        if (!("serviceWorker" in navigator)) return;
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          (regs || []).forEach(function (r) {
+            try {
+              r.unregister();
+            } catch (_e) {}
+          });
+        });
+      } catch (_e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --ink: #173247;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.14);
+      --blue: #2d84b3;
+      --bg: #eef4f9;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      padding: 12px 12px 48px;
+    }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; }
+    .banner {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+      font-size: 0.88rem;
+      max-width: 52rem;
+      overflow-wrap: break-word;
+    }
+    .note {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      max-width: 52rem;
+      overflow-wrap: break-word;
+    }
+    .ttl-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+    .ttl-tab {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .ttl-tab.is-on {
+      background: #dbeafe;
+      border-color: #2563eb;
+      color: #1e3a8a;
+    }
+    .ttl-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 8px;
+      min-width: 0;
+    }
+    .ttl-chip {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .ttl-chip--soft { font-weight: 600; }
+    .ttl-chip.is-on {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+    .ttl-meta {
+      margin: 8px 0 10px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      max-width: 52rem;
+      overflow-wrap: break-word;
+    }
+    .ttl-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .ttl-btn--pri {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .ttl-btn--ghost {
+      background: transparent;
+      border-color: transparent;
+      text-decoration: underline;
+    }
+    .ttl-scroll {
+      overflow-x: auto;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ttl-hours {
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 48rem;
+      width: 100%;
+    }
+    .ttl-hours th,
+    .ttl-hours td {
+      border-bottom: 1px solid #e5e7eb;
+      border-right: 1px solid #eef2f6;
+      padding: 6px 8px;
+      vertical-align: middle;
+      text-align: center;
+      min-width: 0;
+    }
+    .ttl-hours thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    .ttl-head {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      max-width: 100%;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ttl-ico {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+      opacity: 0.9;
+    }
+    .ttl-date {
+      position: sticky;
+      left: 0;
+      background: #f1f5f9;
+      z-index: 2;
+      white-space: nowrap;
+      font-weight: 700;
+      min-width: 7.5rem;
+      text-align: center;
+    }
+    thead .ttl-date { z-index: 3; background: #e2e8f0; color: #334155; }
+    /* Venue header bands */
+    .ttl-v--westway { background: #fde68a; color: #92400e; }
+    .ttl-v--northolt { background: #93c5fd; color: #1e3a8a; }
+    .ttl-v--acton { background: #86efac; color: #14532d; }
+    .ttl-v--swimfarm { background: #f9a8d4; color: #9d174d; }
+    .ttl-v--swimfarm-ma { background: #d8b4fe; color: #581c87; }
+    .ttl-v--default { background: #cbd5e1; color: #334155; }
+    /* Body cells tinted by venue */
+    .ttl-v-body--westway { background: #fffbeb; }
+    .ttl-v-body--northolt { background: #eff6ff; }
+    .ttl-v-body--acton { background: #f0fdf4; }
+    .ttl-v-body--swimfarm { background: #fdf2f8; }
+    .ttl-v-body--swimfarm-ma { background: #faf5ff; }
+    .ttl-v-body--default { background: #f8fafc; }
+    .ttl-v-start {
+      border-left: 3px solid rgba(15, 23, 42, 0.28) !important;
+    }
+    .ttl-v--northolt.ttl-v-start,
+    .ttl-v-body--northolt.ttl-v-start { border-left-color: #2563eb !important; }
+    .ttl-v--acton.ttl-v-start,
+    .ttl-v-body--acton.ttl-v-start { border-left-color: #16a34a !important; }
+    .ttl-v--swimfarm.ttl-v-start,
+    .ttl-v-body--swimfarm.ttl-v-start { border-left-color: #db2777 !important; }
+    .ttl-v--swimfarm-ma.ttl-v-start,
+    .ttl-v-body--swimfarm-ma.ttl-v-start { border-left-color: #7c3aed !important; }
+    .ttl-v--westway.ttl-v-start,
+    .ttl-v-body--westway.ttl-v-start { border-left-color: #d97706 !important; }
+    .ttl-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      width: 100%;
+      min-width: 5.5rem;
+      max-width: 11rem;
+      margin: 0 auto;
+      text-align: center;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 4px 6px;
+      font: inherit;
+      font-size: 12px;
+      line-height: 1.2;
+      background: transparent;
+      cursor: pointer;
+      min-height: 2.4rem;
+    }
+    .ttl-cell:hover { border-color: var(--blue); background: rgba(255,255,255,0.7); }
+    .ttl-cell.is-draft {
+      border-color: #93c5fd;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    .ttl-cell.is-empty { color: #94a3b8; }
+    .ttl-cell__name {
+      display: block;
+      width: 100%;
+      font-weight: 800;
+      text-align: center;
+      overflow-wrap: break-word;
+    }
+    .ttl-cell__time {
+      display: block;
+      width: 100%;
+      font-weight: 600;
+      color: var(--muted);
+      text-align: center;
+      overflow-wrap: break-word;
+    }
+    .ttl-cell.is-draft .ttl-cell__time { color: #3b82f6; }
+    .ttl-cell__empty { color: #94a3b8; }
+    .ttl-cell-ro {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      line-height: 1.2;
+      text-align: center;
+      width: 100%;
+    }
+    .ttl-cell-ro .ttl-cell__time { color: var(--muted); }
+    .ttl-muted { color: #cbd5e1; text-align: center; }
+    .ttl-empty { margin: 20px 0; color: var(--muted); }
+
+    .ttl-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+    .ttl-col {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .ttl-col__head {
+      padding: 10px 12px;
+      font-weight: 800;
+      border-bottom: 1px solid var(--line);
+      background: #f7fafc;
+      overflow-wrap: break-word;
+    }
+    .ttl-col__body { display: grid; gap: 8px; padding: 10px; }
+    .ttl-card-ro {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      min-width: 0;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      background: #fff;
+      cursor: pointer;
+      color: inherit;
+    }
+    .ttl-card-ro:hover,
+    .ttl-card-ro.is-on {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+    .ttl-card__svc {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 4px;
+    }
+    .ttl-card__who { font-weight: 800; margin: 0 0 4px; overflow-wrap: break-word; }
+    .ttl-card__meta { font-size: 0.8rem; color: var(--muted); overflow-wrap: break-word; }
+
+    .ttl-drawer {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: grid;
+      grid-template-columns: 1fr minmax(280px, 400px);
+    }
+    .ttl-drawer[hidden] { display: none; }
+    .ttl-drawer__scrim {
+      border: 0;
+      background: rgba(23, 50, 71, 0.35);
+      cursor: pointer;
+    }
+    .ttl-drawer__panel {
+      background: #fff;
+      border-left: 1px solid var(--line);
+      padding: 14px 14px 28px;
+      overflow: auto;
+      min-width: 0;
+    }
+    .ttl-drawer__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 10px;
+    }
+    .ttl-drawer__note {
+      margin: 0 0 12px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+    .ttl-field {
+      display: grid;
+      gap: 4px;
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .ttl-field input {
+      font: inherit;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      width: 100%;
+    }
+    .ttl-drawer__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    @media (max-width: 720px) {
+      .ttl-drawer { grid-template-columns: 1fr; }
+      .ttl-drawer__scrim { order: 2; min-height: 18vh; }
+      .ttl-drawer__panel { order: 1; max-height: 82vh; }
+    }
+  </style>
+</head>
+<body>
+  <h1>LOCAL · Term timetable</h1>
+  <p class="banner">
+    <strong>Who works</strong> = instructor hours for every Monday (or Tue…) in Autumn (local drafts only).
+    <strong>Who is booked</strong> = standing seats — click a card to preview the Edit term slot prefill (in admin this opens the real editor).
+  </p>
+  <p class="note">
+    Open at <code>http://127.0.0.1:8765/term_timetable_local.html</code>.
+    Production twin: Admin → Instructor timetable.
+  </p>
+
+  <div id="ttlToolbar"></div>
+  <div id="ttlBoard"></div>
+  <div id="ttlDrawer" class="ttl-drawer" hidden></div>
+
+  <script src="/portal/autumn_staff_hours_reference.js?v=20260909-local-tt"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260909-fadi-dc-11-18"></script>
+  <script src="/portal/term_timetable_local.js?v=20260910-who-booked-venues"></script>
+  <script>
+    if (window.TermTimetableLocal) window.TermTimetableLocal.boot();
+  </script>
+</body>
+</html>

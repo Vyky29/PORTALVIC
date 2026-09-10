@@ -1187,6 +1187,52 @@
     return html + "</div>";
   }
 
+  function asrIcoCalendar() {
+    return (
+      '<svg class="asr-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+      '<rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>' +
+      '<path d="M8 3v4M16 3v4M3 11h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+      "</svg>"
+    );
+  }
+
+  function asrIcoVenue(style) {
+    var s = String(style || "");
+    if (s === "northolt" || s === "acton") {
+      return (
+        '<svg class="asr-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+        '<path d="M4 20V9l8-5 8 5v11" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
+        '<path d="M9 20v-6h6v6" fill="none" stroke="currentColor" stroke-width="2"/>' +
+        "</svg>"
+      );
+    }
+    if (s.indexOf("swimfarm") >= 0) {
+      return (
+        '<svg class="asr-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+        '<path d="M3 12c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+        '<path d="M3 17c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+        "</svg>"
+      );
+    }
+    return (
+      '<svg class="asr-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+      '<path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="2"/>' +
+      '<circle cx="12" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/>' +
+      "</svg>"
+    );
+  }
+
+  function flattenHoursVenueLabels(groups) {
+    var labels = [];
+    (groups || []).forEach(function (g) {
+      var span = Number(g.span) || 1;
+      for (var i = 0; i < span; i++) {
+        labels.push({ style: g.style || "default", idx: i, venue: g.venue || "" });
+      }
+    });
+    return labels;
+  }
+
   function renderHoursTableHtml(groups, dates, blockTitle, serviceFilter) {
     if (!groups.length) {
       return '<p class="muted">No columns.</p>';
@@ -1201,26 +1247,38 @@
     if (!filteredDates.length) {
       return '<p class="muted">No assignments for this service on the selected day.</p>';
     }
+    var labels = flattenHoursVenueLabels(groups);
     var html = "";
     if (blockTitle) {
       html += '<p class="asr-hours-block__title">' + esc(blockTitle) + "</p>";
     }
     html += '<div class="asr-scroll asr-hours-block"><table class="asr-grid asr-hours"><thead>';
-    html += '<tr><th rowspan="2" class="asr-date">Dates</th>';
+    html +=
+      '<tr><th rowspan="2" class="asr-date"><span class="asr-head">' +
+      asrIcoCalendar() +
+      "<span>Dates</span></span></th>";
     groups.forEach(function (g) {
+      var st = g.style || "default";
       html +=
         '<th colspan="' +
         g.span +
         '" class="asr-venue--' +
-        esc(g.style || "default") +
-        '">' +
+        esc(st) +
+        ' asr-venue-start"><span class="asr-head">' +
+        asrIcoVenue(st) +
+        "<span>" +
         esc(g.venue) +
-        "</th>";
+        "</span></span></th>";
     });
     html += "</tr><tr>";
     groups.forEach(function (g) {
+      var st = g.style || "default";
       for (var i = 0; i < g.span; i++) {
-        html += "<th class=\"asr-venue--" + esc(g.style || "default") + '"> </th>';
+        html +=
+          '<th class="asr-venue--' +
+          esc(st) +
+          (i === 0 ? " asr-venue-start" : "") +
+          '"> </th>';
       }
     });
     html += "</tr></thead><tbody>";
@@ -1231,12 +1289,17 @@
         '"><td class="asr-date">' +
         esc(dr.label || dr.date) +
         "</td>";
-      (dr.cells || []).forEach(function (cell) {
+      (dr.cells || []).forEach(function (cell, idx) {
+        var lab = labels[idx] || { style: "default", idx: 0 };
+        var tdCls =
+          "asr-venue-body--" +
+          esc(lab.style || "default") +
+          (lab.idx === 0 ? " asr-venue-start" : "");
         if (sf !== "all" && !cellMatchesServiceFilter(cell, sf)) {
-          html += '<td class="asr-cell--muted-filter">—</td>';
+          html += '<td class="' + tdCls + ' asr-cell--muted-filter">—</td>';
           return;
         }
-        html += "<td>" + cellInputHtml(cell) + "</td>";
+        html += '<td class="' + tdCls + '">' + cellInputHtml(cell) + "</td>";
       });
       html += "</tr>";
     });
