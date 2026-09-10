@@ -1945,6 +1945,27 @@
     return slotRow;
   }
 
+  function compareOverviewSlotsTimeThenCancelled(hub, a, b) {
+    var ta = clean(a && (a.time_start || a.time_slot)) || "";
+    var tb = clean(b && (b.time_start || b.time_slot)) || "";
+    if (ta !== tb) return ta < tb ? -1 : ta > tb ? 1 : 0;
+    var aCan = 1;
+    var bCan = 1;
+    try {
+      if (hub && typeof hub.slotHasCancellation === "function") {
+        aCan = hub.slotHasCancellation(a) ? 0 : 1;
+        bCan = hub.slotHasCancellation(b) ? 0 : 1;
+      }
+    } catch (_c) {}
+    if (aCan !== bCan) return aCan - bCan;
+    var aMk = a && a.portalOverrideMakeUpTag ? 1 : 0;
+    var bMk = b && b.portalOverrideMakeUpTag ? 1 : 0;
+    if (aMk !== bMk) return aMk - bMk;
+    return clean(a && a.client_name).localeCompare(clean(b && b.client_name), "en", {
+      sensitivity: "base",
+    });
+  }
+
   function injectOrphanMakeupOverrideSlots(hub, out, isoDate, wd) {
     var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
     if (!ovs.length) return out;
@@ -1977,7 +1998,7 @@
     if (!added.length) return out;
     out = out.concat(added);
     out.sort(function (a, b) {
-      return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
+      return compareOverviewSlotsTimeThenCancelled(hub, a, b);
     });
     return out;
   }
@@ -9007,20 +9028,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     });
     displaySlots = dedupeOverviewDisplaySlots(displaySlots);
     displaySlots.sort(function (a, b) {
-      var ta = clean(a && a.time_start) || "";
-      var tb = clean(b && b.time_start) || "";
-      if (ta !== tb) return ta < tb ? -1 : 1;
-      /* Same clock: Cancelled seats before live / makeup (e.g. Joelle Cancelled above Anas). */
-      var aCan = 0;
-      var bCan = 0;
-      try {
-        aCan = hub.slotHasCancellation(a) ? 0 : 1;
-        bCan = hub.slotHasCancellation(b) ? 0 : 1;
-      } catch (_c) {}
-      if (aCan !== bCan) return aCan - bCan;
-      var ca = clean(a && a.client_name) || "";
-      var cb = clean(b && b.client_name) || "";
-      return ca.localeCompare(cb, "en", { sensitivity: "base" });
+      return compareOverviewSlotsTimeThenCancelled(hub, a, b);
+    });
     });
     return {
       iso: iso,
@@ -10640,10 +10649,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     function sortedItems(key) {
       return byKey[key].slice().sort(function (x, y) {
-        var tx = clean(x.slot.time_start || x.slot.time_slot);
-        var ty = clean(y.slot.time_start || y.slot.time_slot);
-        if (tx !== ty) return tx < ty ? -1 : 1;
-        return clean(x.slot.client_name).localeCompare(clean(y.slot.client_name));
+        return compareOverviewSlotsTimeThenCancelled(hub, x.slot, y.slot);
       });
     }
     var swimKeys = [];

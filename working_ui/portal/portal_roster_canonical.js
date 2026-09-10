@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 96;
+  var SOURCE_VERSION = 97;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1241,6 +1241,13 @@
         /westway/i.test(String(r.venue || ""));
       if (isRaulOnly && (isDc || isTin)) return;
       if (isSandraOnly && isWestwayPa) return;
+      if (
+        isDc &&
+        /^ikram\b/i.test(String(r.client_name || "").trim()) &&
+        /\byoussef\b/i.test(inst)
+      ) {
+        return;
+      }
       /* Stale Victor-only Tinashe dated row (pre-fix) — drop so Godsway/John project. */
       if (
         isTin &&
@@ -1257,7 +1264,26 @@
     autumnMondaySep7AbodiLastSessionRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
+    autumnMondaySep7YoussefIkramRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
     return out;
+  }
+
+  /** Mon 7 Sep: Youssef worked Ikram 12.30-3 (Fadi Cancelled stays above). */
+  function autumnMondaySep7YoussefIkramRows() {
+    return [
+      {
+        client_name: "Ikram",
+        day: "Monday",
+        instructors: "YOUSSEF",
+        service: "Day Centre",
+        area: "Hub Room",
+        time_slot: "12.30 to 3",
+        venue: "SwimFarm",
+        session_date: "2026-09-07",
+      },
+    ];
   }
 
   /**

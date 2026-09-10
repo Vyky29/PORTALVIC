@@ -2978,7 +2978,7 @@
               portalOverrideSymbolText: 'No Participant'
             }, meta);
           }
-          if(manualOv === 'ABSENT'){
+          if(manualOv === 'ABSENT' && !portalTodayIsFadiDcCancelledSeat(s, sessionDateKey)){
             const baseId = String(s.clientId || '').trim().toLowerCase();
             const cAbs = clientNotesById[baseId] || { name: baseId || 'Participant', generalLead: '', specialty: '', specialtyClimbing: '', specialtyFitness: '', generalInfoSheet: '' };
             const showSpecAbs = !isBespokeActivity(activity);
@@ -3036,7 +3036,7 @@
           }
           const adminAbsentOv = portalScheduleOverrideForSessionByType(s, sessionDateKey, 'client_absence_announced');
           const replaceOvSameSlot = portalScheduleOverrideForSessionByType(s, sessionDateKey, 'client_replace_in_slot');
-          if(adminAbsentOv && !replaceOvSameSlot){
+          if(adminAbsentOv && !replaceOvSameSlot && !portalTodayIsFadiDcCancelledSeat(s, sessionDateKey)){
             const cAbs = portalClientNotesLookup(s.clientId) || clientNotesById[s.clientId] || {
               name: String(s.clientDisplay || s.clientName || s.clientId || 'Participant').trim() || 'Participant',
               generalLead: '', specialty: '', specialtyClimbing: '', specialtyFitness: '', generalInfoSheet: ''
@@ -3849,12 +3849,16 @@
       if(portalStaffKeyIsLulia(staffId)){
         mergedToday = portalApplyLuliaIkramCutoffToTodayItems(mergedToday, staffId, sessionDateKey, anchor);
       }
-      /* Cancelled clients first (full red card), then normal time order. */
+      /* Time order; at the same clock Cancelled sits above the live / makeup card
+         (Fadi Cancelled then Ikram; Joelle Cancelled then Anas). */
       mergedToday = (Array.isArray(mergedToday) ? mergedToday.slice() : []).sort(function(a, b){
+        const ta = Number(normalizeTimeForSort(portalTodayItemSortKey(a)));
+        const tb = Number(normalizeTimeForSort(portalTodayItemSortKey(b)));
+        if(ta !== tb) return ta - tb;
         const aCan = portalTodayItemIsCancelledCard(a) ? 0 : 1;
         const bCan = portalTodayItemIsCancelledCard(b) ? 0 : 1;
         if(aCan !== bCan) return aCan - bCan;
-        return Number(normalizeTimeForSort(portalTodayItemSortKey(a))) - Number(normalizeTimeForSort(portalTodayItemSortKey(b)));
+        return 0;
       });
       return mergedToday;
     }
