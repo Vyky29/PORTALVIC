@@ -14,13 +14,29 @@
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/staff_dashboard.html en producción.
   -->
   <script>
-    /* Auto-heal installed PWA (iOS blank after alert tap). One-shot per version.
-       Never leave the full-screen banner up if cache/SW APIs hang. */
+    /* Auto-heal installed PWA. One-shot per version. Do not cover the whole
+       screen (iOS treats inset:0 layers as a tap block). Reload only when
+       caches were actually deleted or a foreign SW was unregistered. */
     (function () {
-      var FLAG = "portalPwaHealV11";
+      var FLAG = "portalPwaHealV12";
       var KEEP = "clubsensational-portal-sw";
       var force = false;
       var healedQ = false;
+      var storageOk = true;
+      function cookieHealed() {
+        try {
+          return /(?:^|; )portalPwaHealV12=1(?:;|$)/.test(String(document.cookie || ""));
+        } catch (eC) {
+          return false;
+        }
+      }
+      function markStored() {
+        try { localStorage.setItem(FLAG, "1"); } catch (eS1) {}
+        try { sessionStorage.setItem("portalPwaFreshV12", "1"); } catch (eS2) {}
+        try {
+          document.cookie = "portalPwaHealV12=1; path=/; max-age=31536000; SameSite=Lax";
+        } catch (eS3) {}
+      }
       try {
         var q = new URLSearchParams(String(location.search || ""));
         force = q.get("portalHeal") === "1" || q.get("heal") === "1";
@@ -28,24 +44,24 @@
       } catch (e0) {}
       try {
         if (healedQ) {
-          localStorage.setItem(FLAG, "1");
+          markStored();
           return;
         }
-        if (!force && localStorage.getItem(FLAG) === "1") return;
+        if (!force && (localStorage.getItem(FLAG) === "1" || cookieHealed())) return;
       } catch (e1) {
-        return;
+        storageOk = false;
+        if (!force && cookieHealed()) return;
       }
       var banner = null;
       try {
-        document.documentElement.style.background = "#edf4fb";
         banner = document.createElement("div");
         banner.id = "portal-pwa-heal-banner";
         banner.setAttribute("role", "status");
         banner.textContent = "Updating CS Portal…";
         banner.setAttribute(
           "style",
-          "position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;" +
-            "background:#edf4fb;font:600 15px/1.4 -apple-system,system-ui,sans-serif;color:#1e3a5f;" +
+          "position:fixed;top:0;left:0;right:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;" +
+            "padding:10px 12px;background:#edf4fb;font:600 13px/1.3 -apple-system,system-ui,sans-serif;color:#1e3a5f;" +
             "pointer-events:none"
         );
         (document.documentElement || document.body).appendChild(banner);
@@ -63,10 +79,10 @@
           jobs.push(
             caches.keys().then(function (keys) {
               var list = keys || [];
-              if (list.length) foundStale = true;
               return Promise.all(
                 list.map(function (k) {
                   if (String(k).indexOf("portal-push-icons") >= 0) return null;
+                  foundStale = true;
                   return caches.delete(k);
                 })
               );
@@ -86,9 +102,7 @@
                     (r.installing && r.installing.scriptURL) ||
                     "";
                   if (String(s).indexOf(KEEP) >= 0) {
-                    return r.update().then(function () {
-                      foundStale = true;
-                    }).catch(function () {});
+                    return r.update().catch(function () {});
                   }
                   foundStale = true;
                   return r.unregister().catch(function () {});
@@ -102,13 +116,14 @@
       function finish(allowReload) {
         if (finished) return;
         finished = true;
-        try {
-          localStorage.setItem(FLAG, "1");
-          sessionStorage.setItem("portalPwaFreshV11", "1");
-        } catch (e5) {}
+        if (!allowReload) {
+          dropBanner();
+          return;
+        }
+        markStored();
         var path = String(location.pathname || "");
         var onRoot = path === "/" || path === "";
-        if (allowReload) {
+        if (storageOk) {
           try {
             var u = new URL(location.href);
             u.searchParams.delete("portalHeal");
@@ -151,7 +166,7 @@
   </script>
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/staff-app-boot.js?v=20260910-staff-boot-order"></script>
-  <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
+  <script src="/portal/portal_auth_page_gate.js?v=20260910-ios-touch"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260820-es-full"></script>
   <script src="/portal/portal-vapid-public.js?v=20260619-vapid-load-fix"></script>
@@ -163,7 +178,7 @@
   <script defer src="/portal/portal_calendar_2026_27.js?v=20260714-w2-80pct"></script>
   <link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign">
   <script defer src="/portal/portal_admin_surface_map.js?v=20260704-login-map-fix"></script>
-  <script src="/portal-static-bootstrap.js?v=20260722-plan-bridge"></script>
+  <script src="/portal-static-bootstrap.js?v=20260910-ios-touch"></script>
   <script src="/portal/portal_dashboard_lazy_scripts.js?v=20260705-ceo-gallery-topbar"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
@@ -238,8 +253,8 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260602-footerlogo" />
   <link rel="manifest" href="/staff-dashboard.webmanifest?v=20260712-cs-portal" />
-  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
-  <script defer src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
+  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260910-ios-touch" />
+  <script defer src="/portal/portal_screenshot_guard.js?v=20260910-ios-touch"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260909-mohamed-new-client" />
   <link rel="stylesheet" href="/portal/portal_staff_whatsapp.css?v=20260906-comms-40" />

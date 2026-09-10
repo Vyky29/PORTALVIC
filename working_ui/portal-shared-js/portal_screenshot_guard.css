@@ -2,14 +2,14 @@
   position: fixed;
   inset: 0;
   z-index: 2147483646;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   background: #fff;
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
   transition: none;
-  touch-action: none;
 }
 
 #portalScreenshotGuard .portal-screenshot-guard-logo {
@@ -23,18 +23,24 @@
 }
 
 #portalScreenshotGuard.is-active {
-  opacity: 1;
+  opacity: 0;
   pointer-events: none;
+  display: none;
+  visibility: hidden;
 }
 
 /* Brief flash only when JS detects a screenshot shortcut (never while app is backgrounded). */
 html.portal-screenshot-foreground-mask #portalScreenshotGuard.is-active {
+  display: flex;
   opacity: 1;
+  visibility: visible;
   pointer-events: none;
 }
 
 html:not(.portal-screenshot-foreground-mask) #portalScreenshotGuard.is-active {
+  display: none;
   opacity: 0;
+  visibility: hidden;
 }
 
 html.portal-screenshot-guard-armed,

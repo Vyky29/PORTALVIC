@@ -6,21 +6,34 @@
   <script>
     /* One-shot PWA heal on login (same as staff dashboard). */
     (function () {
-      var FLAG = "portalPwaHealV11";
+      var FLAG = "portalPwaHealV12";
       var KEEP = "clubsensational-portal-sw";
       var force = false;
+      function cookieHealed() {
+        try {
+          return /(?:^|; )portalPwaHealV12=1(?:;|$)/.test(String(document.cookie || ""));
+        } catch (eC) {
+          return false;
+        }
+      }
+      function markStored() {
+        try { localStorage.setItem(FLAG, "1"); } catch (eS1) {}
+        try {
+          document.cookie = "portalPwaHealV12=1; path=/; max-age=31536000; SameSite=Lax";
+        } catch (eS2) {}
+      }
       try {
         var q = new URLSearchParams(String(location.search || ""));
         force = q.get("portalHeal") === "1" || q.get("heal") === "1";
         if (q.get("healed") === "1") {
-          try { localStorage.setItem(FLAG, "1"); } catch (e) {}
+          markStored();
           return;
         }
       } catch (e0) {}
       try {
-        if (!force && localStorage.getItem(FLAG) === "1") return;
+        if (!force && (localStorage.getItem(FLAG) === "1" || cookieHealed())) return;
       } catch (e1) {
-        return;
+        if (!force && cookieHealed()) return;
       }
       var jobs = [];
       try {
@@ -62,7 +75,7 @@
       function markHealed() {
         if (done) return;
         done = true;
-        try { localStorage.setItem(FLAG, "1"); } catch (e4) {}
+        markStored();
         if (force) {
           try {
             var u = new URL(location.href);
@@ -84,8 +97,8 @@
       ]).catch(markHealed);
     })();
   </script>
-  <script src="/portal-static-bootstrap.js?v=20260630-login-bootstrap"></script>
-  <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
+  <script src="/portal-static-bootstrap.js?v=20260910-ios-touch"></script>
+  <script src="/portal/portal_auth_page_gate.js?v=20260910-ios-touch"></script>
   <script src="/portal/portal-vapid-public.js?v=20260610-vapid-v4"></script>
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />

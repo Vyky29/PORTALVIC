@@ -73,6 +73,25 @@
     return false;
   }
 
+  function parkGuardEl(el) {
+    if (!el) return;
+    el.classList.remove("is-active");
+    el.hidden = true;
+    el.setAttribute("aria-hidden", "true");
+    el.style.display = "none";
+    el.style.visibility = "hidden";
+    el.style.pointerEvents = "none";
+    el.style.touchAction = "auto";
+  }
+
+  function showGuardEl(el) {
+    if (!el) return;
+    el.hidden = false;
+    el.style.display = "";
+    el.style.visibility = "visible";
+    el.classList.add("is-active");
+  }
+
   function ensureEl() {
     var el = document.getElementById(GUARD_ID);
     if (el) return el;
@@ -92,6 +111,7 @@
       this.src = LOGO_FALLBACK;
     };
     el.appendChild(img);
+    parkGuardEl(el);
     var root = document.body || document.documentElement;
     root.appendChild(el);
     return el;
@@ -118,8 +138,7 @@
   function hideMaskForce() {
     global.clearTimeout(lingerTimer);
     setForegroundMask(false);
-    var el = document.getElementById(GUARD_ID);
-    if (el) el.classList.remove("is-active");
+    parkGuardEl(document.getElementById(GUARD_ID));
     if (isPageVisible() && !isPhotoCaptureUiActive()) {
       setScreenshotWatermark(false);
     }
@@ -131,7 +150,7 @@
     opts = opts || {};
     global.clearTimeout(lingerTimer);
     var el = ensureEl();
-    el.classList.add("is-active");
+    showGuardEl(el);
     setScreenshotWatermark(true);
     setForegroundMask(true);
     var linger =

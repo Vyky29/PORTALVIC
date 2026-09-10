@@ -118,10 +118,20 @@
     { once: true }
   );
 
-  /* Safety: never leave a blank screen if bootstrap hangs on slow networks. */
+  /* Safety: never leave a blank screen if bootstrap hangs. Standalone PWA
+     used to sit behind the full-screen loader for 12s (feels frozen). */
+  var gateMs = 12000;
+  try {
+    if (
+      (global.navigator && global.navigator.standalone) ||
+      (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches)
+    ) {
+      gateMs = 2500;
+    }
+  } catch (_eGate) {}
   global.setTimeout(function () {
     if (!doc.documentElement.classList.contains("portal-auth-ready")) {
       markReady();
     }
-  }, 12000);
+  }, gateMs);
 })(typeof window !== "undefined" ? window : globalThis);

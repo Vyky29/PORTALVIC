@@ -54,8 +54,9 @@
       }
       function goLogin() {
         try {
-          localStorage.setItem("portalPwaHealV11", "1");
-          sessionStorage.setItem("portalPwaFreshV11", "1");
+          localStorage.setItem("portalPwaHealV12", "1");
+          sessionStorage.setItem("portalPwaFreshV12", "1");
+          document.cookie = "portalPwaHealV12=1; path=/; max-age=31536000; SameSite=Lax";
         } catch (e) {}
         var next = "/login.html?healed=1&t=" + Date.now();
         try {
