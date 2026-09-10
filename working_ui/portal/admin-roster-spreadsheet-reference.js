@@ -1250,7 +1250,10 @@
       .toLowerCase()
       .trim();
     var text = String((cell && cell.text) || "");
-    if (day === "saturday" || day === "sunday") {
+    if (day === "saturday") {
+      return "Aquatic Activity";
+    }
+    if (day === "sunday") {
       if (band === "day_centre" || band === "dc") return "Day Centre";
       if (band === "bespoke" || /\b4\.15-6\.15\b/.test(text)) return "Bespoke";
       return "Aquatic Activity and Multi-Activity";
@@ -1287,11 +1290,12 @@
         }
       });
       if (best) return best;
-      var weekend =
-        String(dayName || "").toLowerCase() === "saturday" ||
-        String(dayName || "").toLowerCase() === "sunday";
+      var weekendSun = String(dayName || "").toLowerCase() === "sunday";
+      var weekendSat = String(dayName || "").toLowerCase() === "saturday";
       if (String(lab.style || "").indexOf("swimfarm") >= 0) {
-        return weekend ? "Aquatic Activity and Multi-Activity" : "Day Centre";
+        if (weekendSat) return "Aquatic Activity";
+        if (weekendSun) return "Aquatic Activity and Multi-Activity";
+        return "Day Centre";
       }
       return venueServiceUnderName(lab.style) || "";
     });

@@ -134,8 +134,9 @@
     .ttl-hours {
       border-collapse: collapse;
       font-size: 12px;
-      min-width: 48rem;
-      width: 100%;
+      min-width: max-content;
+      width: max-content;
+      max-width: none;
     }
     .ttl-hours th,
     .ttl-hours td {
@@ -145,6 +146,12 @@
       vertical-align: middle;
       text-align: center;
       min-width: 0;
+    }
+    .ttl-hours th:not(.ttl-date),
+    .ttl-hours td:not(.ttl-date) {
+      width: 7.5rem;
+      min-width: 7.5rem;
+      max-width: 11rem;
     }
     .ttl-hours thead th {
       position: sticky;
@@ -230,9 +237,14 @@
       background: #f9a8d4 !important;
       color: #9d174d !important;
     }
+    .ttl-svc--aquatic-activity {
+      background: #f9a8d4 !important;
+      color: #9d174d !important;
+    }
     .ttl-sf-svc--bespoke { background: #fce7f3 !important; }
     .ttl-sf-svc--day-centre { background: #fff1f2 !important; }
     .ttl-sf-svc--aquatic-activity-and-multi-activity { background: #fdf2f8 !important; }
+    .ttl-sf-svc--aquatic-activity { background: #fdf2f8 !important; }
     .ttl-svc-start {
       border-left: 3px solid #be185d !important;
     }
