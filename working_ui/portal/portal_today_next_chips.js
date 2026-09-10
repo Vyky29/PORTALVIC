@@ -91,6 +91,19 @@
     return name === "HOME" || name === "CASA";
   }
 
+  /** cancelled|absent → soft red photo; trial|makeup|new → pulse ring (no photo filter). */
+  function chipOverrideClass(p) {
+    var st = String((p && (p.chipStatus || p.overrideStatus || p.status)) || "")
+      .trim()
+      .toLowerCase();
+    if (st === "cancelled" || st === "cancel") return "today-participant-chip--cancelled";
+    if (st === "absent") return "today-participant-chip--absent";
+    if (st === "trial") return "today-participant-chip--trial";
+    if (st === "makeup" || st === "make_up" || st === "make-up") return "today-participant-chip--makeup";
+    if (st === "new" || st === "new_client") return "today-participant-chip--new";
+    return "";
+  }
+
   var TODAY_HOME_CHIP_SVG =
     '<svg class="today-participant-chip__home-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none">' +
     '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>' +
@@ -245,13 +258,19 @@
           ' onerror="if(window.portalTodayNextChipPhotoTryFallback){window.portalTodayNextChipPhotoTryFallback(this);}" />';
       }
       html +=
-        '<button type="button" class="today-participant-chip"' +
+        '<button type="button" class="today-participant-chip' +
+        (chipOverrideClass(p) ? " " + chipOverrideClass(p) : "") +
+        '"' +
         (chipCol ? ' style="' + chipCol + '"' : "") +
         ' data-next-session-participant="1" data-next-session-client="' +
         esc(rawId) +
         '" data-next-session-name="' +
         esc(rawName) +
-        '" aria-label="Open profile for ' +
+        '"' +
+        (chipOverrideClass(p)
+          ? ' data-chip-status="' + esc(String(p.chipStatus || p.overrideStatus || "").trim().toLowerCase()) + '"'
+          : "") +
+        ' aria-label="Open profile for ' +
         name +
         '" role="listitem">';
       html += '<span class="today-participant-chip__avatar-wrap">';

@@ -5445,6 +5445,69 @@
       text-overflow:ellipsis;
       white-space:nowrap;
     }
+    /* Soft red wash on photo for cancelled / absent (no pulse). */
+    .today-participant-chip--cancelled .today-participant-chip__avatar,
+    .today-participant-chip--absent .today-participant-chip__avatar{
+      border-color:rgba(198,40,40,.42);
+    }
+    .today-participant-chip--cancelled .today-participant-chip__avatar::after,
+    .today-participant-chip--absent .today-participant-chip__avatar::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      z-index:1;
+      border-radius:50%;
+      background:rgba(198,40,40,.28);
+      pointer-events:none;
+    }
+    .today-participant-chip--cancelled .today-participant-chip__avatar img,
+    .today-participant-chip--absent .today-participant-chip__avatar img{
+      filter:saturate(.85) brightness(.96);
+    }
+    /* Trial / Make up / New: coloured pulse ring only — never red photo filter. */
+    .today-participant-chip--trial .today-participant-chip__avatar-wrap{
+      animation:todayNextChipPulseTrial 1.55s ease-in-out infinite;
+      border-radius:50%;
+    }
+    .today-participant-chip--trial .today-participant-chip__avatar{
+      border-color:rgba(124,92,214,.55);
+    }
+    .today-participant-chip--makeup .today-participant-chip__avatar-wrap{
+      animation:todayNextChipPulseMakeup 1.55s ease-in-out infinite;
+      border-radius:50%;
+    }
+    .today-participant-chip--makeup .today-participant-chip__avatar{
+      border-color:rgba(194,24,91,.5);
+    }
+    .today-participant-chip--new .today-participant-chip__avatar-wrap{
+      animation:todayNextChipPulseNew 1.55s ease-in-out infinite;
+      border-radius:50%;
+    }
+    .today-participant-chip--new .today-participant-chip__avatar{
+      border-color:rgba(45,132,179,.55);
+    }
+    @keyframes todayNextChipPulseTrial{
+      0%,100%{box-shadow:0 0 0 0 rgba(124,92,214,.22)}
+      50%{box-shadow:0 0 0 5px rgba(124,92,214,.38)}
+    }
+    @keyframes todayNextChipPulseMakeup{
+      0%,100%{box-shadow:0 0 0 0 rgba(194,24,91,.18)}
+      50%{box-shadow:0 0 0 5px rgba(194,24,91,.36)}
+    }
+    @keyframes todayNextChipPulseNew{
+      0%,100%{box-shadow:0 0 0 0 rgba(45,132,179,.2)}
+      50%{box-shadow:0 0 0 5px rgba(45,132,179,.4)}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .today-participant-chip--trial .today-participant-chip__avatar-wrap,
+      .today-participant-chip--makeup .today-participant-chip__avatar-wrap,
+      .today-participant-chip--new .today-participant-chip__avatar-wrap{
+        animation:none;
+        box-shadow:0 0 0 3px rgba(45,132,179,.28);
+      }
+      .today-participant-chip--trial .today-participant-chip__avatar-wrap{box-shadow:0 0 0 3px rgba(124,92,214,.3)}
+      .today-participant-chip--makeup .today-participant-chip__avatar-wrap{box-shadow:0 0 0 3px rgba(194,24,91,.28)}
+    }
     .today-day-panel__chips[data-chip-count="7"] .today-participant-chip__name,
     .today-day-panel__chips[data-chip-count="8"] .today-participant-chip__name,
     .today-day-panel__chips[data-chip-count="9"] .today-participant-chip__name{

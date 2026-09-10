@@ -4628,6 +4628,108 @@
       }
       dashboardData.venueMeta = 'No participants — ' + dw;
     }
+    function portalTodayRowIsNewClientChip(r){
+      const ov = r && r.__portalScheduleOverride;
+      if(!ov) return false;
+      try{
+        const P = typeof window !== 'undefined' ? window.PortalParticipantsSheet : null;
+        if(P && typeof P.overrideIsFinishBookingNewClient === 'function' && P.overrideIsFinishBookingNewClient(ov)) return true;
+        if(P && typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(ov)) return true;
+      }catch(_){}
+      return false;
+    }
+    /** Chip flags for Next-session faces: cancelled/absent (photo tint) vs trial/makeup/new (pulse). */
+    function portalNextSessionChipStatusFromTodayRow(r){
+      if(!r) return '';
+      const pill = String(r.portalOverrideAlertPill || '').trim().toUpperCase();
+      if(pill === 'CANCELLED') return 'cancelled';
+      if(pill === 'ABSENT') return 'absent';
+      if(r.portalOverrideTrialTag) return 'trial';
+      if(r.portalOverrideMakeUpTag) return 'makeup';
+      if(portalTodayRowIsNewClientChip(r)) return 'new';
+      const futureLbl = String(r.futureOverrideLabel || '').trim().toLowerCase();
+      if(futureLbl === 'new client' || futureLbl === 'new') return 'new';
+      const tone = String(r.portalOverrideCardTone || '').trim().toLowerCase();
+      if(tone === 'trial') return 'trial';
+      if(tone === 'pink') return 'makeup';
+      if(tone === 'admin' && (futureLbl.indexOf('new') >= 0 || portalTodayRowIsNewClientChip(r))) return 'new';
+      if(tone === 'red' && /cancel/i.test(String(r.general || ''))) return 'cancelled';
+      if(tone === 'absent-green' || (tone === 'green' && /absent/i.test(String(r.general || '')))) return 'absent';
+      try{
+        const base = r.__portalBaseSession || r;
+        const iso = String(r.sessionDateKey || r.session_date || '').trim().slice(0, 10)
+          || (typeof portalIsoYmdFromDate === 'function' && r.sessionStartTs
+            ? portalIsoYmdFromDate(new Date(r.sessionStartTs))
+            : '');
+        if(iso && typeof portalTodayIsFadiDcCancelledSeat === 'function'
+          && portalTodayIsFadiDcCancelledSeat(base, iso)) return 'cancelled';
+      }catch(_){}
+      return '';
+    }
+    function portalNextSessionParticipantFromTodayRow(r){
+      const name = String(r && r.name || '').trim() || '—';
+      const clientId = String(r && r.clientId || '').trim();
+      const kind = String(r && r.kind || '').trim().toLowerCase();
+      let photoUrl = String(r && r.avatarFile || '').trim();
+      if(!photoUrl && typeof resolveParticipantPhotoUrl === 'function'){
+        photoUrl = resolveParticipantPhotoUrl(name, clientId) || '';
+      }
+      if(!photoUrl && typeof portalParticipantPhotoUrl === 'function'){
+        photoUrl = portalParticipantPhotoUrl(name, '', clientId) || '';
+      }
+      if(!photoUrl && typeof clientPhotoUrl === 'function') photoUrl = clientPhotoUrl(name) || '';
+      const preloadUrls = typeof portalParticipantPhotoPathCandidates === 'function'
+        ? portalParticipantPhotoPathCandidates(name, photoUrl, clientId)
+        : (photoUrl ? [photoUrl] : []);
+      return {
+        name: name,
+        clientId: clientId,
+        kind: kind,
+        photoUrl: photoUrl,
+        preloadUrls: preloadUrls,
+        hasMedicalAlert: portalParticipantHasMedicalAlert(clientId, name),
+        time: String(r && r.time || r.timeSlotLabel || '').trim(),
+        chipStatus: portalNextSessionChipStatusFromTodayRow(r)
+      };
+    }
+    function portalMergeNextSessionChipStatus(a, b){
+      const rank = { cancelled: 5, absent: 4, trial: 3, makeup: 2, new: 1 };
+      const sa = String(a || '').trim().toLowerCase();
+      const sb = String(b || '').trim().toLowerCase();
+      if(!sa) return sb;
+      if(!sb) return sa;
+      return (rank[sb] || 0) > (rank[sa] || 0) ? sb : sa;
+    }
+    function portalDedupeNextSessionParticipants(list){
+      const raw = Array.isArray(list) ? list : [];
+      const seen = Object.create(null);
+      const out = [];
+      raw.forEach(function(entry){
+        if(!entry) return;
+        const key = String(entry.clientId || '').trim().toLowerCase()
+          || String(entry.name || '').trim().toLowerCase();
+        if(!key) return;
+        if(seen[key] != null){
+          const prev = out[seen[key]];
+          prev.chipStatus = portalMergeNextSessionChipStatus(prev.chipStatus, entry.chipStatus);
+          if(!prev.photoUrl && entry.photoUrl) prev.photoUrl = entry.photoUrl;
+          if(entry.hasMedicalAlert) prev.hasMedicalAlert = true;
+          return;
+        }
+        seen[key] = out.length;
+        out.push(entry);
+      });
+      return out;
+    }
+    function portalNextSessionRowIncludeInChips(r){
+      if(!r) return false;
+      const kind = String(r.kind || '').trim().toLowerCase();
+      if(kind === 'available' || kind === 'closed') return false;
+      if(kind === 'home') return true;
+      const name = String(r.name || '').trim();
+      if(!name || name === '—' || /^no participant/i.test(name)) return false;
+      return true;
+    }
     function portalBuildTodayNextSessionPreview(staffId){
       const id = String(staffId || '').trim().toLowerCase();
       if(!id) return null;
@@ -4654,28 +4756,14 @@
             const dateLabel = typeof portalFormatPortalDateDdMmYyyy === 'function'
               ? portalFormatPortalDateDdMmYyyy(info.date)
               : '';
-            const participantsRaw = nsRows.map(function(r){
-              const name = String(r && r.name || '').trim() || '—';
-              const clientId = String(r && r.clientId || '').trim();
-              const kind = String(r && r.kind || '').trim().toLowerCase();
-              let photoUrl = String(r && r.avatarFile || '').trim();
-              if(!photoUrl && typeof resolveParticipantPhotoUrl === 'function'){
-                photoUrl = resolveParticipantPhotoUrl(name, clientId) || '';
-              }
-              if(!photoUrl && typeof clientPhotoUrl === 'function') photoUrl = clientPhotoUrl(name) || '';
-              return {
-                name: name,
-                clientId: clientId,
-                kind: kind,
-                photoUrl: photoUrl,
-                preloadUrls: photoUrl ? [photoUrl] : [],
-                hasMedicalAlert: portalParticipantHasMedicalAlert(clientId, name),
-                time: String(r && r.time || r.timeSlotLabel || '').trim()
-              };
-            });
-            const participants = typeof portalDedupeParticipantListEntries === 'function'
-              ? portalDedupeParticipantListEntries(participantsRaw, resolveParticipantPhotoUrl)
-              : participantsRaw;
+            const participantsRaw = nsRows
+              .filter(portalNextSessionRowIncludeInChips)
+              .map(function(r){
+                return portalNextSessionParticipantFromTodayRow(
+                  Object.assign({}, r, { sessionDateKey: r.sessionDateKey || iso })
+                );
+              });
+            const participants = portalDedupeNextSessionParticipants(participantsRaw);
             return {
               weekday: weekday,
               dateLabel: dateLabel,
@@ -4699,29 +4787,14 @@
       const dateLabel = typeof portalFormatPortalDateDdMmYyyy === 'function'
         ? portalFormatPortalDateDdMmYyyy(info.date)
         : '';
-      const participantsRaw = rows.map(function(r){
-        const name = String(r && r.name || '').trim() || '—';
-        const clientId = String(r && r.clientId || '').trim();
-        const kind = String(r && r.kind || '').trim().toLowerCase();
-        let photoUrl = typeof resolveParticipantPhotoUrl === 'function'
-          ? resolveParticipantPhotoUrl(name, clientId)
-          : '';
-        if(!photoUrl && typeof clientPhotoUrl === 'function') photoUrl = clientPhotoUrl(name) || '';
-        const preloadUrls = typeof portalParticipantPhotoPathCandidates === 'function'
-          ? portalParticipantPhotoPathCandidates(name, photoUrl)
-          : (photoUrl ? [photoUrl] : []);
-        return {
-          name: name,
-          clientId: clientId,
-          kind: kind,
-          photoUrl: photoUrl,
-          preloadUrls: preloadUrls,
-          hasMedicalAlert: portalParticipantHasMedicalAlert(clientId, name)
-        };
-      });
-      const participants = typeof portalDedupeParticipantListEntries === 'function'
-        ? portalDedupeParticipantListEntries(participantsRaw, resolveParticipantPhotoUrl)
-        : participantsRaw;
+      const participantsRaw = rows
+        .filter(portalNextSessionRowIncludeInChips)
+        .map(function(r){
+          return portalNextSessionParticipantFromTodayRow(
+            Object.assign({}, r, { sessionDateKey: r.sessionDateKey || iso })
+          );
+        });
+      const participants = portalDedupeNextSessionParticipants(participantsRaw);
       if(typeof portalPreloadParticipantPhotoUrls === 'function'){
         const preloadAll = [];
         participants.forEach(function(p){
