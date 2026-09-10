@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260910-roberto-taps";
+  var VER = "20260910-staff-open";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260909-bismark-full",

@@ -505,23 +505,8 @@
   function syncRolePolicy() {
     if (!isWorkerDashboardPage()) return;
     try {
-      if (portalScreenshotGuardCaptureAllowed()) {
-        document.documentElement.classList.remove("portal-screenshot-guard-workers");
-        disarm();
-        return;
-      }
-      document.documentElement.classList.add("portal-screenshot-guard-workers");
-      arm({ mobileOnly: false });
-      bindWorkerSafeguardEvents();
-      var deferObserver = function () {
-        startSensitiveImageObserver();
-      };
-      if (typeof global.requestIdleCallback === "function") {
-        global.requestIdleCallback(deferObserver, { timeout: 1200 });
-      } else {
-        global.setTimeout(deferObserver, 400);
-      }
-      if (document.hidden) setWorkerSensitiveHidden(true);
+      document.documentElement.classList.remove("portal-screenshot-guard-workers");
+      disarm();
     } catch (_e11) {}
   }
 
@@ -530,8 +515,7 @@
       var mode = document.documentElement.getAttribute("data-portal-screenshot-guard");
       if (mode === "off") return;
       if (isWorkerDashboardPage()) {
-        bindRolePolicyEvents();
-        syncRolePolicy();
+        disarm();
         return;
       }
       if (mode === "all") {
