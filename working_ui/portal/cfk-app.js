@@ -349,8 +349,8 @@
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterWait"><span>Participants on waiting list</span> <input type="checkbox" id="c4kSvcFilterWait" /></label>' +
       "</div></div></details>" +
       '<section id="c4kServicesRosterAnchor" aria-label="Roster" style="min-width:0;scroll-margin-top:14px">' +
-      '<h2 class="page-title" style="font-size:1.15rem;margin:14px 0 6px;min-width:0;overflow-wrap:break-word">1 · Roster</h2>' +
-      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Standing term seats by weekday (not calendar day). Make-ups and one-offs stay in Schedule &amp; Covers / Overview. Use <strong>Open places ↓</strong> to filter live Booking seats below.</p>' +
+      '<h2 class="page-title" style="font-size:1.15rem;margin:14px 0 6px;min-width:0;overflow-wrap:break-word">1 · Roster (standing term)</h2>' +
+      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who booked each weekday seat for the term (principal instructor). Day covers and make-ups stay in Schedule &amp; Covers / Overview. Use <strong>Open places ↓</strong> to filter live Booking seats below.</p>' +
       '<div id="c4kServicesRosterRoot" style="min-width:0">' +
       rosterPart +
       "</div></section>" +

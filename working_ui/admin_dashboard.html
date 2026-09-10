@@ -149,7 +149,7 @@
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260909-reply-only" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
-  <script src="/portal/cfk-app.js?v=20260910-services-standing"></script>
+  <script src="/portal/cfk-app.js?v=20260910-services-sandra"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260906-overview-fluid"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -6850,6 +6850,74 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(id) seen[id] = true;
         dest.push(add[i]);
       }
+    }
+    /** True when a Services line is an Autumn calendar-day exception (cover / make-up / last session). */
+    function adminServiceLineIsAutumnDayException(line, standingIso){
+      var iso = String((line && (line.sessionDate || line.session_date)) || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      if(standingIso && iso === standingIso) return false;
+      /* Standing template window (summer snap) is occupancy truth for Services. */
+      if(iso >= SERVICES_STANDING_TEMPLATE_START_ISO && iso <= SERVICES_STANDING_TEMPLATE_END_ISO) return false;
+      /* Weekend standing stamps after purge (Sat/Sun climb etc.). */
+      if(iso === '2026-09-12' || iso === '2026-09-13') return false;
+      return iso >= '2026-09-01';
+    }
+    function adminServiceStaffIsJaviPalankasCover(nameOrId){
+      var s = String(nameOrId || '').trim().toLowerCase();
+      if(!s) return false;
+      if(/\bjavier\b/.test(s) && !/\bpalankas\b/.test(s)) return false;
+      return s === 'javi' || /\bjavi\b/.test(s) || /\bpalankas\b/.test(s);
+    }
+    function adminServiceStaffIsSandraPrincipal(nameOrId){
+      return /\bsandra\b/i.test(String(nameOrId || ''));
+    }
+    /**
+     * Services = one named term seat per participant on a band.
+     * Prefer standing / principal staff; drop day-cover duplicates (e.g. Javi covering Sandra).
+     */
+    function adminServicePickStandingPreferredLine(a, b, standingIso){
+      if(!a) return b;
+      if(!b) return a;
+      var aEx = adminServiceLineIsAutumnDayException(a, standingIso);
+      var bEx = adminServiceLineIsAutumnDayException(b, standingIso);
+      if(!aEx && bEx) return a;
+      if(!bEx && aEx) return b;
+      var aStaff = String(a.staffName || a.staffRosterId || '');
+      var bStaff = String(b.staffName || b.staffRosterId || '');
+      if(adminServiceStaffIsSandraPrincipal(aStaff) && adminServiceStaffIsJaviPalankasCover(bStaff)) return a;
+      if(adminServiceStaffIsSandraPrincipal(bStaff) && adminServiceStaffIsJaviPalankasCover(aStaff)) return b;
+      return a;
+    }
+    function adminServiceCollapseLinesToStandingSeats(lines, standingIso){
+      var list = Array.isArray(lines) ? lines : [];
+      var opens = [];
+      var bestByPax = {};
+      for(var i = 0; i < list.length; i++){
+        var ml = list[i];
+        if(!ml) continue;
+        if(adminServiceLineIsAutumnDayException(ml, standingIso)) continue;
+        var snm = String(ml.staffName || '').trim();
+        if(snm && adminServiceIsExcludedInstructorName(snm)) continue;
+        var pSlug = String(ml.clientSlug || '').trim().toLowerCase();
+        var isClosed = pSlug === 'closed';
+        var paxName = bookingIsBookedClientSlug(pSlug)
+          ? (String(ml.clientDisplay || '').trim() || pSlug)
+          : '';
+        if(!isClosed && !paxName){
+          opens.push(ml);
+          continue;
+        }
+        if(isClosed){
+          opens.push(ml);
+          continue;
+        }
+        var key = paxName.toLowerCase().replace(/\s+/g, ' ');
+        var prev = bestByPax[key];
+        bestByPax[key] = adminServicePickStandingPreferredLine(prev, ml, standingIso);
+      }
+      var out = opens.slice();
+      Object.keys(bestByPax).forEach(function(k){ out.push(bestByPax[k]); });
+      return out;
     }
     /** One UI row per 30-minute step from earliest to latest anchor on this day (parallel instructors share the same band). */
     function adminServiceDayVenueThirtyMinuteBands(slotsWd){
@@ -19820,6 +19888,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(filt && filt.venue && String(vn.venue) !== String(filt.venue)) return '';
           var hid = 'c4k-svc-ven-'+pidx+'-'+vix;
           var allInst = adminSlotInstancesForProgrammeVenueRange(block.programme, vn.venue, standStart, standEnd, pack, pack.notes);
+          /* Drop any Autumn calendar-day cover/make-up lines that leaked into the pack. */
+          if(allInst && allInst.length){
+            allInst = allInst.filter(function(sl){
+              return !adminServiceLineIsAutumnDayException(sl, '');
+            });
+          }
           var progNormKey = adminServiceProgrammeNormKey(block.programme);
           var isAquaticSwimFarm = adminServicesIsSwimFarmVenue(vn.venue) && progNormKey === 'aquatic';
           // SwimFarm *swimming* rota: Sundays only (Mon/Wed/Fri site days are Day Centre).
@@ -20143,7 +20217,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var maxSeats = 0;
             for(var bi = 0; bi < bandKeys.length; bi++){
               var B = bandMap[bandKeys[bi]];
-              var mergedLines = B.lines;
+              var mergedLines = adminServiceCollapseLinesToStandingSeats(B.lines, B.pickIso || pickIso0);
               if(!mergedLines.length) continue;
               for(var pli = 0; pli < mergedLines.length; pli++){
                 var pl = mergedLines[pli];
