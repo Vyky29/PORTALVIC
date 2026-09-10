@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 95;
+  var SOURCE_VERSION = 96;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -628,11 +628,11 @@
                   : "friday";
         var dayTitle = DOW_TITLE[dk] || dk;
         /*
-         * Fadi-board Thursdays (e.g. 17 Sep): DC is Office-only (Raul+Victor).
-         * Roberto/Youssef/Luliya/Michelle are standing-off empty — do not inject
-         * Fadi Cancelled seats (that forced fake day-off / COVER NEEDED paint).
+         * Fri 11 – Fri 18 reshuffled DC boards already replaced Fadi's time
+         * (Emanuel / Office / Ikram). Do not also inject the old Fadi Cancelled
+         * standing seats on those days — that paints the old Fadi card on top of DC.
          */
-        if (isFadiAbsentDcBoardIso(iso) && dow === 4) {
+        if (isFadiAbsentDcBoardIso(iso)) {
           cur.setDate(cur.getDate() + 1);
           continue;
         }

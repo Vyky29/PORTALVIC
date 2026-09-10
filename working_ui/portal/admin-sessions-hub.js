@@ -1492,7 +1492,7 @@
   function normTimeShort(v) {
     var s = String(v == null ? "" : v).trim();
     if (!s) return "";
-    var m = s.match(/(\d{1,2}):(\d{2})/);
+    var m = s.match(/(\d{1,2}):(\d{2})/) || s.match(/(\d{1,2})\.(\d{2})/);
     if (!m) return s.length >= 5 ? s.slice(0, 5) : s;
     return String(parseInt(m[1], 10)).padStart(2, "0") + ":" + m[2];
   }
