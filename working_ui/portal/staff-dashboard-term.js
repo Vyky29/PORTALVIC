@@ -394,7 +394,12 @@
           ? portalStaffFeedbackReviewUiReady(key)
           : (typeof portalStaffFeedbackPipelineReady === 'function' && portalStaffFeedbackPipelineReady());
         const overridesReadyRoster = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
-        if(!reviewReadyRoster || !overridesReadyRoster) return 'pending';
+        /* Pending count already 0 and sessions not still running. Past days must not sit
+           blue waiting on pipeline/overrides — that caused Roberto Term to flip colours. */
+        if(!reviewReadyRoster || !overridesReadyRoster){
+          if(key < todayKey) return 'complete';
+          return 'pending';
+        }
         return 'complete';
       }
       if(typeof portalTermTodayListClientFeedbackAllResolved === 'function'
@@ -405,7 +410,10 @@
         ? portalStaffFeedbackReviewUiReady(key)
         : (typeof portalStaffFeedbackPipelineReady === 'function' && portalStaffFeedbackPipelineReady());
       const overridesReady = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
-      if(!reviewReady || !overridesReady) return 'pending';
+      if(!reviewReady || !overridesReady){
+        if(key < todayKey) return 'complete';
+        return 'pending';
+      }
       if(key <= todayKey || catchUpDay) return 'late';
       return 'pending';
     }

@@ -2443,7 +2443,10 @@
       if(explicit === 'late') return 'late';
       const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
       if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'pending';
-      if(staffId && portalTermIsBeforeCurrentWeek(key) && key <= todayKey){
+      /* Past / today worked days: re-check live roster completeness even in the current
+         week. Without this, Sep 7–9 stayed blue when the map still said pending while
+         Emanuel (etc.) was already Submitted — only weeks-before-current were greened. */
+      if(staffId && key <= todayKey){
         const cur = new Date(key + 'T12:00:00');
         const isReal = function(sess){
           const st = String(sess.status || '').toLowerCase();
@@ -3598,10 +3601,36 @@
       if(id === 'termSheet'){
         syncTermCalendarColorIntro(true);
         if(typeof renderTermCalendarGrid === 'function'){
-          const paintTerm = function(){ renderTermCalendarGrid({ force: true }); };
-          if(typeof portalDeferHeavyDashboardRefresh === 'function') portalDeferHeavyDashboardRefresh(paintTerm, 0);
-          else if(typeof portalScheduleTermGridIdleRender === 'function') portalScheduleTermGridIdleRender(paintTerm, 0);
-          else paintTerm();
+          /* Wait for overrides + feedback pipeline before the first Term paint so
+             Roberto does not see cancelled-red → green/blue flip on open. */
+          const paintTerm = function(){
+            try{ if(typeof window !== 'undefined') delete window.__PORTAL_TERM_REBUILD_LAST_SIG__; }catch(_s){}
+            renderTermCalendarGrid({ force: true });
+          };
+          const termDataReady = function(){
+            try{
+              const pipe = !!(typeof dashboardData !== 'undefined' && dashboardData
+                && dashboardData.portalFeedbackPipelineReady);
+              const ovs = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
+              return pipe && ovs;
+            }catch(_r){ return false; }
+          };
+          if(termDataReady()){
+            if(typeof portalDeferHeavyDashboardRefresh === 'function') portalDeferHeavyDashboardRefresh(paintTerm, 0);
+            else if(typeof portalScheduleTermGridIdleRender === 'function') portalScheduleTermGridIdleRender(paintTerm, 0);
+            else paintTerm();
+          }else{
+            let tries = 0;
+            const waitReady = function(){
+              tries += 1;
+              if(termDataReady() || tries >= 16){
+                paintTerm();
+                return;
+              }
+              setTimeout(waitReady, 150);
+            };
+            waitReady();
+          }
         }
       }
       if(id === 'clientsSheet'){
