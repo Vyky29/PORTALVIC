@@ -385,7 +385,6 @@
     var headVenues = "";
     groups.forEach(function (g) {
       var st = g.style || "default";
-      var under = venueServiceUnderName(st);
       headVenues +=
         '<th colspan="' +
         (Number(g.span) || 1) +
@@ -393,14 +392,8 @@
         esc(st) +
         ' ttl-v-start"><span class="ttl-head">' +
         icoVenue(st) +
-        '<span class="ttl-head__stack"><span class="ttl-head__venue">' +
+        "<span>" +
         esc(g.venue || "") +
-        "</span>" +
-        (under
-          ? '<span class="ttl-head__svc">' + esc(under) + "</span>"
-          : String(st).indexOf("swimfarm") >= 0
-            ? '<span class="ttl-head__svc">Bespoke · Day Centre</span>'
-            : "") +
         "</span></span></th>";
     });
 
