@@ -1303,12 +1303,20 @@
           span: run,
           style: g.style || "default",
           start: i === 0,
+          svcStart: true,
         });
         i += run;
       }
       col += span;
     });
     return segs;
+  }
+
+  function serviceSlug(label) {
+    return String(label || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
   }
 
   function serviceSortRank(svc, venueStyle) {
@@ -1406,12 +1414,15 @@
     });
     html += "</tr><tr>";
     svcSegs.forEach(function (seg) {
+      var slug = serviceSlug(seg.label);
       html +=
         '<th colspan="' +
         seg.span +
         '" class="asr-svc asr-venue--' +
         esc(seg.style) +
         (seg.start ? " asr-venue-start" : "") +
+        (seg.svcStart && !seg.start ? " asr-svc-start" : "") +
+        (slug ? " asr-svc--" + esc(slug) : "") +
         '">' +
         esc(seg.label || "") +
         "</th>";
@@ -1426,10 +1437,16 @@
         "</td>";
       (dr.cells || []).forEach(function (cell, idx) {
         var lab = labels[idx] || { style: "default", idx: 0 };
+        var svcSlug = serviceSlug(columnServices[idx] || "");
+        var prevSlug = idx > 0 ? serviceSlug(columnServices[idx - 1] || "") : "";
         var tdCls =
           "asr-venue-body--" +
           esc(lab.style || "default") +
-          (lab.idx === 0 ? " asr-venue-start" : "");
+          (lab.idx === 0 ? " asr-venue-start" : "") +
+          (svcSlug && String(lab.style || "").indexOf("swimfarm") >= 0
+            ? " asr-sf-svc--" + esc(svcSlug)
+            : "") +
+          (svcSlug && prevSlug && svcSlug !== prevSlug ? " asr-svc-start" : "");
         if (sf !== "all" && !cellMatchesServiceFilter(cell, sf)) {
           html += '<td class="' + tdCls + ' asr-cell--muted-filter">—</td>';
           return;

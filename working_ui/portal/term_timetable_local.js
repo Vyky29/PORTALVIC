@@ -211,12 +211,20 @@
           span: run,
           style: g.style || "default",
           start: i === 0,
+          svcStart: true,
         });
         i += run;
       }
       col += span;
     });
     return segs;
+  }
+
+  function serviceSlug(label) {
+    return String(label || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
   }
 
   /** SwimFarm: swimming instructors (Bespoke) together, then support (Day Centre). */
@@ -399,12 +407,15 @@
 
     var headServices = "";
     svcSegs.forEach(function (seg) {
+      var slug = serviceSlug(seg.label);
       headServices +=
         '<th colspan="' +
         seg.span +
         '" class="ttl-svc ttl-v--' +
         esc(seg.style) +
         (seg.start ? " ttl-v-start" : "") +
+        (seg.svcStart && !seg.start ? " ttl-svc-start" : "") +
+        (slug ? " ttl-svc--" + esc(slug) : "") +
         '">' +
         esc(seg.label || "") +
         "</th>";
@@ -416,10 +427,16 @@
         var tds = labels
           .map(function (lab, i) {
             var cell = cells[i] || { text: "", editKey: "" };
+            var svcSlug = serviceSlug(columnServices[i] || "");
+            var prevSlug = i > 0 ? serviceSlug(columnServices[i - 1] || "") : "";
             var tdCls =
               "ttl-v-body--" +
               esc(lab.style || "default") +
-              (lab.idx === 0 ? " ttl-v-start" : "");
+              (lab.idx === 0 ? " ttl-v-start" : "") +
+              (svcSlug && String(lab.style || "").indexOf("swimfarm") >= 0
+                ? " ttl-sf-svc--" + esc(svcSlug)
+                : "") +
+              (svcSlug && prevSlug && svcSlug !== prevSlug ? " ttl-svc-start" : "");
             if (state.service !== "all" && !cellMatchesService(cell, state.service)) {
               return '<td class="' + tdCls + ' ttl-muted">—</td>';
             }

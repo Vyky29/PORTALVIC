@@ -337,6 +337,19 @@
 .asr-hours td.asr-venue-body--acton { background: #f0fdf4; }
 .asr-hours td.asr-venue-body--swimfarm { background: #fdf2f8; }
 .asr-hours td.asr-venue-body--swimfarm-ma { background: #faf5ff; }
+.asr-hours th.asr-svc--bespoke {
+  background: #f472b6 !important;
+  color: #831843 !important;
+}
+.asr-hours th.asr-svc--day-centre {
+  background: #fda4af !important;
+  color: #9f1239 !important;
+}
+.asr-hours td.asr-sf-svc--bespoke { background: #fce7f3 !important; }
+.asr-hours td.asr-sf-svc--day-centre { background: #fff1f2 !important; }
+.asr-hours .asr-svc-start {
+  border-left: 3px solid #be185d;
+}
 .asr-hours td.asr-venue-body--default { background: #f8fafc; }
 .asr-hours td.asr-venue-start,
 .asr-hours th.asr-venue-start {
