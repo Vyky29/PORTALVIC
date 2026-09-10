@@ -28541,7 +28541,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var b = adminPortalNormalizedPersonName(clientRecordName);
       if(!a || !b) return false;
       if(a === b) return true;
-      if(a.indexOf(b) === 0 || b.indexOf(a) === 0) return true;
+      /* Prefix only at a word boundary: "joel hibbert" may match "joel", but "joel" must NOT match "joelle". */
+      function prefixAtWordBoundary(shortN, longN){
+        if(!shortN || !longN || longN.indexOf(shortN) !== 0) return false;
+        if(longN.length === shortN.length) return true;
+        return longN.charAt(shortN.length) === ' ';
+      }
+      if(a.length <= b.length){
+        if(prefixAtWordBoundary(a, b)) return true;
+      }else if(prefixAtWordBoundary(b, a)){
+        return true;
+      }
       var af = a.split(' ')[0];
       var bf = b.split(' ')[0];
       return !!(af && bf && af === bf && af.length >= 2);
