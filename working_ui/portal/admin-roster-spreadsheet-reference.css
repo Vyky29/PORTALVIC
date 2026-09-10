@@ -381,11 +381,33 @@
   min-width: 0;
   overflow-wrap: break-word;
 }
+.asr-head__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 0;
+  line-height: 1.15;
+}
+.asr-head__venue { font-weight: 800; }
+.asr-head__svc {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.92;
+  overflow-wrap: break-word;
+}
 .asr-ico {
   width: 14px;
   height: 14px;
   flex: 0 0 auto;
   opacity: 0.9;
+}
+.asr-hours th.asr-svc {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 .asr-hours-day-section {
   margin: 0 0 28px;

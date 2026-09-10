@@ -1233,6 +1233,84 @@
     return labels;
   }
 
+  function venueServiceUnderName(style) {
+    var st = String(style || "");
+    if (st === "northolt" || st === "acton") return "Aquatic Activity";
+    if (st === "westway") return "Climbing Activity";
+    return "";
+  }
+
+  function columnServiceFromCell(venueStyle, cell) {
+    var st = String(venueStyle || "");
+    if (st === "northolt" || st === "acton") return "Aquatic Activity";
+    if (st === "westway") return "Climbing Activity";
+    if (st.indexOf("swimfarm") < 0) return venueServiceUnderName(st) || "";
+    var band = String((cell && cell.band) || "")
+      .toLowerCase()
+      .trim();
+    var text = String((cell && cell.text) || "");
+    if (/\b4\.15\s*-\s*6\.15\b/.test(text) || /\b4\.15-6\.15\b/.test(text)) {
+      return "Bespoke";
+    }
+    if (band === "bespoke") return "Bespoke";
+    if (band === "day_centre" || band === "dc") return "Day Centre";
+    if (band === "pool" && /4\.15/.test(text)) return "Bespoke";
+    if (band === "pool" || band === "other" || !band) return "Day Centre";
+    return "Day Centre";
+  }
+
+  function inferColumnServices(groups, dates) {
+    var labels = flattenHoursVenueLabels(groups);
+    return labels.map(function (lab, i) {
+      var counts = Object.create(null);
+      (dates || []).forEach(function (dr) {
+        var cell = (dr.cells || [])[i];
+        if (!cell) return;
+        var raw = String(cell.text || "").trim();
+        if (!raw && !(cell.band || "").trim()) return;
+        var svc = columnServiceFromCell(lab.style, cell);
+        if (!svc) return;
+        counts[svc] = (counts[svc] || 0) + 1;
+      });
+      var best = "";
+      var bestN = 0;
+      Object.keys(counts).forEach(function (k) {
+        if (counts[k] > bestN) {
+          bestN = counts[k];
+          best = k;
+        }
+      });
+      if (best) return best;
+      return (
+        venueServiceUnderName(lab.style) ||
+        (String(lab.style || "").indexOf("swimfarm") >= 0 ? "Day Centre" : "")
+      );
+    });
+  }
+
+  function serviceHeaderSegments(groups, columnServices) {
+    var segs = [];
+    var col = 0;
+    (groups || []).forEach(function (g) {
+      var span = Number(g.span) || 1;
+      var i = 0;
+      while (i < span) {
+        var svc = columnServices[col + i] || "";
+        var run = 1;
+        while (i + run < span && columnServices[col + i + run] === svc) run += 1;
+        segs.push({
+          label: svc,
+          span: run,
+          style: g.style || "default",
+          start: i === 0,
+        });
+        i += run;
+      }
+      col += span;
+    });
+    return segs;
+  }
+
   function renderHoursTableHtml(groups, dates, blockTitle, serviceFilter) {
     if (!groups.length) {
       return '<p class="muted">No columns.</p>';
@@ -1248,6 +1326,8 @@
       return '<p class="muted">No assignments for this service on the selected day.</p>';
     }
     var labels = flattenHoursVenueLabels(groups);
+    var columnServices = inferColumnServices(groups, dates);
+    var svcSegs = serviceHeaderSegments(groups, columnServices);
     var html = "";
     if (blockTitle) {
       html += '<p class="asr-hours-block__title">' + esc(blockTitle) + "</p>";
@@ -1259,6 +1339,7 @@
       "<span>Dates</span></span></th>";
     groups.forEach(function (g) {
       var st = g.style || "default";
+      var under = venueServiceUnderName(st);
       html +=
         '<th colspan="' +
         g.span +
@@ -1266,20 +1347,27 @@
         esc(st) +
         ' asr-venue-start"><span class="asr-head">' +
         asrIcoVenue(st) +
-        "<span>" +
+        '<span class="asr-head__stack"><span class="asr-head__venue">' +
         esc(g.venue) +
+        "</span>" +
+        (under
+          ? '<span class="asr-head__svc">' + esc(under) + "</span>"
+          : String(st).indexOf("swimfarm") >= 0
+            ? '<span class="asr-head__svc">Day Centre · Bespoke</span>'
+            : "") +
         "</span></span></th>";
     });
     html += "</tr><tr>";
-    groups.forEach(function (g) {
-      var st = g.style || "default";
-      for (var i = 0; i < g.span; i++) {
-        html +=
-          '<th class="asr-venue--' +
-          esc(st) +
-          (i === 0 ? " asr-venue-start" : "") +
-          '"> </th>';
-      }
+    svcSegs.forEach(function (seg) {
+      html +=
+        '<th colspan="' +
+        seg.span +
+        '" class="asr-svc asr-venue--' +
+        esc(seg.style) +
+        (seg.start ? " asr-venue-start" : "") +
+        '">' +
+        esc(seg.label || "") +
+        "</th>";
     });
     html += "</tr></thead><tbody>";
     filteredDates.forEach(function (dr) {

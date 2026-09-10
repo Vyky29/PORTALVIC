@@ -154,14 +154,28 @@
       font-weight: 800;
       letter-spacing: 0.02em;
     }
-    .ttl-head {
-      display: inline-flex;
+    .ttl-head__stack {
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
-      max-width: 100%;
+      gap: 1px;
       min-width: 0;
+      line-height: 1.15;
+    }
+    .ttl-head__venue { font-weight: 800; }
+    .ttl-head__svc {
+      font-size: 10px;
+      font-weight: 700;
+      opacity: 0.92;
       overflow-wrap: break-word;
+    }
+    .ttl-svc {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      padding-top: 4px !important;
+      padding-bottom: 4px !important;
     }
     .ttl-ico {
       width: 14px;
@@ -389,7 +403,7 @@
 
   <script src="/portal/autumn_staff_hours_reference.js?v=20260909-local-tt"></script>
   <script src="/portal/portal_roster_canonical.js?v=20260909-fadi-dc-11-18"></script>
-  <script src="/portal/term_timetable_local.js?v=20260910-who-booked-venues"></script>
+  <script src="/portal/term_timetable_local.js?v=20260910-svc-labels"></script>
   <script>
     if (window.TermTimetableLocal) window.TermTimetableLocal.boot();
   </script>

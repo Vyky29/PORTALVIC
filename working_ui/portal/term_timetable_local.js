@@ -142,6 +142,83 @@
     return labels;
   }
 
+  function venueServiceUnderName(style) {
+    var st = String(style || "");
+    if (st === "northolt" || st === "acton") return "Aquatic Activity";
+    if (st === "westway") return "Climbing Activity";
+    return "";
+  }
+
+  function columnServiceFromCell(venueStyle, cell) {
+    var st = String(venueStyle || "");
+    if (st === "northolt" || st === "acton") return "Aquatic Activity";
+    if (st === "westway") return "Climbing Activity";
+    if (st.indexOf("swimfarm") < 0) return venueServiceUnderName(st) || "";
+    var band = String((cell && cell.band) || "")
+      .toLowerCase()
+      .trim();
+    var text = String((cell && cell.text) || "");
+    if (/\b4\.15\s*-\s*6\.15\b/.test(text) || /\b4\.15-6\.15\b/.test(text)) {
+      return "Bespoke";
+    }
+    if (band === "bespoke") return "Bespoke";
+    if (band === "day_centre" || band === "dc") return "Day Centre";
+    if (band === "pool" && /4\.15/.test(text)) return "Bespoke";
+    if (band === "pool" || band === "other" || !band) return "Day Centre";
+    return "Day Centre";
+  }
+
+  /** Majority service label per column (from dated cells). */
+  function inferColumnServices(groups, dates) {
+    var labels = flattenVenueLabels(groups);
+    return labels.map(function (lab, i) {
+      var counts = Object.create(null);
+      (dates || []).forEach(function (dr) {
+        var cell = (dr.cells || [])[i];
+        if (!cell) return;
+        var raw = String(cell.text || "").trim();
+        if (!raw && !(cell.band || "").trim()) return;
+        var svc = columnServiceFromCell(lab.style, cell);
+        if (!svc) return;
+        counts[svc] = (counts[svc] || 0) + 1;
+      });
+      var best = "";
+      var bestN = 0;
+      Object.keys(counts).forEach(function (k) {
+        if (counts[k] > bestN) {
+          bestN = counts[k];
+          best = k;
+        }
+      });
+      if (best) return best;
+      return venueServiceUnderName(lab.style) ||
+        (String(lab.style || "").indexOf("swimfarm") >= 0 ? "Day Centre" : "");
+    });
+  }
+
+  function serviceHeaderSegments(groups, columnServices) {
+    var segs = [];
+    var col = 0;
+    (groups || []).forEach(function (g) {
+      var span = Number(g.span) || 1;
+      var i = 0;
+      while (i < span) {
+        var svc = columnServices[col + i] || "";
+        var run = 1;
+        while (i + run < span && columnServices[col + i + run] === svc) run += 1;
+        segs.push({
+          label: svc,
+          span: run,
+          style: g.style || "default",
+          start: i === 0,
+        });
+        i += run;
+      }
+      col += span;
+    });
+    return segs;
+  }
+
   function icoCalendar() {
     return (
       '<svg class="ttl-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
@@ -246,9 +323,13 @@
       });
     });
 
+    var columnServices = inferColumnServices(groups, dates);
+    var svcSegs = serviceHeaderSegments(groups, columnServices);
+
     var headVenues = "";
     groups.forEach(function (g) {
       var st = g.style || "default";
+      var under = venueServiceUnderName(st);
       headVenues +=
         '<th colspan="' +
         (Number(g.span) || 1) +
@@ -256,9 +337,28 @@
         esc(st) +
         ' ttl-v-start"><span class="ttl-head">' +
         icoVenue(st) +
-        "<span>" +
+        '<span class="ttl-head__stack"><span class="ttl-head__venue">' +
         esc(g.venue || "") +
+        "</span>" +
+        (under
+          ? '<span class="ttl-head__svc">' + esc(under) + "</span>"
+          : String(st).indexOf("swimfarm") >= 0
+            ? '<span class="ttl-head__svc">Day Centre · Bespoke</span>'
+            : "") +
         "</span></span></th>";
+    });
+
+    var headServices = "";
+    svcSegs.forEach(function (seg) {
+      headServices +=
+        '<th colspan="' +
+        seg.span +
+        '" class="ttl-svc ttl-v--' +
+        esc(seg.style) +
+        (seg.start ? " ttl-v-start" : "") +
+        '">' +
+        esc(seg.label || "") +
+        "</th>";
     });
 
     var rowsHtml = filtered
@@ -319,10 +419,12 @@
       filtered.length +
       " dates in Autumn term (1 Sep – 17 Dec) · click a cell to edit locally</p>" +
       '<div class="ttl-scroll"><table class="ttl-hours">' +
-      "<thead><tr><th class=\"ttl-date\"><span class=\"ttl-head\">" +
+      "<thead><tr><th class=\"ttl-date\" rowspan=\"2\"><span class=\"ttl-head\">" +
       icoCalendar() +
       "<span>Dates</span></span></th>" +
       headVenues +
+      "</tr><tr>" +
+      headServices +
       "</tr></thead><tbody>" +
       rowsHtml +
       "</tbody></table></div>"
