@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 86;
+  var SOURCE_VERSION = 87;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1196,12 +1196,14 @@
     var iso = "2026-09-10";
     function mapBook(staff, slots) {
       return slots.map(function (slot) {
+        var area = "Lane (DE)";
+        if (/^joelle\b/i.test(String(slot.name || ""))) area = "Teaching Pool";
         return {
           client_name: slot.name,
           day: "Thursday",
           instructors: staff,
           service: "Aquatic Activity",
-          area: "Lane (DE)",
+          area: area,
           time_slot: slot.time,
           venue: "Acton",
           session_date: iso,
@@ -2258,7 +2260,7 @@
     /* Yassir last session Thu 10 Sep — standing open from Thu 17 (dated row keeps today). */
     { staff: "ROBERTO", name: "No participant", time: "4.30 to 5", area: "Teaching Pool" },
     { staff: "ROBERTO", name: "Yossi", time: "5 to 5.30", area: "Lane (DE)" },
-    { staff: "ROBERTO", name: "Yunis", time: "5.30 to 6", area: "Teaching Pool" },
+    { staff: "ROBERTO", name: "Yunis", time: "5.30 to 6", area: "Lane (SE)" },
     { staff: "ROBERTO", name: "Maiyar", time: "6 to 6.30", area: "Lane (DE)" },
     { staff: "SIMON", name: "Elijah", time: "4 to 4.30", area: "Teaching Pool" },
     { staff: "SIMON", name: "No participant", time: "4.30 to 5", area: "Teaching Pool" },
