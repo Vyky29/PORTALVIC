@@ -2633,6 +2633,8 @@
       let attrs = ' data-action="open-roster-override-attention" data-portal-override-id="' + id + '" data-portal-override-nav-iso="' + iso + '"';
       if(item && Array.isArray(item._cancelledDismissIds) && item._cancelledDismissIds.length){
         attrs += ' data-portal-override-dismiss-all="' + escapeHtml(JSON.stringify(item._cancelledDismissIds)) + '"';
+      }else if(item && Array.isArray(item._scheduleChangeDismissIds) && item._scheduleChangeDismissIds.length){
+        attrs += ' data-portal-override-dismiss-all="' + escapeHtml(JSON.stringify(item._scheduleChangeDismissIds)) + '"';
       }else if(item && Array.isArray(item._shadowingDismissIds) && item._shadowingDismissIds.length){
         attrs += ' data-portal-override-dismiss-all="' + escapeHtml(JSON.stringify(item._shadowingDismissIds)) + '"';
       }
@@ -3332,9 +3334,53 @@
       });
       return rest;
     }
+    /** One Schedule Changed card per day — hide per-slot Hub noise. */
+    function portalCollapseScheduleChangeByDate(items){
+      if(!items || !items.length) return items || [];
+      const byIso = Object.create(null);
+      const rest = [];
+      for(let i = 0; i < items.length; i++){
+        const it = items[i];
+        if(String(it && it.kind || '') !== 'other'){
+          rest.push(it);
+          continue;
+        }
+        const title = String(it && it.title || '').trim();
+        if(title.indexOf('Schedule change') !== 0){
+          rest.push(it);
+          continue;
+        }
+        const iso = String(it.iso || '').trim();
+        if(!iso){
+          rest.push(it);
+          continue;
+        }
+        if(!byIso[iso]) byIso[iso] = { item: it, dismissIds: [] };
+        const did = String(it.id || '').trim();
+        if(did) byIso[iso].dismissIds.push(did);
+      }
+      Object.keys(byIso).sort().forEach(function(iso){
+        const pack = byIso[iso];
+        const da = Number(String(iso).slice(8, 10)) || 0;
+        let ord = 'th';
+        if(typeof portalOverrideOrdinalDaySuffix === 'function' && da){
+          ord = String(portalOverrideOrdinalDaySuffix(da) || '').replace(/^\d+/, '').toLowerCase() || 'th';
+        }
+        rest.push({
+          id: 'schedule-changed-day:' + iso,
+          iso: iso,
+          title: 'Schedule Changed (' + da + ord + ')',
+          sub: '',
+          kind: 'other',
+          _scheduleChangeDismissIds: pack.dismissIds.slice()
+        });
+      });
+      return rest;
+    }
     function portalFinalizeOverrideQuickMenuItems(items, dayIso){
       let out = portalDedupeAbsentOverrideQuickMenuItems(items || []);
       out = portalDedupeScheduleChangeOverrideQuickMenuItems(out);
+      out = portalCollapseScheduleChangeByDate(out);
       out = portalCollapseNewShiftOverrideQuickMenuItems(out);
       out = portalCollapseShadowingOverrideQuickMenuItems(out);
       out = portalCollapseShiftCancelledOverrideQuickMenuItems(out);
@@ -3376,6 +3422,11 @@
           if(!r || !portalScheduleOverrideRowAppliesToLoggedInStaff(r)) continue;
           const iso = normaliseIsoDate(r.session_date);
           if(!iso || typeof portalOverrideRowIsWithinReminderHorizonSessionDate !== 'function' || !portalOverrideRowIsWithinReminderHorizonSessionDate(iso)) continue;
+          /* Off that day: do not surface Admin Changes for what happens while away. */
+          try{
+            const awaySid = typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '';
+            if(awaySid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, awaySid)) continue;
+          }catch(_){}
           if(String(r.override_type || '') === 'slot_open') continue;
           if(String(r.override_type || '') === 'client_absence_announced'){
             const slotKey = portalOverrideAbsentQuickMenuSlotKey(r);
@@ -3400,6 +3451,10 @@
           if(seen[rid]) continue;
           const qiso = normaliseIsoDate(q.iso);
           if(!qiso || typeof portalOverrideRowIsWithinReminderHorizonSessionDate !== 'function' || !portalOverrideRowIsWithinReminderHorizonSessionDate(qiso)) continue;
+          try{
+            const awaySidQ = typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '';
+            if(awaySidQ && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(qiso, awaySidQ)) continue;
+          }catch(_){}
           seen[rid] = true;
           if(!byIso[qiso]) byIso[qiso] = [];
           byIso[qiso].push({
@@ -3420,6 +3475,10 @@
         for(let hi = 0; hi < hostItems.length; hi++){
           const pack = hostItems[hi];
           const iso = pack.iso;
+          try{
+            const awaySidH = typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '';
+            if(awaySidH && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, awaySidH)) continue;
+          }catch(_){}
           if(!byIso[iso]) byIso[iso] = [];
           byIso[iso].push(pack);
         }

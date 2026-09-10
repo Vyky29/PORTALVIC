@@ -4014,7 +4014,7 @@
       }
       if(sid === 'berta'){
         return [
-          { weekdays: ['Sunday'], serviceKeys: ['multi'], venues: ['swimfarm'], leadTeamBanner: true }
+          { weekdays: ['Sunday'], serviceKeys: ['multi', 'aquatic'], venues: ['swimfarm'], programmeWideRoster: true, leadTeamBanner: true }
         ];
       }
       if(sid === 'michelle'){
@@ -4203,7 +4203,16 @@
       var iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
       if(!iso) return null;
       if(typeof portalStaffProgrammeLeadWideCardsExpected === 'function'
-        && portalStaffProgrammeLeadWideCardsExpected(sid, iso)) return null;
+        && portalStaffProgrammeLeadWideCardsExpected(sid, iso)){
+        /* Prefer shift panel over a blank "No sessions" when wide cards did not resolve. */
+        var wideTeam = null;
+        try{
+          if(typeof window.portalLeadTeamOnShiftForIso === 'function'){
+            wideTeam = window.portalLeadTeamOnShiftForIso(iso);
+          }
+        }catch(_){}
+        if(!(wideTeam && wideTeam.members && wideTeam.members.length)) return null;
+      }
       var dayWord = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
       if(typeof portalCalendarIsoUsesSummerDatedRosterOnly === 'function'
         && portalCalendarIsoUsesSummerDatedRosterOnly(iso)
@@ -4281,7 +4290,12 @@
           if(portalStaffIsProgrammeLeadRosterKey(sid)
             && typeof portalStaffProgrammeLeadWideCardsExpected === 'function'
             && portalStaffProgrammeLeadWideCardsExpected(sid, iso)){
-            return todayRows.length ? 'empty' : 'sync';
+            if(todayRows.length) return 'empty';
+            if(typeof portalStaffTodayLeadShiftPanelMeta === 'function'
+              && portalStaffTodayLeadShiftPanelMeta(sid)){
+              return 'shift';
+            }
+            return 'empty';
           }
           if(portalStaffIsProgrammeLeadRosterKey(sid)
             && typeof portalStaffTodayLeadShiftPanelMeta === 'function'
@@ -4711,7 +4725,14 @@
             if(liveToday && id && portalStaffIsProgrammeLeadRosterKey(id)
               && typeof portalStaffProgrammeLeadWideCardsExpected === 'function'
               && portalStaffProgrammeLeadWideCardsExpected(id, selectedIso)){
-              dashboardData.portalTodayEmptyPanelMode = rows.length ? 'empty' : 'sync';
+              if(rows.length){
+                dashboardData.portalTodayEmptyPanelMode = 'empty';
+              }else if(typeof portalStaffTodayLeadShiftPanelMeta === 'function'
+                && portalStaffTodayLeadShiftPanelMeta(id)){
+                dashboardData.portalTodayEmptyPanelMode = 'shift';
+              }else{
+                dashboardData.portalTodayEmptyPanelMode = 'empty';
+              }
             }else if(liveToday && id && portalStaffIsProgrammeLeadRosterKey(id)
               && typeof portalStaffTodayLeadShiftPanelMeta === 'function'
               && portalStaffTodayLeadShiftPanelMeta(id)){
@@ -4784,6 +4805,12 @@
         dashboardData.today = [];
         portalApplyTodayVenueMeta();
         return [];
+      }
+      if(!liveToday && id && selectedIso && !rows.length && !todayOff
+        && portalStaffIsProgrammeLeadRosterKey(id)
+        && typeof portalStaffTodayLeadShiftPanelMeta === 'function'
+        && portalStaffTodayLeadShiftPanelMeta(id)){
+        dashboardData.portalTodayEmptyPanelMode = 'shift';
       }
       if(showLiveEmptyPanel){
         if(!rosterReady){

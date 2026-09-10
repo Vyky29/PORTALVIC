@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260906-berta-sun-aquatic";
+} from "./portal_lead_session_scope.js?v=20260910-berta-off-alerts";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -621,9 +621,27 @@ export function portalLeadTeamShiftContext() {
   return { profile, email, leadKey, scopes };
 }
 
+function leadViewerAwayOnIso(leadKey, iso) {
+  const day = String(iso || "").trim().slice(0, 10);
+  const lk = normKey(leadKey);
+  if (!lk || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  try {
+    if (typeof window !== "undefined" && typeof window.portalTermStaffAwayOnDate === "function") {
+      if (window.portalTermStaffAwayOnDate(day, lk)) return true;
+    }
+    if (typeof window !== "undefined" && typeof window.portalStaffHasRequestedTimeOffOnDate === "function") {
+      if (window.portalStaffHasRequestedTimeOffOnDate(day, lk)) return true;
+    }
+  } catch (_) {}
+  return false;
+}
+
 export function portalLeadTeamOnShiftForIso(iso, ctx) {
   ctx = ctx || portalLeadTeamShiftContext();
   if (!ctx || !iso) return null;
+
+  /* Day off / time-off requested: lead must not see team or absents for that day. */
+  if (leadViewerAwayOnIso(ctx.leadKey, iso)) return null;
 
   const dayKind = portalLeadTeamDayKind(ctx, iso);
   if (!dayKind) return null;
@@ -885,6 +903,7 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
     if (String(ov.status || "active") !== "active") return;
     const iso = String(ov.session_date || "").slice(0, 10);
     if (!iso) return;
+    if (leadViewerAwayOnIso(ctx.leadKey, iso)) return;
     if (isLeadTeamShiftDayDismissed(iso)) return;
     const ovId = String(ov.id || "").trim();
     if (ovId && seenOverrideIds.has(ovId)) return;
