@@ -87,7 +87,7 @@
     "source": "staff_dashboard_spreadsheet_bundle.js + clients_info_embed.js",
     "termTo": "2026-07-31",
     "approved": false,
-    "revision": 549,
+    "revision": 559,
     "seededAt": "2026-06-22T13:36:19.674296+00:00",
     "services": [
       "Aquatic Activity",
@@ -147,9 +147,9 @@
     "lastEditedAt": "2026-07-19T22:53:34.928Z",
     "revisionNote": "Jul 1 Ikram 11–3 cancelled (paid) for Luliya + Michelle",
     "schemaVersion": 2,
-    "lastLiveFoldAt": "2026-09-10T11:54:20.130Z",
+    "lastLiveFoldAt": "2026-09-10T13:23:55.350Z",
     "staffShiftsNote": "Turnos pool/day centre por fecha. Editar en pestaña Staff del editor MADRE o plegar overrides desde portal_madre_fold_queue.",
-    "lastLiveFoldNote": "office_sync:Autumn standing Places align Tue twins + Northolt + Sun climb 2026-09-10",
+    "lastLiveFoldNote": "office:autumn pool notes from july-vs-autumn snap 2026-09-10",
     "staffShiftsSource": "staff_timetable_machine.json",
     "raulVictorRotation": {
       "to": "2026-07-17",
@@ -14474,28 +14474,28 @@
                   "instructors": "AURORA"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "4.30 to 5.30",
                   "client_name": "Aqsa",
                   "instructors": "AURORA"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "5.30 to 6",
                   "client_name": "Joelle",
                   "instructors": "AURORA"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "6 to 6.30",
                   "client_name": "Joelle",
                   "instructors": "AURORA"
@@ -14788,10 +14788,10 @@
             {
               "slots": [
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "4 to 5",
                   "client_name": "Cyrus",
                   "instructors": "JAVIER"
@@ -14830,19 +14830,19 @@
             {
               "slots": [
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "4 to 5",
                   "client_name": "Ayman",
                   "instructors": "JAVIER"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "5 to 5.30",
                   "client_name": "Khalid Ab",
                   "instructors": "JAVIER"
@@ -15345,10 +15345,10 @@
                   "instructors": "ROBERTO"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "4 to 5.30",
                   "client_name": "Adam P",
                   "instructors": "ROBERTO"
@@ -15471,10 +15471,10 @@
                   "instructors": "ROBERTO"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "4 to 4.30",
                   "client_name": "Tom",
                   "instructors": "ROBERTO"
@@ -15498,10 +15498,10 @@
                   "instructors": "ROBERTO"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "5.30 to 6",
                   "client_name": "Yunis Hussein",
                   "instructors": "ROBERTO"
@@ -15601,10 +15601,10 @@
             {
               "slots": [
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "4 to 4.30",
                   "client_name": "Elijah",
                   "instructors": "SIMON"
@@ -15619,19 +15619,19 @@
                   "instructors": "SIMON"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "5 to 5.30",
                   "client_name": "Yuri",
                   "instructors": "SIMON"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "5.30 to 6",
                   "client_name": "Joelle",
                   "instructors": "SIMON"
@@ -15815,10 +15815,10 @@
                   "instructors": "YOUSSEF"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "4.30 to 5.30",
                   "client_name": "Stephanie",
                   "instructors": "YOUSSEF"
@@ -15914,10 +15914,10 @@
                   "instructors": "YOUSSEF"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "10.30 to 11",
                   "client_name": "Emani",
                   "instructors": "YOUSSEF"
@@ -15941,10 +15941,10 @@
                   "instructors": "YOUSSEF"
                 },
                 {
-                  "area": "Lane (DE)",
+                  "area": "Teaching Pool",
                   "venue": "Acton",
                   "service": "Aquatic Activity",
-                  "pool_note": "Lane (DE)",
+                  "pool_note": "Teaching Pool",
                   "time_slot": "12 to 12.30",
                   "client_name": "Saaib",
                   "instructors": "YOUSSEF"
@@ -22233,6 +22233,8 @@
     "rev 546: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)",
     "rev 547: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)",
     "rev 548: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)",
-    "rev 549: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)"
+    "rev 549: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)",
+    "rev 558: Autumn pool/area notes sync from office HTML corrections (standing week)",
+    "rev 559: Autumn pool/area notes sync from office HTML corrections (standing week)"
   ]
 }
