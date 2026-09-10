@@ -128,8 +128,8 @@
       ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:28px;min-width:0;scroll-margin-top:14px;border-top:1px solid var(--line,#e5e7eb);padding-top:16px">' +
         '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">3 · Live open places (Booking Portal)</h2>' +
         '<p class="page-intro" style="max-width:52rem;margin:0 0 12px;min-width:0;overflow-wrap:break-word">' +
-        "Public seats still free (capacity / taken / free — no names). Same source as the Booking Portal. " +
-        "Use <strong>Place existing</strong> or <strong>Place new</strong> on a free band. Filters follow Services above." +
+        "Public seats still free on standing bands (capacity / taken / free — no names). Same source as the Booking Portal. " +
+        "Use <strong>Place existing</strong> or <strong>Place new</strong> on a free band. Day make-ups do not change this board." +
         "</p>"
       : '<div class="page-head" style="min-width:0">' +
         '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Open places 2026/27</h2>' +

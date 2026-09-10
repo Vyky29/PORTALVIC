@@ -14,7 +14,7 @@
   var PRODUCT_NAME = "CFK";
   var PAGE_TITLE = "Services";
   var PAGE_INTRO =
-    "One place for Autumn 26/27: (1) roster — who’s booked and teaching, (2) fill open roster lines with Assign, (3) live Booking Portal seats with Place. Covers stay in Scheduling.";
+    "Autumn 26/27 term board: (1) standing roster — who booked each weekday seat, (2) Assign on open lines, (3) live Booking Portal places. Make-ups and day covers stay in Scheduling.";
 
   var deps = {
     $: function (id) {
@@ -321,7 +321,7 @@
       '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class, instructor or participant</summary>' +
       '<div class="c4k-svc-filters__body">' +
       '<div class="c4k-svc-filters__grid">' +
-      '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterDay">Day</label>' +
+      '<div class="c4k-svc-filters__field"><label class="c4k-svc-filters__lbl" for="c4kSvcFilterDay">Weekday</label>' +
       '<select class="sel c4k-svc-filters__sel" id="c4kSvcFilterDay" aria-label="Filter by weekday">' +
       '<option value="">Any day</option>' +
       '<option value="monday">Monday</option><option value="tuesday">Tuesday</option><option value="wednesday">Wednesday</option>' +
@@ -350,7 +350,7 @@
       "</div></div></details>" +
       '<section id="c4kServicesRosterAnchor" aria-label="Roster" style="min-width:0;scroll-margin-top:14px">' +
       '<h2 class="page-title" style="font-size:1.15rem;margin:14px 0 6px;min-width:0;overflow-wrap:break-word">1 · Roster</h2>' +
-      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who is booked, instructors, and open lines on each band. Use <strong>Open places ↓</strong> on a day to filter live seats below.</p>' +
+      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Standing term seats by weekday (not calendar day). Make-ups and one-offs stay in Schedule &amp; Covers / Overview. Use <strong>Open places ↓</strong> to filter live Booking seats below.</p>' +
       '<div id="c4kServicesRosterRoot" style="min-width:0">' +
       rosterPart +
       "</div></section>" +
