@@ -224,37 +224,48 @@
     .ttl-v-body--swimfarm { background: #fdf2f8; }
     .ttl-v-body--swimfarm-ma { background: #faf5ff; }
     .ttl-v-body--default { background: #f8fafc; }
-    /* SwimFarm service pinks */
-    .ttl-svc--bespoke {
+    /* SwimFarm service pinks only (never override Acton green / Northolt blue) */
+    .ttl-v--swimfarm.ttl-svc--bespoke,
+    .ttl-v--swimfarm-ma.ttl-svc--bespoke {
       background: #f472b6 !important;
       color: #831843 !important;
     }
-    .ttl-svc--day-centre {
+    .ttl-v--swimfarm.ttl-svc--day-centre,
+    .ttl-v--swimfarm-ma.ttl-svc--day-centre {
       background: #fda4af !important;
       color: #9f1239 !important;
     }
-    .ttl-svc--aquatic-activity-and-multi-activity {
-      background: #f9a8d4 !important;
-      color: #9d174d !important;
-    }
-    .ttl-svc--aquatic-multi-activity {
+    .ttl-v--swimfarm.ttl-svc--aquatic-activity-and-multi-activity,
+    .ttl-v--swimfarm.ttl-svc--aquatic-multi-activity,
+    .ttl-v--swimfarm.ttl-svc--aquatic-activity,
+    .ttl-v--swimfarm-ma.ttl-svc--aquatic-activity {
       background: #f472b6 !important;
       color: #831843 !important;
     }
-    .ttl-svc--multi-activity {
+    .ttl-v--swimfarm.ttl-svc--multi-activity,
+    .ttl-v--swimfarm-ma.ttl-svc--multi-activity {
       background: #fda4af !important;
       color: #9f1239 !important;
-    }
-    .ttl-svc--aquatic-activity {
-      background: #f9a8d4 !important;
-      color: #9d174d !important;
     }
     .ttl-sf-svc--bespoke { background: #fce7f3 !important; }
     .ttl-sf-svc--day-centre { background: #fff1f2 !important; }
-    .ttl-sf-svc--aquatic-activity-and-multi-activity { background: #fdf2f8 !important; }
-    .ttl-sf-svc--aquatic-multi-activity { background: #fce7f3 !important; }
+    .ttl-sf-svc--aquatic-activity-and-multi-activity,
+    .ttl-sf-svc--aquatic-multi-activity,
+    .ttl-sf-svc--aquatic-activity { background: #fce7f3 !important; }
     .ttl-sf-svc--multi-activity { background: #fff1f2 !important; }
-    .ttl-sf-svc--aquatic-activity { background: #fdf2f8 !important; }
+    /* Acton / Northolt / Westway service row = same family as venue */
+    .ttl-svc.ttl-v--acton {
+      background: #4ade80;
+      color: #14532d;
+    }
+    .ttl-svc.ttl-v--northolt {
+      background: #60a5fa;
+      color: #1e3a8a;
+    }
+    .ttl-svc.ttl-v--westway {
+      background: #fbbf24;
+      color: #92400e;
+    }
     .ttl-svc-start {
       border-left: 3px solid #be185d !important;
     }
@@ -453,7 +464,7 @@
 
   <script src="/portal/autumn_staff_hours_reference.js?v=20260909-local-tt"></script>
   <script src="/portal/portal_roster_canonical.js?v=20260909-fadi-dc-11-18"></script>
-  <script src="/portal/term_timetable_local.js?v=20260910-sun-split"></script>
+  <script src="/portal/term_timetable_local.js?v=20260910-venue-colours"></script>
   <script>
     if (window.TermTimetableLocal) window.TermTimetableLocal.boot();
   </script>

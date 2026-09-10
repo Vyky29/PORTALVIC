@@ -338,36 +338,47 @@
 .asr-hours td.asr-venue-body--acton { background: #f0fdf4; }
 .asr-hours td.asr-venue-body--swimfarm { background: #fdf2f8; }
 .asr-hours td.asr-venue-body--swimfarm-ma { background: #faf5ff; }
-.asr-hours th.asr-svc--bespoke {
+/* SwimFarm service pinks only (do not paint Acton/Northolt service rows pink) */
+.asr-hours th.asr-venue--swimfarm.asr-svc--bespoke,
+.asr-hours th.asr-venue--swimfarm-ma.asr-svc--bespoke {
   background: #f472b6 !important;
   color: #831843 !important;
 }
-.asr-hours th.asr-svc--day-centre {
+.asr-hours th.asr-venue--swimfarm.asr-svc--day-centre,
+.asr-hours th.asr-venue--swimfarm-ma.asr-svc--day-centre {
   background: #fda4af !important;
   color: #9f1239 !important;
 }
-.asr-hours th.asr-svc--aquatic-activity-and-multi-activity {
-  background: #f9a8d4 !important;
-  color: #9d174d !important;
-}
-.asr-hours th.asr-svc--aquatic-multi-activity {
+.asr-hours th.asr-venue--swimfarm.asr-svc--aquatic-activity-and-multi-activity,
+.asr-hours th.asr-venue--swimfarm.asr-svc--aquatic-multi-activity,
+.asr-hours th.asr-venue--swimfarm.asr-svc--aquatic-activity,
+.asr-hours th.asr-venue--swimfarm-ma.asr-svc--aquatic-activity {
   background: #f472b6 !important;
   color: #831843 !important;
 }
-.asr-hours th.asr-svc--multi-activity {
+.asr-hours th.asr-venue--swimfarm.asr-svc--multi-activity,
+.asr-hours th.asr-venue--swimfarm-ma.asr-svc--multi-activity {
   background: #fda4af !important;
   color: #9f1239 !important;
-}
-.asr-hours th.asr-svc--aquatic-activity {
-  background: #f9a8d4 !important;
-  color: #9d174d !important;
 }
 .asr-hours td.asr-sf-svc--bespoke { background: #fce7f3 !important; }
 .asr-hours td.asr-sf-svc--day-centre { background: #fff1f2 !important; }
-.asr-hours td.asr-sf-svc--aquatic-activity-and-multi-activity { background: #fdf2f8 !important; }
-.asr-hours td.asr-sf-svc--aquatic-multi-activity { background: #fce7f3 !important; }
+.asr-hours td.asr-sf-svc--aquatic-activity-and-multi-activity,
+.asr-hours td.asr-sf-svc--aquatic-multi-activity,
+.asr-hours td.asr-sf-svc--aquatic-activity { background: #fce7f3 !important; }
 .asr-hours td.asr-sf-svc--multi-activity { background: #fff1f2 !important; }
-.asr-hours td.asr-sf-svc--aquatic-activity { background: #fdf2f8 !important; }
+.asr-hours th.asr-svc.asr-venue--acton {
+  background: #4ade80;
+  color: #14532d;
+}
+.asr-hours th.asr-svc.asr-venue--northolt {
+  background: #60a5fa;
+  color: #1e3a8a;
+}
+.asr-hours th.asr-svc.asr-venue--westway {
+  background: #fbbf24;
+  color: #92400e;
+}
 .asr-hours .asr-svc-start {
   border-left: 3px solid #be185d;
 }
