@@ -121,7 +121,8 @@ const DOW: Record<string, string> = {
   "2026-09-18": "Friday",
 };
 
-const THU_OFFS = ["roberto", "luliya", "michelle", "youssef"] as const;
+/* Thu 17: no staff_unavailability — standing off hides empty columns (not day-off-requested). */
+const THU_OFFS: readonly string[] = [];
 const THU_ISO = "2026-09-17";
 
 console.log("DATES", Object.keys(BOARDS));

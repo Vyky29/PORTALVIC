@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 94;
+  var SOURCE_VERSION = 95;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -627,6 +627,15 @@
                   ? "thursday"
                   : "friday";
         var dayTitle = DOW_TITLE[dk] || dk;
+        /*
+         * Fadi-board Thursdays (e.g. 17 Sep): DC is Office-only (Raul+Victor).
+         * Roberto/Youssef/Luliya/Michelle are standing-off empty — do not inject
+         * Fadi Cancelled seats (that forced fake day-off / COVER NEEDED paint).
+         */
+        if (isFadiAbsentDcBoardIso(iso) && dow === 4) {
+          cur.setDate(cur.getDate() + 1);
+          continue;
+        }
         (AUTUMN_DAY_CENTRE_BOARD[dk] || []).forEach(function (col) {
           (col.clients || []).forEach(function (c) {
             if (!/^fadi\b/i.test(String(c.name || "").trim())) return;
@@ -3242,10 +3251,10 @@
 
   /**
    * Standing "does not work this weekday" — hide empty Overview columns.
+   * Not the same as day-off-requested (staff_unavailability): that DOES paint Overview.
    * Victor: Mon + Thu. Raul: Tue + Thu.
    * Fri 11 – Fri 18 (Fadi away boards): Victor + Raul work Office those days;
-   * Luliya / Michelle are off Thursdays (empty DC board).
-   * Roberto + Youssef still show Thu columns — Fadi Cancelled 2:1 overlay (not empty).
+   * Thu: Luliya / Michelle / Youssef have no seats (hide). Roberto keeps Acton AS.
    */
   function autumnStaffStandingOffOnIso(iso, staffRaw) {
     var d = normIso(iso);
@@ -3263,25 +3272,20 @@
     if (dow < 0) return false;
     /* 0 Sun … 1 Mon 2 Tue 3 Wed 4 Thu 5 Fri 6 Sat */
     if (isFadiAbsentDcBoardIso(d)) {
-      /* Keep Roberto + Youssef visible for Fadi Cancelled seats on Thu. */
-      if (
-        key === "roberto" ||
-        key.indexOf("roberto") === 0 ||
-        key === "youssef" ||
-        key.indexOf("youssef") === 0
-      ) {
-        return false;
-      }
+      if (key === "victor" || key.indexOf("victor") === 0) return false;
+      if (key === "raul" || key.indexOf("raul") === 0) return false;
+      /* Roberto still works Acton Thu — not standing off. */
+      if (key === "roberto" || key.indexOf("roberto") === 0) return false;
       if (
         key === "luliya" ||
         key.indexOf("luliya") === 0 ||
         key === "michelle" ||
-        key.indexOf("michelle") === 0
+        key.indexOf("michelle") === 0 ||
+        key === "youssef" ||
+        key.indexOf("youssef") === 0
       ) {
         return dow === 4;
       }
-      if (key === "victor" || key.indexOf("victor") === 0) return false;
-      if (key === "raul" || key.indexOf("raul") === 0) return false;
       return false;
     }
     if (key === "victor" || key.indexOf("victor") === 0) {
