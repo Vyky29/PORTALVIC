@@ -319,7 +319,8 @@
       e.returnValue = '';
     }
 
-    function renderNotices(){
+    function renderNotices(opts){
+      opts = opts && typeof opts === 'object' ? opts : {};
       const noticesGrid = document.getElementById('portalQuickMenuNoticesGrid');
       if(!noticesGrid) return;
       noticesGrid.innerHTML = '';
@@ -404,10 +405,12 @@
           'signed'
         );
       }
-      if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
-      else {
-        if(typeof syncPortalQuickMenuNotificationsGroupVisibility === 'function') syncPortalQuickMenuNotificationsGroupVisibility();
-        if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
+      if(!(opts && opts.skipReminderChrome)){
+        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        else {
+          if(typeof syncPortalQuickMenuNotificationsGroupVisibility === 'function') syncPortalQuickMenuNotificationsGroupVisibility();
+          if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
+        }
       }
     }
     /** Same delivery as roster undo: vibrate + white-tile OS notification once per unsigned announcement key. */
@@ -448,6 +451,8 @@
     function portalAnnSyncFullscreenOpen(){
       try{
         if(document.body && document.body.classList.contains('portal-achievements-camera-open')) return true;
+        var ach = document.getElementById('achievementsSheet');
+        if(ach && ach.classList.contains('open')) return true;
         return !!document.querySelector('.sheet.sheet--fullscreen.open');
       }catch(_){ return false; }
     }
@@ -504,15 +509,14 @@
         if(typeof portalEnsureAnnouncementDemoSeed === 'function') portalEnsureAnnouncementDemoSeed();
       }
       var tPrune = nowMs();
-      const shouldRenderNotices = !dataUnchanged || !!opts.force;
-      if(shouldRenderNotices){
-        if(!dataUnchanged) _portalAnnUiLastFp = fp;
-        if(typeof renderNotices === 'function') renderNotices();
-        else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+      /* force must not rebuild the Quick menu: Chrome showed rn:2609-3649 with fp:0 pr:0. */
+      if(!dataUnchanged){
+        _portalAnnUiLastFp = fp;
+        if(typeof renderNotices === 'function') renderNotices({ skipReminderChrome: true });
+        else if(typeof syncPortalReminderChrome === 'function'){ /* chrome deferred below */ }
         if(typeof syncSessionReviewReminderBanner === 'function') syncSessionReviewReminderBanner();
-        if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
       }
-      var tRender = nowMs();
+      var tNt = nowMs();
       const annSheet = document.getElementById('announcementsSheet');
       if(annSheet && annSheet.classList.contains('open') && typeof renderAnnouncementsSheetContent === 'function'){
         renderAnnouncementsSheetContent();
@@ -532,13 +536,14 @@
           total: Math.round(tEnd - t0),
           fp: Math.round(tFp - t0),
           prune: Math.round(tPrune - tFp),
-          render: Math.round(tRender - tPrune),
-          rest: Math.round(tEnd - tRender),
+          notices: Math.round(tNt - tPrune),
+          rest: Math.round(tEnd - tNt),
           force: !!opts.force,
           dataUnchanged: dataUnchanged,
+          skippedRender: dataUnchanged,
           sheetOpen: sheetOpen
         };
-        window.__portalAnnSyncDbg = 'ann:' + timings.total + ' fp:' + timings.fp + ' pr:' + timings.prune + ' rn:' + timings.render;
+        window.__portalAnnSyncDbg = 'ann:' + timings.total + ' fp:' + timings.fp + ' pr:' + timings.prune + ' nt:' + timings.notices + (dataUnchanged ? ' skip' : '');
         if(typeof window.__portalDbg === 'function'){
           window.__portalDbg('F', 'staff-dashboard-ui.js:annSync', 'ann-sync-ms', timings);
         }
@@ -550,6 +555,39 @@
         }
       }catch(_){}
       // #endregion
+      if(!dataUnchanged){
+        portalScheduleReminderChromeAfterAnnSync();
+      }
+    }
+    var _portalAnnChromeTimer = null;
+    function portalScheduleReminderChromeAfterAnnSync(){
+      if(_portalAnnChromeTimer) clearTimeout(_portalAnnChromeTimer);
+      _portalAnnChromeTimer = setTimeout(function(){
+        _portalAnnChromeTimer = null;
+        if(portalAnnSyncFullscreenOpen()){
+          portalScheduleReminderChromeAfterAnnSync();
+          return;
+        }
+        var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
+        var t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        // #region agent log
+        try{
+          var ch = Math.round(t1 - t0);
+          window.__portalAnnSyncDbg = String(window.__portalAnnSyncDbg || '') + ' ch:' + ch;
+          if(typeof window.__portalDbg === 'function'){
+            window.__portalDbg('F', 'staff-dashboard-ui.js:annChrome', 'ann-chrome-ms', { runId: 'post-fix', ch: ch });
+          }
+          var chip = document.getElementById('portalDbgChip');
+          if(chip && window.__portalAnnSyncDbg){
+            chip.dataset.ann = window.__portalAnnSyncDbg;
+            var keep = String(chip.dataset.base || '');
+            chip.textContent = window.__portalAnnSyncDbg + (keep ? ' ' + keep : '') + (chip.dataset.tap ? ' tap:' + chip.dataset.tap : '');
+          }
+        }catch(_){}
+        // #endregion
+      }, 400);
     }
     /** @deprecated internal */
     function portalSyncAnnouncementsAndRemindersUiImmediate(opts){
