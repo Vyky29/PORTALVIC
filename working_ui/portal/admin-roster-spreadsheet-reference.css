@@ -32,16 +32,79 @@
   border-radius: 4px;
   background: #fff;
 }
+.asr-cell-wrap {
+  display: block;
+  position: relative;
+  width: 100%;
+  min-width: 5.5rem;
+  max-width: 11rem;
+  min-height: 2.55rem;
+}
+.asr-cell-face {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  pointer-events: none;
+  padding: 4px 6px;
+  min-height: 2.55rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  line-height: 1.2;
+}
+.asr-cell-face__name {
+  display: block;
+  width: 100%;
+  font-size: 12px;
+  font-weight: 800;
+  color: #111827;
+  overflow-wrap: break-word;
+}
+.asr-cell-face__time {
+  display: block;
+  width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  overflow-wrap: break-word;
+}
+.asr-cell-wrap .asr-cell-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: text;
+  max-width: none;
+  min-height: 100%;
+}
+.asr-cell-wrap:focus-within .asr-cell-face {
+  opacity: 0;
+}
+.asr-cell-wrap:focus-within .asr-cell-input {
+  opacity: 1;
+}
+.asr-cell-wrap.asr-cell-input--dirty .asr-cell-face,
 .asr-cell-input--dirty {
   border-color: #2563eb;
   background: #eff6ff;
+}
+.asr-cell-wrap.asr-cell-input--dirty .asr-cell-face__name,
+.asr-cell-wrap.asr-cell-input--dirty .asr-cell-face__time {
   color: #2563eb;
 }
+.asr-cell-wrap.asr-cell-input--saved .asr-cell-face,
 .asr-cell-input--saved {
   color: #2563eb;
   font-weight: 600;
   border-color: #93c5fd;
   background: #eff6ff;
+}
+.asr-cell-wrap.asr-cell-input--saved .asr-cell-face__name {
+  color: #2563eb;
+}
+.asr-subtabs--range {
+  margin: 0 0 10px;
 }
 .asr-changelog {
   margin-top: 28px;

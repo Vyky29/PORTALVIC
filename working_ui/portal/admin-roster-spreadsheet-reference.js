@@ -32,10 +32,12 @@
   };
 
   var state = {
-    tab: "sessions",
+    tab: "hours",
     sessionDay: "Monday",
     hoursDay: "Monday",
     hoursService: "all",
+    /** term = all Autumn dates for that weekday; week = one Mon-Sun strip */
+    hoursRange: "term",
     hoursWeekStart: null,
     dirty: Object.create(null),
     dirtyBaseline: Object.create(null),
@@ -162,6 +164,59 @@
       });
     }
     return out;
+  }
+
+  function filterDatesToHoursTerm(dates) {
+    return (dates || []).filter(function (dr) {
+      var iso = String((dr && dr.date) || "").slice(0, 10);
+      return iso >= HOURS_TERM_FROM && iso <= HOURS_TERM_TO;
+    });
+  }
+
+  function sheetForHoursRange(sheet) {
+    if (!sheet) return sheet;
+    if (state.hoursRange === "week") return sheetForHoursWeek(sheet);
+    var out = {
+      venueGroups: sheet.venueGroups || [],
+      dates: filterDatesToHoursTerm(sheet.dates),
+      placeholder: sheet.placeholder,
+    };
+    if (sheet.blocks && sheet.blocks.length) {
+      out.blocks = sheet.blocks.map(function (block) {
+        return {
+          venueGroups: block.venueGroups || [],
+          dates: filterDatesToHoursTerm(block.dates),
+        };
+      });
+    }
+    return out;
+  }
+
+  function splitStaffHoursNameTime(text) {
+    var raw = String(text || "").replace(/\s+/g, " ").trim();
+    if (!raw) return { name: "", time: "" };
+    var m = raw.match(
+      /^(.+?)\s+(\d{1,2}(?:[.:]\d{2})?\s*-\s*\d{1,2}(?:[.:]\d{2})?)(.*)$/,
+    );
+    if (!m) return { name: raw, time: "" };
+    var name = String(m[1] || "").trim();
+    var time = String(m[2] || "").replace(/\s+/g, "");
+    var extra = String(m[3] || "").trim();
+    if (extra) time = time + " " + extra;
+    return { name: name, time: time };
+  }
+
+  function hoursRangeToggleHtml() {
+    return (
+      '<div class="asr-subtabs asr-subtabs--range" role="tablist" aria-label="Hours date range">' +
+      '<button type="button" class="btn btn--ghost btn--sm' +
+      (state.hoursRange === "term" ? " is-active" : "") +
+      '" data-asr-hours-range="term">Whole term</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm' +
+      (state.hoursRange === "week" ? " is-active" : "") +
+      '" data-asr-hours-range="week">One week</button>' +
+      "</div>"
+    );
   }
 
   function hoursWeekNavHtml() {
@@ -623,16 +678,16 @@
       '<div class="asr-root" id="adminSpreadsheetRefRoot">' +
       '<h1 class="page-title">Instructor timetable</h1>' +
       '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-      "<strong>Same roster as Services</strong> (re-enrol + machine + new clients + Autumn Day Centre). " +
-      "<strong>Group sessions</strong> = clients under each instructor (" +
+      "<strong>Who works</strong> = instructor name + hours for every Monday (or Tue…) in Autumn — edit and Save. " +
+      "Does not change who is booked in Services / MADRE (use Edit term slot for that). " +
+      "<strong>Group sessions</strong> = standing client cards (" +
       weekLbl +
-      "). " +
-      "<strong>Staff hours</strong> = instructor timetable for that standing week, plus optional dated overrides for payroll.</p>" +
+      ").</p>" +
       '<div class="asr-tabs" role="tablist">' +
-      '<button type="button" class="btn btn--ghost btn--sm is-active" data-asr-tab="sessions">Group sessions</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-asr-tab="hours">Staff hours</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-asr-tab="sessions">Group sessions</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm is-active" data-asr-tab="hours">Who works</button>' +
       "</div>" +
-      '<div class="asr-toolbar" id="asrToolbar" hidden>' +
+      '<div class="asr-toolbar" id="asrToolbar">' +
       '<button type="button" class="btn btn--pri btn--sm" id="asrSaveBtn">Save staff hours</button>' +
       '<span class="muted" id="asrSaveStatus" style="font-size:12px;min-width:0;overflow-wrap:break-word"></span>' +
       "</div>" +
@@ -954,6 +1009,7 @@
   function cellInputHtml(cell) {
     var key = cell.editKey || "";
     var val = state.dirty[key] != null ? state.dirty[key] : cell.text || "";
+    var parts = splitStaffHoursNameTime(val);
     var dirtyCls = state.dirty[key] != null ? " asr-cell-input--dirty" : "";
     var savedCls =
       state.dirty[key] == null && (cell.overridden || cell.tone === "updated")
@@ -963,7 +1019,22 @@
       cell.tone && state.dirty[key] == null && !savedCls
         ? " asr-tone--" + cell.tone
         : "";
+    var face =
+      '<span class="asr-cell-face" aria-hidden="true">' +
+      '<span class="asr-cell-face__name">' +
+      esc(parts.name || (val ? val : "·")) +
+      "</span>" +
+      (parts.time
+        ? '<span class="asr-cell-face__time">' + esc(parts.time) + "</span>"
+        : "") +
+      "</span>";
     return (
+      '<label class="asr-cell-wrap' +
+      dirtyCls +
+      savedCls +
+      tone +
+      '">' +
+      face +
       '<input type="text" class="asr-cell-input' +
       dirtyCls +
       savedCls +
@@ -972,7 +1043,8 @@
       esc(key) +
       '" value="' +
       esc(val) +
-      '" aria-label="Staff assignment" />'
+      '" aria-label="Staff assignment name and hours" />' +
+      "</label>"
     );
   }
 
@@ -1106,20 +1178,29 @@
     }
     ensureHoursWeekStart();
     var day = state.hoursDay;
+    var rangeHint =
+      state.hoursRange === "term"
+        ? "Showing <strong>every " +
+          (day === "all" ? "weekday" : day) +
+          "</strong> in Autumn Term 2026 (1 Sep - 17 Dec). Edit a cell (name + hours), then <strong>Save staff hours</strong>."
+        : "Showing <strong>one week</strong> only. Switch to Whole term to see all Mondays (etc.).";
     var html =
       renderStandingHoursBlock() +
-      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Below: dated hours sheet for <strong>Autumn Term 2026</strong> (1 Sep - 17 Dec) + saved overrides. Use the week bar to step week by week. Edits sync to dashboards after <strong>Save</strong> - they do not change who is booked in Services.</p>' +
-      hoursWeekNavHtml() +
+      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">' +
+      rangeHint +
+      " Saves update dashboards — they do <strong>not</strong> change MADRE / who is booked (use Edit term slot).</p>" +
+      hoursRangeToggleHtml() +
+      (state.hoursRange === "week" ? hoursWeekNavHtml() : "") +
       hoursLegendHtml() +
       weekdaySubtabs(day, "data-asr-hours-day", {
         includeAll: true,
-        allLabel: "All week",
+        allLabel: "All weekdays",
         allValue: "all",
       }) +
       serviceSubtabs(state.hoursService, "data-asr-hours-service");
     if (day === "all") {
       WEEKDAYS.forEach(function (wd) {
-        var sheet = sheetForHoursWeek(d.staffHours[wd]);
+        var sheet = sheetForHoursRange(d.staffHours[wd]);
         html +=
           '<section class="asr-hours-day-section" aria-labelledby="asr-hours-day-' +
           esc(wd) +
@@ -1129,9 +1210,9 @@
           '">' +
           esc(wd) +
           "</h3>";
-        if (!sheet || !(sheet.dates && sheet.dates.length) && !(sheet.blocks && sheet.blocks.length)) {
+        if (!sheet || (!(sheet.dates && sheet.dates.length) && !(sheet.blocks && sheet.blocks.length))) {
           html +=
-            '<p class="muted" style="margin:0 0 12px">No Autumn shifts this week for ' +
+            '<p class="muted" style="margin:0 0 12px">No Autumn shifts for ' +
             esc(wd) +
             ".</p>";
         } else {
@@ -1141,12 +1222,15 @@
       });
       return html + renderChangeLogHtml();
     }
-    var one = sheetForHoursWeek(d.staffHours[day]);
+    var one = sheetForHoursRange(d.staffHours[day]);
     if (!one || (!(one.dates && one.dates.length) && !(one.blocks && one.blocks.length))) {
       html +=
-        '<p class="muted" style="margin:12px 0">No Autumn shifts in this week for ' +
+        '<p class="muted" style="margin:12px 0">No Autumn shifts for ' +
         esc(day) +
-        ". Use Next week to move into term dates.</p>";
+        (state.hoursRange === "week"
+          ? ". Use Next week, or switch to Whole term."
+          : ".") +
+        "</p>";
       return html + renderChangeLogHtml();
     }
     return html + renderHoursDaySection(day, one) + renderChangeLogHtml();
@@ -1299,6 +1383,12 @@
         refreshPanel();
       });
     });
+    root.querySelectorAll("[data-asr-hours-range]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.hoursRange = btn.getAttribute("data-asr-hours-range") || "term";
+        refreshPanel();
+      });
+    });
     root.querySelectorAll("[data-asr-hours-week]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var act = btn.getAttribute("data-asr-hours-week") || "";
@@ -1326,6 +1416,24 @@
         state.dirty[key] = inp.value;
         inp.classList.add("asr-cell-input--dirty");
         inp.classList.remove("asr-cell-input--saved");
+        var wrap = inp.closest(".asr-cell-wrap");
+        if (wrap) {
+          wrap.classList.add("asr-cell-input--dirty");
+          wrap.classList.remove("asr-cell-input--saved");
+          var parts = splitStaffHoursNameTime(inp.value);
+          var nameEl = wrap.querySelector(".asr-cell-face__name");
+          var timeEl = wrap.querySelector(".asr-cell-face__time");
+          if (nameEl) nameEl.textContent = parts.name || inp.value || "·";
+          if (timeEl) {
+            if (parts.time) {
+              timeEl.textContent = parts.time;
+              timeEl.hidden = false;
+            } else {
+              timeEl.textContent = "";
+              timeEl.hidden = true;
+            }
+          }
+        }
         updateToolbar();
       });
     });
