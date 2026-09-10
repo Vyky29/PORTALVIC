@@ -7,13 +7,13 @@
   var SETS = {
     roster: [
       "/portal/term_from_timetable.js?v=20260909-bismark-full",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260910-yassir-last",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260910-amaar-last",
       "/portal/clients_info_embed.js?v=20260910-joelle-406",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short",
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
-      "/portal/portal_roster_canonical.js?v=20260910-joelle-cancel",
+      "/portal/portal_roster_canonical.js?v=20260910-amaar-last",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260906-overview-fluid",
     ],
     feedback: [

@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 89;
+  var SOURCE_VERSION = 90;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1073,6 +1073,52 @@
       out.push(r);
     });
     autumnThursdaySep10YassirLastSessionRows().forEach(function (row) {
+      out.push(row);
+    });
+    return out;
+  }
+
+  /** Fri 11 Sep: Amaar last Acton Aquatic with Youssef (seat open from Fri 18). */
+  function autumnFridaySep11AmaarLastSessionRows() {
+    return [
+      {
+        client_name: "Amaar Ah",
+        day: "Friday",
+        instructors: "YOUSSEF",
+        service: "Aquatic Activity",
+        area: "Teaching Pool",
+        time_slot: "5.30 to 6",
+        venue: "Acton",
+        session_date: "2026-09-11",
+      },
+    ];
+  }
+
+  /** Keep Amaar named on Fri 11; do not also leave a standing open twin that day. */
+  function scrubAndEnsureSep11AmaarLastSession(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (normIso(r.session_date) !== "2026-09-11") {
+        out.push(r);
+        return;
+      }
+      var slot = String(r.time_slot || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      var isAmaarBand =
+        /acton/i.test(String(r.venue || "")) &&
+        /aquatic|swim/i.test(String(r.service || "")) &&
+        /youssef\b/i.test(String(r.instructors || "")) &&
+        (slot === "5.30 to 6" ||
+          slot === "5:30 to 6" ||
+          slot.indexOf("5.30 to 6") === 0 ||
+          slot.indexOf("5:30 to 6") === 0);
+      if (isAmaarBand) return;
+      out.push(r);
+    });
+    autumnFridaySep11AmaarLastSessionRows().forEach(function (row) {
       out.push(row);
     });
     return out;
@@ -3067,6 +3113,7 @@
     merged = scrubAndEnsureSep6AuroraRobertoPool(merged);
     merged = scrubAndEnsureSep7VictorRaulCover(merged);
     merged = scrubAndEnsureSep10YassirLastSession(merged);
+    merged = scrubAndEnsureSep11AmaarLastSession(merged);
     merged = scrubAndEnsureSep8ActonRedistribute(merged);
     merged = scrubAndEnsureSep10AnasMakeup(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);

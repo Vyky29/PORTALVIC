@@ -273,7 +273,10 @@
     "Abodi P": "2026-09-08",
     "Aboodi Patel": "2026-09-08",
     "Abodi": "2026-09-08",
-    "Yassir": "2026-09-11"
+    "Yassir": "2026-09-11",
+    "Amaar Ah": "2026-09-12",
+    "Amaar": "2026-09-12",
+    "Amaar Ahmed": "2026-09-12"
   },
   "clientWeekdaysOnly": {
     "Emanuel": [

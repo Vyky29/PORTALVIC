@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260910-yassir-last";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260910-amaar-last";
   // Optional "Notes" (relevant_information) only became a genuinely separate,
   // worker-written optional field on 7 Jul 2026. Before that date,
   // relevant_information was the AI "internal relevant" split of the feedback and
@@ -1191,6 +1191,29 @@
             (yassirSlot === "6 to 6.30" ||
               yassirSlot === "6:00 to 6:30" ||
               yassirSlot.indexOf("6 to 6.30") === 0)
+          ) {
+            return false;
+          }
+        }
+        /*
+         * Fri 11 Sep Amaar last Acton Aquatic (dated canonical). Standing seat is already
+         * No participant from Fri 18 — do not also project the open onto last-session day.
+         */
+        if (
+          isoDate === "2026-09-11" &&
+          /youssef\b/i.test(String((r && r.instructors) || "")) &&
+          /acton/i.test(String((r && r.venue) || "")) &&
+          /aquatic|swim/i.test(String((r && r.service) || ""))
+        ) {
+          var amaarSlot = String((r && r.time_slot) || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          if (
+            amaarSlot === "5.30 to 6" ||
+            amaarSlot === "5:30 to 6" ||
+            amaarSlot.indexOf("5.30 to 6") === 0 ||
+            amaarSlot.indexOf("5:30 to 6") === 0
           ) {
             return false;
           }
