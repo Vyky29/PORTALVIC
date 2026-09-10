@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 82;
+  var SOURCE_VERSION = 84;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -716,6 +716,50 @@
     return out;
   }
 
+  /**
+   * Board re-inject (Tue Acton / Sunday pool) runs AFTER portal_roster_rows merge
+   * and would otherwise wipe pool/area notes saved from Edit term slot.
+   * Only honour an area that exists on an active cache row — never summer MADRE leftovers.
+   */
+  function dbAreaOverrideForStandingSlot(row) {
+    var list = global.PORTAL_ROSTER_ROWS_CACHE;
+    if (!row || !Array.isArray(list) || !list.length) return "";
+    var day = String(row.day || "").trim().toLowerCase();
+    var cn = String(row.client_name || "").trim().toLowerCase();
+    var ts = String(row.time_slot || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+    var instr = String(row.instructors || "").trim().toLowerCase();
+    var venue = String(row.venue || "").trim().toLowerCase();
+    var i;
+    for (i = 0; i < list.length; i++) {
+      var d = list[i];
+      if (!d || String(d.status || "active") !== "active") continue;
+      if (String(d.client_name || "").trim().toLowerCase() !== cn) continue;
+      if (String(d.day || "").trim().toLowerCase() !== day) continue;
+      var dts = String(d.time_slot || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      if (dts !== ts) continue;
+      var din = String(d.instructors || "").trim().toLowerCase();
+      if (din && instr && din !== instr) continue;
+      var dv = String(d.venue || "").trim().toLowerCase();
+      if (dv && venue && dv !== venue) continue;
+      var a = String(d.area || "").trim();
+      if (a) return a;
+    }
+    return "";
+  }
+
+  function applyStandingSlotAreaFromDb(row) {
+    var copy = Object.assign({}, row);
+    var ov = dbAreaOverrideForStandingSlot(copy);
+    if (ov) copy.area = ov;
+    return copy;
+  }
+
   function applyAutumnActonTuesdayStanding(rows) {
     var out = [];
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
@@ -723,7 +767,7 @@
       out.push(r);
     });
     autumnActonTuesdayStandingRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
+      out.push(applyStandingSlotAreaFromDb(row));
     });
     return out;
   }
@@ -1433,7 +1477,7 @@
       out.push(r);
     });
     autumnSundayStandingPoolRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
+      out.push(applyStandingSlotAreaFromDb(row));
     });
     return out;
   }
@@ -2164,27 +2208,27 @@
   /**
    * Standing Thu Acton AS: Roberto / Simon / Javier / Aurora (no Luliya).
    * Elijah + Yuri with Simon; Aurora CLOSED 4–4.30 (starts 4.30). Eiji aquatic withdrawn.
-   * Simon works 4–6 (leaves at 6) — gap 4.30–5 is open (No participant), not Closed.
-   * Yunis + Maiyar with Roberto; Joelle 5.30–6.30 with Aurora (Simon 2:1 only until 6).
+   * Simon 4–6.30 (Joelle 2:1 last hour). Gap 4.30–5 is open (No participant), not Closed.
+   * Yunis + Maiyar with Roberto; Joelle 5.30–6.30 Aurora + Simon 2:1 (both halves).
    */
   var AUTUMN_ACTON_THURSDAY_BOARD = [
-    { staff: "ROBERTO", name: "Tom", time: "4 to 4.30" },
-    { staff: "ROBERTO", name: "Yassir", time: "4.30 to 5" },
-    { staff: "ROBERTO", name: "Yossi", time: "5 to 5.30" },
-    { staff: "ROBERTO", name: "Yunis", time: "5.30 to 6" },
-    { staff: "ROBERTO", name: "Maiyar", time: "6 to 6.30" },
-    { staff: "SIMON", name: "Elijah", time: "4 to 4.30" },
-    { staff: "SIMON", name: "No participant", time: "4.30 to 5" },
-    { staff: "SIMON", name: "Yuri", time: "5 to 5.30" },
-    { staff: "SIMON", name: "Joelle", time: "5.30 to 6" },
-    { staff: "JAVIER", name: "Ayman", time: "4 to 5" },
-    { staff: "JAVIER", name: "Khalid Ab", time: "5 to 5.30" },
-    /* Mohamed (Anab / Yusuf) — office arranged Thu 5.30–6.30; booking may still be finishing. */
-    { staff: "JAVIER", name: "Mohamed", time: "5.30 to 6.30" },
-    { staff: "AURORA", name: "Closed", time: "4 to 4.30" },
-    { staff: "AURORA", name: "Aqsa", time: "4.30 to 5.30" },
-    { staff: "AURORA", name: "Joelle", time: "5.30 to 6" },
-    { staff: "AURORA", name: "Joelle", time: "6 to 6.30" },
+    { staff: "ROBERTO", name: "Tom", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "ROBERTO", name: "Yassir", time: "4.30 to 5", area: "Teaching Pool" },
+    { staff: "ROBERTO", name: "Yossi", time: "5 to 5.30", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "Yunis", time: "5.30 to 6", area: "Teaching Pool" },
+    { staff: "ROBERTO", name: "Maiyar", time: "6 to 6.30", area: "Lane (DE)" },
+    { staff: "SIMON", name: "Elijah", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "SIMON", name: "No participant", time: "4.30 to 5", area: "Teaching Pool" },
+    { staff: "SIMON", name: "Yuri", time: "5 to 5.30", area: "Teaching Pool" },
+    { staff: "SIMON", name: "Joelle", time: "5.30 to 6", area: "Teaching Pool" },
+    { staff: "SIMON", name: "Joelle", time: "6 to 6.30", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "Khalid Ab", time: "5 to 5.30", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "Mohamed", time: "5.30 to 6.30", area: "Lane (DE)" },
+    { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "AURORA", name: "Aqsa", time: "4.30 to 5.30", area: "Teaching Pool" },
+    { staff: "AURORA", name: "Joelle", time: "5.30 to 6", area: "Teaching Pool" },
+    { staff: "AURORA", name: "Joelle", time: "6 to 6.30", area: "Teaching Pool" },
   ];
 
   function autumnActonThursdayStandingRows() {
@@ -2195,7 +2239,7 @@
         day: "Thursday",
         instructors: slot.staff,
         service: "Aquatic Activity",
-        area: "Teaching Pool",
+        area: slot.area || "Teaching Pool",
         time_slot: slot.time,
         venue: "Acton",
         session_date: iso,
