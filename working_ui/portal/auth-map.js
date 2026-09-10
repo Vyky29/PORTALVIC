@@ -104,6 +104,11 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Sevitha: "sevitha@clubsensational.org",
   Teflon: "stf020@staff.import.pending",
   teflon: "stf020@staff.import.pending",
+  /* New hire Support Worker (not roster Emanuel). */
+  Emmanuel: "nanaamoakohene745@gmail.com",
+  "Emmanuel Amoakohene": "nanaamoakohene745@gmail.com",
+  Amoakohene: "nanaamoakohene745@gmail.com",
+  "nanaamoakohene745@gmail.com": "nanaamoakohene745@gmail.com",
   "victor@clubsensational.org": "victor@clubsensational.org",
   "raul@clubsensational.org": "raul@clubsensational.org",
   "javier@clubsensational.org": "javier@clubsensational.org",
