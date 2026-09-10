@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 93;
+  var SOURCE_VERSION = 94;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1313,8 +1313,8 @@
   }
 
   /**
-   * Thu 10 Sep: Joelle 5.30–6 taught; 6–6.30 cancelled (Aurora + Simon) + Anas makeup Aurora 6–6.30.
-   * Roberto 6–6.30 open today only (Maiyar second half cancelled).
+   * Thu 10 Sep: Joelle 5.30–6 taught; 6–6.30 cancelled on Aurora (Cancelled chip) + Anas makeup.
+   * Simon 6–6.30 open today only (Joelle second half gone). Roberto keeps Maiyar.
    */
   function autumnThursdaySep10AnasMakeupRows() {
     var iso = "2026-09-10";
@@ -1322,7 +1322,7 @@
       return slots.map(function (slot) {
         var area = "Lane (DE)";
         if (/^joelle\b/i.test(String(slot.name || ""))) area = "Teaching Pool";
-        if (/^no participant\b/i.test(String(slot.name || ""))) area = slot.area || "Lane (DE)";
+        if (/^no participant\b/i.test(String(slot.name || ""))) area = slot.area || "Teaching Pool";
         return {
           client_name: slot.name,
           day: "Thursday",
@@ -1346,11 +1346,8 @@
       .concat(
         mapBook("SIMON", [
           { name: "Joelle", time: "5.30 to 6" },
-          { name: "Joelle", time: "6 to 6.30" },
+          { name: "No participant", time: "6 to 6.30", area: "Teaching Pool" },
         ]),
-      )
-      .concat(
-        mapBook("ROBERTO", [{ name: "No participant", time: "6 to 6.30", area: "Lane (DE)" }]),
       );
   }
 
@@ -1358,40 +1355,45 @@
     var out = [];
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
-      if (normIso(r.session_date) !== "2026-09-10") {
-        out.push(r);
-        return;
-      }
+      var d = normIso(r.session_date);
+      /*
+       * Thu Acton Joelle / Anas on Aurora+Simon for 10 Sep is owned by the dated inject below.
+       * Drop standing Jul Joelle (and any dated Sep 10 copies) so Simon 6–6.30 open + Aurora
+       * Joelle Cancelled + Anas makeup win — Roberto Maiyar is untouched.
+       */
       if (
         isAquaticService(r.service) &&
         /acton/i.test(String(r.venue || "")) &&
         /\b(aurora|simon)\b/i.test(String(r.instructors || "")) &&
         /^(joelle|anas)\b/i.test(String(r.client_name || "").trim())
       ) {
-        return;
+        if (!d || d === "2026-09-10" || isAutumnStandingTemplateIso(d)) return;
       }
-      /* Drop standing Joelle blocks on Aurora/Simon for this date (replaced by halves + Anas). */
-      if (
-        isAquaticService(r.service) &&
-        /acton/i.test(String(r.venue || "")) &&
-        /\b(aurora|simon)\b/i.test(String(r.instructors || "")) &&
-        /^joelle\b/i.test(String(r.client_name || "").trim())
-      ) {
-        return;
-      }
-      /* Roberto 6–6.30 open today (Maiyar second half cancelled). */
-      if (
-        isAquaticService(r.service) &&
-        /acton/i.test(String(r.venue || "")) &&
-        /\broberto\b/i.test(String(r.instructors || "")) &&
-        /^(maiyar|no participant)\b/i.test(String(r.client_name || "").trim())
-      ) {
-        var maiyarSlot = String(r.time_slot || "")
-          .replace(/\s+/g, " ")
-          .trim()
-          .toLowerCase();
-        if (maiyarSlot === "6 to 6.30" || maiyarSlot === "6:00 to 6:30" || maiyarSlot.indexOf("6 to 6.30") === 0) {
-          return;
+      if (d === "2026-09-10") {
+        if (
+          isAquaticService(r.service) &&
+          /acton/i.test(String(r.venue || "")) &&
+          /\bsimon\b/i.test(String(r.instructors || "")) &&
+          /^no participant\b/i.test(String(r.client_name || "").trim())
+        ) {
+          var simonOpen = String(r.time_slot || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          if (simonOpen === "6 to 6.30" || simonOpen.indexOf("6 to 6.30") === 0) return;
+        }
+        /* Stale Roberto open from the mistaken Maiyar clear — standing Maiyar owns the seat. */
+        if (
+          isAquaticService(r.service) &&
+          /acton/i.test(String(r.venue || "")) &&
+          /\broberto\b/i.test(String(r.instructors || "")) &&
+          /^no participant\b/i.test(String(r.client_name || "").trim())
+        ) {
+          var robOpen = String(r.time_slot || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          if (robOpen === "6 to 6.30" || robOpen.indexOf("6 to 6.30") === 0) return;
         }
       }
       out.push(r);

@@ -1169,15 +1169,6 @@
           ) {
             return false;
           }
-          /* Maiyar second half cancelled — dated open owns 6–6.30; do not project standing Maiyar. */
-          if (
-            /^maiyar\b/i.test(String((r && r.client_name) || "").trim()) &&
-            (yassirSlot === "6 to 6.30" ||
-              yassirSlot === "6:00 to 6:30" ||
-              yassirSlot.indexOf("6 to 6.30") === 0)
-          ) {
-            return false;
-          }
         }
         /*
          * Fri 11 Sep Amaar last Acton Aquatic (dated canonical). Standing seat is already
