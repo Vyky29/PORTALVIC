@@ -44,6 +44,11 @@
       }catch(_){}
       return !!(iso && iso >= '2026-09-01' && iso < '2026-09-21');
     }
+    try{
+      if(typeof window !== 'undefined'){
+        window.portalTodayIsFadiDcCancelledSeat = portalTodayIsFadiDcCancelledSeat;
+      }
+    }catch(_){}
     function portalStaffClientSessionsOnCalendarDate(isoYmd, weekdayLong, staffId, modelOverride){
       const iso = normaliseIsoDate(isoYmd);
       const sid = String(staffId || '').trim().toLowerCase();
@@ -1538,6 +1543,14 @@
       const iso = String(sessionDateIso || '').trim().slice(0, 10);
       const sid = String(staffId != null ? staffId : (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')).trim().toLowerCase();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+      /*
+       * Fadi DC Cancelled (Joelle pattern) must resolve as cancelled even without a
+       * schedule_overrides row — otherwise week-1 dates (e.g. Fri 4 Sep) paint Term
+       * green (assume-complete / empty pending) instead of cancelled red like Thu 10.
+       */
+      if(portalTodayIsFadiDcCancelledSeat(s, iso)){
+        return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+      }
       const resolutionEarly = portalOverrideFeedbackResolutionForSession(s, iso);
       if(resolutionEarly === 'absent'){
         return { feedbackDone: false, incident: false, absent: true, cancelled: false };

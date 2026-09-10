@@ -2573,6 +2573,31 @@
       if (!isYoussefActonAfternoonBand(dayName, rosterKey, dayRows, dateKey)) return computedHours;
       return YOUSSEF_ACTON_AFTERNOON_PAY_HOURS;
     }
+    /** True when every Day Centre client that day was admin-cancelled (24h+ notice → not paid). */
+    function dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, dayRows) {
+      const iso = String(dateKey || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      const me = timesheetNormStaffKey(rosterKey);
+      const dcRows = (dayRows || []).filter((s) => /day\s*centre/.test(sessionServiceLower(s)));
+      if (!dcRows.length) return false;
+      const cancelOvs = (state.scheduleOverrides || []).filter((ov) => {
+        if (String(ov.status || "").trim().toLowerCase() === "cancelled") return false;
+        if (String(ov.session_date || "").trim().slice(0, 10) !== iso) return false;
+        if (timesheetNormStaffKey(ov.anchor_staff_id) !== me) return false;
+        return timesheetOverrideCompletionFlag(ov) === "cancelled";
+      });
+      function isFadiWindowCancel(s) {
+        const blob = String((s && (s.clientId || s.clientName || s.client_name)) || "");
+        if (!/\bfadi\b/i.test(blob)) return false;
+        if (!/day\s*centre/.test(sessionServiceLower(s))) return false;
+        return iso >= "2026-09-01" && iso < "2026-09-21";
+      }
+      return dcRows.every(
+        (s) =>
+          isFadiWindowCancel(s) ||
+          cancelOvs.some((ov) => sessionMatchesScheduleOverride(s, iso, ov))
+      );
+    }
     function youssefActonSaturdayPayableHours(dayName, rosterKey, role, computedHours, dayRows, dateKey) {
       if (!isYoussefActonSaturdayMorningBand(dayName, rosterKey, dayRows, dateKey)) return computedHours;
       if (youssefActonSaturdayAllCancelled(dateKey, rosterKey, dayRows)) return 0;
@@ -3208,6 +3233,8 @@
       hours = sundaySwimPayableHours(dayName, rosterKey, dominantRole, dominantService, dateKey, hours, rows);
       hours = youssefActonAfternoonPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
       hours = youssefActonSaturdayPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
+      /* Admin cancel with notice (e.g. Fadi DC): day not payable — not a day-off request. */
+      if (dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, rows)) hours = 0;
       if (!(hours > 0)) return null;
       const role = dominantRole || "";
       const rate = rateForRole(role);
@@ -3330,6 +3357,7 @@
           hours = sundaySwimPayableHours(dayName, rosterKey, role, svc, dateKey, hours, groupRows);
           hours = youssefActonAfternoonPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
           hours = youssefActonSaturdayPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
+          if (dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, groupRows)) hours = 0;
           if (!(hours > 0)) return;
           const serviceName =
             timesheetStripVenueSuffix(

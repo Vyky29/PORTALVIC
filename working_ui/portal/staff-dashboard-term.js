@@ -429,6 +429,11 @@
         item.portalOverrideAlertPill = 'ABSENT';
         item.portalOverrideSuppressReviewOrange = true;
         item.__portalScheduleOverride = adminAbsentOv || null;
+      } else if(typeof portalTodayIsFadiDcCancelledSeat === 'function'
+        && portalTodayIsFadiDcCancelledSeat(s, isoKey)){
+        item.noSessionFeedbackRequired = true;
+        item.portalOverrideAlertPill = 'CANCELLED';
+        item.portalOverrideSuppressReviewOrange = true;
       }
       return item;
     }
