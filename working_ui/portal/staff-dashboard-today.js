@@ -987,9 +987,9 @@
         }
         if(typeof renderTermCalendarGrid === 'function'){
           if(termSheetOpen) renderTermCalendarGrid({ force: true });
-          else renderTermCalendarGrid();
         }
-        if(typeof window.portalSyncLeadTeamShiftUi === 'function') setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
+        if(typeof window.portalScheduleLeadTeamShiftUi === 'function') window.portalScheduleLeadTeamShiftUi();
+        else if(typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
         if(typeof portalRefreshScheduleOverrideDayChrome === 'function') portalRefreshScheduleOverrideDayChrome({ forceTerm: termSheetOpen });
       }catch(_syncOv){}
       }finally{

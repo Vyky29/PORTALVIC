@@ -796,8 +796,12 @@
         try{
           if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
         }catch(_){}
+        /* Only paint the Term grid when the sheet is open — otherwise every
+           rebootstrap rebuilt ~4 months of cells for Roberto (7–8s × N). */
         try{
-          if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+          var termSheet = document.getElementById('termSheet');
+          var termOpen = !!(termSheet && termSheet.classList.contains('open'));
+          if(termOpen && typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
         }catch(_){}
         try{
           if(typeof portalScheduleReminderChromeAfterAnnSync === 'function'){
@@ -807,8 +811,8 @@
           }
         }catch(_){}
       };
-      if(typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 1500 });
-      else setTimeout(go, 0);
+      if(typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 2800 });
+      else setTimeout(go, 400);
     }
     window.portalDeferTermFeedbackRebuild = portalDeferTermFeedbackRebuild;
 
@@ -886,9 +890,6 @@
               portalRefreshTodayNextParticipantPhotos(grid);
             }
             if(typeof portalDeferReminderChromeFromPaint === 'function') portalDeferReminderChromeFromPaint();
-            if(typeof window.portalSyncLeadTeamShiftUi === 'function'){
-          setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
-        }
             return;
           }
         }
@@ -934,9 +935,6 @@
           });
         }
         if(typeof portalDeferReminderChromeFromPaint === 'function') portalDeferReminderChromeFromPaint();
-        if(typeof window.portalSyncLeadTeamShiftUi === 'function'){
-          setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
-        }
         return;
       }
       const fb = document.getElementById('todayGridFallback');
@@ -1010,9 +1008,6 @@
         });
       }
       if(typeof portalDeferReminderChromeFromPaint === 'function') portalDeferReminderChromeFromPaint();
-      if(typeof window.portalSyncLeadTeamShiftUi === 'function'){
-          setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
-        }
     }
 
     function formatClientCount(n){
@@ -1387,10 +1382,9 @@
           wl.innerHTML = (dashboardData.week || []).map(renderWeekRowHtml).join('');
         }
         const termOpen = !!(document.getElementById('termSheet') && document.getElementById('termSheet').classList.contains('open'));
-        /* Term closed: never force a full term rebuild on override hydrate (iPhone tap lag). */
-        if(typeof renderTermCalendarGrid === 'function'){
-          if(termOpen || opts.forceTerm) renderTermCalendarGrid({ force: true });
-          else renderTermCalendarGrid();
+        /* Term closed: never paint the full term grid on override hydrate (iPhone tap lag). */
+        if(typeof renderTermCalendarGrid === 'function' && (termOpen || opts.forceTerm)){
+          renderTermCalendarGrid({ force: true });
         }
         if(typeof renderMiniCounts === 'function') renderMiniCounts();
       }finally{
@@ -5536,9 +5530,8 @@
         if(typeof window.portalSyncServiceLeadsQuickMenu === 'function'){
           window.portalSyncServiceLeadsQuickMenu();
         }
-        if(typeof window.portalSyncLeadTeamShiftUi === 'function'){
-          setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
-        }
+        if (typeof window.portalScheduleLeadTeamShiftUi === 'function') window.portalScheduleLeadTeamShiftUi();
+        else if (typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
       }catch(_sl){}
     });
     window.addEventListener('portal:location-permission-change', function(){
@@ -5589,9 +5582,8 @@
           }
           if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
           if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
-          if(typeof window.portalSyncLeadTeamShiftUi === 'function'){
-          setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
-        }
+          if (typeof window.portalScheduleLeadTeamShiftUi === 'function') window.portalScheduleLeadTeamShiftUi();
+        else if (typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
           if(!navigated){
             try{ console.warn('[portal] Admin Changes: could not open day', iso); }catch(_){}
           }
@@ -5738,9 +5730,8 @@
         }
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
-        if(typeof window.portalSyncLeadTeamShiftUi === 'function'){
-          setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
-        }
+        if (typeof window.portalScheduleLeadTeamShiftUi === 'function') window.portalScheduleLeadTeamShiftUi();
+        else if (typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
         if(!navigated){
           try{ console.warn('[portal] Admin Changes: could not open day', iso); }catch(_){}
         }

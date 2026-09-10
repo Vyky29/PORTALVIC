@@ -102,9 +102,8 @@ if (typeof window.__PORTAL_STAFF_REHYDRATE__ === "function") {
 if (typeof window.portalSyncServiceLeadsQuickMenu === "function") {
   window.portalSyncServiceLeadsQuickMenu();
 }
-if (typeof window.portalSyncLeadTeamShiftUi === "function") {
-  setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
-}
+if (typeof window.portalScheduleLeadTeamShiftUi === 'function') window.portalScheduleLeadTeamShiftUi();
+else if (typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
 if (typeof window.__PORTAL_LOGOUT_FN__ !== "function") {
   window.__PORTAL_LOGOUT_FN__ = portalLogout;
 }

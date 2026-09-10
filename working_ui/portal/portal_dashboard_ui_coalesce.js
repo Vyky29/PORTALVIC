@@ -82,31 +82,58 @@
     }, delayMs == null ? 48 : delayMs);
   };
 
+  var heavyRefreshTimer = null;
+  var heavyRefreshFn = null;
+  var heavyRefreshGen = 0;
+
   /**
    * Yield out of click/rAF handlers before heavy DOM work (term grid, week lists).
-   * Chrome logs [Violation] when a handler runs >50ms; deferring clears the click
-   * stack so the absence/save path feels instant and the console stays quieter.
+   * Coalesce bursts: Roberto's load was stacking ~18 deferred rebuilds × 7–8s each.
    */
   global.portalDeferHeavyDashboardRefresh = function portalDeferHeavyDashboardRefresh(fn, delayMs) {
     if (typeof fn !== "function") return;
+    heavyRefreshFn = fn;
+    heavyRefreshGen += 1;
+    var gen = heavyRefreshGen;
     var wait = delayMs == null ? 0 : Math.max(0, Number(delayMs) || 0);
-    var run = function () {
-      try {
-        fn();
-      } catch (e) {
+    if (heavyRefreshTimer) global.clearTimeout(heavyRefreshTimer);
+    heavyRefreshTimer = global.setTimeout(function () {
+      heavyRefreshTimer = null;
+      if (gen !== heavyRefreshGen) return;
+      var run = heavyRefreshFn;
+      heavyRefreshFn = null;
+      if (typeof run !== "function") return;
+      var kick = function () {
+        if (gen !== heavyRefreshGen) return;
         try {
-          console.warn("[portal] deferred dashboard refresh", e);
-        } catch (_) {}
-      }
-    };
-    global.setTimeout(function () {
+          run();
+        } catch (e) {
+          try {
+            console.warn("[portal] deferred dashboard refresh", e);
+          } catch (_) {}
+        }
+      };
       if (typeof global.requestAnimationFrame === "function") {
         global.requestAnimationFrame(function () {
-          global.setTimeout(run, 0);
+          global.setTimeout(kick, 0);
         });
       } else {
-        run();
+        kick();
       }
+    }, wait);
+  };
+
+  /** One coalesced lead-team strip sync — never stack from every renderToday paint. */
+  var leadTeamSyncTimer = null;
+  global.portalScheduleLeadTeamShiftUi = function portalScheduleLeadTeamShiftUi(delayMs) {
+    if (typeof global.portalSyncLeadTeamShiftUi !== "function") return;
+    var wait = delayMs == null ? 320 : Math.max(0, Number(delayMs) || 0);
+    if (leadTeamSyncTimer) return;
+    leadTeamSyncTimer = global.setTimeout(function () {
+      leadTeamSyncTimer = null;
+      try {
+        global.portalSyncLeadTeamShiftUi();
+      } catch (_) {}
     }, wait);
   };
 

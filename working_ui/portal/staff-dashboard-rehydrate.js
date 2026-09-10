@@ -166,6 +166,27 @@
           console.debug("staff_dashboard: skip rebootstrap that would drop today sessions", sid);
           return;
         }
+        /* Skip full Today/Week/Term paint when the model is unchanged (source-updated bursts). */
+        try {
+          var nextLen = boot.sessionsModel.length;
+          var prevLen = priorModel.length;
+          var sameLen = nextLen === prevLen;
+          var fp = sid + "|" + nextLen;
+          if (sameLen && nextLen) {
+            var a0 = priorModel[0] || {};
+            var b0 = boot.sessionsModel[0] || {};
+            var aN = priorModel[nextLen - 1] || {};
+            var bN = boot.sessionsModel[nextLen - 1] || {};
+            fp += "|" + String(a0.clientId || a0.name || "") + ":" + String(b0.clientId || b0.name || "");
+            fp += "|" + String(aN.clientId || aN.name || "") + ":" + String(bN.clientId || bN.name || "");
+            fp += "|" + String(a0.start || "") + ":" + String(b0.start || "");
+            fp += "|" + String(aN.start || "") + ":" + String(bN.start || "");
+          }
+          if (sameLen && window.__PORTAL_REBOOTSTRAP_FP__ === fp && prevLen > 0) {
+            return;
+          }
+          window.__PORTAL_REBOOTSTRAP_FP__ = fp;
+        } catch (_fp) {}
         __spreadsheetBoot = boot;
         STAFF_DASHBOARD_ID = sid;
         try { window.STAFF_DASHBOARD_ID = sid; } catch (_) {}
@@ -330,7 +351,12 @@
           if(typeof buildWeekRows === "function") dashboardData.week = buildWeekRows(sid);
           if(typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
           if(typeof portalRefreshNextSessionPreview === "function") portalRefreshNextSessionPreview(sid);
-          if(typeof renderTermCalendarGrid === "function") renderTermCalendarGrid();
+          try{
+            var termSheetEarly = document.getElementById("termSheet");
+            if(termSheetEarly && termSheetEarly.classList.contains("open") && typeof renderTermCalendarGrid === "function"){
+              renderTermCalendarGrid();
+            }
+          }catch(_te){}
         }
         if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
         if (typeof renderHeader === "function") renderHeader();
@@ -670,9 +696,8 @@
         if(typeof window.portalSyncServiceLeadsQuickMenu === 'function'){
           window.portalSyncServiceLeadsQuickMenu();
         }
-        if(typeof window.portalSyncLeadTeamShiftUi === 'function'){
-          setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
-        }
+        if (typeof window.portalScheduleLeadTeamShiftUi === 'function') window.portalScheduleLeadTeamShiftUi();
+        else if (typeof window.portalSyncLeadTeamShiftUi === 'function') window.portalSyncLeadTeamShiftUi();
         dashboardData.avatarFile = boot.avatarFile || dashboardData.avatarFile || "";
         if (typeof window.portalSyncTopbarStaffPhoto === "function") {
           window.portalSyncTopbarStaffPhoto();
@@ -837,7 +862,12 @@
           if (typeof renderMiniCounts === "function") renderMiniCounts();
           if (typeof portalDeferTermFeedbackRebuild === "function") portalDeferTermFeedbackRebuild();
           else if (typeof rebuildTermShiftAndFeedbackFromSessionModel === "function") rebuildTermShiftAndFeedbackFromSessionModel();
-          if (typeof renderTermCalendarGrid === "function") renderTermCalendarGrid();
+          try{
+            var termSheetOv = document.getElementById("termSheet");
+            if (termSheetOv && termSheetOv.classList.contains("open") && typeof renderTermCalendarGrid === "function") {
+              renderTermCalendarGrid();
+            }
+          }catch(_tg){}
           try{
             var lockDay3 = String(window.__PORTAL_REVIEW_DAY_URL_LOCK || '').trim();
             if(lockDay3 && typeof PORTAL_WEEK_REVIEW_VALID_DAYS !== "undefined" && PORTAL_WEEK_REVIEW_VALID_DAYS.has(lockDay3)){
