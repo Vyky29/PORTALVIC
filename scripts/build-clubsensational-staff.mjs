@@ -142,22 +142,30 @@ function writeStaffAppConfig(destDir) {
 
 function injectStaffConfigScript(htmlPath) {
   const tag =
-    '<script src="/staff-app-config.js?v=20260713-ceo-chooser"></script>\n  ';
+    '<script src="/staff-app-config.js?v=20260910-staff-boot-order"></script>\n  ';
   const bootTag =
-    '<script src="/portal/staff-app-boot.js?v=20260624-staff-boot8"></script>\n  ';
+    '<script src="/portal/staff-app-boot.js?v=20260910-staff-boot-order"></script>\n  ';
   const hintTag =
     '<script src="/portal/staff-app-install-hint.js?v=20260624-staff-install"></script>\n  ';
   let src = readFileSync(htmlPath, "utf8");
   if (/src=["']\/staff-app-config\.js/i.test(src)) return;
   const isLogin = /login\.html$/i.test(htmlPath);
-  const inject = isLogin ? tag + bootTag + hintTag : tag;
-  if (src.includes('portal_auth_page_gate.js')) {
+  /* Config must run before staff-app-boot.js. Dashboard HTML already has boot in
+     <head>; injecting before portal_auth_page_gate left boot first and the PWA
+     booted as portalvic-staff (heavy sync path → iOS crash after first paint). */
+  if (src.includes("/portal/staff-app-boot.js")) {
+    src = src.replace(
+      '<script src="/portal/staff-app-boot.js',
+      tag + '<script src="/portal/staff-app-boot.js',
+    );
+  } else if (src.includes("portal_auth_page_gate.js")) {
+    const inject = isLogin ? tag + bootTag + hintTag : tag;
     src = src.replace(
       '<script src="/portal/portal_auth_page_gate.js',
       inject + '<script src="/portal/portal_auth_page_gate.js',
     );
   } else {
-    src = src.replace("<head>", "<head>\n  " + inject.trim());
+    src = src.replace("<head>", "<head>\n  " + tag.trim());
   }
   writeFileSync(htmlPath, src, "utf8");
 }

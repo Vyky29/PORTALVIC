@@ -15,9 +15,23 @@
     return false;
   }
 
+  function detectStaffAppHost() {
+    try {
+      var host = String((global.location && global.location.hostname) || "").toLowerCase();
+      if (/clubsensational-staff\.vercel\.app$/i.test(host)) return true;
+      if (/^clubsensational-staff/i.test(host) && /\.vercel\.app$/i.test(host)) return true;
+    } catch (_) {}
+    return false;
+  }
+
   var isHandheld = detectHandheldStaff();
   var isStaffDashboard = /staff_dashboard/i.test(String(global.location.pathname || ""));
-  var isStaffApp = !!global.PORTAL_STAFF_APP;
+  var isStaffApp = !!global.PORTAL_STAFF_APP || detectStaffAppHost();
+  if (isStaffApp) {
+    try {
+      global.PORTAL_STAFF_APP = true;
+    } catch (_) {}
+  }
   var isPortalvicStaff = !isStaffApp && isStaffDashboard;
 
   if (!isStaffApp && !isPortalvicStaff) return;

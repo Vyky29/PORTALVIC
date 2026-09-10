@@ -136,26 +136,26 @@ export function patchStaffAppPerf(deployDir, options = {}) {
 
   if (staffApp) {
     html = html.replace(
-      '<script defer src="/portal/portal_admin_surface_map.js?v=20260609-admin-surface"></script>\n',
-      ""
+      /\s*<script defer src="\/portal\/portal_admin_surface_map\.js[^"]*"><\/script>\n/g,
+      "\n"
     );
     html = html.replace(
-      '<script defer src="/portal/portal_web_push_support.js?v=20260619-inflight-fix"></script>\n',
-      ""
+      /\s*<script defer src="\/portal\/portal_web_push_support\.js[^"]*"><\/script>\n/g,
+      "\n"
     );
     html = html.replace(
-      '<script defer src="/portal/portal_ensure_web_push.js?v=20260619-inflight-fix"></script>\n',
-      ""
+      /\s*<script defer src="\/portal\/portal_ensure_web_push\.js[^"]*"><\/script>\n/g,
+      "\n"
     );
     html = html.replace(
-      "<script defer src=\"/portal/portal_alerts_notifications_ui.js?v=20260619-inflight-fix\"></script>\n",
-      ""
+      /\s*<script defer src="\/portal\/portal_alerts_notifications_ui\.js[^"]*"><\/script>\n/g,
+      "\n"
     );
 
     if (!html.includes("staff-app-boot.js")) {
       html = html.replace(
-        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>',
-        '<script src="/staff-app-config.js?v=20260614-clubsensational-staff"></script>\n  <script src="/portal/staff-app-boot.js?v=20260624-staff-perf14"></script>'
+        /<script src="\/staff-app-config\.js[^"]*"><\/script>/,
+        '<script src="/staff-app-config.js?v=20260910-staff-boot-order"></script>\n  <script src="/portal/staff-app-boot.js?v=20260910-staff-boot-order"></script>'
       );
     }
 
@@ -170,8 +170,8 @@ export function patchStaffAppPerf(deployDir, options = {}) {
     );
 
     html = html.replace(
-      '<script src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-staff-perf"></script>\n',
-      '<script defer src="/portal/portal_dashboard_lazy_scripts.js?v=20260617-staff-perf"></script>\n'
+      /<script src="(\/portal\/portal_dashboard_lazy_scripts\.js[^"]*)"><\/script>/,
+      '<script defer src="$1"></script>'
     );
     html = html.replace(
       '<link rel="stylesheet" href="/portal/contract-preview.css?v=20260622-sign" />\n',

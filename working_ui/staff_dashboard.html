@@ -17,7 +17,7 @@
     /* Auto-heal installed PWA (iOS blank after alert tap). One-shot per version.
        Opens with a visible banner so the phone is never a white void while caching clears. */
     (function () {
-      var FLAG = "portalPwaHealV9";
+      var FLAG = "portalPwaHealV10";
       var KEEP = "clubsensational-portal-sw";
       var force = false;
       try {
@@ -87,7 +87,7 @@
       Promise.all(jobs).then(function () {
         try {
           localStorage.setItem(FLAG, "1");
-          sessionStorage.setItem("portalPwaFreshV9", "1");
+          sessionStorage.setItem("portalPwaFreshV10", "1");
         } catch (e5) {}
         var path = String(location.pathname || "");
         var onRoot = path === "/" || path === "";
@@ -121,7 +121,7 @@
     })();
   </script>
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
-  <script src="/portal/staff-app-boot.js?v=20260820-clients-info-handheld"></script>
+  <script src="/portal/staff-app-boot.js?v=20260910-staff-boot-order"></script>
   <script src="/portal/portal_auth_page_gate.js?v=20260609-auth-gate"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260820-es-full"></script>
