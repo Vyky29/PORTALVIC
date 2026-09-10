@@ -93,6 +93,8 @@
   }
 
   function ensureEl() {
+    /* Staff PWA: never mount a full-viewport layer. iOS treats inset:0 as a tap block. */
+    if (isWorkerDashboardPage()) return null;
     var el = document.getElementById(GUARD_ID);
     if (el) return el;
     el = document.createElement("div");
@@ -152,6 +154,7 @@
   }
 
   function triggerScreenshotMask(opts) {
+    if (isWorkerDashboardPage()) return;
     if (!armed || portalScreenshotGuardCaptureAllowed()) return;
     if (isPhotoCaptureUiActive()) return;
     opts = opts || {};

@@ -175,7 +175,7 @@
   </script>
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/staff-app-boot.js?v=20260910-staff-boot-order"></script>
-  <script src="/portal/portal_auth_page_gate.js?v=20260910-ios-taps"></script>
+  <script src="/portal/portal_auth_page_gate.js?v=20260910-roberto-taps"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260820-es-full"></script>
   <script src="/portal/portal-vapid-public.js?v=20260619-vapid-load-fix"></script>
@@ -262,7 +262,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260602-footerlogo" />
   <link rel="manifest" href="/staff-dashboard.webmanifest?v=20260712-cs-portal" />
-  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260910-ios-taps" />
+  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260910-roberto-taps" />
   <style>
     /* iOS PWA: a full-viewport overlay (even opacity 0) eats every tap. */
     #portalScreenshotGuard{
@@ -274,6 +274,13 @@
       inset:auto !important;
     }
     #backdrop:not(.open){
+      display:none !important;
+      pointer-events:none !important;
+      visibility:hidden !important;
+    }
+    /* Closed sheets stay display:flex + inset:0; iOS still hits them. */
+    .sheet:not(.open),
+    [id$="Sheet"]:not(.open){
       display:none !important;
       pointer-events:none !important;
       visibility:hidden !important;
@@ -294,11 +301,33 @@
         } catch (e2) {}
         try {
           var b = document.getElementById("backdrop");
+          var sheetOpen = !!document.querySelector(".sheet.open");
+          if (b && b.classList.contains("open") && !sheetOpen) {
+            b.classList.remove("open");
+            b.classList.remove("sheet-backdrop--focus");
+          }
           if (b && !b.classList.contains("open")) {
             b.style.pointerEvents = "none";
             b.style.removeProperty("display");
           }
         } catch (e3) {}
+        try {
+          var annOpen = !!document.getElementById("announcementsSheet") &&
+            document.getElementById("announcementsSheet").classList.contains("open");
+          if (!annOpen && document.body) {
+            document.body.classList.remove("dock-context-announcement-lock");
+          }
+        } catch (e4) {}
+        try {
+          var scroll = document.getElementById("appBodyScroll");
+          if (
+            scroll &&
+            document.documentElement.classList.contains("portal-auth-ready") &&
+            !document.body.classList.contains("dock-context-announcement-lock")
+          ) {
+            scroll.style.removeProperty("pointer-events");
+          }
+        } catch (e5) {}
       }
       peel();
       var n = 0;
@@ -307,11 +336,12 @@
         n += 1;
         if (n > 24) clearInterval(t);
       }, 500);
+      setInterval(peel, 2000);
     })();
   </script>
-  <script defer src="/portal/portal_screenshot_guard.js?v=20260910-ios-taps"></script>
+  <script defer src="/portal/portal_screenshot_guard.js?v=20260910-roberto-taps"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260910-taps3" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260910-roberto-taps" />
   <link rel="stylesheet" href="/portal/portal_staff_whatsapp.css?v=20260906-comms-40" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260906-comms-40" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260709-overview-by-service" />
@@ -1233,7 +1263,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260906-yusuf-aurora-swap"></script>
   <script src="/portal/staff-dashboard-today.js?v=20260910-berta-off-alerts"></script>
-  <script src="/portal/staff-dashboard-ui.js?v=20260909-mohamed-new-client"></script>
+  <script src="/portal/staff-dashboard-ui.js?v=20260910-roberto-taps"></script>
   <script src="/portal/portal_today_time_fit.js?v=20260706-time-one-line"></script>
   <script src="/portal/staff-dashboard-auth-bridge.js?v=20260625-lead-day-cards-nav"></script>
   <script src="/portal/staff-dashboard-rehydrate.js?v=20260909-luliya-first"></script>

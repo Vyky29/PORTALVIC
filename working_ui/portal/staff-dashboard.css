@@ -8025,6 +8025,14 @@
       .term-cal-day.term-cal-day--ov-pulse-shift-removed{box-shadow:0 0 0 2px rgba(185,28,28,.55),0 8px 20px rgba(185,28,28,.28)}
     }
 
+    /* Closed sheets must leave the hit tree. iOS still captures inset:0 +
+       display:flex layers even with opacity:0 / pointer-events:none. */
+    .sheet:not(.open),
+    [id$="Sheet"]:not(.open){
+      display:none !important;
+      pointer-events:none !important;
+      visibility:hidden !important;
+    }
     /* Hojas inferiores: cerradas = invisibles (no solo fuera de pantalla), para que nada “trasluzca” bajo el FAB */
     .sheet{
       position:fixed;
@@ -8047,6 +8055,8 @@
       pointer-events:none;
     }
     .sheet.open{
+      display:flex;
+      flex-direction:column;
       transform:translateY(0);
       opacity:1;
       visibility:visible;
@@ -10454,7 +10464,7 @@
       outline-offset:2px;
     }
     /* Pending announcement: block dashboard scroll behind sheet; keep dock so staff can open Quick menu / sign out. */
-    body.dock-context-announcement-lock #appBodyScroll{
+    body.dock-context-announcement-lock:has(#announcementsSheet.open) #appBodyScroll{
       pointer-events:none;
       user-select:none;
     }

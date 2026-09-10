@@ -123,16 +123,15 @@
     { once: true }
   );
 
-  /* Safety: never leave a blank screen if bootstrap hangs. Standalone PWA
-     used to sit behind the full-screen loader for 12s (feels frozen). */
+  /* Safety: never leave a blank screen if bootstrap hangs. Staff dashboard
+     (PWA or Safari) used to sit behind the full-screen loader for 12s. */
   var gateMs = 12000;
   try {
-    if (
+    var staffDash = /staff_dashboard/i.test(path);
+    var standalone =
       (global.navigator && global.navigator.standalone) ||
-      (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches)
-    ) {
-      gateMs = 2500;
-    }
+      (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches);
+    if (staffDash || standalone) gateMs = 2500;
   } catch (_eGate) {}
   global.setTimeout(function () {
     if (!doc.documentElement.classList.contains("portal-auth-ready")) {

@@ -770,7 +770,8 @@
         awaitingInitialToday = typeof portalStaffLiveTodayAwaitingInitialSchedule === 'function'
           && portalStaffLiveTodayAwaitingInitialSchedule();
       }
-      let count = awaitingInitialToday ? 0 : Math.min(9, dashboardData.today.length || 0);
+      const todayRows = (dashboardData && Array.isArray(dashboardData.today)) ? dashboardData.today : [];
+      let count = awaitingInitialToday ? 0 : todayRows.length;
       grid.className = 'today-grid';
       grid.setAttribute('data-session-count', String(count));
       if(!count){
@@ -834,7 +835,7 @@
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         return;
       }
-      const list = dashboardData.today.slice(0, 9);
+      const list = todayRows;
       const todaySig = typeof portalTodaySessionCardsSignature === 'function'
         ? portalTodaySessionCardsSignature(list, sessionReviewRowClass, function(row){
           return typeof resolveParticipantPhotoUrl === 'function'
@@ -906,8 +907,9 @@
         const venAria = portalTodaySessionVenueLabel(item);
         const venPart = venAria && venAria !== '—' ? `, ${venAria}` : '';
         card.setAttribute('aria-label', item.kind === 'available' ? `NO PARTICIPANT — slot open for new bookings, ${item.time}${venPart}${poolAria}` : `Open notes for ${item.name}, ${item.time}${venPart}${poolAria}${adminAdjCls ? (portalTodayItemShowsShadowingHostAlert(item) ? ', shadowing session' : ', schedule changed by admin') : ''}`);
-        card.innerHTML = todaySessionCardInnerHtml(item);
-        card.addEventListener('click', () => openClient(item));
+        try{ card.innerHTML = todaySessionCardInnerHtml(item); }catch(_html){
+          card.textContent = String(item && item.name || 'Session');
+        }
         rowsWrap.appendChild(card);
       });
       grid.appendChild(rowsWrap);
@@ -4557,10 +4559,13 @@
           window.__PORTAL_TERM_JUDGEMENT_ALLOWED = true;
         }
       }catch(_){}
+      try{
       resetClientInfoPanels();
       const gen = resolveClientGeneralInfoText(item);
-      document.getElementById('clientTitle').textContent = item.name;
-      document.getElementById('clientTime').textContent = item.time;
+      const titleEl = document.getElementById('clientTitle');
+      const timeEl = document.getElementById('clientTime');
+      if(titleEl) titleEl.textContent = item.name;
+      if(timeEl) timeEl.textContent = item.time;
       syncClientPhotoSlot(item.name, item.clientId);
       setClientInfoFormattedBody('clientGeneral', gen, 'No general information available.');
       setClientInfoFormattedBody('clientSpecialtyBody', '', 'No information for this programme.');
@@ -4595,7 +4600,34 @@
       if(typeof requestAnimationFrame === 'function'){
         requestAnimationFrame(() => syncDockNavContext());
       }
+      }catch(_openClient){
+        try{ console.warn('[portal] openClient', _openClient); }catch(_){}
+      }
     }
+
+    (function bindTodayGridOpenClient(){
+      const grid = document.getElementById('todayGrid');
+      if(!grid || grid.getAttribute('data-portal-today-open-bound') === '1') return;
+      grid.setAttribute('data-portal-today-open-bound', '1');
+      grid.addEventListener('click', function(ev){
+        const btn = ev.target && ev.target.closest ? ev.target.closest('button.session-card') : null;
+        if(!btn || !grid.contains(btn)) return;
+        const key = String(btn.getAttribute('data-session-key') || '').trim();
+        const list = (dashboardData && Array.isArray(dashboardData.today)) ? dashboardData.today : [];
+        let item = null;
+        if(key){
+          for(let i = 0; i < list.length; i++){
+            if(String(list[i] && list[i].sessionKey || '') === key){ item = list[i]; break; }
+          }
+        }
+        if(!item){
+          const buttons = grid.querySelectorAll('button.session-card');
+          const idx = Array.prototype.indexOf.call(buttons, btn);
+          if(idx >= 0) item = list[idx] || null;
+        }
+        if(item) openClient(item);
+      });
+    })();
 
     portalInitNextSessionParticipantDelegation();
     backdropEl = document.getElementById('backdrop');
@@ -5701,7 +5733,7 @@
         const todayIso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(new Date()) : '';
         if(sel && todayIso && sel === todayIso && typeof renderToday === 'function'){
           const grid = document.getElementById('todayGrid');
-          const list = (dashboardData && Array.isArray(dashboardData.today)) ? dashboardData.today.slice(0, 9) : [];
+          const list = (dashboardData && Array.isArray(dashboardData.today)) ? dashboardData.today : [];
           const nextSig = typeof portalTodaySessionCardsSignature === 'function'
             ? portalTodaySessionCardsSignature(list, sessionReviewRowClass)
             : '';
