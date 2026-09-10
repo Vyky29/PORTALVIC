@@ -4635,6 +4635,30 @@
       dashboardData.portalTodaySectionHeading = '';
       dashboardData.portalTodaySectionMode = 'today';
       const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+      // #region agent log
+      try {
+        if (typeof window.__portalDbg === "function") {
+          var awaiting = !!(liveToday && typeof portalStaffLiveTodayAwaitingInitialSchedule === "function" && portalStaffLiveTodayAwaitingInitialSchedule());
+          var fadiBuild = (rows || []).filter(function (it) {
+            return /fadi/i.test(String((it && (it.name || it.clientId)) || ""));
+          }).map(function (it) {
+            return {
+              name: String(it.name || ""),
+              kind: String(it.kind || ""),
+              segs: Array.isArray(it.segments) ? it.segments.length : 0,
+              key: String(it.sessionKey || "").slice(0, 80)
+            };
+          });
+          window.__portalDbg("E", "staff-dashboard-today.js:syncToday", "today-rows", {
+            n: (rows || []).length,
+            fadi: fadiBuild,
+            sid: String(id || ""),
+            live: !!liveToday,
+            awaiting: awaiting
+          });
+        }
+      } catch (_dbgRows) {}
+      // #endregion
       if(!liveToday){
         dashboardData.portalTodayNextSessionPreview = null;
       }

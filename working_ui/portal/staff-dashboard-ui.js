@@ -843,6 +843,31 @@
             : '';
         })
         : '';
+      // #region agent log
+      try {
+        var fadiRows = (list || []).filter(function (it) {
+          return /fadi/i.test(String((it && (it.name || it.clientId)) || ""));
+        }).map(function (it) {
+          return {
+            name: String(it.name || ""),
+            kind: String(it.kind || ""),
+            segs: Array.isArray(it.segments) ? it.segments.length : 0,
+            ov: String((it.__portalScheduleOverride && it.__portalScheduleOverride.override_type) || ""),
+            key: String(it.sessionKey || "").slice(0, 80),
+            openSheet: it.openSheet
+          };
+        });
+        if (typeof window.__portalDbg === "function") {
+          window.__portalDbg("C", "staff-dashboard-ui.js:renderToday", "today-paint", {
+            count: (list || []).length,
+            sig: String(todaySig || "").slice(0, 80),
+            reuse: !!(todaySig && grid.getAttribute("data-today-cards-sig") === todaySig && grid.querySelector(".today-grid-rows")),
+            fadi: fadiRows,
+            names: (list || []).map(function (it) { return String(it && it.name || ""); })
+          });
+        }
+      } catch (_dbgToday) {}
+      // #endregion
       if(todaySig && grid.getAttribute('data-today-cards-sig') === todaySig && grid.querySelector('.today-grid-rows')){
         applyTodayGridSizing(grid, count);
         /* Same cards DOM — still repair photos (sheet open/close can abort img loads). */
