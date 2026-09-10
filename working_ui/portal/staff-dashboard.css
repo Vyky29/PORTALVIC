@@ -277,9 +277,9 @@
       box-sizing:border-box;
       overflow:visible;
     }
-    /* Halo flanks: hug screen edges + a bit more vertical room for larger tiles. */
+    /* Halo flanks: hug screen edges; keep topbar short so Today gets the height. */
     .topbar:has(.topbar-lead--halo-flanks){
-      padding:6px 1px 4px;
+      padding:2px 1px 0;
     }
     .topbar-lead{
       display:grid;
@@ -423,18 +423,28 @@
       cursor:pointer;
     }
     .topbar-center--halo .avatar-wrap--staff-halo{
-      --avatar-core-size:82px;
-      --avatar-wrap-size:94px;
-      --avatar-orbit-outset:17px;
+      --avatar-core-size:74px;
+      --avatar-wrap-size:86px;
+      --avatar-orbit-outset:14px;
     }
     /* Idle: shrink wrap to the photo so grey padding + empty band under the circle disappear */
     .topbar-center--halo .avatar-wrap--staff-halo.avatar-wrap--portal-orbit-idle{
-      --avatar-wrap-size:84px;
-      --avatar-core-size:82px;
+      --avatar-wrap-size:76px;
+      --avatar-core-size:74px;
       --avatar-orbit-outset:0px;
     }
     .topbar-center--halo:has(.avatar-wrap:not(.avatar-wrap--portal-orbit-idle)) .topbar-staff-photo__edit--above-name{
-      margin-top:calc(var(--avatar-orbit-outset, 16px) + 2px);
+      display:none;
+    }
+    .topbar-center--halo .topbar-staff-photo__edit,
+    .topbar-center--halo .topbar-staff-photo__edit--above-name{
+      display:none !important;
+    }
+    .topbar-center--halo .topbar-name--under-halo{
+      margin-top:1px;
+      line-height:1.05;
+      font-size:clamp(15px, 4.2vw, 20px);
+      flex:0 0 auto;
     }
     .avatar-wrap:hover{
       transform:scale(1.05);
@@ -514,14 +524,6 @@
     }
     .avatar-wrap[data-gender="f"] .topbar-staff-photo--halo .topbar-staff-photo__initials{
       color:var(--topbar-profile-female-ink,#9c2756);
-    }
-    .topbar-center--halo .topbar-staff-photo__edit--above-name{
-      width:26px;
-      height:26px;
-      margin:3px auto 1px;
-    }
-    .topbar-center--halo .topbar-name--under-halo{
-      margin-top:0;
     }
     .topbar-staff-photo--halo .topbar-staff-photo__share-note{
       display:none;
@@ -4647,7 +4649,7 @@
     }
 
     .section-head--today{
-      padding:6px 12px 4px;
+      padding:4px 10px 2px;
       align-items:center;
       justify-content:center;
       flex-direction:row;
@@ -5006,28 +5008,28 @@
       overflow-y:hidden;
     }
     .section-card--today .today-grid.today-grid--session-scroll{
-      overflow-y:auto;
-      -webkit-overflow-scrolling:touch;
-      overscroll-behavior:contain;
-      scrollbar-width:thin;
-      scrollbar-color:rgba(45,132,179,.35) transparent;
+      /* Prefer equal-height fixed rows (auto-scale type/icons) over inner scroll. */
+      overflow-y:hidden;
+      -webkit-overflow-scrolling:auto;
+      overscroll-behavior:none;
     }
     .section-card--today .today-grid.today-grid--session-scroll .today-grid-rows{
-      height:auto;
-      flex:0 0 auto;
-      max-height:none;
+      height:100%;
+      flex:1 1 0;
+      max-height:calc(100% * var(--today-rows-fill, 1));
+      min-height:0;
     }
     .section-card--today .today-grid.today-grid--session-scroll .today-grid-rows > .session-card{
-      flex:0 0 auto;
-      min-height:72px;
+      flex:1 1 0;
+      min-height:0;
       max-height:none;
-      overflow:visible;
+      overflow:hidden;
     }
     .section-card--today .today-grid.today-grid--session-scroll .today-grid-rows > .session-card .session-line--symbol{
-      overflow:visible;
+      overflow:hidden;
     }
     .section-card--today .today-grid.today-grid--session-scroll .session-card .session-card-body{
-      overflow:visible;
+      overflow:hidden;
     }
     .today-grid{
       padding:4px 8px 10px;
@@ -5754,10 +5756,21 @@
     .section-card--today .today-grid[data-session-count="5"] .session-chips-below-name .portal-session-slot-chip,
     .section-card--today .today-grid[data-session-count="6"] .session-chips-below-name .portal-session-slot-chip,
     .section-card--today .today-grid[data-session-count="7"] .session-chips-below-name .portal-session-slot-chip,
-    .section-card--today .today-grid[data-session-count="8"] .session-chips-below-name .portal-session-slot-chip{
-      padding:3px 7px;
-      font-size:9px;
-      line-height:1.1;
+    .section-card--today .today-grid[data-session-count="8"] .session-chips-below-name .portal-session-slot-chip,
+    .section-card--today .today-grid[data-session-count="9"] .session-chips-below-name .portal-session-slot-chip{
+      padding:2px 6px;
+      font-size:clamp(7px, 1.8cqi + 6px, 9px);
+      line-height:1.05;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .section-card--today .today-grid[data-session-count="7"] .session-line--name .session-meta-name,
+    .section-card--today .today-grid[data-session-count="8"] .session-line--name .session-meta-name,
+    .section-card--today .today-grid[data-session-count="9"] .session-line--name .session-meta-name{
+      font-size:clamp(10px, calc(var(--today-name-fs, 12px) + 0.1vw), 14px);
+      line-height:1.05;
     }
     .section-card--today .session-line--name .session-meta-name{
       /* Auto-size: grows with available width but stays consistent. */

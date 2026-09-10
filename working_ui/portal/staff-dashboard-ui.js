@@ -736,41 +736,31 @@
         return;
       }
       const n = Math.min(9, count);
-      var narrowBoard = false;
-      try{
-        if(document.documentElement && document.documentElement.classList.contains('portal-standalone')) narrowBoard = true;
-        else if(window.matchMedia && window.matchMedia('(max-width: 720px)').matches) narrowBoard = true;
-        else if(grid && grid.getBoundingClientRect && grid.getBoundingClientRect().width <= 430) narrowBoard = true;
-      }catch(_){}
-      /* Phone PWA: 5–6 squeezed rows clip Cancelled / Submitted chips (Roberto Today). */
-      const scrollMode = n >= 7 || (narrowBoard && n >= 5);
-      grid.classList.toggle('today-grid--session-scroll', scrollMode);
+      /* Never scroll inside Today: equal-height rows + auto-scale type/icons. */
+      const scrollMode = false;
+      grid.classList.remove('today-grid--session-scroll');
       grid.style.setProperty('--today-rows-fill', n === 1 ? '0.333333' : '1');
       grid.style.setProperty('--today-session-count', String(n));
       const t = (n - 1) / 8;
       let timeFs = Math.round(11 + (1 - t) * 5);
       let nameFs = Math.min(16, timeFs + 1);
-      let iconPx = Math.max(28, Math.round(26 + (1 - t) * 10));
-      let areaIconPx = Math.max(38, Math.round(34 + (1 - t) * 10));
+      let iconPx = Math.max(22, Math.round(26 + (1 - t) * 10));
+      let areaIconPx = Math.max(28, Math.round(34 + (1 - t) * 10));
       let gapPx = n >= 7 ? 2 : (n >= 4 ? 3 : Math.round(4 + (3 - n) * 0.5));
-      let padY = n >= 8 ? 2 : (n >= 5 ? 3 : 4);
-      if(n >= 5 && n <= 6){
-        nameFs = Math.max(13, nameFs);
-        iconPx = Math.min(iconPx, 30);
-      }
-      if(scrollMode){
-        timeFs = 12;
-        nameFs = 14;
-        iconPx = 30;
-        areaIconPx = 36;
-        gapPx = 4;
-        padY = 4;
+      let padY = n >= 8 ? 1 : (n >= 6 ? 2 : (n >= 5 ? 3 : 4));
+      if(n >= 5){
+        timeFs = Math.max(8, Math.round(12 - (n - 4) * 0.7));
+        nameFs = Math.max(11, Math.round(15 - (n - 4) * 0.6));
+        iconPx = Math.max(22, Math.round(30 - (n - 4) * 1.2));
+        areaIconPx = Math.max(28, Math.round(38 - (n - 4) * 1.5));
+        gapPx = n >= 7 ? 1 : 2;
+        padY = n >= 7 ? 1 : 2;
       }
       const areaM = typeof portalTodayAreaNoteMetrics === 'function'
         ? portalTodayAreaNoteMetrics(n, scrollMode, grid, nameFs)
         : { iconPx, areaIconPx, labelFs: 9, symbolColMax: 72 };
-      iconPx = areaM.iconPx;
-      areaIconPx = areaM.areaIconPx;
+      iconPx = Math.min(iconPx, areaM.iconPx);
+      areaIconPx = Math.min(areaIconPx, areaM.areaIconPx);
       grid.style.setProperty('--today-time-fs', timeFs + 'px');
       grid.style.setProperty('--today-name-fs', nameFs + 'px');
       grid.style.setProperty('--today-icon', iconPx + 'px');
@@ -779,7 +769,7 @@
       grid.style.setProperty('--today-area-label-fs', areaM.labelFs + 'px');
       grid.style.setProperty('--today-area-stack-gap', (areaM.stackGap != null ? areaM.stackGap : 0) + 'px');
       grid.style.setProperty('--today-area-label-block', (areaM.labelBlock != null ? areaM.labelBlock : 0) + 'px');
-      grid.style.setProperty('--today-symbol-col-max', (n >= 5 ? Math.min(areaM.symbolColMax, 62) : areaM.symbolColMax) + 'px');
+      grid.style.setProperty('--today-symbol-col-max', (n >= 5 ? Math.min(areaM.symbolColMax, 58) : areaM.symbolColMax) + 'px');
       grid.style.setProperty('--today-row-gap', gapPx + 'px');
       grid.style.setProperty('--today-row-pad-y', padY + 'px');
     }

@@ -220,13 +220,16 @@
     );
   }
 
-  /** Icon + label metrics for TODAY session rows — fixed tile size for every row count. */
+  /** Icon + label metrics for TODAY session rows — shrink with denser boards (no inner scroll). */
   function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl, nameFs) {
-    var areaIconPx = scrollMode ? 36 : 40;
-    var labelFs = scrollMode ? 7 : 8;
-    var stackGap = 2;
-    var symbolColMax = scrollMode ? 52 : 56;
-    var iconPx = scrollMode ? 28 : 32;
+    var n = Math.max(1, Math.min(9, Number(sessionCount) || 1));
+    var dense = n >= 5;
+    var veryDense = n >= 7;
+    var areaIconPx = veryDense ? 28 : (dense ? 32 : (scrollMode ? 36 : 40));
+    var labelFs = veryDense ? 6 : (dense ? 7 : (scrollMode ? 7 : 8));
+    var stackGap = veryDense ? 1 : 2;
+    var symbolColMax = veryDense ? 44 : (dense ? 50 : (scrollMode ? 52 : 56));
+    var iconPx = veryDense ? 22 : (dense ? 26 : (scrollMode ? 28 : 32));
     return {
       iconPx: iconPx,
       areaIconPx: areaIconPx,
