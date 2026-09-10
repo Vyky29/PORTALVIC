@@ -137,7 +137,7 @@
     }
     global.__PORTAL_SW_REG_PROMISE__ = (async function () {
       try {
-        var swUrl = new URL("clubsensational-portal-sw.js?v=20260906-comms-inapp-49", global.location.href).href;
+        var swUrl = new URL("clubsensational-portal-sw.js?v=20260910-staff-static", global.location.href).href;
         var scopeBase = new URL("./", global.location.href).href;
         var reg = await global.navigator.serviceWorker.register(swUrl, { scope: scopeBase });
         global.__PORTAL_SW_REG__ = reg;
@@ -146,9 +146,11 @@
             global.__PORTAL_SW_CTRL_BOUND__ = true;
             global.navigator.serviceWorker.addEventListener("controllerchange", function () {
               try {
+                if (global.PORTAL_STAFF_APP) return;
                 if (sessionStorage.getItem("portal_sw_reloaded_49") === "1") return;
                 sessionStorage.setItem("portal_sw_reloaded_49", "1");
               } catch (_s) {}
+              if (global.PORTAL_STAFF_APP) return;
               global.location.reload();
             });
           }

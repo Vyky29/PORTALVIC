@@ -52,6 +52,10 @@
         storageOk = false;
         if (!force && cookieHealed()) return;
       }
+      if (!force) {
+        markStored();
+        return;
+      }
       var banner = null;
       try {
         banner = document.createElement("div");
@@ -81,7 +85,12 @@
               var list = keys || [];
               return Promise.all(
                 list.map(function (k) {
-                  if (String(k).indexOf("portal-push-icons") >= 0) return null;
+                  var name = String(k);
+                  if (name.indexOf("portal-push-icons") >= 0) return null;
+                  if (name.indexOf("clubsensational-static-") === 0) return null;
+                  if (name.indexOf("clubsensational-staff-static-") === 0) return null;
+                  if (name.indexOf("portal-fg") >= 0) return null;
+                  if (name.indexOf("portal-app-badge") >= 0) return null;
                   foundStale = true;
                   return caches.delete(k);
                 })

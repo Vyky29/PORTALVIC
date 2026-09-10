@@ -152,6 +152,11 @@ export function patchStaffAppPerf(deployDir, options = {}) {
       "\n"
     );
 
+    html = html.replace(
+      /\s*<script src="\/portal\/portal_staff_lead_aquatic_slots\.js[^"]*"><\/script>\n/g,
+      "\n"
+    );
+
     if (!html.includes("staff-app-boot.js")) {
       html = html.replace(
         /<script src="\/staff-app-config\.js[^"]*"><\/script>/,

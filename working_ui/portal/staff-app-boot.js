@@ -77,6 +77,11 @@
 
   if ("serviceWorker" in global.navigator) {
     try {
+      if (isStaffApp) {
+        var swUrl = "/clubsensational-portal-sw.js?v=20260910-staff-static";
+        var scopeBase = new URL("./", global.location.href).href;
+        global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
+      }
       /* Keep the portal push SW; only drop stale unrelated registrations. */
       global.navigator.serviceWorker.getRegistrations().then(function (regs) {
         regs.forEach(function (reg) {
@@ -195,7 +200,7 @@
     if (isHandheld) {
       var kick = function () {
         // Short defer so first paint stays light; still must run (was skipped entirely before).
-        global.setTimeout(start, 800);
+        global.setTimeout(start, 4000);
       };
       if (document.readyState === "complete") kick();
       else global.addEventListener("load", kick, { once: true });
@@ -244,7 +249,7 @@
       if (i >= urls.length) return;
       loadScript(urls[i++]).then(next);
     }
-    scheduleIdle(next, isHandheld ? 1500 : 800);
+    scheduleIdle(next, isHandheld ? 4000 : 800);
   };
 
   function portalStaffDeferHeadExtras() {
