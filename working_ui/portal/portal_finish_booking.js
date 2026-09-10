@@ -653,7 +653,7 @@
     var intro = document.querySelector("#fbStepPay > .muted");
     if (intro) {
       intro.textContent =
-        "Trial session — choose how to pay. Your place is held for 30 minutes.";
+        "Trial sessions are card / Apple Pay only (Stripe). A card fee is added so we receive the session price in full. Term places can choose bank transfer or other methods. Your place is held for 30 minutes.";
     }
     var bank = document.querySelector('input[name="pay_channel"][value="bank_transfer"]');
     var gc = document.querySelector('input[name="pay_channel"][value="gocardless"]');
@@ -666,31 +666,22 @@
     }
     if (bank) {
       bank.checked = false;
-      var bankHint = bank.closest("label") && bank.closest("label").querySelector(".hint");
-      if (bankHint) {
-        bankHint.innerHTML =
-          "Pay <strong>£" +
-          esc(
-            String(
-              (data.pricing && data.pricing.trial_session_gbp) ||
-                data.unit_price_gbp ||
-                "—",
-            ),
-          ) +
-          "</strong> by bank transfer within <strong>30 minutes</strong>. Then email or WhatsApp the office (photo/screenshot of the transfer welcome) so they can confirm.";
-      }
+      var bankChoice = bank.closest("label");
+      if (bankChoice) bankChoice.hidden = true;
     }
     if (!stripeLabel) {
       var host = document.getElementById("fbPayChannelBox");
-      if (host && bank) {
+      if (host) {
         var lbl = document.createElement("label");
         lbl.className = "choice";
         lbl.id = "fbTrialStripeChannel";
         lbl.innerHTML =
           '<input type="radio" name="pay_channel" value="stripe_instant" checked />' +
           "<strong>Card / Apple Pay</strong>" +
-          '<span class="hint">Pay now (small card fee so we receive the session price in full). Confirms the trial when payment succeeds.</span>';
-        host.insertBefore(lbl, bank.closest("label"));
+          '<span class="hint">Pay now. A card fee is added so we receive the session price in full. Confirms the trial when payment succeeds.</span>';
+        var bankWrap = bank && bank.closest("label");
+        if (bankWrap) host.insertBefore(lbl, bankWrap);
+        else host.insertBefore(lbl, host.firstChild);
       }
     } else {
       stripeLabel.hidden = false;
@@ -715,7 +706,9 @@
     var bank = document.querySelector('input[name="pay_channel"][value="bank_transfer"]');
     if (bank) {
       bank.checked = true;
-      var bankHint = bank.closest("label") && bank.closest("label").querySelector(".hint");
+      var bankChoice = bank.closest("label");
+      if (bankChoice) bankChoice.hidden = false;
+      var bankHint = bankChoice && bankChoice.querySelector(".hint");
       if (bankHint) {
         bankHint.innerHTML =
           "You must pay the first amount within <strong>30 minutes</strong> or the place goes live again. After you transfer, email or WhatsApp the office (photo/screenshot welcome) so they can confirm.";
@@ -819,7 +812,7 @@
       if (strong) strong.textContent = "Trial session (pay now)";
       if (hint) {
         hint.textContent =
-          "One session only. Pay immediately with card or Apple Pay — the slot is not booked until payment succeeds.";
+          "One session only. Pay by card or Apple Pay only (Stripe) - a card fee is added so we receive the session price in full. Bank transfer and other methods are only for term places.";
       }
     }
   }
@@ -1286,11 +1279,7 @@
           return;
         }
         if (data.booking_scope === "trial_session") {
-          var trialPlan =
-            channel === "bank_transfer" || channel === "one_off_bank"
-              ? "one_off_bank"
-              : "stripe_instant";
-          void startTrialWithPlan(data, notice, trialPlan).catch(function (err) {
+          void startTrialWithPlan(data, notice, "stripe_instant").catch(function (err) {
             showNotice(notice, err.message || "Could not create trial invoice.", "error");
           });
           return;

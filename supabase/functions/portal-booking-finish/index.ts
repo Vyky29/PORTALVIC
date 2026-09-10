@@ -1215,19 +1215,10 @@ Deno.serve(async (req) => {
         message: "Social Worker / NHS referral bookings have no parent invoice.",
       });
     }
-    if (
-      scope === "trial_session" &&
-      planOnly !== "stripe_instant" &&
-      planOnly !== "one_off_bank"
-    ) {
-      return json(400, {
-        ok: false,
-        error: "trial_pay_plan_required",
-        message: "Trial sessions: pay by card / Apple Pay or bank transfer.",
-      });
+    let plan = planOnly;
+    if (scope === "trial_session") {
+      plan = "stripe_instant";
     }
-
-    const plan = planOnly;
     const now = new Date().toISOString();
     const payPlanColumn = plan === "stripe_instant" ? null : plan;
     await admin
@@ -1288,13 +1279,7 @@ Deno.serve(async (req) => {
     const scope = parseBookingScope(body.booking_scope) || savedScope;
     if (!scope) return json(400, { ok: false, error: "booking_scope_required" });
     if (scope === "trial_session") {
-      if (plan !== "stripe_instant" && plan !== "one_off_bank") {
-        return json(400, {
-          ok: false,
-          error: "trial_pay_plan_required",
-          message: "Trial sessions: pay by card / Apple Pay or bank transfer.",
-        });
-      }
+      plan = "stripe_instant";
     }
     if (!plan) return json(400, { ok: false, error: "pay_plan_required" });
     if (plan === "own_way" && funding === "la_direct_payments") {

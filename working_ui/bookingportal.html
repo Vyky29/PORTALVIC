@@ -2353,7 +2353,7 @@
           choices.hidden = false;
           var termHint = deferNote
             ? deferNote
-            : "Secure the standing place for the rest of the term or year. After registration, complete funding, term or year choice, and payment in the booking flow.";
+            : "Secure the standing place for the rest of the term or year. After registration you choose how to pay (bank transfer, GoCardless, or card).";
           var termBtn =
             '<button type="button" class="sheet__choice' +
             (preferTrial ? "" : " sheet__choice--pri") +
@@ -2367,7 +2367,7 @@
             (preferTrial ? " sheet__choice--pri" : "") +
             '" data-book-kind="trial" data-slot-id="' +
             esc(slot.id) +
-            '"><strong>Book a trial</strong><span>One session. Weekdays: same day OK with at least 2 hours\' notice for staff. Weekends: book by Friday 6pm (otherwise the next Saturday or Sunday). After registration, pay by card, Apple Pay, or bank transfer (30-minute hold)' +
+            '"><strong>Book a trial</strong><span>One session. Weekdays: same day OK with at least 2 hours\' notice. Weekends: book by Friday 6pm (otherwise the next Saturday or Sunday). Pay by card or Apple Pay only (Stripe) - a card fee is added so we receive the session price in full. Bank transfer and other methods are only for term places. Place held 30 minutes while you pay' +
             (price ? " · " + esc(price) : "") +
             (deferNote ? ". " + esc(deferNote) : "") +
             ".</span></button>";
