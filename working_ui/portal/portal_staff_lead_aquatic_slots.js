@@ -221,8 +221,33 @@
 
   function clientNeedsPerSlotAquaticFeedbackOnDate(iso, clientId, dayWord) {
     if (aquaticInstructorCoverUnitsOnDate(iso, clientId, dayWord) > 1) return true;
+    if (clientHasMixedAquaticCancelOnDate(iso, clientId, dayWord)) return true;
     if (aquaticSlotCountForClientOnDate(iso, clientId, dayWord) <= 1) return false;
     return !aquaticSameInstructorAllSlotsOnDate(iso, clientId, dayWord);
+  }
+
+  function clientHasMixedAquaticCancelOnDate(iso, clientId, dayWord) {
+    var cid = slugClient(clientId);
+    if (!iso || !cid) return false;
+    var ovs =
+      typeof global.portalScheduleOverrideRowsAll === "function"
+        ? global.portalScheduleOverrideRowsAll()
+        : Array.isArray(global.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
+          ? global.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
+          : [];
+    var want = String(iso || "").slice(0, 10);
+    for (var i = 0; i < ovs.length; i++) {
+      var ov = ovs[i];
+      if (!ov || String(ov.status || "active") !== "active") continue;
+      if (String(ov.session_date || "").slice(0, 10) !== want) continue;
+      var t = String(ov.override_type || "").trim();
+      if (t !== "slot_clear_client" && t !== "slot_close") continue;
+      if (slugClient(ov.anchor_client_id) !== cid) continue;
+      var svc = String((ov.payload && (ov.payload.service || ov.payload.activity)) || "").toLowerCase();
+      if (svc && !/aquatic|swim/.test(svc)) continue;
+      return true;
+    }
+    return false;
   }
 
   function labelClockStartHm(raw) {
@@ -237,7 +262,7 @@
     var leadH = t.match(/^(\d{1,2})(?=\s*(?:to|-|$))/);
     if (leadH) {
       var h2 = Number(leadH[1]);
-      if (h2 >= 1 && h <= 7) h2 += 12;
+      if (h2 >= 1 && h2 <= 7) h2 += 12;
       return canonicalHmToken(h2 + ":00");
     }
     return "";
@@ -298,7 +323,11 @@
     try {
       if (typeof global.portalTwoToOneSupportLabelForSession === "function") {
         var lab = global.portalTwoToOneSupportLabelForSession(s, s.staffId, s.clientId);
-        if (lab) return true;
+        if (lab) {
+          var labelledStart =
+            canonicalHmToken((s && s.start) || "") || labelClockStartHm((s && s.time) || "");
+          return aquaticTwoToOneStaffCountOnSlot(iso, s.clientId || s.client, labelledStart, day) >= 2;
+        }
       }
     } catch (_) {}
     var start =
@@ -731,6 +760,15 @@
     return out;
   }
 
+  function itemLooksCancelledOrCleared(it) {
+    if (!it) return false;
+    if (it.noSessionFeedbackRequired && String(it.portalOverrideAlertPill || "").toUpperCase() === "CANCELLED") {
+      return true;
+    }
+    var pill = String(it.portalOverrideAlertPill || "").trim().toUpperCase();
+    return pill === "CANCELLED" || pill === "ABSENT";
+  }
+
   function mergeTodayAquaticCards(items, iso, dayWord) {
     if (!items || !items.length) return items || [];
     var passthrough = [];
@@ -759,6 +797,14 @@
     Object.keys(byClient).forEach(function (cid) {
       var list = byClient[cid];
       if (!list.length) return;
+      var nCancel = 0;
+      for (var ci = 0; ci < list.length; ci++) {
+        if (itemLooksCancelledOrCleared(list[ci])) nCancel++;
+      }
+      if (nCancel && nCancel < list.length) {
+        for (var cj = 0; cj < list.length; cj++) merged.push(list[cj]);
+        return;
+      }
       if (list.length === 1) {
         var only = list[0];
         only.sessionKey = buildAquaticSessionReviewKey(

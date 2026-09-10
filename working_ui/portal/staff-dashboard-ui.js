@@ -1074,6 +1074,13 @@
       if(typeof portalTermStaffExtraCalendarDates === 'function' && portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0){
         return false;
       }
+      try{
+        const dw = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+        if(typeof portalStaffClientSessionsOnCalendarDate === 'function'
+          && portalStaffClientSessionsOnCalendarDate(iso, dw, sid)){
+          return false;
+        }
+      }catch(_){}
       if(typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
         && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)){
         return false;

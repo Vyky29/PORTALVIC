@@ -1877,6 +1877,16 @@
       const ot = overrideType ? String(overrideType || '').trim() : String(r && r.override_type || '').trim();
       if(ot === 'client_absence_announced' || ot === 'client_replace_in_slot' || ot === 'slot_clear_client'){
         if(portalTimeAnchorsMatch(r.anchor_start, s.start) && portalTimeAnchorsMatch(r.anchor_end, s.end)) return true;
+        /* Aquatic 30' halves: Joelle 5.30-6 taught must not inherit the 6-6.30 clear. */
+        const svcBlob = String(
+          (s && (s.activity || s.rosterService || s.service)) ||
+          (r && r.payload && (r.payload.service || r.payload.activity)) ||
+          ''
+        ).toLowerCase();
+        if(ot === 'slot_clear_client' && /aquatic|swim/.test(svcBlob)){
+          if(portalTimeAnchorsMatch(r.anchor_start, s.start)) return true;
+          return portalOverrideSlotLabelMatchesRow(r, s);
+        }
         if(portalSessionTimeWindowsOverlap(r.anchor_start, r.anchor_end, s.start, s.end)) return true;
         return portalOverrideSlotLabelMatchesRow(r, s);
       }

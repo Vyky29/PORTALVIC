@@ -496,10 +496,11 @@
       { staff: "Youssef", clients: [] },
     ],
     thursday: [
-      { staff: "Roberto", clients: [] },
+      /* Fadi Cancelled stays on Roberto + Youssef (not a day off). Luliya / Michelle have no DC. */
+      { staff: "Roberto", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
+      { staff: "Youssef", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
       { staff: "Luliya", clients: [] },
       { staff: "Michelle", clients: [] },
-      { staff: "Youssef", clients: [] },
       { staff: "Raul", clients: [{ name: "Office", time: "11 to 4" }] },
       { staff: "Victor", clients: [{ name: "Office", time: "11 to 4" }] },
     ],
@@ -629,10 +630,10 @@
         var dayTitle = DOW_TITLE[dk] || dk;
         /*
          * Fri 11 – Fri 18 reshuffled DC boards already replaced Fadi's time
-         * (Emanuel / Office / Ikram). Do not also inject the old Fadi Cancelled
-         * standing seats on those days — that paints the old Fadi card on top of DC.
+         * (Emanuel / Office / Ikram) except Thursday: Roberto + Youssef keep
+         * Fadi Cancelled. Skip other weekdays so Ikram / Office are not doubled.
          */
-        if (isFadiAbsentDcBoardIso(iso)) {
+        if (isFadiAbsentDcBoardIso(iso) && dow !== 4) {
           cur.setDate(cur.getDate() + 1);
           continue;
         }
@@ -1385,7 +1386,8 @@
         /\b(aurora|simon)\b/i.test(String(r.instructors || "")) &&
         /^(joelle|anas)\b/i.test(String(r.client_name || "").trim())
       ) {
-        if (!d || d === "2026-09-10" || isAutumnStandingTemplateIso(d)) return;
+        /* Dated 10 Sep only. Keep standing Thursday Joelle for 17 Sep onward. */
+        if (d === "2026-09-10") return;
       }
       if (d === "2026-09-10") {
         if (
@@ -3263,7 +3265,7 @@
    * Not the same as day-off-requested (staff_unavailability): that DOES paint Overview.
    * Victor: Mon + Thu. Raul: Tue + Thu.
    * Fri 11 – Fri 18 (Fadi away boards): Victor + Raul work Office those days;
-   * Thu: Luliya / Michelle / Youssef have no seats (hide). Roberto keeps Acton AS.
+   * Thu: Luliya / Michelle have no DC seats (hide). Youssef keeps Fadi Cancelled. Roberto keeps Acton AS.
    */
   function autumnStaffStandingOffOnIso(iso, staffRaw) {
     var d = normIso(iso);
@@ -3289,12 +3291,11 @@
         key === "luliya" ||
         key.indexOf("luliya") === 0 ||
         key === "michelle" ||
-        key.indexOf("michelle") === 0 ||
-        key === "youssef" ||
-        key.indexOf("youssef") === 0
+        key.indexOf("michelle") === 0
       ) {
         return dow === 4;
       }
+      /* Youssef works Thursday (Fadi Cancelled) — never standing off. */
       return false;
     }
     if (key === "victor" || key.indexOf("victor") === 0) {

@@ -1277,24 +1277,10 @@
     rosterSessions,
     clientNotesById
   ) {
-    const roster = Array.isArray(rosterSessions) ? rosterSessions : [];
-    const status = statusRowsForStaffDate(iso, staffId);
-    if (status.length) {
-      return roster.filter(function (s) {
-        return status.some(function (st) {
-          return clientMatch(st, s, clientNotesById);
-        });
-      });
-    }
-    const sub = submittedRowsForStaffDate(iso, staffId);
-    if (sub.length) {
-      return roster.filter(function (s) {
-        return sub.some(function (r) {
-          return clientMatch({ clientName: r.clientName }, s, clientNotesById);
-        });
-      });
-    }
-    return roster;
+    /* Live roster is the list. Portal exports enrich completion — they must not
+       whitelist-drop a taught client (Joelle 5.30-6) just because the 6-6.30
+       cancel never landed in the status bundle. */
+    return Array.isArray(rosterSessions) ? rosterSessions : [];
   }
 
   /**

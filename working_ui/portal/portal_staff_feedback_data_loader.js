@@ -8,7 +8,7 @@
   var SCRIPTS = [
     "/portal/session_feedback_portal_data.js?v=20260614-acat-jun8-absent",
     "/portal/session_feedback_status_portal_data.js?v=20260614-acat-jun8-absent",
-    "/portal/staff_portal_feedback_bridge.js?v=20260910-joelle-2to1",
+    "/portal/staff_portal_feedback_bridge.js?v=20260910-pwa-off-joelle",
   ];
 
   var inflight = null;

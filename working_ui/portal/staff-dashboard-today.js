@@ -630,6 +630,24 @@
             return false;
           }
         }
+        /*
+         * Thu 10: Joelle 5.30 taught / 6-6.30 cancelled + Anas makeup is dated only.
+         * Do not also project standing Thursday Joelle onto that day.
+         */
+        if(iso === '2026-09-10' && rowIso && rowIso !== iso){
+          const svcJ = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
+          const venueJ = String((s && s.venue) || '').toLowerCase();
+          const instJ = String((s && (s.instructors || s.instructor || s.staffId)) || '').toLowerCase();
+          const cidJ = String((s && (s.clientId || s.clientName || '')) || '').trim().toLowerCase();
+          if(
+            /aquatic|swim/.test(svcJ) &&
+            venueJ.indexOf('acton') >= 0 &&
+            /\b(aurora|simon)\b/.test(instJ) &&
+            /^(joelle|anas)\b/.test(cidJ)
+          ){
+            return false;
+          }
+        }
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
         if(portalIsoIsAutumnWeek1Dc(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
         /* Dated overlay for this calendar day (trial / cover) always applies. */
@@ -4015,6 +4033,13 @@
           && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)){
           return false;
         }
+        try{
+          const dayWordLive = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
+          if(iso && typeof portalStaffClientSessionsOnCalendarDate === 'function'
+            && portalStaffClientSessionsOnCalendarDate(iso, dayWordLive, sid)){
+            return false;
+          }
+        }catch(_){}
         if(iso && portalStaffSummerShiftDateWithoutRosterRow(iso, sid)){
           const dayWord = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
           if(typeof portalStaffClientSessionsOnCalendarDate === 'function'
@@ -4431,9 +4456,9 @@
     }
     function portalStaffRosterReadyForNextSessionPreview(){
       try{
-        return !!(typeof window !== 'undefined'
-          && window.__PORTAL_STAFF_ROSTER_HYDRATED__
-          && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
+        /* Canonical / dated roster is enough to paint Next Session. Waiting for
+           overrides used to leave Youssef/Roberto with an empty tomorrow card. */
+        return !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
       }catch(_){ return false; }
     }
     function portalNextSessionPreviewIsTomorrow(preview){
@@ -7074,8 +7099,8 @@
           var iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(d) : '';
           if(viewFrom && iso && iso < viewFrom) continue;
           if(viewTo && iso && iso > viewTo) break;
-          if(iso && typeof portalTermDayIsOffForStaffOnIso === 'function' && portalTermDayIsOffForStaffOnIso(iso, id)) continue;
           if(portalNextSessionCandidateRows(id, wname, iso).length) return { date: d, weekdayName: wname };
+          if(iso && typeof portalTermDayIsOffForStaffOnIso === 'function' && portalTermDayIsOffForStaffOnIso(iso, id)) continue;
           try{
             var builtRows = typeof portalBuildTodayRowsForIso === 'function' ? portalBuildTodayRowsForIso(iso) : [];
             if(builtRows.length) return { date: d, weekdayName: wname };
