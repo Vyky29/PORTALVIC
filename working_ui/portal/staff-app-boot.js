@@ -20,6 +20,13 @@
       var host = String((global.location && global.location.hostname) || "").toLowerCase();
       if (/clubsensational-staff\.vercel\.app$/i.test(host)) return true;
       if (/^clubsensational-staff/i.test(host) && /\.vercel\.app$/i.test(host)) return true;
+      /* Local staff_dashboard = same as clubsensational-staff (no portalvic migrate banner). */
+      if (
+        (host === "localhost" || host === "127.0.0.1" || host === "[::1]") &&
+        /staff_dashboard/i.test(String(global.location.pathname || ""))
+      ) {
+        return true;
+      }
     } catch (_) {}
     return false;
   }

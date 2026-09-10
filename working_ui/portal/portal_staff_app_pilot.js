@@ -98,10 +98,14 @@ export async function portalEnforceStaffAppPilotGate(opts) {
   }
 }
 
-/** portalvic: banner for staff — open the new staff app. */
+/** portalvic: banner for staff — open the new staff app (not shown on localhost / staff app). */
 export function portalSyncStaffAppPilotBanner(opts) {
   opts = opts || {};
   if (typeof window === "undefined" || window.PORTAL_STAFF_APP) return;
+  try {
+    const host = String((window.location && window.location.hostname) || "").toLowerCase();
+    if (host === "localhost" || host === "127.0.0.1" || host === "[::1]") return;
+  } catch (_) {}
   const path = String((window.location && window.location.pathname) || "").toLowerCase();
   if (path.indexOf("staff_dashboard") < 0) return;
 
@@ -121,7 +125,7 @@ export function portalSyncStaffAppPilotBanner(opts) {
     host.setAttribute("role", "status");
     host.innerHTML =
       '<div class="portal-staff-app-pilot-banner__inner">' +
-      '<p class="portal-staff-app-pilot-banner__copy"><strong>You are in the wrong app.</strong> Please check your Cliq messages and open <span style="overflow-wrap:anywhere">clubsensational-staff.vercel.app</span> — same login.</p>' +
+      '<p class="portal-staff-app-pilot-banner__copy"><strong>You are in the wrong app.</strong> Open <span style="overflow-wrap:anywhere">clubsensational-staff.vercel.app</span> — same login.</p>' +
       '<div class="portal-staff-app-pilot-banner__actions">' +
       '<a class="portal-staff-app-pilot-banner__btn portal-staff-app-pilot-banner__btn--pri" id="portalStaffAppPilotOpen" href="#">Open clubsensational-staff</a>' +
       '<button type="button" class="portal-staff-app-pilot-banner__btn portal-staff-app-pilot-banner__btn--ghost" id="portalStaffAppPilotDismiss">Dismiss</button>' +
