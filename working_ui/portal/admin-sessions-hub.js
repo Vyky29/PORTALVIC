@@ -1754,8 +1754,24 @@
     return clean(p.session_kind).toLowerCase() === "trial";
   }
 
+  /** Finish-booking / term seat into an open slot — not a parent-absence makeup. */
+  function overrideIsNewClientReplace(ov) {
+    if (!overrideIsReplaceType(ov) || overrideIsTrialType(ov)) return false;
+    var p = overridePayloadObj(ov);
+    if (p.new_client === true || p.new_client === "true") return true;
+    if (p.term_new_participant === true || p.term_new_participant === "true") return true;
+    if (p.finish_booking === true || p.finish_booking === "true") return true;
+    var kind = clean(p.booking_kind || p.session_kind || p.replace_kind).toLowerCase();
+    return kind === "term" && (p.finish_booking || p.new_client || p.term_new_participant);
+  }
+
   function overrideIsMakeupReplaceType(ov) {
-    return overrideIsReplaceType(ov) && !overrideIsTrialType(ov) && !overrideIsDayReassignReplace(ov);
+    return (
+      overrideIsReplaceType(ov) &&
+      !overrideIsTrialType(ov) &&
+      !overrideIsDayReassignReplace(ov) &&
+      !overrideIsNewClientReplace(ov)
+    );
   }
 
   function overrideAnchorIsOpenSlot(anchorClientId) {
@@ -1913,6 +1929,7 @@
       }),
       portalOverrideMakeUpTag: overrideIsMakeupReplaceType(ov),
       portalOverrideTrialTag: overrideIsTrialType(ov),
+      portalOverrideNewClientTag: overrideIsNewClientReplace(ov),
       __portalScheduleOverride: ov,
     };
     slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
@@ -2039,6 +2056,7 @@
     if (overrideIsInstructorCoverNeededType(ov)) return "COVER NEEDED";
     if (overrideIsInstructorReassignType(ov)) return "Changed instructor";
     if (overrideIsTrialType(ov)) return "Trial";
+    if (overrideIsNewClientReplace(ov)) return "NEW CLIENT";
     if (overrideIsDayReassignReplace(ov)) return "Moved";
     if (overrideIsMakeupReplaceType(ov)) return "MakeUp";
     return String(ov.override_type || "").trim() || "Override";
@@ -2050,6 +2068,7 @@
     if (overrideIsInstructorCoverNeededType(ov)) return "override--cover-needed";
     if (overrideIsInstructorReassignType(ov)) return "override--instructor";
     if (overrideIsTrialType(ov)) return "override--trial";
+    if (overrideIsNewClientReplace(ov)) return "override--updated";
     if (overrideIsDayReassignReplace(ov)) return "override--instructor";
     if (overrideIsMakeupReplaceType(ov)) return "override--replace";
     if (overrideIsAbsentType(ov)) return "override--absent";
@@ -2065,9 +2084,10 @@
   }
 
   function hubSlotShowsUpdatedChip(slot, slotOv) {
-    /* Trial / MakeUp chips win over Updated (slot_update often accompanies trial folds). */
+    /* Trial / MakeUp / NEW CLIENT chips win over Updated (slot_update often accompanies trial folds). */
     if (hubSlotShowsTrialChip(slot, slotOv)) return false;
     if (hubSlotShowsMakeupChip(slot, slotOv)) return false;
+    if (hubSlotShowsNewClientChip(slot, slotOv)) return false;
     /* Never paint Shadowing session_add as Updated (label would wrongly say Shadowing). */
     if (overrideIsShadowingSessionAdd(slotOv)) return false;
     if (slot && (slot.portalShadowingHost || slot.portalShadowingObserver)) return false;
@@ -2088,9 +2108,16 @@
 
   function hubSlotShowsMakeupChip(slot, slotOv) {
     if (hubSlotShowsTrialChip(slot, slotOv)) return false;
+    if (overrideIsNewClientReplace(slotOv)) return false;
     /* Day-reassign replaces are seat moves, not MakeUp. */
     if (overrideIsMakeupReplaceType(slotOv)) return true;
-    return !!(slot && slot.portalOverrideMakeUpTag && !overrideIsDayReassignReplace(slotOv));
+    return !!(slot && slot.portalOverrideMakeUpTag && !overrideIsDayReassignReplace(slotOv) && !overrideIsNewClientReplace(slotOv));
+  }
+
+  function hubSlotShowsNewClientChip(slot, slotOv) {
+    if (hubSlotShowsTrialChip(slot, slotOv)) return false;
+    if (overrideIsNewClientReplace(slotOv)) return true;
+    return !!(slot && slot.portalOverrideNewClientTag);
   }
 
   function hubSlotShowsInstructorReassignChip(slot, slotOv) {
@@ -9963,7 +9990,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (canonicalClientSlug(slot.client_name) === "zaid" &&
         isAquaticService(slot.service) &&
         /9\s*to\s*9\.?30/i.test(clean(slot.time_slot) || clean(slot.time_start)));
-    var isMakeup = hubSlotShowsMakeupChip(slot, slotOv);
+    var isNewClient = hubSlotShowsNewClientChip(slot, slotOv);
+    var isMakeup = !isNewClient && hubSlotShowsMakeupChip(slot, slotOv);
     var kind = rosterSlotKind(slot.client_name);
     var isOpenSlot = kind === "open";
     var isClosed = kind === "closed";
@@ -10002,6 +10030,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       isRealCover: isRealCover,
       isStaffDayOff: isStaffDayOff,
       isTrial: isTrial,
+      isNewClient: isNewClient,
       isMakeup: isMakeup,
       isOpenSlot: isOpenSlot,
       isClosed: isClosed,
@@ -10049,6 +10078,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       chips.push('<span class="override-chip override--replace">MakeUp</span>');
     } else if (st.isTrial) {
       chips.push('<span class="override-chip override--trial">Trial</span>');
+    } else if (st.isNewClient) {
+      chips.push('<span class="override-chip override--updated">NEW CLIENT</span>');
     } else if (st.isMakeup) {
       chips.push('<span class="override-chip override--replace">MakeUp</span>');
     }
@@ -10082,6 +10113,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       !st.isInstructorReassign &&
       !st.isRealCover &&
       !st.isTrial &&
+      !st.isNewClient &&
       !st.isMakeup &&
       !st.isAbsent &&
       !st.isCancelled &&
