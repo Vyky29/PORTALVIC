@@ -15,6 +15,7 @@
     wellbeing: true,
     expense_unpaid: true,
     staff_support: false,
+    general_info: true,
   };
 
   var bootstrapSilent = false;
@@ -127,6 +128,92 @@
       clientName: client,
       sessionDate: d,
     };
+  }
+
+  function activityFromGeneralInfoLog(row, displayName) {
+    if (!row || !row.id) return null;
+    var cid = String(row.contact_id || "").trim();
+    var who =
+      String(displayName || "").trim() ||
+      (cid ? "Contact " + cid : "Participant");
+    var src = String(row.source || "parent").trim().toLowerCase();
+    var by = src === "admin" ? "Office" : "Parent";
+    return {
+      id: "gi-" + row.id,
+      title: "General info updated · " + who,
+      sub: by + " changed registration details — review Assessment",
+      created_at: row.created_at,
+      kind: "general_info",
+      view: "clients",
+      recordId: cid ? "pp-" + cid : "",
+      clientName: who,
+      sessionDate: "",
+    };
+  }
+
+  async function syncGeneralInfoFromServer(client, opts) {
+    opts = opts || {};
+    if (!client || !client.from) return 0;
+    var since = new Date();
+    since.setDate(since.getDate() - 14);
+    var res = await client
+      .from("portal_participant_general_info_log")
+      .select("id, contact_id, source, created_at")
+      .gte("created_at", since.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(40);
+    if (res.error) {
+      console.warn("[admin-bell] general info log", res.error);
+      return 0;
+    }
+    var rows = res.data || [];
+    var contactIds = [];
+    rows.forEach(function (r) {
+      var c = String((r && r.contact_id) || "").trim();
+      if (c && contactIds.indexOf(c) < 0) contactIds.push(c);
+    });
+    var nameByContact = Object.create(null);
+    if (contactIds.length) {
+      try {
+        var pax = await client
+          .from("portal_participants")
+          .select("contact_id, display_name")
+          .in("contact_id", contactIds);
+        (pax.data || []).forEach(function (p) {
+          if (!p || !p.contact_id) return;
+          nameByContact[String(p.contact_id)] = String(p.display_name || "").trim();
+        });
+      } catch (_) {}
+      try {
+        var pc = await client
+          .from("portal_parent_contacts")
+          .select("contact_id, child_display")
+          .in("contact_id", contactIds);
+        (pc.data || []).forEach(function (p) {
+          if (!p || !p.contact_id) return;
+          var id = String(p.contact_id);
+          if (!nameByContact[id] && p.child_display) {
+            nameByContact[id] = String(p.child_display).trim();
+          }
+        });
+      } catch (_) {}
+    }
+    rows.forEach(function (r) {
+      if (!r || !r.id) return;
+      var a = activityFromGeneralInfoLog(
+        r,
+        nameByContact[String(r.contact_id || "")] || "",
+      );
+      if (!a) return;
+      pushActivityAlert(a, {
+        silent: opts.silent || bootstrapSilent,
+      });
+    });
+    sortNewestFirst();
+    if (typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+    return rows.length;
   }
 
   function activityFromWellbeingNotification(row) {
@@ -776,6 +863,8 @@
   global.portalAdminBellBadgeCount = badgeCount;
   global.portalAdminActivityFromLateRequest = activityFromLateRequest;
   global.portalAdminActivityFromWellbeingNotification = activityFromWellbeingNotification;
+  global.portalAdminActivityFromGeneralInfoLog = activityFromGeneralInfoLog;
+  global.portalAdminBellSyncGeneralInfoFromServer = syncGeneralInfoFromServer;
   global.portalAdminSyncChatBellAlerts = syncChatBellAlerts;
   global.portalAdminBellResolveChatHints = resolveChatHints;
   global.portalAdminPushActivityAlert = pushActivityAlert;

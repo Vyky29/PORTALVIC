@@ -9,6 +9,7 @@ import {
   type RegistrationAnswers,
 } from "../_shared/parent_registration_answers.ts";
 import { parseGeneralInfoSheet } from "../_shared/participant_general_info.ts";
+import { notifyParticipantGeneralInfoChanged } from "../_shared/participant_general_info_notify.ts";
 
 function clean(v: unknown, max = 4000): string {
   return String(v ?? "").trim().slice(0, max);
@@ -56,7 +57,7 @@ Deno.serve(async (req) => {
 
   const { data: participant } = await supabase
     .from("portal_participants")
-    .select("contact_id, dob_iso")
+    .select("contact_id, dob_iso, display_name")
     .eq("parent_person_id", session.parent_person_id)
     .eq("contact_id", contactId)
     .maybeSingle();
@@ -77,6 +78,13 @@ Deno.serve(async (req) => {
   const fields = parseGeneralInfoSheet(sheet);
   const now = new Date().toISOString();
 
+  const { data: existing } = await supabase
+    .from("portal_participant_general_info")
+    .select("general_info_sheet")
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  const changed = clean(existing?.general_info_sheet, 12000) !== clean(sheet, 12000);
+
   const { error: upsertErr } = await supabase.from("portal_participant_general_info").upsert(
     {
       contact_id: contactId,
@@ -92,11 +100,31 @@ Deno.serve(async (req) => {
     return parentPortalJsonInvalid(500);
   }
 
-  await supabase.from("portal_participant_general_info_log").insert({
-    contact_id: contactId,
-    parent_person_id: session.parent_person_id,
-    general_info_sheet: sheet,
-  });
+  let logId = "";
+  const { data: logRow } = await supabase
+    .from("portal_participant_general_info_log")
+    .insert({
+      contact_id: contactId,
+      parent_person_id: session.parent_person_id,
+      general_info_sheet: sheet,
+      source: "parent",
+    })
+    .select("id")
+    .maybeSingle();
+  if (logRow?.id) logId = String(logRow.id);
+
+  if (changed) {
+    void notifyParticipantGeneralInfoChanged(supabase, {
+      contactId,
+      source: "parent",
+      displayName: String(participant.display_name || answers.participant_name || ""),
+      logId,
+    }).then((r) => {
+      console.log("[parent-portal-registration-save] notify", r);
+    }).catch((e) => {
+      console.warn("[parent-portal-registration-save] notify failed", e);
+    });
+  }
 
   // Keep portal_parent_contacts in sync so the next "Update registration" opens prefilled.
   const addressRaw = clean(answers.parent_address, 240);

@@ -386,7 +386,7 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260910-joelle-406"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260716-cancel-selfserve"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260910-general-info"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260909-parent-booking-live";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -31206,6 +31206,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         setView('c4k_late_submissions');
         return;
       }
+      if(tab === 'clients'){
+        var paxId = String(meta.recordId || '').trim();
+        if(paxId && paxId.indexOf('pp-') !== 0 && /^\d+$/.test(paxId)) paxId = 'pp-' + paxId;
+        if(paxId) state.openPaxContactId = paxId;
+        setView('clients');
+        return;
+      }
       if(tab === 'absents'){
         return;
       }
@@ -31452,6 +31459,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.portalAdminBellSyncUnpaidExpensesFromServer === 'function'){
           await window.portalAdminBellSyncUnpaidExpensesFromServer(adminEdgePost, { silent: true });
         }
+        if(typeof window.portalAdminBellSyncGeneralInfoFromServer === 'function'){
+          await window.portalAdminBellSyncGeneralInfoFromServer(client, { silent: true });
+        }
         if(typeof window.portalAdminBellPruneAndSort === 'function'){
           window.portalAdminBellPruneAndSort();
         }
@@ -31520,6 +31530,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               window.portalAdminPushActivityAlert(a);
             }
           })
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_participant_general_info_log' }, function(payload){
+            var row = payload && payload.new;
+            if(!row || !row.id) return;
+            var a = typeof window.portalAdminActivityFromGeneralInfoLog === 'function'
+              ? window.portalAdminActivityFromGeneralInfoLog(row, '')
+              : null;
+            if(a && typeof window.portalAdminPushActivityAlert === 'function'){
+              window.portalAdminPushActivityAlert(a);
+            }
+            /* Enrich name async without blocking the sound. */
+            var cid = String(row.contact_id || '').trim();
+            if(cid && client && client.from){
+              client.from('portal_participants').select('display_name').eq('contact_id', cid).maybeSingle().then(function(res){
+                var nm = res && res.data ? String(res.data.display_name || '').trim() : '';
+                if(!nm) return;
+                var list = window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || [];
+                for(var i = 0; i < list.length; i++){
+                  if(list[i] && list[i].id === ('gi-' + row.id)){
+                    list[i].title = 'General info updated · ' + nm;
+                    list[i].clientName = nm;
+                    break;
+                  }
+                }
+                if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
+              }).catch(function(){});
+            }
+          })
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_wellbeing_admin_notifications' }, function(payload){
             var row = payload && payload.new;
             if(typeof window.portalAdminBellOnWellbeingNotificationInsert === 'function'){
@@ -31572,7 +31609,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>';
       }).join('');
       var emptyHtml = !activityHtml
-        ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, expenses, or wellbeing requests right now.</p>'
+        ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, expenses, wellbeing, or general-info updates right now.</p>'
         : '';
       var clearWellbeingBtn = wellbeingN > 0
         ? '<button type="button" class="btn btn--ghost btn--sm" id="portalAdminClearWellbeingAlerts" style="margin-left:auto;font-size:12px">Clear wellbeing ('+wellbeingN+')</button>'
