@@ -184,9 +184,9 @@ function rebuildMonday(week) {
     );
     d.slots.push(aquatic("Northolt", "5 to 5.30", "Amar Rai", "DAN"));
     d.slots.push(aquatic("Northolt", "5.30 to 6", "Amar Rai", "DAN"));
-    d.slots.push(aquatic("Northolt", "6 to 6.30", "Adaam Ah", "DAN"));
+    d.slots.push(aquatic("Northolt", "6 to 6.30", "Amaar Ah", "DAN"));
   }
-  note("Mon AS Acton/Northolt = Autumn canonical (Luliya open 4.30-5 Northolt)");
+  note("Mon AS Acton/Northolt = Autumn (Amaar Mon Northolt 6-6.30; Luliya open 4.30-5)");
 
   for (const [st, name] of [
     [godsway, "GODSWAY"],
@@ -260,7 +260,7 @@ function rebuildTuesday(week) {
     d.slots.push(aquatic("Acton", "4.30 to 5", "NO PARTICIPANT", "LULIYA"));
     d.slots.push(aquatic("Acton", "5 to 5.30", "Logan", "LULIYA"));
     d.slots.push(aquatic("Acton", "5.30 to 6", "NO PARTICIPANT", "LULIYA"));
-    d.slots.push(aquatic("Acton", "6 to 6.30", "NO PARTICIPANT", "LULIYA"));
+    d.slots.push(aquatic("Acton", "6 to 6.30", "Adaam Ah", "LULIYA", "Teaching Pool"));
   }
   if (javier) {
     const d = ensureDay(javier, "Tuesday");
@@ -274,7 +274,7 @@ function rebuildTuesday(week) {
     d.slots.push(aquatic("Acton", "4 to 5", "Ayman", "JAVIER"));
     d.slots.push(aquatic("Acton", "5 to 5.30", "Linda", "JAVIER", "Lane (SE)"));
     d.slots.push(aquatic("Acton", "5.30 to 6", "Rayan Ta", "JAVIER"));
-    d.slots.push(aquatic("Acton", "6 to 6.30", "NO PARTICIPANT", "JAVIER", "Lane (SE)"));
+    d.slots.push(aquatic("Acton", "6 to 6.30", "Aydaan Ah", "JAVIER", "Lane (SE)"));
   }
   if (aurora) {
     const d = ensureDay(aurora, "Tuesday");
@@ -282,14 +282,14 @@ function rebuildTuesday(week) {
     d.slots.push(aquatic("Acton", "4 to 4.30", "CLOSED", "AURORA"));
     d.slots.push(aquatic("Acton", "4.30 to 5", "Adam Mahmmoud", "AURORA", "Teaching Pool"));
     d.slots.push(aquatic("Acton", "5 to 5.30", "Junaid", "AURORA", "Lane (SE)"));
-    d.slots.push(aquatic("Acton", "5.30 to 6", "Aydaan Ah", "AURORA", "Lane (SE)"));
+    d.slots.push(aquatic("Acton", "5.30 to 6", "NO PARTICIPANT", "AURORA", "Lane (SE)"));
     d.slots.push(aquatic("Acton", "6 to 6.30", "Anas", "AURORA"));
   }
   if (youssef) {
     const d = ensureDay(youssef, "Tuesday");
     clearDayServices(d, isActonAquatic);
   }
-  note("Tue Acton AS = Abate twins 4-4.30; Serine Roberto; Logan Luliya; opens 4.30-5 / 5.30-6 / 6-6.30; Aurora Anas 6-6.30");
+  note("Tue Acton AS = Abate twins; Adaam Luliya + Aydaan Javier 6-6.30; Aurora open 5.30-6; opens 4.30-5 / 5.30-6");
 }
 
 function rebuildWednesday(week) {
@@ -470,14 +470,15 @@ function rebuildFriday(week) {
     const d = ensureDay(youssef, "Friday");
     clearDayServices(d, isActonAquatic);
     d.slots.push(aquatic("Acton", "4 to 5.30", "Adam Pi", "YOUSSEF"));
-    d.slots.push(aquatic("Acton", "5.30 to 6", "Amaar Ah", "YOUSSEF"));
+    /* Amaar moved to Mon Northolt — Fri standing open (keeps dated 11 Sep if any). */
+    d.slots.push(aquatic("Acton", "5.30 to 6", "NO PARTICIPANT", "YOUSSEF"));
   }
   for (const st of [godsway, john, bismark, giuseppe, raul]) {
     if (!st) continue;
     const n = clearDayServices(ensureDay(st, "Friday"), isTinashe);
     if (n) note(`Fri ${staffKeyOf(st)} cleared Tinashe (${n})`);
   }
-  note("Fri Hub Tinashe = Roberto; Acton = Youssef");
+  note("Fri Hub Tinashe = Roberto; Acton = Youssef (Amaar off Fri standing)");
 }
 
 function rebuildSaturday(week) {
