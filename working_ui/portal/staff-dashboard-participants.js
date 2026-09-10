@@ -2677,13 +2677,19 @@
       }
       return pl && typeof pl === 'object' ? pl : null;
     }
+    function portalEffectiveCoverStaffKeyFromOverrideRow(row){
+      if(typeof portalInstructorCoverStaffKeyFromOverride === 'function'){
+        return portalInstructorCoverStaffKeyFromOverride(row);
+      }
+      const pl = portalOverrideCoverPayload(row);
+      return portalCanonicalStaffKeyForMatch(pl && (pl.covering_staff_id || pl.covering_staff_name));
+    }
     function portalOverrideIsInstructorCoverForLoggedInStaff(row){
       if(String(row && row.override_type || '').trim() !== 'instructor_reassign') return false;
       if(typeof portalScheduleOverrideRowAppliesToLoggedInStaff === 'function'
         && !portalScheduleOverrideRowAppliesToLoggedInStaff(row)) return false;
       const me = portalCanonicalStaffKeyForMatch(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '');
-      const pl = portalOverrideCoverPayload(row);
-      const cover = portalCanonicalStaffKeyForMatch(pl && pl.covering_staff_id);
+      const cover = portalEffectiveCoverStaffKeyFromOverrideRow(row);
       return !!(me && cover && cover === me);
     }
     /** Logged-in staff covers at least one session on this calendar date (spreadsheet instructor change). */
@@ -2691,14 +2697,15 @@
       const iso = normaliseIsoDate(isoYmd);
       const sid = portalCanonicalStaffKeyForMatch(staffId);
       if(!iso || !sid) return false;
+      /* Sun 6: John covered Emanuel Hub — stale overrides still name Youssef. */
+      if(iso === '2026-09-06' && sid === 'youssef') return false;
       const list = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
       for(let i = 0; i < list.length; i++){
         const row = list[i];
         if(!row || String(row.status || 'active') !== 'active') continue;
         if(String(row.override_type || '').trim() !== 'instructor_reassign') continue;
         if(normaliseIsoDate(row.session_date) !== iso) continue;
-        const pl = portalOverrideCoverPayload(row);
-        const cover = portalCanonicalStaffKeyForMatch(pl && pl.covering_staff_id);
+        const cover = portalEffectiveCoverStaffKeyFromOverrideRow(row);
         if(cover && cover === sid) return true;
       }
       return false;
@@ -2720,8 +2727,8 @@
         if(!iso) continue;
         if(from && iso < from) continue;
         if(to && iso > to) continue;
-        const pl = portalOverrideCoverPayload(row);
-        const cover = portalCanonicalStaffKeyForMatch(pl && pl.covering_staff_id);
+        if(iso === '2026-09-06' && sid === 'youssef') continue;
+        const cover = portalEffectiveCoverStaffKeyFromOverrideRow(row);
         if(!cover || cover !== sid || seen[iso]) continue;
         seen[iso] = true;
         out.push(iso);

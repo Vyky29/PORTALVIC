@@ -6306,11 +6306,11 @@
       border-color:rgba(200,110,45,.52);
     }
     .term-cal-day.term-feedback-cancelled{
-      background:var(--reviewLilacBg);
-      border-color:var(--reviewLilacBorder);
-      box-shadow:0 0 0 1px var(--reviewLilacGlow),0 6px 18px var(--reviewLilacGlow);
-      color:#4a3d5e;
-      cursor:default;
+      background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);
+      border-color:#b71c1c;
+      box-shadow:0 0 0 1px rgba(190,65,65,.14),0 8px 22px rgba(190,65,65,.12);
+      color:#7b1212;
+      cursor:pointer;
     }
     .term-cal-day.term-feedback-future-ov-admin{
       background:linear-gradient(180deg,#eef4ff 0%,#e5eeff 100%);

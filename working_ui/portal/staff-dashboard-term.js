@@ -303,28 +303,34 @@
 
       if(key > todayKey) return 'future';
       if(typeof portalTermDateForcedComplete === 'function' && portalTermDateForcedComplete(key, staffId)) return 'complete';
-      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
-      if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(key)) return 'complete';
 
-      if(relFb.length && cur){
+      /* All-cancelled (Fadi / Joelle-style) before assume-complete or pipeline-pending.
+         Cancelled sessions are feedback-exempt, so they must still count here or the
+         cell stays blue/green instead of a tappable cancelled day. */
+      const cancelList = relFb.length ? relFb : relAll;
+      if(cancelList.length){
         let allCancelled = true;
         let anyApplicable = false;
-        for(let i = 0; i < relFb.length; i++){
-          const s = relFb[i];
-          if(typeof portalRosterSessionFeedbackExempt === 'function'
+        for(let i = 0; i < cancelList.length; i++){
+          const s = cancelList[i];
+          const flags = typeof portalRosterSessionFeedbackResolvedFlags === 'function'
+            ? portalRosterSessionFeedbackResolvedFlags(s, key, staffId)
+            : null;
+          const cancelled = !!(flags && flags.cancelled);
+          if(!cancelled
+            && typeof portalRosterSessionFeedbackExempt === 'function'
             && portalRosterSessionFeedbackExempt(s, key, staffId)) continue;
           anyApplicable = true;
-          const item = typeof portalMinimalReviewItemFromRosterRow === 'function'
-            ? portalMinimalReviewItemFromRosterRow(s, dw, key, cur)
-            : null;
-          if(!item || !item.sessionKey) continue;
-          const r = typeof getEffectiveSessionReviewRecord === 'function'
-            ? (getEffectiveSessionReviewRecord(item) || {})
-            : {};
-          if(!r.cancelled){ allCancelled = false; break; }
+          if(!cancelled){
+            allCancelled = false;
+            break;
+          }
         }
         if(anyApplicable && allCancelled) return 'cancelled';
       }
+
+      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(key, staffId)) return 'complete';
+      if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(key)) return 'complete';
 
       if(key === todayKey && relFb.length && cur){
         let minStart = Infinity;
