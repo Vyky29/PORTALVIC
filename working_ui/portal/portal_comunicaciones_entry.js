@@ -1916,7 +1916,7 @@
   function ensurePortalPushSw() {
     if (!global.navigator || !global.navigator.serviceWorker) return;
     try {
-      var swUrl = new URL("clubsensational-portal-sw.js?v=20260910-staff-static", global.location.href).href;
+      var swUrl = new URL("clubsensational-portal-sw.js?v=20260910-sw-no-fetch", global.location.href).href;
       var scopeBase = new URL("./", global.location.href).href;
       global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).then(function (reg) {
         try {

@@ -78,7 +78,7 @@
   if ("serviceWorker" in global.navigator) {
     try {
       if (isStaffApp) {
-        var swUrl = "/clubsensational-portal-sw.js?v=20260910-staff-static";
+        var swUrl = "/clubsensational-portal-sw.js?v=20260910-sw-no-fetch";
         var scopeBase = new URL("./", global.location.href).href;
         global.navigator.serviceWorker.register(swUrl, { scope: scopeBase }).catch(function () {});
       }
@@ -200,7 +200,7 @@
     if (isHandheld) {
       var kick = function () {
         // Short defer so first paint stays light; still must run (was skipped entirely before).
-        global.setTimeout(start, 4000);
+        global.setTimeout(start, 800);
       };
       if (document.readyState === "complete") kick();
       else global.addEventListener("load", kick, { once: true });

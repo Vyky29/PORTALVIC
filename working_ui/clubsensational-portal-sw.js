@@ -9,84 +9,18 @@
  * v20260905-comms-36 (Home screen PWA numeric badge via Badging API)
  * v20260906-notif-open-fix (never navigate PWA to bare / — blank screen on iOS)
  * v20260906-comms-inapp-49 (always OS banner for incoming calls)
- * v20260910-staff-static (cache JS/CSS so the installed staff PWA is fast on iPhone)
+ * v20260910-sw-no-fetch (do not intercept JS/CSS — Cache API hangs on some iPhone PWAs)
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 var PORTAL_DEFAULT_DASHBOARD = 'staff_dashboard.html';
 
 self.addEventListener('install', function (event) {
-  event.waitUntil(
-    caches
-      .open('portal-push-icons-v1')
-      .then(function (cache) {
-        return cache.add(PORTAL_PUSH_ICON_PATH).catch(function () {});
-      })
-      .then(function () {
-        return self.skipWaiting();
-      })
-  );
+  /* Skip waiting immediately. Do not wait on Cache Storage — it hangs on some iPhone PWAs. */
+  self.skipWaiting();
 });
-
-var PORTAL_STATIC_CACHE = 'clubsensational-static-v17';
-
-function portalStaticCacheable(url) {
-  try {
-    var u = new URL(url);
-    if (u.origin !== self.location.origin) return false;
-    var p = u.pathname;
-    if (p.indexOf('/portal/') === 0 && /\.(js|css|png|jpg|jpeg|webp|svg|woff2?)$/i.test(p)) return true;
-    if (p === '/portal-static-bootstrap.js' || p === '/staff-app-config.js') return true;
-  } catch (e) {}
-  return false;
-}
 
 self.addEventListener('activate', function (event) {
-  event.waitUntil(
-    caches
-      .keys()
-      .then(function (keys) {
-        return Promise.all(
-          (keys || []).map(function (k) {
-            if (k === PORTAL_STATIC_CACHE) return null;
-            if (
-              String(k).indexOf('clubsensational-static-') === 0 ||
-              String(k).indexOf('clubsensational-staff-static-') === 0
-            ) {
-              return caches.delete(k);
-            }
-            return null;
-          })
-        );
-      })
-      .then(function () {
-        return self.clients.claim();
-      })
-  );
-});
-
-self.addEventListener('fetch', function (event) {
-  var req = event.request;
-  if (!req || req.method !== 'GET') return;
-  if (!portalStaticCacheable(req.url)) return;
-  event.respondWith(
-    caches.open(PORTAL_STATIC_CACHE).then(function (cache) {
-      return cache.match(req).then(function (cached) {
-        var network = fetch(req)
-          .then(function (res) {
-            if (res && res.ok) {
-              try {
-                cache.put(req, res.clone());
-              } catch (ePut) {}
-            }
-            return res;
-          })
-          .catch(function () {
-            return cached;
-          });
-        return cached || network;
-      });
-    })
-  );
+  event.waitUntil(self.clients.claim());
 });
 
 var PORTAL_ALERT_VIBRATE = [200, 80, 200, 80, 280, 100, 200];

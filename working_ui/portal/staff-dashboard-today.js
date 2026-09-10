@@ -3801,15 +3801,12 @@
     function portalStaffLiveTodayAwaitingInitialSchedule(){
       if(typeof portalIsViewingLiveCalendarToday !== 'function' || !portalIsViewingLiveCalendarToday()) return false;
       try{
-        if(dashboardData && dashboardData.portalIdentityResolved === false) return true;
         if(!window.__PORTAL_TODAY_AWAIT_SINCE__){
           try{ window.__PORTAL_TODAY_AWAIT_SINCE__ = Date.now(); }catch(_){}
         }
         var waitedMs = 0;
         try{ waitedMs = Date.now() - Number(window.__PORTAL_TODAY_AWAIT_SINCE__ || Date.now()); }catch(_){ waitedMs = 0; }
-        /* Hard cap: never leave TODAY on “Loading sessions…” for more than a few seconds.
-           Overrides/settle flags can flap during rehydrate; after the cap, force the gates open
-           so session cards (e.g. Alex Sunday climbing) can paint. */
+        /* Hard cap first: never leave TODAY on “Loading sessions…” because identity/overrides lag. */
         if(waitedMs > 3500){
           if(!window.__PORTAL_STAFF_ROSTER_HYDRATED__){
             try{
@@ -3819,25 +3816,18 @@
             }catch(_){}
             try{ window.__PORTAL_STAFF_ROSTER_HYDRATED__ = true; }catch(_){}
           }
-          if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__
-            && !window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__){
-            try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
-          }
+          try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = true; }catch(_){}
           if(!window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__){
             portalStaffMarkInitialTodayScheduleSettled();
           }
           return false;
         }
+        if(dashboardData && dashboardData.portalIdentityResolved === false) return true;
         if(!window.__PORTAL_STAFF_ROSTER_HYDRATED__) return true;
-        /* Keep the Today cards on the brief "syncing" panel until schedule overrides have
-           hydrated as well. Releasing on roster-only made staff with an instructor reassignment
-           (e.g. Giuseppe) flash their pre-override sessions before the reassignment applied. The
-           overrides flag is force-set to true on error/no-Supabase and via the settle/hydrate
-           timers, so this can only hold the panel for the brief initial sync window. */
         if(!window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__) return true;
         if(!window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__) return true;
         return false;
-      }catch(_){ return true; }
+      }catch(_){ return false; }
     }
     function portalStaffMarkInitialTodayScheduleUnsettled(){
       try{ window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__ = false; }catch(_){}
@@ -3886,7 +3876,7 @@
     }
     try{ window.__PORTAL_STAFF_INITIAL_TODAY_SETTLED__ = false; }catch(_){}
     try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = false; }catch(_){}
-    try{ portalStaffEnsureInitialTodayScheduleSettledSoon(); }catch(_){}
+    try{ portalStaffEnsureInitialTodayScheduleSettledSoon(3500); }catch(_){}
     function portalStaffEnsureScheduleOverridesHydratedSoon(delayMs){
       try{
         var wait = Number(delayMs) > 0 ? Number(delayMs) : 6000;
