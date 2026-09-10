@@ -688,6 +688,22 @@ export function portalLeadProgrammeLeadWorkingOnIso(leadKey, iso, scopes) {
     .trim()
     .slice(0, 10);
   if (!lk || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  try {
+    const g = typeof globalThis !== "undefined" ? globalThis : null;
+    if (g) {
+      const cache = g.__PORTAL_LEAD_WORKING_ISO_CACHE__ || (g.__PORTAL_LEAD_WORKING_ISO_CACHE__ = Object.create(null));
+      const cacheKey = lk + "|" + day;
+      const hit = cache[cacheKey];
+      if (hit && Date.now() - hit.at < 4000) return hit.ok;
+      const ok = portalLeadProgrammeLeadWorkingOnIsoUncached(lk, day, scopes);
+      cache[cacheKey] = { ok: ok, at: Date.now() };
+      return ok;
+    }
+  } catch (_) {}
+  return portalLeadProgrammeLeadWorkingOnIsoUncached(lk, day, scopes);
+}
+
+function portalLeadProgrammeLeadWorkingOnIsoUncached(lk, day, scopes) {
   /* Ops team-banner days: show Team of the Day without fixed-session gate. */
   if (lk === "ops") return portalLeadDayIsProgrammeWorkDay(day, scopes);
   /*

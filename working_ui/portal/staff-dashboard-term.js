@@ -2054,7 +2054,30 @@
       if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
         if(typeof syncPortalIosAlertPreviewStack === 'function') syncPortalIosAlertPreviewStack();
         if(typeof portalMaybeNotifyReminders === 'function') portalMaybeNotifyReminders(st);
-        if(typeof window.portalSyncLeadTeamShiftUi === 'function') setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
+        /* Skip lead Team sync from reminder chrome when Roberto is not lead today. */
+        try{
+          if(typeof window.portalSyncLeadTeamShiftUi === 'function'){
+            var leadCtx = typeof window.portalLeadTeamShiftContext === 'function'
+              ? window.portalLeadTeamShiftContext()
+              : null;
+            var skipLead = false;
+            if(leadCtx && String(leadCtx.leadKey || '') === 'roberto'
+              && typeof window.portalLeadProgrammeLeadWorkingOnIso === 'function'){
+              var todayIso = '';
+              try{
+                todayIso = typeof portalIsoYmdFromDate === 'function'
+                  ? portalIsoYmdFromDate(new Date())
+                  : '';
+              }catch(_ti){}
+              if(todayIso && !window.portalLeadProgrammeLeadWorkingOnIso(
+                'roberto', todayIso, leadCtx.scopes
+              )) skipLead = true;
+            }
+            if(!skipLead){
+              setTimeout(function(){ try{ window.portalSyncLeadTeamShiftUi(); }catch(_lt){} }, 0);
+            }
+          }
+        }catch(_ls){}
       }catch(_){}
     }
 

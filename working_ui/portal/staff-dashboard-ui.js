@@ -233,8 +233,9 @@
             if(typeof window.portalSyncAnnualProfileQuickMenuGroup === 'function'){
               window.portalSyncAnnualProfileQuickMenuGroup();
             }
+            /* Soft sync after hydrate — force:true on every menu open starved taps. */
             if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
-              portalSyncAnnouncementsAndRemindersUi({ force: true });
+              portalSyncAnnouncementsAndRemindersUi();
             }
           });
         }
@@ -250,8 +251,10 @@
           if(typeof portalRefreshQuickMenuAccordion === 'function') portalRefreshQuickMenuAccordion();
         }
       };
-      if(typeof requestAnimationFrame === 'function'){
-        requestAnimationFrame(function(){ requestAnimationFrame(run); });
+      if(typeof requestIdleCallback === 'function'){
+        requestIdleCallback(run, { timeout: 700 });
+      }else if(typeof requestAnimationFrame === 'function'){
+        requestAnimationFrame(function(){ setTimeout(run, 0); });
       }else{
         setTimeout(run, 0);
       }
@@ -1394,8 +1397,10 @@
           wl.innerHTML = (dashboardData.week || []).map(renderWeekRowHtml).join('');
         }
         const termOpen = !!(document.getElementById('termSheet') && document.getElementById('termSheet').classList.contains('open'));
+        /* Term closed: never force a full term rebuild on override hydrate (iPhone tap lag). */
         if(typeof renderTermCalendarGrid === 'function'){
-          renderTermCalendarGrid(termOpen || opts.forceTerm ? { force: true } : {});
+          if(termOpen || opts.forceTerm) renderTermCalendarGrid({ force: true });
+          else renderTermCalendarGrid();
         }
         if(typeof renderMiniCounts === 'function') renderMiniCounts();
       }finally{
@@ -2980,6 +2985,19 @@
       opts = opts && typeof opts === 'object' ? opts : {};
       const el = document.getElementById('termGrid');
       if(!el) return;
+      const termSheetOpen = !!(document.getElementById('termSheet') && document.getElementById('termSheet').classList.contains('open'));
+      /*
+       * When Term is closed, do not rebuild feedback maps / pending-override cache
+       * on the main thread (Roberto lead-viewer phones lagged every tap). Idle-paint later.
+       */
+      if(!opts.force && !termSheetOpen){
+        if(typeof portalScheduleTermGridIdleRender === 'function'){
+          portalScheduleTermGridIdleRender(function(){
+            renderTermCalendarGrid({ force: true });
+          }, 480);
+          return;
+        }
+      }
       rebuildTermShiftAndFeedbackFromSessionModel();
       if(typeof portalRefreshPendingOverrideDaysCache === 'function') portalRefreshPendingOverrideDaysCache();
       let ovCount = 0;
@@ -2996,17 +3014,8 @@
           pendingOverrideDays: typeof portalPendingOverrideDaysSignature === 'function' ? portalPendingOverrideDaysSignature() : ''
         })
         : '';
-      const termSheetOpen = !!(document.getElementById('termSheet') && document.getElementById('termSheet').classList.contains('open'));
       if(!opts.force && domSig && el.getAttribute('data-term-grid-sig') === domSig && el.querySelector('.term-cal-month')){
         return;
-      }
-      if(!opts.force && !termSheetOpen){
-        if(typeof portalScheduleTermGridIdleRender === 'function'){
-          portalScheduleTermGridIdleRender(function(){
-            renderTermCalendarGrid({ force: true });
-          }, 480);
-          return;
-        }
       }
       const y = Number(dashboardData.termCalendarYear) || 2026;
       let months = Array.isArray(dashboardData.termCalendarMonths) && dashboardData.termCalendarMonths.length
@@ -5019,13 +5028,13 @@
     window.closeClientSessionsOverviewSheet = closeClientSessionsOverviewSheet;
     if(typeof portalInitSheetBackNavigation === 'function') portalInitSheetBackNavigation();
     document.getElementById('dockDashboardTile')?.addEventListener('click', function(){
-      globalThis.setTimeout(handleDashboardDockClick, 0);
+      handleDashboardDockClick();
     });
     document.getElementById('dockParticipantsTile')?.addEventListener('click', function(){
-      globalThis.setTimeout(handleParticipantsDockClick, 0);
+      handleParticipantsDockClick();
     });
     document.getElementById('dockQuickMenuTile')?.addEventListener('click', function(){
-      globalThis.setTimeout(handleQuickMenuDockClick, 0);
+      handleQuickMenuDockClick();
     });
     if(typeof syncDockNavContext === 'function') syncDockNavContext();
     if(typeof portalSyncQuickMenuDockChrome === 'function') portalSyncQuickMenuDockChrome();

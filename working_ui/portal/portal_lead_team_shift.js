@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260910-roberto-taps3";
+} from "./portal_lead_session_scope.js?v=20260910-roberto-taps4";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -849,6 +849,8 @@ export function portalLeadOverrideRowAppliesToLeadScope(row, ctx) {
   if (String(row.status || "active") !== "active") return false;
   const iso = String(row.session_date || "").slice(0, 10);
   if (!iso) return false;
+  /* Roberto (and other leads): no programme-scope matching on days they are not lead. */
+  if (!portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes)) return false;
   const wd = weekdayFromIso(iso);
   const hasScopeDay = ctx.scopes.some(function (sc) {
     return sc.weekdays && sc.weekdays.indexOf(wd) >= 0;
@@ -1511,8 +1513,44 @@ export function portalSyncLeadTeamShiftUi() {
     const path = String((window.location && window.location.pathname) || "").toLowerCase();
     if (path.indexOf("staff_dashboard") < 0) return;
 
+    const todayHost = document.getElementById("portalLeadTeamTodayHost");
+    const qmHost = document.getElementById("portalLeadTeamShiftQuickHost");
+    const qmHeading = document.getElementById("portalLeadTeamShiftHeading");
+    const ctx = portalLeadTeamShiftContext();
+    if (!ctx) {
+      if (todayHost) {
+        todayHost.hidden = true;
+        todayHost.innerHTML = "";
+      }
+      if (qmHost) {
+        qmHost.hidden = true;
+        qmHost.innerHTML = "";
+      }
+      if (qmHeading) qmHeading.hidden = true;
+      return;
+    }
+
+    const iso = todayIsoYmd();
+    const workingToday = portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes);
     /*
-     * Coalesce: Today / overrides / rehydrate call this many times per second for Roberto.
+     * Roberto not DC lead today (client Cancelled): clear lead UI once and exit.
+     * Do not coalesce / walk overrides — that starved iPhone taps while scroll stayed smooth.
+     */
+    if (ctx.leadKey === "roberto" && !workingToday) {
+      if (todayHost && (!todayHost.hidden || todayHost.innerHTML)) {
+        todayHost.innerHTML = "";
+        todayHost.hidden = true;
+      }
+      if (qmHost && (!qmHost.hidden || qmHost.innerHTML)) {
+        qmHost.innerHTML = "";
+        qmHost.hidden = true;
+      }
+      if (qmHeading) qmHeading.hidden = true;
+      return;
+    }
+
+    /*
+     * Coalesce: Today / overrides / rehydrate call this many times per second for leads.
      * Stacking syncs starved iPhone taps (scroll still worked; clicks arrived ~10s late).
      */
     const nowMs = Date.now();
@@ -1534,26 +1572,7 @@ export function portalSyncLeadTeamShiftUi() {
     window.__PORTAL_LEAD_TEAM_SYNC_AT__ = nowMs;
     window.__PORTAL_LEAD_TEAM_SYNC_BUSY__ = true;
 
-    const todayHost = document.getElementById("portalLeadTeamTodayHost");
-    const qmHost = document.getElementById("portalLeadTeamShiftQuickHost");
-    const qmHeading = document.getElementById("portalLeadTeamShiftHeading");
     try {
-      const ctx = portalLeadTeamShiftContext();
-      if (!ctx) {
-        if (todayHost) {
-          todayHost.hidden = true;
-          todayHost.innerHTML = "";
-        }
-        if (qmHost) {
-          qmHost.hidden = true;
-          qmHost.innerHTML = "";
-        }
-        if (qmHeading) qmHeading.hidden = true;
-        return;
-      }
-
-      const iso = todayIsoYmd();
-      const workingToday = portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes);
       const team = workingToday ? portalLeadTeamOnShiftForIso(iso, ctx) : null;
       const showToday = !!team;
 
@@ -1567,14 +1586,7 @@ export function portalSyncLeadTeamShiftUi() {
         }
       }
 
-      /*
-       * When Roberto is not DC lead today (client Cancelled), skip the heavy 7-day
-       * override walk — that scan + roster matching froze taps. Alerts only while lead.
-       */
-      let changes = [];
-      if (workingToday || ctx.leadKey !== "roberto") {
-        changes = portalLeadTeamShiftChanges(ctx);
-      }
+      const changes = portalLeadTeamShiftChanges(ctx);
       const qmHtml = renderQuickMenuChanges(changes);
       if (qmHost) {
         qmHost.innerHTML = qmHtml;
@@ -1614,6 +1626,7 @@ if (typeof window !== "undefined") {
   window.portalLeadTeamShiftDayDismissKey = portalLeadTeamShiftDayDismissKey;
   window.portalLeadTeamShiftDayDismissed = isLeadTeamShiftDayDismissed;
   window.portalLeadOverrideRowAppliesToLeadScope = portalLeadOverrideRowAppliesToLeadScope;
+  window.portalLeadProgrammeLeadWorkingOnIso = portalLeadProgrammeLeadWorkingOnIso;
   window.portalLeadProgrammeWideTodayForStaff = portalLeadProgrammeWideTodayForStaff;
   window.portalLeadSpreadsheetSessionInScopeForLead = portalLeadSpreadsheetSessionInScopeForLead;
   window.portalLeadCollectProgrammeWideSessionsModel = portalLeadCollectProgrammeWideSessionsModel;
