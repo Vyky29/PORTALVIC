@@ -921,7 +921,8 @@
       }
     }
     slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
-    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow);
+    /* Skip auto swim merge here — expandSlotsForDate assigns it once with the day list. */
+    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow, { skipAutoSwim: true });
     return slotRow;
   }
 
@@ -1940,7 +1941,7 @@
       __portalScheduleOverride: ov,
     };
     slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
-    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow);
+    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow, { skipAutoSwim: true });
     return slotRow;
   }
 
@@ -3331,13 +3332,26 @@
     return aStart < bEnd && bStart < aEnd;
   }
 
-  function autoConsecutiveSwimInstructorMergeKey(slot) {
+  function autoConsecutiveSwimInstructorMergeKey(slot, daySlots) {
     if (!isConsecutiveSwimMergeableSlot(slot)) return "";
     if (isTeflonDemoRosterSlot(slot)) return "";
     var iso = slot.session_date;
     var cid = canonicalClientSlug(slot.client_name);
     if (!iso || !cid) return "";
-    var candidates = rosterSlotsForDate(iso).filter(function (s) {
+    /* Prefer the day board already in hand — never re-walk the full roster while
+     * Overview is expanding that ISO (nested O(n²) freezes Chrome: RESULT_CODE_HUNG). */
+    var pool = Array.isArray(daySlots) ? daySlots : null;
+    if (!pool) {
+      try {
+        var expanding =
+          typeof global.__PORTAL_ASH_EXPANDING_ISO__ === "string"
+            ? global.__PORTAL_ASH_EXPANDING_ISO__
+            : "";
+        if (expanding && expanding === String(iso).slice(0, 10)) return "";
+      } catch (_e) {}
+      pool = rosterSlotsForDate(iso);
+    }
+    var candidates = pool.filter(function (s) {
       if (canonicalClientSlug(s.client_name) !== cid) return false;
       if (!isConsecutiveSwimMergeableSlot(s)) return false;
       return slotsShareSwimInstructor(slot, s);
@@ -3385,13 +3399,13 @@
     return "consec_swim|" + cid + "|" + primaryInstructorKey(slot);
   }
 
-  function shouldOmitAutoMergedSwimDuplicate(slot) {
+  function shouldOmitAutoMergedSwimDuplicate(slot, daySlots) {
     if (!slot || !isAquaticService(slot.service)) return false;
-    var mg = slot.feedback_merge_group || feedbackMergeGroupForSlot(slot);
+    var mg = slot.feedback_merge_group || feedbackMergeGroupForSlot(slot, { daySlots: daySlots });
     if (!mg) return false;
     var iso = slot.session_date;
     if (!iso) return false;
-    var slots = rosterSlotsForDate(iso);
+    var slots = Array.isArray(daySlots) ? daySlots : rosterSlotsForDate(iso);
     for (var i = 0; i < slots.length; i++) {
       var s = slots[i];
       if (isAquaticService(s.service)) continue;
@@ -3400,13 +3414,14 @@
       if (!isSwimInstructorPoolAreaKind(kind)) continue;
       if (canonicalClientSlug(s.client_name) !== canonicalClientSlug(slot.client_name)) continue;
       if (!slotsShareSwimInstructor(slot, s)) continue;
-      var sMg = feedbackMergeGroupForSlot(s);
+      var sMg = s.feedback_merge_group || feedbackMergeGroupForSlot(s, { daySlots: slots });
       if (sMg === mg) return true;
     }
     return false;
   }
 
-  function feedbackMergeGroupForSlot(slot) {
+  function feedbackMergeGroupForSlot(slot, opts) {
+    opts = opts || {};
     var rules = feedbackMergeRules();
     var wd = slot.day || weekdayLongFromIso(slot.session_date);
     var slotIso = clean(slot.session_date).slice(0, 10);
@@ -3439,8 +3454,10 @@
         }
       }
     }
-    var autoSwim = autoConsecutiveSwimInstructorMergeKey(slot);
-    if (autoSwim) return autoSwim;
+    if (!opts.skipAutoSwim) {
+      var autoSwim = autoConsecutiveSwimInstructorMergeKey(slot, opts.daySlots);
+      if (autoSwim) return autoSwim;
+    }
     if (
       wd === "Sunday" &&
       isMultiActivityService(slot.service) &&
@@ -6409,6 +6426,9 @@
     if (this._slotsByIso[isoKey]) return this._slotsByIso[isoKey];
     this._expandingSlotsIso = isoKey;
     try {
+      global.__PORTAL_ASH_EXPANDING_ISO__ = isoKey;
+    } catch (_g) {}
+    try {
       var wd = weekdayLongFromIso(isoDate);
       var sunSwimOv = wd === "Sunday" ? sundayDateSwimOverride(isoDate) : null;
       var out = [];
@@ -6450,6 +6470,10 @@
       out = applyInstructorReassignOverrides(this, out);
       out = annotateBespokeSharedUnitKeys(out);
       out = applyShadowingHostDisplay(this, out);
+      /* One pass: auto consecutive swim merge using this day's slots only. */
+      for (var mi = 0; mi < out.length; mi++) {
+        out[mi].feedback_merge_group = feedbackMergeGroupForSlot(out[mi], { daySlots: out });
+      }
       if (this.opts && typeof this.opts.slotScopeFilter === "function") {
         out = out.filter(this.opts.slotScopeFilter);
       }
@@ -6457,6 +6481,9 @@
       return out;
     } finally {
       if (this._expandingSlotsIso === isoKey) this._expandingSlotsIso = "";
+      try {
+        if (global.__PORTAL_ASH_EXPANDING_ISO__ === isoKey) global.__PORTAL_ASH_EXPANDING_ISO__ = "";
+      } catch (_c) {}
     }
   };
 
@@ -10995,7 +11022,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       this.render();
       return;
     }
-    this.invalidateComputeCaches();
+    /* Drop only the painted day — full invalidate recomputes every ISO and can hang Chrome. */
+    var dayKey = String(this.selectedIso || this.overviewIso || "").trim().substring(0, 10);
+    if (dayKey && this._slotsByIso) delete this._slotsByIso[dayKey];
+    if (dayKey && this._dayStatsByIso) {
+      var statsKeys = Object.keys(this._dayStatsByIso);
+      for (var si = 0; si < statsKeys.length; si++) {
+        if (String(statsKeys[si] || "").indexOf(dayKey) === 0) delete this._dayStatsByIso[statsKeys[si]];
+      }
+    }
     this.syncOverviewChromeSelection();
     this.scheduleOverviewBodyPaint();
   };
