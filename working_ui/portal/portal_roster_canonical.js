@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 84;
+  var SOURCE_VERSION = 85;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -373,8 +373,8 @@
    * Serine → Roberto 4.30–5.30; Logan → Luliya 5–5.30; Richard → Roberto; no Youssef.
    */
   /**
-   * Acton Tue pool notes: match Summer where known (Junaid + Aydaan = Lane SE;
-   * Adam Mahmmoud = Teaching Pool). Other seats keep Acton Lane (DE) default.
+   * Acton Tue pool notes: match Summer where known (Junaid Lane SE; Adam Mahmmoud = Teaching Pool).
+   * Aydaan + Adaam 6–6.30 (Javier Lane SE / Luliya Teaching Pool). Aurora 5.30 open.
    */
   var AUTUMN_ACTON_TUESDAY_BOARD = [
     { staff: "ROBERTO", name: "Christian Abate", time: "4 to 4.30", area: "Lane (DE)" },
@@ -386,17 +386,16 @@
     { staff: "LULIYA", name: "No participant", time: "4.30 to 5", area: "Lane (DE)" },
     { staff: "LULIYA", name: "Logan", time: "5 to 5.30", area: "Lane (DE)" },
     { staff: "LULIYA", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
-    { staff: "LULIYA", name: "No participant", time: "6 to 6.30", area: "Lane (DE)" },
+    { staff: "LULIYA", name: "Adaam Ah", time: "6 to 6.30", area: "Teaching Pool" },
     /* Invoice INV-P-0139: Aquatic 60' Tue 4–5 Acton (same as Thu). */
     { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (DE)" },
     { staff: "JAVIER", name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
     { staff: "JAVIER", name: "Rayan Ta", time: "5.30 to 6", area: "Lane (DE)" },
-    /* Kareena unpaid Aug15 release — open seat (LOCAL truth). */
-    { staff: "JAVIER", name: "No participant", time: "6 to 6.30", area: "Lane (SE)" },
+    { staff: "JAVIER", name: "Aydaan Ah", time: "6 to 6.30", area: "Lane (SE)" },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
     { staff: "AURORA", name: "Adam Mahmmoud", time: "4.30 to 5", area: "Teaching Pool" },
     { staff: "AURORA", name: "Junaid", time: "5 to 5.30", area: "Lane (SE)" },
-    { staff: "AURORA", name: "Aydaan Ah", time: "5.30 to 6", area: "Lane (SE)" },
+    { staff: "AURORA", name: "No participant", time: "5.30 to 6", area: "Lane (SE)" },
     { staff: "AURORA", name: "Anas", time: "6 to 6.30", area: "Lane (DE)" },
   ];
 
@@ -897,7 +896,7 @@
           { name: "Muhammad (trial)", time: "4.30 to 5" },
           { name: "Amar Rai", time: "5 to 5.30" },
           { name: "Amar Rai", time: "5.30 to 6" },
-          { name: "Adaam Ah", time: "6 to 6.30" },
+          { name: "Amaar Ah", time: "6 to 6.30" },
         ],
       },
       {
@@ -2194,7 +2193,7 @@
       session_date: "2026-07-17",
     },
     {
-      client_name: "Amaar Ah",
+      client_name: "No participant",
       day: "Friday",
       instructors: "YOUSSEF",
       service: "Aquatic Activity",
