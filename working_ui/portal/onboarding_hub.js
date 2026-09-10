@@ -112,6 +112,7 @@
 
   async function refreshPhotoPreview() {
     var img = global.document.getElementById("obHubPhotoPreview");
+    var frame = global.document.getElementById("obHubPhotoFrame");
     if (!img) return;
     try {
       var box = global.__PORTAL_SUPABASE__ || {};
@@ -120,9 +121,20 @@
       var url = String(meta.avatar_url || (box.staff_profile && box.staff_profile.avatar_url) || "").trim();
       if (url) {
         img.src = url;
+        img.alt = "Your portal photo";
         img.hidden = false;
+        if (frame) frame.classList.add("has-photo");
       }
     } catch (_) {}
+  }
+
+  function bindFilePickName(input, nameEl, onLocalPreview) {
+    if (!input || !nameEl) return;
+    input.addEventListener("change", function () {
+      var file = input.files && input.files[0];
+      nameEl.textContent = file ? file.name : nameEl.getAttribute("data-empty") || "No file chosen";
+      if (typeof onLocalPreview === "function") onLocalPreview(file || null);
+    });
   }
 
   function bindAccordions() {
@@ -164,7 +176,21 @@
     var input = global.document.getElementById("obHubPhotoInput");
     var status = global.document.getElementById("obHubPhotoStatus");
     var btn = global.document.getElementById("obHubPhotoUpload");
+    var nameEl = global.document.getElementById("obHubPhotoFileName");
+    var frame = global.document.getElementById("obHubPhotoFrame");
     if (!input || !btn) return;
+    if (nameEl) nameEl.setAttribute("data-empty", "No file chosen");
+    bindFilePickName(input, nameEl, function (file) {
+      var img = global.document.getElementById("obHubPhotoPreview");
+      if (!img || !file) return;
+      try {
+        var url = URL.createObjectURL(file);
+        img.src = url;
+        img.alt = "Photo preview";
+        img.hidden = false;
+        if (frame) frame.classList.add("has-photo");
+      } catch (_) {}
+    });
     btn.addEventListener("click", async function () {
       var file = input.files && input.files[0];
       if (!file) {
@@ -178,7 +204,9 @@
         var img = global.document.getElementById("obHubPhotoPreview");
         if (img && up && up.publicUrl) {
           img.src = up.publicUrl;
+          img.alt = "Your portal photo";
           img.hidden = false;
+          if (frame) frame.classList.add("has-photo");
         }
         try {
           var box = global.__PORTAL_SUPABASE__;
@@ -201,6 +229,10 @@
     var form = global.document.getElementById("obHubDocForm");
     var status = global.document.getElementById("obHubDocStatus");
     if (!form) return;
+    var fileEl = form.querySelector('[name="doc_file"]');
+    var nameEl = global.document.getElementById("obHubDocFileName");
+    if (nameEl) nameEl.setAttribute("data-empty", "PDF, photo or Word / no file chosen");
+    bindFilePickName(fileEl, nameEl);
     form.addEventListener("submit", async function (ev) {
       ev.preventDefault();
       var typeEl = form.querySelector('[name="doc_type"]');
