@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 88;
+  var SOURCE_VERSION = 89;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1206,8 +1206,8 @@
   }
 
   /**
-   * Thu 10 Sep: Joelle ends 6 (early leave last half) → Anas makeup Aurora only 6–6.30
-   * (Simon leaves at 6 Thursdays). Maiyar stays with Roberto.
+   * Thu 10 Sep: Joelle 5.30–6 taught; 6–6.30 cancelled (Aurora + Simon) + Anas makeup Aurora 6–6.30.
+   * Roberto 6–6.30 open today only (Maiyar second half cancelled).
    */
   function autumnThursdaySep10AnasMakeupRows() {
     var iso = "2026-09-10";
@@ -1215,6 +1215,7 @@
       return slots.map(function (slot) {
         var area = "Lane (DE)";
         if (/^joelle\b/i.test(String(slot.name || ""))) area = "Teaching Pool";
+        if (/^no participant\b/i.test(String(slot.name || ""))) area = slot.area || "Lane (DE)";
         return {
           client_name: slot.name,
           day: "Thursday",
@@ -1231,10 +1232,19 @@
       .concat(
         mapBook("AURORA", [
           { name: "Joelle", time: "5.30 to 6" },
+          { name: "Joelle", time: "6 to 6.30" },
           { name: "Anas", time: "6 to 6.30" },
         ]),
       )
-      .concat(mapBook("SIMON", [{ name: "Joelle", time: "5.30 to 6" }]));
+      .concat(
+        mapBook("SIMON", [
+          { name: "Joelle", time: "5.30 to 6" },
+          { name: "Joelle", time: "6 to 6.30" },
+        ]),
+      )
+      .concat(
+        mapBook("ROBERTO", [{ name: "No participant", time: "6 to 6.30", area: "Lane (DE)" }]),
+      );
   }
 
   function scrubAndEnsureSep10AnasMakeup(rows) {
@@ -1253,7 +1263,7 @@
       ) {
         return;
       }
-      /* Drop standing Joelle blocks on Aurora/Simon for this date (replaced by half + Anas). */
+      /* Drop standing Joelle blocks on Aurora/Simon for this date (replaced by halves + Anas). */
       if (
         isAquaticService(r.service) &&
         /acton/i.test(String(r.venue || "")) &&
@@ -1261,6 +1271,21 @@
         /^joelle\b/i.test(String(r.client_name || "").trim())
       ) {
         return;
+      }
+      /* Roberto 6–6.30 open today (Maiyar second half cancelled). */
+      if (
+        isAquaticService(r.service) &&
+        /acton/i.test(String(r.venue || "")) &&
+        /\broberto\b/i.test(String(r.instructors || "")) &&
+        /^(maiyar|no participant)\b/i.test(String(r.client_name || "").trim())
+      ) {
+        var maiyarSlot = String(r.time_slot || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+        if (maiyarSlot === "6 to 6.30" || maiyarSlot === "6:00 to 6:30" || maiyarSlot.indexOf("6 to 6.30") === 0) {
+          return;
+        }
       }
       out.push(r);
     });
