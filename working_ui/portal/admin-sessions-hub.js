@@ -9855,7 +9855,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   }
 
   /**
-   * Standing Hub Bespoke seat remapped off this away worker (John Wed 9/15 Tinashe).
+   * Standing Hub Bespoke seat remapped off this away worker (John Wed 9/15/16 Tinashe).
    * Clone the live Tinashe card onto their day-off column instead of "No sessions".
    */
   function hubAwayStaffLostHubBespokeSlot(hub, iso, dayName, staffRaw, displaySlots) {
@@ -10423,7 +10423,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
     }
 
-    /* Staff with day-off on this date but no remaining seats (e.g. John Wed 9 Tinashe
+    /* Staff with day-off on this date but no remaining seats (e.g. John Wed 9/15/16 Tinashe
      * remapped to Godsway+Bismark+Emanuel) still need a red column — and the Tinashe card. */
     (function ensureAwayStaffColumns() {
       var iso = String(hub.selectedDay || "").slice(0, 10);
@@ -11404,7 +11404,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (hasOff) {
         flags.push('<span class="ash-day-flag ash-day-flag--staff">Day off req</span>');
       }
-      if (hasCoverNeeded || hasOff) {
+      if (hasCoverNeeded) {
         flags.push('<span class="ash-day-flag ash-day-flag--cover">COVER</span>');
       }
       if (!flags.length) return "";

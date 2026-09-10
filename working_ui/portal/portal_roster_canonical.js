@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 91;
+  var SOURCE_VERSION = 92;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -169,7 +169,7 @@
    * Autumn 26/27 Hub afternoon Bespoke — LOCAL EXTRA standing (from Wed 9 Sep 2026):
    * Mon: Godsway / John / Raul / Bismark (+ Emanuel from Mon 14);
    * Wed: Godsway / Bismark / Emanuel (shadowing Bismark) from Wed 9; John when not off
-   *     (John day off Wed 9 + Wed 15); Raul off Tinashe Wed from 9;
+   *     (John day off Wed 9 + Wed 15 + Wed 16); Raul off Tinashe Wed from 9;
    * Fri: Bespoke Bismark / Roberto / Emanuel (from Fri 11).
    * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30-5 only).
    */
@@ -1951,10 +1951,10 @@
             s = s.replace(/\bRAUL\b/gi, "");
           }
         }
-        /* Wed 9 + Wed 15: John day off — Tinashe = Godsway + Bismark + Emanuel. */
+        /* Wed 9 + Wed 15 + Wed 16: John day off — Tinashe = Godsway + Bismark + Emanuel. */
         if (
           day === "wednesday" &&
-          (iso === "2026-09-09" || iso === "2026-09-15")
+          (iso === "2026-09-09" || iso === "2026-09-15" || iso === "2026-09-16")
         ) {
           if (/\bjohn\b/i.test(s) && !/\b(godsway|bismark|emanuel)\b/i.test(s)) {
             s = "";
@@ -3214,7 +3214,7 @@
 
   /**
    * Hub Bespoke Tinashe template staff for a weekday (before date remaps).
-   * Used so Overview can still paint a day-off Tinashe card when remap strips them (John Wed 9/15).
+   * Used so Overview can still paint a day-off Tinashe card when remap strips them (John Wed 9/15/16).
    */
   function autumnHubBespokeStandingHasStaff(dayName, staffRaw) {
     var wantDay = String(dayName || "")
