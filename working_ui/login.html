@@ -6,7 +6,7 @@
   <script>
     /* One-shot PWA heal on login (same as staff dashboard). */
     (function () {
-      var FLAG = "portalPwaHealV10";
+      var FLAG = "portalPwaHealV11";
       var KEEP = "clubsensational-portal-sw";
       var force = false;
       try {
@@ -58,7 +58,10 @@
           );
         }
       } catch (e3) {}
-      Promise.all(jobs).then(function () {
+      var done = false;
+      function markHealed() {
+        if (done) return;
+        done = true;
         try { localStorage.setItem(FLAG, "1"); } catch (e4) {}
         if (force) {
           try {
@@ -69,7 +72,16 @@
             location.replace(u.pathname + u.search + u.hash);
           } catch (e5) {}
         }
-      });
+      }
+      Promise.race([
+        Promise.all(jobs).then(markHealed),
+        new Promise(function (resolve) {
+          setTimeout(function () {
+            markHealed();
+            resolve();
+          }, 1600);
+        }),
+      ]).catch(markHealed);
     })();
   </script>
   <script src="/portal-static-bootstrap.js?v=20260630-login-bootstrap"></script>
