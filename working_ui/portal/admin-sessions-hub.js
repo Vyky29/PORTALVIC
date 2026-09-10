@@ -848,6 +848,7 @@
     var slot = parseTimeSlot(r.time_slot, wd);
     var origInstRaw = clean(r.instructors);
     var instRaw = applySundayInstructorOverride(isoDate, origInstRaw);
+    var standingInstRaw = instRaw;
     var remappedEmpty = false;
     try {
       var canon = global.PortalRosterCanonical;
@@ -861,13 +862,14 @@
           clientName: r.client_name,
         });
         remapped = clean(remapped);
-        /* Intentional strip (e.g. John off Wed 9 Tinashe) — do not fall back to summer name. */
+        /* Intentional strip (e.g. John off Wed 9 Tinashe) — keep the seat on the original worker. */
         if (!remapped && instRaw) remappedEmpty = true;
         instRaw = remapped;
       }
     } catch (_remap) {}
-    if (remappedEmpty) return null;
-    var instructors = parseInstructors(instRaw);
+    var origInstructors = parseInstructors(standingInstRaw);
+    var usedInstRaw = remappedEmpty ? standingInstRaw : instRaw;
+    var instructors = parseInstructors(usedInstRaw);
     var slotRow = {
       session_date: isoDate,
       day: wd,
@@ -879,11 +881,45 @@
       venue: clean(r.venue),
       area: clean(r.area),
       instructors: instructors,
-      instructor_label: instructors.join(", ") || clean(instRaw),
+      instructor_label: instructors.join(", ") || clean(usedInstRaw),
       session_key: buildSessionKey(isoDate, r),
       __portal_roster_row_id: r.__portal_roster_row_id || null,
       portalRosterTimeUpdated: !!r.__portal_roster_time_updated,
     };
+    if (origInstructors.length) {
+      var origKeySet = Object.create(null);
+      var newKeySet = Object.create(null);
+      var oi;
+      for (oi = 0; oi < origInstructors.length; oi++) {
+        origKeySet[canonicalStaffMatchKey(origInstructors[oi]) || String(origInstructors[oi]).toLowerCase()] = true;
+      }
+      for (oi = 0; oi < instructors.length; oi++) {
+        newKeySet[canonicalStaffMatchKey(instructors[oi]) || String(instructors[oi]).toLowerCase()] = true;
+      }
+      var keysChanged = false;
+      for (oi = 0; oi < origInstructors.length; oi++) {
+        var ok = canonicalStaffMatchKey(origInstructors[oi]) || String(origInstructors[oi]).toLowerCase();
+        if (ok && !newKeySet[ok]) keysChanged = true;
+      }
+      for (oi = 0; oi < instructors.length; oi++) {
+        var nk = canonicalStaffMatchKey(instructors[oi]) || String(instructors[oi]).toLowerCase();
+        if (nk && !origKeySet[nk]) keysChanged = true;
+      }
+      if (keysChanged || remappedEmpty) {
+        slotRow.portalOriginalInstructors = origInstructors;
+        if (!remappedEmpty) {
+          var added = [];
+          for (oi = 0; oi < instructors.length; oi++) {
+            var addKey = canonicalStaffMatchKey(instructors[oi]) || String(instructors[oi]).toLowerCase();
+            if (addKey && !origKeySet[addKey]) added.push(instructors[oi]);
+          }
+          if (added.length) {
+            slotRow.portalInstructorReassigned = true;
+            slotRow.portalCoveringStaffName = added.join(", ");
+          }
+        }
+      }
+    }
     slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
     slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow);
     return slotRow;
@@ -1740,6 +1776,7 @@
     var joined = raw.replace(/[^a-z0-9]+/g, "");
     var k = raw.split(/\s+/)[0] || "";
     if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "luliya";
+    if (k === "aurora" || joined === "auroragarcia") return "aurora";
     if (k === "javiermarquez" || joined === "javiermarquez") return "javier";
     if (
       k === "javiarranz" ||
@@ -2087,7 +2124,17 @@
       var coverName =
         clean(p.covering_staff_name || p.to_staff_name) || resolveStaffDisplayName(coverId);
       var anchorId = clean(ov.anchor_staff_id).toLowerCase();
-      if (anchorId && !staffIdMatchesInstructorWithSwimAliases(anchorId, slot.instructors)) return slot;
+      var matchInst =
+        slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
+          ? slot.portalOriginalInstructors
+          : slot.instructors;
+      if (
+        anchorId &&
+        !staffIdMatchesInstructorWithSwimAliases(anchorId, slot.instructors) &&
+        !staffIdMatchesInstructorWithSwimAliases(anchorId, matchInst)
+      ) {
+        return slot;
+      }
       /* COVER NEEDED with no named cover yet — keep seat on original staff, attach override. */
       if (!coverId && !coverName) {
         if (!overrideIsInstructorCoverNeededType(ov)) return slot;
@@ -2102,8 +2149,16 @@
           portalCoverNeeded: true,
         });
       }
-      var origInst = slotInstructors(slot).slice();
-      var effective = swapInstructorCoverInList(origInst, anchorId, coverName, coverId);
+      var origInst =
+        slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
+          ? normalizeInstructorList(slot.portalOriginalInstructors).slice()
+          : slotInstructors(slot).slice();
+      var effective = swapInstructorCoverInList(
+        slotInstructors(slot).slice(),
+        anchorId,
+        coverName,
+        coverId
+      );
       var reassigned = Object.assign({}, slot, {
         instructors: effective,
         instructor_label: effective.join(", "),
@@ -9680,6 +9735,60 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return false;
   }
 
+  function dayBoardOriginalInstructorsForSlot(slot) {
+    if (slot && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
+      var orig = normalizeInstructorList(slot.portalOriginalInstructors);
+      if (orig.length) return orig;
+    }
+    return dayBoardInstructorsForSlot(slot);
+  }
+
+  function dayBoardStaffKeysEqual(a, b) {
+    var ka = dayBoardStaffKey(a);
+    var kb = dayBoardStaffKey(b);
+    return !!(ka && kb && ka === kb);
+  }
+
+  /** True when this slot still belongs on the away worker's Overview column. */
+  function hubSlotShouldStayOnAwayColumn(hub, slot, iso, staffRaw) {
+    if (!hub || !slot || !staffRaw) return false;
+    var want = dayBoardStaffKey(staffRaw);
+    if (!want || want === "coverneeded") return false;
+    var orig = dayBoardOriginalInstructorsForSlot(slot);
+    var i;
+    for (i = 0; i < orig.length; i++) {
+      if (dayBoardStaffKeysEqual(orig[i], staffRaw)) return true;
+    }
+    var cur = dayBoardInstructorsForSlot(slot);
+    for (i = 0; i < cur.length; i++) {
+      if (dayBoardStaffKeysEqual(cur[i], staffRaw)) return true;
+    }
+    try {
+      var PRC = global.PortalRosterCanonical;
+      if (PRC && typeof PRC.resolveAutumnInstructorsForCalendarDate === "function") {
+        var mapped = clean(
+          PRC.resolveAutumnInstructorsForCalendarDate(staffRaw, iso, {
+            service: slot.service,
+            venue: slot.venue,
+            area: slot.area,
+            day: slot.day,
+            client_name: slot.client_name,
+            clientName: slot.client_name,
+          })
+        );
+        if (!mapped) return false;
+        if (dayBoardStaffKeysEqual(mapped, staffRaw)) return false;
+        var mappedParts = normalizeInstructorList(mapped);
+        for (i = 0; i < cur.length; i++) {
+          for (var mi = 0; mi < mappedParts.length; mi++) {
+            if (dayBoardStaffKeysEqual(cur[i], mappedParts[mi])) return true;
+          }
+        }
+      }
+    } catch (_mapAway) {}
+    return false;
+  }
+
   /**
    * Standing Hub Bespoke seat remapped off this away worker (John Wed 9/15 Tinashe).
    * Clone the live Tinashe card onto their day-off column instead of "No sessions".
@@ -10134,90 +10243,96 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         };
       }
       var iso = String(slot.session_date || hub.selectedDay || "").slice(0, 10);
-      var origInsts = normalizeInstructorList(
-        slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
-          ? slot.portalOriginalInstructors
-          : dayBoardInstructorsForSlot(slot)
-      );
+      var origInsts = dayBoardOriginalInstructorsForSlot(slot);
       if (!origInsts.length) origInsts = ["Unassigned"];
-      var fromLabel = dayBoardStaffLabel(origInsts[0]);
+      var awayOrig = [];
+      for (var oi = 0; oi < origInsts.length; oi++) {
+        if (hubStaffAwayOnIso(hub, iso, origInsts[oi])) awayOrig.push(origInsts[oi]);
+      }
+      var fromLabel = dayBoardStaffLabel((awayOrig[0] || origInsts[0]));
       var realCover = !!(st.isRealCover && (slot.portalCoveringStaffName || slot.portalCoveringStaffId));
-      var keepOnAway =
-        realCover &&
-        origInsts.some(function (raw) {
-          return hubStaffAwayOnIso(hub, iso, raw);
-        });
-      if (!keepOnAway && realCover && (st.isStaffDayOff || slot.portalCoverNeeded)) {
-        keepOnAway = true;
+
+      /* Day-off requested: seats stay on that worker's column (red), even after cover remap. */
+      for (var oa = 0; oa < awayOrig.length; oa++) {
+        pushBoardItem(
+          dayBoardStaffKey(awayOrig[oa]),
+          dayBoardStaffLabel(awayOrig[oa]),
+          slot,
+          cloneBoardState(st, {
+            boardPlace: "away",
+            isStaffDayOff: true,
+            isCoverNeeded: false,
+            isInstructorReassign: false,
+            isRealCover: false,
+            tone: "dayoff",
+          })
+        );
       }
 
       if (realCover) {
-        if (keepOnAway || hubStaffAwayOnIso(hub, iso, origInsts[0])) {
-          for (var oa = 0; oa < origInsts.length; oa++) {
-            pushBoardItem(
-              dayBoardStaffKey(origInsts[oa]),
-              dayBoardStaffLabel(origInsts[oa]),
-              slot,
-              cloneBoardState(st, {
-                boardPlace: "away",
-                isStaffDayOff: true,
-                isCoverNeeded: false,
-                isInstructorReassign: false,
-                isRealCover: false,
-                tone: "dayoff",
-              })
-            );
-          }
-        }
         var coverRaw = slot.portalCoveringStaffName || slot.portalCoveringStaffId;
-        pushBoardItem(
-          dayBoardStaffKey(coverRaw),
-          dayBoardStaffLabel(coverRaw),
-          slot,
-          cloneBoardState(st, {
-            boardPlace: "cover",
-            coverForLabel: fromLabel,
-            isCoverNeeded: false,
-            isStaffDayOff: false,
-            isInstructorReassign: true,
-            isRealCover: true,
-            tone: st.isAbsent ? "absent" : st.isCancelled ? "cancelled" : st.isTrial ? "trial" : "client",
-          })
-        );
-        continue;
-      }
-
-      if (st.isStaffDayOff || st.isCoverNeeded) {
-        var awayPaint =
-          !!st.isStaffDayOff ||
-          origInsts.some(function (rawOff) {
-            return hubStaffAwayOnIso(hub, iso, rawOff);
-          });
-        for (var od = 0; od < origInsts.length; od++) {
+        var coverParts = normalizeInstructorList(coverRaw);
+        if (!coverParts.length && coverRaw) coverParts = [coverRaw];
+        for (var cp = 0; cp < coverParts.length; cp++) {
+          if (hubStaffAwayOnIso(hub, iso, coverParts[cp])) continue;
           pushBoardItem(
-            dayBoardStaffKey(origInsts[od]),
-            dayBoardStaffLabel(origInsts[od]),
+            dayBoardStaffKey(coverParts[cp]),
+            dayBoardStaffLabel(coverParts[cp]),
             slot,
             cloneBoardState(st, {
-              boardPlace: awayPaint ? "away" : "host",
-              isStaffDayOff: awayPaint,
-              isCoverNeeded: !awayPaint,
-              tone: awayPaint ? "dayoff" : "cover",
+              boardPlace: "cover",
+              coverForLabel: fromLabel,
+              isCoverNeeded: false,
+              isStaffDayOff: false,
+              isInstructorReassign: true,
+              isRealCover: true,
+              tone: st.isAbsent ? "absent" : st.isCancelled ? "cancelled" : st.isTrial ? "trial" : "client",
             })
           );
         }
-        pushBoardItem(
-          COVER_KEY,
-          "COVER NEEDED",
-          slot,
-          cloneBoardState(st, {
-            boardPlace: "mirror",
-            coverFromLabel: fromLabel,
-            isCoverNeeded: true,
-            isStaffDayOff: false,
-            tone: "cover",
-          })
-        );
+        continue;
+      }
+
+      if (st.isStaffDayOff || st.isCoverNeeded || awayOrig.length) {
+        var currentInsts = dayBoardInstructorsForSlot(slot);
+        var hasLiveWorker = false;
+        for (var od = 0; od < currentInsts.length; od++) {
+          if (hubStaffAwayOnIso(hub, iso, currentInsts[od])) continue;
+          hasLiveWorker = true;
+          var alreadyAway = false;
+          for (var ax = 0; ax < awayOrig.length; ax++) {
+            if (dayBoardStaffKeysEqual(awayOrig[ax], currentInsts[od])) {
+              alreadyAway = true;
+              break;
+            }
+          }
+          if (alreadyAway) continue;
+          pushBoardItem(
+            dayBoardStaffKey(currentInsts[od]),
+            dayBoardStaffLabel(currentInsts[od]),
+            slot,
+            cloneBoardState(st, {
+              boardPlace: st.isCoverNeeded ? "host" : "normal",
+              isStaffDayOff: false,
+              isCoverNeeded: !!st.isCoverNeeded,
+              tone: st.isCoverNeeded ? "cover" : st.tone,
+            })
+          );
+        }
+        if (!hasLiveWorker) {
+          pushBoardItem(
+            COVER_KEY,
+            "COVER NEEDED",
+            slot,
+            cloneBoardState(st, {
+              boardPlace: "mirror",
+              coverFromLabel: fromLabel,
+              isCoverNeeded: true,
+              isStaffDayOff: false,
+              tone: "cover",
+            })
+          );
+        }
         continue;
       }
 
@@ -10264,19 +10379,48 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             continue;
           }
         } catch (_standOff) {}
-        var lostSlot = hubAwayStaffLostHubBespokeSlot(hub, iso, dayName, rawName, displaySlots);
-        if (lostSlot) {
+        var attached = 0;
+        for (var si = 0; si < displaySlots.length; si++) {
+          var lost = displaySlots[si];
+          if (!lost || !hubSlotShouldStayOnAwayColumn(hub, lost, iso, rawName)) continue;
           var lostSt;
           try {
-            lostSt = overviewSlotBoardState(hub, lostSlot, unitComplete, unitAbsent);
+            lostSt = overviewSlotBoardState(hub, lost, unitComplete, unitAbsent);
           } catch (_lostSt) {
             lostSt = { tone: "dayoff", boardPlace: "away" };
           }
           pushBoardItem(
             key,
             dayBoardStaffLabel(rawName),
-            lostSlot,
+            lost,
             cloneBoardState(lostSt, {
+              boardPlace: "away",
+              isStaffDayOff: true,
+              isCoverNeeded: false,
+              isUpdated: false,
+              isShadowing: false,
+              isInstructorReassign: false,
+              isRealCover: false,
+              isCancelled: false,
+              tone: "dayoff",
+            })
+          );
+          attached++;
+        }
+        if (attached) continue;
+        var lostSlot = hubAwayStaffLostHubBespokeSlot(hub, iso, dayName, rawName, displaySlots);
+        if (lostSlot) {
+          var lostHubSt;
+          try {
+            lostHubSt = overviewSlotBoardState(hub, lostSlot, unitComplete, unitAbsent);
+          } catch (_lostHubSt) {
+            lostHubSt = { tone: "dayoff", boardPlace: "away" };
+          }
+          pushBoardItem(
+            key,
+            dayBoardStaffLabel(rawName),
+            lostSlot,
+            cloneBoardState(lostHubSt, {
               boardPlace: "away",
               isStaffDayOff: true,
               isCoverNeeded: false,
