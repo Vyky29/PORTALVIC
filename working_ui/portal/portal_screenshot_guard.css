@@ -43,8 +43,8 @@ html:not(.portal-screenshot-foreground-mask) #portalScreenshotGuard.is-active {
   visibility: hidden;
 }
 
-html.portal-screenshot-guard-armed,
-html.portal-screenshot-guard-armed body {
+html.portal-screenshot-guard-armed .portal-screenshot-protected,
+html.portal-screenshot-guard-armed .portal-achievement-protected {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;

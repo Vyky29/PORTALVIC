@@ -175,7 +175,7 @@
   </script>
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
   <script src="/portal/staff-app-boot.js?v=20260910-staff-boot-order"></script>
-  <script src="/portal/portal_auth_page_gate.js?v=20260910-ios-touch"></script>
+  <script src="/portal/portal_auth_page_gate.js?v=20260910-ios-taps"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260820-es-full"></script>
   <script src="/portal/portal-vapid-public.js?v=20260619-vapid-load-fix"></script>
@@ -262,17 +262,48 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260602-footerlogo" />
   <link rel="manifest" href="/staff-dashboard.webmanifest?v=20260712-cs-portal" />
-  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260910-ios-touch" />
+  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260910-ios-taps" />
   <style>
-    #portalScreenshotGuard:not(.is-active){
+    /* iOS PWA: a full-viewport overlay (even opacity 0) eats every tap. */
+    #portalScreenshotGuard{
       display:none !important;
       visibility:hidden !important;
       pointer-events:none !important;
+      width:0 !important;
+      height:0 !important;
+      inset:auto !important;
     }
   </style>
-  <script defer src="/portal/portal_screenshot_guard.js?v=20260910-ios-touch"></script>
+  <script>
+    (function () {
+      function peel() {
+        try {
+          var g = document.getElementById("portalScreenshotGuard");
+          if (g && g.parentNode) g.parentNode.removeChild(g);
+        } catch (e1) {}
+        try {
+          var l = document.getElementById("portal-auth-page-gate-loader");
+          if (l && document.documentElement.classList.contains("portal-auth-ready") && l.parentNode) {
+            l.parentNode.removeChild(l);
+          }
+        } catch (e2) {}
+        try {
+          var b = document.getElementById("backdrop");
+          if (b && !b.classList.contains("open")) b.style.pointerEvents = "none";
+        } catch (e3) {}
+      }
+      peel();
+      var n = 0;
+      var t = setInterval(function () {
+        peel();
+        n += 1;
+        if (n > 24) clearInterval(t);
+      }, 500);
+    })();
+  </script>
+  <script defer src="/portal/portal_screenshot_guard.js?v=20260910-ios-taps"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260909-mohamed-new-client" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260910-ios-taps" />
   <link rel="stylesheet" href="/portal/portal_staff_whatsapp.css?v=20260906-comms-40" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260906-comms-40" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260709-overview-by-service" />

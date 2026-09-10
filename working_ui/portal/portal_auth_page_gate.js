@@ -73,6 +73,7 @@
       "position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;" +
       "align-items:center;justify-content:center;gap:14px;background:#edf4fb;" +
       "font:600 14px/1.35 system-ui,-apple-system,Segoe UI,sans-serif;color:#1e3a5f;" +
+      "pointer-events:none!important;" +
       "}" +
     "html.portal-auth-ready #" +
       LOADER_ID +
@@ -105,8 +106,12 @@
   function markReady() {
     doc.documentElement.classList.add("portal-auth-ready");
     var loader = doc.getElementById(LOADER_ID);
-    if (loader) {
-      loader.setAttribute("aria-busy", "false");
+    if (loader && loader.parentNode) {
+      try {
+        loader.parentNode.removeChild(loader);
+      } catch (_rm) {
+        loader.setAttribute("aria-busy", "false");
+      }
     }
   }
 

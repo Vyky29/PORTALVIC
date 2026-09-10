@@ -138,7 +138,14 @@
   function hideMaskForce() {
     global.clearTimeout(lingerTimer);
     setForegroundMask(false);
-    parkGuardEl(document.getElementById(GUARD_ID));
+    var el = document.getElementById(GUARD_ID);
+    if (el && el.parentNode) {
+      try {
+        el.parentNode.removeChild(el);
+      } catch (_rm) {
+        parkGuardEl(el);
+      }
+    }
     if (isPageVisible() && !isPhotoCaptureUiActive()) {
       setScreenshotWatermark(false);
     }
@@ -252,9 +259,17 @@
     if (options.mobileOnly !== false && !isMobilePortalDevice()) return false;
     armed = true;
     try {
-      document.documentElement.classList.add("portal-screenshot-guard-armed");
+      var skipHtmlArm = false;
+      try {
+        skipHtmlArm = !!(global.PORTAL_STAFF_APP) ||
+          !!(global.navigator && global.navigator.standalone) ||
+          (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches);
+      } catch (_skip) {}
+      /* iOS PWA: user-select:none on html/body drops taps. Keep image tagging only. */
+      if (!skipHtmlArm) {
+        document.documentElement.classList.add("portal-screenshot-guard-armed");
+      }
     } catch (_e7) {}
-    ensureEl();
     bindEvents();
     hideMaskForce();
     return true;
