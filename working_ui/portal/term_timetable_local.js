@@ -219,6 +219,58 @@
     return segs;
   }
 
+  /** SwimFarm: swimming instructors (Bespoke) together, then support (Day Centre). */
+  function serviceSortRank(svc, venueStyle) {
+    var s = String(svc || "");
+    var st = String(venueStyle || "");
+    if (st.indexOf("swimfarm") >= 0) {
+      if (s === "Bespoke") return 0;
+      if (s === "Day Centre") return 1;
+      return 2;
+    }
+    return 0;
+  }
+
+  function reorderColumnsByService(groups, dates) {
+    var columnServices = inferColumnServices(groups, dates);
+    var order = [];
+    var col = 0;
+    (groups || []).forEach(function (g) {
+      var span = Number(g.span) || 1;
+      var idxs = [];
+      for (var i = 0; i < span; i++) idxs.push(col + i);
+      idxs.sort(function (a, b) {
+        return (
+          serviceSortRank(columnServices[a], g.style) -
+            serviceSortRank(columnServices[b], g.style) ||
+          a - b
+        );
+      });
+      idxs.forEach(function (oldIdx) {
+        order.push(oldIdx);
+      });
+      col += span;
+    });
+    var changed = order.some(function (oldIdx, newIdx) {
+      return oldIdx !== newIdx;
+    });
+    if (!changed) {
+      return { groups: groups, dates: dates, columnServices: columnServices };
+    }
+    var newServices = order.map(function (oldIdx) {
+      return columnServices[oldIdx] || "";
+    });
+    var newDates = (dates || []).map(function (dr) {
+      var cells = dr.cells || [];
+      return Object.assign({}, dr, {
+        cells: order.map(function (oldIdx) {
+          return cells[oldIdx] || { text: "", editKey: "", band: "" };
+        }),
+      });
+    });
+    return { groups: groups, dates: newDates, columnServices: newServices };
+  }
+
   function icoCalendar() {
     return (
       '<svg class="ttl-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
@@ -311,10 +363,15 @@
     }
     var dates = termDates(sheet);
     var groups = sheet.venueGroups || [];
-    var labels = flattenVenueLabels(groups);
     if (!dates.length) {
       return '<p class="ttl-empty">No Autumn dates for this weekday.</p>';
     }
+
+    var reordered = reorderColumnsByService(groups, dates);
+    groups = reordered.groups;
+    dates = reordered.dates;
+    var labels = flattenVenueLabels(groups);
+    var columnServices = reordered.columnServices;
 
     var filtered = dates.filter(function (dr) {
       if (state.service === "all") return true;
@@ -323,7 +380,6 @@
       });
     });
 
-    var columnServices = inferColumnServices(groups, dates);
     var svcSegs = serviceHeaderSegments(groups, columnServices);
 
     var headVenues = "";
