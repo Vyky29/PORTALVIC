@@ -893,7 +893,7 @@
       {
         staff: "Dan",
         clients: [
-          { name: "Muhammad (trial)", time: "4.30 to 5" },
+          { name: "Muhammad", time: "4.30 to 5" },
           { name: "Amar Rai", time: "5 to 5.30" },
           { name: "Amar Rai", time: "5.30 to 6" },
           { name: "Amaar Ah", time: "6 to 6.30" },

@@ -87,7 +87,7 @@
     "source": "staff_dashboard_spreadsheet_bundle.js + clients_info_embed.js",
     "termTo": "2026-07-31",
     "approved": false,
-    "revision": 547,
+    "revision": 548,
     "seededAt": "2026-06-22T13:36:19.674296+00:00",
     "services": [
       "Aquatic Activity",
@@ -14589,9 +14589,8 @@
                   "service": "Aquatic Activity",
                   "pool_note": "Teaching Pool",
                   "time_slot": "4.30 to 5",
-                  "client_name": "Muhammad (trial)",
-                  "instructors": "DAN",
-                  "participant_info": "trial"
+                  "client_name": "Muhammad",
+                  "instructors": "DAN"
                 },
                 {
                   "area": "Teaching Pool",
@@ -22232,6 +22231,7 @@
     "rev 524: Roberto Thu 5-5.30 Yossi (no office-hold open)",
     "rev 542: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)",
     "rev 546: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)",
-    "rev 547: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)"
+    "rev 547: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)",
+    "rev 548: MADRE Autumn standing align booking Places (Abate twins Tue; Northolt Mon/Wed opens; Sun climb Alex 3-4; Thu Simon 4.30-5)"
   ]
 }

@@ -177,16 +177,12 @@ function rebuildMonday(week) {
   if (dan) {
     const d = ensureDay(dan, "Monday");
     clearDayServices(d, isNortholtAquatic);
-    d.slots.push(
-      Object.assign(aquatic("Northolt", "4.30 to 5", "Muhammad (trial)", "DAN"), {
-        participant_info: "trial",
-      }),
-    );
+    d.slots.push(aquatic("Northolt", "4.30 to 5", "Muhammad", "DAN"));
     d.slots.push(aquatic("Northolt", "5 to 5.30", "Amar Rai", "DAN"));
     d.slots.push(aquatic("Northolt", "5.30 to 6", "Amar Rai", "DAN"));
     d.slots.push(aquatic("Northolt", "6 to 6.30", "Amaar Ah", "DAN"));
   }
-  note("Mon AS Acton/Northolt = Autumn (Amaar Mon Northolt 6-6.30; Luliya open 4.30-5)");
+  note("Mon AS Acton/Northolt = Autumn (Muhammad term Dan 4.30-5; Amaar 6-6.30; Luliya open 4.30-5)");
 
   for (const [st, name] of [
     [godsway, "GODSWAY"],
