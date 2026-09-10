@@ -1,7 +1,7 @@
 /**
  * Admin — Instructor timetable (ex Spreadsheet reference).
- * Group sessions = same standing roster as Services (canonical).
- * Staff hours = standing week from that roster + editable dated overrides (Supabase).
+ * Who is booked = same standing roster as Services (canonical) → Edit term slot.
+ * Who works = standing week from that roster + editable dated overrides (Supabase).
  */
 (function (global) {
   "use strict";
@@ -70,6 +70,51 @@
 
   function pad2(n) {
     return (n < 10 ? "0" : "") + n;
+  }
+
+  /** First Autumn date for this weekday (Edit term slot needs a term-window anchor). */
+  function autumnAnchorForWeekday(dayName) {
+    var want = String(dayName || "").trim();
+    var iso = HOURS_TERM_FROM;
+    var guard = 0;
+    while (iso <= HOURS_TERM_TO && guard < 14) {
+      var d = parseIsoLocal(iso);
+      if (!d) break;
+      var long = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][
+        d.getDay()
+      ];
+      if (long === want) return iso;
+      iso = addDaysIso(iso, 1);
+      guard += 1;
+    }
+    return HOURS_TERM_FROM;
+  }
+
+  function encodeTermEditPayload(obj) {
+    try {
+      return encodeURIComponent(JSON.stringify(obj || {}));
+    } catch (_e) {
+      return "";
+    }
+  }
+
+  function decodeTermEditPayload(raw) {
+    try {
+      return JSON.parse(decodeURIComponent(String(raw || ""))) || null;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function openTermSlotFromBookedCell(prefill) {
+    if (!prefill) return;
+    if (typeof global.portalAdminOpenTermSlotEdit === "function") {
+      global.portalAdminOpenTermSlotEdit(prefill);
+      return;
+    }
+    if (global.AdminTermSlot && typeof global.AdminTermSlot.openWithPrefill === "function") {
+      global.AdminTermSlot.openWithPrefill(prefill);
+    }
   }
 
   function isoFromDate(d) {
@@ -424,11 +469,12 @@
       .replace(/\s+/g, "");
   }
 
-  /** Group sessions grid — same standing week / canonical rows as Services. */
+  /** Who is booked grid — same standing week / canonical rows as Services. */
   function buildSessionGridsFromRoster(rows) {
     var grids = {};
     WEEKDAYS.forEach(function (day) {
       var iso = STANDING_ISO_BY_DAY[day];
+      var termAnchor = autumnAnchorForWeekday(day);
       var dayRows = normalizeGroupSessionRows(
         (rows || []).filter(function (r) {
           return String((r && r.session_date) || "").slice(0, 10) === iso;
@@ -489,18 +535,36 @@
               mins.start + "-" + mins.end === tk
             );
           });
-          if (!hits.length) return { label: "", kind: "empty" };
+          if (!hits.length) return { label: "", kind: "empty", edits: [] };
           var labels = [];
           var seen = Object.create(null);
+          var edits = [];
           hits.forEach(function (h) {
             var nm = String(h.client_name || "").trim();
             if (!nm || seen[nm.toLowerCase()]) return;
             seen[nm.toLowerCase()] = 1;
             labels.push(nm);
+            var kindInfo = cellKindFromClient(nm);
+            edits.push({
+              anchorDate: termAnchor,
+              client_name: nm,
+              service: String(h.service || "").trim(),
+              time_slot: String(h.time_slot || time || "").trim(),
+              instructors: String(h.instructors || "").trim(),
+              venue: String(h.venue || "").trim(),
+              area: String(h.area || "").trim(),
+              scope: "weekday_term",
+              action: "update",
+              label: kindInfo.label || nm,
+              kind: kindInfo.kind,
+            });
           });
-          if (!labels.length) return { label: "", kind: "empty" };
-          if (labels.length === 1) return cellKindFromClient(labels[0]);
-          return { label: labels.join(", "), kind: "client" };
+          if (!labels.length) return { label: "", kind: "empty", edits: [] };
+          if (labels.length === 1) {
+            var one = cellKindFromClient(labels[0]);
+            return { label: one.label, kind: one.kind, edits: edits };
+          }
+          return { label: labels.join(", "), kind: "client", edits: edits };
         });
         return { time: time, cells: cells };
       });
@@ -680,11 +744,11 @@
       '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
       "<strong>Who works</strong> = instructor name + hours for every Monday (or Tue…) in Autumn — edit and Save. " +
       "Does not change who is booked in Services / MADRE (use Edit term slot for that). " +
-      "<strong>Group sessions</strong> = standing client cards (" +
+      "<strong>Who is booked</strong> = standing client seats (" +
       weekLbl +
-      ").</p>" +
+      ") — click a name to open Edit term slot (every matching weekday).</p>" +
       '<div class="asr-tabs" role="tablist">' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-asr-tab="sessions">Group sessions</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-asr-tab="sessions">Who is booked</button>' +
       '<button type="button" class="btn btn--ghost btn--sm is-active" data-asr-tab="hours">Who works</button>' +
       "</div>" +
       '<div class="asr-toolbar" id="asrToolbar">' +
@@ -698,9 +762,10 @@
 
   function sessionLegendHtml() {
     return (
-      '<div class="asr-legend" aria-label="Session cell legend">' +
+      '<div class="asr-legend" aria-label="Booked cell legend">' +
       '<span><i class="asr-swatch" style="background:#fef08a"></i> No client / available</span>' +
       '<span><i class="asr-swatch" style="background:#1e3a5f"></i> Closed</span>' +
+      "<span>Click a name → Edit term slot</span>" +
       "</div>"
     );
   }
@@ -754,7 +819,7 @@
     var day = state.sessionDay;
     var grid = d.sessionGrids[day] || { columns: [], rows: [] };
     var html =
-      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Read-only grid from the <strong>same standing roster as Services</strong>. Change who is booked via <strong>Edit term slot</strong> or <strong>Schedule &amp; Covers</strong>. Instructor hours → <strong>Staff hours</strong> tab.</p>' +
+      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Standing seats from the <strong>same roster as Services</strong>. Click a participant (or open seat) to open <strong>Edit term slot</strong> for every matching weekday in Autumn. One-day covers stay in <strong>Schedule &amp; Covers</strong>. Instructor hours → <strong>Who works</strong>.</p>' +
       sessionLegendHtml() +
       weekdaySubtabs(day, "data-asr-session-day");
     if (!grid.columns.length) {
@@ -776,7 +841,42 @@
       html += "<tr><td class=\"asr-time\">" + esc(row.time) + "</td>";
       (row.cells || []).forEach(function (cell) {
         var kind = cell.kind || "empty";
-        html += '<td class="asr-cell--' + kind + '">' + esc(cell.label || "") + "</td>";
+        var edits = cell.edits || [];
+        if (!edits.length || kind === "closed") {
+          html += '<td class="asr-cell--' + kind + '">' + esc(cell.label || "") + "</td>";
+          return;
+        }
+        html +=
+          '<td class="asr-cell--' +
+          kind +
+          ' asr-cell--booked">' +
+          edits
+            .map(function (ed) {
+              if (ed.kind === "closed") return esc(ed.label || "CLOSED");
+              var payload = {
+                anchorDate: ed.anchorDate,
+                client_name: ed.client_name,
+                service: ed.service,
+                time_slot: ed.time_slot,
+                instructors: ed.instructors,
+                venue: ed.venue,
+                area: ed.area,
+                scope: ed.scope || "weekday_term",
+                action: ed.action || "update",
+              };
+              var chipKind = ed.kind === "available" ? " available" : "";
+              return (
+                '<button type="button" class="asr-booked-chip' +
+                chipKind +
+                '" data-asr-term-edit="' +
+                esc(encodeTermEditPayload(payload)) +
+                '" title="Edit term slot">' +
+                esc(ed.label || ed.client_name || "Open") +
+                "</button>"
+              );
+            })
+            .join(" ") +
+          "</td>";
       });
       html += "</tr>";
     });
@@ -1369,6 +1469,16 @@
       btn.addEventListener("click", function () {
         state.sessionDay = btn.getAttribute("data-asr-session-day") || "Monday";
         refreshPanel();
+      });
+    });
+    root.querySelectorAll("[data-asr-term-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var prefill = decodeTermEditPayload(btn.getAttribute("data-asr-term-edit") || "");
+        if (!prefill) {
+          cfg.toast("Could not open Edit term slot from this cell.");
+          return;
+        }
+        openTermSlotFromBookedCell(prefill);
       });
     });
     root.querySelectorAll("[data-asr-hours-day]").forEach(function (btn) {

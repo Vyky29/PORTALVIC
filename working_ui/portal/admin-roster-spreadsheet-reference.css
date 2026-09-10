@@ -272,6 +272,39 @@
 .asr-cell--client {
   background: #fff;
 }
+.asr-cell--booked {
+  vertical-align: top;
+  min-width: 0;
+}
+.asr-booked-chip {
+  display: inline-block;
+  max-width: 100%;
+  margin: 1px 0;
+  padding: 2px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #0f172a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.asr-booked-chip:hover,
+.asr-booked-chip:focus-visible {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  outline: none;
+}
+.asr-booked-chip.available {
+  background: #fef9c3;
+  border-color: #eab308;
+  font-weight: 500;
+}
 .asr-hours .asr-venue--westway th {
   background: #fecaca;
   color: #7f1d1d;
