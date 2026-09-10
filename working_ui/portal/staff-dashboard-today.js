@@ -362,14 +362,17 @@
       if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return iso;
       if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return iso;
       /*
-       * Autumn: do NOT pin matchIso to the calendar day when a sparse dated overlay
-       * exists (e.g. Javier Sun trial Zaid). Standing Sunday must still project;
-       * dated rows merge via rowIso === calendar iso in the matcher below.
+       * Autumn LOCAL standing stamps (Sat→12 Sep, Sun→13 Sep, DC Jul boards) must
+       * project even when summer weekday snaps were purged. Otherwise Sat 5 (and
+       * other early Autumn days) only match calendar ISO → empty cards while Term
+       * paints green (no real clients).
        */
+      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+      const anchor = new Date(iso + 'T12:00:00');
+      const autumnBest = portalBestStaffRosterIsoForWeekday(model, sid, w, anchor);
+      if(autumnBest) return autumnBest;
       const snap = portalStaffStandingWeekdaySnapArgs(iso);
       if(portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through)){
-        const anchor = new Date(iso + 'T12:00:00');
-        const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
         return portalBestStaffRosterIsoForWeekday(model, sid, w, anchor) || '';
       }
       return iso;
