@@ -7170,10 +7170,8 @@
 
   function teamMemberCardHtml(m) {
     m = m || {};
-    var isCover =
-      String(m.role || "").toLowerCase() === "cover" ||
-      !!m.is_cover ||
-      !!m.covering_after_change;
+    /* Badge only from effective assignment (API role=cover) — never from message heuristics. */
+    var isCover = String(m.role || "").toLowerCase() === "cover" || !!m.is_cover;
     var badgeHtml = isCover
       ? '<span class="pp-team-card__badge" title="Covering after an instructor change">Instructor change</span>'
       : "";
@@ -7269,8 +7267,18 @@
         var msgs = ((payload && payload.messages) || []).filter(function (m) {
           return messageMatchesParticipant(m, data);
         });
-        var covers = coverInstructorsFromMessages(msgs);
+        /*
+         * Messages may explain a cover in copy, but must not invent Team members
+         * or force "Instructor change" badges — that comes from staff_id overrides.
+         */
         var changeNote = "";
+        var hasApiCover = base.some(function (m) {
+          return String((m && m.role) || "").toLowerCase() === "cover";
+        });
+        if (!hasApiCover) {
+          paint(base, "");
+          return;
+        }
         for (var i = 0; i < msgs.length; i++) {
           var m = msgs[i];
           if (!m || m.direction !== "out") continue;
@@ -7278,70 +7286,11 @@
           var k = String(m.kind || "").toLowerCase();
           if (k !== "instructor_change" && k !== "instructor_reassign") continue;
           var preview = String(m.body_text || "").trim().replace(/\s+/g, " ");
-          if (preview.length > 160) preview = preview.slice(0, 157) + "…";
+          if (preview.length > 160) preview = preview.slice(0, 157) + "...";
           changeNote = preview || "A covering instructor was assigned for a recent session.";
           break;
         }
-        var seen = Object.create(null);
-        var merged = [];
-        base.forEach(function (m) {
-          var key = String((m && (m.staff_key || m.key || m.username || m.name)) || "")
-            .trim()
-            .toLowerCase()
-            .split(/\s+/)[0];
-          if (key) seen[key] = true;
-          if (String((m && m.role) || "").toLowerCase() === "cover") {
-            merged.push(Object.assign({}, m, { covering_after_change: true }));
-          } else {
-          merged.push(m);
-          }
-        });
-        covers.forEach(function (c) {
-          if (seen[c.key]) {
-            for (var j = 0; j < merged.length; j++) {
-              var mk = String(
-                (merged[j] && (merged[j].staff_key || merged[j].key || merged[j].name)) || "",
-              )
-                .trim()
-                .toLowerCase()
-                .split(/\s+/)[0];
-              if (mk === c.key) {
-                merged[j] = Object.assign({}, merged[j], {
-                  role: "cover",
-                  covering_after_change: true,
-                });
-              }
-            }
-            return;
-          }
-          var card = null;
-          if (
-            global.PortalParentTeam &&
-            typeof global.PortalParentTeam.catalogMember === "function"
-          ) {
-            card = global.PortalParentTeam.catalogMember(c.key);
-          }
-          if (!card) {
-            card = {
-              name: c.name,
-              avatar_url: "/portal/staff_photos/" + c.key + ".png",
-              bio: "Covering instructor after a recent session change.",
-              role: "cover",
-              covering_after_change: true,
-            };
-          } else {
-            card = Object.assign({}, card, {
-              role: "cover",
-              covering_after_change: true,
-              bio:
-                (card.bio ? card.bio + " " : "") +
-                "Also covering after a recent instructor change.",
-            });
-          }
-          seen[c.key] = true;
-          merged.push(card);
-        });
-        paint(merged, changeNote);
+        paint(base, changeNote);
       })
       .catch(function () {});
   }

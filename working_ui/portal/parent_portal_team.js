@@ -646,6 +646,12 @@
   }
 
   function staffKeyFromFeedbackName(name) {
+    if (
+      global.PortalStaffMatchKey &&
+      typeof global.PortalStaffMatchKey.canonicalStaffMatchKey === "function"
+    ) {
+      return global.PortalStaffMatchKey.canonicalStaffMatchKey(name);
+    }
     var raw = String(name || "")
       .trim()
       .toLowerCase()
@@ -889,10 +895,17 @@
       if (base.bio) out.bio = base.bio;
       if (base.name) out.name = base.name;
       if (base.staff_key) out.staff_key = base.staff_key;
+      if (base.staff_id) out.staff_id = base.staff_id;
     }
+    /* Keep effective cover role from API (staff_id assignment). */
+    if (patch && String(patch.role || "").toLowerCase() === "cover") {
+      out.role = "cover";
+    }
+    if (patch && patch.cover_session_date) out.cover_session_date = patch.cover_session_date;
     delete out.nationality;
     delete out.flag;
     delete out.speaks;
+    delete out.force_standing;
     return out;
   }
 
@@ -908,35 +921,52 @@
     function addCard(card) {
       if (!card) return;
       var k = normalizeTeamStaffKey(
-        card.staff_key || staffKeyFromFeedbackName(card.name) || "",
+        card.staff_id ||
+          card.staff_key ||
+          staffKeyFromFeedbackName(card.name) ||
+          "",
       );
       if (!k || !staffHasTeamPhoto(k) || seen[k]) return;
       var catalog = catalogMember(k);
       if (!catalog) return;
       seen[k] = true;
-      out.push(mergeTeamMember(catalog, Object.assign({}, card, { staff_key: k })));
+      out.push(
+        mergeTeamMember(
+          catalog,
+          Object.assign({}, card, { staff_id: k, staff_key: k }),
+        ),
+      );
     }
 
-    if (data && Array.isArray(data.team)) {
-      data.team.forEach(function (m) {
+    var apiTeam = data && Array.isArray(data.team) ? data.team : [];
+    /*
+     * Prefer edge effective team (roster + staff_id covers). Do not invent
+     * venue heuristics on top when the API already returned assignments.
+     */
+    if (apiTeam.length) {
+      apiTeam.forEach(function (m) {
         if (!m) return;
         var key = normalizeTeamStaffKey(
-          staffKeyFromFeedbackName(
-            m.staff_key || m.key || m.username || m.name || "",
-          ),
+          m.staff_id ||
+            m.staff_key ||
+            staffKeyFromFeedbackName(m.staff_key || m.key || m.username || m.name || ""),
         );
-        addCard(Object.assign({ staff_key: key }, m));
+        addCard(Object.assign({ staff_id: key, staff_key: key }, m));
       });
-    }
-    teamFromSessions(data).forEach(addCard);
-    teamFromStandingPool(data).forEach(addCard);
-    /* Demo map only as last resort — never pad live team with prior-term names. */
-    if (!out.length) {
-      demoKeysForParticipant(data).forEach(function (key) {
-        addCard(catalogMember(key));
-      });
+    } else {
+      teamFromSessions(data).forEach(addCard);
+      teamFromStandingPool(data).forEach(addCard);
+      /* Demo map only as last resort — never pad live team with prior-term names. */
+      if (!out.length) {
+        demoKeysForParticipant(data).forEach(function (key) {
+          addCard(catalogMember(key));
+        });
+      }
     }
     out.sort(function (a, b) {
+      var aCover = String(a.role || "").toLowerCase() === "cover" ? 0 : 1;
+      var bCover = String(b.role || "").toLowerCase() === "cover" ? 0 : 1;
+      if (aCover !== bCover) return aCover - bCover;
       return String(a.name || "").localeCompare(String(b.name || ""));
     });
     return out;

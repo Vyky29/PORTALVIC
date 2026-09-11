@@ -1903,6 +1903,9 @@
     function portalNormKeyStr(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
     /** Match roster keys across aliases (luliya/lulia/aida, javi/javier). */
     function portalCanonicalStaffKeyForMatch(v){
+      if (window.PortalStaffMatchKey && typeof window.PortalStaffMatchKey.canonicalStaffMatchKey === 'function') {
+        return window.PortalStaffMatchKey.canonicalStaffMatchKey(v);
+      }
       var k = portalNormKeyStr(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
       if(!k) return '';
       var CODE = {

@@ -1818,6 +1818,13 @@
 
   /** Collapse staff aliases (luliya/lulia/aida, javi/javier) so override anchors bind to roster names. */
   function canonicalStaffMatchKey(value) {
+    if (
+      typeof globalThis !== "undefined" &&
+      globalThis.PortalStaffMatchKey &&
+      typeof globalThis.PortalStaffMatchKey.canonicalStaffMatchKey === "function"
+    ) {
+      return globalThis.PortalStaffMatchKey.canonicalStaffMatchKey(value);
+    }
     var raw = clean(value).toLowerCase();
     var joined = raw.replace(/[^a-z0-9]+/g, "");
     var k = raw.split(/\s+/)[0] || "";

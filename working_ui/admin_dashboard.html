@@ -157,6 +157,7 @@
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260910-yunis-se"></script>
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
+  <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
   <script src="/portal/portal_roster_canonical.js?v=20260911-wed-acton-no-summer"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
@@ -22527,7 +22528,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260911-term-status';
+    var PORTAL_ADMIN_HUB_BUILD = '20260911-team-staff-id';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

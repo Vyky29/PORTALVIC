@@ -23,6 +23,10 @@ import {
   parseGeneralInfoSheet,
 } from "../_shared/participant_general_info.ts";
 import {
+  canonicalStaffMatchKey,
+  isBlankOrCoverNeededStaffId,
+} from "../_shared/portal_staff_match_key.ts";
+import {
   expandParticipantClientSlugs,
   isAcatGroupClientId,
   isAcatMemberIdentity,
@@ -105,19 +109,10 @@ function parseSections(raw: unknown): Set<DetailSection> {
 /** Parent Team: this academic term only (not prior summer / prior years). */
 const TEAM_TERM_START_ISO = PARENT_SESSION_TERM_START_ISO;
 
-function staffKeyFromName(raw: string): string {
-  let k = String(raw || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .split(/\s+/)[0] || "";
-  if (k === "yousef" || k === "yusef") k = "youssef";
-  if (k === "lulia") k = "luliya";
-  if (k === "javi") k = "javier";
-  return k;
+/** Roster staff_id from a name or id — never invents cover_needed. */
+function staffIdFromRaw(raw: string): string {
+  const id = canonicalStaffMatchKey(raw);
+  return isBlankOrCoverNeededStaffId(id) ? "" : id;
 }
 
 function isPlaceholderStaffName(raw: string): boolean {
@@ -130,14 +125,28 @@ function isPlaceholderStaffName(raw: string): boolean {
   );
 }
 
+function londonTodayIso(): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  } catch (_e) {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
 function upsertTeamMember(
   map: Map<string, Record<string, unknown>>,
   key: string,
   patch: Record<string, unknown>,
 ) {
-  const k = String(key || "").trim().toLowerCase();
-  if (!k || isPlaceholderStaffName(k)) return;
+  const k = staffIdFromRaw(key) || canonicalStaffMatchKey(key);
+  if (!k || isBlankOrCoverNeededStaffId(k) || isPlaceholderStaffName(k)) return;
   const prev = map.get(k) || {
+    staff_id: k,
     staff_key: k,
     name: "",
     avatar_url: "/portal/staff_photos/" + k + ".png",
@@ -145,13 +154,18 @@ function upsertTeamMember(
   };
   const name =
     clean(patch.name, 80) || clean(prev.name, 80) || k.charAt(0).toUpperCase() + k.slice(1);
-  const nextRole =
-    clean(prev.role, 40) === "cover" || clean(patch.role, 40) === "cover"
-      ? "cover"
-      : clean(patch.role, 40) || clean(prev.role, 40) || "instructor";
+  /* Cover badge only when an active upcoming cover patch says so — never sticky from history. */
+  let nextRole = clean(prev.role, 40) || "instructor";
+  if (clean(patch.role, 40) === "cover") nextRole = "cover";
+  else if (clean(patch.role, 40) === "instructor" && clean(prev.role, 40) !== "cover") {
+    nextRole = "instructor";
+  } else if (clean(patch.role, 40) === "instructor" && patch.force_standing === true) {
+    nextRole = "instructor";
+  }
   map.set(k, {
     ...prev,
     ...patch,
+    staff_id: k,
     staff_key: k,
     name,
     role: nextRole,
@@ -160,6 +174,7 @@ function upsertTeamMember(
       clean(prev.avatar_url, 200) ||
       "/portal/staff_photos/" + k + ".png",
   });
+  delete (map.get(k) as Record<string, unknown>).force_standing;
 }
 
 function addStandingInstructorNames(
@@ -171,11 +186,12 @@ function addStandingInstructorNames(
   for (const part of text.split(/[,/&+]|\band\b|\s+·\s+/i)) {
     const name = clean(part, 80);
     if (!name || isPlaceholderStaffName(name)) continue;
-    const key = staffKeyFromName(name);
+    const key = staffIdFromRaw(name);
     if (!key) continue;
     upsertTeamMember(map, key, {
       name: feedbackAuthorFirstName(name) || name,
       role: "instructor",
+      force_standing: true,
     });
   }
 }
@@ -301,15 +317,17 @@ async function buildParentTeam(
     const date = isoFromAny(row.session_date);
     if (!date || date < TEAM_TERM_START_ISO) continue;
     const name = clean(row.completed_by_name, 120);
-    const key = staffKeyFromName(name);
+    const key = staffIdFromRaw(name);
     if (!key) continue;
     upsertTeamMember(map, key, {
       name: feedbackAuthorFirstName(name) || name,
       role: "instructor",
+      force_standing: true,
     });
   }
 
   const slugSet = new Set(clientSlugs.map((s) => String(s || "").toLowerCase()).filter(Boolean));
+  const todayIso = londonTodayIso();
 
   if (slugSet.size) {
     const { data: ovRows, error } = await supabase
@@ -334,43 +352,49 @@ async function buildParentTeam(
         (anchorClient && slugSet.has(anchorClient)) || (toClient && slugSet.has(toClient));
       if (!forThisChild) continue;
 
+      const sessionDate = isoFromAny(ov.session_date) || "";
+
       if (ot === "instructor_reassign") {
-        const slug =
-          clean(pl.covering_staff_id, 80) || staffKeyFromName(clean(pl.covering_staff_name, 120));
-        const name = clean(pl.covering_staff_name, 120) || clean(pl.to_staff_name, 120);
-        if (slug) {
-          upsertTeamMember(map, staffKeyFromName(slug) || slug.toLowerCase(), {
-            name: name || slug,
-            role: "cover",
-          });
-        }
+        /* Prefer covering_staff_id (roster key). Never staffKeyFromName on the id. */
+        const coverId =
+          staffIdFromRaw(clean(pl.covering_staff_id, 80)) ||
+          staffIdFromRaw(clean(pl.covering_staff_name, 120));
+        if (!coverId) continue;
+        const name =
+          clean(pl.covering_staff_name, 120) ||
+          clean(pl.to_staff_name, 120) ||
+          coverId.charAt(0).toUpperCase() + coverId.slice(1);
+        /* Badge only for today/future covers — past covers are history, not "Instructor change". */
+        const activeCover = !!sessionDate && sessionDate >= todayIso;
+        upsertTeamMember(map, coverId, {
+          name,
+          role: activeCover ? "cover" : "instructor",
+          force_standing: !activeCover,
+          ...(activeCover ? { cover_session_date: sessionDate } : {}),
+        });
       } else if (ot === "client_replace_in_slot") {
-        /* Child placed into an instructor's slot (trial / makeup) — show that instructor. */
-        const staffSlug = clean(ov.anchor_staff_id, 80);
-        if (staffSlug && toClient && slugSet.has(toClient)) {
-          const nice = staffSlug
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (c: string) => c.toUpperCase());
-          upsertTeamMember(map, staffKeyFromName(staffSlug) || staffSlug.toLowerCase(), {
-            name: nice || staffSlug,
-            role: "instructor",
-          });
-        } else if (staffSlug && (pl.open_slot_makeup || pl.parent_portal_makeup || toClient)) {
-          const nice = staffSlug
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (c: string) => c.toUpperCase());
-          upsertTeamMember(map, staffKeyFromName(staffSlug) || staffSlug.toLowerCase(), {
-            name: nice || staffSlug,
-            role: "cover",
-          });
-        }
+        /* Child placed into an instructor's slot (trial / makeup) — standing instructor for that seat. */
+        const staffSlug = staffIdFromRaw(clean(ov.anchor_staff_id, 80));
+        if (!staffSlug) continue;
+        const nice =
+          clean(pl.covering_staff_name, 120) ||
+          staffSlug.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+        upsertTeamMember(map, staffSlug, {
+          name: nice || staffSlug,
+          role: "instructor",
+          force_standing: true,
+        });
       }
     }
   }
 
-  return [...map.values()].sort((a, b) =>
-    String(a.name || "").localeCompare(String(b.name || "")),
-  );
+  return [...map.values()]
+    .map((m) => {
+      const out = { ...m };
+      delete out.force_standing;
+      return out;
+    })
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
 }
 
 async function detectHasAquatics(
