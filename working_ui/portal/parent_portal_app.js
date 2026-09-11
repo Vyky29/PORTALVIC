@@ -68,7 +68,26 @@
       }
     }
     if (patch.pending_review_count != null) base.pending_review_count = patch.pending_review_count;
-    if (patch.attendance_summary) base.attendance_summary = patch.attendance_summary;
+    if (patch.attendance_summary) {
+      var nextAtt = patch.attendance_summary;
+      var prevAtt = base.attendance_summary;
+      var nextHas =
+        nextAtt &&
+        (Number(nextAtt.total) > 0 ||
+          Number(nextAtt.absent) > 0 ||
+          Number(nextAtt.attended) > 0 ||
+          (Array.isArray(nextAtt.absent_dates) && nextAtt.absent_dates.length) ||
+          (Array.isArray(nextAtt.cancelled_dates) && nextAtt.cancelled_dates.length));
+      var prevHas =
+        prevAtt &&
+        (Number(prevAtt.total) > 0 ||
+          Number(prevAtt.absent) > 0 ||
+          Number(prevAtt.attended) > 0 ||
+          (Array.isArray(prevAtt.absent_dates) && prevAtt.absent_dates.length) ||
+          (Array.isArray(prevAtt.cancelled_dates) && prevAtt.cancelled_dates.length));
+      /* Notes-only patches used to wipe Absent dates with an empty summary. */
+      if (nextHas || !prevHas) base.attendance_summary = nextAtt;
+    }
     if (Array.isArray(patch.weekly_notes)) base.weekly_notes = patch.weekly_notes;
     if (patch.weekly_note_latest !== undefined) base.weekly_note_latest = patch.weekly_note_latest;
     if (patch.feedback_year != null) base.feedback_year = patch.feedback_year;

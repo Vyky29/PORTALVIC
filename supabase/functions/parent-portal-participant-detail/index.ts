@@ -1230,7 +1230,12 @@ Deno.serve(async (req) => {
     rosterServicesDetail = rosterForFeedback.detail;
   }
 
-  if (wantSessions && !suppressSessionProgress && feedbackYearResolved) {
+  /*
+   * Hub loads "general" first (not "sessions"). Still pull feedback so
+   * attendance_summary.absent_dates includes staff Absent marks (attendance No)
+   * — otherwise TODAY paints AWAITING FEEDBACK after the clock.
+   */
+  if ((wantSessions || wantGeneral) && !suppressSessionProgress && feedbackYearResolved) {
     const fbSel =
       "id, session_date, client_name, client_id, service, session_time, attendance, engagement_rating, engagement_patterns, client_emotions, positive_feedback, relevant_information, completed_by_name, created_at";
 
@@ -1284,6 +1289,7 @@ Deno.serve(async (req) => {
       return clean(b.session_time).localeCompare(clean(a.session_time));
     });
 
+    if (wantSessions) {
     const feedbackIds = rawFeedback.map((r) => String(r.id)).filter(Boolean);
     const cacheById = new Map<string, Record<string, unknown>>();
     const venueByService = await loadParticipantVenueByService(supabase, identityInput, lookupNames);
@@ -1355,6 +1361,7 @@ Deno.serve(async (req) => {
       if (da !== db) return db.localeCompare(da);
       return clean(b.session_time).localeCompare(clean(a.session_time));
     });
+    }
   }
 
   let attendanceSummary = {
@@ -2206,7 +2213,9 @@ Deno.serve(async (req) => {
       },
       ...(wantTeam ? { team: isFormerClient ? [] : teamOut } : {}),
       sessions: sessionsOut,
-      attendance_summary: attendanceSummary,
+      ...(wantAttendanceChips || wantSessions
+        ? { attendance_summary: attendanceSummary }
+        : {}),
       achievements: isFormerClient && !hasAchievementPhotos ? [] : achievements,
       swim_term_reviews: isFormerClient ? [] : swimTermReviews,
       swim_term_review_available: isFormerClient ? false : swimTermReviewAvailable,
