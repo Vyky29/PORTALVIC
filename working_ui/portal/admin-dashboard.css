@@ -2530,10 +2530,11 @@
       width:auto;min-width:0;max-width:none;color:var(--text);text-align:center !important;font-size:11px;
       padding:8px 6px;overflow-wrap:break-word;word-break:break-word;vertical-align:middle
     }
-    .c4k-svc-seat{
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
-      min-width:0;max-width:100%;width:100%;box-sizing:border-box;margin:0 auto;text-align:center
-    }
+    .c4k-svc-seat--pax-only{gap:0}
+    .c4k-svc-dc-seat-table{width:100%;min-width:0}
+    .c4k-svc-dc-seat-td{min-width:0;overflow-wrap:break-word;vertical-align:middle;padding:8px 6px}
+    .c4k-svc-dc-seat-td--time{white-space:nowrap;width:1%;font-weight:600}
+    .c4k-svc-day-acc__avail-instr{display:none}
     .c4k-svc-seat__instr,.c4k-svc-seat__pax{
       min-width:0;max-width:100%;width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:3px;text-align:center
     }

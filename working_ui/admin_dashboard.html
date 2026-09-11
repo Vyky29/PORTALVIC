@@ -149,7 +149,7 @@
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260909-reply-only" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
-  <script src="/portal/cfk-app.js?v=20260911-services-autumn-count"></script>
+  <script src="/portal/cfk-app.js?v=20260912-svc-seats-only"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260911-sched-mobile-cards"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -174,7 +174,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260911-sched-mobile-cards" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260912-svc-seats-only" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -8114,55 +8114,58 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ' title="Open participant info (side panel)">'+esc(pax.paxName)+'</button>'
       );
     }
-    function adminServicesMultiSundayInstrCellHtml(half, dataSlot, opts){
-      opts = opts || {};
-      if(!half || !half.staffName){
-        /* Empty capacity / unpaired open half — not a rota CLOSED block. */
-        if(opts.openSeat){
-          return '<span class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" title="Open 45′ half — no instructor paired on this seat">Open</span>';
-        }
-        return adminServicesClosedChipHtml('No instructor on this 45′ half');
+    function adminServicesMultiSundaySeatCellHtml(pax, dataSlot){
+      if(pax && pax.open){
+        return (
+          '<button type="button" class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" data-novo-edit-sched-slot="1" '+
+          dataSlot+' title="Open seat — edit standing place / Booking Portal">No participant</button>'
+        );
       }
-      return '<button type="button" class="c4k-svc-slot-instr-btn" data-novo-edit-sched-slot="1" '+dataSlot+
-        ' title="Change instructor for this 45′ Multi-Activity half">'+esc(half.staffName)+'</button>';
+      if(pax && pax.paxName){
+        return adminServicesMultiSundayPaxPillHtml(pax);
+      }
+      return (
+        '<button type="button" class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" data-novo-edit-sched-slot="1" '+
+        dataSlot+' title="Open seat — edit standing place / Booking Portal">No participant</button>'
+      );
     }
-    /** One table per 90′ group: participant header once, then two time rows (instructors only). */
+    /** One table per 90′ group: time + participant seats only (staff lives on Instructor timetable / Overview). */
     function adminServicesMultiSundayGroupTableHtml(band, cols, dataSlot){
-      var ths = ['<th scope="col" class="c4k-svc-slot-th-time">Time</th>'];
-      var ci, pax, half, halfKey, timeLabel, rowTds, rows = [];
+      var ths = [
+        '<th scope="col" class="c4k-svc-slot-th-time">Time</th>',
+        '<th scope="col" class="c4k-svc-slot-th-slots" title="Standing seats in this Multi-Activity group">Seats</th>'
+      ];
+      var ci, pax, rowTds;
       for(ci = 0; ci < cols.length; ci++){
         ths.push(
           '<th scope="col" class="c4k-svc-slot-th-seat">'+
-          '<span class="c4k-svc-slot-th-seat__stack">'+adminServicesMultiSundayPaxPillHtml(cols[ci])+'</span>'+
-          '</th>'
+          '<span class="c4k-svc-slot-th-seat__stack">'+
+          '<span class="c4k-svc-slot-th-seat__line">Seat '+esc(String(ci + 1))+'</span>'+
+          '</span></th>'
         );
       }
-      [['a', band.halfALabel], ['b', band.halfBLabel]].forEach(function(pair){
-        halfKey = pair[0];
-        timeLabel = pair[1];
-        rowTds = [
-          '<td class="c4k-svc-slot-td c4k-svc-slot-td--time"><span class="c4k-svc-multi-half-time">'+esc(timeLabel)+'</span></td>'
-        ];
-        for(ci = 0; ci < cols.length; ci++){
-          pax = cols[ci];
-          half = pax ? (halfKey === 'b' ? pax.halfB : pax.halfA) : null;
-          rowTds.push(
-            '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">'+
-            adminServicesMultiSundayInstrCellHtml(half, dataSlot, { openSeat: !!(pax && pax.open) })+
-            '</td>'
-          );
-        }
-        rows.push(
-          '<tr class="c4k-svc-slot-tr" data-c4k-svc-multi-half="'+esc(halfKey)+'" '+dataSlot+'>'+
-          rowTds.join('')+
-          '</tr>'
+      rowTds = [
+        '<td class="c4k-svc-slot-td c4k-svc-slot-td--time"><span class="c4k-svc-multi-half-time">'+
+        esc(String(band.label || (band.halfALabel + ' / ' + band.halfBLabel) || '90′'))+
+        '</span></td>',
+        '<td class="c4k-svc-slot-td c4k-svc-slot-td--slots" title="Standing seats">'+
+        esc(String(cols.filter(function(c){ return c && (c.paxName || c.open); }).length || cols.length))+
+        '</td>'
+      ];
+      for(ci = 0; ci < cols.length; ci++){
+        pax = cols[ci];
+        rowTds.push(
+          '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">'+
+          '<div class="c4k-svc-seat c4k-svc-seat--pax-only">'+
+          '<div class="c4k-svc-seat__pax">'+adminServicesMultiSundaySeatCellHtml(pax, dataSlot)+'</div>'+
+          '</div></td>'
         );
-      });
+      }
       return (
         '<div class="c4k-svc-slots" style="min-width:0;overflow:auto">'+
         '<table class="c4k-svc-slot-table c4k-svc-slot-table--multi-half">'+
         '<thead><tr>'+ths.join('')+'</tr></thead>'+
-        '<tbody>'+rows.join('')+'</tbody>'+
+        '<tbody><tr class="c4k-svc-slot-tr" '+dataSlot+'>'+rowTds.join('')+'</tr></tbody>'+
         '</table></div>'
       );
     }
@@ -8212,7 +8215,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return (
         '<div class="c4k-svc-slots c4k-svc-slots--multi-sun" style="min-width:0">'+
-        '<p class="c4k-svc-dc-hint muted">Three Multi-Activity groups (cap 6). Each 90′ group: participants once across the top, then two 45′ instructor rows.</p>'+
+          '<p class="c4k-svc-dc-hint muted">Multi-Activity groups (cap 6). Standing participant seats only — who works each half is on Instructor timetable / Overview.</p>'+
         blocks.join('')+
         '</div>'
       );
@@ -8335,33 +8338,50 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function adminServicesDayCentreStaffBoardHtml(model){
       if(!model || !model.staffOrder || !model.staffOrder.length){
-        return '<p class="c4k-svc-dc-empty muted">No Day Centre staff roster for this weekday (standing/reenrol template).</p>';
+        return '<p class="c4k-svc-dc-empty muted">No Day Centre standing seats for this weekday.</p>';
       }
-      var cols = model.staffOrder.map(function(k){
+      /* Flatten staff columns → participant seats (time + client). Staff rota lives on Instructor timetable. */
+      var seats = [];
+      var seen = {};
+      model.staffOrder.forEach(function(k){
         var col = model.byStaff[k];
-        var clients = (col.clients || []).map(function(h){
-          var line =
-            '<div class="c4k-svc-dc-line">'+esc(adminServicesDayCentreTimeCompact(h.time))+
-            (h.area ? ' '+esc(String(h.area).toUpperCase()) : '')+
-            '</div>';
-          var pCid = resolveAdminClientDrawerIdFromDisplayName(h.client);
-          var nameHtml = pCid
-            ? ('<button type="button" class="c4k-svc-dc-client-name" data-client="'+esc(pCid)+'" title="Open participant info">'+esc(h.client)+'</button>')
-            : ('<div class="c4k-svc-dc-client-name">'+esc(h.client)+'</div>');
-          return '<div class="c4k-svc-dc-client">'+nameHtml+line+'</div>';
-        }).join('');
+        (col.clients || []).forEach(function(h){
+          var client = String((h && h.client) || '').trim();
+          if(!client || client === '—') return;
+          var key = client.toLowerCase() + '|' + String((h && h.time) || '') + '|' + String((h && h.area) || '');
+          if(seen[key]) return;
+          seen[key] = true;
+          seats.push(h);
+        });
+      });
+      seats.sort(function(a, b){
+        return (a.startMin - b.startMin) || String(a.client).localeCompare(String(b.client));
+      });
+      if(!seats.length){
+        return '<p class="c4k-svc-dc-empty muted">No Day Centre participants on this weekday standing.</p>';
+      }
+      var rows = seats.map(function(h){
+        var pCid = resolveAdminClientDrawerIdFromDisplayName(h.client);
+        var nameHtml = pCid
+          ? ('<button type="button" class="c4k-svc-dc-client-name" data-client="'+esc(pCid)+'" title="Open participant info">'+esc(h.client)+'</button>')
+          : ('<div class="c4k-svc-dc-client-name">'+esc(h.client)+'</div>');
         return (
-          '<section class="c4k-svc-dc-col" aria-label="'+esc(col.name)+'">'+
-          '<h4 class="c4k-svc-dc-col-head">'+
-          adminServicesDayCentreStaffAvatarHtml(col.key, col.name)+
-          '<span class="c4k-svc-dc-col-name">'+esc(col.name)+'</span>'+
-          '</h4>'+
-          '<div class="c4k-svc-dc-col-body">'+
-          (clients || '<p class="c4k-svc-dc-blank">—</p>')+
-          '</div></section>'
+          '<tr class="c4k-svc-dc-seat-tr">'+
+          '<td class="c4k-svc-dc-seat-td c4k-svc-dc-seat-td--time">'+esc(adminServicesDayCentreTimeCompact(h.time))+'</td>'+
+          '<td class="c4k-svc-dc-seat-td c4k-svc-dc-seat-td--pax">'+nameHtml+'</td>'+
+          '<td class="c4k-svc-dc-seat-td c4k-svc-dc-seat-td--area">'+esc(h.area ? String(h.area).toUpperCase() : '—')+'</td>'+
+          '</tr>'
         );
       }).join('');
-      return '<div class="c4k-svc-dc-scroll"><div class="c4k-svc-dc-board" role="list">'+cols+'</div></div>';
+      return (
+        '<div class="c4k-svc-dc-scroll">'+
+        '<table class="c4k-svc-slot-table c4k-svc-dc-seat-table" aria-label="Day Centre standing seats">'+
+        '<thead><tr>'+
+        '<th scope="col" class="c4k-svc-slot-th-time">Time</th>'+
+        '<th scope="col" class="c4k-svc-slot-th-seat">Participant</th>'+
+        '<th scope="col">Area</th>'+
+        '</tr></thead><tbody>'+rows+'</tbody></table></div>'
+      );
     }
     function servicesNextIsoForDowKey(dowKey, fromIso){
       var order = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
@@ -21012,11 +21032,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 var plCd = String((pl && pl.clientDisplay) || '').trim();
                 if(plCd && adminServicePaxSeatIsOpenLive(plCd, B.programme, B.venue, B.dk, B.pickIso || pickIso0 || displayIso0)) continue;
                 if(plCd) venuePaxSet[plCd.toLowerCase()] = 1;
-                var plSn = String((pl && pl.staffName) || '').trim();
-                var plSnL = plSn.toLowerCase();
-                if(plSn && !adminServiceIsExcludedInstructorName(plSn)){
-                  venueInstrSet[plSnL] = 1;
-                }
               }
               var demoIds = mergedLines.map(function(g){ return String(g.demoId || '').trim(); }).filter(Boolean);
               var uniq = [];
@@ -21192,8 +21207,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               seatHead +=
                 '<th scope="col" class="c4k-svc-slot-th-seat">'+
                 '<span class="c4k-svc-slot-th-seat__stack">'+
-                '<span class="c4k-svc-slot-th-seat__line">Instructor</span>'+
-                '<span class="c4k-svc-slot-th-seat__line">Participant</span>'+
+                '<span class="c4k-svc-slot-th-seat__line">Seat '+esc(String(shi + 1))+'</span>'+
                 '</span></th>';
             }
             var rowChunks = [];
@@ -21202,31 +21216,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var seatCells = '';
               for(var si = 0; si < maxSeats; si++){
                 var seat = DR.seats[si];
-                if(!seat || seat.emptyCol){
-                  /* Instructor on the day board but missing this 30′ band → open gap, not Closed. */
-                  seatCells +=
-                    '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">'+
-                    '<div class="c4k-svc-seat">'+
-                    '<div class="c4k-svc-seat__instr">'+
-                    (seat && seat.staffName
-                      ? ('<button type="button" class="c4k-svc-slot-instr-btn" data-novo-edit-sched-slot="1" ' + DR.dataSlot +
-                        ' title="Change instructor(s) for this class band">' + esc(seat.staffName) + '</button>')
-                      : '')+
-                    '</div>'+
-                    '<div class="c4k-svc-seat__pax">'+
-                    '<span class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" title="On shift — no participant on this band">No participant</span>'+
-                    '</div></div></td>';
-                  continue;
-                }
-                var instrBtn = seat.staffName
-                  ? ('<button type="button" class="c4k-svc-slot-instr-btn" data-novo-edit-sched-slot="1" ' + DR.dataSlot +
-                    ' title="Change instructor(s) for this class band">' + esc(seat.staffName) + '</button>')
-                  : adminServicesClosedChipHtml('No instructor on this seat');
                 var paxHtml;
-                if(DR.allClosed || seat.closed){
-                  paxHtml = adminServicesClosedChipHtml('Roster line closed — no bookings on this instructor slot');
+                if(!seat || seat.emptyCol){
+                  paxHtml =
+                    '<button type="button" class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" data-novo-edit-sched-slot="1" ' +
+                    DR.dataSlot + ' title="Open seat — edit standing place / Booking Portal">No participant</button>';
+                }else if(DR.allClosed || seat.closed){
+                  paxHtml = adminServicesClosedChipHtml('Roster line closed — no bookings on this seat');
                 }else if(seat.open){
-                  paxHtml = '<span class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" title="Open seat — no participant / available">No participant</span>';
+                  paxHtml =
+                    '<button type="button" class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" data-novo-edit-sched-slot="1" ' +
+                    DR.dataSlot + ' title="Open seat — edit standing place / Booking Portal">No participant</button>';
                 }else if(seat.paxName){
                   var pCid = resolveAdminClientDrawerIdFromDisplayName(seat.paxName);
                   var pAttrs = pCid
@@ -21236,19 +21236,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                     '<button type="button" class="chip chip--info c4k-svc-pax-pill" ' + pAttrs +
                     ' title="Open participant info (side panel)">' + esc(seat.paxName) + '</button>';
                 }else{
-                  paxHtml = adminServicesClosedChipHtml('No participant on this seat');
+                  paxHtml =
+                    '<button type="button" class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" data-novo-edit-sched-slot="1" ' +
+                    DR.dataSlot + ' title="Open seat — edit standing place / Booking Portal">No participant</button>';
                 }
                 seatCells +=
                   '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">' +
-                  '<div class="c4k-svc-seat">' +
-                  '<div class="c4k-svc-seat__instr">' + instrBtn + '</div>' +
+                  '<div class="c4k-svc-seat c4k-svc-seat--pax-only">' +
                   '<div class="c4k-svc-seat__pax">' + paxHtml + '</div>' +
                   '</div></td>';
               }
               rowChunks.push(
                 '<tr class="c4k-svc-slot-tr" ' + DR.dataSlot + '>' +
                 '<td class="c4k-svc-slot-td c4k-svc-slot-td--time">' + esc(DR.timeRange) + '</td>' +
-                '<td class="c4k-svc-slot-td c4k-svc-slot-td--slots" title="Instructor seats in this time band">' +
+                '<td class="c4k-svc-slot-td c4k-svc-slot-td--slots" title="Standing seats in this time band">' +
                 esc(String((DR.seats || []).filter(function(s){ return s && !s.emptyCol; }).length || 0)) +
                 '</td>' +
                 seatCells +
@@ -21261,20 +21262,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               ? '<span class="c4k-svc-day-acc__hours" title="Earliest to latest rostered time this weekday at this venue (merged sheet, after filters).">'+esc(dayHoursRaw)+'</span>'
               : '';
             var openSeatN = 0;
-            var openInstrNames = [];
-            var openInstrSeen = {};
             for(var osi = 0; osi < dayBandRows.length; osi++){
               var oSeats = dayBandRows[osi].seats || [];
               for(var osj = 0; osj < oSeats.length; osj++){
                 var oSeat = oSeats[osj];
                 if(!oSeat || oSeat.emptyCol || oSeat.closed || !oSeat.open) continue;
                 openSeatN += 1;
-                var oNm = String(oSeat.staffName || '').trim();
-                if(!oNm || adminServiceIsExcludedInstructorName(oNm)) continue;
-                var oKey = oNm.toLowerCase();
-                if(openInstrSeen[oKey]) continue;
-                openInstrSeen[oKey] = true;
-                openInstrNames.push(oNm);
               }
             }
             var availChipHtml = '';
@@ -21284,13 +21277,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 '<span class="c4k-svc-day-acc__avail chip chip--urg" title="No open Bespoke seats this weekday">No places available</span>';
             } else if(openSeatN > 0){
               var availLbl = openSeatN === 1 ? '1x Slot Available' : (String(openSeatN) + 'x Slots Available');
-              var availInstr = openInstrNames.length
-                ? esc(openInstrNames.join(', '))
-                : '—';
               availChipHtml =
-                '<span class="c4k-svc-day-acc__avail chip chip--pend" title="Open instructor seats on this weekday standing (No participant).">'+
+                '<span class="c4k-svc-day-acc__avail chip chip--pend" title="Open standing seats this weekday (No participant → Booking Portal).">'+
                 '<span class="c4k-svc-day-acc__avail-count">'+esc(availLbl)+'</span>'+
-                '<span class="c4k-svc-day-acc__avail-instr">'+availInstr+'</span>'+
                 '</span>';
             }
             var schedAddBtn =
@@ -21302,7 +21291,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               '<table class="c4k-svc-slot-table" aria-label="'+esc(dowTitle)+' sessions">'+
               '<thead><tr>'+
               '<th scope="col" class="c4k-svc-slot-th-time">Time</th>'+
-              '<th scope="col" class="c4k-svc-slot-th-slots" title="Instructor seats in each time band">Slots</th>'+
+              '<th scope="col" class="c4k-svc-slot-th-slots" title="Standing seats in each time band">Seats</th>'+
               seatHead +
               '<th scope="col" class="c4k-svc-slot-th-wait">Waiting</th>'+
               '</tr></thead><tbody>'+rowChunks.join('')+'</tbody></table>'+
@@ -21343,7 +21332,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(venueStanding && venueStanding.length){
             venueAgg.bookedPerWeek = venueSt.booked;
           }
-          var venueInstrCount = Object.keys(venueInstrSet).length;
           var venuePaxCount = Object.keys(venuePaxSet).length;
           var venueWaitN = adminCapacityWaitCountForProgVenue(block.programme, vn.venue);
           var venueMetrics =
@@ -21370,13 +21358,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<span class="c4k-svc-venue-acc__pill-lbl">New (wait): </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueWaitN))+'</strong>'+
             '</button></span>'+
-            '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-inst">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct instructors shown on the Autumn day boards for this venue (not a term-wide unique count).">'+
-            '<span class="c4k-svc-venue-acc__pill-lbl">Instructors: </span>'+
-            '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueInstrCount))+'</strong>'+
-            '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-pax">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct participants shown on the Autumn day boards for this venue.">'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct participants on standing seats at this venue.">'+
             '<span class="c4k-svc-venue-acc__pill-lbl">Participants: </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venuePaxCount))+'</strong>'+
             '</span></span>';
