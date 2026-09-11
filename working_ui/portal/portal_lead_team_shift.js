@@ -11,7 +11,7 @@ import {
   portalLeadProgrammeLeadWorkingOnIso,
   portalLeadSpreadsheetSessionInScopeForLead,
   portalLeadCollectProgrammeWideSessionsModel,
-} from "./portal_lead_session_scope.js?v=20260910-roberto-taps4";
+} from "./portal_lead_session_scope.js?v=20260911-roberto-ov-iso";
 
 const LEAD_SERVICE_CHANGE_TYPES = new Set([
   "instructor_reassign",
@@ -377,8 +377,7 @@ function collectInScopeMemberKeys(iso, scopes, source) {
 
 function applyScheduleOverrideMembers(memberKeys, iso, scopes, source) {
   const coverKeys = [];
-  scheduleOverrideRows().forEach(function (ov) {
-    if (String(ov.session_date || "").slice(0, 10) !== iso) return;
+  scheduleOverrideRowsForIso(iso).forEach(function (ov) {
     if (String(ov.status || "active") !== "active") return;
     if (String(ov.override_type || "").trim() !== "instructor_reassign") return;
     if (!overrideMatchesLeadScopedRoster(ov, iso, scopes, source)) return;
@@ -424,8 +423,7 @@ function rosterRowLooksSwimming(row) {
 
 function coverChipRoleOverridesForIso(iso, scopes, source) {
   const out = Object.create(null);
-  scheduleOverrideRows().forEach(function (ov) {
-    if (String(ov.session_date || "").slice(0, 10) !== iso) return;
+  scheduleOverrideRowsForIso(iso).forEach(function (ov) {
     if (String(ov.status || "active") !== "active") return;
     if (String(ov.override_type || "").trim() !== "instructor_reassign") return;
     const pl = parseOverridePayload(ov);
@@ -596,6 +594,21 @@ function scheduleOverrideRows() {
   }
 }
 
+function scheduleOverrideRowsForIso(iso) {
+  const day = String(iso || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return [];
+  try {
+    if (typeof window.portalScheduleOverrideRowsForIso === "function") {
+      return window.portalScheduleOverrideRowsForIso(day) || [];
+    }
+    const by = window.__PORTAL_SCHEDULE_OVERRIDE_BY_ISO__;
+    if (by && Array.isArray(by[day])) return by[day];
+  } catch (_) {}
+  return scheduleOverrideRows().filter(function (ov) {
+    return String(ov.session_date || "").slice(0, 10) === day;
+  });
+}
+
 function todayIsoYmd() {
   try {
     if (typeof window !== "undefined" && typeof window.portalSelectedViewCalendarIsoYmd === "function") {
@@ -710,10 +723,9 @@ function leadAbsenceClientName(ov, pl) {
 function collectLeadScopeAbsentsForIso(iso, ctx) {
   const out = [];
   const seen = Object.create(null);
-  scheduleOverrideRows().forEach(function (ov) {
+  scheduleOverrideRowsForIso(iso).forEach(function (ov) {
     if (String(ov.override_type || "").trim() !== "client_absence_announced") return;
     if (String(ov.status || "active") !== "active") return;
-    if (String(ov.session_date || "").slice(0, 10) !== iso) return;
     if (!String(ov.anchor_client_id || "").trim()) return;
     if (!portalLeadOverrideRowAppliesToLeadScope(ov, ctx)) return;
     const name = leadAbsenceClientName(ov);
@@ -910,6 +922,9 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
     const t = String(ov.override_type || "").trim();
     if (!LEAD_TEAM_SHIFT_ALERT_TYPES.has(t)) return;
     if (String(ov.status || "active") !== "active") return;
+    /* Cheap age gate before Roberto DC seat / lead-working (those walk roster × OV). */
+    const created = ov.created_at ? new Date(ov.created_at).getTime() : 0;
+    if (created && created < minCreated) return;
     const iso = String(ov.session_date || "").slice(0, 10);
     if (!iso) return;
     if (leadViewerAwayOnIso(ctx.leadKey, iso)) return;
@@ -920,8 +935,6 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
     if (ovId && seenOverrideIds.has(ovId)) return;
     if (!portalLeadOverrideRowAppliesToLeadScope(ov, ctx)) return;
     if (ovId) seenOverrideIds.add(ovId);
-    const created = ov.created_at ? new Date(ov.created_at).getTime() : 0;
-    if (created && created < minCreated) return;
     const pl = parseOverridePayload(ov);
     const wd = weekdayFromIso(iso);
     let dateLabel = wd || iso;

@@ -2680,21 +2680,42 @@
     }
     function portalTermRebuildInputSignature(){
       const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      /* Cheap stamp — do NOT concatenate every override id / review key (Roberto phones
+         stalled every tap building multi-KB signatures before the early-return check). */
       let ovPart = '0';
       try{
         const rows = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
-        ovPart = String(rows.length);
-        rows.forEach(function(r){
-          ovPart += '|' + String(r && r.id || '') + ':' + String(r && (r.updated_at || r.created_at) || '');
-        });
+        let n = 0;
+        let maxTs = '';
+        let idSum = 0;
+        for(let i = 0; i < rows.length; i++){
+          const r = rows[i];
+          if(!r) continue;
+          n++;
+          const id = String(r.id || '');
+          idSum = (idSum + id.length) >>> 0;
+          const ts = String(r.updated_at || r.created_at || '');
+          if(ts > maxTs) maxTs = ts;
+        }
+        ovPart = n + ':' + maxTs + ':' + idSum;
       }catch(_){}
       let revPart = '0';
       try{
-        Object.keys(sessionReviewMapMemory || {}).forEach(function(k){
-          const r = sessionReviewMapMemory[k];
-          if(!r) return;
-          revPart += ';' + k + ':' + (r.feedbackDone ? '1' : '0') + (r.absent ? 'a' : '') + (r.cancelled ? 'c' : '');
-        });
+        const mem = sessionReviewMapMemory || {};
+        const keys = Object.keys(mem);
+        let n = 0;
+        let done = 0;
+        let absent = 0;
+        let cancelled = 0;
+        for(let i = 0; i < keys.length; i++){
+          const r = mem[keys[i]];
+          if(!r) continue;
+          n++;
+          if(r.feedbackDone) done++;
+          if(r.absent) absent++;
+          if(r.cancelled) cancelled++;
+        }
+        revPart = n + ':' + done + ':' + absent + ':' + cancelled;
       }catch(_){}
       let srvPart = '0';
       try{

@@ -791,6 +791,41 @@
       if(!out.length) add(portalIsoYmdFromDate(new Date()));
       return out;
     }
+    /* Date → override rows. Lead Team / Roberto scans used to walk the full active
+       list on every tap; indexed lookup keeps Thu DC work on one day's slice. */
+    window.portalRebuildScheduleOverrideIsoIndex = function portalRebuildScheduleOverrideIsoIndex(rows){
+      const list = Array.isArray(rows)
+        ? rows
+        : (Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
+          ? window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
+          : []);
+      const by = Object.create(null);
+      for(let i = 0; i < list.length; i++){
+        const r = list[i];
+        if(!r) continue;
+        const iso = String(r.session_date || '').trim().slice(0, 10);
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+        if(!by[iso]) by[iso] = [];
+        by[iso].push(r);
+      }
+      window.__PORTAL_SCHEDULE_OVERRIDE_BY_ISO__ = by;
+      return by;
+    };
+    window.portalScheduleOverrideRowsForIso = function portalScheduleOverrideRowsForIso(iso){
+      const day = String(iso || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(day)) return [];
+      try{
+        let by = window.__PORTAL_SCHEDULE_OVERRIDE_BY_ISO__;
+        if(!by || typeof by !== 'object'){
+          by = typeof window.portalRebuildScheduleOverrideIsoIndex === 'function'
+            ? window.portalRebuildScheduleOverrideIsoIndex()
+            : Object.create(null);
+        }
+        return Array.isArray(by[day]) ? by[day] : [];
+      }catch(_){
+        return [];
+      }
+    };
     window.portalRefreshScheduleOverridesCache = function portalRefreshScheduleOverridesCache(opts){
       /* Coalesce concurrent refresh calls (identity resolve + kick + settle) into one fetch.
          Two parallel loads were re-painting Today twice → “first one thing, then it changes”. */
@@ -952,6 +987,11 @@
         if(merged.length || !Array.isArray(prevOv) || !prevOv.length){
           window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = merged;
         }
+        try{
+          if(typeof window.portalRebuildScheduleOverrideIsoIndex === 'function'){
+            window.portalRebuildScheduleOverrideIsoIndex(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__);
+          }
+        }catch(_ix){}
         if(!merged.length && fetchErrors){
           console.warn('[portal] schedule_overrides empty after', fetchErrors, 'chunk error(s)');
         }
@@ -960,6 +1000,11 @@
         console.warn('[portal] schedule_overrides fetch', e);
         // Never wipe an already-loaded set on a transient error (see anti-flicker above).
         if(!Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)) window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = [];
+        try{
+          if(typeof window.portalRebuildScheduleOverrideIsoIndex === 'function'){
+            window.portalRebuildScheduleOverrideIsoIndex(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__);
+          }
+        }catch(_ix2){}
         markHydrated = true;
       }finally{
         if(markHydrated){
@@ -1113,6 +1158,11 @@
           });
           next.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
           window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = next;
+          try{
+            if(typeof window.portalRebuildScheduleOverrideIsoIndex === 'function'){
+              window.portalRebuildScheduleOverrideIsoIndex(next);
+            }
+          }catch(_ix3){}
           try{
             const fetchedMap = window.__PORTAL_SCHEDULE_OVERRIDE_FETCHED_ISOS__ || Object.create(null);
             fetchedMap[iso] = true;

@@ -765,9 +765,15 @@ function portalRobertoDcClientIsCancelledOnIso(iso, clientName) {
   }
   try {
     const rows =
-      typeof globalThis !== "undefined" && Array.isArray(globalThis.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
-        ? globalThis.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
-        : [];
+      typeof globalThis !== "undefined" && typeof globalThis.portalScheduleOverrideRowsForIso === "function"
+        ? globalThis.portalScheduleOverrideRowsForIso(day)
+        : typeof globalThis !== "undefined" &&
+            globalThis.__PORTAL_SCHEDULE_OVERRIDE_BY_ISO__ &&
+            Array.isArray(globalThis.__PORTAL_SCHEDULE_OVERRIDE_BY_ISO__[day])
+          ? globalThis.__PORTAL_SCHEDULE_OVERRIDE_BY_ISO__[day]
+          : typeof globalThis !== "undefined" && Array.isArray(globalThis.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
+            ? globalThis.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
+            : [];
     for (let i = 0; i < rows.length; i++) {
       const ov = rows[i];
       if (!ov || String(ov.status || "active") !== "active") continue;

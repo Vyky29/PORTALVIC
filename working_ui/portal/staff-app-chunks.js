@@ -16,7 +16,7 @@
     "/portal/portal_staff_feedback_data_loader.js?v=20260910-pwa-off-joelle",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
-      "/portal/portal_roster_canonical.js?v=20260911-fadi-standing-no-ov",
+      "/portal/portal_roster_canonical.js?v=20260911-anas-javi-cover",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
@@ -57,7 +57,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260910-roberto-taps2",
+    "/portal/portal_lead_team_shift.js?v=20260911-roberto-ov-iso",
   ];
 
   var TIER_IDLE = [

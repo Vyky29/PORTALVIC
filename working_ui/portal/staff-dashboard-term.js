@@ -2036,6 +2036,22 @@
       return html;
     }
     function syncPortalReminderChrome(){
+      /* Coalesce burst calls (menu open + hydrate + paint) into one pass per frame. */
+      if(typeof window !== 'undefined'){
+        if(window.__PORTAL_REMINDER_CHROME_COALESCED__) return;
+        window.__PORTAL_REMINDER_CHROME_COALESCED__ = 1;
+        var self = syncPortalReminderChrome;
+        var run = function(){
+          try{ window.__PORTAL_REMINDER_CHROME_COALESCED__ = 0; }catch(_){}
+          self.__portalReminderChromeRun();
+        };
+        if(typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+        else setTimeout(run, 0);
+        return;
+      }
+      syncPortalReminderChrome.__portalReminderChromeRun();
+    }
+    syncPortalReminderChrome.__portalReminderChromeRun = function(){
       try{
         const st = typeof portalReminderState === 'function' ? portalReminderState() : {};
       const opHost = document.getElementById('portalOperationalReminderList');
@@ -2128,7 +2144,7 @@
           }
         }catch(_ls){}
       }catch(_){}
-    }
+    };
 
     function sessionRegisterReminderDisplayTier(stats){
       if(!stats || !stats.pending.length) return 0;
