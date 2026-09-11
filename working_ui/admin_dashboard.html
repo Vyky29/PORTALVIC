@@ -4862,6 +4862,75 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return order.map(function(o){ return o.slot; });
     }
+    /**
+     * Same client + time + venue under Aurora standing AND Luliya cover (Sunday remap /
+     * day-off cover) must not list twice. Prefer the live cover seat when an
+     * instructor_reassign exists; otherwise keep one row.
+     */
+    function schedDedupeInstructorCoverTwinSlots(slots){
+      var list = Array.isArray(slots) ? slots : [];
+      if(list.length < 2) return list;
+      var groups = Object.create(null);
+      var order = [];
+      list.forEach(function(slot, idx){
+        var pax = schedEffectivePaxSlugForDedupe(slot);
+        if(!pax || schedIsOpenSlotSlug(pax) || schedIsHomeDutyParticipant(slot) || schedIsManagerDutyParticipant(slot)){
+          order.push({ key: '__keep-' + idx, slot: slot });
+          return;
+        }
+        var key = [
+          String(slot.sessionDate || ''),
+          String(slot.venue || '').trim().toLowerCase(),
+          pax,
+          normTimeShort(slot.anchorStart),
+          normTimeShort(slot.anchorEnd)
+        ].join('|');
+        if(!groups[key]){
+          groups[key] = { slots: [slot], idx: order.length };
+          order.push({ key: key, slot: slot });
+          return;
+        }
+        groups[key].slots.push(slot);
+      });
+      Object.keys(groups).forEach(function(key){
+        var pack = groups[key];
+        if(!pack || pack.slots.length <= 1) return;
+        var preferred = schedPickPreferredInstructorTwinSlot(pack.slots);
+        order[pack.idx].slot = preferred || pack.slots[0];
+      });
+      return order.map(function(o){ return o.slot; });
+    }
+    function schedPickPreferredInstructorTwinSlot(twins){
+      var list = Array.isArray(twins) ? twins : [];
+      if(!list.length) return null;
+      if(list.length === 1) return list[0];
+      var ovs = [];
+      list.forEach(function(slot){
+        var ov = findOverrideForSlotOfTypes(slot, ['instructor_reassign', 'instructor_cover_needed']);
+        if(ov) ovs.push({ slot: slot, ov: ov });
+      });
+      if(ovs.length){
+        ovs.sort(function(a, b){ return new Date(b.ov.created_at || 0) - new Date(a.ov.created_at || 0); });
+        var best = ovs[0].ov;
+        var cover = normalizeSchedAnchorStaffId(best.payload && best.payload.covering_staff_id);
+        var anchor = normalizeSchedAnchorStaffId(best.anchor_staff_id);
+        var byCover = null;
+        var byAnchor = null;
+        for(var i = 0; i < list.length; i++){
+          var sid = normalizeSchedAnchorStaffId(list[i].staffRosterId);
+          if(cover && sid === cover) byCover = list[i];
+          if(anchor && sid === anchor) byAnchor = list[i];
+        }
+        if(byCover) return byCover;
+        if(byAnchor) return byAnchor;
+        return ovs[0].slot;
+      }
+      /* No override: prefer Luliya over Aurora on Sunday SwimFarm twins (standing remap). */
+      for(var j = 0; j < list.length; j++){
+        if(normalizeSchedAnchorStaffId(list[j].staffRosterId) === 'luliya') return list[j];
+      }
+      return list[0];
+    }
     /** Aquatic roster bands longer than 30′ → one sched row per half-hour (e.g. Amar Ra 5–6 → 5–5.30 + 5.30–6). */
     function schedExpandAquaticHalfHourSlots(slots){
       var out = [];
@@ -17521,6 +17590,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(sched.lastMsg && msg){ msg.textContent = sched.lastMsg; msg.style.color = 'var(--success)'; sched.lastMsg = ''; }
       }
       slots = schedDedupeMakeupTwinSlots(slots);
+      slots = schedDedupeInstructorCoverTwinSlots(slots);
       sched.cachedDaySlots = slots;
       sched.slotsById = {};
       for(var sxi2 = 0; sxi2 < slots.length; sxi2++) sched.slotsById[slots[sxi2].demoId] = slots[sxi2];
