@@ -149,7 +149,7 @@
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260909-reply-only" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
-  <script src="/portal/cfk-app.js?v=20260911-services-labels"></script>
+  <script src="/portal/cfk-app.js?v=20260911-services-autumn"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260911-sched-mobile-cards"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -7322,18 +7322,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return best;
     }
     /**
-     * Services capacity tables: use the standing term weekday (latest non-crash date),
-     * not crash-course weeks (from 20 Jul) that only have temporary staff (e.g. Roberto Wed Acton).
-     * Same bridge as Booking Portal / portal-booking-offer: occupancy from summer MADRE
-     * (pre-crash), UI window = Autumn 26/27.
+    /**
+     * Services capacity tables: occupancy projects from summer MADRE weekday stamps
+     * (pre-crash), but the visible window and metrics are Autumn 26/27.
+     * Same bridge as Booking Portal / portal-booking-offer.
      */
     var SERVICES_STANDING_CRASH_FROM_ISO = '2026-07-20';
-    /** Summer spreadsheet/MADRE window used to resolve who stands on each weekday. */
+    /** Summer spreadsheet/MADRE window used only to resolve who stands on each weekday (projection source). */
     var SERVICES_STANDING_TEMPLATE_START_ISO = '2026-04-13';
     var SERVICES_STANDING_TEMPLATE_END_ISO = '2026-07-19';
     /**
-     * Services overview display window = Autumn 26/27 (Booking Portal / open places).
-     * Occupancy still resolves from summer standing template above.
+     * Services overview display + metrics window = Autumn 26/27.
      * Scheduling & Cover uses SCHED_COVER_TERM_* (Autumn 2026 full term).
      */
     var SERVICES_ROSTER_CALENDAR_START_ISO = '2026-09-05';
@@ -7353,7 +7352,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(today < SERVICES_ROSTER_CALENDAR_START_ISO) return '2026-09-07';
       return SERVICES_ROSTER_CALENDAR_END_ISO;
     }
-    /** Latest pre-crash summer ISO for a weekday — same standing truth as Booking Portal. */
+    /** Autumn term start for Services boards/metrics (DC from 1 Sep; AS/weekend from 5 Sep). */
+    function adminServicesAutumnTermStartIso(programme){
+      try{
+        if(typeof adminServicesIsDayCentreProgramme === 'function' && adminServicesIsDayCentreProgramme(programme)){
+          return SERVICES_ROSTER_DAY_CENTRE_START_ISO;
+        }
+      }catch(_){}
+      var k = String(programme || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
+      if(k.indexOf('daycentre') >= 0 || k === 'dc') return SERVICES_ROSTER_DAY_CENTRE_START_ISO;
+      return SERVICES_ROSTER_CALENDAR_START_ISO;
+    }
+    function adminServicesAutumnTermEndIso(){
+      return SERVICES_ROSTER_CALENDAR_END_ISO;
+    }
+    /**
+     * Calendar ISO in Autumn 26/27 for a weekday near the display anchor.
+     * Used by Services §1/§2 instead of the Jul standing stamp date.
+     */
+    function adminServicesAutumnIsoForDow(dowNorm, weekAnchorIso, programme){
+      var start = adminServicesAutumnTermStartIso(programme);
+      var end = adminServicesAutumnTermEndIso();
+      var anchor = String(weekAnchorIso || adminServicesOverviewAnchorIso() || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(anchor)) anchor = start;
+      if(anchor < start) anchor = start;
+      if(anchor > end) anchor = end;
+      var pick = '';
+      try{
+        pick = adminPickIsoForSheetWeekdayNearAnchor(anchor, dowNorm, start, end) || '';
+      }catch(_){ pick = ''; }
+      return pick;
+    }
+    /** Latest pre-crash summer ISO for a weekday — projection source for Autumn calendar days. */
     function adminServicesLatestStandingIsoForDow(dowNorm){
       var want = adminServiceNormalizeDowKey(dowNorm);
       if(!want || !adminSpreadsheetAdapterAvailable()) return '';
@@ -19728,7 +19758,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         (typeof portalOpenPlaces2627NextAnchorForDay === 'function' && dayLong
           ? portalOpenPlaces2627NextAnchorForDay(dayLong)
           : '') ||
-        adminServicesLatestStandingIsoForDow(dayLong) ||
+        adminServicesAutumnIsoForDow(dayLong, adminServicesOverviewAnchorIso(), String(band.prog || '')) ||
         adminServicesOverviewAnchorIso();
       var instr = String(band.instructors || band.inst || '').trim();
       if(!instr && typeof adminCapacityResolveOpenInstructors === 'function'){
@@ -20300,8 +20330,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       opts = opts || {};
       var dowOrder = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
       var standIsos = [];
+      var autumnAnchor = adminServicesOverviewAnchorIso();
       for(var di = 0; di < dowOrder.length; di++){
-        var standIso = adminServicesLatestStandingIsoForDow(dowOrder[di]);
+        var standIso = adminServicesAutumnIsoForDow(dowOrder[di], autumnAnchor, '');
         if(standIso) standIsos.push(standIso);
       }
       var pack = standIsos.length ? adminServiceCapacityBoardRowsFromRoster(standIsos) : null;
@@ -20313,14 +20344,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '';
       }
       var srcLabel = pack.source === 'roster'
-        ? ('autumn standing · all weekdays (summer template)')
+        ? ('Autumn 26/27 weekdays · projected standing seats')
         : 'MOCK.c4kServicesList';
       var headDesc =
-        'Autumn 26/27 <strong>standing</strong> bands (weekday seats, same occupancy as Booking Portal). Each row is a schedulable band (service · venue · weekday · time). '+
+        'Autumn 26/27 <strong>term</strong> bands (weekday seats). Each row is a schedulable band (service · venue · weekday · time). '+
         '<strong>Open</strong> = no named term participant. '+
         '<strong>Assign</strong> places someone on that standing seat. '+
         '<strong>Offer</strong> jumps to waitlist. Make-ups stay in Schedule &amp; Covers. '+
-        'Jump: Services (1 Roster · 2 Fill seats · 3 Live open places) · '+
+        'Jump: Services (1 Roster · 2 Plazas · 3 Booking Portal) · '+
         '<button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_waitlist">WAITING</button>. '+
         'Data source: <strong>'+esc(srcLabel)+'</strong>.';
       var headBlock = '';
@@ -20351,7 +20382,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '<section id="c4kServicesCapacityEmbed" class="c4k-svc-capmap-embed" aria-label="Fill open roster seats" style="margin-top:28px;scroll-margin-top:14px;border-top:1px solid var(--line,#e5e7eb);padding-top:16px">'+
         '<div class="c4k-svc-capmap-embed__head" style="margin-bottom:10px;min-width:0">'+
         '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 4px;min-width:0;overflow-wrap:break-word">2 · Plazas disponibles</h2>'+
-        '<p class="page-intro" style="margin:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Standing open lines (no named participant). <strong>Assign</strong> is a permanent seat. Day covers stay in Schedule &amp; Covers. Public seats are in section 3.</p>'+
+        '<p class="page-intro" style="margin:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Autumn 26/27 open lines (no named participant). <strong>Assign</strong> is a permanent seat. Day covers stay in Schedule &amp; Covers. Public seats are in section 3.</p>'+
         '</div>'+
         inner+'</section>';
     }
@@ -20399,9 +20430,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         );
       }
       /*
-       * Services §1 = term standing only (who booked the weekday seat).
-       * Calendar-day exceptions (make-ups, last session, one-off covers) stay in
-       * Schedule & Covers / Sessions Overview — do not merge Autumn dated overlays here.
+       * Services §1 = Autumn 26/27 term seats (who holds the weekday place).
+       * WHO still comes from the summer MADRE standing stamps (projection source);
+       * display dates, Assign anchors, and venue metrics use the Autumn window.
+       * Calendar-day exceptions stay in Schedule & Covers / Sessions Overview.
        */
       var termStart = SERVICES_ROSTER_CALENDAR_START_ISO;
       var termEnd = SERVICES_ROSTER_CALENDAR_END_ISO;
@@ -20416,6 +20448,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var weekSlots = adminCollectSlotsForProgrammeWeek(block.programme, displayWeekIso);
         var wn = weekSlots.length;
         var nRange = 0;
+        var autumnStart = adminServicesAutumnTermStartIso(block.programme);
+        var autumnEnd = adminServicesAutumnTermEndIso();
         var venuesHtml = block.venues.map(function(vn, vix){
           if(filt && filt.venue && String(vn.venue) !== String(filt.venue)) return '';
           var hid = 'c4k-svc-ven-'+pidx+'-'+vix;
@@ -20512,11 +20546,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 }
               }
               if(!muHasRows) continue;
-              var displayIsoMu = adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, termStart, termEnd);
+              var displayIsoMu = adminServicesAutumnIsoForDow(dk, displayWeekIso, block.programme) ||
+                adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, termStart, termEnd);
               if(displayIsoMu && SERVICES_ROSTER_HALF_TERM_CLOSED &&
                  displayIsoMu >= SERVICES_ROSTER_HALF_TERM_CLOSED.start &&
                  displayIsoMu <= SERVICES_ROSTER_HALF_TERM_CLOSED.end){
-                displayIsoMu = adminPickIsoForSheetWeekdayNearAnchor('2026-09-07', dk, termStart, termEnd) || displayIsoMu;
+                displayIsoMu = adminServicesAutumnIsoForDow(dk, '2026-09-07', block.programme) ||
+                  adminPickIsoForSheetWeekdayNearAnchor('2026-09-07', dk, termStart, termEnd) || displayIsoMu;
               }
               var dowTitleMu = adminServiceDowTitleFromNorm(dk);
               var dayHoursMu = '9:30AM–2:00PM · 3 groups × 6 · 2×45′ each';
@@ -20539,11 +20575,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var didMu = 'c4k-svc-dow-'+pidx+'-'+vix+'-'+dix;
               var schedAddBtnMu =
                 '<button type="button" class="btn btn--pri btn--sm c4k-svc-schedule-class-head-btn" data-novo-sched-add-class="1" '+
-                'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(pickIsoMu || '')+'" '+
+                'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(displayIsoMu || pickIsoMu || '')+'" '+
                 'title="Add an open seat band to Booking Portal for this weekday standing">'+
                 '+ Schedule a Class</button>';
               var bodyMu =
-                adminServicesMultiSundayBoardHtml(muBoard, block.programme, vn.venue, pickIsoMu)+
+                adminServicesMultiSundayBoardHtml(muBoard, block.programme, vn.venue, displayIsoMu || pickIsoMu)+
                 '<div class="c4k-svc-day-sched-bar">'+schedAddBtnMu+adminServicesOpenPlacesFilterBtnHtml(block.programme, vn.venue, dk)+'</div>';
               dowParts.push(
                 '<details class="c4k-svc-day-acc c4k-svc-day-acc--multi-sun" open>'+
@@ -20570,11 +20606,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 (typeof SERVICES_ROSTER_DAY_CENTRE_START_ISO === 'string' && SERVICES_ROSTER_DAY_CENTRE_START_ISO)
                   ? SERVICES_ROSTER_DAY_CENTRE_START_ISO
                   : '2026-09-01';
-              var displayIsoDc = adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, dcTermStart, termEnd);
+              var displayIsoDc = adminServicesAutumnIsoForDow(dk, displayWeekIso, block.programme) ||
+                adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, dcTermStart, termEnd);
               if(displayIsoDc && SERVICES_ROSTER_HALF_TERM_CLOSED &&
                  displayIsoDc >= SERVICES_ROSTER_HALF_TERM_CLOSED.start &&
                  displayIsoDc <= SERVICES_ROSTER_HALF_TERM_CLOSED.end){
-                displayIsoDc = adminPickIsoForSheetWeekdayNearAnchor('2026-09-07', dk, dcTermStart, termEnd) || displayIsoDc;
+                displayIsoDc = adminServicesAutumnIsoForDow(dk, '2026-09-07', block.programme) ||
+                  adminPickIsoForSheetWeekdayNearAnchor('2026-09-07', dk, dcTermStart, termEnd) || displayIsoDc;
               }
               if(!displayIsoDc) displayIsoDc = pickIsoDc;
               var slotsDc = [];
@@ -20605,12 +20643,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               rowsInVenue += dcBoard.staffOrder.length;
               var schedAddBtnDc =
                 '<button type="button" class="btn btn--pri btn--sm c4k-svc-schedule-class-head-btn" data-novo-sched-add-class="1" '+
-                'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(pickIsoDc || '')+'" '+
+                'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(displayIsoDc || pickIsoDc || '')+'" '+
                 'title="Add an open seat band to Booking Portal for this weekday standing">'+
                 '+ Schedule a Class</button>';
               var bodyDc =
                 '<div class="c4k-svc-slots c4k-svc-slots--dc" style="min-width:0;overflow:auto">'+
-                '<p class="c4k-svc-dc-hint muted">Staff board · Day Centre standing (who with whom). Day exceptions live in Schedule &amp; Covers. Cyrus Tue 3.30–5 with Victor is Bespoke on staff dashboard.</p>'+
+                '<p class="c4k-svc-dc-hint muted">Staff board · Day Centre Autumn 26/27 (who with whom). Day exceptions live in Schedule &amp; Covers. Cyrus Tue 3.30–5 with Victor is Bespoke on staff dashboard.</p>'+
                 adminServicesDayCentreStaffBoardHtml(dcBoard)+
                 '<div class="c4k-svc-day-sched-bar">'+schedAddBtnDc+adminServicesOpenPlacesFilterBtnHtml(block.programme, vn.venue, dk)+'</div>'+
                 '</div>';
@@ -20649,6 +20687,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(!pickIso0){
               var slFirst = adminServiceLineGroupForWeek(groups[0], standEnd, standStart, standEnd);
               pickIso0 = String(slFirst.pickIso || '').trim();
+            }
+            var displayIso0 = adminServicesAutumnIsoForDow(dk, displayWeekIso, block.programme) ||
+              adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, autumnStart || termStart, autumnEnd || termEnd) ||
+              pickIso0;
+            if(displayIso0 && SERVICES_ROSTER_HALF_TERM_CLOSED &&
+               displayIso0 >= SERVICES_ROSTER_HALF_TERM_CLOSED.start &&
+               displayIso0 <= SERVICES_ROSTER_HALF_TERM_CLOSED.end){
+              displayIso0 = adminServicesAutumnIsoForDow(dk, '2026-09-07', block.programme) || displayIso0;
             }
             var slotsForBands = slotsWd;
             if(pickIso0){
@@ -20809,7 +20855,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               if(!seats.length && !mergedLines.length) continue;
               if(seats.length > maxSeats) maxSeats = seats.length;
               var dataSlot =
-                'data-sched-demo-id="' + esc(demoId) + '" data-c4k-svc-merged-demos="' + esc(demoIdMerged) + '" data-session-date="' + esc(B.pickIso) + '" data-venue="' + esc(B.venue) + '"' +
+                'data-sched-demo-id="' + esc(demoId) + '" data-c4k-svc-merged-demos="' + esc(demoIdMerged) + '" data-session-date="' + esc(displayIso0 || B.pickIso) + '" data-venue="' + esc(B.venue) + '"' +
                 ' data-c4k-svc-line-count="' + esc(String(mergedLines.length)) + '" data-c4k-svc-programme="' + esc(B.programme) + '"' +
                 ' data-c4k-svc-seg-start="' + esc(B.segA) + '" data-c4k-svc-seg-end="' + esc(B.segB) + '"' +
                 ' data-c4k-svc-staff-ids="' + esc(staffIdList.join('|')) + '"';
@@ -20829,7 +20875,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   '<span class="c4k-svc-wait-ico" aria-hidden="true">⏱</span> ' + esc(String(waitN)) +
                   '</button>')
                 : '<span class="c4k-svc-wait-empty" title="' + esc(waitTitle) + '" aria-hidden="true"></span>';
-              var pseudoSeg = { anchorStart: B.segA, anchorEnd: B.segB, sessionDate: B.pickIso, venue: B.venue, programme: String(slot0.programme || B.programme || '') };
+              var pseudoSeg = { anchorStart: B.segA, anchorEnd: B.segB, sessionDate: displayIso0 || B.pickIso, venue: B.venue, programme: String(slot0.programme || B.programme || '') };
               var timeRange = novoSchedSlotTimeRangeOnly(pseudoSeg);
               dayBandRows.push({
                 dataSlot: dataSlot,
@@ -21041,7 +21087,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
             var schedAddBtn =
               '<button type="button" class="btn btn--pri btn--sm c4k-svc-schedule-class-head-btn" data-novo-sched-add-class="1" '+
-              'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(pickIso0 || '')+'" '+
+              'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(displayIso0 || pickIso0 || '')+'" '+
               'title="Add an open seat band to Booking Portal for this weekday standing">'+
               '+ Schedule a Class</button>';
             var tableHtml =
@@ -21084,23 +21130,46 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           var venueSt = adminStatsSlotsWeek(allInst);
           var venueAgg = adminServiceVenueAggFromInstances(allInst);
+          /* One standing weekday stamp per DOW = Autumn term weekly occupancy (not sum of Apr-Jul weeks). */
+          var stampMetricSlots = [];
+          for(var smi = 0; smi < dowOrder.length; smi++){
+            var smDk = dowOrder[smi];
+            var smSlots = byDow[smDk];
+            if(!smSlots || !smSlots.length) continue;
+            var smPick = '';
+            if(adminServicesIsDayCentreProgramme(block.programme)){
+              smPick = adminServicesDayCentreStandingIsoForDow(smDk);
+            } else {
+              smPick = adminPickServicesStandingIsoForDow(smDk, smSlots, displayWeekIso, standStart, standEnd) ||
+                adminServicesLatestStandingIsoForDow(smDk);
+            }
+            if(!smPick) continue;
+            for(var smj = 0; smj < smSlots.length; smj++){
+              if(String(smSlots[smj].sessionDate || '').trim() === smPick) stampMetricSlots.push(smSlots[smj]);
+            }
+          }
+          if(stampMetricSlots.length){
+            venueSt = adminStatsSlotsWeek(stampMetricSlots);
+            venueAgg = adminServiceVenueAggFromInstances(stampMetricSlots);
+            venueAgg.bookedPerWeek = venueSt.booked;
+          }
           var venueInstrCount = Object.keys(venueInstrSet).length;
           var venuePaxCount = Object.keys(venuePaxSet).length;
           var venueWaitN = adminCapacityWaitCountForProgVenue(block.programme, vn.venue);
           var venueMetrics =
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-total">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Booked places counted on the summer standing template (Apr–Jul) for this venue — not Autumn Sep–Dec dates.">'+
-            '<span class="c4k-svc-venue-acc__pill-lbl">Booked (standing): </span>'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Booked term seats for one Autumn 26/27 weekday stamp at this venue (projected standing occupancy).">'+
+            '<span class="c4k-svc-venue-acc__pill-lbl">Booked (Autumn): </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueSt.booked))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-week">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Peak booked places in any single calendar week of the standing template (Apr–Jul) at this venue — not necessarily this Autumn week.">'+
-            '<span class="c4k-svc-venue-acc__pill-lbl">Booked/wk (peak standing): </span>'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Booked seats in a normal Autumn week at this venue (one standing stamp per weekday).">'+
+            '<span class="c4k-svc-venue-acc__pill-lbl">Booked/wk (Autumn): </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueAgg.bookedPerWeek))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-open">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Unbooked places on the summer standing template (Apr–Jul) at this venue.">'+
-            '<span class="c4k-svc-venue-acc__pill-lbl">Open (standing): </span>'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Unbooked term seats on the Autumn weekday stamp at this venue.">'+
+            '<span class="c4k-svc-venue-acc__pill-lbl">Open (Autumn): </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueSt.open))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-new">'+
@@ -21112,12 +21181,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueWaitN))+'</strong>'+
             '</button></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-inst">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct instructors shown on the standing day boards for this venue (not a term-wide unique count).">'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct instructors shown on the Autumn day boards for this venue (not a term-wide unique count).">'+
             '<span class="c4k-svc-venue-acc__pill-lbl">Instructors: </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueInstrCount))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-pax">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct participants shown on the standing day boards for this venue.">'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct participants shown on the Autumn day boards for this venue.">'+
             '<span class="c4k-svc-venue-acc__pill-lbl">Participants: </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venuePaxCount))+'</strong>'+
             '</span></span>';
@@ -21159,7 +21228,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return '';
         }
         var chips =
-          '<span class="chip chip--info" title="Slot rows Mon–Sun in the Autumn display week (all venues). Not the same unit as Sessions/wk (boards) or Booked (standing).">'+esc(String(wn))+' roster lines/wk (Autumn week)</span>'+
+          '<span class="chip chip--info" title="Slot rows Mon–Sun in the Autumn display week (all venues). Not the same unit as Sessions/wk (boards) or Booked (Autumn).">'+esc(String(wn))+' roster lines/wk (Autumn week)</span>'+
           '<span class="chip chip--ok" title="Sum of rendered boards across venues (time bands or staff columns — programme-specific unit).">'+esc(String(nRange))+' sessions/wk (boards)</span>';
         return adminAppendServiceCapacityBoardAfterPhysicalActivity(
           '<div class="card c4k-svc-card '+adminServiceProgrammeCardClass(block.programme)+'" style="margin-bottom:10px">'+

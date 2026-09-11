@@ -350,7 +350,7 @@
       "</div></div></details>" +
       '<section id="c4kServicesRosterAnchor" aria-label="Roster" style="min-width:0;scroll-margin-top:14px">' +
       '<h2 class="page-title" style="font-size:1.15rem;margin:14px 0 6px;min-width:0;overflow-wrap:break-word">1 · Roster permanente</h2>' +
-      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who holds each weekday seat for the term (principal instructor). Metrics labelled <em>standing</em> use the Apr–Jul occupancy template; <em>Autumn week</em> counts use the Sep–Dec display week.</p>' +
+      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who holds each weekday seat for Autumn 26/27 (principal instructor). Metrics are Autumn term occupancy; day make-ups stay in Schedule &amp; Covers.</p>' +
       '<div id="c4kServicesRosterRoot" style="min-width:0">' +
       rosterPart +
       "</div></section>" +
