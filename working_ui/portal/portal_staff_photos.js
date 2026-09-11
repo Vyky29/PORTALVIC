@@ -204,10 +204,10 @@
       }
       if (!STAFF_PHOTO_FILES[key]) return;
       if (key === "emmanuel" || key === "emanuel") {
-        pushCandidate(urls, base + "emmanuel.png");
-        pushCandidate(urls, base + "emanuel.png");
-        pushCandidate(urls, base + "emmanuel.jpg");
-        pushCandidate(urls, base + "emanuel.jpg");
+        pushCandidate(urls, base + "emmanuel.png?v=20260911-emmanuel-photo");
+        pushCandidate(urls, base + "emanuel.png?v=20260911-emmanuel-photo");
+        pushCandidate(urls, base + "emmanuel.jpg?v=20260911-emmanuel-photo");
+        pushCandidate(urls, base + "emanuel.jpg?v=20260911-emmanuel-photo");
         return;
       }
       pushCandidate(urls, base + key + ".png");
