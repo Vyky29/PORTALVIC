@@ -836,8 +836,14 @@
           }
           return false;
         }
-        /* Dated overlay for this calendar day (trial / cover) always applies. */
-        if(rowIso === iso) return true;
+        /* Dated overlay for this calendar day (trial / cover) always applies.
+         * If the row also stores a weekday, it must match — "Wednesday" parked
+         * on 2026-09-15 (Tue) was painting Tinashe onto Emmanuel's Tuesday. */
+        if(rowIso === iso){
+          const rowDay = String(s.day || '').trim();
+          if(rowDay && w && rowDay.toLowerCase() !== w.toLowerCase()) return false;
+          return true;
+        }
         if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return false;
         /* Outside summer dated window: Day Centre → Autumn board snap (not June ACAT weeks). */
         if(portalSessionIsDayCentreService(s)){

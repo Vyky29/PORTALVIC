@@ -80,6 +80,30 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         0
       ]
     },
+    "emmanuel": {
+      "from": "2026-09-09",
+      "to": "2026-12-17",
+      "weekdays": [
+        2,
+        4
+      ]
+    },
+    "emanuel": {
+      "from": "2026-09-09",
+      "to": "2026-12-17",
+      "weekdays": [
+        2,
+        4
+      ]
+    },
+    "emmanuelamoakohene": {
+      "from": "2026-09-09",
+      "to": "2026-12-17",
+      "weekdays": [
+        2,
+        4
+      ]
+    },
     "luliya": {
       "from": "2026-09-01",
       "to": "2026-12-17",
