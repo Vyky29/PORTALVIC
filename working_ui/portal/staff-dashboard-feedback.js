@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260910-stephanie-half-fanout';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260911-roberto-fast';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -180,17 +180,45 @@
         }
         const t = window.PORTAL_TERM_FROM_TIMETABLE;
         if(t && t.firstDate && t.lastDate){
-          const cur = new Date(String(t.firstDate) + 'T12:00:00');
-          const last = new Date(String(t.lastDate) + 'T12:00:00');
           const todayIso = portalTermLocalYmdFromMs(termCalendarNowMs());
-          while(cur.getTime() <= last.getTime()){
-            const sessionDateKey = termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
-            if(sessionDateKey <= todayIso){
-              const dayWord = cur.toLocaleDateString('en-GB', { weekday: 'long' });
-              addDay(dayWord, sessionDateKey);
+          const seenIso = Object.create(null);
+          const addIso = function(iso){
+            const sessionDateKey = String(iso || '').trim().slice(0, 10);
+            if(!/^\d{4}-\d{2}-\d{2}$/.test(sessionDateKey) || sessionDateKey > todayIso) return;
+            if(seenIso[sessionDateKey]) return;
+            seenIso[sessionDateKey] = true;
+            const dayWord = new Date(sessionDateKey + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+            addDay(dayWord, sessionDateKey);
+          };
+          const shiftMap = t.termStaffShiftDatesByProfileKey;
+          const shiftDates = shiftMap && (shiftMap[staffId] || shiftMap[String(staffId || '').toLowerCase()]);
+          if(Array.isArray(shiftDates) && shiftDates.length){
+            for(let si = 0; si < shiftDates.length; si++) addIso(shiftDates[si]);
+          }else{
+            const worked = (typeof dashboardData !== 'undefined' && dashboardData
+              && Array.isArray(dashboardData.termWorkedWeekdays))
+              ? dashboardData.termWorkedWeekdays.map(Number)
+              : [];
+            const cur = new Date(String(t.firstDate) + 'T12:00:00');
+            const lastWalk = new Date(todayIso + 'T12:00:00');
+            while(cur.getTime() <= lastWalk.getTime()){
+              const w = cur.getDay();
+              if(!worked.length || worked.indexOf(w) >= 0){
+                addIso(termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate()));
+              }
+              cur.setDate(cur.getDate() + 1);
             }
-            cur.setDate(cur.getDate() + 1);
           }
+          try{
+            if(typeof portalStaffInstructorCoverCalendarIsoKeys === 'function'){
+              portalStaffInstructorCoverCalendarIsoKeys(staffId, t.firstDate, todayIso).forEach(addIso);
+            }
+          }catch(_){}
+          try{
+            if(typeof portalTermStaffExtraCalendarDates === 'function'){
+              portalTermStaffExtraCalendarDates(staffId).forEach(addIso);
+            }
+          }catch(_){}
         }
       }catch(_){}
       return portalPrioritizeRosterReviewKeysForSync([...keys]);
@@ -1512,8 +1540,15 @@
     function portalMarkFeedbackReconciledAfterServerSync(){
       try{
         try{ if(typeof window !== 'undefined') delete window.__PORTAL_TERM_REBUILD_LAST_SIG__; }catch(_sig){}
-        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+        let termOpen = false;
+        try{
+          const termSheet = document.getElementById('termSheet');
+          termOpen = !!(termSheet && termSheet.classList.contains('open'));
+        }catch(_t){}
+        if(termOpen && typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
           rebuildTermShiftAndFeedbackFromSessionModel();
+        }else if(typeof portalDeferTermFeedbackRebuild === 'function'){
+          portalDeferTermFeedbackRebuild();
         }
         portalStaffFinishFeedbackPipelineReady({ serverSynced: true });
       }catch(_){}

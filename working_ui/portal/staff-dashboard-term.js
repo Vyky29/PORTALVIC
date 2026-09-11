@@ -1424,8 +1424,6 @@
       try{
         if(dashboardData.termFeedbackByDate && Object.keys(dashboardData.termFeedbackByDate).length){
           /* Maps already built — chrome must not rebuild the whole term on every paint. */
-        } else if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
-          rebuildTermShiftAndFeedbackFromSessionModel();
         }
       }catch(e){}
       const setupPending = !!dashboardData.setupPending;

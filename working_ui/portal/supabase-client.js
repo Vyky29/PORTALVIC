@@ -61,6 +61,16 @@ export function isSupabaseConfigured() {
  */
 export function getSupabaseClient() {
   if (_client) return _client;
+  const w = typeof window !== "undefined" ? window : undefined;
+  const existing =
+    (w && w.__PORTAL_SUPABASE_JS_CLIENT__) ||
+    (w && w.__PORTAL_SUPABASE__ && w.__PORTAL_SUPABASE__.client) ||
+    (w && w.__PORTAL_SUPABASE_SINGLETON__);
+  if (existing) {
+    _client = existing;
+    if (w) w.__PORTAL_SUPABASE_JS_CLIENT__ = existing;
+    return _client;
+  }
   const { url, key } = readConfig();
   if (!url || !key) {
     throw new Error(
@@ -74,6 +84,7 @@ export function getSupabaseClient() {
       detectSessionInUrl: true,
     },
   });
+  if (w) w.__PORTAL_SUPABASE_JS_CLIENT__ = _client;
   return _client;
 }
 
@@ -506,6 +517,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
         opts && Array.isArray(opts.feedbackMergeRules) ? opts.feedbackMergeRules : [],
     };
     if (!Array.isArray(peerRows)) return { present, absent };
+    const rosterByDate = portalGroupSessionKeysByDate(rosterSessionKeys);
     for (const r of peerRows) {
       if (!r || typeof r !== "object") continue;
       const pk = String(
@@ -515,7 +527,8 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       const isAbs = portalFeedbackAttendanceIsAbsent(
         /** @type {{ attendance?: string }} */ (r).attendance
       );
-      for (const rk of rosterSessionKeys) {
+      const rosterCands = portalRosterCandidatesForSubmittedKey(pk, rosterByDate);
+      for (const rk of rosterCands) {
         if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, matchOpts)) continue;
         if (
           portalRosterKeyNeedsSubmitterOwnership(rk, perStaffOwnOnly) &&
@@ -1294,6 +1307,92 @@ function portalSubmittedKeyIsLeadAquaticUnit(submittedKey) {
   return false;
 }
 
+function portalIsoShiftDays(iso, deltaDays) {
+  const s = String(iso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+  const t = Date.parse(s + "T12:00:00");
+  if (!Number.isFinite(t)) return "";
+  const d = new Date(t + deltaDays * 86400000);
+  return (
+    d.getFullYear() +
+    "-" +
+    String(d.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(d.getDate()).padStart(2, "0")
+  );
+}
+
+/** Group `YYYY-MM-DD|…` keys by calendar date so matching is O(keys in that day), not N×M. */
+export function portalGroupSessionKeysByDate(keys) {
+  const map = new Map();
+  for (const k of keys || []) {
+    const s = String(k || "").trim();
+    if (!s) continue;
+    const d = s.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+    let arr = map.get(d);
+    if (!arr) {
+      arr = [];
+      map.set(d, arr);
+    }
+    arr.push(s);
+  }
+  return map;
+}
+
+function portalSubmittedCandidatesForRosterKey(rosterKey, submittedByDate, submittedExact) {
+  const rk = String(rosterKey || "").trim();
+  if (!rk) return [];
+  if (submittedExact && submittedExact.has(rk)) return [rk];
+  const rDate = rk.slice(0, 10);
+  const out = [];
+  const seen = new Set();
+  function addDate(iso) {
+    const arr = submittedByDate.get(iso);
+    if (!arr) return;
+    for (const fk of arr) {
+      if (seen.has(fk)) continue;
+      seen.add(fk);
+      out.push(fk);
+    }
+  }
+  addDate(rDate);
+  /* Matcher allows submitted date = roster date + 1 day. */
+  addDate(portalIsoShiftDays(rDate, 1));
+  return out;
+}
+
+function portalRosterCandidatesForSubmittedKey(submittedKey, rosterByDate) {
+  const s = String(submittedKey || "").trim();
+  if (!s) return [];
+  const sDate = s.slice(0, 10);
+  const out = [];
+  const seen = new Set();
+  function addDate(iso) {
+    const arr = rosterByDate.get(iso);
+    if (!arr) return;
+    for (const rk of arr) {
+      if (seen.has(rk)) continue;
+      seen.add(rk);
+      out.push(rk);
+    }
+  }
+  addDate(sDate);
+  addDate(portalIsoShiftDays(sDate, -1));
+  return out;
+}
+
+function portalRosterKeyMatchesSubmittedSet(rosterKey, submittedByDate, submittedExact, opts) {
+  const rk = String(rosterKey || "").trim();
+  if (!rk) return false;
+  if (submittedExact && submittedExact.has(rk)) return true;
+  const cands = portalSubmittedCandidatesForRosterKey(rk, submittedByDate, submittedExact);
+  for (const fk of cands) {
+    if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rk, opts)) return true;
+  }
+  return false;
+}
+
 /**
  * Roster keys use `YYYY-MM-DD|HH:mm|client_id`; Supabase often stores `YYYY-MM-DD||client_slug`.
  * @param {string} submittedKey
@@ -1389,6 +1488,10 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
     cancelled: false,
   });
   let changed = false;
+  const submittedExact = new Set(
+    (submittedKeys || []).map((k) => String(k || "").trim()).filter(Boolean)
+  );
+  const submittedByDate = portalGroupSessionKeysByDate(submittedKeys);
   for (const rk of rosterKeys || []) {
     const rosterKey = String(rk || "").trim();
     if (!rosterKey) continue;
@@ -1408,7 +1511,12 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
       !ownOnly.has(rosterKey)
     ) {
       let allowPeerAbsent = false;
-      for (const fk0 of submittedKeys || []) {
+      const absentCands = portalSubmittedCandidatesForRosterKey(
+        rosterKey,
+        submittedByDate,
+        submittedExact
+      );
+      for (const fk0 of absentCands) {
         const fk = String(fk0 || "").trim();
         if (!fk || !portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) continue;
         if (fk === rosterKey) {
@@ -1428,7 +1536,12 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
       }
       if (!allowPeerAbsent) continue;
     }
-    for (const fk of submittedKeys || []) {
+    const fanCands = portalSubmittedCandidatesForRosterKey(
+      rosterKey,
+      submittedByDate,
+      submittedExact
+    );
+    for (const fk of fanCands) {
       if (!portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) continue;
       const prev = memory[rosterKey] || base();
       if (markAbsent) {
@@ -1730,14 +1843,15 @@ function portalReviewMemoryBase() {
 function portalOwnRosterKeysFromPortalFeedbackKeys(ownPortalKeys, rosterKeys, opts = {}) {
   /** @type {Set<string>} */
   const out = new Set();
+  const submittedExact = new Set(
+    (ownPortalKeys || []).map((k) => String(k || "").trim()).filter(Boolean)
+  );
+  const submittedByDate = portalGroupSessionKeysByDate(ownPortalKeys);
   for (const rk of rosterKeys || []) {
     const rosterKey = String(rk || "").trim();
     if (!rosterKey) continue;
-    for (const pk of ownPortalKeys || []) {
-      if (portalFeedbackSubmittedKeyMatchesRosterKey(String(pk || "").trim(), rosterKey, opts)) {
-        out.add(rosterKey);
-        break;
-      }
+    if (portalRosterKeyMatchesSubmittedSet(rosterKey, submittedByDate, submittedExact, opts)) {
+      out.add(rosterKey);
     }
   }
   return out;
@@ -1766,13 +1880,15 @@ export function portalBuildServerResolvedRosterKeySets(rosterKeys, packs, opts =
   const cancelNeedsFeedback = new Set();
 
   function fanOut(keys, target) {
+    const submittedExact = new Set(
+      (keys || []).map((k) => String(k || "").trim()).filter(Boolean)
+    );
+    const submittedByDate = portalGroupSessionKeysByDate(keys);
     for (const rk of rosterKeys || []) {
       const rosterKey = String(rk || "").trim();
       if (!rosterKey) continue;
-      for (const fk of keys || []) {
-        if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) {
-          target.add(rosterKey);
-        }
+      if (portalRosterKeyMatchesSubmittedSet(rosterKey, submittedByDate, submittedExact, opts)) {
+        target.add(rosterKey);
       }
     }
   }
@@ -1859,13 +1975,15 @@ export function portalReconcileReviewMemoryWithServer(memory, rosterKeys, packs,
   /** @type {Set<string>} */
   const resolved = new Set();
   function markResolved(keys) {
+    const submittedExact = new Set(
+      (keys || []).map((k) => String(k || "").trim()).filter(Boolean)
+    );
+    const submittedByDate = portalGroupSessionKeysByDate(keys);
     for (const rk of rosterKeys) {
       const rosterKey = String(rk || "").trim();
       if (!rosterKey) continue;
-      for (const fk of keys || []) {
-        if (portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey, opts)) {
-          resolved.add(rosterKey);
-        }
+      if (portalRosterKeyMatchesSubmittedSet(rosterKey, submittedByDate, submittedExact, opts)) {
+        resolved.add(rosterKey);
       }
     }
   }

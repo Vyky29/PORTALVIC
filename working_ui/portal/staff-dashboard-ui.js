@@ -693,10 +693,12 @@
     }
     function portalBindTodayDayOffPanel(grid){
       if(!grid) return;
-      grid.querySelectorAll('[data-open-next-session="1"]').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          if(typeof openSheet === 'function') openSheet('tomorrowSheet');
-        });
+      if(grid.getAttribute('data-portal-next-session-bound') === '1') return;
+      grid.setAttribute('data-portal-next-session-bound', '1');
+      grid.addEventListener('click', function(ev){
+        const btn = ev.target && ev.target.closest ? ev.target.closest('[data-open-next-session="1"]') : null;
+        if(!btn || !grid.contains(btn)) return;
+        if(typeof openSheet === 'function') openSheet('tomorrowSheet');
       });
     }
     function portalInitNextSessionParticipantDelegation(){
@@ -815,9 +817,17 @@
           var termSheet = document.getElementById('termSheet');
           termOpen = !!(termSheet && termSheet.classList.contains('open'));
         }catch(_){}
-        /* Roberto: never walk 4 months of Term on the home screen. Maps rebuild
-           when they open Term (openSheet). Reminder chrome can use last maps. */
+        /* Fill Term colour maps after Today is on screen. Idle so Roberto's first taps work.
+           Same days/states as opening Term — not a reduced calendar. */
         if(!termOpen){
+          try{
+            if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+              rebuildTermShiftAndFeedbackFromSessionModel({ allowWhenClosed: true });
+            }
+          }catch(_){}
+          try{
+            if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
+          }catch(_){}
           try{
             if(typeof portalScheduleReminderChromeAfterAnnSync === 'function'){
               portalScheduleReminderChromeAfterAnnSync();
@@ -2470,10 +2480,9 @@
       if(explicit === 'late') return 'late';
       const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
       if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'pending';
-      /* Past / today worked days: re-check live roster completeness even in the current
-         week. Without this, Sep 7–9 stayed blue when the map still said pending while
-         Emanuel (etc.) was already Submitted — only weeks-before-current were greened. */
-      if(staffId && key <= todayKey){
+      /* Trust Term maps for past days (rebuilt on Term open after feedback sync).
+         Re-scan only today so a just-submitted review goes green without walking 4 months. */
+      if(staffId && key === todayKey){
         const cur = new Date(key + 'T12:00:00');
         const isReal = function(sess){
           const st = String(sess.status || '').toLowerCase();
@@ -2771,8 +2780,16 @@
         String(dashboardData.termDashboardCalendarTo || '')
       ].join('\0');
     }
-    function rebuildTermShiftAndFeedbackFromSessionModel(){
+    function portalTermSheetIsOpen(){
+      try{
+        const el = document.getElementById('termSheet');
+        return !!(el && el.classList.contains('open'));
+      }catch(_){ return false; }
+    }
+    function rebuildTermShiftAndFeedbackFromSessionModel(opts){
+      opts = opts && typeof opts === 'object' ? opts : {};
       if(typeof window !== 'undefined' && window.__PORTAL_TERM_REBUILD_IN_PROGRESS__) return;
+      if(!portalTermSheetIsOpen() && !opts.allowWhenClosed) return;
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       if(!t || !t.firstDate || !t.lastDate || !staffId) return;
@@ -2957,7 +2974,9 @@
     }
     function portalOldestIsoDateNeedingTermFeedback(){
       try{
-        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function') rebuildTermShiftAndFeedbackFromSessionModel();
+        if(portalTermSheetIsOpen() && typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+          rebuildTermShiftAndFeedbackFromSessionModel();
+        }
       }catch(e){}
       const map = dashboardData.termFeedbackByDate;
       const keys = [];
@@ -3652,12 +3671,15 @@
       }
       if(id === 'termSheet'){
         syncTermCalendarColorIntro(true);
+        const termGridEl = document.getElementById('termGrid');
+        if(termGridEl && !termGridEl.querySelector('.term-cal-month')){
+          termGridEl.innerHTML = '<p class="muted" style="padding:16px;margin:0">Loading term…</p>';
+        }
         if(typeof renderTermCalendarGrid === 'function'){
           /* Wait for overrides + feedback pipeline before the first Term paint so
              Roberto does not see cancelled-red → green/blue flip on open. */
           const paintTerm = function(){
-            try{ if(typeof window !== 'undefined') delete window.__PORTAL_TERM_REBUILD_LAST_SIG__; }catch(_s){}
-            renderTermCalendarGrid({ force: true });
+            renderTermCalendarGrid({ force: false });
           };
           const termDataReady = function(){
             try{
