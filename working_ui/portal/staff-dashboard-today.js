@@ -3093,7 +3093,16 @@
           let st = sessionModelStatus(s);
           const time = rosterSlotTimeLabel(s);
           const activity = (s.activity || 'Swimming').trim();
-          const _rowTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
+          const tinHm = (typeof portalSessionIsTinasheClient === 'function' && portalSessionIsTinasheClient(s)
+            && typeof portalTinasheClientFacingHm === 'function')
+            ? portalTinasheClientFacingHm()
+            : null;
+          const _rowTs = portalSessionRowTimestamps(
+            sessionDateKey,
+            (tinHm && tinHm.start) || s.start,
+            (tinHm && tinHm.end) || s.end,
+            anchor
+          );
           const sessionStartTs = _rowTs.sessionStartTs;
           const sessionEndTs = _rowTs.sessionEndTs;
           const dutyLabel = portalRosterDutySlotLabel(s);

@@ -427,8 +427,12 @@
       const y = cur.getFullYear();
       const mo = cur.getMonth();
       const da = cur.getDate();
-      const sessionStartTs = buildSessionStartMsForCalendarDate(y, mo, da, s.start);
-      const sessionEndTs = buildSessionEndMsForCalendarDate(y, mo, da, s.end);
+      const tinHm = (typeof portalSessionIsTinasheClient === 'function' && portalSessionIsTinasheClient(s)
+        && typeof portalTinasheClientFacingHm === 'function')
+        ? portalTinasheClientFacingHm()
+        : null;
+      const sessionStartTs = buildSessionStartMsForCalendarDate(y, mo, da, (tinHm && tinHm.start) || s.start);
+      const sessionEndTs = buildSessionEndMsForCalendarDate(y, mo, da, (tinHm && tinHm.end) || s.end);
       const effClientId = typeof portalEffectiveClientIdForReview === 'function'
         ? portalEffectiveClientIdForReview(s, isoKey)
         : String(s.clientId || '').trim().toLowerCase();
@@ -474,6 +478,25 @@
         if(coverOv) item.__portalScheduleOverride = coverOv;
         if(s.portalOverrideMakeUpTag) item.portalOverrideMakeUpTag = true;
         else if(replaceOvSameSlot) item.portalOverrideMakeUpTag = true;
+        const sidMin = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim();
+        if(sidMin && typeof portalScheduleOverrideRowsForSessionIso === 'function'){
+          const ovsMin = portalScheduleOverrideRowsForSessionIso(isoKey);
+          for(let oi = 0; oi < ovsMin.length; oi++){
+            const ovMin = ovsMin[oi];
+            if(typeof portalObserverShadowingOverrideForStaff !== 'function'
+              || !portalObserverShadowingOverrideForStaff(ovMin, sidMin)) continue;
+            const slug = typeof portalSessionAddShadowingClientSlug === 'function'
+              ? portalSessionAddShadowingClientSlug(ovMin)
+              : '';
+            const cid = String(effClientId || s.clientId || '').trim().toLowerCase();
+            if(slug && cid && slug === cid){
+              item.portalObserverShadowing = true;
+              item.noSessionFeedbackRequired = true;
+              item.portalOverrideSuppressReviewOrange = true;
+              break;
+            }
+          }
+        }
       }
       return item;
     }
@@ -2209,8 +2232,20 @@
     }
     function sessionReviewRowClass(item){
       if(!item || item.kind !== 'client' || !item.sessionKey) return '';
-      if(item.noSessionFeedbackRequired) return '';
-      if(item.portalOverrideSuppressReviewOrange) return '';
+      const observerShadow = typeof portalTodayItemShowsObserverShadowing === 'function'
+        && portalTodayItemShowsObserverShadowing(item);
+      if(item.noSessionFeedbackRequired || item.portalOverrideSuppressReviewOrange){
+        /* Observer on Tinashe: still paint green when the host (Bismark) submitted shared feedback. */
+        if(observerShadow){
+          const rObs = (typeof getEffectiveSessionReviewRecord === 'function'
+            ? getEffectiveSessionReviewRecord(item)
+            : null) || {};
+          if(rObs.absent) return 'session-card--review-done';
+          if(rObs.cancelled) return 'session-card--review-cancelled';
+          if(rObs.feedbackDone) return 'session-card--review-done';
+        }
+        return '';
+      }
       if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()){
         return '';
       }

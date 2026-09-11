@@ -1403,7 +1403,11 @@
           if(portalTodayItemMatchesObserverShadowing(it, ovs[i])){ hit = ovs[i]; break; }
         }
         if(!hit) return it;
-        return Object.assign({}, it, {
+        const tinHm = (typeof portalSessionIsTinasheClient === 'function' && portalSessionIsTinasheClient(it.__portalBaseSession || it, it)
+          && typeof portalTinasheClientFacingHm === 'function')
+          ? portalTinasheClientFacingHm()
+          : null;
+        const next = Object.assign({}, it, {
           portalObserverShadowing: true,
           portalObserverShadowingLabel: 'Shadowing',
           noSessionFeedbackRequired: true,
@@ -1413,6 +1417,17 @@
           portalOverrideHideAdminBadge: true,
           __portalObserverShadowingOverride: hit
         });
+        if(tinHm){
+          next.time = (typeof portalFormatRosterBandLabel === 'function'
+            ? portalFormatRosterBandLabel(tinHm.start, tinHm.end)
+            : '') || '4.30 to 6';
+          if(typeof portalSessionRowTimestamps === 'function'){
+            const ts = portalSessionRowTimestamps(iso, tinHm.start, tinHm.end, null);
+            if(ts && ts.sessionStartTs) next.sessionStartTs = ts.sessionStartTs;
+            if(ts && ts.sessionEndTs) next.sessionEndTs = ts.sessionEndTs;
+          }
+        }
+        return next;
       });
     }
     function portalSessionAddAreaNoteLabel(locRaw){
@@ -1755,7 +1770,27 @@
       if(!a || !b) return '';
       return a + ' to ' + b;
     }
+    /** Hub Tinashe is always the client window 4.30-6. Paid staff band is 4.15-6.15 (timesheet). */
+    function portalSessionIsTinasheClient(s, item){
+      const cid = String(
+        (s && (s.clientId || s.client_id)) || (item && item.clientId) || ''
+      ).trim().toLowerCase();
+      if(cid === 'tinashe') return true;
+      const name = String(
+        (s && (s.clientDisplay || s.clientName || s.name)) || (item && (item.name || item.clientName)) || ''
+      ).trim().toLowerCase();
+      return /^tinashe\b/.test(name);
+    }
+    function portalTinasheClientFacingHm(){
+      return { start: '16:30', end: '18:00' };
+    }
+    try{ window.portalSessionIsTinasheClient = portalSessionIsTinasheClient; }catch(_){}
+    try{ window.portalTinasheClientFacingHm = portalTinasheClientFacingHm; }catch(_){}
     function rosterSlotTimeLabel(s){
+      if(portalSessionIsTinasheClient(s)){
+        const tin = portalFormatRosterBandLabel('16:30', '18:00');
+        return tin || '4.30 to 6';
+      }
       const rawSlot = String(s && s.timeSlotLabel || '').trim();
       if(rawSlot){
         const loose = portalNormSlotLabelLoose(rawSlot);
