@@ -2245,6 +2245,10 @@
     function portalTermCalendarDayIsRed(year, monthIndex, day, staffId, weekStartStrings){
       const iso = termCalendarDateKey(year, monthIndex, day);
       const sid = String(staffId || '').trim().toLowerCase();
+      if(sid && typeof portalStaffCalendarDateBeforeFirstSession === 'function'
+        && portalStaffCalendarDateBeforeFirstSession(iso, sid)){
+        return true;
+      }
       if(sid && typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
         && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)){
         return false;
@@ -3139,16 +3143,20 @@
             && portalStaffHasInstructorCoverOnCalendarDate(isoKey, termStaffId);
           const adminAddedShiftDay = termStaffId && typeof portalStaffHasAdminAddedShiftOnCalendarDate === 'function'
             && portalStaffHasAdminAddedShiftOnCalendarDate(isoKey, termStaffId);
-          const isWorked = extraCatchUp || instructorCoverDay || adminAddedShiftDay || (worked.includes(w) && (rosterApplies || exportWorked));
+          const beforeFirst = termStaffId && typeof portalStaffCalendarDateBeforeFirstSession === 'function'
+            && portalStaffCalendarDateBeforeFirstSession(isoKey, termStaffId);
+          const isWorked = !beforeFirst && (extraCatchUp || instructorCoverDay || adminAddedShiftDay || (worked.includes(w) && (rosterApplies || exportWorked)));
           let cls = 'term-cal-day';
           let label;
           let dayFlagsOff = null;
           const termClosedDay = portalTermClosedDates().indexOf(isoKey) >= 0;
           /* Club closed (e.g. Thu 3 Sep): always red — do not let export/cancelled-seat
              pulses paint the cell blue as if it were a worked day. */
-          const halfBlocksNav = (half || termClosedDay)
-            && !extraCatchUp && !instructorCoverDay && !adminAddedShiftDay
-            && !(exportWorked && !termClosedDay);
+          const halfBlocksNav = (half || termClosedDay || beforeFirst)
+            && (beforeFirst || (
+              !extraCatchUp && !instructorCoverDay && !adminAddedShiftDay
+              && !(exportWorked && !termClosedDay)
+            ));
           const staffRequestedAway = termStaffId
             && portalTermStaffAwayDatesFor(termStaffId).indexOf(isoKey) >= 0;
           const adminScheduleAdjusted = termStaffId
@@ -3163,7 +3171,7 @@
             continue;
           }
           if(halfBlocksNav){
-            const ovPulseHalf = termClosedDay
+            const ovPulseHalf = (termClosedDay || beforeFirst)
               ? ''
               : portalTermOverridePulseClassForNonWorkedDay(isoKey, adminScheduleAdjusted, dayWordRoster);
             dayFlagsOff = typeof portalDayOverrideBadgeFlags === 'function'

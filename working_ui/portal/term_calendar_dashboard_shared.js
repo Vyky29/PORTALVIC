@@ -227,6 +227,9 @@
       if (keys.indexOf("luliya") < 0) keys.push("luliya");
       if (keys.indexOf("lulia") < 0) keys.push("lulia");
     }
+    if (id === "emmanuel" || id === "emmanuelamoakohene" || id === "nanaamoakohene745") {
+      if (keys.indexOf("emanuel") < 0) keys.push("emanuel");
+    }
     if (id === "sevitha" || id === "info") {
       if (keys.indexOf("sevitha") < 0) keys.push("sevitha");
       if (keys.indexOf("info") < 0) keys.push("info");
@@ -372,6 +375,10 @@
 
   /** Red cell: outside view, vacation, or weekday not on this staff's term rota. */
   function dayIsRed(iso, weekdayIndex, staffId, worked, extraRed) {
+    if (typeof global.portalStaffCalendarDateBeforeFirstSession === "function"
+      && global.portalStaffCalendarDateBeforeFirstSession(iso, staffId)) {
+      return true;
+    }
     if (!staffDateInView(iso, staffId)) return true;
     if (staffExtraCalendarDates(staffId).indexOf(iso) >= 0) {
       if (staffOffWeekdayOnDate(iso, staffId)) return true;

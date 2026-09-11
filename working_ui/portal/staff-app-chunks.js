@@ -6,11 +6,11 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260911-tinashe-shadow-fold";
+  var VER = "20260911-emmanuel-wed9";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260909-bismark-full",
-    "/portal/term_calendar_dashboard_shared.js?v=20260903-tue-acat-ikram",
+    "/portal/term_from_timetable.js?v=20260911-emmanuel-wed9",
+    "/portal/term_calendar_dashboard_shared.js?v=20260911-emmanuel-wed9",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260911-emmanuel-photo",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260911-emanuel-alias",
     "/portal/portal_staff_feedback_data_loader.js?v=20260910-pwa-off-joelle",

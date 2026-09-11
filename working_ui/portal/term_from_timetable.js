@@ -104,6 +104,11 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termClientFirstSessionDate": {
     "cyrus": "2026-09-06"
   },
+  "termStaffFirstSessionDateByProfileKey": {
+    "emmanuel": "2026-09-09",
+    "emmanuelamoakohene": "2026-09-09",
+    "nanaamoakohene745": "2026-09-09"
+  },
   "termHalfTermWeekStarts": [
     "2026-10-26"
   ],

@@ -254,6 +254,10 @@
         });
       });
       if(!foundAny) return [];
+      const first = portalStaffFirstSessionDateIso(staffId);
+      if(first){
+        return out.filter(function(d){ return d >= first; }).sort();
+      }
       return out.sort();
     }
     function portalStaffHasNoAutumnTermSessions(staffId){
@@ -268,6 +272,50 @@
       return /^(angel|giuseppe|andres|andr[eé]s)$/i.test(id);
     }
     try{ window.portalStaffHasNoAutumnTermSessions = portalStaffHasNoAutumnTermSessions; }catch(_){}
+    /** Hire Emmanuel Amoakohene (login Emmanuel / nanaamoakohene745) — not standing Emanuel. */
+    function portalStaffIsHireEmmanuelAmoakohene(){
+      try{
+        const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
+        const user = box && box.session && box.session.user;
+        const p = (box && box.staff_profile) || {};
+        const email = String((user && user.email) || p.email_personal || '').trim().toLowerCase();
+        if(email === 'nanaamoakohene745@gmail.com') return true;
+        const uname = String(p.username || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '');
+        if(uname === 'emmanuel' || uname === 'emmanuelamoakohene' || uname.indexOf('amoakohene') >= 0) return true;
+        const fname = String(p.full_name || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+        if(fname.indexOf('amoakohene') >= 0) return true;
+      }catch(_){}
+      return false;
+    }
+    function portalStaffFirstSessionDateIso(staffId){
+      if(portalStaffIsHireEmmanuelAmoakohene()) return '2026-09-09';
+      const id = String(staffId || '').trim().toLowerCase();
+      const t = typeof window !== 'undefined' ? window.PORTAL_TERM_FROM_TIMETABLE : null;
+      const map = t && t.termStaffFirstSessionDateByProfileKey;
+      if(!id || !map || typeof map !== 'object') return '';
+      const keys = typeof portalTermStaffProfileLookupKeys === 'function'
+        ? portalTermStaffProfileLookupKeys(id)
+        : [id];
+      for(let i = 0; i < keys.length; i++){
+        const iso = String(map[keys[i]] || '').trim().slice(0, 10);
+        if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+      }
+      return '';
+    }
+    try{ window.portalStaffFirstSessionDateIso = portalStaffFirstSessionDateIso; }catch(_){}
+    function portalStaffCalendarDateBeforeFirstSession(isoYmd, staffId){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      const first = portalStaffFirstSessionDateIso(staffId);
+      return !!(iso && first && iso < first);
+    }
+    try{ window.portalStaffCalendarDateBeforeFirstSession = portalStaffCalendarDateBeforeFirstSession; }catch(_){}
     function portalStaffHasShiftOnCalendarDate(isoYmd, staffId){
       const dates = portalTermStaffShiftDatesFor(staffId);
       if(dates === null) return null;
@@ -430,6 +478,7 @@
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(!iso || !sid || !w) return true;
+      if(portalStaffCalendarDateBeforeFirstSession(iso, sid)) return false;
       /* Departed Autumn staff: never paint / project summer weekday snaps. */
       if(portalStaffHasNoAutumnTermSessions(sid) && !portalCalendarIsoUsesSummerDatedRosterOnly(iso)){
         return false;
@@ -2055,6 +2104,7 @@
           return [];
         }
       }
+      if(sid && portalStaffCalendarDateBeforeFirstSession(iso, sid)) return [];
       const acc = [];
       (sessionsModel || []).forEach(function(s){
         if(!s) return;
@@ -3527,6 +3577,8 @@
       );
       const extra = [];
       portalPickLatestInstructorCoverOverridesForStaff(staffId, sessionDateKey).forEach(function(ov){
+        if(typeof portalStaffCalendarDateBeforeFirstSession === 'function'
+          && portalStaffCalendarDateBeforeFirstSession(sessionDateKey, staffId)) return;
         const cov = portalInstructorCoverStaffKeyFromOverride(ov) || portalNormKeyStr(staffId);
         const hubWinFix = portalNormSep6JohnEmanuelHubCoverWindow(ov);
         const tinWinFix = portalNormTinasheBespokeCoverWindow(ov);
@@ -3843,6 +3895,8 @@
       // so normalise both sides the same way before matching.
       const normStaffKey = function(v){ return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, ''); };
       const staffIdNorm = normStaffKey(staffId);
+      if(!(typeof portalStaffCalendarDateBeforeFirstSession === 'function'
+        && portalStaffCalendarDateBeforeFirstSession(sessionDateKey, staffId))){
       portalScheduleOverrideRowsForSessionIso(sessionDateKey).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(ov.override_type !== 'session_add') return;
@@ -3902,6 +3956,7 @@
           __portalScheduleOverride: ov
         });
       });
+      }
 
       function portalTodayItemIsCancelledCard(it){
         if(!it) return false;

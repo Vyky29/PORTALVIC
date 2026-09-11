@@ -218,6 +218,10 @@
         if(sid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)){
           return [];
         }
+        if(sid && typeof portalStaffCalendarDateBeforeFirstSession === 'function'
+          && portalStaffCalendarDateBeforeFirstSession(iso, sid)){
+          return [];
+        }
       }catch(_awayList){}
       if(typeof buildSelectedDayViewFromLauraModel !== 'function') return [];
       const prevDateLock = String(typeof __PORTAL_REVIEW_DATE_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DATE_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DATE_URL_LOCK) || '');
