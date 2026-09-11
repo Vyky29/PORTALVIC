@@ -3512,6 +3512,12 @@
       if (/hub/.test(placeBlob)) return "Hub Room";
       return "Hub Room";
     }
+    if (/day\s*centre|daycentre|\bdc\b/.test(lab)) {
+      if (/swimfarm|swim\s*farm/.test(placeBlob)) return "SwimFarm";
+      if (/acton/.test(placeBlob)) return "Acton";
+      if (venue) return venue;
+      return "SwimFarm";
+    }
     if (/aquatic|swim/.test(lab) && !/multi/.test(lab)) {
       if (/acton/.test(placeBlob)) return "Acton";
       if (/northolt/.test(placeBlob)) return "Northolt";

@@ -1866,9 +1866,13 @@
     }
     .pp-hub-ops__slot {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      align-items: center;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas:
+        "ico body"
+        "ico meta";
+      align-items: start;
       column-gap: 12px;
+      row-gap: 8px;
       min-width: 0;
       padding: 12px 14px;
       border-radius: 16px;
@@ -1878,6 +1882,7 @@
       overflow: hidden;
     }
     .pp-hub-ops__slot-ico {
+      grid-area: ico;
       flex: none;
       width: 40px;
       height: 40px;
@@ -1893,6 +1898,7 @@
       display: block;
     }
     .pp-hub-ops__slot-body {
+      grid-area: body;
       flex: 1 1 auto;
       min-width: 0;
       display: flex;
@@ -1903,13 +1909,15 @@
       font-size: 15px;
       font-weight: 800;
       color: var(--ink);
-      overflow-wrap: break-word;
+      overflow-wrap: anywhere;
+      word-break: normal;
       min-width: 0;
+      max-width: 100%;
     }
     .pp-hub-ops__slot-time {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 6px;
       font-size: 15px;
       line-height: 1.2;
@@ -1917,20 +1925,35 @@
       color: var(--ink);
       white-space: nowrap;
       min-width: 0;
-      text-align: center;
+      text-align: left;
     }
     .pp-hub-ops__slot-end {
-      grid-column: 3;
-      grid-row: 1;
-      align-self: center;
-      justify-self: end;
-      display: inline-flex;
+      grid-area: meta;
+      justify-self: stretch;
+      display: flex;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: flex-start;
       gap: 6px 8px;
       min-width: 0;
       max-width: 100%;
+    }
+    @media (min-width: 420px) {
+      .pp-hub-ops__slot {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "ico body end";
+        align-items: center;
+        row-gap: 0;
+      }
+      .pp-hub-ops__slot-end {
+        grid-area: end;
+        justify-content: flex-end;
+        max-width: 12rem;
+      }
+      .pp-hub-ops__slot-time {
+        justify-content: center;
+        text-align: center;
+      }
     }
     .pp-hub-ops__session-done-chip {
       flex: 0 1 auto;
@@ -5600,7 +5623,7 @@
   <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/parent_portal_team.js?v=20260911-team-staff-id"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260911-term-cal"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260911-team-staff-id"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260911-absent-quickmarks"></script>
   <script src="/portal/parent_portal_app.js?v=20260911-absent-hub"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>

@@ -166,11 +166,38 @@ export function scheduleOverrideCountsAsCancelledForClient(
   return type === "slot_close" || type === "client_cancelled";
 }
 
+export type ParentQuickMarkRow = {
+  session_date?: unknown;
+  portal_session_key?: unknown;
+  mark_type?: unknown;
+};
+
+/** Staff/admin Absent tap (portal_staff_session_quick_marks) — not session_feedback. */
+export function quickMarkCountsAsAbsentForClient(
+  mark: ParentQuickMarkRow,
+  clientSlugs: Set<string>,
+  termStartIso = PARENT_SESSION_TERM_START_ISO,
+): boolean {
+  if (cleanStr(mark.mark_type, 40).toLowerCase() !== "absent") return false;
+  const iso = isoFromSessionDate(mark.session_date);
+  if (!iso || iso < termStartIso) return false;
+  const rawKey = cleanStr(mark.portal_session_key, 240).toLowerCase();
+  if (!rawKey) return false;
+  for (const slug of clientSlugs) {
+    if (!slug) continue;
+    if (rawKey.includes("|" + slug + "|") || rawKey.endsWith("|" + slug)) return true;
+    const parts = rawKey.split("|").map((p) => rosterParticipantSlugAlias(slugifyParticipantKey(p)));
+    if (parts.includes(slug)) return true;
+  }
+  return false;
+}
+
 export function buildParentAttendanceSummary(
   feedbackRows: ParentAttendanceFeedbackRow[],
   overrideRows: ParentScheduleOverrideRow[],
   clientSlugs: string[],
   termStartIso = PARENT_SESSION_TERM_START_ISO,
+  quickMarkRows: ParentQuickMarkRow[] = [],
 ): ParentAttendanceSummary {
   const slugSet = new Set(
     clientSlugs.map((s) => rosterParticipantSlugAlias(slugifyParticipantKey(s))).filter(Boolean),
@@ -209,6 +236,14 @@ export function buildParentAttendanceSummary(
     if (attendedSlots.has(key) || absentSlots.has(key)) continue;
     absentSlots.add(key);
     makeupAbsent++;
+  }
+
+  for (const mark of quickMarkRows || []) {
+    if (!quickMarkCountsAsAbsentForClient(mark, slugSet, termStartIso)) continue;
+    const iso = isoFromSessionDate(mark.session_date);
+    if (!iso) continue;
+    /* One absent day chip per ISO is enough for parent hub TODAY / term paint. */
+    absentSlots.add(`${iso}|quick|~`);
   }
 
   const attended = attendedSlots.size;

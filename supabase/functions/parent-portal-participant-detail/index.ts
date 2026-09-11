@@ -1402,11 +1402,35 @@ Deno.serve(async (req) => {
         placeLeftFromIso = iso;
       }
     }
+    /* Staff/admin Absent taps live here — not always in session_feedback. */
+    let quickMarkRows: Array<Record<string, unknown>> = [];
+    const slugOr = clientSlugs
+      .slice(0, 12)
+      .map((s) => String(s || "").trim().toLowerCase())
+      .filter(Boolean)
+      .map((s) => `portal_session_key.ilike.%${s}%`)
+      .join(",");
+    if (slugOr) {
+      const { data: qm, error: qmErr } = await supabase
+        .from("portal_staff_session_quick_marks")
+        .select("portal_session_key, session_date, mark_type")
+        .eq("mark_type", "absent")
+        .gte("session_date", feedbackTermStartIso)
+        .lte("session_date", feedbackTermEndIso)
+        .or(slugOr)
+        .limit(400);
+      if (qmErr) {
+        console.error("[parent-portal-participant-detail] quick_marks error", qmErr);
+      } else {
+        quickMarkRows = Array.isArray(qm) ? qm : [];
+      }
+    }
     attendanceSummary = buildParentAttendanceSummary(
       rawFeedback,
       overrideRows || [],
       clientSlugs,
       feedbackTermStartIso,
+      quickMarkRows,
     );
   } else if (wantAttendanceChips && rawFeedback.length) {
     attendanceSummary = buildParentAttendanceSummary(
@@ -1414,6 +1438,7 @@ Deno.serve(async (req) => {
       [],
       clientSlugs,
       feedbackTermStartIso,
+      [],
     );
   }
 
