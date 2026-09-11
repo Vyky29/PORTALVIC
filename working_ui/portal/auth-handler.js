@@ -1470,7 +1470,7 @@ async function runPortalDashboardAuthSideEffects(ctx) {
       throw new Error("skip_presence_on_lead_overview");
     }
     const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-      "./portal_live_presence.js?v=20260909-parent-booking-live"
+      "./portal_live_presence.js?v=20260911-qm-rt-quiet"
     );
     await startPortalLivePresence({ page, profile, session });
     if (document.getElementById("portalLivePresenceBar")) {

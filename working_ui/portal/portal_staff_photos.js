@@ -308,8 +308,19 @@
     }
   }
 
+  function portalRealtimeDebugEnabled() {
+    try {
+      if (global.PORTAL_DEBUG_REALTIME === true) return true;
+      var q = String((global.location && global.location.search) || "");
+      return /(?:^|[?&])portalDebug(?:Rt)?=1(?:&|$)/i.test(q);
+    } catch (_) {
+      return false;
+    }
+  }
+
   function portalWarnUnlessOffline(label, status, err) {
     if (portalNetworkIsOffline()) return;
+    if (!portalRealtimeDebugEnabled()) return;
     try {
       if (!global.__PORTAL_WARN_LOG__) global.__PORTAL_WARN_LOG__ = Object.create(null);
       var key = String(label || "warn").trim();
@@ -324,9 +335,10 @@
     console.warn(label, status, err || "");
   }
 
-  /** Avoid F12 spam when Realtime reconnects in a loop (warn once per label / minute). */
+  /** Realtime CHANNEL_ERROR / reconnect noise stays silent unless ?portalDebug=1. */
   function portalRealtimeLogChannelIssue(label, status, err) {
     if (portalNetworkIsOffline()) return;
+    if (!portalRealtimeDebugEnabled()) return;
     try {
       if (!global.__PORTAL_RT_ERR_LOG__) global.__PORTAL_RT_ERR_LOG__ = Object.create(null);
       const key = String(label || "realtime").trim();
@@ -347,6 +359,7 @@
     try {
       const key = String(label || "").trim();
       if (key && global.__PORTAL_RT_ERR_LOG__) delete global.__PORTAL_RT_ERR_LOG__[key];
+      if (key && global.__PORTAL_RT_RETRY__) delete global.__PORTAL_RT_RETRY__[key];
     } catch (_) {}
   }
 
@@ -380,10 +393,11 @@
       if (!global.__PORTAL_RT_RETRY__) global.__PORTAL_RT_RETRY__ = Object.create(null);
       var rk = String(label || chKey || "rt").trim();
       var n = Number(global.__PORTAL_RT_RETRY__[rk]) || 0;
-      if (n >= 2) return;
+      /* One quiet retry — looping re-subscribe + unique channel names flooded the main thread. */
+      if (n >= 1) return;
       global.__PORTAL_RT_RETRY__[rk] = n + 1;
     } catch (_) {}
-    setTimeout(initFn, 2500);
+    setTimeout(initFn, 8000);
   }
 
   function bindPortalRealtimeOnlineReconnect() {

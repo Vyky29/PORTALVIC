@@ -1439,7 +1439,7 @@
           return;
         }
         var ch = box.client
-          .channel("staff-schedule-overrides-" + String(Date.now()))
+          .channel("staff-schedule-overrides")
           .on(
             "postgres_changes",
             { event: "*", schema: "public", table: "schedule_overrides" },
@@ -1468,10 +1468,6 @@
                   status,
                   err
                 );
-              }else if(typeof window.portalWarnUnlessOffline === "function"){
-                window.portalWarnUnlessOffline("[portal] Realtime schedule_overrides", status, err);
-              }else if(typeof navigator === "undefined" || navigator.onLine !== false){
-                console.warn("[portal] Realtime schedule_overrides", status, err || "");
               }
             }
           });
@@ -1494,7 +1490,7 @@
           return;
         }
         var ch = box.client
-          .channel("staff-portal-announcements-" + String(Date.now()))
+          .channel("staff-portal-announcements")
           .on(
             "postgres_changes",
             { event: "*", schema: "public", table: "portal_staff_announcements" },
@@ -1522,10 +1518,6 @@
                   status,
                   err
                 );
-              }else if(typeof window.portalWarnUnlessOffline === "function"){
-                window.portalWarnUnlessOffline("[portal] Realtime portal_staff_announcements", status, err);
-              }else if(typeof navigator === "undefined" || navigator.onLine !== false){
-                console.warn("[portal] Realtime portal_staff_announcements", status, err || "");
               }
             }
           });

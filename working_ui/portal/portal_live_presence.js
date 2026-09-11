@@ -291,7 +291,9 @@ function bindPresenceResumeListeners(page, profile, session) {
 async function subscribeAndTrack(supabase, payload) {
   return new Promise((resolve) => {
     const timeout = setTimeout(() => {
-      console.warn("[portal] presence subscribe timeout");
+      if (typeof globalThis.portalRealtimeLogChannelIssue === "function") {
+        globalThis.portalRealtimeLogChannelIssue("[portal] presence subscribe timeout", "TIMED_OUT", null);
+      }
       resolve(false);
     }, SUBSCRIBE_TIMEOUT_MS);
 
