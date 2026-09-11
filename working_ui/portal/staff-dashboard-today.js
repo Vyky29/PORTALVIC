@@ -297,6 +297,42 @@
         return false;
       }
     }
+    /** Jul DC stamps (Fadi) must not paint Fri 11–20; seats on the Fadi-away board still should. */
+    function portalFadiAbsentBoardIncludesSession(isoYmd, s){
+      const iso = normaliseIsoDate(isoYmd);
+      if(!iso || !s) return false;
+      try{
+        const canon = (typeof window !== 'undefined' && window.PortalRosterCanonical)
+          ? window.PortalRosterCanonical
+          : null;
+        if(!canon || !canon.FADI_ABSENT_DC_BOARD) return false;
+        const dow = new Date(iso + 'T12:00:00').getDay();
+        const dk = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dow];
+        const cols = (canon.FADI_ABSENT_DC_BOARD[dk] || []);
+        const staffHint = String(
+          s.staffId || s.__portalRosterInstructorsRaw || s.instructors || ''
+        ).trim();
+        const client = String(s.clientName || s.clientDisplay || s.clientId || '')
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, ' ');
+        if(!staffHint || !client) return false;
+        for(let i = 0; i < cols.length; i++){
+          const col = cols[i];
+          if(!col) continue;
+          const colStaff = String(col.staff || '').trim();
+          if(!colStaff) continue;
+          if(!(portalStaffIdsMatchLoose(colStaff, staffHint) || portalStaffIdsMatchLoose(colStaff, s.staffId))) continue;
+          const seats = Array.isArray(col.clients) ? col.clients : [];
+          for(let j = 0; j < seats.length; j++){
+            const cn = String(seats[j] && seats[j].name || '').trim().toLowerCase();
+            if(!cn) continue;
+            if(client === cn || client.indexOf(cn) === 0 || cn.indexOf(client.split(' ')[0]) === 0) return true;
+          }
+        }
+      }catch(_){}
+      return false;
+    }
     /** After calendar-date instructor remap, is this worker still on the seat? */
     function portalStaffSessionKeptAfterCalendarInstructorRemap(s, calendarIso, staffId){
       if(!s) return false;
@@ -720,8 +756,17 @@
         }
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
         if(portalIsoIsAutumnWeek1Dc(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
-        /* Fri 11–20 Fadi-away DC: dated board only — never Jul standing (Fadi). */
-        if(portalIsoIsFadiAbsentDcBoard(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
+        /* Fri 11–20 Fadi-away DC: dated board rows, or Jul snap seats that are on that board
+         * (Roberto Emanuel 11–3). Never project Jul Fadi onto this window. */
+        if(portalIsoIsFadiAbsentDcBoard(iso) && portalSessionIsDayCentreService(s)){
+          if(rowIso === iso) return true;
+          const dcSnap = portalDayCentreStandingSnapIso(w);
+          if(dcSnap && rowIso === dcSnap && portalFadiAbsentBoardIncludesSession(iso, s)){
+            if(portalStaffClientHasDatedSameProgrammeOnIso(iso, s)) return false;
+            return true;
+          }
+          return false;
+        }
         /* Dated overlay for this calendar day (trial / cover) always applies. */
         if(rowIso === iso) return true;
         if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return false;
@@ -765,6 +810,7 @@
         window.portalSessionSpreadsheetRowMatchesCalendarDate = portalSessionSpreadsheetRowMatchesCalendarDate;
         window.portalStaffSessionKeptAfterCalendarInstructorRemap = portalStaffSessionKeptAfterCalendarInstructorRemap;
         window.portalIsoIsFadiAbsentDcBoard = portalIsoIsFadiAbsentDcBoard;
+        window.portalFadiAbsentBoardIncludesSession = portalFadiAbsentBoardIncludesSession;
       }
     }catch(_){}
     function portalScheduleOverrideFetchIsoList(opts){
@@ -4221,6 +4267,13 @@
           if(typeof portalStaffClientSessionsOnCalendarDate === 'function'
             && portalStaffClientSessionsOnCalendarDate(iso, dayWord, sid)) return false;
           return true;
+        }
+        /* Timetable workday (e.g. Roberto Friday) is not a day off — empty projection
+         * must still try to paint cards, not the "does not work today" panel. */
+        if(iso && typeof portalStaffHasShiftOnCalendarDate === 'function'
+          && portalStaffHasShiftOnCalendarDate(iso, sid) === true){
+          if(iso && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)) return true;
+          return false;
         }
         if(iso && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(iso, sid)) return true;
         if(typeof portalTermCalendarDayIsRed === 'function'
