@@ -1240,8 +1240,27 @@
       return key >= fromIso && key <= todayKey;
     }
     function portalTermCalendarDayCountsForOutstanding(iso, fbMap){
-      const st = fbMap && fbMap[String(iso || '').trim().slice(0, 10)];
-      return st === 'pending' || st === 'late';
+      const key = String(iso || '').trim().slice(0, 10);
+      const st = fbMap && fbMap[key];
+      if(st !== 'pending' && st !== 'late') return false;
+      /* Today is often "pending" in the term map before the first session starts.
+         Alerts / push wait until the full today shift +15 min, and only if there is
+         a real ended-session backlog (same as orange Today cards). */
+      try{
+        const todayKey = typeof getLocalDateKey === 'function' ? getLocalDateKey() : '';
+        if(key === todayKey){
+          if(
+            typeof portalStaffTodayShiftEndedForFeedbackReminders === 'function'
+            && !portalStaffTodayShiftEndedForFeedbackReminders()
+          ){
+            return false;
+          }
+          if(typeof collectSessionReviewPendingStats === 'function'){
+            return (collectSessionReviewPendingStats().pending || []).length > 0;
+          }
+        }
+      }catch(_){}
+      return true;
     }
     var _portalOutstandingFbCountCache = { key: '', n: 0, at: 0 };
     var _portalReminderStateCache = null;
