@@ -922,12 +922,12 @@
        * after a *calendar* remap (Emanuel Fri Tinashe from 11 Sep). Keep anyone
        * named on the raw row; Today/Term drop them when the viewed day remaps them off.
        */
+      const instructorKeys = instructorProfileKeysForRow(instructorsResolved, profiles)
+        .concat(instructorProfileKeysForRow(instructorsRaw, profiles));
       const targetSet = Object.create(null);
-      instructorProfileKeysForRow(instructorsResolved, profiles)
-        .concat(instructorProfileKeysForRow(instructorsRaw, profiles))
-        .forEach(function (k) {
-          targetSet[normalizePersonId(k)] = true;
-        });
+      instructorKeys.forEach(function (k) {
+        targetSet[normalizePersonId(k)] = true;
+      });
       if (!targetSet[wanted]) return;
 
       let nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
@@ -1010,7 +1010,7 @@
       const isManagerSlot = nameLower === "manager";
 
       const selfKey =
-        targets.find((k) => normalizePersonId(k) === wanted) ||
+        instructorKeys.find((k) => normalizePersonId(k) === wanted) ||
         String(staffIdForMatch || "").trim().toLowerCase();
       /* Always stamp canonical roster id (luliya not lulia) so Today/Week filters match auth. */
       const staffKeyOut = normalizePersonId(stored || selfKey) || String(stored || selfKey || "").toLowerCase();
