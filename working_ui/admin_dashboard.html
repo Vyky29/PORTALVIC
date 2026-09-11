@@ -156,7 +156,7 @@
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260910-yunis-se"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260911-anas-javi-cover"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260911-yusuf-ah"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -28622,11 +28622,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       'jack w': 'jack walker',
       'jack s': 'jack stratton',
       // Registration is "Yusuf Ahmed" (mother Fatimah Ahmed). The Sunday roster
-      // splits him across three short names — "Yusuf" (Aquatic 9:00–10:15 pool with
-      // Roberto), "Yusuf Ah" (Multi-Activity 10:15–11:00 class) and "Yusef" (Climbing
-      // 11:00–12:00). Pin every variant to the full name so they merge into one
-      // participant and all three services show (single-token "Yusuf" otherwise fails
-      // the booked-services matcher and the Aquatic segment goes missing).
+      // short names are "Yusuf" / "Yusuf Ah" (pool, Hub Multi, Climbing). Pin every
+      // variant to the full name so they merge into one participant and all three
+      // services show (single-token "Yusuf" otherwise fails the booked-services matcher
+      // and the Aquatic segment goes missing).
       'yusef': 'yusuf ahmed',
       'yusuf': 'yusuf ahmed',
       // Confirmed same-person spelling variants: roster/short names pinned to the full

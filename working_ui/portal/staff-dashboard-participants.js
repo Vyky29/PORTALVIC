@@ -653,6 +653,10 @@
         .replace(/\s*\(\s*trial[^)]*\)\s*/gi, ' ')
         .replace(/\s+/g, ' ')
         .trim();
+      if(/^yusef\b/i.test(stripped)){
+        stripped = stripped.replace(/^yusef\b/i, 'Yusuf');
+        if(/^yusuf$/i.test(stripped)) stripped = 'Yusuf Ah';
+      }
       return stripped || s;
     }
     function portalTodayClientNotesForSession(s){

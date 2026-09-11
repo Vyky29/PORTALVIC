@@ -2554,7 +2554,7 @@
 
   var AUTUMN_SUNDAY_CLIMBING_BOARD = [
     { staff: "ALEX", name: "Eiji", time: "10 to 11" },
-    { staff: "ALEX", name: "Yusef", time: "11 to 12" },
+    { staff: "ALEX", name: "Yusuf Ah", time: "11 to 12" },
     { staff: "ALEX", name: "No participant", time: "12 to 1" },
     { staff: "ALEX", name: "Rodin", time: "1 to 2" },
     { staff: "ALEX", name: "No participant", time: "2 to 3" },

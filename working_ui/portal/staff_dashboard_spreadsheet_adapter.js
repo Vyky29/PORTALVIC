@@ -626,6 +626,9 @@
     put("yosiyas", "Yossi");
     put("yunis", "Yunis");
     put("yunis_hussein", "Yunis");
+    put("yusuf_ah", "Yusuf Ah");
+    put("yusef", "Yusuf Ah");
+    put("yusuf", "Yusuf Ah");
     put("tinashe", "Tinashe");
     put("tinashe_nekati", "Tinashe");
     try {
@@ -685,6 +688,9 @@
     }
     if (cid === "yunis") {
       return "Yunis";
+    }
+    if (cid === "yusuf_ah" || cid === "yusef" || cid === "yusuf") {
+      return "Yusuf Ah";
     }
     if (cid && map[cid]) return map[cid];
     const name = coreName || rawIn;
