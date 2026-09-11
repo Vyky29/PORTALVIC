@@ -350,7 +350,7 @@
       "</div></div></details>" +
       '<section id="c4kServicesRosterAnchor" aria-label="Roster" style="min-width:0;scroll-margin-top:14px">' +
       '<h2 class="page-title" style="font-size:1.15rem;margin:14px 0 6px;min-width:0;overflow-wrap:break-word">1 · Roster permanente</h2>' +
-      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who holds each weekday seat for Autumn 26/27 (display week). Metrics count Autumn only — not Apr-Jul. Day make-ups stay in Schedule &amp; Covers.</p>' +
+      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Live weekday seats for Autumn 26/27 (who holds the place now). Left seats show as No participant and feed Booking Portal. Day covers / absences stay in Schedule &amp; Covers and Sessions Overview.</p>' +
       '<div id="c4kServicesRosterRoot" style="min-width:0">' +
       rosterPart +
       "</div></section>" +

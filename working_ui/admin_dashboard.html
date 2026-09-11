@@ -4621,13 +4621,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var venue = String(s.venue||'');
       var sheetDay = String(s.day || '');
       var clientSlug = String(s.clientId||'').toLowerCase();
-      /* Autumn Schedules & Covers: honour re-enrol releases (same rules as Services). */
-      if(adminSchedUsesStandingProjection(sessionDateIso) &&
-         bookingIsBookedClientSlug(clientSlug) &&
-         typeof adminServicePaxReleasedByReenrol === 'function' &&
-         adminServicePaxReleasedByReenrol(clientName, programme || rosterService, venue, sheetDay)){
-        clientName = 'No participant';
-        clientSlug = 'no_participant';
+      /* Live standing seat: re-enrol releases + gone-from dates → open (Booking Portal). */
+      if(bookingIsBookedClientSlug(clientSlug)){
+        var released =
+          typeof adminServicePaxReleasedByReenrol === 'function' &&
+          adminServicePaxReleasedByReenrol(clientName, programme || rosterService, venue, sheetDay);
+        var gone =
+          typeof adminServiceClientAllowedOnDate === 'function' &&
+          !adminServiceClientAllowedOnDate(clientName, sessionDateIso);
+        if(released || gone){
+          clientName = 'No participant';
+          clientSlug = 'no_participant';
+        }
       }
       return {
         demoId: schedEncodeRowId(sessionDateIso, s),
@@ -8022,7 +8027,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           /* skip closed for participant board */
         }else if(bookingIsBookedClientSlug(slug)){
           pax = String(sl.clientDisplay || '').trim() || slug;
-          if(pax && adminServicePaxReleasedByReenrol(pax, sl.programme || sl.rosterService, sl.venue, 'sunday')){
+          if(pax && adminServicePaxSeatIsOpenLive(pax, sl.programme || sl.rosterService, sl.venue, 'sunday', sl.sessionDate)){
             pax = '';
           }
         }
@@ -8270,7 +8275,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         slug = String(sl.clientSlug || '').trim().toLowerCase();
         if(adminServicesDayCentreIsDutyClient(pax)) continue;
         if(slug && !bookingIsBookedClientSlug(slug) && !pax) continue;
-        if(pax && adminServicePaxReleasedByReenrol(pax, sl.programme || sl.rosterService, sl.venue, sl.sheetDay)) continue;
+        if(pax && adminServicePaxSeatIsOpenLive(pax, sl.programme || sl.rosterService, sl.venue, sl.sheetDay, sl.sessionDate)) continue;
         timeLab = String(sl.timeSlotLabel || sl.anchorTimeLabel || '').trim();
         if(!timeLab && sl.anchorStart && sl.anchorEnd){
           timeLab = String(sl.anchorStart).slice(0, 5) + ' to ' + String(sl.anchorEnd).slice(0, 5);
@@ -19227,6 +19232,41 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return false;
     }
+    /** Lookup STAFF_DASHBOARD_SOURCE client maps by display name or canonical slug. */
+    function adminServiceClientConfigMapEntry(map, clientName){
+      if(!map) return null;
+      var name = String(clientName || '').trim();
+      if(!name) return null;
+      if(map[name] != null) return map[name];
+      var slug = adminCanonicalClientSlug(name);
+      for(var k in map){
+        if(!Object.prototype.hasOwnProperty.call(map, k)) continue;
+        if(adminCanonicalClientSlug(k) === slug) return map[k];
+      }
+      return null;
+    }
+    /**
+     * Same live seat rule as Sessions Overview: start dates + gone-from dates.
+     * From gone-from day onward the standing seat is No participant (Booking Portal open).
+     */
+    function adminServiceClientAllowedOnDate(clientName, isoDate){
+      var iso = String(isoDate || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return true;
+      var src = window.STAFF_DASHBOARD_SOURCE || {};
+      var start = adminServiceClientConfigMapEntry(src.clientRosterStartDates, clientName);
+      if(start && /^\d{4}-\d{2}-\d{2}$/.test(String(start)) && iso < String(start)) return false;
+      var goneFrom = adminServiceClientConfigMapEntry(src.clientRosterGoneFromDates, clientName);
+      if(goneFrom && /^\d{4}-\d{2}-\d{2}$/.test(String(goneFrom)) && iso >= String(goneFrom)) return false;
+      return true;
+    }
+    /** Standing seat blanked for Booking Portal (re-enrol release or gone-from). */
+    function adminServicePaxSeatIsOpenLive(paxName, programme, venue, dowNorm, calendarIso){
+      var name = String(paxName || '').trim();
+      if(!name) return true;
+      if(adminServicePaxReleasedByReenrol(name, programme, venue, dowNorm)) return true;
+      if(calendarIso && !adminServiceClientAllowedOnDate(name, calendarIso)) return true;
+      return false;
+    }
     function adminEnumerateIsosInclusive(startIso, endIso){
       var out = [];
       var ds = bookingParseIsoLocal(String(startIso || '').trim());
@@ -20970,7 +21010,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 var plSlug = String((pl && pl.clientSlug) || '').trim().toLowerCase();
                 if(!bookingIsBookedClientSlug(plSlug)) continue;
                 var plCd = String((pl && pl.clientDisplay) || '').trim();
-                if(plCd && adminServicePaxReleasedByReenrol(plCd, B.programme, B.venue, B.dk)) continue;
+                if(plCd && adminServicePaxSeatIsOpenLive(plCd, B.programme, B.venue, B.dk, B.pickIso || pickIso0 || displayIso0)) continue;
                 if(plCd) venuePaxSet[plCd.toLowerCase()] = 1;
                 var plSn = String((pl && pl.staffName) || '').trim();
                 var plSnL = plSn.toLowerCase();
@@ -20999,7 +21039,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 var paxName = bookingIsBookedClientSlug(pSlug)
                   ? (String((ml && ml.clientDisplay) || '').trim() || pSlug)
                   : '';
-                if(paxName && adminServicePaxReleasedByReenrol(paxName, B.programme, B.venue, B.dk)){
+                if(paxName && adminServicePaxSeatIsOpenLive(paxName, B.programme, B.venue, B.dk, B.pickIso || pickIso0 || displayIso0)){
                   paxName = '';
                   pSlug = 'no_participant';
                 }
