@@ -60,8 +60,11 @@
       return model.some(function(s){
         if(!portalStaffIdsMatchLoose(s.staffId, sid)) return false;
         if(!portalSessionClientActiveOnDate(s, iso)) return false;
-        return typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
-          && portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, w);
+        if(typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
+          || !portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, w)) return false;
+        if(typeof portalStaffSessionKeptAfterCalendarInstructorRemap === 'function'
+          && !portalStaffSessionKeptAfterCalendarInstructorRemap(s, iso, sid)) return false;
+        return true;
       });
     }
     /** Timetable shift today but merged Supabase roster dropped dated rows — restore from shipped bundle once. */
@@ -274,6 +277,65 @@
     function portalIsoIsAutumnWeek1Dc(isoYmd){
       const iso = normaliseIsoDate(isoYmd);
       return !!(iso && iso >= "2026-09-01" && iso <= "2026-09-04");
+    }
+    /** Fri 11 – Fri 20 weekdays: Fadi-away DC board (same as Sessions Overview). */
+    function portalIsoIsFadiAbsentDcBoard(isoYmd){
+      const iso = normaliseIsoDate(isoYmd);
+      try{
+        const canon = (typeof window !== 'undefined' && window.PortalRosterCanonical)
+          ? window.PortalRosterCanonical
+          : null;
+        if(canon && typeof canon.isFadiAbsentDcBoardIso === 'function'){
+          return !!canon.isFadiAbsentDcBoardIso(iso);
+        }
+      }catch(_){}
+      if(!iso || iso < '2026-09-11' || iso >= '2026-09-21') return false;
+      try{
+        const dow = new Date(iso + 'T12:00:00').getDay();
+        return dow >= 1 && dow <= 5;
+      }catch(_d){
+        return false;
+      }
+    }
+    /** After calendar-date instructor remap, is this worker still on the seat? */
+    function portalStaffSessionKeptAfterCalendarInstructorRemap(s, calendarIso, staffId){
+      if(!s) return false;
+      const sid = String(staffId || s.staffId || '').trim();
+      if(!sid) return true;
+      const raw = String(
+        s.__portalRosterInstructorsRaw ||
+        s.__portalRosterInstructorBeforeOverride ||
+        s.instructors ||
+        ''
+      ).trim();
+      if(!raw) return true;
+      let remapped = raw;
+      try{
+        const canon = (typeof window !== 'undefined' && window.PortalRosterCanonical)
+          ? window.PortalRosterCanonical
+          : null;
+        if(canon && typeof canon.resolveAutumnInstructorsForCalendarDate === 'function'){
+          remapped = canon.resolveAutumnInstructorsForCalendarDate(raw, calendarIso, {
+            service: s.rosterService || s.activity || s.service || '',
+            day: s.day || '',
+            venue: s.venue || '',
+            clientName: s.clientName || s.clientDisplay || s.clientId || '',
+            client_name: s.clientName || s.clientDisplay || s.clientId || ''
+          });
+        }
+      }catch(_){}
+      remapped = String(remapped || '').trim();
+      if(!remapped) return false;
+      const parts = remapped.split(/[,/&+]|\band\b/i);
+      for(let i = 0; i < parts.length; i++){
+        const part = String(parts[i] || '').trim();
+        if(!part) continue;
+        if(typeof portalStaffIdsMatchLoose === 'function' && portalStaffIdsMatchLoose(part, sid)) return true;
+        const pk = part.toLowerCase().split(/\s+/)[0].replace(/[^a-z0-9]+/g, '');
+        const sk = sid.toLowerCase().replace(/[^a-z0-9]+/g, '');
+        if(pk && sk && (pk === sk || pk.indexOf(sk) === 0 || sk.indexOf(pk) === 0)) return true;
+      }
+      return false;
     }
     /** Standing weekday snap window (Services / reenrol): exclude crash weeks from 20 Jul. */
     function portalTermStandingSnapBounds(){
@@ -658,6 +720,8 @@
         }
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
         if(portalIsoIsAutumnWeek1Dc(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
+        /* Fri 11–20 Fadi-away DC: dated board only — never Jul standing (Fadi). */
+        if(portalIsoIsFadiAbsentDcBoard(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
         /* Dated overlay for this calendar day (trial / cover) always applies. */
         if(rowIso === iso) return true;
         if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return false;
@@ -699,6 +763,8 @@
     try{
       if(typeof window !== 'undefined'){
         window.portalSessionSpreadsheetRowMatchesCalendarDate = portalSessionSpreadsheetRowMatchesCalendarDate;
+        window.portalStaffSessionKeptAfterCalendarInstructorRemap = portalStaffSessionKeptAfterCalendarInstructorRemap;
+        window.portalIsoIsFadiAbsentDcBoard = portalIsoIsFadiAbsentDcBoard;
       }
     }catch(_){}
     function portalScheduleOverrideFetchIsoList(opts){
@@ -2807,9 +2873,14 @@
       const todaySessionsAfterFilter = baseModel.filter(function(s){
         if(programmeWidePack){
           if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
-            return portalSessionSpreadsheetRowMatchesCalendarDate(s, viewCalendarIso, anchorDayWord);
+            if(!portalSessionSpreadsheetRowMatchesCalendarDate(s, viewCalendarIso, anchorDayWord)) return false;
+          } else if(useIsoPin) {
+            if(normaliseIsoDate(s.session_date || s.sessionDate) !== isoPin) return false;
           }
-          if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
+          if(typeof portalStaffSessionKeptAfterCalendarInstructorRemap === 'function'
+            && !portalStaffSessionKeptAfterCalendarInstructorRemap(s, viewCalendarIso, staffId)){
+            return false;
+          }
           return true;
           /* ES-module scope check is not ready while classic scripts render — fall back to the inline check. */
           if(typeof window.portalLeadSpreadsheetSessionInScopeForLead === 'function'){
@@ -2827,10 +2898,17 @@
         }
         if(!portalStaffIdsMatchLoose(s.staffId, staffId)) return false;
         if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
-          return portalSessionSpreadsheetRowMatchesCalendarDate(s, viewCalendarIso, anchorDayWord);
+          if(!portalSessionSpreadsheetRowMatchesCalendarDate(s, viewCalendarIso, anchorDayWord)) return false;
+        } else if(useIsoPin) {
+          if(normaliseIsoDate(s.session_date || s.sessionDate) !== isoPin) return false;
+        } else {
+          return false;
         }
-        if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
-        return false;
+        if(typeof portalStaffSessionKeptAfterCalendarInstructorRemap === 'function'
+          && !portalStaffSessionKeptAfterCalendarInstructorRemap(s, viewCalendarIso, staffId)){
+          return false;
+        }
+        return true;
       }).filter(function(s){
         return !portalStaffDashboardOmitSpreadsheetSession(s, anchorDayWord, sessionDateKey);
       });

@@ -903,14 +903,32 @@
 
     rows.forEach((row) => {
       const sessionDate = String(row.session_date || row.date || "").trim().slice(0, 10);
+      const instructorsRaw = String(row.instructors || "").trim();
+      const remapMeta = {
+        service: row.service,
+        day: row.day,
+        venue: row.venue,
+        clientName: row.client_name,
+        client_name: row.client_name,
+      };
       const instructorsResolved = resolveInstructorsForSessionDate(
-        row.instructors,
+        instructorsRaw,
         sessionDate,
         source,
-        { service: row.service, day: row.day, venue: row.venue }
+        remapMeta
       );
-      const targets = instructorProfileKeysForRow(instructorsResolved, profiles);
-      if (!targets.some((k) => normalizePersonId(k) === wanted)) return;
+      /*
+       * Standing template stamps (Jul 13–17) must not drop staff who only appear
+       * after a *calendar* remap (Emanuel Fri Tinashe from 11 Sep). Keep anyone
+       * named on the raw row; Today/Term drop them when the viewed day remaps them off.
+       */
+      const targetSet = Object.create(null);
+      instructorProfileKeysForRow(instructorsResolved, profiles)
+        .concat(instructorProfileKeysForRow(instructorsRaw, profiles))
+        .forEach(function (k) {
+          targetSet[normalizePersonId(k)] = true;
+        });
+      if (!targetSet[wanted]) return;
 
       let nameRaw = normalizeWorkerClientName(String(row.client_name || "").trim(), row.client_name);
       // Fictitious office holds stay off the worker dashboard (waitlist probe seats).
@@ -1033,6 +1051,8 @@
         rosterService,
         rosterArea,
         timeSlotLabel,
+        __portalRosterInstructorsRaw: instructorsRaw,
+        clientName: nameRaw,
       };
       if (Array.isArray(row.segments) && row.segments.length) {
         baseSession.segments = row.segments;
@@ -1085,7 +1105,6 @@
         );
         if (fallback) baseSession.segments = fallback;
       }
-      const instructorsRaw = String(row.instructors || "").trim();
       if (
         instructorsRaw &&
         instructorsResolved &&
