@@ -240,6 +240,20 @@
       "avatarFile": "portal/staff_photos/teflon.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
+    },
+    "emmanuel": {
+      "staffId": "emmanuel",
+      "staffName": "Emmanuel",
+      "avatarFile": "portal/staff_photos/emmanuel.png?v=20260911-emmanuel-png",
+      "staffRoleTrack": "swimming",
+      "canViewAll": false
+    },
+    "emanuel": {
+      "staffId": "emanuel",
+      "staffName": "Emmanuel",
+      "avatarFile": "portal/staff_photos/emmanuel.png?v=20260911-emmanuel-png",
+      "staffRoleTrack": "swimming",
+      "canViewAll": false
     }
   },
   "expectedSessionsByWeekday": {

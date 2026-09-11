@@ -204,6 +204,8 @@
       }
       if (!STAFF_PHOTO_FILES[key]) return;
       if (key === "emmanuel" || key === "emanuel") {
+        pushCandidate(urls, base + "emmanuel.png");
+        pushCandidate(urls, base + "emanuel.png");
         pushCandidate(urls, base + "emmanuel.jpg");
         pushCandidate(urls, base + "emanuel.jpg");
         return;

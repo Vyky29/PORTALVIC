@@ -39,7 +39,7 @@
     "/portal/portal_swimming_instructor_menus.js?v=20260904-michelle-interviews",
     "/portal/portal_area_note_icons.js?v=20260702-home-icon",
     "/portal/portal_today_next_chips.js?v=20260903-photo-repair",
-    "/portal/portal_staff_photos.js?v=20260911-emmanuel-photo-alias",
+    "/portal/portal_staff_photos.js?v=20260911-emmanuel-png",
     "/portal/portal_sheet_back.js?v=20260720-aria-sheet-focus",
   ];
 
