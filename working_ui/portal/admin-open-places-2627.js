@@ -73,6 +73,62 @@
     return document.getElementById(id);
   }
 
+  function isIntensiveOrCampSlot(slot) {
+    if (!slot) return false;
+    var sid = String(slot.serviceId || "").trim().toLowerCase();
+    if (sid === "intensive" || sid === "camp" || sid === "crash") return true;
+    if (String(slot.blockId || "").trim()) return true;
+    var day = String(slot.day || "").trim();
+    if (/^week\s*\d/i.test(day)) return true;
+    if (/\bjul(y)?\b/i.test(day) && /week/i.test(day)) return true;
+    return DAY_ORDER.indexOf(day) < 0 && !!day && !/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i.test(day);
+  }
+
+  function termWeekdaySlots(list) {
+    return (list || []).filter(function (s) {
+      return !isIntensiveOrCampSlot(s);
+    });
+  }
+
+  function intensiveCampSlots(list) {
+    return (list || []).filter(function (s) {
+      return isIntensiveOrCampSlot(s);
+    });
+  }
+
+  function dayFilterOptionsHtml(termDays, intensiveDays, selected) {
+    var html = '<option value="">All days</option>';
+    if (termDays.length) {
+      html += '<optgroup label="Autumn term weekdays">';
+      termDays.forEach(function (v) {
+        html +=
+          '<option value="' +
+          esc(v) +
+          '"' +
+          (v === selected ? " selected" : "") +
+          ">" +
+          esc(v) +
+          "</option>";
+      });
+      html += "</optgroup>";
+    }
+    if (intensiveDays.length) {
+      html += '<optgroup label="Intensive Courses & Camps">';
+      intensiveDays.forEach(function (v) {
+        html +=
+          '<option value="' +
+          esc(v) +
+          '"' +
+          (v === selected ? " selected" : "") +
+          ">" +
+          esc(v) +
+          "</option>";
+      });
+      html += "</optgroup>";
+    }
+    return html;
+  }
+
   function freeOf(slot) {
     return Math.max(0, Number(slot.capacity || 0) - Number(slot.taken || 0));
   }
@@ -126,10 +182,10 @@
     var embedded = !!(opts && opts.embedded);
     var head = embedded
       ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:28px;min-width:0;scroll-margin-top:14px;border-top:1px solid var(--line,#e5e7eb);padding-top:16px">' +
-        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">3 · Live open places (Booking Portal)</h2>' +
+        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">3 · Publicación en Booking Portal</h2>' +
         '<p class="page-intro" style="max-width:52rem;margin:0 0 12px;min-width:0;overflow-wrap:break-word">' +
-        "Public seats still free on standing bands (capacity / taken / free — no names). Same source as the Booking Portal. " +
-        "Use <strong>Place existing</strong> or <strong>Place new</strong> on a free band. Day make-ups do not change this board." +
+        "Public bands and free seats (capacity / taken / free — no names). Same source as the Booking Portal. " +
+        "Weekly Autumn term days are listed first; Intensive Courses &amp; Camps (July weeks) are grouped separately below." +
         "</p>"
       : '<div class="page-head" style="min-width:0">' +
         '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Open places 2026/27</h2>' +
@@ -472,11 +528,13 @@
     }
 
     var slots = filteredSlots();
+    var termSlots = termWeekdaySlots(slots);
+    var campSlots = intensiveCampSlots(slots);
     var byDay = {};
     DAY_ORDER.forEach(function (d) {
       byDay[d] = [];
     });
-    slots.forEach(function (slot) {
+    termSlots.forEach(function (slot) {
       var day = slot.day || "Monday";
       if (!byDay[day]) byDay[day] = [];
       byDay[day].push(slot);
@@ -491,17 +549,40 @@
       });
     });
 
+    var byCampDay = {};
+    campSlots.forEach(function (slot) {
+      var day = String(slot.day || "Intensive").trim() || "Intensive";
+      if (!byCampDay[day]) byCampDay[day] = [];
+      byCampDay[day].push(slot);
+    });
+    Object.keys(byCampDay).forEach(function (d) {
+      byCampDay[d].sort(function (a, b) {
+        var va = String(a.venue || "").localeCompare(String(b.venue || ""));
+        if (va) return va;
+        return String(a.sortTime || a.timeLabel || "").localeCompare(
+          String(b.sortTime || b.timeLabel || "")
+        );
+      });
+    });
+
     var venues = uniqueSorted(
       state.slots.map(function (s) {
         return s.venue;
       })
     );
-    var daysPresent = uniqueSorted(
-      state.slots.map(function (s) {
+    var termDaysPresent = uniqueSorted(
+      termWeekdaySlots(state.slots).map(function (s) {
         return s.day;
       })
     ).sort(function (a, b) {
       return DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b);
+    });
+    var intensiveDaysPresent = uniqueSorted(
+      intensiveCampSlots(state.slots).map(function (s) {
+        return s.day;
+      })
+    ).sort(function (a, b) {
+      return String(a).localeCompare(String(b));
     });
 
     var metaBits = [];
@@ -521,12 +602,35 @@
       return daySectionHtml(d, byDay[d] || []);
     }).join("");
 
+    var campDayKeys = Object.keys(byCampDay).sort(function (a, b) {
+      return String(a).localeCompare(String(b));
+    });
+    var campSections = campDayKeys
+      .map(function (d) {
+        return daySectionHtml(d, byCampDay[d] || []);
+      })
+      .join("");
+    if (campSections) {
+      campSections =
+        '<div class="op2627-intensive" style="margin-top:22px;padding-top:14px;border-top:1px dashed var(--line,#e5e7eb);min-width:0">' +
+        '<h3 style="margin:0 0 8px;font-size:1.05rem;min-width:0;overflow-wrap:break-word">Intensive Courses &amp; Camps</h3>' +
+        '<p class="muted" style="margin:0 0 12px;max-width:52rem;min-width:0;overflow-wrap:break-word">July crash / intensive weeks (not weekly Autumn term days). Kept for Booking Portal — not mixed into Mon–Sun standing.</p>' +
+        campSections +
+        "</div>";
+    }
+
     if (!slots.length) {
       sections =
         '<div class="card card-pad"><p class="muted" style="margin:0;min-width:0;overflow-wrap:break-word">' +
         (state.filters.openOnly
           ? "No open places match these filters. Turn off “Open places only” to see full bands."
           : "No bands match these filters.") +
+        "</p></div>";
+      campSections = "";
+    } else if (!termSlots.length && campSlots.length) {
+      sections =
+        '<div class="card card-pad" style="margin-bottom:12px"><p class="muted" style="margin:0;min-width:0;overflow-wrap:break-word">' +
+        "No Autumn weekday bands match these filters. Intensive / camp bands (if any) are below." +
         "</p></div>";
     }
 
@@ -554,8 +658,8 @@
       '<div class="toolbar" style="flex-wrap:wrap;gap:10px;align-items:flex-end;min-width:0">' +
       '<label style="min-width:0;display:grid;gap:4px;font-size:12px">' +
       "<span>Day</span>" +
-      '<select id="op2627Day" class="inp" style="min-width:8rem">' +
-      optionHtml(daysPresent, state.filters.day, "All days") +
+      '<select id="op2627Day" class="inp" style="min-width:10rem">' +
+      dayFilterOptionsHtml(termDaysPresent, intensiveDaysPresent, state.filters.day) +
       "</select></label>" +
       '<label style="min-width:0;display:grid;gap:4px;font-size:12px">' +
       "<span>Service</span>" +
@@ -573,7 +677,8 @@
       " /> Open places only</label>" +
       "</div></div>" +
       kpiHtml(slots) +
-      sections;
+      sections +
+      campSections;
   }
 
   function applyFiltersFromDom() {

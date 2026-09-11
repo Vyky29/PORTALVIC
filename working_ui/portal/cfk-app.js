@@ -14,7 +14,7 @@
   var PRODUCT_NAME = "CFK";
   var PAGE_TITLE = "Services";
   var PAGE_INTRO =
-    "Autumn 26/27 term board: (1) standing roster — who booked each weekday seat, (2) Assign on open lines, (3) live Booking Portal places. Make-ups and day covers stay in Scheduling.";
+    "Services manages permanent term configuration and standing roster. Daily covers, day offs and make-ups are in Schedule & Covers. Effective day result is checked in Sessions Overview. Public seats are checked in Booking Portal (section 3).";
 
   var deps = {
     $: function (id) {
@@ -310,12 +310,12 @@
       "</span>" +
       ' <span class="chip" style="vertical-align:middle;margin-left:4px">Autumn 26/27</span></p>' +
       '<div class="c4k-svc-jumpbar" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;min-width:0" role="navigation" aria-label="Jump on this page">' +
-      '<button type="button" class="btn btn--ghost btn--sm" id="c4kServicesJumpRoster" title="Jump to the roster">' +
-      "1 · Roster</button>" +
-      '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to Assign on open roster lines">' +
-      "2 · Fill seats</button>" +
-      '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to live Booking Portal seats">' +
-      "3 · Live open places</button></div>" +
+      '<button type="button" class="btn btn--ghost btn--sm" id="c4kServicesJumpRoster" title="Jump to permanent roster">' +
+      "1 · Roster permanente</button>" +
+      '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to open standing lines">' +
+      "2 · Plazas disponibles</button>" +
+      '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to Booking Portal places">' +
+      "3 · Publicación en Booking Portal</button></div>" +
       '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>' +
       '<details class="c4k-svc-filters" id="c4kServicesFiltersPanel" open>' +
       '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class, instructor or participant</summary>' +
@@ -349,8 +349,8 @@
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterWait"><span>Participants on waiting list</span> <input type="checkbox" id="c4kSvcFilterWait" /></label>' +
       "</div></div></details>" +
       '<section id="c4kServicesRosterAnchor" aria-label="Roster" style="min-width:0;scroll-margin-top:14px">' +
-      '<h2 class="page-title" style="font-size:1.15rem;margin:14px 0 6px;min-width:0;overflow-wrap:break-word">1 · Roster (standing term)</h2>' +
-      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who booked each weekday seat for the term (principal instructor). Day covers and make-ups stay in Schedule &amp; Covers / Overview. Use <strong>Open places ↓</strong> to filter live Booking seats below.</p>' +
+      '<h2 class="page-title" style="font-size:1.15rem;margin:14px 0 6px;min-width:0;overflow-wrap:break-word">1 · Roster permanente</h2>' +
+      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who holds each weekday seat for the term (principal instructor). Metrics labelled <em>standing</em> use the Apr–Jul occupancy template; <em>Autumn week</em> counts use the Sep–Dec display week.</p>' +
       '<div id="c4kServicesRosterRoot" style="min-width:0">' +
       rosterPart +
       "</div></section>" +

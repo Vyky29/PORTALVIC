@@ -145,11 +145,11 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260909-reply-only"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260905-composer-fit"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
-  <script src="/portal/admin-open-places-2627.js?v=20260910-services-standing"></script>
+  <script src="/portal/admin-open-places-2627.js?v=20260911-services-labels"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260909-reply-only" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
-  <script src="/portal/cfk-app.js?v=20260910-services-sandra"></script>
+  <script src="/portal/cfk-app.js?v=20260911-services-labels"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260911-sched-mobile-cards"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -19521,12 +19521,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var seen = {};
       var list = [];
       var sessions = (pack && pack.sessions) || [];
+      function canonStaffId(raw){
+        var sid = String(raw || '').trim().toLowerCase();
+        if(!sid) return '';
+        if(typeof window.portalCanonicalStaffRosterKey === 'function'){
+          try{ return window.portalCanonicalStaffRosterKey(sid) || sid; }catch(_){ /* fall through */ }
+        }
+        /* Staff Emmanuel Amoakohene — never keep a second filter option for "emanuel". */
+        if(sid === 'emanuel' || sid === 'emmanuelamoakohene') return 'emmanuel';
+        return sid;
+      }
       for(var i = 0; i < sessions.length; i++){
-        var sid = String(sessions[i].staffId || '').trim().toLowerCase();
+        var sid = canonStaffId(sessions[i].staffId || sessions[i].staffRosterId);
         if(!sid || seen[sid]) continue;
         seen[sid] = true;
         var p = prof[sid] || prof[sessions[i].staffId];
         var nm = (p && p.staffName) || sid;
+        if(/^emmanuel$/i.test(sid)) nm = 'Emmanuel';
         list.push({ id: sid, name: nm });
       }
       list.sort(function(a, b){ return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }); });
@@ -19576,9 +19587,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!filt) return true;
       if(filt.coach){
         var ck = String(filt.coach).trim().toLowerCase();
+        if(typeof window.portalCanonicalStaffRosterKey === 'function'){
+          try{ ck = window.portalCanonicalStaffRosterKey(ck) || ck; }catch(_){}
+        }
+        if(ck === 'emanuel') ck = 'emmanuel';
         var okCoach = false;
         for(var i = 0; i < (lineGrp && lineGrp.length) || 0; i++){
-          if(String(lineGrp[i].staffRosterId || '').trim().toLowerCase() === ck){ okCoach = true; break; }
+          var lineSid = String(lineGrp[i].staffRosterId || lineGrp[i].staffId || '').trim().toLowerCase();
+          if(typeof window.portalCanonicalStaffRosterKey === 'function'){
+            try{ lineSid = window.portalCanonicalStaffRosterKey(lineSid) || lineSid; }catch(_){}
+          }
+          if(lineSid === 'emanuel') lineSid = 'emmanuel';
+          if(lineSid === ck){ okCoach = true; break; }
         }
         if(!okCoach) return false;
       }
@@ -19883,7 +19903,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       if(out.length) return out.slice(0, 2).join(' · ');
       var n = (adminC4kWaitlistRows() || []).length;
-      return n ? (String(n) + ' on list · see WAITING') : '—';
+      return n ? (String(n) + ' total on waiting list') : '—';
     }
     /** Open Waiting list focused on programme + venue (and optional band). */
     function adminOpenWaitlistForProgVenue(prog, venue, opts){
@@ -20330,8 +20350,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!inner) return '';
       return '<section id="c4kServicesCapacityEmbed" class="c4k-svc-capmap-embed" aria-label="Fill open roster seats" style="margin-top:28px;scroll-margin-top:14px;border-top:1px solid var(--line,#e5e7eb);padding-top:16px">'+
         '<div class="c4k-svc-capmap-embed__head" style="margin-bottom:10px;min-width:0">'+
-        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 4px;min-width:0;overflow-wrap:break-word">2 · Fill seats (roster lines)</h2>'+
-        '<p class="page-intro" style="margin:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Standing term bands only (who booked the weekday seat). <strong>Open</strong> = no named participant. Use <strong>Assign</strong> to place someone (creates / mounts an unpaid invoice). <strong>Offer</strong> opens matching waitlist rows. Make-ups and day moves live in Schedule &amp; Covers. For live public seats, use section 3 below.</p>'+
+        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 4px;min-width:0;overflow-wrap:break-word">2 · Plazas disponibles</h2>'+
+        '<p class="page-intro" style="margin:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Standing open lines (no named participant). <strong>Assign</strong> is a permanent seat. Day covers stay in Schedule &amp; Covers. Public seats are in section 3.</p>'+
         '</div>'+
         inner+'</section>';
     }
@@ -21062,11 +21082,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           } else {
             dayAcc = '<p class="muted" style="margin:6px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">No roster rows for this programme and venue in the term window.</p>';
           }
-          var venueChip =
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct class time-slots per week at this venue (e.g. Mon 4:00–4:30, Mon 4:30–5:00 …).">'+
-            '<span class="c4k-svc-venue-acc__pill-lbl">Sessions/wk: </span>'+
-            '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(rowsInVenue))+'</strong>'+
-            '</span>';
           var venueSt = adminStatsSlotsWeek(allInst);
           var venueAgg = adminServiceVenueAggFromInstances(allInst);
           var venueInstrCount = Object.keys(venueInstrSet).length;
@@ -21074,18 +21089,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var venueWaitN = adminCapacityWaitCountForProgVenue(block.programme, vn.venue);
           var venueMetrics =
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-total">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Participant places booked across the whole summer term at this venue — every dated session on the roster added up.">'+
-            '<span class="c4k-svc-venue-acc__pill-lbl">Booked (term): </span>'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Booked places counted on the summer standing template (Apr–Jul) for this venue — not Autumn Sep–Dec dates.">'+
+            '<span class="c4k-svc-venue-acc__pill-lbl">Booked (standing): </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueSt.booked))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-week">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Participant places filled in a normal (busiest) week at this venue — weekly capacity.">'+
-            '<span class="c4k-svc-venue-acc__pill-lbl">Booked/wk: </span>'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Peak booked places in any single calendar week of the standing template (Apr–Jul) at this venue — not necessarily this Autumn week.">'+
+            '<span class="c4k-svc-venue-acc__pill-lbl">Booked/wk (peak standing): </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueAgg.bookedPerWeek))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-open">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Unbooked places left across the term at this venue.">'+
-            '<span class="c4k-svc-venue-acc__pill-lbl">Open (term): </span>'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Unbooked places on the summer standing template (Apr–Jul) at this venue.">'+
+            '<span class="c4k-svc-venue-acc__pill-lbl">Open (standing): </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueSt.open))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-new">'+
@@ -21097,15 +21112,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueWaitN))+'</strong>'+
             '</button></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-inst">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct instructors working this service at this venue across the term.">'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct instructors shown on the standing day boards for this venue (not a term-wide unique count).">'+
             '<span class="c4k-svc-venue-acc__pill-lbl">Instructors: </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueInstrCount))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-pax">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct participants booked into this service at this venue across the term.">'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct participants shown on the standing day boards for this venue.">'+
             '<span class="c4k-svc-venue-acc__pill-lbl">Participants: </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venuePaxCount))+'</strong>'+
             '</span></span>';
+          var venueChip =
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Rendered class bands / staff columns for this venue (unit depends on programme — not the same as roster lines/wk).">'+
+            '<span class="c4k-svc-venue-acc__pill-lbl">Sessions/wk (boards): </span>'+
+            '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(rowsInVenue))+'</strong>'+
+            '</span>';
           var venueMetricsRow =
             '<span class="c4k-svc-venue-acc__metrics">'+
             venueMetrics+
@@ -21139,8 +21159,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return '';
         }
         var chips =
-          '<span class="chip chip--info" title="Roster lines (instructor × participant) Mon–Sun in the selected week across all venues.">'+esc(String(wn))+' roster lines/wk</span>'+
-          '<span class="chip chip--ok" title="Distinct class time-slots per week, summed across all venues for this programme.">'+esc(String(nRange))+' sessions/wk</span>';
+          '<span class="chip chip--info" title="Slot rows Mon–Sun in the Autumn display week (all venues). Not the same unit as Sessions/wk (boards) or Booked (standing).">'+esc(String(wn))+' roster lines/wk (Autumn week)</span>'+
+          '<span class="chip chip--ok" title="Sum of rendered boards across venues (time bands or staff columns — programme-specific unit).">'+esc(String(nRange))+' sessions/wk (boards)</span>';
         return adminAppendServiceCapacityBoardAfterPhysicalActivity(
           '<div class="card c4k-svc-card '+adminServiceProgrammeCardClass(block.programme)+'" style="margin-bottom:10px">'+
           '<div class="card-h card-h--c4k-svc">'+
