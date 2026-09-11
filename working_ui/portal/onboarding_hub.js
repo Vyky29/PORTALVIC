@@ -80,10 +80,8 @@
     if (!host) return;
     var labels = [
       ["passport", "Passport"],
-      ["checklist", "Checklist"],
       ["certificate", "Certificate"],
       ["firstaid", "First aid"],
-      ["safeguarding", "Safeguarding"],
     ];
     host.innerHTML = labels
       .map(function (pair) {
@@ -225,20 +223,17 @@
     });
   }
 
-  async function initDocs() {
-    var form = global.document.getElementById("obHubDocForm");
-    var status = global.document.getElementById("obHubDocStatus");
+  function bindDocUploadForm(form, status, nameEl) {
     if (!form) return;
     var fileEl = form.querySelector('[name="doc_file"]');
-    var nameEl = global.document.getElementById("obHubDocFileName");
     if (nameEl) nameEl.setAttribute("data-empty", "PDF, photo or Word / no file chosen");
     bindFilePickName(fileEl, nameEl);
     form.addEventListener("submit", async function (ev) {
       ev.preventDefault();
       var typeEl = form.querySelector('[name="doc_type"]');
-      var fileEl = form.querySelector('[name="doc_file"]');
+      var fileInput = form.querySelector('[name="doc_file"]');
       var docType = typeEl && typeEl.value;
-      var file = fileEl && fileEl.files && fileEl.files[0];
+      var file = fileInput && fileInput.files && fileInput.files[0];
       if (!docType || !file) {
         setStatus(status, "Choose a document type and file.", true);
         return;
@@ -253,7 +248,8 @@
           content_type: file.type || "application/octet-stream",
           content_base64: dataUrl,
         });
-        if (fileEl) fileEl.value = "";
+        if (fileInput) fileInput.value = "";
+        if (nameEl) nameEl.textContent = nameEl.getAttribute("data-empty") || "No file chosen";
         setStatus(status, "Uploaded. Admin Onboarding will show this document.");
         await refreshDocChips();
       } catch (e) {
@@ -261,6 +257,19 @@
         setStatus(status, "Upload failed. Try again or use a smaller file.", true);
       }
     });
+  }
+
+  async function initDocs() {
+    bindDocUploadForm(
+      global.document.getElementById("obHubDocForm"),
+      global.document.getElementById("obHubDocStatus"),
+      global.document.getElementById("obHubDocFileName")
+    );
+    bindDocUploadForm(
+      global.document.getElementById("obHubExtraDocForm"),
+      global.document.getElementById("obHubExtraDocStatus"),
+      global.document.getElementById("obHubExtraDocFileName")
+    );
   }
 
   async function initJob() {

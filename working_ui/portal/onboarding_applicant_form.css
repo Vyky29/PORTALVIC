@@ -171,6 +171,12 @@ body {
   cursor: pointer;
   flex: 1 1 140px;
   min-width: 0;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow-wrap: break-word;
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
 .ob-btn:active { transform: translateY(1px); }
@@ -521,6 +527,38 @@ body {
 }
 .ob-hub-doc-card {
   gap: 14px;
+}
+.ob-hub-action-card {
+  gap: 10px;
+  min-width: 0;
+}
+.ob-hub-action-kicker {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.ob-hub-req {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a2725;
+  background: #fff1f1;
+  border: 1px solid #f5c2c0;
+  border-radius: 999px;
+  padding: 3px 8px;
+  flex: 0 0 auto;
+}
+.ob-hub-action-card .ob-form-block-desc {
+  margin: 0;
 }
 
 @media (max-width: 420px) {

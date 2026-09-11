@@ -11,7 +11,7 @@
       await bootstrapDashboardSupabase({ page: "onboarding" });
     })();
   </script>
-  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260910-ob-ui" />
+  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260911-ob-docs" />
 </head>
 <body>
   <main class="ob-form-page">
@@ -66,32 +66,67 @@
           <span class="ob-hub-acc__chev" aria-hidden="true"></span>
         </button>
         <div class="ob-hub-acc__panel" id="obHubPanelDocs">
-          <p class="ob-form-block-desc">Passport / right to work, checklist, certificates, first aid and safeguarding. Admin sees these under Onboarding.</p>
+          <p class="ob-form-block-desc">Passport is required. Complete the starter checklist in the portal. Safeguarding opens NSPCC training. Certificates and first aid are optional uploads.</p>
           <div class="ob-hub-chip-block">
             <p class="ob-hub-chip-legend">Upload status</p>
             <div id="obHubDocChips" class="ob-hub-chips" aria-live="polite"></div>
           </div>
-          <form id="obHubDocForm" class="ob-form-card ob-hub-doc-card">
-            <label class="ob-field">Document type
-              <select name="doc_type" required>
-                <option value="">Select…</option>
-                <option value="passport">Passport / ID</option>
-                <option value="checklist">Starter checklist</option>
-                <option value="certificate">Certificate</option>
-                <option value="firstaid">First aid</option>
-                <option value="safeguarding">Safeguarding</option>
-              </select>
-            </label>
-            <label class="ob-file-pick ob-file-pick--block">
-              <span class="ob-file-pick__btn">Choose file</span>
-              <span class="ob-file-pick__name" id="obHubDocFileName">PDF, photo or Word / no file chosen</span>
-              <input name="doc_file" type="file" accept="image/*,.pdf,.doc,.docx" required />
-            </label>
-            <p id="obHubDocStatus" class="ob-form-status" hidden></p>
+
+          <article class="ob-form-card ob-hub-action-card">
+            <p class="ob-hub-action-kicker"><span class="ob-hub-req">Required</span> Passport / ID</p>
+            <p class="ob-form-block-desc">Photo or PDF of your passport or photo ID. Admin uses this for right to work.</p>
+            <form id="obHubDocForm" class="ob-hub-doc-card">
+              <input type="hidden" name="doc_type" value="passport" />
+              <label class="ob-file-pick ob-file-pick--block">
+                <span class="ob-file-pick__btn">Choose passport / ID</span>
+                <span class="ob-file-pick__name" id="obHubDocFileName">PDF, photo or Word / no file chosen</span>
+                <input name="doc_file" type="file" accept="image/*,.pdf,.doc,.docx" required />
+              </label>
+              <p id="obHubDocStatus" class="ob-form-status" hidden></p>
+              <div class="ob-form-actions">
+                <button type="submit" class="ob-btn ob-btn--primary">Upload passport</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="ob-form-card ob-hub-action-card">
+            <p class="ob-hub-action-kicker"><span class="ob-hub-req">Required</span> Starter checklist</p>
+            <p class="ob-form-block-desc">Fill this in the portal. Same digital form staff use after login. It saves to your staff record.</p>
             <div class="ob-form-actions">
-              <button type="submit" class="ob-btn ob-btn--primary">Upload document</button>
+              <a class="ob-btn ob-btn--primary" id="obHubStarterLink" href="staff_profile_update.html?from=onboarding">Open starter checklist</a>
             </div>
-          </form>
+          </article>
+
+          <article class="ob-form-card ob-hub-action-card">
+            <p class="ob-hub-action-kicker"><span class="ob-hub-req">Required</span> Safeguarding</p>
+            <p class="ob-form-block-desc">Mandatory training with NSPCC My Learning. Opens in a new tab. After you finish, keep the certificate for the office.</p>
+            <div class="ob-form-actions">
+              <a class="ob-btn ob-btn--primary" id="obHubSafeguardingLink" href="https://mylearning.nspcc.org.uk/UserInfo.aspx" target="_blank" rel="noopener noreferrer">Open safeguarding training</a>
+            </div>
+          </article>
+
+          <article class="ob-form-card ob-hub-action-card">
+            <p class="ob-hub-action-kicker">Optional certificates</p>
+            <p class="ob-form-block-desc">Only if you already have them.</p>
+            <form id="obHubExtraDocForm" class="ob-hub-doc-card">
+              <label class="ob-field">Document type
+                <select name="doc_type" required>
+                  <option value="">Select…</option>
+                  <option value="certificate">Certificate</option>
+                  <option value="firstaid">First aid</option>
+                </select>
+              </label>
+              <label class="ob-file-pick ob-file-pick--block">
+                <span class="ob-file-pick__btn">Choose file</span>
+                <span class="ob-file-pick__name" id="obHubExtraDocFileName">PDF, photo or Word / no file chosen</span>
+                <input name="doc_file" type="file" accept="image/*,.pdf,.doc,.docx" required />
+              </label>
+              <p id="obHubExtraDocStatus" class="ob-form-status" hidden></p>
+              <div class="ob-form-actions">
+                <button type="submit" class="ob-btn ob-btn--ghost">Upload extra document</button>
+              </div>
+            </form>
+          </article>
         </div>
       </section>
 
@@ -371,7 +406,7 @@
   <script src="/portal/onboarding_job_form.js?v=20260614-sections"></script>
   <script src="/portal/onboarding_health_form.js?v=20260614-sections"></script>
   <script src="/portal/onboarding_applicant_form.js?v=20260614-sections"></script>
-  <script src="/portal/onboarding_hub.js?v=20260910-ob-ui"></script>
+  <script src="/portal/onboarding_hub.js?v=20260911-ob-docs"></script>
   <script>
     (function () {
       async function boot() {
