@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260909-overview-unavail';
+  var PORTAL_DAY_OPS_BUILD = '20260911-register-fb';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -56,15 +56,78 @@
     }
   }
 
-  function promiseWithTimeout(promise, ms, fallback) {
+  var FB_FETCH_TIMEOUT = { __portalFbTimeout: true };
+
+  function promiseWithTimeout(promise, ms, fallback, onLate) {
+    var timedOut = false;
+    var timer = null;
+    var tracked = Promise.resolve(promise).then(
+      function (value) {
+        if (timedOut && typeof onLate === 'function') {
+          try {
+            onLate(value);
+          } catch (_late) {}
+        }
+        return value;
+      },
+      function (err) {
+        if (timedOut) {
+          console.warn('[PortalDayOps] late fetch error', err);
+          return fallback;
+        }
+        throw err;
+      }
+    );
     return Promise.race([
-      promise,
+      tracked,
       new Promise(function (resolve) {
-        setTimeout(function () {
+        timer = setTimeout(function () {
+          timedOut = true;
           resolve(fallback);
         }, ms);
       })
-    ]);
+    ]).finally(function () {
+      if (timer) clearTimeout(timer);
+    });
+  }
+
+  function feedbackRowMergeKey(row) {
+    if (!row) return '';
+    var id = String(row.id || '').trim();
+    if (id) return 'id:' + id;
+    return [
+      String(row.session_date || '').slice(0, 10),
+      String(row.client_name || '').trim().toLowerCase(),
+      String(row.session_time || '').trim(),
+      String(row.completed_by_name || '').trim().toLowerCase(),
+      String(row.portal_session_key || '').trim()
+    ].join('|');
+  }
+
+  function mergeSessionFeedbackRows(current, incoming) {
+    if (!Array.isArray(incoming) || !incoming.length) {
+      return Array.isArray(current) ? current : [];
+    }
+    if (!Array.isArray(current) || !current.length) return incoming.slice();
+    var out = [];
+    var at = Object.create(null);
+    function add(row) {
+      if (!row) return;
+      var key = feedbackRowMergeKey(row);
+      if (!key) {
+        out.push(row);
+        return;
+      }
+      if (Object.prototype.hasOwnProperty.call(at, key)) {
+        out[at[key]] = row;
+        return;
+      }
+      at[key] = out.length;
+      out.push(row);
+    }
+    current.forEach(add);
+    incoming.forEach(add);
+    return out;
   }
 
   function fetchWithTimeout(url, options, ms) {
@@ -240,15 +303,21 @@
     if (!j) return;
     if (j.counts) payload.counts = j.counts;
     if (Array.isArray(j.session_feedback)) {
-      if (j.session_feedback.length || !Array.isArray(payload.session_feedback) || !payload.session_feedback.length) {
+      if (j.session_feedback.length) {
+        payload.session_feedback = mergeSessionFeedbackRows(payload.session_feedback, j.session_feedback);
+      } else if (!Array.isArray(payload.session_feedback) || !payload.session_feedback.length) {
         payload.session_feedback = j.session_feedback;
       }
     }
-    if (j.session_feedback_loaded !== undefined) payload.session_feedback_loaded = j.session_feedback_loaded;
+    if (j.session_feedback_loaded !== undefined) {
+      if (j.session_feedback_loaded === true || !(payload.session_feedback || []).length) {
+        payload.session_feedback_loaded = j.session_feedback_loaded;
+      }
+    }
     if (j.session_feedback_total != null) {
-      payload.session_feedback_total = j.session_feedback_total;
-    } else if (Array.isArray(j.session_feedback) && j.session_feedback.length) {
-      payload.session_feedback_total = j.session_feedback.length;
+      payload.session_feedback_total = Math.max(Number(j.session_feedback_total) || 0, (payload.session_feedback || []).length);
+    } else if (Array.isArray(payload.session_feedback) && payload.session_feedback.length) {
+      payload.session_feedback_total = payload.session_feedback.length;
     }
     mergeArrayField('incident_reports', j.incident_reports);
     mergeArrayField('lead_session_reports', j.lead_session_reports);
@@ -302,18 +371,45 @@
   var sessionFeedbackRtBound = false;
   var sessionFeedbackRtDebounce = null;
 
+  function adoptSessionFeedbackRows(rows) {
+    if (!Array.isArray(rows) || !rows.length) return;
+    payload.session_feedback = mergeSessionFeedbackRows(payload.session_feedback, rows);
+    payload.session_feedback_total = payload.session_feedback.length;
+    payload.session_feedback_loaded = true;
+    portalDayOpsAfterFeedbackPayloadMerge();
+  }
+
   async function refreshSessionFeedbackLive() {
     if (!cfg.fetchSessionFeedback) return;
     try {
-      var dbFb = (await promiseWithTimeout(cfg.fetchSessionFeedback(), SESSION_FEEDBACK_FETCH_MS, [])) || [];
-      payload.session_feedback = dbFb;
+      var dbFb = await promiseWithTimeout(
+        cfg.fetchSessionFeedback(),
+        SESSION_FEEDBACK_FETCH_MS,
+        FB_FETCH_TIMEOUT,
+        function (late) {
+          if (Array.isArray(late) && late.length) adoptSessionFeedbackRows(late);
+        }
+      );
+      if (dbFb && dbFb.__portalFbTimeout) {
+        if ((payload.session_feedback || []).length) {
+          payload.session_feedback_loaded = true;
+        }
+        portalDayOpsRenderLiveLoadStatus();
+        return;
+      }
+      if (Array.isArray(dbFb) && dbFb.length) {
+        payload.session_feedback = mergeSessionFeedbackRows(payload.session_feedback, dbFb);
+      } else if (!Array.isArray(payload.session_feedback) || !payload.session_feedback.length) {
+        payload.session_feedback = Array.isArray(dbFb) ? dbFb : [];
+      }
       payload.session_feedback_total = payload.session_feedback.length;
+      payload.session_feedback_loaded = true;
       await fetchParentFeedbackSharesInto(payload);
       portalDayOpsAfterFeedbackPayloadMerge();
     } catch (eFb) {
       console.error('[PortalDayOps] refreshSessionFeedbackLive', eFb);
+      if ((payload.session_feedback || []).length) payload.session_feedback_loaded = true;
     } finally {
-      payload.session_feedback_loaded = true;
       portalDayOpsRenderLiveLoadStatus();
     }
   }
@@ -522,25 +618,48 @@
             if (!client && cfg.waitForSupabaseClient) {
               client = await cfg.waitForSupabaseClient(SUPABASE_WAIT_MS);
             }
-            live = (await promiseWithTimeout(cfg.fetchSessionFeedback(), SESSION_FEEDBACK_FETCH_MS, [])) || [];
-            out.session_feedback = live;
-            out.session_feedback_total = out.session_feedback.length;
-            if (!live.length) {
-              var meta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
-              var err = meta && meta.error ? String(meta.error) : '';
-              console.warn(
-                '[PortalDayOps] session_feedback live rows: 0' + (err ? ' (' + err + ')' : '')
-              );
+            live = await promiseWithTimeout(
+              cfg.fetchSessionFeedback(),
+              SESSION_FEEDBACK_FETCH_MS,
+              FB_FETCH_TIMEOUT,
+              function (late) {
+                if (Array.isArray(late) && late.length) adoptSessionFeedbackRows(late);
+              }
+            );
+            if (live && live.__portalFbTimeout) {
+              if ((payload.session_feedback || []).length) {
+                out.session_feedback = payload.session_feedback;
+                out.session_feedback_total = payload.session_feedback.length;
+                out.session_feedback_loaded = true;
+              } else {
+                console.warn('[PortalDayOps] session_feedback still loading (timeout kept empty payload)');
+              }
             } else {
-              console.log('[PortalDayOps] session_feedback live rows:', live.length);
+              live = Array.isArray(live) ? live : [];
+              out.session_feedback = live;
+              out.session_feedback_total = live.length;
+              out.session_feedback_loaded = true;
+              if (!live.length) {
+                var meta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
+                var err = meta && meta.error ? String(meta.error) : '';
+                console.warn(
+                  '[PortalDayOps] session_feedback live rows: 0' + (err ? ' (' + err + ')' : '')
+                );
+              } else {
+                console.log('[PortalDayOps] session_feedback live rows:', live.length);
+              }
+              dayOpsDebug('[PortalDayOps] session_feedback live rows:', live.length);
             }
-            dayOpsDebug('[PortalDayOps] session_feedback live rows:', live.length);
           } catch (taskErr) {
             console.error('[PortalDayOps] session_feedback task failed', taskErr);
-            out.session_feedback = out.session_feedback || [];
-            out.session_feedback_total = out.session_feedback.length;
-          } finally {
-            out.session_feedback_loaded = true;
+            if ((payload.session_feedback || []).length) {
+              out.session_feedback = payload.session_feedback;
+              out.session_feedback_total = payload.session_feedback.length;
+              out.session_feedback_loaded = true;
+            } else {
+              out.session_feedback = out.session_feedback || [];
+              out.session_feedback_total = out.session_feedback.length;
+            }
           }
         })()
       );
@@ -749,6 +868,14 @@
     var incMeta = live.incident_reports || null;
     if (incMeta && incMeta.count && !incCount) incCount = incMeta.count;
     var loaded = payload.session_feedback_loaded === true;
+    var cache = global.__PORTAL_ADMIN_SESSION_FEEDBACK_CACHE__;
+    if (!fbCount && Array.isArray(cache) && cache.length) {
+      payload.session_feedback = mergeSessionFeedbackRows(payload.session_feedback, cache);
+      payload.session_feedback_total = payload.session_feedback.length;
+      payload.session_feedback_loaded = true;
+      fbCount = payload.session_feedback.length;
+      loaded = true;
+    }
     if (!loaded) {
       el.className = 'portal-forms-status';
       el.innerHTML =
@@ -1833,10 +1960,13 @@
     refreshSessionFeedback: function () {
       return refreshSessionFeedbackLive();
     },
+    adoptSessionFeedback: adoptSessionFeedbackRows,
     ensureLiveRoster: function (force) {
       return ensureLiveRosterForHub(!!force);
     }
   };
+
+  global.portalAdminAdoptSessionFeedback = adoptSessionFeedbackRows;
 
   if (typeof global.addEventListener === 'function') {
     global.addEventListener('portal:supabase-ready', function () {

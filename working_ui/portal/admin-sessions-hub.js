@@ -5270,12 +5270,49 @@
       if (this.opts && this.opts.externalTabs) this.indexFeedback();
       return;
     }
+    if (this.mode === "feedback") {
+      this.render();
+      return;
+    }
     if (this.opts && this.opts.externalTabs) {
       this.indexFeedback();
       this.renderPanels();
     } else {
       this.render();
     }
+  };
+
+  AdminSessionsHub.prototype.adoptLiveSessionFeedbackIfEmpty = function () {
+    var cur = this.payload && this.payload.session_feedback;
+    if (Array.isArray(cur) && cur.length) return;
+    var src = null;
+    try {
+      var live =
+        global.PortalDayOps && typeof global.PortalDayOps.getPayload === "function"
+          ? global.PortalDayOps.getPayload()
+          : null;
+      if (live && Array.isArray(live.session_feedback) && live.session_feedback.length) {
+        src = live.session_feedback;
+        if (!this.payload) this.payload = live;
+        else if (this.payload !== live) {
+          this.payload.session_feedback = src;
+          this.payload.session_feedback_loaded = true;
+          this.payload.session_feedback_total = src.length;
+          return;
+        } else {
+          return;
+        }
+      }
+    } catch (_live) {}
+    try {
+      var cache = global.__PORTAL_ADMIN_SESSION_FEEDBACK_CACHE__;
+      if (Array.isArray(cache) && cache.length) src = cache;
+    } catch (_cache) {}
+    if (!src || !src.length) return;
+    if (!this.payload) this.payload = {};
+    this.payload.session_feedback = src;
+    this.payload.session_feedback_loaded = true;
+    this.payload.session_feedback_total = src.length;
   };
 
   AdminSessionsHub.prototype.indexAbsentMarks = function () {
@@ -9048,10 +9085,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   };
 
   AdminSessionsHub.prototype.renderPanels = function () {
+    this.adoptLiveSessionFeedbackIfEmpty();
     /* Overview staffing board does not need feedback indexes (1000+ rows). */
     if (this.tab !== "tracking") {
-      this.indexAbsentMarks();
-      this.indexFeedback();
+      try {
+        this.indexAbsentMarks();
+        this.indexFeedback();
+      } catch (idxErr) {
+        console.warn("[AdminSessionsHub] renderPanels index", idxErr);
+      }
     }
     var shell = this.root.querySelector(".ash-panels") || this.root.querySelector(".ash-panels--feedback-only");
     if (!shell) return;
@@ -12389,10 +12431,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   };
 
   AdminSessionsHub.prototype.render = function () {
+    this.adoptLiveSessionFeedbackIfEmpty();
     var skipHeavyIndex = this.tab === "tracking" && this.opts && this.opts.externalTabs;
-    if (!skipHeavyIndex) {
-      this.indexAbsentMarks();
-      this.indexFeedback();
+    try {
+      if (!skipHeavyIndex) {
+        this.indexAbsentMarks();
+        this.indexFeedback();
+      }
+    } catch (idxErr) {
+      console.warn("[AdminSessionsHub] indexFeedback", idxErr);
     }
     var warn = this.bundleError
       ? '<p class="ash-bundle-warn">' + esc(this.bundleError) + "</p>"
@@ -12400,6 +12447,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var fbCount = (this.payload && this.payload.session_feedback) ? this.payload.session_feedback.length : 0;
     var fbLoaded = this.payload && this.payload.session_feedback_loaded;
     var loadMeta = global.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__;
+    if (fbCount === 0 && loadMeta && Number(loadMeta.total) > 0) {
+      this.adoptLiveSessionFeedbackIfEmpty();
+      fbCount = (this.payload && this.payload.session_feedback) ? this.payload.session_feedback.length : 0;
+    }
     if ((this.opts && this.opts.externalTabs) && fbLoaded && fbCount === 0) {
       var metaLine = loadMeta ?
         ' Last attempt: ' + esc(String(loadMeta.via || 'rpc')) + ', ' + esc(String(loadMeta.total != null ? loadMeta.total : 0)) + ' rows' +

@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260906-dc-swim-only"></script>
   <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260909-overview-unavail"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260911-register-fb"></script>
   <script src="/portal/admin-portal-documents.js?v=20260905-expense-amount"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260813-office-phone-create"></script>
@@ -22422,7 +22422,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260911-roster-log-dedupe';
+    var PORTAL_ADMIN_HUB_BUILD = '20260911-register-fb';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -22908,6 +22908,58 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     var __adminSessionFeedbackInflight = null;
     var __adminSessionFeedbackCache = null;
+    function adminFeedbackSinceIso(days){
+      var since = new Date();
+      since.setDate(since.getDate() - days);
+      return since.toISOString().slice(0, 10);
+    }
+    function adminMergeFeedbackRowsById(a, b){
+      var out = [];
+      var at = Object.create(null);
+      function add(row){
+        if(!row) return;
+        var id = String(row.id || '').trim();
+        var key = id
+          ? 'id:' + id
+          : [
+              String(row.session_date || '').slice(0, 10),
+              String(row.client_name || '').trim().toLowerCase(),
+              String(row.session_time || '').trim(),
+              String(row.completed_by_name || '').trim().toLowerCase(),
+              String(row.portal_session_key || '').trim()
+            ].join('|');
+        if(!key || key === '||||'){
+          out.push(row);
+          return;
+        }
+        if(Object.prototype.hasOwnProperty.call(at, key)){
+          out[at[key]] = row;
+          return;
+        }
+        at[key] = out.length;
+        out.push(row);
+      }
+      (a || []).forEach(add);
+      (b || []).forEach(add);
+      return out;
+    }
+    function adminPublishSessionFeedbackCache(rows, via, loadErr){
+      if(Array.isArray(rows) && rows.length){
+        __adminSessionFeedbackCache = rows.slice();
+        try{ window.__PORTAL_ADMIN_SESSION_FEEDBACK_CACHE__ = __adminSessionFeedbackCache; }catch(_c){}
+      }
+      try{
+        window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = {
+          at: new Date().toISOString(),
+          total: (rows || []).length,
+          via: via,
+          error: (via === 'cache') ? loadErr : ((rows && rows.length) ? null : loadErr)
+        };
+      }catch(_meta){}
+      if(Array.isArray(rows) && rows.length && typeof window.portalAdminAdoptSessionFeedback === 'function'){
+        try{ window.portalAdminAdoptSessionFeedback(rows); }catch(_a){}
+      }
+    }
     async function adminFetchSessionFeedbackForHub(){
       if(__adminSessionFeedbackInflight) return __adminSessionFeedbackInflight;
       __adminSessionFeedbackInflight = (async function(){
@@ -22925,64 +22977,90 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return __adminSessionFeedbackInflight;
     }
     /**
-     * Register / Sessions hub: prefer RPC (fast, authenticated). Edge is legacy fallback only.
-     * Previously edge-first + 35s abort + outer 45s timeout routinely returned 0 rows before RPC ran.
+     * Register needs this week immediately. PostgREST caps RPC at 1000 rows, so fetch
+     * the last 21 days first (always includes the open week), then merge 150 days.
      */
     async function adminFetchSessionFeedbackForHubInner(){
-      var since = new Date();
-      since.setDate(since.getDate() - 150);
-      var sinceIso = since.toISOString().slice(0, 10);
       var rows = [];
       var via = 'rpc';
       var loadErr = null;
 
       await adminWaitForSupabaseReady(8000);
-      var rpcResult = await adminFetchSessionFeedbackViaRpc(sinceIso);
-      rows = (rpcResult && rpcResult.rows) ? rpcResult.rows : [];
-      via = (rpcResult && rpcResult.via) ? rpcResult.via : 'rpc';
-      loadErr = rpcResult && rpcResult.error ? rpcResult.error : null;
+      var sinceRecent = adminFeedbackSinceIso(21);
+      var sinceWide = adminFeedbackSinceIso(150);
+      var recentP = adminFetchSessionFeedbackViaRpc(sinceRecent);
+      var wideP = adminFetchSessionFeedbackViaRpc(sinceWide);
+      var recentResult = await recentP;
+      rows = (recentResult && recentResult.rows) ? recentResult.rows : [];
+      via = (recentResult && recentResult.via) ? recentResult.via : 'rpc';
+      loadErr = recentResult && recentResult.error ? recentResult.error : null;
+      if(rows.length){
+        adminPublishSessionFeedbackCache(rows, via === 'rpc' ? 'rpc-recent' : via, null);
+        console.info('[admin] session_feedback recent window:', rows.length, 'rows since', sinceRecent);
+      }
 
-      if(!rows.length){
-        try{
-          var edgeResult = await Promise.race([
-            adminFetchSessionFeedbackViaEdge(sinceIso),
-            new Promise(function(resolve){
-              setTimeout(function(){ resolve({ rows: [], error: 'edge_timeout', via: 'edge' }); }, 10000);
-            })
-          ]);
-          var edgeRows = (edgeResult && edgeResult.rows) ? edgeResult.rows : [];
-          if(edgeRows.length){
-            rows = edgeRows;
-            via = (edgeResult && edgeResult.via) ? edgeResult.via : 'edge';
-            loadErr = null;
-          } else if(!loadErr && edgeResult && edgeResult.error){
-            loadErr = edgeResult.error;
-          }
-        }catch(edgeErr){
-          if(!loadErr) loadErr = String(edgeErr && edgeErr.message ? edgeErr.message : edgeErr);
+      async function mergeWideAndFallback(wideResult){
+        var wideRows = (wideResult && wideResult.rows) ? wideResult.rows : [];
+        if(wideRows.length){
+          rows = adminMergeFeedbackRowsById(rows, wideRows);
+          via = (wideResult && wideResult.via) ? wideResult.via : via;
+          loadErr = null;
+        } else if(!rows.length && wideResult && wideResult.error && !loadErr){
+          loadErr = wideResult.error;
         }
+        if(!rows.length){
+          try{
+            var edgeResult = await Promise.race([
+              adminFetchSessionFeedbackViaEdge(sinceWide),
+              new Promise(function(resolve){
+                setTimeout(function(){ resolve({ rows: [], error: 'edge_timeout', via: 'edge' }); }, 10000);
+              })
+            ]);
+            var edgeRows = (edgeResult && edgeResult.rows) ? edgeResult.rows : [];
+            if(edgeRows.length){
+              rows = edgeRows;
+              via = (edgeResult && edgeResult.via) ? edgeResult.via : 'edge';
+              loadErr = null;
+            } else if(!loadErr && edgeResult && edgeResult.error){
+              loadErr = edgeResult.error;
+            }
+          }catch(edgeErr){
+            if(!loadErr) loadErr = String(edgeErr && edgeErr.message ? edgeErr.message : edgeErr);
+          }
+        }
+        if(!rows.length && __adminSessionFeedbackCache && __adminSessionFeedbackCache.length){
+          rows = __adminSessionFeedbackCache.slice();
+          via = 'cache';
+          loadErr = loadErr || 'using_cached_rows';
+          console.warn('[admin] session_feedback: live empty — using', rows.length, 'cached rows');
+        }
+        if(rows.length) adminPublishSessionFeedbackCache(rows, via, loadErr);
+        else {
+          try{
+            window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = {
+              at: new Date().toISOString(),
+              total: 0,
+              via: via,
+              error: loadErr
+            };
+          }catch(_meta){}
+        }
+        console.log('[admin] session_feedback final:', rows.length, 'rows via', via, loadErr || '');
+        adminDayOpsDebug('[admin] session_feedback loaded:', rows.length, 'via', via);
+        return rows;
       }
 
-      if(!rows.length && __adminSessionFeedbackCache && __adminSessionFeedbackCache.length){
-        rows = __adminSessionFeedbackCache.slice();
-        via = 'cache';
-        loadErr = loadErr || 'using_cached_rows';
-        console.warn('[admin] session_feedback: live empty — using', rows.length, 'cached rows');
-      } else if(rows.length){
-        __adminSessionFeedbackCache = rows.slice();
+      if(rows.length){
+        void wideP.then(function(wideResult){
+          mergeWideAndFallback(wideResult);
+        }).catch(function(wideErr){
+          console.warn('[admin] session_feedback wide merge failed', wideErr);
+        });
+        return rows;
       }
 
-      try{
-        window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = {
-          at: new Date().toISOString(),
-          total: rows.length,
-          via: via,
-          error: (via === 'cache') ? loadErr : (rows.length ? null : loadErr)
-        };
-      }catch(_meta){}
-      console.log('[admin] session_feedback final:', rows.length, 'rows via', via, loadErr || '');
-      adminDayOpsDebug('[admin] session_feedback loaded:', rows.length, 'via', via);
-      return rows;
+      var wideResult = await wideP;
+      return await mergeWideAndFallback(wideResult);
     }
     function adminJwtExpiringSoon(token, skewSec){
       try{
