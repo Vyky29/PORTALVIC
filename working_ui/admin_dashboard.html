@@ -20461,6 +20461,54 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             });
           }
           var progNormKey = adminServiceProgrammeNormKey(block.programme);
+          /*
+           * Multi @ SwimFarm Sunday standing lives in Autumn/canonical (not Apr-Jul MADRE).
+           * Inject the Autumn display Sunday so Services still shows the three groups of 6.
+           */
+          if(progNormKey === 'multi' && adminServicesIsSwimFarmVenue(vn.venue)){
+            var sunIsoMuInject = adminServicesAutumnIsoForDow('sunday', displayWeekIso, block.programme);
+            if(sunIsoMuInject && SERVICES_ROSTER_HALF_TERM_CLOSED &&
+               sunIsoMuInject >= SERVICES_ROSTER_HALF_TERM_CLOSED.start &&
+               sunIsoMuInject <= SERVICES_ROSTER_HALF_TERM_CLOSED.end){
+              sunIsoMuInject = adminServicesAutumnIsoForDow('sunday', '2026-09-07', block.programme) || sunIsoMuInject;
+            }
+            if(sunIsoMuInject){
+              var sunInstMu = [];
+              try{
+                sunInstMu = adminSlotInstancesForProgrammeVenueRange(
+                  block.programme, vn.venue, sunIsoMuInject, sunIsoMuInject, pack, pack.notes
+                ) || [];
+              }catch(_muInj){ sunInstMu = []; }
+              if(!sunInstMu.length){
+                try{
+                  var rawSun = slotsForSelectedDate(sunIsoMuInject) || [];
+                  for(var rsi = 0; rsi < rawSun.length; rsi++){
+                    var rsl = rawSun[rsi];
+                    if(adminServiceProgrammeNormKey(rsl.programme) !== 'multi') continue;
+                    if(!adminServicesIsSwimFarmVenue(rsl.venue)) continue;
+                    sunInstMu.push(rsl);
+                  }
+                }catch(_muRaw){}
+              }
+              sunInstMu = (sunInstMu || []).filter(function(sl){
+                return !adminServiceLineIsAutumnDayException(sl, sunIsoMuInject);
+              });
+              if(sunInstMu.length){
+                var seenMuDemo = {};
+                for(var smx = 0; smx < (allInst || []).length; smx++){
+                  var sid0 = String((allInst[smx] && allInst[smx].demoId) || '').trim();
+                  if(sid0) seenMuDemo[sid0] = true;
+                }
+                if(!allInst) allInst = [];
+                for(var smy = 0; smy < sunInstMu.length; smy++){
+                  var sid1 = String((sunInstMu[smy] && sunInstMu[smy].demoId) || '').trim();
+                  if(sid1 && seenMuDemo[sid1]) continue;
+                  if(sid1) seenMuDemo[sid1] = true;
+                  allInst.push(sunInstMu[smy]);
+                }
+              }
+            }
+          }
           var isAquaticSwimFarm = adminServicesIsSwimFarmVenue(vn.venue) && progNormKey === 'aquatic';
           // SwimFarm *swimming* rota: Sundays only (Mon/Wed/Fri site days are Day Centre).
           // Do NOT apply to Multi-Activity / Bespoke / other SwimFarm programmes.
@@ -20495,9 +20543,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(filt && filt.day && dk !== filt.day) continue;
             if(isAquaticSwimFarm && !adminServicesSwimFarmDowAllowed(dk)) continue;
             // Multi-Activity at SwimFarm is the Sunday rota (9:30–2 bands).
+            // Autumn/canonical owns who sits there — allow the Sunday path even when
+            // the Apr-Jul stamp pack has no SwimFarm Multi rows for this venue.
             if(progNormKey === 'multi' && adminServicesIsSwimFarmVenue(vn.venue) && dk !== 'sunday') continue;
             var slotsWd = byDow[dk];
-            if((!slotsWd || !slotsWd.length) && !(progNormKey === 'bespoke' && adminServicesBespokeNoOpenPlacesDow(dk))) continue;
+            var multiSwimFarmSunday = progNormKey === 'multi' && adminServicesIsSwimFarmVenue(vn.venue) && dk === 'sunday';
+            if((!slotsWd || !slotsWd.length) && !multiSwimFarmSunday && !(progNormKey === 'bespoke' && adminServicesBespokeNoOpenPlacesDow(dk))) continue;
             /* Bespoke Tue/Thu with no roster lines: still show “no places available”. */
             if(progNormKey === 'bespoke' && adminServicesBespokeNoOpenPlacesDow(dk) && (!slotsWd || !slotsWd.length)){
               var displayIsoBpEmpty = adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, termStart, termEnd);
@@ -20524,19 +20575,44 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               );
               continue;
             }
-            if(!slotsWd || !slotsWd.length) continue;
+            if(!slotsWd || !slotsWd.length){
+              if(!multiSwimFarmSunday) continue;
+              slotsWd = [];
+            }
             /* Multi-Activity @ SwimFarm Sunday: three groups of 6 (swim + support staff). */
-            if(progNormKey === 'multi' && adminServicesIsSwimFarmVenue(vn.venue) && dk === 'sunday'){
-              var pickIsoMu = adminPickServicesStandingIsoForDow(dk, slotsWd, displayWeekIso, standStart, standEnd);
-              if(!pickIsoMu) pickIsoMu = adminServicesLatestStandingIsoForDow(dk);
-              var slotsMu = slotsWd;
-              if(pickIsoMu){
-                var sMu = [];
-                for(var mui = 0; mui < slotsWd.length; mui++){
-                  if(String(slotsWd[mui].sessionDate || '').trim() === pickIsoMu) sMu.push(slotsWd[mui]);
-                }
-                if(sMu.length) slotsMu = sMu;
+            if(multiSwimFarmSunday){
+              var displayIsoMu = adminServicesAutumnIsoForDow(dk, displayWeekIso, block.programme) ||
+                adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, termStart, termEnd);
+              if(displayIsoMu && SERVICES_ROSTER_HALF_TERM_CLOSED &&
+                 displayIsoMu >= SERVICES_ROSTER_HALF_TERM_CLOSED.start &&
+                 displayIsoMu <= SERVICES_ROSTER_HALF_TERM_CLOSED.end){
+                displayIsoMu = adminServicesAutumnIsoForDow(dk, '2026-09-07', block.programme) ||
+                  adminPickIsoForSheetWeekdayNearAnchor('2026-09-07', dk, termStart, termEnd) || displayIsoMu;
               }
+              var slotsMu = [];
+              if(displayIsoMu){
+                try{
+                  var rawMuDay = slotsForSelectedDate(displayIsoMu) || [];
+                  for(var rmi = 0; rmi < rawMuDay.length; rmi++){
+                    var rmu = rawMuDay[rmi];
+                    if(adminServiceProgrammeNormKey(rmu.programme) !== 'multi') continue;
+                    if(!adminServicesIsSwimFarmVenue(rmu.venue)) continue;
+                    slotsMu.push(rmu);
+                  }
+                }catch(_muDay){ slotsMu = []; }
+              }
+              if(!slotsMu.length && slotsWd && slotsWd.length){
+                var pickIsoMuFall = adminPickServicesStandingIsoForDow(dk, slotsWd, displayWeekIso, standStart, standEnd) ||
+                  adminServicesLatestStandingIsoForDow(dk);
+                if(pickIsoMuFall){
+                  for(var mui = 0; mui < slotsWd.length; mui++){
+                    if(String(slotsWd[mui].sessionDate || '').trim() === pickIsoMuFall) slotsMu.push(slotsWd[mui]);
+                  }
+                }
+                if(!slotsMu.length) slotsMu = slotsWd.slice();
+              }
+              if(!slotsMu.length) continue;
+              var pickIsoMu = displayIsoMu || String((slotsMu[0] && slotsMu[0].sessionDate) || '').trim();
               var muBoard = adminServicesMultiSundayBoardFromSlots(slotsMu, filt);
               var muHasRows = false;
               for(var mchk = 0; mchk < ((muBoard.bands && muBoard.bands.length) || 0); mchk++){
@@ -20546,14 +20622,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 }
               }
               if(!muHasRows) continue;
-              var displayIsoMu = adminServicesAutumnIsoForDow(dk, displayWeekIso, block.programme) ||
-                adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, termStart, termEnd);
-              if(displayIsoMu && SERVICES_ROSTER_HALF_TERM_CLOSED &&
-                 displayIsoMu >= SERVICES_ROSTER_HALF_TERM_CLOSED.start &&
-                 displayIsoMu <= SERVICES_ROSTER_HALF_TERM_CLOSED.end){
-                displayIsoMu = adminServicesAutumnIsoForDow(dk, '2026-09-07', block.programme) ||
-                  adminPickIsoForSheetWeekdayNearAnchor('2026-09-07', dk, termStart, termEnd) || displayIsoMu;
-              }
               var dowTitleMu = adminServiceDowTitleFromNorm(dk);
               var dayHoursMu = '9:30AM–2:00PM · 3 groups × 6 · 2×45′ each';
               for(var msi = 0; msi < ((muBoard.staffOrder && muBoard.staffOrder.length) || 0); msi++){
@@ -21135,6 +21203,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           for(var smi = 0; smi < dowOrder.length; smi++){
             var smDk = dowOrder[smi];
             var smSlots = byDow[smDk];
+            if(progNormKey === 'multi' && adminServicesIsSwimFarmVenue(vn.venue) && smDk === 'sunday'){
+              var smAut = adminServicesAutumnIsoForDow('sunday', displayWeekIso, block.programme);
+              if(smAut){
+                try{
+                  var smRaw = slotsForSelectedDate(smAut) || [];
+                  for(var smr = 0; smr < smRaw.length; smr++){
+                    var smx = smRaw[smr];
+                    if(adminServiceProgrammeNormKey(smx.programme) !== 'multi') continue;
+                    if(!adminServicesIsSwimFarmVenue(smx.venue)) continue;
+                    stampMetricSlots.push(smx);
+                  }
+                }catch(_smAut){}
+              }
+              if(stampMetricSlots.length) continue;
+            }
             if(!smSlots || !smSlots.length) continue;
             var smPick = '';
             if(adminServicesIsDayCentreProgramme(block.programme)){
