@@ -189,7 +189,7 @@
       "source": "/admin_dashboard.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\")" }
+        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\"), screen-wake-lock=(self)" }
       ]
     },
     {
@@ -214,7 +214,7 @@
       "source": "/staff_dashboard.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\")" }
+        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\"), screen-wake-lock=(self)" }
       ]
     },
     {
@@ -251,7 +251,7 @@
       "source": "/comunicaciones.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\")" }
+        { "key": "Permissions-Policy", "value": "camera=(self \"https://8x8.vc\"), microphone=(self \"https://8x8.vc\"), display-capture=(self \"https://8x8.vc\"), screen-wake-lock=(self)" }
       ]
     }
   ]

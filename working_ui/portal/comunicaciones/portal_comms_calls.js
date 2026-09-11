@@ -11,6 +11,10 @@
   var jitsiScriptSrc = "";
   var jitsiScriptLoading = null;
   var joinGen = 0;
+  var callWakeLock = null;
+  var callHoldActive = false;
+  var userWantedMute = false;
+  var callLifecycleBound = false;
   var RING_MS = 45000;
   var CLUB_LOGO = "/portal/F-02-1.png";
   var PHONE_ICON =
@@ -313,8 +317,115 @@
     });
   }
 
+  function releaseCallWakeLock() {
+    var lock = callWakeLock;
+    callWakeLock = null;
+    if (!lock) return;
+    try {
+      void lock.release().catch(function () {});
+    } catch (_r) {}
+  }
+
+  async function acquireCallWakeLock() {
+    if (!callHoldActive) return;
+    try {
+      if (!navigator.wakeLock || typeof navigator.wakeLock.request !== "function") return;
+      if (callWakeLock) return;
+      var lock = await navigator.wakeLock.request("screen");
+      if (!callHoldActive) {
+        try {
+          void lock.release();
+        } catch (_x) {}
+        return;
+      }
+      callWakeLock = lock;
+      lock.addEventListener("release", function () {
+        if (callWakeLock === lock) callWakeLock = null;
+        if (callHoldActive && document.visibilityState === "visible") {
+          void acquireCallWakeLock();
+        }
+      });
+    } catch (_w) {}
+  }
+
+  function markCallMediaSession(on) {
+    try {
+      if (!navigator.mediaSession) return;
+      navigator.mediaSession.playbackState = on ? "playing" : "none";
+      if (typeof navigator.mediaSession.setMicrophoneActive === "function") {
+        navigator.mediaSession.setMicrophoneActive(!!on);
+      }
+      if (on) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: "Communications call",
+          artist: "PORTAL",
+        });
+      }
+    } catch (_m) {}
+  }
+
+  function unmuteJitsiIfNeeded() {
+    if (!jitsiApi || userWantedMute) return;
+    try {
+      jitsiApi.executeCommand("setAudioMute", false);
+    } catch (_s) {
+      try {
+        if (typeof jitsiApi.isAudioMuted !== "function") return;
+        Promise.resolve(jitsiApi.isAudioMuted()).then(function (muted) {
+          if (!jitsiApi || userWantedMute || !muted) return;
+          try {
+            jitsiApi.executeCommand("toggleAudio");
+          } catch (_t) {}
+        });
+      } catch (_i) {}
+    }
+  }
+
+  function restoreCallCapture() {
+    if (!callHoldActive) return;
+    markCallMediaSession(true);
+    void acquireCallWakeLock();
+    unmuteJitsiIfNeeded();
+  }
+
+  function bindCallLifecycle() {
+    if (callLifecycleBound) return;
+    callLifecycleBound = true;
+    document.addEventListener("visibilitychange", function () {
+      if (!callHoldActive) return;
+      if (document.visibilityState === "visible") restoreCallCapture();
+    });
+    global.addEventListener("pageshow", function () {
+      if (!callHoldActive) return;
+      restoreCallCapture();
+    });
+    global.addEventListener("focus", function () {
+      if (!callHoldActive) return;
+      restoreCallCapture();
+    });
+    /* iOS fires pagehide when the screen auto-locks. Do not hang up. */
+    global.addEventListener("beforeunload", function () {
+      if (!jitsiApi) return;
+      try {
+        jitsiApi.executeCommand("hangup");
+      } catch (_h) {}
+    });
+  }
+
+  function holdLiveCall(resetMute) {
+    bindCallLifecycle();
+    callHoldActive = true;
+    if (resetMute) userWantedMute = false;
+    markCallMediaSession(true);
+    void acquireCallWakeLock();
+  }
+
   function dispose() {
     joinGen += 1;
+    callHoldActive = false;
+    userWantedMute = false;
+    releaseCallWakeLock();
+    markCallMediaSession(false);
     removeLegacyHoldNodes();
     var api = jitsiApi;
     jitsiApi = null;
@@ -336,6 +447,7 @@
     var parent = opts.parent;
     if (!parent) throw new Error("Call screen missing.");
     var gen = ++joinGen;
+    holdLiveCall(true);
     removeLegacyHoldNodes();
     if (gen !== joinGen) return null;
     if (jitsiApi) {
@@ -349,10 +461,20 @@
     }
     stopTracksOn(parent);
     var token = opts.token || preparedToken(opts);
-    if (!token) token = await mint(opts.client, opts);
-    if (gen !== joinGen) return null;
-    var domain = String(token.domain || "8x8.vc");
-    await loadJitsiScript("https://" + domain + "/external_api.js");
+    var domain = "8x8.vc";
+    try {
+      if (!token) token = await mint(opts.client, opts);
+      if (gen !== joinGen) return null;
+      domain = String((token && token.domain) || "8x8.vc");
+      await loadJitsiScript("https://" + domain + "/external_api.js");
+    } catch (err) {
+      if (gen === joinGen) {
+        callHoldActive = false;
+        releaseCallWakeLock();
+        markCallMediaSession(false);
+      }
+      throw err;
+    }
     if (gen !== joinGen) return null;
     stopTracksOn(parent);
     parent.innerHTML = "";
@@ -383,6 +505,7 @@
         requireDisplayName: false,
         enableNoAudioDetection: false,
         enableNoisyMicDetection: false,
+        disableSuspendVideo: true,
         constraints: audioOnly
           ? { audio: true, video: false }
           : { audio: true, video: { height: { ideal: 360, max: 480 }, facingMode: "user" } },
@@ -410,11 +533,17 @@
       if (!hangupArmed) return;
       if (typeof opts.onHangup === "function") opts.onHangup();
     }
+    jitsiApi.addListener("audioMuteStatusChanged", function (ev) {
+      if (document.visibilityState === "visible") {
+        userWantedMute = !!(ev && ev.muted);
+      }
+    });
     jitsiApi.addListener("videoConferenceJoined", function () {
       if (gen !== joinGen) return;
       joined = true;
       hangupArmed = true;
       decorateIframe(parent);
+      holdLiveCall(false);
       if (typeof opts.onJoined === "function") opts.onJoined();
     });
     jitsiApi.addListener("videoConferenceLeft", maybeHangup);
@@ -471,8 +600,6 @@
 
   try {
     removeLegacyHoldNodes();
-    global.addEventListener("pagehide", function () {
-      dispose();
-    });
+    bindCallLifecycle();
   } catch (_boot) {}
 })(typeof window !== "undefined" ? window : this);
