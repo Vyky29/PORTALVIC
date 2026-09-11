@@ -2050,9 +2050,13 @@
       return day;
     }
     function portalTermBreakIsoRange(){
+      if(window.PortalTermCalendar && typeof window.PortalTermCalendar.afterSchoolHalfTermWindow === 'function'){
+        const w = window.PortalTermCalendar.afterSchoolHalfTermWindow();
+        if(w && w.from && w.to) return { from: w.from, to: w.to };
+      }
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
-      const from = String((t && t.termBreakFrom) || '2026-05-23').trim().slice(0, 10);
-      const to = String((t && t.termBreakTo) || '2026-05-31').trim().slice(0, 10);
+      const from = String((t && t.termBreakFrom) || '2026-10-26').trim().slice(0, 10);
+      const to = String((t && t.termBreakTo) || '2026-10-30').trim().slice(0, 10);
       return { from, to };
     }
     function portalTermClosedDates(){

@@ -10308,6 +10308,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (hub.overrideForSlotByType(slot, overrideIsAbsentType)) return true;
       }
     } catch (_a) {}
+    try {
+      if (typeof window !== "undefined" && window.PortalSessionStatus) {
+        var ovType = clean((slotOv && (slotOv.override_type || slotOv.type)) || "");
+        var r = window.PortalSessionStatus.resolve({
+          overrideType: ovType,
+          attendance: clean((slot && slot.attendance) || ""),
+        });
+        if (r && r.status === "absent") return true;
+      }
+    } catch (_p) {}
     return false;
   }
 

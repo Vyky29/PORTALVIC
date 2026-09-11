@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <title>Booking Portal preview — clubSENsational</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="/portal/app-icon/icon-192.png" />
+  <style>
+    :root {
+      --ink: #102536;
+      --text: #2a3f4f;
+      --muted: #5f7383;
+      --line: rgba(16, 37, 54, 0.12);
+      --blue: #2d84b3;
+      --blueDeep: #1a628a;
+      --gold: #f0b429;
+      --bg: #eef4f8;
+      --paper: #ffffff;
+      --ok: #1b7a4a;
+      --warn: #9a5b00;
+      --radius: 22px;
+      --shadow: 0 18px 40px rgba(16, 37, 54, 0.12);
+      --pad: clamp(16px, 3.5vw, 40px);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: Lexend, sans-serif;
+      background:
+        radial-gradient(900px 420px at 100% -10%, rgba(240, 180, 41, 0.18), transparent 55%),
+        radial-gradient(800px 480px at -10% 0%, rgba(45, 132, 179, 0.16), transparent 50%),
+        linear-gradient(180deg, #f7fbff 0%, var(--bg) 100%);
+    }
+    button, a { font: inherit; }
+    img { display: block; max-width: 100%; }
+
+    .top {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px var(--pad);
+      background: rgba(247, 251, 255, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    .top__brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      text-decoration: none;
+      color: var(--ink);
+      font-weight: 700;
+    }
+    .top__brand img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 0 0 2px rgba(240, 180, 41, 0.55);
+    }
+    .top__brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top__badge {
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #fff6d8;
+      color: #7a5200;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 18px var(--pad) 80px;
+    }
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 18px;
+    }
+    .section-head h2 {
+      margin: 0;
+      color: var(--ink);
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.35rem, 2.8vw, 1.75rem);
+    }
+    .section-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      max-width: none;
+    }
+    .section-head__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .btn-cal {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(45, 132, 179, 0.28);
+      background: #fff;
+      color: var(--blueDeep);
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 8px 18px rgba(16, 37, 54, 0.06);
+    }
+    .btn-cal:hover {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .btn-cal--solid {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .btn-cal--solid:hover {
+      background: var(--blueDeep);
+      border-color: var(--blueDeep);
+    }
+    .btn-cal__icon {
+      flex: 0 0 auto;
+      display: block;
+    }
+
+    .dates-block {
+      margin: 0 0 28px;
+    }
+    .dates-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    @media (max-width: 800px) {
+      .dates-grid { grid-template-columns: 1fr; }
+    }
+    .date-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+      padding: 18px 18px 16px;
+      border-radius: var(--radius);
+      background: #fff;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    .date-card__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      flex: 0 0 auto;
+    }
+    .date-card__icon svg {
+      display: block;
+      width: 22px;
+      height: 22px;
+    }
+    .date-card__top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .date-card__top .date-card__season {
+      align-self: center;
+      min-width: 0;
+    }
+    .date-card--autumn .date-card__icon {
+      background: #fff1d6;
+      color: #8a5200;
+    }
+    .date-card--spring .date-card__icon {
+      background: #e7f7ee;
+      color: #1b6b3e;
+    }
+    .date-card--summer .date-card__icon {
+      background: #eaf5fb;
+      color: var(--blueDeep);
+    }
+    .date-card__season {
+      display: inline-flex;
+      align-self: flex-start;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .date-card--autumn .date-card__season {
+      background: #fff1d6;
+      color: #8a5200;
+    }
+    .date-card--spring .date-card__season {
+      background: #e7f7ee;
+      color: #1b6b3e;
+    }
+    .date-card--summer .date-card__season {
+      background: #eaf5fb;
+      color: var(--blueDeep);
+    }
+    .date-card strong {
+      color: var(--ink);
+      font-family: Fraunces, Georgia, serif;
+      font-size: 1.25rem;
+      line-height: 1.2;
+    }
+    .date-card span {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+    .dates-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .mosaic {
+      display: grid;
+      gap: 14px;
+      width: 100%;
+    }
+    .mosaic__row {
+      display: grid;
+      gap: 14px;
+      width: 100%;
+    }
+    .mosaic__row--core {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .mosaic__row--more {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    @media (max-width: 1000px) {
+      .mosaic__row--core,
+      .mosaic__row--more {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 560px) {
+      .mosaic__row--core,
+      .mosaic__row--more {
+        grid-template-columns: 1fr;
+      }
+    }
+    .tile {
+      position: relative;
+      min-height: clamp(260px, 28vw, 360px);
+      border: 0;
+      border-radius: var(--radius);
+      overflow: hidden;
+      padding: 0;
+      text-align: left;
+      cursor: pointer;
+      color: #fff;
+      box-shadow: var(--shadow);
+      background: #123;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      min-width: 0;
+      width: 100%;
+    }
+    .mosaic__row--core .tile {
+      min-height: clamp(280px, 30vw, 380px);
+    }
+    .tile:hover,
+    .tile:focus-visible {
+      transform: translateY(-4px);
+      box-shadow: 0 22px 48px rgba(16, 37, 54, 0.18);
+      outline: none;
+    }
+    .tile__img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.02);
+      transition: transform 0.45s ease;
+    }
+    .tile:hover .tile__img { transform: scale(1.07); }
+    .tile__media {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-width: 0;
+      min-height: 0;
+    }
+    .tile__media-pane {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .tile__media-pane + .tile__media-pane {
+      border-left: 2px solid rgba(255, 255, 255, 0.92);
+    }
+    .tile__media-pane img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.02);
+      transition: transform 0.45s ease;
+    }
+    .tile:hover .tile__media-pane img { transform: scale(1.07); }
+    .tile__media-pane:first-child img { object-position: 35% center; }
+    .tile__media-pane:last-child img { object-position: 55% center; }
+    .tile__media-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(15, 35, 52, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      line-height: 1;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    }
+    .tile__media-label--land {
+      left: 25%;
+      right: auto;
+    }
+    .tile__media-label--swim {
+      left: 75%;
+      right: auto;
+    }
+    .tile__media-pane .tile__media-label { display: none; }
+    .sheet__hero-split {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-width: 0;
+      min-height: 0;
+    }
+    .sheet__hero-split span {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .sheet__hero-split span + span {
+      border-left: 2px solid #fff;
+    }
+    .sheet__hero-split img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .sheet__hero-split .tile__media-label {
+      display: block;
+      top: 50%;
+      left: 50%;
+      right: auto;
+      bottom: auto;
+      transform: translate(-50%, -50%);
+      max-width: none;
+    }
+    .tile__shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(8, 20, 32, 0.08) 10%, rgba(8, 20, 32, 0.78) 100%);
+    }
+    .tile__body {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 8px;
+      height: 100%;
+      padding: 18px;
+      min-width: 0;
+    }
+    .tile__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      font-size: 12px;
+      font-weight: 600;
+      backdrop-filter: blur(6px);
+    }
+    .tile h3 {
+      margin: 0;
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+      line-height: 1.15;
+      overflow-wrap: break-word;
+    }
+    .tile__blurb {
+      margin: 0;
+      max-width: 34ch;
+      font-size: 0.92rem;
+      line-height: 1.4;
+      opacity: 0.95;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .tile__cta {
+      margin-top: 4px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .note {
+      margin: 22px 0 0;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .note a { color: var(--blueDeep); font-weight: 600; }
+
+    .sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background: rgba(8, 18, 28, 0.48);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .sheet-backdrop.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .sheet {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 70;
+      width: min(720px, calc(100% - 24px));
+      max-height: min(86vh, 820px);
+      transform: translate(-50%, -46%) scale(0.96);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.22s ease, opacity 0.22s ease;
+      background: var(--paper);
+      border-radius: 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .sheet.is-open {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .sheet__hero {
+      position: relative;
+      flex: 0 0 auto;
+      height: 210px;
+      overflow: hidden;
+    }
+    .sheet__hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .sheet__hero-fade {
+      position: absolute;
+      inset: auto 0 0;
+      height: 90px;
+      background: linear-gradient(180deg, transparent, #fff);
+    }
+    .sheet__close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--ink);
+      font-size: 22px;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    }
+    .sheet__body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      padding: 8px 20px 24px;
+    }
+    .sheet__body h2 {
+      margin: 0 0 6px;
+      color: var(--ink);
+      font-family: Fraunces, Georgia, serif;
+      font-size: 1.7rem;
+    }
+    .sheet__body .lead {
+      margin: 0 0 14px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .facts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 16px;
+    }
+    .fact {
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: #eef6fb;
+      color: var(--blueDeep);
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .slots {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 18px;
+    }
+    .venue-acc {
+      margin: 0 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #f8fbfe;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .venue-acc > summary {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--ink);
+      min-width: 0;
+    }
+    .venue-acc > summary::-webkit-details-marker { display: none; }
+    .venue-acc > summary::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 0.15s ease;
+    }
+    .venue-acc[open] > summary::after {
+      transform: rotate(-135deg);
+      margin-top: 4px;
+    }
+    .venue-acc__label {
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .venue-acc__count {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.88rem;
+      white-space: nowrap;
+    }
+    .venue-acc__body {
+      display: grid;
+      gap: 8px;
+      padding: 0 12px 12px;
+      min-width: 0;
+    }
+    .slot {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      min-width: 0;
+    }
+    .slot strong {
+      display: block;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+    .slot span {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    .slot__state {
+      font-size: 0.82rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .slot__state.is-open { color: var(--ok); }
+    .slot__state.is-full { color: var(--warn); }
+    .sheet__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      position: sticky;
+      bottom: 0;
+      padding-top: 8px;
+      background: linear-gradient(180deg, rgba(255,255,255,0), #fff 28%);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 0;
+      text-decoration: none;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn--pri {
+      background: var(--blue);
+      color: #fff;
+    }
+    .btn--pri:hover { background: var(--blueDeep); }
+    .btn--ghost {
+      background: #eef3f7;
+      color: var(--ink);
+    }
+    .empty-slots {
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #fff8e8;
+      color: #7a5200;
+      font-size: 0.92rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a class="top__brand" href="/bookingportal_preview.html">
+      <img src="/portal/F-02-1.png" alt="" width="42" height="42" />
+      <span>clubSENsational</span>
+    </a>
+    <div class="top__badge">LOCAL PREVIEW</div>
+  </header>
+
+  <main class="wrap">
+    <section class="dates-block" aria-labelledby="datesHeading">
+      <div class="section-head">
+        <div>
+          <h2 id="datesHeading">Our Dates</h2>
+          <p>Term weeks for 2026/27 - green weeks run, red weeks are closed on the full calendar.</p>
+        </div>
+      </div>
+      <div class="dates-grid">
+        <article class="date-card date-card--autumn">
+          <div class="date-card__top">
+            <span class="date-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21c0-4.5 2-8 6-10-1.5 4.5-1 7.5 1 10"/>
+                <path d="M12 21c0-4.5-2-8-6-10 1.5 4.5 1 7.5-1 10"/>
+                <path d="M12 21V9"/>
+                <path d="M12 11c2.5-3.5 5-4.5 8-4-2.5 2-3.5 4-4 6"/>
+                <path d="M12 11C9.5 7.5 7 6.5 4 7c2.5 2 3.5 4 4 6"/>
+              </svg>
+            </span>
+            <span class="date-card__season">Autumn</span>
+          </div>
+          <strong>Sep - Dec 2026</strong>
+          <span>Sat 5 Sep - Fri 18 Dec · after-schools half term 24 Oct - 1 Nov · Day Centre open weekdays</span>
+        </article>
+        <article class="date-card date-card--spring">
+          <div class="date-card__top">
+            <span class="date-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21V11"/>
+                <path d="M12 16c-3-1.5-5-4-5-7 3 0 5 2 5 5"/>
+                <path d="M12 16c3-1.5 5-4 5-7-3 0-5 2-5 5"/>
+                <path d="M12 11c-2.5-2-3.5-4.5-3-7 2.5 1 3.5 3.5 3 6"/>
+                <path d="M12 11c2.5-2 3.5-4.5 3-7-2.5 1-3.5 3.5-3 6"/>
+              </svg>
+            </span>
+            <span class="date-card__season">Spring</span>
+          </div>
+          <strong>Jan - Mar 2027</strong>
+          <span>After Christmas through to Easter break (full calendar for exact weeks)</span>
+        </article>
+        <article class="date-card date-card--summer">
+          <div class="date-card__top">
+            <span class="date-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"/>
+                <path d="M12 2v2.5M12 19.5V22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2 12h2.5M19.5 12H22M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>
+              </svg>
+            </span>
+            <span class="date-card__season">Summer</span>
+          </div>
+          <strong>Apr - Jul 2027</strong>
+          <span>Summer term plus holiday crash courses when blocks open</span>
+        </article>
+      </div>
+      <div class="dates-actions">
+        <a class="btn-cal btn-cal--solid" href="/timetable.html">
+          <svg class="btn-cal__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+            <rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Open full calendar
+        </a>
+      </div>
+    </section>
+
+    <div class="section-head services-block">
+      <div>
+        <h2 id="servicesHeading">Our services</h2>
+        <p>Loading live catalogue...</p>
+      </div>
+    </div>
+
+    <div class="mosaic" id="mosaic"></div>
+
+    <p class="note">
+      Preview only (not live yet). When you tap <strong>Continue to book</strong>, it opens the current
+      <a href="/bookingportal.html">Booking Portal</a> with that service selected so the real OTP / finish-booking flow still works.
+    </p>
+  </main>
+
+  <div class="sheet-backdrop" id="backdrop" hidden></div>
+  <aside class="sheet" id="sheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet__hero">
+      <img id="sheetImg" src="" alt="" />
+      <div class="sheet__hero-fade"></div>
+      <button type="button" class="sheet__close" id="sheetClose" aria-label="Close">×</button>
+    </div>
+    <div class="sheet__body">
+      <h2 id="sheetTitle">Service</h2>
+      <p class="lead" id="sheetLead"></p>
+      <div class="facts" id="sheetFacts"></div>
+      <div id="sheetSlots"></div>
+      <div class="sheet__actions">
+        <a class="btn btn--pri" id="sheetBook" href="#">Continue to book</a>
+        <button type="button" class="btn btn--ghost" id="sheetDismiss">Close</button>
+      </div>
+    </div>
+  </aside>
+
+  <script src="/portal-static-bootstrap.js"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260904-preview-live"></script>
+  <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
+  <script>
+    (function () {
+      var PHOTOS = {
+        aquatic: "/portal/booking-photos/aquatic.jpg",
+        climbing: "/portal/booking-photos/climbing.jpg",
+        physical: "/portal/booking-photos/physical.webp",
+        multi: "/portal/booking-photos/multi.jpg?v=20260812-table",
+        multiSwim: "/portal/booking-photos/multi-swim.jpg?v=20260814-sw13",
+        bespoke: "/portal/booking-photos/bespoke.jpg",
+        day_centre: "/portal/booking-photos/daycentre.jpg?v=20260812-hub",
+        counselling: "/portal/booking-photos/counselling.jpg?v=20260814-web",
+        intensive: "/portal/booking-photos/intensive-swim.jpg?v=20260812-pool",
+      };
+
+      function tileMediaHtml(svcId) {
+        if (svcId === "multi") {
+          return (
+            '<span class="tile__media" aria-hidden="true">' +
+            '<span class="tile__media-pane">' +
+            '<img src="' + esc(PHOTOS.multi) + '" alt="" loading="lazy" />' +
+            "</span>" +
+            '<span class="tile__media-pane">' +
+            '<img src="' + esc(PHOTOS.multiSwim) + '" alt="" loading="lazy" />' +
+            "</span>" +
+            "</span>" +
+            '<span class="tile__media-label tile__media-label--land">DRY</span>' +
+            '<span class="tile__media-label tile__media-label--swim">WET</span>'
+          );
+        }
+        var photo = PHOTOS[svcId] || PHOTOS.aquatic;
+        return '<img class="tile__img" src="' + esc(photo) + '" alt="" loading="lazy" />';
+      }
+
+      function setSheetHero(svcId) {
+        if (svcId === "multi") {
+          sheetImg.hidden = true;
+          sheetImg.removeAttribute("src");
+          var split = document.getElementById("sheetHeroSplit");
+          if (!split) {
+            split = document.createElement("div");
+            split.id = "sheetHeroSplit";
+            split.className = "sheet__hero-split";
+            split.setAttribute("aria-hidden", "true");
+            sheetImg.parentNode.insertBefore(split, sheetImg);
+          }
+          split.hidden = false;
+          split.innerHTML =
+            "<span><img src=\"" + esc(PHOTOS.multi) + "\" alt=\"\" />" +
+            '<span class="tile__media-label">DRY</span></span>' +
+            "<span><img src=\"" + esc(PHOTOS.multiSwim) + "\" alt=\"\" />" +
+            '<span class="tile__media-label">WET</span></span>';
+          return;
+        }
+        var splitEl = document.getElementById("sheetHeroSplit");
+        if (splitEl) {
+          splitEl.hidden = true;
+          splitEl.innerHTML = "";
+        }
+        sheetImg.hidden = false;
+        sheetImg.src = PHOTOS[svcId] || PHOTOS.aquatic;
+      }
+
+      var api = window.PortalBookingOffer;
+      var infoApi = window.PortalBookingServiceInfo;
+
+      var mosaic = document.getElementById("mosaic");
+      var sheet = document.getElementById("sheet");
+      var backdrop = document.getElementById("backdrop");
+      var sheetImg = document.getElementById("sheetImg");
+      var sheetTitle = document.getElementById("sheetTitle");
+      var sheetLead = document.getElementById("sheetLead");
+      var sheetFacts = document.getElementById("sheetFacts");
+      var sheetSlots = document.getElementById("sheetSlots");
+      var sheetBook = document.getElementById("sheetBook");
+      var servicesHeadP = document.querySelector("#servicesHeading + p") ||
+        document.querySelector(".services-block .section-head p");
+
+      function esc(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function venueName(v) {
+        if (api && typeof api.venueLabel === "function") return api.venueLabel(v) || v;
+        return v;
+      }
+
+      function chipsFor(svc) {
+        var chips = [];
+        if (svc.durationHint) chips.push(svc.durationHint);
+        if (svc.priceHint) chips.push(svc.priceHint);
+        else if (svc.enquireOnly) chips.push("Enquire with the office");
+        if (!chips.length) chips.push("See live times");
+        return chips;
+      }
+
+      function slotIsFull(slot) {
+        if (api && typeof api.isFull === "function") return api.isFull(slot);
+        var cap = Number(slot.capacity) || 0;
+        var taken = Number(slot.taken) || 0;
+        return Math.max(0, cap - taken) <= 0;
+      }
+
+      function slotsFor(serviceId) {
+        if (api && typeof api.filterSlots === "function") {
+          return api.filterSlots({ serviceId: serviceId });
+        }
+        return [];
+      }
+
+      function tileHtml(svc) {
+        var chips = chipsFor(svc);
+        var blurb = String(svc.blurb || "").trim();
+        return (
+          '<button type="button" class="tile" data-id="' + esc(svc.id) + '">' +
+          tileMediaHtml(svc.id) +
+          '<span class="tile__shade"></span>' +
+          '<span class="tile__body">' +
+          '<span class="tile__meta">' +
+          chips.map(function (c) {
+            return '<span class="chip">' + esc(c) + "</span>";
+          }).join("") +
+          "</span>" +
+          "<h3>" + esc(svc.name) + "</h3>" +
+          '<p class="tile__blurb">' + esc(blurb) + "</p>" +
+          '<span class="tile__cta">View places →</span>' +
+          "</span></button>"
+        );
+      }
+
+      function renderMosaic() {
+        var services = (api && api.SERVICES) || [];
+        if (!services.length) {
+          mosaic.innerHTML =
+            '<p class="note" style="margin:0">Loading live services and places...</p>';
+          return;
+        }
+        var topIds = { aquatic: 1, climbing: 1, physical: 1, multi: 1 };
+        var top = [];
+        var bottom = [];
+        services.forEach(function (s) {
+          if (topIds[s.id]) top.push(s);
+          else bottom.push(s);
+        });
+        var order = ["aquatic", "climbing", "physical", "multi"];
+        top.sort(function (a, b) {
+          return order.indexOf(a.id) - order.indexOf(b.id);
+        });
+        var bottomOrder = ["bespoke", "day_centre", "counselling", "intensive"];
+        bottom.sort(function (a, b) {
+          var ia = bottomOrder.indexOf(a.id);
+          var ib = bottomOrder.indexOf(b.id);
+          if (ia < 0) ia = 99;
+          if (ib < 0) ib = 99;
+          return ia - ib || String(a.name || "").localeCompare(String(b.name || ""));
+        });
+        mosaic.innerHTML =
+          '<div class="mosaic__row mosaic__row--core">' +
+          top.map(tileHtml).join("") +
+          "</div>" +
+          '<div class="mosaic__row mosaic__row--more">' +
+          bottom.map(tileHtml).join("") +
+          "</div>";
+      }
+
+      function slotRowHtml(s, showVenue) {
+        var full = slotIsFull(s);
+        return (
+          '<div class="slot">' +
+          "<div><strong>" + esc(s.day) + " · " + esc(s.timeLabel) + "</strong>" +
+          (showVenue ? "<span>" + esc(venueName(s.venue)) + "</span>" : "") +
+          "</div>" +
+          '<div class="slot__state ' + (full ? "is-full" : "is-open") + '">' +
+          (full ? "Full" : "Places") +
+          "</div></div>"
+        );
+      }
+
+      function countVenueSlots(venueGroup) {
+        var n = 0;
+        (venueGroup.days || []).forEach(function (d) {
+          n += (d.slots || []).length;
+        });
+        return n;
+      }
+
+      function slotsHtml(list) {
+        var venues = [];
+        if (api && typeof api.groupSlotsByVenueThenDay === "function") {
+          venues = api.groupSlotsByVenueThenDay(list) || [];
+        }
+        if (venues.length > 1) {
+          return venues.map(function (v, idx) {
+            var rows = [];
+            (v.days || []).forEach(function (d) {
+              (d.slots || []).forEach(function (s) {
+                rows.push(slotRowHtml(s, false));
+              });
+            });
+            var count = countVenueSlots(v);
+            return (
+              '<details class="venue-acc"' + (idx === 0 ? " open" : "") + ">" +
+              "<summary>" +
+              '<span class="venue-acc__label">' + esc(v.venueLabel || venueName(v.venue)) + "</span>" +
+              '<span class="venue-acc__count">' + count + " times</span>" +
+              "</summary>" +
+              '<div class="venue-acc__body">' + rows.join("") + "</div>" +
+              "</details>"
+            );
+          }).join("");
+        }
+        return (
+          '<div class="slots">' +
+          list.map(function (s) { return slotRowHtml(s, true); }).join("") +
+          "</div>"
+        );
+      }
+
+      function closeSheet() {
+        sheet.classList.remove("is-open");
+        backdrop.classList.remove("is-open");
+        sheet.setAttribute("aria-hidden", "true");
+        backdrop.hidden = true;
+      }
+
+      function openSheet(id) {
+        var svc = api && api.serviceById ? api.serviceById(id) : null;
+        if (!svc) return;
+        var info = (infoApi && infoApi.pack && infoApi.pack(svc)) || {};
+        setSheetHero(id);
+        sheetTitle.textContent = svc.name;
+        sheetLead.textContent = info.lead || svc.blurb || "";
+        sheetFacts.innerHTML =
+          (svc.ageHint ? '<span class="fact">' + esc(svc.ageHint) + "</span>" : "") +
+          (svc.durationHint ? '<span class="fact">' + esc(svc.durationHint) + "</span>" : "") +
+          (svc.priceHint ? '<span class="fact">' + esc(svc.priceHint) + "</span>" : "") +
+          ((svc.venues || []).map(function (v) {
+            return '<span class="fact">' + esc(venueName(v)) + "</span>";
+          }).join(""));
+
+        var list = slotsFor(id);
+        if (svc.enquireOnly) {
+          sheetSlots.innerHTML =
+            '<p class="empty-slots">This service is arranged with the office - continue to send an enquiry through the live Booking Portal.</p>';
+        } else if (!list.length) {
+          sheetSlots.innerHTML =
+            '<p class="empty-slots">No weekly times listed for this service right now. Continue to the live portal for the latest places.</p>';
+        } else {
+          sheetSlots.innerHTML = slotsHtml(list);
+        }
+
+        sheetBook.href = "/bookingportal.html?service=" + encodeURIComponent(id);
+        sheetBook.textContent = svc.enquireOnly ? "Continue to enquire" : "Continue to book";
+        backdrop.hidden = false;
+        requestAnimationFrame(function () {
+          backdrop.classList.add("is-open");
+          sheet.classList.add("is-open");
+          sheet.setAttribute("aria-hidden", "false");
+        });
+      }
+
+      mosaic.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-id]");
+        if (!btn) return;
+        openSheet(btn.getAttribute("data-id"));
+      });
+      document.getElementById("sheetClose").addEventListener("click", closeSheet);
+      document.getElementById("sheetDismiss").addEventListener("click", closeSheet);
+      backdrop.addEventListener("click", closeSheet);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeSheet();
+      });
+
+      if (!api || typeof api.load !== "function") {
+        mosaic.innerHTML =
+          '<p class="note" style="margin:0">Could not load the live booking offer. Open the <a href="/bookingportal.html">Booking Portal</a>.</p>';
+        return;
+      }
+
+      mosaic.innerHTML =
+        '<p class="note" style="margin:0">Loading live services and places...</p>';
+
+      api
+        .load()
+        .then(function () {
+          if (servicesHeadP) {
+            var term = api.TERM_LABEL || "Autumn term";
+            servicesHeadP.textContent =
+              term + " - live catalogue and places from the Booking Portal.";
+          }
+          renderMosaic();
+        })
+        .catch(function () {
+          mosaic.innerHTML =
+            '<p class="note" style="margin:0">Could not load live places. Refresh, or open the <a href="/bookingportal.html">Booking Portal</a>.</p>';
+        });
+    })();
+  </script>
+</body>
+</html>

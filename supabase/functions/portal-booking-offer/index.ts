@@ -37,6 +37,11 @@ import {
   type CrashActivity,
   type CrashWeekId,
 } from "../_shared/crash_summer_2026.ts";
+import {
+  AUTUMN_TERM_BOOKING,
+  bookingCalendarAfterSchool,
+  bookingCalendarDayCentre,
+} from "../_shared/portal_term_calendar.ts";
 
 const TERM_KEY = "summer-2026";
 
@@ -53,25 +58,7 @@ function json(status: number, body: Record<string, unknown>) {
 }
 
 /** Public weekly offer is Autumn 2026/27 — MADRE summer doc only supplies the standing roster template. */
-const AUTUMN_TERM = {
-  badge: "AUTUMN TERM 2026",
-  label: "Autumn Term 2026",
-  /** After-school + weekend weekly sessions */
-  start: "2026-09-05",
-  end: "2026-12-18",
-  /** Day Centre opens a few days earlier */
-  dayCentreStart: "2026-09-01",
-  /**
-   * After-school + weekend: half-term week AND the flanking weekends
-   * (Sat 24–Sun 25 Oct, Sat 31 Oct–Sun 1 Nov). Matches invoices / rentals
-   * (13 weekend sessions — not 15).
-   */
-  closedRanges: [{ start: "2026-10-24", end: "2026-11-01" }],
-  /** Day Centre stays open through half term (weekdays). */
-  dayCentreClosedRanges: [],
-  range:
-    "Sat 5 September 2026 – Fri 18 December 2026 · no sessions 24 Oct–1 Nov (half term + weekends) · Day Centre from Tue 1 September · Mon after-school from 7 September · Tue–Fri from 8 September",
-};
+const AUTUMN_TERM = AUTUMN_TERM_BOOKING;
 
 async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   const forceWeek2 =
@@ -545,16 +532,8 @@ Deno.serve(async (req) => {
     TERM_BADGE: AUTUMN_TERM.badge,
     TERM_LABEL: AUTUMN_TERM.label,
     TERM_RANGE: AUTUMN_TERM.range,
-    TERM_CALENDAR: {
-      start: AUTUMN_TERM.start,
-      end: AUTUMN_TERM.end,
-      closedRanges: AUTUMN_TERM.closedRanges,
-    },
-    TERM_CALENDAR_DAY_CENTRE: {
-      start: AUTUMN_TERM.dayCentreStart,
-      end: AUTUMN_TERM.end,
-      closedRanges: AUTUMN_TERM.dayCentreClosedRanges,
-    },
+    TERM_CALENDAR: bookingCalendarAfterSchool(),
+    TERM_CALENDAR_DAY_CENTRE: bookingCalendarDayCentre(),
     SERVICES: [...weekly.services, intensiveService],
     MOCK_SLOTS: [...weeklySlotsPublic, ...intensive.slots],
     INTENSIVE_BLOCKS: intensive.blocks,

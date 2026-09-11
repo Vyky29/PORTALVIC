@@ -58,6 +58,8 @@
       { from: "2027-05-29", to: "2027-05-30" },
       { from: "2027-06-05", to: "2027-06-06" },
     ],
+    /** After-school + weekend: half-term week + flanking weekends. */
+    afterSchoolClosedRanges: [{ from: "2026-10-24", to: "2026-11-01" }],
     /** First open day through last open day of the academic year. */
     openFrom: "2026-09-01",
     openTo: "2027-07-30",

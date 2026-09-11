@@ -3321,7 +3321,12 @@
     return true;
   }
 
-  function isNextYearClubClosedIso(iso) {
+  function isNextYearClubClosedIso(iso, serviceLabel) {
+    var PTC = global.PortalTermCalendar;
+    if (PTC && typeof PTC.isClosedIso === "function") {
+      if (serviceLabel) return !!PTC.isClosedIso(iso, { label: serviceLabel });
+      if (typeof PTC.isFullyClosedIso === "function") return !!PTC.isFullyClosedIso(iso);
+    }
     var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
     if (!cal) return false;
     if (cal.openFrom && iso < cal.openFrom) return true;
@@ -3336,6 +3341,18 @@
         return true;
       }
     }
+    var kind =
+      PTC && typeof PTC.inferServiceKind === "function"
+        ? PTC.inferServiceKind(serviceLabel || "")
+        : serviceIsDayCentre(serviceLabel)
+          ? "day_centre"
+          : "afterschool";
+    if (kind !== "day_centre") {
+      var asRanges = Array.isArray(cal.afterSchoolClosedRanges) ? cal.afterSchoolClosedRanges : [];
+      for (var a = 0; a < asRanges.length; a++) {
+        if (isoInRange(iso, asRanges[a].from, asRanges[a].to)) return true;
+      }
+    }
     var closures = Array.isArray(cal.weekendClosures) ? cal.weekendClosures : [];
     for (var j = 0; j < closures.length; j++) {
       if (isoInRange(iso, closures[j].from, closures[j].to)) return true;
@@ -3343,7 +3360,11 @@
     return false;
   }
 
-  function isClubClosedIso(iso, data) {
+  /**
+   * Club closed for this ISO. Pass serviceLabel when projecting a specific slot
+   * (Day Centre stays open through after-school half term weekdays).
+   */
+  function isClubClosedIso(iso, data, serviceLabel) {
     var termTo = currentYearTermToIso(data);
     // Until Booking 2026/27 is submitted: current-year roster only.
     if (!familyAcceptedNextYear(data)) {
@@ -3362,25 +3383,54 @@
     ) {
       return false;
     }
-    var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27;
-    if (!cal) return false;
-    if (cal.openFrom && iso < cal.openFrom) return true;
-    if (cal.openTo && iso > cal.openTo) return true;
-    var terms = Array.isArray(cal.terms) ? cal.terms : [];
-    for (var i = 0; i < terms.length; i++) {
-      var t = terms[i] || {};
-      if (t.christmasClosed && isoInRange(iso, t.christmasClosed.from, t.christmasClosed.to)) {
-        return true;
-      }
-      if (t.easterClosed && isoInRange(iso, t.easterClosed.from, t.easterClosed.to)) {
-        return true;
-      }
+    return isNextYearClubClosedIso(iso, serviceLabel);
+  }
+
+  function resolveHubSessionStatus(data, iso, endMinutes) {
+    var PSS = global.PortalSessionStatus;
+    var today = new Date();
+    var todayIso = isoDateLocal(today);
+    var nowMins = today.getHours() * 60 + today.getMinutes();
+    var attendance = "";
+    var feedbackSubmitted = false;
+    ((data && data.sessions) || []).forEach(function (row) {
+      if (String((row && row.session_date) || "").slice(0, 10) !== iso) return;
+      var att = String((row && row.attendance) || "");
+      if (att) attendance = att;
+      var hasBody =
+        !!(row && row.id) ||
+        !!(row && String(row.positive_feedback || "").trim()) ||
+        row.engagement_rating != null ||
+        !!(row && String(row.completed_by_name || "").trim());
+      if (hasBody || att) feedbackSubmitted = true;
+    });
+    var summary = (data && data.attendance_summary) || {};
+    if (PSS && typeof PSS.resolve === "function") {
+      var absentOnly =
+        PSS.attendanceIsAbsent && PSS.attendanceIsAbsent(attendance);
+      return PSS.resolve({
+        iso: iso,
+        endMinutes: endMinutes,
+        todayIso: todayIso,
+        nowMinutes: nowMins,
+        attendance: attendance,
+        absentDates: summary.absent_dates,
+        cancelledDates: summary.cancelled_dates,
+        feedbackSubmitted: feedbackSubmitted && !absentOnly,
+      });
     }
-    var closures = Array.isArray(cal.weekendClosures) ? cal.weekendClosures : [];
-    for (var j = 0; j < closures.length; j++) {
-      if (isoInRange(iso, closures[j].from, closures[j].to)) return true;
+    var ended =
+      iso === todayIso && endMinutes != null && nowMins >= endMinutes;
+    if (
+      Array.isArray(summary.absent_dates) &&
+      summary.absent_dates.indexOf(iso) >= 0
+    ) {
+      return { status: "absent", label: "Absent", endedByClock: ended };
     }
-    return false;
+    if (ended) {
+      return { status: "awaiting_feedback", label: "Awaiting feedback", endedByClock: true };
+    }
+    return { status: "scheduled", label: "Scheduled", endedByClock: false };
   }
 
   function formatHubDateLabel(iso) {
@@ -3545,9 +3595,17 @@
         if (!venue) venue = crashVenueFromSlotLabel(row.slot_label);
       });
       if (minStart == null || maxEnd == null) return;
-      var completed = g.iso === todayIso && nowMins >= maxEnd;
-      /* Keep today's finished slots so the hub can show red "Session completed" cards. */
-      if (completed && !opts.includeCompletedToday) return;
+      var st = resolveHubSessionStatus(data, g.iso, maxEnd);
+      var completed = st.status === "completed";
+      var endedToday =
+        g.iso === todayIso &&
+        (st.endedByClock ||
+          completed ||
+          st.status === "absent" ||
+          st.status === "cancelled" ||
+          st.status === "awaiting_feedback");
+      /* Keep today's finished slots so the hub can show status chips. */
+      if (endedToday && !opts.includeCompletedToday) return;
       var dur = Math.max(0, maxEnd - minStart);
       var activityLabel = crashActivityRowLabel(g.activity);
       var rawLabel = (dur ? dur + "' " : "") + activityLabel;
@@ -3564,6 +3622,7 @@
         isTomorrow: g.iso === tomorrowIso,
         source: "crash",
         completed: completed,
+        status: st.status,
         _start: minStart,
         _end: maxEnd,
       });
@@ -3628,7 +3687,10 @@
       var iso = isoDateLocal(d);
       // Stop scanning past current-year end for this participant.
       if (!familyAcceptedNextYear(data) && iso > termTo) break;
-      if (isClubClosedIso(iso, data)) continue;
+      var PTC = global.PortalTermCalendar;
+      if (PTC && typeof PTC.isFullyClosedIso === "function" && PTC.isFullyClosedIso(iso)) {
+        continue;
+      }
       var startIso = participantSessionStartIso(data);
       if (startIso && iso < startIso) continue;
       // JS: Sun=0 … Sat=6 → calendar Mon=0 … Sun=6
@@ -3638,17 +3700,27 @@
       if (!slots || !slots.length) continue;
       slots.forEach(function (s) {
         if (out.length >= max) return;
-        if (nextYearDateBeforeServiceStart(iso, serviceIsDayCentre(s.label || s.service), data)) {
+        var lab = s.label || s.service || "";
+        if (isClubClosedIso(iso, data, lab)) return;
+        if (nextYearDateBeforeServiceStart(iso, serviceIsDayCentre(lab), data)) {
           return;
         }
         var endM = parseServiceEndMinutes(s.time);
-        var completed = iso === todayIso && endM != null && nowMins >= endM;
-        if (completed && !opts.includeCompletedToday) return;
+        var st = resolveHubSessionStatus(data, iso, endM);
+        var completed = st.status === "completed";
+        var endedToday =
+          iso === todayIso &&
+          (st.endedByClock ||
+            completed ||
+            st.status === "absent" ||
+            st.status === "cancelled" ||
+            st.status === "awaiting_feedback");
+        if (endedToday && !opts.includeCompletedToday) return;
         out.push({
           iso: iso,
           dayLabel: formatHubDateLabel(iso),
-          label: shortServiceChipLabel(s.label || "Service") || s.label || "Service",
-          rawLabel: s.label || "Service",
+          label: shortServiceChipLabel(lab) || lab || "Service",
+          rawLabel: lab || "Service",
           day: s.day || "",
           time: hubOpsDisplayTime(s.time) || s.time || "",
           venue: String(s.venue || "").trim(),
@@ -3657,6 +3729,7 @@
           isTomorrow: iso === tomorrowIso,
           source: "roster",
           completed: completed,
+          status: st.status,
           _start: parseServiceStartMinutes(s.time),
           _end: endM,
         });
@@ -3685,8 +3758,17 @@
       if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
       if (iso < todayIso) return;
       var endM = parseServiceEndMinutes(raw.time);
-      var completed = iso === todayIso && endM != null && nowMins >= endM;
-      if (completed && !opts.includeCompletedToday) return;
+      var st = resolveHubSessionStatus(data, iso, endM);
+      var completed = st.status === "completed";
+      var endedToday =
+        iso === todayIso &&
+        (st.endedByClock ||
+          completed ||
+          st.status === "absent" ||
+          st.status === "cancelled" ||
+          st.status === "awaiting_feedback");
+      if (endedToday && !opts.includeCompletedToday) return;
+      if (isClubClosedIso(iso, data, raw.label || raw.service || "")) return;
       out.push({
         iso: iso,
         dayLabel: formatHubDateLabel(iso),
@@ -3700,6 +3782,7 @@
         isTomorrow: iso === tomorrowIso,
         source: "booking",
         completed: completed,
+        status: st.status,
         _start: parseServiceStartMinutes(raw.time),
         _end: endM,
       });
@@ -3809,9 +3892,14 @@
       guard++;
       var iso = isoDateLocal(cursor);
       if (iso > toIso) break;
-      if (!isClubClosedIso(iso, data)) {
-        var jsDow = cursor.getDay();
-        var col = jsDow === 0 ? 6 : jsDow - 1;
+      var jsDow = cursor.getDay();
+      var col = jsDow === 0 ? 6 : jsDow - 1;
+      var kind = dcCols[col] ? "day_centre" : "afterschool";
+      var closed =
+        global.PortalTermCalendar && typeof global.PortalTermCalendar.isClosedIso === "function"
+          ? global.PortalTermCalendar.isClosedIso(iso, { serviceKind: kind })
+          : isClubClosedIso(iso, data, kind === "day_centre" ? "Day Centre" : "Aquatic");
+      if (!closed) {
         // 1–4 Sept 2026: Day Centre only — other services start 5 Sept.
         var runs =
           cols[col] && (dcCols[col] || !nextYearDateBeforeServiceStart(iso, false, data));
@@ -5375,30 +5463,55 @@
 
   function hubOpsSessionSlotHtml(s, data) {
     var tone = serviceChipToneClass(s.rawLabel || s.label || "");
-    var completed = !!s.completed;
+    var status = String(s.status || (s.completed ? "completed" : "") || "").toLowerCase();
+    if (!status && data) {
+      var st0 = resolveHubSessionStatus(data, s.iso, s._end);
+      status = st0.status;
+      s.completed = st0.status === "completed";
+    }
+    var completed = status === "completed";
+    var absent = status === "absent";
+    var awaiting = status === "awaiting_feedback";
     var place = hubOpsDisplayPlace(s, data);
     var clock = hubOpsDisplayTime(s.time);
     var pinIco =
       '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
     var clockIco =
       '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    var statusChip = "";
+    if (completed) {
+      statusChip =
+        '<span class="pp-hub-ops__session-done-chip"><span class="pp-hub-ops__session-done-chip__mark" aria-hidden="true">✓</span>SESSION COMPLETED</span>';
+    } else if (absent) {
+      statusChip =
+        '<span class="pp-hub-ops__session-done-chip pp-hub-ops__session-done-chip--absent">ABSENT</span>';
+    } else if (awaiting) {
+      statusChip =
+        '<span class="pp-hub-ops__session-done-chip pp-hub-ops__session-done-chip--awaiting">AWAITING FEEDBACK</span>';
+    }
     var timeBlock = clock
       ? '<span class="pp-hub-ops__slot-end">' +
-        (completed
-          ? '<span class="pp-hub-ops__session-done-chip"><span class="pp-hub-ops__session-done-chip__mark" aria-hidden="true">✓</span>SESSION COMPLETED</span>'
-          : "") +
+        statusChip +
         '<span class="pp-hub-ops__slot-time">' +
         clockIco +
         "<span>" +
         esc(clock) +
         "</span></span></span>"
       : "";
+    var ariaExtra = completed
+      ? " — session completed"
+      : absent
+        ? " — absent"
+        : awaiting
+          ? " — awaiting feedback"
+          : "";
     return (
       '<li class="pp-hub-ops__slot pp-hub-ops__slot--' +
       esc(tone) +
       (completed ? " pp-hub-ops__slot--completed" : "") +
+      (absent ? " pp-hub-ops__slot--absent" : "") +
       '"' +
-      (completed ? ' aria-label="' + esc((s.label || "Session") + " — session completed") + '"' : "") +
+      (ariaExtra ? ' aria-label="' + esc((s.label || "Session") + ariaExtra) + '"' : "") +
       ">" +
       '<span class="pp-hub-ops__slot-ico" aria-hidden="true">' +
       hubOpsSlotGlyph(tone) +
