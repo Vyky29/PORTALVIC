@@ -1134,8 +1134,7 @@
       if(!iso || !staffId) return [];
       const out = [];
       const seen = Object.create(null);
-      portalScheduleOverrideRowsAll().forEach(function(ov){
-        if(normaliseIsoDate(ov.session_date) !== iso) return;
+      portalScheduleOverrideRowsForSessionIso(iso).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(String(ov.override_type || '').trim() !== 'session_add') return;
         let pl = ov.payload;
@@ -1895,7 +1894,7 @@
     function portalOpenSlotMakeupOverrideForSession(s, sessionDateIso){
       const iso = normaliseIsoDate(sessionDateIso);
       if(!iso || !s) return null;
-      const all = portalScheduleOverrideRowsAll().filter(function(r){
+      const all = portalScheduleOverrideRowsForSessionIso(iso).filter(function(r){
         if(String(r.status || 'active') !== 'active') return false;
         if(String(r.override_type || '').trim() !== 'client_replace_in_slot') return false;
         if(!portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id)) return false;
@@ -2101,7 +2100,7 @@
       return !!portalFindSlotOpenOverrideForSession(s, sessionDateIso);
     }
     function portalFindSlotOpenOverrideForSession(s, sessionDateIso){
-      const all = portalScheduleOverrideRowsAll();
+      const all = portalScheduleOverrideRowsForSessionIso(sessionDateIso);
       for(let i = 0; i < all.length; i++){
         if(portalSlotOpenOverrideMatchesSessionRow(all[i], s, sessionDateIso)) return all[i];
       }
@@ -2147,6 +2146,26 @@
     function portalNormalizeScheduleOverrideSessionDate(v){
       return normaliseIsoDate(v);
     }
+    /** One calendar day's override rows. Full-list scans froze Roberto's iPhone after hydrate. */
+    function portalScheduleOverrideRowsForSessionIso(iso){
+      const day = normaliseIsoDate(iso);
+      if(!day) return [];
+      try{
+        if(typeof window.portalScheduleOverrideRowsForIso === 'function'){
+          const sliced = window.portalScheduleOverrideRowsForIso(day);
+          if(Array.isArray(sliced)) return sliced;
+        }
+        const by = window.__PORTAL_SCHEDULE_OVERRIDE_BY_ISO__;
+        if(by && Array.isArray(by[day])) return by[day];
+      }catch(_){}
+      const all = portalScheduleOverrideRowsAll();
+      const out = [];
+      for(let i = 0; i < all.length; i++){
+        if(normaliseIsoDate(all[i] && all[i].session_date) === day) out.push(all[i]);
+      }
+      return out;
+    }
+    try{ window.portalScheduleOverrideRowsForSessionIso = portalScheduleOverrideRowsForSessionIso; }catch(_){}
     /** True when this override row concerns the logged-in staff (anchor or cover on reassign). */
     function portalScheduleOverrideRowAppliesToLoggedInStaff(row){
       if(!row || typeof row !== 'object') return false;
@@ -2229,11 +2248,10 @@
       const dateIso = normaliseIsoDate(iso);
       if(!sid || !dateIso) return false;
       const P = window.PortalParticipantsSheet;
-      const all = portalScheduleOverrideRowsAll();
+      const all = portalScheduleOverrideRowsForSessionIso(dateIso);
       for(let i = 0; i < all.length; i++){
         const r = all[i];
         if(String(r.status || 'active') !== 'active') continue;
-        if(normaliseIsoDate(r.session_date) !== dateIso) continue;
         const t = String(r.override_type || '').trim();
         if(!t || t === 'override_void') continue;
         const anchor = portalNormKeyStr(r.anchor_staff_id);
@@ -2698,12 +2716,11 @@
       if(!iso || !sid) return false;
       /* Sun 6: John covered Emanuel Hub — stale overrides still name Youssef. */
       if(iso === '2026-09-06' && sid === 'youssef') return false;
-      const list = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+      const list = portalScheduleOverrideRowsForSessionIso(iso);
       for(let i = 0; i < list.length; i++){
         const row = list[i];
         if(!row || String(row.status || 'active') !== 'active') continue;
         if(String(row.override_type || '').trim() !== 'instructor_reassign') continue;
-        if(normaliseIsoDate(row.session_date) !== iso) continue;
         const cover = portalEffectiveCoverStaffKeyFromOverrideRow(row);
         if(cover && cover === sid) return true;
       }
@@ -2743,12 +2760,11 @@
       const normStaffKey = function(v){ return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, ''); };
       const sidNorm = normStaffKey(staffId);
       if(!sidNorm) return false;
-      const list = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+      const list = portalScheduleOverrideRowsForSessionIso(iso);
       const P = window.PortalParticipantsSheet;
       for(let i = 0; i < list.length; i++){
         const row = list[i];
         if(!row || String(row.status || 'active') !== 'active') continue;
-        if(normaliseIsoDate(row.session_date) !== iso) continue;
         if(!portalStaffKeysMatch(row.anchor_staff_id, staffId)) continue;
         const t = String(row.override_type || '').trim();
         if(t === 'session_add') return true;
@@ -3563,7 +3579,7 @@
         if(wantType && String(r.override_type || '').trim() !== wantType) return false;
         return true;
       }
-      const all = portalScheduleOverrideRowsAll();
+      const all = portalScheduleOverrideRowsForSessionIso(iso);
       let rows = all.filter(function(r){ return rowMatchesSession(r, true); });
       if(!rows.length){
         const loose = all.filter(function(r){ return rowMatchesSession(r, false); });
@@ -3644,12 +3660,11 @@
       const staff = portalNormKeyStr(ov && ov.anchor_staff_id);
       const start = portalCanonicalHmToken(ov && ov.anchor_start);
       if(!iso || !staff || !start) return raw;
-      const all = portalScheduleOverrideRowsAll();
+      const all = portalScheduleOverrideRowsForSessionIso(iso);
       for(let i = 0; i < all.length; i++){
         const r = all[i];
         if(String(r.status || 'active') !== 'active') continue;
         if(String(r.override_type || '').trim() !== 'client_replace_in_slot') continue;
-        if(normaliseIsoDate(r.session_date) !== iso) continue;
         if(!portalStaffKeysMatch(r.anchor_staff_id, staff)) continue;
         if(portalCanonicalHmToken(r.anchor_start) !== start) continue;
         const cid = portalOverrideReplacementClientId(r.payload);
@@ -3668,12 +3683,11 @@
       if(!iso) return false;
       const startTok = portalCanonicalHmToken(row.anchor_start);
       const venue = portalNormKeyStr(row.anchor_venue);
-      const all = portalScheduleOverrideRowsAll();
+      const all = portalScheduleOverrideRowsForSessionIso(iso);
       for(let i = 0; i < all.length; i++){
         const r = all[i];
         if(String(r.status || 'active') !== 'active') continue;
         if(String(r.override_type || '').trim() !== 'instructor_reassign') continue;
-        if(normaliseIsoDate(r.session_date) !== iso) continue;
         if(!portalStaffKeysMatch(r.anchor_staff_id, me)) continue;
         const pl = portalOverrideCoverPayload(r);
         const cover = portalNormKeyStr(pl && pl.covering_staff_id);
@@ -3692,7 +3706,7 @@
       if(rows.length || overrideType !== 'client_replace_in_slot') return rows[0] || null;
       const iso = normaliseIsoDate(sessionDateIso);
       if(!iso || !s) return null;
-      const all = portalScheduleOverrideRowsAll().filter(function(r){
+      const all = portalScheduleOverrideRowsForSessionIso(iso).filter(function(r){
         if(String(r.status || 'active') !== 'active') return false;
         if(String(r.override_type || '').trim() !== 'client_replace_in_slot') return false;
         if(!portalStaffKeysMatch(r.anchor_staff_id, s.staffId)) return false;
@@ -3740,13 +3754,12 @@
       const iso = normaliseIsoDate(sessionDateIso);
       if(!iso || !s) return null;
       const sid = portalNormKeyStr(s.staffId);
-      const all = portalScheduleOverrideRowsAll();
+      const all = portalScheduleOverrideRowsForSessionIso(iso);
       let best = null;
       for(let i = 0; i < all.length; i++){
         const r = all[i];
         if(String(r.status || 'active') !== 'active') continue;
         if(String(r.override_type || '').trim() !== 'client_replace_in_slot') continue;
-        if(normaliseIsoDate(r.session_date) !== iso) continue;
         if(!portalStaffKeysMatch(r.anchor_staff_id, sid)) continue;
         if(!portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) continue;
         if(!portalScheduleOverrideMatchesSessionWindow(r, s, iso)) continue;
@@ -3784,13 +3797,12 @@
       if(!iso || !s || !me) return null;
       const cid = String(s.clientId || '').trim().toLowerCase();
       if(!cid || portalScheduleOverrideAnchorIsOpenSlot(cid)) return null;
-      const all = portalScheduleOverrideRowsAll();
+      const all = portalScheduleOverrideRowsForSessionIso(iso);
       let best = null;
       for(let i = 0; i < all.length; i++){
         const r = all[i];
         if(String(r.status || 'active') !== 'active') continue;
         if(String(r.override_type || '').trim() !== 'instructor_reassign') continue;
-        if(normaliseIsoDate(r.session_date) !== iso) continue;
         const pl = r.payload || {};
         const cover = typeof portalCanonicalStaffKeyForMatch === 'function'
           ? portalCanonicalStaffKeyForMatch(pl.covering_staff_id || pl.covering_staff_name)
@@ -4109,10 +4121,9 @@
       const sid = portalNormKeyStr(staffId);
       const venue = portalNormKeyStr(base.venue);
       const intervals = [];
-      portalScheduleOverrideRowsAll().forEach(function(ov){
+      portalScheduleOverrideRowsForSessionIso(iso).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return;
-        if(normaliseIsoDate(ov.session_date) !== iso) return;
         if(!portalStaffKeysMatch(ov.anchor_staff_id, sid)) return;
         if(portalOverrideIsTrial(ov)) return;
         const repId = portalOverrideReplacementClientId(ov.payload);
@@ -4156,10 +4167,9 @@
         if(it && it.portalOverrideMakeUpTag) markReplaced(it);
       });
       if(iso && sid){
-        portalScheduleOverrideRowsAll().forEach(function(ov){
+        portalScheduleOverrideRowsForSessionIso(iso).forEach(function(ov){
           if(String(ov.status || 'active') !== 'active') return;
           if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return;
-          if(normaliseIsoDate(ov.session_date) !== iso) return;
           if(!portalStaffKeysMatch(ov.anchor_staff_id, sid)) return;
           if(portalOverrideIsTrial(ov)) return;
           const repId = portalOverrideReplacementClientId(ov.payload);
@@ -4269,10 +4279,9 @@
         }
       });
       const out = items.slice();
-      portalScheduleOverrideRowsAll().forEach(function(ov){
+      portalScheduleOverrideRowsForSessionIso(iso).forEach(function(ov){
         if(!ov || String(ov.status || 'active') !== 'active') return;
         if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return;
-        if(normaliseIsoDate(ov.session_date) !== iso) return;
         if(!portalStaffKeysMatch(ov.anchor_staff_id, sid)) return;
         if(portalLoggedInStaffReassignedOffSlotForRow(ov)) return;
         if(ov.id && seenOvIds[String(ov.id)]) return;

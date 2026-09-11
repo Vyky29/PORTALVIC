@@ -786,8 +786,7 @@
     function portalDeferTermFeedbackRebuild(){
       if(window.__PORTAL_TERM_REBUILD_DEFER__) return;
       window.__PORTAL_TERM_REBUILD_DEFER__ = 1;
-      var go = function(){
-        window.__PORTAL_TERM_REBUILD_DEFER__ = 0;
+      var runRebuild = function(){
         try{
           if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
             rebuildTermShiftAndFeedbackFromSessionModel();
@@ -796,8 +795,6 @@
         try{
           if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
         }catch(_){}
-        /* Only paint the Term grid when the sheet is open — otherwise every
-           rebootstrap rebuilt ~4 months of cells for Roberto (7–8s × N). */
         try{
           var termSheet = document.getElementById('termSheet');
           var termOpen = !!(termSheet && termSheet.classList.contains('open'));
@@ -811,8 +808,28 @@
           }
         }catch(_){}
       };
-      if(typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 2800 });
-      else setTimeout(go, 400);
+      var go = function(){
+        window.__PORTAL_TERM_REBUILD_DEFER__ = 0;
+        var termOpen = false;
+        try{
+          var termSheet = document.getElementById('termSheet');
+          termOpen = !!(termSheet && termSheet.classList.contains('open'));
+        }catch(_){}
+        /* Roberto: do not force a 4-month Term walk ~2s after override hydrate
+           (timeout:2800 used to freeze taps while Today was still painting). */
+        if(!termOpen){
+          if(!window.__PORTAL_TERM_REBUILD_BG__){
+            window.__PORTAL_TERM_REBUILD_BG__ = setTimeout(function(){
+              window.__PORTAL_TERM_REBUILD_BG__ = 0;
+              runRebuild();
+            }, 8000);
+          }
+          return;
+        }
+        runRebuild();
+      };
+      if(typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 12000 });
+      else setTimeout(go, 1200);
     }
     window.portalDeferTermFeedbackRebuild = portalDeferTermFeedbackRebuild;
 
@@ -1187,11 +1204,12 @@
       const sid = String(staffId || '').trim().toLowerCase();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid) return false;
       if(portalTermStaffAwayDatesFor(sid).indexOf(iso) >= 0) return false;
-      const rows = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+      const rows = typeof portalScheduleOverrideRowsForSessionIso === 'function'
+        ? portalScheduleOverrideRowsForSessionIso(iso)
+        : (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []);
       let found = false;
       rows.forEach(function(ov){
         if(!ov || String(ov.status || 'active') !== 'active') return;
-        if(normaliseIsoDate(ov.session_date) !== iso) return;
         if(String(ov.anchor_staff_id || '').trim().toLowerCase() !== sid) return;
         const t = String(ov.override_type || '').trim();
         if(t === 'slot_update' || t === 'slot_close' || t === 'instructor_reassign' || t === 'client_cancelled') found = true;
@@ -1549,8 +1567,9 @@
           if(typeof portalSessionRosterTimeWasUpdated === 'function' && portalSessionRosterTimeWasUpdated(baseSession, iso)) out.hasUpdated = true;
           if(out.hasMakeUp && out.hasTrial && out.hasAbsentAnnounced && out.hasCancelled && out.hasUpdated) break;
         }
-        (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []).forEach(function(ov){
-          if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(iso)) return;
+        (typeof portalScheduleOverrideRowsForSessionIso === 'function'
+          ? portalScheduleOverrideRowsForSessionIso(iso)
+          : (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [])).forEach(function(ov){
           if(String(ov.status || 'active') !== 'active') return;
           if(String(ov.anchor_staff_id || '').trim().toLowerCase() !== sid) return;
           const t = String(ov.override_type || '').trim();
@@ -1578,8 +1597,9 @@
         });
         const normStaffKeyOv = function(v){ return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, ''); };
         const sidNormOv = normStaffKeyOv(sid);
-        (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []).forEach(function(ov){
-          if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(iso)) return;
+        (typeof portalScheduleOverrideRowsForSessionIso === 'function'
+          ? portalScheduleOverrideRowsForSessionIso(iso)
+          : (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [])).forEach(function(ov){
           if(String(ov.status || 'active') !== 'active') return;
           if(ov.override_type !== 'session_add') return;
           if(normStaffKeyOv(ov.anchor_staff_id) !== sidNormOv) return;
@@ -1630,7 +1650,9 @@
     function portalFutureOverrideMetaForDate(sessionDateIso, staffId){
       const sid = String(staffId || '').trim().toLowerCase();
       if(!sessionDateIso || !sid) return null;
-      const rows = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+      const rows = typeof portalScheduleOverrideRowsForSessionIso === 'function'
+        ? portalScheduleOverrideRowsForSessionIso(sessionDateIso)
+        : (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []);
       let best = null;
       const scoreForType = function(t){
         if(t === 'client_replace_in_slot') return 30;

@@ -1618,7 +1618,7 @@ export function portalSyncLeadTeamShiftUi() {
           try {
             portalSyncLeadTeamShiftUi();
           } catch (_a) {}
-        }, 0);
+        }, 450);
       }
     }
   } catch (e) {

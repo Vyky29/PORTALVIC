@@ -1685,14 +1685,12 @@
       const sid = typeof portalNormKeyStr === 'function'
         ? portalNormKeyStr(s.staffId)
         : String(s.staffId || '').trim().toLowerCase();
-      const rows = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+      const rows = typeof portalScheduleOverrideRowsForSessionIso === 'function'
+        ? portalScheduleOverrideRowsForSessionIso(iso)
+        : (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []);
       for(let i = 0; i < rows.length; i++){
         const r = rows[i];
         if(String(r.status || 'active') !== 'active') continue;
-        const rowIso = typeof portalNormalizeScheduleOverrideSessionDate === 'function'
-          ? portalNormalizeScheduleOverrideSessionDate(r.session_date)
-          : String(r.session_date || '').trim().slice(0, 10);
-        if(rowIso !== iso) continue;
         let p = r.payload;
         if(typeof p === 'string'){
           try{ p = JSON.parse(p); }catch(_){ p = {}; }
@@ -1824,15 +1822,13 @@
       }
       /* Loose fallback: active reassign away for this staff+client+date (window match missed). */
       if(sid){
-        const allRe = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+        const allRe = typeof portalScheduleOverrideRowsForSessionIso === 'function'
+          ? portalScheduleOverrideRowsForSessionIso(iso)
+          : (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []);
         for(let ri = 0; ri < allRe.length; ri++){
           const rov = allRe[ri];
           if(String(rov.status || 'active') !== 'active') continue;
           if(String(rov.override_type || '').trim() !== 'instructor_reassign') continue;
-          const rowIso = typeof portalNormalizeScheduleOverrideSessionDate === 'function'
-            ? portalNormalizeScheduleOverrideSessionDate(rov.session_date)
-            : String(rov.session_date || '').trim().slice(0, 10);
-          if(rowIso !== iso) continue;
           const anchorR = typeof portalNormKeyStr === 'function'
             ? portalNormKeyStr(rov.anchor_staff_id)
             : String(rov.anchor_staff_id || '').trim().toLowerCase();
@@ -1913,10 +1909,8 @@
       if(!s || !sessionDateIso) return String(s && s.clientId || '').trim().toLowerCase();
       const isoEff = portalNormalizeScheduleOverrideSessionDate(sessionDateIso);
       if(!isoEff) return String(s && s.clientId || '').trim().toLowerCase();
-      const rows = portalScheduleOverrideRowsAll().filter(function(r){
+      const rows = portalScheduleOverrideRowsForSessionIso(isoEff).filter(function(r){
         if(String(r.status || 'active') !== 'active') return false;
-        const rowIso = portalNormalizeScheduleOverrideSessionDate(r.session_date);
-        if(!rowIso || rowIso !== isoEff) return false;
         if(portalNormKeyStr(r.anchor_staff_id) !== portalNormKeyStr(s.staffId)) return false;
         if(portalNormKeyStr(r.anchor_venue) !== portalNormKeyStr(s.venue)) return false;
         if(!portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) return false;
@@ -2028,8 +2022,7 @@
       if(!cell || typeof weekServiceCatFn !== 'function') return;
       const iso = portalIsoYmdFromDate(cell);
       const sid = String(staffId || '').trim().toLowerCase();
-      portalScheduleOverrideRowsAll().forEach(function(ov){
-        if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(iso)) return;
+      portalScheduleOverrideRowsForSessionIso(iso).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(ov.override_type !== 'instructor_reassign') return;
         const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
@@ -2093,8 +2086,7 @@
           : Object.assign({}, s, { __portalBaseSession: s });
         if(eff.clientId) acc.push(eff);
       });
-      portalScheduleOverrideRowsAll().forEach(function(ov){
-        if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(sessionDateIso)) return;
+      portalScheduleOverrideRowsForSessionIso(sessionDateIso).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(ov.override_type !== 'instructor_reassign') return;
         const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
@@ -2114,10 +2106,9 @@
         if(!isRealFn(synth)) return;
         acc.push(synth);
       });
-      portalScheduleOverrideRowsAll().forEach(function(ov){
+      portalScheduleOverrideRowsForSessionIso(sessionDateIso).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return;
-        if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(sessionDateIso)) return;
         if(portalNormKeyStr(ov.anchor_staff_id) !== portalNormKeyStr(sid)) return;
         const repId = portalOverrideReplacementClientId(ov.payload);
         if(!repId) return;
@@ -2446,8 +2437,7 @@
         : portalNormKeyStr(staffId);
       const iso = normaliseIsoDate(sessionDateKey);
       const bySlot = Object.create(null);
-      portalScheduleOverrideRowsAll().forEach(function(ov){
-        if(normaliseIsoDate(ov.session_date) !== iso) return;
+      portalScheduleOverrideRowsForSessionIso(iso).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(String(ov.override_type || '').trim() !== 'instructor_reassign') return;
         const cov = portalInstructorCoverStaffKeyFromOverride(ov);
@@ -2680,12 +2670,13 @@
           if(!Number.isFinite(lo1) || !Number.isFinite(hi1) || !Number.isFinite(lo2) || !Number.isFinite(hi2)) return false;
           return lo1 < hi2 && lo2 < hi1;
         };
-      const rows = typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : [];
+      const rows = typeof portalScheduleOverrideRowsForSessionIso === 'function'
+        ? portalScheduleOverrideRowsForSessionIso(iso)
+        : (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []);
       for(let i = 0; i < rows.length; i++){
         const ov = rows[i];
         if(String(ov.status || 'active') !== 'active') continue;
         if(String(ov.override_type || '').trim() !== 'instructor_reassign') continue;
-        if(normaliseIsoDate(ov.session_date) !== iso) continue;
         const cov = portalInstructorCoverStaffKeyFromOverride(ov);
         const me = typeof portalCanonicalStaffKeyForMatch === 'function'
           ? portalCanonicalStaffKeyForMatch(sid)
@@ -3795,8 +3786,7 @@
       // so normalise both sides the same way before matching.
       const normStaffKey = function(v){ return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, ''); };
       const staffIdNorm = normStaffKey(staffId);
-      portalScheduleOverrideRowsAll().forEach(function(ov){
-        if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(sessionDateKey)) return;
+      portalScheduleOverrideRowsForSessionIso(sessionDateKey).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(ov.override_type !== 'session_add') return;
         if(normStaffKey(ov.anchor_staff_id) !== staffIdNorm) return;
