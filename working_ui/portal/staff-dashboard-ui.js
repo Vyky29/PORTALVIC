@@ -3679,7 +3679,15 @@
           /* Wait for overrides + feedback pipeline before the first Term paint so
              Roberto does not see cancelled-red → green/blue flip on open. */
           const paintTerm = function(){
-            renderTermCalendarGrid({ force: false });
+            try{
+              renderTermCalendarGrid({ force: true });
+            }catch(err){
+              try{ console.warn('[portal] term grid paint', err); }catch(_){}
+            }
+            const g = document.getElementById('termGrid');
+            if(g && !g.querySelector('.term-cal-month')){
+              g.innerHTML = '<p class="muted" style="padding:16px;margin:0">Term calendar still loading. Close and open Term again.</p>';
+            }
           };
           const termDataReady = function(){
             try{
@@ -3690,8 +3698,8 @@
             }catch(_r){ return false; }
           };
           if(termDataReady()){
-            if(typeof portalDeferHeavyDashboardRefresh === 'function') portalDeferHeavyDashboardRefresh(paintTerm, 0);
-            else if(typeof portalScheduleTermGridIdleRender === 'function') portalScheduleTermGridIdleRender(paintTerm, 0);
+            if(typeof portalScheduleTermGridIdleRender === 'function') portalScheduleTermGridIdleRender(paintTerm, 0);
+            else if(typeof portalDeferHeavyDashboardRefresh === 'function') portalDeferHeavyDashboardRefresh(paintTerm, 0);
             else paintTerm();
           }else{
             let tries = 0;

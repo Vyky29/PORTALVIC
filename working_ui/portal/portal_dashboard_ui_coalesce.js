@@ -83,16 +83,17 @@
   };
 
   var heavyRefreshTimer = null;
-  var heavyRefreshFn = null;
+  var heavyRefreshQueue = [];
   var heavyRefreshGen = 0;
 
   /**
    * Yield out of click/rAF handlers before heavy DOM work (term grid, week lists).
-   * Coalesce bursts: Roberto's load was stacking ~18 deferred rebuilds × 7–8s each.
+   * Coalesce bursts into one timer, but run every queued callback — dropping all but
+   * the last fn left Term open with an empty grid when calendar/absence stole the slot.
    */
   global.portalDeferHeavyDashboardRefresh = function portalDeferHeavyDashboardRefresh(fn, delayMs) {
     if (typeof fn !== "function") return;
-    heavyRefreshFn = fn;
+    heavyRefreshQueue.push(fn);
     heavyRefreshGen += 1;
     var gen = heavyRefreshGen;
     var wait = delayMs == null ? 0 : Math.max(0, Number(delayMs) || 0);
@@ -100,17 +101,17 @@
     heavyRefreshTimer = global.setTimeout(function () {
       heavyRefreshTimer = null;
       if (gen !== heavyRefreshGen) return;
-      var run = heavyRefreshFn;
-      heavyRefreshFn = null;
-      if (typeof run !== "function") return;
+      var batch = heavyRefreshQueue.splice(0, heavyRefreshQueue.length);
+      if (!batch.length) return;
       var kick = function () {
-        if (gen !== heavyRefreshGen) return;
-        try {
-          run();
-        } catch (e) {
+        for (var i = 0; i < batch.length; i++) {
           try {
-            console.warn("[portal] deferred dashboard refresh", e);
-          } catch (_) {}
+            batch[i]();
+          } catch (e) {
+            try {
+              console.warn("[portal] deferred dashboard refresh", e);
+            } catch (_) {}
+          }
         }
       };
       if (typeof global.requestAnimationFrame === "function") {
