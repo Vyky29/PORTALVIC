@@ -2067,7 +2067,101 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     /** @param {string} [bookingsScroll] reserved for future Bookings scroll targets (no longer maps sidebar views into Bookings). */
+    /** Real scroll root for admin views (`#workspace` is also `.admin-workspace`). */
+    function portalAdminScrollRoot(){
+      return document.getElementById('workspace') ||
+        document.querySelector('.admin-workspace') ||
+        document.scrollingElement ||
+        document.documentElement;
+    }
+    var __portalAdminScrollResetRaf = 0;
+    var __portalAdminScrollClampRaf = 0;
+    var __portalAdminViewScrollY = Object.create(null);
+    function portalAdminCancelScrollReset(){
+      if(__portalAdminScrollResetRaf){
+        try{ cancelAnimationFrame(__portalAdminScrollResetRaf); }catch(_c){}
+        __portalAdminScrollResetRaf = 0;
+      }
+    }
+    function portalAdminCancelScrollClamp(){
+      if(__portalAdminScrollClampRaf){
+        try{ cancelAnimationFrame(__portalAdminScrollClampRaf); }catch(_c){}
+        __portalAdminScrollClampRaf = 0;
+      }
+    }
+    function portalAdminSaveViewScroll(viewId){
+      var id = String(viewId || '').trim();
+      if(!id) return;
+      var root = portalAdminScrollRoot();
+      if(!root) return;
+      try{ __portalAdminViewScrollY[id] = root.scrollTop || 0; }catch(_s){}
+    }
+    function portalAdminClampWorkspaceScroll(){
+      var root = portalAdminScrollRoot();
+      if(!root) return;
+      try{
+        var max = Math.max(0, (root.scrollHeight || 0) - (root.clientHeight || 0));
+        if((root.scrollTop || 0) > max) root.scrollTop = max;
+        if(root.scrollTop < 0) root.scrollTop = 0;
+      }catch(_cl){}
+    }
+    /**
+     * After a real section change: paint, then scroll to top once (no competing scrollTo).
+     * Does not run for modal/drawer/row refresh within the same view.
+     */
+    function portalAdminOnViewSectionChanged(viewId){
+      portalAdminCancelScrollReset();
+      var root = portalAdminScrollRoot();
+      var run = function(){
+        __portalAdminScrollResetRaf = 0;
+        if(!root) return;
+        try{ root.scrollTop = 0; }catch(_t){}
+        try{
+          if(document.scrollingElement && document.scrollingElement !== root){
+            document.scrollingElement.scrollTop = 0;
+          }
+        }catch(_w){}
+        try{
+          var heading = document.querySelector('#workspace .page-title, #workspace h1.page-title, #workspace h1');
+          if(heading){
+            if(!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+            heading.focus({ preventScroll: true });
+          }
+        }catch(_f){}
+        portalAdminClampWorkspaceScroll();
+      };
+      /* Double rAF: wait until new view layout is committed. */
+      __portalAdminScrollResetRaf = requestAnimationFrame(function(){
+        __portalAdminScrollResetRaf = requestAnimationFrame(run);
+      });
+    }
+    function portalAdminBindWorkspaceScrollGuards(){
+      if(window.__portalAdminScrollGuardsBound) return;
+      window.__portalAdminScrollGuardsBound = true;
+      try{
+        if('scrollRestoration' in history) history.scrollRestoration = 'manual';
+      }catch(_sr){}
+      var clampSoon = function(){
+        portalAdminCancelScrollClamp();
+        __portalAdminScrollClampRaf = requestAnimationFrame(function(){
+          __portalAdminScrollClampRaf = requestAnimationFrame(function(){
+            __portalAdminScrollClampRaf = 0;
+            portalAdminClampWorkspaceScroll();
+          });
+        });
+      };
+      window.addEventListener('resize', clampSoon, { passive: true });
+      window.addEventListener('orientationchange', clampSoon, { passive: true });
+      window.addEventListener('pageshow', function(ev){
+        if(ev && ev.persisted) clampSoon();
+      });
+    }
+
     function setView(id, bookingsScroll){
+      var prevViewId = String(state.view || '');
+      if(prevViewId && prevViewId !== String(id || '')){
+        portalAdminSaveViewScroll(prevViewId);
+      }
       if(state.view === 'staff_live_map' && id !== 'staff_live_map'){
         try{
           if(window.PortalStaffLiveMap && typeof window.PortalStaffLiveMap.destroyModule === 'function'){
@@ -2163,6 +2257,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         try{ renderNav(); }catch(_rnNav){}
       }
       try{ history.replaceState(null,'','#'+id); }catch(e){}
+      /* Scroll lives on #workspace.admin-workspace — reset only when the section changes. */
+      if(prevViewId !== String(id || '')){
+        portalAdminOnViewSectionChanged(id);
+      }
       try{
         if(window.PortalUiLocale && typeof window.PortalUiLocale.translateTree === 'function' &&
            window.PortalUiLocale.getLang && window.PortalUiLocale.getLang() === 'es'){
@@ -13191,12 +13289,122 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedSlugifyDisplayName(nm){
       return String(nm || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
     }
+    /** Reserved / duty labels — never title-case or rewrite. */
+    function schedIsReservedDisplayLabel(raw){
+      var s = String(raw || '').trim();
+      if(!s) return true;
+      var lo = s.toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+      return lo === '—' || lo === '-' || lo === 'none' || lo === 'no participant' ||
+        lo === 'closed' || lo === 'home' || lo === 'casa' || lo === 'manager' ||
+        lo === 'admin' || lo === 'cover needed' || lo === 'available' ||
+        lo === 'no client' || lo === 'noclient' ||
+        lo === 'replacement' || /^trial\s*·/i.test(s);
+    }
+    /**
+     * Display-only polish (non-destructive). Does not change IDs/slugs/storage.
+     * Order: official map/profile → underscores→spaces → safe title-case only when needed.
+     */
+    function schedTitleCaseWords(s){
+      return String(s || '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(function(w){
+          if(/^(mac|mc)[a-z]/i.test(w) && w.length > 3){
+            return w.charAt(0).toUpperCase() + w.charAt(1).toLowerCase() +
+              w.charAt(2).toUpperCase() + w.slice(3).toLowerCase();
+          }
+          return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+        })
+        .join(' ');
+    }
+    function schedNeedsVisualNamePolish(s){
+      var t = String(s || '').trim();
+      if(!t || schedIsReservedDisplayLabel(t)) return false;
+      if(t.indexOf('_') >= 0) return true;
+      if(t === t.toLowerCase()) return true;
+      if(t === t.toUpperCase() && /[A-Z]/.test(t)) return true;
+      return false;
+    }
+    function schedLookupOfficialParticipantName(raw){
+      var s = String(raw || '').trim();
+      if(!s) return '';
+      var lo = s.toLowerCase();
+      var slug = adminCanonicalClientSlug ? adminCanonicalClientSlug(s) : schedSlugifyDisplayName(s);
+      try{
+        if(MOCK && MOCK.clientsById){
+          if(MOCK.clientsById[slug] && MOCK.clientsById[slug].name){
+            return String(MOCK.clientsById[slug].name).trim();
+          }
+          var keys = Object.keys(MOCK.clientsById);
+          for(var i = 0; i < keys.length; i++){
+            var c = MOCK.clientsById[keys[i]];
+            var nm = String(c && c.name || '').trim();
+            if(!nm) continue;
+            if(nm.toLowerCase() === lo) return nm;
+            if(schedSlugifyDisplayName(nm) === schedSlugifyDisplayName(s)) return nm;
+          }
+        }
+      }catch(_m){}
+      try{
+        if(adminSpreadsheetAdapterAvailable()){
+          var pack = adminMergeSpreadsheetSessions();
+          var notes = (pack && pack.notes) || {};
+          if(notes[slug] && notes[slug].name) return String(notes[slug].name).trim();
+          var nk = Object.keys(notes);
+          for(var j = 0; j < nk.length; j++){
+            var nn = String(notes[nk[j]] && notes[nk[j]].name || '').trim();
+            if(nn && (nn.toLowerCase() === lo || schedSlugifyDisplayName(nn) === schedSlugifyDisplayName(s))) return nn;
+          }
+        }
+      }catch(_n){}
+      return '';
+    }
+    /**
+     * Central display name for Schedule & Covers UI.
+     * Internal id/slug stays untouched; this returns a presentation string only.
+     */
+    function schedGetDisplayName(raw, kind){
+      var original = String(raw == null ? '' : raw).trim();
+      if(!original) return '';
+      if(schedIsReservedDisplayLabel(original) && !/^trial\s*·/i.test(original)){
+        if(/^cover[\s_]*needed$/i.test(original)) return 'COVER NEEDED';
+        if(/^no[\s_]*participant$/i.test(original) || /^no[\s_]*client$/i.test(original)) return 'No participant';
+        return original;
+      }
+      /* "Name · was slug" compound labels from change log */
+      var wasParts = original.split(/\s+·\s+was\s+/i);
+      if(wasParts.length === 2){
+        return schedGetDisplayName(wasParts[0], kind) + ' · was ' + schedGetDisplayName(wasParts[1], kind);
+      }
+      var trialPrefix = '';
+      var body = original;
+      var trialM = body.match(/^(trial\s*·\s*)(.+)$/i);
+      if(trialM){
+        trialPrefix = 'Trial · ';
+        body = String(trialM[2] || '').trim();
+      }
+      body = body.replace(/\s*\(\s*trial[^)]*\)\s*/gi, ' ').replace(/\s+/g, ' ').trim() || body;
+      if(kind === 'staff'){
+        if(typeof portalStaffDisplayName === 'function'){
+          var staffMapped = String(portalStaffDisplayName(body) || '').trim();
+          if(staffMapped){
+            if(staffMapped.indexOf('_') >= 0) staffMapped = schedTitleCaseWords(staffMapped.replace(/_/g, ' '));
+            return trialPrefix + staffMapped;
+          }
+        }
+      }else{
+        var official = schedLookupOfficialParticipantName(body);
+        if(official) return trialPrefix + official;
+      }
+      var visual = body.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+      if(schedNeedsVisualNamePolish(body) || visual !== body){
+        visual = schedTitleCaseWords(visual);
+      }
+      return trialPrefix + visual;
+    }
     /** Show first name only in UI — strip "(Trial 28/06)" style suffixes; TYPE column already says Trial. */
     function schedParticipantDisplayName(raw){
-      var s = String(raw || '').trim();
-      if(!s) return s;
-      var stripped = s.replace(/\s*\(\s*trial[^)]*\)\s*/gi, ' ').replace(/\s+/g, ' ').trim();
-      return stripped || s;
+      return schedGetDisplayName(raw, 'participant');
     }
     function schedBuildReplacementPickList(){
       var bySlug = {};
@@ -16285,12 +16493,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           pOpts.push({ value: u, label: String(label || '').trim() || u });
         }
         var slug = String(s.clientSlug || '').trim().toLowerCase();
-        addPax(slug, String(s.clientDisplay || '').trim() || slug);
+        addPax(slug, schedParticipantDisplayName(String(s.clientDisplay || '').trim() || slug) || slug);
         var ovP = findOverrideForSlot(s);
         if(ovP && String(ovP.override_type || '').trim() === 'client_replace_in_slot'){
           var rs = String(ovP.payload && (ovP.payload.to_client_id || ovP.payload.replacement_client_id) || '').trim().toLowerCase();
           var rlab = String(ovP.payload && (ovP.payload.to_client_name || ovP.payload.replacement_client_name) || '').trim();
-          addPax(rs, rlab || rs);
+          addPax(rs, schedParticipantDisplayName(rlab || rs) || rs);
         }
       });
       if(combo){
@@ -16443,18 +16651,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var hintStr = String(hint || '').trim();
       if(typeof portalStaffDisplayName === 'function'){
         var fromSlug = s ? portalStaffDisplayName(s) : '';
-        if(fromSlug) return fromSlug;
+        if(fromSlug) return schedGetDisplayName(fromSlug, 'staff');
         var fromHint = hintStr ? portalStaffDisplayName(hintStr) : '';
-        if(fromHint) return fromHint;
+        if(fromHint) return schedGetDisplayName(fromHint, 'staff');
       }
-      if(!s) return hintStr || '—';
+      if(!s) return hintStr ? schedGetDisplayName(hintStr, 'staff') : '—';
       var prof = portalStaffProfileByRosterId(s);
       var n = String(prof.staffName || '').trim();
-      if(n) return n;
-      return hintStr || s;
+      if(n) return schedGetDisplayName(n, 'staff');
+      return schedGetDisplayName(hintStr || s, 'staff');
     }
     function schedParticipantPillHtml(label, openKey, tone, openKind){
-      var lab = esc(String(label || '').trim() || '—');
+      var shown = schedParticipantDisplayName(label);
+      if(!shown && String(label || '').trim()) shown = String(label || '').trim();
+      var lab = esc(shown || '—');
       var toneCls = schedNamePillToneClass(tone);
       var kind = openKind === 'slug' ? 'slug' : 'demo';
       var key = String(openKey || '').trim();
@@ -16516,8 +16726,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     function schedStaffPillHtml(label, rosterKey, schedIso, tone){
-      var lab = esc(String(label || '').trim() || '—');
       var key = normalizeSchedAnchorStaffId(rosterKey) || String(rosterKey || '').trim().toLowerCase();
+      var rawLab = String(label || '').trim();
+      var shown = schedStaffDisplayName(key, rawLab || key);
+      var lab = esc(shown || '—');
       var useStaffColor = (!tone || tone === 'booked') && !!key;
       var color = useStaffColor ? schedStaffChipColor(key) : null;
       var toneCls = color ? 'sched-pax-pill--staff' : schedNamePillToneClass(tone);
@@ -16525,7 +16737,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ? ' style="--sched-staff-bg:' + color.bg + ';--sched-staff-fg:' + color.fg + ';--sched-staff-bd:' + color.bd + '"'
         : '';
       if(key){
-        var disp = esc(String(label || '').trim() || key);
+        var disp = esc(shown || key);
         var attrs = 'data-staff-roster="'+esc(key)+'" data-staff-session-iso="'+esc(schedIso)+'" data-staff-label="'+disp+'"';
         var drawerId = resolveAdminStaffDrawerId(key);
         if(drawerId) attrs += ' data-staff="'+esc(drawerId)+'"';
@@ -16934,7 +17146,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(String(o.override_type || '').trim() === 'client_replace_in_slot' && repLab){
               cLabRaw = repLab + (schedIsOpenSlotSlug(o.anchor_client_id) ? '' : (' · was ' + String(o.anchor_client_id || '')));
             }
-            var cLab = esc(cLabRaw);
+            var cLab = esc(schedParticipantDisplayName(cLabRaw));
             var cCell = cBtn ? '<button type="button" class="btn btn--ghost btn--sm" data-client="'+esc(cBtn)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+cLab+'</button>' : cLab;
             var sPlain = String(o.anchor_staff_id || '').trim();
             var sKey = sPlain.toLowerCase();
@@ -16942,8 +17154,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var logStaffAllAttr = logStaffKeys.length
               ? ' data-staff-all="'+esc(logStaffKeys.join(','))+'"'
               : '';
+            var sShown = sKey ? schedStaffDisplayName(sKey, sPlain) : '';
             var sCell = sKey
-              ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sPlain)+'</button>'
+              ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sShown || sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sShown || sPlain)+'</button>'
               : '<span class="muted">—</span>';
             var timeLab = String(o.anchor_time_slot_label || '').trim();
             if(!timeLab){
@@ -16969,12 +17182,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var cb = schedResolveTermEventAuthorName(ev);
             var paxName = schedTermEventParticipantName(ev);
             var cBtn = resolveAdminClientDrawerIdFromDisplayName(paxName);
-            var cLab = esc(paxName);
+            var cLab = esc(schedParticipantDisplayName(paxName));
             var cCell = cBtn ? '<button type="button" class="btn btn--ghost btn--sm" data-client="'+esc(cBtn)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+cLab+'</button>' : cLab;
             var sPlain = schedTermEventInstructor(ev);
             var sKey = sPlain.toLowerCase();
+            var sShown = (sPlain && sPlain !== '—') ? schedStaffDisplayName(sKey, sPlain) : '';
             var sCell = sPlain && sPlain !== '—'
-              ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sPlain)+'</button>'
+              ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sShown || sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sShown || sPlain)+'</button>'
               : '<span class="muted">—</span>';
             return '<tr><td data-label="Time" class="sched-td-time">'+esc(schedTermEventTimeLabel(ev))+'</td>'+
               '<td data-label="Type"><span class="override-chip ' + esc(schedTermEventTypeClass(ev)) + '">' + esc(schedTermEventLabel(ev)) + '</span></td>'+
@@ -17000,12 +17214,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var t = entry.created_at ? new Date(entry.created_at).toLocaleString('en-GB',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
             var cb = schedResolveRosterLogAuthorName(row);
             var cBtn = resolveAdminClientDrawerIdFromDisplayName(paxName);
-            var cLab = esc(paxName);
+            var cLab = esc(schedParticipantDisplayName(paxName));
             var cCell = cBtn ? '<button type="button" class="btn btn--ghost btn--sm" data-client="'+esc(cBtn)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+cLab+'</button>' : cLab;
             var sPlain = String(row.instructors || '').trim();
             var sKey = sPlain.toLowerCase();
+            var sShown = sPlain ? schedStaffDisplayName(sKey, sPlain) : '';
             var sCell = sPlain
-              ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sPlain)+'</button>'
+              ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sShown || sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sShown || sPlain)+'</button>'
               : '<span class="muted">—</span>';
             var typeLabel = entry.typeLabel || 'Cancelled';
             var typeClass = (typeLabel === 'Cancelled' || typeLabel === 'No Participant') ? 'override--cancelled' : 'override--term';
@@ -32359,8 +32574,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         if(window.portalAdminLoadAllDataScriptsIdle) window.portalAdminLoadAllDataScriptsIdle();
       }
-      var portalAdminBoot = function(){
+      function portalAdminBoot(){
         window.__PORTAL_ADMIN_BOOT_DONE__ = true;
+        portalAdminBindWorkspaceScrollGuards();
         portalAdminWireExtractedModules();
         portalAdminOpenInitialView();
         bindNovoDashboardSchedule();
@@ -32368,7 +32584,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(window.__PORTAL_GOD_MODE_BOOT_PENDING__){
           window.__PORTAL_GOD_MODE_BOOT_PENDING__ = false;
         }
-      };
+      }
       function portalAdminBootNeedsSupabaseFirst(){
         if(initial === 'portal_payslips' || initial === 'portal_documents') return true;
         if(String(initial || '').indexOf('portal_docs_') === 0) return true;
