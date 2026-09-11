@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 103;
+  var SOURCE_VERSION = 104;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1668,10 +1668,10 @@
       { client_name: "Faris", service: "Aquatic Activity", area: "Big Pool", time_slot: "2.30 to 3" },
     ];
     var javier = [
-      /* Aquatic trial was Sun 6 only — standing Sundays stay open. Multi: Jack S pool-first, Zaid pool second. */
+      /* Zaid SwimFarm trial fold was Sun 6 only — standing Sundays: Aquatic + his Multi open. Jack S pool-first. */
       { client_name: "No participant", service: "Aquatic Activity", area: "Small Pool", time_slot: "9 to 9.30" },
       { client_name: "Jack S", service: "Multi-Activity", area: "Big Pool", time_slot: "9.30 to 10.15" },
-      { client_name: "Zaid", service: "Multi-Activity", area: "Small Pool", time_slot: "10.15 to 11" },
+      { client_name: "No participant", service: "Multi-Activity", area: "Small Pool", time_slot: "10.15 to 11" },
       { client_name: "Hazem", service: "Multi-Activity", area: "Big Pool", time_slot: "11 to 11.45" },
       { client_name: "Eiji", service: "Multi-Activity", area: "Big Pool", time_slot: "11.45 to 12.30" },
       { client_name: "Rayyan F", service: "Multi-Activity", area: "Small Pool", time_slot: "12.30 to 1.15" },
@@ -2233,11 +2233,10 @@
   }
 
   /**
-   * Autumn Sunday Javier pool book (pre-trial standing):
+   * Autumn Sunday Javier pool book (standing after Zaid trial week):
    * - Jack S: Big Pool 9.30–10.15 (swimming first, then Hub)
-   * - Zaid: Small Pool 10.15–11 (Hub 9.30 first, then swimming)
-   * Sun 6 DATE_EXTRA keeps the trial swap (Zaid pool 9.30 + Jack S pool 10.15).
-   * Aquatic 9–9.30 stays open after the one-off trial.
+   * - Zaid Multi 10.15–11 open (trial fold was Sun 6 only)
+   * Sun 6 DATE_EXTRA keeps Zaid pool Multi for that day only.
    */
   function enforceAutumnSundayJavierPoolBook(row) {
     if (!row || !isMultiActivityService(row.service)) return null;
@@ -2250,8 +2249,13 @@
     var slot = normSundayMultiTimeSlot(row.time_slot);
     var area = String(row.area || "").toLowerCase();
     if (/^zaid\b/i.test(cn) && /small\s*pool/i.test(area)) {
-      if (slot === "9.30 to 10.15" || slot.indexOf("9.30 to 10.15") === 0) {
-        return { time_slot: "10.15 to 11" };
+      if (
+        slot === "9.30 to 10.15" ||
+        slot.indexOf("9.30 to 10.15") === 0 ||
+        slot === "10.15 to 11" ||
+        slot.indexOf("10.15 to 11") === 0
+      ) {
+        return { client_name: "No participant" };
       }
     }
     if (/^jack\s*s\b/i.test(cn) && /big\s*pool/i.test(area)) {
@@ -2263,9 +2267,8 @@
   }
 
   /**
-   * Autumn Sunday Hub Multi for Jack S + Zaid (pre-trial standing):
-   * Zaid Hub 9.30 then pool 10.15; Jack S pool 9.30 then Hub 10.15.
-   * Trial week (Sun 6) kept Hub Jack S 9.30 / Zaid 10.15 via dated cover rows.
+   * Autumn Sunday Hub Multi (standing after Zaid trial week):
+   * Jack S Hub 10.15 (after pool 9.30). Zaid Hub 9.30 open — trial only Sun 6.
    */
   function enforceAutumnSundayJackSZaidHubBook(row) {
     if (!row || !isMultiActivityService(row.service)) return null;
@@ -2276,14 +2279,19 @@
     if (normIso(row.session_date) === "2026-09-06") return null;
     var cn = String(row.client_name || "").trim();
     var slot = normSundayMultiTimeSlot(row.time_slot);
+    if (/^zaid\b/i.test(cn)) {
+      if (
+        slot === "9.30 to 10.15" ||
+        slot.indexOf("9.30 to 10.15") === 0 ||
+        slot === "10.15 to 11" ||
+        slot.indexOf("10.15 to 11") === 0
+      ) {
+        return { client_name: "No participant" };
+      }
+    }
     if (/^jack\s*s\b/i.test(cn)) {
       if (slot === "9.30 to 10.15" || slot.indexOf("9.30 to 10.15") === 0) {
         return { time_slot: "10.15 to 11" };
-      }
-    }
-    if (/^zaid\b/i.test(cn)) {
-      if (slot === "10.15 to 11" || slot.indexOf("10.15 to 11") === 0) {
-        return { time_slot: "9.30 to 10.15" };
       }
     }
     return null;
@@ -3014,9 +3022,9 @@
     { client_name: "Aydaan Ah", time_slot: "1.15 to 2" },
   ];
 
-  /** LOCAL EXTRA Sunday Hub Multi — Emmanuel book (Jack S…Rayyan F). John covers this on Sun 6 only. */
+  /** LOCAL EXTRA Sunday Hub Multi — Emmanuel book. Zaid Hub open after Sun 6 trial; Jack S Hub after pool. */
   var AUTUMN_SUNDAY_HUB_EMMANUEL = [
-    { client_name: "Zaid", time_slot: "9.30 to 10.15" },
+    { client_name: "No participant", time_slot: "9.30 to 10.15" },
     { client_name: "Jack S", time_slot: "10.15 to 11" },
     { client_name: "Eiji", time_slot: "11 to 11.45" },
     { client_name: "Hazem", time_slot: "11.45 to 12.30" },
