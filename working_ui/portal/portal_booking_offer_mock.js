@@ -519,60 +519,27 @@
     );
   }
 
+  /**
+   * Aquatic Places: keep MADRE native bands (30' and 60').
+   * Do not expand a 60' seat into two half-hour rows and sum capacity.
+   */
   function aggregateSlotsToHalfHourBands(slots) {
     if (!shouldAggregateDaySlots(slots)) return slots;
-    var bands = Object.create(null);
-    (slots || []).forEach(function (slot) {
-      var range = slotRangeMinutes(slot);
-      if (!range) return;
-      var bandStart = Math.floor(range.start / 30) * 30;
-      for (var b = bandStart; b < range.end; b += 30) {
-        var bandEnd = b + 30;
-        if (bandEnd > range.end) continue;
-        var key = pad2(Math.floor(b / 60)) + ":" + pad2(b % 60);
-        if (!bands[key]) {
-          bands[key] = { start: b, end: bandEnd, parts: [] };
-        }
-        var seen = bands[key].parts.some(function (p) {
-          return p.id === slot.id;
-        });
-        if (!seen) bands[key].parts.push(slot);
-      }
-    });
-    return Object.keys(bands)
-      .sort()
-      .map(function (key) {
-        var band = bands[key];
-        var ref = band.parts[0];
-        var left = band.parts.reduce(function (n, p) {
-          return n + seatsLeft(p);
-        }, 0);
-        var capacity = band.parts.reduce(function (n, p) {
-          return n + (Number(p.capacity) || 0);
-        }, 0);
-        var taken = band.parts.reduce(function (n, p) {
-          return n + (Number(p.taken) || 0);
-        }, 0);
-        var openIds = band.parts
-          .filter(function (p) {
-            return !isFull(p);
-          })
-          .map(function (p) {
-            return p.id;
-          });
-        return {
-          id: openIds[0] || ref.id,
-          serviceId: ref.serviceId,
-          venue: ref.venue,
-          day: ref.day,
-          sortTime: key,
-          timeLabel: formatClubHalfHour(band.start) + " – " + formatClubHalfHour(band.end),
-          capacity: capacity,
-          taken: taken,
-          activityName: ref.activityName,
-          bandPickIds: openIds.join(","),
-          bandLeft: left,
-        };
+    return (slots || [])
+      .slice()
+      .sort(function (a, b) {
+        var t = String(a.sortTime || "").localeCompare(String(b.sortTime || ""));
+        if (t) return t;
+        var lenA = 0;
+        var lenB = 0;
+        try {
+          var ra = slotRangeMinutes(a);
+          var rb = slotRangeMinutes(b);
+          lenA = ra ? ra.end - ra.start : 0;
+          lenB = rb ? rb.end - rb.start : 0;
+        } catch (_e) {}
+        if (lenA !== lenB) return lenA - lenB;
+        return String(a.timeLabel || "").localeCompare(String(b.timeLabel || ""));
       });
   }
 
@@ -740,6 +707,7 @@
     filterOptions: filterOptions,
     filterSlots: filterSlots,
     groupSlotsByVenueThenDay: groupSlotsByVenueThenDay,
+    aggregateSlotsToHalfHourBands: aggregateSlotsToHalfHourBands,
     groupIntensiveByBlock: groupIntensiveByBlock,
     termDatesForWeekday: termDatesForWeekday,
     remainingTermPrice: remainingTermPrice,
