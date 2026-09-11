@@ -765,12 +765,6 @@
           client: 'joelle',
           days: { thursday: 1 },
           staff: { aurora: 'Simon', simon: 'Aurora' }
-        },
-        {
-          /* Thu 10 Sep Anas makeup uses Joelle's last half 2:1 pair */
-          client: 'anas',
-          days: { thursday: 1 },
-          staff: { aurora: 'Simon', simon: 'Aurora' }
         }
       ];
       for(let i = 0; i < pairs.length; i++){
@@ -1884,8 +1878,8 @@
           ''
         ).toLowerCase();
         if(ot === 'slot_clear_client' && /aquatic|swim/.test(svcBlob)){
-          if(portalTimeAnchorsMatch(r.anchor_start, s.start)) return true;
-          return portalOverrideSlotLabelMatchesRow(r, s);
+          /* Start only — empty slot labels must not wildcard the other 30' half. */
+          return portalTimeAnchorsMatch(r.anchor_start, s.start);
         }
         if(portalSessionTimeWindowsOverlap(r.anchor_start, r.anchor_end, s.start, s.end)) return true;
         return portalOverrideSlotLabelMatchesRow(r, s);
@@ -1906,6 +1900,7 @@
         const Psheet = window.PortalParticipantsSheet;
         if(Psheet && typeof Psheet.overrideIsFinishBookingNewClient === 'function' && Psheet.overrideIsFinishBookingNewClient(r)) return false;
         if(Psheet && typeof Psheet.overrideIsTermNewParticipant === 'function' && Psheet.overrideIsTermNewParticipant(r)) return false;
+        if(portalLoggedInStaffReassignedOffSlotForRow(r)) return false;
         return portalScheduleOverrideMatchesSessionWindow(r, s, iso);
       });
       all.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
@@ -3557,6 +3552,8 @@
         const openMakeupAnchor = rowOvType === 'client_replace_in_slot' && portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id);
         if(!openMakeupAnchor && !portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) return false;
         if(!portalScheduleOverrideAnchorTimesMatchSession(r, s, wantType || String(r.override_type || '').trim())) return false;
+        /* Makeup on an open/cleared seat that a cover instructor took (Anas -> Javi Palankas). */
+        if(rowOvType === 'client_replace_in_slot' && portalLoggedInStaffReassignedOffSlotForRow(r)) return false;
         if(requireSlotLabel && !portalOverrideSlotLabelMatchesRow(r, s)) return false;
         if(String(r.override_type || '').trim() === 'override_void') return false;
         if(wantType && String(r.override_type || '').trim() !== wantType) return false;
@@ -3614,6 +3611,49 @@
       return false;
     }
     try{ window.portalSessionStaffReassignedOff = portalSessionStaffReassignedOff; }catch(_){}
+    /**
+     * instructor_reassign on an open/available seat still names the real client in
+     * portal_session_key or a sibling client_replace (Anas makeup covered by Javi Palankas).
+     */
+    function portalCoverOverrideEffectiveClientId(ov){
+      const raw = String(ov && ov.anchor_client_id || '').trim().toLowerCase();
+      if(raw && !portalScheduleOverrideAnchorIsOpenSlot(raw)) return raw;
+      let pl = ov && ov.payload;
+      if(typeof pl === 'string'){
+        try{ pl = JSON.parse(pl); }catch(_){ pl = {}; }
+      }
+      pl = pl && typeof pl === 'object' ? pl : {};
+      const fromPayload = portalOverrideReplacementClientId(pl);
+      if(fromPayload) return fromPayload;
+      const key = String(pl.portal_session_key || '').trim().toLowerCase();
+      if(key){
+        const parts = key.split('|');
+        for(let i = 2; i < parts.length; i++){
+          const tok = String(parts[i] || '').trim();
+          if(!tok || /^\d{1,2}:\d{2}/.test(tok)) continue;
+          if(tok === 'aquatic' || tok === 'available' || tok === 'closed') continue;
+          if(/^(day_centre|bespoke_shared|hub_room|teaching_pool|lane_de|lane_se|merge)$/.test(tok)) continue;
+          return tok;
+        }
+      }
+      const iso = normaliseIsoDate(ov && ov.session_date);
+      const staff = portalNormKeyStr(ov && ov.anchor_staff_id);
+      const start = portalCanonicalHmToken(ov && ov.anchor_start);
+      if(!iso || !staff || !start) return raw;
+      const all = portalScheduleOverrideRowsAll();
+      for(let i = 0; i < all.length; i++){
+        const r = all[i];
+        if(String(r.status || 'active') !== 'active') continue;
+        if(String(r.override_type || '').trim() !== 'client_replace_in_slot') continue;
+        if(normaliseIsoDate(r.session_date) !== iso) continue;
+        if(!portalStaffKeysMatch(r.anchor_staff_id, staff)) continue;
+        if(portalCanonicalHmToken(r.anchor_start) !== start) continue;
+        const cid = portalOverrideReplacementClientId(r.payload);
+        if(cid) return cid;
+      }
+      return raw;
+    }
+    try{ window.portalCoverOverrideEffectiveClientId = portalCoverOverrideEffectiveClientId; }catch(_){}
     /** True when the logged-in worker was reassigned OFF the slot this override row points at —
      *  so absence/replace/other cards anchored to them must not surface (the cover handles it). */
     function portalLoggedInStaffReassignedOffSlotForRow(row){
@@ -3651,7 +3691,9 @@
       const all = portalScheduleOverrideRowsAll().filter(function(r){
         if(String(r.status || 'active') !== 'active') return false;
         if(String(r.override_type || '').trim() !== 'client_replace_in_slot') return false;
+        if(!portalStaffKeysMatch(r.anchor_staff_id, s.staffId)) return false;
         if(!portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id)) return false;
+        if(portalLoggedInStaffReassignedOffSlotForRow(r)) return false;
         return portalScheduleOverrideMatchesSessionWindow(r, s, iso);
       });
       all.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
@@ -4228,6 +4270,7 @@
         if(String(ov.override_type || '').trim() !== 'client_replace_in_slot') return;
         if(normaliseIsoDate(ov.session_date) !== iso) return;
         if(!portalStaffKeysMatch(ov.anchor_staff_id, sid)) return;
+        if(portalLoggedInStaffReassignedOffSlotForRow(ov)) return;
         if(ov.id && seenOvIds[String(ov.id)]) return;
         const repId = portalOverrideReplacementClientId(ov.payload);
         if(!repId) return;
@@ -4260,6 +4303,7 @@
           ? portalReplaceOverrideForSessionAnchor(base, iso)
           : null);
         if(replaceOvLoose && !portalOverrideIsTrial(replaceOvLoose)){
+          if(portalLoggedInStaffReassignedOffSlotForRow(replaceOvLoose)) return it;
           const repId = portalOverrideReplacementClientId(replaceOvLoose.payload);
           const repName = portalOverrideReplacementClientName(replaceOvLoose.payload);
           const anchorId = String(base.clientId || '').trim().toLowerCase();

@@ -1360,9 +1360,9 @@
   }
 
   /**
-   * Thu 10 Sep: Joelle 5.30–6 taught; 6–6.30 Cancelled on Aurora AND Simon
-   * (same Cancelled chip — not No participant). Aurora also has Anas makeup 6–6.30.
-   * Roberto keeps Maiyar.
+   * Thu 10 Sep: Joelle 5.30-6 taught; 6-6.30 Cancelled on Aurora AND Simon
+   * (same Cancelled chip - not No participant). Anas makeup 6-6.30 is Javi Palankas
+   * (instructor_reassign), not Aurora. Roberto keeps Maiyar.
    */
   function autumnThursdaySep10AnasMakeupRows() {
     var iso = "2026-09-10";

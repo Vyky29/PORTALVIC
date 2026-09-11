@@ -757,7 +757,7 @@
           }
         }
         /*
-         * Thu 10: Joelle 5.30 taught / 6-6.30 cancelled + Anas makeup is dated only.
+         * Thu 10: Joelle 5.30 taught / 6-6.30 cancelled. Anas makeup is Javi Palankas.
          * Do not also project standing Thursday Joelle onto that day.
          */
         if(iso === '2026-09-10' && rowIso && rowIso !== iso){
@@ -1711,8 +1711,21 @@
         /*
          * Paid admin cancel (Ikram Tue 7 Jul for Michelle/Luliya): honour same staff+client
          * even when timed payload key ≠ Day Centre review key, or review key is empty.
+         * Aquatic 30' halves must NOT inherit a later clear (Joelle 5.30-6 taught vs 6-6.30).
          */
-        if(sameClient && sameStaff) return res;
+        if(sameClient && sameStaff){
+          const isSharedUnit = skL.indexOf('|day_centre') >= 0 || skL.indexOf('|bespoke_shared') >= 0;
+          if(!isSharedUnit){
+            const rStart = typeof portalCanonicalHmToken === 'function'
+              ? portalCanonicalHmToken(r.anchor_start)
+              : '';
+            const sStart = typeof portalCanonicalHmToken === 'function'
+              ? portalCanonicalHmToken(s.start)
+              : '';
+            if(rStart && sStart && rStart !== sStart) continue;
+          }
+          return res;
+        }
         if(!pk && sameClient && sameStaff
           && (skL.indexOf('|day_centre') >= 0 || skL.indexOf('|bespoke_shared') >= 0)){
           return res;
@@ -3404,7 +3417,9 @@
           }
           let effClientId = String(s.clientId || '').trim().toLowerCase();
           let nameFromReplace = '';
-          if(ov && ov.override_type === 'client_replace_in_slot' && ov.payload){
+          if(ov && ov.override_type === 'client_replace_in_slot' && ov.payload
+            && !(typeof portalLoggedInStaffReassignedOffSlotForRow === 'function'
+              && portalLoggedInStaffReassignedOffSlotForRow(ov))){
             const rep = portalOverrideReplacementClientId(ov.payload);
             if(rep){
               effClientId = rep;
@@ -3500,7 +3515,11 @@
         const hubWinFix = portalNormSep6JohnEmanuelHubCoverWindow(ov);
         const tinWinFix = portalNormTinasheBespokeCoverWindow(ov);
         const winFix = hubWinFix || tinWinFix;
-        const coverCid = portalTodayClientSlugCanon(ov && ov.anchor_client_id);
+        const coverCid = portalTodayClientSlugCanon(
+          (typeof portalCoverOverrideEffectiveClientId === 'function'
+            ? portalCoverOverrideEffectiveClientId(ov)
+            : '') || (ov && ov.anchor_client_id)
+        );
         const inferredService = (tinWinFix && tinWinFix.service)
           || (coverCid === 'tinashe' ? 'Bespoke Programme' : '')
           || ((coverCid === 'timi' || coverCid === 'emanuel') ? 'Day Centre' : '')
@@ -3510,7 +3529,7 @@
           start: (winFix && winFix.start) || portalHmFromDbTime(ov.anchor_start) || '09:00',
           end: (winFix && winFix.end) || portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00',
           venue: ov.anchor_venue || '',
-          clientId: String(ov.anchor_client_id || '').toLowerCase(),
+          clientId: String(coverCid || ov.anchor_client_id || '').toLowerCase(),
           staffId: String(ov.anchor_staff_id || '').trim().toLowerCase(),
           status: 'Scheduled',
           activity: inferredService || 'Swimming',
@@ -3529,7 +3548,7 @@
         const base = Object.assign({}, baseFound, {
           start: coverWinStart,
           end: coverWinEnd,
-          clientId: String(ov.anchor_client_id || baseFound.clientId || '').toLowerCase() || baseFound.clientId
+          clientId: String(coverCid || ov.anchor_client_id || baseFound.clientId || '').toLowerCase() || baseFound.clientId
         });
         if(inferredService && (!base.rosterService || /multi|swimming/i.test(String(base.rosterService)))){
           base.rosterService = inferredService;
@@ -3566,7 +3585,11 @@
         if(isAbsenceOrClearOv(slotOvCover) && !isAbsenceOrClearOv(slotOvBase)) slotOv = slotOvCover;
         /* instructor_reassign with a real client must still inject even if a wrong
            Available match leaked into `base` (cover staff empty Teaching Pool slot). */
-        const coverClientId = String(ov.anchor_client_id || base.clientId || '').trim().toLowerCase();
+        const coverClientId = String(
+          (typeof portalCoverOverrideEffectiveClientId === 'function'
+            ? portalCoverOverrideEffectiveClientId(ov)
+            : '') || ov.anchor_client_id || base.clientId || ''
+        ).trim().toLowerCase();
         const coverHasRealClient = !!(coverClientId
           && coverClientId !== 'available'
           && coverClientId !== 'closed'
