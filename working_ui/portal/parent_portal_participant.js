@@ -6582,6 +6582,10 @@
     var calHost = host.querySelector("#ppCalYearHost");
     if (!calHost) return;
     var loadOpts = { circles: true };
+    if (participantHasDayCentre(data)) {
+      /* Sessions HTML marks Oct half-term + 1–4 Sep red (after-school). DC stays open. */
+      loadOpts.dayCentreOpenThroughHalfTerm = true;
+    }
     if (isTrialOnlyBooking(data)) {
       /* Trial: highlight only booked ISO date(s), not every Monday of the term. */
       var mineIso = Object.create(null);
@@ -6591,7 +6595,7 @@
       });
       loadOpts.mineIsoColors = mineIso;
     } else {
-    var built = buildMyCalendarDayColors(data);
+      var built = buildMyCalendarDayColors(data);
       loadOpts.dayColors = built.colMap || {};
     }
     if (typeof global.portalLoadSessionsCalendar202627Into === "function") {

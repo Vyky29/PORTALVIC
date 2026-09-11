@@ -288,6 +288,53 @@
     });
   };
 
+  /**
+   * Sessions (after-school) HTML paints Oct half-term weekdays red.
+   * Day Centre stays open those weekdays — flip AS-only closures back to green
+   * before painting the child's session colours.
+   */
+  global.portalReopenDayCentreOpenDaysOnSessionsCalendar =
+    function portalReopenDayCentreOpenDaysOnSessionsCalendar(root) {
+      if (!root || !root.querySelectorAll) return;
+      var PTC = global.PortalTermCalendar;
+      if (!PTC || typeof PTC.isClosedIso !== "function") return;
+      var grids = root.querySelectorAll(".dc-cal-grid");
+      Array.prototype.forEach.call(grids, function (grid) {
+        var label = String(grid.getAttribute("aria-label") || "").trim();
+        var m = label.match(/^([A-Za-z]+)\s+(\d{4})$/);
+        if (!m) return;
+        var monthNum = CAL_MONTH_NAME_TO_NUM[String(m[1] || "").toLowerCase()];
+        var year = Number(m[2]);
+        if (!monthNum || !Number.isFinite(year)) return;
+        var cells = grid.children;
+        for (var i = 0; i < cells.length; i++) {
+          var cell = cells[i];
+          if (!cell || !cell.classList) continue;
+          if (!cell.classList.contains("dc-cal-cell--red")) continue;
+          if (cell.classList.contains("dc-cal-cell--bank-hol")) continue;
+          var dayEl = cell.querySelector(".dc-cal-day");
+          var day = Number(dayEl && String(dayEl.textContent || "").trim());
+          if (!Number.isFinite(day) || day < 1) continue;
+          var iso =
+            String(year) +
+            "-" +
+            (monthNum < 10 ? "0" : "") +
+            monthNum +
+            "-" +
+            (day < 10 ? "0" : "") +
+            day;
+          /* HTML Sessions panel marks AS week-1 (1-4 Sep) + half-term red;
+             PortalTermCalendar may only list half-term for AS — use DC truth. */
+          var dcClosed = !!PTC.isClosedIso(iso, { serviceKind: "day_centre" });
+          if (!dcClosed) {
+            cell.classList.remove("dc-cal-cell--red");
+            cell.classList.add("dc-cal-cell--green");
+            cell.title = "Day Centre open";
+          }
+        }
+      });
+    };
+
   /** Parent My Calendar: Sessions panel only (full year), no Day Centre / crash tabs. */
   global.portalLoadSessionsCalendar202627Into = async function portalLoadSessionsCalendar202627Into(
     host,
@@ -334,6 +381,12 @@
         try {
           global.portalMarkCalendar202627Highlights(node);
         } catch (_mark) {}
+      }
+      /* Day Centre kids: reopen AS-only half-term / week-1 reds before painting mine days. */
+      if (opts.dayCentreOpenThroughHalfTerm) {
+        try {
+          global.portalReopenDayCentreOpenDaysOnSessionsCalendar(node);
+        } catch (_dcOpen) {}
       }
       host.appendChild(node);
       if (opts.mineIsoColors && typeof opts.mineIsoColors === "object") {
