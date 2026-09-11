@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 98;
+  var SOURCE_VERSION = 99;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -42,7 +42,8 @@
    * Order = board column order. Times match MADRE-style "11 to 1" / "12.30 to 3".
    * Cyrus (Victor Tue 3.30-5) is Bespoke — not listed here; see CYRUS_BESPOKE_ROW.
    * Youssef Acton days (Mon/Thu): DC ends 15:00 then pool from 16:00.
-   * Friday: Roberto DC 11-3 then Hub Bespoke Tinashe 4.15-6.15 with Bismark + Emanuel (from Fri 11);
+   * Friday (Fadi-absent board from 11): Roberto DC Emanuel 11-4 then Hub Bespoke Tinashe 4.15-6.15
+   * with Bismark + Emanuel; standing post-Fadi Fri still splits Emanuel / Fadi as below;
    * Youssef DC through 16:00 then Acton aquatic.
    */
   var AUTUMN_DAY_CENTRE_BOARD = {
@@ -281,7 +282,7 @@
       instructors: "ROBERTO",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.30 to 6",
+      time_slot: "4.15 to 6.15",
       venue: "SwimFarm",
       session_date: "2026-07-17",
     },
@@ -291,7 +292,7 @@
       instructors: "BISMARK",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.30 to 6",
+      time_slot: "4.15 to 6.15",
       venue: "SwimFarm",
       session_date: "2026-07-17",
     },
@@ -301,7 +302,7 @@
       instructors: "EMANUEL",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.30 to 6",
+      time_slot: "4.15 to 6.15",
       venue: "SwimFarm",
       session_date: "2026-07-17",
     },
@@ -507,16 +508,11 @@
       { staff: "Victor", clients: [{ name: "Office", time: "11 to 4" }] },
     ],
     friday: [
-      { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 3" }] },
+      /* Roberto keeps Emanuel through 16:00 (was 11-3 + Victor/Raul 3-4), then Hub Tinashe 4.15-6.15 */
+      { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 4" }] },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
       { staff: "Youssef", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      {
-        staff: "Victor",
-        clients: [
-          { name: "Timi", time: "11 to 1" },
-          { name: "Emanuel", time: "3 to 4" },
-        ],
-      },
+      { staff: "Victor", clients: [{ name: "Timi", time: "11 to 1" }] },
       {
         staff: "Michelle",
         clients: [
@@ -524,13 +520,7 @@
           { name: "Ikram", time: "3 to 4" },
         ],
       },
-      {
-        staff: "Raul",
-        clients: [
-          { name: "Timi", time: "11 to 1" },
-          { name: "Emanuel", time: "3 to 4" },
-        ],
-      },
+      { staff: "Raul", clients: [{ name: "Timi", time: "11 to 1" }] },
     ],
   };
 

@@ -311,7 +311,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260911-yusuf-ah"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260911-roberto-emanuel-4"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -354,7 +354,7 @@
     { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "DC: Roberto ACAT 11-12 + Ikram 12-3 · Michelle Ikram 11-12 / Manager 12-3 / Ikram 3-4 · Luliya Ikram 11-3 · Raul Fadi 12.30-3 + Ikram 3-4 · Victor Cyrus 3.30-5 · Aurora OFF · Javier OFF · Acton: Ayman Roberto 4-4.30 then Javi Palankas 4.30-5 · Adam+Junaid Roberto · Aydaan Luliya · Linda/Rayan Ta/Anas Javi Palankas" },
     { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Fadi absent · Victor no DC (not day-off) · Roberto Emanuel 11-4 · Raul Ikram 3-4 · Tinashe = Godsway + Bismark + Emanuel shadow · John OFF" },
     { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Fadi DC cancelled · Youssef OFF · Roberto Acton AS · Joelle early leave · Anas makeup 6-6.30 Aurora · Simon free from 6 · Victor/Raul standing off Thu" },
-    { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Fadi absent · Tinashe = Bismark + Roberto + Emanuel 4.15-6.15" },
+    { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Fadi absent · Roberto Emanuel 11-4 · Tinashe = Bismark + Roberto + Emanuel 4.15-6.15" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
     { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Berta OFF · Hub COVER NEEDED · Godsway + Emanuel Hub · Aurora OFF · Luliya covers Aurora pool · John OFF" },
     { dow: "monday", iso: "2026-09-14", phase: "w3", hint: "Fadi absent · Tinashe = Godsway + John + Raul + Bismark + Emanuel · Victor OFF Mon" },
@@ -530,10 +530,10 @@
     friday: {
       /* Hub Bespoke Tinashe Fri (from Fri 11): Bismark + Roberto (+ Emanuel via EMANUEL_TINASHE). */
       Roberto: [
-        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
       Bismark: [
-        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+        { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
       Youssef: [
         { name: "Adam Pi", time: "4 to 5.30", band: "After school", area: "Acton · Aquatic" },
@@ -860,7 +860,7 @@
 
   /* From Mon 14 Sep: Emanuel on Tinashe Mon/Wed/Fri (+ Sunday MA book below). */
   var EMANUEL_TINASHE = [
-    { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
+    { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
   ];
 
   var SUNDAY_STAFF_ORDER = [
@@ -968,7 +968,7 @@
       Aurora: "4.30 to 6.30",
     },
     friday: {
-      Roberto: "11 to 3 · 4.15 to 6.15",
+      Roberto: "11 to 4 · 4.15 to 6.15",
       Luliya: "11 to 4",
       Michelle: "10.45 to 4.15",
       Victor: "11 to 4",
@@ -1032,9 +1032,10 @@
     if (iso === "2026-09-07" && staffName === "Victor") return "11 to 4 · 4.15 to 6.15";
     if (iso === "2026-09-07" && staffName === "Raul") return "OFF (Victor covers)";
     if (iso === "2026-09-09" && staffName === "Raul") return "3 to 4";
+    if (iso === "2026-09-11" && staffName === "Roberto") return "11 to 4 · 4.15 to 6.15";
+    if (iso === "2026-09-11" && staffName === "Bismark") return "4.15 to 6.15";
     if ((iso === "2026-09-09" || iso === "2026-09-11") && staffName === "Emanuel") return "4.15 to 6.15";
     if (iso === "2026-09-09" && staffName === "Bismark") return "4.15 to 6.15";
-    if (iso === "2026-09-11" && staffName === "Bismark") return "4.15 to 6.15";
     if (iso === "2026-09-13" && staffName === "Emanuel") return "9.15 to 2.15";
     if (iso === "2026-09-06" && staffName === "Emanuel") return "";
     if (iso === "2026-09-06" && staffName === "Youssef") return "";
@@ -1237,7 +1238,14 @@
     var board =
       !STANDING_ONLY && phase === "w1" && WEEK1_DC_BOARD[dayKey]
         ? WEEK1_DC_BOARD
-        : PRC && PRC.AUTUMN_DAY_CENTRE_BOARD;
+        : !STANDING_ONLY &&
+            iso &&
+            PRC &&
+            typeof PRC.isFadiAbsentDcBoardIso === "function" &&
+            PRC.isFadiAbsentDcBoardIso(iso) &&
+            PRC.FADI_ABSENT_DC_BOARD
+          ? PRC.FADI_ABSENT_DC_BOARD
+          : PRC && PRC.AUTUMN_DAY_CENTRE_BOARD;
     var out = [];
     var isWeekend = dayKey === "saturday" || dayKey === "sunday";
     /* Wed 9 Sep: Fadi absent + Victor OFF — one-day DC board (not standing). */
