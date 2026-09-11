@@ -1,5 +1,14 @@
 (function () {
       var DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+      function portalStaffUrlHasGhostToken(){
+        try {
+          if (typeof window.portalGhostTokenInUrl === "function") return !!window.portalGhostTokenInUrl();
+          var q = new URLSearchParams(String(window.location && window.location.search || ""));
+          return !!(q.get("ghostToken") || q.get("ghost"));
+        } catch (_) {
+          return false;
+        }
+      }
       function portalStaffFastBootEnabled(){
         try{
           if(typeof window !== 'undefined' && window.PORTAL_STAFF_APP) return true;
@@ -280,6 +289,9 @@
       }
       function portalStaffApplyIdentityResolved(profileForRoster, p, session) {
         if (!dashboardData) return;
+        if (portalStaffUrlHasGhostToken() && !(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active)) {
+          return;
+        }
         const ghost =
           window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active
             ? window.__PORTAL_GHOST_VIEW__
@@ -291,6 +303,11 @@
               ghost.rosterKey ||
               ""
           ).trim();
+          try {
+            document.documentElement.classList.remove("portal-ghost-view-pending");
+            var pend = document.getElementById("portalGhostViewPending");
+            if (pend && pend.parentNode) pend.parentNode.removeChild(pend);
+          } catch (_ghostClear) {}
         } else {
           var fromAuthor =
             typeof window.portalStaffAuthorFirstName === "function"
@@ -332,6 +349,9 @@
         }
       }
       function portalStaffFinishIdentityUi(profileForRoster, p, session) {
+        if (portalStaffUrlHasGhostToken() && !(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active)) {
+          return;
+        }
         portalStaffApplyIdentityResolved(profileForRoster, p, session);
         var sid = "";
         try{
@@ -407,6 +427,10 @@
           new Promise(function(resolve){
             setTimeout(function(){
               try{
+                if (portalStaffUrlHasGhostToken()) {
+                  resolve();
+                  return;
+                }
                 if(dashboardData && dashboardData.portalIdentityResolved === false){
                   portalStaffFinishIdentityUi(
                     (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || {},
@@ -431,19 +455,22 @@
           try{ window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__ = false; }catch(_){}
         }
         var keepTodayPaint =
+          !portalStaffUrlHasGhostToken() && (
           !!(typeof dashboardData !== 'undefined' && dashboardData && dashboardData.portalIdentityResolved === true)
           || !!(typeof dashboardData !== 'undefined' && dashboardData && Array.isArray(dashboardData.today) && dashboardData.today.length)
-          || !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__);
+          || !!(typeof window !== 'undefined' && window.__PORTAL_STAFF_ROSTER_HYDRATED__)
+          );
         if(!keepTodayPaint) portalStaffMarkInitialTodayScheduleUnsettled();
         try {
         try {
           if (window.__PORTAL_GHOST_VERIFY_PROMISE__) {
-            await Promise.race([
-              window.__PORTAL_GHOST_VERIFY_PROMISE__,
-              new Promise(function (r) { setTimeout(r, 6000); }),
-            ]);
+            await window.__PORTAL_GHOST_VERIFY_PROMISE__;
           }
         } catch (_ghostWait) {}
+        if (portalStaffUrlHasGhostToken()) {
+          if (window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.error) return;
+          if (!(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active)) return;
+        }
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         var session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         var user = session && session.user ? session.user : null;
@@ -515,8 +542,11 @@
             }
           }
         }
-        if (!rosterHit) rosterHit = portalStaffBootstrapRosterFromSession(profileForRoster, user);
+        if (!rosterHit && !(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active)) {
+          rosterHit = portalStaffBootstrapRosterFromSession(profileForRoster, user);
+        }
         if (!rosterHit || !rosterHit.boot) {
+          if (portalStaffUrlHasGhostToken()) return;
           console.warn(
             "staff_dashboard: roster bootstrap failed",
             profileForRoster && profileForRoster.username,

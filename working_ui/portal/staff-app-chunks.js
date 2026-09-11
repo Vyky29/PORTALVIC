@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260911-emmanuel-no-tue";
+  var VER = "20260911-teleport-iso";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260911-emmanuel-no-tue",
@@ -62,7 +62,6 @@
 
   var TIER_IDLE = [
     "/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off",
-    "/portal/portal-ghost-view.js?v=20260712-ghost-inapp",
   ];
 
   var EXTRACTED_BEFORE_AUTH = [
@@ -132,7 +131,7 @@
   function scheduleIdle() {
     var run = function () {
       loadParallel(TIER_IDLE, false);
-      loadCss("/portal/portal_ghost_view.css?v=20260712-ghost-inapp");
+      loadCss("/portal/portal_ghost_view.css?v=20260911-teleport-iso");
       loadCss("/portal/portal_achievements.css?v=20260713-ios-video-save");
       if (typeof global.portalStaffDeferWebPush === "function") {
         global.portalStaffDeferWebPush();
@@ -149,6 +148,12 @@
     Promise.all([loadParallel(TIER_ROSTER, false), loadParallel(TIER_UI, false), loadParallel(TIER_UI_MODULES, true)])
       .then(function () {
         return loadScript("/portal/portal-logout-bind.js", false);
+      })
+      .then(function () {
+        return loadCss("/portal/portal_ghost_view.css?v=20260911-teleport-iso");
+      })
+      .then(function () {
+        return loadScript("/portal/portal-ghost-view.js?v=20260911-teleport-iso", false);
       })
       .then(function () {
         return loadSequential(EXTRACTED_BEFORE_AUTH, false);

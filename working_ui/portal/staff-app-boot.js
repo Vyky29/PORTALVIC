@@ -106,6 +106,21 @@
     } catch (_) {}
   }
 
+  function portalStaffGhostTokenInUrl() {
+    try {
+      var q = new URLSearchParams(String(global.location && global.location.search || ""));
+      return !!(q.get("ghostToken") || q.get("ghost"));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  var GHOST_VER = "20260911-teleport-iso";
+  if (isStaffDashboard && portalStaffGhostTokenInUrl()) {
+    loadCss("/portal/portal_ghost_view.css?v=" + GHOST_VER);
+    loadScript("/portal/portal-ghost-view.js?v=" + GHOST_VER);
+  }
+
   function loadScript(src, asModule) {
     return new Promise(function (resolve) {
       if (document.querySelector('script[src="' + src + '"]')) {
@@ -279,8 +294,8 @@
     global.__PORTAL_STAFF_EXTRAS_DEFERRED__ = true;
     if (!isStaffDashboard) return;
     var run = function () {
-      loadCss("/portal/portal_ghost_view.css?v=20260712-ghost-inapp");
-      loadScript("/portal/portal-ghost-view.js?v=20260712-ghost-inapp");
+      loadCss("/portal/portal_ghost_view.css?v=" + GHOST_VER);
+      loadScript("/portal/portal-ghost-view.js?v=" + GHOST_VER);
       loadScript("/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off");
       loadCss("/portal/portal_achievements.css?v=20260713-ios-video-save");
     };

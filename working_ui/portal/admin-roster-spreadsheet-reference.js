@@ -693,7 +693,7 @@
     copy.sessionGrids = buildSessionGridsFromRoster(rosterRows);
     copy.meta = Object.assign({}, copy.meta || {}, {
       sessionSource: "canonical_roster_standing",
-      sessionWeekLabel: "Standing week (same as Services) · Sat 11–Fri 17 Jul snap",
+      sessionWeekLabel: "Autumn Term 2026 standing week (DC from 1 Sep, weekends Sat 5, after-school Mon 7)",
       syncedWithServices: true,
     });
     copy._standingHours = buildStandingHoursLines(rosterRows);
@@ -737,7 +737,7 @@
 
   function viewHtml() {
     var meta = (data() && data().meta) || (baseData() && baseData().meta) || {};
-    var weekLbl = esc(meta.sessionWeekLabel || "Standing week (same as Services)");
+    var weekLbl = esc(meta.sessionWeekLabel || "Autumn Term 2026 standing week");
     return (
       '<div class="asr-root" id="adminSpreadsheetRefRoot">' +
       '<h1 class="page-title">Instructor timetable</h1>' +
@@ -899,8 +899,8 @@
     var days = day === "all" ? WEEKDAYS : [day];
     var html =
       '<div class="asr-standing-hours" style="margin:0 0 16px;padding:12px 14px;border:1px solid var(--border,#d7e2e8);border-radius:12px;background:#f8fafc;min-width:0">' +
-      '<p class="asr-tab-hint" style="margin:0 0 8px;font-weight:600;max-width:52rem;overflow-wrap:break-word">Standing week · instructor timetable (synced with Services)</p>' +
-      '<p class="muted" style="margin:0 0 10px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Who is on when for the ops standing snap. Editable dated overrides for payroll stay in the sheet below.</p>';
+      '<p class="asr-tab-hint" style="margin:0 0 8px;font-weight:600;max-width:52rem;overflow-wrap:break-word">Autumn Term 2026 standing week · instructor timetable (synced with Services)</p>' +
+      '<p class="muted" style="margin:0 0 10px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Who is on when for Autumn: Day Centre from 1 Sep, weekends from Sat 5 Sep, after-school from Mon 7 Sep. Editable dated overrides for payroll stay in the sheet below.</p>';
     days.forEach(function (wd) {
       var block = stand[wd];
       if (!block || !block.lines || !block.lines.length) {
@@ -912,7 +912,6 @@
         '<div style="margin:0 0 10px;min-width:0">' +
         '<div style="font-size:12px;font-weight:700;margin:0 0 4px">' +
         esc(wd) +
-        (block.iso ? " · " + esc(block.iso) : "") +
         "</div><ul style=\"margin:0;padding-left:1.1rem;max-width:52rem\">";
       block.lines.forEach(function (line) {
         html +=
@@ -1507,7 +1506,7 @@
       return '<p class="muted">No hours sheet for ' + esc(day) + ".</p>";
     }
     if (sheet.placeholder) {
-      return '<p class="muted">No staff hours for ' + esc(day) + " from 1 Jun 2026.</p>";
+      return '<p class="muted">No staff hours for ' + esc(day) + " in Autumn Term 2026.</p>";
     }
     var html = "";
     if (sheet.blocks && sheet.blocks.length) {

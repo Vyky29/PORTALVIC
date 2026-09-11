@@ -2100,6 +2100,50 @@
         bucket[key].count += 1;
       });
     };
+    function portalSessionsModelDayIndexCanon(staffId){
+      if(typeof portalCanonicalStaffKeyForMatch === 'function'){
+        return portalCanonicalStaffKeyForMatch(staffId);
+      }
+      return String(staffId || '').trim().toLowerCase();
+    }
+    function portalRebuildSessionsModelDayIndex(){
+      const idx = Object.create(null);
+      const model = sessionsModel || [];
+      for(let i = 0; i < model.length; i++){
+        const s = model[i];
+        if(!s) continue;
+        const day = String(s.day || '').trim();
+        if(!day) continue;
+        const canon = portalSessionsModelDayIndexCanon(s.staffId);
+        if(!canon) continue;
+        const ik = canon + '\0' + day;
+        if(!idx[ik]) idx[ik] = [];
+        idx[ik].push(s);
+      }
+      try{
+        window.__PORTAL_SESSIONS_MODEL_DAY_INDEX__ = idx;
+        window.__PORTAL_SESSIONS_MODEL_DAY_INDEX_REF__ = model;
+      }catch(_){}
+      return idx;
+    }
+    function portalSessionsModelRowsForStaffDay(staffId, dayWord){
+      const dw = String(dayWord || '').trim();
+      const sid = portalSessionsModelDayIndexCanon(staffId);
+      const model = sessionsModel || [];
+      let idx = null;
+      try{ idx = window.__PORTAL_SESSIONS_MODEL_DAY_INDEX__; }catch(_){}
+      let ref = null;
+      try{ ref = window.__PORTAL_SESSIONS_MODEL_DAY_INDEX_REF__; }catch(_){}
+      if(!idx || ref !== model){
+        idx = portalRebuildSessionsModelDayIndex();
+      }
+      if(!sid || !dw) return [];
+      return idx[sid + '\0' + dw] || [];
+    }
+    try{
+      window.portalRebuildSessionsModelDayIndex = portalRebuildSessionsModelDayIndex;
+      window.portalSessionsModelRowsForStaffDay = portalSessionsModelRowsForStaffDay;
+    }catch(_){}
     /** Full roster rows for staff + weekday + calendar date (same base Today uses), plus instructor-cover synthetics. Does not strip absences or overrides — callers run portalPickScheduleOverrideForSession / feedback rules themselves. */
     function portalBaseClientSessionsForCalendarDate(dayWord, sessionDateIso, staffId, isRealFn){
       const sid = String(staffId || '').trim().toLowerCase();
@@ -2112,10 +2156,10 @@
       }
       if(sid && portalStaffCalendarDateBeforeFirstSession(iso, sid)) return [];
       const acc = [];
-      (sessionsModel || []).forEach(function(s){
+      const staffDayRows = portalSessionsModelRowsForStaffDay(sid, dw);
+      staffDayRows.forEach(function(s){
         if(!s) return;
         if(!portalStaffIdsMatchLoose(s.staffId, sid)) return;
-        if(String(s.day || '').trim() !== dw) return;
         if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
           && !portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateIso, dw)) return;
         if(!isRealFn(s)){
@@ -5655,7 +5699,17 @@
       }
       return true;
     }
+    function portalStaffUrlHasGhostToken(){
+      try {
+        if (typeof window.portalGhostTokenInUrl === "function") return !!window.portalGhostTokenInUrl();
+        var q = new URLSearchParams(String(window.location && window.location.search || ""));
+        return !!(q.get("ghostToken") || q.get("ghost"));
+      } catch (_) {
+        return false;
+      }
+    }
     function portalStaffResolveIdentityEarlyFromSession(){
+      if (portalStaffUrlHasGhostToken()) return false;
       if(!dashboardData || dashboardData.portalIdentityResolved !== false) return false;
       var box = window.__PORTAL_SUPABASE__;
       var session = box && box.session;
@@ -7839,11 +7893,14 @@
         }
         /* Term colours: Staff Timetable only — never invent weekdays from session snaps. */
         dashboardData.termWorkedWeekdays = worked.sort(function(a, b){ return a - b; });
-        dashboardData.termFeedbackByDate = {};
-        dashboardData.termShiftEndByDate = {};
         dashboardData.termDemoNow = null;
-        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
-          try{ rebuildTermShiftAndFeedbackFromSessionModel(); }catch(_re){}
+        /* Do not walk 4 months of Term on the home screen (Roberto freeze). Maps rebuild
+           when Term opens. Keep existing maps for the same staff so Term stays up to date. */
+        if(dashboardData.__portalTermMapsForStaff !== id){
+          dashboardData.termFeedbackByDate = {};
+          dashboardData.termShiftEndByDate = {};
+          dashboardData.__portalTermMapsForStaff = id;
+          try{ delete window.__PORTAL_TERM_REBUILD_LAST_SIG__; }catch(_){}
         }
       }
       const extraDates = (id === 'javier' || id === 'youssef') ? [] : portalTermStaffExtraCalendarDates(id);

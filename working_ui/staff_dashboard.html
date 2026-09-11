@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="en-GB" data-portal-screenshot-guard="off">
 <head>
+  <script>
+    (function () {
+      try {
+        var q = new URLSearchParams(String(location.search || ""));
+        if (!(q.get("ghostToken") || q.get("ghost"))) return;
+        document.documentElement.classList.add("portal-ghost-view-pending");
+        window.__PORTAL_GHOST_VIEW__ = { active: false, pending: true };
+        var el = document.createElement("div");
+        el.id = "portalGhostViewPending";
+        el.setAttribute("role", "status");
+        el.textContent = "Loading dashboard...";
+        el.setAttribute(
+          "style",
+          "position:fixed;inset:0;z-index:14000;display:flex;align-items:center;justify-content:center;padding:24px;background:#edf4fb;color:#1e3a5f;font:700 15px/1.4 -apple-system,system-ui,sans-serif;text-align:center"
+        );
+        (document.body || document.documentElement).appendChild(el);
+      } catch (_e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260911-teleport-iso" />
+  <script src="/portal/portal-ghost-view.js?v=20260911-teleport-iso"></script>
   <!--
     Deploy: Vercel/static desde `working_ui/` (mismo origen + `portal/`). `portal-app-shell` oculta chrome del host si la página va embebida.
 
@@ -174,7 +195,7 @@
     })();
   </script>
   <script src="/portal/portal_hide_chat_ui.js?v=20260614-hide-chat"></script>
-  <script src="/portal/staff-app-boot.js?v=20260911-local-staff-app"></script>
+  <script src="/portal/staff-app-boot.js?v=20260911-teleport-iso"></script>
   <script src="/portal/portal_auth_page_gate.js?v=20260910-staff-open"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260911-en-only"></script>
@@ -1298,13 +1319,13 @@
   <script src="/portal/staff-dashboard-participants.js?v=20260911-emmanuel-no-tue"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260910-pwa-off-joelle"></script>
-  <script src="/portal/staff-dashboard-today.js?v=20260911-emmanuel-no-tue"></script>
+  <script src="/portal/staff-dashboard-today.js?v=20260911-teleport-iso"></script>
   <script src="/portal/staff-dashboard-ui.js?v=20260911-emmanuel-no-tue"></script>
   <script src="/portal/portal_today_time_fit.js?v=20260706-time-one-line"></script>
   <script src="/portal/staff-dashboard-auth-bridge.js?v=20260625-lead-day-cards-nav"></script>
-  <script src="/portal/staff-dashboard-rehydrate.js?v=20260910-roberto-perf"></script>
+  <script src="/portal/staff-dashboard-rehydrate.js?v=20260911-teleport-iso"></script>
   <script src="/portal/portal-logout-bind.js?v=20260712-no-photo-signout"></script>
-  <script type="module" src="/portal/staff-dashboard-auth-supabase.js?v=20260911-emmanuel-no-tue"></script>
+  <script type="module" src="/portal/staff-dashboard-auth-supabase.js?v=20260911-teleport-iso"></script>
   <script src="/portal/staff-dashboard-achievements-boot.js?v=20260910-no-dbg-chip"></script>
     
   

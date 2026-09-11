@@ -55,11 +55,20 @@ if (typeof window.portalStaffResolveIdentityEarlyFromSession === "function") {
 }
 
 if (window.dashboardData) {
+  var ghostTokenInUrl = false;
+  try {
+    if (typeof window.portalGhostTokenInUrl === "function") {
+      ghostTokenInUrl = !!window.portalGhostTokenInUrl();
+    } else {
+      var qg = new URLSearchParams(String(window.location && window.location.search || ""));
+      ghostTokenInUrl = !!(qg.get("ghostToken") || qg.get("ghost"));
+    }
+  } catch (_g) {}
   const ghostEarly =
     window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active
       ? window.__PORTAL_GHOST_VIEW__
       : null;
-  if (!ghostEarly) {
+  if (!ghostEarly && !ghostTokenInUrl) {
     const displayName =
       (typeof portalStaffAuthorFirstName === "function"
         ? portalStaffAuthorFirstName(
@@ -87,11 +96,22 @@ if (typeof window.__PORTAL_STAFF_REHYDRATE__ === "function") {
         window.dashboardData.portalIdentityResolved === false &&
         typeof window.portalStaffFinishIdentityUi === "function"
       ) {
+        var ghostStillPending = false;
+        try {
+          if (typeof window.portalGhostTokenInUrl === "function") {
+            ghostStillPending = !!window.portalGhostTokenInUrl();
+          } else {
+            var qf = new URLSearchParams(String(window.location && window.location.search || ""));
+            ghostStillPending = !!(qf.get("ghostToken") || qf.get("ghost"));
+          }
+        } catch (_gf) {}
+        if (!ghostStillPending) {
         window.portalStaffFinishIdentityUi(
           (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || {},
           window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile,
           window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session
         );
+        }
       }
     } catch (_) {}
   });

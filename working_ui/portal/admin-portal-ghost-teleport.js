@@ -27,6 +27,7 @@
     visitByUserId: Object.create(null),
     loading: false,
     pollTimer: null,
+    viewerGen: 0,
   };
 
   function configure(options) {
@@ -219,7 +220,10 @@
       "</div>" +
       '<button type="button" class="btn btn--sec btn--sm portal-ghost-teleport-viewer__close" id="portalGhostTeleportViewerClose">Close</button>' +
       "</div>" +
-      '<iframe class="portal-ghost-teleport-viewer__frame" id="portalGhostTeleportViewerFrame" title="Staff ghost dashboard"></iframe>';
+      '<div class="portal-ghost-teleport-viewer__stage">' +
+      '<div class="portal-ghost-teleport-viewer__loading" id="portalGhostTeleportViewerLoading" role="status">Loading dashboard...</div>' +
+      '<iframe class="portal-ghost-teleport-viewer__frame" id="portalGhostTeleportViewerFrame" title="Staff ghost dashboard"></iframe>' +
+      "</div>";
     document.body.appendChild(shell);
 
     var closeBtn = document.getElementById("portalGhostTeleportViewerClose");
@@ -242,14 +246,39 @@
     return shell;
   }
 
+  function setViewerLoading(displayName) {
+    var overlay = document.getElementById("portalGhostTeleportViewerLoading");
+    var title = document.getElementById("portalGhostTeleportViewerTitle");
+    var label = displayName ? "Loading " + displayName + "..." : "Loading dashboard...";
+    if (title) title.textContent = label;
+    if (overlay) {
+      overlay.hidden = false;
+      overlay.textContent = label;
+    }
+    var frame = document.getElementById("portalGhostTeleportViewerFrame");
+    if (frame) frame.classList.add("is-ghost-pending");
+  }
+
+  function setViewerReady(displayName) {
+    var overlay = document.getElementById("portalGhostTeleportViewerLoading");
+    var title = document.getElementById("portalGhostTeleportViewerTitle");
+    if (title) title.textContent = displayName || "Staff dashboard";
+    if (overlay) overlay.hidden = true;
+    var frame = document.getElementById("portalGhostTeleportViewerFrame");
+    if (frame) frame.classList.remove("is-ghost-pending");
+  }
+
   function closeGhostViewer() {
+    state.viewerGen += 1;
     var shell = document.getElementById("portalGhostTeleportViewer");
     var frame = document.getElementById("portalGhostTeleportViewerFrame");
     if (frame) {
       try {
+        frame.onload = null;
         frame.src = "about:blank";
       } catch (_e) {}
     }
+    setViewerLoading("");
     if (shell) {
       shell.hidden = true;
       shell.setAttribute("aria-hidden", "true");
@@ -262,15 +291,10 @@
   }
 
   function openGhostViewer(href, displayName) {
+    var gen = ++state.viewerGen;
     var shell = ensureViewerShell();
     var frame = document.getElementById("portalGhostTeleportViewerFrame");
-    var title = document.getElementById("portalGhostTeleportViewerTitle");
-    if (title) {
-      title.textContent = displayName || "Staff dashboard";
-    }
-    if (frame) {
-      frame.src = href;
-    }
+    setViewerLoading(displayName);
     shell.hidden = false;
     shell.setAttribute("aria-hidden", "false");
     shell.classList.add("is-open");
@@ -278,6 +302,27 @@
       document.documentElement.classList.add("portal-ghost-teleport-viewer-open");
       document.body.classList.add("portal-ghost-teleport-viewer-open");
     } catch (_e) {}
+    if (!frame) return;
+    try {
+      frame.onload = null;
+      frame.src = "about:blank";
+    } catch (_blank) {}
+    function onFrameLoad() {
+      if (gen !== state.viewerGen) return;
+      var src = "";
+      try {
+        src = String(frame.getAttribute("src") || frame.src || "");
+      } catch (_src) {}
+      if (!src || src === "about:blank") return;
+      setViewerReady(displayName);
+    }
+    frame.onload = onFrameLoad;
+    global.setTimeout(function () {
+      if (gen !== state.viewerGen) return;
+      try {
+        frame.src = href;
+      } catch (_href) {}
+    }, 0);
   }
 
   async function openGhostDashboard(targetStaffUserId, surface, btn) {

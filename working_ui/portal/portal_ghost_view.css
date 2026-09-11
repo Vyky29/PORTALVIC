@@ -230,6 +230,65 @@
   background: #fff;
 }
 
+.portal-ghost-teleport-viewer__stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.portal-ghost-teleport-viewer__loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #edf4fb;
+  color: #1e3a5f;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.portal-ghost-teleport-viewer__loading[hidden] {
+  display: none !important;
+}
+
+.portal-ghost-teleport-viewer__frame.is-ghost-pending {
+  visibility: hidden;
+}
+
+html.portal-ghost-view-pending body {
+  background: #edf4fb;
+}
+
+html.portal-ghost-view-pending body > *:not(#portalGhostViewPending):not(#portalGhostViewBanner):not(.portal-ghost-view-error-panel) {
+  visibility: hidden !important;
+}
+
+#portalGhostViewPending {
+  position: fixed;
+  inset: 0;
+  z-index: 14000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #edf4fb;
+  color: #1e3a5f;
+  font: 700 15px/1.4 -apple-system, system-ui, sans-serif;
+  text-align: center;
+}
+
+html.portal-ghost-view-error #portalGhostViewPending {
+  display: none !important;
+}
+
 html.portal-ghost-teleport-viewer-open,
 body.portal-ghost-teleport-viewer-open {
   overflow: hidden;
