@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 105;
+  var SOURCE_VERSION = 106;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -2621,6 +2621,72 @@
     return false;
   }
 
+  /**
+   * Wed Acton Autumn: Javier + Youssef aquatic only (LOCAL). No Multi, no Berta, no Giuseppe.
+   * Summer Jul 15 stamp still ships Multi (Cyrus) + Giuseppe Room 2 — drop and rebuild.
+   */
+  var AUTUMN_ACTON_WEDNESDAY_BOARD = [
+    { staff: "YOUSSEF", name: "No participant", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "Stephanie", time: "4.30 to 5.30", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "No participant", time: "5.30 to 6", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "No participant", time: "6 to 6.30", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "Cyrus", time: "4 to 5", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "No participant", time: "5 to 5.30", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "No participant", time: "5.30 to 6", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "Kayden", time: "6 to 6.30", area: "Teaching Pool" },
+  ];
+
+  function autumnActonWednesdayStandingRows() {
+    var iso = DAY_CENTRE_STANDING_ISO.wednesday;
+    return AUTUMN_ACTON_WEDNESDAY_BOARD.map(function (slot) {
+      return {
+        client_name: slot.name,
+        day: "Wednesday",
+        instructors: slot.staff,
+        service: "Aquatic Activity",
+        area: slot.area || "Teaching Pool",
+        time_slot: slot.time,
+        venue: "Acton",
+        session_date: iso,
+      };
+    });
+  }
+
+  /** Aquatic OR Multi on Wed Acton standing/summer stamps — replace with Autumn aquatic board. */
+  function isWednesdayActonStandingRow(row) {
+    if (!row || !isActonVenue(row.venue)) return false;
+    if (normalizeDowKey(row.day) !== "wednesday") return false;
+    if (!(isAquaticService(row.service) || isMultiActivityService(row.service))) {
+      if (String(row.service || "").trim()) return false;
+    }
+    var d = normIso(row.session_date);
+    if (!d) return true;
+    if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
+    if (d === DAY_CENTRE_STANDING_ISO.wednesday) return true;
+    return false;
+  }
+
+  function applyAutumnActonWednesdayStanding(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isWednesdayActonStandingRow(r)) return;
+      /* Never keep Wed Acton Multi after DB merge (Summer stamp / bad overlays). */
+      if (
+        isMultiActivityService(r.service) &&
+        isActonVenue(r.venue) &&
+        normalizeDowKey(r.day) === "wednesday"
+      ) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnActonWednesdayStandingRows().forEach(function (row) {
+      out.push(applyStandingSlotAreaFromDb(row));
+    });
+    return out;
+  }
+
   function mondayActonClientKey(name) {
     var s = String(name || "")
       .trim()
@@ -2776,6 +2842,8 @@
       if (isLuliyaInstructor(r.instructors) && isShadowingOnlyRow(r)) return;
       /* Drop summer Tue Acton aquatic — rebuild from AUTUMN_ACTON_TUESDAY_BOARD. */
       if (isTuesdayActonAquaticStandingRow(r)) return;
+      /* Drop summer Wed Acton aquatic + Multi — rebuild from AUTUMN_ACTON_WEDNESDAY_BOARD. */
+      if (isWednesdayActonStandingRow(r)) return;
       /* Drop summer/live Thu Acton aquatic — rebuild from AUTUMN_ACTON_THURSDAY_BOARD. */
       if (isThursdayActonAquaticStandingRow(r)) return;
       /* Drop summer/live Sun Westway climbing — rebuild from AUTUMN_SUNDAY_CLIMBING_BOARD. */
@@ -2917,34 +2985,14 @@
           }
         }
       }
-      /* Wed Acton: Cyrus with Javier is 4–5 only (not 5–5.30). */
-      if (
-        isAquaticService(r.service) &&
-        isActonVenue(r.venue) &&
-        normalizeDowKey(r.day) === "wednesday" &&
-        /^cyrus\b/i.test(String(r.client_name || "").trim())
-      ) {
-        var slotC = String(r.time_slot || "")
-          .replace(/\s+/g, " ")
-          .trim()
-          .toLowerCase();
-        if (
-          slotC === "5 to 5.30" ||
-          slotC === "5.00 to 5.30" ||
-          slotC === "17 to 17.30" ||
-          slotC === "17.00 to 17.30"
-        ) {
-          out.push(Object.assign({}, r, { client_name: "No participant" }));
-          return;
-        }
-        if (slotC === "4 to 5.30" || slotC === "4.00 to 5.30") {
-          out.push(Object.assign({}, r, { time_slot: "4 to 5" }));
-          return;
-        }
-      }
+      /* Wed Acton aquatic board owns Cyrus/Kayden — do not keep summer Multi patches. */
       var poolPatch = remapAutumnActonPoolInstructors(r);
       if (poolPatch) {
         out.push(Object.assign({}, r, poolPatch));
+        return;
+      }
+      /* Never project Summer Acton Multi onto Autumn (SwimFarm Hub Multi remaps separately). */
+      if (isMultiActivityService(r.service) && isActonVenue(r.venue)) {
         return;
       }
       if (isMultiActivityService(r.service) && normIso(r.session_date) !== "2026-09-06") {
@@ -2982,6 +3030,9 @@
       out.push(Object.assign({}, row));
     });
     autumnActonTuesdayStandingRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    autumnActonWednesdayStandingRows().forEach(function (row) {
       out.push(Object.assign({}, row));
     });
     autumnActonThursdayStandingRows().forEach(function (row) {
@@ -3199,6 +3250,7 @@
     var withAutumn = applyAutumnStandingParticipantRows(base);
     var merged = opts.skipDb ? withAutumn.slice() : applyPortalRosterDbRows(withAutumn);
     merged = applyAutumnActonTuesdayStanding(merged);
+    merged = applyAutumnActonWednesdayStanding(merged);
     merged = applyAutumnActonThursdayStanding(merged);
     merged = scrubDepartedAutumnInstructorRows(merged);
     merged = applyAutumnWeek1DayCentre(merged);
@@ -3356,6 +3408,8 @@
     isAutumnStandingTemplateIso: isAutumnStandingTemplateIso,
     isAutumnTermOrTemplateIso: isAutumnTermOrTemplateIso,
     isAutumnNoSessionStaffKey: isAutumnNoSessionStaffKey,
+    applyAutumnActonWednesdayStanding: applyAutumnActonWednesdayStanding,
+    isWednesdayActonStandingRow: isWednesdayActonStandingRow,
     scrubDepartedAutumnInstructorRows: scrubDepartedAutumnInstructorRows,
     scrubDepartedAngelInstructorRows: scrubDepartedAngelInstructorRows,
     scrubAug15ReleasedFormerClientRows: scrubAug15ReleasedFormerClientRows,

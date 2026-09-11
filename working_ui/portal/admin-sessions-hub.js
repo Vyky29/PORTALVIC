@@ -3240,6 +3240,23 @@
       if (slotMatchesOverviewOmitRule(slot, omitRules[oi])) return true;
     }
     if (shouldOmitAutoMergedSwimDuplicate(slot)) return true;
+    /* Angel / Giuseppe / Andres have no Autumn sessions — never paint their leftover summer seats. */
+    try {
+      var PRC = global.PortalRosterCanonical;
+      if (PRC && typeof PRC.isAutumnNoSessionStaffKey === "function") {
+        var instList = normalizeInstructorList(slot.instructors || []);
+        if (instList.length) {
+          var anyAutumn = false;
+          for (var ni = 0; ni < instList.length; ni++) {
+            if (!PRC.isAutumnNoSessionStaffKey(dayBoardStaffKey(instList[ni]))) {
+              anyAutumn = true;
+              break;
+            }
+          }
+          if (!anyAutumn) return true;
+        }
+      }
+    } catch (_omitNs) {}
     return false;
   }
 
@@ -9558,7 +9575,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     "Raul",
     "Victor",
     "Bismark",
-    "Giuseppe",
     "Carlos",
     "Alex",
     "Sandra",
@@ -9609,7 +9625,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     sandra: 1,
     javi: 1,
     sevitha: 1,
-    giuseppe: 1,
     bismark: 1,
   };
   var DAY_BOARD_CLIMB = {
@@ -10757,7 +10772,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       for (var j = 0; j < targets.length; j++) {
         var raw = targets[j];
-        pushBoardItem(dayBoardStaffKey(raw), dayBoardStaffLabel(raw), slot, cloneBoardState(st, {
+        var staffKey = dayBoardStaffKey(raw);
+        try {
+          var PRCSkip = global.PortalRosterCanonical;
+          if (
+            PRCSkip &&
+            typeof PRCSkip.isAutumnNoSessionStaffKey === "function" &&
+            PRCSkip.isAutumnNoSessionStaffKey(staffKey)
+          ) {
+            continue;
+          }
+        } catch (_ns) {}
+        pushBoardItem(staffKey, dayBoardStaffLabel(raw), slot, cloneBoardState(st, {
           boardPlace: "normal",
         }));
       }
@@ -10778,6 +10804,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (!rawName) continue;
         var key = dayBoardStaffKey(rawName);
         if (!key || key === COVER_KEY) continue;
+        try {
+          var PRCNs = global.PortalRosterCanonical;
+          if (PRCNs && typeof PRCNs.isAutumnNoSessionStaffKey === "function" && PRCNs.isAutumnNoSessionStaffKey(key)) {
+            continue;
+          }
+        } catch (_nsAway) {}
         if (byKey[key] && byKey[key].length) continue;
         try {
           var PRC = global.PortalRosterCanonical;
@@ -10877,6 +10909,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       try {
         var PRC = global.PortalRosterCanonical;
+        if (PRC && typeof PRC.isAutumnNoSessionStaffKey === "function" && PRC.isAutumnNoSessionStaffKey(key)) {
+          return;
+        }
         if (
           PRC &&
           typeof PRC.autumnStaffStandingOffOnIso === "function" &&
