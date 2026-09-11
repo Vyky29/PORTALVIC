@@ -1,19 +1,15 @@
 /**
- * Portal UI locale — full Spanish UI for Víctor, Raúl, Javier Palankas (`javi`).
- * Walks the live DOM (text + labels/placeholders/titles) and keeps EN originals so
- * ES/EN can flip without reload. Everyone else stays English.
+ * Portal UI locale — Spanish UI was available for Víctor / Raúl / Javi Palankas
+ * (Aug 2026). Disabled Sep 2026: everyone stays English; dictionaries kept for
+ * a possible later revive. Toggle no longer mounts.
  */
 (function (global) {
   "use strict";
 
   var STORAGE_KEY = "portal_ui_lang_v1";
-  var EXEC_ES_KEYS = { victor: true, raul: true, javi: true };
-  var EXEC_EMAILS = {
-    "victor@clubsensational.org": "victor",
-    "raul@clubsensational.org": "raul",
-    "javier@clubsensational.org": "javi",
-    "javi@clubsensational.org": "javi",
-  };
+  /* Empty = Spanish UI off for all staff (was victor / raul / javi). */
+  var EXEC_ES_KEYS = Object.create(null);
+  var EXEC_EMAILS = Object.create(null);
 
   var ADMIN_NAV_ES = {
     nav_hub: "Panel",
@@ -586,6 +582,12 @@
     return false;
   }
 
+  function clearStoredLangPref() {
+    try {
+      if (global.localStorage) global.localStorage.removeItem(STORAGE_KEY);
+    } catch (_e) {}
+  }
+
   function getStoredPref() {
     try {
       var pref = clean(global.localStorage && global.localStorage.getItem(STORAGE_KEY)).toLowerCase();
@@ -930,13 +932,25 @@
     return ADMIN_SUBHEAD_ES[f] || STR_ES[f] || f;
   }
 
+  function removeLangToggle() {
+    var doc = global.document;
+    if (!doc) return;
+    var wrap = doc.getElementById("portalUiLangToggle");
+    if (!wrap) return;
+    try {
+      if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+    } catch (_e) {
+      wrap.hidden = true;
+    }
+  }
+
   function paintToggle() {
     var doc = global.document;
     if (!doc) return;
     var wrap = doc.getElementById("portalUiLangToggle");
     if (!wrap) return;
     if (!isExecSpanishEligible()) {
-      wrap.hidden = true;
+      removeLangToggle();
       return;
     }
     wrap.hidden = false;
@@ -1053,13 +1067,16 @@
 
   function boot(surface) {
     bootSurface = clean(surface) || bootSurface;
+    if (!isExecSpanishEligible()) {
+      clearStoredLangPref();
+      applyShell();
+      removeLangToggle();
+      wrapAdminSetView();
+      return getLang();
+    }
     applyShell();
     ensureLangToggle();
     wrapAdminSetView();
-    if (!isExecSpanishEligible()) {
-      paintToggle();
-      return getLang();
-    }
     ensureObserver();
     translateTree(global.document && global.document.body);
     try {
