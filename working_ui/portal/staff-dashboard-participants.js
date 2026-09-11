@@ -3938,7 +3938,34 @@
       if(!it || it.kind !== 'client') return false;
       if(it.portalOverrideTrialTag || it.portalOverrideMakeUpTag) return true;
       const ov = it.__portalScheduleOverride;
-      return !!(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot');
+      if(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot') return true;
+      /* Cover instructor of a MakeUp (Javi Palankas on Anas Thu 10) must review the
+         replacement, not inherit Absent from the original open / cancelled seat. */
+      if(ov && String(ov.override_type || '').trim() === 'instructor_reassign'){
+        const me = portalNormKeyStr(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '');
+        const cov = portalNormKeyStr((portalOverrideCoverPayload(ov) || {}).covering_staff_id);
+        if(me && cov && cov === me){
+          const cid = String(it.clientId || '').trim().toLowerCase();
+          if(cid && !portalScheduleOverrideAnchorIsOpenSlot(cid)){
+            const iso = normaliseIsoDate(ov.session_date);
+            const start = portalCanonicalHmToken(ov.anchor_start);
+            const staff = portalNormKeyStr(ov.anchor_staff_id);
+            const all = portalScheduleOverrideRowsForSessionIso(iso);
+            for(let i = 0; i < all.length; i++){
+              const r = all[i];
+              if(String(r.status || 'active') !== 'active') continue;
+              if(String(r.override_type || '').trim() !== 'client_replace_in_slot') continue;
+              if(!portalStaffKeysMatch(r.anchor_staff_id, staff)) continue;
+              if(start && portalCanonicalHmToken(r.anchor_start) !== start) continue;
+              if(portalOverrideIsTrial(r)) continue;
+              if(portalOverrideIsDayReassignReplace(r)) continue;
+              const rep = String(portalOverrideReplacementClientId(r.payload) || '').trim().toLowerCase();
+              if(rep && rep === cid) return true;
+            }
+          }
+        }
+      }
+      return false;
     }
     /** Make-up Today rows must resolve feedback against the replacement client, not the cleared roster anchor. */
     function portalReviewSessionForItem(item){

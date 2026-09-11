@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260911-qm-rt-quiet";
+  var VER = "20260911-javi-anas-pending";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260909-bismark-full",

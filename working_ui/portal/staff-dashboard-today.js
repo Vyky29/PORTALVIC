@@ -3727,8 +3727,40 @@
         const isTrialCoverOv = hasReplaceCoverOv && portalOverrideIsTrial(slotOv);
         const isInstructorCoverOv = String(ov.override_type || '').trim() === 'instructor_reassign';
         const coverTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
-        const coverItemProbe = { sessionEndTs: coverTs.sessionEndTs, sessionKey };
-        const makeUpPinkCover = !isInstructorCoverOv && !isTrialCoverOv && hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe);
+        /* Cover of a MakeUp (Javi Palankas ← Anas on Aurora's open 6-6.30) stays pending
+           after the slot ends. Do not drop the MakeUp tag — otherwise review treats the
+           original open seat as Absent and the cover cannot submit feedback. */
+        let siblingMakeupOv = null;
+        if(isInstructorCoverOv && typeof portalScheduleOverrideRowsForSessionIso === 'function'){
+          const covStart = typeof portalCanonicalHmToken === 'function'
+            ? portalCanonicalHmToken(ov.anchor_start)
+            : String(ov.anchor_start || '').slice(0, 5);
+          const covStaff = typeof portalNormKeyStr === 'function'
+            ? portalNormKeyStr(ov.anchor_staff_id)
+            : String(ov.anchor_staff_id || '').trim().toLowerCase();
+          const covCid = String(coverClientId || '').trim().toLowerCase();
+          portalScheduleOverrideRowsForSessionIso(sessionDateKey).some(function(r){
+            if(String(r.status || 'active') !== 'active') return false;
+            if(String(r.override_type || '').trim() !== 'client_replace_in_slot') return false;
+            if(typeof portalStaffKeysMatch === 'function'){
+              if(!portalStaffKeysMatch(r.anchor_staff_id, covStaff)) return false;
+            }else if(String(r.anchor_staff_id || '').trim().toLowerCase() !== covStaff) return false;
+            const rStart = typeof portalCanonicalHmToken === 'function'
+              ? portalCanonicalHmToken(r.anchor_start)
+              : String(r.anchor_start || '').slice(0, 5);
+            if(covStart && rStart && covStart !== rStart) return false;
+            if(typeof portalOverrideIsTrial === 'function' && portalOverrideIsTrial(r)) return false;
+            if(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(r)) return false;
+            const rep = typeof portalOverrideReplacementClientId === 'function'
+              ? String(portalOverrideReplacementClientId(r.payload) || '').trim().toLowerCase()
+              : '';
+            if(!rep) return false;
+            if(covCid && rep !== covCid) return false;
+            siblingMakeupOv = r;
+            return true;
+          });
+        }
+        const makeUpPinkCover = !isTrialCoverOv && (hasReplaceCoverOv || !!siblingMakeupOv);
         const coverMemberKeys = [];
         if(isInstructorCoverOv && Array.isArray(ov.__portalCoalescedCoverStarts) && ov.__portalCoalescedCoverStarts.length > 1){
           const seenCk = Object.create(null);

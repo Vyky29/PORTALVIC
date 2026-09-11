@@ -589,7 +589,9 @@
         return { feedbackDone: true, incident: false, absent: false, cancelled: false };
       }
       const baseEarly = portalReviewSessionForItem(item);
-      if(baseEarly && iso && !portalTodayCardUsesReplaceOverride(item)
+      const usesMakeupReplace = typeof portalTodayCardUsesReplaceOverride === 'function'
+        && portalTodayCardUsesReplaceOverride(item);
+      if(baseEarly && iso && !usesMakeupReplace
         && typeof portalRosterSessionSupersededByMakeupReplace === 'function'
         && portalRosterSessionSupersededByMakeupReplace(baseEarly, iso)){
         return { feedbackDone: false, incident: false, absent: true, cancelled: false };
