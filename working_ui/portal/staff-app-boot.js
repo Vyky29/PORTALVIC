@@ -172,7 +172,7 @@
       "/portal/portal_staff_lead_aquatic_slots.js?v=20260910-pwa-off-joelle",
     "/portal/portal_participant_general_hydrate.js?v=20260910-no-other-notes",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-    "/portal/portal_staff_photos.js?v=20260911-emmanuel-png",
+    "/portal/portal_staff_photos.js?v=20260911-emmanuel-photo",
   ];
 
   function portalStaffStartDeferredDashboardScripts() {

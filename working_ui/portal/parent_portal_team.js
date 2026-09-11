@@ -234,6 +234,16 @@
     ],
     "avatar_url": "/portal/staff_photos/youssef.png",
     "bio": "Youssef is confident in aquatic sessions and very attentive to detail. He keeps children motivated while making sure technique and safety stay front and centre."
+  },
+  "emmanuel": {
+    "name": "Emmanuel",
+    "nationality": "Ghanaian",
+    "flag": "🇬🇭",
+    "speaks": [
+      "English"
+    ],
+    "avatar_url": "/portal/staff_photos/emmanuel.png",
+    "bio": "Emmanuel is warm, steady and great with children who need clear structure. He brings calm energy to sessions and helps every participant feel welcome and supported."
   }
 };
 
@@ -827,6 +837,7 @@
     bismark: 1,
     carlos: 1,
     dan: 1,
+    emmanuel: 1,
     giuseppe: 1,
     godsway: 1,
     javi: 1,
@@ -843,8 +854,8 @@
   };
 
   /**
-   * Early Autumn Hub: Emanuel book is covered by John (e.g. Sun 6 Sep) until
-   * Emanuel has a Team photo / is live on the board for parents.
+   * Staff Emmanuel Amoakohene uses key emmanuel (roster may still say emanuel).
+   * Client Emanuel Dodson is a participant name — not remapped here for Team photos.
    */
   function normalizeTeamStaffKey(key) {
     var k = String(key || "")
@@ -852,7 +863,7 @@
       .toLowerCase();
     if (k === "lulia") k = "luliya";
     if (k === "yousef" || k === "yusef") k = "youssef";
-    if (k === "emanuel" || k === "emmanuel") k = "john";
+    if (k === "emanuel" || k === "emmanuelamoakohene" || k === "nanaamoakohene745") k = "emmanuel";
     return k;
   }
 
@@ -865,7 +876,7 @@
     if (!k || !STAFF_CATALOG[k] || !staffHasTeamPhoto(k)) return null;
     var card = Object.assign({ staff_key: k }, STAFF_CATALOG[k]);
     if (card.avatar_url && card.avatar_url.indexOf("?") === -1) {
-      card.avatar_url = card.avatar_url + "?v=20260905-team-photos";
+      card.avatar_url = card.avatar_url + "?v=20260911-emmanuel-photo";
     }
     return card;
   }
