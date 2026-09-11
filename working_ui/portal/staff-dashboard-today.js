@@ -3849,6 +3849,8 @@
         if(normStaffKey(ov.anchor_staff_id) !== staffIdNorm){
           if(!(typeof portalStaffKeysMatch === 'function' && portalStaffKeysMatch(ov.anchor_staff_id, staffId))) return;
         }
+        if(typeof portalTodayHasClientCardForObserverShadowing === 'function'
+          && portalTodayHasClientCardForObserverShadowing(primary, ov)) return;
         const kind = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
         const displayTitle = kind === 'shadowing' ? 'Shadowing' : (kind === 'meeting' ? 'Team meeting' : 'Training session');
         const slug = kind === 'meeting' ? 'meeting' : (kind === 'shadowing' ? 'shadowing' : 'training');
@@ -4124,6 +4126,9 @@
         staffId,
         String(dashboardData && dashboardData.staffName || '').trim()
       );
+      if(typeof portalFoldObserverShadowingOntoClientCards === 'function'){
+        mergedToday = portalFoldObserverShadowingOntoClientCards(mergedToday, sessionDateKey, staffId);
+      }
       if(typeof portalUpgradeTodayMakeupReplacePresentation === 'function'){
         mergedToday = portalUpgradeTodayMakeupReplacePresentation(mergedToday, sessionDateKey, anchorDayWord, supportHidePoolNote);
       }

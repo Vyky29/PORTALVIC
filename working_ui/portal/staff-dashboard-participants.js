@@ -563,11 +563,15 @@
     function portalTodayItemShowsShadowingHostAlert(item){
       return !!(item && item.portalShadowingHostAlert && Array.isArray(item.portalShadowingHostLabels) && item.portalShadowingHostLabels.length);
     }
+    function portalTodayItemShowsObserverShadowing(item){
+      return !!(item && item.portalObserverShadowing && item.kind === 'client');
+    }
     function portalTodayItemUsesAdminShiftCardStyle(item){
       // Combined Day Centre cards (Ikram / Emanuel / Fadi) are the normal recurring
       // roster, never an admin change: no yellow style even if the roster time moved.
       if(portalTodayItemIsSpecialSegmentedCard(item)) return false;
       if(portalTodayItemShowsShadowingHostAlert(item)) return false;
+      if(portalTodayItemShowsObserverShadowing(item)) return false;
       if(portalTodayItemShowsAdminShiftBadge(item)) return true;
       if(typeof portalSessionItemRosterTimeUpdated === 'function' && portalSessionItemRosterTimeUpdated(item)) return true;
       return false;
@@ -1317,6 +1321,100 @@
         });
       });
     }
+    function portalSessionAddPayloadObject(ov){
+      let pl = ov && ov.payload;
+      try{ if(typeof pl === 'string') pl = JSON.parse(pl); }catch(_){ pl = ov && ov.payload; }
+      return pl && typeof pl === 'object' ? pl : {};
+    }
+    function portalSessionAddShadowingClientSlug(ov){
+      if(!ov) return '';
+      const pl = portalSessionAddPayloadObject(ov);
+      const raw = String(ov.anchor_client_id || pl.participant || pl.client_name || pl.client || '').trim();
+      if(!raw) return '';
+      const slug = typeof portalTodayClientSlugCanon === 'function'
+        ? portalTodayClientSlugCanon(raw)
+        : String(raw).toLowerCase().replace(/[^a-z0-9]+/g, '');
+      if(!slug || slug === 'shadowing' || slug === 'training' || slug === 'meeting' || slug === 'available' || slug === 'closed') return '';
+      return slug;
+    }
+    function portalTodayItemClientSlugForShadowFold(it){
+      if(!it || it.kind !== 'client') return '';
+      const cid = String(it.clientId || '').trim().toLowerCase();
+      if(!cid || cid === 'shadowing' || cid === 'training' || cid === 'meeting' || cid === 'available' || cid === 'closed') return '';
+      if(typeof portalCanonicalTodayClientKey === 'function'){
+        return portalCanonicalTodayClientKey(it.clientId, it.name || it.clientName) || cid;
+      }
+      return typeof portalTodayClientSlugCanon === 'function' ? (portalTodayClientSlugCanon(cid) || cid) : cid;
+    }
+    function portalObserverShadowingOverrideForStaff(ov, staffId){
+      if(!ov || String(ov.status || 'active') !== 'active') return false;
+      if(String(ov.override_type || '').trim() !== 'session_add') return false;
+      const pl = portalSessionAddPayloadObject(ov);
+      if(String(pl.kind || '').trim().toLowerCase() !== 'shadowing') return false;
+      const sid = String(staffId || '').trim();
+      if(!sid) return false;
+      if(typeof portalStaffKeysMatch === 'function') return portalStaffKeysMatch(ov.anchor_staff_id, sid);
+      const a = String(ov.anchor_staff_id || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+      const b = sid.toLowerCase().replace(/[^a-z0-9]+/g, '');
+      return !!(a && b && a === b);
+    }
+    function portalTodayItemMatchesObserverShadowing(it, ov){
+      if(!it || it.kind !== 'client') return false;
+      const want = portalSessionAddShadowingClientSlug(ov);
+      if(!want) return false;
+      const got = portalTodayItemClientSlugForShadowFold(it);
+      const nameSlug = String(it.name || it.clientName || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+      if(got !== want && nameSlug !== want) return false;
+      const ovStart = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_start) : '';
+      const ovEnd = (typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_end) : '') || ovStart;
+      const base = it.__portalBaseSession || {};
+      const start = base.start || '';
+      const end = base.end || start;
+      if(start && ovStart && typeof portalHmRangeOverlaps === 'function'
+        && !portalHmRangeOverlaps(start, end, ovStart, ovEnd)) return false;
+      return true;
+    }
+    function portalTodayHasClientCardForObserverShadowing(items, ov){
+      if(!Array.isArray(items) || !ov) return false;
+      if(String(portalSessionAddPayloadObject(ov).kind || '').trim().toLowerCase() !== 'shadowing') return false;
+      if(!portalSessionAddShadowingClientSlug(ov)) return false;
+      for(let i = 0; i < items.length; i++){
+        if(portalTodayItemMatchesObserverShadowing(items[i], ov)) return true;
+      }
+      return false;
+    }
+    function portalFoldObserverShadowingOntoClientCards(items, sessionDateIso, staffId){
+      if(!Array.isArray(items) || !items.length) return items || [];
+      const iso = typeof normaliseIsoDate === 'function' ? normaliseIsoDate(sessionDateIso) : String(sessionDateIso || '').slice(0, 10);
+      if(!iso || !staffId) return items;
+      const rows = typeof portalScheduleOverrideRowsForSessionIso === 'function'
+        ? portalScheduleOverrideRowsForSessionIso(iso)
+        : [];
+      const ovs = [];
+      for(let i = 0; i < rows.length; i++){
+        const ov = rows[i];
+        if(portalObserverShadowingOverrideForStaff(ov, staffId) && portalSessionAddShadowingClientSlug(ov)) ovs.push(ov);
+      }
+      if(!ovs.length) return items;
+      return items.map(function(it){
+        if(!it || it.kind !== 'client') return it;
+        let hit = null;
+        for(let i = 0; i < ovs.length; i++){
+          if(portalTodayItemMatchesObserverShadowing(it, ovs[i])){ hit = ovs[i]; break; }
+        }
+        if(!hit) return it;
+        return Object.assign({}, it, {
+          portalObserverShadowing: true,
+          portalObserverShadowingLabel: 'Shadowing',
+          noSessionFeedbackRequired: true,
+          actionsDisabled: false,
+          detailsOpenAllowed: true,
+          portalOverrideSuppressReviewOrange: true,
+          portalOverrideHideAdminBadge: true,
+          __portalObserverShadowingOverride: hit
+        });
+      });
+    }
     function portalSessionAddAreaNoteLabel(locRaw){
       if(locRaw === 'pool') return 'Teaching Pool';
       if(locRaw === 'room') return 'Hub Room';
@@ -1407,6 +1505,12 @@
       }
       if(pillNorm === 'COMPLETED'){
         return '<span class="portal-session-slot-chip portal-session-slot-chip--submitted" aria-label="Completed"><span>Completed</span></span>';
+      }
+
+      if(portalTodayItemShowsObserverShadowing(item)){
+        const lab = String(item.portalObserverShadowingLabel || 'Shadowing').trim() || 'Shadowing';
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--shadowing" aria-label="' + escapeHtml(lab) + '"><span>' + escapeHtml(lab) + '</span></span>');
+        return chips.join('');
       }
 
       const lifecycleChip = portalTodayFeedbackLifecycleChipHtml(item);
