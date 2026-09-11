@@ -250,7 +250,7 @@ patchHtml(join(OUT, "login.html"), [
   ['<h1 class="login-portal-text" id="loginBrandTitle">Portal</h1>', '<h1 class="login-portal-text" id="loginBrandTitle">Staff</h1>'],
   [
     '<p id="login-updated-msg" class="login-updated-msg"',
-    '<p id="login-staff-admin-hint" class="login-updated-msg" style="margin-bottom:12px">Operations admin? Open <a href="https://portalvic.vercel.app/login.html">portalvic.vercel.app</a>. Parents &amp; carers: <a href="' +
+    '<p id="login-staff-admin-hint" class="login-updated-msg" hidden>Operations admin? Open <a href="https://portalvic.vercel.app/login.html">portalvic.vercel.app</a>. Parents &amp; carers: <a href="' +
       FAMILY_ORIGIN +
       '/parent">Family portal</a>.</p>\n      <p id="login-updated-msg" class="login-updated-msg"',
   ],

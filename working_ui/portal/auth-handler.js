@@ -812,7 +812,14 @@ function portalShowLoginUpdatedBannerIfNeeded() {
     const u = new URL(window.location.href);
     if (u.searchParams.get("updated") !== "1") return;
     const info = document.getElementById("login-updated-msg");
-    if (info) info.classList.add("visible");
+    if (info) {
+      if (!String(info.textContent || "").trim()) {
+        info.textContent =
+          "Your portal has been updated. Please log in again to continue.";
+      }
+      info.hidden = false;
+      info.classList.add("visible");
+    }
     u.searchParams.delete("updated");
     const qs = u.searchParams.toString();
     window.history.replaceState({}, "", u.pathname + (qs ? "?" + qs : "") + u.hash);
