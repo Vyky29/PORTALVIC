@@ -120,6 +120,7 @@
     teflon: true,
     victor: true,
     youssef: true,
+    emmanuel: true,
   };
 
   /** Role/category labels — not roster photo stems (avoids /staff_photos/leads.jpg 404 spam). */
@@ -198,6 +199,10 @@
         return;
       }
       if (!STAFF_PHOTO_FILES[key]) return;
+      if (key === "emmanuel") {
+        pushCandidate(urls, base + "emmanuel.jpg");
+        return;
+      }
       pushCandidate(urls, base + key + ".png");
       if (key === "michelle") pushCandidate(urls, base + key + ".jpg");
     });
