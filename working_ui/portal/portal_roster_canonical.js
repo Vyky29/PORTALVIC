@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 97;
+  var SOURCE_VERSION = 98;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1388,7 +1388,6 @@
         mapBook("AURORA", [
           { name: "Joelle", time: "5.30 to 6" },
           { name: "Joelle", time: "6 to 6.30" },
-          { name: "Anas", time: "6 to 6.30" },
         ]),
       )
       .concat(

@@ -156,7 +156,7 @@
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260910-yunis-se"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260911-fadi-standing-no-ov"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260911-anas-javi-cover"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -4719,6 +4719,50 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           String(a.clientDisplay || '').localeCompare(String(b.clientDisplay || ''));
       });
       return out;
+    }
+    function schedEffectivePaxSlugForDedupe(slot){
+      if(!slot) return '';
+      var ov = findOverrideForSlot(slot);
+      if(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot'){
+        var rep = adminCanonicalClientSlug(
+          (ov.payload && (ov.payload.to_client_id || ov.payload.replacement_client_id)) || ''
+        );
+        if(rep) return rep;
+      }
+      return adminCanonicalClientSlug(String(slot.clientSlug || slot.clientDisplay || '').trim());
+    }
+    /** Roster Anas + MakeUp painted on the open 6-6.30 seat must not list twice. */
+    function schedDedupeMakeupTwinSlots(slots){
+      var list = Array.isArray(slots) ? slots : [];
+      var groups = Object.create(null);
+      var order = [];
+      list.forEach(function(slot, idx){
+        var pax = schedEffectivePaxSlugForDedupe(slot);
+        if(!pax || schedIsOpenSlotSlug(pax)){
+          order.push({ key: '__open-' + idx, slot: slot });
+          return;
+        }
+        var key = [
+          String(slot.sessionDate || ''),
+          normalizeSchedAnchorStaffId(slot.staffRosterId),
+          String(slot.venue || '').trim().toLowerCase(),
+          pax,
+          normTimeShort(slot.anchorStart),
+          normTimeShort(slot.anchorEnd)
+        ].join('|');
+        if(!groups[key]){
+          groups[key] = { slot: slot, idx: order.length };
+          order.push({ key: key, slot: slot });
+          return;
+        }
+        var cur = groups[key].slot;
+        var preferNew = schedIsOpenParticipantSlot(slot) && !schedIsOpenParticipantSlot(cur);
+        if(preferNew){
+          groups[key].slot = slot;
+          order[groups[key].idx].slot = slot;
+        }
+      });
+      return order.map(function(o){ return o.slot; });
     }
     /** Aquatic roster bands longer than 30′ → one sched row per half-hour (e.g. Amar Ra 5–6 → 5–5.30 + 5.30–6). */
     function schedExpandAquaticHalfHourSlots(slots){
@@ -10273,9 +10317,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!timeOnBand){
         timeOnBand = schedTimeRangesOverlap(o.anchor_start, o.anchor_end, slot.anchorStart, slot.anchorEnd);
       }
-      if(oType === 'client_replace_in_slot' && schedIsOpenSlotSlug(o.anchor_client_id)){
-        return timeOnBand;
-      }
       var oCid = adminCanonicalClientSlug(o.anchor_client_id);
       var sCid = adminCanonicalClientSlug(slot.clientSlug || slot.clientDisplay || '');
       if(oType === 'client_replace_in_slot' && schedIsOpenSlotSlug(sCid)){
@@ -10315,12 +10356,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return matches[0];
     }
-    function findOverrideForSlot(slot, overrideRows){
+    function findSchedOverridesMatchingSlot(slot, overrideRows){
       var rows = Array.isArray(overrideRows) ? overrideRows : sched.overrides;
       var matches = [];
       for(var i = 0; i < rows.length; i++){
         if(schedOverrideMatchesSlot(slot, rows[i])) matches.push(rows[i]);
       }
+      return matches;
+    }
+    function findOverrideForSlot(slot, overrideRows){
+      return schedOverridePickBestForSlot(findSchedOverridesMatchingSlot(slot, overrideRows));
+    }
+    function findOverrideForSlotOfTypes(slot, types, overrideRows){
+      var want = {};
+      (types || []).forEach(function(t){ want[String(t || '').trim()] = true; });
+      var matches = findSchedOverridesMatchingSlot(slot, overrideRows).filter(function(o){
+        return !!(o && want[String(o.override_type || '').trim()]);
+      });
       return schedOverridePickBestForSlot(matches);
     }
     function schedOverridePayloadMatches(existing, newRow){
@@ -13312,7 +13364,49 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return list;
     }
     function schedResolveInstructorSlugFromTyped(list, typed){
-      return schedResolveReplacementSlugFromTyped(list, typed);
+      var exact = schedResolveReplacementSlugFromTyped(list, typed);
+      if(exact) return exact;
+      var t = String(typed == null ? '' : typed).trim();
+      if(!t) return '';
+      var tl = t.toLowerCase();
+      var compact = tl.replace(/[^a-z0-9]+/g, '');
+      if(!compact) return '';
+      var hits = [];
+      function pushSlug(slug){
+        var s = String(slug || '').trim();
+        if(!s) return;
+        if(hits.indexOf(s) < 0) hits.push(s);
+      }
+      for(var i = 0; i < (list || []).length; i++){
+        var it = list[i] || {};
+        var slug = String(it.slug || '').trim();
+        var disp = String(it.display || '').toLowerCase();
+        var dCompact = disp.replace(/[^a-z0-9]+/g, '');
+        var slugL = slug.toLowerCase();
+        if(slugL === compact || dCompact === compact) pushSlug(slug);
+        else if(disp === tl) pushSlug(slug);
+        else if(compact.indexOf(slugL) === 0 || slugL.indexOf(compact) === 0) pushSlug(slug);
+        else if(dCompact.indexOf(compact) === 0 || compact.indexOf(dCompact) === 0) pushSlug(slug);
+        try{
+          if(typeof portalStaffDisplayName === 'function'){
+            var dn = String(portalStaffDisplayName(slug) || '').toLowerCase();
+            var dnC = dn.replace(/[^a-z0-9]+/g, '');
+            if(dn && (dn === tl || dnC === compact)) pushSlug(slug);
+          }
+        }catch(_dn){}
+      }
+      if(/\bpalankas\b/.test(tl) || compact.indexOf('palankas') >= 0){
+        var pal = hits.filter(function(s){
+          var k = String(s || '').toLowerCase();
+          var lab = '';
+          try{ lab = String(typeof portalStaffDisplayName === 'function' ? portalStaffDisplayName(s) : '').toLowerCase(); }catch(_p){}
+          return k === 'javi' || /palankas/.test(k) || /palankas/.test(lab);
+        });
+        if(pal.length === 1) return pal[0];
+        if(pal.length > 1) hits = pal;
+      }
+      if(hits.length === 1) return hits[0];
+      return '';
     }
     /** Collapsible form to add a Training / Shadowing session (override_type='session_add'). */
     function schedAddSessionFormHtml(){
@@ -13637,13 +13731,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             b.type = 'button';
             b.className = 'sched-suggest__btn';
             b.textContent = x.display;
-            b.addEventListener('mousedown', function(ev){
-              ev.preventDefault();
+            function pickCover(ev){
+              if(ev) ev.preventDefault();
               if(covHid) covHid.value = x.slug;
               if(covInp) covInp.value = x.display;
               covSug.hidden = true;
               covSug.replaceChildren();
-            });
+            }
+            b.addEventListener('mousedown', pickCover);
+            b.addEventListener('click', pickCover);
             covSug.appendChild(b);
           })(matches[j]);
         }
@@ -13801,6 +13897,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
         covInp.addEventListener('blur', function(){
           setTimeout(function(){
+            if(covHid && !String(covHid.value || '').trim() && covInp && String(covInp.value || '').trim()){
+              var resolvedCover = schedResolveInstructorSlugFromTyped(coverList, covInp.value);
+              if(resolvedCover) covHid.value = resolvedCover;
+            }
             if(covSug){
               covSug.hidden = true;
               covSug.replaceChildren();
@@ -14798,8 +14898,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(msgEl) msgEl.textContent = 'Trial applies to open roster lines (No participant).';
         return;
       }
-      if(ovType === 'instructor_reassign' && !coverSlug){
-        coverSlug = schedResolveInstructorSlugFromTyped(schedBuildInstructorPickList(), coverTyped);
+      if(ovType === 'instructor_reassign'){
+        var coverListResolve = schedBuildInstructorPickList();
+        if(!coverSlug){
+          coverSlug = schedResolveInstructorSlugFromTyped(coverListResolve, coverTyped);
+        }else{
+          var coverKnown = false;
+          var wantCover = normalizeSchedAnchorStaffId(coverSlug);
+          for(var cki = 0; cki < coverListResolve.length; cki++){
+            if(coverListResolve[cki].slug === coverSlug || coverListResolve[cki].slug === wantCover){
+              coverKnown = true;
+              break;
+            }
+          }
+          if(!coverKnown){
+            coverSlug = schedResolveInstructorSlugFromTyped(coverListResolve, coverTyped || coverSlug) || coverSlug;
+          }
+        }
       }
       if(ovType === 'instructor_reassign' && !coverSlug){
         if(msgEl) msgEl.textContent = 'Covering instructor is required for instructor_reassign.';
@@ -16590,13 +16705,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var schedIso = dateEl0 && dateEl0.value ? dateEl0.value : isoDateLocal(new Date());
       return slots.map(function(slot){
         var ov = findOverrideForSlot(slot);
+        var ovStaff = findOverrideForSlotOfTypes(slot, ['instructor_reassign', 'instructor_cover_needed']) || ov;
         var hasOv = !!ov;
-        var ovChip = hasOv
-          ? '<span class="override-chip ' + esc(schedOverrideTypeClass(ov.override_type, ov)) + '">' + esc(schedOverrideLabelForRow(ov)) + '</span>'
-          : '<span class="muted" style="font-size:12px;font-weight:600;letter-spacing:.03em">NONE</span>';
+        var ovChip = '';
+        var chipOvs = [];
+        if(ov) chipOvs.push(ov);
+        if(ovStaff && (!ov || String(ovStaff.id || '') !== String(ov.id || ''))) chipOvs.push(ovStaff);
+        if(chipOvs.length){
+          ovChip = chipOvs.map(function(one){
+            return '<span class="override-chip ' + esc(schedOverrideTypeClass(one.override_type, one)) + '">' + esc(schedOverrideLabelForRow(one)) + '</span>';
+          }).join(' ');
+        }else{
+          ovChip = '<span class="muted" style="font-size:12px;font-weight:600;letter-spacing:.03em">NONE</span>';
+        }
         var rosterCell = schedRosterCellHtml(slot, ov);
         var clientCellHtml = schedParticipantCellHtml(slot, ov);
-        var staffCell = schedInstructorCellHtml(slot, ov, schedIso);
+        var staffCell = schedInstructorCellHtml(slot, ovStaff, schedIso);
         var statusCell = rosterCell;
         var paxSlug = String(slot.clientSlug || '').trim().toLowerCase();
         var paxSlug2 = '';
@@ -17104,6 +17228,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         await schedLoadOverrideAuthors(client, sched.overrides, sched.termEvents, rosterAuthorRows);
         if(sched.lastMsg && msg){ msg.textContent = sched.lastMsg; msg.style.color = 'var(--success)'; sched.lastMsg = ''; }
       }
+      slots = schedDedupeMakeupTwinSlots(slots);
+      sched.cachedDaySlots = slots;
+      sched.slotsById = {};
+      for(var sxi2 = 0; sxi2 < slots.length; sxi2++) sched.slotsById[slots[sxi2].demoId] = slots[sxi2];
       schedEnsureBaseTableHead();
       if(tbody){
         tbody.innerHTML = slots.length

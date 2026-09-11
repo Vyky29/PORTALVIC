@@ -6985,7 +6985,36 @@
       if (!staffIdMatchesInstructor(ov.anchor_staff_id, slot.instructors)) return false;
     } else {
       var oCid = canonicalClientSlug(ov.anchor_client_id);
-      if (oCid && sCid && oCid !== sCid) return false;
+      if (oCid && sCid && oCid !== sCid) {
+        var openCoverOk = false;
+        if (
+          overrideIsInstructorReassignType(ov) &&
+          overrideAnchorIsOpenSlot(ov.anchor_client_id)
+        ) {
+          if (isOpenRosterSlot(slot.client_name) || slot.portalOverrideMakeUpTag) {
+            openCoverOk = true;
+          } else {
+            var sibs = (this.payload && this.payload.schedule_overrides) || [];
+            for (var si = 0; si < sibs.length; si++) {
+              var mk = sibs[si];
+              if (!overrideIsReplaceType(mk)) continue;
+              if (clean(mk.session_date) !== clean(ov.session_date)) continue;
+              if (!overrideAnchorIsOpenSlot(mk.anchor_client_id)) continue;
+              if (normalizeAnchorStaffId(mk.anchor_staff_id) !== normalizeAnchorStaffId(ov.anchor_staff_id)) continue;
+              var mkStart = normTimeShort(mk.anchor_start);
+              var ovStart = normTimeShort(ov.anchor_start);
+              if (mkStart && ovStart && mkStart !== ovStart) continue;
+              var painted = overrideReplacementClientId(overridePayloadObj(mk)) ||
+                canonicalClientSlug(overrideReplacementClientName(overridePayloadObj(mk)));
+              if (painted && sCid && painted === sCid) {
+                openCoverOk = true;
+                break;
+              }
+            }
+          }
+        }
+        if (!openCoverOk) return false;
+      }
       if (overrideIsInstructorReassignType(ov)) {
         if (!staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)) return false;
       }
