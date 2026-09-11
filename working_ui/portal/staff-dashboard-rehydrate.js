@@ -86,17 +86,23 @@
             typeof portalBaseClientSessionsForCalendarDate === "function" && iso
               ? portalBaseClientSessionsForCalendarDate(day, iso, sid, isReal)
               : [];
+          var multiClientIds = null;
+          if (day === "Sunday") {
+            multiClientIds = Object.create(null);
+            sessions.forEach(function (s) {
+              if (weekServiceCat(s) === "Multi-Activity") {
+                var cidM = String(s.clientId || "").trim().toLowerCase();
+                if (cidM) multiClientIds[cidM] = 1;
+              }
+            });
+          }
           sessions.forEach(function (s) {
             if (typeof window.portalWeekStripSessionShouldCount === "function" && !window.portalWeekStripSessionShouldCount(s, day, sid)) return;
             var venue = String(s.venue || "—");
             var lab = weekServiceCat(s);
             if (day === "Sunday" && lab === "Aquatic Activities") {
               var cidAqu = String(s.clientId || "").trim().toLowerCase();
-              if (cidAqu && sessions.some(function (o) {
-                return o !== s
-                  && String(o.clientId || "").trim().toLowerCase() === cidAqu
-                  && weekServiceCat(o) === "Multi-Activity";
-              })) return;
+              if (cidAqu && multiClientIds && multiClientIds[cidAqu]) return;
             }
             var countKey = typeof window.portalWeekStripSessionCountKey === "function"
               ? window.portalWeekStripSessionCountKey(s, day, sid)
@@ -116,6 +122,7 @@
           return { day: day, segments: segments };
         });
       }
+      try{ window.buildWeekRows = buildWeekRows; }catch(_){}
 
       function portalLocalCanonicalStaffKey(raw) {
         var k = String(raw || "")
@@ -753,9 +760,7 @@
            (portalServerResolvedRosterKeys) before Pending/Submitted colours are safe —
            otherwise Emanuel-style cards flash orange then turn green late. */
         portalSyncTodaySectionDisplay(sessionsModel);
-        if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
-        if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(staffId);
-        dashboardData.week = buildWeekRows(staffId);
+        /* TODAY first — defer NEXT SESSION / WEEK until idle or sheet open. */
         (function(){
           if(typeof portalApplyTodayVenueMeta === 'function') portalApplyTodayVenueMeta();
         })();
@@ -803,9 +808,6 @@
         }
         if (runId !== _rehydrateRun) return;
         portalSyncTodaySectionDisplay(sessionsModel);
-        if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
-        if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(staffId);
-        dashboardData.week = buildWeekRows(staffId);
         (function(){
           if(typeof portalApplyTodayVenueMeta === 'function') portalApplyTodayVenueMeta();
         })();
@@ -815,12 +817,9 @@
         if(typeof portalMaybeResetDemoViewDayAfterFeedbackPostLoad === "function" && !_portalSkipPostFbDayReset){
           portalMaybeResetDemoViewDayAfterFeedbackPostLoad();
         }
-        dashboardData.week = buildWeekRows(staffId);
 
         if (typeof window.portalApplyTermCalendarForStaff === "function") window.portalApplyTermCalendarForStaff(staffId);
         portalSyncTodaySectionDisplay(sessionsModel);
-        if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
-        if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(staffId);
         if(typeof portalApplyTodayVenueMeta === 'function') portalApplyTodayVenueMeta();
 
         try{
@@ -833,10 +832,7 @@
               dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
             }
             portalSyncTodaySectionDisplay();
-            if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
-            dashboardData.week = buildWeekRows(staffId);
             (function(){
-              if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(staffId);
               if(typeof portalApplyTodayVenueMeta === 'function') portalApplyTodayVenueMeta();
             })();
           }
@@ -847,7 +843,13 @@
           if (typeof renderHeader === "function") renderHeader();
           if (typeof renderToday === "function") renderToday();
           if (typeof renderMiniCounts === "function") renderMiniCounts();
-          if (typeof renderLists === "function") renderLists();
+          /* Do not paint closed NEXT/WEEK sheets here — openSheet / idle hydrate. */
+          try{
+            if(typeof portalStaffIdleHydrateSecondaryPanels === "function"){
+              window.__PORTAL_SECONDARY_PANELS_SCHEDULED__ = 0;
+              portalStaffIdleHydrateSecondaryPanels();
+            }
+          }catch(_idle){}
           if(typeof portalRefreshDashboardParticipantPhotos === "function"){
             portalRefreshDashboardParticipantPhotos(document, {
               resolvePhotoUrl: resolveParticipantPhotoUrl,
@@ -884,18 +886,19 @@
           var sid = String(staffId || (typeof window.portalAuthStaffRosterId === 'function' ? window.portalAuthStaffRosterId() : STAFF_DASHBOARD_ID) || '').trim().toLowerCase();
           try{ if(typeof window !== 'undefined') delete window.__PORTAL_TERM_REBUILD_LAST_SIG__; }catch(_sig){}
           portalSyncTodaySectionDisplay();
-          if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
-          if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(sid);
-          dashboardData.week = buildWeekRows(sid);
-          if (typeof window.portalApplyTermCalendarForStaff === "function") window.portalApplyTermCalendarForStaff(sid);
           if (typeof renderToday === "function") renderToday();
           if (typeof renderMiniCounts === "function") renderMiniCounts();
-          if (typeof portalDeferTermFeedbackRebuild === "function") portalDeferTermFeedbackRebuild();
-          else if (typeof rebuildTermShiftAndFeedbackFromSessionModel === "function") rebuildTermShiftAndFeedbackFromSessionModel();
+          try{
+            window.__PORTAL_SECONDARY_PANELS_SCHEDULED__ = 0;
+            if(typeof portalStaffIdleHydrateSecondaryPanels === "function") portalStaffIdleHydrateSecondaryPanels();
+          }catch(_sec){}
+          /* TERM maps only if Term sheet is open — never walk the full term on override refresh. */
           try{
             var termSheetOv = document.getElementById("termSheet");
-            if (termSheetOv && termSheetOv.classList.contains("open") && typeof renderTermCalendarGrid === "function") {
-              renderTermCalendarGrid();
+            if (termSheetOv && termSheetOv.classList.contains("open")) {
+              if (typeof portalDeferTermFeedbackRebuild === "function") portalDeferTermFeedbackRebuild();
+              else if (typeof rebuildTermShiftAndFeedbackFromSessionModel === "function") rebuildTermShiftAndFeedbackFromSessionModel();
+              if (typeof renderTermCalendarGrid === "function") renderTermCalendarGrid();
             }
           }catch(_tg){}
           try{
@@ -908,10 +911,7 @@
                 dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
               }
               portalSyncTodaySectionDisplay();
-              if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
-              dashboardData.week = buildWeekRows(staffId);
               (function(){
-                if(typeof portalRefreshNextSessionPreview === 'function') portalRefreshNextSessionPreview(staffId);
                 if(typeof portalApplyTodayVenueMeta === 'function') portalApplyTodayVenueMeta();
               })();
             }

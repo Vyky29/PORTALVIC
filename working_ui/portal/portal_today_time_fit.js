@@ -66,10 +66,14 @@
     global.addEventListener('portal:dashboard-rendered', schedule);
     document.addEventListener('visibilitychange', schedule);
 
-    // Catch tab switches / re-renders that replace the Today cards.
+    // Observe only the Today grid — body-wide observers re-ran fit on every sheet
+    // paint (Week/Term/Participants) and blocked Roberto's main thread.
     try {
       var obs = new MutationObserver(function () { schedule(); });
-      obs.observe(document.body, { childList: true, subtree: true });
+      var host = document.getElementById('todayGrid')
+        || document.querySelector('.section-card--today')
+        || null;
+      if (host) obs.observe(host, { childList: true, subtree: true });
     } catch (_) {}
 
     // A couple of delayed passes cover late layout (web fonts, avatars, etc.).

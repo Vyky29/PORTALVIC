@@ -303,7 +303,7 @@
       }catch(_){}
       return [...keys].slice(0, 200);
     }
-    /** All term dates ≤ today (plus catch-up) — peer fan-out must not paint Sunday pairs green on past Sundays. */
+    /** Worked weekdays + catch-up/cover dates ≤ today — same feedback keys, skip empty calendar days. */
     function portalCollectAllPerStaffOwnFeedbackOnlyKeys(catchUpDates){
       const keys = new Set();
       const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
@@ -317,19 +317,44 @@
       });
       try{
         const t = window.PORTAL_TERM_FROM_TIMETABLE;
-        if(t && t.firstDate && t.lastDate){
+        if(t && t.firstDate){
+          const worked = (typeof dashboardData !== 'undefined' && dashboardData
+            && Array.isArray(dashboardData.termWorkedWeekdays))
+            ? dashboardData.termWorkedWeekdays.map(Number)
+            : [];
+          const lastIso = todayIso || String(t.lastDate || '').slice(0, 10);
           const cur = new Date(String(t.firstDate) + 'T12:00:00');
-          const last = new Date(String(t.lastDate) + 'T12:00:00');
+          const last = new Date(String(lastIso) + 'T12:00:00');
           while(cur.getTime() <= last.getTime()){
+            const w = cur.getDay();
             const dk = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0') + '-' + String(cur.getDate()).padStart(2, '0');
-            if(!todayIso || dk <= todayIso) dates.add(dk);
+            if(!worked.length || worked.indexOf(w) >= 0){
+              if(!todayIso || dk <= todayIso) dates.add(dk);
+            }
             cur.setDate(cur.getDate() + 1);
           }
+          try{
+            if(typeof portalStaffInstructorCoverCalendarIsoKeys === 'function'){
+              portalStaffInstructorCoverCalendarIsoKeys(staffId, t.firstDate, lastIso).forEach(function(iso){
+                const k = String(iso || '').trim().slice(0, 10);
+                if(k && (!todayIso || k <= todayIso)) dates.add(k);
+              });
+            }
+          }catch(_){}
+          try{
+            if(typeof portalTermStaffExtraCalendarDates === 'function'){
+              portalTermStaffExtraCalendarDates(staffId).forEach(function(iso){
+                const k = String(iso || '').trim().slice(0, 10);
+                if(k && (!todayIso || k <= todayIso)) dates.add(k);
+              });
+            }
+          }catch(_){}
         }
       }catch(_){}
-      dates.forEach(function(iso){
-        portalCollectPerStaffOwnFeedbackOnlyKeys(iso).forEach(function(k){ keys.add(k); });
-      });
+      const isoList = [...dates];
+      for(let i = 0; i < isoList.length; i++){
+        portalCollectPerStaffOwnFeedbackOnlyKeys(isoList[i]).forEach(function(k){ keys.add(k); });
+      }
       return [...keys].slice(0, 600);
     }
     function portalTodayItemIsSundayInstructorCover(item){
@@ -1581,12 +1606,21 @@
             dashboardData.today = buildSelectedDayViewFromLauraModel();
           }
         }catch(_preToday){}
+        /* Yield so Home taps land before the full-term key walk. */
+        try{
+          if(typeof portalYieldToMain === 'function') await portalYieldToMain();
+          else await new Promise(function(r){ setTimeout(r, 0); });
+        }catch(_){}
         let rosterKeys = typeof portalCollectRosterSessionKeysForReviewSync === 'function' ? portalCollectRosterSessionKeysForReviewSync() : [];
         const staffIdSync = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         const todayIsoSync = portalLondonTodayIso();
         const catchUpDates = typeof portalTermStaffCatchUpFeedbackDates === 'function'
           ? portalTermStaffCatchUpFeedbackDates(staffIdSync)
           : [];
+        try{
+          if(typeof portalYieldToMain === 'function') await portalYieldToMain();
+          else await new Promise(function(r){ setTimeout(r, 0); });
+        }catch(_){}
         const perStaffOwnKeys = typeof portalCollectAllPerStaffOwnFeedbackOnlyKeys === 'function'
           ? portalCollectAllPerStaffOwnFeedbackOnlyKeys(catchUpDates)
           : (typeof portalCollectPerStaffOwnFeedbackOnlyKeys === 'function'
