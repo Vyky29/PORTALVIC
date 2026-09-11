@@ -94,6 +94,34 @@
     if (u && urls.indexOf(u) < 0) urls.push(u);
   }
 
+  /** Files that actually exist under portal/staff_photos/ — skip img for anyone else (no 404 spam). */
+  var STAFF_PHOTO_FILES = {
+    alex: true,
+    andres: true,
+    angel: true,
+    aurora: true,
+    berta: true,
+    bismark: true,
+    carlos: true,
+    dan: true,
+    giuseppe: true,
+    godsway: true,
+    javi: true,
+    javier: true,
+    john: true,
+    lulia: true,
+    luliya: true,
+    michelle: true,
+    raul: true,
+    roberto: true,
+    sandra: true,
+    sevitha: true,
+    simon: true,
+    teflon: true,
+    victor: true,
+    youssef: true,
+  };
+
   /** Role/category labels — not roster photo stems (avoids /staff_photos/leads.jpg 404 spam). */
   var NO_STATIC_PHOTO = {
     leads: true,
@@ -154,9 +182,12 @@
         if (key && src && src.staffProfiles && src.staffProfiles[key]) {
           var af = String(src.staffProfiles[key].avatarFile || "").trim();
           if (af) {
-            hadProfileFile = true;
-            pushCandidate(urls, swapPhotoExt(af, "png"));
-            pushCandidate(urls, af);
+            var afKey = canonicalStaffKey(key);
+            if (STAFF_PHOTO_FILES[afKey] || !/staff_photos\//i.test(af)) {
+              hadProfileFile = true;
+              pushCandidate(urls, swapPhotoExt(af, "png"));
+              pushCandidate(urls, af);
+            }
           }
         }
       } catch (_) {}
@@ -164,9 +195,11 @@
       if (!key) return;
       if (key === "lulia" || key === "luliya") {
         pushCandidate(urls, base + "luliya.png");
+        return;
       }
+      if (!STAFF_PHOTO_FILES[key]) return;
       pushCandidate(urls, base + key + ".png");
-      pushCandidate(urls, base + key + ".jpg");
+      if (key === "michelle") pushCandidate(urls, base + key + ".jpg");
     });
     return urls;
   }
