@@ -815,15 +815,16 @@
           var termSheet = document.getElementById('termSheet');
           termOpen = !!(termSheet && termSheet.classList.contains('open'));
         }catch(_){}
-        /* Roberto: do not force a 4-month Term walk ~2s after override hydrate
-           (timeout:2800 used to freeze taps while Today was still painting). */
+        /* Roberto: never walk 4 months of Term on the home screen. Maps rebuild
+           when they open Term (openSheet). Reminder chrome can use last maps. */
         if(!termOpen){
-          if(!window.__PORTAL_TERM_REBUILD_BG__){
-            window.__PORTAL_TERM_REBUILD_BG__ = setTimeout(function(){
-              window.__PORTAL_TERM_REBUILD_BG__ = 0;
-              runRebuild();
-            }, 8000);
-          }
+          try{
+            if(typeof portalScheduleReminderChromeAfterAnnSync === 'function'){
+              portalScheduleReminderChromeAfterAnnSync();
+            }else if(typeof syncPortalReminderChrome === 'function'){
+              setTimeout(function(){ syncPortalReminderChrome(); }, 0);
+            }
+          }catch(_){}
           return;
         }
         runRebuild();
@@ -3019,17 +3020,11 @@
       if(!el) return;
       const termSheetOpen = !!(document.getElementById('termSheet') && document.getElementById('termSheet').classList.contains('open'));
       /*
-       * When Term is closed, do not rebuild feedback maps / pending-override cache
-       * on the main thread (Roberto lead-viewer phones lagged every tap). Idle-paint later.
+       * Term closed: do not rebuild maps or paint 4 months of cells. The idle
+       * force:true path was freezing Roberto (~18s setTimeout, taps dead) after
+       * Today had already painted. Opening Term still paints via openSheet.
        */
-      if(!opts.force && !termSheetOpen){
-        if(typeof portalScheduleTermGridIdleRender === 'function'){
-          portalScheduleTermGridIdleRender(function(){
-            renderTermCalendarGrid({ force: true });
-          }, 480);
-          return;
-        }
-      }
+      if(!termSheetOpen) return;
       rebuildTermShiftAndFeedbackFromSessionModel();
       if(typeof portalRefreshPendingOverrideDaysCache === 'function') portalRefreshPendingOverrideDaysCache();
       let ovCount = 0;
@@ -3505,7 +3500,9 @@
           ? 'Red = not your shift. You are not rostered for Autumn Term 2026 sessions.'
           : 'Tap a <strong>green</strong> or <strong>blue</strong> day to open that day&apos;s session cards. Red = not your shift.';
       }
-      renderTermCalendarGrid();
+      if(document.getElementById('termSheet') && document.getElementById('termSheet').classList.contains('open')){
+        renderTermCalendarGrid();
+      }
       renderQuickMenuSetupVisibility();
       if(typeof portalRefreshDashboardParticipantPhotos === 'function'){
         portalRefreshDashboardParticipantPhotos(document.getElementById('tomorrowList') || document, {
@@ -3614,6 +3611,9 @@
       }
       if(id === 'menuSheet'){
         if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode({ shellOnly: true });
+      }
+      if(id === 'weekSheet' || id === 'tomorrowSheet'){
+        if(typeof renderLists === 'function') renderLists();
       }
       if(id === 'setupReminderSheet' && backdropEl){
         backdropEl.classList.add('sheet-backdrop--focus');

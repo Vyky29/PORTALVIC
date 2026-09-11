@@ -807,11 +807,15 @@
       }catch(_){}
     }
     function portalStaffRefreshFeedbackDependentUi(){
-      try{
-        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function') rebuildTermShiftAndFeedbackFromSessionModel();
-      }catch(_){}
       if(typeof renderToday === 'function') renderToday();
-      if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+      if(typeof portalDeferTermFeedbackRebuild === 'function') portalDeferTermFeedbackRebuild();
+      else if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+        try{ rebuildTermShiftAndFeedbackFromSessionModel(); }catch(_){}
+      }
+      var termSheetFb = document.getElementById('termSheet');
+      if(termSheetFb && termSheetFb.classList.contains('open') && typeof renderTermCalendarGrid === 'function'){
+        renderTermCalendarGrid();
+      }
       if(typeof renderMiniCounts === 'function') renderMiniCounts();
       if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
       else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
