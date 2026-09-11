@@ -485,6 +485,11 @@
         esc(String(i.issued_at || "").slice(0, 10)) +
         (i.charge_applies ? " · £" + esc(String(i.charge_gbp)) + " charge" : "") +
         "</div>" +
+        (i.reason
+          ? '<div style="font-size:12px;color:#334155;margin-top:4px;overflow-wrap:break-word">Note: ' +
+            esc(i.reason) +
+            "</div>"
+          : "") +
         '<div style="font-size:12px;color:#475569;margin-top:4px;overflow-wrap:break-word">Staff ack: ' +
         esc(i.staff_ack_name || "pending") +
         (i.staff_ack_at ? " @ " + esc(String(i.staff_ack_at).slice(0, 16)) : "") +
