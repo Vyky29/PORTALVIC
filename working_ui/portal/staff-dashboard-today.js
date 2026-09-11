@@ -3872,9 +3872,24 @@
       }
 
       function portalTodayItemSortKey(it){
-        const sk = String(it.sessionKey || '');
-        const p = sk.split('|');
-        return p[1] || '00:00';
+        const base = it && it.__portalBaseSession ? it.__portalBaseSession : (it || {});
+        if(typeof portalCanonicalHmToken === 'function'){
+          const fromBase = portalCanonicalHmToken(base.start);
+          if(fromBase) return fromBase;
+        }
+        const sk = String(it && it.sessionKey || '');
+        const parts = sk.split('|');
+        for(let i = 1; i < parts.length; i++){
+          const tok = String(parts[i] || '').trim();
+          if(/^\d{1,2}:\d{2}/.test(tok)) return tok;
+        }
+        if(it && it.sessionStartTs){
+          const d = new Date(it.sessionStartTs);
+          if(!isNaN(d.getTime())){
+            return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+          }
+        }
+        return parts[1] || '00:00';
       }
       /** Dedupe cover rows injected from instructor_reassign when roster already lists the same client slot. */
       function portalTodayItemClientSlotDedupeKey(it){
@@ -4082,16 +4097,15 @@
       if(portalStaffKeyIsLulia(staffId)){
         mergedToday = portalApplyLuliaIkramCutoffToTodayItems(mergedToday, staffId, sessionDateKey, anchor);
       }
-      /* Cancelled original first (Fadi Cancelled), then live / replacement by time
-         (Emanuel below Fadi even when Emanuel starts earlier). Same pattern as
-         Joelle Cancelled then Anas / Ikram. */
+      /* Clock order (Joelle 6-6.30 Cancelled last). Same-slot tie: cancelled
+         original above a live replacement (Fadi then Emanuel / Anas makeup). */
       mergedToday = (Array.isArray(mergedToday) ? mergedToday.slice() : []).sort(function(a, b){
-        const aCan = portalTodayItemIsCancelledCard(a) ? 0 : 1;
-        const bCan = portalTodayItemIsCancelledCard(b) ? 0 : 1;
-        if(aCan !== bCan) return aCan - bCan;
         const ta = Number(normalizeTimeForSort(portalTodayItemSortKey(a)));
         const tb = Number(normalizeTimeForSort(portalTodayItemSortKey(b)));
         if(ta !== tb) return ta - tb;
+        const aCan = portalTodayItemIsCancelledCard(a) ? 0 : 1;
+        const bCan = portalTodayItemIsCancelledCard(b) ? 0 : 1;
+        if(aCan !== bCan) return aCan - bCan;
         return 0;
       });
       return mergedToday;
