@@ -40,14 +40,9 @@ Deno.serve(async (req) => {
 
   const portalUrl = (Deno.env.get("SUPABASE_URL") ?? "").trim();
   const portalService = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
-  const obUrl = (Deno.env.get("ONBOARDING_SUPABASE_URL") ?? "").trim();
-  const obService = (Deno.env.get("ONBOARDING_SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
 
   if (!portalUrl || !portalService) {
     return json(500, { ok: false, error: "misconfigured" });
-  }
-  if (!obUrl || !obService) {
-    return json(503, { ok: false, error: "onboarding_not_configured" });
   }
 
   const portalAdmin = createClient(portalUrl, portalService, {
@@ -97,28 +92,36 @@ Deno.serve(async (req) => {
     return json(413, { ok: false, error: "payload_too_large" });
   }
 
-  const obAdmin = createClient(obUrl, obService, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const { error } = await obAdmin.from("onboarding_applicant_drafts").upsert({
-    applicant_session_id: userId,
-    form_type: formType,
-    payload,
-    updated_at: new Date().toISOString(),
-  });
+  const now = new Date().toISOString();
+  // Drafts live on Portal (same project as staff auth) — not the legacy Onboarding project.
+  const { error } = await portalAdmin.from("onboarding_applicant_drafts").upsert(
+    {
+      applicant_session_id: userId,
+      form_type: formType,
+      payload,
+      updated_at: now,
+    },
+    { onConflict: "applicant_session_id,form_type" },
+  );
 
   if (error) {
     console.error("[portal-staff-onboarding-draft-save]", error);
-    return json(500, { ok: false, error: "save_failed" });
+    return json(500, {
+      ok: false,
+      error: "save_failed",
+      detail: error.message || null,
+    });
   }
 
   if (staffName) {
-    await obAdmin.from("onboarding_applicant_sessions").upsert({
-      applicant_session_id: userId,
-      portal_staff_name: staffName,
-      updated_at: new Date().toISOString(),
-    });
+    await portalAdmin.from("onboarding_applicant_sessions").upsert(
+      {
+        applicant_session_id: userId,
+        portal_staff_name: staffName,
+        updated_at: now,
+      },
+      { onConflict: "applicant_session_id" },
+    );
   }
 
   if (onboardingSubmittedAt(payload)) {

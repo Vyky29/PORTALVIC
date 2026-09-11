@@ -343,12 +343,13 @@ async function loadRegisteredSessions(
 }
 
 async function loadApplicantProgress(
-  obAdmin: SupabaseClient,
+  draftsDb: SupabaseClient,
   documents: OnboardingDocRow[],
   portalAdmin?: SupabaseClient,
 ): Promise<ApplicantProgress[]> {
-  const sessions = await loadRegisteredSessions(obAdmin);
-  const { data, error } = await obAdmin
+  // Job/health drafts + session touch live on Portal; document files may still be on OB storage.
+  const sessions = await loadRegisteredSessions(draftsDb);
+  const { data, error } = await draftsDb
     .from("onboarding_applicant_drafts")
     .select("applicant_session_id, form_type, payload, updated_at")
     .order("updated_at", { ascending: false })
@@ -522,7 +523,7 @@ Deno.serve(async (req) => {
 
   const { bucket, errors: bucketErrors } = await resolveOnboardingBucket(obAdmin);
   const { documents, errors: listErrors } = await listAllDocuments(obAdmin, bucket);
-  const applicants = await loadApplicantProgress(obAdmin, documents, portalAdmin);
+  const applicants = await loadApplicantProgress(portalAdmin, documents, portalAdmin);
   const upload_counts = uploadCountsFromDocuments(documents);
   const unlinked_documents = documents.filter((d) => !d.applicant_session_id).length;
 
@@ -548,7 +549,7 @@ Deno.serve(async (req) => {
       bucket,
       onboarding_project: obUrl,
       onboarding_configured: true,
-      drafts_source: "onboarding_project",
+      drafts_source: "portal_project",
       unlinked_documents,
       errors: [...bucketErrors, ...listErrors].filter(Boolean),
     },

@@ -33,8 +33,6 @@ Deno.serve(async (req) => {
 
   const portalUrl = (Deno.env.get("SUPABASE_URL") ?? "").trim();
   const portalService = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
-  const obUrl = (Deno.env.get("ONBOARDING_SUPABASE_URL") ?? "").trim();
-  const obService = (Deno.env.get("ONBOARDING_SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
 
   if (!portalUrl || !portalService) {
     return json(500, { ok: false, error: "misconfigured" });
@@ -67,27 +65,21 @@ Deno.serve(async (req) => {
     health = true;
   }
 
-  if (obUrl && obService) {
-    const obAdmin = createClient(obUrl, obService, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+  const { data: drafts } = await portalAdmin
+    .from("onboarding_applicant_drafts")
+    .select("form_type, payload")
+    .eq("applicant_session_id", userId);
 
-    const { data: drafts } = await obAdmin
-      .from("onboarding_applicant_drafts")
-      .select("form_type, payload")
-      .eq("applicant_session_id", userId);
-
-    for (const row of drafts ?? []) {
-      const ft = String(row.form_type ?? "").toLowerCase();
-      const payload = row.payload as Record<string, unknown> | null;
-      const portal =
-        payload?._portal && typeof payload._portal === "object"
-          ? (payload._portal as Record<string, unknown>)
-          : null;
-      const submitted = portal?.submitted_at;
-      if (ft === "job" && submitted) job = true;
-      if (ft === "health" && submitted) health = true;
-    }
+  for (const row of drafts ?? []) {
+    const ft = String(row.form_type ?? "").toLowerCase();
+    const payload = row.payload as Record<string, unknown> | null;
+    const portalMeta =
+      payload?._portal && typeof payload._portal === "object"
+        ? (payload._portal as Record<string, unknown>)
+        : null;
+    const submitted = portalMeta?.submitted_at;
+    if (ft === "job" && submitted) job = true;
+    if (ft === "health" && submitted) health = true;
   }
 
   return json(200, {
@@ -95,6 +87,6 @@ Deno.serve(async (req) => {
     applicant_session_id: userId,
     job,
     health,
-    onboarding_configured: !!(obUrl && obService),
+    onboarding_configured: true,
   });
 });
