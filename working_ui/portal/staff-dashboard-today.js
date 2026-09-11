@@ -333,11 +333,34 @@
       }catch(_){}
       return false;
     }
-    /** After calendar-date instructor remap, is this worker still on the seat? */
+    /** Instructor string (AURORA / SIMON) includes this worker? */
+    function portalInstructorListIncludesStaff(instructors, staffId){
+      const sid = String(staffId || '').trim();
+      if(!sid) return false;
+      const parts = String(instructors || '').split(/[,/&+]|\band\b/i);
+      for(let i = 0; i < parts.length; i++){
+        const part = String(parts[i] || '').trim();
+        if(!part) continue;
+        if(typeof portalStaffIdsMatchLoose === 'function' && portalStaffIdsMatchLoose(part, sid)) return true;
+        const pk = part.toLowerCase().split(/\s+/)[0].replace(/[^a-z0-9]+/g, '');
+        const sk = sid.toLowerCase().replace(/[^a-z0-9]+/g, '');
+        if(pk && sk && (pk === sk || pk.indexOf(sk) === 0 || sk.indexOf(pk) === 0)) return true;
+      }
+      return false;
+    }
+    /**
+     * After calendar-date instructor remap, is this worker still on the seat?
+     * Only drop standing *template* rows when the viewed day remaps that person off
+     * (Emanuel Tinashe before Fri 11). Dated rows for the viewed ISO always stay —
+     * a failed name match on Jul stamps was emptying Term cards for every worker.
+     */
     function portalStaffSessionKeptAfterCalendarInstructorRemap(s, calendarIso, staffId){
       if(!s) return false;
       const sid = String(staffId || s.staffId || '').trim();
       if(!sid) return true;
+      const iso = String(calendarIso || '').trim().slice(0, 10);
+      const rowIso = String(s.session_date || s.sessionDate || '').trim().slice(0, 10);
+      if(rowIso && iso && rowIso === iso) return true;
       const raw = String(
         s.__portalRosterInstructorsRaw ||
         s.__portalRosterInstructorBeforeOverride ||
@@ -362,16 +385,13 @@
       }catch(_){}
       remapped = String(remapped || '').trim();
       if(!remapped) return false;
-      const parts = remapped.split(/[,/&+]|\band\b/i);
-      for(let i = 0; i < parts.length; i++){
-        const part = String(parts[i] || '').trim();
-        if(!part) continue;
-        if(typeof portalStaffIdsMatchLoose === 'function' && portalStaffIdsMatchLoose(part, sid)) return true;
-        const pk = part.toLowerCase().split(/\s+/)[0].replace(/[^a-z0-9]+/g, '');
-        const sk = sid.toLowerCase().replace(/[^a-z0-9]+/g, '');
-        if(pk && sk && (pk === sk || pk.indexOf(sk) === 0 || sk.indexOf(pk) === 0)) return true;
+      if(portalInstructorListIncludesStaff(remapped, sid)) return true;
+      if(s.staffId && portalInstructorListIncludesStaff(remapped, s.staffId)) return true;
+      if(portalInstructorListIncludesStaff(raw, sid)
+        || (s.staffId && portalInstructorListIncludesStaff(raw, s.staffId))){
+        return false;
       }
-      return false;
+      return true;
     }
     /** Standing weekday snap window (Services / reenrol): exclude crash weeks from 20 Jul. */
     function portalTermStandingSnapBounds(){
