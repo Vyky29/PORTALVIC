@@ -149,7 +149,7 @@
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260909-reply-only" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
-  <script src="/portal/cfk-app.js?v=20260912-svc-seats-only"></script>
+  <script src="/portal/cfk-app.js?v=20260912-svc-places-week"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260911-sched-mobile-cards"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -7141,7 +7141,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           opens.push(ml);
           continue;
         }
-        var key = paxName.toLowerCase().replace(/\s+/g, ' ');
+        /* Keep 2:1 (same child, two instructors) as two seats — match Booking / MADRE. */
+        var staffKey = String(ml.staffRosterId || ml.staffName || '')
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, ' ');
+        var key = paxName.toLowerCase().replace(/\s+/g, ' ') + '|' + staffKey;
         var prev = bestByPax[key];
         bestByPax[key] = adminServicePickStandingPreferredLine(prev, ml, standingIso);
       }
@@ -7330,15 +7335,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return best;
     }
     /**
-    /**
      * Services capacity / Booking Portal: summer MADRE stamps (Apr-Jul pre-crash) are
      * only a projection source inside adminSessionMatchesCalendarIso.
-     * Services §1 boards and metrics count the Autumn 26/27 display week — never Apr-Jul rows.
+     * Services §1 boards count Booking-aligned standing Places — never week-1 day-ops.
      */
     var SERVICES_STANDING_CRASH_FROM_ISO = '2026-07-20';
     /** Summer spreadsheet/MADRE window — projection source only (not Services counts). */
     var SERVICES_STANDING_TEMPLATE_START_ISO = '2026-04-13';
     var SERVICES_STANDING_TEMPLATE_END_ISO = '2026-07-19';
+    /**
+     * First full Autumn standing week (Places === Booking). Avoids Tue 8 / Thu 10 / Mon 7 day-ops.
+     */
+    var SERVICES_BOOKING_PLACES_WEEK_ANCHOR = '2026-09-14';
     /**
      * Services overview display + metrics window = Autumn 26/27.
      * Scheduling & Cover uses SCHED_COVER_TERM_* (Autumn 2026 full term).
@@ -19266,8 +19274,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return null;
     }
     /**
-     * Same live seat rule as Sessions Overview: start dates + gone-from dates.
-     * From gone-from day onward the standing seat is No participant (Booking Portal open).
+     * Same Booking/Overview gone-from rule on the paint ISO (no "today wins").
+     * Services places week is Booking-aligned standing, so paint ISOs are already past leave dates.
      */
     function adminServiceClientAllowedOnDate(clientName, isoDate){
       var iso = String(isoDate || '').trim().slice(0, 10);
@@ -19279,26 +19287,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(goneFrom && /^\d{4}-\d{2}-\d{2}$/.test(String(goneFrom)) && iso >= String(goneFrom)) return false;
       return true;
     }
-    /**
-     * Services standing = who holds the seat now (Booking Portal), not "this week's Monday ISO".
-     * If today is past a paint weekday (e.g. viewing Mon 7 after Abodi left 8 Sep), use today.
-     */
-    function adminServiceStandingEffectiveIso(calendarIso){
-      var paint = String(calendarIso || '').trim().slice(0, 10);
-      var today = '';
-      try{ today = isoDateLocal(new Date()); }catch(_e){ today = ''; }
-      if(/^\d{4}-\d{2}-\d{2}$/.test(today) && /^\d{4}-\d{2}-\d{2}$/.test(paint)){
-        return today > paint ? today : paint;
-      }
-      return paint || today;
-    }
-    /** Standing seat blanked for Booking Portal (re-enrol release or gone-from). */
+    /** Standing seat blanked for Booking Portal (re-enrol release or gone-from on paint ISO). */
     function adminServicePaxSeatIsOpenLive(paxName, programme, venue, dowNorm, calendarIso){
       var name = String(paxName || '').trim();
       if(!name) return true;
       if(adminServicePaxReleasedByReenrol(name, programme, venue, dowNorm)) return true;
-      var checkIso = adminServiceStandingEffectiveIso(calendarIso);
-      if(checkIso && !adminServiceClientAllowedOnDate(name, checkIso)) return true;
+      if(calendarIso && !adminServiceClientAllowedOnDate(name, calendarIso)) return true;
       return false;
     }
     function adminEnumerateIsosInclusive(startIso, endIso){
@@ -20555,7 +20549,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       opts = opts || {};
       var dowOrder = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
       var standIsos = [];
-      var autumnAnchor = adminServicesOverviewAnchorIso();
+      var autumnAnchor = SERVICES_BOOKING_PLACES_WEEK_ANCHOR;
       for(var di = 0; di < dowOrder.length; di++){
         var standIso = adminServicesAutumnIsoForDow(dowOrder[di], autumnAnchor, '');
         if(standIso) standIsos.push(standIso);
@@ -20655,15 +20649,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         );
       }
       /*
-       * Services §1 = Autumn 26/27 display-week seats (who holds the weekday place now).
-       * Counts and boards use Autumn ISOs only. Summer MADRE may still feed projection
-       * inside slotsForSelectedDate / adminSessionMatchesCalendarIso — never shown as Apr-Jul.
-       * Day make-ups / covers stay in Schedule & Covers / Sessions Overview when possible.
+       * Services §1 = Booking-aligned standing Places (week from Mon 14 Sep 2026),
+       * not the current calendar week’s day-ops (Tue 8 redistribute, Thu 10 makeup, Mon 7 Abodi last).
+       * Day covers / make-ups stay in Schedule & Covers / Sessions Overview.
        */
       var termStart = SERVICES_ROSTER_CALENDAR_START_ISO;
       var termEnd = SERVICES_ROSTER_CALENDAR_END_ISO;
-      var displayWeekIso = adminServicesOverviewAnchorIso();
-      if(weekIso && weekIso >= termStart && weekIso <= termEnd) displayWeekIso = weekIso;
+      var displayWeekIso = SERVICES_BOOKING_PLACES_WEEK_ANCHOR;
+      if(
+        weekIso &&
+        weekIso >= SERVICES_BOOKING_PLACES_WEEK_ANCHOR &&
+        weekIso <= termEnd
+      ){
+        displayWeekIso = weekIso;
+      }
       var dowOrder = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
       var hasFilt = !!(filt && (filt.day || filt.class || filt.venue || filt.coach || filt.participant || filt.spaceOnly || filt.waitOnly));
       var cardsHtml = grouped.map(function(block, pidx){
