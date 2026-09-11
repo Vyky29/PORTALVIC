@@ -2159,6 +2159,54 @@
     return !!(slot.portalShadowingHost || slot.portalShadowingObserver);
   }
 
+  /**
+   * Makeup painted onto an open seat (Anas on Aurora available 6-6.30) plus
+   * instructor_reassign also anchored on that open seat. Client ids differ
+   * (available vs Anas) so overrideMatchesSlot can miss; match staff + clock + venue.
+   */
+  function instructorReassignOnSameOpenSeat(hub, slot) {
+    if (!hub || !slot) return null;
+    if (!slot.portalOverrideMakeUpTag && !isOpenRosterSlot(slot.client_name)) return null;
+    var makeup = slot.__portalScheduleOverride;
+    var staff = normalizeAnchorStaffId(
+      (makeup && makeup.anchor_staff_id) || slot.anchor_staff_id
+    );
+    if (!staff) {
+      var insts = slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
+        ? slot.portalOriginalInstructors
+        : slotInstructors(slot);
+      if (insts && insts.length) staff = normalizeAnchorStaffId(insts[0]);
+    }
+    var start = normTimeShort((makeup && makeup.anchor_start) || slot.time_start);
+    var venue = clean((makeup && makeup.anchor_venue) || slot.venue).toLowerCase();
+    if (!staff || !start) return null;
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    var best = null;
+    for (var i = 0; i < ovs.length; i++) {
+      var ov = ovs[i];
+      if (!overrideIsInstructorReassignType(ov)) continue;
+      if (clean(ov.session_date) !== slot.session_date) continue;
+      if (String(ov.status || "active").trim() !== "active") continue;
+      if (normalizeAnchorStaffId(ov.anchor_staff_id) !== staff) continue;
+      if (!overrideAnchorIsOpenSlot(ov.anchor_client_id)) {
+        var oCid = canonicalClientSlug(ov.anchor_client_id);
+        var sCid = canonicalClientSlug(slot.client_name);
+        if (oCid && sCid && oCid !== sCid) continue;
+      }
+      var ovStart = normTimeShort(ov.anchor_start);
+      if (ovStart && ovStart !== start) continue;
+      var oVen = clean(ov.anchor_venue).toLowerCase();
+      if (venue && oVen && oVen !== venue) continue;
+      if (
+        !best ||
+        (ov.created_at && (!best.created_at || String(ov.created_at) > String(best.created_at)))
+      ) {
+        best = ov;
+      }
+    }
+    return best;
+  }
+
   function instructorReassignOverrideForSlot(hub, slot) {
     if (!hub || !slot) return null;
     if (slot.__portalScheduleOverride && overrideIsInstructorReassignType(slot.__portalScheduleOverride)) {
@@ -2189,7 +2237,7 @@
         best = cand;
       }
     }
-    return best;
+    return best || instructorReassignOnSameOpenSeat(hub, slot);
   }
 
   function applyInstructorReassignOverrides(hub, slots) {
@@ -6080,8 +6128,24 @@
     return !!(this._incidentByDateClient && this._incidentByDateClient[k]);
   };
 
+  /** Fadi CLIENT DC seats stay Cancelled through Sun 20 Sep (return Mon 21) — standing, not DB overrides. */
+  function hubSlotIsFadiDcCancelled(slot) {
+    if (!slot) return false;
+    if (!/\bfadi\b/i.test(clean(slot.client_name))) return false;
+    if (!isDayCentreService(slot.service)) return false;
+    var iso = clean(slot.session_date).slice(0, 10);
+    try {
+      var canon = global.PortalRosterCanonical;
+      if (canon && typeof canon.isFadiAbsentDcWindowIso === "function") {
+        return !!canon.isFadiAbsentDcWindowIso(iso);
+      }
+    } catch (_f) {}
+    return !!(iso && iso >= "2026-09-01" && iso < "2026-09-21");
+  }
+
   AdminSessionsHub.prototype.slotHasCancellation = function (slot) {
     if (hubSlotIsTrial(slot)) return false;
+    if (hubSlotIsFadiDcCancelled(slot)) return true;
     if (this.slotHasFeedbackResolution(slot, "cancelled")) return true;
     var ovCan = this.overrideForSlotByType(slot, overrideIsCancelledType);
     if (ovCan) return true;
@@ -6092,6 +6156,7 @@
   /** Before-start (or admin override) cancel counts as Submitted; during-session cancel still awaits feedback. */
   AdminSessionsHub.prototype.slotCancellationCountsAsSubmitted = function (slot) {
     if (hubSlotIsTrial(slot)) return false;
+    if (hubSlotIsFadiDcCancelled(slot)) return true;
     if (this.slotHasFeedbackResolution(slot, "cancelled")) return true;
     var ovCan = this.overrideForSlotByType(slot, overrideIsCancelledType);
     if (ovCan) return true;
@@ -6284,6 +6349,7 @@
     if (this.feedbackUnitAbsent(unit)) return true;
     if (this.feedbackUnitComplete(unit)) return true;
     for (var si = 0; si < unit.slots.length; si++) {
+      if (this.slotCancellationCountsAsSubmitted(unit.slots[si])) return true;
       var stEx = this.statusExportRowForSlot(unit.slots[si]);
       if (stEx && statusExportRowIsResolved(stEx)) return true;
     }
@@ -6391,6 +6457,27 @@
       return true;
     }
     return false;
+  };
+
+  /** Display row when standing/override cancel has no session_cancellations row (Fadi DC). */
+  AdminSessionsHub.prototype.syntheticCancellationDisplayRow = function (slot) {
+    if (!slot) return null;
+    return {
+      client_name: slot.client_name,
+      service: slot.service || "\u2014",
+      session_date: slot.session_date,
+      session_time: slot.time_start || slot.time_slot || "",
+      attendance: "No",
+      completed_by_name: (slotInstructors(slot) || []).join(", ") || "\u2014",
+      created_at: null,
+      engagement_rating: null,
+      client_emotions: null,
+      engagement_patterns: null,
+      positive_feedback: null,
+      relevant_information: "Cancelled",
+      _ashCancellationMark: true,
+      _ashDisplaySlot: slot,
+    };
   };
 
   /** Display row for feedback tab when overview already shows absent but no session_feedback row. */
@@ -7939,6 +8026,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (afb && !isUsed(afb)) {
           out.push(afb);
           markUsed(afb);
+        } else if (isCancelledSubmitted) {
+          var synthCan = hub.syntheticCancellationDisplayRow(slot);
+          if (synthCan) {
+            out.push(synthCan);
+            markUsed(synthCan);
+          }
         } else if (isAbsent) {
           var synthAbsent = hub.syntheticAbsentDisplayRow(slot);
           if (synthAbsent) {
@@ -8048,6 +8141,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     if (fb && fb._ashAwaitingSlot && fb.slot) {
       var awaitSlot = fb.slot;
+      if (hub.slotCancellationCountsAsSubmitted(awaitSlot)) {
+        var canRow = hub.syntheticCancellationDisplayRow(awaitSlot);
+        if (canRow) return hub.htmlFeedbackTableRow(canRow, escFn, opts);
+      }
       var awaitOpen =
         isOpenRosterSlot(awaitSlot.client_name) ||
         rosterSlotKind(awaitSlot.client_name) === "closed" ||
@@ -8100,7 +8197,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           "</tr>"
         );
       }
-      var awaitInst = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
+      var awaitInst = hubInstructorCellHtml(
+        awaitSlot,
+        instructorReassignOverrideForSlot(hub, awaitSlot) || hub.overrideForSlot(awaitSlot)
+      );
       return (
         '<tr class="ash-fb-row ash-fb-row--awaiting">' +
         (variant === "register" ? awaitParticipantServiceCell : awaitPaxOnlyCell) +
@@ -10111,6 +10211,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   }
 
   function overviewSlotBoardIsCancelled(hub, slot, slotOv) {
+    if (hubSlotIsFadiDcCancelled(slot)) return true;
     if (overrideIsCancelledType(slotOv) || overrideFeedbackResolution(slotOv) === "cancelled") {
       return true;
     }
