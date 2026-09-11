@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260910-amaar-last";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260912-amaar-mon-keep";
   // Optional "Notes" (relevant_information) only became a genuinely separate,
   // worker-written optional field on 7 Jul 2026. Before that date,
   // relevant_information was the AI "internal relevant" split of the feedback and

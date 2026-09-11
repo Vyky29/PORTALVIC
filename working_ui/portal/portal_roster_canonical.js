@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 106;
+  var SOURCE_VERSION = 107;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -2628,7 +2628,8 @@
   var AUTUMN_ACTON_WEDNESDAY_BOARD = [
     { staff: "YOUSSEF", name: "No participant", time: "4 to 4.30", area: "Teaching Pool" },
     { staff: "YOUSSEF", name: "Stephanie", time: "4.30 to 5.30", area: "Teaching Pool" },
-    { staff: "YOUSSEF", name: "No participant", time: "5.30 to 6", area: "Teaching Pool" },
+    /* Amaar: Acton Fri 5.30-6 moved to Wed (last Fri 11 dated; standing from Wed 16). */
+    { staff: "YOUSSEF", name: "Amaar Ah", time: "5.30 to 6", area: "Teaching Pool" },
     { staff: "YOUSSEF", name: "No participant", time: "6 to 6.30", area: "Teaching Pool" },
     { staff: "JAVIER", name: "Cyrus", time: "4 to 5", area: "Teaching Pool" },
     { staff: "JAVIER", name: "No participant", time: "5 to 5.30", area: "Teaching Pool" },
@@ -2815,7 +2816,7 @@
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
    * - Fri DC: Victor+Raul Emanuel 1–4 (after Timi); Michelle+Luliya Ikram to 16:00;
    *   Youssef Fadi ends 15:00 (Acton from 16:00 — no Emanuel 3–4)
-   * - Acton Fri: Roberto → Youssef (Adam Pi / Amaar); Hub Fri Tinashe: Bismark + Roberto + Emanuel (from Fri 11)
+   * - Acton Fri: Roberto → Youssef (Adam Pi; Amaar moved to Wed Acton); Hub Fri Tinashe: Bismark + Roberto + Emanuel (from Fri 11)
    * - Victor OFF Mondays and Thursdays (DC empty — do not show Overview column)
    * - Raul OFF Tuesdays and Thursdays (DC empty — do not show Overview column)
    * - Acton Mon/Tue/Wed 4–4.30 Youssef: CLOSED → open (No participant)
