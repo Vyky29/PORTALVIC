@@ -424,6 +424,8 @@
    * Fadi (CLIENT) away until Mon 21 Sep 2026 — still paint his DC seats as Cancelled
    * (Joelle pattern), not Absent and not No participant.
    * Fri 11 – Fri 18: Victor's reshuffled DC boards (others cover); Fadi Cancelled overlays.
+   * This standing layer is the timetable for that window — do not re-apply
+   * schedule_overrides / dated portal_roster_rows for Fadi DC (voided 11 Sep 2026).
    */
   var FADI_ABSENT_DC_UNTIL = "2026-09-21";
   var FADI_ABSENT_DC_BOARD_FROM = "2026-09-11";
