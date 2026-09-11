@@ -9030,7 +9030,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     displaySlots.sort(function (a, b) {
       return compareOverviewSlotsTimeThenCancelled(hub, a, b);
     });
-    });
     return {
       iso: iso,
       units: [],
