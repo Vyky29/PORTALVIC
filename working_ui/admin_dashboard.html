@@ -151,7 +151,7 @@
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
   <script src="/portal/cfk-app.js?v=20260910-services-sandra"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
-  <script src="/portal/admin-scheduling-module.js?v=20260910-mohamed-band"></script>
+  <script src="/portal/admin-scheduling-module.js?v=20260911-sched-mobile-cards"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -171,7 +171,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260910-taps3" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260911-sched-mobile-cards" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -16740,15 +16740,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : '<span class="muted">—</span>';
         var coverNeededRow = !!(ov && String(ov.override_type || '').trim() === 'instructor_cover_needed');
         return '<tr class="sched-slot-row'+(coverNeededRow ? ' sched-slot-row--cover-needed' : '')+'" data-sched-demo-id="'+esc(slot.demoId)+'" data-venue="'+esc(slot.venue)+'" data-staff="'+esc(staffKey)+'"'+staffAllAttr+' data-pax-slug="'+esc(paxSlug)+'"'+(paxSlug2 ? ' data-pax-slug2="'+esc(paxSlug2)+'"' : '')+' data-has-ov="'+(hasOv?'1':'0')+'">'+
-          '<td style="min-width:0">'+clientCellHtml+'</td>'+
-          '<td style="min-width:0">'+serviceCell+'</td>'+
-          '<td style="white-space:nowrap">'+esc(rosterBandLabelFromPg(slot.anchorStart, slot.anchorEnd, slot.sheetDay)||slot.anchorTimeLabel||normTimeShort(slot.anchorStart))+'</td>'+
-          '<td style="min-width:0">'+notesCell+'</td>'+
-          '<td style="min-width:0">'+esc(slot.venue)+'</td>'+
-          '<td style="min-width:0">'+staffCell+'</td>'+
-          '<td>'+statusCell+'</td>'+
-          '<td class="ash-td-center">'+ovChip+'</td>'+
-          '<td class="ash-td-center"><button type="button" class="btn btn--sec btn--sm" data-sched-change="'+esc(slot.demoId)+'" style="max-width:100%">Change</button></td></tr>';
+          '<td data-label="Participant" style="min-width:0">'+clientCellHtml+'</td>'+
+          '<td data-label="Service" style="min-width:0">'+serviceCell+'</td>'+
+          '<td data-label="Time" class="sched-td-time">'+esc(rosterBandLabelFromPg(slot.anchorStart, slot.anchorEnd, slot.sheetDay)||slot.anchorTimeLabel||normTimeShort(slot.anchorStart))+'</td>'+
+          '<td data-label="Notes" style="min-width:0">'+notesCell+'</td>'+
+          '<td data-label="Venue" style="min-width:0">'+esc(slot.venue)+'</td>'+
+          '<td data-label="Instructor" style="min-width:0">'+staffCell+'</td>'+
+          '<td data-label="Roster">'+statusCell+'</td>'+
+          '<td data-label="Override" class="ash-td-center">'+ovChip+'</td>'+
+          '<td data-label="Action" class="ash-td-center sched-td-action"><button type="button" class="btn btn--sec btn--sm sched-change-btn" data-sched-change="'+esc(slot.demoId)+'">Change</button></td></tr>';
       }).join('');
     }
     function schedTermEventAppliesToDate(ev, iso){
@@ -16951,13 +16951,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var te = normTimeShort(o.anchor_end);
               timeLab = ts && te && ts !== te ? (ts + '–' + te) : ts;
             }
-            return '<tr'+logStaffAllAttr+'><td style="white-space:nowrap" title="'+esc(String(o.anchor_start||'')+'–'+String(o.anchor_end||''))+'">'+esc(timeLab)+'</td>'+
-              '<td><span class="override-chip ' + esc(schedOverrideTypeClass(o.override_type, o)) + '">' + esc(schedOverrideLabelForRow(o)) + '</span></td>'+
-              '<td style="min-width:0">'+cCell+'</td>'+
-              '<td style="min-width:0">'+sCell+'</td>'+
-              '<td style="min-width:0;max-width:220px;overflow-wrap:break-word">'+esc(o.reason||'—')+'</td>'+
-              '<td class="muted">'+esc(cb)+'</td>'+
-              '<td class="muted" style="white-space:nowrap">'+esc(t)+'</td></tr>';
+            return '<tr'+logStaffAllAttr+'><td data-label="Time" class="sched-td-time" title="'+esc(String(o.anchor_start||'')+'–'+String(o.anchor_end||''))+'">'+esc(timeLab)+'</td>'+
+              '<td data-label="Type"><span class="override-chip ' + esc(schedOverrideTypeClass(o.override_type, o)) + '">' + esc(schedOverrideLabelForRow(o)) + '</span></td>'+
+              '<td data-label="Participant" style="min-width:0">'+cCell+'</td>'+
+              '<td data-label="Instructor" style="min-width:0">'+sCell+'</td>'+
+              '<td data-label="Reason" style="min-width:0;overflow-wrap:break-word">'+esc(o.reason||'—')+'</td>'+
+              '<td data-label="Created by" class="muted">'+esc(cb)+'</td>'+
+              '<td data-label="Created" class="muted sched-td-time">'+esc(t)+'</td></tr>';
           })()
         });
       });
@@ -16976,13 +16976,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var sCell = sPlain && sPlain !== '—'
               ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sPlain)+'</button>'
               : '<span class="muted">—</span>';
-            return '<tr><td style="white-space:nowrap">'+esc(schedTermEventTimeLabel(ev))+'</td>'+
-              '<td><span class="override-chip ' + esc(schedTermEventTypeClass(ev)) + '">' + esc(schedTermEventLabel(ev)) + '</span></td>'+
-              '<td style="min-width:0">'+cCell+'</td>'+
-              '<td style="min-width:0">'+sCell+'</td>'+
-              '<td style="min-width:0;max-width:220px;overflow-wrap:break-word">'+esc(schedTermEventReason(ev))+'</td>'+
-              '<td class="muted">'+esc(cb)+'</td>'+
-              '<td class="muted" style="white-space:nowrap">'+esc(t)+'</td></tr>';
+            return '<tr><td data-label="Time" class="sched-td-time">'+esc(schedTermEventTimeLabel(ev))+'</td>'+
+              '<td data-label="Type"><span class="override-chip ' + esc(schedTermEventTypeClass(ev)) + '">' + esc(schedTermEventLabel(ev)) + '</span></td>'+
+              '<td data-label="Participant" style="min-width:0">'+cCell+'</td>'+
+              '<td data-label="Instructor" style="min-width:0">'+sCell+'</td>'+
+              '<td data-label="Reason" style="min-width:0;overflow-wrap:break-word">'+esc(schedTermEventReason(ev))+'</td>'+
+              '<td data-label="Created by" class="muted">'+esc(cb)+'</td>'+
+              '<td data-label="Created" class="muted sched-td-time">'+esc(t)+'</td></tr>';
           })()
         });
       });
@@ -17010,13 +17010,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var typeLabel = entry.typeLabel || 'Cancelled';
             var typeClass = (typeLabel === 'Cancelled' || typeLabel === 'No Participant') ? 'override--cancelled' : 'override--term';
             var reason = entry.isTemplate ? 'Term roster · weekly template' : 'Term roster edit';
-            return '<tr><td style="white-space:nowrap">'+esc(schedTimeSlotStartLabel(row.time_slot))+'</td>'+
-              '<td><span class="override-chip ' + esc(typeClass) + '">' + esc(typeLabel) + '</span></td>'+
-              '<td style="min-width:0">'+cCell+'</td>'+
-              '<td style="min-width:0">'+sCell+'</td>'+
-              '<td style="min-width:0;max-width:220px;overflow-wrap:break-word">'+esc(reason)+'</td>'+
-              '<td class="muted">'+esc(cb)+'</td>'+
-              '<td class="muted" style="white-space:nowrap">'+esc(t)+'</td></tr>';
+            return '<tr><td data-label="Time" class="sched-td-time">'+esc(schedTimeSlotStartLabel(row.time_slot))+'</td>'+
+              '<td data-label="Type"><span class="override-chip ' + esc(typeClass) + '">' + esc(typeLabel) + '</span></td>'+
+              '<td data-label="Participant" style="min-width:0">'+cCell+'</td>'+
+              '<td data-label="Instructor" style="min-width:0">'+sCell+'</td>'+
+              '<td data-label="Reason" style="min-width:0;overflow-wrap:break-word">'+esc(reason)+'</td>'+
+              '<td data-label="Created by" class="muted">'+esc(cb)+'</td>'+
+              '<td data-label="Created" class="muted sched-td-time">'+esc(t)+'</td></tr>';
           })()
         });
       });

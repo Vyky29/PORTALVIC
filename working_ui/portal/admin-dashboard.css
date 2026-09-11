@@ -3599,8 +3599,167 @@
     .trend-row span:last-child{font-weight:700;color:var(--ink)}
     .demo-strip{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);background:var(--blueSoft);border:1px solid rgba(45,132,179,.25);border-radius:10px;padding:8px 12px;margin-bottom:16px}
     .sched-banner{border:1px dashed rgba(45,132,179,.45);border-radius:var(--radiusLg);padding:12px 14px;margin-bottom:14px;background:#f8fafc;font-size:13px;color:var(--text);line-height:1.5;min-width:0;overflow-wrap:break-word}
+    .sched-tbl-wrap{padding:0;min-width:0;max-width:100%;overflow-x:visible}
+    .sched-tbl{width:100%;max-width:100%;table-layout:auto}
     .sched-tbl th,.sched-tbl td{min-width:0;overflow-wrap:break-word;word-break:normal;text-align:center}
     .sched-tbl th:last-child,.sched-tbl td:last-child{white-space:nowrap;width:1%}
+    .sched-tbl .sched-td-time{white-space:nowrap}
+    .sched-tbl .sched-change-btn{max-width:100%}
+    /* Schedule & Covers — mobile/tablet: stacked labeled cards (keep <table> semantics). */
+    @media (max-width:900px){
+      .sched-filter-row{
+        width:100%;
+        max-width:100%;
+        box-sizing:border-box;
+        align-items:stretch !important;
+      }
+      .sched-filter-row > label[for="schedDate"],
+      .sched-filter-row > label:has(#schedOnlyOverride){
+        width:100%;
+        max-width:100%;
+      }
+      .sched-filter-row #schedDate,
+      .sched-filter-row .sel,
+      .sched-filter-row .portal-search-combo,
+      .sched-filter-row .sched-filter-combo,
+      .sched-filter-row .sched-combo-wrap{
+        flex:1 1 100%;
+        width:100% !important;
+        max-width:100% !important;
+        min-width:0;
+        box-sizing:border-box;
+      }
+      .sched-filter-row .btn{
+        flex:1 1 auto;
+        min-height:44px;
+        justify-content:center;
+      }
+      .sched-tbl-wrap{
+        overflow:visible;
+        padding:10px;
+        box-sizing:border-box;
+      }
+      .sched-tbl{
+        border-collapse:separate;
+        border-spacing:0;
+        width:100%;
+        max-width:100%;
+      }
+      /* Visually hide headers; keep in a11y tree (not display:none). */
+      .sched-tbl thead{
+        position:absolute;
+        width:1px;
+        height:1px;
+        padding:0;
+        margin:-1px;
+        overflow:hidden;
+        clip:rect(0,0,0,0);
+        white-space:nowrap;
+        border:0;
+      }
+      .sched-tbl tbody,
+      .sched-tbl tr,
+      .sched-tbl td{
+        display:block;
+        width:100%;
+        max-width:100%;
+        box-sizing:border-box;
+      }
+      .sched-tbl tbody tr{
+        margin:0 0 12px;
+        padding:10px 12px 12px;
+        border:1px solid var(--line);
+        border-radius:var(--radiusLg,12px);
+        background:var(--surface,#fff);
+        box-shadow:var(--shadow,0 1px 2px rgba(15,23,42,.04));
+        min-width:0;
+      }
+      .sched-tbl tbody tr:last-child{margin-bottom:0}
+      .sched-tbl tbody tr:hover td{background:transparent}
+      .sched-tbl td{
+        display:grid;
+        grid-template-columns:minmax(6.5rem,34%) minmax(0,1fr);
+        gap:8px 10px;
+        align-items:start;
+        padding:8px 0;
+        border-bottom:1px solid var(--line);
+        text-align:left;
+        white-space:normal !important;
+        width:100%;
+        max-width:100%;
+        min-width:0;
+        overflow-wrap:anywhere;
+        word-break:break-word;
+      }
+      .sched-tbl td:last-child{border-bottom:0}
+      .sched-tbl td::before{
+        content:attr(data-label);
+        font-size:11px;
+        font-weight:700;
+        letter-spacing:.04em;
+        text-transform:uppercase;
+        color:var(--muted);
+        line-height:1.35;
+        padding-top:2px;
+        min-width:0;
+        overflow-wrap:break-word;
+      }
+      .sched-tbl td > *{min-width:0;max-width:100%}
+      .sched-tbl td .btn{
+        max-width:100%;
+        white-space:normal;
+        overflow-wrap:break-word;
+      }
+      .sched-tbl td[colspan]{
+        display:block;
+        padding:12px 4px;
+        text-align:left;
+      }
+      .sched-tbl td[colspan]::before{content:none}
+      .sched-tbl td.sched-td-action{
+        display:block;
+        padding-top:12px;
+        margin-top:4px;
+        border-bottom:0;
+        border-top:1px solid var(--line);
+      }
+      .sched-tbl td.sched-td-action::before{
+        display:block;
+        margin-bottom:8px;
+      }
+      .sched-tbl td.sched-td-action .sched-change-btn,
+      .sched-tbl td.sched-td-action .btn[data-sched-change]{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        width:100%;
+        max-width:100%;
+        min-height:44px;
+        min-width:44px;
+        box-sizing:border-box;
+        padding:10px 14px;
+        white-space:normal;
+      }
+      .sched-tbl th:last-child,
+      .sched-tbl td:last-child{
+        width:auto;
+        white-space:normal;
+      }
+    }
+    @media (max-width:600px){
+      .sched-tbl-wrap{padding:8px}
+      .sched-tbl tbody tr{padding:10px 10px 12px;margin-bottom:10px}
+      .sched-tbl td{
+        grid-template-columns:minmax(5.5rem,38%) minmax(0,1fr);
+        gap:6px 8px;
+        padding:7px 0;
+        font-size:13px;
+      }
+      .sched-filter-row .btn{width:100%;flex:1 1 100%}
+    }
+    @media (min-width:901px){
+      .sched-tbl-wrap{overflow-x:auto}
+    }
     /* Day operations — staff with multiple venues: stacked halves (venue ↔ blocks aligned). */
     .dayops-split-pair{display:flex;flex-direction:column;min-width:0;width:100%}
     .dayops-split-pair__half{min-width:0;padding:8px 10px;overflow-wrap:break-word;text-align:center;line-height:1.35;font-size:13px;display:flex;align-items:center;justify-content:center}

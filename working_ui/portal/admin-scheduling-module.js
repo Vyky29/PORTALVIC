@@ -55,7 +55,7 @@
       '<div id="schedWeekDayStrip">' +
       deps.schedWeekDayStripHtml(anchor, today) +
       "</div>" +
-      '<div class="filter-row" style="align-items:center;margin-bottom:14px;flex-wrap:wrap">' +
+      '<div class="filter-row sched-filter-row" style="align-items:center;margin-bottom:14px;flex-wrap:wrap">' +
       '<label class="muted" for="schedDate">Date</label> ' +
       '<input type="date" id="schedDate" class="inp" style="max-width:180px" min="' +
       deps.esc(deps.termStart) +
@@ -77,9 +77,9 @@
       '<p id="schedConnMsg" class="muted" style="margin:0 0 12px;min-height:1.25em;max-width:900px;overflow-wrap:break-word"></p>' +
       deps.schedAddSessionFormHtml() +
       '<div class="section"><div class="section-h"><h2>Base schedule</h2><p>Click a row for full context and to add or review an override. Instructor and participant names open profiles when linked in admin data.</p></div>' +
-      '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl sched-tbl" id="schedBaseTable"><thead><tr><th>Participant</th><th>Service</th><th>Time</th><th>Notes</th><th>Venue</th><th>Instructor</th><th>Roster</th><th>Override</th><th>Action</th></tr></thead><tbody></tbody></table></div></div></div>' +
+      '<div class="card"><div class="card-pad sched-tbl-wrap"><table class="tbl sched-tbl" id="schedBaseTable"><thead><tr><th>Participant</th><th>Service</th><th>Time</th><th>Notes</th><th>Venue</th><th>Instructor</th><th>Roster</th><th>Override</th><th>Action</th></tr></thead><tbody></tbody></table></div></div></div>' +
       '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Change log</h2><p>Day overrides and term roster edits for the selected date (Supabase).</p></div>' +
-      '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl sched-tbl" id="schedLogTable"><thead><tr><th>Time</th><th>Type</th><th>Participant</th><th>Instructor</th><th>Reason</th><th>Created by</th><th>Created</th></tr></thead><tbody></tbody></table></div></div></div>'
+      '<div class="card"><div class="card-pad sched-tbl-wrap"><table class="tbl sched-tbl" id="schedLogTable"><thead><tr><th>Time</th><th>Type</th><th>Participant</th><th>Instructor</th><th>Reason</th><th>Created by</th><th>Created</th></tr></thead><tbody></tbody></table></div></div></div>'
     );
   }
 
