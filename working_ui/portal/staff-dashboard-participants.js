@@ -1781,6 +1781,7 @@
       if(k === 'javiarranz' || k === 'javiarranzescorial' || k === 'palankas' || k === 'palankasarranz' || k === 'palankasarranzescorial') return 'javi';
       if(k === 'michelleemmacaleb' || (k.indexOf('michelle') === 0 && k !== 'michelle')) return 'michelle';
       if(k === 'auroragarcia') return 'aurora';
+      if(k === 'emmanuel' || k === 'emmanuelamoakohene' || k === 'nanaamoakohene745') return 'emanuel';
       if(typeof window.portalCanonicalStaffRosterKey === 'function'){
         var canon = String(window.portalCanonicalStaffRosterKey(k) || '').trim().toLowerCase();
         if(canon) return canon;

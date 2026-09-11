@@ -3813,7 +3813,9 @@
       portalScheduleOverrideRowsForSessionIso(sessionDateKey).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(ov.override_type !== 'session_add') return;
-        if(normStaffKey(ov.anchor_staff_id) !== staffIdNorm) return;
+        if(normStaffKey(ov.anchor_staff_id) !== staffIdNorm){
+          if(!(typeof portalStaffKeysMatch === 'function' && portalStaffKeysMatch(ov.anchor_staff_id, staffId))) return;
+        }
         const kind = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
         const displayTitle = kind === 'shadowing' ? 'Shadowing' : (kind === 'meeting' ? 'Team meeting' : 'Training session');
         const slug = kind === 'meeting' ? 'meeting' : (kind === 'shadowing' ? 'shadowing' : 'training');
@@ -5438,6 +5440,7 @@
         return window.portalCanonicalStaffKeyForMatch(k) || k;
       }
       if(k === 'lulia' || k === 'luliya' || k === 'aida' || k === 'stf021') return 'luliya';
+      if(k === 'emmanuel' || k === 'emmanuelamoakohene' || k === 'nanaamoakohene745') return 'emanuel';
       if(typeof window.portalCanonicalStaffRosterKey === 'function'){
         return window.portalCanonicalStaffRosterKey(k) || k;
       }
@@ -5467,6 +5470,7 @@
           .trim();
         if(!k || seen[k]) return;
         if(k === 'lulia' || k === 'aida') k = 'luliya';
+        if(k === 'emmanuel' || k === 'emmanuelamoakohene' || k === 'nanaamoakohene745') k = 'emanuel';
         seen[k] = true;
         keys.push(k);
         if(/^stf\d{3}$/.test(k)){

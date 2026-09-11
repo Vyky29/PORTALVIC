@@ -56,6 +56,10 @@
     if (k === "javiermarquez") return "javier";
     if (k === "javiarranz" || k === "javiarranzescorial") return "javi";
     if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
+    /* Hire login Emmanuel (two m) = standing rota key emanuel (one m). Not the DC client. */
+    if (k === "emmanuel" || k === "emmanuelamoakohene" || k === "nanaamoakohene745") {
+      return "emanuel";
+    }
     var alias = PORTAL_STAFF_CODE_TO_ROSTER_KEY[k];
     if (alias) return alias;
     return k;
@@ -85,6 +89,7 @@
     "javier@clbusensational.org": "javi",
     "sevitha@clubsensational.org": "sevitha",
     "info@clubsensational.org": "sevitha",
+    "nanaamoakohene745@gmail.com": "emanuel",
   };
 
   /** Auth email → roster key (berta, john); stf00x local part via staff code map. */

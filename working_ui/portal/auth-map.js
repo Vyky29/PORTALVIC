@@ -348,6 +348,10 @@ export function portalCanonicalStaffRosterKey(value) {
   if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
   if (k === "michelleemmacaleb" || k.startsWith("michelle")) return "michelle";
   if (k === "auroragarcia") return "aurora";
+  /* Hire login Emmanuel (two m) = standing rota key emanuel (one m). Not the DC client. */
+  if (k === "emmanuel" || k === "emmanuelamoakohene" || k === "nanaamoakohene745") {
+    return "emanuel";
+  }
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
 }
 

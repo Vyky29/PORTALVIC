@@ -372,6 +372,9 @@
       return "michelle";
     }
     if (v === "auroragarcia") return "aurora";
+    if (v === "emmanuel" || v === "emmanuelamoakohene" || v === "nanaamoakohene745") {
+      return "emanuel";
+    }
     if (typeof window !== "undefined" && typeof window.portalCanonicalStaffRosterKey === "function") {
       const canon = String(window.portalCanonicalStaffRosterKey(v) || "")
         .trim()
