@@ -4079,6 +4079,7 @@
   function termChipToneMeta(d, statusByIso) {
     statusByIso = statusByIso || {};
     var st = statusByIso[d.iso] || "";
+    /* Orange — parent / staff absent. */
     if (st === "absent") {
       return {
         tone: "absent",
@@ -4086,6 +4087,7 @@
         icon: CHIP_X_SVG,
       };
     }
+    /* Red — club cancel. */
     if (st === "cancelled") {
       return {
         tone: "cancelled",
@@ -4116,8 +4118,9 @@
         icon: "",
       };
     }
-    if (d.past) {
-      return { tone: "done", title: "Completed — " + d.iso, icon: "" };
+    /* Green — attended / completed (past booked day, or explicit completed). */
+    if (st === "completed" || d.past) {
+      return { tone: "done", title: "Completed (attended) — " + d.iso, icon: "" };
     }
     if (d.isNext || d.isToday) {
       return { tone: "next", title: (d.isToday ? "Today — " : "Next session — ") + d.iso, icon: "" };
@@ -4450,15 +4453,15 @@
     return out;
   }
 
+  /**
+   * Keep all booked / status chips visible (green done, orange absent, red cancel).
+   * hideCompleted is retained for callers but no longer strips completed days —
+   * parents need to see attended sessions in green alongside upcoming blue.
+   */
   function filterChipListForDisplay(list, statusByIso, hideCompleted) {
     statusByIso = statusByIso || {};
-    if (!hideCompleted) return list || [];
-    return (list || []).filter(function (d) {
-      var st = statusByIso[d.iso] || "";
-      if (st === "absent" || st === "cancelled") return true;
-      var meta = termChipToneMeta(d, statusByIso);
-      return meta.tone !== "done";
-    });
+    void hideCompleted;
+    return list || [];
   }
 
   /** Icons for term half-rows (same size/style as crash activity icons). */
@@ -4496,7 +4499,7 @@
     );
   }
 
-  /** Blue / green / red key for date chips (hub + booking). */
+  /** Blue / green / orange / red key for date chips (hub + booking). */
   function termChipColorLegendHtml() {
     return (
       '<ul class="pp-hub-ops__chip-legend" aria-label="Date colour key">' +
@@ -4505,10 +4508,13 @@
       '<span class="pp-hub-ops__chip-legend__text"><strong>Blue</strong> — upcoming / next session</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--green" aria-hidden="true"></span>' +
-      '<span class="pp-hub-ops__chip-legend__text"><strong>Green</strong> — completed</span></li>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Green</strong> — completed (attended)</span></li>' +
+      '<li class="pp-hub-ops__chip-legend__item">' +
+      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--orange" aria-hidden="true"></span>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Orange</strong> — absent</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--red" aria-hidden="true"></span>' +
-      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — absent, cancelled, or not re-enrolled for 2026/27</span></li>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — cancelled or not booked / not re-enrolled</span></li>' +
       "</ul>"
     );
   }
@@ -5336,6 +5342,19 @@
         /^(no|n|false|0)$/.test(att)
       ) {
         statusByIso[iso] = "absent";
+        return;
+      }
+      var present =
+        /\b(present|attended|yes|y|true|1)\b/.test(att) || att === "present";
+      var hasBody =
+        !!(s && s.id) ||
+        !!(s && String(s.positive_feedback || "").trim()) ||
+        s.engagement_rating != null ||
+        !!(s && String(s.completed_by_name || "").trim());
+      if (present || hasBody) {
+        if (statusByIso[iso] !== "absent" && statusByIso[iso] !== "cancelled") {
+          statusByIso[iso] = "completed";
+        }
       }
     });
     if (typeof opts.listAbsences === "function") {
@@ -5344,7 +5363,7 @@
           ((j && j.reports) || []).forEach(function (r) {
             var iso = String((r && r.session_date) || "").slice(0, 10);
             if (!iso) return;
-            // Any parent Absent report for that day marks the chip red.
+            // Parent Absent report → orange absent chip.
             statusByIso[iso] = "absent";
           });
         }),

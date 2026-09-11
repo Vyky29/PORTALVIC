@@ -1622,6 +1622,10 @@
       background: rgba(22, 163, 74, 0.35);
       border: 1px solid rgba(21, 128, 61, 0.45);
     }
+    .pp-hub-ops__chip-legend__swatch--orange {
+      background: rgba(234, 88, 12, 0.4);
+      border: 1px solid rgba(194, 65, 12, 0.5);
+    }
     .pp-hub-ops__chip-legend__swatch--red {
       background: rgba(220, 38, 38, 0.3);
       border: 1px solid rgba(185, 28, 28, 0.45);
@@ -1745,8 +1749,15 @@
       color: var(--blue);
       border: 1px solid rgba(37, 99, 235, 0.35);
     }
-    /* Absent or club cancel — red */
-    .pp-hub-ops__date-chip--absent,
+    /* Absent — orange */
+    .pp-hub-ops__date-chip--absent {
+      background: rgba(234, 88, 12, 0.14);
+      color: #c2410c;
+      border: 1px solid rgba(234, 88, 12, 0.35);
+      text-decoration: line-through;
+      text-decoration-thickness: 1.5px;
+    }
+    /* Club cancel — red */
     .pp-hub-ops__date-chip--cancelled {
       background: rgba(220, 38, 38, 0.14);
       color: #b91c1c;
@@ -1754,7 +1765,7 @@
       text-decoration: line-through;
       text-decoration-thickness: 1.5px;
     }
-    /* Not re-enrolled for 2026/27 — red, no strikethrough (place at risk) */
+    /* Not booked / not re-enrolled — red, no strikethrough */
     .pp-hub-ops__date-chip--unconfirmed {
       background: rgba(220, 38, 38, 0.14);
       color: #b91c1c;
@@ -5588,7 +5599,7 @@
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
   <script src="/portal/parent_portal_team.js?v=20260911-emmanuel-photo"></script>
   <script src="/portal/portal_calendar_2026_27.js?v=20260911-term-cal"></script>
-  <script src="/portal/parent_portal_participant.js?v=20260911-term-status"></script>
+  <script src="/portal/parent_portal_participant.js?v=20260911-chip-tones"></script>
   <script src="/portal/parent_portal_app.js?v=20260909-team-persist"></script>
   <script src="/portal/parent-app-install-hint.js?v=20260703-family-pwa"></script>
   <script>
