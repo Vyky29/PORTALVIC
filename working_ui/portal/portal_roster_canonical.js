@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 101;
+  var SOURCE_VERSION = 102;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -1668,8 +1668,9 @@
       { client_name: "Faris", service: "Aquatic Activity", area: "Big Pool", time_slot: "2.30 to 3" },
     ];
     var javier = [
+      /* Aquatic trial was Sun 6 only — standing Sundays stay open. Multi Zaid is standing. */
       { client_name: "No participant", service: "Aquatic Activity", area: "Small Pool", time_slot: "9 to 9.30" },
-      { client_name: "No participant", service: "Multi-Activity", area: "Small Pool", time_slot: "9.30 to 10.15" },
+      { client_name: "Zaid", service: "Multi-Activity", area: "Small Pool", time_slot: "9.30 to 10.15" },
       { client_name: "Jack S", service: "Multi-Activity", area: "Big Pool", time_slot: "10.15 to 11" },
       { client_name: "Hazem", service: "Multi-Activity", area: "Big Pool", time_slot: "11 to 11.45" },
       { client_name: "Eiji", service: "Multi-Activity", area: "Big Pool", time_slot: "11.45 to 12.30" },
