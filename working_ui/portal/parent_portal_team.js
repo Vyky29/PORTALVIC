@@ -422,7 +422,7 @@
     "youssef"
   ],
   "jack_s": [
-    "emanuel",
+    "emmanuel",
     "giuseppe",
     "javier",
     "youssef"
@@ -854,8 +854,8 @@
   };
 
   /**
-   * Staff Emmanuel Amoakohene uses key emmanuel (roster may still say emanuel).
-   * Client Emanuel Dodson is a participant name — not remapped here for Team photos.
+   * Staff Emmanuel Amoakohene uses key emmanuel.
+   * Client Emanuel Dodson is a participant — not a staff key.
    */
   function normalizeTeamStaffKey(key) {
     var k = String(key || "")

@@ -136,7 +136,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       1,
       3
     ],
-    "emanuel": [
+    "emmanuel": [
       0,
       1,
       3,
@@ -231,7 +231,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       1,
       3
     ],
-    "emanuel": [
+    "emmanuel": [
       0,
       1,
       3,
@@ -469,7 +469,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-12-14",
       "2026-12-16"
     ],
-    "emanuel": [
+    "emmanuel": [
       "2026-09-04",
       "2026-09-06",
       "2026-09-07",

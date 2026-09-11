@@ -6,17 +6,17 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260911-tinashe-430";
+  var VER = "20260911-emmanuel-staff";
 
   var TIER_ROSTER = [
-    "/portal/term_from_timetable.js?v=20260911-emmanuel-wed9",
-    "/portal/term_calendar_dashboard_shared.js?v=20260911-emmanuel-wed9",
-    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260911-emmanuel-photo",
-    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260911-emanuel-alias",
+    "/portal/term_from_timetable.js?v=20260911-emmanuel-staff",
+    "/portal/term_calendar_dashboard_shared.js?v=20260911-emmanuel-staff",
+    "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260911-emmanuel-staff",
+    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260911-emmanuel-staff",
     "/portal/portal_staff_feedback_data_loader.js?v=20260910-pwa-off-joelle",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
-      "/portal/portal_roster_canonical.js?v=20260911-roberto-emanuel-4",
+      "/portal/portal_roster_canonical.js?v=20260911-emmanuel-staff",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
@@ -26,8 +26,8 @@
     "/portal/portal_staff_lead_aquatic_slots.js?v=20260910-pwa-off-joelle",
     "/portal/portal_participant_identity.js?v=20260712-rayyan-f",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
-    "/portal/staff_roster_resolve.js?v=20260911-emanuel-alias",
-    "/portal/portal_staff_display_names.js?v=20260902-luliya-display",
+    "/portal/staff_roster_resolve.js?v=20260911-emmanuel-staff",
+    "/portal/portal_staff_display_names.js?v=20260911-emmanuel-staff",
   ];
 
   var TIER_UI = [
@@ -57,7 +57,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260911-roberto-iso-tap",
+    "/portal/portal_lead_team_shift.js?v=20260911-emmanuel-staff",
   ];
 
   var TIER_IDLE = [

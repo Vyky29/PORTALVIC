@@ -1962,7 +1962,7 @@
     }
     if (s.indexOf("saaib") === 0 || s.indexOf("saiib") === 0) return "saaib";
     if (s.indexOf("ikram") === 0) return "ikram";
-    if (s.indexOf("emanuel") === 0 || s.indexOf("emmanuel") === 0) return "emanuel";
+    if (s.indexOf("emanuel") === 0) return "emanuel";
     if (s.indexOf("fadi") === 0) return "fadi";
     /* ACAT cohort — roster / payments keys vary (jacks vs jack_s / Jack S (ACAT)). */
     if (s === "jacks" || s.indexOf("jack_s") === 0 || /^jacks?_acat/.test(s)) return "jacks";

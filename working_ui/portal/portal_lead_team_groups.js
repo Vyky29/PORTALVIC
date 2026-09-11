@@ -55,7 +55,7 @@
         label: "Bespoke programme",
         scopes: [JOHN_BESPOKE_SCOPE],
         leadRosterKeys: ["john"],
-        staticRosterKeys: ["godsway", "emanuel", "raul"],
+        staticRosterKeys: ["godsway", "emmanuel", "raul"],
       },
       {
         slug: "lead_team_john_sunday_ma",

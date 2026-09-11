@@ -240,7 +240,7 @@ function staffExpectedOnTeamIso(staffKey, iso) {
   const k = normKey(staffKey);
   const day = String(iso || "").trim().slice(0, 10);
   if (!k || !day) return true;
-  if (day === "2026-09-06" && (k === "youssef" || k === "emanuel")) return false;
+  if (day === "2026-09-06" && (k === "youssef" || k === "emmanuel")) return false;
   if (day === "2026-09-13" && (k === "john" || k === "aurora")) return false;
   try {
     const t = typeof window !== "undefined" ? window.PORTAL_TERM_FROM_TIMETABLE : null;
@@ -682,7 +682,7 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   });
   /* Seed expected Hub Multi support when standing rows did not resolve yet (Berta is Sunday Lead). */
   if (dayKind === "sunday_ma_swimfarm" && ctx.leadKey === "berta") {
-    const seeds = iso === "2026-09-06" ? ["godsway", "john"] : ["godsway", "emanuel"];
+    const seeds = iso === "2026-09-06" ? ["godsway", "john"] : ["godsway", "emmanuel"];
     seeds.forEach(function (k) {
       if (!staffExpectedOnTeamIso(k, iso)) return;
       if (memberKeys.indexOf(k) < 0) memberKeys.push(k);

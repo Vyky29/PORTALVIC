@@ -272,7 +272,7 @@
       return /^(angel|giuseppe|andres|andr[eé]s)$/i.test(id);
     }
     try{ window.portalStaffHasNoAutumnTermSessions = portalStaffHasNoAutumnTermSessions; }catch(_){}
-    /** Hire Emmanuel Amoakohene (login Emmanuel / nanaamoakohene745) — not standing Emanuel. */
+    /** Hire Emmanuel Amoakohene (login Emmanuel / nanaamoakohene745). Participant Emanuel is not this staff. */
     function portalStaffIsHireEmmanuelAmoakohene(){
       try{
         const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
@@ -765,7 +765,7 @@
           if(
             svc.indexOf('multi') >= 0 &&
             (!venue || venue.indexOf('swimfarm') >= 0) &&
-            (sid === 'berta' || sid === 'john' || sid === 'emanuel' || sid === 'giuseppe')
+            (sid === 'berta' || sid === 'john' || sid === 'emmanuel' || sid === 'emanuel' || sid === 'giuseppe')
           ){
             return false;
           }
@@ -2413,7 +2413,7 @@
         if(
           iso === '2026-09-06' &&
           portalSep6EmanuelHubBookClient(cid) &&
-          (anchor === 'emanuel' || anchor === 'giuseppe' || anchor === 'youssef' || cov === 'youssef')
+          (anchor === 'emmanuel' || anchor === 'emanuel' || anchor === 'giuseppe' || anchor === 'youssef' || cov === 'youssef')
         ){
           return 'john';
         }
@@ -5542,7 +5542,8 @@
         return window.portalCanonicalStaffKeyForMatch(k) || k;
       }
       if(k === 'lulia' || k === 'luliya' || k === 'aida' || k === 'stf021') return 'luliya';
-      if(k === 'emmanuel' || k === 'emmanuelamoakohene' || k === 'nanaamoakohene745') return 'emanuel';
+      if(k === 'emmanuel' || k === 'emmanuelamoakohene' || k === 'nanaamoakohene745') return 'emmanuel';
+      if(k === 'emanuel') return 'emmanuel';
       if(typeof window.portalCanonicalStaffRosterKey === 'function'){
         return window.portalCanonicalStaffRosterKey(k) || k;
       }
@@ -5572,7 +5573,8 @@
           .trim();
         if(!k || seen[k]) return;
         if(k === 'lulia' || k === 'aida') k = 'luliya';
-        if(k === 'emmanuel' || k === 'emmanuelamoakohene' || k === 'nanaamoakohene745') k = 'emanuel';
+        if(k === 'emmanuel' || k === 'emmanuelamoakohene' || k === 'nanaamoakohene745') k = 'emmanuel';
+        if(k === 'emanuel') k = 'emmanuel';
         seen[k] = true;
         keys.push(k);
         if(/^stf\d{3}$/.test(k)){

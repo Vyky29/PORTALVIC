@@ -373,8 +373,9 @@
     }
     if (v === "auroragarcia") return "aurora";
     if (v === "emmanuel" || v === "emmanuelamoakohene" || v === "nanaamoakohene745") {
-      return "emanuel";
+      return "emmanuel";
     }
+    if (v === "emanuel") return "emmanuel";
     if (typeof window !== "undefined" && typeof window.portalCanonicalStaffRosterKey === "function") {
       const canon = String(window.portalCanonicalStaffRosterKey(v) || "")
         .trim()
@@ -928,7 +929,7 @@
       );
       /*
        * Standing template stamps (Jul 13–17) must not drop staff who only appear
-       * after a *calendar* remap (Emanuel Fri Tinashe from 11 Sep). Keep anyone
+       * after a *calendar* remap (Emmanuel Fri Tinashe from 11 Sep). Keep anyone
        * named on the raw row; Today/Term drop them when the viewed day remaps them off.
        */
       const instructorKeys = instructorProfileKeysForRow(instructorsResolved, profiles)

@@ -31,6 +31,7 @@
   function displayFromNormKey(k) {
     if (!k) return "";
     if (isLuliyaNormKey(k)) return "Luliya";
+    if (k === "emmanuel" || k === "emanuel" || k === "emmanuelamoakohene" || k === "nanaamoakohene745") return "Emmanuel";
     if (k === "javier" || k === "javiermarquez" || k === "stf010") return "Javier";
     if (
       k === "javi" ||

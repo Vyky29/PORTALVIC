@@ -1250,7 +1250,6 @@
   var SUNDAY_SF_SWIM = {
     aurora: 1,
     berta: 1,
-    emanuel: 1,
     emmanuel: 1,
   };
   var SUNDAY_SF_SUPPORT = {

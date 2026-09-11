@@ -328,6 +328,8 @@ export function portalCanonicalStaffRosterKey(value) {
     return "luliya";
   }
   if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+  if (k === "emmanuel" || k === "emmanuelamoakohene" || k === "nanaamoakohene745") return "emmanuel";
+  if (k === "emanuel") return "emmanuel";
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
 }
 

@@ -228,7 +228,7 @@
       if (keys.indexOf("lulia") < 0) keys.push("lulia");
     }
     if (id === "emmanuel" || id === "emmanuelamoakohene" || id === "nanaamoakohene745") {
-      if (keys.indexOf("emanuel") < 0) keys.push("emanuel");
+      if (keys.indexOf("emmanuel") < 0) keys.push("emmanuel");
     }
     if (id === "sevitha" || id === "info") {
       if (keys.indexOf("sevitha") < 0) keys.push("sevitha");

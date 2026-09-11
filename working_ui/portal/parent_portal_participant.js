@@ -2061,7 +2061,7 @@
         return String(x || "").toLowerCase();
       })
       .join(" ");
-    if (/\bemanuel\b/.test(blob) || /\bemmanuel\b/.test(blob)) return "emanuel";
+    if (/\bemanuel\b/.test(blob)) return "emanuel";
     if (/\btimi\b/.test(blob) || /oluwatimilehin/.test(blob)) return "timi";
     if (/\bikram\b/.test(blob)) return "ikram";
     if (/\bfadi\b/.test(blob)) return "fadi";

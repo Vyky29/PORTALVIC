@@ -218,7 +218,7 @@
     {
       client_name: "Tinashe",
       day: "Monday",
-      instructors: "EMANUEL",
+      instructors: "EMMANUEL",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.30 to 6",
@@ -258,7 +258,7 @@
     {
       client_name: "Tinashe",
       day: "Wednesday",
-      instructors: "EMANUEL",
+      instructors: "EMMANUEL",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.30 to 6",
@@ -299,7 +299,7 @@
     {
       client_name: "Tinashe",
       day: "Friday",
-      instructors: "EMANUEL",
+      instructors: "EMMANUEL",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.15 to 6.15",
@@ -1884,9 +1884,9 @@
    * Standing books (already named): Emmanuel = Godsway summer; Godsway = Bismark summer;
    * Berta Lead = John summer (John only worked Sun 6 via dated cover).
    * Summer/DB leftovers still use old names:
-   * - BISMARK → GODSWAY; GIUSEPPE → EMANUEL; JOHN → BERTA
-   * Do NOT map GODSWAY→EMANUEL here — standing Godsway rows would steal Emmanuel's book.
-   * Sun 6 Sep: dated autumnSundaySep6HubCoverRows give John the Emanuel book.
+   * - BISMARK → GODSWAY; GIUSEPPE → EMMANUEL; JOHN → BERTA
+   * Do NOT map GODSWAY→EMMANUEL here — standing Godsway rows would steal Emmanuel's book.
+   * Sun 6 Sep: dated autumnSundaySep6HubCoverRows give John the Emmanuel Hub book.
    */
   function remapAutumnMultiInstructorsStanding(instructorsRaw) {
     var s = String(instructorsRaw || "").trim();
@@ -1894,9 +1894,9 @@
     return s
       .replace(/\bBISMARK\b/gi, "GODSWAY")
       .replace(/\bBISMARCK\b/gi, "GODSWAY")
-      .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
+      .replace(/\bGIUSEPPE\b/gi, "EMMANUEL")
       /* Standing: Berta Lead keeps the Hub book that summer stored under John.
-       * Sun 6 dated cover re-injects JOHN for the Emanuel book after this remap. */
+       * Sun 6 dated cover re-injects JOHN for the Emmanuel book after this remap. */
       .replace(/\bJOHN\b/gi, "BERTA");
   }
 
@@ -1924,14 +1924,15 @@
     if (isMultiActivityService(service)) {
       if (iso === "2026-09-06") {
         /*
-         * Sun 6 LOCAL: John covers Emanuel Hub book; Berta Lead keeps Jack W book.
+         * Sun 6 LOCAL: John covers Emmanuel Hub book; Berta Lead keeps Jack W book.
          * Do NOT run JOHN→BERTA first — that turned John's dated cover into Berta and
          * stacked both Hub books on Berta in Schedule & Covers / Today.
          */
         s = s
           .replace(/\bBISMARK\b/gi, "GODSWAY")
           .replace(/\bBISMARCK\b/gi, "GODSWAY")
-          .replace(/\bGIUSEPPE\b/gi, "EMANUEL")
+          .replace(/\bGIUSEPPE\b/gi, "EMMANUEL")
+          .replace(/\bEMMANUEL\b/gi, "JOHN")
           .replace(/\bEMANUEL\b/gi, "JOHN");
         /* Leave JOHN and BERTA as-is. */
       } else {
@@ -1943,41 +1944,41 @@
         .trim()
         .toLowerCase();
       var isTinashe = /^tinashe\b/.test(clientTin) || clientTin === "tinashe";
-      /* Mon 1–13 Sep: Emanuel not on Mon Tinashe yet → drop Emanuel seat (Raul stays). */
+      /* Mon 1–13 Sep: Emmanuel not on Mon Tinashe yet → drop Emmanuel seat (Raul stays). */
       if (iso && iso >= "2026-09-01" && iso < "2026-09-14" && day === "monday") {
-        if (/\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark|victor)\b/i.test(s)) {
+        if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark|victor)\b/i.test(s)) {
           s = "";
         } else {
-          s = s.replace(/\bEMANUEL\b/gi, "");
+          s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
         }
       }
-      /* Wed: Emanuel on Tinashe from Wed 9 (shadowing Bismark). */
+      /* Wed: Emmanuel on Tinashe from Wed 9 (shadowing Bismark). */
       if (iso && iso < "2026-09-09" && day === "wednesday") {
-        if (/\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark)\b/i.test(s)) {
+        if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark)\b/i.test(s)) {
           s = "";
         } else {
-          s = s.replace(/\bEMANUEL\b/gi, "");
+          s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
         }
       }
-      /* Fri: Emanuel on Tinashe from Fri 11 Sep. */
+      /* Fri: Emmanuel on Tinashe from Fri 11 Sep. */
       if (iso && iso < "2026-09-11" && day === "friday") {
-        if (/\bemanuel\b/i.test(s) && !/\b(roberto|bismark)\b/i.test(s)) {
+        if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(roberto|bismark)\b/i.test(s)) {
           s = "";
         } else {
-          s = s.replace(/\bEMANUEL\b/gi, "");
+          s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
         }
       }
       /* Bismark: Wed/Fri from 9 Sep; Mon from 14 Sep. */
       if (isTinashe && iso) {
         if (day === "monday" && iso < "2026-09-14") {
-          if (/\bbismark\b|\bbismarck\b/i.test(s) && !/\b(godsway|john|raul|emanuel|victor)\b/i.test(s)) {
+          if (/\bbismark\b|\bbismarck\b/i.test(s) && !/\b(godsway|john|raul|emmanuel|emanuel|victor)\b/i.test(s)) {
             s = "";
           } else {
             s = s.replace(/\bBISMARK\b/gi, "").replace(/\bBISMARCK\b/gi, "");
           }
         }
         if ((day === "wednesday" || day === "friday") && iso < "2026-09-09") {
-          if (/\bbismark\b|\bbismarck\b/i.test(s) && !/\b(godsway|john|raul|roberto|emanuel)\b/i.test(s)) {
+          if (/\bbismark\b|\bbismarck\b/i.test(s) && !/\b(godsway|john|raul|roberto|emmanuel|emanuel)\b/i.test(s)) {
             s = "";
           } else {
             s = s.replace(/\bBISMARK\b/gi, "").replace(/\bBISMARCK\b/gi, "");
@@ -1985,18 +1986,18 @@
         }
         /* Wed from 9 Sep: Raul off Tinashe (keeps DC when he has it). */
         if (day === "wednesday" && iso >= "2026-09-09") {
-          if (/\braul\b/i.test(s) && !/\b(godsway|john|bismark|emanuel)\b/i.test(s)) {
+          if (/\braul\b/i.test(s) && !/\b(godsway|john|bismark|emmanuel|emanuel)\b/i.test(s)) {
             s = "";
           } else {
             s = s.replace(/\bRAUL\b/gi, "");
           }
         }
-        /* Wed 9 + Wed 15 + Wed 16: John day off — Tinashe = Godsway + Bismark + Emanuel. */
+        /* Wed 9 + Wed 15 + Wed 16: John day off — Tinashe = Godsway + Bismark + Emmanuel. */
         if (
           day === "wednesday" &&
           (iso === "2026-09-09" || iso === "2026-09-15" || iso === "2026-09-16")
         ) {
-          if (/\bjohn\b/i.test(s) && !/\b(godsway|bismark|emanuel)\b/i.test(s)) {
+          if (/\bjohn\b/i.test(s) && !/\b(godsway|bismark|emmanuel|emanuel)\b/i.test(s)) {
             s = "";
           } else {
             s = s.replace(/\bJOHN\b/gi, "");
@@ -3017,8 +3018,8 @@
     { client_name: "Aydaan Ah", time_slot: "1.15 to 2" },
   ];
 
-  /** LOCAL EXTRA Sunday Hub Multi — Emanuel book (Jack S…Rayyan F). John covers this on Sun 6 only. */
-  var AUTUMN_SUNDAY_HUB_EMANUEL = [
+  /** LOCAL EXTRA Sunday Hub Multi — Emmanuel book (Jack S…Rayyan F). John covers this on Sun 6 only. */
+  var AUTUMN_SUNDAY_HUB_EMMANUEL = [
     { client_name: "Jack S", time_slot: "9.30 to 10.15" },
     { client_name: "Zaid", time_slot: "10.15 to 11" },
     { client_name: "Eiji", time_slot: "11 to 11.45" },
@@ -3055,7 +3056,7 @@
     /* Prefer Hub, but also treat known Hub staff Sunday Multi as Hub books
        (summer rows sometimes omit area and escaped the scrub). */
     if (/hub/i.test(String(r.area || ""))) return true;
-    return /\b(john|emanuel|giuseppe|berta|godsway|bismark|bismarck)\b/i.test(
+    return /\b(john|emmanuel|emanuel|giuseppe|berta|godsway|bismark|bismarck)\b/i.test(
       String(r.instructors || "")
     );
   }
@@ -3077,14 +3078,14 @@
       });
     }
     return mapBook("BERTA", AUTUMN_SUNDAY_HUB_BERTA)
-      .concat(mapBook("EMANUEL", AUTUMN_SUNDAY_HUB_EMANUEL))
+      .concat(mapBook("EMMANUEL", AUTUMN_SUNDAY_HUB_EMMANUEL))
       .concat(mapBook("GODSWAY", AUTUMN_SUNDAY_HUB_GODSWAY));
   }
 
   /**
    * Sunday Hub Multi = LOCAL only.
    * Drop legacy summer/DB Sunday Multi for Hub books (with or without Hub in area).
-   * Re-inject: standing Berta Lead + Godsway + Emanuel; Sun 6 dated John cover + Berta + Godsway.
+   * Re-inject: standing Berta Lead + Godsway + Emmanuel; Sun 6 dated John cover + Berta + Godsway.
    */
   function scrubAndEnsureSep6HubCover(rows) {
     var out = [];
@@ -3092,7 +3093,7 @@
       if (!r) return;
       if (isSundaySwimfarmHubMultiRow(r)) {
         var inst = String(r.instructors || "");
-        if (/\b(john|emanuel|giuseppe|berta|godsway|bismark|bismarck)\b/i.test(inst)) return;
+        if (/\b(john|emmanuel|emanuel|giuseppe|berta|godsway|bismark|bismarck)\b/i.test(inst)) return;
       }
       out.push(r);
     });

@@ -348,10 +348,11 @@ export function portalCanonicalStaffRosterKey(value) {
   if (k === "palankas" || k === "palankasarranz" || k === "palankasarranzescorial") return "javi";
   if (k === "michelleemmacaleb" || k.startsWith("michelle")) return "michelle";
   if (k === "auroragarcia") return "aurora";
-  /* Hire login Emmanuel (two m) = standing rota key emanuel (one m). Not the DC client. */
+  /* Staff Emmanuel Amoakohene. emanuel (one m) is the DC participant. */
   if (k === "emmanuel" || k === "emmanuelamoakohene" || k === "nanaamoakohene745") {
-    return "emanuel";
+    return "emmanuel";
   }
+  if (k === "emanuel") return "emmanuel";
   return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
 }
 
@@ -384,6 +385,9 @@ export function portalStaffDisplayName(value) {
       k === "stf021"
     ) {
       return "Luliya";
+    }
+    if (k === "emmanuel" || k === "emanuel" || k === "emmanuelamoakohene" || k === "nanaamoakohene745") {
+      return "Emmanuel";
     }
     if (k === "javier" || k === "javiermarquez" || k === "stf010") return "Javier";
     if (

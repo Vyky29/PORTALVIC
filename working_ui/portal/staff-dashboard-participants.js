@@ -546,7 +546,7 @@
         .replace(/[^a-z0-9]+/g, ' ')
         .trim();
       if(!raw) return ' session-card--dc-pax-default';
-      if(/\bemanuel\b|\bemmanuel\b/.test(raw) || raw === 'emanuel' || raw === 'emmanuel'){
+      if(/\bemanuel\b/.test(raw) || raw === 'emanuel'){
         return ' session-card--dc-pax-emanuel';
       }
       if(/\bfadi\b/.test(raw) || raw === 'fadi') return ' session-card--dc-pax-fadi';
@@ -1920,7 +1920,8 @@
       if(k === 'javiarranz' || k === 'javiarranzescorial' || k === 'palankas' || k === 'palankasarranz' || k === 'palankasarranzescorial') return 'javi';
       if(k === 'michelleemmacaleb' || (k.indexOf('michelle') === 0 && k !== 'michelle')) return 'michelle';
       if(k === 'auroragarcia') return 'aurora';
-      if(k === 'emmanuel' || k === 'emmanuelamoakohene' || k === 'nanaamoakohene745') return 'emanuel';
+      if(k === 'emmanuel' || k === 'emmanuelamoakohene' || k === 'nanaamoakohene745') return 'emmanuel';
+      if(k === 'emanuel') return 'emmanuel';
       if(typeof window.portalCanonicalStaffRosterKey === 'function'){
         var canon = String(window.portalCanonicalStaffRosterKey(k) || '').trim().toLowerCase();
         if(canon) return canon;

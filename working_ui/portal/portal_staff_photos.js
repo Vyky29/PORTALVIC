@@ -124,7 +124,6 @@
     victor: true,
     youssef: true,
     emmanuel: true,
-    emanuel: true,
   };
 
   /** Role/category labels — not roster photo stems (avoids /staff_photos/leads.jpg 404 spam). */
