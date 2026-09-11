@@ -5138,7 +5138,8 @@
     return out;
   }
 
-  function bookingDayCentreYearChipsHtml(data) {
+  function bookingDayCentreYearChipsHtml(data, statusByIso) {
+    statusByIso = statusByIso || {};
     var dates = findDayCentreYearSessionDates(data);
     if (!dates.length) return "";
     var cal = global.PORTAL_DAY_CENTRE_CALENDAR_2026_27 || {};
@@ -5152,7 +5153,7 @@
         '">' +
         list
           .map(function (d) {
-            return dateChipSpanHtml(d, {});
+            return dateChipSpanHtml(d, statusByIso);
           })
           .join("") +
         "</div>"
@@ -5225,6 +5226,16 @@
 
   function applyTermDateChipStatuses(host, data, statusByIso) {
     if (!host) return;
+    /* My booking Day Centre year board — same absent/cancel/done tones as Hub. */
+    var bookingWrap = host.querySelector(".pp-booking-year-dates");
+    if (bookingWrap) {
+      try {
+        host._ppTermStatusByIso = statusByIso || Object.create(null);
+      } catch (_bk) {}
+      var nextBooking = bookingDayCentreYearChipsHtml(data, statusByIso);
+      if (nextBooking) bookingWrap.outerHTML = nextBooking;
+      return;
+    }
     var parts;
     try {
       parts = buildTermSessionDateParts(data, statusByIso);
@@ -5407,6 +5418,8 @@
       mergeAndPaint();
       return;
     }
+    /* Paint sync sources first (attendance_summary / sessions) so Absent is not stuck green. */
+    mergeAndPaint();
     void Promise.all(
       tasks.map(function (p) {
         return p.catch(function () {});
@@ -6914,6 +6927,9 @@
         invoiceBlock,
     );
     bindBack(host, data, opts);
+    if (host.querySelector(".pp-booking-year-dates")) {
+      mountTermDateChipStatuses(host, data, opts, null);
+    }
     if (showInvoicesForParticipant(data)) bindInvoices(host, data, opts);
   }
 
