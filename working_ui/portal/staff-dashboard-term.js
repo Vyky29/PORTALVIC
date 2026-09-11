@@ -458,6 +458,18 @@
         item.noSessionFeedbackRequired = true;
         item.portalOverrideAlertPill = 'CANCELLED';
         item.portalOverrideSuppressReviewOrange = true;
+      } else {
+        const coverOv = s.__portalScheduleOverride
+          || (typeof portalCoverInstructorReassignForViewerSession === 'function'
+            ? portalCoverInstructorReassignForViewerSession(
+              s,
+              isoKey,
+              typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : ''
+            )
+            : null);
+        if(coverOv) item.__portalScheduleOverride = coverOv;
+        if(s.portalOverrideMakeUpTag) item.portalOverrideMakeUpTag = true;
+        else if(replaceOvSameSlot) item.portalOverrideMakeUpTag = true;
       }
       return item;
     }

@@ -2926,7 +2926,8 @@
           fbMap[isoKey] = 'complete';
           return;
         }
-        if(portalTermStaffAwayOnDate(isoKey, staffId) || portalTermStaffOffWeekdayOnDate(isoKey, staffId)) return;
+        /* Cover days (Javi Palankas Thu Anas makeup) are off standing rota — still count pending. */
+        if(!isCoverDay && (portalTermStaffAwayOnDate(isoKey, staffId) || portalTermStaffOffWeekdayOnDate(isoKey, staffId))) return;
         const isRealExtra = function(s){
           if(baseRealTerm) return baseRealTerm(s, isoKey);
           const st = String(s.status || '').toLowerCase();

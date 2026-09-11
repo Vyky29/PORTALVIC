@@ -2081,19 +2081,52 @@
       portalScheduleOverrideRowsForSessionIso(sessionDateIso).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(ov.override_type !== 'instructor_reassign') return;
-        const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
-        if(!cov || cov !== sid) return;
+        const coverKey = (typeof portalInstructorCoverStaffKeyFromOverride === 'function'
+          ? portalInstructorCoverStaffKeyFromOverride(ov)
+          : '') || String((ov.payload && ov.payload.covering_staff_id) || '').trim().toLowerCase();
+        const sidKey = typeof portalCanonicalStaffKeyForMatch === 'function'
+          ? portalCanonicalStaffKeyForMatch(sid)
+          : sid;
+        if(!coverKey || coverKey !== sidKey) return;
+        /* Open-seat makeup (Anas on Aurora's available 6-6.30): name the replacement,
+           not available/Joelle — otherwise term halo never sees a real pending unit. */
+        const coverCid = String(
+          (typeof portalCoverOverrideEffectiveClientId === 'function'
+            ? portalCoverOverrideEffectiveClientId(ov)
+            : '') || ov.anchor_client_id || ''
+        ).trim().toLowerCase();
+        if(!coverCid || (typeof portalScheduleOverrideAnchorIsOpenSlot === 'function'
+          && portalScheduleOverrideAnchorIsOpenSlot(coverCid))) return;
         const base = typeof portalFindSpreadsheetSessionMatchingOverride === 'function' ? portalFindSpreadsheetSessionMatchingOverride(ov, dw) : null;
+        const startHm = (base && base.start) || portalHmFromDbTime(ov.anchor_start) || '09:00';
+        const startTok = typeof portalCanonicalHmToken === 'function'
+          ? portalCanonicalHmToken(startHm)
+          : String(startHm || '').trim();
+        let already = false;
+        for(let ai = 0; ai < acc.length; ai++){
+          const existing = acc[ai];
+          const eid = String((existing && existing.clientId) || '').trim().toLowerCase();
+          const est = typeof portalCanonicalHmToken === 'function'
+            ? portalCanonicalHmToken(existing && (existing.start || (existing.__portalBaseSession && existing.__portalBaseSession.start)))
+            : String((existing && existing.start) || '').trim();
+          if(eid === coverCid && startTok && est === startTok){ already = true; break; }
+        }
+        if(already) return;
         const synth = Object.assign({}, base || {
           day: dw,
           start: portalHmFromDbTime(ov.anchor_start) || '09:00',
           end: portalHmFromDbTime(ov.anchor_end) || portalHmFromDbTime(ov.anchor_start) || '10:00',
           venue: ov.anchor_venue || '',
-          clientId: String(ov.anchor_client_id || '').toLowerCase(),
-          staffId: cov,
+          clientId: coverCid,
+          staffId: coverKey,
           status: 'Scheduled',
           activity: 'Swimming'
-        }, { staffId: cov });
+        }, {
+          staffId: coverKey,
+          clientId: coverCid,
+          __portalScheduleOverride: ov
+        });
+        if(base) synth.__portalBaseSession = base;
         if(String(synth.day || '').trim() !== dw) return;
         if(!isRealFn(synth)) return;
         acc.push(synth);
