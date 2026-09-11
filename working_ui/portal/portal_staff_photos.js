@@ -23,6 +23,7 @@
     if (!k) return "";
     if (k === "lulia" || k === "luliya" || k === "aida" || k === "stf021") return "luliya";
     if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+    if (k === "emanuel") return "emmanuel";
     if (k === "stf006") return "john";
     if (k === "stf012") return "berta";
     return k;
@@ -48,6 +49,8 @@
     andresborrego: "andres",
     youssefmoustafa: "youssef",
     aidalulia: "luliya",
+    emmanuelamoakohene: "emmanuel",
+    emanuelamoakohene: "emmanuel",
   };
 
   function photoLookupKeys(nameOrKey, opts) {
@@ -121,6 +124,7 @@
     victor: true,
     youssef: true,
     emmanuel: true,
+    emanuel: true,
   };
 
   /** Role/category labels — not roster photo stems (avoids /staff_photos/leads.jpg 404 spam). */
@@ -199,8 +203,9 @@
         return;
       }
       if (!STAFF_PHOTO_FILES[key]) return;
-      if (key === "emmanuel") {
+      if (key === "emmanuel" || key === "emanuel") {
         pushCandidate(urls, base + "emmanuel.jpg");
+        pushCandidate(urls, base + "emanuel.jpg");
         return;
       }
       pushCandidate(urls, base + key + ".png");
