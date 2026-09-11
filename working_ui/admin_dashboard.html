@@ -7498,9 +7498,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** After scheduling table refresh: scroll to slot row, highlight, open drawer (set from Nuevo dashboard rows). */
     function portalApplyPendingBookingsSlotFocusAfterSchedRefresh(){
       var fs = state.pendingBookingsSlotFocus;
-      if(!fs || !fs.demoId || (state.view !== 'bookings' && state.view !== 'orders_all' && state.view !== 'scheduling')) return;
+      if(!fs || (state.view !== 'bookings' && state.view !== 'orders_all' && state.view !== 'scheduling')) return;
       var demoId = String(fs.demoId || '').trim();
       var venueWant = String(fs.venue || '').trim();
+      if(!demoId && !venueWant && !fs.iso) return;
       state.pendingBookingsSlotFocus = null;
       if(venueWant && window.PortalAdminSearchCombo){
         PortalAdminSearchCombo.setValue('schedVenueFilter', venueWant, venueWant);
@@ -7510,8 +7511,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(vf) vf.value = venueWant;
         applySchedTableFilters();
       }
-      var tr = portalFindSchedRowByDemoId(demoId);
-      if(!tr && venueWant){
+      var tr = demoId ? portalFindSchedRowByDemoId(demoId) : null;
+      if(demoId && !tr && venueWant){
         if(window.PortalAdminSearchCombo) PortalAdminSearchCombo.setValue('schedVenueFilter', '', '');
         else { var vf2 = $('schedVenueFilter'); if(vf2) vf2.value = ''; }
         applySchedTableFilters();
@@ -7527,7 +7528,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             tr.classList.add('sched-slot-row--focus-flash');
             window.setTimeout(function(){ tr.classList.remove('sched-slot-row--focus-flash'); }, 2400);
           }
-          var slot = sched.slotsById && sched.slotsById[demoId];
+          var slot = demoId && sched.slotsById ? sched.slotsById[demoId] : null;
           if(slot) openSchedSlotDrawer(slot);
         });
       });
@@ -7536,11 +7537,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalNavigateToBookingsSlot(payload){
       payload = payload || {};
       var demoId = String(payload.demoId || '').trim();
-      if(demoId){
+      var iso = String(payload.iso || '').trim();
+      var venue = String(payload.venue || '').trim();
+      if(demoId || iso || venue){
         state.pendingBookingsSlotFocus = {
-          iso: String(payload.iso || '').trim() || isoDateLocal(new Date()),
+          iso: iso || isoDateLocal(new Date()),
           demoId: demoId,
-          venue: String(payload.venue || '').trim()
+          venue: venue
         };
       }else{
         state.pendingBookingsSlotFocus = null;
@@ -19344,6 +19347,49 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return out;
     }
+    /**
+     * Standing seats for one programme in the display week (one row per open/closed
+     * line + one preferred line per booked participant). Same unit as §2 capacity.
+     */
+    function adminCollectStandingSeatsForProgrammeWeek(programme, weekAnchorIso){
+      var want = adminNormalizeLegacyProgrammeName(programme);
+      var days = bookingWeekIsoRangeMonSun(weekAnchorIso) || [];
+      var out = [];
+      for(var di = 0; di < days.length; di++){
+        var iso = String(days[di] || '').trim().slice(0, 10);
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+        var dayLines = [];
+        var slots = [];
+        try{ slots = slotsForSelectedDate(iso) || []; }catch(_e){ slots = []; }
+        for(var si = 0; si < slots.length; si++){
+          var sl = slots[si];
+          if(adminNormalizeLegacyProgrammeName(sl && sl.programme) === want) dayLines.push(sl);
+        }
+        var collapsed = adminServiceCollapseLinesToStandingSeats(dayLines, iso);
+        for(var ci = 0; ci < collapsed.length; ci++) out.push(collapsed[ci]);
+      }
+      return out;
+    }
+    /** Collapse slot instances by session date before Booked/Open counts. */
+    function adminCollapseSlotInstancesToStandingSeats(slots){
+      var list = Array.isArray(slots) ? slots : [];
+      if(!list.length) return [];
+      var byIso = {};
+      for(var i = 0; i < list.length; i++){
+        var sl = list[i];
+        if(!sl) continue;
+        var iso = String(sl.sessionDate || '').trim().slice(0, 10);
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) iso = '_';
+        if(!byIso[iso]) byIso[iso] = [];
+        byIso[iso].push(sl);
+      }
+      var out = [];
+      Object.keys(byIso).forEach(function(iso){
+        var part = adminServiceCollapseLinesToStandingSeats(byIso[iso], iso === '_' ? '' : iso);
+        for(var j = 0; j < part.length; j++) out.push(part[j]);
+      });
+      return out;
+    }
     function adminSlotWeekBucket(slot){
       var slug = String(slot && slot.clientSlug || '').trim().toLowerCase();
       if(slug === 'closed') return 'closed';
@@ -19691,7 +19737,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ' data-cap-day="'+esc(String(band.dayShort || band.day || ''))+'"'+
         ' data-cap-time="'+esc(String(band.time || ''))+'"'+
         ' data-cap-open="'+esc(String(band.open != null ? band.open : ''))+'"'+
-        ' data-cap-instr="'+esc(String(band.instructors || band.inst || ''))+'"';
+        ' data-cap-instr="'+esc(String(band.instructors || band.inst || ''))+'"'+
+        ' data-cap-iso="'+esc(String(band.iso || ''))+'"'+
+        ' data-cap-demo="'+esc(String(band.demoId || ''))+'"';
       return (
         '<div class="toolbar cap-act" style="flex-wrap:wrap;gap:4px;min-width:0"'+meta+'>'+
         '<button type="button" class="btn btn--pri btn--sm" data-cap-act="offer" title="Open matching waiting-list rows">Offer</button>'+
@@ -19796,6 +19844,59 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       state.scrollToCapacityEmbed = false;
       adminOpenWaitlistForProgVenue(band.prog, band.venue, { matchedN: matches.length });
     }
+    /** Resolve Schedule deep-link target from a §2 capacity band. */
+    function adminCapacityResolveBandSlotFocus(band){
+      band = band || {};
+      var dayLong = adminCapacityDayLongFromShort(band.dayShort || band.day);
+      var venue = String(band.venue || '').trim();
+      var prog = String(band.prog || '').trim();
+      var wantProg = adminNormalizeLegacyProgrammeName(prog);
+      var iso = String(band.iso || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+        iso =
+          adminServicesAutumnIsoForDow(dayLong, adminServicesOverviewAnchorIso(), prog) ||
+          adminServicesOverviewAnchorIso() ||
+          isoDateLocal(new Date());
+      }
+      var demoId = String(band.demoId || '').trim();
+      function timeClose(a, b){
+        var na = String(a || '').toLowerCase().replace(/\s+/g, ' ').replace(/\s*[–—-]\s*/g, ' to ').trim();
+        var nb = String(b || '').toLowerCase().replace(/\s+/g, ' ').replace(/\s*[–—-]\s*/g, ' to ').trim();
+        if(!na || !nb) return !na && !nb;
+        return na === nb || na.indexOf(nb) >= 0 || nb.indexOf(na) >= 0;
+      }
+      try{
+        var slots = slotsForSelectedDate(iso) || [];
+        var openHit = '';
+        var anyHit = '';
+        for(var i = 0; i < slots.length; i++){
+          var sl = slots[i];
+          if(!sl) continue;
+          if(wantProg && adminNormalizeLegacyProgrammeName(sl.programme) !== wantProg) continue;
+          if(venue){
+            var rv = String(sl.venue || '').trim();
+            if(rv && rv.toLowerCase() !== venue.toLowerCase() &&
+               rv.toLowerCase().indexOf(venue.toLowerCase()) < 0 &&
+               venue.toLowerCase().indexOf(rv.toLowerCase()) < 0) continue;
+          }
+          if(band.time){
+            var tm = String(sl.anchorTimeLabel || '').trim() ||
+              (normTimeShort(sl.anchorStart) + '\u2013' + normTimeShort(sl.anchorEnd));
+            if(!timeClose(tm, band.time)) continue;
+          }
+          var id = String(sl.demoId || '').trim();
+          if(!id) continue;
+          if(!anyHit) anyHit = id;
+          var slug = String(sl.clientSlug || '').trim().toLowerCase();
+          if(slug !== 'closed' && !bookingIsBookedClientSlug(slug)){
+            openHit = id;
+            break;
+          }
+        }
+        if(!demoId) demoId = openHit || anyHit;
+      }catch(_e){}
+      return { demoId: demoId, iso: iso, venue: venue };
+    }
     function adminCapacityHandleQuickAction(act, band){
       act = String(act || '').toLowerCase();
       if(act === 'assign'){
@@ -19816,9 +19917,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return;
       }
       if(act === 'cover'){
-        setView('scheduling');
+        var focus = adminCapacityResolveBandSlotFocus(band);
+        if(typeof portalNavigateToBookingsSlot === 'function'){
+          portalNavigateToBookingsSlot({
+            demoId: focus.demoId,
+            iso: focus.iso,
+            venue: focus.venue
+          });
+        }else{
+          setView('scheduling');
+        }
         if(typeof portalAdminToast === 'function'){
-          portalAdminToast('Scheduling & Cover — pick the session to set staff cover.', 'ok');
+          portalAdminToast(
+            focus.demoId
+              ? 'Scheduling & Cover — session focused for staff cover.'
+              : 'Scheduling & Cover — pick the session to set staff cover.',
+            'ok'
+          );
         }
       }
     }
@@ -20099,15 +20214,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var tm = String(sl.anchorTimeLabel || '').trim() || (normTimeShort(sl.anchorStart) + '\u2013' + normTimeShort(sl.anchorEnd));
           var ak = prog + '\u0001' + v + '\u0001' + dayShort + '\u0001' + String(sl.anchorStart || '') + '\u0001' + String(sl.anchorEnd || '');
           if(!by[ak]){
-            by[ak] = { prog: prog, venue: v, dayShort: dayShort, time: tm, open: 0, booked: 0, closed: 0, lines: 0, instructors: '' };
+            by[ak] = {
+              prog: prog,
+              venue: v,
+              dayShort: dayShort,
+              time: tm,
+              open: 0,
+              booked: 0,
+              closed: 0,
+              lines: 0,
+              instructors: '',
+              iso: iso,
+              demoId: ''
+            };
           }
           var g = by[ak];
           g.lines++;
+          if(!g.iso) g.iso = iso;
           var slug = String(sl.clientSlug || '').trim().toLowerCase();
+          var thisDemo = String(sl.demoId || '').trim();
           if(slug === 'closed') g.closed++;
-          else if(bookingIsBookedClientSlug(slug)) g.booked++;
-          else {
+          else if(bookingIsBookedClientSlug(slug)){
+            g.booked++;
+            if(!g.demoId && thisDemo) g.demoId = thisDemo;
+          } else {
             g.open++;
+            if(thisDemo) g.demoId = thisDemo;
             if(!g.instructors){
               var openInst = String(sl.staffName || sl.staffRosterId || '').trim();
               if(openInst) g.instructors = openInst;
@@ -20446,7 +20578,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var hasFilt = !!(filt && (filt.day || filt.class || filt.venue || filt.coach || filt.participant || filt.spaceOnly || filt.waitOnly));
       var cardsHtml = grouped.map(function(block, pidx){
         if(filt && filt.class && String(block.programme) !== String(filt.class)) return '';
-        var weekSlots = adminCollectSlotsForProgrammeWeek(block.programme, displayWeekIso);
+        var weekSlots = adminCollectStandingSeatsForProgrammeWeek(block.programme, displayWeekIso);
         var wn = weekSlots.length;
         var nRange = 0;
         var autumnStart = adminServicesAutumnTermStartIso(block.programme);
@@ -21164,10 +21296,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           } else {
             dayAcc = '<p class="muted" style="margin:6px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">No roster rows for this programme and venue in the term window.</p>';
           }
-          var venueSt = adminStatsSlotsWeek(allInst);
-          var venueAgg = adminServiceVenueAggFromInstances(allInst);
+          var venueStanding = adminCollapseSlotInstancesToStandingSeats(allInst);
+          var venueSt = adminStatsSlotsWeek(venueStanding);
+          var venueAgg = adminServiceVenueAggFromInstances(venueStanding);
           /* Autumn display week = one week of seats (not Apr-Jul sum). */
-          if(allInst && allInst.length){
+          if(venueStanding && venueStanding.length){
             venueAgg.bookedPerWeek = venueSt.booked;
           }
           var venueInstrCount = Object.keys(venueInstrSet).length;
@@ -21208,8 +21341,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venuePaxCount))+'</strong>'+
             '</span></span>';
           var venueChip =
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Rendered class bands / staff columns for this venue (unit depends on programme — not the same as roster lines/wk).">'+
-            '<span class="c4k-svc-venue-acc__pill-lbl">Sessions/wk (boards): </span>'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Board layout rows for this venue (time bands or staff columns). Display-only — not the same unit as standing seats.">'+
+            '<span class="c4k-svc-venue-acc__pill-lbl">Board rows (display): </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(rowsInVenue))+'</strong>'+
             '</span>';
           var venueMetricsRow =
@@ -21245,8 +21378,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return '';
         }
         var chips =
-          '<span class="chip chip--info" title="Slot rows Mon–Sun in the Autumn display week (all venues). Not the same unit as Sessions/wk (boards) or Booked (Autumn).">'+esc(String(wn))+' roster lines/wk (Autumn week)</span>'+
-          '<span class="chip chip--ok" title="Sum of rendered boards across venues (time bands or staff columns — programme-specific unit).">'+esc(String(nRange))+' sessions/wk (boards)</span>';
+          '<span class="chip chip--info" title="Standing seats Mon–Sun in the Autumn display week (one open/closed line + one preferred line per booked participant). Same unit as §2 capacity.">'+esc(String(wn))+' standing seats/wk (Autumn)</span>'+
+          '<span class="chip chip--ok" title="Sum of board layout rows across venues (time bands or staff columns). Display-only — not a second capacity total.">'+esc(String(nRange))+' board rows (display)</span>';
         return adminAppendServiceCapacityBoardAfterPhysicalActivity(
           '<div class="card c4k-svc-card '+adminServiceProgrammeCardClass(block.programme)+'" style="margin-bottom:10px">'+
           '<div class="card-h card-h--c4k-svc">'+
@@ -32716,7 +32849,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               dayShort: wrap ? wrap.getAttribute('data-cap-day') : '',
               time: wrap ? wrap.getAttribute('data-cap-time') : '',
               open: wrap ? wrap.getAttribute('data-cap-open') : '',
-              instructors: wrap ? wrap.getAttribute('data-cap-instr') : ''
+              instructors: wrap ? wrap.getAttribute('data-cap-instr') : '',
+              iso: wrap ? wrap.getAttribute('data-cap-iso') : '',
+              demoId: wrap ? wrap.getAttribute('data-cap-demo') : ''
             });
             return;
           }
