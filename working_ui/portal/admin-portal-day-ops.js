@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260911-register-fb';
+  var PORTAL_DAY_OPS_BUILD = '20260911-register-day';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -345,8 +345,7 @@
       window.portalInvalidateAdminFeedbackStatusCache();
     }
     if (feedbackHub && typeof feedbackHub.setPayload === 'function') {
-      feedbackHub.setPayload(payload);
-      if (typeof feedbackHub.render === 'function') feedbackHub.render();
+      feedbackHub.setPayload(payload, { quiet: true });
     }
     /* Overview is a staffing board — do not re-paint on every feedback poll/realtime tick. */
     if (trackingHub && typeof trackingHub.setPayload === 'function') {

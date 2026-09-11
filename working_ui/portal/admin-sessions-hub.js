@@ -5215,6 +5215,16 @@
     this._dayStatsByIso = null;
     this._fbIndexSig = "";
     this._expandingSlotsIso = "";
+    this._fbLogByIso = null;
+    this._termLogHtml = "";
+    this._termLogSig = "";
+  };
+
+  AdminSessionsHub.prototype.invalidateFeedbackIndexOnly = function () {
+    this._fbIndexSig = "";
+    this._fbLogByIso = null;
+    this._termLogHtml = "";
+    this._termLogSig = "";
   };
 
   AdminSessionsHub.prototype.dayStatsCacheKey = function (iso) {
@@ -5246,7 +5256,9 @@
     ) {
       this.payload.incident_reports = global.__PORTAL_INCIDENT_REPORTS__.slice();
     }
-    this.invalidateComputeCaches();
+    if (!setOpts.quiet) {
+      this.invalidateComputeCaches();
+    }
     var adamDates = buildAdamAbSessionDateSet(this.rosterRows, this.payload.session_feedback);
     if (Array.isArray(this.payload.session_feedback)) {
       this.payload.session_feedback = normalizeMisnamedAdamAbFeedbackRows(
@@ -5267,11 +5279,20 @@
       this.initFeedbackDateRange();
     }
     if (setOpts.quiet) {
-      if (this.opts && this.opts.externalTabs) this.indexFeedback();
+      var quietHub = this;
+      if (quietHub._fbIndexTimer) clearTimeout(quietHub._fbIndexTimer);
+      quietHub._fbIndexTimer = setTimeout(function () {
+        quietHub._fbIndexTimer = null;
+        quietHub.invalidateFeedbackIndexOnly();
+        try {
+          if (quietHub.opts && quietHub.opts.externalTabs) quietHub.indexFeedback();
+        } catch (_idx) {}
+      }, 80);
       return;
     }
-    if (this.mode === "feedback") {
-      this.render();
+    if (this.mode === "feedback" && typeof this.softPaintFeedbackDay === "function" && this.feedbackSurfaceReady()) {
+      this.indexFeedback();
+      this.softPaintFeedbackDay();
       return;
     }
     if (this.opts && this.opts.externalTabs) {
@@ -6445,9 +6466,10 @@
       var hit = map[clean(aliases[a]).toLowerCase()];
       if (hit && absentFeedbackFitsSlot(hit, slot)) return hit;
     }
-    var list = this.payload.session_feedback || [];
-    for (var i = 0; i < list.length; i++) {
-      if (absentFeedbackFitsSlot(list[i], slot)) return list[i];
+    var dayList =
+      (this._fbByDate && slot.session_date && this._fbByDate[slot.session_date]) || [];
+    for (var i = 0; i < dayList.length; i++) {
+      if (absentFeedbackFitsSlot(dayList[i], slot)) return dayList[i];
     }
     return null;
   };
@@ -7764,6 +7786,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.feedbackLogRowsForDay = function (iso) {
     var hub = this;
     var day = clean(iso);
+    if (!this._fbLogByIso) this._fbLogByIso = Object.create(null);
+    var logSig =
+      day +
+      "|" +
+      String((this.payload.session_feedback || []).length) +
+      "|" +
+      String((this.payload.session_quick_marks || []).length) +
+      "|" +
+      String((this.payload.cancellation_reports || []).length);
+    if (this._fbLogByIso[logSig]) return this._fbLogByIso[logSig];
     var byKey = {};
     var out = [];
 
@@ -7900,6 +7932,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       return bySlot[k];
     });
     out.sort(feedbackSortNewestFirst);
+    this._fbLogByIso[logSig] = out;
     return out;
   };
 
@@ -8875,7 +8908,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (fbMetricDay && hub.mode === "feedback") {
         hub.feedbackMetricsDay = fbMetricDay.getAttribute("data-ash-feedback-metric-day");
         hub.selectedDay = hub.feedbackMetricsDay;
-        hub.renderPanels();
+        if (typeof hub.softPaintFeedbackDay === "function" && hub.feedbackSurfaceReady()) {
+          hub.softPaintFeedbackDay();
+        } else {
+          hub.renderPanels();
+        }
         hub.scrollToWeekPicker();
         return;
       }
@@ -8908,6 +8945,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           hub.overviewSurfaceReady()
         ) {
           hub.softRefreshOverview();
+        } else if (
+          hub.mode === "feedback" &&
+          typeof hub.softPaintFeedbackDay === "function" &&
+          hub.feedbackSurfaceReady()
+        ) {
+          hub.softPaintFeedbackDay();
         } else if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
         else hub.render();
         hub.scrollToWeekPicker();
@@ -11139,6 +11182,76 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     );
   };
 
+  AdminSessionsHub.prototype.feedbackSurfaceReady = function () {
+    if (this.mode !== "feedback") return false;
+    var root = this.root;
+    if (!root) return false;
+    return !!(
+      root.querySelector(".ash-metrics-dashboard") &&
+      root.querySelector("table.ash-table--register")
+    );
+  };
+
+  AdminSessionsHub.prototype.syncFeedbackChromeSelection = function () {
+    var root = this.root;
+    if (!root) return;
+    var day = this.selectedDay;
+    var cards = root.querySelectorAll("[data-ash-day], [data-ash-feedback-metric-day]");
+    for (var i = 0; i < cards.length; i++) {
+      var el = cards[i];
+      var iso = el.getAttribute("data-ash-day") || el.getAttribute("data-ash-feedback-metric-day");
+      el.classList.toggle("ash-day-card--sel", iso === day);
+    }
+  };
+
+  AdminSessionsHub.prototype.htmlFeedbackRegisterTableBody = function () {
+    var hub = this;
+    var esc = this.escapeHtml;
+    var rows = this.feedbackRowsForSelectedDay();
+    var tableRows = rows
+      .map(function (fb, rowIdx) {
+        var awaiting = fb && fb._ashAwaitingSlot;
+        return hub.htmlFeedbackTableRow(fb, esc, {
+          rowIdx: awaiting ? null : rowIdx,
+          clickable: !awaiting,
+          variant: "register",
+        });
+      })
+      .join("");
+    if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
+      return (
+        '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>'
+      );
+    }
+    if (!tableRows) {
+      return '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
+    }
+    return tableRows;
+  };
+
+  /**
+   * Switch Register day without rebuilding the term log or all 7 day-stat cards
+   * (that full render hangs Chrome after the 1000-row payload lands).
+   */
+  AdminSessionsHub.prototype.softPaintFeedbackDay = function () {
+    if (!this.feedbackSurfaceReady()) {
+      this.renderPanels();
+      return;
+    }
+    this.syncFeedbackChromeSelection();
+    var root = this.root;
+    var sum = this.engagementSummary(this.feedbackRowsForMetrics());
+    var metrics = root.querySelector(".ash-metrics-dashboard");
+    if (metrics) {
+      var wrap = document.createElement("div");
+      wrap.innerHTML = this.htmlFeedbackMetricStrip(sum);
+      var next = wrap.firstElementChild;
+      if (next && metrics.parentNode) metrics.parentNode.replaceChild(next, metrics);
+    }
+    var tbody = root.querySelector("table.ash-table--register tbody[data-ash-client-filter-tbody]");
+    if (tbody) tbody.innerHTML = this.htmlFeedbackRegisterTableBody();
+  };
+
   AdminSessionsHub.prototype.overviewSurfaceReady = function () {
     var root = this.root;
     if (!root) return false;
@@ -12034,29 +12147,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   };
 
   AdminSessionsHub.prototype.htmlFeedback = function () {
-    var esc = this.escapeHtml;
     var hub = this;
-    var rows = this.feedbackRowsForSelectedDay();
     var sum = this.engagementSummary(this.feedbackRowsForMetrics());
-
-    var tableRows = rows
-      .map(function (fb, rowIdx) {
-        var awaiting = fb && fb._ashAwaitingSlot;
-        return hub.htmlFeedbackTableRow(fb, esc, {
-          rowIdx: awaiting ? null : rowIdx,
-          clickable: !awaiting,
-          variant: "register",
-        });
-      })
-      .join("");
-
-    if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
-      tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
-    } else if (!tableRows) {
-      tableRows =
-        '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
-    }
+    var tableRows = this.htmlFeedbackRegisterTableBody();
 
     var weekBlock =
       hub.opts && hub.opts.showFullWeekDayStrip
@@ -12086,6 +12179,22 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '<button type="button" class="ash-btn ash-btn--ghost" data-ash-feedback-clear-note-filter>Show all</button></p>';
     }
 
+    var logSig = String(fbLoaded) + "|" + String(this.weekStart || "");
+    var logHtml = "";
+    if (this._termLogHtml && this._termLogSig === logSig) {
+      logHtml = this._termLogHtml;
+    } else {
+      logHtml = this.htmlFeedbackTermWeekLog({
+        title: "Session feedback log",
+        flatWeeks: true,
+        weekJumpOnly: true,
+        hint:
+          "Past weeks (Mon\u2013Sun). Click <strong>Show week \u2192</strong> to jump to that week at the top \u2013 day buttons and feedback for the selected day.",
+      });
+      this._termLogHtml = logHtml;
+      this._termLogSig = logSig;
+    }
+
     return (
       this.htmlFeedbackMetricStrip(sum) +
       weekBlock +
@@ -12100,13 +12209,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (hub.opts && hub.opts.showFullWeekDayStrip
         ? ""
         : '<p class="ash-metric-foot ash-metric-foot--center">Absents show as <strong>Submitted (Absent)</strong> with N/A (except Reviewed by). Use <strong>Sessions overview</strong> for the roster table.</p>') +
-      this.htmlFeedbackTermWeekLog({
-        title: "Session feedback log",
-        flatWeeks: true,
-        weekJumpOnly: true,
-        hint:
-          'Past weeks (Mon\u2013Sun). Click <strong>Show week \u2192</strong> to jump to that week at the top \u2013 day buttons and feedback for the selected day.',
-      })
+      logHtml
     );
   };
 
