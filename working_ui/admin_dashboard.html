@@ -161,7 +161,7 @@
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal-shared-js/portal_field_autocomplete.js?v=20260609-term-slot-autofill"></script>
-  <script src="/portal/admin-portal-term-slot.js?v=20260811-autumn-preserve"></script>
+  <script src="/portal/admin-portal-term-slot.js?v=20260911-roster-dedupe"></script>
   <script src="/portal/portal-staff-timetable-merge.js?v=20260614-changelog"></script>
   <script src="/portal/spreadsheet_reference_data.js?v=20260828-autumn-hours-base"></script>
   <script src="/portal/autumn_staff_hours_reference.js?v=20260906-sandra-javi"></script>
@@ -8660,18 +8660,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
       var q = client
         .from('portal_roster_rows')
-        .select('id')
-        .eq('status', 'active')
+        .select('id,status,updated_at,created_at')
         .eq('client_name', payload.client_name)
         .eq('time_slot', payload.time_slot)
         .eq('day', payload.day)
         .eq('instructors', payload.instructors)
         .is('session_date', null);
       if(payload.venue) q = q.eq('venue', payload.venue);
-      return q.maybeSingle().then(function(res){
-        if(res.error && res.error.code !== 'PGRST116') throw res.error;
-        if(res.data && res.data.id){
-          return client.from('portal_roster_rows').update(payload).eq('id', res.data.id).select('id').single();
+      return q.then(function(res){
+        if(res.error) throw res.error;
+        var hit = schedPickReusableRosterRow(res.data || []);
+        if(hit && hit.id){
+          return client.from('portal_roster_rows').update(payload).eq('id', hit.id).select('id').single();
         }
         return client.from('portal_roster_rows').insert([payload]).select('id').single();
       }).then(function(res){
@@ -10597,7 +10597,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return [
         String(o && o.override_type || '').trim(),
         adminRosterSlugify(String(o && o.anchor_client_id || '').trim()),
-        schedNormTimeSlotKey(o && (o.anchor_time_slot_label || normTimeShort(o.anchor_start))),
+        schedCanonicalStartKey(o && (o.anchor_time_slot_label || o.anchor_start), o && o.session_date),
         normalizeSchedAnchorStaffId(o && o.anchor_staff_id)
       ].join('|');
     }
@@ -17022,6 +17022,65 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedNormTimeSlotKey(v){
       return String(v || '').toLowerCase().replace(/\s+/g, ' ').trim();
     }
+    /** 24h HH:MM so "5.30 to 6" and "17.30 to 18" / "17:30:00" collapse to the same slot. */
+    function schedCanonicalStartKey(v, dayOrIso){
+      var raw = String(v || '').trim();
+      if(!raw) return '';
+      var day = String(dayOrIso || '').trim();
+      if(/^\d{4}-\d{2}-\d{2}/.test(day) && typeof portalWeekdayLongFromIsoDate === 'function'){
+        day = portalWeekdayLongFromIsoDate(day.slice(0, 10)) || day;
+      }
+      var pg = raw.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+      if(pg){
+        var ph = parseInt(pg[1], 10);
+        var pm = parseInt(pg[2], 10) || 0;
+        if(ph >= 0 && ph <= 7) ph += 12;
+        return adminRosterPad2(ph) + ':' + adminRosterPad2(pm);
+      }
+      var band = /\s+to\s+/i.test(raw) ? raw : (raw + ' to ' + raw);
+      var parsed = adminRosterParseTimeSlot(band, day);
+      return String(parsed && parsed.start || '').trim();
+    }
+    function schedRosterSlotIdentity(row){
+      if(!row) return '';
+      return [
+        adminRosterSlugify(String(row.client_name || row.anchor_client_id || '').trim()),
+        schedCanonicalStartKey(row.time_slot || row.anchor_time_slot_label || row.anchor_start, row.day || row.session_date),
+        normalizeSchedAnchorStaffId(row.instructors || row.anchor_staff_id)
+      ].join('|');
+    }
+    function schedPickNewerRosterRow(a, b){
+      var at = new Date((a && (a.updated_at || a.created_at)) || 0).getTime();
+      var bt = new Date((b && (b.updated_at || b.created_at)) || 0).getTime();
+      return at >= bt ? a : b;
+    }
+    function schedPickReusableRosterRow(rows){
+      var active = [];
+      var cancelled = [];
+      (rows || []).forEach(function(row){
+        var st = String(row && row.status || '').trim();
+        if(st === 'active') active.push(row);
+        else if(st === 'cancelled') cancelled.push(row);
+      });
+      if(active.length) return active[0];
+      if(!cancelled.length) return null;
+      return cancelled.slice().sort(function(a, b){
+        return new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0);
+      })[0];
+    }
+    function schedDatedActiveIdentitySet(iso){
+      var keys = {};
+      var cache = window.PORTAL_ROSTER_ROWS_CACHE || [];
+      var want = adminNormIsoDate(iso);
+      for(var i = 0; i < cache.length; i++){
+        var row = cache[i];
+        if(String(row.status || 'active') !== 'active') continue;
+        if(adminNormIsoDate(row.session_date) !== want) continue;
+        var k = schedRosterSlotIdentity(row);
+        if(k && k !== '||') keys[k] = true;
+      }
+      return keys;
+    }
     function schedTimeSlotStartLabel(v){
       var ts = String(v || '').trim();
       if(!ts) return '—';
@@ -17037,21 +17096,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedRosterCancelRowsForLog(iso, datedRows, templateRows, noClientRows){
       var out = [];
       var seenDated = {};
+      var keepAlive = schedDatedActiveIdentitySet(iso);
       (datedRows || []).forEach(function(row){
         var pax = String(row.client_name || '').trim();
         if(!pax || /^no[\s_-]*client$/i.test(pax) || /^no[\s_-]*participant$/i.test(pax)) return;
         var typeLabel = schedNoClientMatchesRosterRow(row, noClientRows, iso) ? 'No Participant' : 'Cancelled';
-        seenDated[schedNormTimeSlotKey(pax) + '|' + schedNormTimeSlotKey(row.time_slot)] = true;
+        seenDated[schedRosterSlotIdentity(row) || (schedNormTimeSlotKey(pax) + '|' + schedNormTimeSlotKey(row.time_slot))] = true;
         out.push({ row: row, typeLabel: typeLabel, created_at: row.updated_at || row.created_at || '' });
       });
       (templateRows || []).forEach(function(row){
         var pax = String(row.client_name || '').trim();
         if(!pax || /^no[\s_-]*client$/i.test(pax) || /^no[\s_-]*participant$/i.test(pax)) return;
-        var dk = schedNormTimeSlotKey(pax) + '|' + schedNormTimeSlotKey(row.time_slot);
+        var ident = schedRosterSlotIdentity(row);
+        var dk = ident || (schedNormTimeSlotKey(pax) + '|' + schedNormTimeSlotKey(row.time_slot));
         if(seenDated[dk]) return;
+        if(ident && keepAlive[ident]) return;
         var typeLabel = schedNoClientMatchesRosterRow(Object.assign({}, row, { session_date: iso }), noClientRows, iso)
           ? 'No Participant'
           : 'Cancelled';
+        seenDated[dk] = true;
         out.push({ row: row, typeLabel: typeLabel, created_at: row.updated_at || row.created_at || '', isTemplate: true });
       });
       return out;
@@ -17081,14 +17144,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       b = b || { dated: [], template: [], noClient: [] };
       function dedupeRows(list){
         var seen = {};
-        var out = [];
         (list || []).forEach(function(row){
-          var key = String(row.id || '') + '|' + adminNormIsoDate(row.session_date) + '|' + normDayLabel(row.day) + '|' + schedNormTimeSlotKey(row.client_name) + '|' + schedNormTimeSlotKey(row.time_slot);
-          if(seen[key]) return;
-          seen[key] = true;
-          out.push(row);
+          var ident = schedRosterSlotIdentity(row);
+          var key = ident && ident !== '||'
+            ? ident
+            : (String(row.id || '') + '|' + adminNormIsoDate(row.session_date) + '|' + normDayLabel(row.day) + '|' + schedNormTimeSlotKey(row.client_name) + '|' + schedNormTimeSlotKey(row.time_slot));
+          if(!seen[key]) seen[key] = row;
+          else seen[key] = schedPickNewerRosterRow(seen[key], row);
         });
-        return out;
+        return Object.keys(seen).map(function(k){ return seen[k]; });
       }
       return {
         dated: dedupeRows((a.dated || []).concat(b.dated || [])),
@@ -17108,8 +17172,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedTermEventDedupeKeys(){
       var keys = {};
       (sched.termEvents || []).forEach(function(ev){
+        var snap = ev.after_snapshot || {};
+        var ident = schedRosterSlotIdentity({
+          client_name: schedTermEventParticipantName(ev),
+          time_slot: snap.time_slot,
+          instructors: snap.instructors,
+          day: snap.day,
+          session_date: ev.anchor_session_date
+        });
+        if(ident && ident !== '||') keys[ident] = true;
         var pax = normDayLabel(schedTermEventParticipantName(ev));
-        var slot = schedNormTimeSlotKey((ev.after_snapshot || {}).time_slot);
+        var slot = schedNormTimeSlotKey(snap.time_slot);
         if(pax && slot) keys[pax + '|' + slot] = true;
       });
       return keys;
@@ -17117,8 +17190,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedOverrideDedupeKeys(){
       var keys = {};
       (sched.overrides || []).forEach(function(o){
+        var ident = schedRosterSlotIdentity(o);
+        if(ident && ident !== '||') keys[ident] = true;
         var slug = adminRosterSlugify(String(o.anchor_client_id || '').trim());
-        var slot = schedNormTimeSlotKey(o.anchor_time_slot_label || normTimeShort(o.anchor_start));
+        var slot = schedCanonicalStartKey(o.anchor_time_slot_label || o.anchor_start, o.session_date);
         if(slug && slot) keys[slug + '|' + slot] = true;
       });
       return keys;
@@ -17205,7 +17280,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       (sched.rosterLogRows||[]).forEach(function(entry){
         var row = entry.row || {};
         var paxName = String(row.client_name || '').trim();
-        var rosterKey = adminRosterSlugify(paxName) + '|' + schedNormTimeSlotKey(row.time_slot);
+        var rosterIdent = schedRosterSlotIdentity(row);
+        var rosterKey = adminRosterSlugify(paxName) + '|' + schedCanonicalStartKey(row.time_slot, row.day || logIso);
+        if(rosterIdent && (termDedupe[rosterIdent] || overrideDedupe[rosterIdent])) return;
         if(termDedupe[normDayLabel(paxName) + '|' + schedNormTimeSlotKey(row.time_slot)]) return;
         if(overrideDedupe[rosterKey]) return;
         merged.push({
@@ -22275,7 +22352,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260911-overview-log-fix';
+    var PORTAL_ADMIN_HUB_BUILD = '20260911-roster-log-dedupe';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;

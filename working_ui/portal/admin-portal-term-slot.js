@@ -672,6 +672,21 @@
     };
   }
 
+  function pickReusableRosterRow(rows) {
+    var active = [];
+    var cancelled = [];
+    (rows || []).forEach(function (row) {
+      var st = String((row && row.status) || "").trim();
+      if (st === "active") active.push(row);
+      else if (st === "cancelled") cancelled.push(row);
+    });
+    if (active.length) return active[0];
+    cancelled.sort(function (a, b) {
+      return new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0);
+    });
+    return cancelled[0] || null;
+  }
+
   function upsertDatedRow(client, row, sessionDate, weekday) {
     var payload = {
       client_name: row.client_name,
@@ -686,19 +701,18 @@
     };
     return client
       .from("portal_roster_rows")
-      .select("id")
-      .eq("status", "active")
+      .select("id,status,updated_at,created_at")
       .eq("client_name", payload.client_name)
       .eq("time_slot", payload.time_slot)
       .eq("session_date", payload.session_date)
-      .maybeSingle()
       .then(function (res) {
-        if (res.error && res.error.code !== "PGRST116") throw res.error;
-        if (res.data && res.data.id) {
+        if (res.error) throw res.error;
+        var hit = pickReusableRosterRow(res.data || []);
+        if (hit && hit.id) {
           return client
             .from("portal_roster_rows")
             .update(payload)
-            .eq("id", res.data.id)
+            .eq("id", hit.id)
             .select("id")
             .single();
         }
@@ -722,22 +736,23 @@
       session_date: null,
       status: "active",
     };
-    return client
+    var q = client
       .from("portal_roster_rows")
-      .select("id")
-      .eq("status", "active")
+      .select("id,status,updated_at,created_at")
       .eq("client_name", payload.client_name)
       .eq("time_slot", payload.time_slot)
       .eq("day", payload.day)
-      .is("session_date", null)
-      .maybeSingle()
+      .is("session_date", null);
+    if (payload.instructors) q = q.eq("instructors", payload.instructors);
+    return q
       .then(function (res) {
-        if (res.error && res.error.code !== "PGRST116") throw res.error;
-        if (res.data && res.data.id) {
+        if (res.error) throw res.error;
+        var hit = pickReusableRosterRow(res.data || []);
+        if (hit && hit.id) {
           return client
             .from("portal_roster_rows")
             .update(payload)
-            .eq("id", res.data.id)
+            .eq("id", hit.id)
             .select("id")
             .single();
         }
@@ -1155,7 +1170,22 @@
       session_date: null,
       status: "cancelled",
     };
-    return client.from("portal_roster_rows").insert([payload]).select("id").single();
+    var q = client
+      .from("portal_roster_rows")
+      .select("id,status,updated_at,created_at")
+      .eq("client_name", payload.client_name)
+      .eq("time_slot", payload.time_slot)
+      .eq("day", payload.day)
+      .is("session_date", null);
+    if (payload.instructors) q = q.eq("instructors", payload.instructors);
+    return q.then(function (res) {
+      if (res.error) throw res.error;
+      var hit = pickReusableRosterRow(res.data || []);
+      if (hit && hit.id) {
+        return client.from("portal_roster_rows").update(payload).eq("id", hit.id).select("id").single();
+      }
+      return client.from("portal_roster_rows").insert([payload]).select("id").single();
+    });
   }
 
   function insertCancelledDatedMarker(client, row, sessionDate, weekday) {
@@ -1170,7 +1200,20 @@
       session_date: sessionDate,
       status: "cancelled",
     };
-    return client.from("portal_roster_rows").insert([payload]).select("id").single();
+    return client
+      .from("portal_roster_rows")
+      .select("id,status,updated_at,created_at")
+      .eq("client_name", payload.client_name)
+      .eq("time_slot", payload.time_slot)
+      .eq("session_date", sessionDate)
+      .then(function (res) {
+        if (res.error) throw res.error;
+        var hit = pickReusableRosterRow(res.data || []);
+        if (hit && hit.id) {
+          return client.from("portal_roster_rows").update(payload).eq("id", hit.id).select("id").single();
+        }
+        return client.from("portal_roster_rows").insert([payload]).select("id").single();
+      });
   }
 
   function ensureCancelledTemplate(client, row) {

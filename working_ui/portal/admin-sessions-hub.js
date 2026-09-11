@@ -5549,6 +5549,7 @@
     for (var i = 0; i < list.length; i++) {
       if (this.portalReportDateIso(list[i]) !== iso) continue;
       var k0 = cancelDedupeKey(list[i]);
+      if (k0 && seen[k0]) continue;
       if (k0) seen[k0] = true;
       out.push({ row: list[i], idx: i });
     }
