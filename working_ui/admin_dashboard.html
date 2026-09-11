@@ -19279,12 +19279,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(goneFrom && /^\d{4}-\d{2}-\d{2}$/.test(String(goneFrom)) && iso >= String(goneFrom)) return false;
       return true;
     }
+    /**
+     * Services standing = who holds the seat now (Booking Portal), not "this week's Monday ISO".
+     * If today is past a paint weekday (e.g. viewing Mon 7 after Abodi left 8 Sep), use today.
+     */
+    function adminServiceStandingEffectiveIso(calendarIso){
+      var paint = String(calendarIso || '').trim().slice(0, 10);
+      var today = '';
+      try{ today = isoDateLocal(new Date()); }catch(_e){ today = ''; }
+      if(/^\d{4}-\d{2}-\d{2}$/.test(today) && /^\d{4}-\d{2}-\d{2}$/.test(paint)){
+        return today > paint ? today : paint;
+      }
+      return paint || today;
+    }
     /** Standing seat blanked for Booking Portal (re-enrol release or gone-from). */
     function adminServicePaxSeatIsOpenLive(paxName, programme, venue, dowNorm, calendarIso){
       var name = String(paxName || '').trim();
       if(!name) return true;
       if(adminServicePaxReleasedByReenrol(name, programme, venue, dowNorm)) return true;
-      if(calendarIso && !adminServiceClientAllowedOnDate(name, calendarIso)) return true;
+      var checkIso = adminServiceStandingEffectiveIso(calendarIso);
+      if(checkIso && !adminServiceClientAllowedOnDate(name, checkIso)) return true;
       return false;
     }
     function adminEnumerateIsosInclusive(startIso, endIso){
@@ -19426,7 +19440,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(adminNormalizeLegacyProgrammeName(sl && sl.programme) === want) dayLines.push(sl);
         }
         var collapsed = adminServiceCollapseLinesToStandingSeats(dayLines, iso);
-        for(var ci = 0; ci < collapsed.length; ci++) out.push(collapsed[ci]);
+        for(var ci = 0; ci < collapsed.length; ci++){
+          var seat = collapsed[ci];
+          if(!seat) continue;
+          var pax = String(seat.clientDisplay || '').trim();
+          var slug = String(seat.clientSlug || '').trim().toLowerCase();
+          if(
+            pax &&
+            bookingIsBookedClientSlug(slug) &&
+            adminServicePaxSeatIsOpenLive(pax, seat.programme || programme, seat.venue, seat.sheetDay, iso)
+          ){
+            seat = Object.assign({}, seat, {
+              clientDisplay: 'No participant',
+              clientSlug: 'no_participant'
+            });
+          }
+          out.push(seat);
+        }
       }
       return out;
     }
