@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 113;
+  var SOURCE_VERSION = 114;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -2507,7 +2507,8 @@
     { staff: "CARLOS", name: "Zaid", time: "11 to 12" },
     { staff: "CARLOS", name: "Serine", time: "12 to 1" },
     { staff: "CARLOS", name: "Zakariya", time: "1 to 2" },
-    { staff: "CARLOS", name: "No participant", time: "2 to 3" },
+    /* Trial Sun 13 Sep only — Places board paints Trial until that day passes. */
+    { staff: "CARLOS", name: "Muhammad", time: "2 to 3", trial: true, trialDate: "2026-09-13" },
     { staff: "CARLOS", name: "Patrick", time: "3 to 4" },
   ];
 
@@ -2539,9 +2540,17 @@
   function autumnSundayClimbingRowsForIso(iso) {
     var stamp = normIso(iso) || WEEKEND_STANDING_ISO.sunday;
     return AUTUMN_SUNDAY_CLIMBING_BOARD.map(function (slot) {
+      var pax;
+      if (slot.closed) {
+        pax = "CLOSED";
+      } else if (slot.trial) {
+        /* Trial is dated Sep 13 only — standing template stays open; inject owns the seat. */
+        pax = "No participant";
+      } else {
+        pax = slot.name;
+      }
       return {
-        /* Blocked Elia seat paints CLOSED in Overview / Booking; Places board keeps Elia label. */
-        client_name: slot.closed ? "CLOSED" : slot.name,
+        client_name: pax,
         day: "Sunday",
         instructors: slot.staff,
         service: "Climbing Activity",
@@ -2551,6 +2560,66 @@
         session_date: stamp,
       };
     });
+  }
+
+  /** Dated one-off: Muhammad Climbing trial · Carlos · Sun 13 Sep · 2–3. */
+  function autumnSundayMuhammadClimbTrialRows() {
+    return [
+      {
+        client_name: "Muhammad",
+        day: "Sunday",
+        instructors: "CARLOS",
+        service: "Climbing Activity",
+        area: "Wall",
+        time_slot: "2 to 3",
+        venue: "Westway",
+        session_date: "2026-09-13",
+      },
+    ];
+  }
+
+  /**
+   * Keep Muhammad trial on Carlos 2–3 for Sun 13 (DB rows were scrubbed with standing climb rebuild).
+   * Drop standing open twin + any leftover Alex 3–4 Muhammad.
+   */
+  function scrubAndEnsureMuhammadClimbTrial(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isClimbingService(r.service) && isWestwayVenue(r.venue)) {
+        var d = normIso(r.session_date);
+        var dk = normalizeDowKey(r.day);
+        var inst = String(r.instructors || "");
+        var t = String(r.time_slot || "")
+          .toLowerCase()
+          .replace(/:/g, ".")
+          .replace(/\s+/g, " ")
+          .trim();
+        var cn = String(r.client_name || "").trim();
+        if (
+          dk === "sunday" &&
+          d === "2026-09-13" &&
+          /\bcarlos\b/i.test(inst) &&
+          /^2(\.00)?\s*to\s*3(\.00)?$/.test(t) &&
+          (/^no participant$/i.test(cn) || /^muhammad\b/i.test(cn))
+        ) {
+          return;
+        }
+        if (
+          dk === "sunday" &&
+          /\balex\b/i.test(inst) &&
+          /^3(\.00)?\s*to\s*4(\.00)?$/.test(t) &&
+          /^muhammad\b/i.test(cn)
+        ) {
+          return;
+        }
+      }
+      out.push(r);
+    });
+    autumnSundayMuhammadClimbTrialRows().forEach(function (row) {
+      out.push(Object.assign({}, row));
+    });
+    return out;
   }
 
   function autumnWeekdayClimbingStandingRows() {
@@ -2608,8 +2677,10 @@
         client: pax,
         time: time,
         area: "Wall · Westway",
-        open: !slot.closed && /^no participant$/i.test(pax),
+        open: !slot.closed && !slot.trial && /^no participant$/i.test(pax),
         closed: !!slot.closed,
+        trial: !!slot.trial,
+        trialDate: slot.trialDate || "",
       });
       if (time && !timeSeen[time]) {
         timeSeen[time] = true;
@@ -3307,6 +3378,7 @@
     merged = applyFadiAbsentDayCentre(merged);
     merged = scrubAndEnsureSep6HubCover(merged);
     merged = scrubAndEnsureSep6Climbing(merged);
+    merged = scrubAndEnsureMuhammadClimbTrial(merged);
     merged = scrubAndEnsureAutumnSundayPoolStanding(merged);
     merged = scrubAndEnsureSep6JavierPool(merged);
     merged = scrubAndEnsureSep6AuroraRobertoPool(merged);

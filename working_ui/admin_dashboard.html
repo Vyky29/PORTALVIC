@@ -159,7 +159,7 @@
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
   <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260912-places-elia-tinashe"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260912-muhammad-climb-trial"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -8281,7 +8281,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(window.PortalRosterCanonical &&
            typeof window.PortalRosterCanonical.buildSundayClimbingStaffBoard === 'function'){
           var board = window.PortalRosterCanonical.buildSundayClimbingStaffBoard(filt || {});
-          if(board && board.staffOrder && board.staffOrder.length) return board;
+          if(board && board.staffOrder && board.staffOrder.length){
+            var todayCl = '';
+            try{ todayCl = isoDateLocal(new Date()); }catch(_tCl){ todayCl = new Date().toISOString().slice(0, 10); }
+            for(var siRel = 0; siRel < board.staffOrder.length; siRel++){
+              var colRel = board.byStaff[board.staffOrder[siRel]];
+              var clsRel = (colRel && colRel.clients) || [];
+              for(var cjRel = 0; cjRel < clsRel.length; cjRel++){
+                var hitRel = clsRel[cjRel];
+                if(!hitRel || !hitRel.trial) continue;
+                var tdRel = String(hitRel.trialDate || '').trim().slice(0, 10);
+                if(tdRel && /^\d{4}-\d{2}-\d{2}$/.test(tdRel) && tdRel < todayCl){
+                  hitRel.client = 'No participant';
+                  hitRel.open = true;
+                  hitRel.trial = false;
+                }
+              }
+            }
+            return board;
+          }
         }
       }catch(_eCl){}
       return { staffOrder: [], byStaff: {}, timeOrder: [] };
@@ -8405,7 +8423,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           paxName = hit ? String(hit.client || '').trim() : '';
           var isClosedClimb = !!(hit && hit.closed) || /^closed$/i.test(paxName);
-          var isOpen = !isClosedClimb && (!hit || !!hit.open || /^no participant$/i.test(paxName) || !paxName);
+          var isTrialClimb = !!(hit && hit.trial) && !isClosedClimb && paxName && !/^no participant$/i.test(paxName);
+          var isOpen = !isClosedClimb && !isTrialClimb && (!hit || !!hit.open || /^no participant$/i.test(paxName) || !paxName);
           if(hit && hit.demoId) demoIds.push(hit.demoId);
           if(sn) staffIds.push(sn);
           if(isClosedClimb){
@@ -8423,7 +8442,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             cellHtml =
               '<button type="button" class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" '+
               'title="Open place — no participant on this Climbing hour">No participant</button>';
-          }else if(hit && hit.trial){
+          }else if(isTrialClimb || (hit && hit.trial)){
             cellHtml = adminServiceTrialPaxPillHtml(paxName, '', '');
           }else{
             cellHtml =
