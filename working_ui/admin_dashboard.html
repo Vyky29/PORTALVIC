@@ -174,7 +174,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260912-trial-pill" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260912-reggie-trial" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -19516,16 +19516,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var n = String(paxName || '').trim();
       if(!n) return false;
       if(/\(\s*trial\b/i.test(n) || /^trial\s*[·\-:]/i.test(n) || /\btrial\b/i.test(n)) return true;
-      if(line && (line.isTrial === true || String(line.bookingKind || line.booking_kind || '').toLowerCase() === 'trial')) return true;
+      if(line && (line.isTrial === true || String(line.bookingKind || line.booking_kind || line.sessionKind || line.session_kind || '').toLowerCase() === 'trial')) return true;
+      var nLow = n.toLowerCase().replace(/\s+/g, ' ');
+      /* Known Autumn trials (Booking finish / dated fold) — not term CLIENT yet. */
+      if(/^reggie(\s+conlon)?\b/.test(nLow)) return true;
       var sd = String((line && (line.sessionDate || line.session_date)) || '').trim().slice(0, 10);
       var paint = String(pickIso || '').trim().slice(0, 10);
-      /* Dated Autumn one-off on the Places paint day (e.g. Reggie Conlon trial) — not summer standing stamp. */
+      /* Dated Autumn one-off on the Places paint day — only when name already looks new/trial-ish is too weak;
+       * require explicit trial mark above. Keep date match for rows that carry trial in demoId. */
+      var demo = String((line && line.demoId) || '').toLowerCase();
+      if(/\btrial\b/.test(demo)) return true;
       if(
         /^\d{4}-\d{2}-\d{2}$/.test(sd) &&
         /^\d{4}-\d{2}-\d{2}$/.test(paint) &&
         sd === paint &&
         sd >= '2026-09-01' &&
-        !(sd >= SERVICES_STANDING_TEMPLATE_START_ISO && sd <= SERVICES_STANDING_TEMPLATE_END_ISO)
+        !(sd >= SERVICES_STANDING_TEMPLATE_START_ISO && sd <= SERVICES_STANDING_TEMPLATE_END_ISO) &&
+        line && line.trialOneOff === true
       ){
         return true;
       }
