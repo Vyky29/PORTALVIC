@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 114;
+  var SOURCE_VERSION = 115;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -679,6 +679,7 @@
     var d = normIso(row.session_date);
     if (!d) return true;
     if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
+    if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
     return false;
   }
 
@@ -801,15 +802,16 @@
       out.push(r);
     });
     autumnActonTuesdayStandingRows().forEach(function (row) {
-      out.push(applyStandingSlotAreaFromDb(row));
+      expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
+        out.push(exp);
+      });
     });
     return out;
   }
 
   /**
    * Re-inject Thu Acton AFTER portal_roster_rows merge.
-   * Standing stamp is 2026-07-16; summer dated rows for that ISO (e.g. Yunis Hussein
-   * Teaching Pool, Yossi Sium blank area) otherwise overwrite Autumn board pool notes.
+   * Standing is materialised onto every Autumn Thursday (no Jul stamp projection).
    */
   function applyAutumnActonThursdayStanding(rows) {
     var out = [];
@@ -818,7 +820,9 @@
       out.push(r);
     });
     autumnActonThursdayStandingRows().forEach(function (row) {
-      out.push(applyStandingSlotAreaFromDb(row));
+      expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
+        out.push(exp);
+      });
     });
     return out;
   }
@@ -829,6 +833,8 @@
     wednesday: "Wednesday",
     thursday: "Thursday",
     friday: "Friday",
+    saturday: "Saturday",
+    sunday: "Sunday",
   };
 
   function normIso(v) {
@@ -1674,7 +1680,9 @@
       out.push(r);
     });
     autumnSundayStandingPoolRows().forEach(function (row) {
-      out.push(applyStandingSlotAreaFromDb(row));
+      expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
+        out.push(exp);
+      });
     });
     return out;
   }
@@ -2488,10 +2496,11 @@
         return false;
       }
     }
-    /* Undated + summer history — rebuild from AUTUMN_SATURDAY_ACTON_BOARD. Keep dated Sep+ MADRE. */
+    /* Undated + summer + Autumn term — rebuild from AUTUMN_SATURDAY_ACTON_BOARD. */
     if (!d) return true;
     if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
     if (d === WEEKEND_STANDING_ISO.saturday) return true;
+    if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
     return false;
   }
 
@@ -2507,8 +2516,7 @@
     { staff: "CARLOS", name: "Zaid", time: "11 to 12" },
     { staff: "CARLOS", name: "Serine", time: "12 to 1" },
     { staff: "CARLOS", name: "Zakariya", time: "1 to 2" },
-    /* Trial Sun 13 Sep only — Places board paints Trial until that day passes. */
-    { staff: "CARLOS", name: "Muhammad", time: "2 to 3", trial: true, trialDate: "2026-09-13" },
+    { staff: "CARLOS", name: "No participant", time: "2 to 3" },
     { staff: "CARLOS", name: "Patrick", time: "3 to 4" },
   ];
 
@@ -2677,7 +2685,7 @@
         client: pax,
         time: time,
         area: "Wall · Westway",
-        open: !slot.closed && !slot.trial && /^no participant$/i.test(pax),
+        open: !slot.closed && /^no participant$/i.test(pax),
         closed: !!slot.closed,
         trial: !!slot.trial,
         trialDate: slot.trialDate || "",
@@ -2733,6 +2741,7 @@
     var d = normIso(row.session_date);
     if (!d) return true;
     if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
+    if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
     return false;
   }
 
@@ -2779,6 +2788,7 @@
     if (!d) return true;
     if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
     if (d === DAY_CENTRE_STANDING_ISO.wednesday) return true;
+    if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
     return false;
   }
 
@@ -2798,7 +2808,9 @@
       out.push(r);
     });
     autumnActonWednesdayStandingRows().forEach(function (row) {
-      out.push(applyStandingSlotAreaFromDb(row));
+      expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
+        out.push(exp);
+      });
     });
     return out;
   }
@@ -2865,23 +2877,17 @@
   }
 
   /**
-   * Autumn template stamp dates (NOT summer truth).
-   * Weekend stamps are real Autumn Sundays (12–13 Sep).
-   * Weekday DC stamps remain Jul 13–17 until those boards move to Sep weekdays.
+   * Autumn term calendar — standing is materialised onto each real date.
+   * No Jul stamps and no Sep-13→other-Sunday projection.
    */
   var AUTUMN_TERM_FROM_ISO = "2026-09-01";
+  var AUTUMN_TERM_THROUGH_ISO = "2026-12-18";
+  var AUTUMN_AFTER_SCHOOL_FROM_ISO = "2026-09-05";
   /** While applying Autumn patches, drop summer DC/Hub rows in this window before re-injecting LOCAL boards. */
   var AUTUMN_DC_REPLACE_FROM = "2026-06-01";
   var AUTUMN_DC_REPLACE_THROUGH = "2026-07-19";
-  var AUTUMN_STANDING_TEMPLATE_ISO_SET = {
-    "2026-09-12": 1 /* Sat weekend standing */,
-    "2026-09-13": 1 /* Sun Multi/Climb/pool standing */,
-    "2026-07-13": 1 /* Mon DC stamp (temporary) */,
-    "2026-07-14": 1 /* Tue */,
-    "2026-07-15": 1 /* Wed */,
-    "2026-07-16": 1 /* Thu */,
-    "2026-07-17": 1 /* Fri */,
-  };
+  /** @deprecated Kept empty — standing no longer lives on Jul/Sep-13 stamp dates. */
+  var AUTUMN_STANDING_TEMPLATE_ISO_SET = {};
 
   function isAutumnStandingTemplateIso(iso) {
     var d = normIso(iso);
@@ -2891,13 +2897,110 @@
   function isAutumnTermOrTemplateIso(iso) {
     var d = normIso(iso);
     if (!d) return false;
-    if (d >= AUTUMN_TERM_FROM_ISO) return true;
-    return !!AUTUMN_STANDING_TEMPLATE_ISO_SET[d];
+    /* Autumn term only — never keep Jul/summer template stamps in the live source. */
+    return d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO;
+  }
+
+  function jsDayForDowKey(dowKey) {
+    var dk = normalizeDowKey(dowKey);
+    if (dk === "sunday") return 0;
+    if (dk === "monday") return 1;
+    if (dk === "tuesday") return 2;
+    if (dk === "wednesday") return 3;
+    if (dk === "thursday") return 4;
+    if (dk === "friday") return 5;
+    if (dk === "saturday") return 6;
+    return -1;
+  }
+
+  /** Every Mon…Sun ISO in Autumn term for a weekday key. */
+  function enumerateAutumnTermIsosForDow(dowKey) {
+    var want = jsDayForDowKey(dowKey);
+    if (want < 0) return [];
+    var out = [];
+    var cur = new Date(AUTUMN_TERM_FROM_ISO + "T12:00:00");
+    var end = new Date(AUTUMN_TERM_THROUGH_ISO + "T12:00:00");
+    if (isNaN(cur.getTime()) || isNaN(end.getTime())) return out;
+    for (; cur.getTime() <= end.getTime(); cur.setDate(cur.getDate() + 1)) {
+      if (cur.getDay() !== want) continue;
+      var y = cur.getFullYear();
+      var m = String(cur.getMonth() + 1);
+      if (m.length < 2) m = "0" + m;
+      var d = String(cur.getDate());
+      if (d.length < 2) d = "0" + d;
+      out.push(y + "-" + m + "-" + d);
+    }
+    return out;
+  }
+
+  function autumnStandingServiceAllowedOnIso(service, iso) {
+    var d = normIso(iso);
+    if (!d || d < AUTUMN_TERM_FROM_ISO || d > AUTUMN_TERM_THROUGH_ISO) return false;
+    if (isDayCentreService(service)) return true;
+    return d >= AUTUMN_AFTER_SCHOOL_FROM_ISO;
   }
 
   /**
-   * Drop summer history weeks. Autumn dashboards must never project May/Jun/early-Jul
-   * books — only Autumn template stamps (Jul 11–17 LOCAL boards) + dated Sep+ rows.
+   * Clone one standing template row onto every Autumn term date of that weekday.
+   * This replaces Jul / single-Sunday stamp projection.
+   */
+  function expandStandingRowAcrossAutumnTerm(row) {
+    if (!row) return [];
+    var dk = normalizeDowKey(row.day);
+    if (!dk) {
+      var sd0 = normIso(row.session_date);
+      if (sd0) {
+        try {
+          var dt0 = new Date(sd0 + "T12:00:00");
+          if (!isNaN(dt0.getTime())) {
+            dk = [
+              "sunday",
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday",
+            ][dt0.getDay()];
+          }
+        } catch (_) {}
+      }
+    }
+    if (!dk) return [Object.assign({}, row)];
+    var dates = enumerateAutumnTermIsosForDow(dk);
+    var out = [];
+    for (var i = 0; i < dates.length; i++) {
+      var iso = dates[i];
+      if (!autumnStandingServiceAllowedOnIso(row.service, iso)) continue;
+      out.push(
+        Object.assign({}, row, {
+          session_date: iso,
+          day: DOW_TITLE[dk] || row.day,
+        })
+      );
+    }
+    return out;
+  }
+
+  function expandStandingRowsAcrossAutumnTerm(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      expandStandingRowAcrossAutumnTerm(r).forEach(function (x) {
+        out.push(x);
+      });
+    });
+    return out;
+  }
+
+  function pushExpandedStanding(out, rows) {
+    expandStandingRowsAcrossAutumnTerm(rows).forEach(function (row) {
+      out.push(row);
+    });
+  }
+
+  /**
+   * Drop summer history weeks. Autumn dashboards only keep dated Sep–Dec term rows
+   * (standing already materialised onto those dates — no Jul stamps).
    */
   function purgeSummerHistoryOutsideAutumnTemplates(rows) {
     var out = [];
@@ -3123,53 +3226,74 @@
       out.push(r);
     });
     autumnDayCentreStandingRows().forEach(function (row) {
-      out.push(row);
+      pushExpandedStanding(out, [row]);
     });
     autumnNortholtAquaticStandingRows().forEach(function (row) {
-      out.push(row);
+      pushExpandedStanding(out, [row]);
     });
-    AUTUMN_BESPOKE_HUB_ROWS.forEach(function (row) {
-      out.push(Object.assign({}, row));
-    });
-    out.push(Object.assign({}, CYRUS_BESPOKE_ROW));
+    pushExpandedStanding(out, AUTUMN_BESPOKE_HUB_ROWS);
+    pushExpandedStanding(out, [CYRUS_BESPOKE_ROW]);
     YOUSSEF_ACTON_OPEN_430_ROWS.forEach(function (row) {
       var dk = normalizeDowKey(row.day);
       if (opened430[dk]) return;
-      out.push(Object.assign({}, row));
+      pushExpandedStanding(out, [row]);
     });
     ROBERTO_MONDAY_ACTON_FROM_ANGEL.forEach(function (row) {
       var key = mondayActonClientKey(row.client_name);
-      if (hasMondayActonClient(out, key)) return;
-      out.push(Object.assign({}, row));
+      /* Expand first, then skip dates that already have this client. */
+      expandStandingRowAcrossAutumnTerm(row).forEach(function (exp) {
+        if (
+          (out || []).some(function (r) {
+            if (!r) return false;
+            if (normIso(r.session_date) !== normIso(exp.session_date)) return false;
+            if (!isActonVenue(r.venue) || !isAquaticService(r.service)) return false;
+            return mondayActonClientKey(r.client_name) === key;
+          })
+        ) {
+          return;
+        }
+        out.push(exp);
+      });
     });
     YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO.forEach(function (row) {
       var key = fridayActonClientKey(row.client_name);
-      if (hasFridayActonClient(out, key)) return;
-      out.push(Object.assign({}, row));
+      expandStandingRowAcrossAutumnTerm(row).forEach(function (exp) {
+        if (
+          (out || []).some(function (r) {
+            if (!r) return false;
+            if (normIso(r.session_date) !== normIso(exp.session_date)) return false;
+            if (!isActonVenue(r.venue) || !isAquaticService(r.service)) return false;
+            return fridayActonClientKey(r.client_name) === key;
+          })
+        ) {
+          return;
+        }
+        out.push(exp);
+      });
     });
     autumnActonTuesdayStandingRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
+      pushExpandedStanding(out, [row]);
     });
     autumnActonWednesdayStandingRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
+      pushExpandedStanding(out, [row]);
     });
     autumnActonThursdayStandingRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
+      pushExpandedStanding(out, [row]);
     });
     autumnSundayClimbingStandingRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
+      pushExpandedStanding(out, [row]);
     });
     autumnWeekdayClimbingStandingRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
+      pushExpandedStanding(out, [row]);
     });
     autumnSaturdayActonStandingRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
+      pushExpandedStanding(out, [row]);
     });
     autumnSundayZaidJavierAquaticStandingRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
+      pushExpandedStanding(out, [row]);
     });
     autumnSundayYusufRobertoAquaticStandingRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
+      pushExpandedStanding(out, [row]);
     });
     /* Sep 6 Hub cover is applied once in resolveCanonicalRosterRows (after DB rows). */
     return out;
@@ -3265,7 +3389,9 @@
       out.push(r);
     });
     autumnSundayStandingHubRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
+      expandStandingRowAcrossAutumnTerm(row).forEach(function (exp) {
+        out.push(exp);
+      });
     });
     autumnSundaySep6HubCoverRows().forEach(function (row) {
       out.push(Object.assign({}, row));

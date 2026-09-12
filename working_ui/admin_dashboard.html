@@ -159,7 +159,7 @@
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
   <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260912-muhammad-climb-trial"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260912-no-stamp-project"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -5297,47 +5297,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function adminSchedStandingSourceIso(iso){
       var want = adminNormIsoDate(iso);
-      if(!want || !adminSchedUsesStandingProjection(want)) return want;
-      var wd = portalWeekdayLongFromIsoDate(want);
-      var stand = '';
-      try{ stand = adminServicesLatestStandingIsoForDow(wd); }catch(_e){ stand = ''; }
-      return stand || want;
+      /* Autumn: standing is materialised onto each calendar date — never a Jul/Sep-13 stamp. */
+      return want;
     }
     function adminSessionMatchesCalendarIso(s, iso, weekdayLong, sessions){
       var wantIso = adminNormIsoDate(iso);
       if(!adminSessionAllowedOnAutumnCalendarIso(s, wantIso)) return false;
       var rowIso = adminNormIsoDate(s.session_date || s.sessionDate);
       var project = adminSchedUsesStandingProjection(wantIso);
-      var standIso = project ? adminSchedStandingSourceIso(wantIso) : wantIso;
       if(rowIso){
-        if(rowIso === wantIso) return true;
-        /*
-         * Autumn: project summer standing onto the calendar day, then merge sparse
-         * dated overlays (new bookings / office exceptions). A few portal_roster_rows
-         * for one child (e.g. Patrick on Sun 6 Sep) must NOT hide the rest of the
-         * standing Sunday — only that client's standing copy is suppressed below.
-         */
-        if(project && standIso && standIso !== wantIso && rowIso === standIso){
-          /*
-           * Sun 6 Hub Multi is owned by LOCAL dated cover (John = Emanuel book, Berta Lead).
-           * Never project standing/summer Multi for those Hub staff — empty area used to
-           * escape the Hub-only check and leave Jack S under Berta.
-           */
-          if(wantIso === '2026-09-06' && adminSchedMustUseDatedSep6HubOnly(s)) return false;
-          if(adminClientHasDatedRosterInWeekSameFamily(wantIso, s)) return false;
-          /* Dated trial / new booking on this calendar day fills the open standing seat. */
-          if(adminDatedNamedOccupiesOpenSeat(wantIso, s)) return false;
+        /* Exact calendar day only — no Jul→Sep and no Sep-13→Sep-20 stamp projection. */
+        if(rowIso === wantIso){
+          if(wantIso === '2026-09-06' && adminSchedMustUseDatedSep6HubOnly(s)){
+            /* Sep 6 Hub: allow only the dated cover staff books. */
+          }
           return true;
         }
-        /* Pre-autumn: a fully dated calendar day replaces weekday/standing templates. */
-        if(!project && adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
         return false;
       }
+      /* Undated rows: weekday match only (rare after Autumn materialisation). */
       if(!project && adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
-      if(project && standIso && standIso !== wantIso && adminRosterHasDatedSessionsForIso(standIso, sessions)) return false;
       if(wantIso === '2026-09-06' && adminSchedMustUseDatedSep6HubOnly(s)) return false;
       if(adminClientHasDatedRosterInWeekSameFamily(wantIso, s)) return false;
-      if(project && standIso && standIso !== wantIso && adminClientHasDatedRosterInWeekSameFamily(standIso, s)) return false;
       return normDayLabel(s.day) === normDayLabel(weekdayLong);
     }
     function schedClampIsoToTerm(iso){
@@ -7429,37 +7410,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * Prefer PortalRosterCanonical (weekend Multi/Climb Sep 12–13; weekday Jul snaps),
      * else latest Apr–Jul template row still present after purge.
      */
+    /**
+     * Standing stamp ISO for a weekday — DEPRECATED for Autumn projection.
+     * Standing is materialised onto each calendar date; this only remains for
+     * legacy callers and returns the Autumn display-week date when possible.
+     */
     function adminServicesLatestStandingIsoForDow(dowNorm){
       var want = adminServiceNormalizeDowKey(dowNorm);
       if(!want) return '';
       try{
-        var PRC = window.PortalRosterCanonical;
-        if(PRC){
-          if((want === 'saturday' || want === 'sunday') && PRC.WEEKEND_STANDING_ISO){
-            var we = String(PRC.WEEKEND_STANDING_ISO[want] || '').trim().slice(0, 10);
-            if(/^\d{4}-\d{2}-\d{2}$/.test(we)) return we;
-          }
-          if(PRC.DAY_CENTRE_STANDING_ISO){
-            var dc = String(PRC.DAY_CENTRE_STANDING_ISO[want] || '').trim().slice(0, 10);
-            if(/^\d{4}-\d{2}-\d{2}$/.test(dc)) return dc;
-          }
-        }
-      }catch(_prc){}
-      if(!adminSpreadsheetAdapterAvailable()) return '';
-      var src = window.STAFF_DASHBOARD_SOURCE;
-      var rows = (src && src.rows) || [];
-      var best = '';
-      for(var i = 0; i < rows.length; i++){
-        var r = rows[i];
-        var iso = String((r && (r.session_date || r.sessionDate)) || '').trim().slice(0, 10);
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
-        if(iso < SERVICES_STANDING_TEMPLATE_START_ISO || iso > SERVICES_STANDING_TEMPLATE_END_ISO) continue;
-        if(adminServiceIsCrashWeekIso(iso)) continue;
-        var d = adminServiceNormalizeDowKey(r.day || portalWeekdayLongFromIsoDate(iso));
-        if(d !== want) continue;
-        if(!best || iso > best) best = iso;
-      }
-      return best;
+        var pick = adminServicesAutumnIsoForDow(want, SERVICES_BOOKING_PLACES_WEEK_ANCHOR || '2026-09-14', '');
+        if(pick) return pick;
+      }catch(_e){}
+      return '';
     }
     function adminPickServicesStandingIsoForDow(dowNorm, slotsWd, weekAnchorIso, termStart, termEnd){
       var want = adminServiceNormalizeDowKey(dowNorm);
@@ -21318,21 +21281,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 }catch(_clDay){ slotsCl = []; }
               }
               if(!slotsCl.length && slotsWd && slotsWd.length) slotsCl = slotsWd.slice();
-              /* Also pull stamp Sunday (13 Sep) so dated trials (e.g. Muhammad) overlay. */
-              try{
-                var stampSunCl = (window.PortalRosterCanonical &&
-                  window.PortalRosterCanonical.WEEKEND_STANDING_ISO &&
-                  window.PortalRosterCanonical.WEEKEND_STANDING_ISO.sunday) || '2026-09-13';
-                if(stampSunCl && stampSunCl !== displayIsoCl){
-                  var rawStampCl = slotsForSelectedDate(stampSunCl) || [];
-                  for(var sci = 0; sci < rawStampCl.length; sci++){
-                    var scl = rawStampCl[sci];
-                    if(adminServiceProgrammeNormKey(scl.programme) !== 'climbing') continue;
-                    if(!adminServicesIsWestwayVenue(scl.venue)) continue;
-                    slotsCl.push(scl);
-                  }
-                }
-              }catch(_stampCl){}
               climbBoard = adminServicesClimbingSundayBoardApplyLiveSlots(climbBoard, slotsCl, displayIsoCl);
               var dowTitleCl = adminServiceDowTitleFromNorm(dk);
               var dayHoursCl = '10:00AM–4:00PM · Alex + Carlos · 60′';
