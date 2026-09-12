@@ -174,7 +174,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260912-reggie-trial" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260912-trial-live" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -2042,6 +2042,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       void adminFetchScheduleOverridesForHub().then(function(){
         portalOperatorPatchLiveHosts();
+        try{
+          if(state.view === 'c4k_services' && typeof refreshC4kServicesPartial === 'function'){
+            refreshC4kServicesPartial();
+          }
+        }catch(_svc){}
       });
       if(typeof portalAdminBootstrapActivityAlerts === 'function'){
         void portalAdminBootstrapActivityAlerts().then(function(){
@@ -19511,39 +19516,158 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return 40;
     }
-    /** Trial / new (not term CLIENT) — purple pill like Overview. */
-    function adminServicePaxSeatIsTrial(paxName, line, pickIso){
-      var n = String(paxName || '').trim();
-      if(!n) return false;
-      if(/\(\s*trial\b/i.test(n) || /^trial\s*[·\-:]/i.test(n) || /\btrial\b/i.test(n)) return true;
-      if(line && (line.isTrial === true || String(line.bookingKind || line.booking_kind || line.sessionKind || line.session_kind || '').toLowerCase() === 'trial')) return true;
-      var nLow = n.toLowerCase().replace(/\s+/g, ' ');
-      /* Known Autumn trials (Booking finish / dated fold) — not term CLIENT yet. */
-      if(/^reggie(\s+conlon)?\b/.test(nLow)) return true;
+    /**
+     * Live Booking trial seat on Places (aligned with Overview / finish-booking overrides):
+     *  - trial (purple) while the trial session day is today or still ahead
+     *  - open (No participant) after the trial day if they did not book term
+     *  - client (blue) when term standing / term finish-booking exists
+     */
+    function adminServiceScheduleOverridesCache(){
+      if(Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDES__)) return window.__PORTAL_SCHEDULE_OVERRIDES__;
+      try{
+        var pay = window.PortalDayOps && typeof window.PortalDayOps.getPayload === 'function'
+          ? window.PortalDayOps.getPayload()
+          : null;
+        if(pay && Array.isArray(pay.schedule_overrides)) return pay.schedule_overrides;
+      }catch(_e){}
+      return [];
+    }
+    function adminServiceNormPaxKey(name){
+      return String(name || '')
+        .toLowerCase()
+        .replace(/\(\s*trial\s*\)/gi, ' ')
+        .replace(/\btrial\b/gi, ' ')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    function adminServiceOverrideIsTrialPayload(ov){
+      if(!ov || String(ov.status || 'active').toLowerCase() === 'cancelled') return false;
+      var p = ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
+      if(p.is_trial === true) return true;
+      var kind = String(p.booking_kind || p.session_kind || '').toLowerCase();
+      return kind === 'trial';
+    }
+    function adminServiceOverrideIsTermPayload(ov){
+      if(!ov || String(ov.status || 'active').toLowerCase() === 'cancelled') return false;
+      var p = ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
+      if(p.is_trial === true) return false;
+      if(p.term_new_participant === true || p.new_client === true) return true;
+      var kind = String(p.booking_kind || p.session_kind || '').toLowerCase();
+      return kind === 'term';
+    }
+    function adminServiceOverrideClientName(ov){
+      var p = ov && ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
+      return String(
+        p.replacement_client_name || p.to_client_name || p.client_name || p.participant_name || ''
+      ).trim();
+    }
+    function adminServiceFindBookingOverrideForPax(paxName, sessionIso){
+      var want = adminServiceNormPaxKey(paxName);
+      if(!want) return null;
+      var iso = String(sessionIso || '').trim().slice(0, 10);
+      var rows = adminServiceScheduleOverridesCache();
+      var best = null;
+      for(var i = 0; i < rows.length; i++){
+        var ov = rows[i];
+        if(!ov) continue;
+        if(String(ov.status || 'active').toLowerCase() === 'cancelled') continue;
+        var nm = adminServiceNormPaxKey(adminServiceOverrideClientName(ov));
+        if(!nm || nm !== want) continue;
+        var sd = String(ov.session_date || ov.sessionDate || '').trim().slice(0, 10);
+        if(iso && sd && sd !== iso) continue;
+        if(adminServiceOverrideIsTrialPayload(ov) || adminServiceOverrideIsTermPayload(ov)){
+          best = ov;
+          if(iso && sd === iso) return ov;
+        }
+      }
+      return best;
+    }
+    function adminServiceLineIsAutumnDatedOneOff(line){
       var sd = String((line && (line.sessionDate || line.session_date)) || '').trim().slice(0, 10);
-      var paint = String(pickIso || '').trim().slice(0, 10);
-      /* Dated Autumn one-off on the Places paint day — only when name already looks new/trial-ish is too weak;
-       * require explicit trial mark above. Keep date match for rows that carry trial in demoId. */
-      var demo = String((line && line.demoId) || '').toLowerCase();
-      if(/\btrial\b/.test(demo)) return true;
-      if(
-        /^\d{4}-\d{2}-\d{2}$/.test(sd) &&
-        /^\d{4}-\d{2}-\d{2}$/.test(paint) &&
-        sd === paint &&
-        sd >= '2026-09-01' &&
-        !(sd >= SERVICES_STANDING_TEMPLATE_START_ISO && sd <= SERVICES_STANDING_TEMPLATE_END_ISO) &&
-        line && line.trialOneOff === true
-      ){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(sd)) return false;
+      if(sd < '2026-09-01') return false;
+      if(sd >= SERVICES_STANDING_TEMPLATE_START_ISO && sd <= SERVICES_STANDING_TEMPLATE_END_ISO) return false;
+      return true;
+    }
+    function adminServicePaxHasTermStandingSeat(paxName, programme, venue, dowNorm){
+      var want = adminServiceNormPaxKey(paxName);
+      if(!want) return false;
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      var rows = (src && Array.isArray(src.rows) ? src.rows : []).concat(
+        (function(){
+          try{
+            var pack = adminMergeSpreadsheetSessions();
+            return (pack && pack.sessions) || [];
+          }catch(_e){ return []; }
+        })()
+      );
+      var wantProg = adminServiceProgrammeNormKey(programme);
+      var wantDow = adminServiceNormalizeDowKey(dowNorm);
+      for(var i = 0; i < rows.length; i++){
+        var s = rows[i];
+        if(!s) continue;
+        var rawName = String(s.client_name || s.clientName || s.clientDisplay || '').trim();
+        if(!rawName || /\(\s*trial\b/i.test(rawName)) continue;
+        var nm = adminServiceNormPaxKey(rawName);
+        if(!nm || nm !== want) continue;
+        var sd = String(s.session_date || s.sessionDate || '').trim().slice(0, 10);
+        if(adminServiceLineIsAutumnDatedOneOff({ sessionDate: sd })) continue;
+        var prog = adminServiceProgrammeNormKey(s.service || s.rosterService || s.activity || '');
+        if(wantProg && prog && prog !== wantProg && prog !== 'session') continue;
+        var d = adminServiceNormalizeDowKey(s.day || (sd ? portalWeekdayLongFromIsoDate(sd) : ''));
+        if(wantDow && d && d !== wantDow) continue;
         return true;
       }
+      /* Term finish-booking override (any date) also counts as CLIENT. */
+      var rowsOv = adminServiceScheduleOverridesCache();
+      for(var j = 0; j < rowsOv.length; j++){
+        var ov = rowsOv[j];
+        if(!adminServiceOverrideIsTermPayload(ov)) continue;
+        if(adminServiceNormPaxKey(adminServiceOverrideClientName(ov)) === want) return true;
+      }
       return false;
+    }
+    /**
+     * @returns {'trial'|'client'|'open'}
+     */
+    function adminServicePaxBookingSeatState(paxName, line, pickIso, programme, venue, dowNorm){
+      var n = String(paxName || '').trim();
+      if(!n) return 'open';
+      var today = '';
+      try{ today = isoDateLocal(new Date()); }catch(_t){ today = new Date().toISOString().slice(0, 10); }
+      var sd = String((line && (line.sessionDate || line.session_date)) || '').trim().slice(0, 10);
+      var paint = String(pickIso || sd || '').trim().slice(0, 10);
+      var ov = adminServiceFindBookingOverrideForPax(n, sd || paint);
+      var nameTrial = /\(\s*trial\b/i.test(n) || /^trial\s*[·\-:]/i.test(n);
+      var lineTrial = !!(line && (line.isTrial === true ||
+        String(line.bookingKind || line.booking_kind || line.sessionKind || line.session_kind || '').toLowerCase() === 'trial'));
+      var ovTrial = adminServiceOverrideIsTrialPayload(ov);
+      var ovTerm = adminServiceOverrideIsTermPayload(ov);
+      if(ovTerm || adminServicePaxHasTermStandingSeat(n, programme, venue, dowNorm)) return 'client';
+      var isTrial = nameTrial || lineTrial || ovTrial;
+      var datedOneOff = adminServiceLineIsAutumnDatedOneOff(line);
+      if(!isTrial && !datedOneOff) return 'client';
+      if(!isTrial && datedOneOff){
+        /* Dated finish-booking without trial flag → treat as new CLIENT for that day, keep blue. */
+        return 'client';
+      }
+      var trialDay = sd || (ov && String(ov.session_date || '').slice(0, 10)) || paint;
+      if(trialDay && /^\d{4}-\d{2}-\d{2}$/.test(trialDay) && trialDay < today){
+        /* Trial session already passed and no term standing → release Places seat. */
+        return 'open';
+      }
+      return 'trial';
+    }
+    function adminServicePaxSeatIsTrial(paxName, line, pickIso, programme, venue, dowNorm){
+      return adminServicePaxBookingSeatState(paxName, line, pickIso, programme, venue, dowNorm) === 'trial';
     }
     function adminServiceTrialPaxPillHtml(paxName, pAttrs, dataSlot){
       var label = String(paxName || '').replace(/\s*\(\s*trial\s*\)\s*/gi, ' ').replace(/\s+/g, ' ').trim() || paxName;
       return (
         '<button type="button" class="chip chip--trial c4k-svc-pax-pill c4k-svc-pax-pill--trial" ' +
         (pAttrs || '') + (dataSlot ? (' ' + dataSlot) : '') +
-        ' title="Trial / new — not a term CLIENT yet">' +
+        ' title="Trial / Booking hold — becomes No participant after the trial day unless they book term (then blue CLIENT)">' +
         esc(label) + ' · Trial</button>'
       );
     }
@@ -21143,6 +21267,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   paxName = '';
                   pSlug = 'no_participant';
                 }
+                var bookingSeatState = '';
+                if(paxName){
+                  bookingSeatState = adminServicePaxBookingSeatState(
+                    paxName,
+                    ml,
+                    B.pickIso || pickIso0 || displayIso0,
+                    B.programme,
+                    B.venue,
+                    B.dk
+                  );
+                  if(bookingSeatState === 'open'){
+                    paxName = '';
+                    pSlug = 'no_participant';
+                    bookingSeatState = '';
+                  }
+                }
                 var isBooked = !!paxName && bookingIsBookedClientSlug(pSlug);
                 seats.push({
                   staffName: snm,
@@ -21151,10 +21291,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   demoId: String((ml && ml.demoId) || '').trim(),
                   closed: isClosed,
                   open: !isClosed && !isBooked,
-                  paxName: isBooked ? paxName : '',
-                  trial: isBooked
-                    ? adminServicePaxSeatIsTrial(paxName, ml, B.pickIso || pickIso0 || displayIso0)
-                    : false
+                  paxName: isBooked
+                    ? String(paxName).replace(/\s*\(\s*trial\s*\)\s*/gi, ' ').replace(/\s+/g, ' ').trim()
+                    : '',
+                  trial: isBooked && bookingSeatState === 'trial'
                 });
               }
               // "Space available" filter: only show open instructor seats — hide columns
