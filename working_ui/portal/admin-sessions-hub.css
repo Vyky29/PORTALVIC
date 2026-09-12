@@ -1146,9 +1146,9 @@
       border: 1px solid rgba(91, 33, 182, 0.35);
     }
     .ash-pill--no-participant {
-      background: linear-gradient(180deg, #fff4df 0%, #fef3c7 100%);
-      color: #78350f;
-      border: 1px solid rgba(244, 183, 64, 0.42);
+      background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+      color: #9f1239;
+      border: 1px solid rgba(244, 63, 94, 0.28);
     }
     .ash-pill--staff {
       background: var(--ash-staff-bg, #ecfdf5);
@@ -1157,9 +1157,9 @@
     }
     .ash-badge--available,
     .ash-badge--open-slot {
-      background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
-      color: #92400e;
-      border: 1px solid rgba(245, 158, 11, 0.42);
+      background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+      color: #9f1239;
+      border: 1px solid rgba(244, 63, 94, 0.28);
     }
     .ash-pill--closed { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
     .ash-pill--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
@@ -2077,10 +2077,10 @@
       font-size: 12px;
     }
     .ash-db-card--open {
-      background: #fffbeb;
-      border-color: #fde68a;
+      background: #fff1f2;
+      border-color: #fecdd3;
     }
-    .ash-db-card--open .ash-db-card__name { color: #854d0e; }
+    .ash-db-card--open .ash-db-card__name { color: #9f1239; }
     .ash-db-card--closed {
       background: #f1f5f9;
       border-color: #cbd5e1;
