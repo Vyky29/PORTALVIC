@@ -6191,12 +6191,20 @@
           ),
         );
       }
-      parts.push(
-        sessionsFeedbackTermAccordionHtml(
-          "Autumn 2026",
-          overviewHtmlFor(autumnPayload || data, "Autumn 2026"),
-        ),
-      );
+      var autumnHas = sessionsHasFeedbackPayload(autumnPayload || data);
+      if (autumnHas) {
+        parts.push(
+          sessionsFeedbackTermAccordionHtml(
+            "Autumn 2026",
+            overviewHtmlFor(autumnPayload || data, "Autumn 2026"),
+          ),
+        );
+      }
+      if (!parts.length) {
+        sessionsHost.innerHTML =
+          '<p class="pcso-empty" role="status">No session stats or feedback yet.</p>';
+        return;
+      }
       sessionsHost.innerHTML =
         '<div class="pp-sessions-fb-stack" aria-label="Session feedback by term">' +
         parts.join("") +

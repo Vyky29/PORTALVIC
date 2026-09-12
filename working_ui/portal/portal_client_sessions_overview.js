@@ -635,6 +635,9 @@
         }
       });
     });
+    if (!total) {
+      return '<p class="pcso-kpi-empty">No regulation / emotion tags yet.</p>';
+    }
     const order = [
       { key: "happy", label: "Happy", colors: { hi: "#4ade80", lo: "#15803d", track: "#ecfdf5" } },
       { key: "anxious", label: "Anxious", colors: { hi: "#fde047", lo: "#ca8a04", track: "#fffbeb" } },
@@ -726,6 +729,35 @@
   function kpiSlabHtml(feedback, termLabel, opts) {
     var term = clean(termLabel || TERM_LABEL);
     var includeAttendance = !!(opts && opts.includeAttendance);
+    var list = feedback || [];
+    /*
+     * Parent portal: never paint demo/empty KPI chrome. If there is no real
+     * attendance / engagement / emotion / independence data, show one empty line.
+     */
+    if (opts && opts.parentStrictEmpty) {
+      var attSum = opts.attendanceSummary;
+      var attTotal =
+        attSum && Number(attSum.total) > 0
+          ? Number(attSum.total)
+          : list.length;
+      var hasEng = list.some(function (r) {
+        var n = Number(r && r.engagement_rating);
+        return !Number.isNaN(n) && n >= 1 && n <= 5;
+      });
+      var hasEmo = list.some(function (r) {
+        var em = clean(r && r.client_emotions);
+        return !!(em && em !== "—");
+      });
+      var hasInd = list.some(function (r) {
+        var b = independenceBucket(r && r.engagement_patterns);
+        return !!(b && b !== "other");
+      });
+      if (!attTotal && !hasEng && !hasEmo && !hasInd) {
+        return (
+          '<p class="pcso-empty" role="status">No session stats or feedback for this term yet.</p>'
+        );
+      }
+    }
     var attendanceCard = includeAttendance
       ? '<article class="pcso-kpi-card pcso-kpi-card--att"><header class="pcso-kpi-card__head"><h4>Attendance</h4><p>(' + esc(term) + ")</p></header>" +
         attendanceKpiHtml(feedback, opts && opts.attendanceSummary) +
@@ -832,6 +864,8 @@
     var kpiOpts = {
       includeAttendance: !!(opts && opts.includeAttendance),
       attendanceSummary: null,
+      parentStrictEmpty: !!(opts && (opts.parentStrictEmpty || opts.parentTable)),
+      parentTable: !!(opts && opts.parentTable),
     };
     return (
       '<section class="pcso-service-block pcso-service-block--' +
@@ -864,6 +898,11 @@
   function overviewByServiceHtml(feedback, termLabel, opts) {
     var groups = groupFeedbackByService(feedback);
     if (!groups.length) {
+      if (opts && opts.parentStrictEmpty) {
+        return (
+          '<p class="pcso-empty" role="status">No session stats or feedback for this term yet.</p>'
+        );
+      }
       return kpiSlabHtml(feedback, termLabel, opts);
     }
     if (groups.length === 1) {
@@ -1336,12 +1375,27 @@
       opts.attendance_summary,
     );
     var includeTable = opts.includeTable !== false;
+    var att = opts.attendance_summary || null;
+    var hasAtt = !!(att && Number(att.total) > 0);
+    /* Parent-facing: zero rows + zero attendance = no KPI / table chrome at all. */
+    if (!feedback.length && !hasAtt) {
+      return (
+        '<p class="pcso-empty" role="status">No session stats or feedback for this term yet.</p>' +
+        (hideAchievements
+          ? ""
+          : '<section class="pcso-feed-section pp-ach-section">' +
+            '<div class="pcso-feed-head"><h4 class="pcso-section__title">Achievements</h4></div>' +
+            achievementsGalleryHtml(achievements) +
+            "</section>")
+      );
+    }
     return (
       overviewByServiceHtml(feedback, term, {
         includeAttendance: true,
-        attendanceSummary: opts.attendance_summary || null,
+        attendanceSummary: att,
         includeTable: includeTable,
         parentTable: true,
+        parentStrictEmpty: true,
         tableTitle: "Session feedback",
       }) +
       (hideAchievements
