@@ -145,11 +145,11 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260909-reply-only"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260905-composer-fit"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
-  <script src="/portal/admin-open-places-2627.js?v=20260911-services-labels"></script>
+  <script src="/portal/admin-open-places-2627.js?v=20260912-drop-mock-cap"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260909-reply-only" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
-  <script src="/portal/cfk-app.js?v=20260912-svc-places-week"></script>
+  <script src="/portal/cfk-app.js?v=20260912-drop-mock-cap"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260911-sched-mobile-cards"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -460,7 +460,7 @@
       { id:'open_places_2627', label:'Open places → Services §3' },
       { id:'c4k_reviews', label:'Reviews' },
       { id:'c4k_reports', label:'Report requests' },
-      { id:'servicecap', label:'Fill seats → Services §2' },
+      { id:'servicecap', label:'Fill seats → Services §2 Booking Portal' },
       { id:'portal_activity', label:'Portal activity' },
       { id:'portal_training_progress', label:'Training & readiness' },
       { id:'portal_push_devices', label:'Staff push devices' },
@@ -2191,7 +2191,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         id = 'c4k_services';
       }
       if(id === 'servicecap'){
-        state.scrollToCapacityEmbed = true;
+        state.scrollToOpenPlaces = true;
         id = 'c4k_services';
       }
       if(id === 'novo_orders') id = portalAdminBookingsHidden() ? 'c4k_services' : 'orders_all';
@@ -20961,22 +20961,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(standIso) standIsos.push(standIso);
       }
       var pack = standIsos.length ? adminServiceCapacityBoardRowsFromRoster(standIsos) : null;
-      if(!pack || !pack.html) pack = adminServiceCapacityBoardRowsFromMockServicesList();
+      /* Never fall back to MOCK.c4kServicesList (Climb Hub / Maria L. / Kemi O. demo). */
       if(!pack || !pack.html){
-        if(typeof __OPWF_HTML !== 'undefined' && __OPWF_HTML.viewServiceCap){
-          return String(__OPWF_HTML.viewServiceCap);
-        }
-        return '';
+        return '<p class="muted" style="margin:0;max-width:52rem;overflow-wrap:break-word">No live capacity rows from Autumn roster. Use <strong>1 · Roster permanente</strong> or <strong>2 · Publicación en Booking Portal</strong>.</p>';
       }
-      var srcLabel = pack.source === 'roster'
-        ? ('Autumn 26/27 weekdays · projected standing seats')
-        : 'MOCK.c4kServicesList';
+      var srcLabel = 'Autumn 26/27 weekdays · projected standing seats';
       var headDesc =
         'Autumn 26/27 <strong>term</strong> bands (weekday seats). Each row is a schedulable band (service · venue · weekday · time). '+
         '<strong>Open</strong> = no named term participant. '+
         '<strong>Assign</strong> places someone on that standing seat. '+
         '<strong>Offer</strong> jumps to waitlist. Make-ups stay in Schedule &amp; Covers. '+
-        'Jump: Services (1 Roster · 2 Plazas · 3 Booking Portal) · '+
+        'Jump: Services (1 Roster · 2 Booking Portal) · '+
         '<button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_waitlist">WAITING</button>. '+
         'Data source: <strong>'+esc(srcLabel)+'</strong>.';
       var headBlock = '';
@@ -21001,15 +20996,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<tbody>'+pack.html+'</tbody></table></div></div>'
       );
     }
+    /** Removed from Services page — was MOCK.c4kServicesList (Maria L. / Kemi O. demo). Live seats = §1 roster + §2 Booking Portal. */
     function adminServiceCapacityBoardEmbedHtml(){
-      var inner = adminServiceCapacityBoardInnerHtml({ bare: true });
-      if(!inner) return '';
-      return '<section id="c4kServicesCapacityEmbed" class="c4k-svc-capmap-embed" aria-label="Fill open roster seats" style="margin-top:28px;scroll-margin-top:14px;border-top:1px solid var(--line,#e5e7eb);padding-top:16px">'+
-        '<div class="c4k-svc-capmap-embed__head" style="margin-bottom:10px;min-width:0">'+
-        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 4px;min-width:0;overflow-wrap:break-word">2 · Plazas disponibles</h2>'+
-        '<p class="page-intro" style="margin:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Autumn 26/27 open lines (no named participant). <strong>Assign</strong> is a permanent seat. Day covers stay in Schedule &amp; Covers. Public seats are in section 3.</p>'+
-        '</div>'+
-        inner+'</section>';
+      return '';
     }
     /** Services page: roster by programme → venue accordion → weekday accordion → unique time-slot rows (week of selected date for Register). */
     /** Button on each Services day band → filter + scroll Open places embed below. */
@@ -25939,7 +25928,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         operator:'Control centre · KPIs · suggestions · new leads',
         c4k_services:'Standing term roster, Assign on open seats, and live Booking Portal places. Day make-ups stay in Schedule & Covers.',
         open_places_2627:'Shortcut — opens Services and scrolls to live open places (§3).',
-        servicecap:'Shortcut — opens Services and scrolls to fill seats / Assign (§2).',
+        servicecap:'Shortcut — opens Services and scrolls to Booking Portal places (§2).',
         c4k_sessions:'Live roster grid — who worked today, pending feedback, absents and flags.',
         roster_spreadsheets:'Who works = instructor hours for every weekday in term. Who is booked = standing seats → Edit term slot. Schedule & Covers for one-day only.',
         term_roster_edit:'Change a recurring term slot from the anchor date or for one day only.',
@@ -27950,8 +27939,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     function viewServiceCap(){
-      /* Legacy full page — setView redirects to Services §2. */
-      state.scrollToCapacityEmbed = true;
+      /* Legacy full page — mock capacity removed; jump to live Booking Portal places. */
+      state.scrollToOpenPlaces = true;
       return viewC4kServices();
     }
     function opwfBookingsMockAppend(){
@@ -29780,25 +29769,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var rosterEl = $('c4kServicesRosterAnchor') || $('c4kServicesRosterRoot');
           if(rosterEl) rosterEl.scrollIntoView({ block:'start', behavior:'smooth' });
         };
-        var btnJumpCap = $('c4kServicesJumpCapacity');
-        if(btnJumpCap) btnJumpCap.onclick = function(){
-          var capEl = $('c4kServicesCapacityEmbed');
-          if(capEl) capEl.scrollIntoView({ block:'start', behavior:'smooth' });
-        };
         var btnJumpOp = $('c4kServicesJumpOpenPlaces');
         if(btnJumpOp) btnJumpOp.onclick = function(){
           var opEl = $('op2627Anchor') || $('op2627Root');
           if(opEl) opEl.scrollIntoView({ block:'start', behavior:'smooth' });
         };
         portalAdminForceServicesRosterRefresh();
-        bindCapacityBoardFilters(document.getElementById('c4kServicesCapacityEmbed') || document.getElementById('workspace') || document);
         bindOpenPlaces2627Module();
         if(state.scrollToCapacityEmbed){
+          /* Legacy flag → live Booking Portal section (mock §2 removed). */
           state.scrollToCapacityEmbed = false;
-          setTimeout(function(){
-            var capEl = $('c4kServicesCapacityEmbed');
-            if(capEl) capEl.scrollIntoView({ block:'start', behavior:'smooth' });
-          }, 80);
+          state.scrollToOpenPlaces = true;
         }
         if(state.scrollToOpenPlaces){
           state.scrollToOpenPlaces = false;

@@ -249,14 +249,8 @@
     } catch (_e) {}
   }
 
+  /** Former mock §2 capacity table removed — only live roster + Booking Portal places. */
   function capacityEmbedHtml() {
-    if (typeof deps.renderCapacityEmbedHtml === "function") {
-      try {
-        return deps.renderCapacityEmbedHtml() || "";
-      } catch (_e) {
-        return "";
-      }
-    }
     return "";
   }
 
@@ -312,10 +306,8 @@
       '<div class="c4k-svc-jumpbar" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;min-width:0" role="navigation" aria-label="Jump on this page">' +
       '<button type="button" class="btn btn--ghost btn--sm" id="c4kServicesJumpRoster" title="Jump to permanent roster">' +
       "1 · Roster permanente</button>" +
-      '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to open standing lines">' +
-      "2 · Plazas disponibles</button>" +
       '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to Booking Portal places">' +
-      "3 · Publicación en Booking Portal</button></div>" +
+      "2 · Publicación en Booking Portal</button></div>" +
       '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>' +
       '<details class="c4k-svc-filters" id="c4kServicesFiltersPanel" open>' +
       '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class, instructor or participant</summary>' +
