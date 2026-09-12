@@ -1,5 +1,6 @@
 /* Admin — spreadsheet reference (sessions + staff hours) */
 .asr-root {
+  position: relative;
   min-width: 0;
   max-width: 100%;
 }
@@ -77,15 +78,101 @@
   position: absolute;
   inset: 0;
   opacity: 0;
-  cursor: text;
+  cursor: pointer;
   max-width: none;
   min-height: 100%;
+  pointer-events: none;
 }
-.asr-cell-wrap:focus-within .asr-cell-face {
+.asr-cell-wrap {
+  cursor: pointer;
+}
+.asr-cell-wrap--picking .asr-cell-face {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+.asr-cell-wrap--type .asr-cell-face {
   opacity: 0;
 }
-.asr-cell-wrap:focus-within .asr-cell-input {
+.asr-cell-wrap--type .asr-cell-input--type {
   opacity: 1;
+  pointer-events: auto;
+  cursor: text;
+  z-index: 2;
+}
+.asr-cell-wrap:focus-within .asr-cell-face {
+  opacity: 1;
+}
+.asr-cell-wrap--type:focus-within .asr-cell-face {
+  opacity: 0;
+}
+.asr-pick {
+  position: absolute;
+  z-index: 40;
+  width: min(18rem, calc(100% - 16px));
+  max-width: 20rem;
+  max-height: min(70vh, 28rem);
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+  min-width: 0;
+}
+.asr-pick__title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.asr-pick__sec {
+  margin: 0 0 10px;
+  min-width: 0;
+}
+.asr-pick__lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.asr-pick__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.asr-pick-chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 5px 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #0f172a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: center;
+}
+.asr-pick-chip:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+.asr-pick-chip.is-active {
+  border-color: #2563eb;
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+.asr-pick__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
 }
 .asr-cell-wrap.asr-cell-input--dirty .asr-cell-face,
 .asr-cell-input--dirty {

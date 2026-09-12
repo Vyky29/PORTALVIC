@@ -51,7 +51,58 @@
     authorById: Object.create(null),
     /** iso YYYY-MM-DD -> [{ key, label }] from staff_unavailability (same as Overview). */
     dayOffByDate: Object.create(null),
+    /** Active cell picker: { editKey, wrap } */
+    pick: null,
   };
+
+  /** First-name labels used on Autumn hours sheet (clickable pick list). */
+  var AUTUMN_HOURS_STAFF_SEED = [
+    "Alex",
+    "Aurora",
+    "Berta",
+    "Bismark",
+    "Carlos",
+    "Emmanuel",
+    "Emanuel",
+    "Fadi",
+    "Godsway",
+    "Javier",
+    "Javi",
+    "Joelle",
+    "John",
+    "Luliya",
+    "Michelle",
+    "Patrick",
+    "Raul",
+    "Roberto",
+    "Simon",
+    "Victor",
+    "Youssef",
+    "Yusuf",
+  ];
+
+  var COMMON_HOURS_BANDS = [
+    "9-12",
+    "9.15-12",
+    "10-11",
+    "10.45-4.15",
+    "11-3",
+    "11-4",
+    "12-1",
+    "12.30-3",
+    "12.30-4",
+    "1-2",
+    "1-3",
+    "2-3",
+    "3-4",
+    "3.30-5",
+    "4-5",
+    "4-6",
+    "4-6.30",
+    "4.15-6.15",
+    "4.30-6.30",
+    "5-6",
+  ];
 
   var HOURS_SERVICE_FILTERS = [
     { id: "all", label: "All" },
@@ -763,6 +814,7 @@
       '<span class="muted" id="asrSaveStatus" style="font-size:12px;min-width:0;overflow-wrap:break-word"></span>' +
       "</div>" +
       '<div id="adminSpreadsheetRefPanel" class="asr-panel-host"></div>' +
+      staffHoursPickHtml() +
       "</div>"
     );
   }
@@ -783,6 +835,7 @@
       "<span>Scroll horizontally for all venues · edits sync to dashboards after Save</span>" +
       '<span><i class="asr-swatch" style="background:#eff6ff;border-color:#93c5fd"></i> Saved override (blue text)</span>' +
       '<span><i class="asr-swatch" style="background:#fff7ed;border-color:#fdba74"></i> Day off · COVER (staff_unavailability)</span>' +
+      "<span>Click cell → pick staff / hours</span>" +
       "</div>"
     );
   }
@@ -1211,7 +1264,251 @@
     return html;
   }
 
-  function cellInputHtml(cell, iso) {
+  function composeStaffHoursText(name, time) {
+    var n = String(name || "").trim();
+    var t = String(time || "")
+      .replace(/\s+/g, "")
+      .trim();
+    if (!n && !t) return "";
+    if (!n) return t;
+    if (!t) return n;
+    return n + " " + t;
+  }
+
+  function collectStaffPickNames() {
+    var seen = Object.create(null);
+    var out = [];
+    function push(raw) {
+      var n = String(raw || "").trim();
+      if (!n) return;
+      var first = n.split(/\s+/)[0];
+      if (!first || /^no$/i.test(first) || /^closed$/i.test(first)) return;
+      var key = staffNameKey(first);
+      if (!key || seen[key]) return;
+      if (isHiddenFromAutumnHours(first) && !/luliya|lulia/i.test(first)) return;
+      seen[key] = 1;
+      out.push(first.charAt(0).toUpperCase() + first.slice(1));
+    }
+    AUTUMN_HOURS_STAFF_SEED.forEach(push);
+    var sh = data() && data().staffHours;
+    if (sh) {
+      Object.keys(sh).forEach(function (day) {
+        var sheet = sh[day];
+        if (!sheet) return;
+        function scanCells(cells) {
+          (cells || []).forEach(function (cell) {
+            push(splitStaffHoursNameTime(cell && cell.text).name);
+          });
+        }
+        (sheet.dates || []).forEach(function (dr) {
+          scanCells(dr.cells);
+        });
+        (sheet.blocks || []).forEach(function (block) {
+          (block.dates || []).forEach(function (dr) {
+            scanCells(dr.cells);
+          });
+        });
+      });
+    }
+    try {
+      resolveRosterRows().forEach(function (r) {
+        String((r && r.instructors) || "")
+          .split(/[,+/|]/)
+          .forEach(function (part) {
+            push(part);
+          });
+      });
+    } catch (_e) {}
+    out.sort(function (a, b) {
+      return a.localeCompare(b, undefined, { sensitivity: "base" });
+    });
+    return out;
+  }
+
+  function collectTimePickBands(dayName, colIdx) {
+    var seen = Object.create(null);
+    var out = [];
+    function push(raw) {
+      var t = String(raw || "")
+        .replace(/\s+/g, "")
+        .trim();
+      if (!t || !/\d/.test(t) || seen[t]) return;
+      seen[t] = 1;
+      out.push(t);
+    }
+    COMMON_HOURS_BANDS.forEach(push);
+    var sh = data() && data().staffHours;
+    var sheet = sh && sh[dayName];
+    if (sheet) {
+      function scanDates(dates) {
+        (dates || []).forEach(function (dr) {
+          var cell = (dr.cells || [])[colIdx];
+          if (!cell) return;
+          push(splitStaffHoursNameTime(cell.text).time);
+        });
+      }
+      scanDates(sheet.dates);
+      (sheet.blocks || []).forEach(function (block) {
+        scanDates(block.dates);
+      });
+    }
+    return out;
+  }
+
+  function updateCellWrapFace(wrap, val, iso) {
+    if (!wrap) return;
+    var parts = splitStaffHoursNameTime(val);
+    var away = !!(iso && parts.name && staffAwayOnIso(parts.name, iso));
+    wrap.classList.toggle("asr-cell-wrap--dayoff", away);
+    var nameEl = wrap.querySelector(".asr-cell-face__name");
+    var timeEl = wrap.querySelector(".asr-cell-face__time");
+    var badge = wrap.querySelector(".asr-dayoff-badge");
+    if (nameEl) nameEl.textContent = parts.name || (val ? val : "·");
+    if (timeEl) {
+      if (parts.time) {
+        timeEl.textContent = parts.time;
+        timeEl.hidden = false;
+      } else {
+        timeEl.textContent = "";
+        timeEl.hidden = true;
+      }
+    }
+    if (away && !badge) {
+      var face = wrap.querySelector(".asr-cell-face");
+      if (face) {
+        var span = document.createElement("span");
+        span.className = "asr-dayoff-badge";
+        span.title = "staff_unavailability — same as Overview";
+        span.textContent = "Day off · COVER";
+        face.appendChild(span);
+      }
+    } else if (!away && badge) {
+      badge.remove();
+    }
+  }
+
+  function setCellAssignment(wrap, val) {
+    if (!wrap) return;
+    var key = wrap.getAttribute("data-asr-edit-key") || "";
+    if (!key) return;
+    if (!Object.prototype.hasOwnProperty.call(state.dirtyBaseline, key)) {
+      var cell = findCellInStaffHours(data() && data().staffHours, key);
+      state.dirtyBaseline[key] = cell ? String(cell.text || "") : "";
+    }
+    var next = String(val || "").trim();
+    var base = state.dirtyBaseline[key];
+    if (next === String(base || "").trim()) {
+      delete state.dirty[key];
+      wrap.classList.remove("asr-cell-input--dirty");
+      wrap.classList.toggle(
+        "asr-cell-input--saved",
+        !!(function () {
+          var c = findCellInStaffHours(data() && data().staffHours, key);
+          return c && (c.overridden || c.tone === "updated");
+        })()
+      );
+    } else {
+      state.dirty[key] = next;
+      wrap.classList.add("asr-cell-input--dirty");
+      wrap.classList.remove("asr-cell-input--saved");
+    }
+    wrap.setAttribute("data-asr-value", next);
+    var iso = wrap.getAttribute("data-asr-iso") || "";
+    updateCellWrapFace(wrap, next, iso);
+    var typeInp = wrap.querySelector(".asr-cell-input--type");
+    if (typeInp) typeInp.value = next;
+    updateToolbar();
+  }
+
+  function closeStaffHoursPick() {
+    var pop = document.getElementById("asrStaffHoursPick");
+    if (pop) pop.hidden = true;
+    if (state.pick && state.pick.wrap) {
+      state.pick.wrap.classList.remove("asr-cell-wrap--picking");
+      state.pick.wrap.classList.remove("asr-cell-wrap--type");
+    }
+    state.pick = null;
+  }
+
+  function renderPickChips(host, items, kind, activeVal) {
+    if (!host) return;
+    var activeKey =
+      kind === "staff" ? staffNameKey(activeVal) : String(activeVal || "").replace(/\s+/g, "");
+    host.innerHTML = items
+      .map(function (item) {
+        var label = String(item);
+        var isActive =
+          kind === "staff"
+            ? staffNameKey(label) === activeKey
+            : String(label).replace(/\s+/g, "") === activeKey;
+        return (
+          '<button type="button" class="asr-pick-chip' +
+          (isActive ? " is-active" : "") +
+          '" data-asr-pick="' +
+          esc(kind) +
+          '" data-asr-pick-val="' +
+          esc(label) +
+          '">' +
+          esc(label) +
+          "</button>"
+        );
+      })
+      .join("");
+  }
+
+  function openStaffHoursPick(wrap) {
+    if (!wrap) return;
+    var root = document.getElementById("adminSpreadsheetRefRoot");
+    var pop = document.getElementById("asrStaffHoursPick");
+    if (!root || !pop) return;
+    closeStaffHoursPick();
+    state.pick = { editKey: wrap.getAttribute("data-asr-edit-key") || "", wrap: wrap };
+    wrap.classList.add("asr-cell-wrap--picking");
+    var val = wrap.getAttribute("data-asr-value") || "";
+    var parts = splitStaffHoursNameTime(val);
+    var dayName = wrap.getAttribute("data-asr-day") || state.hoursDay || "Monday";
+    var colIdx = Number(wrap.getAttribute("data-asr-col") || 0);
+    renderPickChips(
+      pop.querySelector("[data-asr-pick-staff]"),
+      collectStaffPickNames(),
+      "staff",
+      parts.name
+    );
+    renderPickChips(
+      pop.querySelector("[data-asr-pick-times]"),
+      collectTimePickBands(dayName, colIdx),
+      "time",
+      parts.time
+    );
+    pop.hidden = false;
+    var rect = wrap.getBoundingClientRect();
+    var rootRect = root.getBoundingClientRect();
+    var top = rect.bottom - rootRect.top + root.scrollTop + 6;
+    var left = rect.left - rootRect.left + root.scrollLeft;
+    var maxLeft = Math.max(8, root.clientWidth - 320);
+    if (left > maxLeft) left = maxLeft;
+    if (left < 8) left = 8;
+    pop.style.top = top + "px";
+    pop.style.left = left + "px";
+  }
+
+  function staffHoursPickHtml() {
+    return (
+      '<div id="asrStaffHoursPick" class="asr-pick" hidden role="dialog" aria-label="Pick staff and hours">' +
+      '<p class="asr-pick__title">Pick staff + hours</p>' +
+      '<div class="asr-pick__sec"><div class="asr-pick__lbl">Staff</div>' +
+      '<div class="asr-pick__chips" data-asr-pick-staff></div></div>' +
+      '<div class="asr-pick__sec"><div class="asr-pick__lbl">Hours</div>' +
+      '<div class="asr-pick__chips" data-asr-pick-times></div></div>' +
+      '<div class="asr-pick__actions">' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-asr-pick-clear>Clear</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-asr-pick-type>Type…</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" data-asr-pick-done>Done</button>' +
+      "</div></div>"
+    );
+  }
+
+  function cellInputHtml(cell, iso, colIdx, dayName) {
     var key = cell.editKey || "";
     var val = state.dirty[key] != null ? state.dirty[key] : cell.text || "";
     var parts = splitStaffHoursNameTime(val);
@@ -1233,29 +1530,33 @@
       "</span>" +
       (parts.time
         ? '<span class="asr-cell-face__time">' + esc(parts.time) + "</span>"
-        : "") +
+        : '<span class="asr-cell-face__time" hidden></span>') +
       (away
         ? '<span class="asr-dayoff-badge" title="staff_unavailability — same as Overview">Day off · COVER</span>'
         : "") +
       "</span>";
     return (
-      '<label class="asr-cell-wrap' +
+      '<div class="asr-cell-wrap' +
       dirtyCls +
       savedCls +
       tone +
       dayOffCls +
+      '" role="button" tabindex="0" title="Click to pick staff + hours" data-asr-edit-key="' +
+      esc(key) +
+      '" data-asr-value="' +
+      esc(val) +
+      '" data-asr-iso="' +
+      esc(iso || "") +
+      '" data-asr-col="' +
+      esc(String(colIdx == null ? 0 : colIdx)) +
+      '" data-asr-day="' +
+      esc(dayName || "") +
       '">' +
       face +
-      '<input type="text" class="asr-cell-input' +
-      dirtyCls +
-      savedCls +
-      tone +
-      '" data-asr-edit-key="' +
-      esc(key) +
-      '" value="' +
+      '<input type="text" class="asr-cell-input asr-cell-input--type" value="' +
       esc(val) +
-      '" aria-label="Staff assignment name and hours" />' +
-      "</label>"
+      '" aria-label="Type staff assignment name and hours" tabindex="-1" />' +
+      "</div>"
     );
   }
 
@@ -1602,7 +1903,7 @@
           html += '<td class="' + tdCls + ' asr-cell--muted-filter">—</td>';
           return;
         }
-        html += '<td class="' + tdCls + '">' + cellInputHtml(cell, iso) + "</td>";
+        html += '<td class="' + tdCls + '">' + cellInputHtml(cell, iso, idx, dayName) + "</td>";
       });
       html += "</tr>";
     });
@@ -1650,8 +1951,8 @@
       state.hoursRange === "term"
         ? "Showing <strong>every " +
           (day === "all" ? "weekday" : day) +
-          "</strong> in Autumn Term 2026 (1 Sep - 17 Dec). Edit a cell (name + hours), then <strong>Save staff hours</strong>."
-        : "Showing <strong>one week</strong> only. Switch to Whole term to see all Mondays (etc.).";
+          "</strong> in Autumn Term 2026 (1 Sep - 17 Dec). <strong>Click a cell</strong> to pick staff + hours (chips), then <strong>Save staff hours</strong>."
+        : "Showing <strong>one week</strong> only. Click a cell to pick staff + hours. Switch to Whole term to see all Mondays (etc.).";
     var html =
       renderStandingHoursBlock() +
       '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">' +
@@ -1719,6 +2020,7 @@
   }
 
   function refreshPanel() {
+    closeStaffHoursPick();
     var panel = document.getElementById("adminSpreadsheetRefPanel");
     if (!panel) return;
     panel.innerHTML = state.tab === "sessions" ? renderSessionsPanel() : renderHoursPanel();
@@ -1883,43 +2185,111 @@
         refreshPanel();
       });
     });
-    root.querySelectorAll(".asr-cell-input").forEach(function (inp) {
-      inp.addEventListener("input", function () {
-        var key = inp.getAttribute("data-asr-edit-key") || "";
-        if (!key) return;
-        if (!Object.prototype.hasOwnProperty.call(state.dirtyBaseline, key)) {
-          var cell = findCellInStaffHours(data() && data().staffHours, key);
-          state.dirtyBaseline[key] = cell ? String(cell.text || "") : "";
-        }
-        state.dirty[key] = inp.value;
-        inp.classList.add("asr-cell-input--dirty");
-        inp.classList.remove("asr-cell-input--saved");
-        var wrap = inp.closest(".asr-cell-wrap");
-        if (wrap) {
-          wrap.classList.add("asr-cell-input--dirty");
-          wrap.classList.remove("asr-cell-input--saved");
-          var parts = splitStaffHoursNameTime(inp.value);
-          var nameEl = wrap.querySelector(".asr-cell-face__name");
-          var timeEl = wrap.querySelector(".asr-cell-face__time");
-          if (nameEl) nameEl.textContent = parts.name || inp.value || "·";
-          if (timeEl) {
-            if (parts.time) {
-              timeEl.textContent = parts.time;
-              timeEl.hidden = false;
-            } else {
-              timeEl.textContent = "";
-              timeEl.hidden = true;
-            }
-          }
-        }
-        updateToolbar();
+
+    root.querySelectorAll(".asr-cell-wrap[data-asr-edit-key]").forEach(function (wrap) {
+      wrap.addEventListener("click", function (e) {
+        if (e.target && e.target.closest && e.target.closest(".asr-cell-input--type")) return;
+        if (wrap.classList.contains("asr-cell-wrap--type")) return;
+        e.preventDefault();
+        openStaffHoursPick(wrap);
       });
+      wrap.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          if (wrap.classList.contains("asr-cell-wrap--type")) return;
+          e.preventDefault();
+          openStaffHoursPick(wrap);
+        }
+      });
+      var typeInp = wrap.querySelector(".asr-cell-input--type");
+      if (typeInp) {
+        typeInp.addEventListener("input", function () {
+          setCellAssignment(wrap, typeInp.value);
+        });
+        typeInp.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") {
+            wrap.classList.remove("asr-cell-wrap--type");
+            typeInp.blur();
+            closeStaffHoursPick();
+          }
+        });
+      }
+    });
+  }
+
+  function bindStaffHoursPickOnce() {
+    var root = document.getElementById("adminSpreadsheetRefRoot");
+    if (!root || root._asrPickBound) return;
+    root._asrPickBound = true;
+    root.addEventListener("click", function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var pickBtn = t.closest("[data-asr-pick]");
+      if (pickBtn && state.pick && state.pick.wrap) {
+        e.preventDefault();
+        e.stopPropagation();
+        var kind = pickBtn.getAttribute("data-asr-pick") || "";
+        var pickVal = pickBtn.getAttribute("data-asr-pick-val") || "";
+        var wrap = state.pick.wrap;
+        var cur = splitStaffHoursNameTime(wrap.getAttribute("data-asr-value") || "");
+        if (kind === "staff") {
+          setCellAssignment(wrap, composeStaffHoursText(pickVal, cur.time));
+        } else if (kind === "time") {
+          setCellAssignment(wrap, composeStaffHoursText(cur.name, pickVal));
+        }
+        var parts = splitStaffHoursNameTime(wrap.getAttribute("data-asr-value") || "");
+        var pop = document.getElementById("asrStaffHoursPick");
+        if (pop) {
+          renderPickChips(
+            pop.querySelector("[data-asr-pick-staff]"),
+            collectStaffPickNames(),
+            "staff",
+            parts.name
+          );
+          renderPickChips(
+            pop.querySelector("[data-asr-pick-times]"),
+            collectTimePickBands(
+              wrap.getAttribute("data-asr-day") || state.hoursDay || "Monday",
+              Number(wrap.getAttribute("data-asr-col") || 0)
+            ),
+            "time",
+            parts.time
+          );
+        }
+        return;
+      }
+      if (t.closest("[data-asr-pick-clear]") && state.pick && state.pick.wrap) {
+        e.preventDefault();
+        setCellAssignment(state.pick.wrap, "");
+        closeStaffHoursPick();
+        return;
+      }
+      if (t.closest("[data-asr-pick-done]")) {
+        e.preventDefault();
+        closeStaffHoursPick();
+        return;
+      }
+      if (t.closest("[data-asr-pick-type]") && state.pick && state.pick.wrap) {
+        e.preventDefault();
+        var w = state.pick.wrap;
+        closeStaffHoursPick();
+        w.classList.add("asr-cell-wrap--type");
+        var inp = w.querySelector(".asr-cell-input--type");
+        if (inp) {
+          inp.focus();
+          inp.select();
+        }
+        return;
+      }
+      if (t.closest("#asrStaffHoursPick")) return;
+      if (t.closest(".asr-cell-wrap[data-asr-edit-key]")) return;
+      closeStaffHoursPick();
     });
   }
 
   function bindModule() {
     var root = document.getElementById("adminSpreadsheetRefRoot");
     if (!root) return;
+    bindStaffHoursPickOnce();
     root.querySelectorAll("[data-asr-tab]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         state.tab = btn.getAttribute("data-asr-tab") || "sessions";
