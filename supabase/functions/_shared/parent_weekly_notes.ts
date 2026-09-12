@@ -14,8 +14,73 @@ import {
   type ParticipantIdentityInput,
 } from "./participant_identity.ts";
 
-export const WEEKLY_NOTE_PROMPT_VERSION = "20260912-no-parent-dialogue-v1";
+export const WEEKLY_NOTE_PROMPT_VERSION = "20260912-day-centre-only-v1";
 export const DEFAULT_WEEKLY_NOTE_MODEL = "gpt-4o-mini";
+
+/**
+ * Weekly notes (for now) are Day Centre only — multi-day consecutive attendance.
+ * Contact ids + roster aliases for Emanuel / Fadi / Ikram / Timi.
+ */
+export const DAY_CENTRE_WEEKLY_NOTES_CONTACT_IDS = new Set([
+  "gap-emanuel-dodson",
+  "101",
+  "gap-ikram-omar",
+  "gap-timi-dairo",
+]);
+
+const DAY_CENTRE_WEEKLY_NOTES_SLUGS = new Set([
+  "emanuel",
+  "fadi",
+  "ikram",
+  "ikram-omar",
+  "timi",
+]);
+
+export function isDayCentreWeeklyNotesContactId(contactId: unknown): boolean {
+  const id = clean(contactId, 80).toLowerCase();
+  return !!id && DAY_CENTRE_WEEKLY_NOTES_CONTACT_IDS.has(id);
+}
+
+export function servicesDetailHasDayCentrePlace(detail: unknown): boolean {
+  if (!Array.isArray(detail)) return false;
+  for (const raw of detail) {
+    const s = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : null;
+    if (!s) continue;
+    const lab = clean(s.label ?? s.service, 200);
+    if (!/day\s*centre|daycentre/i.test(lab)) continue;
+    const dur = Number(s.duration_min ?? s.durationMin ?? 0);
+    if (dur >= 90) return true;
+    const slot = clean(s.time ?? s.timeSlot ?? s.time_slot, 80);
+    // e.g. "11 to 4", "12.30 to 3"
+    const m = slot.match(/(\d{1,2})(?:\.(\d{2}))?\s*(?:to|–|-)\s*(\d{1,2})(?:\.(\d{2}))?/i);
+    if (m) {
+      const a = Number(m[1]) + Number(m[2] || 0) / 60;
+      const b = Number(m[3]) + Number(m[4] || 0) / 60;
+      if (b > a && b - a >= 1.4) return true;
+    }
+  }
+  return false;
+}
+
+export function identityLooksLikeDayCentreWeeklyNotes(
+  identity: ParticipantIdentityInput,
+  contactId?: string,
+): boolean {
+  if (isDayCentreWeeklyNotesContactId(contactId || identity.contactId)) return true;
+  for (const slug of resolveParticipantClientSlugs(identity)) {
+    const alias = rosterParticipantSlugAlias(slug) || slug.toLowerCase();
+    if (DAY_CENTRE_WEEKLY_NOTES_SLUGS.has(alias) || DAY_CENTRE_WEEKLY_NOTES_SLUGS.has(slug.toLowerCase())) {
+      return true;
+    }
+  }
+  const first = clean(identity.firstName, 80).toLowerCase();
+  const display = clean(identity.displayName || identity.firstName, 120).toLowerCase();
+  if (first === "emanuel" || display.startsWith("emanuel ")) return true;
+  if (first === "fadi" || display.startsWith("fadi ")) return true;
+  if (first === "ikram" || display.startsWith("ikram ")) return true;
+  if (first === "timi" || first === "oluwatimilehin" || display.startsWith("timi ")) return true;
+  return false;
+}
 
 /** Tinashe: Mon/Wed/Fri lead briefs from John; feedback fallback from session instructors. */
 const TINASHE_LEAD_WEEKDAYS = new Set([1, 3, 5]); // Mon, Wed, Fri
@@ -686,6 +751,17 @@ export async function generateWeeklyNoteForContact(
       ok: true,
       skipped: true,
       reason: "kate_no_parent_notes",
+      contact_id: opts.contactId,
+      week_start: saturdayWeekStart(opts.weekStart) || opts.weekStart,
+    };
+  }
+
+  /* Office policy (Sep 2026): weekly notes only for Day Centre families. */
+  if (!identityLooksLikeDayCentreWeeklyNotes(opts.identity, opts.contactId)) {
+    return {
+      ok: true,
+      skipped: true,
+      reason: "not_day_centre",
       contact_id: opts.contactId,
       week_start: saturdayWeekStart(opts.weekStart) || opts.weekStart,
     };

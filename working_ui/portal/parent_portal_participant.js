@@ -2320,6 +2320,7 @@
   }
 
   function unreadWeeklyNotesCount(data, opts) {
+    if (!weeklyNotesEnabled(data)) return 0;
     var notes = Array.isArray(data && data.weekly_notes) ? data.weekly_notes : [];
     if (!notes.length) return 0;
     var seen = weeklyNotesSeenWeekStart(weeklyNotesContactId(data, opts));
@@ -2379,7 +2380,7 @@
         '<p class="pp-pax-info-section-label">Quick access</p>' +
         '<div class="pp-hub-shortcuts__grid">' +
         bookingPortalQuickAccessBtnHtml(data, icoF) +
-        (formerHasFeedback(data)
+        (formerHasFeedback(data) && weeklyNotesEnabled(data)
           ? hubShortcutBtn(
               "weekly_notes",
               "Notes",
@@ -2394,7 +2395,14 @@
               icoF('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
               { extraClass: " pp-hub-shortcut--sessions" },
             )
-          : "") +
+          : formerHasFeedback(data)
+            ? hubShortcutBtn(
+                "sessions",
+                "Sessions Overview",
+                icoF('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'),
+                { extraClass: " pp-hub-shortcut--sessions" },
+              )
+            : "") +
         (hasAchievementPhotos(data) ? photosShortcutBtnHtml(icoF) : "") +
         "</div></section>"
       );
@@ -2487,7 +2495,7 @@
             { extraClass: " pp-hub-shortcut--invoices" },
           )
         : "") +
-      (sessionProgressEnabled
+      (weeklyNotesEnabled(data)
         ? hubShortcutBtn(
             "weekly_notes",
             "Notes",
@@ -2762,7 +2770,7 @@
       "</div>" +
       '<p class="pp-pax-info-section-label pp-pax-info-section-label--progress">Progress</p>' +
       '<div class="pp-pax-info-row pp-pax-info-row--progress">' +
-      (sessionProgressEnabled
+      (weeklyNotesEnabled(data)
         ? infoBtnHtml("weekly_notes", "Weekly notes", notesIcon, {
             extraClass:
               " pp-pax-info-btn--weekly-notes" +
@@ -6008,6 +6016,13 @@
     return !(data && data.session_progress) || data.session_progress.enabled !== false;
   }
 
+  /** Weekly notes folder — Day Centre only (Sep 2026 office policy). */
+  function weeklyNotesEnabled(data) {
+    if (!sessionProgressEnabled(data)) return false;
+    if (data && data.session_progress && data.session_progress.weekly_notes === false) return false;
+    return true;
+  }
+
   function renderFeedbackYearPicker(host, data, opts, targetView) {
     var years = feedbackYearsAvailable(data);
     var title = targetView === "weekly_notes" ? "Weekly notes" : "Sessions Overview";
@@ -7009,12 +7024,12 @@
 
   function renderWeeklyNotes(host, data, opts, viewOpts) {
     viewOpts = viewOpts || {};
-    if (!sessionProgressEnabled(data)) {
+    if (!weeklyNotesEnabled(data)) {
       host.innerHTML = subviewShell(
         data,
         "weekly_notes",
         '<h3 class="pp-pax-subview-title">Weekly notes</h3>' +
-          '<p class="pp-muted">Weekly notes are not shown for this participant.</p>',
+          '<p class="pp-muted">Weekly notes are for Day Centre places only.</p>',
       );
       bindBack(host, data, opts);
       return;
@@ -10358,7 +10373,7 @@
     if (isFormerClient(data)) {
       var allowed = { hub: true };
       if (formerHasFeedback(data)) {
-        allowed.weekly_notes = true;
+        if (weeklyNotesEnabled(data)) allowed.weekly_notes = true;
         allowed.sessions = true;
       }
       if (hasAchievementPhotos(data)) allowed.achievements = true;
@@ -10366,6 +10381,10 @@
         renderHub(host, data, opts);
         return;
       }
+    }
+    if (view === "weekly_notes" && !weeklyNotesEnabled(data)) {
+      renderHub(host, data, opts);
+      return;
     }
     if (opts && typeof opts.activityPing === "function") {
       var pingView =

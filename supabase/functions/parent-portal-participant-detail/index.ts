@@ -59,6 +59,7 @@ import {
   buildParentReenrolUi,
   servicesDetailHasDayCentre,
 } from "../_shared/parent_reenrol_ui.ts";
+import { identityLooksLikeDayCentreWeeklyNotes } from "../_shared/parent_weekly_notes.ts";
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
@@ -1121,6 +1122,7 @@ Deno.serve(async (req) => {
     lastName: clean(participant.last_name, 80),
   };
   const suppressSessionProgress = parentPortalSuppressSessionProgress(identityInput);
+  const weeklyNotesDayCentreOnly = identityLooksLikeDayCentreWeeklyNotes(identityInput, contactId);
   const clientSlugs = suppressSessionProgress
     ? expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput)).filter(
       (s) => !["acat", "acat_group"].includes(slugifyParticipantKey(s)),
@@ -1983,7 +1985,7 @@ Deno.serve(async (req) => {
 
   let weeklyNotes: Record<string, unknown>[] = [];
   let weeklyNoteLatest: Record<string, unknown> | null = null;
-  if (wantWeeklyNotes && !suppressSessionProgress && feedbackYearResolved) {
+  if (wantWeeklyNotes && weeklyNotesDayCentreOnly && !suppressSessionProgress && feedbackYearResolved) {
     const { data: noteRows, error: noteErr } = await supabase
       .from("portal_parent_weekly_notes")
       .select(
@@ -2329,14 +2331,18 @@ Deno.serve(async (req) => {
         sessions_overview: isFormerClient
           ? hasSessionFeedback
           : !suppressSessionProgress,
-        weekly_notes: isFormerClient ? hasSessionFeedback : !suppressSessionProgress,
+        weekly_notes: isFormerClient
+          ? hasSessionFeedback && weeklyNotesDayCentreOnly
+          : !suppressSessionProgress && weeklyNotesDayCentreOnly,
         reason: isFormerClient
           ? hasSessionFeedback
             ? "Former client — past session notes only."
             : "Former client — limited portal access."
           : suppressSessionProgress
             ? "Irregular ACAT attendance — session overview and weekly notes are not shown for this participant."
-            : "",
+            : !weeklyNotesDayCentreOnly
+              ? "Weekly notes are for Day Centre places only."
+              : "",
       },
     }),
     { status: 200, headers: { ...parentPortalCorsHeaders, "Content-Type": "application/json" } },
