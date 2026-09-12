@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 115;
+  var SOURCE_VERSION = 116;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -2516,14 +2516,15 @@
     { staff: "CARLOS", name: "Zaid", time: "11 to 12" },
     { staff: "CARLOS", name: "Serine", time: "12 to 1" },
     { staff: "CARLOS", name: "Zakariya", time: "1 to 2" },
-    { staff: "CARLOS", name: "No participant", time: "2 to 3" },
+    /* Trial Sun 13 Sep · Carlos 2–3 (Places + Overview). Later Sundays stay open via trialDate. */
+    { staff: "CARLOS", name: "Muhammad", time: "2 to 3", trial: true, trialDate: "2026-09-13" },
     { staff: "CARLOS", name: "Patrick", time: "3 to 4" },
   ];
 
   /**
    * Autumn after-school Climbing @ Westway (Tue / Thu 4–6).
    * Victor TEST Elia books both hours (4–5 and 5–6).
-   * Stamp = Jul weekday templates so Services Places projects onto Autumn weeks.
+   * Expanded onto every Autumn Tue/Thu (no summer projection).
    */
   var AUTUMN_WEEKDAY_CLIMBING_BOARD = [
     { day: "Tuesday", staff: "ALEX", name: "Elia", time: "4 to 5", session_date: "2026-07-14" },
@@ -2685,7 +2686,7 @@
         client: pax,
         time: time,
         area: "Wall · Westway",
-        open: !slot.closed && /^no participant$/i.test(pax),
+        open: !slot.closed && !slot.trial && /^no participant$/i.test(pax),
         closed: !!slot.closed,
         trial: !!slot.trial,
         trialDate: slot.trialDate || "",

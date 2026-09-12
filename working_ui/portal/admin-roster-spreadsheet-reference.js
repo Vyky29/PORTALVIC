@@ -20,15 +20,19 @@
     },
   };
 
-  /** Same snap dates Services uses for standing weekday projection. */
+  /**
+   * Standing snap dates for Who is booked / standing hours summary.
+   * Autumn week after DC standing starts (Mon 7). Sunday uses 20 Sep so the
+   * sample is a normal Aurora Sunday (not Aurora-off cover days 13 Sep / 4 Oct).
+   */
   var STANDING_ISO_BY_DAY = {
-    Saturday: "2026-07-11",
-    Sunday: "2026-07-12",
-    Monday: "2026-07-13",
-    Tuesday: "2026-07-14",
-    Wednesday: "2026-07-15",
-    Thursday: "2026-07-16",
-    Friday: "2026-07-17",
+    Monday: "2026-09-07",
+    Tuesday: "2026-09-08",
+    Wednesday: "2026-09-09",
+    Thursday: "2026-09-10",
+    Friday: "2026-09-11",
+    Saturday: "2026-09-12",
+    Sunday: "2026-09-20",
   };
 
   var state = {
@@ -45,6 +49,8 @@
     mergedData: null,
     overrideLog: [],
     authorById: Object.create(null),
+    /** iso YYYY-MM-DD -> [{ key, label }] from staff_unavailability (same as Overview). */
+    dayOffByDate: Object.create(null),
   };
 
   var HOURS_SERVICE_FILTERS = [
@@ -744,6 +750,7 @@
       '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
       "<strong>Who works</strong> = instructor name + hours for every Monday (or Tue…) in Autumn — edit and Save. " +
       "Does not change who is booked in Services / MADRE (use Edit term slot for that). " +
+      "<strong>Day off · COVER</strong> on a date comes from the same <code>staff_unavailability</code> as Sessions Overview (Validate day / HR). " +
       "<strong>Who is booked</strong> = standing client seats (" +
       weekLbl +
       ") — click a name to open Edit term slot (every matching weekday).</p>" +
@@ -775,6 +782,7 @@
       '<div class="asr-legend" aria-label="Staff hours legend">' +
       "<span>Scroll horizontally for all venues · edits sync to dashboards after Save</span>" +
       '<span><i class="asr-swatch" style="background:#eff6ff;border-color:#93c5fd"></i> Saved override (blue text)</span>' +
+      '<span><i class="asr-swatch" style="background:#fff7ed;border-color:#fdba74"></i> Day off · COVER (staff_unavailability)</span>' +
       "</div>"
     );
   }
@@ -900,7 +908,7 @@
     var html =
       '<div class="asr-standing-hours" style="margin:0 0 16px;padding:12px 14px;border:1px solid var(--border,#d7e2e8);border-radius:12px;background:#f8fafc;min-width:0">' +
       '<p class="asr-tab-hint" style="margin:0 0 8px;font-weight:600;max-width:52rem;overflow-wrap:break-word">Autumn Term 2026 standing week · instructor timetable (synced with Services)</p>' +
-      '<p class="muted" style="margin:0 0 10px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Who is on when for Autumn: Day Centre from 1 Sep, weekends from Sat 5 Sep, after-school from Mon 7 Sep. Editable dated overrides for payroll stay in the sheet below.</p>';
+      '<p class="muted" style="margin:0 0 10px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Who is on when for Autumn: Day Centre from 1 Sep, weekends from Sat 5 Sep, after-school from Mon 7 Sep. Editable dated overrides for payroll stay in the sheet below. Orange Day off · COVER badges on dated rows come from live staff_unavailability (not this standing snapshot).</p>';
     days.forEach(function (wd) {
       var block = stand[wd];
       if (!block || !block.lines || !block.lines.length) {
@@ -908,16 +916,38 @@
           '<p class="muted" style="margin:0 0 8px">' + esc(wd) + ": no standing roster lines.</p>";
         return;
       }
+      var sampleIso = block.iso || STANDING_ISO_BY_DAY[wd] || "";
+      var sampleOffs = dayOffsForIso(sampleIso);
       html +=
         '<div style="margin:0 0 10px;min-width:0">' +
         '<div style="font-size:12px;font-weight:700;margin:0 0 4px">' +
         esc(wd) +
-        "</div><ul style=\"margin:0;padding-left:1.1rem;max-width:52rem\">";
+        (sampleIso ? ' <span class="muted">(' + esc(sampleIso) + ")</span>" : "") +
+        "</div>";
+      if (sampleOffs.length) {
+        html +=
+          '<p class="asr-standing-dayoffs" style="margin:0 0 6px;font-size:12px;min-width:0;overflow-wrap:break-word">' +
+          sampleOffs
+            .map(function (o) {
+              return (
+                '<span class="asr-dayoff-chip">' +
+                esc(o.label) +
+                " · Day off</span>"
+              );
+            })
+            .join(" ") +
+          "</p>";
+      }
+      html += "<ul style=\"margin:0;padding-left:1.1rem;max-width:52rem\">";
       block.lines.forEach(function (line) {
+        var away = sampleIso && staffAwayOnIso(line.name, sampleIso);
         html +=
           "<li style=\"overflow-wrap:break-word;min-width:0\">" +
           esc(line.text) +
           (line.venue ? ' <span class="muted">(' + esc(line.venue) + ")</span>" : "") +
+          (away
+            ? ' <span class="asr-dayoff-chip">Day off · COVER</span>'
+            : "") +
           "</li>";
       });
       html += "</ul></div>";
@@ -1056,6 +1086,75 @@
       });
   }
 
+  /** Same live day-off source as Sessions Overview (Validate day / HR Add day off). */
+  function loadDayOffs() {
+    var client = cfg.getClient();
+    if (!client) {
+      state.dayOffByDate = Object.create(null);
+      return Promise.resolve();
+    }
+    return client
+      .from("staff_unavailability")
+      .select("staff_name,name_key,off_date,reason")
+      .gte("off_date", HOURS_TERM_FROM)
+      .lte("off_date", HOURS_TERM_TO)
+      .then(function (res) {
+        if (res.error) throw res.error;
+        var map = Object.create(null);
+        (res.data || []).forEach(function (r) {
+          if (!r) return;
+          var iso = String(r.off_date || "").slice(0, 10);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+          var key = staffNameKey(r.name_key || r.staff_name || "");
+          if (!key) return;
+          var label = String(r.staff_name || r.name_key || "").trim() || key;
+          if (!map[iso]) map[iso] = [];
+          if (
+            map[iso].some(function (x) {
+              return x.key === key;
+            })
+          ) {
+            return;
+          }
+          map[iso].push({ key: key, label: label });
+        });
+        state.dayOffByDate = map;
+      })
+      .catch(function () {
+        state.dayOffByDate = Object.create(null);
+      });
+  }
+
+  function dayOffsForIso(iso) {
+    return state.dayOffByDate[String(iso || "").slice(0, 10)] || [];
+  }
+
+  function staffAwayOnIso(staffRaw, iso) {
+    var key = staffNameKey(staffRaw);
+    if (!key) return false;
+    return dayOffsForIso(iso).some(function (x) {
+      return x.key === key;
+    });
+  }
+
+  function dateDayOffChipsHtml(iso) {
+    var offs = dayOffsForIso(iso);
+    if (!offs.length) return "";
+    return (
+      '<div class="asr-date-dayoffs" title="From staff_unavailability (same as Overview)">' +
+      offs
+        .map(function (o) {
+          return (
+            '<span class="asr-dayoff-chip">' +
+            esc(o.label) +
+            " · Day off</span>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
   function renderChangeLogHtml() {
     var rows = state.overrideLog || [];
     if (!rows.length) {
@@ -1112,7 +1211,7 @@
     return html;
   }
 
-  function cellInputHtml(cell) {
+  function cellInputHtml(cell, iso) {
     var key = cell.editKey || "";
     var val = state.dirty[key] != null ? state.dirty[key] : cell.text || "";
     var parts = splitStaffHoursNameTime(val);
@@ -1125,6 +1224,8 @@
       cell.tone && state.dirty[key] == null && !savedCls
         ? " asr-tone--" + cell.tone
         : "";
+    var away = !!(iso && parts.name && staffAwayOnIso(parts.name, iso));
+    var dayOffCls = away ? " asr-cell-wrap--dayoff" : "";
     var face =
       '<span class="asr-cell-face" aria-hidden="true">' +
       '<span class="asr-cell-face__name">' +
@@ -1133,12 +1234,16 @@
       (parts.time
         ? '<span class="asr-cell-face__time">' + esc(parts.time) + "</span>"
         : "") +
+      (away
+        ? '<span class="asr-dayoff-badge" title="staff_unavailability — same as Overview">Day off · COVER</span>'
+        : "") +
       "</span>";
     return (
       '<label class="asr-cell-wrap' +
       dirtyCls +
       savedCls +
       tone +
+      dayOffCls +
       '">' +
       face +
       '<input type="text" class="asr-cell-input' +
@@ -1471,11 +1576,15 @@
     });
     html += "</tr></thead><tbody>";
     filteredDates.forEach(function (dr) {
+      var iso = String(dr.date || "").slice(0, 10);
+      var rowOff = dayOffsForIso(iso).length ? " asr-row--has-dayoff" : "";
       html +=
         '<tr class="asr-row--' +
         esc(dr.status || "confirmed") +
+        rowOff +
         '"><td class="asr-date">' +
         esc(dr.label || dr.date) +
+        dateDayOffChipsHtml(iso) +
         "</td>";
       (dr.cells || []).forEach(function (cell, idx) {
         var lab = labels[idx] || { style: "default", idx: 0 };
@@ -1493,7 +1602,7 @@
           html += '<td class="' + tdCls + ' asr-cell--muted-filter">—</td>';
           return;
         }
-        html += '<td class="' + tdCls + '">' + cellInputHtml(cell) + "</td>";
+        html += '<td class="' + tdCls + '">' + cellInputHtml(cell, iso) + "</td>";
       });
       html += "</tr>";
     });
@@ -1836,7 +1945,7 @@
         return;
       }
       state.mergedData = null;
-      Promise.all([applyOverridesToMerged(), loadChangeLog()]).then(refreshPanel);
+      Promise.all([applyOverridesToMerged(), loadChangeLog(), loadDayOffs()]).then(refreshPanel);
     }
 
     if (!global.__ASR_ROSTER_SYNC_BOUND__) {
@@ -1844,7 +1953,7 @@
       try {
         global.addEventListener("portal:staff-dashboard-source-updated", function () {
           if (!document.getElementById("adminSpreadsheetRefRoot")) return;
-          applyOverridesToMerged().then(refreshPanel);
+          Promise.all([applyOverridesToMerged(), loadDayOffs()]).then(refreshPanel);
         });
       } catch (_e) {}
     }
