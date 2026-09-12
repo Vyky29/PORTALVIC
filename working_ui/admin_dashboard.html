@@ -159,7 +159,7 @@
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
   <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260912-tue-seats-trial"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260912-ma-bespoke-climb"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -5161,16 +5161,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(adminSchedIsSundaySwimfarmHubMulti(sessionOrRow)) return true;
       return adminSchedIsSep6HubBookStaff(sessionOrRow);
     }
-    /** Same client + same programme family (Multi hub≠pool) has a dated row this week. */
+    /**
+     * Same client + same programme family has a *dated* row on this calendar day.
+     * (Do not use the whole Mon–Sun week — a Wed Tinashe dated exception must not
+     * blank Mon/Fri standing Bespoke for the same child.)
+     */
     function adminClientHasDatedRosterInWeekSameFamily(iso, standingSession){
       var cid = adminCanonicalClientSlug(standingSession && (standingSession.clientId || standingSession.client_name));
       if(!cid || cid === 'available' || cid === 'closed') return false;
       var want = adminNormIsoDate(iso);
       if(!want) return false;
-      var days = bookingWeekIsoRangeMonSun(want);
-      if(!days.length) return false;
-      var ws = days[0];
-      var we = days[days.length - 1];
       var standMulti = adminSchedIsMultiProgramme(standingSession);
       var standArea = standMulti ? adminSchedSlotAreaKind(standingSession) : '';
       var standProg = '';
@@ -5186,7 +5186,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       for(var i = 0; i < rows.length; i++){
         var r = rows[i];
         var sd = adminNormIsoDate(r.session_date || r.date);
-        if(!sd || sd < ws || sd > we) continue;
+        if(!sd || sd !== want) continue;
         if(adminCanonicalClientSlug(r.client_name) !== cid) continue;
         var oProg = '';
         try{
@@ -7400,10 +7400,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_){ pick = ''; }
       return pick;
     }
-    /** Latest pre-crash summer ISO for a weekday — projection source for Autumn calendar days. */
+    /**
+     * Standing stamp ISO for a weekday — projection source for Autumn calendar days.
+     * Prefer PortalRosterCanonical (weekend Multi/Climb Sep 12–13; weekday Jul snaps),
+     * else latest Apr–Jul template row still present after purge.
+     */
     function adminServicesLatestStandingIsoForDow(dowNorm){
       var want = adminServiceNormalizeDowKey(dowNorm);
-      if(!want || !adminSpreadsheetAdapterAvailable()) return '';
+      if(!want) return '';
+      try{
+        var PRC = window.PortalRosterCanonical;
+        if(PRC){
+          if((want === 'saturday' || want === 'sunday') && PRC.WEEKEND_STANDING_ISO){
+            var we = String(PRC.WEEKEND_STANDING_ISO[want] || '').trim().slice(0, 10);
+            if(/^\d{4}-\d{2}-\d{2}$/.test(we)) return we;
+          }
+          if(PRC.DAY_CENTRE_STANDING_ISO){
+            var dc = String(PRC.DAY_CENTRE_STANDING_ISO[want] || '').trim().slice(0, 10);
+            if(/^\d{4}-\d{2}-\d{2}$/.test(dc)) return dc;
+          }
+        }
+      }catch(_prc){}
+      if(!adminSpreadsheetAdapterAvailable()) return '';
       var src = window.STAFF_DASHBOARD_SOURCE;
       var rows = (src && src.rows) || [];
       var best = '';
@@ -19390,6 +19408,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           for(var si = 0; si < rel.length; si++){
             var s = rel[si];
             if(!adminSessionMatchesCalendarIso(s, calIso, wd, sessions)) continue;
+            /*
+             * Re-apply Autumn calendar remaps on the *paint* day (not Jul stamp).
+             * Example: Wed 16 Tinashe drops John + Raul → 3 seats (Godsway/Bismark/Emmanuel).
+             */
+            try{
+              var PRCInst = window.PortalRosterCanonical;
+              if(PRCInst && typeof PRCInst.resolveAutumnInstructorsForCalendarDate === 'function'){
+                var staffTok = String(s.staffId || s.instructors || '').trim();
+                var keptTok = PRCInst.resolveAutumnInstructorsForCalendarDate(staffTok, calIso, {
+                  service: s.rosterService || s.activity || '',
+                  day: wd,
+                  venue: s.venue || '',
+                  clientName: s.clientId || s.client_name || '',
+                  client_name: s.clientId || s.client_name || ''
+                });
+                if(!String(keptTok || '').trim()) continue;
+              }
+            }catch(_remapInst){}
             out.push(mapSpreadsheetSessionToSchedSlot(s, calIso, notesBy));
           }
         }
