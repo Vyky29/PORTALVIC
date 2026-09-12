@@ -159,7 +159,7 @@
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
   <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260912-amaar-mon-only"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260912-tue-seats-trial"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -174,7 +174,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260912-svc-seats-only" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260912-trial-pill" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -19492,9 +19492,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return { booked: booked, open: open, closed: closed, cap: cap, total: (slots && slots.length) || 0 };
     }
     /**
-     * Stable Seat 1..N columns for Places (match LOCAL Acton AS books).
-     * Tue Acton: Aurora · Javier · Roberto · Luliya (Seat 4 = Luliya open / Reggie trial).
-     * Thu Acton: Aurora · Javier · Roberto · Simon.
+     * Stable Seat 1..N columns for Places (match Sessions Overview / LOCAL Acton AS).
+     * Tue Acton: 1 Aurora · 2 Javier · 3 Roberto · 4 Luliya.
+     * Thu Acton: 1 Aurora · 2 Javier · 3 Roberto · 4 Simon.
      */
     function adminServicePlacesStaffColumnRank(programme, venue, dowNorm, staffName){
       var prog = adminServiceProgrammeNormKey(programme);
@@ -19510,6 +19510,35 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(sn === order[i] || sn.indexOf(order[i]) === 0) return i;
       }
       return 40;
+    }
+    /** Trial / new (not term CLIENT) — purple pill like Overview. */
+    function adminServicePaxSeatIsTrial(paxName, line, pickIso){
+      var n = String(paxName || '').trim();
+      if(!n) return false;
+      if(/\(\s*trial\b/i.test(n) || /^trial\s*[·\-:]/i.test(n) || /\btrial\b/i.test(n)) return true;
+      if(line && (line.isTrial === true || String(line.bookingKind || line.booking_kind || '').toLowerCase() === 'trial')) return true;
+      var sd = String((line && (line.sessionDate || line.session_date)) || '').trim().slice(0, 10);
+      var paint = String(pickIso || '').trim().slice(0, 10);
+      /* Dated Autumn one-off on the Places paint day (e.g. Reggie Conlon trial) — not summer standing stamp. */
+      if(
+        /^\d{4}-\d{2}-\d{2}$/.test(sd) &&
+        /^\d{4}-\d{2}-\d{2}$/.test(paint) &&
+        sd === paint &&
+        sd >= '2026-09-01' &&
+        !(sd >= SERVICES_STANDING_TEMPLATE_START_ISO && sd <= SERVICES_STANDING_TEMPLATE_END_ISO)
+      ){
+        return true;
+      }
+      return false;
+    }
+    function adminServiceTrialPaxPillHtml(paxName, pAttrs, dataSlot){
+      var label = String(paxName || '').replace(/\s*\(\s*trial\s*\)\s*/gi, ' ').replace(/\s+/g, ' ').trim() || paxName;
+      return (
+        '<button type="button" class="chip chip--trial c4k-svc-pax-pill c4k-svc-pax-pill--trial" ' +
+        (pAttrs || '') + (dataSlot ? (' ' + dataSlot) : '') +
+        ' title="Trial / new — not a term CLIENT yet">' +
+        esc(label) + ' · Trial</button>'
+      );
     }
     /** Staff names excluded from Services venue/day instructor counts and band lists. */
     function adminServiceIsExcludedInstructorName(nm){
@@ -21115,7 +21144,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   demoId: String((ml && ml.demoId) || '').trim(),
                   closed: isClosed,
                   open: !isClosed && !isBooked,
-                  paxName: isBooked ? paxName : ''
+                  paxName: isBooked ? paxName : '',
+                  trial: isBooked
+                    ? adminServicePaxSeatIsTrial(paxName, ml, B.pickIso || pickIso0 || displayIso0)
+                    : false
                 });
               }
               // "Space available" filter: only show open instructor seats — hide columns
@@ -21221,6 +21253,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 /* Named dated booking (trial / new client) beats standing "No participant". */
                 if(nextBooked && !prevBooked) byKey[rk] = rs;
                 else if(prevBooked && !nextBooked){ /* keep booked */ }
+                /* Prefer trial flag when both booked on same instructor. */
+                else if(nextBooked && prevBooked && rs.trial && !prevSeat.trial) byKey[rk] = rs;
                 /* On-shift open seat beats stale Closed (e.g. Luliya Tue 4). */
                 else if(prevSeat.closed && rs.open && !rs.closed) byKey[rk] = rs;
                 else if(prevSeat.open && !prevSeat.closed && rs.closed){ /* keep open */ }
@@ -21284,9 +21318,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   var pAttrs = pCid
                     ? 'data-client="' + esc(pCid) + '"'
                     : 'data-pax-name="' + escAttr(seat.paxName) + '"';
-                  paxHtml =
-                    '<button type="button" class="chip chip--info c4k-svc-pax-pill" ' + pAttrs +
-                    ' title="Open participant info (side panel)">' + esc(seat.paxName) + '</button>';
+                  if(seat.trial){
+                    paxHtml = adminServiceTrialPaxPillHtml(seat.paxName, pAttrs, '');
+                  }else{
+                    paxHtml =
+                      '<button type="button" class="chip chip--info c4k-svc-pax-pill" ' + pAttrs +
+                      ' title="Open participant info (side panel)">' + esc(seat.paxName) + '</button>';
+                  }
                 }else{
                   paxHtml =
                     '<button type="button" class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" data-novo-edit-sched-slot="1" ' +

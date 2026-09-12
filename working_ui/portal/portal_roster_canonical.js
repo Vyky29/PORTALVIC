@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 109;
+  var SOURCE_VERSION = 110;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -375,7 +375,8 @@
    */
   /**
    * Acton Tue pool notes: match Summer where known (Junaid Lane SE; Adam Mahmmoud = Teaching Pool).
-   * Brothers staggered: Aydaan 5.30–6 Aurora; Adaam 6–6.30 Luliya. Javier 6 open.
+   * Overview seats: 1 Aurora · 2 Javier · 3 Roberto · 4 Luliya.
+   * Brothers: Aydaan Javier 6–6.30; Adaam Luliya 6–6.30. Aurora 5.30 open.
    */
   var AUTUMN_ACTON_TUESDAY_BOARD = [
     { staff: "ROBERTO", name: "Christian Abate", time: "4 to 4.30", area: "Lane (DE)" },
@@ -392,11 +393,11 @@
     { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (DE)" },
     { staff: "JAVIER", name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
     { staff: "JAVIER", name: "Rayan Ta", time: "5.30 to 6", area: "Lane (DE)" },
-    { staff: "JAVIER", name: "No participant", time: "6 to 6.30", area: "Lane (SE)" },
+    { staff: "JAVIER", name: "Aydaan Ah", time: "6 to 6.30", area: "Lane (SE)" },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
     { staff: "AURORA", name: "Adam Mahmmoud", time: "4.30 to 5", area: "Teaching Pool" },
     { staff: "AURORA", name: "Junaid", time: "5 to 5.30", area: "Lane (SE)" },
-    { staff: "AURORA", name: "Aydaan Ah", time: "5.30 to 6", area: "Lane (SE)" },
+    { staff: "AURORA", name: "No participant", time: "5.30 to 6", area: "Lane (SE)" },
     { staff: "AURORA", name: "Anas", time: "6 to 6.30", area: "Lane (DE)" },
   ];
 

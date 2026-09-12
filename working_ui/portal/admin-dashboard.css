@@ -2565,6 +2565,10 @@
     .chip.chip--urg.c4k-svc-pax-pill--closed{
       cursor:default;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;font-weight:700
     }
+    .c4k-svc-pax-pill--trial,
+    .chip.chip--trial.c4k-svc-pax-pill--trial{
+      cursor:pointer;background:#f3e8ff;color:#7c3aed;border:1px solid rgba(124,58,237,.32);font-weight:700
+    }
     .c4k-svc-slot-instr-btn{
       appearance:none;-webkit-appearance:none;border:0;background:transparent;padding:0;margin:0;
       font:inherit;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;max-width:100%;
