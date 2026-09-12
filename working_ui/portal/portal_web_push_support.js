@@ -213,19 +213,32 @@
   global.portalPersistSet = global.portalPersistSet || persistSet;
   global.portalIsStandalonePwa = portalIsStandalonePwa;
 
-  /** Short beep + optional vibrate so the in-app COMMS card is heard inside the PWA. */
+  /** Unlock / resume alert audio only after a real user gesture (not pageshow). */
   var lastAlertCueAt = 0;
   function portalUnlockAlertAudio() {
     try {
       var AC = global.AudioContext || global.webkitAudioContext;
       if (!AC) return;
-      var ctx = global.__PORTAL_ALERT_AUDIO_CTX__ || new AC();
-      global.__PORTAL_ALERT_AUDIO_CTX__ = ctx;
+      var ctx = global.__PORTAL_ALERT_AUDIO_CTX__;
+      if (!ctx) {
+        ctx = new AC();
+        global.__PORTAL_ALERT_AUDIO_CTX__ = ctx;
+      }
       if (ctx.state === "suspended") {
         var p = ctx.resume();
         if (p && typeof p.catch === "function") p.catch(function () {});
       }
     } catch (_u) {}
+  }
+  function portalResumeAlertAudioIfReady() {
+    try {
+      var ctx = global.__PORTAL_ALERT_AUDIO_CTX__;
+      if (!ctx) return;
+      if (ctx.state === "suspended") {
+        var p = ctx.resume();
+        if (p && typeof p.catch === "function") p.catch(function () {});
+      }
+    } catch (_r) {}
   }
   function portalPlayAlertCue(opts) {
     opts = opts || {};
@@ -269,7 +282,7 @@
     try {
       document.addEventListener("pointerdown", portalUnlockAlertAudio, true);
       document.addEventListener("touchstart", portalUnlockAlertAudio, { capture: true, passive: true });
-      global.addEventListener("pageshow", portalUnlockAlertAudio);
+      global.addEventListener("pageshow", portalResumeAlertAudioIfReady);
     } catch (_b) {}
   }
 

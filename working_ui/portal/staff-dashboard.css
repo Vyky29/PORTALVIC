@@ -4307,12 +4307,13 @@
       box-shadow:0 0 0 1px var(--reviewGreenGlow),0 8px 22px var(--reviewGreenGlow);
     }
     .session-card.override--instructor{background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);border-color:rgba(25,118,210,.32)}
+    /* No Participant keeps light-red open paint even if an override tone class is present. */
     .section-card--today .session-card.session-card--available.session-card--ov-yellow,
     .section-card--today .session-card.session-card--available.session-card--ov-green,
     .section-card--today .session-card.session-card--available.session-card--ov-red{
-      border-color:rgba(45,132,179,.34);
-      background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);
-      box-shadow:0 1px 4px rgba(23,50,71,.07);
+      border-color:rgba(244, 63, 94, 0.35);
+      background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);
+      box-shadow:0 1px 6px rgba(190, 18, 60, 0.1);
     }
     .session-ov-symbol-text{
       display:block;min-width:0;max-width:100%;
@@ -5580,19 +5581,19 @@
       background:linear-gradient(180deg,#fff1f1 0%,#ffcaca 100%);
       box-shadow:0 1px 6px rgba(150,28,28,.2);
     }
-    /* No Participant = open slot awaiting a booking → yellow card (matches the
-       "changed by admin" yellow), no chip. Distinct from Closed (red). */
+    /* No Participant = open slot awaiting a booking → light red card, no chip.
+       Distinct from Closed (stronger red). */
     .section-card--today .session-card.session-card--available{
-      border-color:rgba(200,165,45,.5);
-      background:linear-gradient(180deg,#fffef6 0%,#fff3bf 100%);
-      box-shadow:0 1px 6px rgba(200,165,45,.12);
+      border-color:rgba(244, 63, 94, 0.35);
+      background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);
+      box-shadow:0 1px 6px rgba(190, 18, 60, 0.1);
     }
     .section-card--today .session-card.session-card--available:hover{
-      border-color:rgba(150,110,20,.62);
-      box-shadow:0 4px 14px rgba(180,140,30,.2);
+      border-color:rgba(190, 18, 60, 0.5);
+      box-shadow:0 4px 14px rgba(190, 18, 60, 0.16);
     }
     .section-card--today .session-card.session-card--available .session-meta-name{
-      color:#b91c1c;
+      color:#9f1239;
     }
     .section-card--today .session-card .session-card-body{
       flex:1 1 auto;

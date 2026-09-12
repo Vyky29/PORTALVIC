@@ -853,7 +853,9 @@
         var entries = performance.getEntriesByName('portal:' + name);
         var last = entries && entries.length ? entries[entries.length - 1] : null;
         if(last && typeof console !== 'undefined' && console.debug){
-          console.debug('[portal-perf]', name, Math.round(last.duration) + 'ms');
+          var perfOn = false;
+          try{ perfOn = !!(globalThis.localStorage && localStorage.getItem('PORTAL_PERF') === '1'); }catch(_p){}
+          if(perfOn) console.debug('[portal-perf]', name, Math.round(last.duration) + 'ms');
         }
       }catch(_){}
     }
@@ -1082,7 +1084,9 @@
                 : (item.kind === 'admin'
                   ? 'session-card--admin'
                   : (item.kind === 'manager' ? 'session-card--manager' : ''))));
-          row.className = 'session-card' + (rowKindCls ? ' ' + rowKindCls : '') + ovTone + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '');
+          /* Open/closed seats keep their own paint — do not layer override tone classes. */
+          const toneCls = (item.kind === 'available' || item.kind === 'closed') ? '' : ovTone;
+          row.className = 'session-card' + (rowKindCls ? ' ' + rowKindCls : '') + toneCls + adminAdjCls + (ovTypeCls ? ' ' + ovTypeCls : '');
           row.setAttribute('role', 'listitem');
           row.innerHTML = todaySessionCardInnerHtml(item);
           rowsWrap.appendChild(row);
