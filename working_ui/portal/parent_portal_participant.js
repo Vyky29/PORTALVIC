@@ -4513,8 +4513,8 @@
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--blue" aria-hidden="true"></span>' +
       '<span class="pp-hub-ops__chip-legend__text"><strong>Blue</strong> — upcoming / next session</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
-      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--lilac" aria-hidden="true"></span>' +
-      '<span class="pp-hub-ops__chip-legend__text"><strong>Lilac</strong> — trial</span></li>' +
+      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--purple" aria-hidden="true"></span>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Purple</strong> — trial</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--green" aria-hidden="true"></span>' +
       '<span class="pp-hub-ops__chip-legend__text"><strong>Green</strong> — completed (attended)</span></li>' +
@@ -5000,7 +5000,7 @@
        * still get their term days instead of an empty accordion.
        */
       if (!nextDates.length) nextDates = findUnconfirmedNextYearSessionDates(data);
-      /* Mix-in one-off trial days (lilac) — e.g. climb trial + aquatic term. */
+      /* Mix-in one-off trial days (purple) — e.g. climb trial + aquatic term. */
       try {
         var trialIsoMap = Object.create(null);
         trialBookedDateRows(data).forEach(function (t) {
