@@ -14,7 +14,7 @@ import {
   type ParticipantIdentityInput,
 } from "./participant_identity.ts";
 
-export const WEEKLY_NOTE_PROMPT_VERSION = "20260723-tinashe-lead-v1";
+export const WEEKLY_NOTE_PROMPT_VERSION = "20260912-no-parent-dialogue-v1";
 export const DEFAULT_WEEKLY_NOTE_MODEL = "gpt-4o-mini";
 
 /** Tinashe: Mon/Wed/Fri lead briefs from John; feedback fallback from session instructors. */
@@ -120,6 +120,39 @@ function feedbackAttendanceIsAbsent(attendance: unknown): boolean {
 function firstNameOf(display: string): string {
   const t = clean(display, 120);
   return t.split(/\s+/)[0] || t || "they";
+}
+
+/**
+ * Weekly notes are read BY parents on the family portal.
+ * Staff session narratives often include handover lines ("I explained to mum…")
+ * that must never appear in the parent-facing summary.
+ */
+export function stripParentAudienceLeaks(text: string): string {
+  const raw = clean(text, 8000);
+  if (!raw) return "";
+  const parts = raw
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const leak =
+    /\b(mum|mom|dad|mummy|daddy|parent|parents|carer|caregiver|guardian|handover)\b/i;
+  const talkToParent =
+    /\b(I|we)\s+(explained|shared|told|spoke|updated|mentioned|said|spoke\s+with|talked\s+to)\b/i;
+  const parentReaction =
+    /\b(mum|mom|dad|parent|parents|carer)\s+(was|were|seemed|looked|mentioned|shared|said|thrilled|pleased|happy|delighted)\b/i;
+  const kept = parts.filter((s) => {
+    if (parentReaction.test(s)) return false;
+    if (/\b(his|her|their)\s+(mum|mom|dad|parent|parents|carer)\b/i.test(s)) return false;
+    if (leak.test(s) && (talkToParent.test(s) || /\bhandover\b/i.test(s) || /\bwith\s+(his|her|their)\s+(mum|mom|dad)\b/i.test(s))) {
+      return false;
+    }
+    if (/\bI\s+shared\s+with\s+(his|her|their)\s+(mum|mom|dad|parent)/i.test(s)) return false;
+    if (/\b(explained|shared|told|spoke)\s+to\s+(mum|mom|dad|parent)/i.test(s)) return false;
+    if (/\bhandover\s+with\s+(mum|mom|dad|parent)/i.test(s)) return false;
+    if (leak.test(s) && /\b(she|he)\s+(seemed|was)\s+(happy|pleased|thrilled)/i.test(s)) return false;
+    return true;
+  });
+  return kept.join(" ").replace(/\s+/g, " ").trim();
 }
 
 export function listWeekStartsInclusive(fromIso: string, throughIso: string): string[] {
@@ -508,7 +541,7 @@ function fallbackCelebrateBody(firstName: string, sources: WeeklyNoteDaySource[]
   const name = firstName || "They";
   const bits = sources
     .slice(0, 4)
-    .map((s) => clean(s.text, 220))
+    .map((s) => stripParentAudienceLeaks(clean(s.text, 400)).slice(0, 220))
     .filter(Boolean);
   if (!bits.length) {
     return `${name} had a good week with us. We look forward to seeing them again soon.`;
@@ -530,19 +563,28 @@ async function callOpenAiWeeklyNote(
   varyHarder = false,
 ): Promise<{ ok: true; body: string; model: string } | { ok: false; error: string; model: string }> {
   const model = clean(Deno.env.get("PORTAL_OPENAI_MODEL"), 64) || DEFAULT_WEEKLY_NOTE_MODEL;
-  const dayBlocks = sources
-    .map(
-      (s) =>
-        `Date ${s.session_date} (${s.service}, source=${s.source}):\n${clean(s.text, 2500)}`,
-    )
+  const scrubbedBlocks = sources
+    .map((s) => {
+      const scrubbed = stripParentAudienceLeaks(s.text);
+      if (!scrubbed) return "";
+      return `Date ${s.session_date} (${s.service}, source=${s.source}):\n${scrubbed.slice(0, 2500)}`;
+    })
+    .filter(Boolean)
     .join("\n\n");
+  if (!scrubbedBlocks) {
+    return { ok: false, error: "no-scrubbed-sources", model };
+  }
 
   const system = [
     "You write short weekly notes for parents at clubSENsational, a neurodivergent children's activity club.",
+    "IMPORTANT: The family reads this note on the parent portal. You are writing TO the parents — not reporting a conversation about them.",
+    "Never mention mum, dad, parents, carers, guardians, handovers, pick-up chats, or how a parent reacted.",
+    "Never write lines like \"I shared with his mum\", \"Mum was pleased\", \"handover with Mum\", or \"I explained to mum\".",
+    "If day notes include staff↔parent dialogue, ignore that part completely. Summarise only what the child did in the session.",
     "Tone: warm, plain English, celebrate effort and joy more than problems. Do not sound clinical or technical.",
     "Avoid jargon (engagement scores, regulation codes, independence levels). Prefer everyday words.",
     "If a day mentions a challenge, keep it brief and constructive; lead with what went well.",
-    "Do not invent activities or feelings that are not in the day notes.",
+    "Do not invent activities, feelings, progress, or parent reactions that are not in the day notes.",
     `Always use the child's first name exactly as given: "${firstName}" (spell it the same way every time; never a variant spelling).`,
     "Write 1–3 short paragraphs in English. No bullet lists. No title heading.",
     "Each week's note must feel fresh: vary the opening line and structure. Do not reuse stock openers like \"What a wonderful week…\", \"had a fantastic week…\", or the same closing sentence as earlier notes.",
@@ -559,8 +601,8 @@ async function callOpenAiWeeklyNote(
 
   const user = [
     `Week: ${weekStart} (Saturday) to ${weekEnd} (Friday).`,
-    "Day notes to summarise into one weekly note for the family:",
-    dayBlocks,
+    "Day notes to summarise into one weekly note for the family (parent dialogue already removed):",
+    scrubbedBlocks,
     priorBlock,
     varyHarder
       ? "IMPORTANT: Your previous draft was too similar to an earlier weekly note. Rewrite with a different opening, different sentence shapes, and only this week's concrete moments."
@@ -591,7 +633,7 @@ async function callOpenAiWeeklyNote(
       return { ok: false, error: `openai-http-${res.status}:${errText.slice(0, 120)}`, model };
     }
     const json = await res.json();
-    const body = clean(json?.choices?.[0]?.message?.content, 2500);
+    const body = stripParentAudienceLeaks(clean(json?.choices?.[0]?.message?.content, 2500));
     if (body.length < 40) {
       return { ok: false, error: "openai-empty", model };
     }
@@ -774,10 +816,10 @@ export async function generateWeeklyNoteForContact(
       if (retry.ok) ai = retry;
     }
     if (ai.ok) {
-      body = ai.body;
+      body = stripParentAudienceLeaks(ai.body);
       reviewModel = ai.model + (tooSimilarToPriorNotes(body, priorBodies) ? "+sim-warn" : "");
       // Last resort: keep uniqueness by appending week-specific day facts if still near-dup.
-      if (tooSimilarToPriorNotes(body, priorBodies)) {
+      if (tooSimilarToPriorNotes(body, priorBodies) || body.length < 40) {
         body = fallbackCelebrateBody(firstName, sources);
         reviewModel = `${ai.model}+fallback-dedupe`;
       }
@@ -789,6 +831,8 @@ export async function generateWeeklyNoteForContact(
     body = fallbackCelebrateBody(firstName, sources);
     reviewModel = "fallback-no-openai";
   }
+
+  body = stripParentAudienceLeaks(body);
 
   const row = {
     contact_id: opts.contactId,
