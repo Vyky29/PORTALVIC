@@ -2037,7 +2037,9 @@
         }
       }
     }
-    /* Berta day off Sun 13 / 20 Sep / 4 Oct — Hub Lead book stays COVER NEEDED (no named cover yet). */
+    /* Berta day off Sun 13 / 20 Sep / 4 Oct — standing anchor stays Berta.
+     * Sun 13: Raul named cover + 11.45 Gabriel↔Arthur Ma with Godsway (schedule_overrides).
+     * Sun 20 / 4 Oct: Hub Lead stays COVER NEEDED until a cover is assigned. */
     if (
       (iso === "2026-09-13" || iso === "2026-09-20" || iso === "2026-10-04") &&
       day === "sunday" &&
@@ -2045,7 +2047,6 @@
     ) {
       var areaBerta = String((meta && meta.area) || "").trim().toLowerCase();
       if (areaBerta.indexOf("hub") >= 0 || /\bberta\b/i.test(s)) {
-        /* Keep Berta as anchor for COVER NEEDED paint — do not remap to another staff. */
         s = s;
       }
     }
