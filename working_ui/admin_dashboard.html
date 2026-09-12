@@ -4223,14 +4223,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** Participant drawer · Sessions tab — same KPI family as Session feedback grid, scoped to this child. */
     function adminC4kParticipantSessionsKpiSlabHtml(pname, drf, od){
       drf = drf || [];
-      var usingPortal = adminSessionFeedbackPortalRows().length > 0 || adminLiveSessionFeedbackHubRows().length > 0;
       var sub = adminPortalFeedbackTermTitle();
-      var kpiEngBody = usingPortal
-        ? adminC4kRegistersKpiEngagementGaugeHtml(drf)
-        : adminC4kRegistersKpiMockEngagementGaugeHtml();
-      var kpiEmoBody = usingPortal
-        ? adminC4kRegistersKpiEmotionsDayVisualHtml(drf)
-        : adminC4kRegistersKpiMockEmotionsDayVisualHtml();
+      /* Scoped to this child only — never show club-wide mock demos. */
+      var kpiEngBody = adminC4kRegistersKpiEngagementGaugeHtml(drf);
+      var kpiEmoBody = adminC4kRegistersKpiEmotionsDayVisualHtml(drf);
       var kpiIndBody = adminC4kRegistersKpiIndependenceBarsHtml(drf);
       return (
         '<div class="sf-kpi-grid sf-kpi-grid--participant" role="region" aria-label="' +
@@ -30078,13 +30074,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         if(sheetInc) incFoot = '<span class="muted pax-sheet-stat-foot">'+esc(String(sheetInc))+' flagged in session notes</span>';
       }
-      var usingPortalKpi = adminSessionFeedbackPortalRows().length > 0;
-      var emoBody = usingPortalKpi && kpiRows.length
-        ? adminC4kRegistersKpiEmotionsVisualHtml(kpiRows)
-        : adminC4kRegistersKpiMockEmotionsVisualHtml();
-      var engBody = usingPortalKpi && kpiRows.length
-        ? adminC4kRegistersKpiEngagementGaugeHtml(kpiRows)
-        : adminC4kRegistersKpiMockEngagementGaugeHtml();
+      /* Never fall back to mock KPI demos for a named participant — empty = empty state. */
+      var emoBody = adminC4kRegistersKpiEmotionsVisualHtml(kpiRows);
+      var engBody = adminC4kRegistersKpiEngagementGaugeHtml(kpiRows);
       var indBody = adminC4kRegistersKpiIndependenceBarsHtml(kpiRows);
       var engFoot = (engTileFoot || engExtraStat)
         ? '<div style="margin-top:6px;text-align:center;min-width:0">'+engTileFoot+engExtraStat+'</div>'
