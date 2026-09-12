@@ -2517,8 +2517,7 @@
     { staff: "CARLOS", name: "Zaid", time: "11 to 12" },
     { staff: "CARLOS", name: "Serine", time: "12 to 1" },
     { staff: "CARLOS", name: "Zakariya", time: "1 to 2" },
-    /* Trial Sun 13 Sep · Carlos 2–3 (Places + Overview). Later Sundays stay open via trialDate. */
-    { staff: "CARLOS", name: "Muhammad", time: "2 to 3", trial: true, trialDate: "2026-09-13" },
+    { staff: "CARLOS", name: "No participant", time: "2 to 3" },
     { staff: "CARLOS", name: "Patrick", time: "3 to 4" },
   ];
 
@@ -2572,16 +2571,16 @@
     });
   }
 
-  /** Dated one-off: Muhammad Climbing trial · Carlos · Sun 13 Sep · 2–3. */
+  /** Dated one-off: Muhammad Climbing trial · Alex · Sun 13 Sep · 12–1. */
   function autumnSundayMuhammadClimbTrialRows() {
     return [
       {
         client_name: "Muhammad",
         day: "Sunday",
-        instructors: "CARLOS",
+        instructors: "ALEX",
         service: "Climbing Activity",
         area: "Wall",
-        time_slot: "2 to 3",
+        time_slot: "12 to 1",
         venue: "Westway",
         session_date: "2026-09-13",
       },
@@ -2589,8 +2588,8 @@
   }
 
   /**
-   * Keep Muhammad trial on Carlos 2–3 for Sun 13 (DB rows were scrubbed with standing climb rebuild).
-   * Drop standing open twin + any leftover Alex 3–4 Muhammad.
+   * Keep Muhammad trial on Alex 12–1 for Sun 13 (DB rows were scrubbed with standing climb rebuild).
+   * Drop standing open twin + any leftover Carlos 2–3 / Alex 3–4 Muhammad.
    */
   function scrubAndEnsureMuhammadClimbTrial(rows) {
     var out = [];
@@ -2609,9 +2608,18 @@
         if (
           dk === "sunday" &&
           d === "2026-09-13" &&
+          /\balex\b/i.test(inst) &&
+          /^12(\.00)?\s*to\s*1(\.00)?$/.test(t) &&
+          (/^no participant$/i.test(cn) || /^muhammad\b/i.test(cn))
+        ) {
+          return;
+        }
+        if (
+          dk === "sunday" &&
+          d === "2026-09-13" &&
           /\bcarlos\b/i.test(inst) &&
           /^2(\.00)?\s*to\s*3(\.00)?$/.test(t) &&
-          (/^no participant$/i.test(cn) || /^muhammad\b/i.test(cn))
+          /^muhammad\b/i.test(cn)
         ) {
           return;
         }

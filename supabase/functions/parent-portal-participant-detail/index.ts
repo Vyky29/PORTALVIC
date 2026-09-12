@@ -806,6 +806,17 @@ function buildServicesDetail(
     const svcRaw = clean(s.service, 80);
     // Crash / intensives are separate bookings — never drive weekly term chips.
     if (/crash|intensiv/i.test(svcRaw)) continue;
+    /*
+     * One-off trials (isTrial / weeks:1 trial) must not expand onto every matching
+     * weekday for the term — hub chips / Tomorrow would paint false term Sundays.
+     * Trials surface via upcoming_booked_sessions only.
+     */
+    const isTrialSession =
+      s.isTrial === true ||
+      s.is_trial === true ||
+      String(s.booking_kind || s.session_kind || "").toLowerCase() === "trial" ||
+      (Number(s.weeks) === 1 && /\btrial\b/i.test(String(s.notes || s.label || "")));
+    if (isTrialSession) continue;
     const svc = canonicalProgrammeName(s.service) || svcRaw || "Service";
     const day = clean(s.day, 20);
     const key = (svc + "|" + day).toLowerCase();

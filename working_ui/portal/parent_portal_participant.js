@@ -1336,23 +1336,23 @@
 
     if (isOutstandingSummerAhmedSibling(data)) {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27 — Summer 2026 payments outstanding">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Enrolled for 2026/27 — Summer 2026 payments outstanding">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-        "<span>Re-enrolled (Outstanding Payments Summer 2026)</span>" +
+        "<span>Enrolled (Outstanding Payments Summer 2026)</span>" +
         "</span>"
       );
     }
 
     /*
-     * LA / NHS office-billed term: plain Re-enrolled. An unpaid parent-pay extra
+     * LA / NHS office-billed term: plain Enrolled. An unpaid parent-pay extra
      * (e.g. a crash course billed to the family in the child's name) is chased on
      * the Invoices shortcut — it must not make the term place look unpaid.
      */
     if (isOfficeBilledLaOrNhs(data)) {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Enrolled for 2026/27">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-        "<span>Re-enrolled</span>" +
+        "<span>Enrolled</span>" +
         "</span>"
       );
     }
@@ -1360,32 +1360,32 @@
     var pay = hubReenrolPayState(data);
     if (crashUnpaid || pay === "unpaid") {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — payment outstanding">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--unpaid" data-pp-hub-reenrol-chip role="status" title="Enrolled — payment outstanding">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-        "<span>Re-enrolled (unpaid)</span>" +
+        "<span>Enrolled (unpaid)</span>" +
         "</span>"
       );
     }
     if (pay === "partial") {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--partial" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — part paid; balance still due">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--partial" data-pp-hub-reenrol-chip role="status" title="Enrolled — part paid; balance still due">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-        "<span>Re-enrolled (partially paid)</span>" +
+        "<span>Enrolled (partially paid)</span>" +
         "</span>"
       );
     }
     if (pay === "pending") {
       return (
-        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--pending" data-pp-hub-reenrol-chip role="status" title="Re-enrolled — waiting for the office to confirm payment">' +
+        '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip pp-hub-reenrolled--pending" data-pp-hub-reenrol-chip role="status" title="Enrolled — waiting for the office to confirm payment">' +
         '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-        "<span>Re-enrolled (awaiting admin confirmation)</span>" +
+        "<span>Enrolled (awaiting admin confirmation)</span>" +
         "</span>"
       );
     }
     return (
-      '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Re-enrolled for 2026/27">' +
+      '<span class="pp-hub-reenrolled pp-hub-reenrolled--chip" data-pp-hub-reenrol-chip role="status" title="Enrolled for 2026/27">' +
       '<span class="pp-hub-reenrolled__mark" aria-hidden="true">✓</span>' +
-      "<span>Re-enrolled</span>" +
+      "<span>Enrolled</span>" +
       "</span>"
     );
   }
@@ -1768,7 +1768,7 @@
     var payStateFinal = false;
     if (crashPending) {
       data._hubCrashUnpaid = true;
-      /* LA / NHS term stays plain Re-enrolled; the crash is chased on Invoices. */
+      /* LA / NHS term stays plain Enrolled; the crash is chased on Invoices. */
       if (!officeBilled) applyHubReenrolPayVisual(host, data, "unpaid");
     }
     if (!familyAcceptedNextYear(data) && !crashPending && !hasCrashDates) {
@@ -4119,7 +4119,7 @@
     }
     if (d.trialBooked) {
       return {
-        tone: d.isNext || d.isToday ? "next" : "upcoming",
+        tone: "trial",
         title: "Trial session — " + d.iso,
         icon: "",
       };
@@ -4513,6 +4513,9 @@
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--blue" aria-hidden="true"></span>' +
       '<span class="pp-hub-ops__chip-legend__text"><strong>Blue</strong> — upcoming / next session</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
+      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--lilac" aria-hidden="true"></span>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Lilac</strong> — trial</span></li>' +
+      '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--green" aria-hidden="true"></span>' +
       '<span class="pp-hub-ops__chip-legend__text"><strong>Green</strong> — completed (attended)</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
@@ -4520,7 +4523,7 @@
       '<span class="pp-hub-ops__chip-legend__text"><strong>Orange</strong> — absent</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--red" aria-hidden="true"></span>' +
-      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — cancelled or not booked / not re-enrolled</span></li>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — cancelled or not booked</span></li>' +
       "</ul>"
     );
   }
@@ -4997,7 +5000,41 @@
        * still get their term days instead of an empty accordion.
        */
       if (!nextDates.length) nextDates = findUnconfirmedNextYearSessionDates(data);
-      pushTermAccordionsFromDates(nextDates, true, " Term 26/27 · Re-enrolled");
+      /* Mix-in one-off trial days (lilac) — e.g. climb trial + aquatic term. */
+      try {
+        var trialIsoMap = Object.create(null);
+        trialBookedDateRows(data).forEach(function (t) {
+          if (!t || !t.iso || t.iso <= summerTo) return;
+          trialIsoMap[t.iso] = true;
+        });
+        nextDates.forEach(function (d) {
+          if (d && d.iso && trialIsoMap[d.iso]) d.trialBooked = true;
+        });
+        Object.keys(trialIsoMap).forEach(function (tIso) {
+          var have = nextDates.some(function (d) {
+            return d && d.iso === tIso;
+          });
+          if (have) return;
+          nextDates.push(
+            annotateChipDate(
+              {
+                iso: tIso,
+                shortLabel: formatTermChipLabel(tIso),
+                past: tIso < isoDateLocal(new Date()),
+                isToday: tIso === isoDateLocal(new Date()),
+                isNext: true,
+                pendingReenrol: false,
+                trialBooked: true,
+              },
+              data,
+            ),
+          );
+        });
+        nextDates.sort(function (a, b) {
+          return String(a.iso || "").localeCompare(String(b.iso || ""));
+        });
+      } catch (_trialMix) {}
+      pushTermAccordionsFromDates(nextDates, true, " Term 26/27");
     } else if (todayIso > summerTo) {
       // Summer 25/26 finished and still not confirmed → 26/27 chips in red.
       var pendingDates = findUnconfirmedNextYearSessionDates(data);
