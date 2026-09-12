@@ -159,7 +159,7 @@
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
   <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260912-climb-sun-board"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260912-places-elia-tinashe"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -7102,9 +7102,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function adminServiceStaffIsSandraPrincipal(nameOrId){
       return /\bsandra\b/i.test(String(nameOrId || ''));
     }
+    function adminServiceStaffIsAuroraPrincipal(nameOrId){
+      return /\baurora\b/i.test(String(nameOrId || ''));
+    }
+    function adminServiceStaffIsLuliyaCover(nameOrId){
+      return /\bluliya\b/i.test(String(nameOrId || ''));
+    }
     /**
      * Services = one named term seat per participant on a band.
-     * Prefer standing / principal staff; drop day-cover duplicates (e.g. Javi covering Sandra).
+     * Prefer standing / principal staff; drop day-cover duplicates (e.g. Javi covering Sandra,
+     * Luliya covering Aurora pool on stamp Sunday projected onto later Sundays).
      */
     function adminServicePickStandingPreferredLine(a, b, standingIso){
       if(!a) return b;
@@ -7117,12 +7124,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var bStaff = String(b.staffName || b.staffRosterId || '');
       if(adminServiceStaffIsSandraPrincipal(aStaff) && adminServiceStaffIsJaviPalankasCover(bStaff)) return a;
       if(adminServiceStaffIsSandraPrincipal(bStaff) && adminServiceStaffIsJaviPalankasCover(aStaff)) return b;
+      if(adminServiceStaffIsAuroraPrincipal(aStaff) && adminServiceStaffIsLuliyaCover(bStaff)) return a;
+      if(adminServiceStaffIsAuroraPrincipal(bStaff) && adminServiceStaffIsLuliyaCover(aStaff)) return b;
       return a;
     }
     function adminServiceCollapseLinesToStandingSeats(lines, standingIso){
       var list = Array.isArray(lines) ? lines : [];
       var opens = [];
       var bestByPax = {};
+      /* Aquatic SwimFarm Sunday = 3 standing seats (Aurora / Javier / Roberto).
+       * Same child on Aurora + Luliya cover must collapse to one seat (not 2:1). */
+      var sundayAquaticSwim = false;
+      for(var qi = 0; qi < list.length; qi++){
+        var ql = list[qi];
+        if(!ql) continue;
+        if(adminServiceProgrammeNormKey(ql.programme || ql.rosterService) !== 'aquatic') continue;
+        if(!adminServicesIsSwimFarmVenue(ql.venue)) continue;
+        var qDow = adminServiceNormalizeDowKey(ql.sheetDay || portalWeekdayLongFromIsoDate(ql.sessionDate));
+        if(qDow === 'sunday'){ sundayAquaticSwim = true; break; }
+      }
       for(var i = 0; i < list.length; i++){
         var ml = list[i];
         if(!ml) continue;
@@ -7135,6 +7155,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ? (String(ml.clientDisplay || '').trim() || pSlug)
           : '';
         if(!isClosed && !paxName){
+          /* Drop Luliya open halves when Aurora already owns the Sunday pool pattern. */
+          if(sundayAquaticSwim && adminServiceStaffIsLuliyaCover(snm || ml.staffRosterId)) continue;
           opens.push(ml);
           continue;
         }
@@ -7142,12 +7164,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           opens.push(ml);
           continue;
         }
-        /* Keep 2:1 (same child, two instructors) as two seats — match Booking / MADRE. */
+        /* Keep 2:1 (same child, two instructors) as two seats — except Sunday Aquatic SwimFarm. */
         var staffKey = String(ml.staffRosterId || ml.staffName || '')
           .trim()
           .toLowerCase()
           .replace(/\s+/g, ' ');
-        var key = paxName.toLowerCase().replace(/\s+/g, ' ') + '|' + staffKey;
+        var key = sundayAquaticSwim
+          ? paxName.toLowerCase().replace(/\s+/g, ' ')
+          : (paxName.toLowerCase().replace(/\s+/g, ' ') + '|' + staffKey);
         var prev = bestByPax[key];
         bestByPax[key] = adminServicePickStandingPreferredLine(prev, ml, standingIso);
       }
@@ -8303,12 +8327,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var clients = board.byStaff[snKey].clients || [];
         for(var j = 0; j < clients.length; j++){
           if(normTimeLabel(clients[j].time) !== tWant) continue;
-          clients[j].client = pax;
-          clients[j].open = false;
-          clients[j].demoId = String(sl.demoId || '');
-          clients[j].trial = adminServicePaxBookingSeatState(
+          if(clients[j].closed) break;
+          var seatState = adminServicePaxBookingSeatState(
             pax, sl, pickIso, 'Climbing Activity', 'Westway', 'sunday'
-          ) === 'trial';
+          );
+          if(seatState === 'open'){
+            clients[j].client = 'No participant';
+            clients[j].open = true;
+            clients[j].trial = false;
+          }else{
+            clients[j].client = pax;
+            clients[j].open = false;
+            clients[j].demoId = String(sl.demoId || '');
+            clients[j].trial = seatState === 'trial';
+          }
           break;
         }
       }
@@ -8372,10 +8404,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(String(clist[cj].time || '').trim() === timeLab){ hit = clist[cj]; break; }
           }
           paxName = hit ? String(hit.client || '').trim() : '';
-          var isOpen = !hit || !!hit.open || /^no participant$/i.test(paxName) || !paxName;
+          var isClosedClimb = !!(hit && hit.closed) || /^closed$/i.test(paxName);
+          var isOpen = !isClosedClimb && (!hit || !!hit.open || /^no participant$/i.test(paxName) || !paxName);
           if(hit && hit.demoId) demoIds.push(hit.demoId);
           if(sn) staffIds.push(sn);
-          if(isOpen){
+          if(isClosedClimb){
+            cellHtml = adminServicesClosedChipHtml(
+              paxName && !/^closed$/i.test(paxName)
+                ? (paxName + ' — blocked seat (not bookable)')
+                : 'Blocked Climbing seat — not bookable'
+            );
+            if(paxName && !/^closed$/i.test(paxName)){
+              cellHtml =
+                '<span class="chip chip--urg c4k-svc-pax-pill c4k-svc-pax-pill--closed" title="'+
+                esc(paxName + ' — blocked seat (not bookable)')+'">'+esc(paxName)+' · CLOSED</span>';
+            }
+          }else if(isOpen){
             cellHtml =
               '<button type="button" class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" '+
               'title="Open place — no participant on this Climbing hour">No participant</button>';
@@ -19698,6 +19742,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var ven = String(venue || '').toLowerCase();
       var dk = adminServiceNormalizeDowKey(dowNorm);
       var sn = String(staffName || '').trim().toLowerCase();
+      if(prog === 'aquatic' && ven.indexOf('swimfarm') >= 0 && dk === 'sunday'){
+        var sunOrder = ['aurora', 'javier', 'roberto'];
+        for(var si = 0; si < sunOrder.length; si++){
+          if(sn === sunOrder[si] || sn.indexOf(sunOrder[si]) === 0) return si;
+        }
+        if(/\bluliya\b/.test(sn)) return 9;
+        return 50;
+      }
       if(prog !== 'aquatic' || ven.indexOf('acton') < 0) return 50;
       var order = null;
       if(dk === 'tuesday') order = ['aurora', 'javier', 'roberto', 'luliya'];
@@ -21655,6 +21707,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               if(ra !== rb) return ra - rb;
               return String(a.staffName || a.key).localeCompare(String(b.staffName || b.key), undefined, { sensitivity: 'base' });
             });
+            /* Aquatic SwimFarm Sunday standing = Aurora / Javier / Roberto only (drop Luliya cover twin). */
+            if(isAquaticSwimFarm && dk === 'sunday' && dayStaffOrder.length > 3){
+              var sunPoolKeep = {};
+              var sunPoolFiltered = [];
+              for(var spf = 0; spf < dayStaffOrder.length; spf++){
+                var spCol = dayStaffOrder[spf];
+                var spNm = String(spCol.staffName || spCol.key || '').trim().toLowerCase();
+                if(adminServiceStaffIsLuliyaCover(spNm)) continue;
+                var spCanon =
+                  /\baurora\b/.test(spNm) ? 'aurora' :
+                  /\bjavier\b/.test(spNm) ? 'javier' :
+                  /\broberto\b/.test(spNm) ? 'roberto' : spNm;
+                if(sunPoolKeep[spCanon]) continue;
+                sunPoolKeep[spCanon] = true;
+                sunPoolFiltered.push(spCol);
+              }
+              if(sunPoolFiltered.length) dayStaffOrder = sunPoolFiltered;
+            }
             maxSeats = Math.max(1, dayStaffOrder.length || maxSeats);
             for(var drm = 0; drm < dayBandRows.length; drm++){
               var rowSeats = dayBandRows[drm].seats || [];

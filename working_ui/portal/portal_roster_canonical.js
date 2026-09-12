@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 112;
+  var SOURCE_VERSION = 113;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -168,11 +168,14 @@
 
   /**
    * Autumn 26/27 Hub afternoon Bespoke — LOCAL EXTRA standing (from Wed 9 Sep 2026):
-   * Mon: Godsway / John / Raul / Bismark (+ Emanuel from Mon 14);
-   * Wed: Godsway / Bismark / Emanuel (shadowing Bismark) from Wed 9; John when not off
-   *     (John day off Wed 9 + Wed 16); Raul off Tinashe Wed from 9;
-   * Fri: Bespoke Bismark / Roberto / Emanuel (from Fri 11).
+   * Mon: Godsway / John / Raul (3 seats);
+   * Wed: Godsway / Bismark / Emmanuel (3 seats);
+   * Fri: Bismark / Roberto / Emmanuel (3 seats).
    * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30-5 only).
+   */
+  /**
+   * Hub Bespoke Tinashe = 3 seats every working day (same count as Friday):
+   * Mon: Godsway + John + Raul · Wed: Godsway + Bismark + Emmanuel · Fri: Bismark + Roberto + Emmanuel.
    */
   var AUTUMN_BESPOKE_HUB_ROWS = [
     {
@@ -207,26 +210,6 @@
     },
     {
       client_name: "Tinashe",
-      day: "Monday",
-      instructors: "BISMARK",
-      service: "Bespoke Programme",
-      area: "Hub Room",
-      time_slot: "4.30 to 6",
-      venue: "SwimFarm",
-      session_date: "2026-07-13",
-    },
-    {
-      client_name: "Tinashe",
-      day: "Monday",
-      instructors: "EMMANUEL",
-      service: "Bespoke Programme",
-      area: "Hub Room",
-      time_slot: "4.30 to 6",
-      venue: "SwimFarm",
-      session_date: "2026-07-13",
-    },
-    {
-      client_name: "Tinashe",
       day: "Wednesday",
       instructors: "GODSWAY",
       service: "Bespoke Programme",
@@ -238,16 +221,6 @@
     {
       client_name: "Tinashe",
       day: "Wednesday",
-      instructors: "JOHN",
-      service: "Bespoke Programme",
-      area: "Hub Room",
-      time_slot: "4.30 to 6",
-      venue: "SwimFarm",
-      session_date: "2026-07-15",
-    },
-    {
-      client_name: "Tinashe",
-      day: "Wednesday",
       instructors: "BISMARK",
       service: "Bespoke Programme",
       area: "Hub Room",
@@ -259,17 +232,6 @@
       client_name: "Tinashe",
       day: "Wednesday",
       instructors: "EMMANUEL",
-      service: "Bespoke Programme",
-      area: "Hub Room",
-      time_slot: "4.30 to 6",
-      venue: "SwimFarm",
-      session_date: "2026-07-15",
-    },
-    /* Pre-Wed-9 history: Raul still on Wed template; stripped from 2026-09-09 via remap. */
-    {
-      client_name: "Tinashe",
-      day: "Wednesday",
-      instructors: "RAUL",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.30 to 6",
@@ -1946,9 +1908,9 @@
         .trim()
         .toLowerCase();
       var isTinashe = /^tinashe\b/.test(clientTin) || clientTin === "tinashe";
-      /* Mon 1–13 Sep: Emmanuel not on Mon Tinashe yet → drop Emmanuel seat (Raul stays). */
-      if (iso && iso >= "2026-09-01" && iso < "2026-09-14" && day === "monday") {
-        if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark|victor)\b/i.test(s)) {
+      /* Mon Tinashe standing = Godsway + John + Raul only (never Bismark / Emmanuel). */
+      if (iso && day === "monday") {
+        if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|victor)\b/i.test(s)) {
           s = "";
         } else {
           s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
@@ -1970,10 +1932,10 @@
           s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
         }
       }
-      /* Bismark: Wed/Fri from 9 Sep; Mon from 14 Sep. */
+      /* Bismark: Wed/Fri from 9 Sep; never on Mon Tinashe standing. */
       if (isTinashe && iso) {
-        if (day === "monday" && iso < "2026-09-14") {
-          if (/\bbismark\b|\bbismarck\b/i.test(s) && !/\b(godsway|john|raul|emmanuel|emanuel|victor)\b/i.test(s)) {
+        if (day === "monday") {
+          if (/\bbismark\b|\bbismarck\b/i.test(s) && !/\b(godsway|john|raul|victor)\b/i.test(s)) {
             s = "";
           } else {
             s = s.replace(/\bBISMARK\b/gi, "").replace(/\bBISMARCK\b/gi, "");
@@ -1986,20 +1948,13 @@
             s = s.replace(/\bBISMARK\b/gi, "").replace(/\bBISMARCK\b/gi, "");
           }
         }
-        /* Wed from 9 Sep: Raul off Tinashe (keeps DC when he has it). */
+        /* Wed standing = Godsway + Bismark + Emmanuel (drop John + Raul). */
         if (day === "wednesday" && iso >= "2026-09-09") {
-          if (/\braul\b/i.test(s) && !/\b(godsway|john|bismark|emmanuel|emanuel)\b/i.test(s)) {
+          if (/\braul\b/i.test(s) && !/\b(godsway|bismark|emmanuel|emanuel)\b/i.test(s)) {
             s = "";
           } else {
             s = s.replace(/\bRAUL\b/gi, "");
           }
-        }
-        /* Wed 9 + Wed 16: John day off — Tinashe = Godsway + Bismark + Emmanuel.
-         * 2026-09-15 is Tuesday — do not treat it as a Wednesday Tinashe day. */
-        if (
-          day === "wednesday" &&
-          (iso === "2026-09-09" || iso === "2026-09-16")
-        ) {
           if (/\bjohn\b/i.test(s) && !/\b(godsway|bismark|emmanuel|emanuel)\b/i.test(s)) {
             s = "";
           } else {
@@ -2546,7 +2501,8 @@
     { staff: "ALEX", name: "No participant", time: "12 to 1" },
     { staff: "ALEX", name: "Rodin", time: "1 to 2" },
     { staff: "ALEX", name: "No participant", time: "2 to 3" },
-    { staff: "ALEX", name: "No participant", time: "3 to 4" },
+    /* Alex 3–4: Elia blocked (not bookable) — office hold on Seat 1. */
+    { staff: "ALEX", name: "Elia", time: "3 to 4", closed: true },
     { staff: "CARLOS", name: "Hazem", time: "10 to 11" },
     { staff: "CARLOS", name: "Zaid", time: "11 to 12" },
     { staff: "CARLOS", name: "Serine", time: "12 to 1" },
@@ -2557,14 +2513,14 @@
 
   /**
    * Autumn after-school Climbing @ Westway (Tue / Thu 4–6).
-   * Victor TEST participant Elia — replaces former Andres/Angel HOLD WAITLIST probes.
+   * Victor TEST Elia books both hours (4–5 and 5–6).
    * Stamp = Jul weekday templates so Services Places projects onto Autumn weeks.
    */
   var AUTUMN_WEEKDAY_CLIMBING_BOARD = [
     { day: "Tuesday", staff: "ALEX", name: "Elia", time: "4 to 5", session_date: "2026-07-14" },
-    { day: "Tuesday", staff: "ALEX", name: "No participant", time: "5 to 6", session_date: "2026-07-14" },
+    { day: "Tuesday", staff: "ALEX", name: "Elia", time: "5 to 6", session_date: "2026-07-14" },
     { day: "Thursday", staff: "CARLOS", name: "Elia", time: "4 to 5", session_date: "2026-07-16" },
-    { day: "Thursday", staff: "CARLOS", name: "No participant", time: "5 to 6", session_date: "2026-07-16" },
+    { day: "Thursday", staff: "CARLOS", name: "Elia", time: "5 to 6", session_date: "2026-07-16" },
   ];
 
   function isClimbingService(service) {
@@ -2584,7 +2540,8 @@
     var stamp = normIso(iso) || WEEKEND_STANDING_ISO.sunday;
     return AUTUMN_SUNDAY_CLIMBING_BOARD.map(function (slot) {
       return {
-        client_name: slot.name,
+        /* Blocked Elia seat paints CLOSED in Overview / Booking; Places board keeps Elia label. */
+        client_name: slot.closed ? "CLOSED" : slot.name,
         day: "Sunday",
         instructors: slot.staff,
         service: "Climbing Activity",
@@ -2651,7 +2608,8 @@
         client: pax,
         time: time,
         area: "Wall · Westway",
-        open: /^no participant$/i.test(pax),
+        open: !slot.closed && /^no participant$/i.test(pax),
+        closed: !!slot.closed,
       });
       if (time && !timeSeen[time]) {
         timeSeen[time] = true;

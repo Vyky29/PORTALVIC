@@ -293,7 +293,7 @@
     Open at <code>http://127.0.0.1:8765/local_dc_staff_week.html</code> (not file://). Club closed Mon 31 Aug 2026 (BH).
     <strong>1-6 Sep</strong> = week 1 (DC weekdays; Sat 5 + Sun 6 weekend · Hub: <strong>Berta Lead + Jack W…Aydaan book</strong> · <strong>John = Emmanuel book</strong> · Godsway · Youssef off · Emmanuel off).
     <strong>7-13 Sep</strong> = Emmanuel onboarding (Mon 7 interview 4pm; shadow Wed 9 / Fri 11; Sun 13 Multi Hub shadow — Hub staff: Berta · Godsway · Emmanuel only; John off).
-    Hub Tinashe from <strong>Wed 9 Sep</strong>: Wed = <strong>Godsway + Bismark + Emmanuel (shadow Bismark)</strong> · John off Wed 9 + Wed 16 · Mon = <strong>Godsway + John + Raul + Bismark + Emmanuel</strong> (from Mon 14); Fri = <strong>Bismark + Roberto + Emmanuel</strong>. Victor off Mon+Thu · Raul off Tue+Thu (no Overview column).
+    Hub Tinashe from <strong>Wed 9 Sep</strong>: <strong>3 seats</strong> every day — Wed = <strong>Godsway + Bismark + Emmanuel</strong> · Mon = <strong>Godsway + John + Raul</strong> · Fri = <strong>Bismark + Roberto + Emmanuel</strong>. Victor off Mon+Thu · Raul off Tue+Thu (no Overview column).
     Sundays: <strong>Berta Lead + Hub book (Jack W…Aydaan)</strong> · Godsway (= Bismark summer) · Emmanuel (= Godsway summer). <strong>John Sunday = 6 Sep only</strong>. Berta off Sun 13 / 20 / 4 Oct = COVER NEEDED (no cover yet).
     <strong>Fadi absent through Fri 18 Sep</strong> (returns Mon 21) — worker DC seats with Fadi cancelled.
     <strong>Day offs (validated admin):</strong> Sandra Mon 7 (Javi Palankas covers Westway Physical) · Aurora Tue 8 (Acton redistribute) · Javier Marquez Tue 8 (Ayman→Roberto 4–4.30 + Javi Palankas 4.30–5; Linda/Rayan Ta/Anas→Javi Palankas) · Aurora Sun 13 / Tue 15 / Sun 4 Oct — painted here; live COVER NEEDED stays in Schedule &amp; Covers until cover assigned.
@@ -311,7 +311,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260912-tue-seats-trial"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260912-places-elia-tinashe"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -357,7 +357,7 @@
     { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Fadi absent · Roberto Emanuel 11-4 · Tinashe = Bismark + Roberto + Emmanuel 4.15-6.15" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
     { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Berta OFF · Hub COVER NEEDED · Godsway + Emmanuel Hub · Aurora OFF · Luliya covers Aurora pool · John OFF" },
-    { dow: "monday", iso: "2026-09-14", phase: "w3", hint: "Fadi absent · Tinashe = Godsway + John + Raul + Bismark + Emmanuel · Victor OFF Mon" },
+    { dow: "monday", iso: "2026-09-14", phase: "w3", hint: "Fadi absent · Tinashe = Godsway + John + Raul (3) · Victor OFF Mon" },
     { dow: "tuesday", iso: "2026-09-15", phase: "w3", hint: "Aurora OFF · Javi Palankas covers Aurora Acton · Raul OFF Tue · Emmanuel not on Tuesday" },
     { dow: "wednesday", iso: "2026-09-16", phase: "w3", hint: "Fadi absent · John OFF · Tinashe = Godsway + Bismark + Emmanuel · Raul no Tinashe" },
     { dow: "friday", iso: "2026-09-18", phase: "w3", hint: "Fadi last absent day · Tinashe = Bismark + Roberto + Emmanuel" },
@@ -415,7 +415,7 @@
    * Standing weekend + weekday after-school (local preview; not DC board).
    * Saturday: Youssef Acton 9.30-1 (Matthias left → open 11-12).
    * Sunday: Autumn climbing Alex 10-2 / Carlos 10-4; Multi remap Godsway/Emanuel.
-   * Tue/Thu Westway Climb: Alex/Carlos 4-6 with Elia (Victor TEST) + open 5-6.
+   * Tue/Thu Westway Climb: Alex/Carlos 4-6 with Elia both hours (Victor TEST).
    * Fri Acton: Youssef (Adam Pi / Amaar). Fri Hub Tinashe: Bismark + Roberto + Emanuel (from Fri 11).
    */
   var EXTRA = {
@@ -460,7 +460,7 @@
       /* Westway Climbing after-school — Victor TEST Elia (replaces Andres HOLD). */
       Alex: [
         { name: "Elia", time: "4 to 5", band: "After school", area: "Westway · Climbing" },
-        { name: "No participant", time: "5 to 6", band: "After school", area: "Westway · Climbing", kind: "open" },
+        { name: "Elia", time: "5 to 6", band: "After school", area: "Westway · Climbing" },
       ],
     },
     wednesday: {
@@ -491,8 +491,7 @@
         { name: "Amber", time: "5.30 to 6", band: "After school", area: "Northolt · Aquatic" },
         { name: "No participant", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic", kind: "open" },
       ],
-      /* Hub Bespoke Tinashe Wed (from Wed 9): Godsway + Bismark + Emmanuel (shadow).
-       * John when not off (off Wed 9 + Wed 16). Raul off Tinashe Wed. */
+      /* Hub Bespoke Tinashe Wed: Godsway + Bismark + Emmanuel (3 seats). */
       Godsway: [
         { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
@@ -501,9 +500,6 @@
       ],
       Emmanuel: [
         { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke · shadow Bismark" },
-      ],
-      John: [
-        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
     },
     thursday: {
@@ -539,7 +535,7 @@
       /* Westway Climbing after-school — Victor TEST Elia (replaces Angel HOLD). */
       Carlos: [
         { name: "Elia", time: "4 to 5", band: "After school", area: "Westway · Climbing" },
-        { name: "No participant", time: "5 to 6", band: "After school", area: "Westway · Climbing", kind: "open" },
+        { name: "Elia", time: "5 to 6", band: "After school", area: "Westway · Climbing" },
       ],
     },
     friday: {
@@ -630,7 +626,7 @@
         { name: "Max", time: "2 to 2.30", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
         { name: "Shaan", time: "2.30 to 3", band: "Weekend", area: "SwimFarm · Aquatic · Big Pool" },
       ],
-      /* Climb: Scott not renewing 2026/27 — 12-1 open. Alex 2-3 + 3-4 open. Patrick 3-4 Carlos.
+      /* Climb: Scott not renewing 2026/27 — 12-1 open. Alex 2-3 open. Alex 3-4 Elia blocked. Patrick 3-4 Carlos.
        * Kabir unpaid omit. Ayden off. Climbing bookable units = 60' (not 30'). */
       Alex: [
         { name: "Eiji", time: "10 to 11", band: "Weekend", area: "Westway · Climbing" },
@@ -638,7 +634,7 @@
         { name: "No participant", time: "12 to 1", band: "Weekend", area: "Westway · Climbing", kind: "open" },
         { name: "Rodin", time: "1 to 2", band: "Weekend", area: "Westway · Climbing" },
         { name: "No participant", time: "2 to 3", band: "Weekend", area: "Westway · Climbing", kind: "open" },
-        { name: "No participant", time: "3 to 4", band: "Weekend", area: "Westway · Climbing", kind: "open" },
+        { name: "Elia", time: "3 to 4", band: "Weekend", area: "Westway · Climbing", kind: "closed" },
       ],
       Carlos: [
         { name: "Hazem", time: "10 to 11", band: "Weekend", area: "Westway · Climbing" },
@@ -674,7 +670,7 @@
         /* Standing open from Mon 14 — Abodi cancelled after Mon 7 (DATE_EXTRA keeps today). */
         { name: "No participant", time: "5.30 to 6.30", band: "After school", area: "Acton · Aquatic", kind: "open" },
       ],
-      /* Hub Bespoke Tinashe Mon (from Mon 14): Godsway + John + Raul + Bismark (+ Emmanuel via EMMANUEL_TINASHE). Victor OFF Mondays. */
+      /* Hub Bespoke Tinashe Mon: Godsway + John + Raul (3 seats). Victor OFF Mondays. */
       Godsway: [
         { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
@@ -682,9 +678,6 @@
         { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
       Raul: [
-        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
-      ],
-      Bismark: [
         { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
     },
@@ -872,7 +865,7 @@
     },
   };
 
-  /* From Mon 14 Sep: Emanuel on Tinashe Mon/Wed/Fri (+ Sunday MA book below). */
+  /* Wed/Fri: Emmanuel on Tinashe (Mon stays Godsway + John + Raul only). */
   var EMMANUEL_TINASHE = [
     { name: "Tinashe", time: "4.15 to 6.15", band: "After school", area: "SwimFarm · Hub · Bespoke" },
   ];
@@ -893,10 +886,10 @@
   ];
   var WEEKDAY_EXTRA_ORDER = {
     tuesday: ["Javier", "Aurora"],
-    wednesday: ["Javier", "Dan", "Godsway", "John", "Bismark"],
+    wednesday: ["Javier", "Dan", "Godsway", "Bismark", "Emmanuel"],
     thursday: ["Simon", "Javier", "Aurora"],
     friday: ["Roberto", "Bismark", "Emmanuel"],
-    monday: ["Godsway", "John", "Raul", "Bismark"],
+    monday: ["Godsway", "John", "Raul"],
   };
   /* Mon: Dan takes Victor's column slot (Victor OFF Mondays). */
   var MONDAY_COL_ORDER = [
@@ -908,8 +901,6 @@
     "Youssef",
     "Godsway",
     "John",
-    "Bismark",
-    "Emmanuel",
   ];
   /* Wed: keep Acton swim (Youssef+Javier) adjacent before wrap. */
   var WEDNESDAY_COL_ORDER = [
@@ -922,7 +913,6 @@
     "Raul",
     "Dan",
     "Godsway",
-    "John",
     "Bismark",
     "Emmanuel",
   ];
@@ -1340,25 +1330,24 @@
         var extraDay = EXTRA[dayKey];
         extraStaff = extraDay && extraDay[staffName];
       }
-      /* From Fri 11 Sep: Emanuel on Fri Tinashe. From Mon 14: also Mon/Wed. */
+      /* From Fri 11 Sep: Emmanuel on Fri Tinashe. Wed already has Emmanuel in EXTRA. Not Mon. */
       if (
         !STANDING_ONLY &&
         staffName === "Emmanuel" &&
         (
           (dayKey === "friday" && iso && iso >= "2026-09-11") ||
-          (phase === "w3" &&
-            (dayKey === "monday" || dayKey === "wednesday" || dayKey === "friday"))
+          (dayKey === "wednesday" && iso && iso >= "2026-09-09" && phase === "w2")
         )
       ) {
         extraStaff = EMMANUEL_TINASHE;
       }
-      /* Bismark Tinashe: Wed/Fri from 9 Sep; Mon from 14 Sep. */
+      /* Bismark Tinashe: Wed/Fri from 9 Sep only (not Mon). */
       if (
         !STANDING_ONLY &&
         staffName === "Bismark" &&
         iso &&
         (
-          (dayKey === "monday" && iso < "2026-09-14") ||
+          dayKey === "monday" ||
           ((dayKey === "wednesday" || dayKey === "friday") && iso < "2026-09-09")
         )
       ) {
