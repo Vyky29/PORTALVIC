@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 111;
+  var SOURCE_VERSION = 112;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -2611,6 +2611,56 @@
     });
   }
 
+  /**
+   * Services Places / Overview-style Sunday Climbing board (Alex | Carlos columns).
+   * Times are 60' books 10–4. Open seats use name "No participant".
+   */
+  function buildSundayClimbingStaffBoard(filt) {
+    filt = filt || {};
+    var coachFilt = filt.coach ? String(filt.coach).trim().toLowerCase() : "";
+    var paxFilt = filt.participant ? String(filt.participant).trim().toLowerCase() : "";
+    var byStaff = {};
+    var staffOrder = [];
+    var timeOrder = [];
+    var timeSeen = {};
+    AUTUMN_SUNDAY_CLIMBING_BOARD.forEach(function (slot) {
+      var snm = String(slot.staff || "").trim();
+      if (!snm) return;
+      if (
+        coachFilt &&
+        snm.toLowerCase().indexOf(coachFilt) < 0 &&
+        coachFilt.indexOf(snm.toLowerCase()) < 0
+      ) {
+        return;
+      }
+      var snKey = snm.toLowerCase();
+      if (!byStaff[snKey]) {
+        byStaff[snKey] = { key: snKey, name: snm, clients: [] };
+        staffOrder.push(snKey);
+      }
+      var pax = String(slot.name || "").trim() || "No participant";
+      if (
+        paxFilt &&
+        pax.toLowerCase().indexOf(paxFilt) < 0 &&
+        paxFilt.indexOf(pax.toLowerCase()) < 0
+      ) {
+        return;
+      }
+      var time = String(slot.time || "").trim();
+      byStaff[snKey].clients.push({
+        client: pax,
+        time: time,
+        area: "Wall · Westway",
+        open: /^no participant$/i.test(pax),
+      });
+      if (time && !timeSeen[time]) {
+        timeSeen[time] = true;
+        timeOrder.push(time);
+      }
+    });
+    return { staffOrder: staffOrder, byStaff: byStaff, timeOrder: timeOrder };
+  }
+
   function isWeekdayWestwayClimbingStandingRow(row) {
     if (!row) return false;
     if (!isClimbingService(row.service) || !isWestwayVenue(row.venue)) return false;
@@ -3434,6 +3484,7 @@
     autumnStaffStandingOffOnIso: autumnStaffStandingOffOnIso,
     autumnHubBespokeStandingHasStaff: autumnHubBespokeStandingHasStaff,
     buildDayCentreStaffBoard: buildDayCentreStaffBoard,
+    buildSundayClimbingStaffBoard: buildSundayClimbingStaffBoard,
     autumnDayCentreStandingRows: autumnDayCentreStandingRows,
     DAY_CENTRE_STANDING_ISO: DAY_CENTRE_STANDING_ISO,
     WEEKEND_STANDING_ISO: WEEKEND_STANDING_ISO,

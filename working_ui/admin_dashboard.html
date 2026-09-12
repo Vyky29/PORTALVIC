@@ -159,7 +159,7 @@
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
   <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260912-ma-bespoke-climb"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260912-climb-sun-board"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -7825,6 +7825,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(low.indexOf('westway') >= 0) return 'Westway';
       return v.replace(/\s+Centre$/i, '').replace(/\s+Center$/i, '').trim() || v;
     }
+    function adminServicesIsWestwayVenue(venue){
+      var low = String(venue || '').toLowerCase().replace(/\s+/g, '');
+      return low.indexOf('westway') >= 0;
+    }
     function adminServicesIsSwimFarmVenue(venue){
       var low = String(venue || '').toLowerCase().replace(/\s+/g, '');
       return low.indexOf('swimfarm') >= 0;
@@ -8245,6 +8249,162 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<p class="c4k-svc-dc-hint muted">Multi-Activity groups (cap 6). Standing participant seats only — who works each half is on Instructor timetable / Overview.</p>'+
         blocks.join('')+
         '</div>'
+      );
+    }
+    /** Autumn Westway Sunday Climbing board (Alex | Carlos) — same seats as Sessions Overview. */
+    function adminServicesClimbingSundayBoardFromCanonical(filt){
+      try{
+        if(window.PortalRosterCanonical &&
+           typeof window.PortalRosterCanonical.buildSundayClimbingStaffBoard === 'function'){
+          var board = window.PortalRosterCanonical.buildSundayClimbingStaffBoard(filt || {});
+          if(board && board.staffOrder && board.staffOrder.length) return board;
+        }
+      }catch(_eCl){}
+      return { staffOrder: [], byStaff: {}, timeOrder: [] };
+    }
+    /** Overlay named climb seats from projected/dated slots onto the canonical Sunday board. */
+    function adminServicesClimbingSundayBoardApplyLiveSlots(board, slotsForDay, pickIso){
+      if(!board || !board.byStaff || !slotsForDay || !slotsForDay.length) return board;
+      function normTimeLabel(raw){
+        var t = String(raw || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/:/g, '.');
+        t = t.replace(/\s*-\s*/g, ' to ').replace(/\s+/g, ' ');
+        return t;
+      }
+      function slotTimeLabel(sl){
+        var a = String(sl.rosterStartRaw || '').trim();
+        if(a && /\bto\b/i.test(a)) return normTimeLabel(a);
+        var st = String(sl.anchorStart || '').slice(0, 5);
+        var en = String(sl.anchorEnd || '').slice(0, 5);
+        if(st && en){
+          function hm(x){
+            var p = String(x).split(':');
+            var h = parseInt(p[0], 10);
+            var m = parseInt(p[1], 10) || 0;
+            if(!Number.isFinite(h)) return '';
+            return String(h) + (m ? '.' + String(m).padStart(2, '0').replace(/0$/, '') : '');
+          }
+          var hs = hm(st);
+          var he = hm(en);
+          if(hs && he) return normTimeLabel(hs + ' to ' + he);
+        }
+        return '';
+      }
+      for(var i = 0; i < slotsForDay.length; i++){
+        var sl = slotsForDay[i];
+        if(!sl) continue;
+        var snKey = String(sl.staffName || sl.staffRosterId || '').trim().toLowerCase();
+        if(!snKey || !board.byStaff[snKey]) continue;
+        var pax = String(sl.clientDisplay || '').trim();
+        var slug = String(sl.clientSlug || '').trim().toLowerCase();
+        if(!bookingIsBookedClientSlug(slug) || !pax) continue;
+        if(/^no participant$/i.test(pax)) continue;
+        var tWant = slotTimeLabel(sl);
+        if(!tWant) continue;
+        var clients = board.byStaff[snKey].clients || [];
+        for(var j = 0; j < clients.length; j++){
+          if(normTimeLabel(clients[j].time) !== tWant) continue;
+          clients[j].client = pax;
+          clients[j].open = false;
+          clients[j].demoId = String(sl.demoId || '');
+          clients[j].trial = adminServicePaxBookingSeatState(
+            pax, sl, pickIso, 'Climbing Activity', 'Westway', 'sunday'
+          ) === 'trial';
+          break;
+        }
+      }
+      return board;
+    }
+    function adminServicesClimbingSundayBoardHtml(board, programme, venue, pickIso){
+      if(!board || !board.staffOrder || !board.staffOrder.length){
+        return '<p class="c4k-svc-dc-empty muted">No Climbing Sunday board in the Autumn standing template.</p>';
+      }
+      var times = (board.timeOrder && board.timeOrder.length)
+        ? board.timeOrder.slice()
+        : [];
+      if(!times.length){
+        var seenT = {};
+        for(var si0 = 0; si0 < board.staffOrder.length; si0++){
+          var col0 = board.byStaff[board.staffOrder[si0]];
+          var cls0 = (col0 && col0.clients) || [];
+          for(var ci0 = 0; ci0 < cls0.length; ci0++){
+            var tm0 = String(cls0[ci0].time || '').trim();
+            if(tm0 && !seenT[tm0]){ seenT[tm0] = true; times.push(tm0); }
+          }
+        }
+      }
+      var ths = ['<th scope="col" class="c4k-svc-slot-th c4k-svc-slot-th--time">Time</th>'];
+      var si, snKey, col;
+      for(si = 0; si < board.staffOrder.length; si++){
+        snKey = board.staffOrder[si];
+        col = board.byStaff[snKey];
+        ths.push(
+          '<th scope="col" class="c4k-svc-slot-th c4k-svc-slot-th--seat">'+
+          esc((col && col.name) || snKey)+
+          '</th>'
+        );
+      }
+      ths.push('<th scope="col" class="c4k-svc-slot-th c4k-svc-slot-th--wait">Waiting</th>');
+      var bodyRows = [];
+      var ti, timeLab, trCells, sj, sn, clist, hit, paxName, cellHtml, dataSlot, waitInner;
+      for(ti = 0; ti < times.length; ti++){
+        timeLab = times[ti];
+        trCells = [
+          '<td class="c4k-svc-slot-td c4k-svc-slot-td--time"><span class="c4k-svc-slot-time">'+
+          esc(novoSchedSlotTimeRangeOnly({
+            anchorStart: (function(){
+              var p = adminRosterParseTimeSlot(timeLab, 'Sunday');
+              return p && p.start ? (String(p.start).length === 5 ? p.start + ':00' : p.start) : '';
+            })(),
+            anchorEnd: (function(){
+              var p = adminRosterParseTimeSlot(timeLab, 'Sunday');
+              return p && p.end ? (String(p.end).length === 5 ? p.end + ':00' : p.end) : '';
+            })()
+          }) || timeLab)+
+          '</span></td>'
+        ];
+        var demoIds = [];
+        var staffIds = [];
+        for(sj = 0; sj < board.staffOrder.length; sj++){
+          sn = board.staffOrder[sj];
+          clist = (board.byStaff[sn] && board.byStaff[sn].clients) || [];
+          hit = null;
+          for(var cj = 0; cj < clist.length; cj++){
+            if(String(clist[cj].time || '').trim() === timeLab){ hit = clist[cj]; break; }
+          }
+          paxName = hit ? String(hit.client || '').trim() : '';
+          var isOpen = !hit || !!hit.open || /^no participant$/i.test(paxName) || !paxName;
+          if(hit && hit.demoId) demoIds.push(hit.demoId);
+          if(sn) staffIds.push(sn);
+          if(isOpen){
+            cellHtml =
+              '<button type="button" class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" '+
+              'title="Open place — no participant on this Climbing hour">No participant</button>';
+          }else if(hit && hit.trial){
+            cellHtml = adminServiceTrialPaxPillHtml(paxName, '', '');
+          }else{
+            cellHtml =
+              '<button type="button" class="chip chip--info c4k-svc-pax-pill" '+
+              'title="Standing Climbing seat">'+esc(paxName)+'</button>';
+          }
+          trCells.push(
+            '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">'+
+            '<div class="c4k-svc-seat c4k-svc-seat--pax-only"><div class="c4k-svc-seat__pax">'+cellHtml+'</div></div></td>'
+          );
+        }
+        dataSlot =
+          'data-sched-demo-id="'+esc(demoIds[0] || '')+'" data-c4k-svc-merged-demos="'+esc(demoIds.join('|'))+'" '+
+          'data-session-date="'+esc(pickIso || '')+'" data-venue="'+esc(venue || '')+'" '+
+          'data-c4k-svc-programme="'+esc(programme || '')+'" data-c4k-svc-staff-ids="'+esc(staffIds.join('|'))+'"';
+        waitInner = '<span class="c4k-svc-wait-empty" aria-hidden="true"></span>';
+        trCells.push('<td class="c4k-svc-slot-td c4k-svc-slot-td--wait">'+waitInner+'</td>');
+        bodyRows.push('<tr class="c4k-svc-slot-tr" '+dataSlot+'>'+trCells.join('')+'</tr>');
+      }
+      return (
+        '<div class="c4k-svc-slots c4k-svc-slots--climb-sun" style="min-width:0;overflow:auto">'+
+        '<p class="c4k-svc-dc-hint muted">Climbing Sunday · Westway Wall (60′). Same standing seats as Sessions Overview (Alex / Carlos).</p>'+
+        '<table class="c4k-svc-slot-table">'+
+        '<thead><tr>'+ths.join('')+'</tr></thead>'+
+        '<tbody>'+bodyRows.join('')+'</tbody></table></div>'
       );
     }
     /**
@@ -20944,7 +21104,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(progNormKey === 'multi' && adminServicesIsSwimFarmVenue(vn.venue) && dk !== 'sunday') continue;
             var slotsWd = byDow[dk];
             var multiSwimFarmSunday = progNormKey === 'multi' && adminServicesIsSwimFarmVenue(vn.venue) && dk === 'sunday';
-            if((!slotsWd || !slotsWd.length) && !multiSwimFarmSunday && !(progNormKey === 'bespoke' && adminServicesBespokeNoOpenPlacesDow(dk))) continue;
+            var climbWestwaySunday = progNormKey === 'climbing' && adminServicesIsWestwayVenue(vn.venue) && dk === 'sunday';
+            if((!slotsWd || !slotsWd.length) && !multiSwimFarmSunday && !climbWestwaySunday && !(progNormKey === 'bespoke' && adminServicesBespokeNoOpenPlacesDow(dk))) continue;
             /* Bespoke Tue/Thu with no roster lines: still show “no places available”. */
             if(progNormKey === 'bespoke' && adminServicesBespokeNoOpenPlacesDow(dk) && (!slotsWd || !slotsWd.length)){
               var displayIsoBpEmpty = adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, termStart, termEnd);
@@ -20972,7 +21133,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               continue;
             }
             if(!slotsWd || !slotsWd.length){
-              if(!multiSwimFarmSunday) continue;
+              if(!multiSwimFarmSunday && !climbWestwaySunday) continue;
               slotsWd = [];
             }
             /* Multi-Activity @ SwimFarm Sunday: three groups of 6 (swim + support staff). */
@@ -21057,6 +21218,87 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 '</span>'+
                 '</summary>'+
                 bodyMu+
+                '</details>'
+              );
+              continue;
+            }
+            /* Climbing @ Westway Sunday: Alex | Carlos board (same seats as Sessions Overview). */
+            if(climbWestwaySunday){
+              var displayIsoCl = adminServicesAutumnIsoForDow(dk, displayWeekIso, block.programme) ||
+                adminPickIsoForSheetWeekdayNearAnchor(displayWeekIso, dk, termStart, termEnd);
+              if(displayIsoCl && SERVICES_ROSTER_HALF_TERM_CLOSED &&
+                 displayIsoCl >= SERVICES_ROSTER_HALF_TERM_CLOSED.start &&
+                 displayIsoCl <= SERVICES_ROSTER_HALF_TERM_CLOSED.end){
+                displayIsoCl = adminServicesAutumnIsoForDow(dk, '2026-09-07', block.programme) ||
+                  adminPickIsoForSheetWeekdayNearAnchor('2026-09-07', dk, termStart, termEnd) || displayIsoCl;
+              }
+              var climbBoard = adminServicesClimbingSundayBoardFromCanonical(filt);
+              if(!climbBoard.staffOrder || !climbBoard.staffOrder.length) continue;
+              var slotsCl = [];
+              if(displayIsoCl){
+                try{
+                  var rawClDay = slotsForSelectedDate(displayIsoCl) || [];
+                  for(var rci = 0; rci < rawClDay.length; rci++){
+                    var rcl = rawClDay[rci];
+                    if(adminServiceProgrammeNormKey(rcl.programme) !== 'climbing') continue;
+                    if(!adminServicesIsWestwayVenue(rcl.venue)) continue;
+                    slotsCl.push(rcl);
+                  }
+                }catch(_clDay){ slotsCl = []; }
+              }
+              if(!slotsCl.length && slotsWd && slotsWd.length) slotsCl = slotsWd.slice();
+              /* Also pull stamp Sunday (13 Sep) so dated trials (e.g. Muhammad) overlay. */
+              try{
+                var stampSunCl = (window.PortalRosterCanonical &&
+                  window.PortalRosterCanonical.WEEKEND_STANDING_ISO &&
+                  window.PortalRosterCanonical.WEEKEND_STANDING_ISO.sunday) || '2026-09-13';
+                if(stampSunCl && stampSunCl !== displayIsoCl){
+                  var rawStampCl = slotsForSelectedDate(stampSunCl) || [];
+                  for(var sci = 0; sci < rawStampCl.length; sci++){
+                    var scl = rawStampCl[sci];
+                    if(adminServiceProgrammeNormKey(scl.programme) !== 'climbing') continue;
+                    if(!adminServicesIsWestwayVenue(scl.venue)) continue;
+                    slotsCl.push(scl);
+                  }
+                }
+              }catch(_stampCl){}
+              climbBoard = adminServicesClimbingSundayBoardApplyLiveSlots(climbBoard, slotsCl, displayIsoCl);
+              var dowTitleCl = adminServiceDowTitleFromNorm(dk);
+              var dayHoursCl = '10:00AM–4:00PM · Alex + Carlos · 60′';
+              for(var csi = 0; csi < climbBoard.staffOrder.length; csi++){
+                var clCol = climbBoard.byStaff[climbBoard.staffOrder[csi]];
+                var clSn = String((clCol && clCol.name) || '').trim();
+                if(clSn && !adminServiceIsExcludedInstructorName(clSn)){
+                  venueInstrSet[clSn.toLowerCase()] = 1;
+                }
+                var clClients = (clCol && clCol.clients) || [];
+                for(var ccj = 0; ccj < clClients.length; ccj++){
+                  var clPax = String(clClients[ccj].client || '').trim();
+                  if(clPax && !/^no participant$/i.test(clPax)) venuePaxSet[clPax.toLowerCase()] = 1;
+                }
+              }
+              rowsInVenue += (climbBoard.timeOrder && climbBoard.timeOrder.length) || 6;
+              var didCl = 'c4k-svc-dow-'+pidx+'-'+vix+'-'+dix;
+              var schedAddBtnCl =
+                '<button type="button" class="btn btn--pri btn--sm c4k-svc-schedule-class-head-btn" data-novo-sched-add-class="1" '+
+                'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(displayIsoCl || '')+'" '+
+                'title="Add an open seat band to Booking Portal for this weekday standing">'+
+                '+ Schedule a Class</button>';
+              var bodyCl =
+                adminServicesClimbingSundayBoardHtml(climbBoard, block.programme, vn.venue, displayIsoCl)+
+                '<div class="c4k-svc-day-sched-bar">'+schedAddBtnCl+adminServicesOpenPlacesFilterBtnHtml(block.programme, vn.venue, dk)+'</div>';
+              dowParts.push(
+                '<details class="c4k-svc-day-acc c4k-svc-day-acc--climb-sun" open>'+
+                '<summary class="c4k-svc-day-acc__sum" id="'+esc(didCl)+'">'+
+                '<span class="c4k-svc-day-acc__lead">'+
+                '<span class="c4k-svc-day-acc__sum-txt">'+adminServiceDowIconHtml(dk)+
+                '<span class="c4k-svc-day-acc__namecol">'+
+                '<span class="c4k-svc-day-acc__name">'+esc(dowTitleCl)+'</span>'+
+                '<span class="c4k-svc-day-acc__hours" title="Climbing Sunday Westway — Alex and Carlos 60′ books.">'+esc(dayHoursCl)+'</span>'+
+                '</span></span>'+
+                '</span>'+
+                '</summary>'+
+                bodyCl+
                 '</details>'
               );
               continue;
