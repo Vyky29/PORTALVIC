@@ -902,6 +902,24 @@
         return Math.max(0, cap - taken) <= 0;
       }
 
+      function slotSpacesLeft(slot) {
+        if (api && typeof api.seatsLeft === "function") {
+          return Math.max(0, Number(api.seatsLeft(slot)) || 0);
+        }
+        var cap = Number(slot.capacity) || 0;
+        var taken = Number(slot.taken) || 0;
+        return Math.max(0, cap - taken);
+      }
+
+      /** Preview label: free count + standing capacity (for office check vs Services). */
+      function slotOpenLabel(slot) {
+        var n = slotSpacesLeft(slot);
+        var cap = Number(slot.capacity) || 0;
+        if (n <= 0) return "Full · cap " + cap;
+        var unit = n === 1 ? "space" : "spaces";
+        return n + " " + unit + " · cap " + cap;
+      }
+
       function slotsFor(serviceId) {
         if (api && typeof api.filterSlots === "function") {
           return api.filterSlots({ serviceId: serviceId });
@@ -972,7 +990,7 @@
           (showVenue ? "<span>" + esc(venueName(s.venue)) + "</span>" : "") +
           "</div>" +
           '<div class="slot__state ' + (full ? "is-full" : "is-open") + '">' +
-          (full ? "Full" : "Places") +
+          slotOpenLabel(s) +
           "</div></div>"
         );
       }
