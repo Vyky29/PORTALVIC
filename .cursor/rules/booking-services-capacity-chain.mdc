@@ -1,0 +1,44 @@
+---
+description: Booking plazas = Services seats chain (AS/weekend); DC/Bespoke off Places
+globs: supabase/functions/_shared/portal_booking_seat_helper.ts,supabase/functions/portal-booking-offer/**,working_ui/portal/portal_booking_offer.js,working_ui/portal/admin-open-places-2627.js,working_ui/bookingportal.html
+alwaysApply: false
+---
+
+# Booking → Services → Timetable → Overview → Covers
+
+## Chain (product law)
+
+```
+Booking (plazas) → Services (clients / seats) → Timetable (staff) → Overview (day) → Schedule & Covers (patch)
+```
+
+| Layer | Owns | Does not own |
+|-------|------|----------------|
+| **Booking Portal** | Public AS/weekend Places (capacity / taken / free) | Instructor names; DC; Bespoke |
+| **Services** | Who is booked on each seat (term / trial) | Day-of covers |
+| **Timetable** | Who works which seat in standing | Public Places |
+| **Sessions Overview** | **Only day look-here** (standing + exceptions) | Authoring drafts |
+| **Schedule & Covers** | Day exceptions (absent, cover, cancel, reassign) | Term-wide capacity redesign |
+
+## Capacity rule (AS / weekend)
+
+- Public `capacity` = standing **seat line count** for that band (`booked` + `NO PARTICIPANT` / open lines).
+- **Do not** inflate capacity from `instructorCount` (phantom Places).
+- Intentional hardcap only: **Sunday SwimFarm Multi-Activity = 6** (product band). Document any new hardcap here before coding.
+- Wed Multi Acton is filtered off the public offer (not a Places band).
+
+## Day Centre / Bespoke
+
+- Never appear as Booking Places.
+- Standing schedule is term truth; day changes only via Schedule & Covers.
+- Admin create/edit seat only for new programme seats or term replan — not day-of.
+
+## Look-here
+
+- Day: **Sessions Overview** only.
+- LOCAL DC / local MADRE calendar: optional authoring / look — not plaza truth.
+- Admin Open Places uses the same offer payload as Booking (`MOCK_SLOTS`).
+
+## When changing offer capacity
+
+Edit `supabase/functions/_shared/portal_booking_seat_helper.ts` → deploy `portal-booking-offer`. Smoke that sample AS/weekend bands match seat lines and DC/Bespoke are absent.

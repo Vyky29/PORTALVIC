@@ -328,16 +328,19 @@ function format12(mins: number): string {
   return `${h}.${String(m).padStart(2, "0")}`;
 }
 
+/**
+ * Public Places capacity = standing seat lines (booked + open / NO PARTICIPANT).
+ * Do not inflate from instructorCount (phantom plazas vs Services).
+ * Sunday SwimFarm Multi hardcap 6 is applied in foldMultiActivityOfferSlots.
+ */
 function displayCapacity(
-  serviceId: PublicServiceId,
-  venue: string,
-  day: string,
+  _serviceId: PublicServiceId,
+  _venue: string,
+  _day: string,
   lineCount: number,
-  instructorCount: number,
+  _instructorCount: number,
 ): number {
-  if (serviceId === "multi" && venue === "Acton" && day === "Wednesday") return 4;
-  if (serviceId === "multi" && venue === "SwimFarm" && day === "Sunday") return 6;
-  return Math.max(1, instructorCount || lineCount || 1);
+  return Math.max(0, Number(lineCount) || 0);
 }
 
 function slotId(
@@ -700,18 +703,15 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
      * Same-day Schedule & Covers fills live on calendar dates; term Places still
      * come from the standing week (ref) until office folds that open seat.
      *
-     * Capacity must cover booked + open seat lines. Instructor-only caps used to
-     * hide NO PARTICIPANT (e.g. Northolt Mon Luliya open beside a trial; Climbing
-     * Sun Alex 3–4 beside Patrick) when booked already equalled instructorCount.
+     * Capacity = seat line count (booked + NO PARTICIPANT). Never inflate from
+     * instructorCount — that created more Places than Services seats.
      */
     const openSeats = Math.max(0, Number(latestBucket.open) || 0);
     const bookedLines = Math.max(0, Number(latestBucket.booked) || 0);
     const lineCount = bookedLines + openSeats;
+    if (lineCount < 1) continue;
     const instructorCount = latestBucket.instructors.size;
-    const cap = Math.max(
-      lineCount,
-      displayCapacity(serviceId, venue, day, lineCount, instructorCount),
-    );
+    const cap = displayCapacity(serviceId, venue, day, lineCount, instructorCount);
     /*
      * Public Places left = standing open seats (NO PARTICIPANT lines).
      * Pending/validated slot holds may still increment `taken` afterward.
