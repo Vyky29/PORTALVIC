@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Roster MADRE · Staff · 1 Jun – 17 Jul 2026</title>
+<title>Roster MADRE · Autumn standing (13–17 Jul template) · summer history weeks</title>
 <style>
   :root { --bg:#d8dce0; --text:#111; --line:#0d0d0d; --day-bar:#b0b0b0; --staff-bar:#dcdcdc; }
   * { box-sizing: border-box; }
@@ -110,7 +110,13 @@
 <body>
 <header class="top">
   <h1>Roster MADRE — participantes + turnos staff</h1>
-  <p class="sub">Un solo documento (<code>roster_term_master.json</code>): pestaña <strong>Participantes</strong> (slots por instructor) y <strong>Turnos staff</strong> (pool / day centre). Overrides admin se encolan para plegar en MADRE. Tras exportar: <code>sync_roster_madre_to_portal.py</code></p>
+  <p class="sub">
+    Documento <code>roster_term_master.json</code> (term_key summer-2026).
+    <strong>Autumn standing</strong> = semana <strong>13–17 Jul 2026</strong> (preseleccionada).
+    Semanas Jun / early Jul = historia summer — no uses esas para Places / Overview.
+    LOCAL look: <a href="/local_madre_live.html">local_madre_live.html</a> ·
+    <a href="/local_dc_staff_week.html">local_dc_staff_week.html</a>.
+  </p>
   <div class="madre-tabs" role="tablist">
     <button type="button" id="tabParticipants" class="active" aria-selected="true">Participantes</button>
     <button type="button" id="tabStaffShifts" aria-selected="false">Turnos staff</button>
@@ -178,6 +184,15 @@
   var STAFF_ORDER = ['alex','andres','angel','aurora','berta','bismark','carlos','dan','giuseppe','godsway','javi','javier','john','lulia','michelle','raul','roberto','sandra','sevitha','simon','teflon','victor','youssef'];
 
   var state = null, seedSnapshot = null, weekIdx = 0, dirty = false;
+  var AUTUMN_STANDING_START = '2026-07-13';
+
+  function indexOfAutumnStandingWeek(weeks){
+    var list = weeks || [];
+    for(var i = 0; i < list.length; i++){
+      if(String(list[i] && list[i].start || '').slice(0, 10) === AUTUMN_STANDING_START) return i;
+    }
+    return 0;
+  }
   var app = document.getElementById('app');
   var weekSelect = document.getElementById('weekSelect');
   var staffPick = document.getElementById('staffPick');
@@ -357,7 +372,8 @@
   function renderWeek(week, wi, q, staffOnly, showBanner){
     var html = '';
     if(showBanner){
-      html += '<div class="week-banner">Semana '+week.weekNum+' · '+fmtDate(week.start)+' – '+fmtDate(week.end)+'</div>';
+      var stand = String(week.start||'').slice(0,10) === AUTUMN_STANDING_START ? ' · AUTUMN STANDING' : '';
+      html += '<div class="week-banner">Semana '+week.weekNum+' · '+fmtDate(week.start)+' – '+fmtDate(week.end)+stand+'</div>';
     }
     var dayIsos=[], seen=Object.create(null);
     (week.staff||[]).forEach(function(st){
@@ -466,7 +482,8 @@
     (state.weeks||[]).forEach(function(w,i){
       var o=document.createElement('option');
       o.value=String(i);
-      o.textContent='S'+w.weekNum+' ('+fmtDate(w.start)+'–'+fmtDate(w.end)+')';
+      var tag = String(w.start||'').slice(0,10) === AUTUMN_STANDING_START ? ' · AUTUMN STANDING' : '';
+      o.textContent='S'+w.weekNum+' ('+fmtDate(w.start)+'–'+fmtDate(w.end)+')'+tag;
       weekSelect.appendChild(o);
     });
     weekSelect.value=String(weekIdx);
@@ -478,7 +495,7 @@
       throw new Error('JSON sin semanas (weeks[]) — archivo incompleto o borrador corrupto');
     }
     state = normalizeState(deepClone(data));
-    weekIdx = Math.min(Math.max(0, weekIdx), Math.max(0, state.weeks.length - 1));
+    weekIdx = indexOfAutumnStandingWeek(state.weeks);
     fillWeekSelect(); fillStaffPick(); updateStats();
     dirty=false;
     render();
