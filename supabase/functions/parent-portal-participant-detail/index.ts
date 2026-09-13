@@ -1246,7 +1246,7 @@ Deno.serve(async (req) => {
   /*
    * Hub loads "general" first (not "sessions"). Still pull feedback so
    * attendance_summary.absent_dates includes staff Absent marks (attendance No)
-   * — otherwise TODAY paints AWAITING FEEDBACK after the clock.
+   * and so sessionsOut can mark TODAY completed (not AWAITING) after staff submit.
    */
   if ((wantSessions || wantGeneral) && !suppressSessionProgress && feedbackYearResolved) {
     const fbSel =
@@ -1302,7 +1302,12 @@ Deno.serve(async (req) => {
       return clean(b.session_time).localeCompare(clean(a.session_time));
     });
 
-    if (wantSessions) {
+    /*
+     * Build sessions for hub "general" too — resolveHubSessionStatus reads
+     * data.sessions by session_date. Without this, TODAY stays AWAITING after
+     * staff submit until the parent opens Sessions Overview.
+     */
+    if (wantSessions || wantGeneral) {
     const feedbackIds = rawFeedback.map((r) => String(r.id)).filter(Boolean);
     const cacheById = new Map<string, Record<string, unknown>>();
     const venueByService = await loadParticipantVenueByService(supabase, identityInput, lookupNames);
@@ -1362,6 +1367,8 @@ Deno.serve(async (req) => {
         independence: independenceLabel(patterns),
         feedback_by_name: instructor,
         feedback_by_role: staffName ? resolveFeedbackAuthorRole(staffName, service) : "",
+        completed_by_name: instructor,
+        positive_feedback: positiveText ? "1" : "",
         comment: commentPack.comment,
         parent_message: commentPack.comment,
         message_pending: commentPack.pending,
@@ -2026,6 +2033,7 @@ Deno.serve(async (req) => {
   const isFormerClient = inClassFlag === false;
   const hasSessionFeedback =
     sessionsOut.length > 0 ||
+    rawFeedback.length > 0 ||
     weeklyNotes.length > 0 ||
     !!(weeklyNoteLatest && weeklyNoteLatest.week_start);
 
