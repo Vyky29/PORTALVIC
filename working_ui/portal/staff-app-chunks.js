@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260913-venue-embed3";
+  var VER = "20260913-roberto-open850";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260911-emmanuel-no-tue",

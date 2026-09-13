@@ -282,7 +282,7 @@
       void loadSequential(
         [
           "/portal/portal_orientation_lock.js?v=20260622-next-chip-client",
-          "/portal/portal_venue_report_schedule.js?v=20260913-roberto-venue-hub",
+          "/portal/portal_venue_report_schedule.js?v=20260913-roberto-open850",
         ],
         false
       );

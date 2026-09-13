@@ -164,7 +164,8 @@
     roberto: {
       venue: "SwimFarm",
       label: "Sunday pool (Roberto)",
-      openEnd: mins(8, 40),
+      /** Late after service start + 5 min (8:45 → remind from 8:50). */
+      openEnd: mins(8, 50),
       closeEnd: mins(15, 30),
       serviceStart: mins(8, 45),
       serviceEnd: mins(15, 15),
