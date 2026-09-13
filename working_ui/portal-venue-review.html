@@ -709,8 +709,66 @@
   <script>
     var STAFF_PROFILE_PORTAL_BRIDGE_SECRET = "%%PB6%%";
   </script>
+  <!-- Instant context paint (no module wait) so Roberto Sunday never shows empty venue/check. -->
+  <script>
+    (function portalVenueContextBoot(){
+      try{
+        var qs = new URLSearchParams(location.search || "");
+        var name = String(qs.get("completedBy") || qs.get("name") || qs.get("ghostDisplayName") || "").trim();
+        var venue = String(qs.get("venue") || qs.get("location") || "").trim();
+        var kindRaw = String(qs.get("kind") || qs.get("openingClosing") || "").trim().toLowerCase();
+        var dateIso = String(qs.get("date") || "").trim();
+        var video = qs.get("video") === "1" || qs.get("requireVideo") === "1";
+        var isSun = false;
+        if(/^\d{4}-\d{2}-\d{2}$/.test(dateIso)){
+          var p = dateIso.split("-").map(Number);
+          isSun = new Date(p[0], p[1] - 1, p[2]).getDay() === 0;
+        }else{
+          isSun = new Date().getDay() === 0;
+        }
+        var looksRoberto = /roberto/i.test(name);
+        if(looksRoberto && isSun){
+          if(!venue) venue = "SwimFarm";
+          if(!kindRaw){
+            var nowM = new Date().getHours() * 60 + new Date().getMinutes();
+            kindRaw = nowM < 12 * 60 ? "open" : "close";
+          }
+          video = true;
+        }
+        var kindLabel = "";
+        if(kindRaw === "open" || kindRaw === "opening") kindLabel = "Opening";
+        else if(kindRaw === "close" || kindRaw === "closing") kindLabel = "Closing";
+        function setTxt(id, t){
+          var el = document.getElementById(id);
+          if(el && t) el.textContent = t;
+        }
+        if(name) setTxt("venueContextCompletedBy", name);
+        if(venue) setTxt("venueContextVenue", venue);
+        if(dateIso && /^\d{4}-\d{2}-\d{2}$/.test(dateIso)){
+          setTxt("venueContextDate", dateIso.slice(8,10) + "/" + dateIso.slice(5,7) + "/" + dateIso.slice(0,4));
+        }
+        var kindEl = document.getElementById("venueContextKind");
+        var kindRow = document.getElementById("venueContextKindRow");
+        if(kindEl && kindLabel){
+          kindEl.textContent = kindLabel;
+          if(kindRow) kindRow.removeAttribute("hidden");
+        }
+        if(video){
+          var panel = document.getElementById("venueWalkthroughPanel");
+          if(panel) panel.hidden = false;
+        }
+        window.__PORTAL_VENUE_BOOT__ = {
+          venue: venue,
+          kind: kindLabel,
+          video: video,
+          completedBy: name,
+          date: dateIso
+        };
+      }catch(_e){}
+    })();
+  </script>
   <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
-  <!-- Front-end + Supabase insert: portal-shared-js/venue_review_app.js -->
-  <script type="module" src="/portal-shared-js/venue_review_app.js?v=20260913-roberto-venue-hub"></script>
+  <!-- Canonical module under /portal/ (not portal-shared-js) so auth-handler resolves correctly. -->
+  <script type="module" src="/portal/venue_review_app.js?v=20260913-venue-embed3"></script>
 </body>
 </html>

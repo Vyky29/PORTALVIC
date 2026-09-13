@@ -6142,7 +6142,8 @@
               target = tu.href;
             }
           }catch(_){}
-          if(typeof portalQuickMenuNavigate === 'function') portalQuickMenuNavigate(target);
+          if(typeof portalOpenVenueReportEmbed === 'function') portalOpenVenueReportEmbed(target);
+          else if(typeof portalQuickMenuNavigate === 'function') portalQuickMenuNavigate(target);
           else window.location.href = target;
           return;
         }
@@ -6176,7 +6177,8 @@
                 target = tu.href;
               }
             }catch(_){}
-            portalQuickMenuNavigate(target);
+            if(typeof portalOpenVenueReportEmbed === 'function') portalOpenVenueReportEmbed(target);
+            else portalQuickMenuNavigate(target);
             return;
           }
           if(extBtn.id === 'quickMenuDropoffPickup'){
@@ -6347,6 +6349,66 @@
         }
       }catch(_){}
     }, 60 * 1000);
+    function portalCloseVenueReportEmbed(){
+      try{
+        const wrap = document.getElementById('portalVenueEmbedWrap');
+        const frame = document.getElementById('portalVenueEmbedFrame');
+        if(frame) frame.src = 'about:blank';
+        if(wrap) wrap.hidden = true;
+        document.documentElement.classList.remove('portal-venue-embed-open');
+      }catch(_){}
+      try{
+        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+        else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+      }catch(_){}
+    }
+    function portalOpenVenueReportEmbed(url){
+      const href = String(url || '').trim();
+      if(!href) return;
+      try{ if(typeof closeSheet === 'function') closeSheet({ skipHistory: true }); }catch(_){}
+      let wrap = document.getElementById('portalVenueEmbedWrap');
+      if(!wrap){
+        wrap = document.createElement('div');
+        wrap.id = 'portalVenueEmbedWrap';
+        wrap.hidden = true;
+        wrap.innerHTML =
+          '<div id="portalVenueEmbedBar">' +
+          '<button type="button" id="portalVenueEmbedClose" aria-label="Back to dashboard">← Back</button>' +
+          '</div>' +
+          '<iframe id="portalVenueEmbedFrame" title="Venue opening closing report" allow="camera; microphone; fullscreen"></iframe>';
+        document.body.appendChild(wrap);
+        const closeBtn = document.getElementById('portalVenueEmbedClose');
+        if(closeBtn){
+          closeBtn.addEventListener('click', function(ev){
+            ev.preventDefault();
+            portalCloseVenueReportEmbed();
+          });
+        }
+      }
+      const frame = document.getElementById('portalVenueEmbedFrame');
+      wrap.hidden = false;
+      document.documentElement.classList.add('portal-venue-embed-open');
+      if(frame){
+        try{
+          const tu = new URL(href, window.location.href);
+          tu.searchParams.set('portalEmbed', '1');
+          frame.src = tu.href;
+        }catch(_){
+          frame.src = href;
+        }
+      }
+    }
+    try{ window.portalOpenVenueReportEmbed = portalOpenVenueReportEmbed; }catch(_){}
+    try{ window.portalCloseVenueReportEmbed = portalCloseVenueReportEmbed; }catch(_){}
+    window.addEventListener('message', function(ev){
+      try{
+        if(!ev || ev.origin !== window.location.origin) return;
+        const d = ev.data;
+        if(!d || (d.type !== 'portal-venue-embed-close' && d.type !== 'portal-venue-embed-done')) return;
+        portalCloseVenueReportEmbed();
+      }catch(_){}
+    });
+
     function portalOnStaffAppBackgrounded(){
       try{
         if(typeof portalMaybeNotifyUnsignedAnnouncementPending === 'function') portalMaybeNotifyUnsignedAnnouncementPending();

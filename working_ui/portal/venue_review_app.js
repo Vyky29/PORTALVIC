@@ -9,12 +9,8 @@ const PORTAL_AUTH_MODULE_V = "20260419-99";
 
 /** Resolve auth-handler from same folder as this module (portal/ or portal-shared-js/). */
 function portalAuthModuleUrl() {
-  try {
-    if (typeof import.meta !== "undefined" && import.meta.url) {
-      return new URL("./auth-handler.js?v=" + PORTAL_AUTH_MODULE_V, import.meta.url).href;
-    }
-  } catch (_) {}
-  return "/portal/auth-handler.js?v=" + PORTAL_AUTH_MODULE_V;
+  /* Always use canonical portal auth (shared-js copy is older / can stall on iOS PWA). */
+  return "/portal/auth-handler.js?v=20260913-venue-embed3";
 }
 
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search || "" : "");
@@ -641,6 +637,14 @@ function showVenueReviewSuccessLocked() {
 
 function venueReviewDashboardReturnUrl() {
   try {
+    if (window.parent && window.parent !== window) {
+      try {
+        window.parent.postMessage({ type: "portal-venue-embed-close" }, window.location.origin);
+        return "about:blank";
+      } catch (_) {}
+    }
+  } catch (_) {}
+  try {
     var ret = new URLSearchParams(location.search).get("return");
     if (ret) {
       var ru = new URL(ret, location.href);
@@ -656,6 +660,10 @@ function venueReviewDashboardReturnUrl() {
     var rp = new URLSearchParams(location.search).get("rp");
     if (rp && /\.html(\?|$)/i.test(rp)) return new URL(rp, location.href).href;
   } catch (_) {}
+  try {
+    var pr = new URLSearchParams(location.search).get("portalReturn");
+    if (pr && /^https?:/i.test(pr)) return pr;
+  } catch (_) {}
   return new URL("staff_dashboard.html", location.href).href;
 }
 
@@ -663,6 +671,12 @@ function showCompletionPopupAndReturnDashboard() {
   showVenueReviewSuccessLocked();
   var dest = venueReviewDashboardReturnUrl();
   window.setTimeout(function () {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "portal-venue-embed-done" }, window.location.origin);
+        return;
+      }
+    } catch (_) {}
     try {
       window.location.assign(dest);
     } catch (_) {
@@ -754,8 +768,18 @@ function initVenueReviewPage() {
     window.setInterval(setAutomaticTime, 15000);
   } catch (_) {}
   updateNoButtonText(btnNo);
-  const ctx = applyRobertoSundayVenueDefaults(contextFromQuery());
-  renderVenueContextHeader(ctx);
+  let ctx = applyRobertoSundayVenueDefaults(contextFromQuery());
+  try {
+    const boot = window.__PORTAL_VENUE_BOOT__;
+    if (boot) {
+      if (!clean(ctx.venue) && boot.venue) ctx.venue = String(boot.venue);
+      if (!clean(ctx.openingClosing) && boot.kind) ctx.openingClosing = String(boot.kind);
+      if (boot.video) ctx.requireVideo = true;
+      if (!clean(ctx.completedBy) && boot.completedBy) ctx.completedBy = String(boot.completedBy);
+      if (!clean(ctx.date) && boot.date) ctx.date = String(boot.date);
+    }
+  } catch (_) {}
+  void renderVenueContextHeader(ctx);
   void portalBindVenueReviewVoice(ctx);
   const walkthrough = initVenueWalkthroughRecorder(ctx);
 
