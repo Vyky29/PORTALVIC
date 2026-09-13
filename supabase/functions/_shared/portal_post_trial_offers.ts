@@ -140,6 +140,64 @@ function firstName(parentName: string): string {
   return p.split(/\s+/)[0] || "there";
 }
 
+/**
+ * Offer rows snapshot time/slot at pay time. Office moves (e.g. Muhammad 3-4 → 12-1)
+ * update the reservation but not the offer — refresh before end-time checks / WhatsApp.
+ */
+async function refreshOfferSlotFromReservation(
+  admin: SupabaseClient,
+  offer: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const reservationId = clean(offer.reservation_id, 80);
+  if (!reservationId) return offer;
+
+  const { data: res } = await admin
+    .from("portal_booking_slot_reservations")
+    .select("time_label, venue, service_name, slot_id, date_iso")
+    .eq("id", reservationId)
+    .maybeSingle();
+  if (!res) return offer;
+
+  const nextTime = clean(res.time_label, 80);
+  const nextVenue = clean(res.venue, 80);
+  const nextService = clean(res.service_name, 80);
+  const nextSlot = clean(res.slot_id, 160);
+  const nextDate = clean(String(res.date_iso || ""), 12);
+
+  const patch: Record<string, unknown> = {};
+  if (nextTime && nextTime !== clean(offer.trial_time_label, 80)) {
+    patch.trial_time_label = nextTime;
+  }
+  if (nextVenue && nextVenue !== clean(offer.trial_venue, 80)) {
+    patch.trial_venue = nextVenue;
+  }
+  if (nextService && nextService !== clean(offer.trial_service, 80)) {
+    patch.trial_service = nextService;
+  }
+  if (nextSlot && nextSlot !== clean(offer.slot_id, 160)) {
+    patch.slot_id = nextSlot;
+  }
+  if (
+    /^\d{4}-\d{2}-\d{2}$/.test(nextDate) &&
+    nextDate !== clean(String(offer.trial_session_date || ""), 12)
+  ) {
+    patch.trial_session_date = nextDate;
+  }
+
+  if (!Object.keys(patch).length) return offer;
+
+  patch.updated_at = new Date().toISOString();
+  const { error } = await admin
+    .from("portal_post_trial_offers")
+    .update(patch)
+    .eq("id", offer.id);
+  if (error) {
+    console.warn("[post-trial] refresh offer from reservation", error.message);
+    return offer;
+  }
+  return { ...offer, ...patch };
+}
+
 async function sendOfferWhatsapp(
   admin: SupabaseClient,
   offer: Record<string, unknown>,
@@ -395,9 +453,11 @@ export async function runPostTrialOffersMaintenance(
     return { ...stats, errors: 1 };
   }
 
-  for (const offer of offers || []) {
+  for (const rawOffer of offers || []) {
     stats.pending += 1;
     try {
+      const offer = await refreshOfferSlotFromReservation(admin, rawOffer);
+
       if (await parentTookTermAction(admin, offer)) {
         await releaseSoftHold(admin, offer, "term_booked");
         await admin

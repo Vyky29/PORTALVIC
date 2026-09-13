@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 116;
+  var SOURCE_VERSION = 117;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -2508,7 +2508,8 @@
   var AUTUMN_SUNDAY_CLIMBING_BOARD = [
     { staff: "ALEX", name: "Eiji", time: "10 to 11" },
     { staff: "ALEX", name: "Yusuf Ah", time: "11 to 12" },
-    { staff: "ALEX", name: "No participant", time: "12 to 1" },
+    /* Trial Sun 13 Sep · Alex · 12–1 (Places + Overview). Later Sundays stay open via trialDate. */
+    { staff: "ALEX", name: "Muhammad", time: "12 to 1", trial: true, trialDate: "2026-09-13" },
     { staff: "ALEX", name: "Rodin", time: "1 to 2" },
     { staff: "ALEX", name: "No participant", time: "2 to 3" },
     /* Alex 3–4: Elia blocked (not bookable) — office hold on Seat 1. */
