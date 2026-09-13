@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 117;
+  var SOURCE_VERSION = 118;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -2524,14 +2524,15 @@
 
   /**
    * Autumn after-school Climbing @ Westway (Tue / Thu 4–6).
-   * Victor TEST Elia books both hours (4–5 and 5–6).
+   * Office holds (Elia label) so seats stay unbookable — not real CLIENT sessions.
+   * Alex / Carlos real climbing books are Sundays only; holds must not owe feedback.
    * Expanded onto every Autumn Tue/Thu (no summer projection).
    */
   var AUTUMN_WEEKDAY_CLIMBING_BOARD = [
-    { day: "Tuesday", staff: "ALEX", name: "Elia", time: "4 to 5", session_date: "2026-07-14" },
-    { day: "Tuesday", staff: "ALEX", name: "Elia", time: "5 to 6", session_date: "2026-07-14" },
-    { day: "Thursday", staff: "CARLOS", name: "Elia", time: "4 to 5", session_date: "2026-07-16" },
-    { day: "Thursday", staff: "CARLOS", name: "Elia", time: "5 to 6", session_date: "2026-07-16" },
+    { day: "Tuesday", staff: "ALEX", name: "Elia", time: "4 to 5", closed: true, session_date: "2026-07-14" },
+    { day: "Tuesday", staff: "ALEX", name: "Elia", time: "5 to 6", closed: true, session_date: "2026-07-14" },
+    { day: "Thursday", staff: "CARLOS", name: "Elia", time: "4 to 5", closed: true, session_date: "2026-07-16" },
+    { day: "Thursday", staff: "CARLOS", name: "Elia", time: "5 to 6", closed: true, session_date: "2026-07-16" },
   ];
 
   function isClimbingService(service) {
@@ -2644,7 +2645,7 @@
   function autumnWeekdayClimbingStandingRows() {
     return AUTUMN_WEEKDAY_CLIMBING_BOARD.map(function (slot) {
       return {
-        client_name: slot.name,
+        client_name: slot.closed ? "CLOSED" : slot.name,
         day: slot.day,
         instructors: slot.staff,
         service: "Climbing Activity",
@@ -3078,7 +3079,7 @@
       if (isThursdayActonAquaticStandingRow(r)) return;
       /* Drop summer/live Sun Westway climbing — rebuild from AUTUMN_SUNDAY_CLIMBING_BOARD. */
       if (isSundayWestwayClimbingStandingRow(r)) return;
-      /* Drop summer/live Tue/Thu Westway climbing — rebuild from AUTUMN_WEEKDAY_CLIMBING_BOARD (Elia). */
+      /* Drop summer/live Tue/Thu Westway climbing — rebuild from AUTUMN_WEEKDAY_CLIMBING_BOARD (holds). */
       if (isWeekdayWestwayClimbingStandingRow(r)) return;
       /* Drop summer/live Sat Acton aquatic — rebuild from AUTUMN_SATURDAY_ACTON_BOARD. */
       if (isSaturdayActonAquaticStandingRow(r)) return;
