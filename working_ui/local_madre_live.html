@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <title>LOCAL · MADRE live / Autumn standing</title>
+  <script>
+    (function () {
+      try {
+        if (!("serviceWorker" in navigator)) return;
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          (regs || []).forEach(function (r) {
+            try { r.unregister(); } catch (_e) {}
+          });
+        });
+      } catch (_e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --ink: #173247;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.14);
+      --bg: #eef4f9;
+      --card: #fff;
+      --blue: #2d84b3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      padding: 12px 12px 40px;
+    }
+    h1 { margin: 0 0 6px; font-size: 1.15rem; }
+    .note {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      max-width: 920px;
+      overflow-wrap: break-word;
+    }
+    .links { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+    .links a {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #173247;
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .links a.soft { background: #fff; color: #173247; border: 1px solid var(--line); }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .toolbar label { font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .toolbar select, .toolbar input[type="search"] {
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font: inherit;
+      max-width: 100%;
+    }
+    button {
+      cursor: pointer;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font: inherit;
+      font-weight: 700;
+    }
+    button.primary { background: var(--blue); color: #fff; border-color: #1f6a94; }
+    #status { font-size: 0.82rem; color: var(--muted); flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; }
+    #status.ok { color: #1b5e20; font-weight: 700; }
+    #status.warn { color: #bf360c; font-weight: 700; }
+    .day {
+      margin: 0 0 14px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .day-h {
+      padding: 8px 12px;
+      font-weight: 800;
+      background: #173247;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+    .staff {
+      border-top: 1px solid var(--line);
+      padding: 8px 10px;
+      min-width: 0;
+    }
+    .staff-n {
+      font-weight: 800;
+      font-size: 0.82rem;
+      margin: 0 0 6px;
+      text-transform: uppercase;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      table-layout: fixed;
+    }
+    th, td {
+      border-top: 1px solid var(--line);
+      padding: 5px 6px;
+      text-align: left;
+      vertical-align: top;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    th { color: var(--muted); font-weight: 700; width: 18%; }
+    .empty { padding: 16px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <h1>LOCAL · MADRE</h1>
+  <p class="note">
+    Autumn standing template lives on week <strong>Mon 13 – Fri 17 Jul 2026</strong> inside term_key
+    <code>summer-2026</code>. That week is the authoring board — not “summer Places” for the public offer.
+    Public booking must ignore earlier June/July leftover weeks.
+  </p>
+  <div class="links">
+    <a href="/local_office_boards.html" class="soft">Boards hub</a>
+    <a href="/local_dc_staff_week.html">Autumn roster (LOCAL DC)</a>
+    <a href="/roster_term_master_review.html" class="soft">MADRE grid editor</a>
+    <a href="/term_timetable_local.html" class="soft">Term timetable</a>
+  </div>
+  <div class="toolbar">
+    <label>Source
+      <select id="sourceSel">
+        <option value="git">Git JSON (roster_term_master.json)</option>
+        <option value="live">Live Supabase MADRE</option>
+      </select>
+    </label>
+    <label>Week
+      <select id="weekSel"></select>
+    </label>
+    <label>Day
+      <select id="daySel">
+        <option value="">All days</option>
+        <option>Monday</option>
+        <option>Tuesday</option>
+        <option>Wednesday</option>
+        <option>Thursday</option>
+        <option>Friday</option>
+        <option>Saturday</option>
+        <option>Sunday</option>
+      </select>
+    </label>
+    <label>Search
+      <input id="q" type="search" placeholder="staff / client / venue" />
+    </label>
+    <button type="button" class="primary" id="reloadBtn">Reload</button>
+    <span id="status">Loading…</span>
+  </div>
+  <div id="board"></div>
+
+  <script>
+    window.SUPABASE_URL = window.SUPABASE_URL || "https://cklpnwhlqsulpmkipmqb.supabase.co";
+    /* Same publishable anon as portal static pages — live MADRE read only. */
+    window.SUPABASE_ANON_KEY =
+      window.SUPABASE_ANON_KEY ||
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE";
+  </script>
+  <script src="/portal/portal_madre_fold.js?v=20260913-local-madre"></script>
+  <script>
+(function () {
+  var STANDING_START = "2026-07-13";
+  var TERM_KEY = "summer-2026";
+  var state = { doc: null, rows: [] };
+
+  var weekSel = document.getElementById("weekSel");
+  var daySel = document.getElementById("daySel");
+  var sourceSel = document.getElementById("sourceSel");
+  var qEl = document.getElementById("q");
+  var statusEl = document.getElementById("status");
+  var board = document.getElementById("board");
+
+  function setStatus(msg, kind) {
+    statusEl.textContent = msg;
+    statusEl.className = kind || "";
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function foldApi() {
+    return window.PortalMadreFold || window.portalMadreFold || null;
+  }
+
+  function toRows(doc) {
+    var api = foldApi();
+    if (api && typeof api.madreToAdapterRows === "function") {
+      return api.madreToAdapterRows(doc) || [];
+    }
+    var out = [];
+    ((doc && doc.weeks) || []).forEach(function (w) {
+      var staff = w && w.staff;
+      var list = Array.isArray(staff)
+        ? staff
+        : staff && typeof staff === "object"
+          ? Object.keys(staff).map(function (k) { return staff[k]; })
+          : [];
+      list.forEach(function (st) {
+        if (!st) return;
+        var staffName = String(st.staffName || st.staffKey || st.name || "").trim().toUpperCase();
+        (st.days || []).forEach(function (d) {
+          (d.slots || []).forEach(function (s) {
+            out.push({
+              client_name: s.client_name || "",
+              day: d.weekday || "",
+              instructors: staffName || String(s.instructors || "").trim().toUpperCase(),
+              service: s.service || "",
+              area: s.pool_note || s.area || "",
+              time_slot: s.time_slot || "",
+              venue: s.venue || "",
+              session_date: d.sessionDate || d.session_date || "",
+            });
+          });
+        });
+      });
+    });
+    return out;
+  }
+
+  function weekLabel(w, i) {
+    var s = String((w && w.start) || "").slice(0, 10);
+    var e = String((w && w.end) || "").slice(0, 10);
+    var tag = s === STANDING_START ? " · AUTUMN STANDING" : "";
+    return "Week " + (i + 1) + " · " + s + " → " + e + tag;
+  }
+
+  function fillWeeks(doc) {
+    var weeks = (doc && doc.weeks) || [];
+    weekSel.innerHTML = "";
+    var prefer = -1;
+    weeks.forEach(function (w, i) {
+      var opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = weekLabel(w, i);
+      weekSel.appendChild(opt);
+      if (String(w.start || "").slice(0, 10) === STANDING_START) prefer = i;
+    });
+    if (prefer >= 0) weekSel.value = String(prefer);
+  }
+
+  function selectedWeekRange() {
+    var wi = parseInt(weekSel.value, 10) || 0;
+    var w = ((state.doc && state.doc.weeks) || [])[wi];
+    return {
+      start: String((w && w.start) || "").slice(0, 10),
+      end: String((w && w.end) || "").slice(0, 10),
+    };
+  }
+
+  function render() {
+    var range = selectedWeekRange();
+    var dayFilter = String(daySel.value || "").trim();
+    var q = String(qEl.value || "").trim().toLowerCase();
+    var rows = (state.rows || []).filter(function (r) {
+      var iso = String(r.session_date || "").slice(0, 10);
+      if (range.start && range.end && (iso < range.start || iso > range.end)) return false;
+      if (dayFilter && String(r.day || "") !== dayFilter) return false;
+      if (!q) return true;
+      var blob = [r.instructors, r.client_name, r.venue, r.service, r.area, r.time_slot, r.day].join(" ").toLowerCase();
+      return blob.indexOf(q) >= 0;
+    });
+
+    var byDay = {};
+    var dayOrder = [];
+    rows.forEach(function (r) {
+      var iso = String(r.session_date || "").slice(0, 10);
+      var key = iso + "|" + String(r.day || "");
+      if (!byDay[key]) {
+        byDay[key] = { iso: iso, day: r.day || "", byStaff: {} };
+        dayOrder.push(key);
+      }
+      var inst = String(r.instructors || "?").trim() || "?";
+      if (!byDay[key].byStaff[inst]) byDay[key].byStaff[inst] = [];
+      byDay[key].byStaff[inst].push(r);
+    });
+    dayOrder.sort();
+
+    if (!dayOrder.length) {
+      board.innerHTML = '<p class="empty">No rows for this filter.</p>';
+      return;
+    }
+
+    var html = [];
+    dayOrder.forEach(function (key) {
+      var block = byDay[key];
+      html.push(
+        '<section class="day"><div class="day-h">' +
+          esc(block.day) +
+          " · " +
+          esc(block.iso) +
+          "</div>"
+      );
+      Object.keys(block.byStaff)
+        .sort()
+        .forEach(function (inst) {
+          var slots = block.byStaff[inst].slice().sort(function (a, b) {
+            return String(a.time_slot || "").localeCompare(String(b.time_slot || ""));
+          });
+          html.push('<div class="staff"><div class="staff-n">' + esc(inst) + "</div>");
+          html.push(
+            "<table><thead><tr><th>Time</th><th>Client</th><th>Service</th><th>Venue / area</th></tr></thead><tbody>"
+          );
+          slots.forEach(function (sl) {
+            var client = sl.client_name ? sl.client_name : "NO PARTICIPANT";
+            var venue = [sl.venue, sl.area].filter(Boolean).join(" · ");
+            html.push(
+              "<tr><td>" +
+                esc(sl.time_slot) +
+                "</td><td>" +
+                esc(client) +
+                "</td><td>" +
+                esc(sl.service) +
+                "</td><td>" +
+                esc(venue) +
+                "</td></tr>"
+            );
+          });
+          html.push("</tbody></table></div>");
+        });
+      html.push("</section>");
+    });
+    board.innerHTML = html.join("");
+  }
+
+  function applyDoc(doc, label, kind) {
+    state.doc = doc;
+    state.rows = toRows(doc);
+    fillWeeks(doc);
+    setStatus(label + " · " + state.rows.length + " slot rows · Autumn standing week pre-selected", kind || "ok");
+    render();
+  }
+
+  function loadGit() {
+    setStatus("Loading git MADRE JSON…");
+    return fetch("/portal/roster_term_master.json?_=" + Date.now(), { cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (doc) {
+        var rev = (doc.meta && (doc.meta.revision || doc.meta.rev)) || "";
+        applyDoc(doc, "Git JSON" + (rev ? " · rev " + rev : ""), "ok");
+      });
+  }
+
+  function loadLive() {
+    setStatus("Loading live portal_madre_document…");
+    var base =
+      (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.url) ||
+      window.SUPABASE_URL ||
+      "https://cklpnwhlqsulpmkipmqb.supabase.co";
+    var key =
+      (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.anonKey) ||
+      window.SUPABASE_ANON_KEY ||
+      "";
+    if (!key) {
+      setStatus("No anon key on this page — using git JSON. (Live needs portal keys or paste SUPABASE_ANON_KEY.)", "warn");
+      return loadGit();
+    }
+    return fetch(
+      String(base).replace(/\/+$/, "") +
+        "/rest/v1/portal_madre_document?select=document,revision,updated_at&term_key=eq." +
+        encodeURIComponent(TERM_KEY),
+      {
+        headers: {
+          apikey: key,
+          Authorization: "Bearer " + key,
+          Accept: "application/vnd.pgrst.object+json",
+        },
+        cache: "no-store",
+      }
+    )
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (row) {
+        if (!row || !row.document) throw new Error("empty document");
+        applyDoc(
+          row.document,
+          "Live MADRE · rev " + String(row.revision || "?") + " · " + String(row.updated_at || ""),
+          "ok"
+        );
+      })
+      .catch(function (err) {
+        setStatus("Live fetch failed: " + (err && err.message ? err.message : err) + " — using git.", "warn");
+        return loadGit();
+      });
+  }
+
+  function reload() {
+    return sourceSel.value === "live" ? loadLive() : loadGit();
+  }
+
+  weekSel.addEventListener("change", render);
+  daySel.addEventListener("change", render);
+  qEl.addEventListener("input", render);
+  sourceSel.addEventListener("change", reload);
+  document.getElementById("reloadBtn").addEventListener("click", reload);
+
+  reload();
+})();
+  </script>
+</body>
+</html>

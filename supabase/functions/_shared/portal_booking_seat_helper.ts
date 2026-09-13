@@ -554,6 +554,43 @@ const CRASH_TEMPLATE_SKIP_DATES: Set<string> = (() => {
 })();
 
 /**
+ * Autumn 26/27 public weekly offer may only read:
+ * - MADRE standing authoring week Mon–Fri 2026-07-13…17, or
+ * - live Autumn calendar dates from Sep 2026.
+ * Earlier June/July summer leftover weeks (e.g. Wed SwimFarm midday pool) must
+ * never appear as bookable Places.
+ */
+const AUTUMN_OFFER_STANDING_FROM = "2026-07-13";
+const AUTUMN_OFFER_STANDING_TO = "2026-07-17";
+const AUTUMN_OFFER_LIVE_FROM = "2026-09-01";
+
+function isAutumnPublicOfferTemplateDate(iso: string): boolean {
+  const d = String(iso || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+  if (CRASH_TEMPLATE_SKIP_DATES.has(d)) return false;
+  if (d >= AUTUMN_OFFER_STANDING_FROM && d <= AUTUMN_OFFER_STANDING_TO) return true;
+  if (d >= AUTUMN_OFFER_LIVE_FROM) return true;
+  return false;
+}
+
+/** Weekday SwimFarm aquatic before 15:00 is Day Centre pool time — not after-school Places. */
+function isWeekdaySwimFarmDayCentreAquaticSlot(s: OfferSlot): boolean {
+  if (s.serviceId !== "aquatic") return false;
+  if (String(s.venue || "") !== "SwimFarm") return false;
+  const day = String(s.day || "");
+  if (
+    day !== "Monday" &&
+    day !== "Tuesday" &&
+    day !== "Wednesday" &&
+    day !== "Thursday" &&
+    day !== "Friday"
+  ) {
+    return false;
+  }
+  return String(s.sortTime || "") < "15:00";
+}
+
+/**
  * Build weekly template slots from MADRE document.
  * Occupancy uses the latest non-crash date for each standing time template.
  * Times that only exist as historic one-offs (older weeks) are omitted.
@@ -589,6 +626,8 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     if (!iso) continue;
     // Crash-week lines are intensive-only; keep them out of Autumn weekly template.
     if (CRASH_TEMPLATE_SKIP_DATES.has(iso)) continue;
+    // Drop June / early-July summer leftovers (Wed SwimFarm midday, etc.).
+    if (!isAutumnPublicOfferTemplateDate(iso)) continue;
 
     const svd = `${serviceId}|${venue}|${day}`;
     const prevMax = latestBySvd.get(svd);
@@ -704,6 +743,8 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
   folded = folded.filter(
     (s) => !(s.serviceId === "multi" && s.day === "Wednesday"),
   );
+  /* Weekday SwimFarm midday aquatic = Day Centre pool — never public Places. */
+  folded = folded.filter((s) => !isWeekdaySwimFarmDayCentreAquaticSlot(s));
 
   folded.sort((a, b) => {
     const dayOrder: Record<string, number> = {

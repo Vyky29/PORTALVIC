@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>LOCAL · Office boards (MADRE + Autumn roster)</title>
+  <style>
+    :root { --ink: #173247; --muted: #728290; --bg: #eef4f9; --card: #fff; --line: rgba(23,50,71,.14); }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      padding: 20px 16px 48px;
+    }
+    h1 { margin: 0 0 8px; font-size: 1.25rem; }
+    p { margin: 0 0 16px; color: var(--muted); max-width: 40rem; line-height: 1.45; }
+    .grid {
+      display: grid;
+      gap: 12px;
+      max-width: 560px;
+    }
+    a.card {
+      display: block;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      text-decoration: none;
+      color: inherit;
+      min-width: 0;
+    }
+    a.card strong {
+      display: block;
+      font-size: 1.05rem;
+      margin-bottom: 4px;
+    }
+    a.card span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.88rem;
+      overflow-wrap: break-word;
+    }
+    code { font-size: 0.85em; }
+  </style>
+</head>
+<body>
+  <h1>LOCAL office boards</h1>
+  <p>
+    Serve from <code>working_ui/</code> at
+    <code>http://127.0.0.1:8765/local_office_boards.html</code> (not file://).
+    Day-of truth stays Sessions Overview — these are authoring / look-at boards only.
+  </p>
+  <div class="grid">
+    <a class="card" href="/local_madre_live.html">
+      <strong>MADRE (live + git)</strong>
+      <span>Standing term document — Autumn week 13–17 Jul template + week picker. Live Supabase when logged in; otherwise git JSON.</span>
+    </a>
+    <a class="card" href="/local_dc_staff_week.html">
+      <strong>Autumn 2026 roster (LOCAL DC)</strong>
+      <span>The board you first called LOCAL DC — weekday Day Centre / Hub / after-school authoring draft.</span>
+    </a>
+    <a class="card" href="/term_timetable_local.html">
+      <strong>Term timetable (who works)</strong>
+      <span>Staff shift strip for the term.</span>
+    </a>
+    <a class="card" href="/roster_term_master_review.html">
+      <strong>MADRE grid editor</strong>
+      <span>Full editable roster_term_master grid (export / sync path).</span>
+    </a>
+  </div>
+</body>
+</html>
