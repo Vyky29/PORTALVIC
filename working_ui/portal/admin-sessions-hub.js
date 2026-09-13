@@ -996,9 +996,17 @@
   }
 
   /** Latest standing snap ISO for this weekday (summer Jul window, else Autumn weekend stamps). */
+  var _hubStandingIsoByDowCache = Object.create(null);
+  var _hubStandingIsoByDowCacheN = -1;
   function hubLatestStandingIsoForDow(rosterRows, wd) {
     var want = clean(wd);
     if (!want || !rosterRows || !rosterRows.length) return "";
+    var n = rosterRows.length;
+    if (_hubStandingIsoByDowCacheN !== n) {
+      _hubStandingIsoByDowCache = Object.create(null);
+      _hubStandingIsoByDowCacheN = n;
+    }
+    if (_hubStandingIsoByDowCache[want] !== undefined) return _hubStandingIsoByDowCache[want];
     var canon = global.PortalRosterCanonical;
     var weekendKey = String(want || "").trim().toLowerCase();
     if (canon && canon.WEEKEND_STANDING_ISO && canon.WEEKEND_STANDING_ISO[weekendKey]) {
@@ -1008,7 +1016,10 @@
           var rj = rosterRows[j];
           if (rosterRowSessionDate(rj) !== stamp) continue;
           var dj = clean(rj.day) || weekdayLongFromIso(stamp);
-          if (dj === want) return stamp;
+          if (dj === want) {
+            _hubStandingIsoByDowCache[want] = stamp;
+            return stamp;
+          }
         }
       }
     }
@@ -1023,6 +1034,7 @@
       if (d !== want) continue;
       if (!best || iso > best) best = iso;
     }
+    _hubStandingIsoByDowCache[want] = best;
     return best;
   }
 
@@ -5231,12 +5243,18 @@
     this._absentBySessionKey = {};
     this._slotsByIso = null;
     this._dayStatsByIso = null;
+    this._rosterByIso = null;
+    this._rosterUndatedByDow = null;
+    this._standingIsoByDow = null;
     this._fbIndexSig = "";
   }
 
   AdminSessionsHub.prototype.invalidateComputeCaches = function () {
     this._slotsByIso = null;
     this._dayStatsByIso = null;
+    this._rosterByIso = null;
+    this._rosterUndatedByDow = null;
+    this._standingIsoByDow = null;
     this._fbIndexSig = "";
     this._expandingSlotsIso = "";
     this._fbLogByIso = null;
@@ -6058,6 +6076,34 @@
     return n;
   };
 
+  /** Register week strip: count by date only (no expandSlots — avoids Autumn freeze). */
+  AdminSessionsHub.prototype.feedbackCountForDateLight = function (iso) {
+    var hub = this;
+    var want = clean(iso);
+    if (!want) return 0;
+    if (this._fbByDate && this._fbByDate[want]) {
+      var indexed = this._fbByDate[want];
+      var nIdx = 0;
+      for (var ii = 0; ii < indexed.length; ii++) {
+        var fbI = indexed[ii];
+        if (isTeflonDemoFeedbackRow(hub, fbI)) continue;
+        if (fbI.attendance && String(fbI.attendance).toLowerCase().indexOf("no") === 0) continue;
+        nIdx++;
+      }
+      return nIdx;
+    }
+    var list = this.payload.session_feedback || [];
+    var n = 0;
+    for (var i = 0; i < list.length; i++) {
+      var fb = list[i];
+      if (feedbackSessionDate(fb) !== want) continue;
+      if (isTeflonDemoFeedbackRow(hub, fb)) continue;
+      if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) continue;
+      n++;
+    }
+    return n;
+  };
+
   AdminSessionsHub.prototype.weekFeedbackReport = function () {
     var hub = this;
     return this.weekDays().map(function (iso) {
@@ -6612,6 +6658,71 @@
     return false;
   };
 
+  /**
+   * Index roster by session_date (and undated by weekday) so expandSlotsForDate
+   * does not walk the full Autumn-materialised list on every day paint (Register freeze).
+   */
+  AdminSessionsHub.prototype.ensureRosterDateIndex = function () {
+    if (this._rosterByIso && this._rosterUndatedByDow) return;
+    var byIso = Object.create(null);
+    var undated = Object.create(null);
+    var rows = this.rosterRows || [];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r) continue;
+      var sd = rosterRowSessionDate(r);
+      if (sd) {
+        if (!byIso[sd]) byIso[sd] = [];
+        byIso[sd].push(r);
+        continue;
+      }
+      var dow = clean(r.day);
+      if (!dow) continue;
+      if (!undated[dow]) undated[dow] = [];
+      undated[dow].push(r);
+    }
+    this._rosterByIso = byIso;
+    this._rosterUndatedByDow = undated;
+  };
+
+  AdminSessionsHub.prototype.rosterCandidateRowsForDate = function (isoDate, wd) {
+    this.ensureRosterDateIndex();
+    var out = [];
+    var seen = Object.create(null);
+    function pushList(list) {
+      if (!list || !list.length) return;
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i];
+        if (!r) continue;
+        var id =
+          String(r.id || "") ||
+          String(r.session_date || "") +
+            "|" +
+            String(r.client_name || "") +
+            "|" +
+            String(r.time_slot || "") +
+            "|" +
+            String(r.instructors || "");
+        if (seen[id]) continue;
+        seen[id] = 1;
+        out.push(r);
+      }
+    }
+    pushList(this._rosterByIso[isoDate]);
+    var project = hubUsesAutumnStandingProjection(isoDate);
+    if (project) {
+      if (!this._standingIsoByDow) this._standingIsoByDow = Object.create(null);
+      var standIso = this._standingIsoByDow[wd];
+      if (standIso === undefined) {
+        standIso = hubLatestStandingIsoForDow(this.rosterRows, wd) || "";
+        this._standingIsoByDow[wd] = standIso;
+      }
+      if (standIso && standIso !== isoDate) pushList(this._rosterByIso[standIso]);
+    }
+    pushList(this._rosterUndatedByDow[wd]);
+    return out;
+  };
+
   AdminSessionsHub.prototype.expandSlotsForDate = function (isoDate) {
     var isoKey = String(isoDate || "").trim().substring(0, 10);
     if (!this._slotsByIso) this._slotsByIso = Object.create(null);
@@ -6623,9 +6734,10 @@
     try {
       var wd = weekdayLongFromIso(isoDate);
       var sunSwimOv = wd === "Sunday" ? sundayDateSwimOverride(isoDate) : null;
+      var candidates = this.rosterCandidateRowsForDate(isoDate, wd);
       var out = [];
-      for (var i = 0; i < this.rosterRows.length; i++) {
-        var r = this.rosterRows[i];
+      for (var i = 0; i < candidates.length; i++) {
+        var r = candidates[i];
         if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
         if (!rosterServiceAllowedOnAutumnDate(r.service, isoDate)) continue;
         if (!isRosterClient(r.client_name) && !isOpenRosterSlot(r.client_name)) continue;
@@ -8684,6 +8796,33 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           body.innerHTML =
             '<p class="ash-bundle-warn" role="alert">' +
             hub.escapeHtml((err && err.message) || "Could not load overview log.") +
+            "</p>";
+        }
+      },
+      true
+    );
+    root.addEventListener(
+      "toggle",
+      function (ev) {
+        var det = ev.target;
+        if (!det || !det.getAttribute || det.getAttribute("data-ash-feedback-term-log-lazy") !== "1") return;
+        if (!det.open) return;
+        var body = det.querySelector("[data-ash-feedback-term-log-body]");
+        if (!body || body.getAttribute("data-loaded") === "1") return;
+        body.setAttribute("data-loaded", "1");
+        try {
+          body.innerHTML = hub.htmlFeedbackTermWeekLog({
+            title: "Session feedback log",
+            flatWeeks: true,
+            weekJumpOnly: true,
+            hint:
+              "Past weeks (Mon\u2013Sun). Click <strong>Show week \u2192</strong> to jump to that week at the top \u2013 day buttons and feedback for the selected day.",
+          });
+        } catch (err) {
+          console.warn("[AdminSessionsHub] feedback term log", err);
+          body.innerHTML =
+            '<p class="ash-bundle-warn" role="alert">' +
+            hub.escapeHtml((err && err.message) || "Could not load feedback log.") +
             "</p>";
         }
       },
@@ -11902,11 +12041,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
             "</button>"
           );
         }
-        /* Overview day picker: skip dayStats (7× expandSlots freezes the tab). */
-        var ds =
-          opts.overviewPicker && !opts.computeOverviewDayStats
-            ? { total: 0, done: 0 }
-            : hub.dayStats(iso);
+        /* Overview day picker: skip dayStats (7× expandSlots freezes the tab).
+         * Register: count submitted feedback only — same freeze if we expand Autumn roster. */
+        var ds;
+        if (opts.overviewPicker && !opts.computeOverviewDayStats) {
+          ds = { total: 0, done: 0 };
+        } else if (hub.mode === "feedback" && !opts.overviewPicker) {
+          var submittedN = hub.feedbackCountForDateLight
+            ? hub.feedbackCountForDateLight(iso)
+            : hub.feedbackCountForDate(iso);
+          ds = { total: submittedN, done: submittedN };
+        } else {
+          ds = hub.dayStats(iso);
+        }
         var col = DAY_COLORS[idx % DAY_COLORS.length];
         var tint = DAY_BG_TINTS[idx % DAY_BG_TINTS.length];
         var innerPct = 0;
@@ -12236,13 +12383,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (this._termLogHtml && this._termLogSig === logSig) {
       logHtml = this._termLogHtml;
     } else {
-      logHtml = this.htmlFeedbackTermWeekLog({
-        title: "Session feedback log",
-        flatWeeks: true,
-        weekJumpOnly: true,
-        hint:
-          "Past weeks (Mon\u2013Sun). Click <strong>Show week \u2192</strong> to jump to that week at the top \u2013 day buttons and feedback for the selected day.",
-      });
+      /* Lazy: building the full 1000-row week jump log on first paint freezes Register. */
+      logHtml =
+        '<details class="ash-feedback-log" data-ash-feedback-term-log-lazy="1">' +
+        '<summary class="ash-feedback-log__summary">Session feedback log (past weeks) — expand to load</summary>' +
+        '<div class="ash-feedback-log__body" data-ash-feedback-term-log-body>' +
+        '<p class="ash-muted">Expand to load week jumps for older feedback.</p></div></details>';
       this._termLogHtml = logHtml;
       this._termLogSig = logSig;
     }
