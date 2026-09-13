@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 118;
+  var SOURCE_VERSION = 119;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -945,6 +945,8 @@
   /**
    * Autumn 26/27 Northolt aquatic standing (Services truth — not summer Roberto book).
    * Source: admin Services Mon 7 Sep / Wed 9 Sep 2026 grids.
+   * Mon Dan 6–6.30: Adaam Ah through Mon 7; Amaar Ah from Mon 14 (Leila swap).
+   * Scrub `scrubAndEnsureMonNortholtDan630LeilaSwap` owns the pre-14 Adaam paint.
    */
   var AUTUMN_NORTHOLT_AQUATIC_BOARD = {
     monday: [
@@ -1133,6 +1135,54 @@
         session_date: "2026-09-11",
       },
     ];
+  }
+
+  /**
+   * Leila swap: Mon Northolt Dan 6–6.30 was Adaam Ah (e.g. Mon 7 — Dan feedback);
+   * Amaar Ah takes that seat from Mon 14 Sep 2026. Adaam + Aydaan stand on Tue Acton 6–6.30.
+   */
+  var AMAAR_MON_NORTHOLT_DAN_630_FROM = "2026-09-14";
+
+  function isMonNortholtDan630Aquatic(row) {
+    if (!row) return false;
+    if (!/northolt/i.test(String(row.venue || ""))) return false;
+    if (!/aquatic|swim/i.test(String(row.service || ""))) return false;
+    if (!/\bdan\b/i.test(String(row.instructors || ""))) return false;
+    var slot = String(row.time_slot || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+      .replace(/:/g, ".");
+    return /^6(\.00)?\s*to\s*6\.30$/.test(slot);
+  }
+
+  function scrubAndEnsureMonNortholtDan630LeilaSwap(rows) {
+    var out = [];
+    var sealed = {};
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var d = normIso(r.session_date);
+      if (!d || !isMonNortholtDan630Aquatic(r)) {
+        out.push(r);
+        return;
+      }
+      if (sealed[d]) return;
+      sealed[d] = true;
+      var name = d < AMAAR_MON_NORTHOLT_DAN_630_FROM ? "Adaam Ah" : "Amaar Ah";
+      out.push(
+        Object.assign({}, r, {
+          client_name: name,
+          day: "Monday",
+          instructors: String(r.instructors || "DAN").replace(/\bdan\b/i, "DAN") || "DAN",
+          service: "Aquatic Activity",
+          area: r.area || "Teaching Pool",
+          time_slot: "6 to 6.30",
+          venue: "Northolt",
+          session_date: d,
+        })
+      );
+    });
+    return out;
   }
 
   /** Keep Amaar named on Fri 11; do not also leave a standing open twin that day. */
@@ -3523,6 +3573,7 @@
     merged = scrubAndEnsureSep7VictorRaulCover(merged);
     merged = scrubAndEnsureSep10YassirLastSession(merged);
     merged = scrubAndEnsureSep11AmaarLastSession(merged);
+    merged = scrubAndEnsureMonNortholtDan630LeilaSwap(merged);
     merged = scrubAndEnsureSep8ActonRedistribute(merged);
     merged = scrubAndEnsureSep10AnasMakeup(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);
