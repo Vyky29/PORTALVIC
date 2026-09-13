@@ -132,11 +132,12 @@
   </style>
 </head>
 <body>
-  <h1>LOCAL · MADRE</h1>
+  <h1>LOCAL · MADRE · Autumn calendar</h1>
   <p class="note">
-    Autumn standing template lives on week <strong>Mon 13 – Fri 17 Jul 2026</strong> inside term_key
-    <code>summer-2026</code>. That week is the authoring board — not “summer Places” for the public offer.
-    Public booking must ignore earlier June/July leftover weeks.
+    Autumn term starts <strong>1 Sep 2026</strong>. This board paints the MADRE standing seats onto
+    <strong>calendar weeks in September+</strong> (dates like <strong>13-Sep-2026</strong>).
+    Inside the JSON the weekday pattern is still stored on Jul 13–17 — that is only the template key,
+    not the week you look at here.
   </p>
   <div class="links">
     <a href="/local_office_boards.html" class="soft">Boards hub</a>
@@ -150,7 +151,7 @@
         <option value="live">Live Supabase MADRE</option>
       </select>
     </label>
-    <label>Week
+    <label>Autumn week
       <select id="weekSel"></select>
     </label>
     <label>Day
@@ -175,17 +176,24 @@
 
   <script>
     window.SUPABASE_URL = window.SUPABASE_URL || "https://cklpnwhlqsulpmkipmqb.supabase.co";
-    /* Same publishable anon as portal static pages — live MADRE read only. */
     window.SUPABASE_ANON_KEY =
       window.SUPABASE_ANON_KEY ||
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE";
   </script>
-  <script src="/portal/portal_madre_fold.js?v=20260913-local-madre"></script>
+  <script src="/portal/portal_madre_fold.js?v=20260913-local-madre-autumn"></script>
   <script>
 (function () {
-  var STANDING_START = "2026-07-13";
+  var STANDING_FROM = "2026-07-13";
+  var STANDING_TO = "2026-07-17";
+  var WEEKEND_TEMPLATE_FROM = "2026-07-11";
+  var WEEKEND_TEMPLATE_TO = "2026-07-12";
+  var AUTUMN_FROM = "2026-09-01";
+  var AUTUMN_TO = "2026-12-18";
   var TERM_KEY = "summer-2026";
-  var state = { doc: null, rows: [] };
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+  var state = { doc: null, rows: [], autumnWeeks: [], templateByDay: {} };
 
   var weekSel = document.getElementById("weekSel");
   var daySel = document.getElementById("daySel");
@@ -205,6 +213,29 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function fmtUk(iso) {
+    var p = String(iso || "").slice(0, 10).split("-");
+    if (p.length !== 3) return String(iso || "");
+    var m = MONTHS[parseInt(p[1], 10) - 1] || p[1];
+    return p[2] + "-" + m + "-" + p[0];
+  }
+
+  function parseIso(iso) {
+    var s = String(iso || "").slice(0, 10);
+    var d = new Date(s + "T12:00:00");
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function toIso(d) {
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
   }
 
   function foldApi() {
@@ -246,83 +277,139 @@
     return out;
   }
 
-  function weekLabel(w, i) {
-    var s = String((w && w.start) || "").slice(0, 10);
-    var e = String((w && w.end) || "").slice(0, 10);
-    var tag = s === STANDING_START ? " · AUTUMN STANDING" : "";
-    return "Week " + (i + 1) + " · " + s + " → " + e + tag;
+  function buildTemplateByDay(rows) {
+    var map = {};
+    (rows || []).forEach(function (r) {
+      var iso = String(r.session_date || "").slice(0, 10);
+      var day = String(r.day || "").trim();
+      if (!day) return;
+      var isWeekday = day !== "Saturday" && day !== "Sunday";
+      var ok = isWeekday
+        ? iso >= STANDING_FROM && iso <= STANDING_TO
+        : iso >= WEEKEND_TEMPLATE_FROM && iso <= WEEKEND_TEMPLATE_TO;
+      if (!ok) return;
+      if (!map[day]) map[day] = [];
+      map[day].push(r);
+    });
+    return map;
   }
 
-  function fillWeeks(doc) {
-    var weeks = (doc && doc.weeks) || [];
+  /** Mon-start weeks from Autumn term start through end. */
+  function buildAutumnWeeks() {
+    var weeks = [];
+    var cur = parseIso(AUTUMN_FROM);
+    var end = parseIso(AUTUMN_TO);
+    if (!cur || !end) return weeks;
+    /* Snap back to Monday of that week (Mon=1 … Sun=0 → back to Mon). */
+    var dow = cur.getDay();
+    var back = dow === 0 ? 6 : dow - 1;
+    cur.setDate(cur.getDate() - back);
+    while (cur.getTime() <= end.getTime()) {
+      var days = [];
+      for (var i = 0; i < 7; i++) {
+        var d = new Date(cur.getTime());
+        d.setDate(cur.getDate() + i);
+        var iso = toIso(d);
+        if (iso >= AUTUMN_FROM && iso <= AUTUMN_TO) {
+          days.push({ iso: iso, day: DAY_NAMES[d.getDay()] });
+        }
+      }
+      if (days.length) {
+        weeks.push({
+          start: days[0].iso,
+          end: days[days.length - 1].iso,
+          days: days,
+        });
+      }
+      cur.setDate(cur.getDate() + 7);
+    }
+    return weeks;
+  }
+
+  function preferAutumnWeekIndex(weeks) {
+    var today = toIso(new Date());
+    for (var i = 0; i < weeks.length; i++) {
+      if (today >= weeks[i].start && today <= weeks[i].end) return i;
+    }
+    /* Default: week containing 7 Sep (standing weekday start) or first week. */
+    for (var j = 0; j < weeks.length; j++) {
+      if (weeks[j].start <= "2026-09-07" && weeks[j].end >= "2026-09-07") return j;
+    }
+    return 0;
+  }
+
+  function fillWeeks() {
+    state.autumnWeeks = buildAutumnWeeks();
     weekSel.innerHTML = "";
-    var prefer = -1;
-    weeks.forEach(function (w, i) {
+    state.autumnWeeks.forEach(function (w, i) {
       var opt = document.createElement("option");
       opt.value = String(i);
-      opt.textContent = weekLabel(w, i);
+      opt.textContent =
+        "Week · " + fmtUk(w.start) + " → " + fmtUk(w.end);
       weekSel.appendChild(opt);
-      if (String(w.start || "").slice(0, 10) === STANDING_START) prefer = i;
     });
-    if (prefer >= 0) weekSel.value = String(prefer);
+    weekSel.value = String(preferAutumnWeekIndex(state.autumnWeeks));
   }
 
-  function selectedWeekRange() {
-    var wi = parseInt(weekSel.value, 10) || 0;
-    var w = ((state.doc && state.doc.weeks) || [])[wi];
-    return {
-      start: String((w && w.start) || "").slice(0, 10),
-      end: String((w && w.end) || "").slice(0, 10),
-    };
+  function selectedAutumnWeek() {
+    var i = parseInt(weekSel.value, 10) || 0;
+    return state.autumnWeeks[i] || null;
+  }
+
+  function rowsForAutumnDay(calDay) {
+    var tmpl = state.templateByDay[calDay.day] || [];
+    return tmpl.map(function (r) {
+      return {
+        client_name: r.client_name,
+        day: calDay.day,
+        instructors: r.instructors,
+        service: r.service,
+        area: r.area,
+        time_slot: r.time_slot,
+        venue: r.venue,
+        session_date: calDay.iso,
+      };
+    });
   }
 
   function render() {
-    var range = selectedWeekRange();
-    var dayFilter = String(daySel.value || "").trim();
-    var q = String(qEl.value || "").trim().toLowerCase();
-    var rows = (state.rows || []).filter(function (r) {
-      var iso = String(r.session_date || "").slice(0, 10);
-      if (range.start && range.end && (iso < range.start || iso > range.end)) return false;
-      if (dayFilter && String(r.day || "") !== dayFilter) return false;
-      if (!q) return true;
-      var blob = [r.instructors, r.client_name, r.venue, r.service, r.area, r.time_slot, r.day].join(" ").toLowerCase();
-      return blob.indexOf(q) >= 0;
-    });
-
-    var byDay = {};
-    var dayOrder = [];
-    rows.forEach(function (r) {
-      var iso = String(r.session_date || "").slice(0, 10);
-      var key = iso + "|" + String(r.day || "");
-      if (!byDay[key]) {
-        byDay[key] = { iso: iso, day: r.day || "", byStaff: {} };
-        dayOrder.push(key);
-      }
-      var inst = String(r.instructors || "?").trim() || "?";
-      if (!byDay[key].byStaff[inst]) byDay[key].byStaff[inst] = [];
-      byDay[key].byStaff[inst].push(r);
-    });
-    dayOrder.sort();
-
-    if (!dayOrder.length) {
-      board.innerHTML = '<p class="empty">No rows for this filter.</p>';
+    var week = selectedAutumnWeek();
+    if (!week) {
+      board.innerHTML = '<p class="empty">No Autumn weeks.</p>';
       return;
     }
-
+    var dayFilter = String(daySel.value || "").trim();
+    var q = String(qEl.value || "").trim().toLowerCase();
     var html = [];
-    dayOrder.forEach(function (key) {
-      var block = byDay[key];
+    week.days.forEach(function (calDay) {
+      if (dayFilter && calDay.day !== dayFilter) return;
+      var rows = rowsForAutumnDay(calDay).filter(function (r) {
+        if (!q) return true;
+        var blob = [r.instructors, r.client_name, r.venue, r.service, r.area, r.time_slot].join(" ").toLowerCase();
+        return blob.indexOf(q) >= 0;
+      });
+      if (q && !rows.length) return;
       html.push(
         '<section class="day"><div class="day-h">' +
-          esc(block.day) +
+          esc(calDay.day) +
           " · " +
-          esc(block.iso) +
+          esc(fmtUk(calDay.iso)) +
           "</div>"
       );
-      Object.keys(block.byStaff)
+      if (!rows.length) {
+        html.push('<p class="empty">No standing seats for this weekday in MADRE template.</p></section>');
+        return;
+      }
+      var byStaff = {};
+      rows.forEach(function (r) {
+        var inst = String(r.instructors || "?").trim() || "?";
+        if (!byStaff[inst]) byStaff[inst] = [];
+        byStaff[inst].push(r);
+      });
+      Object.keys(byStaff)
         .sort()
         .forEach(function (inst) {
-          var slots = block.byStaff[inst].slice().sort(function (a, b) {
+          var slots = byStaff[inst].slice().sort(function (a, b) {
             return String(a.time_slot || "").localeCompare(String(b.time_slot || ""));
           });
           html.push('<div class="staff"><div class="staff-n">' + esc(inst) + "</div>");
@@ -348,14 +435,22 @@
         });
       html.push("</section>");
     });
-    board.innerHTML = html.join("");
+    board.innerHTML = html.length ? html.join("") : '<p class="empty">No rows for this filter.</p>';
   }
 
   function applyDoc(doc, label, kind) {
     state.doc = doc;
     state.rows = toRows(doc);
-    fillWeeks(doc);
-    setStatus(label + " · " + state.rows.length + " slot rows · Autumn standing week pre-selected", kind || "ok");
+    state.templateByDay = buildTemplateByDay(state.rows);
+    fillWeeks();
+    var nDays = Object.keys(state.templateByDay).length;
+    setStatus(
+      label +
+        " · Autumn calendar (from 1 Sep) · standing template weekdays=" +
+        nDays +
+        " · dates like 13-Sep-2026",
+      kind || "ok"
+    );
     render();
   }
 
@@ -383,7 +478,7 @@
       window.SUPABASE_ANON_KEY ||
       "";
     if (!key) {
-      setStatus("No anon key on this page — using git JSON. (Live needs portal keys or paste SUPABASE_ANON_KEY.)", "warn");
+      setStatus("No anon key — using git JSON.", "warn");
       return loadGit();
     }
     return fetch(
@@ -407,12 +502,12 @@
         if (!row || !row.document) throw new Error("empty document");
         applyDoc(
           row.document,
-          "Live MADRE · rev " + String(row.revision || "?") + " · " + String(row.updated_at || ""),
+          "Live MADRE · rev " + String(row.revision || "?"),
           "ok"
         );
       })
       .catch(function (err) {
-        setStatus("Live fetch failed: " + (err && err.message ? err.message : err) + " — using git.", "warn");
+        setStatus("Live failed: " + (err && err.message ? err.message : err) + " — git.", "warn");
         return loadGit();
       });
   }
