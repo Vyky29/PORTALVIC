@@ -129,6 +129,13 @@
   global.portalScheduleLeadTeamShiftUi = function portalScheduleLeadTeamShiftUi(delayMs) {
     if (typeof global.portalSyncLeadTeamShiftUi !== "function") return;
     var wait = delayMs == null ? 320 : Math.max(0, Number(delayMs) || 0);
+    /* Roberto Sunday = programme-wide pool lead — give Today paint room before lead scan. */
+    if (delayMs == null) {
+      try {
+        var sid = String(global.STAFF_DASHBOARD_ID || global.__PORTAL_STAFF_ID__ || "").toLowerCase();
+        if (sid.indexOf("roberto") >= 0) wait = 900;
+      } catch (_) {}
+    }
     if (leadTeamSyncTimer) return;
     leadTeamSyncTimer = global.setTimeout(function () {
       leadTeamSyncTimer = null;

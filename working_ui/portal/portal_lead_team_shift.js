@@ -33,7 +33,7 @@ const LEAD_TEAM_SHIFT_ALERT_TYPES = new Set([
   "session_add",
   "slot_update",
 ]);
-const CHANGE_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
+const CHANGE_LOOKBACK_MS = 3 * 24 * 60 * 60 * 1000;
 
 function normKey(v) {
   return String(v || "")
@@ -782,10 +782,25 @@ function matchingLeadScopedRosterRow(ov, iso, scopes, source) {
   const wantClient = String(ov.anchor_client_id || "").trim();
   const openClient = openSlotClientSlug(wantClient);
   const src = source || rosterSource();
-  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  const day = String(iso || "").slice(0, 10);
+  let rows = null;
+  try {
+    const cache = window.__PORTAL_LEAD_ROSTER_BY_ISO__;
+    if (cache && Array.isArray(cache[day])) rows = cache[day];
+  } catch (_) {}
+  if (!rows) {
+    const all = src && Array.isArray(src.rows) ? src.rows : [];
+    rows = [];
+    for (let r = 0; r < all.length; r++) {
+      if (rosterRowMatchesIso(all[r], day)) rows.push(all[r]);
+    }
+    try {
+      if (!window.__PORTAL_LEAD_ROSTER_BY_ISO__) window.__PORTAL_LEAD_ROSTER_BY_ISO__ = Object.create(null);
+      window.__PORTAL_LEAD_ROSTER_BY_ISO__[day] = rows;
+    } catch (_) {}
+  }
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    if (!rosterRowMatchesIso(row, iso)) continue;
     const slot = rosterRowToSlot(row, iso);
     if (!portalLeadSlotInScope(slot, scopes)) continue;
     // Match the override anchor against BOTH the resolved instructor (after any
@@ -1568,24 +1583,30 @@ export function portalSyncLeadTeamShiftUi() {
      */
     const nowMs = Date.now();
     const lastAt = Number(window.__PORTAL_LEAD_TEAM_SYNC_AT__ || 0) || 0;
+    /* Roberto Sunday pool is programme-wide — allow fewer syncs (was freezing 3s+). */
+    const minGap = ctx.leadKey === "roberto" ? 2200 : 900;
     if (window.__PORTAL_LEAD_TEAM_SYNC_BUSY__) {
       window.__PORTAL_LEAD_TEAM_SYNC_AGAIN__ = true;
       return;
     }
-    if (nowMs - lastAt < 900) {
+    if (nowMs - lastAt < minGap) {
       if (window.__PORTAL_LEAD_TEAM_SYNC_TIMER__) return;
       window.__PORTAL_LEAD_TEAM_SYNC_TIMER__ = setTimeout(function () {
         try {
           window.__PORTAL_LEAD_TEAM_SYNC_TIMER__ = 0;
           portalSyncLeadTeamShiftUi();
         } catch (_t) {}
-      }, 920);
+      }, minGap + 40);
       return;
     }
     window.__PORTAL_LEAD_TEAM_SYNC_AT__ = nowMs;
     window.__PORTAL_LEAD_TEAM_SYNC_BUSY__ = true;
 
     try {
+      try {
+        window.__PORTAL_LEAD_ROSTER_BY_ISO__ = Object.create(null);
+      } catch (_) {}
+
       const team = workingToday ? portalLeadTeamOnShiftForIso(iso, ctx) : null;
       const showToday = !!team;
 
@@ -1599,13 +1620,35 @@ export function portalSyncLeadTeamShiftUi() {
         }
       }
 
-      const changes = portalLeadTeamShiftChanges(ctx);
-      const qmHtml = renderQuickMenuChanges(changes);
-      if (qmHost) {
-        qmHost.innerHTML = qmHtml;
-        qmHost.hidden = !qmHtml;
+      /*
+       * Defer Quick Menu "team schedule changes" walk (overrides × roster).
+       * Doing it inline with Today strip was the 3s setTimeout freeze on Roberto Sundays.
+       * Javier is not a programme lead so he never hits this path.
+       */
+      const paintChanges = function () {
+        try {
+          if (!workingToday) {
+            if (qmHost) {
+              qmHost.innerHTML = "";
+              qmHost.hidden = true;
+            }
+            if (qmHeading) qmHeading.hidden = true;
+            return;
+          }
+          const changes = portalLeadTeamShiftChanges(ctx);
+          const qmHtml = renderQuickMenuChanges(changes);
+          if (qmHost) {
+            qmHost.innerHTML = qmHtml;
+            qmHost.hidden = !qmHtml;
+          }
+          if (qmHeading) qmHeading.hidden = !qmHtml;
+        } catch (_ch) {}
+      };
+      if (typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(paintChanges, { timeout: 3500 });
+      } else {
+        setTimeout(paintChanges, ctx.leadKey === "roberto" ? 1200 : 400);
       }
-      if (qmHeading) qmHeading.hidden = !qmHtml;
       /*
        * Do NOT rebuild week/term chrome here. Override hydrate already paints pulses.
        * Lead sync on every Today paint was freezing Roberto's iPhone (Youssef unaffected).
@@ -1618,7 +1661,7 @@ export function portalSyncLeadTeamShiftUi() {
           try {
             portalSyncLeadTeamShiftUi();
           } catch (_a) {}
-        }, 450);
+        }, ctx.leadKey === "roberto" ? 1800 : 450);
       }
     }
   } catch (e) {
