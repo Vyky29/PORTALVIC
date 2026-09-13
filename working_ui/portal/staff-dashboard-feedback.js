@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260911-roberto-fast';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260913-dc-shared-fanout';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -243,9 +243,21 @@
         — only this staff's own Supabase rows may mark green. Day Centre, Bespoke shared,
         and 2:1 aquatic (same client + same clock, e.g. Joelle Aurora+Simon) are shared:
         one worker's submit completes both instructors. */
+    function portalClientIsDayCentreSharedParticipant(clientIdOrName){
+      const raw = String(clientIdOrName || '').trim().toLowerCase();
+      if(!raw) return false;
+      const slug = raw.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      const DC = ['ikram', 'fadi', 'timi', 'emanuel', 'emmanuel', 'acat'];
+      for(let i = 0; i < DC.length; i++){
+        const d = DC[i];
+        if(slug === d || slug.indexOf(d + '_') === 0 || raw.indexOf(d) === 0) return true;
+      }
+      return false;
+    }
     function portalSessionNeedsPerStaffOwnFeedbackOnly(s, iso){
       if(portalSessionIsSundayInstructorCover(s)) return true;
       if(portalSessionIsSundaySwimfarmPerStaffFeedback(s, iso)) return true;
+      if(portalClientIsDayCentreSharedParticipant(s && (s.clientId || s.clientName))) return false;
       const act = String((s && (s.activity || s.rosterService || s.service)) || '').toLowerCase();
       if(/day\s*centre/.test(act)) return false;
       if(typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s)) return false;
@@ -264,6 +276,7 @@
       if(act.indexOf('physical activit') >= 0 || act.indexOf('fitness') >= 0 || act === 'gym') return true;
       return false;
     }
+    try{ window.portalClientIsDayCentreSharedParticipant = portalClientIsDayCentreSharedParticipant; }catch(_){}
     function portalAppendPerStaffOwnKeysForDate(keys, iso, staffId){
       if(!staffId || !iso || !/^\d{4}-\d{2}-\d{2}$/.test(String(iso).slice(0, 10))) return;
       const dayWord = new Date(String(iso).slice(0, 10) + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
@@ -941,6 +954,10 @@
       }
       if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s) && cid){
         add(iso + '|' + cid + '|day_centre');
+      }else if(cid && typeof portalClientIsDayCentreSharedParticipant === 'function'
+        && portalClientIsDayCentreSharedParticipant(cid)){
+        add(iso + '|' + cid + '|day_centre');
+        add(iso + '||' + cid);
       }
       if(typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s) && cid){
         add(iso + '|' + cid + '|bespoke_shared');
@@ -1264,13 +1281,15 @@
         const needsOwnFeedback = typeof portalTodayItemNeedsPerStaffOwnFeedbackOnly === 'function'
           && portalTodayItemNeedsPerStaffOwnFeedbackOnly(item, iso);
         const ownSrv = dashboardData && dashboardData.portalServerOwnFeedbackKeys;
+        const dcSharedClient = !!(cidForSlot && typeof portalClientIsDayCentreSharedParticipant === 'function'
+          && portalClientIsDayCentreSharedParticipant(cidForSlot));
         for(let i = 0; i < aliases.length; i++){
           const k = aliases[i];
           if(typeof portalStaffLeadFeedbackKeyMatchesAquaticSlot === 'function'
             && !portalStaffLeadFeedbackKeyMatchesAquaticSlot(k, iso, cidForSlot, startHm, dayWord)){
             continue;
           }
-          if(needsOwnFeedback && ownSrv){
+          if(needsOwnFeedback && ownSrv && !dcSharedClient){
             if(ownSrv.has(k)) feedbackDone = true;
           }else if(srv.feedback && srv.feedback.has(k)){
             feedbackDone = true;

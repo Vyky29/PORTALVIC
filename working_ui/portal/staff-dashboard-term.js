@@ -2268,6 +2268,9 @@
       if(/day\s*centre/i.test(String(s.service || ''))) return true;
       if(/day\s*centre/i.test(String(s.activity || ''))) return true;
       if(String(s.feedbackUnitKey || '').indexOf('day_centre') >= 0) return true;
+      /* Shared DC participants (Ikram / Fadi / …): any rota slice that day shares one unit. */
+      if(typeof portalClientIsDayCentreSharedParticipant === 'function'
+        && portalClientIsDayCentreSharedParticipant(s.clientId || s.clientName)) return true;
       return false;
     }
     /** 2:1 / 3:1 Bespoke SwimFarm Hub — shared feedback across co-instructors (e.g. Tinashe). */

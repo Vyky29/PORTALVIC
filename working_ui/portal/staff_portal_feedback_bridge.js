@@ -477,6 +477,8 @@
         return String(p || "").trim().toLowerCase();
       })
       .filter(Boolean);
+    const lastEarly = String(parts[parts.length - 1] || "").trim().toLowerCase();
+    if (lastEarly === "day_centre" || lastEarly === "bespoke_shared") return lastEarly;
     if (parts.length < 4) return "";
     /* date|client|HH:mm|service|area|instructor — last segment is instructor, not area */
     if (
@@ -501,6 +503,14 @@
     if (!aa && !bb) return true;
     if (aa && bb) {
       if (aa === bb) return true;
+      if (aa === "day_centre" || bb === "day_centre") return true;
+      if (aa === "bespoke_shared" || bb === "bespoke_shared") return true;
+      if (
+        (aa.indexOf("hub") >= 0 || aa === "bespoke_shared") &&
+        (bb.indexOf("hub") >= 0 || bb === "bespoke_shared")
+      ) {
+        return true;
+      }
       if (
         (aa.indexOf("climb") >= 0 || aa === "climbing" || aa === "climbing_wall") &&
         (bb.indexOf("climb") >= 0 || bb === "climbing" || bb === "climbing_wall")
@@ -616,8 +626,23 @@
     return true;
   }
 
+  function portalClientIsDayCentreSharedParticipant(clientIdOrName) {
+    const raw = String(clientIdOrName || "")
+      .trim()
+      .toLowerCase();
+    if (!raw) return false;
+    const s = raw.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    const DC = ["ikram", "fadi", "timi", "emanuel", "emmanuel", "acat"];
+    for (let i = 0; i < DC.length; i++) {
+      const d = DC[i];
+      if (s === d || s.indexOf(d + "_") === 0 || raw.indexOf(d) === 0) return true;
+    }
+    return false;
+  }
+
   function isDayCentreRosterSession(s) {
     if (!s) return false;
+    if (portalClientIsDayCentreSharedParticipant(s.clientId || s.clientName)) return true;
     const blob = String(
       (s.rosterService || s.activity || s.service || "") + " " + (s.clientId || "")
     );
@@ -681,6 +706,7 @@
   function rosterSessionNeedsPerStaffOwnFeedbackOnly(s, iso) {
     if (!s) return false;
     if (s.__portalSundayInstructorCover) return true;
+    if (portalClientIsDayCentreSharedParticipant(s.clientId || s.clientName)) return false;
     const act = String((s.activity || s.rosterService || s.service) || "")
       .trim()
       .toLowerCase();
@@ -1223,11 +1249,29 @@
     if (!key) return false;
     const day = String(iso || "").trim().substring(0, 10);
     const unitKey = day + "|" + key + "|day_centre";
+    const dateClientKey = day + "||" + key;
     try {
       const dd = typeof window !== "undefined" && window.dashboardData;
       const srv = dd && dd.portalServerResolvedRosterKeys;
-      if (srv && srv.feedback && typeof srv.feedback.has === "function" && srv.feedback.has(unitKey)) {
-        return true;
+      if (srv && srv.feedback && typeof srv.feedback.has === "function") {
+        if (srv.feedback.has(unitKey) || srv.feedback.has(dateClientKey)) return true;
+      }
+      const submitted =
+        (dd && dd.portalServerSubmittedFeedbackPortalKeys) ||
+        (dd && dd.portalServerSubmittedFeedbackKeys);
+      if (submitted && typeof submitted.has === "function") {
+        if (submitted.has(unitKey) || submitted.has(dateClientKey)) return true;
+        const matcher =
+          typeof window !== "undefined" && typeof window.__PORTAL_REVIEW_KEY_MATCHER__ === "function"
+            ? window.__PORTAL_REVIEW_KEY_MATCHER__
+            : null;
+        if (matcher && submitted.size) {
+          for (const fk of submitted) {
+            try {
+              if (matcher(fk, unitKey) || matcher(fk, dateClientKey)) return true;
+            } catch (_) {}
+          }
+        }
       }
     } catch (_) {}
     return submittedRowsForDateAll(iso).some(function (r) {
@@ -1550,6 +1594,7 @@
     anySubmittedCoversRosterSession: anySubmittedCoversRosterSession,
     dayCentreClientResolved: dayCentreClientResolved,
     dayCentrePeerSubmissionCoversClient: dayCentrePeerSubmissionCoversClient,
+    portalClientIsDayCentreSharedParticipant: portalClientIsDayCentreSharedParticipant,
     mergeGroupResolved: mergeGroupResolved,
     feedbackUnitKeyResolved: feedbackUnitKeyResolved,
     exportMarksDayComplete: exportMarksDayComplete,

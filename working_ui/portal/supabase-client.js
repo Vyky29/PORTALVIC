@@ -185,6 +185,19 @@ export async function portalBumpAuthSessionGeneration(supabase, userId) {
  */
 export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys) {
   const out = new Set();
+  const DC = new Set(["ikram", "fadi", "timi", "emanuel", "emmanuel", "acat"]);
+  function isDcClientToken(tok) {
+    const t = String(tok || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (!t) return false;
+    for (const d of DC) {
+      if (t === d || t.indexOf(d + "_") === 0) return true;
+    }
+    return false;
+  }
   for (const raw of rosterSessionKeys || []) {
     const rk = String(raw || "").trim();
     if (!rk) continue;
@@ -215,6 +228,25 @@ export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys)
       if (client) {
         out.add(`${date}||${client}`);
         out.add(`${date}|${client}|bespoke_shared`);
+        if (isDcClientToken(client)) out.add(`${date}|${client}|day_centre`);
+      }
+    }
+    /* Timed Hub cover of a DC client (Raul 3–4 Ikram) → still look up shared day_centre. */
+    for (let i = 1; i < parts.length; i++) {
+      const tok = String(parts[i] || "").trim().toLowerCase();
+      if (!tok || /^\d{1,2}:\d{2}$/.test(tok)) continue;
+      if (
+        tok === "day_centre" ||
+        tok === "bespoke_shared" ||
+        tok === "hub_room" ||
+        tok === "aquatic" ||
+        /pool|climb|multi|lane/.test(tok)
+      ) {
+        continue;
+      }
+      if (isDcClientToken(tok)) {
+        out.add(`${date}|${tok}|day_centre`);
+        out.add(`${date}||${tok}`);
       }
     }
   }
@@ -527,6 +559,21 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       const isAbs = portalFeedbackAttendanceIsAbsent(
         /** @type {{ attendance?: string }} */ (r).attendance
       );
+      /*
+       * Day Centre / Bespoke shared: keep the exact unit key so every co-worker
+       * (Michelle submits → Raul/Luliya green) resolves even before roster fan-out.
+       */
+      if (portalRosterKeyIsSharedFeedbackUnit(pk)) {
+        if (isAbs) {
+          if (!seenA.has(pk)) {
+            seenA.add(pk);
+            absent.push(pk);
+          }
+        } else if (!seenP.has(pk)) {
+          seenP.add(pk);
+          present.push(pk);
+        }
+      }
       const rosterCands = portalRosterCandidatesForSubmittedKey(pk, rosterByDate);
       for (const rk of rosterCands) {
         if (!portalFeedbackSubmittedKeyMatchesRosterKey(pk, rk, matchOpts)) continue;
@@ -1163,6 +1210,9 @@ function portalSessionKeyAreaToken(key) {
     .split("|")
     .map((p) => String(p || "").trim().toLowerCase())
     .filter(Boolean);
+  const lastEarly = String(parts[parts.length - 1] || "").trim().toLowerCase();
+  /* date|client|day_centre (3 pipes) — must not fall through as empty area. */
+  if (lastEarly === "day_centre" || lastEarly === "bespoke_shared") return lastEarly;
   if (parts.length < 4) return "";
   /* date|client|HH:mm|service|area|instructor — trailing token is instructor, not area */
   if (
@@ -1461,6 +1511,16 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
 }
 
 /**
+ * True when a shared Day Centre / Bespoke / date||client submit covers this roster key.
+ */
+function portalSubmittedSharedUnitCoversRosterKey(submittedKey, rosterKey, opts) {
+  const fk = String(submittedKey || "").trim();
+  const rk = String(rosterKey || "").trim();
+  if (!fk || !rk || !portalRosterKeyIsSharedFeedbackUnit(fk)) return false;
+  return portalFeedbackSubmittedKeyMatchesRosterKey(fk, rk, opts || {});
+}
+
+/**
  * Map submitted portal_session_key values onto roster session review keys in memory.
  * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean }>} memory
  * @param {string[]} submittedKeys
@@ -1495,10 +1555,19 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
   for (const rk of rosterKeys || []) {
     const rosterKey = String(rk || "").trim();
     if (!rosterKey) continue;
+    const fanCandsPreview = portalSubmittedCandidatesForRosterKey(
+      rosterKey,
+      submittedByDate,
+      submittedExact
+    );
+    const sharedPeerCover = fanCandsPreview.some((fk) =>
+      portalSubmittedSharedUnitCoversRosterKey(fk, rosterKey, opts)
+    );
     if (
       !markAbsent &&
       portalRosterKeyNeedsSubmitterOwnership(rosterKey, perStaffOwnOnly) &&
-      !ownOnly.has(rosterKey)
+      !ownOnly.has(rosterKey) &&
+      !sharedPeerCover
     ) {
       continue;
     }
@@ -1729,9 +1798,23 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
   )) {
     expandedOwnOnly.add(rk);
   }
+  const wipeSubmittedExact = new Set(submittedFb.map((k) => String(k || "").trim()).filter(Boolean));
+  const wipeSubmittedByDate = portalGroupSessionKeysByDate(submittedFb);
   if (perStaffOwnOnly.size) {
     for (const rk of perStaffOwnOnly) {
       if (expandedOwnOnly.has(rk)) continue;
+      /* Never strip shared Day Centre / Bespoke peer completion. */
+      if (portalRosterKeyIsSharedFeedbackUnit(rk)) continue;
+      const wipeCands = portalSubmittedCandidatesForRosterKey(
+        rk,
+        wipeSubmittedByDate,
+        wipeSubmittedExact
+      );
+      if (
+        wipeCands.some((fk) => portalSubmittedSharedUnitCoversRosterKey(fk, rk, fanOutOpts))
+      ) {
+        continue;
+      }
       const prev = memory[rk];
       if (prev && prev.feedbackDone && !prev.absent && !prev.cancelled) {
         memory[rk] = { ...prev, feedbackDone: false };
