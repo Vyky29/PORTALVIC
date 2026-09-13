@@ -1,6 +1,7 @@
 /**
- * Aggregate MADRE adapter rows into a public weekly booking offer
- * (no participant names). Capacity rules aligned with admin Services register.
+ * Aggregate MADRE adapter rows into a weekly booking offer.
+ * Participant names stay off the public JSON; office=1 / include_staff=1 may
+ * include bookedNames for local/admin checks. Capacity = seat line count.
  */
 import {
   canonicalizeServiceTypeToken,
@@ -35,6 +36,8 @@ export type OfferSlot = {
   openInstructors?: string[];
   /** Internal: booked client keys for band merge (stripped before public JSON). */
   bookedKeys?: string[];
+  /** Display names on standing booked lines (office only — strip for parents). */
+  bookedNames?: string[];
 };
 
 export type OfferService = {
@@ -428,9 +431,14 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
       );
       const useParts = partsForRef.length ? partsForRef : band.parts;
       const keys = new Set<string>();
+      const namesByKey = new Map<string, string>();
       for (const part of useParts) {
         for (const k of part.bookedKeys || []) {
           if (k) keys.add(k);
+        }
+        for (const n of part.bookedNames || []) {
+          const ck = clientKey(n);
+          if (ck && !namesByKey.has(ck)) namesByKey.set(ck, n);
         }
       }
       const uniqueTaken = keys.size;
@@ -456,6 +464,9 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
         openSeats,
         referenceDate: ref,
         bookedKeys: [...keys],
+        bookedNames: [...namesByKey.values()].sort((a, b) =>
+          a.localeCompare(b, "en", { sensitivity: "base" }),
+        ),
         instructors: [
           ...new Set(
             useParts.flatMap((p) =>
@@ -539,6 +550,8 @@ type DayBucket = {
   /** Instructors with a NO PARTICIPANT line on this band (ops pick / office only). */
   openInstructors: Set<string>;
   bookedKeys: Set<string>;
+  /** clientKey → MADRE display name (office list preview). */
+  bookedNames: Map<string, string>;
 };
 
 /**
@@ -657,6 +670,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
           instructors: new Set(),
           openInstructors: new Set(),
           bookedKeys: new Set(),
+          bookedNames: new Map(),
         };
         dateMap.set(iso, bucket);
       }
@@ -664,8 +678,12 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       if (inst) bucket.instructors.add(inst.toUpperCase());
       if (kind === "booked") {
         bucket.booked += 1;
-        const ck = clientKey(String(row.client_name || ""));
-        if (ck) bucket.bookedKeys.add(ck);
+        const rawName = String(row.client_name || "").trim();
+        const ck = clientKey(rawName);
+        if (ck) {
+          bucket.bookedKeys.add(ck);
+          if (!bucket.bookedNames.has(ck)) bucket.bookedNames.set(ck, rawName);
+        }
       } else {
         bucket.open += 1;
         if (inst) bucket.openInstructors.add(inst.toUpperCase());
@@ -731,6 +749,9 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
       instructors: [...latestBucket.instructors].sort(),
       openInstructors: [...latestBucket.openInstructors].sort(),
       bookedKeys: [...latestBucket.bookedKeys],
+      bookedNames: [...latestBucket.bookedNames.values()].sort((a, b) =>
+        a.localeCompare(b, "en", { sensitivity: "base" }),
+      ),
     });
   }
 

@@ -470,6 +470,7 @@ Deno.serve(async (req) => {
   const weeklySlotsPublic = weekly.slots.map((slot) => {
     const {
       bookedKeys: _bk,
+      bookedNames: _bn,
       instructors: _inst,
       openInstructors: _openInst,
       ...pub
@@ -494,12 +495,13 @@ Deno.serve(async (req) => {
       startDeferredForAdminOverride: !!resolved.bumpedForAdminDayOverride,
       startDeferredMessage: resolved.parentMessage || null,
     };
-    /* Parents never see instructor identity until CLIENT (Participant's Team). */
+    /* Parents never see instructor / participant identity on Places. */
     if (!includeStaff) return base;
     return {
       ...base,
       instructors: Array.isArray(slot.instructors) ? slot.instructors : [],
       openInstructors: Array.isArray(slot.openInstructors) ? slot.openInstructors : [],
+      bookedNames: Array.isArray(slot.bookedNames) ? slot.bookedNames : [],
     };
   });
 

@@ -682,6 +682,115 @@
       color: #7a5200;
       font-size: 0.92rem;
     }
+  
+    .list-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 14px;
+      min-width: 0;
+    }
+    .list-filter {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .list-filter.is-on {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .places-list { min-width: 0; }
+    .pl-board {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+    .pl-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.7fr) minmax(0, 1.4fr);
+      gap: 12px;
+      align-items: start;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: 0 8px 22px rgba(16, 37, 54, 0.06);
+      min-width: 0;
+    }
+    .pl-row.is-full { opacity: 0.92; }
+    .pl-row__when, .pl-row__cap, .pl-row__who { min-width: 0; }
+    .pl-row__when strong {
+      display: block;
+      color: var(--ink);
+      font-size: 0.98rem;
+      overflow-wrap: break-word;
+    }
+    .pl-row__when span, .pl-row__cap span, .pl-row__staff {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 2px;
+      overflow-wrap: break-word;
+    }
+    .pl-row__cap span:first-child {
+      color: var(--ok);
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .pl-row.is-full .pl-row__cap span:first-child { color: var(--warn); }
+    .pl-row__who-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .pl-seats {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
+    .pl-seat {
+      max-width: 100%;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+    .pl-seat--booked {
+      background: rgba(45, 132, 179, 0.12);
+      color: var(--blueDeep);
+    }
+    .pl-seat--open {
+      background: rgba(27, 122, 74, 0.12);
+      color: var(--ok);
+      border: 1px dashed rgba(27, 122, 74, 0.35);
+    }
+    .pl-seat--empty { color: var(--muted); }
+    .empty-slots {
+      margin: 0;
+      padding: 16px;
+      border-radius: 14px;
+      background: #fff8e8;
+      color: #7a5200;
+    }
+    @media (max-width: 820px) {
+      .pl-row { grid-template-columns: 1fr; }
+    }
+
   </style>
 </head>
 <body>
@@ -761,117 +870,34 @@
 
     <div class="section-head services-block">
       <div>
-        <h2 id="servicesHeading">Our services</h2>
+        <h2 id="servicesHeading">Places list (office check)</h2>
         <p>Loading live catalogue...</p>
       </div>
     </div>
 
-    <div class="mosaic" id="mosaic"></div>
+    <div class="list-filters" id="listFilters" hidden></div>
+    <div class="places-list" id="placesList" aria-live="polite"></div>
 
     <p class="note">
-      Preview only (not live yet). When you tap <strong>Continue to book</strong>, it opens the current
-      <a href="/bookingportal.html">Booking Portal</a> with that service selected so the real OTP / finish-booking flow still works.
+      Local office list - shows free seats, capacity, and who occupies standing seats
+      (<code>office=1</code>). Parent Booking Portal never shows names. Next check: Services seats.
     </p>
   </main>
 
-  <div class="sheet-backdrop" id="backdrop" hidden></div>
-  <aside class="sheet" id="sheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-    <div class="sheet__hero">
-      <img id="sheetImg" src="" alt="" />
-      <div class="sheet__hero-fade"></div>
-      <button type="button" class="sheet__close" id="sheetClose" aria-label="Close">×</button>
-    </div>
-    <div class="sheet__body">
-      <h2 id="sheetTitle">Service</h2>
-      <p class="lead" id="sheetLead"></p>
-      <div class="facts" id="sheetFacts"></div>
-      <div id="sheetSlots"></div>
-      <div class="sheet__actions">
-        <a class="btn btn--pri" id="sheetBook" href="#">Continue to book</a>
-        <button type="button" class="btn btn--ghost" id="sheetDismiss">Close</button>
-      </div>
-    </div>
-  </aside>
-
   <script src="/portal-static-bootstrap.js"></script>
-  <script src="/portal/portal_booking_offer.js?v=20260911-plazas-native"></script>
-  <script src="/portal/portal_booking_service_info.js?v=20260824-service-info"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260913-office-list"></script>
   <script>
     (function () {
-      var PHOTOS = {
-        aquatic: "/portal/booking-photos/aquatic.jpg",
-        climbing: "/portal/booking-photos/climbing.jpg",
-        physical: "/portal/booking-photos/physical.webp",
-        multi: "/portal/booking-photos/multi.jpg?v=20260812-table",
-        multiSwim: "/portal/booking-photos/multi-swim.jpg?v=20260814-sw13",
-        bespoke: "/portal/booking-photos/bespoke.jpg",
-        day_centre: "/portal/booking-photos/daycentre.jpg?v=20260812-hub",
-        counselling: "/portal/booking-photos/counselling.jpg?v=20260814-web",
-        intensive: "/portal/booking-photos/intensive-swim.jpg?v=20260812-pool",
-      };
+      "use strict";
 
-      function tileMediaHtml(svcId) {
-        if (svcId === "multi") {
-          return (
-            '<span class="tile__media" aria-hidden="true">' +
-            '<span class="tile__media-pane">' +
-            '<img src="' + esc(PHOTOS.multi) + '" alt="" loading="lazy" />' +
-            "</span>" +
-            '<span class="tile__media-pane">' +
-            '<img src="' + esc(PHOTOS.multiSwim) + '" alt="" loading="lazy" />' +
-            "</span>" +
-            "</span>" +
-            '<span class="tile__media-label tile__media-label--land">DRY</span>' +
-            '<span class="tile__media-label tile__media-label--swim">WET</span>'
-          );
-        }
-        var photo = PHOTOS[svcId] || PHOTOS.aquatic;
-        return '<img class="tile__img" src="' + esc(photo) + '" alt="" loading="lazy" />';
-      }
-
-      function setSheetHero(svcId) {
-        if (svcId === "multi") {
-          sheetImg.hidden = true;
-          sheetImg.removeAttribute("src");
-          var split = document.getElementById("sheetHeroSplit");
-          if (!split) {
-            split = document.createElement("div");
-            split.id = "sheetHeroSplit";
-            split.className = "sheet__hero-split";
-            split.setAttribute("aria-hidden", "true");
-            sheetImg.parentNode.insertBefore(split, sheetImg);
-          }
-          split.hidden = false;
-          split.innerHTML =
-            "<span><img src=\"" + esc(PHOTOS.multi) + "\" alt=\"\" />" +
-            '<span class="tile__media-label">DRY</span></span>' +
-            "<span><img src=\"" + esc(PHOTOS.multiSwim) + "\" alt=\"\" />" +
-            '<span class="tile__media-label">WET</span></span>';
-          return;
-        }
-        var splitEl = document.getElementById("sheetHeroSplit");
-        if (splitEl) {
-          splitEl.hidden = true;
-          splitEl.innerHTML = "";
-        }
-        sheetImg.hidden = false;
-        sheetImg.src = PHOTOS[svcId] || PHOTOS.aquatic;
-      }
-
+      var CORE_ORDER = ["aquatic", "climbing", "physical", "multi"];
       var api = window.PortalBookingOffer;
-      var infoApi = window.PortalBookingServiceInfo;
-
-      var mosaic = document.getElementById("mosaic");
-      var sheet = document.getElementById("sheet");
-      var backdrop = document.getElementById("backdrop");
-      var sheetImg = document.getElementById("sheetImg");
-      var sheetTitle = document.getElementById("sheetTitle");
-      var sheetLead = document.getElementById("sheetLead");
-      var sheetFacts = document.getElementById("sheetFacts");
-      var sheetSlots = document.getElementById("sheetSlots");
-      var sheetBook = document.getElementById("sheetBook");
-      var servicesHeadP = document.querySelector("#servicesHeading + p") ||
+      var listEl = document.getElementById("placesList");
+      var filtersEl = document.getElementById("listFilters");
+      var servicesHeadP =
+        document.querySelector("#servicesHeading + p") ||
         document.querySelector(".services-block .section-head p");
+      var activeService = "aquatic";
 
       function esc(s) {
         return String(s || "")
@@ -883,26 +909,10 @@
 
       function venueName(v) {
         if (api && typeof api.venueLabel === "function") return api.venueLabel(v) || v;
-        return v;
+        return v || "-";
       }
 
-      function chipsFor(svc) {
-        var chips = [];
-        if (svc.durationHint) chips.push(svc.durationHint);
-        if (svc.priceHint) chips.push(svc.priceHint);
-        else if (svc.enquireOnly) chips.push("Enquire with the office");
-        if (!chips.length) chips.push("See live times");
-        return chips;
-      }
-
-      function slotIsFull(slot) {
-        if (api && typeof api.isFull === "function") return api.isFull(slot);
-        var cap = Number(slot.capacity) || 0;
-        var taken = Number(slot.taken) || 0;
-        return Math.max(0, cap - taken) <= 0;
-      }
-
-      function slotSpacesLeft(slot) {
+      function seatsLeft(slot) {
         if (api && typeof api.seatsLeft === "function") {
           return Math.max(0, Number(api.seatsLeft(slot)) || 0);
         }
@@ -911,207 +921,136 @@
         return Math.max(0, cap - taken);
       }
 
-      /** Preview label: free count + standing capacity (for office check vs Services). */
-      function slotOpenLabel(slot) {
-        var n = slotSpacesLeft(slot);
-        var cap = Number(slot.capacity) || 0;
-        if (n <= 0) return "Full · cap " + cap;
-        var unit = n === 1 ? "space" : "spaces";
-        return n + " " + unit + " · cap " + cap;
-      }
-
-      function slotsFor(serviceId) {
-        if (api && typeof api.filterSlots === "function") {
-          return api.filterSlots({ serviceId: serviceId });
+      function occupantsHtml(slot) {
+        var names = Array.isArray(slot.bookedNames) ? slot.bookedNames.slice() : [];
+        var open = seatsLeft(slot);
+        var bits = [];
+        names.forEach(function (n) {
+          bits.push('<li class="pl-seat pl-seat--booked">' + esc(n) + "</li>");
+        });
+        var i;
+        for (i = 0; i < open; i++) {
+          bits.push('<li class="pl-seat pl-seat--open">NO PARTICIPANT</li>');
         }
-        return [];
+        if (!bits.length) {
+          bits.push('<li class="pl-seat pl-seat--empty">-</li>');
+        }
+        return '<ul class="pl-seats">' + bits.join("") + "</ul>";
       }
 
-      function tileHtml(svc) {
-        var chips = chipsFor(svc);
-        var blurb = String(svc.blurb || "").trim();
+      function slotRowHtml(slot) {
+        var free = seatsLeft(slot);
+        var cap = Number(slot.capacity) || 0;
+        var taken = Number(slot.taken) || 0;
+        var tone = free > 0 ? "is-open" : "is-full";
+        var staff = Array.isArray(slot.instructors) ? slot.instructors.join(", ") : "";
         return (
-          '<button type="button" class="tile" data-id="' + esc(svc.id) + '">' +
-          tileMediaHtml(svc.id) +
-          '<span class="tile__shade"></span>' +
-          '<span class="tile__body">' +
-          '<span class="tile__meta">' +
-          chips.map(function (c) {
-            return '<span class="chip">' + esc(c) + "</span>";
-          }).join("") +
-          "</span>" +
-          "<h3>" + esc(svc.name) + "</h3>" +
-          '<p class="tile__blurb">' + esc(blurb) + "</p>" +
-          '<span class="tile__cta">View places →</span>' +
-          "</span></button>"
+          '<article class="pl-row ' + tone + '">' +
+          '<div class="pl-row__when">' +
+          "<strong>" + esc(slot.day) + " · " + esc(slot.timeLabel) + "</strong>" +
+          "<span>" + esc(venueName(slot.venue)) + "</span>" +
+          (staff ? '<span class="pl-row__staff">Staff: ' + esc(staff) + "</span>" : "") +
+          "</div>" +
+          '<div class="pl-row__cap">' +
+          "<span>" + free + " free</span>" +
+          "<span>cap " + cap + " · taken " + taken + "</span>" +
+          "</div>" +
+          '<div class="pl-row__who">' +
+          '<div class="pl-row__who-label">Seats</div>' +
+          occupantsHtml(slot) +
+          "</div>" +
+          "</article>"
         );
       }
 
-      function renderMosaic() {
+      function serviceIds() {
         var services = (api && api.SERVICES) || [];
-        if (!services.length) {
-          mosaic.innerHTML =
-            '<p class="note" style="margin:0">Loading live services and places...</p>';
+        var ids = [];
+        CORE_ORDER.forEach(function (id) {
+          if (services.some(function (s) { return s.id === id; })) ids.push(id);
+        });
+        services.forEach(function (s) {
+          if (s.enquireOnly) return;
+          if (ids.indexOf(s.id) >= 0) return;
+          if (s.id === "day_centre" || s.id === "bespoke") return;
+          ids.push(s.id);
+        });
+        return ids;
+      }
+
+      function renderFilters() {
+        var ids = serviceIds();
+        if (!ids.length) {
+          filtersEl.hidden = true;
           return;
         }
-        var topIds = { aquatic: 1, climbing: 1, physical: 1, multi: 1 };
-        var top = [];
-        var bottom = [];
-        services.forEach(function (s) {
-          if (topIds[s.id]) top.push(s);
-          else bottom.push(s);
-        });
-        var order = ["aquatic", "climbing", "physical", "multi"];
-        top.sort(function (a, b) {
-          return order.indexOf(a.id) - order.indexOf(b.id);
-        });
-        var bottomOrder = ["bespoke", "day_centre", "counselling", "intensive"];
-        bottom.sort(function (a, b) {
-          var ia = bottomOrder.indexOf(a.id);
-          var ib = bottomOrder.indexOf(b.id);
-          if (ia < 0) ia = 99;
-          if (ib < 0) ib = 99;
-          return ia - ib || String(a.name || "").localeCompare(String(b.name || ""));
-        });
-        mosaic.innerHTML =
-          '<div class="mosaic__row mosaic__row--core">' +
-          top.map(tileHtml).join("") +
-          "</div>" +
-          '<div class="mosaic__row mosaic__row--more">' +
-          bottom.map(tileHtml).join("") +
-          "</div>";
-      }
-
-      function slotRowHtml(s, showVenue) {
-        var full = slotIsFull(s);
-        return (
-          '<div class="slot">' +
-          "<div><strong>" + esc(s.day) + " · " + esc(s.timeLabel) + "</strong>" +
-          (showVenue ? "<span>" + esc(venueName(s.venue)) + "</span>" : "") +
-          "</div>" +
-          '<div class="slot__state ' + (full ? "is-full" : "is-open") + '">' +
-          slotOpenLabel(s) +
-          "</div></div>"
-        );
-      }
-
-      function countVenueSlots(venueGroup) {
-        var n = 0;
-        (venueGroup.days || []).forEach(function (d) {
-          n += (d.slots || []).length;
-        });
-        return n;
-      }
-
-      function slotsHtml(list) {
-        var venues = [];
-        if (api && typeof api.groupSlotsByVenueThenDay === "function") {
-          venues = api.groupSlotsByVenueThenDay(list) || [];
-        }
-        if (venues.length > 1) {
-          return venues.map(function (v, idx) {
-            var rows = [];
-            (v.days || []).forEach(function (d) {
-              (d.slots || []).forEach(function (s) {
-                rows.push(slotRowHtml(s, false));
-              });
-            });
-            var count = countVenueSlots(v);
+        if (ids.indexOf(activeService) < 0) activeService = ids[0];
+        filtersEl.hidden = false;
+        filtersEl.innerHTML = ids
+          .map(function (id) {
+            var svc = api.serviceById(id);
+            var label = (svc && svc.name) || id;
+            var on = id === activeService ? " is-on" : "";
             return (
-              '<details class="venue-acc"' + (idx === 0 ? " open" : "") + ">" +
-              "<summary>" +
-              '<span class="venue-acc__label">' + esc(v.venueLabel || venueName(v.venue)) + "</span>" +
-              '<span class="venue-acc__count">' + count + " times</span>" +
-              "</summary>" +
-              '<div class="venue-acc__body">' + rows.join("") + "</div>" +
-              "</details>"
+              '<button type="button" class="list-filter' + on + '" data-svc="' +
+              esc(id) + '">' + esc(label) + "</button>"
             );
-          }).join("");
+          })
+          .join("");
+      }
+
+      function renderList() {
+        if (!api) {
+          listEl.innerHTML = '<p class="note" style="margin:0">Offer API missing.</p>';
+          return;
         }
-        return (
-          '<div class="slots">' +
-          list.map(function (s) { return slotRowHtml(s, true); }).join("") +
-          "</div>"
-        );
-      }
-
-      function closeSheet() {
-        sheet.classList.remove("is-open");
-        backdrop.classList.remove("is-open");
-        sheet.setAttribute("aria-hidden", "true");
-        backdrop.hidden = true;
-      }
-
-      function openSheet(id) {
-        var svc = api && api.serviceById ? api.serviceById(id) : null;
-        if (!svc) return;
-        var info = (infoApi && infoApi.pack && infoApi.pack(svc)) || {};
-        setSheetHero(id);
-        sheetTitle.textContent = svc.name;
-        sheetLead.textContent = info.lead || svc.blurb || "";
-        sheetFacts.innerHTML =
-          (svc.ageHint ? '<span class="fact">' + esc(svc.ageHint) + "</span>" : "") +
-          (svc.durationHint ? '<span class="fact">' + esc(svc.durationHint) + "</span>" : "") +
-          (svc.priceHint ? '<span class="fact">' + esc(svc.priceHint) + "</span>" : "") +
-          ((svc.venues || []).map(function (v) {
-            return '<span class="fact">' + esc(venueName(v)) + "</span>";
-          }).join(""));
-
-        var list = slotsFor(id);
-        if (svc.enquireOnly) {
-          sheetSlots.innerHTML =
-            '<p class="empty-slots">This service is arranged with the office - continue to send an enquiry through the live Booking Portal.</p>';
-        } else if (!list.length) {
-          sheetSlots.innerHTML =
-            '<p class="empty-slots">No weekly times listed for this service right now. Continue to the live portal for the latest places.</p>';
-        } else {
-          sheetSlots.innerHTML = slotsHtml(list);
+        var list =
+          typeof api.filterSlots === "function"
+            ? api.filterSlots({ serviceId: activeService })
+            : [];
+        if (!list.length) {
+          listEl.innerHTML =
+            '<p class="empty-slots">No public Places bands for this service.</p>';
+          return;
         }
-
-        sheetBook.href = "/bookingportal.html?service=" + encodeURIComponent(id);
-        sheetBook.textContent = svc.enquireOnly ? "Continue to enquire" : "Continue to book";
-        backdrop.hidden = false;
-        requestAnimationFrame(function () {
-          backdrop.classList.add("is-open");
-          sheet.classList.add("is-open");
-          sheet.setAttribute("aria-hidden", "false");
-        });
+        listEl.innerHTML =
+          '<div class="pl-board">' + list.map(slotRowHtml).join("") + "</div>";
       }
 
-      mosaic.addEventListener("click", function (e) {
-        var btn = e.target.closest("[data-id]");
+      function paint() {
+        renderFilters();
+        renderList();
+      }
+
+      filtersEl.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-svc]");
         if (!btn) return;
-        openSheet(btn.getAttribute("data-id"));
-      });
-      document.getElementById("sheetClose").addEventListener("click", closeSheet);
-      document.getElementById("sheetDismiss").addEventListener("click", closeSheet);
-      backdrop.addEventListener("click", closeSheet);
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") closeSheet();
+        activeService = btn.getAttribute("data-svc") || activeService;
+        paint();
       });
 
       if (!api || typeof api.load !== "function") {
-        mosaic.innerHTML =
-          '<p class="note" style="margin:0">Could not load the live booking offer. Open the <a href="/bookingportal.html">Booking Portal</a>.</p>';
+        listEl.innerHTML =
+          '<p class="note" style="margin:0">Could not load the live booking offer.</p>';
         return;
       }
 
-      mosaic.innerHTML =
-        '<p class="note" style="margin:0">Loading live services and places...</p>';
+      listEl.innerHTML =
+        '<p class="note" style="margin:0">Loading live places + seat names...</p>';
 
       api
-        .load()
+        .load({ office: true })
         .then(function () {
           if (servicesHeadP) {
             var term = api.TERM_LABEL || "Autumn term";
             servicesHeadP.textContent =
-              term + " - live catalogue and places from the Booking Portal.";
+              term + " - list mode with free / cap / who occupies each standing seat.";
           }
-          renderMosaic();
+          paint();
         })
         .catch(function () {
-          mosaic.innerHTML =
-            '<p class="note" style="margin:0">Could not load live places. Refresh, or open the <a href="/bookingportal.html">Booking Portal</a>.</p>';
+          listEl.innerHTML =
+            '<p class="note" style="margin:0">Could not load live places. Refresh.</p>';
         });
     })();
   </script>

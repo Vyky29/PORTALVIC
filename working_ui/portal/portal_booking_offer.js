@@ -78,11 +78,15 @@
 
   /**
    * Fetch live offer. Resolves with the API object (same helpers).
+   * @param {object} [opts]
+   * @param {boolean} [opts.office] — include staff + bookedNames (local/admin check)
    * @returns {Promise<object>}
    */
-  function load() {
+  function load(opts) {
     var key = anonKey();
+    var office = !!(opts && opts.office);
     var url = supabaseUrl() + "/functions/v1/portal-booking-offer";
+    if (office) url += "?office=1";
     if (!key) {
       state.source = "error";
       state.error = "missing_anon_key";
