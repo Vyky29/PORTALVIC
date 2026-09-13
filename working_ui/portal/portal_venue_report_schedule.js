@@ -235,7 +235,7 @@
     }
 
     if (dow === 0) {
-      if (id === "roberto" && staffHasRosterOnDay(id, dayName, sessionsModel)) {
+      if (id === "roberto") {
         return {
           kind: "open",
           scopeKey: "sun_roberto_open",
@@ -338,7 +338,7 @@
           closeEnd: ROBERTO_THU.closeEnd,
         };
       }
-      if (dow === 0 && staffHasRosterOnDay(id, dayName, sessionsModel)) {
+      if (dow === 0) {
         return {
           kind: "close",
           scopeKey: "sun_roberto_close",

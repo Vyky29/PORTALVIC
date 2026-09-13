@@ -35,19 +35,39 @@ function contextFromQuery() {
   else if (kindRaw === "Opening" || kindRaw === "Closing") openingClosing = kindRaw;
   let origin = clean(qs.get("origin") || "dashboard");
   if (origin !== "this_week" && origin !== "term" && origin !== "dashboard") origin = "dashboard";
+  const date = clean(qs.get("date") || "");
+  const completedBy = clean(qs.get("completedBy") || qs.get("name") || qs.get("ghostDisplayName") || "");
+  const requireVideoExplicit =
+    qs.get("video") === "1" ||
+    qs.get("requireVideo") === "1" ||
+    clean(qs.get("video") || "").toLowerCase() === "true";
   return {
-    date: clean(qs.get("date") || ""),
+    date,
     venue: clean(qs.get("venue") || qs.get("location") || ""),
     service: clean(qs.get("service") || qs.get("programme") || ""),
     openingClosing,
     portalSessionKey: clean(qs.get("sessionKey") || ""),
     origin,
-    completedBy: clean(qs.get("completedBy") || qs.get("name") || ""),
-    requireVideo:
-      qs.get("video") === "1" ||
-      qs.get("requireVideo") === "1" ||
-      clean(qs.get("video") || "").toLowerCase() === "true"
+    completedBy,
+    requireVideo: requireVideoExplicit || venueWalkthroughLikelyRequired(date, completedBy)
   };
+}
+
+/** Roberto Sunday open/close walkthrough — also infer if dashboard forgot ?video=1. */
+function venueWalkthroughLikelyRequired(dateIso, completedBy) {
+  const name = clean(completedBy).toLowerCase();
+  const looksRoberto = /\broberto\b/.test(name);
+  if (!looksRoberto) return false;
+  const iso = clean(dateIso);
+  let d = null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const parts = iso.split("-").map(Number);
+    d = new Date(parts[0], parts[1] - 1, parts[2]);
+  } else {
+    d = new Date();
+  }
+  if (!d || isNaN(d.getTime())) return false;
+  return d.getDay() === 0;
 }
 
 function localIsoDateToday() {
@@ -357,19 +377,40 @@ function initVenueWalkthroughRecorder(ctx) {
 
   async function startCamera() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setStatus("Camera not supported on this device/browser.");
+      setStatus("Camera not supported on this device/browser. Use Safari or Chrome on the phone (HTTPS).");
       return;
     }
-    try {
-      stopVenueMediaStream(state.stream);
-      state.stream = await navigator.mediaDevices.getUserMedia({
+    if (typeof MediaRecorder === "undefined") {
+      setStatus("This browser cannot record video. Update iOS/Safari or try Chrome, then tap Start camera again.");
+      return;
+    }
+    const attempts = [
+      {
         audio: true,
         video: {
           facingMode: { ideal: "environment" },
           width: { ideal: 1280 },
           height: { ideal: 720 }
         }
-      });
+      },
+      { audio: true, video: { facingMode: "environment" } },
+      { audio: true, video: true },
+      { audio: false, video: true }
+    ];
+    let lastErr = null;
+    try {
+      stopVenueMediaStream(state.stream);
+      state.stream = null;
+      for (let i = 0; i < attempts.length; i++) {
+        try {
+          state.stream = await navigator.mediaDevices.getUserMedia(attempts[i]);
+          lastErr = null;
+          break;
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+      if (!state.stream) throw lastErr || new Error("getUserMedia_failed");
       if (liveEl) {
         liveEl.srcObject = state.stream;
         liveEl.hidden = false;
@@ -385,7 +426,16 @@ function initVenueWalkthroughRecorder(ctx) {
       setStatus("Camera on. Tap Record when ready.");
     } catch (err) {
       console.error(err);
-      setStatus("Could not open the camera. Check permissions and try again.");
+      const name = String((err && err.name) || "");
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        setStatus("Camera/mic blocked. Allow access for this site in the browser settings, then tap Start camera.");
+      } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        setStatus("No camera found on this device.");
+      } else if (name === "NotReadableError" || name === "TrackStartError") {
+        setStatus("Camera is in use by another app. Close it and try again.");
+      } else {
+        setStatus("Could not open the camera. Check permissions and try again.");
+      }
       setButtons("idle");
     }
   }

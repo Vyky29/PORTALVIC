@@ -2035,9 +2035,24 @@
         try{
           const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
           const sched = typeof window !== 'undefined' ? window.PortalVenueReportSchedule : null;
-          const needVideo = sched && typeof sched.portalVenueReportRequiresWalkthroughVideo === 'function'
+          let needVideo = sched && typeof sched.portalVenueReportRequiresWalkthroughVideo === 'function'
             ? sched.portalVenueReportRequiresWalkthroughVideo(sid, typeof portalVenueScheduleCtx === 'function' ? portalVenueScheduleCtx() : {}, vkind || '')
             : false;
+          /* Belt-and-braces: Roberto Sunday always needs the walkthrough, even if roster rows are slow/empty. */
+          if(!needVideo && sid === 'roberto'){
+            try{
+              const dayName = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+              if(/^sunday$/i.test(dayName)) needVideo = true;
+              else {
+                const iso = String(typeof portalViewCalendarDateKey === 'function' ? portalViewCalendarDateKey() : '').trim();
+                if(/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+                  const p = iso.split('-').map(Number);
+                  const d = new Date(p[0], p[1] - 1, p[2]);
+                  if(d.getDay() === 0) needVideo = true;
+                }
+              }
+            }catch(_sun){}
+          }
           if(needVideo) u.searchParams.set('video', '1');
         }catch(_){}
         return portalAppendStaffMobileVerticalParam(u.href);

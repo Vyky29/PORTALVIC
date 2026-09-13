@@ -79,7 +79,7 @@
     preloadScript("/portal/staff_dashboard_spreadsheet_bundle.js?v=20260707-roberto-venues");
     preloadScript("/portal/staff-dashboard-dock-boot.js?v=20260625-lead-day-cards-nav");
     preloadScript("/portal/staff-dashboard-topbar.js?v=20260625-lead-day-cards-nav");
-    preloadScript("/portal/staff-dashboard-feedback.js?v=20260727-fb-keys-perf");
+    preloadScript("/portal/staff-dashboard-feedback.js?v=20260913-roberto-venue-video");
   }
 
   if ("serviceWorker" in global.navigator) {
@@ -282,7 +282,7 @@
       void loadSequential(
         [
           "/portal/portal_orientation_lock.js?v=20260622-next-chip-client",
-          "/portal/portal_venue_report_schedule.js?v=20260905-roberto-venue-video",
+          "/portal/portal_venue_report_schedule.js?v=20260913-roberto-venue-video",
         ],
         false
       );
