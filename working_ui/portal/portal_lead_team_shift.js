@@ -476,19 +476,44 @@ function instructorTokensFromLabel(label) {
 function staffKeyFromInstructorToken(token) {
   const want = normKey(token);
   if (!want) return "";
+  try {
+    if (!window.__PORTAL_LEAD_STAFF_KEY_CACHE__) {
+      window.__PORTAL_LEAD_STAFF_KEY_CACHE__ = Object.create(null);
+    }
+    if (Object.prototype.hasOwnProperty.call(window.__PORTAL_LEAD_STAFF_KEY_CACHE__, want)) {
+      return window.__PORTAL_LEAD_STAFF_KEY_CACHE__[want];
+    }
+  } catch (_) {}
   const src = rosterSource();
   const profiles = src && src.staffProfiles ? src.staffProfiles : {};
   const keys = Object.keys(profiles);
+  let hit = "";
   for (let i = 0; i < keys.length; i++) {
     const k = keys[i];
     const p = profiles[k];
-    if (normKey(k) === want) return normKey(k);
-    if (normKey(p && p.staffId) === want) return normKey(k);
-    if (normKey(p && p.staffName) === want) return normKey(k);
+    if (normKey(k) === want) {
+      hit = normKey(k);
+      break;
+    }
+    if (normKey(p && p.staffId) === want) {
+      hit = normKey(k);
+      break;
+    }
+    if (normKey(p && p.staffName) === want) {
+      hit = normKey(k);
+      break;
+    }
     const first = normKey(String((p && p.staffName) || "").split(/\s+/)[0]);
-    if (first && first === want) return normKey(k);
+    if (first && first === want) {
+      hit = normKey(k);
+      break;
+    }
   }
-  return canonicalStaffKey(token);
+  if (!hit) hit = canonicalStaffKey(token);
+  try {
+    window.__PORTAL_LEAD_STAFF_KEY_CACHE__[want] = hit;
+  } catch (_) {}
+  return hit;
 }
 
 function rosterRowToSlot(row, iso) {
@@ -921,7 +946,8 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
   if (!ctx) return [];
   opts = opts || {};
   const now = Date.now();
-  const minCreated = now - (opts.lookbackMs != null ? opts.lookbackMs : CHANGE_LOOKBACK_MS);
+  const lookbackMs = opts.lookbackMs != null ? opts.lookbackMs : CHANGE_LOOKBACK_MS;
+  const minCreated = now - lookbackMs;
   const out = [];
   const workingIsoCache = Object.create(null);
   function leadWorkingOnIso(iso) {
@@ -932,41 +958,61 @@ export function portalLeadTeamShiftChanges(ctx, opts) {
   }
 
   const seenOverrideIds = new Set();
+  /*
+   * Walk lookback calendar days via by-iso index — never forEach the full
+   * override array (that froze Roberto Sundays at 3s+ on programme-wide pool).
+   */
+  const dayCount = Math.max(1, Math.min(14, Math.ceil(lookbackMs / (24 * 60 * 60 * 1000)) + 1));
+  const today = todayIsoYmd();
+  const isos = [];
+  try {
+    const base = /^\d{4}-\d{2}-\d{2}$/.test(today)
+      ? new Date(today + "T12:00:00")
+      : new Date();
+    for (let i = 0; i < dayCount; i++) {
+      const d = new Date(base.getTime() - i * 24 * 60 * 60 * 1000);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      isos.push(y + "-" + m + "-" + day);
+    }
+  } catch (_) {
+    isos.push(today);
+  }
 
-  scheduleOverrideRows().forEach(function (ov) {
-    const t = String(ov.override_type || "").trim();
-    if (!LEAD_TEAM_SHIFT_ALERT_TYPES.has(t)) return;
-    if (String(ov.status || "active") !== "active") return;
-    /* Cheap age gate before Roberto DC seat / lead-working (those walk roster × OV). */
-    const created = ov.created_at ? new Date(ov.created_at).getTime() : 0;
-    if (created && created < minCreated) return;
-    const iso = String(ov.session_date || "").slice(0, 10);
+  isos.forEach(function (iso) {
     if (!iso) return;
     if (leadViewerAwayOnIso(ctx.leadKey, iso)) return;
     if (isLeadTeamShiftDayDismissed(iso)) return;
-    /* Roberto Thu: only team-shift alerts on days he is still DC lead (active client). */
     if (!leadWorkingOnIso(iso)) return;
-    const ovId = String(ov.id || "").trim();
-    if (ovId && seenOverrideIds.has(ovId)) return;
-    if (!portalLeadOverrideRowAppliesToLeadScope(ov, ctx)) return;
-    if (ovId) seenOverrideIds.add(ovId);
-    const pl = parseOverridePayload(ov);
-    const wd = weekdayFromIso(iso);
-    let dateLabel = wd || iso;
-    try {
-      const d = new Date(iso + "T12:00:00");
-      if (!isNaN(d.getTime())) {
-        dateLabel = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-      }
-    } catch (_) {}
+    scheduleOverrideRowsForIso(iso).forEach(function (ov) {
+      const t = String(ov.override_type || "").trim();
+      if (!LEAD_TEAM_SHIFT_ALERT_TYPES.has(t)) return;
+      if (String(ov.status || "active") !== "active") return;
+      const created = ov.created_at ? new Date(ov.created_at).getTime() : 0;
+      if (created && created < minCreated) return;
+      const ovId = String(ov.id || "").trim();
+      if (ovId && seenOverrideIds.has(ovId)) return;
+      if (!portalLeadOverrideRowAppliesToLeadScope(ov, ctx)) return;
+      if (ovId) seenOverrideIds.add(ovId);
+      const pl = parseOverridePayload(ov);
+      const wd = weekdayFromIso(iso);
+      let dateLabel = wd || iso;
+      try {
+        const d = new Date(iso + "T12:00:00");
+        if (!isNaN(d.getTime())) {
+          dateLabel = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+        }
+      } catch (_) {}
 
-    out.push({
-      id: String(ov.id || iso + "|" + t + "|" + ov.anchor_staff_id),
-      iso: iso,
-      type: t,
-      title: leadOverrideChangeTitle(ov, pl),
-      sub: dateLabel,
-      createdAt: ov.created_at || "",
+      out.push({
+        id: String(ov.id || iso + "|" + t + "|" + ov.anchor_staff_id),
+        iso: iso,
+        type: t,
+        title: leadOverrideChangeTitle(ov, pl),
+        sub: dateLabel,
+        createdAt: ov.created_at || "",
+      });
     });
   });
 
@@ -1603,9 +1649,22 @@ export function portalSyncLeadTeamShiftUi() {
     window.__PORTAL_LEAD_TEAM_SYNC_BUSY__ = true;
 
     try {
+      /* Keep __PORTAL_LEAD_ROSTER_BY_ISO__ across syncs — clearing every pass defeated the cache. */
+      let ovFp = "";
       try {
-        window.__PORTAL_LEAD_ROSTER_BY_ISO__ = Object.create(null);
+        const allOv = scheduleOverrideRows();
+        const last = allOv.length ? allOv[allOv.length - 1] : null;
+        ovFp =
+          String(allOv.length) +
+          "|" +
+          String((last && last.id) || "") +
+          "|" +
+          String((last && last.updated_at) || (last && last.created_at) || "");
       } catch (_) {}
+      const syncFp = String(ctx.leadKey) + "|" + iso + "|" + String(!!workingToday) + "|" + ovFp;
+      if (window.__PORTAL_LEAD_TEAM_SYNC_FP__ === syncFp) {
+        return;
+      }
 
       const team = workingToday ? portalLeadTeamOnShiftForIso(iso, ctx) : null;
       const showToday = !!team;
@@ -1619,6 +1678,7 @@ export function portalSyncLeadTeamShiftUi() {
           todayHost.hidden = true;
         }
       }
+      window.__PORTAL_LEAD_TEAM_SYNC_FP__ = syncFp;
 
       /*
        * Defer Quick Menu "team schedule changes" walk (overrides × roster).

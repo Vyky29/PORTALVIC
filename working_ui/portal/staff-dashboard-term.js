@@ -2166,31 +2166,7 @@
       if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
         if(typeof syncPortalIosAlertPreviewStack === 'function') syncPortalIosAlertPreviewStack();
         if(typeof portalMaybeNotifyReminders === 'function') portalMaybeNotifyReminders(st);
-        /* Skip lead Team sync from reminder chrome when the viewer is not lead today. */
-        try{
-          if(typeof window.portalScheduleLeadTeamShiftUi === 'function'
-            || typeof window.portalSyncLeadTeamShiftUi === 'function'){
-            var leadCtx = typeof window.portalLeadTeamShiftContext === 'function'
-              ? window.portalLeadTeamShiftContext()
-              : null;
-            var skipLead = !leadCtx || !leadCtx.leadKey;
-            if(!skipLead && typeof window.portalLeadProgrammeLeadWorkingOnIso === 'function'){
-              var todayIso = '';
-              try{
-                todayIso = typeof portalIsoYmdFromDate === 'function'
-                  ? portalIsoYmdFromDate(new Date())
-                  : '';
-              }catch(_ti){}
-              if(todayIso && !window.portalLeadProgrammeLeadWorkingOnIso(
-                leadCtx.leadKey, todayIso, leadCtx.scopes
-              )) skipLead = true;
-            }
-            if(!skipLead){
-              if(typeof window.portalScheduleLeadTeamShiftUi === 'function') window.portalScheduleLeadTeamShiftUi();
-              else window.portalSyncLeadTeamShiftUi();
-            }
-          }
-        }catch(_ls){}
+        /* Lead Team sync is kicked from override hydrate / rehydrate / Today — not every reminder paint. */
       }catch(_){}
     };
 
