@@ -495,13 +495,16 @@ Deno.serve(async (req) => {
       startDeferredForAdminOverride: !!resolved.bumpedForAdminDayOverride,
       startDeferredMessage: resolved.parentMessage || null,
     };
-    /* Parents never see instructor / participant identity on Places. */
+    /*
+     * Never put participant names on this public Edge Function (even office=1 /
+     * include_staff=1) — anon key would leak CLIENT names. Staff keys only.
+     * Names stay on Services / MADRE / Overview, not Booking offer JSON.
+     */
     if (!includeStaff) return base;
     return {
       ...base,
       instructors: Array.isArray(slot.instructors) ? slot.instructors : [],
       openInstructors: Array.isArray(slot.openInstructors) ? slot.openInstructors : [],
-      bookedNames: Array.isArray(slot.bookedNames) ? slot.bookedNames : [],
     };
   });
 

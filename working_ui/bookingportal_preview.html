@@ -879,13 +879,13 @@
     <div class="places-list" id="placesList" aria-live="polite"></div>
 
     <p class="note">
-      Local office list - shows free seats, capacity, and who occupies standing seats
-      (<code>office=1</code>). Parent Booking Portal never shows names. Next check: Services seats.
+      Local list check for free / cap / taken only. Client names are not on the Booking offer
+      (not in production). Next: compare the same bands in Services / MADRE.
     </p>
   </main>
 
   <script src="/portal-static-bootstrap.js"></script>
-  <script src="/portal/portal_booking_offer.js?v=20260913-office-list"></script>
+  <script src="/portal/portal_booking_offer.js?v=20260913-list-no-names"></script>
   <script>
     (function () {
       "use strict";
@@ -921,14 +921,15 @@
         return Math.max(0, cap - taken);
       }
 
+      /** Counts only — never render client names from the public offer. */
       function occupantsHtml(slot) {
-        var names = Array.isArray(slot.bookedNames) ? slot.bookedNames.slice() : [];
         var open = seatsLeft(slot);
+        var taken = Math.max(0, Number(slot.taken) || 0);
         var bits = [];
-        names.forEach(function (n) {
-          bits.push('<li class="pl-seat pl-seat--booked">' + esc(n) + "</li>");
-        });
         var i;
+        for (i = 0; i < taken; i++) {
+          bits.push('<li class="pl-seat pl-seat--booked">Taken (see Services)</li>');
+        }
         for (i = 0; i < open; i++) {
           bits.push('<li class="pl-seat pl-seat--open">NO PARTICIPANT</li>');
         }
@@ -943,13 +944,11 @@
         var cap = Number(slot.capacity) || 0;
         var taken = Number(slot.taken) || 0;
         var tone = free > 0 ? "is-open" : "is-full";
-        var staff = Array.isArray(slot.instructors) ? slot.instructors.join(", ") : "";
         return (
           '<article class="pl-row ' + tone + '">' +
           '<div class="pl-row__when">' +
           "<strong>" + esc(slot.day) + " · " + esc(slot.timeLabel) + "</strong>" +
           "<span>" + esc(venueName(slot.venue)) + "</span>" +
-          (staff ? '<span class="pl-row__staff">Staff: ' + esc(staff) + "</span>" : "") +
           "</div>" +
           '<div class="pl-row__cap">' +
           "<span>" + free + " free</span>" +
@@ -1036,15 +1035,15 @@
       }
 
       listEl.innerHTML =
-        '<p class="note" style="margin:0">Loading live places + seat names...</p>';
+        '<p class="note" style="margin:0">Loading live places...</p>';
 
       api
-        .load({ office: true })
+        .load()
         .then(function () {
           if (servicesHeadP) {
             var term = api.TERM_LABEL || "Autumn term";
             servicesHeadP.textContent =
-              term + " - list mode with free / cap / who occupies each standing seat.";
+              term + " - list mode (free / cap / taken). Names stay in Services.";
           }
           paint();
         })
