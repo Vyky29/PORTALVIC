@@ -70,6 +70,33 @@ function venueWalkthroughLikelyRequired(dateIso, completedBy) {
   return d.getDay() === 0;
 }
 
+function venueIsoIsSunday(dateIso) {
+  const iso = clean(dateIso);
+  let d = null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const parts = iso.split("-").map(Number);
+    d = new Date(parts[0], parts[1] - 1, parts[2]);
+  } else {
+    d = new Date();
+  }
+  return !!(d && !isNaN(d.getTime()) && d.getDay() === 0);
+}
+
+function applyRobertoSundayVenueDefaults(ctx) {
+  if (!ctx) return ctx;
+  const looksRoberto = /\broberto\b/i.test(clean(ctx.completedBy));
+  if (!looksRoberto || !venueIsoIsSunday(ctx.date || localIsoDateToday())) return ctx;
+  if (!clean(ctx.venue) || /^venue not detected$/i.test(clean(ctx.venue))) {
+    ctx.venue = "SwimFarm";
+  }
+  if (!clean(ctx.openingClosing)) {
+    const nowM = new Date().getHours() * 60 + new Date().getMinutes();
+    ctx.openingClosing = nowM < 12 * 60 ? "Opening" : "Closing";
+  }
+  ctx.requireVideo = true;
+  return ctx;
+}
+
 function localIsoDateToday() {
   const now = new Date();
   const y = now.getFullYear();
@@ -727,7 +754,7 @@ function initVenueReviewPage() {
     window.setInterval(setAutomaticTime, 15000);
   } catch (_) {}
   updateNoButtonText(btnNo);
-  const ctx = contextFromQuery();
+  const ctx = applyRobertoSundayVenueDefaults(contextFromQuery());
   renderVenueContextHeader(ctx);
   void portalBindVenueReviewVoice(ctx);
   const walkthrough = initVenueWalkthroughRecorder(ctx);

@@ -6357,10 +6357,10 @@
     }
     /* Installed PWAs (esp. iOS) resume the last in-memory page instead of doing a
        fresh network load like a browser tab, so schedule edits/new deploys never
-       reach the worker. When the app is brought back to the foreground after being
-       backgrounded a while, do a real reload (HTML is no-store → fresh boot + roster
-       + live data). Guarded so we never interrupt an open sheet or active typing. */
-    var PORTAL_STAFF_RESUME_RELOAD_MS = 4 * 60 * 1000;
+       reach the worker. When the app is brought back after a long background,
+       do a real reload. Do NOT reload after short hops to venue/feedback forms —
+       that made Roberto's hub feel broken every time he left a screen. */
+    var PORTAL_STAFF_RESUME_RELOAD_MS = 45 * 60 * 1000;
     function portalStaffIsStandalonePwa(){
       try{
         if(window.navigator && window.navigator.standalone === true) return true;
@@ -6373,6 +6373,12 @@
     function portalStaffShouldReloadOnResume(){
       try{
         if(!portalStaffIsStandalonePwa()) return false;
+        try{
+          var formNav = Number(sessionStorage.getItem('portalStaffFormNavAt') || 0);
+          /* Returning from venue / feedback / other portal forms within 90 minutes:
+             keep the in-memory hub (no full cold boot). */
+          if(formNav > 0 && (Date.now() - formNav) < 90 * 60 * 1000) return false;
+        }catch(_){}
         var tHid = Number(window.__PORTAL_STAFF_HIDDEN_AT__ || 0);
         if(!(tHid > 0)) return false;
         if(Date.now() - tHid < PORTAL_STAFF_RESUME_RELOAD_MS) return false;

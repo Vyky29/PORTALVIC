@@ -974,10 +974,21 @@
     const PORTAL_IS_LEAD_APP = false;
 
     function portalVenueScheduleCtx(){
-      const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+      let viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+      let viewDateIso = '';
+      try{
+        viewDateIso = typeof portalViewCalendarDateKey === 'function' ? portalViewCalendarDateKey() : '';
+      }catch(_){}
+      if(!viewDay && /^\d{4}-\d{2}-\d{2}$/.test(viewDateIso)){
+        try{
+          const p = viewDateIso.split('-').map(Number);
+          const d = new Date(p[0], p[1] - 1, p[2]);
+          viewDay = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()] || '';
+        }catch(_){}
+      }
       return {
         viewDay: viewDay,
-        viewDateIso: typeof portalViewCalendarDateKey === 'function' ? portalViewCalendarDateKey() : '',
+        viewDateIso: viewDateIso,
         sessionsModel: sessionsModel || [],
         hasShiftToday: portalStaffHasVenueShiftOnView(STAFF_DASHBOARD_ID),
         parseStartMin: portalParseRosterStartMin
