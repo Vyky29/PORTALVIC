@@ -44,10 +44,23 @@ export function bookingHoldStillActive(
 }
 
 export function filterActiveBookingHolds<
-  T extends { hold_expires_at?: unknown; status?: unknown },
+  T extends { hold_expires_at?: unknown; status?: unknown; notes?: unknown },
 >(holds: T[] | null | undefined, nowMs = Date.now()): T[] {
   return (holds || []).filter((h) => {
     const st = String(h.status || "").toLowerCase();
+    const notes = String(h.notes || "").toLowerCase();
+    /*
+     * Trial / EOD clear tags mean the standing seat is open again (e.g. Zaid
+     * SwimFarm Sun 9–9.30). Do not keep painting Fully booked from a leftover
+     * validated row after office released the trial hold.
+     */
+    if (
+      notes.includes("trial_hold_cleared") ||
+      notes.includes("released_post_trial") ||
+      notes.includes("eod_no_decision")
+    ) {
+      return false;
+    }
     // Pay-window / validated rows keep the public seat until maintenance flips
     // status (expireUnpaidBookingPayHolds). Do not free the offer on clock alone
     // while status is still awaiting_payment — that double-sold Sunday Climbing.

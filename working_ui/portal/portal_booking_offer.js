@@ -117,6 +117,9 @@
     if (slot && slot.bandLeft != null) {
       return Math.max(0, Number(slot.bandLeft));
     }
+    if (slot && slot.openSeats != null) {
+      return Math.max(0, Number(slot.openSeats) || 0);
+    }
     return Math.max(0, Number(slot.capacity || 0) - Number(slot.taken || 0));
   }
 

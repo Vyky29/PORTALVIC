@@ -263,6 +263,47 @@ export function parseTimeSlot(raw: unknown): { sortTime: string; timeLabel: stri
   return { sortTime: "00:00", timeLabel: s };
 }
 
+/**
+ * Aquatic public offer is always 30′. MADRE/roster may store 60′/90′ instructor
+ * bands (e.g. Acton Mon 5.30–6.30) — expand those into half-hour bookable rows
+ * so parents never see hour-long swimming slots.
+ */
+export function aquaticOfferTimeSegments(
+  raw: unknown,
+): { sortTime: string; timeLabel: string }[] {
+  const s = norm(raw);
+  if (!s) return [{ sortTime: "00:00", timeLabel: "—" }];
+  const range = s.match(
+    /(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\s*(?:[-–—]|to)\s*(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i,
+  );
+  if (!range) return [parseTimeSlot(raw)];
+  const a = toMinutes(Number(range[1]), Number(range[2] || 0), range[3]);
+  const b = toMinutes(
+    Number(range[4]),
+    Number(range[5] || 0),
+    range[6] || range[3],
+  );
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) {
+    return [parseTimeSlot(raw)];
+  }
+  if (b - a <= 30) {
+    return [{
+      sortTime: minutesToSort(a),
+      timeLabel: `${format12(a)} – ${format12(b)}`,
+    }];
+  }
+  const out: { sortTime: string; timeLabel: string }[] = [];
+  for (let t = a; t < b; t += 30) {
+    const te = Math.min(t + 30, b);
+    if (te <= t) break;
+    out.push({
+      sortTime: minutesToSort(t),
+      timeLabel: `${format12(t)} – ${format12(te)}`,
+    });
+  }
+  return out.length ? out : [parseTimeSlot(raw)];
+}
+
 function toMinutes(h: number, m: number, ampm?: string): number {
   let hh = h;
   const ap = String(ampm || "").toLowerCase();
@@ -544,7 +585,6 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     const venue = normalizeVenue(row.venue);
     const day = normalizeWeekday(row.day);
     if (!day) continue;
-    const { sortTime, timeLabel } = parseTimeSlot(row.time_slot);
     const iso = norm(row.session_date).slice(0, 10);
     if (!iso) continue;
     // Crash-week lines are intensive-only; keep them out of Autumn weekly template.
@@ -554,32 +594,40 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     const prevMax = latestBySvd.get(svd);
     if (!prevMax || iso > prevMax) latestBySvd.set(svd, iso);
 
-    const key = `${serviceId}|${venue}|${day}|${sortTime}|${timeLabel}`;
-    let dateMap = byKey.get(key);
-    if (!dateMap) {
-      dateMap = new Map();
-      byKey.set(key, dateMap);
-    }
-    let bucket = dateMap.get(iso);
-    if (!bucket) {
-      bucket = {
-        booked: 0,
-        open: 0,
-        instructors: new Set(),
-        openInstructors: new Set(),
-        bookedKeys: new Set(),
-      };
-      dateMap.set(iso, bucket);
-    }
-    const inst = norm(row.instructors);
-    if (inst) bucket.instructors.add(inst.toUpperCase());
-    if (kind === "booked") {
-      bucket.booked += 1;
-      const key = clientKey(String(row.client_name || ""));
-      if (key) bucket.bookedKeys.add(key);
-    } else {
-      bucket.open += 1;
-      if (inst) bucket.openInstructors.add(inst.toUpperCase());
+    const segments =
+      serviceId === "aquatic"
+        ? aquaticOfferTimeSegments(row.time_slot)
+        : [parseTimeSlot(row.time_slot)];
+
+    for (const seg of segments) {
+      const { sortTime, timeLabel } = seg;
+      const key = `${serviceId}|${venue}|${day}|${sortTime}|${timeLabel}`;
+      let dateMap = byKey.get(key);
+      if (!dateMap) {
+        dateMap = new Map();
+        byKey.set(key, dateMap);
+      }
+      let bucket = dateMap.get(iso);
+      if (!bucket) {
+        bucket = {
+          booked: 0,
+          open: 0,
+          instructors: new Set(),
+          openInstructors: new Set(),
+          bookedKeys: new Set(),
+        };
+        dateMap.set(iso, bucket);
+      }
+      const inst = norm(row.instructors);
+      if (inst) bucket.instructors.add(inst.toUpperCase());
+      if (kind === "booked") {
+        bucket.booked += 1;
+        const ck = clientKey(String(row.client_name || ""));
+        if (ck) bucket.bookedKeys.add(ck);
+      } else {
+        bucket.open += 1;
+        if (inst) bucket.openInstructors.add(inst.toUpperCase());
+      }
     }
 
     let vs = venueSets.get(serviceId);
@@ -789,6 +837,9 @@ export function applyBookingSlotHoldsToOffer(
     const seats = seatsNeededFromHoldNotes(hold.notes);
     const cap = Number(slot.capacity) || 0;
     slot.taken = Math.min(cap, (Number(slot.taken) || 0) + seats);
+    if (slot.openSeats != null) {
+      slot.openSeats = Math.max(0, (Number(slot.openSeats) || 0) - seats);
+    }
     applied += 1;
   }
   return { applied, skipped_roster: skippedRoster };

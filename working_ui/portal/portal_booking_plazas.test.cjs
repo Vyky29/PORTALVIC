@@ -1,5 +1,7 @@
 /**
- * Booking plazas: 60' MADRE seats must not become two summed half-hours.
+ * Client grouping must not invent plazas by collapsing/summing bands.
+ * Server-side aquaticOfferTimeSegments expands 60' MADRE rows into 30' offer
+ * slots before they reach the client — this test only covers the client sort.
  * Run: node working_ui/portal/portal_booking_plazas.test.cjs
  */
 "use strict";
