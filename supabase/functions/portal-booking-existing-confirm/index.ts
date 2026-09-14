@@ -38,6 +38,16 @@ import {
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const BUCKET = "participant-documents";
 
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(label || "timeout")), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
@@ -386,12 +396,16 @@ Deno.serve(async (req) => {
 
   if (photoBytes) {
     try {
-      await saveParticipantAvatarWithArchive(
-        admin,
-        child.contact_id,
-        photoBytes,
-        photoContentType,
-        "booking_existing_confirm",
+      await withTimeout(
+        saveParticipantAvatarWithArchive(
+          admin,
+          child.contact_id,
+          photoBytes,
+          photoContentType,
+          "booking_existing_confirm",
+        ),
+        12000,
+        "avatar_timeout",
       );
     } catch (avatarErr) {
       console.warn("[portal-booking-existing-confirm] avatar", avatarErr);
@@ -603,23 +617,21 @@ Deno.serve(async (req) => {
     .filter(Boolean)
     .join(" · ");
 
-  try {
-    await notifyOfficeRegistrationSubmitted({
-      documentId: String(docRow.id),
-      formType: "client_registration",
-      participantName: child.display_name,
-      parentName: clean(lead.parent_name, 120) || null,
-      parentEmail: parentEmail || null,
-      parentPhone: clean(lead.mobile, 40) || null,
-      leadId: String(lead.id),
-      slotHeld: !!holdRow?.id,
-      bookingSummary,
-      pdfBytes,
-      pdfFilename: `ExistingClient_${safeName}.pdf`,
-    });
-  } catch (notifyErr) {
+  const officeNotify = notifyOfficeRegistrationSubmitted({
+    documentId: String(docRow.id),
+    formType: "client_registration",
+    participantName: child.display_name,
+    parentName: clean(lead.parent_name, 120) || null,
+    parentEmail: parentEmail || null,
+    parentPhone: clean(lead.mobile, 40) || null,
+    leadId: String(lead.id),
+    slotHeld: !!holdRow?.id,
+    bookingSummary,
+    pdfBytes,
+    pdfFilename: `ExistingClient_${safeName}.pdf`,
+  }).catch((notifyErr) => {
     console.warn("[portal-booking-existing-confirm] notify", notifyErr);
-  }
+  });
 
   let finishUrl: string | null = null;
   let finishUrlSent = false;
@@ -640,6 +652,12 @@ Deno.serve(async (req) => {
     finishUrlSent = sent.finish_url_sent;
   } catch (finishErr) {
     console.warn("[portal-booking-existing-confirm] finish link", finishErr);
+  }
+
+  try {
+    await withTimeout(officeNotify, 8000, "office_notify_timeout");
+  } catch (notifyWaitErr) {
+    console.warn("[portal-booking-existing-confirm] notify wait", notifyWaitErr);
   }
 
   return bookingLeadJson({
