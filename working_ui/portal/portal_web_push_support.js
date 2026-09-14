@@ -215,8 +215,20 @@
 
   /** Unlock / resume alert audio only after a real user gesture (not pageshow). */
   var lastAlertCueAt = 0;
-  function portalUnlockAlertAudio() {
+  function portalUserActivationActive() {
     try {
+      var ua = global.navigator && global.navigator.userActivation;
+      if (ua && typeof ua.isActive === "boolean") return !!ua.isActive;
+    } catch (_ua) {}
+    return false;
+  }
+  function portalUnlockAlertAudio(ev) {
+    try {
+      /* Creating / resuming AudioContext outside a user gesture logs Chrome warnings
+         and never actually starts audio — skip unless activation is live. */
+      var fromGesture =
+        !!(ev && ev.isTrusted && ev.type && /^(pointerdown|touchstart|click|keydown)$/i.test(ev.type));
+      if (!fromGesture && !portalUserActivationActive()) return;
       var AC = global.AudioContext || global.webkitAudioContext;
       if (!AC) return;
       var ctx = global.__PORTAL_ALERT_AUDIO_CTX__;
@@ -233,11 +245,11 @@
   function portalResumeAlertAudioIfReady() {
     try {
       var ctx = global.__PORTAL_ALERT_AUDIO_CTX__;
-      if (!ctx) return;
-      if (ctx.state === "suspended") {
-        var p = ctx.resume();
-        if (p && typeof p.catch === "function") p.catch(function () {});
-      }
+      if (!ctx || ctx.state !== "suspended") return;
+      /* pageshow is not a user gesture — resume only if activation is still open. */
+      if (!portalUserActivationActive()) return;
+      var p = ctx.resume();
+      if (p && typeof p.catch === "function") p.catch(function () {});
     } catch (_r) {}
   }
   function portalPlayAlertCue(opts) {
@@ -254,9 +266,9 @@
       } catch (_v) {}
     }
     try {
-      portalUnlockAlertAudio();
+      /* Never create AudioContext here — push/realtime cues often fire without a gesture. */
       var ctx = global.__PORTAL_ALERT_AUDIO_CTX__;
-      if (!ctx) return;
+      if (!ctx || ctx.state !== "running") return;
       var now = ctx.currentTime;
       function beep(at, freq, dur, vol) {
         var o = ctx.createOscillator();

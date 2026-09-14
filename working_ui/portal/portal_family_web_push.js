@@ -449,11 +449,10 @@
       }
     } catch (_v) {}
     try {
-      var AC = global.AudioContext || global.webkitAudioContext;
-      if (!AC) return;
-      var ctx = global.__FAMILY_ALERT_AUDIO_CTX__ || new AC();
-      global.__FAMILY_ALERT_AUDIO_CTX__ = ctx;
-      if (ctx.state === "suspended") void ctx.resume();
+      /* Reuse a gesture-unlocked context only — never new AudioContext() here
+         (Chrome autoplay warnings when cues fire from push / realtime). */
+      var ctx = global.__FAMILY_ALERT_AUDIO_CTX__ || global.__PORTAL_ALERT_AUDIO_CTX__;
+      if (!ctx || ctx.state !== "running") return;
       var now = ctx.currentTime;
       function beep(at, freq, dur) {
         var o = ctx.createOscillator();
