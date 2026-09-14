@@ -337,8 +337,10 @@
 
   /**
    * Standing Tue Acton AS (from Mon 7 Sep): Roberto / Aurora / Javier / Luliya.
-   * Serine → Roberto 4.30–5.30; Logan → Luliya 5–5.30; Richard → Roberto; no Youssef.
+   * Serine → Roberto 4.30–5.30 from Tue 15 Sep (open before); Logan → Luliya 5–5.30; Richard → Roberto; no Youssef.
    */
+  var SERINE_ACTON_TUE_AQUATIC_FROM = "2026-09-15";
+
   /**
    * Acton Tue pool notes: match Summer where known (Junaid Lane SE; Adam Mahmmoud = Teaching Pool).
    * Overview seats: 1 Aurora · 2 Javier · 3 Roberto · 4 Luliya.
@@ -1142,6 +1144,56 @@
    * Amaar Ah takes that seat from Mon 14 Sep 2026. Adaam + Aydaan stand on Tue Acton 6–6.30.
    */
   var AMAAR_MON_NORTHOLT_DAN_630_FROM = "2026-09-14";
+
+  function isSerineActonTueAquaticSeat(row) {
+    if (!row) return false;
+    if (!/^serine\b/i.test(String(row.client_name || "").trim())) return false;
+    if (!isAquaticService(row.service)) return false;
+    if (!isActonVenue(row.venue)) return false;
+    var day = normalizeDowKey(row.day);
+    if (!day) {
+      var iso0 = normIso(row.session_date);
+      if (iso0) {
+        try {
+          day = normalizeDowKey(
+            new Date(iso0 + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long" })
+          );
+        } catch (_) {
+          day = "";
+        }
+      }
+    }
+    if (day !== "tuesday") return false;
+    if (!/\broberto\b/i.test(String(row.instructors || ""))) return false;
+    var slot = String(row.time_slot || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+      .replace(/:/g, ".");
+    return (
+      /^4\.30\s*to\s*5\.30$/.test(slot) ||
+      /^4\.30\s*to\s*5(\.00)?$/.test(slot) ||
+      /^5(\.00)?\s*to\s*5\.30$/.test(slot)
+    );
+  }
+
+  function scrubAndEnsureSerineActonTueFrom(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (!isSerineActonTueAquaticSeat(r)) {
+        out.push(r);
+        return;
+      }
+      var d = normIso(r.session_date);
+      if (d && d < SERINE_ACTON_TUE_AQUATIC_FROM) {
+        out.push(Object.assign({}, r, { client_name: "No participant" }));
+        return;
+      }
+      out.push(r);
+    });
+    return out;
+  }
 
   function isMonNortholtDan630Aquatic(row) {
     if (!row) return false;
@@ -2158,14 +2210,11 @@
     }
 
     if (day === "tuesday") {
-      /* Standing Tue Acton: Roberto / Aurora / Javier / Luliya (no Youssef). */
+      /* Standing Tue Acton: Roberto / Aurora / Javier / Luliya (no Youssef).
+         Serine stays with Roberto (capacity chain) — do not remap to Luliya. */
       if (/^logan\b/.test(client) || client === "richard") {
         if (/\broberto\b/i.test(raw)) return null;
         return { instructors: "ROBERTO" };
-      }
-      if (/^serine\b/.test(client)) {
-        if (/\bluliya\b|\blulia\b|\baida\b/i.test(raw)) return null;
-        return { instructors: "LULIYA" };
       }
       if (/^rayan\s*ta\b/.test(client)) {
         if (/\bjavier\b/i.test(raw)) return null;
@@ -3656,6 +3705,7 @@
     merged = scrubAndEnsureSep10YassirLastSession(merged);
     merged = scrubAndEnsureSep11AmaarLastSession(merged);
     merged = scrubAndEnsureMonNortholtDan630LeilaSwap(merged);
+    merged = scrubAndEnsureSerineActonTueFrom(merged);
     merged = scrubAndEnsureSep8ActonRedistribute(merged);
     merged = scrubAndEnsureSep10AnasMakeup(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);

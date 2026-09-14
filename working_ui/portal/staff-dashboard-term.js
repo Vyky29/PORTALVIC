@@ -458,9 +458,16 @@
         ? portalEffectiveClientIdForReview(s, isoKey)
         : String(s.clientId || '').trim().toLowerCase();
       const dw = String(dayWord || '').trim() || cur.toLocaleDateString('en-GB', { weekday: 'long' });
-      const sessionKey = typeof portalBuildSessionReviewKey === 'function'
+      let sessionKey = typeof portalBuildSessionReviewKey === 'function'
         ? portalBuildSessionReviewKey(isoKey, s, dw, effClientId)
         : `${isoKey}|${s.start}|${effClientId}`;
+      /* Same instructor 1h aquatic → day|client|aquatic so one submit covers both 30' halves. */
+      try{
+        if(typeof portalStaffLeadAquaticSessionReviewKey === 'function'){
+          const aqK = portalStaffLeadAquaticSessionReviewKey(isoKey, effClientId || s.clientId, s, dw);
+          if(aqK) sessionKey = aqK;
+        }
+      }catch(_){}
       const st = typeof sessionModelStatus === 'function' ? sessionModelStatus(s) : '';
       const adminAbsentOv = typeof portalScheduleOverrideForSessionByType === 'function'
         ? portalScheduleOverrideForSessionByType(s, isoKey, 'client_absence_announced')
@@ -551,6 +558,7 @@
       const cur = curDate && !isNaN(curDate.getTime()) ? curDate : new Date(key + 'T12:00:00');
       if(!/^\d{4}-\d{2}-\d{2}$/.test(key) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return 0;
       let pending = 0;
+      const seenAquaticUnits = Object.create(null);
       for(let i = 0; i < rel.length; i++){
         const s = rel[i];
         if(typeof portalRosterSessionFeedbackExempt === 'function'
@@ -563,6 +571,17 @@
         const pillPend = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
         if(pillPend === 'CANCELLED' || pillPend === 'ABSENT') continue;
         if(typeof portalTodayItemIsCancelledCard === 'function' && portalTodayItemIsCancelledCard(item)) continue;
+        /* Same instructor 1h aquatic (2×30'): one feedback unit — do not count both halves. */
+        try{
+          const cidUnit = String(item.clientId || s.clientId || '').trim().toLowerCase();
+          if(cidUnit && typeof portalStaffLeadAquaticSessionReviewKey === 'function'){
+            const aqKey = String(portalStaffLeadAquaticSessionReviewKey(key, cidUnit, s, dw) || '');
+            const parts = aqKey.split('|');
+            if(parts.length === 3 && parts[2] === 'aquatic'){
+              if(seenAquaticUnits[aqKey]) continue;
+            }
+          }
+        }catch(_){}
         const started = typeof isSessionStartedForItem === 'function' && isSessionStartedForItem(item);
         const ended = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
         if(!started && !ended) continue;
@@ -570,6 +589,16 @@
           ? (getEffectiveSessionReviewRecord(item) || {})
           : (typeof getSessionReviewRecord === 'function' ? (getSessionReviewRecord(item) || {}) : {});
         if(r.feedbackDone || r.absent || (r.cancelled && !r.cancelNeedsFeedback)) continue;
+        try{
+          const cidMark = String(item.clientId || s.clientId || '').trim().toLowerCase();
+          if(cidMark && typeof portalStaffLeadAquaticSessionReviewKey === 'function'){
+            const aqMark = String(portalStaffLeadAquaticSessionReviewKey(key, cidMark, s, dw) || '');
+            const partsM = aqMark.split('|');
+            if(partsM.length === 3 && partsM[2] === 'aquatic'){
+              seenAquaticUnits[aqMark] = true;
+            }
+          }
+        }catch(_){}
         pending++;
       }
       return pending;

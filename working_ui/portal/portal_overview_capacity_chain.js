@@ -284,6 +284,16 @@
     return clientFromSeatLine(line);
   }
 
+  /** First calendar day a standing CLIENT occupies this seat (ISO). Before that → open. */
+  function bookedFromForSeatLine(line, slot) {
+    var raw =
+      (line && (line.bookedFrom || line.booked_from || line.firstSession || line.first_session)) ||
+      (slot && (slot.bookedFrom || slot.booked_from)) ||
+      "";
+    var d = String(raw || "").slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
+  }
+
   function occupantsPhasesToRosterRows(bySlotId, win) {
     var out = [];
     Object.keys(bySlotId || {}).forEach(function (slotId) {
@@ -322,12 +332,22 @@
         if (trialSeat && !isTrialSeatLine(line) && trialIso) {
           standingClient = "No participant";
         }
+        var bookedFrom = bookedFromForSeatLine(line, slot);
         var staff = String(line.instructor || "").trim();
         if (!staff) return;
         dates.forEach(function (iso) {
           var client = standingClient;
           if (trialSeat) {
             client = trialIso && iso === trialIso && trialClient ? trialClient : "No participant";
+          }
+          /* Standing CLIENT not yet started on this seat (e.g. Serine Roberto Tue from 15 Sep). */
+          if (
+            bookedFrom &&
+            iso < bookedFrom &&
+            client &&
+            !/^(no participant|closed|available|hold\b)/i.test(String(client).trim())
+          ) {
+            client = "No participant";
           }
           if (isFadiOffRotaIso(iso) && isFadiLabel(client)) return;
           out.push({
