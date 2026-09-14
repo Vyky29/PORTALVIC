@@ -2196,8 +2196,15 @@
 
   function hubSlotShowsNewClientChip(slot, slotOv) {
     if (hubSlotShowsTrialChip(slot, slotOv)) return false;
-    if (overrideIsNewClientReplace(slotOv)) return true;
-    return !!(slot && slot.portalOverrideNewClientTag);
+    var tagged =
+      overrideIsNewClientReplace(slotOv) || !!(slot && slot.portalOverrideNewClientTag);
+    if (!tagged) return false;
+    /* NEW CLIENT only on first session day (payload.first_session), not every week. */
+    var p = overridePayloadObj(slotOv || (slot && slot.__portalScheduleOverride));
+    var first = String((p && (p.first_session || p.firstSession)) || "").slice(0, 10);
+    var iso = String((slot && slot.session_date) || "").slice(0, 10);
+    if (first && /^\d{4}-\d{2}-\d{2}$/.test(first) && iso && first !== iso) return false;
+    return true;
   }
 
   function hubSlotShowsInstructorReassignChip(slot, slotOv) {
