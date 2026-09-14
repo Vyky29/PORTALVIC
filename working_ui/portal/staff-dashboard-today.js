@@ -3559,6 +3559,45 @@
               __portalScheduleOverride: adminAbsentOv
             }, meta);
           }
+          const adminSlotCloseOv = portalScheduleOverrideForSessionByType(s, sessionDateKey, 'slot_close')
+            || portalScheduleOverrideForSessionByType(s, sessionDateKey, 'client_cancelled');
+          if(adminSlotCloseOv && !replaceOvSameSlot
+            && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
+              && sessionDateKey
+              && portalStaffHasRequestedTimeOffOnDate(sessionDateKey, STAFF_DASHBOARD_ID))){
+            const cCan = portalTodayClientNotesForSession(s);
+            const showSpecCan = !isBespokeActivity(activity);
+            let poolLocationCan = resolvePoolLocationLabelFromSession(s, activity, cCan, viewDay);
+            if(supportHidePoolNote) poolLocationCan = null;
+            const areaCan = rosterAreaLabelForSession(s, activity, supportHidePoolNote);
+            return Object.assign({
+              time,
+              kind: 'client',
+              clientId: s.clientId,
+              name: cCan.name || 'Participant',
+              activity,
+              areaLabel: areaCan,
+              poolLocationLabel: poolLocationCan,
+              poolTier: poolTierForAreaNoteRow(s, activity, cCan, viewDay, supportHidePoolNote),
+              showPoolSymbol: !!(poolLocationCan || areaCan),
+              showSpecialty: showSpecCan,
+              specialtyLabel: specialtyInfoTitle(activity),
+              segments: portalTodayKeepDcSegments(s),
+              general: `Cancelled (Today). ${clientGeneralBodyFromNotes(cCan, s)}`.trim(),
+              specialty: showSpecCan ? pickSpecialtyBody(cCan, activity) : '',
+              openSheet: true,
+              sessionKey: `${sessionDateKey}|${s.start}|${String(s.clientId || '').toLowerCase()}`,
+              sessionStartTs,
+              sessionEndTs,
+              noSessionFeedbackRequired: true,
+              actionsDisabled: true,
+              detailsOpenAllowed: true,
+              portalOverrideSuppressReviewOrange: true,
+              portalOverrideCardTone: 'red',
+              portalOverrideAlertPill: 'CANCELLED',
+              __portalScheduleOverride: adminSlotCloseOv
+            }, meta);
+          }
           if(ov && ov.override_type === 'slot_clear_client' && !replaceOvSameSlot){
             const plClear = ov.payload || {};
             const isDayReassignClear = !!(plClear.day_reassign === true || plClear.not_makeup === true);
@@ -4160,6 +4199,7 @@
           const typ = String(ov.override_type || ov.overrideType || '').trim();
           const pl = ov.payload || {};
           if(typ === 'slot_clear_client' && pl && pl.cancelled_by_admin) return true;
+          if(typ === 'slot_close' || typ === 'client_cancelled') return true;
         }
         const manual = String(
           (it.__portalBaseSession && it.__portalBaseSession.override) || it.override || ''
@@ -7905,7 +7945,12 @@
             }
             var manualOv = String(s && s.override || '').trim().toUpperCase();
             var hasAdminAbsence = !!(ov && ov.override_type === 'client_absence_announced');
-            var hasAdminCancelled = !!(ov && ov.override_type === 'slot_clear_client' && ov.payload && ov.payload.cancelled_by_admin);
+            var hasAdminCancelled = !!(ov && (
+              (ov.override_type === 'slot_clear_client' && ov.payload && ov.payload.cancelled_by_admin)
+              || ov.override_type === 'slot_close'
+              || ov.override_type === 'client_cancelled'
+              || (ov.payload && String(ov.payload.feedback_resolution || '').trim().toLowerCase() === 'cancelled')
+            ));
             if(hasAdminCancelled && sessionDateIso && typeof portalStaffHasRequestedTimeOffOnDate === 'function'
               && portalStaffHasRequestedTimeOffOnDate(sessionDateIso, id)){
               hasAdminCancelled = false;

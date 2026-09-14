@@ -1335,8 +1335,22 @@
           if(ex.feedbackDone && !ex.absent && !ex.cancelled) feedbackDone = true;
         }
       }
+      /* Admin cancel (Schedule & Covers / term cancel) = same as absent: never ask for feedback. */
+      const ovAdmin = item && item.__portalScheduleOverride;
+      const ovTyp = ovAdmin ? String(ovAdmin.override_type || '').trim() : '';
+      const ovPl = ovAdmin && ovAdmin.payload ? ovAdmin.payload : null;
+      const adminCancelOv = !!(ovTyp === 'slot_close' || ovTyp === 'client_cancelled'
+        || (ovTyp === 'slot_clear_client' && ovPl && ovPl.cancelled_by_admin
+          && ovPl.day_reassign !== true && ovPl.not_makeup !== true)
+        || (ovPl && String(ovPl.feedback_resolution || '').trim().toLowerCase() === 'cancelled')
+        || (item.noSessionFeedbackRequired
+          && String(item.portalOverrideAlertPill || '').toUpperCase() === 'CANCELLED'));
+      if(adminCancelOv){
+        cancelled = true;
+        cancelNeedsFeedback = false;
+      }
       const mem = getSessionReviewRecord(item) || {};
-      if(mem.cancelNeedsFeedback && mem.cancelled && !mem.feedbackDone){
+      if(!adminCancelOv && mem.cancelNeedsFeedback && mem.cancelled && !mem.feedbackDone){
         cancelled = true;
         cancelNeedsFeedback = true;
       }
@@ -1346,7 +1360,7 @@
       }
       if(absent || (cancelled && !cancelNeedsFeedback)) feedbackDone = false;
       if(cancelled && !cancelNeedsFeedback){
-        /* Before-start cancel counts as submitted. */
+        /* Before-start / admin cancel counts as submitted (no instructor feedback). */
         feedbackDone = true;
       }
       if(!feedbackDone && !absent && !(cancelled && !cancelNeedsFeedback)){

@@ -2773,7 +2773,7 @@
         const r = typeof getEffectiveSessionReviewRecord === 'function'
           ? (getEffectiveSessionReviewRecord(item) || {})
           : (typeof getSessionReviewRecord === 'function' ? (getSessionReviewRecord(item) || {}) : {});
-        if(!r.feedbackDone && !r.absent && !r.cancelled) return false;
+        if(!r.feedbackDone && !r.absent && !(r.cancelled && !r.cancelNeedsFeedback)) return false;
       }
       return accountable > 0;
     }

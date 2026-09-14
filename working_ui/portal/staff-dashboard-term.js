@@ -272,7 +272,7 @@
           const r = typeof getEffectiveSessionReviewRecord === 'function'
             ? (getEffectiveSessionReviewRecord(item) || {})
             : (getSessionReviewRecord(item) || {});
-          if(r.feedbackDone || r.absent || r.cancelled) continue;
+          if(r.feedbackDone || r.absent || (r.cancelled && !r.cancelNeedsFeedback)) continue;
           pending++;
         }
         return pending;
@@ -488,6 +488,27 @@
         item.portalOverrideAlertPill = 'CANCELLED';
         item.portalOverrideSuppressReviewOrange = true;
       } else {
+        /* Admin cancel (Schedule & Covers) — same as absent: no instructor feedback. */
+        const adminCancelOv = typeof portalScheduleOverrideForSessionByType === 'function'
+          ? (portalScheduleOverrideForSessionByType(s, isoKey, 'slot_close')
+            || portalScheduleOverrideForSessionByType(s, isoKey, 'client_cancelled'))
+          : null;
+        const clearOv = typeof portalScheduleOverrideForSessionByType === 'function'
+          ? portalScheduleOverrideForSessionByType(s, isoKey, 'slot_clear_client')
+          : null;
+        const clearPl = clearOv && clearOv.payload ? clearOv.payload : null;
+        const clearIsAdminCancel = !!(clearOv && clearPl && clearPl.cancelled_by_admin
+          && clearPl.day_reassign !== true && clearPl.not_makeup !== true);
+        const resolvedCancel = typeof portalRosterSessionFeedbackResolvedFlags === 'function'
+          ? portalRosterSessionFeedbackResolvedFlags(s, isoKey, typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')
+          : null;
+        if(adminCancelOv || clearIsAdminCancel || (resolvedCancel && resolvedCancel.cancelled)){
+          item.noSessionFeedbackRequired = true;
+          item.portalOverrideAlertPill = 'CANCELLED';
+          item.portalOverrideSuppressReviewOrange = true;
+          item.actionsDisabled = true;
+          item.__portalScheduleOverride = adminCancelOv || (clearIsAdminCancel ? clearOv : null);
+        } else {
         const coverOv = s.__portalScheduleOverride
           || (typeof portalCoverInstructorReassignForViewerSession === 'function'
             ? portalCoverInstructorReassignForViewerSession(
@@ -518,6 +539,7 @@
             }
           }
         }
+        }
       }
       return item;
     }
@@ -544,7 +566,7 @@
         const r = typeof getEffectiveSessionReviewRecord === 'function'
           ? (getEffectiveSessionReviewRecord(item) || {})
           : (typeof getSessionReviewRecord === 'function' ? (getSessionReviewRecord(item) || {}) : {});
-        if(r.feedbackDone || r.absent || r.cancelled) continue;
+        if(r.feedbackDone || r.absent || (r.cancelled && !r.cancelNeedsFeedback)) continue;
         pending++;
       }
       return pending;

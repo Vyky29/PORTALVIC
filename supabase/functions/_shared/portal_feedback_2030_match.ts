@@ -438,7 +438,8 @@ function isUsableCoverStaff(raw: string): boolean {
  * Apply live day ops so feedback debt follows the cover, not the original book.
  * - instructor_reassign: drop anchor/absent staff slot; add covering staff
  * - slot_clear_client: drop cleared seat on anchor
- * - client_absence_announced: drop that client seat
+ * - client_absence_announced / admin cancel (slot_close, client_cancelled,
+ *   feedback_resolution cancelled/absent): drop seat — no instructor feedback
  * - client_replace_in_slot: ensure replacement client sits with anchor (cover) staff
  */
 export function applyScheduleOverridesToFeedback2030Slots(
@@ -483,6 +484,20 @@ export function applyScheduleOverridesToFeedback2030Slots(
     next.push(candidate);
   };
 
+  const dropClientSeat = (
+    anchorStaff: string,
+    anchorClient: string,
+    pl: Record<string, unknown>,
+    timeLab: string,
+    requireStaff: boolean,
+  ): void => {
+    dropMatching((s) => {
+      if (requireStaff && anchorStaff && !staffKeysMatch(s.staff, anchorStaff)) return false;
+      if (!clientMatchesOverride(s.client, anchorClient, pl)) return false;
+      return feedbackTimesCompatible(s.time, timeLab);
+    });
+  };
+
   for (const ov of active) {
     const ot = String(ov.override_type || "").trim();
     const pl = (ov.payload && typeof ov.payload === "object")
@@ -493,6 +508,23 @@ export function applyScheduleOverridesToFeedback2030Slots(
     const anchorClient = String(ov.anchor_client_id || "").trim();
     const timeLab = String(ov.anchor_time_slot_label || "").trim();
     const svc = String(pl.service || pl.activity || pl.roster_service || "").trim();
+    const feedbackRes = String(pl.feedback_resolution || "").trim().toLowerCase();
+    const adminCancel =
+      ot === "slot_close" ||
+      ot === "client_cancelled" ||
+      feedbackRes === "cancelled" ||
+      (ot === "slot_clear_client" && !!pl.cancelled_by_admin &&
+        pl.day_reassign !== true && pl.not_makeup !== true);
+
+    /* Admin cancel / absent: same as absent — never nag instructors for feedback. */
+    if (
+      adminCancel ||
+      ot === "client_absence_announced" ||
+      feedbackRes === "absent"
+    ) {
+      dropClientSeat(anchorStaff, anchorClient, pl, timeLab, false);
+      continue;
+    }
 
     if (ot === "instructor_reassign") {
       const cover = String(pl.covering_staff_id || pl.covering_staff_name || "").trim();

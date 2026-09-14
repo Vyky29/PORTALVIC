@@ -686,7 +686,7 @@
           return { feedbackDone: false, incident: false, absent: true, cancelled: false };
         }
         if(exEarly && exEarly.cancelled){
-          return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+          return { feedbackDone: false, incident: false, absent: false, cancelled: true, cancelNeedsFeedback: false };
         }
         if(exEarly && exEarly.feedbackDone){
           const memEarly = getSessionReviewRecord(item) || {};
@@ -705,7 +705,7 @@
           return { feedbackDone: false, incident: !!(getSessionReviewRecord(item) || {}).incident, absent: true, cancelled: false };
         }
         if(pillEarly === 'CANCELLED'){
-          return { feedbackDone: false, incident: !!(getSessionReviewRecord(item) || {}).incident, absent: false, cancelled: true };
+          return { feedbackDone: false, incident: !!(getSessionReviewRecord(item) || {}).incident, absent: false, cancelled: true, cancelNeedsFeedback: false };
         }
       }
       if(iso && portalReviewAbsentResolvedForItem(item, iso)){
@@ -728,7 +728,29 @@
       }
       if(iso && portalIsServerTruthFeedbackDay(iso)){
         const serverRec = portalServerTruthReviewRecordForItem(item, iso);
-        if(serverRec.absent || serverRec.cancelled) return serverRec;
+        if(serverRec.absent) return serverRec;
+        if(serverRec.cancelled){
+          const pillSrv = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
+          const ovCan = item && item.__portalScheduleOverride;
+          const ovCanT = ovCan ? String(ovCan.override_type || '').trim() : '';
+          const ovCanP = ovCan && ovCan.payload ? ovCan.payload : null;
+          const adminCancelCard = pillSrv === 'CANCELLED'
+            || ovCanT === 'slot_close'
+            || ovCanT === 'client_cancelled'
+            || (ovCanT === 'slot_clear_client' && ovCanP && ovCanP.cancelled_by_admin
+              && ovCanP.day_reassign !== true && ovCanP.not_makeup !== true)
+            || (ovCanP && String(ovCanP.feedback_resolution || '').trim().toLowerCase() === 'cancelled');
+          if(adminCancelCard || !serverRec.cancelNeedsFeedback){
+            return {
+              feedbackDone: true,
+              incident: !!serverRec.incident,
+              absent: false,
+              cancelled: true,
+              cancelNeedsFeedback: false
+            };
+          }
+          return serverRec;
+        }
         const dayWordSrv = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
         const baseSrv = portalReviewSessionForItem(item);
         if(baseSrv && typeof portalGetMergedSessionReviewRecordForRoster === 'function'){
@@ -1051,7 +1073,7 @@
         if(!isSessionEndedForFeedback(item)) continue;
         eligible++;
         const r = getEffectiveSessionReviewRecord(item) || {};
-        if(r.feedbackDone || r.absent || r.cancelled) continue;
+        if(r.feedbackDone || r.absent || (r.cancelled && !r.cancelNeedsFeedback)) continue;
         pending.push(item);
       }
       return {
