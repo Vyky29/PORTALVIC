@@ -79,16 +79,47 @@
       try{ window.__PORTAL_TODAY_SYNC_RETRY__ = false; }catch(_){}
       try{ window.__PORTAL_TODAY_SYNC_RETRY_GAVE_UP__ = false; }catch(_){}
       DEMO_VIEW_DAY = day;
+      try{ window.DEMO_VIEW_DAY = day; }catch(_){}
       if(typeof getDemoDateLabel === 'function') dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
       if(typeof getDemoDateTopbar === 'function') dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
-      hydrateSessionReviewMapFromStorage();
-      portalSyncTodaySectionDisplay();
-      if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
-      renderHeader();
-      renderToday();
-      renderMiniCounts();
-      renderLists();
-      document.getElementById('portalTodaySection')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      /* Shell first: never rebuild the full Today board inside the click / rAF chain.
+         Javier Sunday (~10 cards + overrides) was attributing 4–32s to the Term cell click. */
+      try{
+        dashboardData.portalTodayEmptyPanelMode = 'sync';
+        dashboardData.today = [];
+        dashboardData.portalTodayNextSessionPreview = null;
+      }catch(_){}
+      try{ if(typeof renderHeader === 'function') renderHeader(); }catch(_){}
+      try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
+      var buildGen = (window.__PORTAL_DAY_REVIEW_BUILD_GEN__ = (window.__PORTAL_DAY_REVIEW_BUILD_GEN__ || 0) + 1);
+      var runHeavy = function(){
+        if(buildGen !== window.__PORTAL_DAY_REVIEW_BUILD_GEN__) return;
+        try{
+          if(typeof hydrateSessionReviewMapFromStorage === 'function') hydrateSessionReviewMapFromStorage();
+        }catch(_){}
+        try{
+          if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+        }catch(_){}
+        /* Next-session rows only matter on live Today — skip on historical review. */
+        try{
+          var live = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+          if(live && typeof window.__portalSyncNextSessionFromModel === 'function'){
+            window.__portalSyncNextSessionFromModel();
+          }
+        }catch(_){}
+        if(buildGen !== window.__PORTAL_DAY_REVIEW_BUILD_GEN__) return;
+        try{ if(typeof renderHeader === 'function') renderHeader(); }catch(_){}
+        try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
+        try{ if(typeof renderMiniCounts === 'function') renderMiniCounts(); }catch(_){}
+        try{ if(typeof renderLists === 'function') renderLists(); }catch(_){}
+        try{
+          document.getElementById('portalTodaySection')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }catch(_){}
+      };
+      var defer = typeof portalDeferHeavyDashboardRefresh === 'function'
+        ? portalDeferHeavyDashboardRefresh
+        : function(fn){ setTimeout(fn, 0); };
+      defer(runHeavy, 0);
     }
     function portalOpenWeekDayReviewFlow(dayName, opts){
       const day = String(dayName || '').trim();
@@ -126,6 +157,7 @@
       }
       portalSyncReviewNavigationQueryToHistory();
       const finish = function(){
+        /* Roster pending only — never rebuild the full Today board just to flip judgement. */
         if(!termJudgementAllowed && /^\d{4}-\d{2}-\d{2}$/.test(isoOpt)
           && typeof portalTermCalendarDayStillHasPendingFeedback === 'function'){
           const dayWordCheck = new Date(isoOpt + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
@@ -133,14 +165,8 @@
         }
         portalFinishWeekDayReviewFlow(day, isoOpt, usedDateLock, termJudgementAllowed);
       };
-      /* Admin Changes / override taps use sync so the day paints before chrome re-renders. */
-      if(opts.sync){
-        finish();
-      }else if(typeof requestAnimationFrame === 'function'){
-        requestAnimationFrame(function(){ setTimeout(finish, 0); });
-      } else {
-        setTimeout(finish, 0);
-      }
+      /* Shell + deferred heavy build (even for Admin Changes) so clicks stay under budget. */
+      finish();
       if(/^\d{4}-\d{2}-\d{2}$/.test(isoOpt) && typeof window.portalEnsureScheduleOverridesForIso === 'function'){
         Promise.resolve(window.portalEnsureScheduleOverridesForIso(isoOpt))
           .then(function(res){
@@ -149,15 +175,24 @@
               const lock = String(window.__PORTAL_REVIEW_DATE_URL_LOCK || '').trim().slice(0, 10);
               if(lock !== isoOpt) return;
             }catch(_){ return; }
-            try{
-              if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
-              if(typeof renderToday === 'function'){
-                const grid = document.getElementById('todayGrid');
-                if(grid) grid.removeAttribute('data-today-cards-sig');
-                renderToday();
-              }
-              if(typeof renderMiniCounts === 'function') renderMiniCounts();
-            }catch(_soft){}
+            var softGen = window.__PORTAL_DAY_REVIEW_BUILD_GEN__ || 0;
+            var soft = function(){
+              if(softGen !== window.__PORTAL_DAY_REVIEW_BUILD_GEN__) return;
+              try{
+                if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+                if(typeof renderToday === 'function'){
+                  const grid = document.getElementById('todayGrid');
+                  if(grid) grid.removeAttribute('data-today-cards-sig');
+                  renderToday();
+                }
+                if(typeof renderMiniCounts === 'function') renderMiniCounts();
+              }catch(_soft){}
+            };
+            if(typeof portalDeferHeavyDashboardRefresh === 'function'){
+              portalDeferHeavyDashboardRefresh(soft, 0);
+            }else{
+              setTimeout(soft, 0);
+            }
           })
           .catch(function(){});
       }

@@ -280,11 +280,32 @@
         return 0;
       }
     }
-    /** Authoritative pending check for term calendar vs Today list (must agree before a day goes green). */
+    /** Pending check before unlocking judgement — roster only (never rebuild Today here). */
     function portalTermCalendarDayStillHasPendingFeedback(isoYmd, dayWord){
       try{
-        if(typeof portalCountPendingSessionReviewsForCalendarDay !== 'function') return false;
-        return portalCountPendingSessionReviewsForCalendarDay(isoYmd, dayWord) > 0;
+        const iso = String(isoYmd || '').trim().slice(0, 10);
+        const dw = String(dayWord || '').trim();
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return false;
+        const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+        if(typeof portalCountPendingFromRosterRows === 'function'
+          && typeof portalTermFeedbackSessionsForDate === 'function'){
+          const baseReal = typeof window.__portalIsRealClientSession === 'function'
+            ? window.__portalIsRealClientSession
+            : null;
+          const isReal = function(s){
+            if(baseReal) return baseReal(s, iso);
+            const st0 = String(s && s.status || '').toLowerCase();
+            if(st0 === 'closed' || st0 === 'available') return false;
+            const cid = String(s && s.clientId || '').toLowerCase();
+            return Boolean(cid && cid !== 'closed' && cid !== 'available');
+          };
+          const rel = portalTermFeedbackSessionsForDate(dw, iso, staffId, isReal);
+          return portalCountPendingFromRosterRows(iso, dw, rel, new Date(iso + 'T12:00:00'), staffId) > 0;
+        }
+        if(typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
+          return portalCountPendingSessionReviewsForCalendarDay(iso, dw) > 0;
+        }
+        return false;
       }catch(_){
         return false;
       }
@@ -1289,10 +1310,23 @@
       const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
       return key >= fromIso && key <= todayKey;
     }
+    var _portalOutstandingDayOkCache = Object.create(null);
     function portalTermCalendarDayCountsForOutstanding(iso, fbMap){
       const key = String(iso || '').trim().slice(0, 10);
       const st = fbMap && fbMap[key];
       if(st !== 'pending' && st !== 'late') return false;
+      var peerSig = '0|0';
+      try{
+        var apk = dashboardData && dashboardData.portalServerAbsentQuickMarkKeys;
+        var sfk = dashboardData && dashboardData.portalServerSubmittedFeedbackPortalKeys;
+        peerSig = String(apk && typeof apk.size === 'number' ? apk.size : 0)
+          + '|'
+          + String(sfk && typeof sfk.size === 'number' ? sfk.size : 0);
+      }catch(_){}
+      var dayCk = key + '|' + st + '|' + peerSig + '|' + String(dashboardData && dashboardData.portalFeedbackServerSynced ? '1' : '0');
+      var hit = _portalOutstandingDayOkCache[key];
+      if(hit && hit.ck === dayCk) return !!hit.ok;
+      var ok = false;
       /* Today is often "pending" in the term map before the first session starts.
          Alerts / push wait until the full today shift +15 min, and only if there is
          a real ended-session backlog (same as orange Today cards). */
@@ -1303,10 +1337,14 @@
             typeof portalStaffTodayShiftEndedForFeedbackReminders === 'function'
             && !portalStaffTodayShiftEndedForFeedbackReminders()
           ){
+            ok = false;
+            _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: ok };
             return false;
           }
           if(typeof collectSessionReviewPendingStats === 'function'){
-            return (collectSessionReviewPendingStats().pending || []).length > 0;
+            ok = (collectSessionReviewPendingStats().pending || []).length > 0;
+            _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: ok };
+            return ok;
           }
         }
       }catch(_){}
@@ -1314,18 +1352,22 @@
          mark Tue–Thu late before feedback keys land). Re-check roster pending units. */
       try{
         if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(key)){
+          _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: false };
           return false;
         }
         const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
         if(staffId && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(key, staffId)){
+          _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: false };
           return false;
         }
         if(staffId && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(key, staffId)){
+          _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: false };
           return false;
         }
         if(staffId && typeof portalTermFeedbackAssumeComplete === 'function'
           && portalTermFeedbackAssumeComplete(key, staffId)){
           if(fbMap) fbMap[key] = 'complete';
+          _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: false };
           return false;
         }
         if(typeof portalCountPendingFromRosterRows === 'function'
@@ -1353,11 +1395,16 @@
           );
           if(n < 1){
             if(fbMap) fbMap[key] = 'complete';
+            _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: false };
             return false;
           }
         }
-      }catch(_){}
-      return true;
+        ok = true;
+      }catch(_){
+        ok = true;
+      }
+      _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: ok };
+      return ok;
     }
     try{ window.portalTermCalendarDayCountsForOutstanding = portalTermCalendarDayCountsForOutstanding; }catch(_){}
     var _portalOutstandingFbCountCache = { key: '', n: 0, at: 0 };
@@ -1412,6 +1459,7 @@
       _portalReminderStateCache = null;
       _portalReminderStateCacheKey = '';
       _portalOutstandingFbCountCache = { key: '', n: 0, at: 0 };
+      _portalOutstandingDayOkCache = Object.create(null);
     }
     window.portalInvalidateReminderStateCache = portalInvalidateReminderStateCache;
     function portalOutstandingSessionFeedbackCountAcrossTerm(){
