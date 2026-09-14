@@ -940,15 +940,13 @@
   }
 
   /**
-   * Places Sunday Multi bands are capacity windows (e.g. 9.30–11 with Adam+Jack),
-   * not teaching turns. Staff Today feedback needs Timetable/canonical 45' seats
-   * (Aurora Small/Big Pool + Sep 6 Yusuf swap). Overview keeps Places bands.
+   * Places Sunday Multi bands are capacity windows (e.g. 9.30-11 with Adam+Jack),
+   * not teaching turns. Staff Today and Sessions Overview WHO WORKS need canonical
+   * 45' seats: pool books on swimming instructors + Hub Room on support
+   * (Berta/Emmanuel/Godsway standing; John / Raul / Victor via dated covers).
+   * Places occupancy counts stay on the Places occupants JSON; WHO WORKS paints turns.
    */
-  function replaceStaffSwimfarmPlacesBandsWithTeachingTurns(rows, staffId) {
-    var C = global.PortalRosterCanonical;
-    if (!C || typeof C.resolveCanonicalRosterRows !== "function") return rows;
-    var want = canonStaffTok(staffId);
-    if (!want) return rows;
+  function dropSwimfarmPlacesPoolOrHubRows(rows) {
     var kept = [];
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
@@ -958,28 +956,52 @@
       }
       kept.push(r);
     });
-    var canon = [];
+    return kept;
+  }
+
+  function resolveCanonicalSwimfarmTeachingTurnRows() {
+    var C = global.PortalRosterCanonical;
+    if (!C || typeof C.resolveCanonicalRosterRows !== "function") return [];
     try {
-      /* skipDb: do not depend on portal_roster_rows cache; Hub books are LOCAL standing. */
-      canon = C.resolveCanonicalRosterRows({ skipDb: true }) || [];
+      /* skipDb: Hub books are LOCAL standing; do not depend on portal_roster_rows cache. */
+      return C.resolveCanonicalRosterRows({ skipDb: true }) || [];
     } catch (_c) {
       try {
-        canon = C.resolveCanonicalRosterRows() || [];
+        return C.resolveCanonicalRosterRows() || [];
       } catch (_c2) {
-        return kept.length ? kept : rows;
+        return [];
       }
     }
-    var added = 0;
+  }
+
+  function appendCanonicalSwimfarmTeachingTurns(kept, staffKeyFilter) {
+    var want = staffKeyFilter ? canonStaffTok(staffKeyFilter) : "";
+    var canon = resolveCanonicalSwimfarmTeachingTurnRows();
+    if (!canon.length) return kept;
     canon.forEach(function (r) {
       if (!r) return;
       var venue = String(r.venue || "").toLowerCase();
       if (venue.indexOf("swimfarm") < 0) return;
       if (!isSwimfarmPoolOrHubPlacesService(r.service)) return;
-      if (!instructorMentionsStaff(r.instructors, want)) return;
+      if (want && !instructorMentionsStaff(r.instructors, want)) return;
       kept.push(r);
-      added++;
     });
     return kept;
+  }
+
+  function replaceStaffSwimfarmPlacesBandsWithTeachingTurns(rows, staffId) {
+    var want = canonStaffTok(staffId);
+    if (!want) return rows;
+    var kept = dropSwimfarmPlacesPoolOrHubRows(rows);
+    var next = appendCanonicalSwimfarmTeachingTurns(kept, want);
+    return next.length ? next : rows;
+  }
+
+  /** Overview WHO WORKS: same SwimFarm teaching turns for every staff column (incl. Hub support). */
+  function replaceOverviewSwimfarmPlacesBandsWithTeachingTurns(rows) {
+    var kept = dropSwimfarmPlacesPoolOrHubRows(rows);
+    var next = appendCanonicalSwimfarmTeachingTurns(kept, "");
+    return next.length ? next : rows;
   }
 
   function occupantsHasDayCentre(bySlotId) {
@@ -1137,7 +1159,12 @@
           dateWindow: schedWin,
         });
         if (weekSrc) {
+          var weekTeach = replaceOverviewSwimfarmPlacesBandsWithTeachingTurns(
+            weekSrc.rows || [],
+          );
           weekSrc = Object.assign({}, weekSrc, {
+            rows: weekTeach,
+            capacityChainSwimfarmTeachingTurns: true,
             capacityChainDateWindowFrom: schedWin.from,
             capacityChainDateWindowThrough: schedWin.through,
             rosterSourceNote:
@@ -1145,13 +1172,21 @@
               " · schedule week " +
               schedWin.from +
               ".." +
-              schedWin.through,
+              schedWin.through +
+              " · SwimFarm teaching turns",
           });
         }
         return weekSrc;
       }
       var full = resolveCapacityChainRosterSource(by, { includeDc: true });
       if (full && Array.isArray(full.rows) && full.rows.length) {
+        var fullTeach = replaceOverviewSwimfarmPlacesBandsWithTeachingTurns(full.rows);
+        full = Object.assign({}, full, {
+          rows: fullTeach,
+          capacityChainSwimfarmTeachingTurns: true,
+          rosterSourceNote:
+            (full.rosterSourceNote || "Capacity chain") + " · SwimFarm teaching turns",
+        });
         FULL_CHAIN_CACHE = full;
       }
       return full;
