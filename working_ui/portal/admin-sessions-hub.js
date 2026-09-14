@@ -11387,11 +11387,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       );
     }
     var useBoard = true;
+    var srcNote = global.STAFF_DASHBOARD_SOURCE || {};
+    var chainOn = !!(srcNote.capacityChainNoCanonicalRemap || global.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__);
+    var boardHint = chainOn
+      ? "Capacity chain + Schedule & Covers — who works and which seats today. Feedback status is on Register."
+      : "Staffing board — who works and which seats today. Feedback status is on Register / Session Feedback.";
     /* Shell first — board body fills via scheduleOverviewBodyPaint (keeps tab responsive). */
     return (
       this.htmlFeedbackWeekDaysRow({ overviewPicker: true, staffingGuide: true }) +
-      '<p class="ash-feedback-filter-hint" role="status">' +
-      esc("Staffing board — who works and which seats today. Feedback status is on Register / Session Feedback.") +
+      '<p class="ash-feedback-filter-hint" role="status" data-ash-overview-source="' +
+      esc(chainOn ? "capacity-chain" : "other") +
+      '">' +
+      esc(boardHint) +
       "</p>" +
       this.overviewFilterRowHtml() +
       '<div class="ash-table-title-row">' +
@@ -11399,7 +11406,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       esc(formatLongDate(this.selectedDay)) +
       ' <span class="ash-badge ash-badge--booked">' +
       esc("Who works") +
-      "</span></h3>" +
+      "</span>" +
+      (chainOn
+        ? ' <span class="ash-badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0">Places · Services · Timetable · Covers</span>'
+        : "") +
+      "</h3>" +
       "</div>" +
       '<div data-ash-overview-body class="ash-overview-body">' +
       '<p class="ash-feedback-filter-hint" role="status">Building day board…</p>' +

@@ -13,12 +13,12 @@
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
-      "/portal/portal_roster_canonical.js?v=20260914-overview-pin",
-      "/portal/autumn_staff_hours_reference.js?v=20260914-overview-pin",
-      "/portal/portal_dc_services_local.js?v=20260914-overview-pin",
-      "/portal/portal_capacity_chain_occupants.js?v=20260914-overview-pin",
-      "/portal/portal_overview_capacity_chain.js?v=20260914-overview-pin",
-      "/portal/staff_dashboard_portal_roster_source.js?v=20260914-overview-pin",
+      "/portal/portal_roster_canonical.js?v=20260914-overview-pin2",
+      "/portal/autumn_staff_hours_reference.js?v=20260914-overview-pin2",
+      "/portal/portal_dc_services_local.js?v=20260914-overview-pin2",
+      "/portal/portal_capacity_chain_occupants.js?v=20260914-overview-pin2",
+      "/portal/portal_overview_capacity_chain.js?v=20260914-overview-pin2",
+      "/portal/staff_dashboard_portal_roster_source.js?v=20260914-overview-pin2",
     ],
     feedback: [
       "/portal/cancellations_portal_data.js?v=20260528-timi-cancel",
@@ -33,7 +33,7 @@
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: [
       "/portal/spreadsheet_reference_data.js?v=20260911-autumn-labels",
-      "/portal/autumn_staff_hours_reference.js?v=20260914-overview-pin",
+      "/portal/autumn_staff_hours_reference.js?v=20260914-overview-pin2",
     ],
   };
 
@@ -71,7 +71,20 @@
       .then(function () {
         inflight[key] = null;
         done[key] = Promise.resolve();
-        if (key === "roster") window.__PORTAL_ADMIN_ROSTER_LOAD_FAILED__ = false;
+        if (key === "roster") {
+          window.__PORTAL_ADMIN_ROSTER_LOAD_FAILED__ = false;
+          try {
+            var keepOverview =
+              !!(window.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__ ||
+                window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__ ||
+                /c4k_sessions/i.test(String((window.location && window.location.hash) || "")));
+            if (typeof window.portalRefreshStaffDashboardSourceFromPortal === "function") {
+              window.portalRefreshStaffDashboardSourceFromPortal(
+                keepOverview ? { forSessionsOverview: true } : {}
+              );
+            }
+          } catch (_restoreOverview) {}
+        }
         return done[key];
       })
       .catch(function (err) {

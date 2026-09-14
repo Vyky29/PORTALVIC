@@ -159,12 +159,12 @@
   <script src="/portal/portal_term_calendar.js?v=20260911-term-cal"></script>
   <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260914-overview-pin"></script>
-  <script src="/portal/autumn_staff_hours_reference.js?v=20260914-overview-pin"></script>
-  <script src="/portal/portal_dc_services_local.js?v=20260914-overview-pin"></script>
-  <script src="/portal/portal_capacity_chain_occupants.js?v=20260914-overview-pin"></script>
-  <script src="/portal/portal_overview_capacity_chain.js?v=20260914-overview-pin"></script>
-  <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260914-overview-pin"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260914-overview-pin2"></script>
+  <script src="/portal/autumn_staff_hours_reference.js?v=20260914-overview-pin2"></script>
+  <script src="/portal/portal_dc_services_local.js?v=20260914-overview-pin2"></script>
+  <script src="/portal/portal_capacity_chain_occupants.js?v=20260914-overview-pin2"></script>
+  <script src="/portal/portal_overview_capacity_chain.js?v=20260914-overview-pin2"></script>
+  <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260914-overview-pin2"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
@@ -401,7 +401,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260914-overview-pin"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260914-overview-pin2"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260910-general-info"></script>
@@ -9251,7 +9251,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
           }catch(_inv){}
           if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
-            try{ window.portalRefreshStaffDashboardSourceFromPortal(); }catch(_r){}
+            try{ window.portalAdminRefreshStaffDashboardSource ? window.portalAdminRefreshStaffDashboardSource() : window.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true }); }catch(_r){}
           }
           if(typeof portalNotifyAdminRosterDataChanged === 'function'){
             portalNotifyAdminRosterDataChanged({ refreshScheduling: true });
@@ -15365,8 +15365,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         if(client && typeof window.portalRefreshPortalRosterRowsFromSupabase === 'function'){
           await window.portalRefreshPortalRosterRowsFromSupabase(client);
+        }else if(typeof window.portalAdminRefreshStaffDashboardSource === 'function'){
+          window.portalAdminRefreshStaffDashboardSource();
         }else if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
-          window.portalRefreshStaffDashboardSourceFromPortal();
+          window.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
         }
       }catch(_rf){}
       portalInvalidateAdminSlotsCache();
@@ -15405,6 +15407,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     window.portalSyncOverviewDayTruth = portalSyncOverviewDayTruth;
+    /** Keep Sessions Overview on capacity chain when refreshing roster source. */
+    function portalAdminRefreshStaffDashboardSource(opts){
+      opts = opts || {};
+      var onOverview =
+        String(state.view || '') === 'c4k_sessions' ||
+        /c4k_sessions/i.test(String(location.hash || '')) ||
+        !!window.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__ ||
+        !!window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__;
+      if(typeof window.portalRefreshStaffDashboardSourceFromPortal !== 'function') return;
+      try{
+        window.portalRefreshStaffDashboardSourceFromPortal(
+          onOverview || opts.forSessionsOverview ? { forSessionsOverview: true } : opts
+        );
+      }catch(_r){}
+    }
+    window.portalAdminRefreshStaffDashboardSource = portalAdminRefreshStaffDashboardSource;
     async function saveSchedOverrideFromDrawer(){
       var msgEl = $('schedFormErr');
       if(msgEl) msgEl.textContent = '';
@@ -15872,7 +15890,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void window.PortalMadreFold.loadLiveMadre(client, true).then(function(){
           try{
             if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
-              window.portalRefreshStaffDashboardSourceFromPortal();
+              window.portalAdminRefreshStaffDashboardSource ? window.portalAdminRefreshStaffDashboardSource() : window.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
             }
           }catch(_r){}
           finish();
@@ -15904,7 +15922,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminAfterRosterScriptsLoaded(viewId){
       try{
         if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
-          window.portalRefreshStaffDashboardSourceFromPortal();
+          window.portalAdminRefreshStaffDashboardSource ? window.portalAdminRefreshStaffDashboardSource() : window.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
         }
       }catch(_pr){}
       portalInvalidateAdminSlotsCache();
@@ -16326,7 +16344,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(client && typeof window.portalRefreshPortalRosterRowsFromSupabase === 'function'){
         chain = window.portalRefreshPortalRosterRowsFromSupabase(client);
       }else if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
-        try{ window.portalRefreshStaffDashboardSourceFromPortal(); }catch(_pr){}
+        try{ window.portalAdminRefreshStaffDashboardSource ? window.portalAdminRefreshStaffDashboardSource() : window.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true }); }catch(_pr){}
       }
       return chain.then(function(){
         portalInvalidateAdminSlotsCache();
@@ -16663,7 +16681,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void window.portalAdminLoadScriptSet('roster').then(function(){
           try{
             if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
-              window.portalRefreshStaffDashboardSourceFromPortal();
+              window.portalAdminRefreshStaffDashboardSource ? window.portalAdminRefreshStaffDashboardSource() : window.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
             }
           }catch(_pr){}
           openInner();
@@ -23225,7 +23243,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260914-overview-pin';
+    var PORTAL_ADMIN_HUB_BUILD = '20260914-overview-pin2';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -29229,7 +29247,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(window.PortalRosterRowsMerge && client){
             void window.PortalRosterRowsMerge.loadAndCache(client).then(function(){
               if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
-                window.portalRefreshStaffDashboardSourceFromPortal();
+                window.portalAdminRefreshStaffDashboardSource ? window.portalAdminRefreshStaffDashboardSource() : window.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
               }
             });
           }
