@@ -6775,7 +6775,17 @@
         '<path d="M12 21s7-5.3 7-11a7 7 0 10-14 0c0 5.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>'
       );
     }
+    if (kind === "no") {
+      return open + '<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>';
+    }
     return open + '<path d="M20 6L9 17l-5-5"/></svg>';
+  }
+
+  function bookingChoiceTone(choice) {
+    var c = String(choice || "").toLowerCase();
+    if (/not continuing|withdraw/.test(c)) return "withdraw";
+    if (/\bkeep\b|\bcontinue\b/.test(c)) return "keep";
+    return "";
   }
 
   function isBookingActivityItem(item) {
@@ -6814,8 +6824,11 @@
         esc(venue) +
         "</span></span>";
     }
+    var tone = bookingChoiceTone(choice);
     return (
-      '<li class="pp-booking-item">' +
+      '<li class="pp-booking-item' +
+      (tone ? " pp-booking-item--" + tone : "") +
+      '">' +
       '<div class="pp-booking-item__row">' +
       '<span class="pp-booking-item__badge" aria-hidden="true">' +
       bookingItemIconSvg(title) +
@@ -6827,7 +6840,7 @@
       (meta ? '<div class="pp-booking-item__metas">' + meta + "</div>" : "") +
       '<div class="pp-booking-item__choice">' +
       '<span class="pp-booking-item__choice-ico" aria-hidden="true">' +
-      bookingMetaIcon("ok") +
+      bookingMetaIcon(tone === "withdraw" ? "no" : "ok") +
       "</span>" +
       "<span>" +
       esc(choice) +
