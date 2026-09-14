@@ -26,7 +26,21 @@
     return !!REFRESH_INFLIGHT;
   };
 
-  function resolveStaffDashboardSource() {
+  function resolveStaffDashboardSource(opts) {
+    opts = opts || {};
+    /* Sessions Overview: capacity chain (Places + Services DC phases + Timetable).
+       Staff Today / other surfaces keep canonical until cut over. */
+    if (opts.forSessionsOverview) {
+      try {
+        var Chain = window.PortalOverviewCapacityChain;
+        if (Chain && typeof Chain.resolve === "function") {
+          var chainSrc = Chain.resolve(opts);
+          if (chainSrc && Array.isArray(chainSrc.rows) && chainSrc.rows.length) {
+            return chainSrc;
+          }
+        }
+      } catch (_chain) {}
+    }
     var canon = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
     if (canon && typeof canon.resolveCanonicalStaffDashboardSource === "function") {
       return canon.resolveCanonicalStaffDashboardSource();

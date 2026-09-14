@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <title>LOCAL · Sessions Overview</title>
+  <script>
+    (function () {
+      try {
+        if (!("serviceWorker" in navigator)) return;
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          (regs || []).forEach(function (r) {
+            try {
+              r.unregister();
+            } catch (_e) {}
+          });
+        });
+      } catch (_e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260914-absent-yellow" />
+  <style>
+    :root {
+      --ink: #173247;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.14);
+      --blue: #2d84b3;
+      --bg: #eef4f9;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      padding: 12px 12px 48px;
+    }
+    h1 { margin: 0; font-size: 1.2rem; }
+    .sol-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 0 0 8px;
+      max-width: 1200px;
+    }
+    .sol-badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #fff6d8;
+      color: #7a5200;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .chain-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 12px;
+      max-width: 1200px;
+    }
+    .chain-nav a,
+    .chain-nav span {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .chain-nav a.is-here {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .chain-nav .is-next {
+      border-style: dashed;
+      color: var(--muted);
+    }
+    .banner,
+    .note {
+      max-width: 1200px;
+      margin: 0 0 12px;
+      line-height: 1.45;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+    .banner {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+    .sol-warn {
+      max-width: 1200px;
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      color: #9a3412;
+      font-size: 0.9rem;
+    }
+    #solHubRoot {
+      max-width: 1200px;
+      min-width: 0;
+    }
+    #solHubRoot .ash-panels {
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div class="sol-top">
+    <h1>5 · Sessions Overview</h1>
+    <div class="sol-badge">LOCAL · same board as Admin</div>
+  </div>
+  <nav class="chain-nav" aria-label="Capacity chain">
+    <a href="/bookingportal_preview.html">1 · Places list</a>
+    <a href="/services_seats_preview.html">2 · Services seats</a>
+    <a href="/term_timetable_local.html">3 · Timetable</a>
+    <a href="/schedule_covers_local.html">4 · Schedule &amp; Covers</a>
+    <a class="is-here" href="/sessions_overview_local.html">5 · Overview</a>
+  </nav>
+  <p class="banner">
+    <strong>Only day look-here:</strong> AS from Places · DC who from Services (phased seats) ·
+    Bespoke who from Timetable · day patches from Covers.
+    No <code>resolveCanonical</code> paint.
+  </p>
+  <p class="note">
+    Open at <code>http://127.0.0.1:8765/sessions_overview_local.html</code> (not file://).
+    Production: <a href="/admin_dashboard.html?view=sessions">Admin → Sessions Overview</a>.
+    Covers twin: <a href="/schedule_covers_local.html">4 · Schedule &amp; Covers</a>.
+  </p>
+  <div id="solWarn" class="sol-warn" hidden></div>
+  <div id="solHubRoot" class="admin-sessions-hub-root" role="region" aria-label="Local Sessions Overview"></div>
+
+  <script src="/portal/autumn_staff_hours_reference.js?v=20260914-capacity-chain"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260914-capacity-chain"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260914-capacity-chain"></script>
+  <script src="/portal/portal_dc_services_local.js?v=20260914-capacity-chain"></script>
+  <script src="/portal/portal_capacity_chain_occupants.js?v=20260914-capacity-chain"></script>
+  <script src="/portal/portal_overview_capacity_chain.js?v=20260914-capacity-chain"></script>
+  <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260914-capacity-chain"></script>
+  <script src="/portal/admin-sessions-hub.js?v=20260914-capacity-chain"></script>
+  <script src="/portal/sessions_overview_local.js?v=20260914-capacity-chain"></script>
+  <script>
+    if (window.SessionsOverviewLocal) window.SessionsOverviewLocal.boot();
+  </script>
+</body>
+</html>

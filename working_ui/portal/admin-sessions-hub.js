@@ -607,9 +607,34 @@
     return allow.indexOf(weekdayLong) !== -1;
   }
 
+  /** Fadi CLIENT is off worker rotas 1-19 Sep 2026 (starts 20 Sep) — not Cancelled. */
+  function clientIsFadiOffRota(clientName, isoDate) {
+    var name = clean(clientName);
+    var canon = global.PortalRosterCanonical;
+    var isFadi =
+      canon && typeof canon.isFadiClientName === "function"
+        ? canon.isFadiClientName(name)
+        : /^fadi\b/i.test(name);
+    if (!isFadi) return false;
+    if (canon && typeof canon.isFadiOffRotaIso === "function") {
+      return !!canon.isFadiOffRotaIso(isoDate);
+    }
+    return !!(isoDate && isoDate >= "2026-09-01" && isoDate < "2026-09-20");
+  }
+
+  function overrideIsFadiOffRota(ov) {
+    if (!ov) return false;
+    var iso = clean(ov.session_date).substring(0, 10);
+    if (clientIsFadiOffRota(ov.anchor_client_id, iso)) return true;
+    var p = overridePayloadObj(ov);
+    if (p && clientIsFadiOffRota(p.to_client_name || p.client_name, iso)) return true;
+    return false;
+  }
+
   /** First calendar day this client appears on roster (ISO date). */
   function clientAllowedOnDate(clientName, isoDate) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return true;
+    if (clientIsFadiOffRota(clientName, isoDate)) return false;
     var start = clientConfigMapEntry(
       global.STAFF_DASHBOARD_SOURCE && global.STAFF_DASHBOARD_SOURCE.clientRosterStartDates,
       clientName
@@ -851,8 +876,15 @@
     var standingInstRaw = instRaw;
     var remappedEmpty = false;
     try {
+      var src = global.STAFF_DASHBOARD_SOURCE;
+      var skipAutumnRemap =
+        !!(src && (src.capacityChainNoCanonicalRemap || src.localNoCanonicalResolve));
       var canon = global.PortalRosterCanonical;
-      if (canon && typeof canon.resolveAutumnInstructorsForCalendarDate === "function") {
+      if (
+        !skipAutumnRemap &&
+        canon &&
+        typeof canon.resolveAutumnInstructorsForCalendarDate === "function"
+      ) {
         var remapped = canon.resolveAutumnInstructorsForCalendarDate(instRaw, isoDate, {
           service: r.service,
           venue: r.venue,
@@ -5954,7 +5986,7 @@
     try {
       var resolved =
         typeof global.portalResolveStaffDashboardSource === "function"
-          ? global.portalResolveStaffDashboardSource()
+          ? global.portalResolveStaffDashboardSource({ forSessionsOverview: true })
           : null;
       if (resolved && typeof resolved === "object") {
         global.STAFF_DASHBOARD_SOURCE = resolved;
@@ -6257,19 +6289,9 @@
     return !!(this._incidentByDateClient && this._incidentByDateClient[k]);
   };
 
-  /** Fadi CLIENT DC seats stay Cancelled through Sun 20 Sep (return Mon 21) — standing, not DB overrides. */
+  /** Fadi is off the worker rotas until 20 Sep — not Cancelled, not a seat. */
   function hubSlotIsFadiDcCancelled(slot) {
-    if (!slot) return false;
-    if (!/\bfadi\b/i.test(clean(slot.client_name))) return false;
-    if (!isDayCentreService(slot.service)) return false;
-    var iso = clean(slot.session_date).slice(0, 10);
-    try {
-      var canon = global.PortalRosterCanonical;
-      if (canon && typeof canon.isFadiAbsentDcWindowIso === "function") {
-        return !!canon.isFadiAbsentDcWindowIso(iso);
-      }
-    } catch (_f) {}
-    return !!(iso && iso >= "2026-09-01" && iso < "2026-09-21");
+    return false;
   }
 
   AdminSessionsHub.prototype.slotHasCancellation = function (slot) {
@@ -7248,6 +7270,9 @@
     if (!slot || !ov) return false;
     if (clean(ov.session_date) !== slot.session_date) return false;
     if (String(ov.status || "active").trim() !== "active") return false;
+    if (overrideIsFadiOffRota(ov) || clientIsFadiOffRota(slot.client_name, slot.session_date)) {
+      return false;
+    }
     /* Shadowing session_add: only trainer (host) or observer seat — not every co-worker. */
     if (overrideIsShadowingSessionAdd(ov)) {
       return !!shadowingOverrideRoleForSlot(slot, ov);
@@ -10295,6 +10320,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       } catch (_mapCover) {}
     }
     if (!names.length) {
+      var fromUnavail = hubAwayCoverNameFromUnavailability(hub, iso, awayStaff);
+      if (fromUnavail) return fromUnavail;
+    }
+    if (!names.length) {
       var live = dayBoardInstructorsForSlot(slot);
       for (var i = 0; i < live.length; i++) pushName(live[i]);
     }
@@ -10354,14 +10383,45 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   }
 
   /**
-   * Standing Hub Bespoke seat remapped off this away worker (John Wed 9/15/16 Tinashe).
+   * Standing Hub Bespoke seat remapped off this away worker (John Wed 9/16 Tinashe).
    * Clone the live Tinashe card onto their day-off column instead of "No sessions".
    */
+  function hubAwayJohnWedTinasheCoverWindow(iso, dayName, staffRaw) {
+    var d = String(iso || "").slice(0, 10);
+    if (!/^wednesday$/i.test(String(dayName || "").trim())) return false;
+    if (!/^john\b/i.test(String(staffRaw || "").trim())) return false;
+    /* Timetable: Emmanuel SHADOWING on Wed 9 + 16; John resumes Wed 23. */
+    return d >= "2026-09-09" && d < "2026-09-23";
+  }
+
+  function hubAwayCoverNameFromUnavailability(hub, iso, awayStaff) {
+    var want = String(iso || "").slice(0, 10);
+    var staffKey = canonicalStaffMatchKey(awayStaff) || dayBoardStaffKey(awayStaff);
+    if (!want || !staffKey) return "";
+    var rows = hubStaffUnavailabilityRows(hub);
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r || String(r.off_date || "").slice(0, 10) !== want) continue;
+      var nk = canonicalStaffMatchKey(r.name_key || "") || dayBoardStaffKey(r.name_key || "");
+      var sn = canonicalStaffMatchKey(r.staff_name || "") || dayBoardStaffKey(r.staff_name || "");
+      if (nk !== staffKey && sn !== staffKey && dayBoardStaffKey(r.name_key || r.staff_name || "") !== dayBoardStaffKey(awayStaff)) {
+        continue;
+      }
+      var cover = clean(r.cover_name || r.coverName || "");
+      if (cover) return dayBoardStaffLabel(cover) || cover;
+    }
+    return "";
+  }
+
   function hubAwayStaffLostHubBespokeSlot(hub, iso, dayName, staffRaw, displaySlots) {
     var PRC = global.PortalRosterCanonical;
-    if (!PRC || typeof PRC.autumnHubBespokeStandingHasStaff !== "function") return null;
-    if (!PRC.autumnHubBespokeStandingHasStaff(dayName, staffRaw)) return null;
-    if (typeof PRC.resolveAutumnInstructorsForCalendarDate === "function") {
+    if (!PRC) return null;
+    var onStanding =
+      typeof PRC.autumnHubBespokeStandingHasStaff === "function" &&
+      PRC.autumnHubBespokeStandingHasStaff(dayName, staffRaw);
+    var johnWed = hubAwayJohnWedTinasheCoverWindow(iso, dayName, staffRaw);
+    if (!onStanding && !johnWed) return null;
+    if (!johnWed && typeof PRC.resolveAutumnInstructorsForCalendarDate === "function") {
       var kept = PRC.resolveAutumnInstructorsForCalendarDate(staffRaw, iso, {
         service: "Bespoke Programme",
         client_name: "Tinashe",
@@ -11011,6 +11071,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           } catch (_lostHubSt) {
             lostHubSt = { tone: "dayoff", boardPlace: "away" };
           }
+          var coverFromUnavail = hubAwayCoverNameFromUnavailability(hub, iso, rawName);
+          var coverLbl =
+            coverFromUnavail || dayBoardAwayCoverLabel(hub, lostSlot, iso, rawName);
           pushBoardItem(
             key,
             dayBoardStaffLabel(rawName),
@@ -11021,9 +11084,37 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
                 isShadowing: false,
                 isCancelled: false,
               }),
-              dayBoardAwayCoverLabel(hub, lostSlot, iso, rawName)
+              coverLbl
             )
           );
+          /* Emmanuel (cover) Tinashe card → Cover · John, same pattern as Javi → Cover · Aurora. */
+          if (coverLbl) {
+            var coverKey = dayBoardStaffKey(coverLbl);
+            var coverItems = byKey[coverKey] || [];
+            for (var ci = 0; ci < coverItems.length; ci++) {
+              var cit = coverItems[ci];
+              var cs = cit && cit.slot;
+              if (!cs || !isBespokeService(cs.service)) continue;
+              if (!/^tinashe\b/i.test(clean(cs.client_name))) continue;
+              cit.st = cloneBoardState(cit.st || {}, {
+                boardPlace: "cover",
+                coverForLabel: dayBoardStaffLabel(rawName),
+                isRealCover: true,
+                isInstructorReassign: true,
+                isShadowing: false,
+                isStaffDayOff: false,
+                isCoverNeeded: false,
+                tone:
+                  (cit.st && cit.st.isAbsent)
+                    ? "absent"
+                    : (cit.st && cit.st.isCancelled)
+                      ? "cancelled"
+                      : (cit.st && cit.st.isTrial)
+                        ? "trial"
+                        : "client",
+              });
+            }
+          }
           continue;
         }
         byKey[key] = [];
