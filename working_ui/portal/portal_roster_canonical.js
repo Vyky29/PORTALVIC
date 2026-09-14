@@ -487,10 +487,11 @@
         staff: "Michelle",
         clients: [
           { name: "Timi", time: "11 to 1" },
+          { name: "Office", time: "1 to 3" },
           { name: "Ikram", time: "3 to 4" },
         ],
       },
-      { staff: "Raul", clients: [{ name: "Timi", time: "11 to 1" }] },
+      /* Fri 18: Raul off rota (dated Services). Fadi-off Fridays: no Raul DC book. */
     ],
   };
 
