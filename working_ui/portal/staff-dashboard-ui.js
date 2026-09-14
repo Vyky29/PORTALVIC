@@ -2900,22 +2900,22 @@
       if(!t || !t.firstDate || !t.lastDate || !staffId) return;
       try{
         if(typeof window.portalEnsureStaffCapacityChainDateWindow === 'function'){
+          const termFromFull = String(t.termResumeDate || t.firstDate || '').slice(0, 10);
+          const termToFull = String(t.lastDate || '').slice(0, 10);
           const viewFrom = String(
-            (dashboardData && dashboardData.termDashboardCalendarFrom) || t.termResumeDate || t.firstDate || ''
+            (dashboardData && dashboardData.termDashboardCalendarFrom) || termFromFull || ''
           ).slice(0, 10);
           const viewTo = String(
-            (dashboardData && dashboardData.termDashboardCalendarTo) || t.lastDate || ''
+            (dashboardData && dashboardData.termDashboardCalendarTo) || termToFull || ''
           ).slice(0, 10);
           if(viewFrom && viewTo){
             window.portalEnsureStaffCapacityChainDateWindow(viewFrom, viewTo);
           }
           /* Widen to full term after first Term paint (idle) — keeps open snappy. */
-          const termFrom = String(t.termResumeDate || t.firstDate || '').slice(0, 10);
-          const termTo = String(t.lastDate || '').slice(0, 10);
-          if(termFrom && termTo && (termFrom < viewFrom || termTo > viewTo)){
+          if(termFromFull && termToFull && (termFromFull < viewFrom || termToFull > viewTo)){
             var widen = function(){
               try{
-                window.portalEnsureStaffCapacityChainDateWindow(termFrom, termTo);
+                window.portalEnsureStaffCapacityChainDateWindow(termFromFull, termToFull);
               }catch(_w){}
             };
             if(typeof requestIdleCallback === 'function'){
@@ -3126,21 +3126,52 @@
       if(!portalTermSheetIsOpen() && !opts.allowWhenClosed) return;
       try{
         if(typeof window.portalEnsureStaffCapacityChainDateWindow === 'function'){
-          const viewFrom = String(
-            (dashboardData && dashboardData.termDashboardCalendarFrom) || t.termResumeDate || t.firstDate || ''
-          ).slice(0, 10);
-          const viewTo = String(
-            (dashboardData && dashboardData.termDashboardCalendarTo) || t.lastDate || ''
-          ).slice(0, 10);
-          if(viewFrom && viewTo){
-            window.portalEnsureStaffCapacityChainDateWindow(viewFrom, viewTo);
+          const termFromFull = String(t.termResumeDate || t.firstDate || '').slice(0, 10);
+          const termToFull = String(t.lastDate || '').slice(0, 10);
+          const todayKeyCap0 = portalTermLocalYmdFromMs(termCalendarNowMs());
+          /* First Term open / through-today: only widen capacity ~3w back → +2w ahead.
+             Full Aug–Dec expand on the click froze Roberto (~seconds). */
+          let ensureFrom = termFromFull;
+          let ensureTo = termToFull;
+          if(opts.throughTodayOnly && todayKeyCap0){
+            try{
+              const roll = new Date(todayKeyCap0 + 'T12:00:00');
+              roll.setDate(roll.getDate() - 21);
+              const rollFrom = typeof portalIsoYmdFromDate === 'function'
+                ? portalIsoYmdFromDate(roll)
+                : todayKeyCap0;
+              if(rollFrom && rollFrom > ensureFrom) ensureFrom = rollFrom;
+              const ahead = new Date(todayKeyCap0 + 'T12:00:00');
+              ahead.setDate(ahead.getDate() + 14);
+              ensureTo = typeof portalIsoYmdFromDate === 'function'
+                ? portalIsoYmdFromDate(ahead)
+                : todayKeyCap0;
+              if(termToFull && ensureTo > termToFull) ensureTo = termToFull;
+            }catch(_q){
+              ensureTo = todayKeyCap0;
+            }
+          }else{
+            const viewFrom = String(
+              (dashboardData && dashboardData.termDashboardCalendarFrom) || termFromFull || ''
+            ).slice(0, 10);
+            const viewTo = String(
+              (dashboardData && dashboardData.termDashboardCalendarTo) || termToFull || ''
+            ).slice(0, 10);
+            if(viewFrom) ensureFrom = viewFrom;
+            if(viewTo) ensureTo = viewTo;
           }
-          const termFrom = String(t.termResumeDate || t.firstDate || '').slice(0, 10);
-          const termTo = String(t.lastDate || '').slice(0, 10);
-          if(termFrom && termTo && (termFrom < viewFrom || termTo > viewTo)){
+          if(ensureFrom && ensureTo){
+            window.portalEnsureStaffCapacityChainDateWindow(ensureFrom, ensureTo);
+          }
+          if(
+            !opts.throughTodayOnly
+            && termFromFull
+            && termToFull
+            && (termFromFull < ensureFrom || termToFull > ensureTo)
+          ){
             var widenP = function(){
               try{
-                window.portalEnsureStaffCapacityChainDateWindow(termFrom, termTo);
+                window.portalEnsureStaffCapacityChainDateWindow(termFromFull, termToFull);
               }catch(_w){}
             };
             if(typeof requestIdleCallback === 'function'){
@@ -4150,9 +4181,12 @@
                 if(typeof portalMarkPerf === 'function') portalMarkPerf('term-open-start');
                 if(typeof portalYieldToMain === 'function') await portalYieldToMain();
                 if(termReq !== portalPanelLoadState.term.requestId) return;
-                /* One paint after maps — never two full Aug–Oct walks (that felt like double lag). */
+                /* Phase 1: through-today maps only — paint Term fast (Roberto Sundays). */
                 if(typeof rebuildTermShiftAndFeedbackFromSessionModelProgressive === 'function'){
-                  await rebuildTermShiftAndFeedbackFromSessionModelProgressive({ requestId: termReq });
+                  await rebuildTermShiftAndFeedbackFromSessionModelProgressive({
+                    requestId: termReq,
+                    throughTodayOnly: true
+                  });
                 }else if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
                   rebuildTermShiftAndFeedbackFromSessionModel({ allowWhenClosed: true });
                 }
@@ -4162,6 +4196,28 @@
                 paintTerm();
                 termSt.loaded = true;
                 if(typeof portalMeasurePerf === 'function') portalMeasurePerf('term-open', 'term-open-start');
+                /* Phase 2: full term colours + capacity widen on idle (after sheet is usable). */
+                var finishFull = function(){
+                  void (async function(){
+                    try{
+                      if(termReq !== portalPanelLoadState.term.requestId) return;
+                      if(!portalTermSheetIsOpen()) return;
+                      if(typeof rebuildTermShiftAndFeedbackFromSessionModelProgressive === 'function'){
+                        await rebuildTermShiftAndFeedbackFromSessionModelProgressive({
+                          requestId: termReq
+                        });
+                      }
+                      if(termReq !== portalPanelLoadState.term.requestId) return;
+                      if(!portalTermSheetIsOpen()) return;
+                      paintTerm();
+                    }catch(_full){}
+                  })();
+                };
+                if(typeof requestIdleCallback === 'function'){
+                  requestIdleCallback(finishFull, { timeout: 2500 });
+                }else{
+                  setTimeout(finishFull, 600);
+                }
               }catch(err){
                 try{ console.warn('[portal] term open', err && err.message); }catch(_){}
                 paintTerm();

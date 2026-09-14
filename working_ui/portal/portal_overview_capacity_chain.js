@@ -886,6 +886,9 @@
         ? baseSrc.sundayFeedbackMerges
         : [],
       sundayDateOverrides: Object.assign({}, baseSrc.sundayDateOverrides || {}),
+      overviewOmitRosterSlots: Array.isArray(baseSrc.overviewOmitRosterSlots)
+        ? baseSrc.overviewOmitRosterSlots
+        : [],
       capacityChainPlacesPhases: true,
       localPlacesPhases: true,
       capacityChainTimetableBespoke: true,

@@ -144,8 +144,16 @@
 
   function captureBundleMetaOnce() {
     if (typeof window === "undefined") return;
-    if (window.__PORTAL_STAFF_BUNDLE_META__) return;
+    if (
+      window.__PORTAL_STAFF_BUNDLE_META__ &&
+      Array.isArray(window.__PORTAL_STAFF_BUNDLE_META__.sundayFeedbackMerges) &&
+      window.__PORTAL_STAFF_BUNDLE_META__.sundayFeedbackMerges.length
+    ) {
+      return;
+    }
     var b = window.STAFF_DASHBOARD_SOURCE;
+    var merges = b && Array.isArray(b.sundayFeedbackMerges) ? b.sundayFeedbackMerges : [];
+    /* Prefer a real bundle (has merges / profiles) even if capacity chain already replaced SOURCE. */
     if (
       b &&
       b.staffProfiles &&
@@ -158,11 +166,30 @@
           staffPhotosBaseUrl: b.staffPhotosBaseUrl || "portal/staff_photos/",
           staffPhotoExtension: b.staffPhotoExtension || "png",
           sundayDateOverrides: b.sundayDateOverrides || {},
-          sundayFeedbackMerges: Array.isArray(b.sundayFeedbackMerges) ? b.sundayFeedbackMerges : [],
+          sundayFeedbackMerges: merges,
+          overviewOmitRosterSlots: Array.isArray(b.overviewOmitRosterSlots)
+            ? b.overviewOmitRosterSlots
+            : [],
           clientRosterStartDates: b.clientRosterStartDates || {},
           clientRosterGoneFromDates: b.clientRosterGoneFromDates || {},
           clientWeekdaysOnly: b.clientWeekdaysOnly || {},
         };
+      } catch (_) {}
+      return;
+    }
+    /* Late capture: keep merges if SOURCE still has them after chain cutover. */
+    if (merges.length) {
+      try {
+        var prev = window.__PORTAL_STAFF_BUNDLE_META__ || {};
+        window.__PORTAL_STAFF_BUNDLE_META__ = Object.assign({}, prev, {
+          sundayFeedbackMerges: merges,
+          overviewOmitRosterSlots:
+            (Array.isArray(prev.overviewOmitRosterSlots) && prev.overviewOmitRosterSlots.length
+              ? prev.overviewOmitRosterSlots
+              : null) ||
+            (Array.isArray(b && b.overviewOmitRosterSlots) ? b.overviewOmitRosterSlots : []) ||
+            [],
+        });
       } catch (_) {}
     }
   }
@@ -207,7 +234,22 @@
       (pinned && Array.isArray(pinned.sundayFeedbackMerges) && pinned.sundayFeedbackMerges.length
         ? pinned.sundayFeedbackMerges
         : null) ||
-      (bundle && Array.isArray(bundle.sundayFeedbackMerges) ? bundle.sundayFeedbackMerges : []) ||
+      (bundle && Array.isArray(bundle.sundayFeedbackMerges) && bundle.sundayFeedbackMerges.length
+        ? bundle.sundayFeedbackMerges
+        : null) ||
+      (typeof window !== "undefined" &&
+      typeof window.portalStaffLeadSundayFeedbackMergeRulesFallback === "function"
+        ? window.portalStaffLeadSundayFeedbackMergeRulesFallback()
+        : []) ||
+      [];
+    var omitSlots =
+      (Array.isArray(chainSrc.overviewOmitRosterSlots) && chainSrc.overviewOmitRosterSlots.length
+        ? chainSrc.overviewOmitRosterSlots
+        : null) ||
+      (pinned && Array.isArray(pinned.overviewOmitRosterSlots) && pinned.overviewOmitRosterSlots.length
+        ? pinned.overviewOmitRosterSlots
+        : null) ||
+      (bundle && Array.isArray(bundle.overviewOmitRosterSlots) ? bundle.overviewOmitRosterSlots : []) ||
       [];
     var starts = Object.assign(
       {},
@@ -233,6 +275,7 @@
       staffPhotoExtension: photoExt,
       sundayDateOverrides: sundayOv,
       sundayFeedbackMerges: sundayMerges,
+      overviewOmitRosterSlots: omitSlots,
       clientRosterStartDates: starts,
       clientRosterGoneFromDates: gone,
       clientWeekdaysOnly: weekdays,
