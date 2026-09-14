@@ -766,9 +766,17 @@
       dc = [];
     }
     var rows = phases.concat(bespoke).concat(dc);
+    var baseSrc = global.STAFF_DASHBOARD_SOURCE || {};
+    var starts = Object.assign(
+      {},
+      baseSrc.clientRosterStartDates || {},
+      C && C.FADI_START_ISO ? { Fadi: C.FADI_START_ISO } : {}
+    );
     return {
       rows: rows,
-      clientRosterStartDates: C && C.FADI_START_ISO ? { Fadi: C.FADI_START_ISO } : {},
+      clientRosterStartDates: starts,
+      clientRosterGoneFromDates: Object.assign({}, baseSrc.clientRosterGoneFromDates || {}),
+      clientWeekdaysOnly: Object.assign({}, baseSrc.clientWeekdaysOnly || {}),
       capacityChainPlacesPhases: true,
       localPlacesPhases: true,
       capacityChainTimetableBespoke: true,

@@ -269,7 +269,9 @@
     "clientRosterStartDates": {
     "Emanuel": "2026-06-12",
     "Logan": "2026-05-11",
-    "Fadi": "2026-09-20"
+    "Fadi": "2026-09-20",
+    "Emmanuel Abate": "2026-09-15",
+    "Christian Abate": "2026-09-15"
   },
   "clientRosterGoneFromDates": {
     "Karo": "2026-08-16",

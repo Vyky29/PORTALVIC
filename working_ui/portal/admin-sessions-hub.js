@@ -639,6 +639,12 @@
       global.STAFF_DASHBOARD_SOURCE && global.STAFF_DASHBOARD_SOURCE.clientRosterStartDates,
       clientName
     );
+    var ovStart = clientConfigMapEntry(global.__PORTAL_ASH_CLIENT_FIRST_SESSION__, clientName);
+    if (start && ovStart) {
+      start = String(start) <= String(ovStart) ? start : ovStart;
+    } else {
+      start = start || ovStart;
+    }
     if (start && /^\d{4}-\d{2}-\d{2}$/.test(String(start)) && isoDate < String(start)) {
       return false;
     }
@@ -651,6 +657,66 @@
       return false;
     }
     return true;
+  }
+
+  /**
+   * NEW CLIENT / finish-booking overrides carry first_session — Register must not
+   * list "Awaiting feedback" on earlier weeks when MADRE already folded the seat.
+   */
+  function rebuildClientFirstSessionIndex(overrides) {
+    var map = Object.create(null);
+    function note(name, iso) {
+      var n = clean(name);
+      var d = clean(iso).slice(0, 10);
+      if (!n || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+      if (isOpenRosterSlot(n) || slotIsHoldWaitlistNoFeedback(n)) return;
+      var slug = canonicalClientSlug(n);
+      if (!slug) return;
+      if (!map[slug] || d < map[slug]) map[slug] = d;
+    }
+    var list = Array.isArray(overrides) ? overrides : [];
+    for (var i = 0; i < list.length; i++) {
+      var ov = list[i];
+      if (!ov) continue;
+      if (String(ov.status || "active").trim() !== "active") continue;
+      var p = overridePayloadObj(ov);
+      var first = clean(p.first_session || p.firstSession).slice(0, 10);
+      var isNew =
+        overrideIsNewClientReplace(ov) ||
+        p.new_client === true ||
+        p.new_client === "true" ||
+        p.term_new_participant === true ||
+        p.term_new_participant === "true" ||
+        p.finish_booking === true ||
+        p.finish_booking === "true";
+      if (!first && isNew) first = clean(ov.session_date).slice(0, 10);
+      if (!first) continue;
+      if (!isNew && !clean(p.first_session || p.firstSession)) continue;
+      note(p.to_client_name || p.toClientName, first);
+      note(p.replacement_client_name || p.replacementClientName, first);
+      note(p.client_name || p.clientName, first);
+      note(p.participant_name || p.participantName, first);
+      note(ov.anchor_client_id, first);
+      try {
+        note(overrideClientName(ov), first);
+      } catch (_n) {}
+    }
+    try {
+      global.__PORTAL_ASH_CLIENT_FIRST_SESSION__ = map;
+    } catch (_g) {}
+    return map;
+  }
+
+  /** HOLD / waitlist placeholder seats never owe session feedback. */
+  function slotIsHoldWaitlistNoFeedback(name) {
+    var low = clean(name).toLowerCase();
+    if (!low) return false;
+    if (low === "hold waitlist" || low === "hold_waitlist" || low === "hold-waitlist") {
+      return true;
+    }
+    if (low === "waitlist" || low === "waiting list" || low === "waiting") return true;
+    if (/^hold\b/.test(low) && /wait/.test(low)) return true;
+    return false;
   }
 
   function parseHm(token) {
@@ -5393,6 +5459,7 @@
     ) {
       this.payload.incident_reports = global.__PORTAL_INCIDENT_REPORTS__.slice();
     }
+    rebuildClientFirstSessionIndex(this.payload.schedule_overrides);
     if (!setOpts.quiet) {
       this.invalidateComputeCaches();
     }
@@ -6231,6 +6298,7 @@
   AdminSessionsHub.prototype.indexFeedback = function () {
     var hub = this;
     syncScheduleOverridesForMatching(this.payload && this.payload.schedule_overrides);
+    rebuildClientFirstSessionIndex(this.payload && this.payload.schedule_overrides);
     var list = this.payload.session_feedback || [];
     var sig =
       String(list.length) +
@@ -6313,7 +6381,11 @@
     if (!slot) return false;
     if (shouldOmitOverviewSlot(this, slot) || isTeflonDemoRosterSlot(slot)) return false;
     if (slotIsStaffDutyNoFeedback(slot)) return false;
+    if (slotIsHoldWaitlistNoFeedback(slot.client_name)) return false;
     if (isOpenRosterSlot(slot.client_name) || rosterSlotKind(slot.client_name) === "closed") {
+      return false;
+    }
+    if (!clientAllowedOnDate(slot.client_name, clean(slot.session_date).slice(0, 10))) {
       return false;
     }
     if (clean(this.instructorFilter) || clean(this.serviceFilter) || clean(this.clientSearch)) {
@@ -8302,7 +8374,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (
         isOpenRosterSlot(slot.client_name) ||
         rosterSlotKind(slot.client_name) === "closed" ||
-        slotIsStaffDutyNoFeedback(slot)
+        slotIsStaffDutyNoFeedback(slot) ||
+        slotIsHoldWaitlistNoFeedback(slot.client_name)
       ) {
         continue;
       }
@@ -8459,7 +8532,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var awaitOpen =
         isOpenRosterSlot(awaitSlot.client_name) ||
         rosterSlotKind(awaitSlot.client_name) === "closed" ||
-        slotIsStaffDutyNoFeedback(awaitSlot);
+        slotIsStaffDutyNoFeedback(awaitSlot) ||
+        slotIsHoldWaitlistNoFeedback(awaitSlot.client_name);
       var awaitSvc = clean(awaitSlot.service) || "\u2014";
       var awaitTime = awaitSlot.time_slot
         ? '<div class="ash-cell-sub">' + esc(rosterTimeDisplay(awaitSlot)) + "</div>"
@@ -9641,7 +9715,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         counts.open++;
         continue;
       }
+      if (slotIsHoldWaitlistNoFeedback(slot.client_name)) {
+        counts.open++;
+        continue;
+      }
       if (slotIsStaffDutyNoFeedback(slot)) {
+        continue;
+      }
+      if (!clientAllowedOnDate(slot.client_name, clean(slot.session_date).slice(0, 10))) {
         continue;
       }
       var makeupDisp = makeupOverrideDisplacingSlot(hub, slot);

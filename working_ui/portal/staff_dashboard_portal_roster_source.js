@@ -143,6 +143,9 @@
           staffPhotosBaseUrl: b.staffPhotosBaseUrl || "portal/staff_photos/",
           staffPhotoExtension: b.staffPhotoExtension || "png",
           sundayDateOverrides: b.sundayDateOverrides || {},
+          clientRosterStartDates: b.clientRosterStartDates || {},
+          clientRosterGoneFromDates: b.clientRosterGoneFromDates || {},
+          clientWeekdaysOnly: b.clientWeekdaysOnly || {},
         };
       } catch (_) {}
     }
@@ -181,11 +184,32 @@
       (pinned && pinned.sundayDateOverrides) ||
       (bundle && bundle.sundayDateOverrides) ||
       {};
+    var starts = Object.assign(
+      {},
+      (pinned && pinned.clientRosterStartDates) || {},
+      (bundle && bundle.clientRosterStartDates) || {},
+      chainSrc.clientRosterStartDates || {}
+    );
+    var gone = Object.assign(
+      {},
+      (pinned && pinned.clientRosterGoneFromDates) || {},
+      (bundle && bundle.clientRosterGoneFromDates) || {},
+      chainSrc.clientRosterGoneFromDates || {}
+    );
+    var weekdays = Object.assign(
+      {},
+      (pinned && pinned.clientWeekdaysOnly) || {},
+      (bundle && bundle.clientWeekdaysOnly) || {},
+      chainSrc.clientWeekdaysOnly || {}
+    );
     return Object.assign({}, chainSrc, {
       staffProfiles: profiles,
       staffPhotosBaseUrl: photosBase,
       staffPhotoExtension: photoExt,
       sundayDateOverrides: sundayOv,
+      clientRosterStartDates: starts,
+      clientRosterGoneFromDates: gone,
+      clientWeekdaysOnly: weekdays,
     });
   }
 
