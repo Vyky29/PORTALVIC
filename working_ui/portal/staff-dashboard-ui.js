@@ -4059,14 +4059,9 @@
       if(id === 'termSheet'){
         syncTermCalendarColorIntro(true);
         const termGridEl = document.getElementById('termGrid');
-        /* Paint month shell immediately — never leave "Loading term…" while maps build. */
-        if(typeof renderTermCalendarGrid === 'function'){
-          try{ renderTermCalendarGrid({ force: true }); }catch(_shell){
-            if(termGridEl && !termGridEl.querySelector('.term-cal-month')){
-              termGridEl.innerHTML = '<p class="muted" style="padding:16px;margin:0">Loading term…</p>';
-            }
-          }
-        }else if(termGridEl && !termGridEl.querySelector('.term-cal-month')){
+        /* Sheet is already open. Never sync-paint Aug–Oct cells in the TERM click —
+           that froze Emmanuel (~2.7s). Keep prior grid or show Loading; colour after yield. */
+        if(termGridEl && !termGridEl.querySelector('.term-cal-month')){
           termGridEl.innerHTML = '<p class="muted" style="padding:16px;margin:0">Loading term…</p>';
         }
         var termSt = portalPanelLoadState.term;
@@ -4074,8 +4069,6 @@
         window.__PORTAL_TERM_REBUILD_REQ__ = termReq;
         termSt.loading = true;
         if(typeof renderTermCalendarGrid === 'function'){
-          /* Wait for overrides + feedback pipeline before colouring days so
-             cancelled-red → green/blue does not flip on open. Shell already painted. */
           const paintTerm = function(){
             try{
               if(termReq !== portalPanelLoadState.term.requestId) return;
@@ -4100,11 +4093,16 @@
             void (async function(){
               try{
                 if(typeof portalMarkPerf === 'function') portalMarkPerf('term-open-start');
+                if(typeof portalYieldToMain === 'function') await portalYieldToMain();
+                if(termReq !== portalPanelLoadState.term.requestId) return;
+                /* One paint after maps — never two full Aug–Oct walks (that felt like double lag). */
                 if(typeof rebuildTermShiftAndFeedbackFromSessionModelProgressive === 'function'){
                   await rebuildTermShiftAndFeedbackFromSessionModelProgressive({ requestId: termReq });
                 }else if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
                   rebuildTermShiftAndFeedbackFromSessionModel({ allowWhenClosed: true });
                 }
+                if(termReq !== portalPanelLoadState.term.requestId) return;
+                if(typeof portalYieldToMain === 'function') await portalYieldToMain();
                 if(termReq !== portalPanelLoadState.term.requestId) return;
                 paintTerm();
                 termSt.loaded = true;
@@ -4117,15 +4115,18 @@
               }
             })();
           };
+          const deferStart = typeof portalDeferHeavyDashboardRefresh === 'function'
+            ? portalDeferHeavyDashboardRefresh
+            : function(fn){ setTimeout(fn, 0); };
           if(termDataReady()){
-            requestAnimationFrame(startTermWork);
+            deferStart(startTermWork, 0);
           }else{
             let tries = 0;
             const waitReady = function(){
               tries += 1;
               if(termReq !== portalPanelLoadState.term.requestId) return;
               if(termDataReady() || tries >= 10){
-                startTermWork();
+                deferStart(startTermWork, 0);
                 return;
               }
               setTimeout(waitReady, 120);
