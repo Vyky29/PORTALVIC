@@ -4084,10 +4084,10 @@
       return false;
     }
     var kind = slotAreaKind(slot);
-    if (kind === "hub") return /godsway|giuseppe|lulia|luliya|bismark|john|berta/.test(by);
-    if (kind === "pool") return /aurora|javier|roberto|dan|youssef/.test(by);
-    if (kind === "climb") return /carlos|alex|bismark/.test(by);
-    if (kind === "aquatic") return /aurora|javier|roberto|dan|youssef|bismark/.test(by);
+    if (kind === "hub") return /godsway|giuseppe|lulia|luliya|bismark|john|berta|raul|emmanuel|emanuel|victor|javi\b/.test(by);
+    if (kind === "pool") return /aurora|javier|roberto|dan|youssef|luliya|lulia|aida/.test(by);
+    if (kind === "climb") return /carlos|alex|bismark|angel|andres/.test(by);
+    if (kind === "aquatic") return /aurora|javier|roberto|dan|youssef|bismark|luliya|lulia|aida/.test(by);
     return true;
   }
 
