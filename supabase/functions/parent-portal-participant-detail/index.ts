@@ -999,7 +999,7 @@ async function fetchRosterServiceLines(
 
   const { data, error } = await supabase
     .from("portal_participant_service_lines")
-    .select("client_key, client_name, client_name_norm, sessions, services_count")
+    .select("client_key, client_name, client_name_norm, sessions, services_count, term_label")
     .in("client_key", rawKeys)
     .limit(12);
 
@@ -1012,7 +1012,7 @@ async function fetchRosterServiceLines(
   if (nameNorm) {
     const { data: byName, error: nameErr } = await supabase
       .from("portal_participant_service_lines")
-      .select("client_key, client_name, client_name_norm, sessions, services_count")
+      .select("client_key, client_name, client_name_norm, sessions, services_count, term_label")
       .eq("client_name_norm", nameNorm)
       .limit(12);
     if (nameErr) {
@@ -1043,8 +1043,10 @@ async function fetchRosterServiceLines(
   if (!rows.length) return null;
 
   // Merge every matching row so Mon/Wed (LA) + Fri (NHS) all appear.
+  // Do not paint July Summer Term 2026 leftovers onto Autumn hubs.
   const mergedSessions: unknown[] = [];
   for (const row of rows) {
+    if (/summer/i.test(String((row as { term_label?: string }).term_label || ""))) continue;
     if (Array.isArray(row.sessions)) mergedSessions.push(...row.sessions);
   }
   const detail = buildServicesDetail(mergedSessions);
