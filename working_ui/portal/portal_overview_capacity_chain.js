@@ -223,6 +223,31 @@
     return text;
   }
 
+  function isTrialSeatLine(line) {
+    var kind = String((line && line.kind) || "").toLowerCase();
+    if (kind === "trial") return true;
+    var text = String((line && line.client) || "");
+    var label = String((line && line.label) || "");
+    return /HOLD BY TRIAL/i.test(text) || /HOLD BY TRIAL/i.test(label);
+  }
+
+  /** One-off trial day if Places stamped it; otherwise standing stays open. */
+  function trialDateForSeatLine(line, slot) {
+    var raw =
+      (line && (line.trialDate || line.trial_date || line.session_date)) ||
+      (slot && (slot.trialDate || slot.trial_date)) ||
+      "";
+    var d = String(raw || "").slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
+  }
+
+  function trialClientForSeatLine(line) {
+    var named = String((line && (line.trialClient || line.trial_client)) || "").trim();
+    if (named) return named;
+    if (!isTrialSeatLine(line)) return "";
+    return clientFromSeatLine(line);
+  }
+
   function occupantsPhasesToRosterRows(bySlotId) {
     var out = [];
     Object.keys(bySlotId || {}).forEach(function (slotId) {
@@ -253,10 +278,21 @@
               },
             ];
       lines.forEach(function (line) {
-        var client = clientFromSeatLine(line);
+        var trialIso = trialDateForSeatLine(line, slot);
+        var trialClient = trialClientForSeatLine(line);
+        var trialSeat = isTrialSeatLine(line) || !!(trialIso && trialClient);
+        var standingClient = trialSeat && isTrialSeatLine(line) ? "No participant" : clientFromSeatLine(line);
+        /* Open seat that only carries a dated trial stamp stays open on other weeks. */
+        if (trialSeat && !isTrialSeatLine(line) && trialIso) {
+          standingClient = "No participant";
+        }
         var staff = String(line.instructor || "").trim();
         if (!staff) return;
         dates.forEach(function (iso) {
+          var client = standingClient;
+          if (trialSeat) {
+            client = trialIso && iso === trialIso && trialClient ? trialClient : "No participant";
+          }
           if (isFadiOffRotaIso(iso) && isFadiLabel(client)) return;
           out.push({
             client_name: client,
