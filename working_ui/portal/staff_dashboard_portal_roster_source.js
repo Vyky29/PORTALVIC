@@ -1,7 +1,8 @@
 /**
  * Wires STAFF_DASHBOARD_SOURCE.rows through the roster pipeline.
- * Sessions Overview uses capacity chain (Places + Services DC + Timetable).
- * Staff Today / other surfaces keep canonical until cut over.
+ * Sessions Overview + Staff Today use the same capacity chain
+ * (Places + Services DC + Timetable). Day patches stay schedule_overrides.
+ * Canonical is only a last-resort fallback when chain scripts are missing.
  */
 (function () {
   function dispatchStaffDashboardSourceUpdated() {
@@ -32,7 +33,6 @@
     if (typeof window === "undefined") return false;
     try {
       if (window.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__) return true;
-      if (window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__) return true;
       var hash = String(window.location && window.location.hash ? window.location.hash : "")
         .toLowerCase();
       if (hash.indexOf("c4k_sessions") >= 0) return true;
@@ -55,49 +55,135 @@
     } catch (_) {}
   }
 
-  function resolveCapacityChainForOverview(opts) {
+  function normalizeStaffKey(raw) {
+    if (typeof window.portalCanonicalStaffMatchKey === "function") {
+      return String(window.portalCanonicalStaffMatchKey(raw) || "").trim().toLowerCase();
+    }
+    return String(raw || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function instructorTokenKeys(instructorsRaw) {
+    var out = [];
+    var seen = Object.create(null);
+    String(instructorsRaw || "")
+      .split(/,|\/|&|\band\b/gi)
+      .forEach(function (part) {
+        var k = normalizeStaffKey(part);
+        if (!k || seen[k]) return;
+        seen[k] = true;
+        out.push(k);
+      });
+    return out;
+  }
+
+  /**
+   * Slim capacity-chain rows to one worker so Staff Today does not keep the
+   * whole club term board in memory (admin Overview keeps the full set).
+   */
+  function filterCapacityChainRowsForStaff(rows, staffId) {
+    var want = normalizeStaffKey(staffId);
+    if (!want || !Array.isArray(rows) || !rows.length) return rows || [];
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      if (!row) continue;
+      var keys = instructorTokenKeys(row.instructors);
+      if (keys.indexOf(want) >= 0) out.push(row);
+    }
+    return out;
+  }
+
+  window.portalFilterCapacityChainRowsForStaff = filterCapacityChainRowsForStaff;
+
+  function resolveLoggedInStaffId(opts) {
+    opts = opts || {};
+    if (opts.staffId) return normalizeStaffKey(opts.staffId);
+    try {
+      if (typeof window.portalAuthStaffRosterId === "function") {
+        var authId = window.portalAuthStaffRosterId();
+        if (authId) return normalizeStaffKey(authId);
+      }
+    } catch (_) {}
+    try {
+      if (typeof window.STAFF_DASHBOARD_ID !== "undefined" && window.STAFF_DASHBOARD_ID) {
+        return normalizeStaffKey(window.STAFF_DASHBOARD_ID);
+      }
+    } catch (_) {}
+    return "";
+  }
+
+  function resolveCapacityChainSource(opts) {
+    opts = opts || {};
+    var forOverview = !!(opts.forSessionsOverview || sessionsOverviewSurfaceActive());
     try {
       var Chain = window.PortalOverviewCapacityChain;
       if (Chain && typeof Chain.resolve === "function") {
-        var chainSrc = Chain.resolve(opts || {});
+        var chainSrc = Chain.resolve(opts);
         if (chainSrc && Array.isArray(chainSrc.rows) && chainSrc.rows.length) {
-          pinOverviewCapacitySource(chainSrc);
-          return chainSrc;
+          if (forOverview) {
+            pinOverviewCapacitySource(chainSrc);
+            return chainSrc;
+          }
+          var staffId = resolveLoggedInStaffId(opts);
+          if (staffId) {
+            var slimRows = filterCapacityChainRowsForStaff(chainSrc.rows, staffId);
+            return Object.assign({}, chainSrc, {
+              rows: slimRows,
+              rosterSourceNote:
+                (chainSrc.rosterSourceNote || "Capacity chain") +
+                " · staff-scoped (" +
+                staffId +
+                ")",
+              capacityChainStaffScoped: true,
+              capacityChainStaffId: staffId,
+            });
+          }
+          /* Identity not ready yet — keep full chain briefly; bootstrap re-runs after auth. */
+          return Object.assign({}, chainSrc, {
+            rosterSourceNote:
+              (chainSrc.rosterSourceNote || "Capacity chain") + " · staff (pending identity)",
+          });
         }
       }
       if (typeof console !== "undefined" && console.warn) {
         console.warn(
-          "[portal] Sessions Overview capacity chain unavailable (need Timetable hours + occupants). Not falling back to canonical."
+          "[portal] Capacity chain unavailable (need Timetable hours + occupants)." +
+            (forOverview ? " Not falling back to canonical for Overview." : "")
         );
       }
     } catch (_chain) {
       if (typeof console !== "undefined" && console.warn) {
-        console.warn("[portal] Sessions Overview capacity chain failed", _chain);
+        console.warn("[portal] Capacity chain resolve failed", _chain);
       }
     }
-    var pinned =
-      typeof window !== "undefined" ? window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__ : null;
-    if (pinned && Array.isArray(pinned.rows) && pinned.rows.length) return pinned;
-    var prev = typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
-    if (prev && prev.capacityChainNoCanonicalRemap && Array.isArray(prev.rows) && prev.rows.length) {
-      return prev;
+    if (forOverview) {
+      var pinned =
+        typeof window !== "undefined" ? window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__ : null;
+      if (pinned && Array.isArray(pinned.rows) && pinned.rows.length) return pinned;
+      var prev = typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
+      if (prev && prev.capacityChainNoCanonicalRemap && Array.isArray(prev.rows) && prev.rows.length) {
+        return prev;
+      }
+      return {
+        rows: prev && Array.isArray(prev.rows) ? prev.rows.slice() : [],
+        capacityChainNoCanonicalRemap: true,
+        localNoCanonicalResolve: true,
+        rosterSourceNote:
+          "Sessions Overview waiting for capacity chain (Places + Services + Timetable)",
+      };
     }
-    /* Never remap Overview through canonical Jul stamps. */
-    return {
-      rows: prev && Array.isArray(prev.rows) ? prev.rows.slice() : [],
-      capacityChainNoCanonicalRemap: true,
-      localNoCanonicalResolve: true,
-      rosterSourceNote:
-        "Sessions Overview waiting for capacity chain (Places + Services + Timetable)",
-    };
+    return null;
   }
 
   function resolveStaffDashboardSource(opts) {
     opts = opts || {};
-    var forOverview = !!(opts.forSessionsOverview || sessionsOverviewSurfaceActive());
-    if (forOverview) {
-      return resolveCapacityChainForOverview(opts);
-    }
+    var chain = resolveCapacityChainSource(opts);
+    if (chain) return chain;
     var canon = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
     if (canon && typeof canon.resolveCanonicalStaffDashboardSource === "function") {
       return canon.resolveCanonicalStaffDashboardSource();
@@ -105,7 +191,7 @@
     var base = (typeof window !== "undefined" && window.STAFF_DASHBOARD_SOURCE) || {};
     return Object.assign({}, base, {
       rows: Array.isArray(base.rows) ? base.rows.slice() : [],
-      rosterSourceNote: "fallback: bundle only (portal_roster_canonical.js not loaded)",
+      rosterSourceNote: "fallback: bundle only (capacity chain + portal_roster_canonical missing)",
     });
   }
 
@@ -114,15 +200,19 @@
   function refreshStaffDashboardSourceFromPortal(opts) {
     if (typeof window === "undefined") return;
     opts = opts || {};
-    var keepOverview =
-      !!(opts.forSessionsOverview) ||
-      sessionsOverviewSurfaceActive() ||
-      !!(window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.capacityChainNoCanonicalRemap) ||
-      !!window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__;
+    /* Overview pin only on admin Sessions Overview — never treat staff chain as Overview. */
+    var forOverview =
+      !!(opts.forSessionsOverview) || sessionsOverviewSurfaceActive();
     window.STAFF_DASHBOARD_SOURCE = resolveStaffDashboardSource(
-      keepOverview ? { forSessionsOverview: true } : opts
+      forOverview ? Object.assign({}, opts, { forSessionsOverview: true }) : opts
     );
-    if (keepOverview) pinOverviewCapacitySource(window.STAFF_DASHBOARD_SOURCE);
+    if (
+      forOverview &&
+      window.STAFF_DASHBOARD_SOURCE &&
+      window.STAFF_DASHBOARD_SOURCE.capacityChainNoCanonicalRemap
+    ) {
+      pinOverviewCapacitySource(window.STAFF_DASHBOARD_SOURCE);
+    }
     dispatchStaffDashboardSourceUpdated();
   }
 
@@ -151,7 +241,7 @@
           : Promise.resolve([]);
       })
       .then(function (rows) {
-        /* MADRE / portal_roster_rows refresh must not wipe Overview capacity chain. */
+        /* MADRE refresh must not wipe capacity chain (Overview or Staff Today). */
         refreshStaffDashboardSourceFromPortal(
           sessionsOverviewSurfaceActive() || window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__
             ? { forSessionsOverview: true }

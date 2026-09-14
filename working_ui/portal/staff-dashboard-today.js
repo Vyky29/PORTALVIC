@@ -1022,6 +1022,85 @@
         return [];
       }
     };
+    /**
+     * Programme leads / Roberto Lead Team need peer day overrides.
+     * Everyone else (e.g. Javier) only fetches own anchor + cover-as-me rows.
+     */
+    function portalStaffNeedsFullDayOverrides(staffId){
+      var k = String(staffId || '').trim().toLowerCase();
+      if(!k) return true;
+      if(k === 'john' || k === 'berta' || k === 'michelle' || k === 'roberto') return true;
+      if(k === 'victor' || k === 'raul' || k === 'javi') return true;
+      try{
+        if(typeof portalStaffIsProgrammeLeadRosterKey === 'function' && portalStaffIsProgrammeLeadRosterKey(k)){
+          return true;
+        }
+      }catch(_){}
+      return false;
+    }
+    function portalStaffOverrideMatchKeys(staffId){
+      var raw = String(staffId || '').trim().toLowerCase();
+      var out = [];
+      var seen = Object.create(null);
+      function add(v){
+        var k = String(v || '').trim().toLowerCase();
+        if(!k || seen[k]) return;
+        seen[k] = true;
+        out.push(k);
+      }
+      add(raw);
+      try{
+        if(typeof portalCanonicalStaffKeyForMatch === 'function') add(portalCanonicalStaffKeyForMatch(raw));
+      }catch(_){}
+      try{
+        if(typeof window.portalCanonicalStaffMatchKey === 'function') add(window.portalCanonicalStaffMatchKey(raw));
+      }catch(_){}
+      if(raw === 'javier'){ add('stf010'); }
+      if(raw === 'javi'){ add('stf017'); }
+      if(raw === 'emmanuel'){ add('emanuel'); }
+      return out;
+    }
+    /** PostgREST .or() filter: my anchors + rows where I am the cover. */
+    function portalStaffScheduleOverrideOrFilter(staffId){
+      var keys = portalStaffOverrideMatchKeys(staffId);
+      if(!keys.length) return '';
+      var parts = [];
+      keys.forEach(function(k){
+        if(!/^[a-z0-9_]+$/i.test(k)) return;
+        parts.push('anchor_staff_id.eq.' + k);
+        parts.push('payload->>covering_staff_id.eq.' + k);
+      });
+      return parts.join(',');
+    }
+    function portalStaffFilterOverrideRowsForSelf(rows, staffId){
+      if(!Array.isArray(rows) || !rows.length) return [];
+      if(portalStaffNeedsFullDayOverrides(staffId)) return rows.slice();
+      var keys = portalStaffOverrideMatchKeys(staffId);
+      if(!keys.length) return rows.slice();
+      var want = Object.create(null);
+      keys.forEach(function(k){ want[k] = true; });
+      return rows.filter(function(row){
+        if(!row) return false;
+        var anchor = String(row.anchor_staff_id || '').trim().toLowerCase();
+        if(want[anchor]) return true;
+        var p = row.payload && typeof row.payload === 'object' ? row.payload : {};
+        var cover = String(p.covering_staff_id || '').trim().toLowerCase();
+        if(want[cover]) return true;
+        var coverName = String(p.covering_staff_name || p.to_staff_name || '').trim().toLowerCase();
+        if(coverName){
+          for(var i = 0; i < keys.length; i++){
+            if(coverName.indexOf(keys[i]) >= 0) return true;
+          }
+          try{
+            if(typeof portalCanonicalStaffKeyForMatch === 'function'){
+              var cn = portalCanonicalStaffKeyForMatch(coverName);
+              if(cn && want[cn]) return true;
+            }
+          }catch(_){}
+        }
+        return false;
+      });
+    }
     window.portalRefreshScheduleOverridesCache = function portalRefreshScheduleOverridesCache(opts){
       /* Coalesce concurrent refresh calls (identity resolve + kick + settle) into one fetch.
          Two parallel loads were re-painting Today twice → “first one thing, then it changes”. */
@@ -1141,20 +1220,35 @@
         const merged = [];
         const CHUNK = 40;
         var fetchErrors = 0;
+        const viewerSid = (typeof portalAuthStaffRosterId === 'function'
+          ? portalAuthStaffRosterId()
+          : '') || String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+        const scopeSelf = !!(viewerSid && typeof portalStaffNeedsFullDayOverrides === 'function'
+          && !portalStaffNeedsFullDayOverrides(viewerSid));
+        const orFilter = scopeSelf && typeof portalStaffScheduleOverrideOrFilter === 'function'
+          ? portalStaffScheduleOverrideOrFilter(viewerSid)
+          : '';
         for(let start = 0; start < isoList.length; start += CHUNK){
           const chunk = isoList.slice(start, start + CHUNK);
           if(!chunk.length) continue;
-          const res = await box.client.from('schedule_overrides')
+          let q = box.client.from('schedule_overrides')
             .select(selectCols)
             .eq('status', 'active')
             .in('session_date', chunk)
             .order('created_at', { ascending: false });
+          if(orFilter) q = q.or(orFilter);
+          const res = await q;
           if(res.error){
             fetchErrors += 1;
             console.warn('[portal] schedule_overrides fetch', res.error && (res.error.message || res.error), chunk && chunk[0]);
             continue;
           }
           (res.data || []).forEach(function(row){ merged.push(row); });
+        }
+        if(scopeSelf && typeof portalStaffFilterOverrideRowsForSelf === 'function'){
+          const scoped = portalStaffFilterOverrideRowsForSelf(merged, viewerSid);
+          merged.length = 0;
+          scoped.forEach(function(row){ merged.push(row); });
         }
         merged.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
         // Anti-flicker: this refresh runs several times per load (identity resolve,
@@ -1323,16 +1417,29 @@
           }
           if(!sess || !sess.user) return { ok: false, reason: 'no_session', iso: iso };
           const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,status';
-          const res = await box.client.from('schedule_overrides')
+          const viewerSid = (typeof portalAuthStaffRosterId === 'function'
+            ? portalAuthStaffRosterId()
+            : '') || String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+          const scopeSelf = !!(viewerSid && typeof portalStaffNeedsFullDayOverrides === 'function'
+            && !portalStaffNeedsFullDayOverrides(viewerSid));
+          const orFilter = scopeSelf && typeof portalStaffScheduleOverrideOrFilter === 'function'
+            ? portalStaffScheduleOverrideOrFilter(viewerSid)
+            : '';
+          let q = box.client.from('schedule_overrides')
             .select(selectCols)
             .eq('status', 'active')
             .eq('session_date', iso)
             .order('created_at', { ascending: false });
+          if(orFilter) q = q.or(orFilter);
+          const res = await q;
           if(res.error){
             console.warn('[portal] schedule_overrides single-iso', res.error && (res.error.message || res.error), iso);
             return { ok: false, reason: 'fetch_error', iso: iso };
           }
-          const rows = Array.isArray(res.data) ? res.data : [];
+          let rows = Array.isArray(res.data) ? res.data : [];
+          if(scopeSelf && typeof portalStaffFilterOverrideRowsForSelf === 'function'){
+            rows = portalStaffFilterOverrideRowsForSelf(rows, viewerSid);
+          }
           const prev = Array.isArray(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__)
             ? window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__
             : [];
@@ -4306,7 +4413,14 @@
         window.addEventListener('portal:staff-deferred-dashboard-ready', function(){
           try{
             if(typeof portalMergeStaffLeadTodayAquaticCards !== 'function') return;
-            if(typeof renderToday === 'function') renderToday();
+            var sid = typeof portalAuthStaffRosterId === 'function' ? portalAuthStaffRosterId() : '';
+            if(sid && typeof portalStaffTodayBlockIsOff === 'function' && portalStaffTodayBlockIsOff(sid)) return;
+            var deferAq = typeof portalDeferHeavyDashboardRefresh === 'function'
+              ? portalDeferHeavyDashboardRefresh
+              : function(fn){ setTimeout(fn, 0); };
+            deferAq(function(){
+              try{ if(typeof renderToday === 'function') renderToday(); }catch(_){}
+            }, 0);
           }catch(_r){}
         });
       }
@@ -4494,6 +4608,31 @@
         if(iso && typeof portalTermStaffExtraCalendarDates === 'function' && portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0){
           return false;
         }
+        /* Cheap rota gates before dense cover / client-session walks (day-off staff
+         * like Javier Mon were paying ~3s on every Today sync). */
+        if(iso && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)) return true;
+        if(iso && typeof portalStaffHasShiftOnCalendarDate === 'function'
+          && portalStaffHasShiftOnCalendarDate(iso, sid) === true){
+          return false;
+        }
+        if(iso && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(iso, sid)){
+          if(iso && typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+            && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)){
+            return false;
+          }
+          try{
+            const dayWordOff = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
+            if(typeof portalStaffClientSessionsOnCalendarDate === 'function'
+              && portalStaffClientSessionsOnCalendarDate(iso, dayWordOff, sid)){
+              return false;
+            }
+          }catch(_){}
+          return true;
+        }
+        if(typeof portalTermCalendarDayIsRed === 'function'
+          && portalTermCalendarDayIsRed(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), sid, halfWeeks)){
+          return true;
+        }
         if(iso && typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
           && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)){
           return false;
@@ -4511,19 +4650,6 @@
             && portalStaffClientSessionsOnCalendarDate(iso, dayWord, sid)) return false;
           return true;
         }
-        /* Timetable workday (e.g. Roberto Friday) is not a day off — empty projection
-         * must still try to paint cards, not the "does not work today" panel. */
-        if(iso && typeof portalStaffHasShiftOnCalendarDate === 'function'
-          && portalStaffHasShiftOnCalendarDate(iso, sid) === true){
-          if(iso && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)) return true;
-          return false;
-        }
-        if(iso && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(iso, sid)) return true;
-        if(typeof portalTermCalendarDayIsRed === 'function'
-          && portalTermCalendarDayIsRed(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), sid, halfWeeks)){
-          return true;
-        }
-        if(iso && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)) return true;
         return false;
       }catch(_){ return false; }
     }
@@ -5243,12 +5369,6 @@
     function portalSyncTodaySectionDisplay(modelOverride){
       const id = portalAuthStaffRosterId();
       const prevPreview = dashboardData && dashboardData.__portalStableNextSessionPreview;
-      let rows = [];
-      try{
-        rows = typeof buildSelectedDayViewFromLauraModel === 'function'
-          ? buildSelectedDayViewFromLauraModel(modelOverride)
-          : [];
-      }catch(_){ rows = []; }
       dashboardData.portalTodaySectionHeading = '';
       dashboardData.portalTodaySectionMode = 'today';
       const liveToday = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
@@ -5268,6 +5388,46 @@
       const selectedIso = selectedAnchor && typeof portalIsoYmdFromDate === 'function'
         ? portalIsoYmdFromDate(selectedAnchor)
         : '';
+      /* Day-off / away: never walk the full day model first (Javier Mon froze ~3s on load). */
+      const awayOffEarly = !!(id && selectedIso
+        && typeof portalTermStaffAwayOnDate === 'function'
+        && portalTermStaffAwayOnDate(selectedIso, id));
+      const todayOffEarly = awayOffEarly || !!(id && liveToday
+        && typeof portalStaffTodayBlockIsOff === 'function'
+        && portalStaffTodayBlockIsOff(id));
+      if(todayOffEarly){
+        let emptyPanelMode = typeof portalStaffLiveTodayEmptyPanelMode === 'function'
+          ? portalStaffLiveTodayEmptyPanelMode(id, { loading: dashboardData.portalIdentityResolved === false })
+          : 'off';
+        dashboardData.portalTodayEmptyPanelMode = emptyPanelMode;
+        if(selectedIso && typeof portalStaffDayOffIsTimeOffRequested === 'function'
+          && portalStaffDayOffIsTimeOffRequested(selectedIso, id)){
+          dashboardData.portalTodayEmptyPanelMode = 'off_time_requested';
+        }
+        dashboardData.today = [];
+        portalApplyTodayVenueMeta();
+        const rosterReadyEarly = portalStaffRosterReadyForNextSessionPreview();
+        if(liveToday && id && dashboardData.portalIdentityResolved !== false && rosterReadyEarly){
+          const deferPrev = typeof portalDeferHeavyDashboardRefresh === 'function'
+            ? portalDeferHeavyDashboardRefresh
+            : function(fn){ setTimeout(fn, 0); };
+          deferPrev(function(){
+            try{ portalRefreshNextSessionPreview(id); }catch(_){}
+            try{
+              if(typeof renderToday === 'function') renderToday();
+            }catch(_){}
+          }, 0);
+        }else{
+          dashboardData.portalTodayNextSessionPreview = null;
+        }
+        return [];
+      }
+      let rows = [];
+      try{
+        rows = typeof buildSelectedDayViewFromLauraModel === 'function'
+          ? buildSelectedDayViewFromLauraModel(modelOverride)
+          : [];
+      }catch(_){ rows = []; }
       /* Selected (non-live) day review: hold the cards on the brief "syncing" panel until schedule
          overrides hydrate, so reassignments/absences apply before the list renders. Without this a
          refresh on a past day flashes the pre-override roster (e.g. Aurora 23 Jun: Aydaan Ah present
@@ -5625,10 +5785,7 @@
         }
       }
       var Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
-      var source = typeof window.portalResolveStaffDashboardSource === 'function'
-        ? window.portalResolveStaffDashboardSource()
-        : window.STAFF_DASHBOARD_SOURCE;
-      if(!Adapter || !source || !user) return null;
+      if(!Adapter || !user) return null;
       var email = String(user.email || '');
       var keys = [];
       var seen = Object.create(null);
@@ -5666,6 +5823,10 @@
       }
       if(typeof window.portalInferStaffKey === 'function') pushKey(window.portalInferStaffKey(profileForRoster, email));
       function portalStaffBootstrapHitForKey(staffKey){
+        var source = typeof window.portalResolveStaffDashboardSource === 'function'
+          ? window.portalResolveStaffDashboardSource({ staffId: staffKey })
+          : window.STAFF_DASHBOARD_SOURCE;
+        if(!source) return null;
         var boot = Adapter.bootstrap({ source: source, staffId: staffKey });
         if(!boot || !Array.isArray(boot.sessionsModel)) return null;
         var canonical = portalCanonicalStaffKeyLite(staffKey);
@@ -5689,6 +5850,21 @@
       if(!sid) return false;
       STAFF_DASHBOARD_ID = sid;
       try{ window.STAFF_DASHBOARD_ID = sid; }catch(_){}
+      try{
+        if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
+          window.portalRefreshStaffDashboardSourceFromPortal({ staffId: sid });
+        }
+        var Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
+        var scopedSrc = typeof window.portalResolveStaffDashboardSource === 'function'
+          ? window.portalResolveStaffDashboardSource({ staffId: sid })
+          : window.STAFF_DASHBOARD_SOURCE;
+        if(Adapter && scopedSrc){
+          var reBoot = Adapter.bootstrap({ source: scopedSrc, staffId: sid });
+          if(reBoot && Array.isArray(reBoot.sessionsModel)){
+            hit = { staffId: sid, boot: reBoot };
+          }
+        }
+      }catch(_scope){}
       __spreadsheetBoot = hit.boot;
       sessionsModel = hit.boot.sessionsModel || [];
       clientNotesById = hit.boot.clientNotesById || {};
