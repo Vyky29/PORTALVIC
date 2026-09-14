@@ -30,11 +30,13 @@ import {
   outstandingByStaff,
   remapAutumnFeedback2030Slots,
   resolveProfileForStaffKey,
+  scrubFadiOffDayCentreSlots,
   slotsFromMadre,
   slotsFromRosterRows,
   type Feedback2030KeyRow,
   type Feedback2030OverrideRow,
   type Feedback2030Row,
+  type Feedback2030StaffDebt,
   type Feedback2030UnavailabilityRow,
 } from "../_shared/portal_feedback_2030_match.ts";
 
@@ -43,7 +45,45 @@ const DEDUPE_TABLE = "portal_feedback_2030_wa_sent";
 const PORTAL_URL =
   String(Deno.env.get("PORTAL_STAFF_DASHBOARD_URL") || "").trim() ||
   "https://clubsensational-staff.vercel.app/staff_dashboard.html";
-const SKIP_USERNAMES = new Set(["victor"]);
+/** Victor = office; Michelle = do not nag on 20:00 feedback WA (office rule). */
+const SKIP_USERNAMES = new Set(["victor", "michelle"]);
+
+function previousSundayIso(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return "";
+  const day = d.getUTCDay(); // 0 Sun
+  if (day === 0) return iso;
+  d.setUTCDate(d.getUTCDate() - day);
+  return d.toISOString().slice(0, 10);
+}
+
+function mergeStaffDebts(
+  lists: Feedback2030StaffDebt[][],
+): Feedback2030StaffDebt[] {
+  const map = new Map<string, Feedback2030StaffDebt>();
+  for (const list of lists) {
+    for (const d of list || []) {
+      const key = String(d.staffKey || "").toLowerCase();
+      if (!key) continue;
+      const ex = map.get(key);
+      if (!ex) {
+        map.set(key, {
+          staffKey: d.staffKey,
+          staffLabel: d.staffLabel,
+          pending: d.pending,
+          sample: (d.sample || []).slice(0, 4),
+        });
+        continue;
+      }
+      ex.pending += d.pending;
+      for (const s of d.sample || []) {
+        if (ex.sample.length >= 4) break;
+        if (ex.sample.indexOf(s) < 0) ex.sample.push(s);
+      }
+    }
+  }
+  return [...map.values()].sort((a, b) => a.staffLabel.localeCompare(b.staffLabel));
+}
 
 function resolveWave(raw, london) {
   const w = String(raw || "").trim();
@@ -178,99 +218,120 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
-  const { data: datedRoster } = await admin
-    .from("portal_roster_rows")
-    .select("client_name, time_slot, service, instructors, session_date, day, area")
-    .eq("status", "active")
-    .eq("session_date", iso);
-  const weekday = new Date(`${iso}T12:00:00`).toLocaleDateString("en-GB", {
-    weekday: "long",
-  });
-  const { data: templateRoster } = await admin
-    .from("portal_roster_rows")
-    .select("client_name, time_slot, service, instructors, session_date, day, area")
-    .eq("status", "active")
-    .is("session_date", null)
-    .ilike("day", weekday);
+  async function outstandingDebtsForIso(dayIso: string) {
+    const { data: datedRoster } = await admin
+      .from("portal_roster_rows")
+      .select("client_name, time_slot, service, instructors, session_date, day, area")
+      .eq("status", "active")
+      .eq("session_date", dayIso);
+    const weekday = new Date(`${dayIso}T12:00:00`).toLocaleDateString("en-GB", {
+      weekday: "long",
+    });
+    const { data: templateRoster } = await admin
+      .from("portal_roster_rows")
+      .select("client_name, time_slot, service, instructors, session_date, day, area")
+      .eq("status", "active")
+      .is("session_date", null)
+      .ilike("day", weekday);
 
-  /** Autumn 2026 standing lives on summer-2026 until autumn-2026 term_key is cut over. */
-  let madreDoc = null;
-  let madreTermKey = "";
-  for (const termKey of FEEDBACK_2030_MADRE_TERM_KEYS) {
-    const { data: madreRow } = await admin
-      .from("portal_madre_document")
-      .select("term_key, document")
-      .eq("term_key", termKey)
-      .maybeSingle();
-    if (madreRow?.document) {
-      madreDoc = madreRow.document;
-      madreTermKey = String(madreRow.term_key || termKey);
-      break;
+    let madreDoc = null;
+    let madreTermKey = "";
+    for (const termKey of FEEDBACK_2030_MADRE_TERM_KEYS) {
+      const { data: madreRow } = await admin
+        .from("portal_madre_document")
+        .select("term_key, document")
+        .eq("term_key", termKey)
+        .maybeSingle();
+      if (madreRow?.document) {
+        madreDoc = madreRow.document;
+        madreTermKey = String(madreRow.term_key || termKey);
+        break;
+      }
+    }
+
+    const { data: overrideRows } = await admin
+      .from("schedule_overrides")
+      .select(
+        "override_type, status, anchor_staff_id, anchor_client_id, anchor_time_slot_label, payload",
+      )
+      .eq("session_date", dayIso)
+      .eq("status", "active");
+    const { data: offRows } = await admin
+      .from("staff_unavailability")
+      .select("name_key, staff_name")
+      .eq("off_date", dayIso);
+
+    let slots = mergeFeedback2030Slots([
+      datedFallbackSlots(dayIso),
+      slotsFromMadre(madreDoc, dayIso),
+      slotsFromRosterRows([...(datedRoster || []), ...(templateRoster || [])], dayIso),
+    ]);
+    slots = scrubFadiOffDayCentreSlots(slots, dayIso);
+    slots = remapAutumnFeedback2030Slots(slots, dayIso);
+    slots = applyScheduleOverridesToFeedback2030Slots(
+      slots,
+      (overrideRows || []) as Feedback2030OverrideRow[],
+    );
+    slots = dropSlotsForUnavailableStaff(
+      slots,
+      (offRows || []) as Feedback2030UnavailabilityRow[],
+    );
+
+    const { data: feedbackRows } = await admin
+      .from("session_feedback")
+      .select("client_name, session_date, portal_session_key, attendance, service, completed_by_name")
+      .eq("session_date", dayIso);
+    const { data: quickMarkRows } = await admin
+      .from("portal_staff_session_quick_marks")
+      .select("portal_session_key, session_date, mark_type, staff_user_id")
+      .eq("session_date", dayIso)
+      .in("mark_type", ["absent", "feedback_done"]);
+    const { data: cancelRows } = await admin
+      .from("cancellation_reports")
+      .select("client_name, session_date, portal_session_key")
+      .eq("session_date", dayIso);
+
+    const { data: profiles } = await admin
+      .from("staff_profiles")
+      .select("id, username, full_name, phone_e164, app_role, is_active")
+      .eq("is_active", true);
+
+    const staffIdByKey: Record<string, string> = {};
+    for (const p of profiles || []) {
+      const un = String(p.username || "");
+      if (un) staffIdByKey[un.toLowerCase().replace(/[^a-z0-9]+/g, "")] = String(p.id);
+    }
+
+    const debts = outstandingByStaff(slots, dayIso, {
+      feedbackRows: (feedbackRows || []) as Feedback2030Row[],
+      cancelRows: (cancelRows || []) as Feedback2030KeyRow[],
+      absentMarks: ((quickMarkRows || []) as Feedback2030KeyRow[]).filter((m) => m.mark_type === "absent"),
+      feedbackDoneMarks: ((quickMarkRows || []) as Feedback2030KeyRow[]).filter(
+        (m) => m.mark_type === "feedback_done",
+      ),
+      staffIdByKey,
+    });
+    return { slots, debts, madreTermKey, profiles: profiles || [] };
+  }
+
+  const todayPack = await outstandingDebtsForIso(iso);
+  let debts = todayPack.debts;
+  let slots = todayPack.slots;
+  let madreTermKey = todayPack.madreTermKey;
+  const profiles = todayPack.profiles;
+  const debtDays = [iso];
+
+  /* Monday 20:00 also nags open Sunday books (e.g. Javier pool + Luliya cover). */
+  const wd = new Date(`${iso}T12:00:00`).toLocaleDateString("en-GB", { weekday: "long" });
+  if (wd === "Monday") {
+    const sunIso = previousSundayIso(iso);
+    if (sunIso && sunIso !== iso) {
+      const sunPack = await outstandingDebtsForIso(sunIso);
+      debts = mergeStaffDebts([todayPack.debts, sunPack.debts]);
+      slots = todayPack.slots.concat(sunPack.slots);
+      debtDays.push(sunIso);
     }
   }
-
-  const { data: overrideRows } = await admin
-    .from("schedule_overrides")
-    .select(
-      "override_type, status, anchor_staff_id, anchor_client_id, anchor_time_slot_label, payload",
-    )
-    .eq("session_date", iso)
-    .eq("status", "active");
-  const { data: offRows } = await admin
-    .from("staff_unavailability")
-    .select("name_key, staff_name")
-    .eq("off_date", iso);
-
-  let slots = mergeFeedback2030Slots([
-    datedFallbackSlots(iso),
-    slotsFromMadre(madreDoc, iso),
-    slotsFromRosterRows([...(datedRoster || []), ...(templateRoster || [])], iso),
-  ]);
-  slots = remapAutumnFeedback2030Slots(slots, iso);
-  /* Covers / clears / absences: nag the worker who ran the session, not the original book. */
-  slots = applyScheduleOverridesToFeedback2030Slots(
-    slots,
-    (overrideRows || []) as Feedback2030OverrideRow[],
-  );
-  slots = dropSlotsForUnavailableStaff(
-    slots,
-    (offRows || []) as Feedback2030UnavailabilityRow[],
-  );
-
-  const { data: feedbackRows } = await admin
-    .from("session_feedback")
-    .select("client_name, session_date, portal_session_key, attendance, service, completed_by_name")
-    .eq("session_date", iso);
-  const { data: quickMarkRows } = await admin
-    .from("portal_staff_session_quick_marks")
-    .select("portal_session_key, session_date, mark_type, staff_user_id")
-    .eq("session_date", iso)
-    .in("mark_type", ["absent", "feedback_done"]);
-  const { data: cancelRows } = await admin
-    .from("cancellation_reports")
-    .select("client_name, session_date, portal_session_key")
-    .eq("session_date", iso);
-
-  const { data: profiles } = await admin
-    .from("staff_profiles")
-    .select("id, username, full_name, phone_e164, app_role, is_active")
-    .eq("is_active", true);
-
-  const staffIdByKey: Record<string, string> = {};
-  for (const p of profiles || []) {
-    const un = String(p.username || "");
-    if (un) staffIdByKey[un.toLowerCase().replace(/[^a-z0-9]+/g, "")] = String(p.id);
-  }
-
-  const debts = outstandingByStaff(slots, iso, {
-    feedbackRows: (feedbackRows || []) as Feedback2030Row[],
-    cancelRows: (cancelRows || []) as Feedback2030KeyRow[],
-    absentMarks: ((quickMarkRows || []) as Feedback2030KeyRow[]).filter((m) => m.mark_type === "absent"),
-    feedbackDoneMarks: ((quickMarkRows || []) as Feedback2030KeyRow[]).filter(
-      (m) => m.mark_type === "feedback_done",
-    ),
-    staffIdByKey,
-  });
 
   const targets = [];
   for (const debt of debts) {
@@ -297,6 +358,7 @@ Deno.serve(async (req) => {
       dryRun: true,
       wave,
       shiftDate: iso,
+      debtDays,
       madreTermKey: madreTermKey || null,
       slotCount: slots.length,
       targets: targets.map((t) => ({
@@ -374,6 +436,7 @@ Deno.serve(async (req) => {
     ok: true,
     wave,
     shiftDate: iso,
+    debtDays,
     slotCount: slots.length,
     sent: sent.length,
     skipped,

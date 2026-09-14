@@ -22,7 +22,7 @@ export type Feedback2030StaffDebt = {
   sample: string[];
 };
 
-const SKIP_CLIENT = /^(home|manager|closed|available|no[_ ]participant|open|cover[_ ]needed|off|day[_ ]off|casa|na)$/i;
+const SKIP_CLIENT = /^(home|manager|closed|available|no[_ ]participant|no[_ ]client|open|cover[_ ]needed|off|day[_ ]off|casa|na|office)$/i;
 
 /** Sun 6 Sep 2026 dated books (Overview / LOCAL). Used when DB roster is still thin. */
 const SUNDAY_2026_09_06: Feedback2030Slot[] = [
@@ -95,6 +95,33 @@ const AUTUMN_TERM_FROM = "2026-09-01";
 const AUTUMN_STANDING_WEEK_START = "2026-07-13";
 const AUTUMN_STANDING_WEEK_END = "2026-07-17";
 
+/** Fadi off-rota DC reshuffle (Places fadi_off phase). Standing MADRE still names Fadi. */
+const FADI_OFF_DC_FROM = "2026-09-07";
+const FADI_OFF_DC_THROUGH = "2026-09-19";
+
+/**
+ * Monday Day Centre during Fadi off — Ikram with Luliya + Youssef (not Fadi / standing Michelle book).
+ * Dated Mon 14 Sep uses the same kids; times match Places fadi_off / dated_2026-09-14.
+ */
+const MONDAY_FADI_OFF_DC: Feedback2030Slot[] = [
+  { staff: "ROBERTO", client: "Emanuel", time: "11 to 3", service: "Day Centre" },
+  { staff: "LULIYA", client: "Ikram", time: "11 to 3", service: "Day Centre" },
+  { staff: "YOUSSEF", client: "Ikram", time: "12.30 to 3", service: "Day Centre" },
+  { staff: "VICTOR", client: "Timi", time: "11 to 1", service: "Day Centre" },
+  { staff: "VICTOR", client: "Emanuel", time: "3 to 4", service: "Day Centre" },
+  { staff: "RAUL", client: "Ikram", time: "3 to 4", service: "Day Centre" },
+];
+
+/** Mon 14 Sep dated DC board (Places dated_2026-09-14) — Youssef Ikram 11–3. */
+const MONDAY_2026_09_14_DC: Feedback2030Slot[] = [
+  { staff: "ROBERTO", client: "Emanuel", time: "11 to 4", service: "Day Centre" },
+  { staff: "LULIYA", client: "Ikram", time: "11 to 3", service: "Day Centre" },
+  { staff: "YOUSSEF", client: "Ikram", time: "11 to 3", service: "Day Centre" },
+  { staff: "MICHELLE", client: "Timi", time: "11 to 1", service: "Day Centre" },
+  { staff: "RAUL", client: "Timi", time: "11 to 1", service: "Day Centre" },
+  { staff: "RAUL", client: "Ikram", time: "3 to 4", service: "Day Centre" },
+];
+
 /** Prefer autumn-2026 when cut over; until then summer-2026 holds Autumn standing. */
 export const FEEDBACK_2030_MADRE_TERM_KEYS = ["autumn-2026", "summer-2026"] as const;
 
@@ -164,9 +191,30 @@ function weekdayLongUtcNoon(iso: string): string {
 
 export function datedFallbackSlots(iso: string): Feedback2030Slot[] {
   if (iso === "2026-09-06") return SUNDAY_2026_09_06.slice();
+  if (iso === "2026-09-14") return MONDAY_2026_09_14_DC.slice();
   const wd = weekdayLongUtcNoon(iso);
   if (wd === "Saturday") return SATURDAY_ACTON_REAL.slice();
+  if (
+    wd === "Monday" &&
+    iso >= FADI_OFF_DC_FROM &&
+    iso <= FADI_OFF_DC_THROUGH
+  ) {
+    return MONDAY_FADI_OFF_DC.slice();
+  }
   return [];
+}
+
+/** Drop standing-MADRE Fadi DC seats while Fadi is off-rota (Places uses Ikram / fadi_off). */
+export function scrubFadiOffDayCentreSlots(
+  slots: Feedback2030Slot[],
+  iso: string,
+): Feedback2030Slot[] {
+  if (!iso || iso < FADI_OFF_DC_FROM || iso > FADI_OFF_DC_THROUGH) return slots;
+  return (slots || []).filter((s) => {
+    const client = String(s.client || "").trim();
+    if (/^fadi\b/i.test(client)) return false;
+    return true;
+  });
 }
 
 type MadreLike = {
