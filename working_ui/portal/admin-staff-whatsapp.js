@@ -427,21 +427,7 @@
   }
 
   function compareStaffWaDirectory(a, b) {
-    /* Keep the open chat pinned so 5s poll re-sort does not jump the selection. */
-    var sel = staffUsernameKey(state.selected);
-    if (sel) {
-      var aSel = staffUsernameKey(a && a.username) === sel ? 0 : 1;
-      var bSel = staffUsernameKey(b && b.username) === sel ? 0 : 1;
-      if (aSel !== bSel) return aSel - bSel;
-    }
-    /* Unread inbound first (any date), then most recent received, then any activity. */
-    var ua = isLeaderUnread(a) ? 0 : 1;
-    var ub = isLeaderUnread(b) ? 0 : 1;
-    if (ua !== ub) return ua - ub;
-    var cmpIn = String((b && b.lastInboundAt) || "").localeCompare(
-      String((a && a.lastInboundAt) || ""),
-    );
-    if (cmpIn) return cmpIn;
+    /* Same as Family Messages / parents: whoever wrote last floats to the top. */
     var cmp = String(staffWaLastActivityAt(b) || "").localeCompare(
       String(staffWaLastActivityAt(a) || ""),
     );
@@ -460,7 +446,7 @@
       total +
       " staff" +
       (unread ? " · " + unread + " unread" : "") +
-      " · unread first";
+      " · latest first";
     el.classList.toggle("portal-staff-wa-admin__count--has-unread", unread > 0);
   }
 
