@@ -5056,7 +5056,7 @@
       // Summer 25/26 is never a Later term — after re-enrol it moves to Quick menu → Old Term Dates.
       var autumnSettled = hubReenrolPayState(data) === "settled";
       upcomingAccordions.forEach(function (term, idx) {
-        var html = termAccordionHtml(term.label, term.body, false, autumnSettled && acceptedNext);
+        var html = termAccordionHtml(term.label, term.body, idx === 0, autumnSettled && acceptedNext);
         if (idx === 0) thisChunks.push(html);
         else laterChunks.push(html);
       });
