@@ -635,6 +635,10 @@
   var ASH_FALLBACK_CLIENT_STARTS = {
     "Emmanuel Abate": "2026-09-15",
     "Christian Abate": "2026-09-15",
+    "Amaar Ah": "2026-09-14",
+    "Muhammad": "2026-09-14",
+    "Adaam Ah": "2026-09-14",
+    "Aydaan Ah": "2026-09-14",
   };
 
   /** First calendar day this client appears on roster (ISO date). */
@@ -2467,11 +2471,13 @@
         slot.portalOriginalInstructors && slot.portalOriginalInstructors.length
           ? normalizeInstructorList(slot.portalOriginalInstructors).slice()
           : slotInstructors(slot).slice();
-      var effective = swapInstructorCoverInList(
-        slotInstructors(slot).slice(),
-        anchorId,
-        coverName,
-        coverId
+      var effective = dedupeInstructorNames(
+        swapInstructorCoverInList(
+          slotInstructors(slot).slice(),
+          anchorId,
+          coverName,
+          coverId
+        )
       );
       var reassigned = Object.assign({}, slot, {
         instructors: effective,
@@ -2485,44 +2491,6 @@
       });
       return reassigned;
     });
-  }
-
-  function hubInstructorCellHtml(slot, slotOv) {
-    if (!slot) return "\u2014";
-    if (slot.portalShadowingHost && slot.portalShadowingObserverName) {
-      var origInstSh = normalizeInstructorList(slot.portalOriginalInstructors || slot.instructors);
-      var origHtmlSh = origInstSh.map(formatInstructorPillOut).join("");
-      var obsHtml = formatInstructorPill(slot.portalShadowingObserverName);
-      return (
-        '<span class="ash-instructor-reassign ash-instructor-shadowing">' +
-        origHtmlSh +
-        '<span class="ash-instructor-reassign-sep" aria-hidden="true">/</span>' +
-        obsHtml +
-        "</span>"
-      );
-    }
-    if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
-      var origHtml = normalizeInstructorList(slot.portalOriginalInstructors).map(formatInstructorPillOut).join("");
-      var coverNeeded = !!(
-        slot.__portalScheduleOverride &&
-        overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride)
-      );
-      var coverHtml = slotInstructors(slot)
-        .map(function (n) {
-          return coverNeeded ? formatInstructorPillCoverNeeded(n) : formatInstructorPill(n);
-        })
-        .join("");
-      return (
-        '<span class="ash-instructor-reassign' +
-        (coverNeeded ? " ash-instructor-reassign--cover-needed" : "") +
-        '">' +
-        origHtml +
-        '<span class="ash-instructor-reassign-sep" aria-hidden="true">/</span>' +
-        coverHtml +
-        "</span>"
-      );
-    }
-    return slotInstructors(slot).map(formatInstructorPill).join(" ") || "\u2014";
   }
 
   /** schedule_overrides client_replace_in_slot — instructor receiving the client owes feedback for that anchor time. */
@@ -3042,6 +3010,17 @@
     if (up === "HOME" || up === "CASA") return "home";
     if (up === "MANAGER") return "manager";
     if (low === "closed") return "closed";
+    /* Duty / ops seats — never parent session feedback (Office, Interviews, …). */
+    if (
+      low === "office" ||
+      low === "interviews" ||
+      low === "interview" ||
+      low === "admin" ||
+      low === "ops" ||
+      low === "operations"
+    ) {
+      return "staff_duty";
+    }
     if (
       low === "shadowing" ||
       low === "training" ||
@@ -3070,10 +3049,16 @@
     return rosterSlotKind(name) === "client";
   }
 
-  /** Shadowing / training / meeting rows never owe parent session feedback. */
+  /** Shadowing / training / meeting / Office / Interviews never owe parent session feedback. */
   function slotIsStaffDutyNoFeedback(slot) {
     if (!slot) return false;
     if (rosterSlotKind(slot.client_name) === "staff_duty") return true;
+    if (rosterSlotKind(slot.client_name) === "home") return true;
+    if (rosterSlotKind(slot.client_name) === "manager") return true;
+    var svc = serviceKey(slot.service);
+    if (svc === "interview" || svc === "interviews" || svc.indexOf("interview") === 0) {
+      return true;
+    }
     if (overrideIsShadowingSessionAdd(slot.__portalScheduleOverride)) return true;
     var ov =
       slot.__portalScheduleOverride ||
@@ -3280,7 +3265,7 @@
       return solo ? [solo] : [];
     }
     var cover = coverName || resolveStaffDisplayName(coverId) || coverId;
-    if (!anchorId) return cover ? [cover] : list.slice();
+    if (!anchorId) return cover ? dedupeInstructorNames([cover]) : dedupeInstructorNames(list);
     var hit = false;
     var out = list.map(function (name) {
       if (staffIdMatchesInstructorWithSwimAliases(anchorId, [name])) {
@@ -3293,7 +3278,81 @@
       return cover ? [cover] : list.slice();
     }
     if (!hit && cover) return [cover];
-    return out.length ? out : list.slice();
+    return dedupeInstructorNames(out.length ? out : list);
+  }
+
+  function dedupeInstructorNames(list) {
+    var out = [];
+    var seen = Object.create(null);
+    (Array.isArray(list) ? list : []).forEach(function (name) {
+      var n = clean(name);
+      if (!n) return;
+      var k = canonicalStaffMatchKey(n) || clean(n).toLowerCase();
+      if (!k || seen[k]) return;
+      seen[k] = true;
+      out.push(n);
+    });
+    return out;
+  }
+
+  function hubInstructorCellHtml(slot, slotOv, opts) {
+    if (!slot) return "\u2014";
+    opts = opts || {};
+    /* Register / who-owes: only the cover on duty — not Aurora struck + Luliya. */
+    var whoOwes = !!opts.feedbackWhoOwes;
+    if (slot.portalShadowingHost && slot.portalShadowingObserverName) {
+      if (whoOwes) {
+        return (
+          formatInstructorPill(slot.portalShadowingObserverName) ||
+          slotInstructors(slot).map(formatInstructorPill).join(" ") ||
+          "\u2014"
+        );
+      }
+      var origInstSh = normalizeInstructorList(slot.portalOriginalInstructors || slot.instructors);
+      var origHtmlSh = origInstSh.map(formatInstructorPillOut).join("");
+      var obsHtml = formatInstructorPill(slot.portalShadowingObserverName);
+      return (
+        '<span class="ash-instructor-reassign ash-instructor-shadowing">' +
+        origHtmlSh +
+        '<span class="ash-instructor-reassign-sep" aria-hidden="true">/</span>' +
+        obsHtml +
+        "</span>"
+      );
+    }
+    if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
+      var coverNeeded = !!(
+        slot.__portalScheduleOverride &&
+        overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride)
+      );
+      var effective = dedupeInstructorNames(slotInstructors(slot));
+      if (whoOwes) {
+        return (
+          effective
+            .map(function (n) {
+              return coverNeeded ? formatInstructorPillCoverNeeded(n) : formatInstructorPill(n);
+            })
+            .join(" ") || "\u2014"
+        );
+      }
+      var origHtml = normalizeInstructorList(slot.portalOriginalInstructors).map(formatInstructorPillOut).join("");
+      var coverHtml = effective
+        .map(function (n) {
+          return coverNeeded ? formatInstructorPillCoverNeeded(n) : formatInstructorPill(n);
+        })
+        .join("");
+      return (
+        '<span class="ash-instructor-reassign' +
+        (coverNeeded ? " ash-instructor-reassign--cover-needed" : "") +
+        '">' +
+        origHtml +
+        '<span class="ash-instructor-reassign-sep" aria-hidden="true">/</span>' +
+        coverHtml +
+        "</span>"
+      );
+    }
+    return (
+      dedupeInstructorNames(slotInstructors(slot)).map(formatInstructorPill).join(" ") || "\u2014"
+    );
   }
 
   function dayCentreFeedbackServiceCompatible(fb, slot) {
@@ -8559,7 +8618,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         "</td>";
       var awaitPaxOnlyCell = "<td>" + awaitPaxPill + "</td><td>" + esc(awaitSvc) + awaitTime + "</td>";
       if (awaitOpen) {
-        var awaitInstOpen = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
+        var awaitInstOpen = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot), {
+          feedbackWhoOwes: true,
+        });
         return (
           '<tr class="ash-fb-row ash-fb-row--open-seat">' +
           (variant === "register" ? awaitParticipantServiceCell : awaitPaxOnlyCell) +
@@ -8577,7 +8638,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           hub.findAbsentFeedbackForSlot(awaitSlot) ||
           hub.syntheticAbsentDisplayRow(awaitSlot);
         if (absentRow) return hub.htmlFeedbackTableRow(absentRow, escFn, opts);
-        var awaitInstAbsent = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot));
+        var awaitInstAbsent = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot), {
+          feedbackWhoOwes: true,
+        });
         return (
           '<tr class="ash-fb-row ash-fb-row--awaiting">' +
           (variant === "register" ? awaitParticipantServiceCell : awaitPaxOnlyCell) +
@@ -8592,7 +8655,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       var awaitInst = hubInstructorCellHtml(
         awaitSlot,
-        instructorReassignOverrideForSlot(hub, awaitSlot) || hub.overrideForSlot(awaitSlot)
+        instructorReassignOverrideForSlot(hub, awaitSlot) || hub.overrideForSlot(awaitSlot),
+        { feedbackWhoOwes: true }
       );
       return (
         '<tr class="ash-fb-row ash-fb-row--awaiting">' +

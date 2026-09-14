@@ -1,0 +1,24 @@
+# Sessions Register — who owes feedback
+
+Victor should not have to re-explain these. Apply in **Sessions Overview / Register** day stats and awaiting rows (`admin-sessions-hub.js`).
+
+## Never count as awaiting / never in feedback denominator
+
+| Seat / label | Why |
+|---|---|
+| **Office** | Ops duty block — not a participant session |
+| **Interviews** / Interview service | Michelle ops — not participant feedback |
+| **HOME** / **MANAGER** / **Admin** | Staff duty |
+| **Shadowing** / Training / Meeting | Staff development |
+| **HOLD WAITLIST** / waitlist placeholders | Booking hold, not a seated CLIENT |
+| Clients before `first_session` / `clientRosterStartDates` | Not started yet — MADRE may already show the seat |
+
+## Cover display on Register
+
+When Luliya (or anyone) **covers** Aurora (or anyone) via `instructor_reassign`, Register **Reviewed by / awaiting instructor** shows **only the cover** who owes the feedback — not Aurora+Luliya.
+
+Overview day board may still show original → cover chrome.
+
+## Sunday totals
+
+Sunday denominators inflate when duty/hold/not-started seats are included. Keep them out of `slotIncludedInDayStats` / awaiting mix.

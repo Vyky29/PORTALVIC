@@ -773,6 +773,10 @@
       {
         "Emmanuel Abate": "2026-09-15",
         "Christian Abate": "2026-09-15",
+        "Amaar Ah": "2026-09-14",
+        "Muhammad": "2026-09-14",
+        "Adaam Ah": "2026-09-14",
+        "Aydaan Ah": "2026-09-14",
       },
       C && C.FADI_START_ISO ? { Fadi: C.FADI_START_ISO } : {}
     );
