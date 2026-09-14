@@ -323,7 +323,8 @@ function rebuildWednesday(week) {
     const d = ensureDay(javier, "Wednesday");
     clearDayServices(d, isActonAquatic);
     d.slots.push(aquatic("Acton", "4 to 5", "Cyrus", "JAVIER"));
-    d.slots.push(aquatic("Acton", "5 to 6", "Ayman", "JAVIER"));
+    d.slots.push(aquatic("Acton", "5 to 5.30", "Ayman", "JAVIER"));
+    d.slots.push(aquatic("Acton", "5.30 to 6", "Ayman", "JAVIER"));
     d.slots.push(aquatic("Acton", "6 to 6.30", "Kayden", "JAVIER"));
   }
   if (youssef) {

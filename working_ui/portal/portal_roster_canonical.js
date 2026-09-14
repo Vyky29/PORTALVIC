@@ -2831,8 +2831,9 @@
     { staff: "YOUSSEF", name: "No participant", time: "5.30 to 6", area: "Teaching Pool" },
     { staff: "YOUSSEF", name: "No participant", time: "6 to 6.30", area: "Teaching Pool" },
     { staff: "JAVIER", name: "Cyrus", time: "4 to 5", area: "Teaching Pool" },
-    /* Wed Acton hour: Ayman 5–6 (both half-hours). Do not leave a free 5.30–6 under it. */
-    { staff: "JAVIER", name: "Ayman", time: "5 to 6", area: "Teaching Pool" },
+    /* Wed Acton: two 30' rows (same rule as Serine / Mohamed hour split for feedback merge). */
+    { staff: "JAVIER", name: "Ayman", time: "5 to 5.30", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "Ayman", time: "5.30 to 6", area: "Teaching Pool" },
     { staff: "JAVIER", name: "Kayden", time: "6 to 6.30", area: "Teaching Pool" },
   ];
 
