@@ -741,6 +741,47 @@
     return out;
   }
 
+  function isSwimfarmPoolOrHubPlacesService(service) {
+    var svc = String(service || "").toLowerCase();
+    return /multi/.test(svc) || /aquatic|swim/.test(svc);
+  }
+
+  /**
+   * Places Sunday Multi bands are capacity windows (e.g. 9.30–11 with Adam+Jack),
+   * not teaching turns. Staff Today feedback needs Timetable/canonical 45' seats
+   * (Aurora Small/Big Pool + Sep 6 Yusuf swap). Overview keeps Places bands.
+   */
+  function replaceStaffSwimfarmPlacesBandsWithTeachingTurns(rows, staffId) {
+    var C = global.PortalRosterCanonical;
+    if (!C || typeof C.resolveCanonicalRosterRows !== "function") return rows;
+    var want = normStaffTok(staffId);
+    if (!want) return rows;
+    var kept = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      var venue = String(r.venue || "").toLowerCase();
+      if (venue.indexOf("swimfarm") >= 0 && isSwimfarmPoolOrHubPlacesService(r.service)) {
+        return;
+      }
+      kept.push(r);
+    });
+    var canon = [];
+    try {
+      canon = C.resolveCanonicalRosterRows() || [];
+    } catch (_c) {
+      return rows;
+    }
+    canon.forEach(function (r) {
+      if (!r) return;
+      var venue = String(r.venue || "").toLowerCase();
+      if (venue.indexOf("swimfarm") < 0) return;
+      if (!isSwimfarmPoolOrHubPlacesService(r.service)) return;
+      if (!instructorMentionsStaff(r.instructors, want)) return;
+      kept.push(r);
+    });
+    return kept;
+  }
+
   function occupantsHasDayCentre(bySlotId) {
     return Object.keys(bySlotId || {}).some(function (id) {
       var s = bySlotId[id];
@@ -825,14 +866,20 @@
           includeDc: occupantsHasDayCentre(slimBy),
         });
         if (slim) {
+          var teachingRows = replaceStaffSwimfarmPlacesBandsWithTeachingTurns(
+            slim.rows || [],
+            staffId,
+          );
           slim = Object.assign({}, slim, {
+            rows: teachingRows,
             capacityChainStaffScoped: true,
             capacityChainStaffId: staffId,
+            capacityChainSwimfarmTeachingTurns: true,
             rosterSourceNote:
               (slim.rosterSourceNote || "Capacity chain") +
               " · staff-scoped (" +
               staffId +
-              ")",
+              ") · SwimFarm teaching turns",
           });
           STAFF_CHAIN_CACHE[staffId] = slim;
         }
