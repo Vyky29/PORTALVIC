@@ -263,6 +263,7 @@
           ? portalDeferHeavyDashboardRefresh
           : function(fn){ setTimeout(fn, 0); };
         deferPaint(paintAfterReboot, 0);
+      }
       window.portalRebootstrapSessionsForPinnedStaff = portalRebootstrapSessionsForPinnedStaff;
       function portalStaffKeyForRotaFromProfile(p){
         var sess = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
