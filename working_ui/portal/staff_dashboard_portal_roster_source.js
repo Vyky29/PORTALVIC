@@ -1,6 +1,7 @@
 /**
- * Wires STAFF_DASHBOARD_SOURCE.rows through the canonical roster pipeline
- * (see portal_roster_canonical.js). Admin and staff dashboards share this entry point.
+ * Wires STAFF_DASHBOARD_SOURCE.rows through the roster pipeline.
+ * Sessions Overview uses capacity chain (Places + Services DC + Timetable).
+ * Staff Today / other surfaces keep canonical until cut over.
  */
 (function () {
   function dispatchStaffDashboardSourceUpdated() {
@@ -26,34 +27,76 @@
     return !!REFRESH_INFLIGHT;
   };
 
+  /** Admin Sessions Overview (hash / open hub) — same pin path as LOCAL. */
+  function sessionsOverviewSurfaceActive() {
+    if (typeof window === "undefined") return false;
+    try {
+      if (window.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__) return true;
+      if (window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__) return true;
+      var hash = String(window.location && window.location.hash ? window.location.hash : "")
+        .toLowerCase();
+      if (hash.indexOf("c4k_sessions") >= 0) return true;
+      if (
+        typeof document !== "undefined" &&
+        document.querySelector &&
+        document.querySelector(".admin-sessions-hub-root")
+      ) {
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  function pinOverviewCapacitySource(src) {
+    if (!src || !src.capacityChainNoCanonicalRemap) return;
+    if (!Array.isArray(src.rows) || !src.rows.length) return;
+    try {
+      window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__ = src;
+    } catch (_) {}
+  }
+
+  function resolveCapacityChainForOverview(opts) {
+    try {
+      var Chain = window.PortalOverviewCapacityChain;
+      if (Chain && typeof Chain.resolve === "function") {
+        var chainSrc = Chain.resolve(opts || {});
+        if (chainSrc && Array.isArray(chainSrc.rows) && chainSrc.rows.length) {
+          pinOverviewCapacitySource(chainSrc);
+          return chainSrc;
+        }
+      }
+      if (typeof console !== "undefined" && console.warn) {
+        console.warn(
+          "[portal] Sessions Overview capacity chain unavailable (need Timetable hours + occupants). Not falling back to canonical."
+        );
+      }
+    } catch (_chain) {
+      if (typeof console !== "undefined" && console.warn) {
+        console.warn("[portal] Sessions Overview capacity chain failed", _chain);
+      }
+    }
+    var pinned =
+      typeof window !== "undefined" ? window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__ : null;
+    if (pinned && Array.isArray(pinned.rows) && pinned.rows.length) return pinned;
+    var prev = typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
+    if (prev && prev.capacityChainNoCanonicalRemap && Array.isArray(prev.rows) && prev.rows.length) {
+      return prev;
+    }
+    /* Never remap Overview through canonical Jul stamps. */
+    return {
+      rows: prev && Array.isArray(prev.rows) ? prev.rows.slice() : [],
+      capacityChainNoCanonicalRemap: true,
+      localNoCanonicalResolve: true,
+      rosterSourceNote:
+        "Sessions Overview waiting for capacity chain (Places + Services + Timetable)",
+    };
+  }
+
   function resolveStaffDashboardSource(opts) {
     opts = opts || {};
-    /* Sessions Overview: capacity chain (Places + Services DC phases + Timetable).
-       Staff Today / other surfaces keep canonical until cut over. */
-    if (opts.forSessionsOverview) {
-      try {
-        var Chain = window.PortalOverviewCapacityChain;
-        if (Chain && typeof Chain.resolve === "function") {
-          var chainSrc = Chain.resolve(opts);
-          if (chainSrc && Array.isArray(chainSrc.rows) && chainSrc.rows.length) {
-            return chainSrc;
-          }
-        }
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn(
-            "[portal] Sessions Overview capacity chain unavailable (need Timetable hours + occupants). Not falling back silently for Overview paint."
-          );
-        }
-      } catch (_chain) {
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn("[portal] Sessions Overview capacity chain failed", _chain);
-        }
-      }
-      /* Prefer last good capacity-chain source over canonical remap for Overview. */
-      var prev = typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
-      if (prev && prev.capacityChainNoCanonicalRemap && Array.isArray(prev.rows) && prev.rows.length) {
-        return prev;
-      }
+    var forOverview = !!(opts.forSessionsOverview || sessionsOverviewSurfaceActive());
+    if (forOverview) {
+      return resolveCapacityChainForOverview(opts);
     }
     var canon = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
     if (canon && typeof canon.resolveCanonicalStaffDashboardSource === "function") {
@@ -69,13 +112,17 @@
   window.portalResolveStaffDashboardSource = resolveStaffDashboardSource;
 
   function refreshStaffDashboardSourceFromPortal(opts) {
-    if (typeof window === "undefined" || !window.STAFF_DASHBOARD_SOURCE) return;
+    if (typeof window === "undefined") return;
+    opts = opts || {};
     var keepOverview =
-      !!(opts && opts.forSessionsOverview) ||
-      !!(window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.capacityChainNoCanonicalRemap);
+      !!(opts.forSessionsOverview) ||
+      sessionsOverviewSurfaceActive() ||
+      !!(window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.capacityChainNoCanonicalRemap) ||
+      !!window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__;
     window.STAFF_DASHBOARD_SOURCE = resolveStaffDashboardSource(
-      keepOverview ? { forSessionsOverview: true } : opts || {}
+      keepOverview ? { forSessionsOverview: true } : opts
     );
+    if (keepOverview) pinOverviewCapacitySource(window.STAFF_DASHBOARD_SOURCE);
     dispatchStaffDashboardSourceUpdated();
   }
 
@@ -104,7 +151,12 @@
           : Promise.resolve([]);
       })
       .then(function (rows) {
-        refreshStaffDashboardSourceFromPortal();
+        /* MADRE / portal_roster_rows refresh must not wipe Overview capacity chain. */
+        refreshStaffDashboardSourceFromPortal(
+          sessionsOverviewSurfaceActive() || window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__
+            ? { forSessionsOverview: true }
+            : {}
+        );
         markStaffRosterLiveReady();
         return rows;
       })
@@ -116,7 +168,9 @@
 
   window.portalRefreshPortalRosterRowsFromSupabase = refreshPortalRosterRowsFromSupabase;
 
-  refreshStaffDashboardSourceFromPortal();
+  refreshStaffDashboardSourceFromPortal(
+    sessionsOverviewSurfaceActive() ? { forSessionsOverview: true } : {}
+  );
 
   function bootstrapLiveMadreWhenReady() {
     if (typeof window === "undefined") return;
@@ -133,7 +187,11 @@
         typeof window.PortalMadreFold.loadLiveMadre === "function"
       ) {
         window.PortalMadreFold.loadLiveMadre(client, false).then(function () {
-          refreshStaffDashboardSourceFromPortal();
+          refreshStaffDashboardSourceFromPortal(
+            sessionsOverviewSurfaceActive() || window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__
+              ? { forSessionsOverview: true }
+              : {}
+          );
         });
         return;
       }
@@ -148,7 +206,8 @@
   // stayed open pick up newer portal_madre_document revisions on tab focus and
   // on a slow periodic backstop. A 60s min-gap avoids network spam.
   function setupLiveMadreAutoRefresh() {
-    if (typeof document === "undefined") return;
+    if (typeof document === "undefined" || !document.addEventListener) return;
+    if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
     var MIN_GAP_MS = 60 * 1000;
     var PERIODIC_MS = 8 * 60 * 1000;
     var lastAt = 0;

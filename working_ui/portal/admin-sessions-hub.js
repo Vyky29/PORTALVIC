@@ -5974,6 +5974,13 @@
   AdminSessionsHub.prototype.loadBundle = async function () {
     try {
       await loadScriptOnce(BUNDLE_SRC);
+      /* Spreadsheet bundle stomps STAFF_DASHBOARD_SOURCE — restore capacity chain for Overview. */
+      try {
+        global.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__ = true;
+        if (typeof global.portalRefreshStaffDashboardSourceFromPortal === "function") {
+          global.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
+        }
+      } catch (_restoreChain) {}
       this.refreshRosterRowsFromResolvedSource();
     } catch (e) {
       this.rosterRows = [];
@@ -5984,12 +5991,20 @@
 
   AdminSessionsHub.prototype.refreshRosterRowsFromResolvedSource = function () {
     try {
+      try {
+        global.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__ = true;
+      } catch (_flag) {}
       var resolved =
         typeof global.portalResolveStaffDashboardSource === "function"
           ? global.portalResolveStaffDashboardSource({ forSessionsOverview: true })
           : null;
       if (resolved && typeof resolved === "object") {
         global.STAFF_DASHBOARD_SOURCE = resolved;
+        if (resolved.capacityChainNoCanonicalRemap && Array.isArray(resolved.rows) && resolved.rows.length) {
+          try {
+            global.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__ = resolved;
+          } catch (_pin) {}
+        }
       }
       var src = global.STAFF_DASHBOARD_SOURCE;
       this.invalidateComputeCaches();
