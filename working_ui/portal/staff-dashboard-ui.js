@@ -812,26 +812,34 @@
           }catch(_){}
           return;
         }
-        try{
-          if(typeof portalMarkPerf === 'function') portalMarkPerf('term-rebuild-start');
-          if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
-            rebuildTermShiftAndFeedbackFromSessionModel();
-          }
-          if(typeof portalMeasurePerf === 'function') portalMeasurePerf('term-rebuild', 'term-rebuild-start');
-        }catch(_){}
-        try{
-          if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
-        }catch(_){}
-        try{
-          if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
-        }catch(_){}
-        try{
-          if(typeof portalScheduleReminderChromeAfterAnnSync === 'function'){
-            portalScheduleReminderChromeAfterAnnSync();
-          }else if(typeof syncPortalReminderChrome === 'function'){
-            setTimeout(function(){ syncPortalReminderChrome(); }, 0);
-          }
-        }catch(_){}
+        void (async function(){
+          try{
+            if(typeof portalMarkPerf === 'function') portalMarkPerf('term-rebuild-start');
+            var req = (window.__PORTAL_TERM_REBUILD_REQ__ = (window.__PORTAL_TERM_REBUILD_REQ__ || 0) + 1);
+            if(typeof rebuildTermShiftAndFeedbackFromSessionModelProgressive === 'function'){
+              await rebuildTermShiftAndFeedbackFromSessionModelProgressive({
+                requestId: req,
+                allowWhenClosed: true
+              });
+            }else if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+              rebuildTermShiftAndFeedbackFromSessionModel({ allowWhenClosed: true });
+            }
+            if(typeof portalMeasurePerf === 'function') portalMeasurePerf('term-rebuild', 'term-rebuild-start');
+          }catch(_){}
+          try{
+            if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
+          }catch(_){}
+          try{
+            if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid({ force: true });
+          }catch(_){}
+          try{
+            if(typeof portalScheduleReminderChromeAfterAnnSync === 'function'){
+              portalScheduleReminderChromeAfterAnnSync();
+            }else if(typeof syncPortalReminderChrome === 'function'){
+              setTimeout(function(){ syncPortalReminderChrome(); }, 0);
+            }
+          }catch(_){}
+        })();
       };
       if(typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 2500 });
       else setTimeout(go, 400);
@@ -3146,7 +3154,7 @@
           curCollect.setDate(curCollect.getDate() + 1);
         }
 
-        const CHUNK = 5;
+        const CHUNK = 2;
         for(let di = 0; di < dayList.length; di++){
           if(requestId && requestId !== window.__PORTAL_TERM_REBUILD_REQ__) return;
           if(di > 0 && di % CHUNK === 0 && typeof portalYieldToMain === 'function'){
@@ -3358,7 +3366,11 @@
        * Today had already painted. Opening Term still paints via openSheet.
        */
       if(!termSheetOpen) return;
-      rebuildTermShiftAndFeedbackFromSessionModel();
+      /*
+       * Never sync-walk the full term here. Javier/Luliya (dense Acton books) froze
+       * for 2s+ and stayed on "Loading term…". Maps are built progressively in
+       * openSheet / portalDeferTermFeedbackRebuild, then this paint uses them.
+       */
       if(typeof portalRefreshPendingOverrideDaysCache === 'function') portalRefreshPendingOverrideDaysCache();
       let ovCount = 0;
       try{
@@ -4026,7 +4038,14 @@
       if(id === 'termSheet'){
         syncTermCalendarColorIntro(true);
         const termGridEl = document.getElementById('termGrid');
-        if(termGridEl && !termGridEl.querySelector('.term-cal-month')){
+        /* Paint month shell immediately — never leave "Loading term…" while maps build. */
+        if(typeof renderTermCalendarGrid === 'function'){
+          try{ renderTermCalendarGrid({ force: true }); }catch(_shell){
+            if(termGridEl && !termGridEl.querySelector('.term-cal-month')){
+              termGridEl.innerHTML = '<p class="muted" style="padding:16px;margin:0">Loading term…</p>';
+            }
+          }
+        }else if(termGridEl && !termGridEl.querySelector('.term-cal-month')){
           termGridEl.innerHTML = '<p class="muted" style="padding:16px;margin:0">Loading term…</p>';
         }
         var termSt = portalPanelLoadState.term;
@@ -4034,8 +4053,8 @@
         window.__PORTAL_TERM_REBUILD_REQ__ = termReq;
         termSt.loading = true;
         if(typeof renderTermCalendarGrid === 'function'){
-          /* Wait for overrides + feedback pipeline before the first Term paint so
-             Roberto does not see cancelled-red → green/blue flip on open. */
+          /* Wait for overrides + feedback pipeline before colouring days so
+             cancelled-red → green/blue does not flip on open. Shell already painted. */
           const paintTerm = function(){
             try{
               if(termReq !== portalPanelLoadState.term.requestId) return;
@@ -4084,11 +4103,11 @@
             const waitReady = function(){
               tries += 1;
               if(termReq !== portalPanelLoadState.term.requestId) return;
-              if(termDataReady() || tries >= 16){
+              if(termDataReady() || tries >= 10){
                 startTermWork();
                 return;
               }
-              setTimeout(waitReady, 150);
+              setTimeout(waitReady, 120);
             };
             waitReady();
           }
