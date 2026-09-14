@@ -3238,12 +3238,22 @@
       .map(function (s) {
         var iso = String((s && s.iso) || "").slice(0, 10);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+        /*
+         * Purple = trial only. Paid first / standing term seats arrive in the same
+         * upcoming_booked_sessions list with kind "session" (Abate twins Tue 15).
+         */
+        var kind = String((s && s.kind) || "").toLowerCase();
+        var label = String((s && s.label) || "");
+        var isTrial =
+          kind === "trial" ||
+          (!kind && /\btrial\b/i.test(label));
+        if (!isTrial) return null;
         return {
           iso: iso,
           shortLabel: formatTermChipLabel(iso),
           dayLabel: formatHubDateLabel(iso),
-          label: shortServiceChipLabel((s && s.label) || "Trial") || "Trial",
-          rawLabel: (s && s.label) || "Trial",
+          label: shortServiceChipLabel(label || "Trial") || "Trial",
+          rawLabel: label || "Trial",
           day: (s && s.day) || "",
           time: (s && s.time) || "",
           venue: String((s && s.venue) || "").trim(),
