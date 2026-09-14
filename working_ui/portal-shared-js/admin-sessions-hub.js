@@ -1380,8 +1380,8 @@
       session_time: st,
       client_name: overrideClientName(ov),
       service: "\u2014",
-      staff_user_id: "",
-      staff_name: clean(ov.reason) ? "Schedule override \u2014 " + clean(ov.reason) : "Schedule override",
+      staff_user_id: clean(ov && ov.created_by) || "",
+      staff_name: "Office",
       created_at: ov.created_at || null,
       mark_type: "absent",
       source: "schedule_override",
@@ -1401,9 +1401,9 @@
       session_time: normTimeShort(ov.anchor_start),
       client_name: overrideClientName(ov),
       service: "\u2014",
-      cancellation_timing: "Schedule override",
+      cancellation_timing: "Office",
       reason_category: reason,
-      submitted_by_name: "Schedule override",
+      submitted_by_name: "Office",
       portal_session_key: normTimeShort(ov.anchor_start)
         ? sd + "||" + normTimeShort(ov.anchor_start) + "||" + slug
         : sd + "||" + slug,
