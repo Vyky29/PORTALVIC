@@ -9799,7 +9799,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     simon: 1,
     michelle: 1,
     angel: 1,
-    andres: 1,
   };
   var DAY_BOARD_SUPPORT = {
     berta: 1,
@@ -9817,6 +9816,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   var DAY_BOARD_CLIMB = {
     alex: 1,
     carlos: 1,
+    andres: 1,
   };
 
   function dayBoardStaffRole(staffKey, items) {
@@ -11010,7 +11010,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           if (
             PRCSkip &&
             typeof PRCSkip.isAutumnNoSessionStaffKey === "function" &&
-            PRCSkip.isAutumnNoSessionStaffKey(staffKey)
+            PRCSkip.isAutumnNoSessionStaffKey(staffKey) &&
+            !(st && (st.boardPlace === "cover" || st.isRealCover))
           ) {
             continue;
           }
@@ -11172,7 +11173,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       try {
         var PRC = global.PortalRosterCanonical;
-        if (PRC && typeof PRC.isAutumnNoSessionStaffKey === "function" && PRC.isAutumnNoSessionStaffKey(key)) {
+        /* Never drop a column that already has cover / away cards (e.g. Andres covering Carlos). */
+        var hasLiveBoardItems = !!(byKey[key] && byKey[key].length);
+        if (
+          !hasLiveBoardItems &&
+          PRC &&
+          typeof PRC.isAutumnNoSessionStaffKey === "function" &&
+          PRC.isAutumnNoSessionStaffKey(key)
+        ) {
           return;
         }
         if (
@@ -11608,13 +11616,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     var title = root.querySelector(".ash-table-title-row .ash-table-title");
     if (title) {
-      var badge = title.querySelector(".ash-badge");
+      var srcNote = global.STAFF_DASHBOARD_SOURCE || {};
+      var chainOn = !!(
+        srcNote.capacityChainNoCanonicalRemap || global.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__
+      );
       title.innerHTML =
         hub.escapeHtml(formatLongDate(day)) +
-        " " +
-        (badge
-          ? badge.outerHTML
-          : '<span class="ash-badge ash-badge--booked">Who works</span>');
+        ' <span class="ash-badge ash-badge--booked">' +
+        hub.escapeHtml("Who works") +
+        "</span>" +
+        (chainOn
+          ? ' <span class="ash-badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0">' +
+            hub.escapeHtml("Places · Services · Timetable · Covers") +
+            "</span>"
+          : "");
     }
   };
 

@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 122;
+  var SOURCE_VERSION = 127;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -178,7 +178,8 @@
    */
   /**
    * Hub Bespoke Tinashe = 3 seats every working day (same count as Friday):
-   * Mon: Godsway + John + Raul · Wed: Godsway + Bismark + Emmanuel · Fri: Bismark + Roberto + Emmanuel.
+   * Mon: Godsway + John + Bismark (Mon 7 only: Victor covers third seat) ·
+   * Wed: Godsway + Bismark + Emmanuel · Fri: Bismark + Roberto + Emmanuel.
    */
   var AUTUMN_BESPOKE_HUB_ROWS = [
     {
@@ -204,7 +205,7 @@
     {
       client_name: "Tinashe",
       day: "Monday",
-      instructors: "RAUL",
+      instructors: "BISMARK",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.30 to 6",
@@ -247,7 +248,7 @@
       instructors: "ROBERTO",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.15 to 6.15",
+      time_slot: "4.30 to 6",
       venue: "SwimFarm",
       session_date: "2026-07-17",
     },
@@ -257,7 +258,7 @@
       instructors: "BISMARK",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.15 to 6.15",
+      time_slot: "4.30 to 6",
       venue: "SwimFarm",
       session_date: "2026-07-17",
     },
@@ -267,7 +268,7 @@
       instructors: "EMMANUEL",
       service: "Bespoke Programme",
       area: "Hub Room",
-      time_slot: "4.15 to 6.15",
+      time_slot: "4.30 to 6",
       venue: "SwimFarm",
       session_date: "2026-07-17",
     },
@@ -390,11 +391,13 @@
   /**
    * Fadi (CLIENT) is off the worker rotas from 1 Sep through 19 Sep 2026.
    * He starts 20 Sep — do not paint Cancelled seats or occupy override/slot space before that.
-   * Fri 11 – Fri 18: reshuffled DC boards (others cover); Thursday Roberto/Youssef have no Fadi book.
+   * DC who-with-whom while off: FADI_ABSENT_DC_BOARD for Mon 7 – Fri 19 (weekdays).
+   * Standing AUTUMN_DAY_CENTRE_BOARD from 20 Sep.
    */
   var FADI_START_ISO = "2026-09-20";
   var FADI_ABSENT_DC_UNTIL = FADI_START_ISO;
-  var FADI_ABSENT_DC_BOARD_FROM = "2026-09-11";
+  /* Fadi off-rota DC reshuffle: Mon 7 Sep through Sat 19 Sep; standing from Sun 20. */
+  var FADI_ABSENT_DC_BOARD_FROM = "2026-09-07";
   var FADI_ABSENT_DC_BOARD = {
     monday: [
       { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 3" }] },
@@ -432,14 +435,8 @@
         ],
       },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      {
-        staff: "Michelle",
-        clients: [
-          { name: "Ikram", time: "11 to 12" },
-          { name: "Manager", time: "12 to 3" },
-          { name: "Ikram", time: "3 to 4" },
-        ],
-      },
+      /* Michelle Tue (Fadi-off): Interviews 12.30-3 — not Ikram/Manager. */
+      { staff: "Michelle", clients: [{ name: "Interview", time: "12.30 to 3" }] },
       {
         staff: "Victor",
         clients: [
@@ -537,6 +534,7 @@
     if (n === "manager") return "Hub · Manager";
     if (n === "office") return "Hub · Office";
     if (n === "acat") return "Hub · ACAT";
+    if (n === "interview" || n === "interviews") return "Hub Room";
     return "Hub Room";
   }
 
@@ -595,6 +593,68 @@
     return out;
   }
 
+  /**
+   * Mon 14 Sep 2026 — day DC reshuffle (Adam P absent → Roberto stays Hub to 4,
+   * Acton from 5.30). Timetable hours for this date match these windows.
+   */
+  var MONDAY_SEP14_DC_BOARD = [
+    { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 4" }] },
+    { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
+    { staff: "Youssef", clients: [{ name: "Ikram", time: "11 to 3" }] },
+    { staff: "Victor", clients: [{ name: "Office", time: "11 to 4" }] },
+    {
+      staff: "Michelle",
+      clients: [
+        { name: "Timi", time: "11 to 1" },
+        { name: "Office", time: "1 to 3" },
+        { name: "Ikram", time: "3 to 4" },
+      ],
+    },
+    {
+      staff: "Raul",
+      clients: [
+        { name: "Timi", time: "11 to 1" },
+        { name: "Office", time: "1 to 3" },
+        { name: "Ikram", time: "3 to 4" },
+      ],
+    },
+  ];
+
+  function autumnMondaySep14DcRows() {
+    var iso = "2026-09-14";
+    var out = [];
+    MONDAY_SEP14_DC_BOARD.forEach(function (col) {
+      (col.clients || []).forEach(function (c) {
+        out.push({
+          client_name: c.name,
+          day: "Monday",
+          instructors: String(col.staff || "").toUpperCase(),
+          service: "Day Centre",
+          area: areaForDcClient(c.name),
+          time_slot: c.time,
+          venue: "SwimFarm",
+          session_date: iso,
+        });
+      });
+    });
+    return out;
+  }
+
+  function scrubAndEnsureSep14DayCentre(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (normIso(r.session_date) === "2026-09-14" && isDayCentreService(r.service)) {
+        return;
+      }
+      out.push(r);
+    });
+    autumnMondaySep14DcRows().forEach(function (row) {
+      out.push(row);
+    });
+    return out;
+  }
+
   /** True when this Day Centre row is the Jul standing snap used for Mon 7+ projection. */
   function isAutumnDcStandingTemplateRow(row) {
     if (!row || !isDayCentreService(row.service)) return false;
@@ -618,12 +678,11 @@
   }
 
   /**
-   * No Autumn Term 2026 sessions (LOCAL has no columns). Summer / MADRE leftovers
-   * must not project onto Sep+ Today or Term calendars.
+   * No Autumn Term 2026 standing sessions (LOCAL has no columns). Summer leftovers
+   * must not project onto Sep+ boards. Andres CAN cover Climbing (e.g. Sun 20 Carlos).
    */
-  var AUTUMN_NO_SESSION_STAFF_KEYS = ["angel", "giuseppe", "andres"];
-  var AUTUMN_NO_SESSION_INSTRUCTOR_RE =
-    /\b(angel|giuseppe|andres|andr[eé]s)\b/i;
+  var AUTUMN_NO_SESSION_STAFF_KEYS = ["angel", "giuseppe"];
+  var AUTUMN_NO_SESSION_INSTRUCTOR_RE = /\b(angel|giuseppe)\b/i;
 
   function isAutumnNoSessionStaffKey(staffKey) {
     var id = String(staffKey || "")
@@ -631,7 +690,6 @@
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "");
     if (!id) return false;
-    if (id === "andres" || id === "andrés" || id === "andresx") return true;
     return AUTUMN_NO_SESSION_STAFF_KEYS.indexOf(id) >= 0;
   }
 
@@ -1918,12 +1976,16 @@
         .trim()
         .toLowerCase();
       var isTinashe = /^tinashe\b/.test(clientTin) || clientTin === "tinashe";
-      /* Mon Tinashe standing = Godsway + John + Raul only (never Bismark / Emmanuel). */
+      /* Mon Tinashe: Godsway + John + Bismark (Timetable). Never Emmanuel alone. */
       if (iso && day === "monday") {
-        if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|victor)\b/i.test(s)) {
+        if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|john|bismark|raul|victor)\b/i.test(s)) {
           s = "";
         } else {
           s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
+        }
+        /* Standing third seat is Bismark — drop stale Raul if still present. */
+        if (iso >= "2026-09-14") {
+          s = s.replace(/\bRAUL\b/gi, "");
         }
       }
       /* Wed: Emmanuel on Tinashe from Wed 9 (shadowing Bismark). */
@@ -1942,9 +2004,9 @@
           s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
         }
       }
-      /* Bismark: Wed/Fri from 9 Sep; never on Mon Tinashe standing. */
+      /* Bismark: Mon from 14 Sep; Wed/Fri from 9 Sep. */
       if (isTinashe && iso) {
-        if (day === "monday") {
+        if (day === "monday" && iso < "2026-09-14") {
           if (/\bbismark\b|\bbismarck\b/i.test(s) && !/\b(godsway|john|raul|victor)\b/i.test(s)) {
             s = "";
           } else {
@@ -1972,9 +2034,9 @@
           }
         }
       }
-      /* Mon 7 Sep only: Raul OFF → Victor covers Tinashe (with Godsway + John). */
+      /* Mon 7 Sep only: third seat cover = Victor (Timetable), not Raul/Bismark. */
       if (iso === "2026-09-07" && day === "monday") {
-        s = s.replace(/\bRAUL\b/gi, "VICTOR");
+        s = s.replace(/\bRAUL\b/gi, "VICTOR").replace(/\bBISMARK\b/gi, "VICTOR");
       }
       s = String(s || "")
         .replace(/^[,\s/|]+|[,\s/|]+$/g, "")
@@ -3574,6 +3636,7 @@
     merged = scrubDepartedAutumnInstructorRows(merged);
     merged = applyAutumnWeek1DayCentre(merged);
     merged = applyFadiAbsentDayCentre(merged);
+    merged = scrubAndEnsureSep14DayCentre(merged);
     merged = scrubAndEnsureSep6HubCover(merged);
     merged = scrubAndEnsureSep6Climbing(merged);
     merged = scrubAndEnsureMuhammadClimbTrial(merged);
@@ -3740,6 +3803,9 @@
     WEEK1_DC_BOARD: WEEK1_DC_BOARD,
     isAutumnWeek1DcIso: isAutumnWeek1DcIso,
     FADI_ABSENT_DC_BOARD: FADI_ABSENT_DC_BOARD,
+    FADI_ABSENT_DC_BOARD_FROM: FADI_ABSENT_DC_BOARD_FROM,
+    MONDAY_SEP14_DC_BOARD: MONDAY_SEP14_DC_BOARD,
+    scrubAndEnsureSep14DayCentre: scrubAndEnsureSep14DayCentre,
     FADI_START_ISO: FADI_START_ISO,
     isFadiClientName: isFadiClientName,
     isFadiOffRotaIso: isFadiOffRotaIso,

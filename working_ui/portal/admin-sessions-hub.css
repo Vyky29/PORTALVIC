@@ -1165,7 +1165,7 @@
     .ash-pill--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
     .ash-pill--out { background: #fef2f2; color: #b91c1c; border: 1px solid rgba(220, 38, 38, 0.22); }
     .ash-pill--makeup { background: #dcfce7; color: #15803d; border: 1px solid rgba(22, 163, 74, 0.28); }
-    .ash-pill--absent { background: #fee2e2; color: #991b1b; border: 1px solid rgba(185, 28, 28, 0.35); }
+    .ash-pill--absent { background: #ffedd5; color: #c2410c; border: 1px solid rgba(234, 88, 12, 0.45); }
     .ash-instructor-reassign { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; max-width: 100%; min-width: 0; }
     .ash-instructor-reassign--cover-needed { gap: 6px; }
     .ash-pill--cover-needed {
@@ -1202,7 +1202,7 @@
     .override--shadowing { background: rgba(13,148,136,.16); color: #0f766e; border: 1px solid rgba(13,148,136,.42); }
     .override--trial { background: #f3e8ff; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.32); }
     .override--replace { background: #dcfce7; color: #15803d; border: 1px solid rgba(22, 163, 74, 0.28); }
-    .override--absent { background: #fee2e2; color: #b91c1c; border: 1px solid rgba(185, 28, 28, 0.35); }
+    .override--absent { background: #ffedd5; color: #c2410c; border: 1px solid rgba(234, 88, 12, 0.45); }
     .override--cancelled { background: #ffedd5; color: #c2410c; border: 1px solid rgba(194, 65, 12, 0.32); }
     .ash-status--wait { color: #c2410c; font-weight: 700; font-size: 12px; }
     .ash-status__compact { display: none; }
@@ -1213,7 +1213,7 @@
     body.admin-touch-compact .ash-status--wait .ash-status__wide { display: none; }
     body.admin-touch-compact .ash-status--wait .ash-status__compact { display: inline; }
     .ash-status--done { color: #166534; font-weight: 700; font-size: 12px; }
-    .ash-status--absent { color: #b91c1c; font-weight: 700; font-size: 12px; }
+    .ash-status--absent { color: #c2410c; font-weight: 700; font-size: 12px; }
     .ash-status--cancelled { color: #c2410c; font-weight: 700; font-size: 12px; }
     .ash-cell-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .ash-cell-main { font-weight: 600; }
@@ -2048,7 +2048,7 @@
     }
     .ash-db-badge--done { color: #166534; }
     .ash-db-badge--wait { color: #c2410c; }
-    .ash-db-badge--absent { color: #9a3412; }
+    .ash-db-badge--absent { color: #c2410c; }
     .ash-db-badge--cancel { color: #b91c1c; }
     .ash-db-badge--na { color: var(--muted); }
     .ash-db-seg {
@@ -2095,11 +2095,11 @@
       border-color: #ddd6fe;
     }
     .ash-db-card--absent {
-      background: #fef2f2;
-      border-color: #fca5a5;
-      box-shadow: inset 3px 0 0 #dc2626;
+      background: #fff7ed;
+      border-color: #fdba74;
+      box-shadow: inset 3px 0 0 #ea580c;
     }
-    .ash-db-card--absent .ash-db-card__name { color: #991b1b; }
+    .ash-db-card--absent .ash-db-card__name { color: #c2410c; }
     .ash-db-card--cancelled {
       background: #fef2f2;
       border-color: #fecaca;
