@@ -770,6 +770,10 @@
     var starts = Object.assign(
       {},
       baseSrc.clientRosterStartDates || {},
+      {
+        "Emmanuel Abate": "2026-09-15",
+        "Christian Abate": "2026-09-15",
+      },
       C && C.FADI_START_ISO ? { Fadi: C.FADI_START_ISO } : {}
     );
     return {

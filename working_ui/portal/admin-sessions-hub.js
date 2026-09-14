@@ -631,6 +631,12 @@
     return false;
   }
 
+  /** Fallback when capacity chain wiped bundle starts (admin Overview often has no bundle). */
+  var ASH_FALLBACK_CLIENT_STARTS = {
+    "Emmanuel Abate": "2026-09-15",
+    "Christian Abate": "2026-09-15",
+  };
+
   /** First calendar day this client appears on roster (ISO date). */
   function clientAllowedOnDate(clientName, isoDate) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return true;
@@ -640,11 +646,13 @@
       clientName
     );
     var ovStart = clientConfigMapEntry(global.__PORTAL_ASH_CLIENT_FIRST_SESSION__, clientName);
-    if (start && ovStart) {
-      start = String(start) <= String(ovStart) ? start : ovStart;
-    } else {
-      start = start || ovStart;
+    var fbStart = clientConfigMapEntry(ASH_FALLBACK_CLIENT_STARTS, clientName);
+    function earlierIso(a, b) {
+      if (!a) return b || "";
+      if (!b) return a;
+      return String(a) <= String(b) ? a : b;
     }
+    start = earlierIso(earlierIso(start, ovStart), fbStart);
     if (start && /^\d{4}-\d{2}-\d{2}$/.test(String(start)) && isoDate < String(start)) {
       return false;
     }
