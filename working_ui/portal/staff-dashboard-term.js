@@ -461,13 +461,23 @@
       let sessionKey = typeof portalBuildSessionReviewKey === 'function'
         ? portalBuildSessionReviewKey(isoKey, s, dw, effClientId)
         : `${isoKey}|${s.start}|${effClientId}`;
-      /* Same instructor 1h aquatic → day|client|aquatic so one submit covers both 30' halves. */
-      try{
-        if(typeof portalStaffLeadAquaticSessionReviewKey === 'function'){
-          const aqK = portalStaffLeadAquaticSessionReviewKey(isoKey, effClientId || s.clientId, s, dw);
-          if(aqK) sessionKey = aqK;
-        }
-      }catch(_){}
+      /* Same instructor 1h aquatic → day|client|aquatic so one submit covers both 30' halves.
+         Never overwrite Day Centre / bespoke shared (Ikram etc.) — that broke peer clear
+         (Michelle/Roberto submit day_centre → Luliya outstanding still counted aquatic). */
+      const keepSharedUnit = (typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s))
+        || (typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(s))
+        || (typeof portalClientIsDayCentreSharedParticipant === 'function'
+          && portalClientIsDayCentreSharedParticipant(effClientId || s.clientId || s.clientName));
+      if(!keepSharedUnit){
+        try{
+          const act = String(s.activity || s.rosterService || s.service || '').trim();
+          if(typeof portalStaffLeadIsAquaticActivity === 'function' && portalStaffLeadIsAquaticActivity(act)
+            && typeof portalStaffLeadAquaticSessionReviewKey === 'function'){
+            const aqK = portalStaffLeadAquaticSessionReviewKey(isoKey, effClientId || s.clientId, s, dw);
+            if(aqK) sessionKey = aqK;
+          }
+        }catch(_){}
+      }
       const st = typeof sessionModelStatus === 'function' ? sessionModelStatus(s) : '';
       const adminAbsentOv = typeof portalScheduleOverrideForSessionByType === 'function'
         ? portalScheduleOverrideForSessionByType(s, isoKey, 'client_absence_announced')
@@ -584,6 +594,31 @@
           if(unitKey) seenFeedbackUnits[unitKey] = true;
           continue;
         }
+        /* Shared Day Centre: peer (or self) already submitted this unit → not outstanding. */
+        try{
+          const cidDc = String(item.clientId || s.clientId || s.clientName || '').trim().toLowerCase();
+          const isDcShared = (typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(s))
+            || (typeof portalClientIsDayCentreSharedParticipant === 'function'
+              && portalClientIsDayCentreSharedParticipant(cidDc));
+          if(isDcShared && cidDc){
+            const slugDc = cidDc.replace(/[^a-z0-9]+/g, '').replace(/^_+|_+$/g, '') || cidDc;
+            const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+            if(bridge && typeof bridge.dayCentrePeerSubmissionCoversClient === 'function'
+              && bridge.dayCentrePeerSubmissionCoversClient(key, slugDc)){
+              if(unitKey) seenFeedbackUnits[unitKey] = true;
+              continue;
+            }
+            const dcKey = key + '|' + slugDc + '|day_centre';
+            const dd = typeof window !== 'undefined' ? window.dashboardData : null;
+            const submitted = dd && (dd.portalServerSubmittedFeedbackPortalKeys || dd.portalServerSubmittedFeedbackKeys);
+            const srvFb = dd && dd.portalServerResolvedRosterKeys && dd.portalServerResolvedRosterKeys.feedback;
+            if((submitted && typeof submitted.has === 'function' && submitted.has(dcKey))
+              || (srvFb && typeof srvFb.has === 'function' && srvFb.has(dcKey))){
+              if(unitKey) seenFeedbackUnits[unitKey] = true;
+              continue;
+            }
+          }
+        }catch(_dcPeer){}
         const started = typeof isSessionStartedForItem === 'function' && isSessionStartedForItem(item);
         const ended = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
         if(!started && !ended) continue;

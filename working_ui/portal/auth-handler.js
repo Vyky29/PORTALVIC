@@ -25,7 +25,7 @@ import {
   portalReadPersistedSupabaseAccessToken,
   portalReadPersistedSupabaseSession,
   bindPortalRemoteLogoutOnStaleAuthGeneration,
-} from "./supabase-client.js?v=20260913-dc-shared-fanout";
+} from "./supabase-client.js?v=20260914-dc-peer-clear";
 import {
   portalStaffIsDocumentsOnly,
   portalStaffDocumentsOnlyHomeUrl,
@@ -110,7 +110,7 @@ export {
   portalClearCachedAuthSessionGeneration,
   portalFetchSubmittedReviewSessionKeys,
   portalMergeReviewKeysIntoMemoryMap,
-} from "./supabase-client.js?v=20260913-dc-shared-fanout";
+} from "./supabase-client.js?v=20260914-dc-peer-clear";
 
 /** Bump to force a one-time sign-out + fresh login after a published portal build. */
 export const APP_VERSION = "2026-07-05-live-madre-logout-all";

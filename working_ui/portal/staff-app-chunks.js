@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-    var VER = "20260914-dc-feedback-dedupe";
+    var VER = "20260914-dc-peer-clear";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260914-raul-fri18-off",
@@ -23,7 +23,7 @@
     "/portal/clients_info_embed.js?v=20260910-joelle-406",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
     "/portal/portal_participants_sheet.js?v=20260909-mohamed-new-client",
-    "/portal/portal_staff_lead_aquatic_slots.js?v=20260910-pwa-off-joelle",
+    "/portal/portal_staff_lead_aquatic_slots.js?v=20260914-dc-peer-clear",
     "/portal/portal_participant_identity.js?v=20260712-rayyan-f",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
     "/portal/staff_roster_resolve.js?v=20260911-emmanuel-no-tue",

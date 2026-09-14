@@ -366,6 +366,21 @@
       .trim()
       .toLowerCase();
     if (!iso || !cid) return "";
+    /* Day Centre shared participants must keep date|client|day_centre — never aquatic. */
+    if (
+      typeof global.portalClientIsDayCentreSharedParticipant === "function" &&
+      global.portalClientIsDayCentreSharedParticipant(cid)
+    ) {
+      return "";
+    }
+    if (
+      typeof global.portalRosterSessionIsDayCentre === "function" &&
+      global.portalRosterSessionIsDayCentre(s)
+    ) {
+      return "";
+    }
+    var act = String((s && (s.activity || s.rosterService || s.service)) || "").trim();
+    if (act && !isAquaticActivity(act)) return "";
     if (clientNeedsPerSlotAquaticFeedbackOnDate(iso, cid, dayWord)) {
       var st = String((s && s.start) || "").trim();
       return iso + "|" + cid + "|" + st + "|aquatic";

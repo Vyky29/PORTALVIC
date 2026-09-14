@@ -256,7 +256,8 @@ export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys)
 /** Keys for shared feedback units where co-instructor absent quick marks should propagate. */
 function portalSharedFeedbackUnitKeys(rosterSessionKeys) {
   const seen = new Set();
-  const out = [];
+  const dayCentreFirst = [];
+  const dateClient = [];
   for (const raw of rosterSessionKeys || []) {
     const k = String(raw || "").trim();
     if (!k || seen.has(k)) continue;
@@ -264,12 +265,17 @@ function portalSharedFeedbackUnitKeys(rosterSessionKeys) {
     const last = String(parts[parts.length - 1] || "")
       .trim()
       .toLowerCase();
-    if (last === "bespoke_shared" || last === "day_centre" || parts[1] === "") {
+    if (last === "bespoke_shared" || last === "day_centre") {
       seen.add(k);
-      out.push(k);
+      dayCentreFirst.push(k);
+    } else if (parts[1] === "") {
+      seen.add(k);
+      dateClient.push(k);
     }
   }
-  return out;
+  /* Prefer day_centre / bespoke before date||client so the RPC 120-key cap
+     never drops Ikram peer clears under a flood of aquatic aliases. */
+  return dayCentreFirst.concat(dateClient);
 }
 
 /**
