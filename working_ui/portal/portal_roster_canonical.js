@@ -3490,7 +3490,7 @@
     return out;
   }
 
-  /** LOCAL EXTRA Sunday Hub Multi — Aurora book (was Berta Lead / slash pool). */
+  /** LOCAL EXTRA Sunday Hub Multi — Berta Lead book (Aurora pool kids' Hub half). */
   var AUTUMN_SUNDAY_HUB_BERTA = [
     { client_name: "Jack W", time_slot: "9.30 to 10.15" },
     { client_name: "Adam Ab", time_slot: "10.15 to 11" },
@@ -3500,7 +3500,7 @@
     { client_name: "Aydaan Ah", time_slot: "1.15 to 2" },
   ];
 
-  /** LOCAL EXTRA Sunday Hub Multi — Javier book (was Emmanuel / slash pool). */
+  /** LOCAL EXTRA Sunday Hub Multi — Emmanuel book (Javier pool kids' Hub half). */
   var AUTUMN_SUNDAY_HUB_EMMANUEL = [
     { client_name: "Zaid", time_slot: "9.30 to 10.15" },
     { client_name: "Jack S", time_slot: "10.15 to 11" },
@@ -3510,7 +3510,7 @@
     { client_name: "Rayyan F", time_slot: "1.15 to 2" },
   ];
 
-  /** LOCAL EXTRA Sunday Hub Multi — Roberto book (was Godsway / slash pool). */
+  /** LOCAL EXTRA Sunday Hub Multi — Godsway book (Roberto pool kids' Hub half). */
   var AUTUMN_SUNDAY_HUB_GODSWAY = [
     { client_name: "Samer", time_slot: "9.30 to 10.15" },
     { client_name: "Yusuf Ah", time_slot: "10.15 to 11" },
@@ -3538,7 +3538,7 @@
     /* Prefer Hub, but also treat known Hub staff Sunday Multi as Hub books
        (summer rows sometimes omit area and escaped the scrub). */
     if (/hub/i.test(String(r.area || ""))) return true;
-    return /\b(aurora|javier|roberto|john|emmanuel|emanuel|giuseppe|berta|godsway|bismark|bismarck)\b/i.test(
+    return /\b(berta|john|emmanuel|emanuel|giuseppe|godsway|bismark|bismarck|raul)\b/i.test(
       String(r.instructors || "")
     );
   }
@@ -3559,15 +3559,16 @@
         };
       });
     }
-    return mapBook("AURORA", AUTUMN_SUNDAY_HUB_BERTA)
-      .concat(mapBook("JAVIER", AUTUMN_SUNDAY_HUB_EMMANUEL))
-      .concat(mapBook("ROBERTO", AUTUMN_SUNDAY_HUB_GODSWAY));
+    /* LOCAL: Hub = Berta / Emmanuel / Godsway — never pool instructors Javier/Aurora/Roberto. */
+    return mapBook("BERTA", AUTUMN_SUNDAY_HUB_BERTA)
+      .concat(mapBook("EMMANUEL", AUTUMN_SUNDAY_HUB_EMMANUEL))
+      .concat(mapBook("GODSWAY", AUTUMN_SUNDAY_HUB_GODSWAY));
   }
 
   /**
    * Sunday Hub Multi = LOCAL only.
-   * Standing = Aurora | Javier | Roberto (covers via overrides).
-   * Re-inject standing books; Sun 6 dated John/Berta/Godsway cover rows stay historical.
+   * Standing = Berta | Emmanuel | Godsway (covers via overrides).
+   * Sun 6 dated John/Berta/Godsway cover rows own that day — do not also stamp standing Hub.
    */
   function scrubAndEnsureSep6HubCover(rows) {
     var out = [];
@@ -3576,7 +3577,7 @@
       if (isSundaySwimfarmHubMultiRow(r)) {
         var inst = String(r.instructors || "");
         if (
-          /\b(john|emmanuel|emanuel|giuseppe|berta|godsway|bismark|bismarck|aurora|javier|roberto)\b/i.test(
+          /\b(john|emmanuel|emanuel|giuseppe|berta|godsway|bismark|bismarck|aurora|javier|roberto|raul)\b/i.test(
             inst
           )
         ) {
@@ -3587,6 +3588,7 @@
     });
     autumnSundayStandingHubRows().forEach(function (row) {
       expandStandingRowAcrossAutumnTerm(row).forEach(function (exp) {
+        if (normIso(exp.session_date) === "2026-09-06") return;
         out.push(exp);
       });
     });

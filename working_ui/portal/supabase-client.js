@@ -898,6 +898,11 @@ const PORTAL_ROSTER_CLIENT_SLUG_CANON = Object.freeze({
   khalid: "khalid",
   rayyan_fi: "rayyan_f",
   rayyan_f: "rayyan_f",
+  zaid_alfadhl: "zaid",
+  zaid_al: "zaid",
+  zaid_trial: "zaid",
+  trial_zaid: "zaid",
+  zaid: "zaid",
   chaitanya_trial_28_06: "chaitanya",
   chaitanya: "chaitanya",
 });

@@ -81,6 +81,7 @@
     const s = String(slugKey || "").trim().toLowerCase();
     if (!s) return "";
     if (s === "amar_rai") return "amar_ra";
+    if (s === "zaid_alfadhl" || s === "zaid_al" || s === "zaid_trial" || s === "trial_zaid") return "zaid";
     return s;
   }
 

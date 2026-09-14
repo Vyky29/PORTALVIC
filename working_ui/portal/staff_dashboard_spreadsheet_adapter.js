@@ -571,6 +571,7 @@
     /* One CLIENT — never show Zaid Alfadhl as a different person. */
     zaid_alfadhl: "zaid",
     zaid_al: "zaid",
+    zaid_trial: "zaid",
     trial_zaid: "zaid",
     trial_zaid_alfadhl: "zaid",
     trial_zaid_al: "zaid",
