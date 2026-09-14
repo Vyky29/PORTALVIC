@@ -435,8 +435,15 @@
         ],
       },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      /* Michelle Tue (Fadi-off): Interviews 12.30-3 — not Ikram/Manager. */
-      { staff: "Michelle", clients: [{ name: "Interview", time: "12.30 to 3" }] },
+      /* Michelle Tue (Fadi-off): Ikram 11-12 + Interviews 12.30-3 + Ikram 3-4. */
+      {
+        staff: "Michelle",
+        clients: [
+          { name: "Ikram", time: "11 to 12" },
+          { name: "Interview", time: "12.30 to 3" },
+          { name: "Ikram", time: "3 to 4" },
+        ],
+      },
       {
         staff: "Victor",
         clients: [

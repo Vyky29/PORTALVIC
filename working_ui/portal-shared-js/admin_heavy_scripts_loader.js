@@ -13,10 +13,10 @@
       "/portal/portal_participant_catalog.js?v=20260707-acat-keep-q6-exclude",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
-      "/portal/portal_roster_canonical.js?v=20260914-andres-col",
-      "/portal/autumn_staff_hours_reference.js?v=20260914-overview-pin2",
+      "/portal/portal_roster_canonical.js?v=20260914-michelle-ikram",
+      "/portal/autumn_staff_hours_reference.js?v=20260914-michelle-ikram",
       "/portal/portal_dc_services_local.js?v=20260914-overview-pin2",
-      "/portal/portal_capacity_chain_occupants.js?v=20260914-reggie-luliya",
+      "/portal/portal_capacity_chain_occupants.js?v=20260914-michelle-ikram",
       "/portal/portal_overview_capacity_chain.js?v=20260914-reggie-luliya",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260914-overview-pin2",
     ],
@@ -33,7 +33,7 @@
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: [
       "/portal/spreadsheet_reference_data.js?v=20260911-autumn-labels",
-      "/portal/autumn_staff_hours_reference.js?v=20260914-overview-pin2",
+      "/portal/autumn_staff_hours_reference.js?v=20260914-michelle-ikram",
     ],
   };
 
