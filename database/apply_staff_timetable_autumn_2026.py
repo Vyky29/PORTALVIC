@@ -315,6 +315,14 @@ def build_autumn_rows() -> list[dict]:
                     and tr.replace(":", ".").startswith("4.15")
                 ):
                     continue
+                # Fri 18 Sep (fadi_off DC): no Raul — Places board is Luliya/Michelle/Roberto/
+                # Victor/Youssef only. Standing Fri Raul returns from 25 Sep.
+                if (
+                    day_name == "Friday"
+                    and iso == "2026-09-18"
+                    and staff.lower() == "raul"
+                ):
+                    continue
                 rows.append(slot(iso, day_name, staff, tr, venue))
             # Mon Hub Bespoke seat 3: Victor 7 Sep; Bismark from 14 Sep (not Emmanuel).
             if day_name == "Monday" and _assignment_allowed(iso, "4.15-6.15"):
