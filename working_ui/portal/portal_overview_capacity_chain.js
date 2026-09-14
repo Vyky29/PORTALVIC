@@ -1158,6 +1158,7 @@
     filterOccupantsByStaff: filterOccupantsByStaff,
     staffExpandWindowBounds: staffExpandWindowBounds,
     resolveSlashInstructorsForIso: resolveSlashInstructorsForIso,
+    timetableStaffKeysForIso: timetableStaffKeysForIso,
     clearResolveCache: clearResolveCache,
   };
 })(typeof window !== "undefined" ? window : globalThis);

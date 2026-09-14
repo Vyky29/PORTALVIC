@@ -1006,6 +1006,18 @@
   function rosterRowToSlot(isoDate, wd, r) {
     var slot = parseTimeSlot(r.time_slot, wd);
     var origInstRaw = clean(r.instructors);
+    /* Timetable owns slash pools before parse — never ship Roberto/Youssef as two columns. */
+    try {
+      var ChainSlot = global.PortalOverviewCapacityChain;
+      if (ChainSlot && typeof ChainSlot.resolveSlashInstructorsForIso === "function") {
+        var collapsed = ChainSlot.resolveSlashInstructorsForIso(
+          origInstRaw,
+          isoDate,
+          clean(r.service)
+        );
+        if (collapsed) origInstRaw = clean(collapsed);
+      }
+    } catch (_slashSlot) {}
     var instRaw = applySundayInstructorOverride(isoDate, origInstRaw);
     var standingInstRaw = instRaw;
     var remappedEmpty = false;
@@ -10742,6 +10754,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   /**
    * Collapse Places slash pools to Timetable who-works for the session ISO.
    * Keeps Dan / Youssef / Directors off Sundays until Timetable names them.
+   * Always run this before painting columns (incl. day-off / cover paths).
    */
   function dayBoardResolveInstructorsForIso(insts, iso, slot) {
     var list = Array.isArray(insts) ? insts.slice() : [];
@@ -10754,7 +10767,26 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var resolved = Chain.resolveSlashInstructorsForIso(joined, iso, svc);
         if (resolved) {
           var parts = normalizeInstructorList(resolved);
-          if (parts.length) return parts;
+          if (parts.length) list = parts;
+        }
+      }
+      /* Hard filter: if Timetable has a row for this ISO, drop anyone not on it. */
+      if (Chain && typeof Chain.timetableStaffKeysForIso === "function") {
+        var tt = Chain.timetableStaffKeysForIso(iso);
+        if (tt && typeof tt === "object") {
+          var ttKeys = Object.keys(tt);
+          if (ttKeys.length) {
+            list = list.filter(function (tok) {
+              var want = normStaffTokCompat(tok);
+              if (!want) return false;
+              if (tt[want]) return true;
+              for (var ti = 0; ti < ttKeys.length; ti++) {
+                if (normStaffTokCompat(ttKeys[ti]) === want) return true;
+                if (normStaffTokCompat(tt[ttKeys[ti]]) === want) return true;
+              }
+              return false;
+            });
+          }
         }
       }
     } catch (_r) {}
@@ -10762,6 +10794,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return list.filter(function (tok) {
       return !/^(directors?|manager|office)$/i.test(String(tok || "").trim());
     });
+  }
+
+  function normStaffTokCompat(raw) {
+    return String(raw || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
   }
 
   function overviewSlotBoardIsAbsent(hub, slot, slotOv) {
@@ -11155,7 +11196,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         };
       }
       var iso = String(slot.session_date || hub.selectedDay || "").slice(0, 10);
-      var origInsts = dayBoardOriginalInstructorsForSlot(slot);
+      var origInsts = dayBoardResolveInstructorsForIso(
+        dayBoardOriginalInstructorsForSlot(slot),
+        iso,
+        slot
+      );
       if (!origInsts.length) origInsts = ["Unassigned"];
       var awayOrig = [];
       for (var oi = 0; oi < origInsts.length; oi++) {
@@ -11267,7 +11312,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
       if (st.isStaffDayOff || st.isCoverNeeded || awayOrig.length) {
         if (pushedNamedCover) continue;
-        var currentInsts = dayBoardInstructorsForSlot(slot);
+        var currentInsts = dayBoardResolveInstructorsForIso(
+          dayBoardInstructorsForSlot(slot),
+          iso,
+          slot
+        );
         var hasLiveWorker = false;
         for (var od = 0; od < currentInsts.length; od++) {
           if (hubStaffAwayOnIso(hub, iso, currentInsts[od])) continue;
