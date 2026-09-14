@@ -28,7 +28,7 @@ Booking (plazas) → Services (clients / seats) → Timetable (staff) → Schedu
 - DC phases helper: `working_ui/portal/portal_dc_services_local.js`
 - Admin Overview calls `portalResolveStaffDashboardSource({ forSessionsOverview: true })` and skips `resolveAutumnInstructorsForCalendarDate` when `capacityChainNoCanonicalRemap`
 - Staff Today still uses canonical until a later cutover
-- Next cleanup: void redundant day overrides that only papered over old canonical boards
+- Override cleanup (2026-09-14): voided Patrick term `slot_update`, Giuseppe dup Sun-6 covers, Wed 9/16 Tinashe shadow `session_add`; inserted John→Emmanuel Tinashe covers. Keep real Covers (Aurora/Javi, absences, trials, Berta COVER NEEDED, Emanuel-anchored Youssef Sun 6). Script: `database/local-vault/office-void-capacity-chain-redundant-overrides-20260914.ts`
 
 ## Capacity rule (AS / weekend)
 
