@@ -333,9 +333,13 @@
           standingClient = "No participant";
         }
         var bookedFrom = bookedFromForSeatLine(line, slot);
-        var staff = String(line.instructor || "").trim();
-        if (!staff) return;
+        var staffRaw = String(line.instructor || "").trim();
+        if (!staffRaw) return;
         dates.forEach(function (iso) {
+          /* Timetable owns who-works: collapse slash pools (Dan/Youssef/Directors) per ISO. */
+          var staff =
+            resolveSlashInstructorsForIso(staffRaw, iso, slot.serviceId || service) || staffRaw;
+          if (!staff) return;
           var client = standingClient;
           if (trialSeat) {
             client = trialIso && iso === trialIso && trialClient ? trialClient : "No participant";
@@ -549,6 +553,123 @@
     var m = raw.match(/^(.+?)\s+(\d{1,2}(?:\.\d{1,2})?\s*-\s*\d{1,2}(?:\.\d{1,2})?)/i);
     if (m) return String(m[1] || "").trim();
     return raw.replace(/\boffice\b/i, "").trim();
+  }
+
+  /** First-name keys on Timetable for this ISO (draft hours win). */
+  function timetableStaffKeysForIso(iso) {
+    var P = global.PORTAL_AUTUMN_STAFF_HOURS;
+    var root = P && (P.staffHours || P);
+    if (!root) return null;
+    var dayIso = String(iso || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dayIso)) return null;
+    var day = DOW_TITLE[DOW_KEYS[new Date(dayIso + "T12:00:00").getDay()]];
+    var sheet = root[day];
+    if (!sheet) return null;
+    var dateRow = null;
+    (sheet.dates || []).forEach(function (dr) {
+      if (String((dr && dr.date) || "").slice(0, 10) === dayIso) dateRow = dr;
+    });
+    if (!dateRow) return null;
+    var keys = Object.create(null);
+    (dateRow.cells || []).forEach(function (cell) {
+      var name = parseHoursName(timetableCellText(cell));
+      var k = normStaffTok(name);
+      if (k) keys[k] = name.split(/\s+/)[0] || name;
+    });
+    return keys;
+  }
+
+  function isRoleInstructorToken(tok) {
+    return /^(directors?|manager|office)$/i.test(String(tok || "").trim());
+  }
+
+  /** Places "Directors" pool → named club directors (never paint literal DI). */
+  function expandRoleInstructorToken(tok) {
+    if (/^directors?$/i.test(String(tok || "").trim())) {
+      return ["Victor", "Raul", "Javi"];
+    }
+    return [String(tok || "").trim()];
+  }
+
+  /**
+   * Slash capacity (Javier/Dan/Emmanuel, Roberto/Youssef/Godsway,
+   * Aurora/Luliya/Berta/Directors) → Timetable who-works for that ISO.
+   * Dan/Youssef/DI only appear when Timetable names them that Sunday.
+   */
+  function resolveSlashInstructorsForIso(instructorsRaw, iso, serviceId) {
+    var raw = String(instructorsRaw || "").trim();
+    if (!raw) return "";
+    var hasSlash = /[\/|,]/.test(raw) || isRoleInstructorToken(raw);
+    if (!hasSlash) return raw;
+    var tt = timetableStaffKeysForIso(iso);
+    var parts = raw
+      .split(/[,/&]+|\band\b/gi)
+      .map(function (p) {
+        return String(p || "").trim();
+      })
+      .filter(Boolean);
+    if (!parts.length) return raw;
+    var expanded = [];
+    parts.forEach(function (p) {
+      expandRoleInstructorToken(p).forEach(function (n) {
+        if (n && expanded.indexOf(n) < 0) expanded.push(n);
+      });
+    });
+    function onTt(name) {
+      if (!tt) return false;
+      return !!tt[normStaffTok(name)];
+    }
+    function displayName(name) {
+      var k = normStaffTok(name);
+      if (tt && tt[k]) return tt[k];
+      return String(name || "").split(/\s+/)[0] || name;
+    }
+    var matched = expanded.filter(onTt).map(displayName);
+    var seen = Object.create(null);
+    matched = matched.filter(function (n) {
+      var k = normStaffTok(n);
+      if (!k || seen[k]) return false;
+      seen[k] = 1;
+      return true;
+    });
+    var pool = parts
+      .concat(expanded)
+      .map(function (p) {
+        return normStaffTok(p);
+      })
+      .join(" ");
+    var isMulti = /multi/i.test(String(serviceId || ""));
+    function pick(want) {
+      var wk = normStaffTok(want);
+      for (var i = 0; i < matched.length; i++) {
+        if (normStaffTok(matched[i]) === wk) return matched[i];
+      }
+      return "";
+    }
+    /* Sunday Hub Multi books: one named owner from Timetable (not every slash token). */
+    if (isMulti) {
+      if (/\bgodsway\b/.test(pool) && pick("Godsway")) return pick("Godsway");
+      if (/\bemmanuel\b|\bemanuel\b/.test(pool) && (pick("Emmanuel") || pick("Emanuel"))) {
+        return pick("Emmanuel") || pick("Emanuel");
+      }
+      /* Sun 6: John covers Emmanuel Hub book — John is on Timetable, not in slash. */
+      if (
+        (/\bemmanuel\b|\bemanuel\b|\bgiuseppe\b/.test(pool) || /\bjavier\b/.test(pool)) &&
+        onTt("John") &&
+        !onTt("Emmanuel") &&
+        !onTt("Emanuel")
+      ) {
+        return displayName("John");
+      }
+      if (/\bberta\b/.test(pool) && pick("Berta")) return pick("Berta");
+      if (/\baurora\b/.test(pool) && pick("Aurora")) return pick("Aurora");
+    }
+    if (matched.length) return matched[0];
+    /* Nobody from the pool on Timetable — keep first real name (not Directors). */
+    for (var j = 0; j < parts.length; j++) {
+      if (!isRoleInstructorToken(parts[j])) return parts[j].split(/\s+/)[0] || parts[j];
+    }
+    return "";
   }
 
   /** Timetable DC window for instructor on iso (point 3 → Overview). */
@@ -1036,6 +1157,7 @@
     occupantsBySlotId: occupantsBySlotId,
     filterOccupantsByStaff: filterOccupantsByStaff,
     staffExpandWindowBounds: staffExpandWindowBounds,
+    resolveSlashInstructorsForIso: resolveSlashInstructorsForIso,
     clearResolveCache: clearResolveCache,
   };
 })(typeof window !== "undefined" ? window : globalThis);

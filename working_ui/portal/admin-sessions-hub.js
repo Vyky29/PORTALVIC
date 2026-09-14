@@ -10739,6 +10739,31 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return list;
   }
 
+  /**
+   * Collapse Places slash pools to Timetable who-works for the session ISO.
+   * Keeps Dan / Youssef / Directors off Sundays until Timetable names them.
+   */
+  function dayBoardResolveInstructorsForIso(insts, iso, slot) {
+    var list = Array.isArray(insts) ? insts.slice() : [];
+    if (!list.length) return list;
+    var joined = list.join("/");
+    var svc = clean((slot && slot.service) || "");
+    try {
+      var Chain = global.PortalOverviewCapacityChain;
+      if (Chain && typeof Chain.resolveSlashInstructorsForIso === "function") {
+        var resolved = Chain.resolveSlashInstructorsForIso(joined, iso, svc);
+        if (resolved) {
+          var parts = normalizeInstructorList(resolved);
+          if (parts.length) return parts;
+        }
+      }
+    } catch (_r) {}
+    /* Fallback: drop role tokens (Directors → DI) when chain helper missing. */
+    return list.filter(function (tok) {
+      return !/^(directors?|manager|office)$/i.test(String(tok || "").trim());
+    });
+  }
+
   function overviewSlotBoardIsAbsent(hub, slot, slotOv) {
     /* Staffing board: override / resolution only — avoid full feedback scans. */
     if (overrideIsAbsentType(slotOv) || overrideFeedbackResolution(slotOv) === "absent") {
@@ -11201,11 +11226,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (realCover) {
         pushCoverColumn(slot.portalCoveringStaffName || slot.portalCoveringStaffId, fromLabel);
         /*
-         * Slash Multi seats (Javier/Dan/Emmanuel, Roberto/Youssef/Godsway): a cover for
-         * one token must not wipe the co-workers' columns. Still paint every other
-         * live token on the seat.
+         * Slash Multi seats: after Timetable resolve, still paint sibling workers
+         * who remain on the seat (not the covered-away token).
          */
-        var coverInsts = origInsts.length ? origInsts : dayBoardInstructorsForSlot(slot);
+        var coverInstsRaw = origInsts.length ? origInsts : dayBoardInstructorsForSlot(slot);
+        var coverInsts = dayBoardResolveInstructorsForIso(coverInstsRaw, iso, slot);
         var coverWho = slot.portalCoveringStaffName || slot.portalCoveringStaffId || "";
         for (var ci = 0; ci < coverInsts.length; ci++) {
           var sib = coverInsts[ci];
@@ -11287,10 +11312,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var insts = dayBoardInstructorsForSlot(slot);
       /*
        * Sunday Hub Multi seats ship slash labels (Javier/Dan/Emmanuel,
-       * Roberto/Youssef/Godsway). Paint every token so Emmanuel / Godsway /
-       * Dan get columns — not only the first name.
+       * Roberto/Youssef/Godsway, Aurora/…/Directors). Timetable owns who
+       * works that ISO — paint only resolved names (no Dan/Youssef/DI unless
+       * Timetable lists them).
        */
-      var targets = insts;
+      var targets = dayBoardResolveInstructorsForIso(insts, iso, slot);
       for (var j = 0; j < targets.length; j++) {
         var raw = targets[j];
         var staffKey = dayBoardStaffKey(raw);
