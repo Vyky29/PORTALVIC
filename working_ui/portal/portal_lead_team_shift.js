@@ -1210,6 +1210,126 @@ function formatLeadTeamTimeCompact(timeSlot) {
     .replace(/\s+/g, "");
 }
 
+function leadTeamMinutesToHm(mins) {
+  if (!Number.isFinite(mins) || mins < 0) return "";
+  const h = Math.floor(mins / 60) % 24;
+  const m = Math.round(mins % 60);
+  return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+}
+
+function leadTeamMinutesToBandLabel(startMin, endMin) {
+  function tok(mins) {
+    if (!Number.isFinite(mins) || mins < 0) return "";
+    let h = Math.floor(mins / 60) % 24;
+    const m = Math.round(mins % 60);
+    if (h > 12) h -= 12;
+    if (h === 0) h = 12;
+    if (!m) return String(h);
+    if (m === 30) return h + ".30";
+    if (m === 15) return h + ".15";
+    if (m === 45) return h + ".45";
+    return h + "." + String(m).padStart(2, "0");
+  }
+  const a = tok(startMin);
+  const b = tok(endMin);
+  if (!a || !b) return "";
+  return a + " to " + b;
+}
+
+function leadTeamParseHoursCellRange(text) {
+  const raw = String(text || "").trim();
+  const m = raw.match(/(\d{1,2}(?:\.\d{1,2})?)\s*-\s*(\d{1,2}(?:\.\d{1,2})?)/);
+  if (!m) return { start: -1, end: -1 };
+  function toMin(tok) {
+    const p = String(tok).split(".");
+    let h = parseInt(p[0], 10);
+    let mi = p[1] ? parseInt(p[1].length === 1 ? p[1] + "0" : p[1], 10) : 0;
+    if (!Number.isFinite(h)) return -1;
+    if (h >= 1 && h <= 7) h += 12;
+    return h * 60 + (Number.isFinite(mi) ? mi : 0);
+  }
+  return { start: toMin(m[1]), end: toMin(m[2]) };
+}
+
+function leadTeamParseHoursCellName(text) {
+  const raw = String(text || "").trim();
+  if (!raw || /^closed$/i.test(raw)) return "";
+  const m = raw.match(/^(.+?)\s+(\d{1,2}(?:\.\d{1,2})?\s*-\s*\d{1,2}(?:\.\d{1,2})?)/i);
+  if (m) return String(m[1] || "").trim();
+  return raw.replace(/\boffice\b/i, "").trim();
+}
+
+/** Timetable hours for staff on iso that overlap the client session window. */
+function leadTeamTimetableOverlapBand(staffKey, iso, sessionTime) {
+  try {
+    const P =
+      typeof window !== "undefined" ? window.PORTAL_AUTUMN_STAFF_HOURS : null;
+    const root = P && (P.staffHours || P);
+    if (!root) return "";
+    const day = weekdayFromIso(iso);
+    const sheet = root[day];
+    if (!sheet) return "";
+    let dateRow = null;
+    (sheet.dates || []).forEach(function (dr) {
+      if (String((dr && dr.date) || "").slice(0, 10) === String(iso || "").slice(0, 10)) {
+        dateRow = dr;
+      }
+    });
+    if (!dateRow) return "";
+    const want = normKey(staffKey);
+    const sessStart = parseSlotStartMinutes(sessionTime);
+    const sessEnd = parseSlotEndMinutes(sessionTime);
+    let best = null;
+    (dateRow.cells || []).forEach(function (cell) {
+      const text = String((cell && cell.text) || "");
+      const name = leadTeamParseHoursCellName(text);
+      if (!name) return;
+      const nk = normKey(name);
+      const first = normKey(String(name).split(/\s+/)[0]);
+      if (nk !== want && first !== want) return;
+      const range = leadTeamParseHoursCellRange(text);
+      if (range.start < 0 || range.end < 0) return;
+      if (!(range.start < sessEnd + 5 && range.end > sessStart - 5)) return;
+      best = leadTeamMinutesToBandLabel(range.start, range.end);
+    });
+    return best || "";
+  } catch (_) {
+    return "";
+  }
+}
+
+/**
+ * Leaders' Team on shift: show when the worker starts (Timetable / paid band),
+ * not the client session window (e.g. Godsway 4.15-6.15 not Tinashe 4.30-6).
+ */
+function leadTeamStaffFacingTimeLabel(staffKey, iso, sessionTime, service) {
+  const sess = String(sessionTime || "").trim();
+  if (!sess) return "";
+  const tt = leadTeamTimetableOverlapBand(staffKey, iso, sess);
+  if (tt) return formatLeadTeamTimeCompact(tt);
+  try {
+    if (
+      typeof window !== "undefined" &&
+      typeof window.portalStaffSessionShiftSlotLabel === "function"
+    ) {
+      const startM = parseSlotStartMinutes(sess);
+      const endM = parseSlotEndMinutes(sess);
+      const lab = window.portalStaffSessionShiftSlotLabel(
+        {
+          start: leadTeamMinutesToHm(startM),
+          end: leadTeamMinutesToHm(endM),
+          rosterService: service,
+          service: service,
+          day: weekdayFromIso(iso),
+        },
+        iso
+      );
+      if (lab) return formatLeadTeamTimeCompact(lab);
+    }
+  } catch (_) {}
+  return formatLeadTeamTimeCompact(sess);
+}
+
 function leadTeamClientCanon(name) {
   try {
     const A =
@@ -1416,6 +1536,7 @@ function renderLeadTeamRosterTableHtml(model) {
   if (!model || !model.members.length) {
     return '<p class="portal-lead-team-roster__empty">No team roster to show for today.</p>';
   }
+  const iso = String((model && model.iso) || "").slice(0, 10);
   const cols = model.members
     .map(function (m) {
       const k = normKey(m.key);
@@ -1434,7 +1555,12 @@ function renderLeadTeamRosterTableHtml(model) {
                 ];
           const lines = segs
             .map(function (s) {
-              const t = formatLeadTeamTimeCompact(s.time);
+              const t = leadTeamStaffFacingTimeLabel(
+                k,
+                iso,
+                s.time || h.time,
+                h.service
+              );
               const area = s.area ? " " + escHtml(String(s.area).toUpperCase()) : "";
               return (
                 '<div class="portal-lead-team-roster__line">' +
