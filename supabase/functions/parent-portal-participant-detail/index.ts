@@ -890,6 +890,67 @@ function buildServicesDetail(
 }
 
 /**
+ * Live Autumn weekly templates (session_date NULL). Prefer these over the
+ * Summer roster-review snapshot so withdrawn weekdays (Eiji/Hazem aquatic)
+ * do not paint onto the parent hub as Tomorrow.
+ */
+async function fetchStandingWeeklyRosterSessions(
+  supabase: ReturnType<typeof createClient>,
+  identityInput: {
+    contactId?: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+  },
+): Promise<unknown[]> {
+  const names = [
+    ...new Set(
+      resolveParticipantLookupNames(identityInput)
+        .map((n) => clean(n, 80))
+        .filter(Boolean),
+    ),
+  ];
+  if (!names.length) return [];
+  const queries = names.slice(0, 6).map((nm) => {
+    const token = nm.includes(" ") ? nm : `${nm}%`;
+    return supabase
+      .from("portal_roster_rows")
+      .select("client_name, day, time_slot, service, venue, area, instructors, status")
+      .eq("status", "active")
+      .is("session_date", null)
+      .ilike("client_name", token)
+      .limit(40);
+  });
+  const results = await Promise.all(queries);
+  const out: unknown[] = [];
+  const seen = new Set<string>();
+  for (const { data } of results) {
+    for (const row of data || []) {
+      if (!row) continue;
+      const clientName = clean(row.client_name, 80);
+      if (!participantIdentityMatches(identityInput, clientName, "")) continue;
+      if (/no\s*participant|^closed$|^open$/i.test(clientName)) continue;
+      const svc = clean(row.service, 80);
+      if (/crash|intensiv/i.test(svc)) continue;
+      const day = clean(row.day, 20);
+      const timeSlot = clean(row.time_slot, 40);
+      const key = [day, svc, timeSlot, clean(row.venue, 80)].join("|").toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({
+        day,
+        service: svc,
+        timeSlot,
+        venue: clean(row.venue, 80),
+        area: clean(row.area, 80),
+        instructor: clean(row.instructors, 80),
+      });
+    }
+  }
+  return out;
+}
+
+/**
  * Look up the child's roster-review service snapshot. Keyed by the same canonical
  * participant slug used across the portal (participant_identity.ts) so spelling
  * variants (e.g. "Aadam Ahmed" ↔ roster "Adaam Ah") still resolve.
@@ -971,6 +1032,12 @@ async function fetchRosterServiceLines(
         if (key) seen.add(key);
       }
     }
+  }
+
+  const standing = await fetchStandingWeeklyRosterSessions(supabase, identityInput);
+  if (standing.length) {
+    const standingDetail = buildServicesDetail(standing);
+    if (standingDetail.length) return { count: standingDetail.length, detail: standingDetail };
   }
 
   if (!rows.length) return null;
@@ -1665,11 +1732,11 @@ Deno.serve(async (req) => {
       : null;
     reenrolmentSummary = buildReenrolmentParentSummary(payload, submittedAt);
 
-    // Re-enrolled families with no summer/payment-sheet roster yet still need
-    // weekday chips (Next session / Calendar) from kept 2026/27 slots.
-    if (!rosterServicesDetail.length && reenrolmentSummary.continuing) {
+    // Re-enrolled families: kept 2026/27 slots beat a stale Summer snapshot
+    // when live weekly templates were missing (withdrawn weekdays stay gone).
+    if (reenrolmentSummary.continuing) {
       const fromReenrol = buildServicesDetail(sessionsFromReenrolKeptSlots(payload));
-      if (fromReenrol.length) {
+      if (fromReenrol.length && !rosterServicesDetail.length) {
         rosterServicesDetail = fromReenrol;
         rosterServicesCount = fromReenrol.length;
       }
