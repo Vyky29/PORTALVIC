@@ -794,6 +794,62 @@
     });
   }
 
+  function slotRangeMinutesForCover(slot, wd) {
+    if (!slot) return null;
+    var start = normTimeShort(slot.time_start) || "";
+    var end = normTimeShort(slot.time_end) || "";
+    if ((!start || !end) && slot.time_slot) {
+      var pt = parseTimeSlot(slot.time_slot, wd || slot.day || "");
+      if (!start) start = pt.start || "";
+      if (!end) end = pt.end || "";
+    }
+    function toMin(hm) {
+      var m = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+      if (!m) return null;
+      return parseInt(m[1], 10) * 60 + (parseInt(m[2], 10) || 0);
+    }
+    var a = toMin(start);
+    var b = toMin(end);
+    if (a == null || b == null) return null;
+    if (b <= a) b += 12 * 60;
+    return { start: a, end: b };
+  }
+
+  /**
+   * Hour (or longer) booked seat on the same instructor absorbs open half-hours inside it.
+   * e.g. Ayman 5–6 on Javier must not leave a free 5.30–6 NO PARTICIPANT under it.
+   */
+  function suppressOpenSlotsCoveredByBookedHours(out, wd) {
+    if (!out || out.length < 2) return out;
+    var booked = [];
+    for (var i = 0; i < out.length; i++) {
+      var s = out[i];
+      if (!s || isOpenRosterSlot(s.client_name) || !isRosterClient(s.client_name)) continue;
+      var range = slotRangeMinutesForCover(s, wd);
+      if (!range || range.end - range.start < 45) continue;
+      booked.push({
+        staff: slotAnchorStaffKey(s),
+        venue: clean(s.venue).toLowerCase(),
+        range: range,
+      });
+    }
+    if (!booked.length) return out;
+    return out.filter(function (slot) {
+      if (!isOpenRosterSlot(slot.client_name)) return true;
+      var or = slotRangeMinutesForCover(slot, wd);
+      if (!or) return true;
+      var staff = slotAnchorStaffKey(slot);
+      var venue = clean(slot.venue).toLowerCase();
+      for (var j = 0; j < booked.length; j++) {
+        var b = booked[j];
+        if (b.staff !== staff) continue;
+        if (b.venue && venue && b.venue !== venue) continue;
+        if (or.start >= b.range.start && or.end <= b.range.end) return false;
+      }
+      return true;
+    });
+  }
+
   function weekdayLongFromIso(iso) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
     var p = iso.split("-").map(Number);
@@ -6815,6 +6871,7 @@
         wd,
         (this.payload && this.payload.schedule_overrides) || []
       );
+      out = suppressOpenSlotsCoveredByBookedHours(out, wd);
       out = applyInstructorReassignOverrides(this, out);
       out = annotateBespokeSharedUnitKeys(out);
       out = applyShadowingHostDisplay(this, out);

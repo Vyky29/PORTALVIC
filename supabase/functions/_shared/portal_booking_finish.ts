@@ -1604,6 +1604,36 @@ export async function syncOpsAfterFinishBookingPaid(
   notes.push("seat_validated");
   reservation.notes = notesBeforeSync;
 
+  /* Linked half-hours for the same finish doc (e.g. 5–5.30 + 5.30–6 under a 60' place). */
+  if (token.document_id) {
+    const { data: siblings } = await admin
+      .from("portal_booking_slot_reservations")
+      .select("id, notes")
+      .eq("document_id", token.document_id)
+      .neq("id", String(reservation.id))
+      .in("status", ["pending", "awaiting_payment"]);
+    for (const sib of siblings || []) {
+      const sibNotes = mergeReservationNotes(String(sib.notes || ""), [
+        `instructor=${instructor}`,
+        payTag,
+        "linked_hour_validated",
+        isTrial ? "booking_kind=trial" : "booking_kind=term",
+      ]);
+      await admin
+        .from("portal_booking_slot_reservations")
+        .update({
+          status: "validated",
+          validated_at: now,
+          hold_expires_at: holdFar,
+          released_at: null,
+          notes: sibNotes,
+          updated_at: now,
+        })
+        .eq("id", String(sib.id));
+      notes.push("linked_seat_validated:" + String(sib.id).slice(0, 8));
+    }
+  }
+
   try {
     const fold = await foldValidatedReservationOntoMadre(admin, String(reservation.id));
     notes.push(fold.ok ? `fold:${fold.note}` : `fold_fail:${fold.note}`);

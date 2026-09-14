@@ -179,6 +179,23 @@ function findOpenSeatOnBand(
   return null;
 }
 
+/** Open half-hours fully inside a longer booked window (e.g. 5–5.30 + 5.30–6 under 5–6). */
+function findOpenSeatsCoveredByRange(
+  slots: MadreSlot[],
+  range: { start: number; end: number },
+  venue: string,
+): MadreSlot[] {
+  const out: MadreSlot[] = [];
+  for (const s of slots) {
+    if (!isOpenMadreClientName(s.client_name)) continue;
+    if (!venuesCompatible(s.venue, venue)) continue;
+    const m = parseTimeSlotMinutes(String(s.time_slot ?? ""));
+    if (!m) continue;
+    if (m.start >= range.start && m.end <= range.end) out.push(s);
+  }
+  return out;
+}
+
 /** Prefer named instructor; else staff column that already has this open/named band. */
 function resolveStaffForUpsert(
   week: MadreWeek,
@@ -230,9 +247,20 @@ function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<str
     const slots = day.slots ?? [];
     day.slots = slots;
 
-    let slot = slotMatch(slots, client, timeSlot);
+    const bookedRange = parseTimeSlotMinutes(timeSlot);
+    const venue = String(payload.venue ?? "");
+    /* Hour+ bookings: drop every open half-hour inside the window, then seat the named client. */
+    if (replaceOpen && bookedRange && bookedRange.end - bookedRange.start > 35) {
+      const covered = findOpenSeatsCoveredByRange(slots, bookedRange, venue);
+      if (covered.length) {
+        const drop = new Set(covered);
+        day.slots = slots.filter((s) => !drop.has(s));
+      }
+    }
+
+    let slot = slotMatch(day.slots, client, timeSlot);
     if (!slot && replaceOpen) {
-      slot = findOpenSeatOnBand(slots, timeSlot, String(payload.venue ?? ""));
+      slot = findOpenSeatOnBand(day.slots, timeSlot, venue);
       if (slot) {
         slot.client_name = client;
         // Prefer the open seat's existing sheet time label so Services capacity matches.
@@ -245,7 +273,7 @@ function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<str
     }
     if (!slot) {
       slot = { client_name: client, time_slot: timeSlot };
-      slots.push(slot);
+      day.slots.push(slot);
     } else if (timeSlotsEquivalent(String(slot.time_slot ?? ""), timeSlot)) {
       // Keep sheet-style label when already equivalent (e.g. "12 to 1" vs "12.00 – 1.00").
       if (!slot.time_slot) slot.time_slot = timeSlot;
@@ -259,7 +287,7 @@ function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<str
       slot.area = area;
       slot.pool_note = area;
     }
-    slots.sort((a, b) => norm(a.time_slot).localeCompare(norm(b.time_slot)));
+    day.slots.sort((a, b) => norm(a.time_slot).localeCompare(norm(b.time_slot)));
     return true;
   }
   return false;
