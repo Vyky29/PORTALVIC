@@ -3163,7 +3163,7 @@
    *   not only 13–17 Jul — so June ACAT/Fadi snaps cannot win Autumn projection)
    * - Replace summer Hub Bespoke with Autumn rota staff + Tinashe / Cyrus
    * - Multi-Activity: Bismark→Godsway; Giuseppe→Emanuel; John keeps Hub book;
-   *   Berta Sunday = Leader (no Multi clients); Sun 6 only: Emanuel→Youssef (Emanuel off)
+   *   Berta Sunday = Leader (no Multi clients); Sun 6 only: Emanuel→John (Emanuel + Youssef off)
    * - Acton Mon: Angel → Roberto (Adam P / Steven / Mario)
    * - Acton Tue: Roberto / Aurora / Javier / Luliya (Serine Roberto; Logan Luliya; Richard Roberto; no Youssef)
    * - Acton Thu: Roberto / Simon / Javier / Aurora (Luliya OFF; Simon keeps Elijah / Yuri)
