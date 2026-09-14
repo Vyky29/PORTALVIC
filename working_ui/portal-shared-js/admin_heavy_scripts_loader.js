@@ -17,7 +17,7 @@
       "/portal/autumn_staff_hours_reference.js?v=20260914-fri18-raul",
       "/portal/portal_dc_services_local.js?v=20260914-overview-pin2",
       "/portal/portal_capacity_chain_occupants.js?v=20260914-serine-tue15",
-      "/portal/portal_overview_capacity_chain.js?v=20260914-serine-tue15",
+      "/portal/portal_overview_capacity_chain.js?v=20260914-sched-term-snappy",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260914-staff-self-slice",
     ],
     feedback: [
