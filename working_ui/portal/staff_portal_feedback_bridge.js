@@ -897,9 +897,21 @@
   function rosterFeedbackMergeRules() {
     const src =
       typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
-    return src && Array.isArray(src.sundayFeedbackMerges)
-      ? src.sundayFeedbackMerges
-      : [];
+    const fromSrc =
+      src && Array.isArray(src.sundayFeedbackMerges) ? src.sundayFeedbackMerges : [];
+    if (fromSrc.length) return fromSrc;
+    const pinned =
+      typeof window !== "undefined" && window.__PORTAL_STAFF_BUNDLE_META__
+        ? window.__PORTAL_STAFF_BUNDLE_META__.sundayFeedbackMerges
+        : null;
+    if (Array.isArray(pinned) && pinned.length) return pinned;
+    if (
+      typeof window !== "undefined" &&
+      typeof window.portalStaffLeadSundayFeedbackMergeRules === "function"
+    ) {
+      return window.portalStaffLeadSundayFeedbackMergeRules() || [];
+    }
+    return [];
   }
 
   function mergeRuleSlotStartHm(timeSlot) {
@@ -1095,13 +1107,17 @@
       .filter(Boolean);
     if (parts.length < 3 || !/^\d{4}-\d{2}-\d{2}$/.test(parts[0])) return false;
     const last = slug(parts[parts.length - 1]);
-    if (last !== "aquatic") return false;
-    if (parts.length === 3) {
-      return !normalizeHmToken(parts[1]) && !!slug(parts[1]);
+    if (last === "aquatic") {
+      if (parts.length === 3) {
+        return !normalizeHmToken(parts[1]) && !!slug(parts[1]);
+      }
+      if (parts.length === 4 && normalizeHmToken(parts[2])) {
+        return !normalizeHmToken(parts[1]) && !!slug(parts[1]);
+      }
+      return false;
     }
-    if (parts.length === 4 && normalizeHmToken(parts[2])) {
-      return !normalizeHmToken(parts[1]) && !!slug(parts[1]);
-    }
+    /* Timed AA submit without |aquatic suffix (Roberto Yusuf 2026-09-13|09:00|yusuf_ah). */
+    if (parts.length === 3 && normalizeHmToken(parts[1]) && !!slug(parts[2])) return true;
     return false;
   }
 

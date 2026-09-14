@@ -882,6 +882,10 @@
       clientRosterStartDates: starts,
       clientRosterGoneFromDates: Object.assign({}, baseSrc.clientRosterGoneFromDates || {}),
       clientWeekdaysOnly: Object.assign({}, baseSrc.clientWeekdaysOnly || {}),
+      sundayFeedbackMerges: Array.isArray(baseSrc.sundayFeedbackMerges)
+        ? baseSrc.sundayFeedbackMerges
+        : [],
+      sundayDateOverrides: Object.assign({}, baseSrc.sundayDateOverrides || {}),
       capacityChainPlacesPhases: true,
       localPlacesPhases: true,
       capacityChainTimetableBespoke: true,

@@ -158,6 +158,7 @@
           staffPhotosBaseUrl: b.staffPhotosBaseUrl || "portal/staff_photos/",
           staffPhotoExtension: b.staffPhotoExtension || "png",
           sundayDateOverrides: b.sundayDateOverrides || {},
+          sundayFeedbackMerges: Array.isArray(b.sundayFeedbackMerges) ? b.sundayFeedbackMerges : [],
           clientRosterStartDates: b.clientRosterStartDates || {},
           clientRosterGoneFromDates: b.clientRosterGoneFromDates || {},
           clientWeekdaysOnly: b.clientWeekdaysOnly || {},
@@ -199,6 +200,15 @@
       (pinned && pinned.sundayDateOverrides) ||
       (bundle && bundle.sundayDateOverrides) ||
       {};
+    var sundayMerges =
+      (Array.isArray(chainSrc.sundayFeedbackMerges) && chainSrc.sundayFeedbackMerges.length
+        ? chainSrc.sundayFeedbackMerges
+        : null) ||
+      (pinned && Array.isArray(pinned.sundayFeedbackMerges) && pinned.sundayFeedbackMerges.length
+        ? pinned.sundayFeedbackMerges
+        : null) ||
+      (bundle && Array.isArray(bundle.sundayFeedbackMerges) ? bundle.sundayFeedbackMerges : []) ||
+      [];
     var starts = Object.assign(
       {},
       (pinned && pinned.clientRosterStartDates) || {},
@@ -222,6 +232,7 @@
       staffPhotosBaseUrl: photosBase,
       staffPhotoExtension: photoExt,
       sundayDateOverrides: sundayOv,
+      sundayFeedbackMerges: sundayMerges,
       clientRosterStartDates: starts,
       clientRosterGoneFromDates: gone,
       clientWeekdaysOnly: weekdays,

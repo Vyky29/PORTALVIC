@@ -621,9 +621,50 @@
     return false;
   }
 
+  var FALLBACK_SUNDAY_FEEDBACK_MERGES = [
+    {
+      day: "Wednesday",
+      client_name: "Cyrus",
+      instructors: "JAVIER",
+      mergeKey: "cyrus_javier_wed_swim",
+      slots: [
+        { time_slot: "4 to 4.30", service: "Aquatic Activity" },
+        { time_slot: "4.30 to 5.15", service: "Multi-Activity" },
+      ],
+    },
+    {
+      day: "Sunday",
+      client_name: "Yusuf Ah",
+      instructors: "ROBERTO",
+      mergeKey: "yusuf_ah_roberto_sun_swim",
+      exceptSessionDates: ["2026-09-06"],
+      slots: [
+        { time_slot: "9 to 9.30", service: "Aquatic Activity" },
+        { time_slot: "9.30 to 10.15", service: "Multi-Activity" },
+      ],
+    },
+    {
+      day: "Sunday",
+      client_name: "Zaid",
+      instructors: "JAVIER",
+      mergeKey: "zaid_javier_sun_swim",
+      slots: [
+        { time_slot: "9 to 9.30", service: "Aquatic Activity" },
+        { time_slot: "9.30 to 10.15", service: "Multi-Activity" },
+      ],
+    },
+  ];
+
   function sundayFeedbackMergeRules() {
     var src = global.STAFF_DASHBOARD_SOURCE;
-    return src && Array.isArray(src.sundayFeedbackMerges) ? src.sundayFeedbackMerges : [];
+    var fromSrc = src && Array.isArray(src.sundayFeedbackMerges) ? src.sundayFeedbackMerges : [];
+    if (fromSrc.length) return fromSrc;
+    var pinned =
+      typeof global !== "undefined" && global.__PORTAL_STAFF_BUNDLE_META__
+        ? global.__PORTAL_STAFF_BUNDLE_META__.sundayFeedbackMerges
+        : null;
+    if (Array.isArray(pinned) && pinned.length) return pinned;
+    return FALLBACK_SUNDAY_FEEDBACK_MERGES;
   }
 
   function cardMatchesMergeSlot(it, slot, dayWord) {
@@ -633,7 +674,17 @@
     var ts = String(base.timeSlotLabel || it.time || "").trim();
     var svc = String(base.rosterService || base.activity || it.activity || "").trim();
     if (slot.time_slot && String(slot.time_slot).trim() !== ts) return false;
-    if (slot.service && String(slot.service).trim().toLowerCase() !== svc.toLowerCase()) return false;
+    if (slot.service) {
+      var want = String(slot.service).trim().toLowerCase().replace(/[\s_-]+/g, " ");
+      var got = svc.toLowerCase().replace(/[\s_-]+/g, " ");
+      var wantMulti = want.indexOf("multi") >= 0 && want.indexOf("activ") >= 0;
+      var gotMulti = got.indexOf("multi") >= 0 && got.indexOf("activ") >= 0;
+      var wantAquatic = want.indexOf("aquatic") >= 0 || want.indexOf("swim") >= 0;
+      var gotAquatic = got.indexOf("aquatic") >= 0 || got.indexOf("swim") >= 0;
+      if (wantMulti && gotMulti) return true;
+      if (wantAquatic && gotAquatic) return true;
+      if (want !== got && got.indexOf(want) < 0 && want.indexOf(got) < 0) return false;
+    }
     return true;
   }
 
@@ -916,6 +967,10 @@
   global.portalStaffLeadAquaticInstructorCoverUnitsOnDate = aquaticInstructorCoverUnitsOnDate;
   global.portalStaffLeadFeedbackKeyMatchesAquaticSlot = feedbackKeyMatchesAquaticSlot;
   global.portalStaffLeadReviewKeyAllowsDateClientOnlyAlias = reviewKeyAllowsDateClientOnlyAlias;
+  global.portalStaffLeadSundayFeedbackMergeRules = sundayFeedbackMergeRules;
+  global.portalStaffLeadSundayFeedbackMergeRulesFallback = function () {
+    return FALLBACK_SUNDAY_FEEDBACK_MERGES.slice();
+  };
   global.portalMergeStaffLeadTodayAquaticCards = mergeTodayAquaticCards;
   global.portalMergeStaffTodayFeedbackMergeGroups = mergeTodayFeedbackMergeGroups;
   global.portalMergeStaffTodayConsecutiveHalfHourSlots = mergeTodayConsecutiveHalfHourClientSlots;

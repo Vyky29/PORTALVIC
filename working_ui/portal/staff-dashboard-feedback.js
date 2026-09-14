@@ -417,7 +417,10 @@
     function portalStaffOwnsSundayFeedbackMergeSlot(s, weekday, sessionDateIso){
       try{
         const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
-        const merges = src && Array.isArray(src.sundayFeedbackMerges) ? src.sundayFeedbackMerges : [];
+        let merges = src && Array.isArray(src.sundayFeedbackMerges) ? src.sundayFeedbackMerges : [];
+        if(!merges.length && typeof window.portalStaffLeadSundayFeedbackMergeRules === 'function'){
+          merges = window.portalStaffLeadSundayFeedbackMergeRules() || [];
+        }
         if(!merges.length || !s) return true;
         const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
         const day = String(weekday || s.day || '').trim();
