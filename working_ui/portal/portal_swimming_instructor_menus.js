@@ -875,17 +875,27 @@
       try {
         portalResyncPlannerToolsAfterIdentity();
       } catch (_) {}
-      try {
-        if (typeof global.portalSyncTodaySectionDisplay === "function") {
-          global.portalSyncTodaySectionDisplay();
-        } else if (typeof portalSyncTodaySectionDisplay === "function") {
-          portalSyncTodaySectionDisplay();
-        }
-      } catch (_) {}
-      try {
-        if (typeof global.renderToday === "function") global.renderToday();
-        else if (typeof renderToday === "function") renderToday();
-      } catch (_) {}
+      /* Defer Today rebuild off the load/deferred-ready turn — sync paint here
+         was freezing Javier (~3s) on day-off Mondays. */
+      var deferPaint =
+        typeof global.portalDeferHeavyDashboardRefresh === "function"
+          ? global.portalDeferHeavyDashboardRefresh
+          : function (fn) {
+              setTimeout(fn, 0);
+            };
+      deferPaint(function () {
+        try {
+          if (typeof global.portalSyncTodaySectionDisplay === "function") {
+            global.portalSyncTodaySectionDisplay();
+          } else if (typeof portalSyncTodaySectionDisplay === "function") {
+            portalSyncTodaySectionDisplay();
+          }
+        } catch (_) {}
+        try {
+          if (typeof global.renderToday === "function") global.renderToday();
+          else if (typeof renderToday === "function") renderToday();
+        } catch (_) {}
+      }, 0);
     });
   }
 })(typeof window !== "undefined" ? window : globalThis);
