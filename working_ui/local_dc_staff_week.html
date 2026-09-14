@@ -299,7 +299,7 @@
     <strong>7-13 Sep</strong> = Emmanuel onboarding (Mon 7 interview 4pm; shadow Wed 9 / Fri 11; Sun 13 Multi Hub shadow — Hub staff: Berta · Godsway · Emmanuel only; John off).
     Hub Tinashe from <strong>Wed 9 Sep</strong>: <strong>3 seats</strong> every day — Wed = <strong>Godsway + Bismark + Emmanuel</strong> · Mon = <strong>Godsway + John + Raul</strong> · Fri = <strong>Bismark + Roberto + Emmanuel</strong>. Victor off Mon+Thu · Raul off Tue+Thu (no Overview column).
     Sundays: <strong>Berta Lead + Hub book (Jack W…Aydaan)</strong> · Godsway (= Bismark summer) · Emmanuel (= Godsway summer). <strong>John Sunday = 6 Sep only</strong>. Berta off Sun 13 / 20 / 4 Oct = COVER NEEDED (no cover yet).
-    <strong>Fadi absent through Fri 18 Sep</strong> (returns Mon 21) — worker DC seats with Fadi cancelled.
+    <strong>Fadi off rota until Sun 20 Sep</strong> (no Cancelled seats; standing DC pairs resume from Mon 21).
     <strong>Day offs (validated admin):</strong> Sandra Mon 7 (Javi Palankas covers Westway Physical) · Aurora Tue 8 (Acton redistribute) · Javier Marquez Tue 8 (Ayman→Roberto 4–4.30 + Javi Palankas 4.30–5; Linda/Rayan Ta/Anas→Javi Palankas) · Aurora Sun 13 / Tue 15 / Sun 4 Oct — painted here; live COVER NEEDED stays in Schedule &amp; Covers until cover assigned.
     <strong>Stripe/paid:</strong> finish-booking folds MADRE + schedule_overrides; after editing this file, commit/push + run <code>office-madre-sync-local-board-mon-fri.mjs</code> when standing seats change.
   </p>
@@ -315,7 +315,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260914-amaar-mon-from14"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260914-youssef-eddie"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -337,13 +337,9 @@
     "2026-09-09": {
       John: "Time off requested · Tinashe = Godsway + Bismark + Emmanuel (shadow)",
     },
-    "2026-09-10": {
-      Youssef: "Fadi Day Centre cancelled — no other Thu sessions",
-    },
     "2026-09-13": { Aurora: "Time off requested · Luliya pool", Berta: "Time off requested · Hub COVER NEEDED" },
     "2026-09-15": { Aurora: "Time off requested · Javi Acton" },
     "2026-09-16": { John: "Time off requested · Tinashe = Godsway + Bismark + Emmanuel" },
-    "2026-09-17": { Youssef: "Fadi Day Centre cancelled — no other Thu sessions" },
     "2026-09-20": { Berta: "Time off requested · Hub COVER NEEDED" },
     "2026-10-04": { Aurora: "Time off requested · Luliya pool", Berta: "Time off requested · Hub COVER NEEDED" },
   };
@@ -355,17 +351,17 @@
     { dow: "saturday", iso: "2026-09-05", phase: "w1", hint: "Week 1 · first Saturday" },
     { dow: "sunday", iso: "2026-09-06", phase: "w1", hint: "Week 1 · Hub: Berta Lead + Jack W…Aydaan · John = Emmanuel book · Godsway · Aurora Yusuf Aquatic 9–9.30 · Roberto Simon Aquatic 9–9.30 + Yusuf Multi 9.30–10.15 (2 feedbacks) · Youssef OFF · Emmanuel OFF" },
     { dow: "monday", iso: "2026-09-07", phase: "w2", hint: "Raul OFF · Victor covers Timi 11-1 + Emanuel 1-4 + Tinashe with Godsway/John · Emmanuel interview 4pm · Sandra OFF · Javi Palankas covers Westway Physical (Ayaan 4–5 / Serine 5–6)" },
-    { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "DC: Roberto ACAT 11-12 + Ikram 12-3 · Michelle Ikram 11-12 / Manager 12-3 / Ikram 3-4 · Luliya Ikram 11-3 · Raul Fadi 12.30-3 + Ikram 3-4 · Victor Cyrus 3.30-5 · Aurora OFF · Javier OFF · Acton: Ayman Roberto 4-4.30 then Javi Palankas 4.30-5 · Adam+Junaid Roberto · Aydaan Luliya · Linda/Rayan Ta/Anas Javi Palankas" },
-    { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Fadi absent · Victor no DC (not day-off) · Roberto Emanuel 11-4 · Raul Ikram 3-4 · Tinashe = Godsway + Bismark + Emmanuel shadow · John OFF" },
-    { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Fadi DC cancelled · Youssef OFF · Roberto Acton AS · Joelle early leave · Anas makeup 6-6.30 Aurora · Simon free from 6 · Victor/Raul standing off Thu" },
-    { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Fadi absent · Roberto Emanuel 11-4 · Tinashe = Bismark + Roberto + Emmanuel 4.15-6.15" },
+    { dow: "tuesday", iso: "2026-09-08", phase: "w2", hint: "DC: Roberto ACAT 11-12 + Ikram 12-3 · Michelle Ikram 11-12 / Manager 12-3 / Ikram 3-4 · Luliya Ikram 11-3 · Raul OFF Tue · Victor Cyrus 3.30-5 · Fadi off rota · Aurora OFF · Javier OFF · Acton: Ayman Roberto 4-4.30 then Javi Palankas 4.30-5 · Adam+Junaid Roberto · Aydaan Luliya · Linda/Rayan Ta/Anas Javi Palankas" },
+    { dow: "wednesday", iso: "2026-09-09", phase: "w2", hint: "Fadi off rota · Victor no DC (not day-off) · Roberto Emanuel 11-4 · Raul Ikram 3-4 · Tinashe = Godsway + Bismark + Emmanuel shadow · John OFF" },
+    { dow: "thursday", iso: "2026-09-10", phase: "w2", hint: "Fadi off rota · Roberto/Youssef no DC book · Roberto Acton AS · Joelle early leave · Anas makeup 6-6.30 Aurora · Simon free from 6 · Victor/Raul standing off Thu" },
+    { dow: "friday", iso: "2026-09-11", phase: "w2", hint: "Fadi off rota · Roberto Emanuel 11-4 · Tinashe = Bismark + Roberto + Emmanuel 4.15-6.15" },
     { dow: "saturday", iso: "2026-09-12", phase: "w2", hint: "Standing · weekend" },
     { dow: "sunday", iso: "2026-09-13", phase: "w2", hint: "Berta OFF · Hub COVER NEEDED · Godsway + Emmanuel Hub · Aurora OFF · Luliya covers Aurora pool · John OFF" },
-    { dow: "monday", iso: "2026-09-14", phase: "w3", hint: "Amaar Ah takes Dan Northolt 6–6.30 (was Adaam) · Adaam+Aydaan Tue Acton 6–6.30 · Fadi absent · Tinashe = Godsway + John + Raul (3) · Victor OFF Mon" },
+    { dow: "monday", iso: "2026-09-14", phase: "w3", hint: "Amaar Ah takes Dan Northolt 6–6.30 (was Adaam) · Adaam+Aydaan Tue Acton 6–6.30 · Fadi off rota · Tinashe = Godsway + John + Raul (3) · Victor OFF Mon" },
     { dow: "tuesday", iso: "2026-09-15", phase: "w3", hint: "Aurora OFF · Javi Palankas covers Aurora Acton · Raul OFF Tue · Emmanuel not on Tuesday" },
-    { dow: "wednesday", iso: "2026-09-16", phase: "w3", hint: "Fadi absent · John OFF · Tinashe = Godsway + Bismark + Emmanuel · Raul no Tinashe" },
-    { dow: "friday", iso: "2026-09-18", phase: "w3", hint: "Fadi last absent day · Tinashe = Bismark + Roberto + Emmanuel" },
-    { dow: "sunday", iso: "2026-09-20", phase: "w3", hint: "Berta OFF · Hub COVER NEEDED · Emmanuel Sunday Multi MA standing" },
+    { dow: "wednesday", iso: "2026-09-16", phase: "w3", hint: "Fadi off rota · John OFF · Tinashe = Godsway + Bismark + Emmanuel · Raul no Tinashe" },
+    { dow: "friday", iso: "2026-09-18", phase: "w3", hint: "Fadi last off-rota weekday · Tinashe = Bismark + Roberto + Emmanuel" },
+    { dow: "sunday", iso: "2026-09-20", phase: "w3", hint: "Fadi starts (DC weekdays from Mon 21) · Berta OFF · Hub COVER NEEDED · Emmanuel Sunday Multi MA standing" },
     { dow: "sunday", iso: "2026-10-04", phase: "w3", hint: "Berta OFF · Hub COVER NEEDED · Aurora OFF · Luliya covers Aurora pool" },
   ];
   var DAY_LABEL = {
@@ -1283,7 +1279,7 @@
       Victor: [],
       Youssef: [],
     };
-    /* Thu 10 Sep: Fadi DC cancelled — Roberto/Youssef no DC book (Roberto keeps Acton AS). */
+    /* Thu 10 Sep: Fadi off rota — Roberto/Youssef no DC book (Roberto keeps Acton AS). */
     var THU10_DC_BOARD = {
       Roberto: [],
       Youssef: [],
@@ -1313,6 +1309,14 @@
         return String(c.staff || "").toLowerCase() === staffName.toLowerCase();
       });
       (col && col.clients ? col.clients : []).forEach(function (c) {
+        if (
+          PRC &&
+          typeof PRC.isFadiOffRotaIso === "function" &&
+          PRC.isFadiOffRotaIso(iso) &&
+          /^fadi\b/i.test(String(c.name || "").trim())
+        ) {
+          return;
+        }
         out.push({
           name: c.name,
           time: c.time,

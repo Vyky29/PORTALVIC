@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 119;
+  var SOURCE_VERSION = 121;
 
   /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
   var DAY_CENTRE_STANDING_ISO = {
@@ -86,7 +86,7 @@
         ],
       },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      /* Raul OFF Tuesdays (no DC). Ikram 3-4 stays Michelle; Fadi cancelled while absent to 18 Sep. */
+      /* Raul OFF Tuesdays (no DC). Ikram 3-4 stays Michelle. */
       { staff: "Raul", clients: [] },
       /* Victor Tue: Cyrus Bespoke 3.30–5 (not DC) — see CYRUS_BESPOKE_ROW. */
       { staff: "Victor", clients: [] },
@@ -385,13 +385,12 @@
   }
 
   /**
-   * Fadi (CLIENT) away until Mon 21 Sep 2026 — still paint his DC seats as Cancelled
-   * (Joelle pattern), not Absent and not No participant.
-   * Fri 11 – Fri 18: Victor's reshuffled DC boards (others cover); Fadi Cancelled overlays.
-   * This standing layer is the timetable for that window — do not re-apply
-   * schedule_overrides / dated portal_roster_rows for Fadi DC (voided 11 Sep 2026).
+   * Fadi (CLIENT) is off the worker rotas from 1 Sep through 19 Sep 2026.
+   * He starts 20 Sep — do not paint Cancelled seats or occupy override/slot space before that.
+   * Fri 11 – Fri 18: reshuffled DC boards (others cover); Thursday Roberto/Youssef have no Fadi book.
    */
-  var FADI_ABSENT_DC_UNTIL = "2026-09-21";
+  var FADI_START_ISO = "2026-09-20";
+  var FADI_ABSENT_DC_UNTIL = FADI_START_ISO;
   var FADI_ABSENT_DC_BOARD_FROM = "2026-09-11";
   var FADI_ABSENT_DC_BOARD = {
     monday: [
@@ -462,9 +461,9 @@
       { staff: "Youssef", clients: [] },
     ],
     thursday: [
-      /* Fadi Cancelled stays on Roberto + Youssef (not a day off). Luliya / Michelle have no DC. */
-      { staff: "Roberto", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
-      { staff: "Youssef", clients: [{ name: "Fadi", time: "12.30 to 3" }] },
+      /* No Fadi book — Roberto keeps Acton AS; Youssef has no DC this Thursday. */
+      { staff: "Roberto", clients: [] },
+      { staff: "Youssef", clients: [] },
       { staff: "Luliya", clients: [] },
       { staff: "Michelle", clients: [] },
       { staff: "Raul", clients: [{ name: "Office", time: "11 to 4" }] },
@@ -487,9 +486,18 @@
     ],
   };
 
-  function isFadiAbsentDcWindowIso(iso) {
+  function isFadiClientName(name) {
+    return /^fadi\b/i.test(String(name || "").trim());
+  }
+
+  /** True when Fadi must not appear on worker rotas (1 Sep through 19 Sep). */
+  function isFadiOffRotaIso(iso) {
     var d = normIso(iso);
-    return !!(d && d >= "2026-09-01" && d < FADI_ABSENT_DC_UNTIL);
+    return !!(d && d >= "2026-09-01" && d < FADI_START_ISO);
+  }
+
+  function isFadiAbsentDcWindowIso(iso) {
+    return isFadiOffRotaIso(iso);
   }
 
   function isFadiAbsentDcBoardIso(iso) {
@@ -545,6 +553,7 @@
       var dayTitle = DOW_TITLE[dk] || dk;
       (FADI_ABSENT_DC_BOARD[dk] || []).forEach(function (col) {
         (col.clients || []).forEach(function (c) {
+          if (isFadiClientName(c.name)) return;
           out.push({
             client_name: c.name,
             day: dayTitle,
@@ -562,55 +571,8 @@
   }
 
   function autumnFadiCancelledSeatRows() {
-    var out = [];
-    var cur = new Date("2026-09-01T12:00:00");
-    var end = new Date(FADI_ABSENT_DC_UNTIL + "T12:00:00");
-    while (cur < end) {
-      var dow = cur.getDay();
-      if (dow >= 1 && dow <= 5) {
-        var y = cur.getFullYear();
-        var m = String(cur.getMonth() + 1).padStart(2, "0");
-        var dayNum = String(cur.getDate()).padStart(2, "0");
-        var iso = y + "-" + m + "-" + dayNum;
-        var dk =
-          dow === 1
-            ? "monday"
-            : dow === 2
-              ? "tuesday"
-              : dow === 3
-                ? "wednesday"
-                : dow === 4
-                  ? "thursday"
-                  : "friday";
-        var dayTitle = DOW_TITLE[dk] || dk;
-        /*
-         * Fri 11 – Fri 18 reshuffled DC boards already replaced Fadi's time
-         * (Emanuel / Office / Ikram) except Thursday: Roberto + Youssef keep
-         * Fadi Cancelled. Skip other weekdays so Ikram / Office are not doubled.
-         */
-        if (isFadiAbsentDcBoardIso(iso) && dow !== 4) {
-          cur.setDate(cur.getDate() + 1);
-          continue;
-        }
-        (AUTUMN_DAY_CENTRE_BOARD[dk] || []).forEach(function (col) {
-          (col.clients || []).forEach(function (c) {
-            if (!/^fadi\b/i.test(String(c.name || "").trim())) return;
-            out.push({
-              client_name: "Fadi",
-              day: dayTitle,
-              instructors: String(col.staff || "").toUpperCase(),
-              service: "Day Centre",
-              area: "Hub Room",
-              time_slot: c.time,
-              venue: "SwimFarm",
-              session_date: iso,
-            });
-          });
-        });
-      }
-      cur.setDate(cur.getDate() + 1);
-    }
-    return out;
+    /* Fadi is off rota until FADI_START_ISO — do not occupy Cancelled seats. */
+    return [];
   }
 
   function applyFadiAbsentDayCentre(rows) {
@@ -618,45 +580,13 @@
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
       var d = normIso(r.session_date);
+      /* Dated Sep 1-19 Fadi rows (any programme) — drop, do not Cancelled-occupy. */
+      if (isFadiClientName(r.client_name) && isFadiOffRotaIso(d)) return;
       if (isDayCentreService(r.service) && isFadiAbsentDcBoardIso(d)) return;
-      /* Drop stale No participant placeholders that hid Fadi Cancelled seats. */
-      if (
-        isDayCentreService(r.service) &&
-        isFadiAbsentDcWindowIso(d) &&
-        /^no participant\b/i.test(String(r.client_name || "").trim()) &&
-        /swimfarm/i.test(String(r.venue || "")) &&
-        /\b(roberto|youssef|raul)\b/i.test(String(r.instructors || ""))
-      ) {
-        var openSlot = String(r.time_slot || "")
-          .replace(/\s+/g, " ")
-          .trim()
-          .toLowerCase();
-        if (
-          openSlot.indexOf("12.30 to 3") === 0 ||
-          openSlot.indexOf("12:30 to 3") === 0 ||
-          openSlot === "1 to 3" ||
-          openSlot.indexOf("1 to 3") === 0
-        ) {
-          return;
-        }
-      }
       out.push(r);
     });
     autumnFadiAbsentDayCentreRows().forEach(function (row) {
       out.push(row);
-    });
-    /* Always paint Fadi Cancelled seats through Sun 20 (return Mon 21). */
-    autumnFadiCancelledSeatRows().forEach(function (row) {
-      var dup = out.some(function (r) {
-        if (!r || !isDayCentreService(r.service)) return false;
-        if (!/^fadi\b/i.test(String(r.client_name || "").trim())) return false;
-        if (normIso(r.session_date) !== normIso(row.session_date)) return false;
-        return (
-          String(r.instructors || "").toUpperCase() ===
-          String(row.instructors || "").toUpperCase()
-        );
-      });
-      if (!dup) out.push(row);
     });
     return out;
   }
@@ -1258,6 +1188,24 @@
         /\byoussef\b/i.test(inst)
       ) {
         return;
+      }
+      /* Standing open 5.30–6.30 — replace with Abodi last session for Mon 7 only. */
+      if (
+        isYoussefInstructor(inst) &&
+        isActonVenue(r.venue) &&
+        isAquaticService(r.service)
+      ) {
+        var slotAb = String(r.time_slot || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+        if (
+          slotAb === "5.30 to 6.30" ||
+          slotAb === "5.30 to 6" ||
+          slotAb.indexOf("5.30 to 6") === 0
+        ) {
+          return;
+        }
       }
       /* Stale Victor-only Tinashe dated row (pre-fix) — drop so Godsway/John project. */
       if (
@@ -2062,7 +2010,7 @@
         /* Michelle 11-4 + Luliya 11-3 stay; Raul takes 3-4 (Victor's block). */
         if (/\bvictor\b/i.test(s)) s = s.replace(/\bVICTOR\b/gi, "RAUL");
       } else if (/^fadi\b/.test(clientWed9) || clientWed9 === "fadi") {
-        s = s; /* absence handled via overrides */
+        s = ""; /* off rota until 20 Sep — no Cancelled override seat */
       } else if (/\bvictor\b/i.test(s) && !/\b(roberto|raul|michelle|luliya)\b/i.test(s)) {
         s = "";
       }
@@ -2368,16 +2316,7 @@
   }
 
   var YOUSSEF_ACTON_OPEN_430_ROWS = [
-    {
-      client_name: "No participant",
-      day: "Monday",
-      instructors: "YOUSSEF",
-      service: "Aquatic Activity",
-      area: "Teaching Pool",
-      time_slot: "4 to 4.30",
-      venue: "Acton",
-      session_date: "2026-07-13",
-    },
+    /* Monday Acton Youssef board owns 4–4.30 (Closed→open) — see AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD. */
     /* Tuesday Acton: Youssef is not on the Autumn pool. Opens sit on Roberto. */
     {
       client_name: "No participant",
@@ -2822,6 +2761,71 @@
     { staff: "JAVIER", name: "No participant", time: "5.30 to 6", area: "Teaching Pool" },
     { staff: "JAVIER", name: "Kayden", time: "6 to 6.30", area: "Teaching Pool" },
   ];
+
+  /**
+   * Mon Acton Autumn — Youssef aquatic (LOCAL standing from Mon 14).
+   * Closed 4–4.30 · Eddie Mc 4.30–5 · open 5–5.30 · open 5.30–6.30.
+   * Mon 7 Abodi last session is dated via scrubAndEnsureSep7VictorRaulCover.
+   */
+  var AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD = [
+    { staff: "YOUSSEF", name: "Closed", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "Eddie Mc", time: "4.30 to 5", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "No participant", time: "5 to 5.30", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "No participant", time: "5.30 to 6.30", area: "Teaching Pool" },
+  ];
+
+  function autumnActonMondayYoussefStandingRows() {
+    var iso = DAY_CENTRE_STANDING_ISO.monday;
+    return AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD.map(function (slot) {
+      return {
+        client_name: slot.name,
+        day: "Monday",
+        instructors: slot.staff,
+        service: "Aquatic Activity",
+        area: slot.area || "Teaching Pool",
+        time_slot: slot.time,
+        venue: "Acton",
+        session_date: iso,
+      };
+    });
+  }
+
+  function isMondayYoussefActonAquaticStandingRow(row) {
+    if (!row || !isActonVenue(row.venue)) return false;
+    if (normalizeDowKey(row.day) !== "monday") return false;
+    if (!isYoussefInstructor(row.instructors)) return false;
+    if (!isAquaticService(row.service) && String(row.service || "").trim()) return false;
+    var d = normIso(row.session_date);
+    if (!d) return true;
+    if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
+    if (d === DAY_CENTRE_STANDING_ISO.monday) return true;
+    if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
+    return false;
+  }
+
+  /**
+   * Re-inject Mon Acton Youssef AFTER portal_roster_rows merge.
+   * Summer Eddie stamp (May) is purged; without this board Mon Today misses Eddie Mc.
+   */
+  function applyAutumnActonMondayYoussefStanding(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (isMondayYoussefActonAquaticStandingRow(r)) return;
+      out.push(r);
+    });
+    autumnActonMondayYoussefStandingRows().forEach(function (row) {
+      expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
+        /* Closed 4–4.30 paints as No participant on staff Today (same as summer→Autumn). */
+        if (isYoussefActon430ClosedSlot(exp)) {
+          out.push(Object.assign({}, exp, { client_name: "No participant" }));
+          return;
+        }
+        out.push(exp);
+      });
+    });
+    return out;
+  }
 
   function autumnActonWednesdayStandingRows() {
     var iso = DAY_CENTRE_STANDING_ISO.wednesday;
@@ -3558,6 +3562,7 @@
     /* Autumn standing first, then portal_roster_rows so dated trials (e.g. Muhammad Mon Northolt) win. */
     var withAutumn = applyAutumnStandingParticipantRows(base);
     var merged = opts.skipDb ? withAutumn.slice() : applyPortalRosterDbRows(withAutumn);
+    merged = applyAutumnActonMondayYoussefStanding(merged);
     merged = applyAutumnActonTuesdayStanding(merged);
     merged = applyAutumnActonWednesdayStanding(merged);
     merged = applyAutumnActonThursdayStanding(merged);
@@ -3582,17 +3587,24 @@
     return dedupeRosterAdapterRows(merged);
   }
 
-  function resolveCanonicalStaffDashboardSource() {
+  function resolveCanonicalStaffDashboardSource(opts) {
+    opts = opts || {};
     var base = global.STAFF_DASHBOARD_SOURCE || {};
-    var rows = resolveCanonicalRosterRows();
+    var rows = resolveCanonicalRosterRows(opts);
+    var starts = Object.assign({}, base.clientRosterStartDates || {}, {
+      Fadi: FADI_START_ISO,
+    });
     return Object.assign({}, base, {
       rows: rows,
+      clientRosterStartDates: starts,
       rosterSourceId: SOURCE_ID,
       rosterSourceVersion: SOURCE_VERSION,
       rosterSourceNote:
-        global.PORTAL_MADRE_LIVE && global.PORTAL_MADRE_LIVE.rows
-          ? "Autumn LOCAL standing templates + dated Sep+ (summer history purged)"
-          : "Autumn LOCAL standing templates + dated Sep+ (summer history purged)",
+        opts.skipDb
+          ? "Autumn LOCAL standing (skipDb — no portal_roster_rows cache)"
+          : global.PORTAL_MADRE_LIVE && global.PORTAL_MADRE_LIVE.rows
+            ? "Autumn LOCAL standing templates + dated Sep+ (summer history purged)"
+            : "Autumn LOCAL standing templates + dated Sep+ (summer history purged)",
     });
   }
 
@@ -3642,7 +3654,7 @@
    * Not the same as day-off-requested (staff_unavailability): that DOES paint Overview.
    * Victor: Mon + Thu. Raul: Tue + Thu.
    * Fri 11 – Fri 18 (Fadi away boards): Victor + Raul work Office those days;
-   * Thu: Luliya / Michelle have no DC seats (hide). Youssef keeps Fadi Cancelled. Roberto keeps Acton AS.
+   * Thu: Luliya / Michelle have no DC seats (hide). Roberto keeps Acton AS. Youssef has no DC book.
    */
   function autumnStaffStandingOffOnIso(iso, staffRaw) {
     var d = normIso(iso);
@@ -3672,7 +3684,7 @@
       ) {
         return dow === 4;
       }
-      /* Youssef works Thursday (Fadi Cancelled) — never standing off. */
+      /* Youssef has no Thursday DC book while Fadi is off rota. */
       return false;
     }
     if (key === "victor" || key.indexOf("victor") === 0) {
@@ -3708,9 +3720,24 @@
     DAY_CENTRE_STANDING_ISO: DAY_CENTRE_STANDING_ISO,
     WEEKEND_STANDING_ISO: WEEKEND_STANDING_ISO,
     AUTUMN_DAY_CENTRE_BOARD: AUTUMN_DAY_CENTRE_BOARD,
+    AUTUMN_ACTON_TUESDAY_BOARD: AUTUMN_ACTON_TUESDAY_BOARD,
+    AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD: AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD,
+    AUTUMN_ACTON_WEDNESDAY_BOARD: AUTUMN_ACTON_WEDNESDAY_BOARD,
+    AUTUMN_ACTON_THURSDAY_BOARD: AUTUMN_ACTON_THURSDAY_BOARD,
+    AUTUMN_SATURDAY_ACTON_BOARD: AUTUMN_SATURDAY_ACTON_BOARD,
+    ROBERTO_MONDAY_ACTON_FROM_ANGEL: ROBERTO_MONDAY_ACTON_FROM_ANGEL,
+    YOUSSEF_ACTON_OPEN_430_ROWS: YOUSSEF_ACTON_OPEN_430_ROWS,
+    YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO: YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO,
+    AUTUMN_NORTHOLT_AQUATIC_BOARD: AUTUMN_NORTHOLT_AQUATIC_BOARD,
+    AUTUMN_BESPOKE_HUB_ROWS: AUTUMN_BESPOKE_HUB_ROWS,
+    AUTUMN_SUNDAY_CLIMBING_BOARD: AUTUMN_SUNDAY_CLIMBING_BOARD,
+    AUTUMN_WEEKDAY_CLIMBING_BOARD: AUTUMN_WEEKDAY_CLIMBING_BOARD,
     WEEK1_DC_BOARD: WEEK1_DC_BOARD,
     isAutumnWeek1DcIso: isAutumnWeek1DcIso,
     FADI_ABSENT_DC_BOARD: FADI_ABSENT_DC_BOARD,
+    FADI_START_ISO: FADI_START_ISO,
+    isFadiClientName: isFadiClientName,
+    isFadiOffRotaIso: isFadiOffRotaIso,
     isFadiAbsentDcWindowIso: isFadiAbsentDcWindowIso,
     isFadiAbsentDcBoardIso: isFadiAbsentDcBoardIso,
     isAutumnDcStandingTemplateRow: isAutumnDcStandingTemplateRow,
@@ -3720,6 +3747,7 @@
     isAutumnStandingTemplateIso: isAutumnStandingTemplateIso,
     isAutumnTermOrTemplateIso: isAutumnTermOrTemplateIso,
     isAutumnNoSessionStaffKey: isAutumnNoSessionStaffKey,
+    applyAutumnActonMondayYoussefStanding: applyAutumnActonMondayYoussefStanding,
     applyAutumnActonWednesdayStanding: applyAutumnActonWednesdayStanding,
     isWednesdayActonStandingRow: isWednesdayActonStandingRow,
     scrubDepartedAutumnInstructorRows: scrubDepartedAutumnInstructorRows,
