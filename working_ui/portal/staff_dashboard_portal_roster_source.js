@@ -117,6 +117,68 @@
     return "";
   }
 
+  function captureBundleMetaOnce() {
+    if (typeof window === "undefined") return;
+    if (window.__PORTAL_STAFF_BUNDLE_META__) return;
+    var b = window.STAFF_DASHBOARD_SOURCE;
+    if (
+      b &&
+      b.staffProfiles &&
+      Object.keys(b.staffProfiles).length &&
+      !b.capacityChainNoCanonicalRemap
+    ) {
+      try {
+        window.__PORTAL_STAFF_BUNDLE_META__ = {
+          staffProfiles: b.staffProfiles,
+          staffPhotosBaseUrl: b.staffPhotosBaseUrl || "portal/staff_photos/",
+          staffPhotoExtension: b.staffPhotoExtension || "png",
+          sundayDateOverrides: b.sundayDateOverrides || {},
+        };
+      } catch (_) {}
+    }
+  }
+
+  function attachBundleMeta(chainSrc) {
+    if (!chainSrc || typeof chainSrc !== "object") return chainSrc;
+    captureBundleMetaOnce();
+    var pinned =
+      typeof window !== "undefined" ? window.__PORTAL_STAFF_BUNDLE_META__ : null;
+    var bundle =
+      typeof window !== "undefined" && window.STAFF_DASHBOARD_SOURCE
+        ? window.STAFF_DASHBOARD_SOURCE
+        : null;
+    var profiles =
+      (chainSrc.staffProfiles && Object.keys(chainSrc.staffProfiles).length
+        ? chainSrc.staffProfiles
+        : null) ||
+      (pinned && pinned.staffProfiles) ||
+      (bundle && bundle.staffProfiles && !bundle.capacityChainNoCanonicalRemap
+        ? bundle.staffProfiles
+        : null) ||
+      {};
+    var photosBase =
+      chainSrc.staffPhotosBaseUrl ||
+      (pinned && pinned.staffPhotosBaseUrl) ||
+      (bundle && bundle.staffPhotosBaseUrl) ||
+      "portal/staff_photos/";
+    var photoExt =
+      chainSrc.staffPhotoExtension ||
+      (pinned && pinned.staffPhotoExtension) ||
+      (bundle && bundle.staffPhotoExtension) ||
+      "png";
+    var sundayOv =
+      chainSrc.sundayDateOverrides ||
+      (pinned && pinned.sundayDateOverrides) ||
+      (bundle && bundle.sundayDateOverrides) ||
+      {};
+    return Object.assign({}, chainSrc, {
+      staffProfiles: profiles,
+      staffPhotosBaseUrl: photosBase,
+      staffPhotoExtension: photoExt,
+      sundayDateOverrides: sundayOv,
+    });
+  }
+
   function resolveCapacityChainSource(opts) {
     opts = opts || {};
     var forOverview = !!(opts.forSessionsOverview || sessionsOverviewSurfaceActive());
@@ -125,6 +187,7 @@
       if (Chain && typeof Chain.resolve === "function") {
         var chainSrc = Chain.resolve(opts);
         if (chainSrc && Array.isArray(chainSrc.rows) && chainSrc.rows.length) {
+          chainSrc = attachBundleMeta(chainSrc);
           if (forOverview) {
             pinOverviewCapacitySource(chainSrc);
             return chainSrc;
@@ -200,6 +263,7 @@
   function refreshStaffDashboardSourceFromPortal(opts) {
     if (typeof window === "undefined") return;
     opts = opts || {};
+    captureBundleMetaOnce();
     /* Overview pin only on admin Sessions Overview — never treat staff chain as Overview. */
     var forOverview =
       !!(opts.forSessionsOverview) || sessionsOverviewSurfaceActive();

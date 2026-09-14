@@ -389,12 +389,15 @@
   function resolveInstructorsForSessionDate(instructorsRaw, sessionDate, source, meta) {
     var out = String(instructorsRaw || "").trim();
     var iso = String(sessionDate || "").trim().slice(0, 10);
-    try {
-      var canon = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
-      if (canon && typeof canon.resolveAutumnInstructorsForCalendarDate === "function") {
-        out = canon.resolveAutumnInstructorsForCalendarDate(out, iso, meta || {});
-      }
-    } catch (_) {}
+    /* Capacity chain already owns who-works; do not remap through Jul/canonical Sunday stamps. */
+    if (!(source && source.capacityChainNoCanonicalRemap)) {
+      try {
+        var canon = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
+        if (canon && typeof canon.resolveAutumnInstructorsForCalendarDate === "function") {
+          out = canon.resolveAutumnInstructorsForCalendarDate(out, iso, meta || {});
+        }
+      } catch (_) {}
+    }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return out;
     var overrides =
       source && source.sundayDateOverrides ? source.sundayDateOverrides : null;
@@ -429,6 +432,9 @@
       if (!hit && n === "yusef") {
         hit = keys.find((k) => String(k).toLowerCase() === "youssef");
       }
+      /* Capacity chain standing has no staffProfiles map — keep the token itself
+         so buildForStaff still matches Javier / Dan / Emmanuel on Multi pools. */
+      if (!hit) hit = n;
       if (hit && !seen.has(hit)) {
         seen.add(hit);
         out.push(hit);
