@@ -287,7 +287,7 @@
       {
         staff: "Michelle",
         clients: [
-          { name: "Manager", time: "11 to 3" },
+          { name: "Office", time: "1 to 3" },
           { name: "Ikram", time: "3 to 4" },
         ],
       },
@@ -324,7 +324,12 @@
             day: dayTitle,
             instructors: String(col.staff || "").toUpperCase(),
             service: "Day Centre",
-            area: c.name && String(c.name).toLowerCase() === "manager" ? "Hub · Manager" : "Hub Room",
+            area:
+              c.name && String(c.name).toLowerCase() === "manager"
+                ? "Hub · Manager"
+                : c.name && String(c.name).toLowerCase() === "office"
+                  ? "Hub · Office"
+                  : "Hub Room",
             time_slot: c.time,
             venue: "SwimFarm",
             session_date: iso,

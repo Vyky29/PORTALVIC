@@ -16,7 +16,7 @@
       "/portal/portal_roster_canonical.js?v=20260914-sun-3seats",
       "/portal/autumn_staff_hours_reference.js?v=20260914-youssef-fri-ikram",
       "/portal/portal_dc_services_local.js?v=20260914-overview-pin2",
-      "/portal/portal_capacity_chain_occupants.js?v=20260914-sun-3seats",
+      "/portal/portal_capacity_chain_occupants.js?v=20260914-michelle-office-tue1",
       "/portal/portal_overview_capacity_chain.js?v=20260914-sun-hub-support",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260914-term-open-fast",
     ],
