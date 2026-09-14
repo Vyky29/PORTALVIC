@@ -557,35 +557,20 @@
     opts = opts || {};
     var block = ensureOptionalSwimBlock(root);
     if (!block) return false;
-    var pureAquatic = !!opts.aquaticFullMode || isAquaticService(service);
-    /* Optional "Swimming today?" is Day Centre only (Fadi / Ikram / Emanuel / Timi).
-     * Multi-Activity must not show this choice. */
-    var dual = !pureAquatic && isDayCentreSwimEligible(clientName, service);
-    var showChoice = dual;
-
-    block.hidden = !showChoice;
-    block.setAttribute("data-swim-choice-mode", dual ? "dual" : "");
-    block.querySelectorAll(".fb-dc-swim__note--dual").forEach(function (el) {
-      el.hidden = !dual;
+    /*
+     * Day Centre uses the same feedback form as other sessions — no
+     * "Swimming / No swimming" choice. That toggle called applyFeedbackFormMode
+     * and wiped the first-part E/R/I selections when staff tapped Swimming.
+     */
+    block.hidden = true;
+    block.setAttribute("data-swim-choice-mode", "");
+    setAddonAxesVisible(false);
+    block.querySelectorAll('input[name="dayCentreSwimDone"]').forEach(function (inp) {
+      inp.checked = inp.value === "no";
     });
-    block.querySelectorAll(".fb-dc-swim__note--exclusive").forEach(function (el) {
-      el.hidden = true;
-    });
-
-    if (!showChoice) {
-      setAddonAxesVisible(false);
-      block.querySelectorAll('input[name="dayCentreSwimDone"]').forEach(function (inp) {
-        inp.checked = inp.value === "no";
-      });
-      clearAddonSwimInputs();
-      if (root) applyFeedbackFormMode(root, false);
-      return false;
-    }
-
-    applyFeedbackFormMode(root, false);
-    wireOptionalSwimToggle(block, root, "dual");
-    refreshSwimChoice(block, root, "dual");
-    return true;
+    clearAddonSwimInputs();
+    if (root) applyFeedbackFormMode(root, false);
+    return false;
   }
 
   function clearAddonSwimInputs() {
