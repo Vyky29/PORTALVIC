@@ -799,19 +799,6 @@
           var termSheet = document.getElementById('termSheet');
           termOpen = !!(termSheet && termSheet.classList.contains('open'));
         }catch(_){}
-        if(!termOpen){
-          try{
-            if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
-          }catch(_){}
-          try{
-            if(typeof portalScheduleReminderChromeAfterAnnSync === 'function'){
-              portalScheduleReminderChromeAfterAnnSync();
-            }else if(typeof syncPortalReminderChrome === 'function'){
-              setTimeout(function(){ syncPortalReminderChrome(); }, 0);
-            }
-          }catch(_){}
-          return;
-        }
         void (async function(){
           try{
             if(typeof portalMarkPerf === 'function') portalMarkPerf('term-rebuild-start');
@@ -819,9 +806,12 @@
             if(typeof rebuildTermShiftAndFeedbackFromSessionModelProgressive === 'function'){
               await rebuildTermShiftAndFeedbackFromSessionModelProgressive({
                 requestId: req,
-                allowWhenClosed: true
+                allowWhenClosed: true,
+                /* Halo outstanding needs past days even when Term is closed.
+                   Full future walk stays Term-open only (Roberto freeze). */
+                throughTodayOnly: !termOpen
               });
-            }else if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+            }else if(termOpen && typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
               rebuildTermShiftAndFeedbackFromSessionModel({ allowWhenClosed: true });
             }
             if(typeof portalMeasurePerf === 'function') portalMeasurePerf('term-rebuild', 'term-rebuild-start');
@@ -829,15 +819,20 @@
           try{
             if(typeof portalInvalidateReminderStateCache === 'function') portalInvalidateReminderStateCache();
           }catch(_){}
-          try{
-            if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid({ force: true });
-          }catch(_){}
+          if(termOpen){
+            try{
+              if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid({ force: true });
+            }catch(_){}
+          }
           try{
             if(typeof portalScheduleReminderChromeAfterAnnSync === 'function'){
               portalScheduleReminderChromeAfterAnnSync();
             }else if(typeof syncPortalReminderChrome === 'function'){
               setTimeout(function(){ syncPortalReminderChrome(); }, 0);
             }
+          }catch(_){}
+          try{
+            if(typeof syncPortalOutstandingFeedbackSlot === 'function') syncPortalOutstandingFeedbackSlot();
           }catch(_){}
         })();
       };
@@ -938,6 +933,10 @@
           try{ console.warn('[portal] secondary panel hydrate', err && err.message); }catch(_){}
         }
         window.__PORTAL_SECONDARY_PANELS_DONE__ = 1;
+        try{
+          /* Build past-day feedback maps for Halo outstanding (Term closed). */
+          if(typeof portalDeferTermFeedbackRebuild === 'function') portalDeferTermFeedbackRebuild();
+        }catch(_){}
       };
       if(typeof requestIdleCallback === 'function') requestIdleCallback(runNext, { timeout: 1200 });
       else setTimeout(runNext, 200);
@@ -3100,7 +3099,8 @@
 
       const worked = Array.isArray(dashboardData.termWorkedWeekdays) ? dashboardData.termWorkedWeekdays.map(Number) : [];
       if(!worked.length) return;
-      const rebuildSig = portalTermRebuildInputSignature();
+      const rebuildSig = portalTermRebuildInputSignature()
+        + (opts.throughTodayOnly ? '|throughToday' : '|full');
       if(typeof window !== 'undefined'
         && window.__PORTAL_TERM_REBUILD_LAST_SIG__ === rebuildSig
         && dashboardData.termFeedbackByDate
@@ -3140,10 +3140,14 @@
           || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.toIso
             && PortalTermCalendarDashboard.toIso(staffId))
           || String(t.lastDate || '2026-07-17').slice(0, 10);
+        const todayKeyCap = portalTermLocalYmdFromMs(termCalendarNowMs());
+        const collectTo = opts.throughTodayOnly && todayKeyCap && todayKeyCap < viewTo
+          ? todayKeyCap
+          : viewTo;
 
         const dayList = [];
         const curCollect = new Date(String(viewFrom) + 'T12:00:00');
-        const lastCollect = new Date(String(viewTo) + 'T12:00:00');
+        const lastCollect = new Date(String(collectTo) + 'T12:00:00');
         while(curCollect.getTime() <= lastCollect.getTime()){
           const w = curCollect.getDay();
           if(worked.includes(w)){
@@ -3248,6 +3252,7 @@
         for(let ei = 0; ei < termExtraCatchUpIsoKeys.length; ei++){
           if(requestId && requestId !== window.__PORTAL_TERM_REBUILD_REQ__) return;
           const isoKey = termExtraCatchUpIsoKeys[ei];
+          if(opts.throughTodayOnly && todayKeyCap && isoKey > todayKeyCap) continue;
           if(Object.prototype.hasOwnProperty.call(fbMap, isoKey)) continue;
           const curExtra = new Date(String(isoKey) + 'T12:00:00');
           const w = curExtra.getDay();
