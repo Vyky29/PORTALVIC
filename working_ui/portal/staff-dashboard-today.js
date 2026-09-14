@@ -7951,23 +7951,8 @@
       }
       function portalFindNextSessionCalendarInfo(staffId, fromNow, model){
         var id = String(staffId || '').trim().toLowerCase();
-        if(typeof portalStaffHasNoAutumnTermSessions === 'function' && portalStaffHasNoAutumnTermSessions(id)){
-          /* Still allow Next Session when they have a dated cover (Angel → Carlos Sun 20). */
-          var hasCoverAhead = false;
-          try{
-            if(typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'){
-              for(var ci = 1; ci <= 30; ci++){
-                var cd = new Date(fromNow.getFullYear(), fromNow.getMonth(), fromNow.getDate() + ci);
-                var ciso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(cd) : '';
-                if(ciso && portalStaffHasInstructorCoverOnCalendarDate(ciso, id)){
-                  hasCoverAhead = true;
-                  break;
-                }
-              }
-            }
-          }catch(_cov){}
-          if(!hasCoverAhead) return null;
-        }
+        /* Cover-only Autumn staff (Angel/Giuseppe): do not bail early — candidate rows
+           already inject instructor_reassign covers (e.g. Angel → Carlos Sun 20). */
         var start = new Date(fromNow.getFullYear(), fromNow.getMonth(), fromNow.getDate());
         var todayIso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(start) : '';
         try{
