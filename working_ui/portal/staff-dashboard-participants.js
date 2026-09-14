@@ -3889,6 +3889,22 @@
         return new Date(b.created_at || 0) - new Date(a.created_at || 0);
       });
       const picked = rows[0] || null;
+      /* Admin cancel / absent always wins over a same-window MakeUp on `available`
+         (Thu 10 Joelle Cancelled lost to Anas replace because replace pri 30 > clear 10). */
+      for(let ci = 0; ci < rows.length; ci++){
+        const cand = rows[ci];
+        if(!cand) continue;
+        const candType = String(cand.override_type || '').trim();
+        const plCand = cand.payload && typeof cand.payload === 'object' ? cand.payload : {};
+        if(candType === 'client_absence_announced') return cand;
+        if(candType === 'slot_close') return cand;
+        if(candType === 'slot_clear_client' && plCand.cancelled_by_admin
+          && plCand.day_reassign !== true && plCand.not_makeup !== true){
+          return cand;
+        }
+        const fres = String(plCand.feedback_resolution || '').trim().toLowerCase();
+        if(fres === 'cancelled' || fres === 'absent') return cand;
+      }
       if(replaceOv){
         const pickedType = String(picked && picked.override_type || '').trim();
         if(!picked || pickedType === 'slot_clear_client' || pickedType === 'client_absence_announced'){

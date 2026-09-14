@@ -1070,6 +1070,9 @@
         if(!item || !item.sessionKey) continue;
         if(item.kind === 'closed' || item.kind === 'available') continue;
         if(item.noSessionFeedbackRequired) continue;
+        if(typeof portalTodayItemIsCancelledCard === 'function' && portalTodayItemIsCancelledCard(item)) continue;
+        const pill = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
+        if(pill === 'CANCELLED' || pill === 'ABSENT') continue;
         if(!isSessionEndedForFeedback(item)) continue;
         eligible++;
         const r = getEffectiveSessionReviewRecord(item) || {};

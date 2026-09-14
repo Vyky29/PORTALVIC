@@ -560,6 +560,9 @@
           : null;
         if(!item || !item.sessionKey) continue;
         if(item.noSessionFeedbackRequired) continue;
+        const pillPend = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
+        if(pillPend === 'CANCELLED' || pillPend === 'ABSENT') continue;
+        if(typeof portalTodayItemIsCancelledCard === 'function' && portalTodayItemIsCancelledCard(item)) continue;
         const started = typeof isSessionStartedForItem === 'function' && isSessionStartedForItem(item);
         const ended = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
         if(!started && !ended) continue;
@@ -1418,7 +1421,9 @@
           return storeDay(true, n);
         }
       }catch(_){}
-      return storeDay(true, 1);
+      /* Do not invent a phantom "1 left" when the roster recheck failed — that kept
+         Aurora nagged for Joelle Cancelled after the day board was already clear. */
+      return storeDay(false, 0);
     }
     try{ window.portalTermCalendarDayCountsForOutstanding = portalTermCalendarDayCountsForOutstanding; }catch(_){}
     function portalOutstandingPendingSessionsForIso(iso, fbMap){
@@ -1426,7 +1431,7 @@
       if(!portalTermCalendarDayCountsForOutstanding(key, fbMap)) return 0;
       const hit = _portalOutstandingDayOkCache[key];
       const n = hit && hit.n != null ? Number(hit.n) : 0;
-      return n > 0 ? n : 1;
+      return n > 0 ? n : 0;
     }
     try{ window.portalOutstandingPendingSessionsForIso = portalOutstandingPendingSessionsForIso; }catch(_){}
     var _portalOutstandingFbCountCache = { key: '', n: 0, at: 0 };

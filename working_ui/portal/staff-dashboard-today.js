@@ -1891,13 +1891,18 @@
         if(sameClient && sameStaff){
           const isSharedUnit = skL.indexOf('|day_centre') >= 0 || skL.indexOf('|bespoke_shared') >= 0;
           if(!isSharedUnit){
-            const rStart = typeof portalCanonicalHmToken === 'function'
-              ? portalCanonicalHmToken(r.anchor_start)
-              : '';
-            const sStart = typeof portalCanonicalHmToken === 'function'
-              ? portalCanonicalHmToken(s.start)
-              : '';
-            if(rStart && sStart && rStart !== sStart) continue;
+            const timeOk = typeof portalTimeAnchorsMatch === 'function'
+              ? portalTimeAnchorsMatch(r.anchor_start, s.start)
+              : (function(){
+                  const rStart = typeof portalCanonicalHmToken === 'function'
+                    ? portalCanonicalHmToken(r.anchor_start)
+                    : '';
+                  const sStart = typeof portalCanonicalHmToken === 'function'
+                    ? portalCanonicalHmToken(s.start)
+                    : '';
+                  return !(rStart && sStart && rStart !== sStart);
+                })();
+            if(!timeOk) continue;
           }
           return res;
         }
@@ -1957,6 +1962,40 @@
         : null;
       if(absentOvDedicated){
         return { feedbackDone: false, incident: false, absent: true, cancelled: false };
+      }
+      /* Admin cancel must beat same-window MakeUp on `available` (Anas→Javi cover on
+         Thu 10 18:00 was preferred over Joelle Cancelled and left Aurora with "1 left"). */
+      const clearAdminDedicated = typeof portalScheduleOverrideForSessionByType === 'function'
+        ? portalScheduleOverrideForSessionByType(s, iso, 'slot_clear_client')
+        : null;
+      if(clearAdminDedicated){
+        const plClear = clearAdminDedicated.payload && typeof clearAdminDedicated.payload === 'object'
+          ? clearAdminDedicated.payload
+          : {};
+        if(plClear.cancelled_by_admin
+          && plClear.day_reassign !== true
+          && plClear.not_makeup !== true){
+          return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+        }
+      }
+      const closeAdminDedicated = typeof portalScheduleOverrideForSessionByType === 'function'
+        ? portalScheduleOverrideForSessionByType(s, iso, 'slot_close')
+        : null;
+      if(closeAdminDedicated){
+        return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+      }
+      /* Covered away (Anas → Javi): original instructor owes no feedback. */
+      if(sid && typeof portalScheduleOverrideForSessionByType === 'function'){
+        const reAway = portalScheduleOverrideForSessionByType(s, iso, 'instructor_reassign');
+        if(reAway){
+          const covAway = String(reAway.payload && reAway.payload.covering_staff_id || '').trim().toLowerCase();
+          const anchorAway = typeof portalNormKeyStr === 'function'
+            ? portalNormKeyStr(reAway.anchor_staff_id)
+            : String(reAway.anchor_staff_id || '').trim().toLowerCase();
+          if(covAway && covAway !== sid && (anchorAway === sid || sid === (typeof portalNormKeyStr === 'function' ? portalNormKeyStr(s.staffId) : String(s.staffId || '').trim().toLowerCase()))){
+            return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+          }
+        }
       }
       const replaceMakeupDedicated = typeof portalReplaceMakeupOverrideForSession === 'function'
         ? portalReplaceMakeupOverrideForSession(s, iso)
