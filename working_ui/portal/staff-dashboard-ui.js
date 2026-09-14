@@ -5495,8 +5495,10 @@
         const lockDay = String(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DAY_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DAY_URL_LOCK) || '').trim();
         const flowOrigin = (typeof portalGetReviewFlowOrigin === 'function') ? portalGetReviewFlowOrigin() : 'dashboard';
         const stickyReview = !!(typeof window !== 'undefined' && window.__PORTAL_STICKY_REVIEW_DAY_LOAD__);
-        const historicalHeading = (typeof portalTodaySectionTitleText === 'function') ? portalTodaySectionTitleText() : 'Today';
-        const shouldForceHistoricalExit = !!lockIso || !!lockDay || stickyReview || flowOrigin === 'term' || historicalHeading !== 'Today';
+        /* Do not compare portalTodaySectionTitleText() to "Today" — live heading is
+           "TODAY dd/mm/…" and that forced a full day rebuild on every Home tap. */
+        const shouldForceHistoricalExit = !!lockIso || !!lockDay || stickyReview || flowOrigin === 'term'
+          || (typeof portalStaffIsHistoricalReviewDayMode === 'function' && portalStaffIsHistoricalReviewDayMode());
         const exitedHistorical = (typeof portalExitHistoricalReviewToLiveTodayMode === 'function')
           ? portalExitHistoricalReviewToLiveTodayMode(shouldForceHistoricalExit)
           : false;
@@ -5538,8 +5540,9 @@
       const lockDay = String(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DAY_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DAY_URL_LOCK) || '').trim();
       const flowOrigin = (typeof portalGetReviewFlowOrigin === 'function') ? portalGetReviewFlowOrigin() : 'dashboard';
       const stickyReview = !!(typeof window !== 'undefined' && window.__PORTAL_STICKY_REVIEW_DAY_LOAD__);
-      const historicalHeading = (typeof portalTodaySectionTitleText === 'function') ? portalTodaySectionTitleText() : 'Today';
-      const shouldForceHistoricalExit = !!lockIso || !!lockDay || stickyReview || flowOrigin === 'term' || historicalHeading !== 'Today';
+      /* Live Today title is "TODAY dd/mm/…" — never treat that as historical. */
+      const shouldForceHistoricalExit = !!lockIso || !!lockDay || stickyReview || flowOrigin === 'term'
+        || (typeof portalStaffIsHistoricalReviewDayMode === 'function' && portalStaffIsHistoricalReviewDayMode());
       const exitedHistorical = (typeof portalExitHistoricalReviewToLiveTodayMode === 'function')
         ? portalExitHistoricalReviewToLiveTodayMode(shouldForceHistoricalExit)
         : false;
