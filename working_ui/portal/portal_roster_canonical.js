@@ -2163,7 +2163,8 @@
     }
     /* Berta day off Sun 13 / 20 Sep / 4 Oct — standing anchor stays Berta.
      * Sun 13: Raul named cover + 11.45 Gabriel↔Arthur Ma with Godsway (schedule_overrides).
-     * Sun 20 / 4 Oct: Hub Lead stays COVER NEEDED until a cover is assigned. */
+     * Sun 20: Victor Hub Lead cover. Sun 4 Oct: Javi Hub Lead cover.
+     * Climbing: Carlos off those Sundays → Angel Westway cover (not Andres). */
     if (
       (iso === "2026-09-13" || iso === "2026-09-20" || iso === "2026-10-04") &&
       day === "sunday" &&
