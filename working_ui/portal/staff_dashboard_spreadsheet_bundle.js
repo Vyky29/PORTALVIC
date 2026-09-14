@@ -266,9 +266,10 @@
       "total": 17
     }
   },
-  "clientRosterStartDates": {
+    "clientRosterStartDates": {
     "Emanuel": "2026-06-12",
-    "Logan": "2026-05-11"
+    "Logan": "2026-05-11",
+    "Fadi": "2026-09-20"
   },
   "clientRosterGoneFromDates": {
     "Karo": "2026-08-16",
@@ -1394,16 +1395,6 @@
       "area": "Gym",
       "time_slot": "4 to 5",
       "venue": "Westway",
-      "session_date": "2026-05-18"
-    },
-    {
-      "client_name": "Eddie Mc",
-      "day": "Monday",
-      "instructors": "YOUSSEF",
-      "service": "Aquatic Activity",
-      "area": "Teaching Pool",
-      "time_slot": "4.30 to 5",
-      "venue": "Acton",
       "session_date": "2026-05-18"
     },
     {

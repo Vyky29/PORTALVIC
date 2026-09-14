@@ -2775,7 +2775,8 @@
   ];
 
   function autumnActonMondayYoussefStandingRows() {
-    var iso = DAY_CENTRE_STANDING_ISO.monday;
+    /* Template date = first standing Autumn Monday (14 Sep), not a Jul placeholder. */
+    var iso = "2026-09-14";
     return AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD.map(function (slot) {
       return {
         client_name: slot.name,
@@ -2798,14 +2799,14 @@
     var d = normIso(row.session_date);
     if (!d) return true;
     if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
-    if (d === DAY_CENTRE_STANDING_ISO.monday) return true;
+    if (d === "2026-09-14" || d === DAY_CENTRE_STANDING_ISO.monday) return true;
     if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
     return false;
   }
 
   /**
-   * Re-inject Mon Acton Youssef AFTER portal_roster_rows merge.
-   * Summer Eddie stamp (May) is purged; without this board Mon Today misses Eddie Mc.
+   * Re-inject Mon Acton Youssef AFTER portal_roster_rows merge so Autumn Mondays
+   * always carry Eddie Mc + opens (LOCAL standing).
    */
   function applyAutumnActonMondayYoussefStanding(rows) {
     var out = [];
@@ -2816,7 +2817,7 @@
     });
     autumnActonMondayYoussefStandingRows().forEach(function (row) {
       expandStandingRowAcrossAutumnTerm(applyStandingSlotAreaFromDb(row)).forEach(function (exp) {
-        /* Closed 4–4.30 paints as No participant on staff Today (same as summer→Autumn). */
+        /* Closed 4–4.30 shows as No participant on staff Today cards. */
         if (isYoussefActon430ClosedSlot(exp)) {
           out.push(Object.assign({}, exp, { client_name: "No participant" }));
           return;
