@@ -10915,42 +10915,73 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       var fromLabel = dayBoardStaffLabel((awayOrig[0] || origInsts[0]));
       var realCover = !!(st.isRealCover && (slot.portalCoveringStaffName || slot.portalCoveringStaffId));
-
-      /* Day-off requested: seats stay on that worker's column (red), even after cover remap. */
-      for (var oa = 0; oa < awayOrig.length; oa++) {
-        pushBoardItem(
-          dayBoardStaffKey(awayOrig[oa]),
-          dayBoardStaffLabel(awayOrig[oa]),
-          slot,
-          awayColumnBoardState(st, dayBoardAwayCoverLabel(hub, slot, iso, awayOrig[oa]))
-        );
-      }
-
-      if (realCover) {
-        var coverRaw = slot.portalCoveringStaffName || slot.portalCoveringStaffId;
-        var coverParts = normalizeInstructorList(coverRaw);
-        if (!coverParts.length && coverRaw) coverParts = [coverRaw];
-        for (var cp = 0; cp < coverParts.length; cp++) {
-          if (hubStaffAwayOnIso(hub, iso, coverParts[cp])) continue;
+      var pushedNamedCover = false;
+      var coverDedupe = Object.create(null);
+      function pushCoverColumn(coverRaw, forWho) {
+        var parts = normalizeInstructorList(coverRaw);
+        if (!parts.length && coverRaw) parts = [coverRaw];
+        for (var cpi = 0; cpi < parts.length; cpi++) {
+          if (hubStaffAwayOnIso(hub, iso, parts[cpi])) continue;
+          if (forWho && dayBoardStaffKeysEqual(parts[cpi], forWho)) continue;
+          var ck = dayBoardStaffKey(parts[cpi]);
+          var dedupeKey =
+            ck +
+            "|" +
+            clean(slot.client_name) +
+            "|" +
+            clean(slot.time_slot) +
+            "|" +
+            clean(slot.service);
+          if (!ck || coverDedupe[dedupeKey]) continue;
+          coverDedupe[dedupeKey] = 1;
+          pushedNamedCover = true;
           pushBoardItem(
-            dayBoardStaffKey(coverParts[cp]),
-            dayBoardStaffLabel(coverParts[cp]),
+            ck,
+            dayBoardStaffLabel(parts[cpi]),
             slot,
             cloneBoardState(st, {
               boardPlace: "cover",
-              coverForLabel: fromLabel,
+              coverForLabel: dayBoardStaffLabel(forWho || fromLabel),
               isCoverNeeded: false,
               isStaffDayOff: false,
               isInstructorReassign: true,
               isRealCover: true,
-              tone: st.isAbsent ? "absent" : st.isCancelled ? "cancelled" : st.isTrial ? "trial" : "client",
+              tone: st.isAbsent
+                ? "absent"
+                : st.isCancelled
+                  ? "cancelled"
+                  : st.isTrial
+                    ? "trial"
+                    : "client",
             })
           );
         }
+      }
+
+      /* Day-off requested: seats stay on that worker's column (red), even after cover remap. */
+      for (var oa = 0; oa < awayOrig.length; oa++) {
+        var awayCoverLbl = dayBoardAwayCoverLabel(hub, slot, iso, awayOrig[oa]);
+        pushBoardItem(
+          dayBoardStaffKey(awayOrig[oa]),
+          dayBoardStaffLabel(awayOrig[oa]),
+          slot,
+          awayColumnBoardState(st, awayCoverLbl)
+        );
+        /*
+         * Named cover from unavailability / override chip (e.g. Andres covering Carlos) must
+         * also get a Cover column — same as Victor covering Berta — not only a chip on the
+         * away column.
+         */
+        if (awayCoverLbl) pushCoverColumn(awayCoverLbl, awayOrig[oa]);
+      }
+
+      if (realCover) {
+        pushCoverColumn(slot.portalCoveringStaffName || slot.portalCoveringStaffId, fromLabel);
         continue;
       }
 
       if (st.isStaffDayOff || st.isCoverNeeded || awayOrig.length) {
+        if (pushedNamedCover) continue;
         var currentInsts = dayBoardInstructorsForSlot(slot);
         var hasLiveWorker = false;
         for (var od = 0; od < currentInsts.length; od++) {
