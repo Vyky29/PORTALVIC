@@ -919,30 +919,28 @@
     function portalStaffIdleHydrateSecondaryPanels(){
       if(window.__PORTAL_SECONDARY_PANELS_SCHEDULED__) return;
       window.__PORTAL_SECONDARY_PANELS_SCHEDULED__ = 1;
-      var run = function(){
+      var runNext = function(){
         try{
           if(typeof portalMarkPerf === 'function') portalMarkPerf('secondary-hydrate-start');
-          if(typeof window.__portalSyncNextSessionFromModel === 'function'){
-            window.__portalSyncNextSessionFromModel();
-          }
+          /* Next-session chips only. Week/Term rebuild on openSheet — stacking
+             sync + full Today + week here froze Javier (~10s idle × many times). */
           if(typeof portalRefreshNextSessionPreview === 'function'){
             try{
               var sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim();
               if(sid) portalRefreshNextSessionPreview(sid);
             }catch(_){}
-          }
-          if(typeof window.buildWeekRows === 'function' && dashboardData){
-            var sidW = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim();
-            if(sidW) dashboardData.week = window.buildWeekRows(sidW);
+          }else if(typeof window.__portalSyncNextSessionFromModel === 'function'){
+            window.__portalSyncNextSessionFromModel();
           }
           if(typeof renderMiniCounts === 'function') renderMiniCounts();
           if(typeof portalMeasurePerf === 'function') portalMeasurePerf('secondary-hydrate', 'secondary-hydrate-start');
         }catch(err){
           try{ console.warn('[portal] secondary panel hydrate', err && err.message); }catch(_){}
         }
+        window.__PORTAL_SECONDARY_PANELS_DONE__ = 1;
       };
-      if(typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 4000 });
-      else setTimeout(run, 600);
+      if(typeof requestIdleCallback === 'function') requestIdleCallback(runNext, { timeout: 1200 });
+      else setTimeout(runNext, 200);
     }
     window.portalStaffIdleHydrateSecondaryPanels = portalStaffIdleHydrateSecondaryPanels;
 

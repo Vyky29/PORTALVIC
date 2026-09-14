@@ -846,7 +846,6 @@
           /* Do not paint closed NEXT/WEEK sheets here — openSheet / idle hydrate. */
           try{
             if(typeof portalStaffIdleHydrateSecondaryPanels === "function"){
-              window.__PORTAL_SECONDARY_PANELS_SCHEDULED__ = 0;
               portalStaffIdleHydrateSecondaryPanels();
             }
           }catch(_idle){}
@@ -885,12 +884,18 @@
           if(typeof buildSelectedDayViewFromLauraModel !== "function") return;
           var sid = String(staffId || (typeof window.portalAuthStaffRosterId === 'function' ? window.portalAuthStaffRosterId() : STAFF_DASHBOARD_ID) || '').trim().toLowerCase();
           try{ if(typeof window !== 'undefined') delete window.__PORTAL_TERM_REBUILD_LAST_SIG__; }catch(_sig){}
+          try{
+            if(typeof window.portalClearNextSessionCalCache === 'function') window.portalClearNextSessionCalCache();
+            else window.__PORTAL_NEXT_SESSION_CAL_CACHE__ = null;
+          }catch(_cal){}
           portalSyncTodaySectionDisplay();
           if (typeof renderToday === "function") renderToday();
           if (typeof renderMiniCounts === "function") renderMiniCounts();
           try{
-            window.__PORTAL_SECONDARY_PANELS_SCHEDULED__ = 0;
-            if(typeof portalStaffIdleHydrateSecondaryPanels === "function") portalStaffIdleHydrateSecondaryPanels();
+            if(typeof portalRefreshNextSessionPreview === "function" && sid){
+              portalRefreshNextSessionPreview(sid);
+            }
+            if(typeof renderMiniCounts === "function") renderMiniCounts();
           }catch(_sec){}
           /* TERM maps only if Term sheet is open — never walk the full term on override refresh. */
           try{

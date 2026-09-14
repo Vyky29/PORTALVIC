@@ -28,21 +28,9 @@
         return (Array.isArray(segs) && segs.length) ? segs : undefined;
       }catch(_){ return undefined; }
     }
-    /** Fadi DC seats stay Cancelled (Joelle pattern) through Sun 20 Sep 2026. */
+    /** Fadi is off the worker rotas until 20 Sep 2026 — do not paint Cancelled seats. */
     function portalTodayIsFadiDcCancelledSeat(s, sessionDateKey){
-      if(!s) return false;
-      var blob = String(s.clientId || '') + ' ' + String(s.clientDisplay || '') + ' ' + String(s.clientName || '');
-      if(!/\bfadi\b/i.test(blob)) return false;
-      var activity = String(s.activity || s.service || s.rosterService || '').trim().toLowerCase();
-      if(!/day\s*centre/.test(activity)) return false;
-      var iso = String(sessionDateKey || s.session_date || s.sessionDate || '').trim().slice(0, 10);
-      try{
-        var canon = (typeof window !== 'undefined' && window.PortalRosterCanonical) ? window.PortalRosterCanonical : null;
-        if(canon && typeof canon.isFadiAbsentDcWindowIso === 'function'){
-          return !!canon.isFadiAbsentDcWindowIso(iso);
-        }
-      }catch(_){}
-      return !!(iso && iso >= '2026-09-01' && iso < '2026-09-21');
+      return false;
     }
     try{
       if(typeof window !== 'undefined'){
@@ -3065,6 +3053,15 @@
           }
         }catch(_pw){ programmeWidePack = null; }
       }
+      /* Dense Autumn books (Javier/Luliya Acton): do not scan the whole club model
+         for this weekday. Cover cards still inject from schedule_overrides below. */
+      if(!programmeWidePack && staffId && !(Array.isArray(modelOverride) && modelOverride.length)
+        && typeof portalSessionsModelRowsForStaffDay === 'function'){
+        try{
+          var indexedDay = portalSessionsModelRowsForStaffDay(staffId, anchorDayWord);
+          if(Array.isArray(indexedDay)) baseModel = indexedDay;
+        }catch(_idxDay){}
+      }
       const todaySessionsAfterFilter = baseModel.filter(function(s){
         if(programmeWidePack){
           if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
@@ -4874,7 +4871,11 @@
       }catch(_){}
       return String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
     }
+    function portalClearNextSessionCalCache(){
+      try{ window.__PORTAL_NEXT_SESSION_CAL_CACHE__ = null; }catch(_){}
+    }
     function portalClearNextSessionPreviewCache(){
+      portalClearNextSessionCalCache();
       if(!dashboardData) return;
       dashboardData.__portalStableNextSessionPreview = null;
       dashboardData.__portalStableNextSessionStaffId = '';
@@ -4888,6 +4889,7 @@
       return false;
     }
     try{ window.portalAuthStaffRosterId = portalAuthStaffRosterId; }catch(_){}
+    try{ window.portalClearNextSessionCalCache = portalClearNextSessionCalCache; }catch(_){}
     try{ window.portalClearNextSessionPreviewCache = portalClearNextSessionPreviewCache; }catch(_){}
     try{ window.portalStaffRosterKeysCross = portalStaffRosterKeysCross; }catch(_){}
     function portalBuildTodayRowsForIso(isoYmd){
@@ -5056,11 +5058,11 @@
       if(portalTodayRowIsNewClientChip(r)) return 'new';
       const futureLbl = String(r.futureOverrideLabel || '').trim().toLowerCase();
       if(futureLbl === 'new client' || futureLbl === 'new') return 'new';
-      const tone = String(r.portalOverrideCardTone || '').trim().toLowerCase();
+      const tone = String(r.portalOverrideCardTone || r.futureOverrideTone || '').trim().toLowerCase();
       if(tone === 'trial') return 'trial';
       if(tone === 'pink') return 'makeup';
       if(tone === 'admin' && (futureLbl.indexOf('new') >= 0 || portalTodayRowIsNewClientChip(r))) return 'new';
-      if(tone === 'red' && /cancel/i.test(String(r.general || ''))) return 'cancelled';
+      if(tone === 'cancelled-green' || (tone === 'red' && /cancel/i.test(String(r.general || '')))) return 'cancelled';
       if(tone === 'absent-green' || (tone === 'green' && /absent/i.test(String(r.general || '')))) return 'absent';
       try{
         const base = r.__portalBaseSession || r;
@@ -5137,56 +5139,12 @@
       if(!name || name === '—' || /^no participant/i.test(name)) return false;
       return true;
     }
-    function portalBuildTodayNextSessionPreview(staffId){
-      const id = String(staffId || '').trim().toLowerCase();
-      if(!id) return null;
-      const info = typeof window.portalFindNextSessionCalendarInfo === 'function'
-        ? window.portalFindNextSessionCalendarInfo(id, new Date(), sessionsModel)
-        : null;
-      if(!info || !info.date) return null;
-      const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(info.date) : '';
-      // Show the genuine next session even when it is not literally tomorrow
-      // (e.g. a worker off until Tuesday): the panel says "your next session is below".
-      if(!iso) return null;
-      let rows = [];
-      try{
-        rows = iso ? portalBuildTodayRowsForIso(iso) : [];
-      }catch(_){ rows = []; }
-      if(!rows.length){
-        try{
-          if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
-          const nsRows = (typeof dashboardData !== 'undefined' && dashboardData && Array.isArray(dashboardData.tomorrow))
-            ? dashboardData.tomorrow
-            : [];
-          if(nsRows.length){
-            const weekday = info.date.toLocaleDateString('en-GB', { weekday: 'long' });
-            const dateLabel = typeof portalFormatPortalDateDdMmYyyy === 'function'
-              ? portalFormatPortalDateDdMmYyyy(info.date)
-              : '';
-            const participantsRaw = nsRows
-              .filter(portalNextSessionRowIncludeInChips)
-              .map(function(r){
-                return portalNextSessionParticipantFromTodayRow(
-                  Object.assign({}, r, { sessionDateKey: r.sessionDateKey || iso })
-                );
-              });
-            const participants = portalDedupeNextSessionParticipants(participantsRaw);
-            return {
-              weekday: weekday,
-              dateLabel: dateLabel,
-              iso: iso,
-              sessionCount: participants.length,
-              venueLabel: String(nsRows[0] && nsRows[0].venue || '').trim(),
-              participants: participants
-            };
-          }
-        }catch(_fb){}
-        return null;
-      }
+    function portalNextSessionPreviewFromRows(info, iso, rows){
+      if(!info || !info.date || !iso || !Array.isArray(rows) || !rows.length) return null;
       const venues = {};
       rows.forEach(function(r){
         const base = r && r.__portalBaseSession;
-        const v = String(r.sessionVenue || (base && base.venue) || '').trim();
+        const v = String(r.sessionVenue || r.venue || (base && base.venue) || '').trim();
         if(v && v !== '—') venues[v] = (venues[v] || 0) + 1;
       });
       const venueKeys = Object.keys(venues).sort(function(a, b){ return venues[b] - venues[a]; });
@@ -5198,7 +5156,10 @@
         .filter(portalNextSessionRowIncludeInChips)
         .map(function(r){
           return portalNextSessionParticipantFromTodayRow(
-            Object.assign({}, r, { sessionDateKey: r.sessionDateKey || iso })
+            Object.assign({}, r, {
+              sessionDateKey: r.sessionDateKey || iso,
+              portalOverrideCardTone: r.portalOverrideCardTone || r.futureOverrideTone
+            })
           );
         });
       const participants = portalDedupeNextSessionParticipants(participantsRaw);
@@ -5218,9 +5179,45 @@
         dateLabel: dateLabel,
         iso: iso,
         sessionCount: participants.length,
-        venueLabel: venueKeys[0] || '',
+        venueLabel: venueKeys[0] || String(rows[0] && rows[0].venue || '').trim(),
         participants: participants
       };
+    }
+    function portalBuildTodayNextSessionPreview(staffId){
+      const id = String(staffId || '').trim().toLowerCase();
+      if(!id) return null;
+      let info = null;
+      try{
+        const cachedDate = dashboardData && dashboardData.nextSessionCalendarDate;
+        if(cachedDate instanceof Date && !isNaN(cachedDate.getTime())){
+          info = {
+            date: cachedDate,
+            weekdayName: cachedDate.toLocaleDateString('en-GB', { weekday: 'long' })
+          };
+        }
+      }catch(_){}
+      if(!info && typeof window.portalFindNextSessionCalendarInfo === 'function'){
+        info = window.portalFindNextSessionCalendarInfo(id, new Date(), sessionsModel);
+      }
+      if(!info || !info.date) return null;
+      const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(info.date) : '';
+      if(!iso) return null;
+      /* Never rebuild the full Today board for next-session chips — that froze
+         Javier/Luliya (~10s idle) on dense Acton 30' books. Candidate rows +
+         cover synthetics are enough for faces. */
+      let rows = [];
+      try{
+        if(dashboardData && Array.isArray(dashboardData.tomorrow) && dashboardData.tomorrow.length){
+          rows = dashboardData.tomorrow;
+        }
+      }catch(_){}
+      if(!rows.length && typeof window.__portalSyncNextSessionFromModel === 'function'){
+        try{ window.__portalSyncNextSessionFromModel(); }catch(_){}
+        try{
+          rows = (dashboardData && Array.isArray(dashboardData.tomorrow)) ? dashboardData.tomorrow : [];
+        }catch(_){ rows = []; }
+      }
+      return portalNextSessionPreviewFromRows(info, iso, rows);
     }
     function portalSyncTodaySectionDisplay(modelOverride){
       const id = portalAuthStaffRosterId();
@@ -7616,6 +7613,13 @@
           return null;
         }
         var start = new Date(fromNow.getFullYear(), fromNow.getMonth(), fromNow.getDate());
+        var todayIso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(start) : '';
+        try{
+          var hit = window.__PORTAL_NEXT_SESSION_CAL_CACHE__;
+          if(hit && hit.id === id && hit.todayIso === todayIso && hit.model === model){
+            return hit.info;
+          }
+        }catch(_){}
         var viewFrom = '';
         var viewTo = '';
         try{
@@ -7628,29 +7632,32 @@
             (typeof dashboardData !== 'undefined' && dashboardData.termDashboardCalendarTo)
               || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.toIso
                 && PortalTermCalendarDashboard.toIso(STAFF_DASHBOARD_ID))
-              || '2026-07-17'
+              || '2026-12-31'
           ).trim().slice(0, 10);
         }catch(_){}
         // Scan forward to the genuine next working day, not just tomorrow: a worker
         // whose tomorrow is off (or whose tomorrow was fully reassigned to a cover)
         // should see the participants of their actual next session (e.g. Tuesday).
+        var info = null;
         for(var i = 1; i <= 30; i++){
           var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
           var wname = d.toLocaleDateString('en-GB', { weekday: 'long' });
           var iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(d) : '';
           if(viewFrom && iso && iso < viewFrom) continue;
           if(viewTo && iso && iso > viewTo) break;
-          if(portalNextSessionCandidateRows(id, wname, iso).length) return { date: d, weekdayName: wname };
+          if(portalNextSessionCandidateRows(id, wname, iso).length){
+            info = { date: d, weekdayName: wname };
+            break;
+          }
           if(iso && typeof portalTermDayIsOffForStaffOnIso === 'function' && portalTermDayIsOffForStaffOnIso(iso, id)) continue;
-          try{
-            var builtRows = typeof portalBuildTodayRowsForIso === 'function' ? portalBuildTodayRowsForIso(iso) : [];
-            if(builtRows.length) return { date: d, weekdayName: wname };
-          }catch(_built){}
         }
-        return null;
+        try{
+          window.__PORTAL_NEXT_SESSION_CAL_CACHE__ = { id: id, todayIso: todayIso, model: model, info: info };
+        }catch(_){}
+        return info;
       }
-      function portalBuildNextSessionRows(staffId, fromNow, model, notes){
-        var info = portalFindNextSessionCalendarInfo(staffId, fromNow, model);
+      function portalBuildNextSessionRows(staffId, fromNow, model, notes, infoOpt){
+        var info = infoOpt || portalFindNextSessionCalendarInfo(staffId, fromNow, model);
         if(!info) return [];
         var w = info.weekdayName;
         var id = String(staffId || '').trim().toLowerCase();
@@ -7788,7 +7795,7 @@
         var id = portalAuthStaffRosterId();
         var info = portalFindNextSessionCalendarInfo(id, new Date(), sessionsModel);
         dashboardData.nextSessionCalendarDate = info ? info.date : null;
-        dashboardData.tomorrow = portalBuildNextSessionRows(id, new Date(), sessionsModel, clientNotesById);
+        dashboardData.tomorrow = portalBuildNextSessionRows(id, new Date(), sessionsModel, clientNotesById, info);
       };
       window.__portalIsRealClientSession = portalIsRealClientSession;
       window.portalFindNextSessionCalendarInfo = portalFindNextSessionCalendarInfo;
