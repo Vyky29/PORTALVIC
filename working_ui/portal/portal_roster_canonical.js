@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 127;
+  var SOURCE_VERSION = 128;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -2880,9 +2880,9 @@
     { staff: "YOUSSEF", name: "No participant", time: "5.30 to 6", area: "Teaching Pool" },
     { staff: "YOUSSEF", name: "No participant", time: "6 to 6.30", area: "Teaching Pool" },
     { staff: "JAVIER", name: "Cyrus", time: "4 to 5", area: "Teaching Pool" },
-    /* Wed Acton: two 30' rows (same rule as Serine / Mohamed hour split for feedback merge). */
-    { staff: "JAVIER", name: "Ayman", time: "5 to 5.30", area: "Teaching Pool" },
-    { staff: "JAVIER", name: "Ayman", time: "5.30 to 6", area: "Teaching Pool" },
+    /* Wed Acton: first session Wed 16 Sep (finish-booking). Open before that. */
+    { staff: "JAVIER", name: "Ayman", time: "5 to 5.30", area: "Teaching Pool", bookedFrom: "2026-09-16" },
+    { staff: "JAVIER", name: "Ayman", time: "5.30 to 6", area: "Teaching Pool", bookedFrom: "2026-09-16" },
     { staff: "JAVIER", name: "Kayden", time: "6 to 6.30", area: "Teaching Pool" },
   ];
 
@@ -2964,8 +2964,37 @@
         time_slot: slot.time,
         venue: "Acton",
         session_date: iso,
+        bookedFrom: slot.bookedFrom || "",
       };
     });
+  }
+
+  var AYMAN_WED_ACTON_FROM = "2026-09-16";
+
+  function scrubAymanWedActonBeforeFirstSession(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (!/^ayman\b/i.test(String(r.client_name || "").trim())) {
+        out.push(r);
+        return;
+      }
+      if (!isActonVenue(r.venue) || !isAquaticService(r.service)) {
+        out.push(r);
+        return;
+      }
+      if (normalizeDowKey(r.day) !== "wednesday") {
+        out.push(r);
+        return;
+      }
+      var d = normIso(r.session_date);
+      if (d && d < AYMAN_WED_ACTON_FROM) {
+        out.push(Object.assign({}, r, { client_name: "No participant" }));
+        return;
+      }
+      out.push(r);
+    });
+    return out;
   }
 
   /** Aquatic OR Multi on Wed Acton standing/summer stamps — replace with Autumn aquatic board. */
@@ -3003,7 +3032,7 @@
         out.push(exp);
       });
     });
-    return out;
+    return scrubAymanWedActonBeforeFirstSession(out);
   }
 
   function mondayActonClientKey(name) {
@@ -3728,6 +3757,11 @@
     var rows = resolveCanonicalRosterRows(opts);
     var starts = Object.assign({}, base.clientRosterStartDates || {}, {
       Fadi: FADI_START_ISO,
+      /* Wed Acton Javier 5–6: first session Wed 16 Sep (finish-booking). */
+      Ayman: "2026-09-16",
+      "Ayman El Bakry": "2026-09-16",
+      ayman: "2026-09-16",
+      ayman_el_bakry: "2026-09-16",
     });
     return Object.assign({}, base, {
       rows: rows,

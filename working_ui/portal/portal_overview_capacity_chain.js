@@ -1019,6 +1019,8 @@
         "Muhammad": "2026-09-14",
         "Adaam Ah": "2026-09-14",
         "Aydaan Ah": "2026-09-14",
+        Ayman: "2026-09-16",
+        "Ayman El Bakry": "2026-09-16",
       },
       C && C.FADI_START_ISO ? { Fadi: C.FADI_START_ISO } : {}
     );
