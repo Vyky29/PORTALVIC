@@ -347,6 +347,23 @@
     /* Overview pin only on admin Sessions Overview — never treat staff chain as Overview. */
     var forOverview =
       !!(opts.forSessionsOverview) || sessionsOverviewSurfaceActive();
+    /*
+     * Admin pages that are not Overview/Schedule chain surfaces: never replace a
+     * loaded spreadsheet bundle with an empty staff-pending capacity resolve.
+     */
+    if (!forOverview && !isStaffDashboardPage()) {
+      var cur = window.STAFF_DASHBOARD_SOURCE;
+      if (
+        cur &&
+        Array.isArray(cur.rows) &&
+        cur.rows.length &&
+        !cur.capacityChainStaffScoped
+      ) {
+        dispatchStaffDashboardSourceUpdated();
+        return;
+      }
+      if (!opts.force) return;
+    }
     window.STAFF_DASHBOARD_SOURCE = resolveStaffDashboardSource(
       forOverview ? Object.assign({}, opts, { forSessionsOverview: true }) : opts
     );

@@ -17,8 +17,8 @@
       "/portal/autumn_staff_hours_reference.js?v=20260914-fri18-raul",
       "/portal/portal_dc_services_local.js?v=20260914-overview-pin2",
       "/portal/portal_capacity_chain_occupants.js?v=20260914-fri18-raul",
-      "/portal/portal_overview_capacity_chain.js?v=20260914-reggie-luliya",
-      "/portal/staff_dashboard_portal_roster_source.js?v=20260914-overview-pin2",
+      "/portal/portal_overview_capacity_chain.js?v=20260914-staff-self-slice",
+      "/portal/staff_dashboard_portal_roster_source.js?v=20260914-staff-self-slice",
     ],
     feedback: [
       "/portal/cancellations_portal_data.js?v=20260528-timi-cancel",
@@ -74,14 +74,27 @@
         if (key === "roster") {
           window.__PORTAL_ADMIN_ROSTER_LOAD_FAILED__ = false;
           try {
-            var keepOverview =
+            var hash = String(
+              (window.location && window.location.hash) || ""
+            ).toLowerCase();
+            var wantFullClubChain =
               !!(window.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__ ||
                 window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__ ||
-                /c4k_sessions/i.test(String((window.location && window.location.hash) || "")));
-            if (typeof window.portalRefreshStaffDashboardSourceFromPortal === "function") {
-              window.portalRefreshStaffDashboardSourceFromPortal(
-                keepOverview ? { forSessionsOverview: true } : {}
-              );
+                /c4k_sessions/i.test(hash) ||
+                /scheduling/i.test(hash) ||
+                /c4k_services|servicecap|term_roster|absents_refunds/i.test(hash));
+            /*
+             * Admin Schedule / Overview / Services need the full capacity-chain club
+             * board. Never call refresh with {} here — that staff-scoped path empties
+             * STAFF_DASHBOARD_SOURCE on admin (no staffId) and shows "bundle empty".
+             */
+            if (
+              wantFullClubChain &&
+              typeof window.portalRefreshStaffDashboardSourceFromPortal === "function"
+            ) {
+              window.portalRefreshStaffDashboardSourceFromPortal({
+                forSessionsOverview: true,
+              });
             }
           } catch (_restoreOverview) {}
         }

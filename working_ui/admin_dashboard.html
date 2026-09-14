@@ -401,7 +401,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260914-fri18-raul"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260914-sched-chain"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260910-general-info"></script>
@@ -17733,10 +17733,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     window.refreshSchedulingModuleDebounced = refreshSchedulingModuleDebounced;
     async function refreshSchedulingModule(opts){
       opts = opts || {};
-      if(window.portalAdminLoadScriptSet && !adminSpreadsheetAdapterAvailable()){
+      if(window.portalAdminLoadScriptSet){
         try{
           await window.portalAdminLoadScriptSet('roster');
         }catch(_schedLoad){}
+        try{
+          /* Schedule & Covers = full club day board (same capacity chain as Overview). */
+          if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
+            window.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
+          }
+        }catch(_chain){}
         portalInvalidateAdminSlotsCache();
       }
       schedEnsureState();
