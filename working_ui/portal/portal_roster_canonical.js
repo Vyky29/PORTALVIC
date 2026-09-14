@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 128;
+  var SOURCE_VERSION = 129;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -171,15 +171,15 @@
 
   /**
    * Autumn 26/27 Hub afternoon Bespoke — LOCAL EXTRA standing (from Wed 9 Sep 2026):
-   * Mon: Godsway / John / Raul (3 seats);
-   * Wed: Godsway / Bismark / Emmanuel (3 seats);
+   * Mon: Godsway / John / Raul (3 seats; Bismark from Mon 14);
+   * Wed standing: Godsway / Bismark / John (Emmanuel only dated John-off Weds 9 + 16);
    * Fri: Bismark / Roberto / Emmanuel (3 seats).
    * Tue/Thu Hub: no Bespoke afternoon shift (Cyrus Tue is Victor 3.30-5 only).
    */
   /**
    * Hub Bespoke Tinashe = 3 seats every working day (same count as Friday):
    * Mon: Godsway + John + Bismark (Mon 7 only: Victor covers third seat) ·
-   * Wed: Godsway + Bismark + Emmanuel · Fri: Bismark + Roberto + Emmanuel.
+   * Wed: Godsway + Bismark + John · Fri: Bismark + Roberto + Emmanuel.
    */
   var AUTUMN_BESPOKE_HUB_ROWS = [
     {
@@ -235,7 +235,7 @@
     {
       client_name: "Tinashe",
       day: "Wednesday",
-      instructors: "EMMANUEL",
+      instructors: "JOHN",
       service: "Bespoke Programme",
       area: "Hub Room",
       time_slot: "4.30 to 6",
@@ -2053,12 +2053,15 @@
           s = s.replace(/\bRAUL\b/gi, "");
         }
       }
-      /* Wed: Emmanuel on Tinashe from Wed 9 (shadowing Bismark). */
-      if (iso && iso < "2026-09-09" && day === "wednesday") {
-        if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark)\b/i.test(s)) {
-          s = "";
-        } else {
-          s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
+      /* Wed: Emmanuel only on dated John-off covers (9 + 16 Sep shadow). Standing = John. */
+      if (iso && day === "wednesday") {
+        var emmanuelWedCover = iso === "2026-09-09" || iso === "2026-09-16";
+        if (!emmanuelWedCover) {
+          if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|john|raul|bismark)\b/i.test(s)) {
+            s = "";
+          } else {
+            s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
+          }
         }
       }
       /* Fri: Emmanuel on Tinashe from Fri 11 Sep. */
@@ -2085,17 +2088,21 @@
             s = s.replace(/\bBISMARK\b/gi, "").replace(/\bBISMARCK\b/gi, "");
           }
         }
-        /* Wed standing = Godsway + Bismark + Emmanuel (drop John + Raul). */
+        /* Wed standing = Godsway + Bismark + John (drop Raul + Emmanuel).
+           Dated John-off Weds (9 + 16): remap John seat → Emmanuel. */
         if (day === "wednesday" && iso >= "2026-09-09") {
-          if (/\braul\b/i.test(s) && !/\b(godsway|bismark|emmanuel|emanuel)\b/i.test(s)) {
+          var emmanuelWedCoverTin = iso === "2026-09-09" || iso === "2026-09-16";
+          if (/\braul\b/i.test(s) && !/\b(godsway|bismark|john|emmanuel|emanuel)\b/i.test(s)) {
             s = "";
           } else {
             s = s.replace(/\bRAUL\b/gi, "");
           }
-          if (/\bjohn\b/i.test(s) && !/\b(godsway|bismark|emmanuel|emanuel)\b/i.test(s)) {
+          if (emmanuelWedCoverTin) {
+            s = s.replace(/\bJOHN\b/gi, "EMMANUEL");
+          } else if (/\bemmanuel\b|\bemanuel\b/i.test(s) && !/\b(godsway|bismark|john)\b/i.test(s)) {
             s = "";
           } else {
-            s = s.replace(/\bJOHN\b/gi, "");
+            s = s.replace(/\bEMMANUEL\b/gi, "").replace(/\bEMANUEL\b/gi, "");
           }
         }
       }
@@ -3800,7 +3807,7 @@
 
   /**
    * Hub Bespoke Tinashe template staff for a weekday (before date remaps).
-   * Used so Overview can still paint a day-off Tinashe card when remap strips them (John Wed 9/15/16).
+   * Used so Overview can still paint a day-off Tinashe card when remap strips them (John Wed 9/16).
    */
   function autumnHubBespokeStandingHasStaff(dayName, staffRaw) {
     var wantDay = String(dayName || "")
@@ -3868,9 +3875,13 @@
     if (key === "raul" || key.indexOf("raul") === 0) {
       return dow === 2 || dow === 4;
     }
-    /* Hire Emmanuel: Tinashe Mon/Wed/Fri + Sunday Hub. Not Tuesday or Thursday. */
+    /* Hire Emmanuel: Tinashe Fri + Sunday Hub. Wed only dated covers (9 + 16). Not Tue/Thu. */
     if (key === "emmanuel" || key === "emanuel" || key.indexOf("emmanuel") === 0) {
-      return dow === 2 || dow === 4;
+      if (dow === 2 || dow === 4) return true;
+      if (dow === 3) {
+        return d !== "2026-09-09" && d !== "2026-09-16";
+      }
+      return false;
     }
     return false;
   }

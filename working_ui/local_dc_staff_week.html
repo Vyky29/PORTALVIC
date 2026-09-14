@@ -297,7 +297,7 @@
     <a href="/term_timetable_local.html">term timetable</a>.
     <strong>1-6 Sep</strong> = week 1 (DC weekdays; Sat 5 + Sun 6 weekend · Hub: <strong>Berta Lead + Jack W…Aydaan book</strong> · <strong>John = Emmanuel book</strong> · Godsway · Youssef off · Emmanuel off).
     <strong>7-13 Sep</strong> = Emmanuel onboarding (Mon 7 interview 4pm; shadow Wed 9 / Fri 11; Sun 13 Multi Hub shadow — Hub staff: Berta · Godsway · Emmanuel only; John off).
-    Hub Tinashe from <strong>Wed 9 Sep</strong>: <strong>3 seats</strong> every day — Wed = <strong>Godsway + Bismark + Emmanuel</strong> · Mon = <strong>Godsway + John + Raul</strong> · Fri = <strong>Bismark + Roberto + Emmanuel</strong>. Victor off Mon+Thu · Raul off Tue+Thu (no Overview column).
+    Hub Tinashe from <strong>Wed 9 Sep</strong>: <strong>3 seats</strong> every day — Wed standing = <strong>Godsway + Bismark + John</strong> (Emmanuel only Wed 9 + 16 John off) · Mon = <strong>Godsway + John + Raul</strong> · Fri = <strong>Bismark + Roberto + Emmanuel</strong>. Victor off Mon+Thu · Raul off Tue+Thu (no Overview column).
     Sundays: <strong>Berta Lead + Hub book (Jack W…Aydaan)</strong> · Godsway (= Bismark summer) · Emmanuel (= Godsway summer). <strong>John Sunday = 6 Sep only</strong>. Berta off Sun 13 / 20 / 4 Oct = COVER NEEDED (no cover yet).
     <strong>Fadi off rota until Sun 20 Sep</strong> (no Cancelled seats; standing DC pairs resume from Mon 21).
     <strong>Day offs (validated admin):</strong> Sandra Mon 7 (Javi Palankas covers Westway Physical) · Aurora Tue 8 (Acton redistribute) · Javier Marquez Tue 8 (Ayman→Roberto 4–4.30 + Javi Palankas 4.30–5; Linda/Rayan Ta/Anas→Javi Palankas) · Aurora Sun 13 / Tue 15 / Sun 4 Oct — painted here; live COVER NEEDED stays in Schedule &amp; Covers until cover assigned.
@@ -315,7 +315,7 @@
   <div class="links" id="dashLinks"></div>
   <div class="week" id="week"></div>
 
-  <script src="/portal/portal_roster_canonical.js?v=20260914-sun-3seats"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260914-wed-john-tinashe"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
   <!-- local board bump: 20260905-zaid-aquatic-trial-only -->
   <script>
@@ -492,15 +492,16 @@
         { name: "Amber", time: "5.30 to 6", band: "After school", area: "Northolt · Aquatic" },
         { name: "No participant", time: "6 to 6.30", band: "After school", area: "Northolt · Aquatic", kind: "open" },
       ],
-      /* Hub Bespoke Tinashe Wed: Godsway + Bismark + Emmanuel (3 seats). */
+      /* Hub Bespoke Tinashe Wed standing: Godsway + Bismark + John (3 seats).
+       * Emmanuel only on dated John-off Weds (9 + 16) via DATE_EXTRA. */
       Godsway: [
         { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
       Bismark: [
         { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
-      Emmanuel: [
-        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke · shadow Bismark" },
+      John: [
+        { name: "Tinashe", time: "4.30 to 6", band: "After school", area: "SwimFarm · Hub · Bespoke" },
       ],
     },
     thursday: {
@@ -905,7 +906,7 @@
   ];
   var WEEKDAY_EXTRA_ORDER = {
     tuesday: ["Javier", "Aurora"],
-    wednesday: ["Javier", "Dan", "Godsway", "Bismark", "Emmanuel"],
+    wednesday: ["Javier", "Dan", "Godsway", "Bismark", "John"],
     thursday: ["Simon", "Javier", "Aurora"],
     friday: ["Roberto", "Bismark", "Emmanuel"],
     monday: ["Godsway", "John", "Raul"],
@@ -933,7 +934,7 @@
     "Dan",
     "Godsway",
     "Bismark",
-    "Emmanuel",
+    "John",
   ];
   /* Tue Acton AS column order after DC core (Michelle/Victor stay for Day Centre only). */
   var TUESDAY_AS_ORDER = ["Roberto", "Luliya", "Javier", "Aurora", "Javi"];
@@ -981,7 +982,6 @@
       Godsway: "4.15 to 6.15",
       John: "4.15 to 6.15",
       Bismark: "4.15 to 6.15",
-      Emmanuel: "4.15 to 6.15",
     },
     thursday: {
       Roberto: "12.15 to 3.15 · 4 to 6.30",
