@@ -1326,7 +1326,10 @@
       var dayCk = key + '|' + st + '|' + peerSig + '|' + String(dashboardData && dashboardData.portalFeedbackServerSynced ? '1' : '0');
       var hit = _portalOutstandingDayOkCache[key];
       if(hit && hit.ck === dayCk) return !!hit.ok;
-      var ok = false;
+      function storeDay(ok, n){
+        _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: !!ok, n: Math.max(0, Number(n) || 0) };
+        return !!ok;
+      }
       /* Today is often "pending" in the term map before the first session starts.
          Alerts / push wait until the full today shift +15 min, and only if there is
          a real ended-session backlog (same as orange Today cards). */
@@ -1337,14 +1340,11 @@
             typeof portalStaffTodayShiftEndedForFeedbackReminders === 'function'
             && !portalStaffTodayShiftEndedForFeedbackReminders()
           ){
-            ok = false;
-            _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: ok };
-            return false;
+            return storeDay(false, 0);
           }
           if(typeof collectSessionReviewPendingStats === 'function'){
-            ok = (collectSessionReviewPendingStats().pending || []).length > 0;
-            _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: ok };
-            return ok;
+            const nToday = (collectSessionReviewPendingStats().pending || []).length;
+            return storeDay(nToday > 0, nToday);
           }
         }
       }catch(_){}
@@ -1352,23 +1352,19 @@
          mark Tue–Thu late before feedback keys land). Re-check roster pending units. */
       try{
         if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(key)){
-          _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: false };
-          return false;
+          return storeDay(false, 0);
         }
         const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
         if(staffId && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(key, staffId)){
-          _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: false };
-          return false;
+          return storeDay(false, 0);
         }
         if(staffId && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(key, staffId)){
-          _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: false };
-          return false;
+          return storeDay(false, 0);
         }
         if(staffId && typeof portalTermFeedbackAssumeComplete === 'function'
           && portalTermFeedbackAssumeComplete(key, staffId)){
           if(fbMap) fbMap[key] = 'complete';
-          _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: false };
-          return false;
+          return storeDay(false, 0);
         }
         if(typeof portalCountPendingFromRosterRows === 'function'
           && typeof portalBaseClientSessionsForCalendarDate === 'function'){
@@ -1395,18 +1391,22 @@
           );
           if(n < 1){
             if(fbMap) fbMap[key] = 'complete';
-            _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: false };
-            return false;
+            return storeDay(false, 0);
           }
+          return storeDay(true, n);
         }
-        ok = true;
-      }catch(_){
-        ok = true;
-      }
-      _portalOutstandingDayOkCache[key] = { ck: dayCk, ok: ok };
-      return ok;
+      }catch(_){}
+      return storeDay(true, 1);
     }
     try{ window.portalTermCalendarDayCountsForOutstanding = portalTermCalendarDayCountsForOutstanding; }catch(_){}
+    function portalOutstandingPendingSessionsForIso(iso, fbMap){
+      const key = String(iso || '').trim().slice(0, 10);
+      if(!portalTermCalendarDayCountsForOutstanding(key, fbMap)) return 0;
+      const hit = _portalOutstandingDayOkCache[key];
+      const n = hit && hit.n != null ? Number(hit.n) : 0;
+      return n > 0 ? n : 1;
+    }
+    try{ window.portalOutstandingPendingSessionsForIso = portalOutstandingPendingSessionsForIso; }catch(_){}
     var _portalOutstandingFbCountCache = { key: '', n: 0, at: 0 };
     var _portalReminderStateCache = null;
     var _portalReminderStateCacheKey = '';
@@ -1473,16 +1473,15 @@
           return _portalOutstandingFbCountCache.n;
         }
         if(typeof portalStaffFeedbackPipelineReady === 'function' && !portalStaffFeedbackPipelineReady()) return 0;
-        /* Count outstanding days from the already-built term map. Never rebuild Today
-           per calendar day here — that froze every tap on the staff PWA. */
+        /* Sum pending *sessions* across outstanding days (not day count).
+           Luliya Sunday had 9 Pending but the tile said "1" because we counted days. */
         var fbMap = (dashboardData && dashboardData.termFeedbackByDate) ? dashboardData.termFeedbackByDate : {};
         var keys = Object.keys(fbMap);
         var count = 0;
         for(var i = 0; i < keys.length; i++){
           var k = keys[i];
           if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(k)) continue;
-          if(!portalTermCalendarDayCountsForOutstanding(k, fbMap)) continue;
-          count += 1;
+          count += portalOutstandingPendingSessionsForIso(k, fbMap);
         }
         var result = Math.max(0, count);
         _portalOutstandingFbCountCache = { key: fp, n: result, at: Date.now() };
@@ -2012,6 +2011,14 @@
         aria = firstName
           ? firstName + ' — 1 session feedback left, tap to open'
           : '1 session feedback left, tap to open';
+      }else if(need && n > 1){
+        title = firstName
+          ? firstName + ', ' + n + ' session feedbacks left'
+          : n + ' session feedbacks left';
+        sub = 'Complete your session feedback';
+        aria = firstName
+          ? firstName + ' — ' + n + ' session feedbacks left, tap to open'
+          : n + ' session feedbacks left, tap to open';
       }
       return '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-outstanding-feedback' + tone + '" id="portalOutstandingFeedbackBtn" data-action="open-pending-feedback" aria-label="' + escapeHtml(aria) + '">' +
         '<div class="menu-btn-icon" aria-hidden="true">' + fbIcon + '</div>' +
