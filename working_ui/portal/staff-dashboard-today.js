@@ -489,12 +489,13 @@
       const w = String(weekdayLong || '').trim();
       if(!iso || !sid || !w) return true;
       if(portalStaffCalendarDateBeforeFirstSession(iso, sid)) return false;
+      /* Cover days still count even when the worker has no Autumn standing book (Angel → Carlos). */
+      if(typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
+        && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)) return true;
       /* Departed Autumn staff: never paint / project summer weekday snaps. */
       if(portalStaffHasNoAutumnTermSessions(sid) && !portalCalendarIsoUsesSummerDatedRosterOnly(iso)){
         return false;
       }
-      if(typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
-        && portalStaffHasInstructorCoverOnCalendarDate(iso, sid)) return true;
       if(portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0) return true;
       if(portalTermDateForcedComplete(iso, sid)) return true;
       if(portalTermStaffOffWeekdayOnDate(iso, sid)) return false;
@@ -2348,13 +2349,15 @@
       const sid = String(staffId || '').trim().toLowerCase();
       const dw = String(dayWord || '').trim();
       const iso = String(sessionDateIso || '').trim().slice(0, 10);
-      if(sid && typeof portalStaffHasNoAutumnTermSessions === 'function' && portalStaffHasNoAutumnTermSessions(sid)){
-        if(!(typeof portalCalendarIsoUsesSummerDatedRosterOnly === 'function' && portalCalendarIsoUsesSummerDatedRosterOnly(iso))){
-          return [];
-        }
-      }
+      const noAutumnStanding = !!(sid
+        && typeof portalStaffHasNoAutumnTermSessions === 'function'
+        && portalStaffHasNoAutumnTermSessions(sid)
+        && !(typeof portalCalendarIsoUsesSummerDatedRosterOnly === 'function'
+          && portalCalendarIsoUsesSummerDatedRosterOnly(iso)));
       if(sid && portalStaffCalendarDateBeforeFirstSession(iso, sid)) return [];
       const acc = [];
+      /* Angel/Giuseppe have no Autumn standing — still inject instructor_reassign covers. */
+      if(!noAutumnStanding){
       const staffDayRows = portalSessionsModelRowsForStaffDay(sid, dw);
       staffDayRows.forEach(function(s){
         if(!s) return;
@@ -2377,6 +2380,7 @@
           : Object.assign({}, s, { __portalBaseSession: s });
         if(eff.clientId) acc.push(eff);
       });
+      }
       portalScheduleOverrideRowsForSessionIso(sessionDateIso).forEach(function(ov){
         if(String(ov.status || 'active') !== 'active') return;
         if(ov.override_type !== 'instructor_reassign') return;
@@ -7948,7 +7952,21 @@
       function portalFindNextSessionCalendarInfo(staffId, fromNow, model){
         var id = String(staffId || '').trim().toLowerCase();
         if(typeof portalStaffHasNoAutumnTermSessions === 'function' && portalStaffHasNoAutumnTermSessions(id)){
-          return null;
+          /* Still allow Next Session when they have a dated cover (Angel → Carlos Sun 20). */
+          var hasCoverAhead = false;
+          try{
+            if(typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'){
+              for(var ci = 1; ci <= 30; ci++){
+                var cd = new Date(fromNow.getFullYear(), fromNow.getMonth(), fromNow.getDate() + ci);
+                var ciso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(cd) : '';
+                if(ciso && portalStaffHasInstructorCoverOnCalendarDate(ciso, id)){
+                  hasCoverAhead = true;
+                  break;
+                }
+              }
+            }
+          }catch(_cov){}
+          if(!hasCoverAhead) return null;
         }
         var start = new Date(fromNow.getFullYear(), fromNow.getMonth(), fromNow.getDate());
         var todayIso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(start) : '';

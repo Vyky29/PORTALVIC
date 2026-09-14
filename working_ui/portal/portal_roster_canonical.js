@@ -689,7 +689,7 @@
 
   /**
    * No Autumn Term 2026 standing sessions (LOCAL has no columns). Summer leftovers
-   * must not project onto Sep+ boards. Andres CAN cover Climbing (e.g. Sun 20 Carlos).
+   * must not project onto Sep+ boards. Angel CAN cover Climbing (e.g. Sun 20 Carlos).
    */
   var AUTUMN_NO_SESSION_STAFF_KEYS = ["angel", "giuseppe"];
   var AUTUMN_NO_SESSION_INSTRUCTOR_RE = /\b(angel|giuseppe)\b/i;
