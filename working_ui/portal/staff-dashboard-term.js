@@ -558,7 +558,9 @@
       const cur = curDate && !isNaN(curDate.getTime()) ? curDate : new Date(key + 'T12:00:00');
       if(!/^\d{4}-\d{2}-\d{2}$/.test(key) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return 0;
       let pending = 0;
-      const seenAquaticUnits = Object.create(null);
+      /* One feedback unit per review key (Day Centre Ikram, aquatic 2×30', bespoke shared).
+         Spreadsheet/MADRE can list the same DC seat many times — do not inflate the tile. */
+      const seenFeedbackUnits = Object.create(null);
       for(let i = 0; i < rel.length; i++){
         const s = rel[i];
         if(typeof portalRosterSessionFeedbackExempt === 'function'
@@ -567,38 +569,32 @@
           ? portalMinimalReviewItemFromRosterRow(s, dw, key, cur)
           : null;
         if(!item || !item.sessionKey) continue;
-        if(item.noSessionFeedbackRequired) continue;
+        const unitKey = String(item.sessionKey || '').trim().toLowerCase();
+        if(unitKey && seenFeedbackUnits[unitKey]) continue;
+        if(item.noSessionFeedbackRequired){
+          if(unitKey) seenFeedbackUnits[unitKey] = true;
+          continue;
+        }
         const pillPend = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
-        if(pillPend === 'CANCELLED' || pillPend === 'ABSENT') continue;
-        if(typeof portalTodayItemIsCancelledCard === 'function' && portalTodayItemIsCancelledCard(item)) continue;
-        /* Same instructor 1h aquatic (2×30'): one feedback unit — do not count both halves. */
-        try{
-          const cidUnit = String(item.clientId || s.clientId || '').trim().toLowerCase();
-          if(cidUnit && typeof portalStaffLeadAquaticSessionReviewKey === 'function'){
-            const aqKey = String(portalStaffLeadAquaticSessionReviewKey(key, cidUnit, s, dw) || '');
-            const parts = aqKey.split('|');
-            if(parts.length === 3 && parts[2] === 'aquatic'){
-              if(seenAquaticUnits[aqKey]) continue;
-            }
-          }
-        }catch(_){}
+        if(pillPend === 'CANCELLED' || pillPend === 'ABSENT'){
+          if(unitKey) seenFeedbackUnits[unitKey] = true;
+          continue;
+        }
+        if(typeof portalTodayItemIsCancelledCard === 'function' && portalTodayItemIsCancelledCard(item)){
+          if(unitKey) seenFeedbackUnits[unitKey] = true;
+          continue;
+        }
         const started = typeof isSessionStartedForItem === 'function' && isSessionStartedForItem(item);
         const ended = typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item);
         if(!started && !ended) continue;
         const r = typeof getEffectiveSessionReviewRecord === 'function'
           ? (getEffectiveSessionReviewRecord(item) || {})
           : (typeof getSessionReviewRecord === 'function' ? (getSessionReviewRecord(item) || {}) : {});
-        if(r.feedbackDone || r.absent || (r.cancelled && !r.cancelNeedsFeedback)) continue;
-        try{
-          const cidMark = String(item.clientId || s.clientId || '').trim().toLowerCase();
-          if(cidMark && typeof portalStaffLeadAquaticSessionReviewKey === 'function'){
-            const aqMark = String(portalStaffLeadAquaticSessionReviewKey(key, cidMark, s, dw) || '');
-            const partsM = aqMark.split('|');
-            if(partsM.length === 3 && partsM[2] === 'aquatic'){
-              seenAquaticUnits[aqMark] = true;
-            }
-          }
-        }catch(_){}
+        if(r.feedbackDone || r.absent || (r.cancelled && !r.cancelNeedsFeedback)){
+          if(unitKey) seenFeedbackUnits[unitKey] = true;
+          continue;
+        }
+        if(unitKey) seenFeedbackUnits[unitKey] = true;
         pending++;
       }
       return pending;
