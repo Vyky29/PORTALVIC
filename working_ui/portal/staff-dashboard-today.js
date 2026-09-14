@@ -1997,15 +1997,23 @@
       if(closeAdminDedicated){
         return { feedbackDone: false, incident: false, absent: false, cancelled: true };
       }
-      /* Covered away (Anas → Javi): original instructor owes no feedback. */
+      /* Covered away (Anas → Javi): original instructor owes no feedback.
+         Reassign may be anchored on `available` after Joelle clear — still clears Aurora. */
       if(sid && typeof portalScheduleOverrideForSessionByType === 'function'){
         const reAway = portalScheduleOverrideForSessionByType(s, iso, 'instructor_reassign');
         if(reAway){
           const covAway = String(reAway.payload && reAway.payload.covering_staff_id || '').trim().toLowerCase();
+          const covAwayCanon = typeof portalCanonicalStaffKeyForMatch === 'function'
+            ? portalCanonicalStaffKeyForMatch(covAway)
+            : covAway;
+          const sidCanon = typeof portalCanonicalStaffKeyForMatch === 'function'
+            ? portalCanonicalStaffKeyForMatch(sid)
+            : sid;
           const anchorAway = typeof portalNormKeyStr === 'function'
             ? portalNormKeyStr(reAway.anchor_staff_id)
             : String(reAway.anchor_staff_id || '').trim().toLowerCase();
-          if(covAway && covAway !== sid && (anchorAway === sid || sid === (typeof portalNormKeyStr === 'function' ? portalNormKeyStr(s.staffId) : String(s.staffId || '').trim().toLowerCase()))){
+          const meOnSlot = anchorAway === sid || sid === (typeof portalNormKeyStr === 'function' ? portalNormKeyStr(s.staffId) : String(s.staffId || '').trim().toLowerCase());
+          if(covAway && covAwayCanon !== sidCanon && meOnSlot){
             return { feedbackDone: true, incident: false, absent: false, cancelled: false };
           }
         }
@@ -2049,7 +2057,8 @@
           }
         }
       }
-      /* Loose fallback: active reassign away for this staff+client+date (window match missed). */
+      /* Loose fallback: active reassign away for this staff+client+date (window match missed).
+         Also honour open-seat covers (anchor_client_id=available) at the same start time. */
       if(sid){
         const allRe = typeof portalScheduleOverrideRowsForSessionIso === 'function'
           ? portalScheduleOverrideRowsForSessionIso(iso)
@@ -2062,10 +2071,18 @@
             ? portalNormKeyStr(rov.anchor_staff_id)
             : String(rov.anchor_staff_id || '').trim().toLowerCase();
           if(anchorR !== sid) continue;
-          const sameClientR = typeof portalRosterClientIdsMatch === 'function'
+          const openSeatCover = typeof portalScheduleOverrideAnchorIsOpenSlot === 'function'
+            && portalScheduleOverrideAnchorIsOpenSlot(rov.anchor_client_id);
+          const sameClientR = openSeatCover || (typeof portalRosterClientIdsMatch === 'function'
             ? portalRosterClientIdsMatch(rov.anchor_client_id, s.clientId)
-            : String(rov.anchor_client_id || '').trim().toLowerCase() === String(s.clientId || '').trim().toLowerCase();
+            : String(rov.anchor_client_id || '').trim().toLowerCase() === String(s.clientId || '').trim().toLowerCase());
           if(!sameClientR) continue;
+          if(openSeatCover){
+            const timeOk = typeof portalTimeAnchorsMatch === 'function'
+              ? portalTimeAnchorsMatch(rov.anchor_start, s.start)
+              : true;
+            if(!timeOk) continue;
+          }
           const covR = String(rov.payload && rov.payload.covering_staff_id || '').trim().toLowerCase();
           if(covR){
             return { feedbackDone: true, incident: false, absent: false, cancelled: false };

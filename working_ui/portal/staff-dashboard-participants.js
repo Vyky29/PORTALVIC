@@ -3722,7 +3722,9 @@
         /* Absences: allow venue miss (Acton vs empty) — staff/client/time still gate the match. */
         if(!isAbsence && portalNormKeyStr(r.anchor_venue) !== portalNormKeyStr(s.venue)) return false;
         const openMakeupAnchor = rowOvType === 'client_replace_in_slot' && portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id);
-        if(!openMakeupAnchor && !portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) return false;
+        /* Cover on a cleared/open seat (Thu 10 Anas→Javi: reassign anchor_client_id=available). */
+        const openCoverAnchor = rowOvType === 'instructor_reassign' && portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id);
+        if(!openMakeupAnchor && !openCoverAnchor && !portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) return false;
         if(!portalScheduleOverrideAnchorTimesMatchSession(r, s, wantType || String(r.override_type || '').trim())) return false;
         /* Makeup on an open/cleared seat that a cover instructor took (Anas -> Javi Palankas). */
         if(rowOvType === 'client_replace_in_slot' && portalLoggedInStaffReassignedOffSlotForRow(r)) return false;

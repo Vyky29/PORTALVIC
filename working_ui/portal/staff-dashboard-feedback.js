@@ -1330,10 +1330,13 @@
       }
       const staffIdSrv = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
       const isMakeupCard = portalTodayCardUsesReplaceOverride(item);
-      if(baseS && !isMakeupCard && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
+      if(baseS && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
         const ex = portalRosterSessionFeedbackResolvedFlags(baseS, iso, staffIdSrv);
         if(ex){
-          if(ex.absent) absent = true;
+          /* MakeUp card (Anas on Aurora): still honour cover-away / admin cancel so Javi's
+             cover clears Aurora's aquatic "own feedback" debt. Do not paint MakeUp as Absent
+             via the superseded-original replace path. */
+          if(ex.absent && !isMakeupCard) absent = true;
           if(ex.cancelled) cancelled = true;
           if(ex.feedbackDone && !ex.absent && !ex.cancelled) feedbackDone = true;
         }
