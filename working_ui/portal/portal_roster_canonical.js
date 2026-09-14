@@ -3490,7 +3490,7 @@
     return out;
   }
 
-  /** LOCAL EXTRA Sunday Hub Multi — Berta Lead book (Jack W…Aydaan). */
+  /** LOCAL EXTRA Sunday Hub Multi — Aurora book (was Berta Lead / slash pool). */
   var AUTUMN_SUNDAY_HUB_BERTA = [
     { client_name: "Jack W", time_slot: "9.30 to 10.15" },
     { client_name: "Adam Ab", time_slot: "10.15 to 11" },
@@ -3500,7 +3500,7 @@
     { client_name: "Aydaan Ah", time_slot: "1.15 to 2" },
   ];
 
-  /** LOCAL EXTRA Sunday Hub Multi — Emmanuel book. From Sun 13: Zaid Hub 9.30; Jack S Hub after pool. */
+  /** LOCAL EXTRA Sunday Hub Multi — Javier book (was Emmanuel / slash pool). */
   var AUTUMN_SUNDAY_HUB_EMMANUEL = [
     { client_name: "Zaid", time_slot: "9.30 to 10.15" },
     { client_name: "Jack S", time_slot: "10.15 to 11" },
@@ -3510,7 +3510,7 @@
     { client_name: "Rayyan F", time_slot: "1.15 to 2" },
   ];
 
-  /** LOCAL EXTRA Sunday Hub Multi — Godsway book (Samer…Amaar Ah). */
+  /** LOCAL EXTRA Sunday Hub Multi — Roberto book (was Godsway / slash pool). */
   var AUTUMN_SUNDAY_HUB_GODSWAY = [
     { client_name: "Samer", time_slot: "9.30 to 10.15" },
     { client_name: "Yusuf Ah", time_slot: "10.15 to 11" },
@@ -3538,7 +3538,7 @@
     /* Prefer Hub, but also treat known Hub staff Sunday Multi as Hub books
        (summer rows sometimes omit area and escaped the scrub). */
     if (/hub/i.test(String(r.area || ""))) return true;
-    return /\b(john|emmanuel|emanuel|giuseppe|berta|godsway|bismark|bismarck)\b/i.test(
+    return /\b(aurora|javier|roberto|john|emmanuel|emanuel|giuseppe|berta|godsway|bismark|bismarck)\b/i.test(
       String(r.instructors || "")
     );
   }
@@ -3559,15 +3559,15 @@
         };
       });
     }
-    return mapBook("BERTA", AUTUMN_SUNDAY_HUB_BERTA)
-      .concat(mapBook("EMMANUEL", AUTUMN_SUNDAY_HUB_EMMANUEL))
-      .concat(mapBook("GODSWAY", AUTUMN_SUNDAY_HUB_GODSWAY));
+    return mapBook("AURORA", AUTUMN_SUNDAY_HUB_BERTA)
+      .concat(mapBook("JAVIER", AUTUMN_SUNDAY_HUB_EMMANUEL))
+      .concat(mapBook("ROBERTO", AUTUMN_SUNDAY_HUB_GODSWAY));
   }
 
   /**
    * Sunday Hub Multi = LOCAL only.
-   * Drop legacy summer/DB Sunday Multi for Hub books (with or without Hub in area).
-   * Re-inject: standing Berta Lead + Godsway + Emmanuel; Sun 6 dated John cover + Berta + Godsway.
+   * Standing = Aurora | Javier | Roberto (covers via overrides).
+   * Re-inject standing books; Sun 6 dated John/Berta/Godsway cover rows stay historical.
    */
   function scrubAndEnsureSep6HubCover(rows) {
     var out = [];
@@ -3575,7 +3575,13 @@
       if (!r) return;
       if (isSundaySwimfarmHubMultiRow(r)) {
         var inst = String(r.instructors || "");
-        if (/\b(john|emmanuel|emanuel|giuseppe|berta|godsway|bismark|bismarck)\b/i.test(inst)) return;
+        if (
+          /\b(john|emmanuel|emanuel|giuseppe|berta|godsway|bismark|bismarck|aurora|javier|roberto)\b/i.test(
+            inst
+          )
+        ) {
+          return;
+        }
       }
       out.push(r);
     });

@@ -646,23 +646,22 @@
       }
       return "";
     }
-    /* Sunday Hub Multi books: one named owner from Timetable (not every slash token). */
-    if (isMulti) {
-      if (/\bgodsway\b/.test(pool) && pick("Godsway")) return pick("Godsway");
-      if (/\bemmanuel\b|\bemanuel\b/.test(pool) && (pick("Emmanuel") || pick("Emanuel"))) {
-        return pick("Emmanuel") || pick("Emanuel");
+    /* Sunday standing = Aurora | Javier | Roberto only; covers via overrides. */
+    if (isMulti || /aquatic|swim/i.test(String(serviceId || ""))) {
+      if (/\bjavier\b|\bdan\b|\bemmanuel\b|\bemanuel\b|\bgiuseppe\b/.test(pool) && pick("Javier")) {
+        return pick("Javier");
       }
-      /* Sun 6: John covers Emmanuel Hub book — John is on Timetable, not in slash. */
-      if (
-        (/\bemmanuel\b|\bemanuel\b|\bgiuseppe\b/.test(pool) || /\bjavier\b/.test(pool)) &&
-        onTt("John") &&
-        !onTt("Emmanuel") &&
-        !onTt("Emanuel")
-      ) {
-        return displayName("John");
+      if (/\broberto\b|\byoussef\b|\bgodsway\b/.test(pool) && pick("Roberto")) {
+        return pick("Roberto");
       }
-      if (/\bberta\b/.test(pool) && pick("Berta")) return pick("Berta");
-      if (/\baurora\b/.test(pool) && pick("Aurora")) return pick("Aurora");
+      if (/\baurora\b|\bluliya\b|\bberta\b|\bdirectors?\b/.test(pool) && pick("Aurora")) {
+        return pick("Aurora");
+      }
+      /* Cover on Timetable who is not the standing name (e.g. Luliya covering Aurora). */
+      if (matched.length === 1) return matched[0];
+      if (pick("Aurora")) return pick("Aurora");
+      if (pick("Javier")) return pick("Javier");
+      if (pick("Roberto")) return pick("Roberto");
     }
     if (matched.length) return matched[0];
     /* Nobody from the pool on Timetable — keep first real name (not Directors). */
