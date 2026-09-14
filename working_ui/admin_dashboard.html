@@ -15407,18 +15407,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     window.portalSyncOverviewDayTruth = portalSyncOverviewDayTruth;
-    /** Keep Sessions Overview on capacity chain when refreshing roster source. */
+    /** Keep Schedule / Overview / Services on full capacity-chain club board. */
     function portalAdminRefreshStaffDashboardSource(opts){
       opts = opts || {};
-      var onOverview =
-        String(state.view || '') === 'c4k_sessions' ||
-        /c4k_sessions/i.test(String(location.hash || '')) ||
+      var view = String(state.view || '');
+      var hash = String(location.hash || '');
+      var wantFullClub =
+        !!opts.forSessionsOverview ||
+        view === 'c4k_sessions' ||
+        view === 'scheduling' ||
+        view === 'c4k_services' ||
+        view === 'servicecap' ||
+        view === 'term_roster_edit' ||
+        view === 'absents_refunds' ||
+        /c4k_sessions|scheduling|c4k_services|servicecap|term_roster|absents_refunds/i.test(hash) ||
         !!window.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__ ||
         !!window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__;
       if(typeof window.portalRefreshStaffDashboardSourceFromPortal !== 'function') return;
       try{
         window.portalRefreshStaffDashboardSourceFromPortal(
-          onOverview || opts.forSessionsOverview ? { forSessionsOverview: true } : opts
+          wantFullClub ? Object.assign({}, opts, { forSessionsOverview: true }) : opts
         );
       }catch(_r){}
     }

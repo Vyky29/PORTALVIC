@@ -347,17 +347,17 @@
     /* Overview pin only on admin Sessions Overview — never treat staff chain as Overview. */
     var forOverview =
       !!(opts.forSessionsOverview) || sessionsOverviewSurfaceActive();
+    var prev = window.STAFF_DASHBOARD_SOURCE;
     /*
      * Admin pages that are not Overview/Schedule chain surfaces: never replace a
      * loaded spreadsheet bundle with an empty staff-pending capacity resolve.
      */
     if (!forOverview && !isStaffDashboardPage()) {
-      var cur = window.STAFF_DASHBOARD_SOURCE;
       if (
-        cur &&
-        Array.isArray(cur.rows) &&
-        cur.rows.length &&
-        !cur.capacityChainStaffScoped
+        prev &&
+        Array.isArray(prev.rows) &&
+        prev.rows.length &&
+        !prev.capacityChainStaffScoped
       ) {
         dispatchStaffDashboardSourceUpdated();
         return;
@@ -367,6 +367,22 @@
     window.STAFF_DASHBOARD_SOURCE = resolveStaffDashboardSource(
       forOverview ? Object.assign({}, opts, { forSessionsOverview: true }) : opts
     );
+    /*
+     * Never replace a populated board with an empty resolve (Schedule used to
+     * flash "Spreadsheet bundle not loaded" when capacity chain briefly failed).
+     */
+    if (
+      (!window.STAFF_DASHBOARD_SOURCE ||
+        !Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows) ||
+        !window.STAFF_DASHBOARD_SOURCE.rows.length) &&
+      prev &&
+      Array.isArray(prev.rows) &&
+      prev.rows.length
+    ) {
+      window.STAFF_DASHBOARD_SOURCE = prev;
+      dispatchStaffDashboardSourceUpdated();
+      return;
+    }
     if (
       forOverview &&
       window.STAFF_DASHBOARD_SOURCE &&
@@ -419,7 +435,17 @@
           : Promise.resolve([]);
       })
       .then(function (rows) {
-        if (sessionsOverviewSurfaceActive()) {
+        /* Admin Schedule / Overview / Services: keep full club capacity chain after MADRE. */
+        var hash = "";
+        try {
+          hash = String((window.location && window.location.hash) || "").toLowerCase();
+        } catch (_) {}
+        var wantFullClub =
+          sessionsOverviewSurfaceActive() ||
+          /c4k_sessions|scheduling|c4k_services|servicecap|term_roster|absents_refunds/i.test(
+            hash,
+          );
+        if (wantFullClub) {
           refreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
         }
         markStaffRosterLiveReady();
