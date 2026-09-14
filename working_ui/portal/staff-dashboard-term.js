@@ -1310,14 +1310,71 @@
           }
         }
       }catch(_){}
+      /* Past days: do not trust a stale fbMap alone (idle through-today rebuild can
+         mark Tue–Thu late before feedback keys land). Re-check roster pending units. */
+      try{
+        if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(key)){
+          return false;
+        }
+        const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+        if(staffId && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(key, staffId)){
+          return false;
+        }
+        if(staffId && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(key, staffId)){
+          return false;
+        }
+        if(staffId && typeof portalTermFeedbackAssumeComplete === 'function'
+          && portalTermFeedbackAssumeComplete(key, staffId)){
+          if(fbMap) fbMap[key] = 'complete';
+          return false;
+        }
+        if(typeof portalCountPendingFromRosterRows === 'function'
+          && typeof portalBaseClientSessionsForCalendarDate === 'function'){
+          const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+          const baseReal = typeof window.__portalIsRealClientSession === 'function'
+            ? window.__portalIsRealClientSession
+            : null;
+          const isReal = function(s){
+            if(baseReal) return baseReal(s, key);
+            const st0 = String(s && s.status || '').toLowerCase();
+            if(st0 === 'closed' || st0 === 'available') return false;
+            const cid = String(s && s.clientId || '').toLowerCase();
+            return Boolean(cid && cid !== 'closed' && cid !== 'available');
+          };
+          const rel = typeof portalTermFeedbackSessionsForDate === 'function'
+            ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
+            : portalBaseClientSessionsForCalendarDate(dayWord, key, staffId, isReal);
+          const n = portalCountPendingFromRosterRows(
+            key,
+            dayWord,
+            rel,
+            new Date(key + 'T12:00:00'),
+            staffId
+          );
+          if(n < 1){
+            if(fbMap) fbMap[key] = 'complete';
+            return false;
+          }
+        }
+      }catch(_){}
       return true;
     }
+    try{ window.portalTermCalendarDayCountsForOutstanding = portalTermCalendarDayCountsForOutstanding; }catch(_){}
     var _portalOutstandingFbCountCache = { key: '', n: 0, at: 0 };
     var _portalReminderStateCache = null;
     var _portalReminderStateCacheKey = '';
     function portalReminderStateFingerprint(){
       var fbMap = dashboardData && dashboardData.termFeedbackByDate;
       var fbKeys = fbMap && typeof fbMap === 'object' ? Object.keys(fbMap).length : 0;
+      var fbOutstanding = 0;
+      try{
+        if(fbMap && typeof fbMap === 'object'){
+          Object.keys(fbMap).forEach(function(k){
+            var v = fbMap[k];
+            if(v === 'pending' || v === 'late') fbOutstanding += 1;
+          });
+        }
+      }catch(_){}
       /* Dismissed schedule-override / shadowing keys change which attention cards (and the avatar
          halo) are active, so they must be part of the cache key or the halo goes stale after dismiss. */
       var dismissedSig = '0';
@@ -1344,6 +1401,7 @@
         String(STAFF_DASHBOARD_ID || ''),
         String(Array.isArray(sessionsModel) ? sessionsModel.length : 0),
         String(fbKeys),
+        String(fbOutstanding),
         String(dashboardData && dashboardData.portalFeedbackServerSynced ? '1' : '0'),
         dismissedSig,
         absentPeerSig,

@@ -2582,9 +2582,9 @@
       /* Validated / requested day off — never nag for session feedback on that date. */
       if(staffId && typeof portalStaffHasRequestedTimeOffOnDate === 'function'
         && portalStaffHasRequestedTimeOffOnDate(key, staffId)) return 'complete';
+      if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'complete';
       if(explicit === 'late') return 'late';
       const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
-      if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'pending';
       /* Trust Term maps for past days (rebuilt on Term open after feedback sync).
          Re-scan only today so a just-submitted review goes green without walking 4 months. */
       if(staffId && key === todayKey){
@@ -3293,27 +3293,17 @@
     window.rebuildTermShiftAndFeedbackFromSessionModelProgressive = rebuildTermShiftAndFeedbackFromSessionModelProgressive;
 
     function portalOldestIsoDateNeedingTermFeedback(){
-      try{
-        if(portalTermSheetIsOpen() && typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
-          rebuildTermShiftAndFeedbackFromSessionModel();
-        }
-      }catch(e){}
+      /* Never sync-rebuild the whole term here — that froze the orange Outstanding
+         tap for Javier (~5–30s) before Term even opened. */
       const map = dashboardData.termFeedbackByDate;
       const keys = [];
-      const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       if(map && typeof map === 'object'){
         Object.keys(map).forEach(function(k){
-          const v = map[k];
-          if(sid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(k, sid)) return;
-          if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(k)) return;
-          if(v !== 'pending' && v !== 'late') return;
-          if(typeof getTermFeedbackStateForDay === 'function'){
-            const isoKey = String(k || '').trim().slice(0, 10);
-            const m = isoKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            if(m){
-              const calSt = getTermFeedbackStateForDay(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-              if(calSt === 'complete' || calSt === 'cancelled') return;
-            }
+          if(typeof portalTermCalendarDayCountsForOutstanding === 'function'){
+            if(!portalTermCalendarDayCountsForOutstanding(k, map)) return;
+          }else{
+            const v = map[k];
+            if(v !== 'pending' && v !== 'late') return;
           }
           keys.push(String(k || '').trim());
         });
@@ -3325,7 +3315,9 @@
         const first = stats.pending && stats.pending[0];
         if(first && first.sessionKey){
           const d = String(first.sessionKey).split('|')[0].trim();
-          if(/^\d{4}-\d{2}-\d{2}$/.test(d) && portalFeedbackReminderDayInScope(d)) return d;
+          if(/^\d{4}-\d{2}-\d{2}$/.test(d)
+            && typeof portalFeedbackReminderDayInScope === 'function'
+            && portalFeedbackReminderDayInScope(d)) return d;
         }
       }
       return '';
@@ -3335,8 +3327,24 @@
       try{
         if(typeof portalSetReviewFlowOrigin === 'function') portalSetReviewFlowOrigin('term');
       }catch(e){}
+      /* Jump straight to the outstanding day board (same as tapping the Term cell).
+         Opening Term first + sync rebuild left Halo stuck for seconds. */
+      if(iso && /^\d{4}-\d{2}-\d{2}$/.test(iso)){
+        var dayWord = '';
+        try{
+          dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+        }catch(_){}
+        if(dayWord && typeof PORTAL_WEEK_REVIEW_VALID_DAYS !== 'undefined'
+          && PORTAL_WEEK_REVIEW_VALID_DAYS.has(dayWord)
+          && typeof portalOpenWeekDayReviewFlow === 'function'){
+          portalOpenWeekDayReviewFlow(dayWord, {
+            portalReviewDate: iso,
+            portalTermJudgementAllowed: true
+          });
+          return;
+        }
+      }
       if(typeof closeSheet === 'function') closeSheet();
-      if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
       if(typeof openSheet === 'function') openSheet('termSheet');
       function focusCell(){
         const grid = document.getElementById('termGrid');
