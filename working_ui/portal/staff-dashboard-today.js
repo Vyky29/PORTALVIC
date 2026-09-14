@@ -251,6 +251,18 @@
     function portalStaffHasNoAutumnTermSessions(staffId){
       const id = String(staffId || '').trim().toLowerCase();
       if(!id) return false;
+      /* Hire Emmanuel must never inherit Giuseppe's AUTUMN_NO_SESSION via stf008. */
+      try{
+        if(typeof portalStaffIsHireEmmanuelAmoakohene === 'function' && portalStaffIsHireEmmanuelAmoakohene()){
+          return false;
+        }
+      }catch(_){}
+      try{
+        if(typeof portalCanonicalStaffKeyForMatch === 'function'){
+          const canon = portalCanonicalStaffKeyForMatch(id);
+          if(canon === 'emmanuel' || canon === 'emanuel') return false;
+        }
+      }catch(_){}
       try{
         const PRC = window.PortalRosterCanonical;
         if(PRC && typeof PRC.isAutumnNoSessionStaffKey === 'function'){
@@ -3239,12 +3251,14 @@
         }catch(_pw){ programmeWidePack = null; }
       }
       /* Dense Autumn books (Javier/Luliya Acton): do not scan the whole club model
-         for this weekday. Cover cards still inject from schedule_overrides below. */
+         for this weekday. Cover cards still inject from schedule_overrides below.
+         Never replace with an empty index — that wiped Hub Sundays for Emmanuel when
+         the day-index key missed (canon mismatch) while sessionsModel still had rows. */
       if(!programmeWidePack && staffId && !(Array.isArray(modelOverride) && modelOverride.length)
         && typeof portalSessionsModelRowsForStaffDay === 'function'){
         try{
           var indexedDay = portalSessionsModelRowsForStaffDay(staffId, anchorDayWord);
-          if(Array.isArray(indexedDay)) baseModel = indexedDay;
+          if(Array.isArray(indexedDay) && indexedDay.length) baseModel = indexedDay;
         }catch(_idxDay){}
       }
       const todaySessionsAfterFilter = baseModel.filter(function(s){
@@ -5915,7 +5929,7 @@
         if(/^stf\d{3}$/.test(k)){
           var map = {
             stf001: 'sandra', stf002: 'roberto', stf003: 'dan', stf004: 'angel',
-            stf005: 'youssef', stf006: 'john', stf007: 'bismark', stf008: 'giuseppe',
+            stf005: 'youssef', stf006: 'john', stf007: 'bismark', stf008: 'emmanuel',
             stf009: 'godsway', stf010: 'javier', stf011: 'aurora', stf012: 'berta',
             stf013: 'victor', stf014: 'carlos', stf015: 'alex', stf016: 'simon', stf017: 'javi',
             stf018: 'raul', stf019: 'sevitha', stf020: 'teflon', stf021: 'luliya',

@@ -10,7 +10,8 @@
     stf005: "youssef",
     stf006: "john",
     stf007: "bismark",
-    stf008: "giuseppe",
+    /* Giuseppe left; stf008 is hire Emmanuel Amoakohene on Autumn boards. */
+    stf008: "emmanuel",
     stf009: "godsway",
     stf010: "javier",
     stf011: "aurora",

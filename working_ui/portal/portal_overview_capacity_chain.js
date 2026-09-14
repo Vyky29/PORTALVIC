@@ -871,13 +871,31 @@
       .replace(/[^a-z0-9]+/g, "");
   }
 
+  function canonStaffTok(raw) {
+    var t = normStaffTok(raw);
+    if (!t) return "";
+    try {
+      var fn =
+        typeof global.portalCanonicalStaffMatchKey === "function"
+          ? global.portalCanonicalStaffMatchKey
+          : global.PortalStaffMatchKey &&
+            typeof global.PortalStaffMatchKey.canonicalStaffMatchKey === "function"
+          ? global.PortalStaffMatchKey.canonicalStaffMatchKey
+          : null;
+      if (fn) t = normStaffTok(fn(raw) || t);
+    } catch (_c) {}
+    /* Hire Emmanuel Amoakohene — never treat as departed Giuseppe / DC Emanuel. */
+    if (t === "giuseppe" || t === "emanuel" || t === "emmanuelamoakohene") return "emmanuel";
+    return t;
+  }
+
   function instructorMentionsStaff(instructorsRaw, staffKey) {
-    var want = normStaffTok(staffKey);
+    var want = canonStaffTok(staffKey);
     if (!want) return false;
     return String(instructorsRaw || "")
       .split(/,|\/|&|\band\b/gi)
       .some(function (part) {
-        return normStaffTok(part) === want;
+        return canonStaffTok(part) === want;
       });
   }
 
@@ -929,7 +947,7 @@
   function replaceStaffSwimfarmPlacesBandsWithTeachingTurns(rows, staffId) {
     var C = global.PortalRosterCanonical;
     if (!C || typeof C.resolveCanonicalRosterRows !== "function") return rows;
-    var want = normStaffTok(staffId);
+    var want = canonStaffTok(staffId);
     if (!want) return rows;
     var kept = [];
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
@@ -942,10 +960,16 @@
     });
     var canon = [];
     try {
-      canon = C.resolveCanonicalRosterRows() || [];
+      /* skipDb: do not depend on portal_roster_rows cache; Hub books are LOCAL standing. */
+      canon = C.resolveCanonicalRosterRows({ skipDb: true }) || [];
     } catch (_c) {
-      return rows;
+      try {
+        canon = C.resolveCanonicalRosterRows() || [];
+      } catch (_c2) {
+        return kept.length ? kept : rows;
+      }
     }
+    var added = 0;
     canon.forEach(function (r) {
       if (!r) return;
       var venue = String(r.venue || "").toLowerCase();
@@ -953,6 +977,7 @@
       if (!isSwimfarmPoolOrHubPlacesService(r.service)) return;
       if (!instructorMentionsStaff(r.instructors, want)) return;
       kept.push(r);
+      added++;
     });
     return kept;
   }

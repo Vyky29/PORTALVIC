@@ -303,7 +303,7 @@
           if (/^stf\d{3}$/.test(k)) {
             var map = {
               stf001: "sandra", stf002: "roberto", stf003: "dan", stf004: "angel",
-              stf005: "youssef", stf006: "john", stf007: "bismark", stf008: "giuseppe",
+              stf005: "youssef", stf006: "john", stf007: "bismark", stf008: "emmanuel",
               stf009: "godsway", stf010: "javier", stf011: "aurora", stf012: "berta",
               stf013: "victor", stf014: "carlos", stf015: "alex", stf017: "javi",
               stf018: "raul", stf019: "sevitha", stf020: "teflon", stf021: "luliya",
