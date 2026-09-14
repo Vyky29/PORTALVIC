@@ -146,7 +146,7 @@ def friday_template() -> list[tuple[str, str, str]]:
         _pairs("Raul", "11-4", "SwimFarm"),
         _pairs("Roberto", "11-4", "SwimFarm"),
         _pairs("Victor", "11-4", "SwimFarm"),
-        _pairs("Youssef", "12.30-3", "SwimFarm"),
+        _pairs("Youssef", "11-3", "SwimFarm"),
         _pairs("Youssef", "4-6", "Acton"),
         # Fri Hub Bespoke = Bismark + Roberto + Emmanuel
         _pairs("Bismark", "4.15-6.15", "SwimFarm"),

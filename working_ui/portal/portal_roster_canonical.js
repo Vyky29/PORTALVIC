@@ -134,7 +134,7 @@
           { name: "Fadi", time: "1 to 3" },
         ],
       },
-      /* Michelle + Luliya Ikram to 4; Victor + Raul Timi then Emanuel 1–4; Youssef Fadi to 3 (Acton from 4). */
+      /* Michelle + Luliya Ikram to 4; Victor + Raul Timi then Emanuel 1–4; Youssef Ikram 11–3 (Acton from 4). */
       { staff: "Michelle", clients: [{ name: "Ikram", time: "11 to 4" }] },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 4" }] },
       {
@@ -153,7 +153,7 @@
       },
       {
         staff: "Youssef",
-        clients: [{ name: "Fadi", time: "12.30 to 3" }],
+        clients: [{ name: "Ikram", time: "11 to 3" }],
       },
     ],
   };
@@ -3224,7 +3224,7 @@
    *   Luliya Ikram 11–3; Raul Fadi 12.30–3 + Ikram 3–4; Victor Cyrus Bespoke 3.30–5 (not DC)
    * - Victor Wed DC: Emanuel 12.30–3 (Fadi with Roberto+Raul), Ikram 3–4
    * - Fri DC: Victor+Raul Emanuel 1–4 (after Timi); Michelle+Luliya Ikram to 16:00;
-   *   Youssef Fadi ends 15:00 (Acton from 16:00 — no Emanuel 3–4)
+   *   Youssef Ikram 11–3 (Acton from 16:00 — no Emanuel 3–4)
    * - Acton Fri: Roberto → Youssef (Adam Pi; Amaar Fri left after 11 Sep — Mon Northolt only); Hub Fri Tinashe: Bismark + Roberto + Emanuel (from Fri 11)
    * - Victor OFF Mondays and Thursdays (DC empty — do not show Overview column)
    * - Raul OFF Tuesdays and Thursdays (DC empty — do not show Overview column)
