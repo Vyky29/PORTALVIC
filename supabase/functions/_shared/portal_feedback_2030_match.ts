@@ -564,13 +564,13 @@ export function applyScheduleOverridesToFeedback2030Slots(
       (ot === "slot_clear_client" && !!pl.cancelled_by_admin &&
         pl.day_reassign !== true && pl.not_makeup !== true);
 
-    /* Admin cancel / absent: same as absent — never nag instructors for feedback. */
+    /* Absences / cancels applied in a final pass so instructor_reassign cannot
+       re-upsert an absent client onto the cover (e.g. Gabriel → Raul Hub swap). */
     if (
       adminCancel ||
       ot === "client_absence_announced" ||
       feedbackRes === "absent"
     ) {
-      dropClientSeat(anchorStaff, anchorClient, pl, timeLab, false);
       continue;
     }
 
@@ -622,15 +622,6 @@ export function applyScheduleOverridesToFeedback2030Slots(
       continue;
     }
 
-    if (ot === "client_absence_announced") {
-      /* Drop every seat for that client+time (standing book and cover). */
-      dropMatching((s) => {
-        if (!clientMatchesOverride(s.client, anchorClient, pl)) return false;
-        return feedbackTimesCompatible(s.time, timeLab);
-      });
-      continue;
-    }
-
     if (ot === "client_replace_in_slot") {
       const toClient = String(
         pl.to_client_name || pl.replacement_client_name || pl.to_client_id ||
@@ -652,6 +643,41 @@ export function applyScheduleOverridesToFeedback2030Slots(
         return openish || clientsClose(s.client, toClient);
       });
       upsertCover(coverStaff, toClient, timeLab, svc, String(pl.area || "").trim() || undefined);
+    }
+  }
+
+  /* Final pass: absences/cancels always win over cover upserts. */
+  for (const ov of active) {
+    const ot = String(ov.override_type || "").trim();
+    const pl = (ov.payload && typeof ov.payload === "object")
+      ? ov.payload as Record<string, unknown>
+      : {};
+    const anchorStaff = String(ov.anchor_staff_id || "").trim();
+    const anchorClient = String(ov.anchor_client_id || "").trim();
+    const timeLab = String(ov.anchor_time_slot_label || "").trim();
+    const feedbackRes = String(pl.feedback_resolution || "").trim().toLowerCase();
+    const adminCancel =
+      ot === "slot_close" ||
+      ot === "client_cancelled" ||
+      feedbackRes === "cancelled" ||
+      (ot === "slot_clear_client" && !!pl.cancelled_by_admin &&
+        pl.day_reassign !== true && pl.not_makeup !== true);
+    if (
+      !(
+        adminCancel ||
+        ot === "client_absence_announced" ||
+        feedbackRes === "absent"
+      )
+    ) {
+      continue;
+    }
+    dropMatching((s) => {
+      if (!clientMatchesOverride(s.client, anchorClient, pl)) return false;
+      return feedbackTimesCompatible(s.time, timeLab);
+    });
+    /* Also drop by anchor staff+time when client slug forms differ slightly. */
+    if (anchorStaff) {
+      dropClientSeat(anchorStaff, anchorClient, pl, timeLab, true);
     }
   }
 
