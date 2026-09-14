@@ -684,7 +684,14 @@
     var C = global.PortalRosterCanonical;
     var phases = occupantsPhasesToRosterRows(occupantsBySlotId || {});
     var bespoke = timetableBespokeToRosterRows(occupantsBySlotId || {});
-    var dc = clipDcRowsToTimetable(occupantsDcToRosterRows(occupantsBySlotId || {}));
+    var dc = [];
+    try {
+      if (global.PortalDcServicesLocal) {
+        dc = clipDcRowsToTimetable(occupantsDcToRosterRows(occupantsBySlotId || {}));
+      }
+    } catch (_dc) {
+      dc = [];
+    }
     var rows = phases.concat(bespoke).concat(dc);
     return {
       rows: rows,
@@ -713,8 +720,25 @@
     var by = occupantsBySlotId(opt);
     if (!by || !Object.keys(by).length) return null;
     if (!global.PORTAL_AUTUMN_STAFF_HOURS) return null;
-    if (!global.PortalDcServicesLocal) return null;
-    return resolveCapacityChainRosterSource(by);
+    /* DC helper is optional — Places AS / weekend / climb must still paint for Staff Today
+       even if Day Centre seats fail to expand. */
+    try {
+      return resolveCapacityChainRosterSource(by);
+    } catch (_e) {
+      try {
+        var phases = occupantsPhasesToRosterRows(by);
+        var bespoke = timetableBespokeToRosterRows(by);
+        return {
+          rows: phases.concat(bespoke),
+          capacityChainNoCanonicalRemap: true,
+          localNoCanonicalResolve: true,
+          rosterSourceNote:
+            "Capacity chain (Places + Timetable; DC expand failed)",
+        };
+      } catch (_e2) {
+        return null;
+      }
+    }
   }
 
   global.PortalOverviewCapacityChain = {

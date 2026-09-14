@@ -397,6 +397,12 @@
       const iso = String(calendarIso || '').trim().slice(0, 10);
       const rowIso = String(s.session_date || s.sessionDate || '').trim().slice(0, 10);
       if(rowIso && iso && rowIso === iso) return true;
+      /* Capacity chain already owns who-works — do not remap through Jul/canonical stamps. */
+      try{
+        if(window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.capacityChainNoCanonicalRemap){
+          return true;
+        }
+      }catch(_){}
       const raw = String(
         s.__portalRosterInstructorsRaw ||
         s.__portalRosterInstructorBeforeOverride ||
@@ -3114,8 +3120,10 @@
         ? modelOverride
         : (Array.isArray(sessionsModel) ? sessionsModel : []);
       if(staffId && !baseModel.length && typeof window.portalBootstrapFromMachineFallback === 'function'){
-        const fbAllowed = typeof portalStaffMachineBundleFallbackAllowed !== 'function'
-          || portalStaffMachineBundleFallbackAllowed(staffId, sessionDateKey);
+        var chainPinned = !!(window.STAFF_DASHBOARD_SOURCE
+          && window.STAFF_DASHBOARD_SOURCE.capacityChainNoCanonicalRemap);
+        const fbAllowed = !chainPinned && (typeof portalStaffMachineBundleFallbackAllowed !== 'function'
+          || portalStaffMachineBundleFallbackAllowed(staffId, sessionDateKey));
         if(fbAllowed){
         try{
           const fb = window.portalBootstrapFromMachineFallback(staffId);
@@ -3141,6 +3149,7 @@
             shiftExpected = portalTermStaffExtraCalendarDates(staffId).indexOf(sessionDateKey) >= 0;
           }
           if(shiftExpected && typeof window.portalBootstrapFromMachineFallback === 'function'
+            && !(window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.capacityChainNoCanonicalRemap)
             && (typeof portalStaffMachineBundleFallbackAllowed !== 'function'
               || portalStaffMachineBundleFallbackAllowed(staffId, sessionDateKey))){
             try{
@@ -5425,7 +5434,10 @@
       let rows = [];
       try{
         rows = typeof buildSelectedDayViewFromLauraModel === 'function'
-          ? buildSelectedDayViewFromLauraModel(modelOverride)
+          ? buildSelectedDayViewFromLauraModel(
+              modelOverride,
+              selectedIso && /^\d{4}-\d{2}-\d{2}$/.test(selectedIso) ? selectedIso : undefined
+            )
           : [];
       }catch(_){ rows = []; }
       /* Selected (non-live) day review: hold the cards on the brief "syncing" panel until schedule

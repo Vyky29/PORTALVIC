@@ -166,12 +166,14 @@
         var Adapter = typeof StaffDashboardSpreadsheetAdapter !== "undefined" ? StaffDashboardSpreadsheetAdapter : null;
         var source =
           typeof window.portalResolveStaffDashboardSource === "function"
-            ? window.portalResolveStaffDashboardSource()
+            ? window.portalResolveStaffDashboardSource({ staffId: sid })
             : window.STAFF_DASHBOARD_SOURCE;
         if (!Adapter || !source || !sid) return;
         var boot = Adapter.bootstrap({ source: source, staffId: sid });
         if (!boot || !Array.isArray(boot.sessionsModel) || !boot.sessionsModel.length) {
-          if (typeof window.portalBootstrapFromMachineFallback === "function") {
+          /* Capacity chain owns Autumn Staff Today — never refill from Jul machine stamps. */
+          if (!(source && source.capacityChainNoCanonicalRemap)
+            && typeof window.portalBootstrapFromMachineFallback === "function") {
             var fbIso = "";
             try {
               var fbAnchor = typeof portalResolveTodaySectionCalendarDate === "function"
@@ -283,11 +285,7 @@
           return window.portalBootstrapStaffRosterFromProfile(profileForRoster, user);
         }
         var Adapter = typeof StaffDashboardSpreadsheetAdapter !== "undefined" ? StaffDashboardSpreadsheetAdapter : null;
-        var source =
-          typeof window.portalResolveStaffDashboardSource === "function"
-            ? window.portalResolveStaffDashboardSource()
-            : window.STAFF_DASHBOARD_SOURCE;
-        if (!Adapter || !source || !user) return null;
+        if (!Adapter || !user) return null;
         var email = String(user.email || "");
         var keys = [];
         var seen = Object.create(null);
@@ -320,6 +318,11 @@
         pushKey(email.split("@")[0]);
         if (typeof window.portalInferStaffKey === "function") pushKey(window.portalInferStaffKey(profileForRoster, email));
         function portalStaffBootstrapHitForKey(staffKey) {
+          var source =
+            typeof window.portalResolveStaffDashboardSource === "function"
+              ? window.portalResolveStaffDashboardSource({ staffId: staffKey })
+              : window.STAFF_DASHBOARD_SOURCE;
+          if (!source) return null;
           var boot = Adapter.bootstrap({ source: source, staffId: staffKey });
           if (!boot || !Array.isArray(boot.sessionsModel)) return null;
           var canonical = portalLocalCanonicalStaffKey(staffKey);
@@ -576,11 +579,11 @@
         if (window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active) {
           var ghost = window.__PORTAL_GHOST_VIEW__;
           var ghostAdapter = typeof StaffDashboardSpreadsheetAdapter !== "undefined" ? StaffDashboardSpreadsheetAdapter : null;
+          var ghostKey = portalLocalCanonicalStaffKey(String(ghost.rosterKey || "").trim().toLowerCase());
           var ghostSource =
             typeof window.portalResolveStaffDashboardSource === "function"
-              ? window.portalResolveStaffDashboardSource()
+              ? window.portalResolveStaffDashboardSource({ staffId: ghostKey })
               : window.STAFF_DASHBOARD_SOURCE;
-          var ghostKey = portalLocalCanonicalStaffKey(String(ghost.rosterKey || "").trim().toLowerCase());
           if (ghostAdapter && ghostSource && ghostKey) {
             var ghostBoot = ghostAdapter.bootstrap({ source: ghostSource, staffId: ghostKey });
             if (ghostBoot) {

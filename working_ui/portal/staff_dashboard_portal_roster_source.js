@@ -247,6 +247,22 @@
     opts = opts || {};
     var chain = resolveCapacityChainSource(opts);
     if (chain) return chain;
+    /* Capacity chain scripts present but resolve failed — do not silently paint Jul
+       canonical stamps onto Autumn Staff Today (empty / sparse boards). */
+    var chainScripts =
+      typeof window !== "undefined" &&
+      window.PortalOverviewCapacityChain &&
+      window.PORTAL_CAPACITY_CHAIN_OCCUPANTS &&
+      window.PORTAL_AUTUMN_STAFF_HOURS;
+    if (chainScripts && !opts.allowCanonicalFallback) {
+      return {
+        rows: [],
+        capacityChainNoCanonicalRemap: true,
+        localNoCanonicalResolve: true,
+        rosterSourceNote:
+          "Capacity chain failed to resolve — refusing canonical Jul fallback",
+      };
+    }
     var canon = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
     if (canon && typeof canon.resolveCanonicalStaffDashboardSource === "function") {
       return canon.resolveCanonicalStaffDashboardSource();
