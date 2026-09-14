@@ -2028,7 +2028,15 @@
           /* Start only — empty slot labels must not wildcard the other 30' half. */
           return portalTimeAnchorsMatch(r.anchor_start, s.start);
         }
+        /* Hour-long finish-booking / MakeUp (e.g. Ayman 17:00-18:00) covers both 30' halves. */
         if(portalSessionTimeWindowsOverlap(r.anchor_start, r.anchor_end, s.start, s.end)) return true;
+        /*
+         * Do NOT fall through to empty anchor_time_slot_label (= always true). That made
+         * open-seat NEW CLIENT replaces paint every Javier Acton card that day (Cyrus 4pm
+         * became Ayman; real 5-6 halves went empty with Updated by admin).
+         */
+        const lab = String(r && r.anchor_time_slot_label != null ? r.anchor_time_slot_label : '').trim();
+        if(!lab) return false;
         return portalOverrideSlotLabelMatchesRow(r, s);
       }
       if(!portalTimeAnchorsMatch(r.anchor_start, s.start)) return false;

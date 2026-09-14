@@ -310,7 +310,8 @@
     if (statusRowIsAquaticTwoToOneShared(st)) return false;
     if (statusRowServiceNeedsPerStaffUnitFeedback(st)) return true;
     if (isDayCentreStatusRow(st) || isBespokeStatusRow(st)) return false;
-    if (String(st.feedbackMergeGroup || "").trim()) return false;
+    /* Merge group (Yusuf/Cyrus AA+MA) still belongs to one instructor — never
+       let a support-worker submit clear the swim instructor's unit. */
     const svc = String(st.service || "").toLowerCase();
     if (/multi[-\s]?activity/.test(svc)) return true;
     if (svc.indexOf("climbing") >= 0 || svc.indexOf("climb") >= 0) return true;
@@ -426,16 +427,19 @@
   }
 
   /** Yusuf / Cyrus: Aquatic + Multi-Activity same instructor → one feedback covers the merge group. */
-  function submittedCoversMergeGroup(iso, st) {
+  function submittedCoversMergeGroup(iso, st, staffId) {
     const mg = String(st && st.feedbackMergeGroup ? st.feedbackMergeGroup : "").trim();
     if (!mg) return false;
     const groupRows = statusRowsForDateAll(iso).filter(function (row) {
       return String(row.feedbackMergeGroup || "").trim() === mg;
     });
     if (!groupRows.length) return false;
+    const sid = String(staffId || "").trim().toLowerCase();
     return submittedRowsForDateAll(iso).some(function (r) {
       if (submittedRowMarksAbsent(r)) return false;
       if (!submittedRowMatchesStatusClient(r, st)) return false;
+      /* Viewer must be the submitter — Dan/Emmanuel submit must not clear Javier. */
+      if (sid && !staffOwnsInstructor(sid, r.instructor)) return false;
       for (let i = 0; i < groupRows.length; i++) {
         if (staffOwnsInstructor(groupRows[i].instructor, r.instructor)) return true;
       }
@@ -763,7 +767,7 @@
         );
       });
     }
-    if (submittedCoversMergeGroup(iso, st)) return true;
+    if (submittedCoversMergeGroup(iso, st, staffId)) return true;
     const sid = String(staffId || "").trim().toLowerCase();
     return submittedRowsForDateAll(iso).some(function (r) {
       if (!submittedRowMatchesStatusClient(r, st)) return false;
@@ -880,7 +884,7 @@
     if (statusRowTermCancelledOnPortal(iso, st)) return true;
     if (statusOverviewIsAbsent(st)) return true;
     if (String(st.feedbackMergeGroup || "").trim()) {
-      if (submittedCoversMergeGroup(iso, st)) return true;
+      if (submittedCoversMergeGroup(iso, st, staffId)) return true;
       return submittedCoversStatusRow(iso, st, staffId);
     }
     if (statusRowNeedsPerStaffUnitFeedback(st)) {

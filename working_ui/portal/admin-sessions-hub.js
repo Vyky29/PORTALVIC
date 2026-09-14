@@ -11194,6 +11194,43 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
       if (realCover) {
         pushCoverColumn(slot.portalCoveringStaffName || slot.portalCoveringStaffId, fromLabel);
+        /*
+         * Slash Multi seats (Javier/Dan/Emmanuel, Roberto/Youssef/Godsway): a cover for
+         * one token must not wipe the co-workers' columns. Still paint every other
+         * live token on the seat.
+         */
+        var coverInsts = origInsts.length ? origInsts : dayBoardInstructorsForSlot(slot);
+        var coverWho = slot.portalCoveringStaffName || slot.portalCoveringStaffId || "";
+        for (var ci = 0; ci < coverInsts.length; ci++) {
+          var sib = coverInsts[ci];
+          if (hubStaffAwayOnIso(hub, iso, sib)) continue;
+          if (dayBoardStaffKeysEqual(sib, fromLabel)) continue;
+          if (awayOrig.some(function (a) { return dayBoardStaffKeysEqual(a, sib); })) continue;
+          if (dayBoardStaffKeysEqual(sib, coverWho)) continue;
+          var coverParts = normalizeInstructorList(coverWho);
+          var sibIsCover = false;
+          for (var cp = 0; cp < coverParts.length; cp++) {
+            if (dayBoardStaffKeysEqual(sib, coverParts[cp])) {
+              sibIsCover = true;
+              break;
+            }
+          }
+          if (sibIsCover) continue;
+          pushBoardItem(
+            dayBoardStaffKey(sib),
+            dayBoardStaffLabel(sib),
+            slot,
+            cloneBoardState(st, {
+              boardPlace: "normal",
+              isCoverNeeded: false,
+              isStaffDayOff: false,
+              isRealCover: false,
+              isInstructorReassign: false,
+              coverForLabel: "",
+              coverFromLabel: "",
+            })
+          );
+        }
         continue;
       }
 
@@ -11242,14 +11279,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
 
       var insts = dayBoardInstructorsForSlot(slot);
+      /*
+       * Sunday Hub Multi seats ship slash labels (Javier/Dan/Emmanuel,
+       * Roberto/Youssef/Godsway). Paint every token so Emmanuel / Godsway /
+       * Dan get columns — not only the first name.
+       */
       var targets = insts;
-      if (
-        !isDayCentreService(slot.service) &&
-        !isBespokeSharedFeedbackSlot(slot) &&
-        insts.length > 1
-      ) {
-        targets = [insts[0]];
-      }
       for (var j = 0; j < targets.length; j++) {
         var raw = targets[j];
         var staffKey = dayBoardStaffKey(raw);
