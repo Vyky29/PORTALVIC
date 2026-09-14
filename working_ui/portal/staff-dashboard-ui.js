@@ -2898,6 +2898,19 @@
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       if(!t || !t.firstDate || !t.lastDate || !staffId) return;
+      try{
+        if(typeof window.portalEnsureStaffCapacityChainDateWindow === 'function'){
+          const termFrom = String(
+            (dashboardData && dashboardData.termDashboardCalendarFrom) || t.termResumeDate || t.firstDate || ''
+          ).slice(0, 10);
+          const termTo = String(
+            (dashboardData && dashboardData.termDashboardCalendarTo) || t.lastDate || ''
+          ).slice(0, 10);
+          if(termFrom && termTo){
+            window.portalEnsureStaffCapacityChainDateWindow(termFrom, termTo);
+          }
+        }
+      }catch(_win){}
       const rebuildSig = portalTermRebuildInputSignature();
       if(typeof window !== 'undefined'
         && window.__PORTAL_TERM_REBUILD_LAST_SIG__ === rebuildSig
@@ -3096,6 +3109,19 @@
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       if(!t || !t.firstDate || !t.lastDate || !staffId) return;
       if(!portalTermSheetIsOpen() && !opts.allowWhenClosed) return;
+      try{
+        if(typeof window.portalEnsureStaffCapacityChainDateWindow === 'function'){
+          const termFrom = String(
+            (dashboardData && dashboardData.termDashboardCalendarFrom) || t.termResumeDate || t.firstDate || ''
+          ).slice(0, 10);
+          const termTo = String(
+            (dashboardData && dashboardData.termDashboardCalendarTo) || t.lastDate || ''
+          ).slice(0, 10);
+          if(termFrom && termTo){
+            window.portalEnsureStaffCapacityChainDateWindow(termFrom, termTo);
+          }
+        }
+      }catch(_win){}
 
       const worked = Array.isArray(dashboardData.termWorkedWeekdays) ? dashboardData.termWorkedWeekdays.map(Number) : [];
       if(!worked.length) return;

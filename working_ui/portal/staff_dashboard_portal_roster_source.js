@@ -47,6 +47,21 @@
     return false;
   }
 
+  /** Staff PWA / staff_dashboard.html — never pull club MADRE or full-chain expand. */
+  function isStaffDashboardPage() {
+    if (typeof window === "undefined") return false;
+    try {
+      var path = String(
+        (window.location && window.location.pathname) || ""
+      ).toLowerCase();
+      if (path.indexOf("staff_dashboard") >= 0) return true;
+    } catch (_) {}
+    try {
+      if (window.__PORTAL_STAFF_DASHBOARD_PAGE__) return true;
+    } catch (_) {}
+    return false;
+  }
+
   function pinOverviewCapacitySource(src) {
     if (!src || !src.capacityChainNoCanonicalRemap) return;
     if (!Array.isArray(src.rows) || !src.rows.length) return;
@@ -247,6 +262,8 @@
           forSessionsOverview: forOverview,
           staffId: staffId || undefined,
           bypassCache: !!opts.bypassCache,
+          windowFrom: opts.windowFrom || undefined,
+          windowThrough: opts.windowThrough || undefined,
         });
         if (chainSrc && Array.isArray(chainSrc.rows)) {
           /* Staff-scoped may legitimately be empty (day off / no seats); still attach meta. */
@@ -347,8 +364,25 @@
 
   var REFRESH_INFLIGHT = null;
 
+  /**
+   * Staff: re-resolve capacity chain for this worker only (no MADRE / club
+   * portal_roster_rows). Admin Overview keeps the live MADRE + rows merge path.
+   */
   function refreshPortalRosterRowsFromSupabase(client) {
     if (REFRESH_INFLIGHT) {
+      return REFRESH_INFLIGHT;
+    }
+    if (isStaffDashboardPage()) {
+      REFRESH_INFLIGHT = Promise.resolve()
+        .then(function () {
+          var sid = resolveLoggedInStaffId({});
+          if (sid) refreshStaffDashboardSourceFromPortal({ staffId: sid });
+          markStaffRosterLiveReady();
+          return [];
+        })
+        .finally(function () {
+          REFRESH_INFLIGHT = null;
+        });
       return REFRESH_INFLIGHT;
     }
     var madreP =
@@ -368,12 +402,8 @@
           : Promise.resolve([]);
       })
       .then(function (rows) {
-        /* MADRE refresh must not wipe capacity chain (Overview or Staff Today). */
         if (sessionsOverviewSurfaceActive()) {
           refreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
-        } else {
-          var sid = resolveLoggedInStaffId({});
-          if (sid) refreshStaffDashboardSourceFromPortal({ staffId: sid });
         }
         markStaffRosterLiveReady();
         return rows;
@@ -386,19 +416,69 @@
 
   window.portalRefreshPortalRosterRowsFromSupabase = refreshPortalRosterRowsFromSupabase;
 
+  /**
+   * Widen staff capacity-chain date window (e.g. when Term sheet opens).
+   * Merges into the existing staff-scoped cache via union window.
+   */
+  function ensureStaffCapacityChainDateWindow(fromIso, throughIso) {
+    if (!isStaffDashboardPage()) return null;
+    var sid = resolveLoggedInStaffId({});
+    if (!sid) return null;
+    var Chain = window.PortalOverviewCapacityChain;
+    if (!Chain || typeof Chain.resolve !== "function") return null;
+    var from = String(fromIso || "").slice(0, 10);
+    var through = String(throughIso || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(through)) {
+      return null;
+    }
+    var prev =
+      typeof window !== "undefined" && window.STAFF_DASHBOARD_SOURCE
+        ? window.STAFF_DASHBOARD_SOURCE
+        : null;
+    if (
+      prev &&
+      prev.capacityChainStaffScoped &&
+      prev.capacityChainDateWindowFrom &&
+      prev.capacityChainDateWindowThrough &&
+      prev.capacityChainDateWindowFrom <= from &&
+      prev.capacityChainDateWindowThrough >= through &&
+      Array.isArray(prev.rows) &&
+      prev.rows.length
+    ) {
+      return prev;
+    }
+    refreshStaffDashboardSourceFromPortal({
+      staffId: sid,
+      windowFrom: from,
+      windowThrough: through,
+      bypassCache: false,
+    });
+    return window.STAFF_DASHBOARD_SOURCE || null;
+  }
+
+  window.portalEnsureStaffCapacityChainDateWindow = ensureStaffCapacityChainDateWindow;
+
   /* Overview needs the full pin ASAP; Staff defers so script parse stays snappy. */
   if (sessionsOverviewSurfaceActive()) {
     refreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
-  } else {
+  } else if (isStaffDashboardPage()) {
     setTimeout(function () {
       var sid = resolveLoggedInStaffId({});
       if (sid) refreshStaffDashboardSourceFromPortal({ staffId: sid });
       else captureBundleMetaOnce();
     }, 0);
+  } else {
+    /* Admin other pages: capture bundle meta only; Overview pins when hub opens. */
+    captureBundleMetaOnce();
   }
 
   function bootstrapLiveMadreWhenReady() {
     if (typeof window === "undefined") return;
+    /* Staff Today does not pull live MADRE — capacity chain + overrides only. */
+    if (isStaffDashboardPage()) {
+      markStaffRosterLiveReady();
+      return;
+    }
     var tries = 0;
     function tick() {
       tries += 1;
@@ -414,10 +494,8 @@
         window.PortalMadreFold.loadLiveMadre(client, false).then(function () {
           if (sessionsOverviewSurfaceActive()) {
             refreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
-          } else {
-            var sid = resolveLoggedInStaffId({});
-            if (sid) refreshStaffDashboardSourceFromPortal({ staffId: sid });
           }
+          markStaffRosterLiveReady();
         });
         return;
       }
@@ -427,13 +505,12 @@
   }
   bootstrapLiveMadreWhenReady();
 
-  // Keep already-open staff dashboards in sync with the live MADRE without a
-  // manual reload or logout. The refresh forces loadLiveMadre(), so tabs that
-  // stayed open pick up newer portal_madre_document revisions on tab focus and
-  // on a slow periodic backstop. A 60s min-gap avoids network spam.
+  // Admin only: keep open tabs in sync with live MADRE.
+  // Staff dashboards skip this — day truth is capacity chain + schedule_overrides.
   function setupLiveMadreAutoRefresh() {
     if (typeof document === "undefined" || !document.addEventListener) return;
     if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
+    if (isStaffDashboardPage()) return;
     var MIN_GAP_MS = 60 * 1000;
     var PERIODIC_MS = 8 * 60 * 1000;
     var lastAt = 0;

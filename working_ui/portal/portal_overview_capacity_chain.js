@@ -112,7 +112,45 @@
       .toLowerCase();
   }
 
-  function autumnIsosForDow(dayName) {
+  function ymdLocal(d) {
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
+  }
+
+  /**
+   * Staff Today expands only a rolling date window (not whole Sep–Dec).
+   * Admin Overview leaves win null → full Autumn term.
+   */
+  function staffExpandWindowBounds(opt) {
+    opt = opt || {};
+    var from = String(opt.windowFrom || "").slice(0, 10);
+    var through = String(opt.windowThrough || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(through)) {
+      var now = new Date();
+      var a = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 21);
+      var b = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 35);
+      from = ymdLocal(a);
+      through = ymdLocal(b);
+    }
+    if (from < TERM_FROM) from = TERM_FROM;
+    if (through > TERM_THROUGH) through = TERM_THROUGH;
+    if (through < from) through = from;
+    return { from: from, through: through };
+  }
+
+  function isoInWindow(iso, win) {
+    var d = String(iso || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+    if (!win || !win.from || !win.through) return true;
+    return d >= win.from && d <= win.through;
+  }
+
+  function autumnIsosForDow(dayName, win) {
     var want = DOW_KEYS.indexOf(normDow(dayName));
     if (want < 0) return [];
     var out = [];
@@ -120,10 +158,8 @@
     var end = new Date(TERM_THROUGH + "T12:00:00");
     while (cur <= end) {
       if (cur.getDay() === want) {
-        var y = cur.getFullYear();
-        var m = String(cur.getMonth() + 1).padStart(2, "0");
-        var d = String(cur.getDate()).padStart(2, "0");
-        out.push(y + "-" + m + "-" + d);
+        var iso = ymdLocal(cur);
+        if (isoInWindow(iso, win)) out.push(iso);
       }
       cur.setDate(cur.getDate() + 1);
     }
@@ -248,7 +284,7 @@
     return clientFromSeatLine(line);
   }
 
-  function occupantsPhasesToRosterRows(bySlotId) {
+  function occupantsPhasesToRosterRows(bySlotId, win) {
     var out = [];
     Object.keys(bySlotId || {}).forEach(function (slotId) {
       var slot = bySlotId[slotId];
@@ -256,7 +292,7 @@
       var service = serviceLabelFromId(slot.serviceId);
       if (!service) return;
       var day = String(slot.day || "").trim();
-      var dates = autumnIsosForDow(day);
+      var dates = autumnIsosForDow(day, win);
       if (!dates.length) return;
       var band = parseBandMinutes(slot.timeLabel);
       var timeSlot =
@@ -375,7 +411,7 @@
    * Bespoke standing for Overview = Timetable who works that date (point 3).
    * Client name/window from Places/Services occupants for the weekday.
    */
-  function timetableBespokeToRosterRows(bySlotId) {
+  function timetableBespokeToRosterRows(bySlotId, win) {
     var P = global.PORTAL_AUTUMN_STAFF_HOURS;
     var root = P && (P.staffHours || P);
     if (!root) return [];
@@ -392,6 +428,7 @@
       (sheet.dates || []).forEach(function (dr) {
         var iso = String((dr && dr.date) || "").slice(0, 10);
         if (!iso || iso < TERM_FROM || iso > TERM_THROUGH) return;
+        if (!isoInWindow(iso, win)) return;
         (dr.cells || []).forEach(function (cell, ci) {
           var band = String((cell && cell.band) || "").toLowerCase();
           if (band !== "bespoke") return;
@@ -570,17 +607,15 @@
     return DOW_KEYS[d] || "";
   }
 
-  function enumerateTermWeekdays() {
+  function enumerateTermWeekdays(win) {
     var out = [];
     var cur = new Date(TERM_FROM + "T12:00:00");
     var end = new Date(TERM_THROUGH + "T12:00:00");
     while (cur <= end) {
       var dow = cur.getDay();
       if (dow >= 1 && dow <= 5) {
-        var y = cur.getFullYear();
-        var m = String(cur.getMonth() + 1).padStart(2, "0");
-        var d = String(cur.getDate()).padStart(2, "0");
-        out.push(y + "-" + m + "-" + d);
+        var iso = ymdLocal(cur);
+        if (isoInWindow(iso, win)) out.push(iso);
       }
       cur.setDate(cur.getDate() + 1);
     }
@@ -623,14 +658,14 @@
     return { phase: "none", columns: [] };
   }
 
-  function occupantsDcToRosterRows(bySlotId) {
+  function occupantsDcToRosterRows(bySlotId, win) {
     var Dc = global.PortalDcServicesLocal;
     if (!Dc || typeof Dc.rosterRowsForIso !== "function") {
       return [];
     }
     var C = global.PortalRosterCanonical;
     var out = [];
-    enumerateTermWeekdays().forEach(function (iso) {
+    enumerateTermWeekdays(win).forEach(function (iso) {
       var fadiOff =
         C && typeof C.isFadiOffRotaIso === "function"
           ? C.isFadiOffRotaIso(iso)
@@ -794,14 +829,15 @@
 
   function resolveCapacityChainRosterSource(occupantsBySlotId, opt) {
     opt = opt || {};
+    var win = opt.dateWindow || null;
     var C = global.PortalRosterCanonical;
-    var phases = occupantsPhasesToRosterRows(occupantsBySlotId || {});
-    var bespoke = timetableBespokeToRosterRows(occupantsBySlotId || {});
+    var phases = occupantsPhasesToRosterRows(occupantsBySlotId || {}, win);
+    var bespoke = timetableBespokeToRosterRows(occupantsBySlotId || {}, win);
     var dc = [];
     var wantDc = opt.includeDc !== false && occupantsHasDayCentre(occupantsBySlotId);
     try {
       if (wantDc && global.PortalDcServicesLocal) {
-        dc = clipDcRowsToTimetable(occupantsDcToRosterRows(occupantsBySlotId || {}));
+        dc = clipDcRowsToTimetable(occupantsDcToRosterRows(occupantsBySlotId || {}, win));
       }
     } catch (_dc) {
       dc = [];
@@ -856,14 +892,34 @@
             : null;
         if (canonFn) staffId = normStaffTok(canonFn(staffId) || staffId);
       }
-      /* Staff Today: expand only this worker's seats (not the whole club term). */
+      /* Staff Today: expand only this worker's seats in a rolling date window. */
       if (staffId && !opt.forSessionsOverview) {
-        if (!opt.bypassCache && STAFF_CHAIN_CACHE[staffId] && Array.isArray(STAFF_CHAIN_CACHE[staffId].rows)) {
-          return STAFF_CHAIN_CACHE[staffId];
+        var wantWin = staffExpandWindowBounds(opt);
+        var cached = !opt.bypassCache ? STAFF_CHAIN_CACHE[staffId] : null;
+        if (
+          cached &&
+          Array.isArray(cached.rows) &&
+          cached._winFrom &&
+          cached._winThrough &&
+          cached._winFrom <= wantWin.from &&
+          cached._winThrough >= wantWin.through
+        ) {
+          return cached;
+        }
+        var unionWin = {
+          from: wantWin.from,
+          through: wantWin.through,
+        };
+        if (cached && cached._winFrom && cached._winThrough) {
+          if (cached._winFrom < unionWin.from) unionWin.from = cached._winFrom;
+          if (cached._winThrough > unionWin.through) {
+            unionWin.through = cached._winThrough;
+          }
         }
         var slimBy = filterOccupantsByStaff(by, staffId);
         var slim = resolveCapacityChainRosterSource(slimBy, {
           includeDc: occupantsHasDayCentre(slimBy),
+          dateWindow: unionWin,
         });
         if (slim) {
           var teachingRows = replaceStaffSwimfarmPlacesBandsWithTeachingTurns(
@@ -875,11 +931,19 @@
             capacityChainStaffScoped: true,
             capacityChainStaffId: staffId,
             capacityChainSwimfarmTeachingTurns: true,
+            capacityChainDateWindowFrom: unionWin.from,
+            capacityChainDateWindowThrough: unionWin.through,
+            _winFrom: unionWin.from,
+            _winThrough: unionWin.through,
             rosterSourceNote:
               (slim.rosterSourceNote || "Capacity chain") +
               " · staff-scoped (" +
               staffId +
-              ") · SwimFarm teaching turns",
+              ") · " +
+              unionWin.from +
+              ".." +
+              unionWin.through +
+              " · SwimFarm teaching turns",
           });
           STAFF_CHAIN_CACHE[staffId] = slim;
         }
@@ -920,6 +984,7 @@
     resolveCapacityChainRosterSource: resolveCapacityChainRosterSource,
     occupantsBySlotId: occupantsBySlotId,
     filterOccupantsByStaff: filterOccupantsByStaff,
+    staffExpandWindowBounds: staffExpandWindowBounds,
     clearResolveCache: clearResolveCache,
   };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -912,11 +912,19 @@
         if(out.indexOf(x) < 0) out.push(x);
       };
       try{
-        /* Near window only — do NOT enumerate the whole Term calendar (Aug–Dec).
-           That used to fire 4×40-date override fetches and left Term day cards on
-           "syncing" for a long time. Past days: ensure term review / late feedback. */
+        /* Near window only — staff does not pull the whole term.
+           Past days: late feedback / Term review. Forward: Today + next weeks. */
         const now = new Date();
-        for(let i = -28; i <= 21; i++){
+        var back = -21;
+        var fwd = 21;
+        try{
+          const sidW = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+          if(sidW && typeof portalStaffNeedsFullDayOverrides === 'function' && portalStaffNeedsFullDayOverrides(sidW)){
+            back = -28;
+            fwd = 35;
+          }
+        }catch(_w){}
+        for(let i = back; i <= fwd; i++){
           const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
           add(portalIsoYmdFromDate(d));
         }

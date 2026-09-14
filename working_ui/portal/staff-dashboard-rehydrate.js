@@ -982,6 +982,22 @@
           try{
             var hidAt = Number(window.__PORTAL_STAFF_HIDDEN_AT__ || 0);
             var hasExplicitRow = !!(payload && (payload.new || payload.old));
+            /* Ignore club-wide override noise — only rebuild when the row is ours
+               (or lead/ops needs the full day board). */
+            try{
+              var rowProbe = payload && (payload.new || payload.old);
+              if(rowProbe && typeof portalScheduleOverrideRowAppliesToLoggedInStaff === "function"){
+                var needsFull = false;
+                try{
+                  if(typeof portalStaffNeedsFullDayOverrides === "function"){
+                    needsFull = !!portalStaffNeedsFullDayOverrides(staffId);
+                  }
+                }catch(_nf){}
+                if(!needsFull && !portalScheduleOverrideRowAppliesToLoggedInStaff(rowProbe)){
+                  return;
+                }
+              }
+            }catch(_skip){}
             try{
               if(payload && typeof window.portalHandleScheduleOverrideUndoFromRealtimePayload === "function"){
                 window.portalHandleScheduleOverrideUndoFromRealtimePayload(payload);
