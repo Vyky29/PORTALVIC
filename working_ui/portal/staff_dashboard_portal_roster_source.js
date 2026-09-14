@@ -39,7 +39,21 @@
             return chainSrc;
           }
         }
-      } catch (_chain) {}
+        if (typeof console !== "undefined" && console.warn) {
+          console.warn(
+            "[portal] Sessions Overview capacity chain unavailable (need Timetable hours + occupants). Not falling back silently for Overview paint."
+          );
+        }
+      } catch (_chain) {
+        if (typeof console !== "undefined" && console.warn) {
+          console.warn("[portal] Sessions Overview capacity chain failed", _chain);
+        }
+      }
+      /* Prefer last good capacity-chain source over canonical remap for Overview. */
+      var prev = typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
+      if (prev && prev.capacityChainNoCanonicalRemap && Array.isArray(prev.rows) && prev.rows.length) {
+        return prev;
+      }
     }
     var canon = typeof window !== "undefined" ? window.PortalRosterCanonical : null;
     if (canon && typeof canon.resolveCanonicalStaffDashboardSource === "function") {
@@ -54,9 +68,14 @@
 
   window.portalResolveStaffDashboardSource = resolveStaffDashboardSource;
 
-  function refreshStaffDashboardSourceFromPortal() {
+  function refreshStaffDashboardSourceFromPortal(opts) {
     if (typeof window === "undefined" || !window.STAFF_DASHBOARD_SOURCE) return;
-    window.STAFF_DASHBOARD_SOURCE = resolveStaffDashboardSource();
+    var keepOverview =
+      !!(opts && opts.forSessionsOverview) ||
+      !!(window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.capacityChainNoCanonicalRemap);
+    window.STAFF_DASHBOARD_SOURCE = resolveStaffDashboardSource(
+      keepOverview ? { forSessionsOverview: true } : opts || {}
+    );
     dispatchStaffDashboardSourceUpdated();
   }
 
