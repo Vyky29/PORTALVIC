@@ -64,65 +64,81 @@
         if (!t) return "Session";
         return t.replace(/\s+session(s)?\s*$/i, "").trim() || "Session";
       }
-      function buildWeekRows(staffId){
+      function buildWeekRowForDay(day, staffId){
         var sid = String(staffId || "").trim().toLowerCase();
         var baseReal = typeof window.__portalIsRealClientSession === "function" ? window.__portalIsRealClientSession : null;
-        return WEEK_ORDER_MON_SUN.map(function (day) {
-          if (typeof portalWeekListDayIsOff === "function" && portalWeekListDayIsOff(day, sid)) {
-            return { day: day, segments: [{ count: 0, venue: "", serviceLabel: "" }] };
-          }
-          var bucket = {};
-          var seenCount = Object.create(null);
-          var cell = typeof calendarDateForWeekListDay === "function" ? calendarDateForWeekListDay(day) : null;
-          var iso = cell && typeof portalIsoYmdFromDate === "function" ? portalIsoYmdFromDate(cell) : "";
-          var isReal = function (s) {
-            if (baseReal) return baseReal(s, iso);
-            var st = String(s.status || "").toLowerCase();
-            if (st === "closed" || st === "available") return false;
-            var cid = String(s.clientId || "").toLowerCase();
-            return Boolean(cid && cid !== "closed" && cid !== "available");
-          };
-          var sessions =
-            typeof portalBaseClientSessionsForCalendarDate === "function" && iso
-              ? portalBaseClientSessionsForCalendarDate(day, iso, sid, isReal)
-              : [];
-          var multiClientIds = null;
-          if (day === "Sunday") {
-            multiClientIds = Object.create(null);
-            sessions.forEach(function (s) {
-              if (weekServiceCat(s) === "Multi-Activity") {
-                var cidM = String(s.clientId || "").trim().toLowerCase();
-                if (cidM) multiClientIds[cidM] = 1;
-              }
-            });
-          }
+        if (typeof portalWeekListDayIsOff === "function" && portalWeekListDayIsOff(day, sid)) {
+          return { day: day, segments: [{ count: 0, venue: "", serviceLabel: "" }] };
+        }
+        var bucket = {};
+        var seenCount = Object.create(null);
+        var cell = typeof calendarDateForWeekListDay === "function" ? calendarDateForWeekListDay(day) : null;
+        var iso = cell && typeof portalIsoYmdFromDate === "function" ? portalIsoYmdFromDate(cell) : "";
+        var isReal = function (s) {
+          if (baseReal) return baseReal(s, iso);
+          var st = String(s.status || "").toLowerCase();
+          if (st === "closed" || st === "available") return false;
+          var cid = String(s.clientId || "").toLowerCase();
+          return Boolean(cid && cid !== "closed" && cid !== "available");
+        };
+        var sessions =
+          typeof portalBaseClientSessionsForCalendarDate === "function" && iso
+            ? portalBaseClientSessionsForCalendarDate(day, iso, sid, isReal)
+            : [];
+        var multiClientIds = null;
+        if (day === "Sunday") {
+          multiClientIds = Object.create(null);
           sessions.forEach(function (s) {
-            if (typeof window.portalWeekStripSessionShouldCount === "function" && !window.portalWeekStripSessionShouldCount(s, day, sid)) return;
-            var venue = String(s.venue || "—");
-            var lab = weekServiceCat(s);
-            if (day === "Sunday" && lab === "Aquatic Activities") {
-              var cidAqu = String(s.clientId || "").trim().toLowerCase();
-              if (cidAqu && multiClientIds && multiClientIds[cidAqu]) return;
+            if (weekServiceCat(s) === "Multi-Activity") {
+              var cidM = String(s.clientId || "").trim().toLowerCase();
+              if (cidM) multiClientIds[cidM] = 1;
             }
-            var countKey = typeof window.portalWeekStripSessionCountKey === "function"
-              ? window.portalWeekStripSessionCountKey(s, day, sid)
-              : (lab + "\0" + venue + "\0" + String(s.clientId || "").trim().toLowerCase());
-            if (!countKey) return;
-            if (seenCount[countKey]) return;
-            seenCount[countKey] = true;
-            var key = venue + "\0" + lab;
-            if (!bucket[key]) bucket[key] = { count: 0, venue: venue, serviceLabel: lab };
-            bucket[key].count += 1;
           });
-          if (typeof window.portalWeekStripAddSyntheticCoverCounts === "function") {
-            window.portalWeekStripAddSyntheticCoverCounts(day, sid, bucket, weekServiceCat, seenCount);
+        }
+        sessions.forEach(function (s) {
+          if (typeof window.portalWeekStripSessionShouldCount === "function" && !window.portalWeekStripSessionShouldCount(s, day, sid)) return;
+          var venue = String(s.venue || "—");
+          var lab = weekServiceCat(s);
+          if (day === "Sunday" && lab === "Aquatic Activities") {
+            var cidAqu = String(s.clientId || "").trim().toLowerCase();
+            if (cidAqu && multiClientIds && multiClientIds[cidAqu]) return;
           }
-          var segments = Object.keys(bucket).map(function (k) { return bucket[k]; });
-          if (!segments.length) segments = [{ count: 0, venue: "", serviceLabel: "" }];
-          return { day: day, segments: segments };
+          var countKey = typeof window.portalWeekStripSessionCountKey === "function"
+            ? window.portalWeekStripSessionCountKey(s, day, sid)
+            : (lab + "\0" + venue + "\0" + String(s.clientId || "").trim().toLowerCase());
+          if (!countKey) return;
+          if (seenCount[countKey]) return;
+          seenCount[countKey] = true;
+          var key = venue + "\0" + lab;
+          if (!bucket[key]) bucket[key] = { count: 0, venue: venue, serviceLabel: lab };
+          bucket[key].count += 1;
+        });
+        if (typeof window.portalWeekStripAddSyntheticCoverCounts === "function") {
+          window.portalWeekStripAddSyntheticCoverCounts(day, sid, bucket, weekServiceCat, seenCount);
+        }
+        var segments = Object.keys(bucket).map(function (k) { return bucket[k]; });
+        if (!segments.length) segments = [{ count: 0, venue: "", serviceLabel: "" }];
+        return { day: day, segments: segments };
+      }
+      function buildWeekRows(staffId){
+        var sid = String(staffId || "").trim().toLowerCase();
+        return WEEK_ORDER_MON_SUN.map(function (day) {
+          return buildWeekRowForDay(day, sid);
         });
       }
+      async function buildWeekRowsAsync(staffId){
+        var sid = String(staffId || "").trim().toLowerCase();
+        var out = [];
+        for (var i = 0; i < WEEK_ORDER_MON_SUN.length; i++) {
+          out.push(buildWeekRowForDay(WEEK_ORDER_MON_SUN[i], sid));
+          if (i < WEEK_ORDER_MON_SUN.length - 1 && typeof window.portalYieldToMain === "function") {
+            await window.portalYieldToMain();
+          }
+        }
+        return out;
+      }
       try{ window.buildWeekRows = buildWeekRows; }catch(_){}
+      try{ window.buildWeekRowsAsync = buildWeekRowsAsync; }catch(_){}
 
       function portalLocalCanonicalStaffKey(raw) {
         var k = String(raw || "")

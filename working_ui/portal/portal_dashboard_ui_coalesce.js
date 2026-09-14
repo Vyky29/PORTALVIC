@@ -103,16 +103,26 @@
       if (gen !== heavyRefreshGen) return;
       var batch = heavyRefreshQueue.splice(0, heavyRefreshQueue.length);
       if (!batch.length) return;
-      var kick = function () {
-        for (var i = 0; i < batch.length; i++) {
+  var kick = function () {
+        var i = 0;
+        var step = function () {
+          if (i >= batch.length) return;
           try {
-            batch[i]();
+            batch[i++]();
           } catch (e) {
             try {
               console.warn("[portal] deferred dashboard refresh", e);
             } catch (_) {}
           }
-        }
+          if (i < batch.length) {
+            if (typeof global.portalYieldToMain === "function") {
+              void global.portalYieldToMain().then(step);
+            } else {
+              global.setTimeout(step, 0);
+            }
+          }
+        };
+        step();
       };
       if (typeof global.requestAnimationFrame === "function") {
         global.requestAnimationFrame(function () {

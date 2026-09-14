@@ -3986,14 +3986,24 @@
             try{
               if(reqId !== st.requestId) return;
               if(typeof portalMarkPerf === 'function') portalMarkPerf(panelKey + '-open-start');
+              /* Yield before heavy day walks so the sheet chrome paints first. */
+              if(typeof portalYieldToMain === 'function') await portalYieldToMain();
+              if(reqId !== st.requestId) return;
               if(panelKey === 'tomorrow' && typeof window.__portalSyncNextSessionFromModel === 'function'){
                 window.__portalSyncNextSessionFromModel();
+                if(typeof portalYieldToMain === 'function') await portalYieldToMain();
               }
-              if(panelKey === 'week' && typeof window.buildWeekRows === 'function' && dashboardData){
+              if(panelKey === 'week'){
                 var sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim();
-                if(sid) dashboardData.week = window.buildWeekRows(sid);
+                if(sid && dashboardData){
+                  if(typeof window.buildWeekRowsAsync === 'function'){
+                    dashboardData.week = await window.buildWeekRowsAsync(sid);
+                  }else if(typeof window.buildWeekRows === 'function'){
+                    dashboardData.week = window.buildWeekRows(sid);
+                  }
+                }
+                if(typeof portalYieldToMain === 'function') await portalYieldToMain();
               }
-              await portalYieldToMain();
               if(reqId !== st.requestId) return;
               if(typeof renderLists === 'function') renderLists({ force: true });
               if(typeof renderMiniCounts === 'function') renderMiniCounts();

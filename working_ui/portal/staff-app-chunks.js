@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260914-javier-idle";
+  var VER = "20260914-javier-week";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260911-emmanuel-no-tue",
@@ -32,7 +32,7 @@
 
   var TIER_UI = [
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
-    "/portal/portal_dashboard_ui_coalesce.js?v=20260913-roberto-lead-idle",
+    "/portal/portal_dashboard_ui_coalesce.js?v=20260914-javier-week",
     "/portal/portal_participant_photos.js?v=20260903-chip-photos",
     "/portal/portal_topbar_header.js?v=20260904-michelle-interviews",
     "/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category",
