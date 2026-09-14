@@ -163,7 +163,7 @@
   <script src="/portal/autumn_staff_hours_reference.js?v=20260914-emmanuel-fri-sun"></script>
   <script src="/portal/portal_dc_services_local.js?v=20260914-overview-pin2"></script>
   <script src="/portal/portal_capacity_chain_occupants.js?v=20260914-serine-tue15"></script>
-  <script src="/portal/portal_overview_capacity_chain.js?v=20260914-serine-tue15"></script>
+  <script src="/portal/portal_overview_capacity_chain.js?v=20260914-sched-term-snappy"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260914-staff-self-slice"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
@@ -401,7 +401,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260914-sched-chain"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260914-sched-term-snappy"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260910-general-info"></script>
@@ -4504,22 +4504,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var notes = {};
       if(!adminSpreadsheetAdapterAvailable()) return { sessions: merged, notes: notes };
       var src = window.STAFF_DASHBOARD_SOURCE;
-      var keys = Object.keys(src.staffProfiles || {});
-      for(var i=0;i<keys.length;i++){
-        // The "teflon" profile is the portal guide demo account — skip in admin aggregate
-        // so fictional Demo clients do not inflate real register capacity.
-        if(String(keys[i] || '').trim().toLowerCase() === 'teflon') continue;
-        try{
-          var boot = window.StaffDashboardSpreadsheetAdapter.bootstrap({ source: src, staffId: keys[i] });
-          var sm = boot.sessionsModel || [];
-          for(var j=0;j<sm.length;j++) merged.push(sm[j]);
-          var cn = boot.clientNotesById || {};
-          Object.keys(cn).forEach(function(cid){
-            if(!notes[cid]) notes[cid] = cn[cid];
-          });
-        }catch(err){}
+      /*
+       * Capacity-chain boards already list every seat as dated rows. Bootstrapping
+       * every staffProfiles key against 2000+ rows freezes Schedule ("Wait / Close").
+       */
+      if(src && (src.capacityChainNoCanonicalRemap || src.capacityChainPlacesPhases)){
+        adminAppendSessionsFromRowsAllInstructors(merged, notes, src);
+      }else{
+        var keys = Object.keys(src.staffProfiles || {});
+        for(var i=0;i<keys.length;i++){
+          if(String(keys[i] || '').trim().toLowerCase() === 'teflon') continue;
+          try{
+            var boot = window.StaffDashboardSpreadsheetAdapter.bootstrap({ source: src, staffId: keys[i] });
+            var sm = boot.sessionsModel || [];
+            for(var j=0;j<sm.length;j++) merged.push(sm[j]);
+            var cn = boot.clientNotesById || {};
+            Object.keys(cn).forEach(function(cid){
+              if(!notes[cid]) notes[cid] = cn[cid];
+            });
+          }catch(err){}
+        }
+        adminAppendSessionsFromRowsAllInstructors(merged, notes, src);
       }
-      adminAppendSessionsFromRowsAllInstructors(merged, notes, src);
       var seenMerged = {};
       var dedupedMerged = [];
       for(var mi = 0; mi < merged.length; mi++){
@@ -5634,9 +5640,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!want || !adminSpreadsheetAdapterAvailable()) return [];
       var src = window.STAFF_DASHBOARD_SOURCE;
       var wd = portalWeekdayLongFromIsoDate(iso);
+      var wdLower = String(wd || '').trim().toLowerCase();
       var merged = [];
       var notes = notesById || {};
-      adminAppendSessionsFromRowsAllInstructors(merged, notes, src);
+      /* Only walk rows for this calendar day (capacity chain is term-wide). */
+      var dayRows = [];
+      var allRows = (src && Array.isArray(src.rows)) ? src.rows : [];
+      for(var ri = 0; ri < allRows.length; ri++){
+        var row = allRows[ri];
+        if(!row) continue;
+        var d = String(row.session_date || row.date || '').trim().slice(0, 10);
+        if(d === want){
+          dayRows.push(row);
+          continue;
+        }
+        if(!d && wdLower && String(row.day || '').trim().toLowerCase() === wdLower){
+          dayRows.push(row);
+        }
+      }
+      var slimSrc = Object.assign({}, src, { rows: dayRows });
+      adminAppendSessionsFromRowsAllInstructors(merged, notes, slimSrc);
       var out = [];
       for(var i = 0; i < merged.length; i++){
         var s = merged[i];
@@ -5657,31 +5680,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         slotsForSelectedDate._byIso[want] = [];
         return [];
       }
-      var pack = adminMergeSpreadsheetSessions();
-      var wd = portalWeekdayLongFromIsoDate(iso);
-      sched.slotsById = {};
+      var src = window.STAFF_DASHBOARD_SOURCE;
       var out = [];
-      for(var i=0;i<pack.sessions.length;i++){
-        var s = pack.sessions[i];
-        if(!adminSessionMatchesCalendarIso(s, iso, wd, pack.sessions)) continue;
-        var slot = mapSpreadsheetSessionToSchedSlot(s, iso, pack.notes);
-        try{
-          var O = typeof window !== 'undefined' ? window.__PORTAL_DAYOPS_ROSTER_ASSIGNMENTS__ : null;
-          if(O && O[slot.demoId]){
-            var as = O[slot.demoId];
-            if(String(as.clientDisplay || '').trim()){
-              slot.clientDisplay = String(as.clientDisplay).trim();
-              slot.clientSlug = String(as.clientSlug || '').trim().toLowerCase() || adminRosterSlugify(slot.clientDisplay);
-              slot.rosterSheetLabel = 'Booked';
+      sched.slotsById = {};
+      /* Capacity chain: build the day from dated rows only — never N× staff bootstrap. */
+      if(src && (src.capacityChainNoCanonicalRemap || src.capacityChainPlacesPhases)){
+        out = adminSchedSlotsFromRosterRows(iso, {});
+        for(var fi0 = 0; fi0 < out.length; fi0++) sched.slotsById[out[fi0].demoId] = out[fi0];
+      }else{
+        var pack = adminMergeSpreadsheetSessions();
+        var wd = portalWeekdayLongFromIsoDate(iso);
+        for(var i=0;i<pack.sessions.length;i++){
+          var s = pack.sessions[i];
+          if(!adminSessionMatchesCalendarIso(s, iso, wd, pack.sessions)) continue;
+          var slot = mapSpreadsheetSessionToSchedSlot(s, iso, pack.notes);
+          try{
+            var O = typeof window !== 'undefined' ? window.__PORTAL_DAYOPS_ROSTER_ASSIGNMENTS__ : null;
+            if(O && O[slot.demoId]){
+              var as = O[slot.demoId];
+              if(String(as.clientDisplay || '').trim()){
+                slot.clientDisplay = String(as.clientDisplay).trim();
+                slot.clientSlug = String(as.clientSlug || '').trim().toLowerCase() || adminRosterSlugify(slot.clientDisplay);
+                slot.rosterSheetLabel = 'Booked';
+              }
             }
-          }
-        }catch(_ov){}
-        sched.slotsById[slot.demoId] = slot;
-        out.push(slot);
-      }
-      if(!out.length){
-        out = adminSchedSlotsFromRosterRows(iso, pack.notes);
-        for(var fi = 0; fi < out.length; fi++) sched.slotsById[out[fi].demoId] = out[fi];
+          }catch(_ov){}
+          sched.slotsById[slot.demoId] = slot;
+          out.push(slot);
+        }
+        if(!out.length){
+          out = adminSchedSlotsFromRosterRows(iso, pack.notes);
+          for(var fi = 0; fi < out.length; fi++) sched.slotsById[out[fi].demoId] = out[fi];
+        }
       }
       out = schedDedupeOpenSchedulingSlots(out);
       out.sort(function(a,b){
@@ -15928,9 +15958,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     function portalAdminAfterRosterScriptsLoaded(viewId){
+      var id = String(viewId || '');
       try{
-        if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
-          window.portalAdminRefreshStaffDashboardSource ? window.portalAdminRefreshStaffDashboardSource() : window.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
+        /* Schedule paints via refreshSchedulingModule (week window). Do not expand full term here. */
+        if(id !== 'scheduling'){
+          if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
+            window.portalAdminRefreshStaffDashboardSource ? window.portalAdminRefreshStaffDashboardSource() : window.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
+          }
         }
       }catch(_pr){}
       portalInvalidateAdminSlotsCache();
@@ -15942,6 +15976,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var finish = function(){
         if(String(state.view || '') === String(viewId || '')) portalAdminRefreshRosterDependentViews(viewId);
       };
+      /* Schedule & Covers: day board only — skip MADRE + club portal_roster_rows pull (freezes tab). */
+      if(id === 'scheduling'){
+        finish();
+        return;
+      }
       var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
       if(client && typeof window.portalRefreshPortalRosterRowsFromSupabase === 'function'){
         void window.portalRefreshPortalRosterRowsFromSupabase(client).then(finish).catch(finish);
@@ -17746,13 +17785,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           await window.portalAdminLoadScriptSet('roster');
         }catch(_schedLoad){}
         try{
-          /* Schedule & Covers = full club day board (same capacity chain as Overview). */
+          /* Week window only — full Autumn club expand freezes Schedule & Covers. */
+          var dateElPre = $('schedDate');
+          var isoPre = schedClampIsoToTerm(dateElPre && dateElPre.value ? dateElPre.value : isoDateLocal(new Date()));
+          var weekMon = schedMondayOfWeekIso(isoPre);
+          var weekSun = '';
+          try{
+            var p = String(weekMon || '').split('-');
+            if(p.length === 3){
+              var sunD = new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10) + 6, 12, 0, 0);
+              weekSun = isoDateLocal(sunD);
+            }
+          }catch(_ws){}
           if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
-            window.portalRefreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
+            window.portalRefreshStaffDashboardSourceFromPortal({
+              forSessionsOverview: true,
+              windowFrom: weekMon || undefined,
+              windowThrough: weekSun || undefined
+            });
           }
         }catch(_chain){}
         portalInvalidateAdminSlotsCache();
       }
+      /* Yield so the tab can paint before building the day table. */
+      try{
+        await new Promise(function(r){ setTimeout(r, 0); });
+      }catch(_y){}
       schedEnsureState();
       var dateEl = $('schedDate');
       var iso = schedClampIsoToTerm(dateEl && dateEl.value ? dateEl.value : isoDateLocal(new Date()));

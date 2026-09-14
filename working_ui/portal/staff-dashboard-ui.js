@@ -2900,14 +2900,29 @@
       if(!t || !t.firstDate || !t.lastDate || !staffId) return;
       try{
         if(typeof window.portalEnsureStaffCapacityChainDateWindow === 'function'){
-          const termFrom = String(
+          const viewFrom = String(
             (dashboardData && dashboardData.termDashboardCalendarFrom) || t.termResumeDate || t.firstDate || ''
           ).slice(0, 10);
-          const termTo = String(
+          const viewTo = String(
             (dashboardData && dashboardData.termDashboardCalendarTo) || t.lastDate || ''
           ).slice(0, 10);
-          if(termFrom && termTo){
-            window.portalEnsureStaffCapacityChainDateWindow(termFrom, termTo);
+          if(viewFrom && viewTo){
+            window.portalEnsureStaffCapacityChainDateWindow(viewFrom, viewTo);
+          }
+          /* Widen to full term after first Term paint (idle) — keeps open snappy. */
+          const termFrom = String(t.termResumeDate || t.firstDate || '').slice(0, 10);
+          const termTo = String(t.lastDate || '').slice(0, 10);
+          if(termFrom && termTo && (termFrom < viewFrom || termTo > viewTo)){
+            var widen = function(){
+              try{
+                window.portalEnsureStaffCapacityChainDateWindow(termFrom, termTo);
+              }catch(_w){}
+            };
+            if(typeof requestIdleCallback === 'function'){
+              requestIdleCallback(widen, { timeout: 4000 });
+            }else{
+              setTimeout(widen, 1200);
+            }
           }
         }
       }catch(_win){}
@@ -3111,14 +3126,28 @@
       if(!portalTermSheetIsOpen() && !opts.allowWhenClosed) return;
       try{
         if(typeof window.portalEnsureStaffCapacityChainDateWindow === 'function'){
-          const termFrom = String(
+          const viewFrom = String(
             (dashboardData && dashboardData.termDashboardCalendarFrom) || t.termResumeDate || t.firstDate || ''
           ).slice(0, 10);
-          const termTo = String(
+          const viewTo = String(
             (dashboardData && dashboardData.termDashboardCalendarTo) || t.lastDate || ''
           ).slice(0, 10);
-          if(termFrom && termTo){
-            window.portalEnsureStaffCapacityChainDateWindow(termFrom, termTo);
+          if(viewFrom && viewTo){
+            window.portalEnsureStaffCapacityChainDateWindow(viewFrom, viewTo);
+          }
+          const termFrom = String(t.termResumeDate || t.firstDate || '').slice(0, 10);
+          const termTo = String(t.lastDate || '').slice(0, 10);
+          if(termFrom && termTo && (termFrom < viewFrom || termTo > viewTo)){
+            var widenP = function(){
+              try{
+                window.portalEnsureStaffCapacityChainDateWindow(termFrom, termTo);
+              }catch(_w){}
+            };
+            if(typeof requestIdleCallback === 'function'){
+              requestIdleCallback(widenP, { timeout: 4000 });
+            }else{
+              setTimeout(widenP, 1200);
+            }
           }
         }
       }catch(_win){}

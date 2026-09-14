@@ -969,8 +969,32 @@
         }
         return slim;
       }
-      if (!opt.bypassCache && FULL_CHAIN_CACHE && Array.isArray(FULL_CHAIN_CACHE.rows)) {
+      if (!opt.bypassCache && FULL_CHAIN_CACHE && Array.isArray(FULL_CHAIN_CACHE.rows) && !opt.windowFrom) {
         return FULL_CHAIN_CACHE;
+      }
+      /* Schedule & Covers: optional week window (do not poison full Overview cache). */
+      if (opt.forSessionsOverview && opt.windowFrom && opt.windowThrough) {
+        var schedWin = staffExpandWindowBounds({
+          windowFrom: opt.windowFrom,
+          windowThrough: opt.windowThrough,
+        });
+        var weekSrc = resolveCapacityChainRosterSource(by, {
+          includeDc: true,
+          dateWindow: schedWin,
+        });
+        if (weekSrc) {
+          weekSrc = Object.assign({}, weekSrc, {
+            capacityChainDateWindowFrom: schedWin.from,
+            capacityChainDateWindowThrough: schedWin.through,
+            rosterSourceNote:
+              (weekSrc.rosterSourceNote || "Capacity chain") +
+              " · schedule week " +
+              schedWin.from +
+              ".." +
+              schedWin.through,
+          });
+        }
+        return weekSrc;
       }
       var full = resolveCapacityChainRosterSource(by, { includeDc: true });
       if (full && Array.isArray(full.rows) && full.rows.length) {
