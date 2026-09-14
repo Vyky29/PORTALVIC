@@ -18,23 +18,26 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 121;
+  var SOURCE_VERSION = 122;
 
-  /** Standing snap dates (pre-crash) — Services / staff weekday projection source. */
+  /**
+   * Autumn standing weekday stamps (first full standing week after week-1 DC).
+   * Worker / Overview boards must never snap to pre-Sep history for Sep+ days.
+   */
   var DAY_CENTRE_STANDING_ISO = {
-    monday: "2026-07-13",
-    tuesday: "2026-07-14",
-    wednesday: "2026-07-15",
-    thursday: "2026-07-16",
-    friday: "2026-07-17",
+    monday: "2026-09-07",
+    tuesday: "2026-09-08",
+    wednesday: "2026-09-09",
+    thursday: "2026-09-10",
+    friday: "2026-09-11",
   };
 
   var DAY_CENTRE_STANDING_ISO_SET = {
-    "2026-07-13": 1,
-    "2026-07-14": 1,
-    "2026-07-15": 1,
-    "2026-07-16": 1,
-    "2026-07-17": 1,
+    "2026-09-07": 1,
+    "2026-09-08": 1,
+    "2026-09-09": 1,
+    "2026-09-10": 1,
+    "2026-09-11": 1,
   };
 
   /**
@@ -396,7 +399,8 @@
     monday: [
       { staff: "Roberto", clients: [{ name: "Emanuel", time: "11 to 3" }] },
       { staff: "Luliya", clients: [{ name: "Ikram", time: "11 to 3" }] },
-      { staff: "Youssef", clients: [{ name: "Ikram", time: "11 to 3" }] },
+      /* Timetable Mon DC: Youssef 12.30-3 (not 11-3) — same hours as standing Fadi book window. */
+      { staff: "Youssef", clients: [{ name: "Ikram", time: "12.30 to 3" }] },
       {
         staff: "Victor",
         clients: [
@@ -2799,7 +2803,7 @@
     var d = normIso(row.session_date);
     if (!d) return true;
     if (d >= AUTUMN_DC_REPLACE_FROM && d <= AUTUMN_DC_REPLACE_THROUGH) return true;
-    if (d === "2026-09-14" || d === DAY_CENTRE_STANDING_ISO.monday) return true;
+    if (d === "2026-09-14" || d === "2026-09-07" || d === DAY_CENTRE_STANDING_ISO.monday) return true;
     if (d >= AUTUMN_TERM_FROM_ISO && d <= AUTUMN_TERM_THROUGH_ISO) return true;
     return false;
   }

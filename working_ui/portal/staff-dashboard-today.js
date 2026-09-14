@@ -440,11 +440,15 @@
       return { from: String(from || '').slice(0, 10), through: String(through || '').slice(0, 10) };
     }
     function portalStaffStandingWeekdaySnapArgs(isoYmd){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
       const bounds = portalTermStandingSnapBounds();
       if(portalCalendarIsoUsesSummerDatedRosterOnly(isoYmd)){
         return { floor: bounds.from, through: '' };
       }
-      // Autumn (and any day outside summer dated window): project Services standing only.
+      /* Sep+: only Autumn-dated rows — never search June/July history for snaps. */
+      if(/^\d{4}-\d{2}-\d{2}$/.test(iso) && iso >= '2026-09-01'){
+        return { floor: '2026-09-01', through: '' };
+      }
       return { floor: bounds.from, through: bounds.through };
     }
     function portalTermStaffHasShiftDateMapEntry(staffId){
@@ -594,6 +598,17 @@
       const iso = normaliseIsoDate(isoYmd);
       if(!iso) return true;
       const cid = String(s && s.clientId || '').trim().toLowerCase();
+      const name = String(s && (s.clientName || s.clientDisplay || s.clientId) || '').trim();
+      try{
+        const canon = typeof window !== 'undefined' ? window.PortalRosterCanonical : null;
+        const isFadi = canon && typeof canon.isFadiClientName === 'function'
+          ? (canon.isFadiClientName(name) || canon.isFadiClientName(cid))
+          : /^fadi\b/i.test(name) || /^fadi\b/i.test(cid);
+        if(isFadi && canon && typeof canon.isFadiOffRotaIso === 'function' && canon.isFadiOffRotaIso(iso)){
+          return false;
+        }
+        if(isFadi && iso >= '2026-09-01' && iso < '2026-09-20') return false;
+      }catch(_){}
       const first = portalClientFirstSessionDateIso(cid);
       if(first && iso < first) return false;
       return true;
@@ -606,7 +621,7 @@
       }
       return true;
     }
-    /** Exact Autumn standing template ISO for a weekday (LOCAL board stamp — not summer history). */
+    /** Exact Autumn standing template ISO for a weekday (Sep LOCAL board stamp). */
     function portalAutumnStandingSnapIsoForWeekday(weekdayLong){
       try{
         const PRC = typeof window !== 'undefined' ? window.PortalRosterCanonical : null;
@@ -650,13 +665,25 @@
         : '';
       const summerOnly = portalCalendarIsoUsesSummerDatedRosterOnly(anchorIso);
 
-      // Autumn: only the LOCAL standing template ISO for this weekday (Jul 11–17 stamps).
+      // Autumn: LOCAL standing template ISO for this weekday (Sep stamps), else exact calendar day.
       if(!summerOnly){
         const stamp = portalAutumnStandingSnapIsoForWeekday(w);
-        if(stamp && isos.indexOf(stamp) >= 0) return stamp;
+        if(stamp && stamp >= '2026-09-01' && isos.indexOf(stamp) >= 0) return stamp;
         /* Dated Autumn exception on this calendar day. */
-        if(anchorIso && isos.indexOf(anchorIso) >= 0) return anchorIso;
-        return '';
+        if(anchorIso && anchorIso >= '2026-09-01' && isos.indexOf(anchorIso) >= 0) return anchorIso;
+        /* Any other Autumn-dated row for this weekday (never pre-Sep). */
+        let bestAut = '';
+        let bestDiff = Infinity;
+        isos.forEach(function(ri){
+          if(!ri || ri < '2026-09-01') return;
+          if(anchorIso && String(ri) > anchorIso) return;
+          const p = String(ri).split('-');
+          const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+          if(isNaN(d.getTime())) return;
+          const diff = Math.abs(d.getTime() - anchorMs);
+          if(diff < bestDiff){ bestDiff = diff; bestAut = ri; }
+        });
+        return bestAut;
       }
 
       const bounds = portalTermStandingSnapBounds();
@@ -676,7 +703,7 @@
       });
       return best;
     }
-    /** Autumn Day Centre always snaps to Services standing ISO (13–17 Jul), not "latest" summer week. */
+    /** Autumn Day Centre always snaps to standing ISO (Mon 7–Fri 11 Sep stamps). */
     function portalDayCentreStandingSnapIso(weekdayLong){
       try{
         const PRC = typeof window !== 'undefined' ? window.PortalRosterCanonical : null;
@@ -716,22 +743,16 @@
       const w = String(weekdayLong || '').trim();
       if(rowIso){
         /*
+         * Hard cut: Sep+ worker boards never paint pre-Sep hours/clients
+         * (no June/July/May history projected onto Autumn calendar days).
+         */
+        if(iso >= '2026-09-01' && rowIso < '2026-09-01') return false;
+        /*
          * Sun 6: Hub Multi is dated cover only (John = Emanuel book, Berta Lead).
          * Never project standing Hub Multi onto that day — duplicates both books on Berta.
          */
         if(iso === '2026-09-06' && portalSessionIsSundaySwimfarmHubMulti(s) && rowIso !== iso){
           return false;
-        }
-        /* Autumn Sundays: never invent from summer weeks (pre-Sep). */
-        if(iso >= '2026-09-01' && rowIso && rowIso < '2026-09-01'){
-          const svcS = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
-          const venueS = String((s && s.venue) || '').toLowerCase();
-          const areaS = String((s && (s.rosterArea || s.area || '')) || '').toLowerCase();
-          const sunWorker =
-            (/climb/.test(svcS) && venueS.indexOf('westway') >= 0) ||
-            ((svcS.indexOf('multi') >= 0 || /aquatic|swim/.test(svcS)) &&
-              (!venueS || venueS.indexOf('swimfarm') >= 0));
-          if(sunWorker) return false;
         }
         /* Sun 6 is fully dated — do not project standing 13 Sep onto it. */
         if(iso === '2026-09-06' && rowIso && rowIso !== iso){
@@ -813,12 +834,12 @@
         }
         if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return rowIso === iso;
         if(portalIsoIsAutumnWeek1Dc(iso) && portalSessionIsDayCentreService(s)) return rowIso === iso;
-        /* Fri 11–20 Fadi-away DC: dated board rows, or Jul snap seats that are on that board
-         * (Roberto Emanuel 11–3). Never project Jul Fadi onto this window. */
+        /* Fri 11–20 Fadi-away DC: dated board rows, or Autumn standing snap seats on that board
+         * (Roberto Emanuel 11–3). Never project pre-Sep Fadi onto this window. */
         if(portalIsoIsFadiAbsentDcBoard(iso) && portalSessionIsDayCentreService(s)){
           if(rowIso === iso) return true;
           const dcSnap = portalDayCentreStandingSnapIso(w);
-          if(dcSnap && rowIso === dcSnap && portalFadiAbsentBoardIncludesSession(iso, s)){
+          if(dcSnap && dcSnap >= '2026-09-01' && rowIso === dcSnap && portalFadiAbsentBoardIncludesSession(iso, s)){
             if(portalStaffClientHasDatedSameProgrammeOnIso(iso, s)) return false;
             return true;
           }
@@ -833,10 +854,10 @@
           return true;
         }
         if(portalStaffUsesExactRosterIsoOnDate(iso, sid)) return false;
-        /* Outside summer dated window: Day Centre → Autumn board snap (not June ACAT weeks). */
+        /* Outside June–July dated window: Day Centre → Autumn board snap (Sep stamps only). */
         if(portalSessionIsDayCentreService(s)){
           const dcSnap = portalDayCentreStandingSnapIso(w);
-          if(dcSnap){
+          if(dcSnap && dcSnap >= '2026-09-01'){
             if(rowIso !== dcSnap) return false;
             if(portalStaffClientHasDatedSameProgrammeOnIso(iso, s)) return false;
             return true;
