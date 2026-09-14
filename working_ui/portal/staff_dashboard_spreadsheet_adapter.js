@@ -119,9 +119,13 @@
     const areaFallback =
       name === "manager"
         ? "Hub · Manager"
-        : name === "emanuel" || name === "emmanuel" || name === "ikram" || name === "fadi"
-          ? "Hub Room"
-          : String(areaHint || "").trim() || "Day Centre";
+        : name === "office"
+          ? "Hub · Office"
+          : name === "interview" || name === "interviews"
+            ? "Hub · Interview"
+            : name === "emanuel" || name === "emmanuel" || name === "ikram" || name === "fadi"
+              ? "Hub Room"
+              : String(areaHint || "").trim() || "Day Centre";
     const plainDays = PORTAL_COMBINED_SEGMENTS_PLAIN_DAYS[key];
     if (plainDays && plainDays.indexOf(dayKey) !== -1) {
       return [{ time_slot: timeLabel, area: areaFallback }];
@@ -1023,7 +1027,12 @@
         nameLower === "casa" ||
         nameLower === "home" ||
         String(rosterArea || "").trim().toUpperCase() === "HOME";
+      /* Manager / Office / Interview = duty blocks — never session feedback. */
       const isManagerSlot = nameLower === "manager";
+      const isOfficeSlot = nameLower === "office";
+      const isInterviewSlot = nameLower === "interview" || nameLower === "interviews";
+      const isAdminDutySlot = nameLower === "admin";
+      const isDutySeatSlot = isManagerSlot || isOfficeSlot || isInterviewSlot || isAdminDutySlot;
 
       const selfKey =
         instructorKeys.find((k) => normalizePersonId(k) === wanted) ||
@@ -1150,9 +1159,25 @@
         return;
       }
 
-      if (isHomeSlot || isManagerSlot) {
-        const dutyId = isHomeSlot ? "home" : "manager";
-        let dutyName = isHomeSlot ? "HOME" : "MANAGER";
+      if (isHomeSlot || isDutySeatSlot) {
+        const dutyId = isHomeSlot
+          ? "home"
+          : isOfficeSlot
+            ? "office"
+            : isInterviewSlot
+              ? "interview"
+              : isAdminDutySlot
+                ? "admin"
+                : "manager";
+        let dutyName = isHomeSlot
+          ? "HOME"
+          : isOfficeSlot
+            ? "OFFICE"
+            : isInterviewSlot
+              ? "INTERVIEW"
+              : isAdminDutySlot
+                ? "ADMIN"
+                : "MANAGER";
         if (
           isManagerSlot &&
           typeof window !== "undefined" &&
@@ -1164,7 +1189,13 @@
             ? window.portalOpsAdminDisplay.workerFacingLabel()
             : "ADMIN";
         }
-        const dutyArea = isHomeSlot ? "HOME" : "Hub Room";
+        const dutyArea = isHomeSlot
+          ? "HOME"
+          : isOfficeSlot
+            ? "Hub · Office"
+            : isInterviewSlot
+              ? "Hub · Interview"
+              : "Hub Room";
         sessionsModel.push(
           Object.assign({}, baseSession, {
             clientId: dutyId,

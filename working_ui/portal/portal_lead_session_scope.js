@@ -743,6 +743,8 @@ function portalRobertoDcClientLooksDutyOnly(name) {
     n === "noparticipant" ||
     n === "office" ||
     n === "manager" ||
+    n === "interview" ||
+    n === "interviews" ||
     n === "home" ||
     n === "admin"
   );
@@ -753,15 +755,8 @@ function portalRobertoDcClientIsCancelledOnIso(iso, clientName) {
   const nm = String(clientName || "").trim();
   if (!day || !nm) return true;
   if (/^fadi\b/i.test(nm)) {
-    try {
-      const g = typeof globalThis !== "undefined" ? globalThis : null;
-      const canon = g && g.PortalRosterCanonical ? g.PortalRosterCanonical : null;
-      if (canon && typeof canon.isFadiAbsentDcWindowIso === "function" && canon.isFadiAbsentDcWindowIso(day)) {
-        return true;
-      }
-    } catch (_) {}
-    /* Fallback if canonical not mounted yet — Fadi DC absence until 21 Sep. */
-    if (day >= "2026-09-01" && day < "2026-09-21") return true;
+    /* Off rota until 20 Sep — not a Cancelled DC seat. */
+    return false;
   }
   try {
     const rows =
@@ -967,7 +962,7 @@ export function portalLeadProgrammeWideTodayForStaff(staffId, iso, profile, auth
 export function portalLeadSpreadsheetSessionInScopeForLead(s, iso, leadKey, scopes) {
   if (!s || !iso || !scopes || !scopes.length) return false;
   const cid = normKey(s.clientId);
-  if (!cid || cid === "closed" || cid === "available" || cid === "home" || cid === "manager") {
+  if (!cid || cid === "closed" || cid === "available" || cid === "home" || cid === "manager" || cid === "office" || cid === "interview" || cid === "admin") {
     return false;
   }
   const slot = {

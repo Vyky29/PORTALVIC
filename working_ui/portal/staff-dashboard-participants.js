@@ -74,7 +74,7 @@
       sessionsModel.forEach(s => {
         if(!portalStaffKeysMatch(s.staffId, sid)) return;
         const st = sessionModelStatus(s);
-        if(st === 'Closed' || st === 'Available' || st === 'Home' || st === 'Manager') return;
+        if(st === 'Closed' || st === 'Available' || st === 'Home' || st === 'Manager' || st === 'Admin' || st === 'Office' || st === 'Interview') return;
         pushClient(s.clientId);
       });
       function pushDashboardRow(row){

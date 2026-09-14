@@ -6,13 +6,13 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-  var VER = "20260914-term-open-fast";
+    var VER = "20260914-office-duty-nofb";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260911-emmanuel-no-tue",
     "/portal/term_calendar_dashboard_shared.js?v=20260911-emmanuel-no-tue",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260914-no-eddie-may",
-    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260911-emmanuel-no-tue",
+    "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260914-office-duty-nofb",
     "/portal/portal_staff_feedback_data_loader.js?v=20260910-pwa-off-joelle",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",

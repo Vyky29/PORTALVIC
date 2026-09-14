@@ -346,7 +346,7 @@
             ? String(sessionModelStatus(s) || '').trim()
             : String(s && s.status || '').trim();
           const cid = String(s && s.clientId || '').trim().toLowerCase();
-          if(st === 'Available' || st === 'Closed' || st === 'Home') continue;
+          if(st === 'Available' || st === 'Closed' || st === 'Home' || st === 'Manager' || st === 'Admin' || st === 'Office' || st === 'Interview') continue;
           if(!cid || cid === 'available' || cid === 'closed' || cid === 'home') continue;
           if(flags && flags.cancelled){
             sawCancelled = true;
@@ -2566,8 +2566,12 @@
       if(!s) return '';
       const cid = String(s.clientId || '').trim().toLowerCase();
       const statusLow = String(s.status || '').trim().toLowerCase();
-      if(cid === 'home' || statusLow === 'home') return 'HOME';
-      if(cid === 'manager' || statusLow === 'manager') {
+      const nameBlob = String((s && (s.clientName || s.client || s.name || s.clientDisplay || s.client_name)) || '').trim().toLowerCase();
+      if(cid === 'home' || statusLow === 'home' || nameBlob === 'home' || nameBlob === 'casa') return 'HOME';
+      if(cid === 'office' || statusLow === 'office' || nameBlob === 'office') return 'OFFICE';
+      if(cid === 'interview' || statusLow === 'interview' || nameBlob === 'interview' || nameBlob === 'interviews') return 'INTERVIEW';
+      if(cid === 'admin' || statusLow === 'admin' || nameBlob === 'admin') return 'ADMIN';
+      if(cid === 'manager' || statusLow === 'manager' || nameBlob === 'manager') {
         var sk = '';
         if(
           typeof window !== 'undefined' &&
@@ -2623,6 +2627,9 @@
       const nameBlob = String((s && (s.clientName || s.client || s.name)) || '').trim().toLowerCase();
       if(statusLow === 'closed' || clientIdLow === 'closed') return 'Closed';
       if(statusLow === 'home' || clientIdLow === 'home' || nameBlob === 'home' || nameBlob === 'casa') return 'Home';
+      if(statusLow === 'office' || clientIdLow === 'office' || nameBlob === 'office') return 'Office';
+      if(statusLow === 'interview' || clientIdLow === 'interview' || nameBlob === 'interview' || nameBlob === 'interviews') return 'Interview';
+      if(statusLow === 'admin' || clientIdLow === 'admin' || nameBlob === 'admin') return 'Admin';
       if(statusLow === 'manager' || clientIdLow === 'manager' || nameBlob === 'manager'){
         var skMgr = '';
         if(

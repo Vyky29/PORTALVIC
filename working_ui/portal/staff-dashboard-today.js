@@ -1774,6 +1774,7 @@
       const openedClosed = typeof portalSessionHasSlotOpenOverride === 'function' && portalSessionHasSlotOpenOverride(s, sessionDateIso);
       if(st === 'Available') return false;
       if(st === 'Home' || st === 'Manager') return false;
+      if(st === 'Office' || st === 'Interview' || st === 'Admin') return false;
       if(st === 'Closed' && !openedClosed) return false;
       const cid0 = String(s.clientId || '').trim().toLowerCase();
       if(!cid0 || cid0 === 'available') return false;
@@ -1951,7 +1952,7 @@
         }
         return { feedbackDone: true, incident: false, absent: false, cancelled: false };
       }
-      if(st === 'Home' || st === 'Manager' || st === 'Admin'){
+      if(st === 'Home' || st === 'Manager' || st === 'Admin' || st === 'Office' || st === 'Interview'){
         return { feedbackDone: true, incident: false, absent: false, cancelled: false };
       }
       if(st === 'Closed' && !openedClosed){
@@ -3113,7 +3114,7 @@
           it.clientId || (it.__portalBaseSession && it.__portalBaseSession.clientId),
           it.name
         );
-        if(!cid || cid === 'home' || cid === 'manager') return;
+        if(!cid || cid === 'home' || cid === 'manager' || cid === 'office' || cid === 'interview' || cid === 'admin') return;
         if(!byClient[cid]) byClient[cid] = [];
         byClient[cid].push(idx);
       });
@@ -3341,8 +3342,12 @@
             if(!portalStaffIdsMatchLoose(s.staffId, staffId)) return null;
             const isHomeDuty = dutyLabel === 'HOME';
             const isAdminDuty = !isHomeDuty && String(dutyLabel).toUpperCase() === 'ADMIN';
-            const dutyKind = isHomeDuty ? 'home' : (isAdminDuty ? 'admin' : 'manager');
-            const dutyAreaLabel = isHomeDuty ? 'Home' : 'Day Centre';
+            const isOfficeDuty = !isHomeDuty && !isAdminDuty && String(dutyLabel).toUpperCase() === 'OFFICE';
+            const isInterviewDuty = !isHomeDuty && !isAdminDuty && !isOfficeDuty && String(dutyLabel).toUpperCase() === 'INTERVIEW';
+            const dutyKind = isHomeDuty
+              ? 'home'
+              : (isAdminDuty ? 'admin' : (isOfficeDuty ? 'office' : (isInterviewDuty ? 'interview' : 'manager')));
+            const dutyAreaLabel = isHomeDuty ? 'Home' : (isOfficeDuty ? 'Hub · Office' : (isInterviewDuty ? 'Hub · Interview' : 'Day Centre'));
             return Object.assign({
               time: time,
               kind: dutyKind,
@@ -3357,7 +3362,13 @@
               showSpecialty: false,
               specialtyLabel: '',
               portalDutyFullCard: false,
-              general: isHomeDuty ? 'Working from home.' : (isAdminDuty ? 'Admin on duty.' : 'Manager on duty.'),
+              general: isHomeDuty
+                ? 'Working from home.'
+                : (isAdminDuty
+                  ? 'Admin on duty.'
+                  : (isOfficeDuty
+                    ? 'Office duty.'
+                    : (isInterviewDuty ? 'Interviews.' : 'Manager on duty.'))),
               specialty: '—',
               openSheet: false,
               sessionKey: `${sessionDateKey}|${s.start}|${String(s.clientId || dutyKind).toLowerCase()}`,
@@ -7846,9 +7857,9 @@
       function portalIsRealClientSession(s, sessionDateIsoForOpen){
         var status = (typeof sessionModelStatus === 'function') ? sessionModelStatus(s) : '';
         if(status === 'Available') return false;
-        // HOME / MANAGER / Admin are duty shifts, not participant sessions: they never
+        // HOME / MANAGER / OFFICE / INTERVIEW / Admin are duty shifts, not participant sessions: they never
         // need feedback and must not hold a day "still running" until the shift end time.
-        if(status === 'Home' || status === 'Manager' || status === 'Admin') return false;
+        if(status === 'Home' || status === 'Manager' || status === 'Admin' || status === 'Office' || status === 'Interview') return false;
         if(
           typeof portalRosterNonClientSessionKind === 'function' &&
           portalRosterNonClientSessionKind(s)
