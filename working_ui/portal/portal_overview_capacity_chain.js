@@ -680,13 +680,86 @@
    * LOCAL Overview = Places (AS) + Services (DC phased seats) + Timetable (Bespoke who)
    * + Covers snaps. Does NOT paint from resolveCanonicalRosterRows.
    */
-  function resolveCapacityChainRosterSource(occupantsBySlotId) {
+
+  function occupantsBySlotId(opt) {
+    if (opt && opt.bySlotId) return opt.bySlotId;
+    var P = global.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+    return (P && P.bySlotId) || null;
+  }
+
+  function normStaffTok(raw) {
+    return String(raw || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function instructorMentionsStaff(instructorsRaw, staffKey) {
+    var want = normStaffTok(staffKey);
+    if (!want) return false;
+    return String(instructorsRaw || "")
+      .split(/,|\/|&|\band\b/gi)
+      .some(function (part) {
+        return normStaffTok(part) === want;
+      });
+  }
+
+  /** Keep only seats that name this worker — expand fewer term dates on Staff Today. */
+  function filterOccupantsByStaff(bySlotId, staffId) {
+    var want = normStaffTok(staffId);
+    if (!want || !bySlotId) return bySlotId || {};
+    var out = {};
+    Object.keys(bySlotId).forEach(function (slotId) {
+      var slot = bySlotId[slotId];
+      if (!slot) return;
+      var lines = Array.isArray(slot.seatLines) ? slot.seatLines : [];
+      var keepLines = lines.filter(function (line) {
+        return instructorMentionsStaff(line && line.instructor, want);
+      });
+      if (keepLines.length) {
+        out[slotId] = Object.assign({}, slot, {
+          seatLines: keepLines,
+          instructors: keepLines
+            .map(function (l) {
+              return String(l.instructor || "").trim();
+            })
+            .filter(Boolean),
+        });
+        return;
+      }
+      var inst = slot.instructors || [];
+      if (
+        inst.some(function (name) {
+          return instructorMentionsStaff(name, want);
+        })
+      ) {
+        out[slotId] = slot;
+      }
+    });
+    return out;
+  }
+
+  function occupantsHasDayCentre(bySlotId) {
+    return Object.keys(bySlotId || {}).some(function (id) {
+      var s = bySlotId[id];
+      return s && String(s.serviceId || "").toLowerCase() === "day_centre";
+    });
+  }
+
+  var FULL_CHAIN_CACHE = null;
+  var STAFF_CHAIN_CACHE = Object.create(null);
+
+  function resolveCapacityChainRosterSource(occupantsBySlotId, opt) {
+    opt = opt || {};
     var C = global.PortalRosterCanonical;
     var phases = occupantsPhasesToRosterRows(occupantsBySlotId || {});
     var bespoke = timetableBespokeToRosterRows(occupantsBySlotId || {});
     var dc = [];
+    var wantDc = opt.includeDc !== false && occupantsHasDayCentre(occupantsBySlotId);
     try {
-      if (global.PortalDcServicesLocal) {
+      if (wantDc && global.PortalDcServicesLocal) {
         dc = clipDcRowsToTimetable(occupantsDcToRosterRows(occupantsBySlotId || {}));
       }
     } catch (_dc) {
@@ -709,21 +782,54 @@
     };
   }
 
-
-  function occupantsBySlotId(opt) {
-    if (opt && opt.bySlotId) return opt.bySlotId;
-    var P = global.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
-    return (P && P.bySlotId) || null;
-  }
-
   function resolve(opt) {
+    opt = opt || {};
     var by = occupantsBySlotId(opt);
     if (!by || !Object.keys(by).length) return null;
     if (!global.PORTAL_AUTUMN_STAFF_HOURS) return null;
-    /* DC helper is optional — Places AS / weekend / climb must still paint for Staff Today
-       even if Day Centre seats fail to expand. */
+    var staffId = normStaffTok(opt.staffId || "");
     try {
-      return resolveCapacityChainRosterSource(by);
+      if (staffId) {
+        var canonFn =
+          typeof global.portalCanonicalStaffMatchKey === "function"
+            ? global.portalCanonicalStaffMatchKey
+            : global.PortalStaffMatchKey &&
+              typeof global.PortalStaffMatchKey.canonicalStaffMatchKey === "function"
+            ? global.PortalStaffMatchKey.canonicalStaffMatchKey
+            : null;
+        if (canonFn) staffId = normStaffTok(canonFn(staffId) || staffId);
+      }
+      /* Staff Today: expand only this worker's seats (not the whole club term). */
+      if (staffId && !opt.forSessionsOverview) {
+        if (!opt.bypassCache && STAFF_CHAIN_CACHE[staffId] && Array.isArray(STAFF_CHAIN_CACHE[staffId].rows)) {
+          return STAFF_CHAIN_CACHE[staffId];
+        }
+        var slimBy = filterOccupantsByStaff(by, staffId);
+        var slim = resolveCapacityChainRosterSource(slimBy, {
+          includeDc: occupantsHasDayCentre(slimBy),
+        });
+        if (slim) {
+          slim = Object.assign({}, slim, {
+            capacityChainStaffScoped: true,
+            capacityChainStaffId: staffId,
+            rosterSourceNote:
+              (slim.rosterSourceNote || "Capacity chain") +
+              " · staff-scoped (" +
+              staffId +
+              ")",
+          });
+          STAFF_CHAIN_CACHE[staffId] = slim;
+        }
+        return slim;
+      }
+      if (!opt.bypassCache && FULL_CHAIN_CACHE && Array.isArray(FULL_CHAIN_CACHE.rows)) {
+        return FULL_CHAIN_CACHE;
+      }
+      var full = resolveCapacityChainRosterSource(by, { includeDc: true });
+      if (full && Array.isArray(full.rows) && full.rows.length) {
+        FULL_CHAIN_CACHE = full;
+      }
+      return full;
     } catch (_e) {
       try {
         var phases = occupantsPhasesToRosterRows(by);
@@ -741,9 +847,16 @@
     }
   }
 
+  function clearResolveCache() {
+    FULL_CHAIN_CACHE = null;
+    STAFF_CHAIN_CACHE = Object.create(null);
+  }
+
   global.PortalOverviewCapacityChain = {
     resolve: resolve,
     resolveCapacityChainRosterSource: resolveCapacityChainRosterSource,
     occupantsBySlotId: occupantsBySlotId,
+    filterOccupantsByStaff: filterOccupantsByStaff,
+    clearResolveCache: clearResolveCache,
   };
 })(typeof window !== "undefined" ? window : globalThis);

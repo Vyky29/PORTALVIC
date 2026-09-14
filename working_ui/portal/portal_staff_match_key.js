@@ -122,6 +122,7 @@
   };
 
   global.PortalStaffMatchKey = api;
+  global.portalCanonicalStaffMatchKey = canonicalStaffMatchKey;
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   }

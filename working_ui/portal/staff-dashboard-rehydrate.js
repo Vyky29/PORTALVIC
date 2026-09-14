@@ -328,15 +328,25 @@
           var canonical = portalLocalCanonicalStaffKey(staffKey);
           var profiles = source.staffProfiles && typeof source.staffProfiles === "object" ? source.staffProfiles : {};
           if (!boot.sessionsModel.length && !profiles[canonical] && !profiles[staffKey]) return null;
-          return { staffId: canonical || staffKey, boot: boot };
+          return { staffId: canonical || staffKey, boot: boot, source: source };
         }
         var i;
         var profileOnlyHit = null;
         for (i = 0; i < keys.length; i++) {
           var hit = portalStaffBootstrapHitForKey(keys[i]);
           if (!hit) continue;
-          if (hit.boot.sessionsModel.length) return hit;
+          if (hit.boot.sessionsModel.length) {
+            try {
+              if (hit.source) window.STAFF_DASHBOARD_SOURCE = hit.source;
+            } catch (_) {}
+            return hit;
+          }
           if (!profileOnlyHit) profileOnlyHit = hit;
+        }
+        if (profileOnlyHit && profileOnlyHit.source) {
+          try {
+            window.STAFF_DASHBOARD_SOURCE = profileOnlyHit.source;
+          } catch (_) {}
         }
         return profileOnlyHit;
       }

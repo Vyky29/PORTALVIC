@@ -56,9 +56,19 @@
   }
 
   function normalizeStaffKey(raw) {
-    if (typeof window.portalCanonicalStaffMatchKey === "function") {
-      return String(window.portalCanonicalStaffMatchKey(raw) || "").trim().toLowerCase();
-    }
+    try {
+      if (typeof window.portalCanonicalStaffMatchKey === "function") {
+        return String(window.portalCanonicalStaffMatchKey(raw) || "").trim().toLowerCase();
+      }
+      if (
+        window.PortalStaffMatchKey &&
+        typeof window.PortalStaffMatchKey.canonicalStaffMatchKey === "function"
+      ) {
+        return String(window.PortalStaffMatchKey.canonicalStaffMatchKey(raw) || "")
+          .trim()
+          .toLowerCase();
+      }
+    } catch (_) {}
     return String(raw || "")
       .trim()
       .toLowerCase()
@@ -185,32 +195,45 @@
     try {
       var Chain = window.PortalOverviewCapacityChain;
       if (Chain && typeof Chain.resolve === "function") {
-        var chainSrc = Chain.resolve(opts);
-        if (chainSrc && Array.isArray(chainSrc.rows) && chainSrc.rows.length) {
-          chainSrc = attachBundleMeta(chainSrc);
-          if (forOverview) {
-            pinOverviewCapacitySource(chainSrc);
+        var staffId = forOverview ? "" : resolveLoggedInStaffId(opts);
+        /*
+         * Staff Today must never expand the full-club capacity chain while
+         * identity is unknown — that blocks the main thread (~1s+) and sticks
+         * on "Loading term...". Wait for staffId (auth / bootstrap).
+         */
+        if (!forOverview && !staffId) {
+          var pendingPrev =
+            typeof window !== "undefined" ? window.STAFF_DASHBOARD_SOURCE : null;
+          if (
+            pendingPrev &&
+            pendingPrev.capacityChainStaffScoped &&
+            Array.isArray(pendingPrev.rows) &&
+            pendingPrev.rows.length
+          ) {
+            return pendingPrev;
+          }
+          return {
+            rows: [],
+            capacityChainNoCanonicalRemap: true,
+            localNoCanonicalResolve: true,
+            rosterSourceNote: "Capacity chain · staff (pending identity)",
+          };
+        }
+        var chainSrc = Chain.resolve({
+          forSessionsOverview: forOverview,
+          staffId: staffId || undefined,
+          bypassCache: !!opts.bypassCache,
+        });
+        if (chainSrc && Array.isArray(chainSrc.rows)) {
+          /* Staff-scoped may legitimately be empty (day off / no seats); still attach meta. */
+          if (chainSrc.rows.length || (staffId && chainSrc.capacityChainStaffScoped)) {
+            chainSrc = attachBundleMeta(chainSrc);
+            if (forOverview) {
+              pinOverviewCapacitySource(chainSrc);
+              return chainSrc;
+            }
             return chainSrc;
           }
-          var staffId = resolveLoggedInStaffId(opts);
-          if (staffId) {
-            var slimRows = filterCapacityChainRowsForStaff(chainSrc.rows, staffId);
-            return Object.assign({}, chainSrc, {
-              rows: slimRows,
-              rosterSourceNote:
-                (chainSrc.rosterSourceNote || "Capacity chain") +
-                " · staff-scoped (" +
-                staffId +
-                ")",
-              capacityChainStaffScoped: true,
-              capacityChainStaffId: staffId,
-            });
-          }
-          /* Identity not ready yet — keep full chain briefly; bootstrap re-runs after auth. */
-          return Object.assign({}, chainSrc, {
-            rosterSourceNote:
-              (chainSrc.rosterSourceNote || "Capacity chain") + " · staff (pending identity)",
-          });
         }
       }
       if (typeof console !== "undefined" && console.warn) {
@@ -322,11 +345,12 @@
       })
       .then(function (rows) {
         /* MADRE refresh must not wipe capacity chain (Overview or Staff Today). */
-        refreshStaffDashboardSourceFromPortal(
-          sessionsOverviewSurfaceActive() || window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__
-            ? { forSessionsOverview: true }
-            : {}
-        );
+        if (sessionsOverviewSurfaceActive()) {
+          refreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
+        } else {
+          var sid = resolveLoggedInStaffId({});
+          if (sid) refreshStaffDashboardSourceFromPortal({ staffId: sid });
+        }
         markStaffRosterLiveReady();
         return rows;
       })
@@ -338,9 +362,16 @@
 
   window.portalRefreshPortalRosterRowsFromSupabase = refreshPortalRosterRowsFromSupabase;
 
-  refreshStaffDashboardSourceFromPortal(
-    sessionsOverviewSurfaceActive() ? { forSessionsOverview: true } : {}
-  );
+  /* Overview needs the full pin ASAP; Staff defers so script parse stays snappy. */
+  if (sessionsOverviewSurfaceActive()) {
+    refreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
+  } else {
+    setTimeout(function () {
+      var sid = resolveLoggedInStaffId({});
+      if (sid) refreshStaffDashboardSourceFromPortal({ staffId: sid });
+      else captureBundleMetaOnce();
+    }, 0);
+  }
 
   function bootstrapLiveMadreWhenReady() {
     if (typeof window === "undefined") return;
@@ -357,11 +388,12 @@
         typeof window.PortalMadreFold.loadLiveMadre === "function"
       ) {
         window.PortalMadreFold.loadLiveMadre(client, false).then(function () {
-          refreshStaffDashboardSourceFromPortal(
-            sessionsOverviewSurfaceActive() || window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__
-              ? { forSessionsOverview: true }
-              : {}
-          );
+          if (sessionsOverviewSurfaceActive()) {
+            refreshStaffDashboardSourceFromPortal({ forSessionsOverview: true });
+          } else {
+            var sid = resolveLoggedInStaffId({});
+            if (sid) refreshStaffDashboardSourceFromPortal({ staffId: sid });
+          }
         });
         return;
       }
