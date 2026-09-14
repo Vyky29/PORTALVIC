@@ -928,7 +928,7 @@ async function fetchStandingWeeklyRosterSessions(
     for (const row of data || []) {
       if (!row) continue;
       const clientName = clean(row.client_name, 80);
-      if (!participantIdentityMatches(identityInput, clientName, "")) continue;
+      if (!participantIdentityMatches(identityInput, clientName, clientName)) continue;
       if (/no\s*participant|^closed$|^open$/i.test(clientName)) continue;
       const svc = clean(row.service, 80);
       if (/crash|intensiv/i.test(svc)) continue;

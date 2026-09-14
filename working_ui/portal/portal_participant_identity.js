@@ -42,6 +42,8 @@
     fadi_ab: "fadi",
     cyrus_mahdavi: "cyrus",
     cyrus_ma: "cyrus",
+    adam_pilcher: "adam_p",
+    adam_pilch: "adam_p",
     zaid_alfadhl: "zaid",
     zaid_al: "zaid",
     yossi_sium: "yossi",
