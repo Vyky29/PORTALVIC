@@ -228,15 +228,41 @@
         portalStaffMarkRosterHydrated();
         if(sid === 'teflon' && typeof portalApplyTeflonGuideDemoRoster === 'function') portalApplyTeflonGuideDemoRoster();
         portalApplyClientsInfoToNotes();
-        portalSyncTodaySectionDisplay(sessionsModel);
-        if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
-        dashboardData.week = buildWeekRows(sid);
-        if (typeof window.portalApplyTermCalendarForStaff === "function") window.portalApplyTermCalendarForStaff(sid);
-        if (typeof renderToday === "function") renderToday();
-        if (typeof renderLists === "function") renderLists();
-        if (typeof renderMiniCounts === "function") renderMiniCounts();
-        if (typeof portalDeferTermFeedbackRebuild === "function") portalDeferTermFeedbackRebuild();
-      }
+        /* Never rebuild Week / full Term / next-session inside this timer — that froze
+           every staff PWA (~1–8s Violations on source-updated). Paint Today deferred. */
+        var rebGen = (window.__PORTAL_REBOOTSTRAP_UI_GEN__ = (window.__PORTAL_REBOOTSTRAP_UI_GEN__ || 0) + 1);
+        var paintAfterReboot = function(){
+          if(rebGen !== window.__PORTAL_REBOOTSTRAP_UI_GEN__) return;
+          try{
+            if(typeof portalSyncTodaySectionDisplay === "function") portalSyncTodaySectionDisplay(sessionsModel);
+          }catch(_){}
+          try{
+            var live = typeof portalIsViewingLiveCalendarToday === "function" && portalIsViewingLiveCalendarToday();
+            if(live && typeof window.__portalSyncNextSessionFromModel === "function"){
+              window.__portalSyncNextSessionFromModel();
+            }
+          }catch(_){}
+          try{
+            var weekOpen = !!(document.getElementById("weekSheet") && document.getElementById("weekSheet").classList.contains("open"));
+            if(weekOpen && typeof window.buildWeekRows === "function"){
+              dashboardData.week = window.buildWeekRows(sid);
+            }
+          }catch(_){}
+          if(rebGen !== window.__PORTAL_REBOOTSTRAP_UI_GEN__) return;
+          try{ if(typeof renderToday === "function") renderToday(); }catch(_){}
+          try{ if(typeof renderLists === "function") renderLists(); }catch(_){}
+          try{ if(typeof renderMiniCounts === "function") renderMiniCounts(); }catch(_){}
+          try{
+            if(typeof portalDeferTermFeedbackRebuild === "function") portalDeferTermFeedbackRebuild();
+          }catch(_){}
+          try{
+            if(typeof syncPortalReminderChrome === "function") syncPortalReminderChrome();
+          }catch(_){}
+        };
+        var deferPaint = typeof portalDeferHeavyDashboardRefresh === "function"
+          ? portalDeferHeavyDashboardRefresh
+          : function(fn){ setTimeout(fn, 0); };
+        deferPaint(paintAfterReboot, 0);
       window.portalRebootstrapSessionsForPinnedStaff = portalRebootstrapSessionsForPinnedStaff;
       function portalStaffKeyForRotaFromProfile(p){
         var sess = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
@@ -1207,7 +1233,7 @@
         _portalSourceUpdatedT = setTimeout(function(){
           _portalSourceUpdatedT = 0;
           try{ portalRebootstrapSessionsForPinnedStaff(); }catch(_){}
-        }, 120);
+        }, 280);
       });
       var _portalFeedbackReadyMergeT = 0;
       window.addEventListener("portal:feedback-data-ready", function(){

@@ -2197,14 +2197,23 @@
       return html;
     }
     function syncPortalReminderChrome(){
-      /* Coalesce burst calls (menu open + hydrate + paint) into one pass per frame. */
+      /* Coalesce burst calls; never run the heavy pass inside a click handler. */
       if(typeof window !== 'undefined'){
         if(window.__PORTAL_REMINDER_CHROME_COALESCED__) return;
         window.__PORTAL_REMINDER_CHROME_COALESCED__ = 1;
         var self = syncPortalReminderChrome;
         var run = function(){
           try{ window.__PORTAL_REMINDER_CHROME_COALESCED__ = 0; }catch(_){}
-          self.__portalReminderChromeRun();
+          var kick = function(){
+            try{ self.__portalReminderChromeRun(); }catch(_r){}
+          };
+          if(typeof portalDeferHeavyDashboardRefresh === 'function'){
+            portalDeferHeavyDashboardRefresh(kick, 0);
+          }else if(typeof portalYieldToMain === 'function'){
+            void portalYieldToMain().then(kick);
+          }else{
+            setTimeout(kick, 0);
+          }
         };
         if(typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
         else setTimeout(run, 0);
