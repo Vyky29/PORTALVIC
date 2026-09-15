@@ -3739,6 +3739,15 @@
                 scheduleAdminAdjusted: true
               });
             }
+            const newClientFromClear = typeof portalTryNewClientTodayCardFromOpenSlot === 'function'
+              ? portalTryNewClientTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote)
+              : null;
+            if(newClientFromClear){
+              return Object.assign({}, meta, newClientFromClear, {
+                __portalScheduleOverride: newClientFromClear.__portalScheduleOverride,
+                scheduleAdminAdjusted: true
+              });
+            }
             if(portalSessionWindowOverlapsInstructorCover(s, sessionDateKey, staffId)) return null;
             const c = clientNotesById.available;
             const showSpec = !isBespokeActivity(activity);
@@ -3771,6 +3780,15 @@
             if(makeupFromOpen){
               return Object.assign({}, meta, makeupFromOpen, {
                 __portalScheduleOverride: makeupFromOpen.__portalScheduleOverride,
+                scheduleAdminAdjusted: true
+              });
+            }
+            const newClientFromOpen = typeof portalTryNewClientTodayCardFromOpenSlot === 'function'
+              ? portalTryNewClientTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote)
+              : null;
+            if(newClientFromOpen){
+              return Object.assign({}, meta, newClientFromOpen, {
+                __portalScheduleOverride: newClientFromOpen.__portalScheduleOverride,
                 scheduleAdminAdjusted: true
               });
             }
@@ -3846,7 +3864,17 @@
           const replacedVisual = manualOv === 'REPLACED';
           const isDayReassignReplace = hasReplaceOv && typeof portalOverrideIsDayReassignReplace === 'function'
             && portalOverrideIsDayReassignReplace(ov);
-          const isMakeUpCard = !isTrialOv && !isDayReassignReplace && (hasReplaceOv || replacedVisual);
+          let isNewClientOv = false;
+          try{
+            const Pnc = window.PortalParticipantsSheet;
+            if(hasReplaceOv && Pnc){
+              isNewClientOv = !!(
+                (typeof Pnc.overrideIsFinishBookingNewClient === 'function' && Pnc.overrideIsFinishBookingNewClient(ov))
+                || (typeof Pnc.overrideIsTermNewParticipant === 'function' && Pnc.overrideIsTermNewParticipant(ov))
+              );
+            }
+          }catch(_){}
+          const isMakeUpCard = !isTrialOv && !isDayReassignReplace && !isNewClientOv && (hasReplaceOv || replacedVisual);
           const makeUpPink = isMakeUpCard;
           const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
             && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
@@ -3886,8 +3914,9 @@
             portalTwoToOneSupportLabel: twoToOneLabel,
             portalOverrideMakeUpTag: isMakeUpCard,
             portalOverrideTrialTag: isTrialOv,
-            portalOverrideCardTone: fadiDcCancel ? 'red' : (isMakeUpCard ? 'pink' : (slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : ''))),
-            portalOverrideSymbolText: isTrialOv ? 'Trial' : (isMakeUpCard ? 'Make Up' : ''),
+            portalOverrideNewClientTag: !!isNewClientOv,
+            portalOverrideCardTone: fadiDcCancel ? 'red' : (isMakeUpCard ? 'pink' : (isNewClientOv || slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : ''))),
+            portalOverrideSymbolText: isTrialOv ? 'Trial' : (isNewClientOv ? 'New Client' : (isMakeUpCard ? 'Make Up' : '')),
             portalOverrideHideAdminBadge: false,
             portalOverrideAlertPill: fadiDcCancel ? 'CANCELLED' : (slotWasUpdated ? 'UPDATED' : ''),
             noSessionFeedbackRequired: !!fadiDcCancel,

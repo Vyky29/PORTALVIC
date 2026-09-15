@@ -6067,6 +6067,19 @@
       text-overflow:unset;
       text-align:center;
     }
+    .portal-session-slot-chip--new-client{
+      color:#fff;
+      background:linear-gradient(145deg,#38bdf8,#0284c7);
+      border:1px solid rgba(3,105,161,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 2px 8px rgba(2,132,199,.28);
+      text-transform:none;
+    }
+    .portal-session-slot-chip--new-client > span{
+      white-space:normal;
+      overflow-wrap:anywhere;
+      text-overflow:unset;
+      text-align:center;
+    }
     .portal-session-slot-chip--plain{
       color:#fff;
       background:linear-gradient(145deg,#64748b,#475569);

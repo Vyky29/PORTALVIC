@@ -3815,9 +3815,15 @@
       "Kareena Al hassani": KAREENA_ACTON_TUE_FROM,
       kareena: KAREENA_ACTON_TUE_FROM,
     });
+    var gone = Object.assign({}, base.clientRosterGoneFromDates || {});
+    /* Kareena returned Tue 15 Sep 2026 — never keep Aug15 gone-from on live source. */
+    delete gone.Kareena;
+    delete gone.kareena;
+    delete gone["Kareena Al hassani"];
     return Object.assign({}, base, {
       rows: rows,
       clientRosterStartDates: starts,
+      clientRosterGoneFromDates: gone,
       rosterSourceId: SOURCE_ID,
       rosterSourceVersion: SOURCE_VERSION,
       rosterSourceNote:

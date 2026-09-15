@@ -275,7 +275,6 @@
   },
   "clientRosterGoneFromDates": {
     "Karo": "2026-08-16",
-    "Kareena": "2026-08-16",
     "Shire": "2026-08-16",
     "Joel": "2026-09-01",
     "Joel Hibbert-Nixon": "2026-09-01",

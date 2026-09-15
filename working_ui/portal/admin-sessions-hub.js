@@ -2334,16 +2334,18 @@
   }
 
   function hubSlotShowsUpdatedChip(slot, slotOv) {
-    /* Trial / MakeUp / NEW CLIENT chips win over Updated (slot_update often accompanies trial folds). */
+    /* Trial / MakeUp chips win over Updated. NEW CLIENT may coexist with Updated on first session. */
     if (hubSlotShowsTrialChip(slot, slotOv)) return false;
     if (hubSlotShowsMakeupChip(slot, slotOv)) return false;
-    if (hubSlotShowsNewClientChip(slot, slotOv)) return false;
     /* Never paint Shadowing session_add as Updated (label would wrongly say Shadowing). */
     if (overrideIsShadowingSessionAdd(slotOv)) return false;
     if (slot && (slot.portalShadowingHost || slot.portalShadowingObserver)) return false;
     /* Standing Hub Bespoke: kid 4.30–6 · staff 4.15–6.15 is not an admin update. */
     if (hubSlotIsStandingTinasheStaffBand(slot)) return false;
     if (overrideIsSlotUpdateType(slotOv)) return true;
+    if (hubSlotShowsNewClientChip(slot, slotOv)) {
+      return !!(slot && (slot.portalRosterTimeUpdated || slot.scheduleAdminAdjusted));
+    }
     return !!(slot && slot.portalRosterTimeUpdated);
   }
 
@@ -11057,6 +11059,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       chips.push('<span class="override-chip override--trial">Trial</span>');
     } else if (st.isNewClient) {
       chips.push('<span class="override-chip override--updated">NEW CLIENT</span>');
+      if (st.isUpdated) {
+        chips.push(
+          '<span class="override-chip override--updated">' +
+            esc(st.slotOv && overrideIsSlotUpdateType(st.slotOv) ? hubOverrideLabel(st.slotOv) : "Updated") +
+            "</span>"
+        );
+      }
     } else if (st.isMakeup) {
       chips.push('<span class="override-chip override--replace">MakeUp</span>');
     }

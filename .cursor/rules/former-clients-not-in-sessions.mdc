@@ -20,5 +20,5 @@ Known **OLD** from unpaid Aug 15 2026 release (live from **2026-08-16**): **Karo
 ## Do
 
 - Empty seats = **No participant** (open), matching LOCAL (e.g. Javier Tue Acton 6–6.30).
-- Keep `clientRosterGoneFromDates` + `scrubAug15ReleasedFormerClientRows` / `clientAllowedOnDate`.
+- Keep `clientRosterGoneFromDates` (Karo / Shire only) + `scrubAug15ReleasedFormerClientRows` / `clientAllowedOnDate`. Kareena is CLIENT again from 2026-09-15 — do not list her in gone-from or Services reenrol-blank.
 ---

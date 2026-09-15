@@ -1505,9 +1505,18 @@
       const symNorm = sym.toLowerCase().replace(/\s+/g, ' ').trim();
       const isMakeUpSym = symNorm === 'make up session' || symNorm === 'make up';
       const isTrialSym = symNorm === 'trial';
+      const isNewClientSym = symNorm === 'new client' || symNorm === 'new participant';
+      let isNewClientItem = !!(item.portalOverrideNewClientTag || isNewClientSym);
+      if(!isNewClientItem){
+        try{
+          if(typeof portalTodayRowIsNewClientChip === 'function' && portalTodayRowIsNewClientChip(item)){
+            isNewClientItem = true;
+          }
+        }catch(_){}
+      }
       // Make-up / trial cards carry their own pink/purple identity and must NOT also
       // show the yellow "Updated by admin" chip — that chip is reserved for a plain
-      // move-slot admin change.
+      // move-slot admin change. NEW CLIENT first session may show both New Client + Updated.
       const isMakeUpOrTrialItem = isMakeUpSym || isTrialSym || !!item.portalOverrideMakeUpTag || !!item.portalOverrideTrialTag;
       const chips = [];
       const push = function(html){ if(html) chips.push(html); };
@@ -1537,12 +1546,14 @@
         push(portalPlainSessionSlotChipsHtml(item.portalSessionAddChips, item.portalOverrideCardTone));
       } else if(!!item.portalOverrideTrialTag || isTrialSym){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial/New Participant"><span>Trial/New Participant</span></span>');
+      } else if(isNewClientItem){
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--new-client" aria-label="New Client"><span>New Client</span></span>');
       } else if(isMakeUpSym || !!item.portalOverrideMakeUpTag){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--makeup" aria-label="Make up"><span>Make up</span></span>');
       } else if(pillText && pillNorm !== 'UPDATED'){
         const display = escapeHtml(pillText).replace(/\n/g, ' ');
         push('<span class="portal-session-slot-chip" aria-label="' + display + '"><span>' + display + '</span></span>');
-      } else if(sym && !isMakeUpSym && symNorm !== 'no participant'){
+      } else if(sym && !isMakeUpSym && !isNewClientSym && symNorm !== 'no participant'){
         // "No Participant" open slots show their yellow card + big red name only —
         // the redundant grey chip is suppressed.
         const tx = escapeHtml(sym);
@@ -1558,8 +1569,12 @@
         }
       }
 
-      if(!isMakeUpOrTrialItem && !chips.length && item.scheduleAdminAdjusted && !item.portalOverrideAlertPill && !item.portalOverrideHideAdminBadge && !portalTodayItemIsSpecialSegmentedCard(item)){
-        push(portalSessionUpdatedChipHtml());
+      if(!isMakeUpOrTrialItem && item.scheduleAdminAdjusted && !item.portalOverrideHideAdminBadge && !portalTodayItemIsSpecialSegmentedCard(item)){
+        const alreadyUpdated = chips.some(function(h){ return String(h || '').indexOf('portal-session-slot-chip--updated') >= 0; });
+        const pillBlocksUpdated = !!(item.portalOverrideAlertPill && pillNorm !== 'UPDATED');
+        if(!alreadyUpdated && (isNewClientItem || !chips.length || pillNorm === 'UPDATED') && !pillBlocksUpdated){
+          push(portalSessionUpdatedChipHtml());
+        }
       }
       return chips.join('');
     }
@@ -2072,6 +2087,32 @@
       if(!makeupOv) return null;
       return portalBuildMakeupTodayCardFromOverride(s, makeupOv, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote);
     }
+    /** Finish-booking / NEW CLIENT replace anchored on an open seat. */
+    function portalOpenSlotNewClientOverrideForSession(s, sessionDateIso){
+      const iso = normaliseIsoDate(sessionDateIso);
+      if(!iso || !s) return null;
+      const all = portalScheduleOverrideRowsForSessionIso(iso).filter(function(r){
+        if(String(r.status || 'active') !== 'active') return false;
+        if(String(r.override_type || '').trim() !== 'client_replace_in_slot') return false;
+        if(!portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id)) return false;
+        const Psheet = window.PortalParticipantsSheet;
+        const isNc = !!(Psheet && (
+          (typeof Psheet.overrideIsFinishBookingNewClient === 'function' && Psheet.overrideIsFinishBookingNewClient(r))
+          || (typeof Psheet.overrideIsTermNewParticipant === 'function' && Psheet.overrideIsTermNewParticipant(r))
+        ));
+        if(!isNc) return false;
+        if(portalLoggedInStaffReassignedOffSlotForRow(r)) return false;
+        return portalScheduleOverrideMatchesSessionWindow(r, s, iso);
+      });
+      all.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+      return all[0] || null;
+    }
+    function portalTryNewClientTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote){
+      const ncOv = portalOpenSlotNewClientOverrideForSession(s, sessionDateKey);
+      if(!ncOv) return null;
+      return portalBuildMakeupTodayCardFromOverride(s, ncOv, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote);
+    }
+    try{ window.portalTryNewClientTodayCardFromOpenSlot = portalTryNewClientTodayCardFromOpenSlot; }catch(_){}
     function portalHmFromDbTime(t){
       const m = String(t || '').match(/(\d{1,2}):(\d{2})/);
       if(!m) return '';
@@ -3937,8 +3978,21 @@
         if(String(r.status || 'active') !== 'active') continue;
         if(String(r.override_type || '').trim() !== 'client_replace_in_slot') continue;
         if(!portalStaffKeysMatch(r.anchor_staff_id, sid)) continue;
-        if(!portalRosterClientIdsMatch(r.anchor_client_id, s.clientId)) continue;
         if(!portalScheduleOverrideMatchesSessionWindow(r, s, iso)) continue;
+        const anchorMatch = portalRosterClientIdsMatch(r.anchor_client_id, s.clientId);
+        let openSeatNewClientMatch = false;
+        if(!anchorMatch && portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id)){
+          const P = window.PortalParticipantsSheet;
+          const isNc = !!(P && (
+            (typeof P.overrideIsFinishBookingNewClient === 'function' && P.overrideIsFinishBookingNewClient(r))
+            || (typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(r))
+          ));
+          if(isNc){
+            const repId = portalOverrideReplacementClientId(r.payload);
+            openSeatNewClientMatch = !!(repId && portalRosterClientIdsMatch(repId, s.clientId));
+          }
+        }
+        if(!anchorMatch && !openSeatNewClientMatch) continue;
         if(!best || new Date(r.created_at || 0) > new Date(best.created_at || 0)) best = r;
       }
       return best;
@@ -4243,10 +4297,12 @@
           return Object.assign({}, it, {
             portalOverrideMakeUpTag: false,
             portalOverrideTrialTag: false,
-            portalOverrideCardTone: it.portalOverrideCardTone === 'pink' ? '' : it.portalOverrideCardTone,
-            portalOverrideSymbolText: '',
+            portalOverrideNewClientTag: true,
+            portalOverrideCardTone: it.portalOverrideCardTone === 'pink' ? 'blue' : (it.portalOverrideCardTone || 'blue'),
+            portalOverrideSymbolText: 'New Client',
             portalOverrideAlertPill: String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'MAKE UP' ? '' : it.portalOverrideAlertPill,
             scheduleAdminAdjusted: true,
+            portalOverrideHideAdminBadge: false,
             __portalScheduleOverride: ov
           });
         }
@@ -4428,10 +4484,14 @@
       const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effClientId);
       const rowTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
       const isTrial = portalOverrideIsTrial(ov);
-      const makeUpPink = !isTrial && !isSessionEndedForFeedback({ sessionEndTs: rowTs.sessionEndTs, sessionKey });
+      const PsheetNc = window.PortalParticipantsSheet;
+      const isNewClient = !!(PsheetNc && (
+        (typeof PsheetNc.overrideIsFinishBookingNewClient === 'function' && PsheetNc.overrideIsFinishBookingNewClient(ov))
+        || (typeof PsheetNc.overrideIsTermNewParticipant === 'function' && PsheetNc.overrideIsTermNewParticipant(ov))
+      ));
       const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
         && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
-      const isMakeUpCard = !isTrial;
+      const isMakeUpCard = !isTrial && !isNewClient;
       return {
         time,
         kind: 'client',
@@ -4444,17 +4504,20 @@
         showPoolSymbol,
         showSpecialty: showSpec,
         specialtyLabel: specialtyInfoTitle(activity),
-        general: clientGeneralBodyForMakeupSession(anchorNotes, c, s, activity, anchorDayWord, supportHidePoolNote),
+        general: isNewClient
+          ? clientGeneralBodyFromNotes(c, s)
+          : clientGeneralBodyForMakeupSession(anchorNotes, c, s, activity, anchorDayWord, supportHidePoolNote),
         specialty: showSpec ? pickSpecialtyBody(c, activity) : '',
         openSheet: true,
         sessionKey,
         sessionStartTs: rowTs.sessionStartTs,
         sessionEndTs: rowTs.sessionEndTs,
         scheduleAdminAdjusted: true,
-        portalOverrideMakeUpTag: !isTrial,
+        portalOverrideMakeUpTag: isMakeUpCard,
         portalOverrideTrialTag: isTrial,
-        portalOverrideCardTone: isMakeUpCard ? 'pink' : (slotWasUpdated ? 'yellow' : (isTrial ? 'trial' : '')),
-        portalOverrideSymbolText: isTrial ? 'Trial' : (isMakeUpCard ? 'Make Up' : ''),
+        portalOverrideNewClientTag: !!isNewClient,
+        portalOverrideCardTone: isMakeUpCard ? 'pink' : (isNewClient || slotWasUpdated ? 'blue' : (isTrial ? 'trial' : '')),
+        portalOverrideSymbolText: isTrial ? 'Trial' : (isNewClient ? 'New Client' : (isMakeUpCard ? 'Make Up' : '')),
         portalOverrideHideAdminBadge: false,
         portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
         portalRosterTimeUpdated: !!slotWasUpdated,
