@@ -246,6 +246,8 @@
     var kind = String((line && line.kind) || "").toLowerCase();
     var raw = line && line.client;
     if (kind === "open" || raw == null || raw === "") return "No participant";
+    /* Office hold seats (e.g. Elia Tue/Thu Climb) — CLOSED for Overview/feedback. */
+    if (kind === "closed") return "CLOSED";
     var text = String(raw).trim();
     if (!text || /^no participant$/i.test(text)) return "No participant";
     if (kind === "trial" || /HOLD BY TRIAL/i.test(text) || /HOLD BY TRIAL/i.test(String(line.label || ""))) {

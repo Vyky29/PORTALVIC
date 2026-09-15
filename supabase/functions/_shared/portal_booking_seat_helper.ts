@@ -218,6 +218,12 @@ function clientKind(clientName: string): "open" | "booked" | "skip" {
   ) {
     return "skip";
   }
+  /* Blocked office seats — count as taken (Fully booked), not Places. */
+  if (up === "HOLD WAITLIST" || up.replace(/\s+/g, "") === "HOLDWAITLIST") {
+    return "booked";
+  }
+  /* Elia = office hold on Tue/Thu Westway Climb (Andres / Angel) — Fully booked. */
+  if (up === "ELIA" || up.startsWith("ELIA ")) return "booked";
   if (
     up === "NO PARTICIPANT" ||
     up === "NOPARTICIPANT" ||
@@ -489,6 +495,67 @@ function foldMultiActivityOfferSlots(slots: OfferSlot[]): OfferSlot[] {
 }
 
 /**
+ * Tue/Thu Westway Climb 4–6: office hold (Elia) with Andres / Angel.
+ * Always Fully booked on the public offer — not real Places / no parent book.
+ */
+function ensureWeekdayClimbEliaOfficeHoldFullyBooked(slots: OfferSlot[]): OfferSlot[] {
+  const want: Array<{ day: string; from: number; to: number; staff: string }> = [
+    { day: "Tuesday", from: 16 * 60, to: 17 * 60, staff: "ANDRES" },
+    { day: "Tuesday", from: 17 * 60, to: 18 * 60, staff: "ANDRES" },
+    { day: "Thursday", from: 16 * 60, to: 17 * 60, staff: "ANGEL" },
+    { day: "Thursday", from: 17 * 60, to: 18 * 60, staff: "ANGEL" },
+  ];
+
+  function midOf(s: OfferSlot): number {
+    return slotMidMinutes(s);
+  }
+
+  const out = slots.slice();
+  for (const w of want) {
+    const hit = out.find(
+      (s) =>
+        s.serviceId === "climbing" &&
+        s.day === w.day &&
+        /westway/i.test(s.venue) &&
+        midOf(s) >= w.from &&
+        midOf(s) < w.to,
+    );
+    if (hit) {
+      const cap = Math.max(1, Number(hit.capacity) || 1);
+      hit.openSeats = 0;
+      hit.taken = cap;
+      hit.openInstructors = [];
+      hit.bookedNames = ["Elia"];
+      hit.instructors = [w.staff];
+      continue;
+    }
+    const sortTime = `${String(Math.floor(w.from / 60)).padStart(2, "0")}:${String(w.from % 60).padStart(2, "0")}`;
+    const endH = Math.floor(w.to / 60);
+    const endM = w.to % 60;
+    const timeLabel = `${format12(w.from)} – ${format12(w.to)}`;
+    out.push({
+      id: slotId("climbing", "Westway", w.day, sortTime, timeLabel),
+      serviceId: "climbing",
+      venue: "Westway",
+      day: w.day,
+      timeLabel,
+      sortTime,
+      capacity: 1,
+      taken: 1,
+      openSeats: 0,
+      referenceDate: "2026-09-15",
+      instructors: [w.staff],
+      openInstructors: [],
+      bookedKeys: ["elia"],
+      bookedNames: ["Elia"],
+    });
+    void endH;
+    void endM;
+  }
+  return out;
+}
+
+/**
  * Do not force-open Sunday 3–4. Alex’s late band stays office-gated until earlier
  * Alex hours (12–1 and 2–3) are filled — see gateAlexClimbSundayThreeFour.
  */
@@ -571,12 +638,13 @@ const CRASH_TEMPLATE_SKIP_DATES: Set<string> = (() => {
 
 /**
  * Autumn 26/27 public weekly offer may only read:
- * - MADRE standing authoring week Mon–Fri 2026-07-13…17, or
+ * - MADRE standing weekend Sat–Sun 2026-07-11…12 (SwimFarm Sunday aquatic, etc.),
+ * - MADRE standing weekday Mon–Fri 2026-07-13…17, or
  * - live Autumn calendar dates from Sep 2026.
  * Earlier June/July summer leftover weeks (e.g. Wed SwimFarm midday pool) must
  * never appear as bookable Places.
  */
-const AUTUMN_OFFER_STANDING_FROM = "2026-07-13";
+const AUTUMN_OFFER_STANDING_FROM = "2026-07-11";
 const AUTUMN_OFFER_STANDING_TO = "2026-07-17";
 const AUTUMN_OFFER_LIVE_FROM = "2026-09-01";
 
@@ -758,6 +826,7 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
   let folded = foldMultiActivityOfferSlots(slots);
   folded = ensureClimbingSundayOpenBand(folded);
   folded = gateAlexClimbSundayThreeFour(folded);
+  folded = ensureWeekdayClimbEliaOfficeHoldFullyBooked(folded);
   /* Day Centre + Bespoke are office-arranged only — never expose MADRE capacity as bookable slots. */
   folded = folded.filter((s) => s.serviceId !== "day_centre" && s.serviceId !== "bespoke");
   /* Defence in depth: Wed Multi stays off the public offer. */

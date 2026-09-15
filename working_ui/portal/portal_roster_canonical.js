@@ -698,8 +698,8 @@
    * No Autumn Term 2026 standing sessions (LOCAL has no columns). Summer leftovers
    * must not project onto Sep+ boards. Angel CAN cover Climbing (e.g. Sun 20 Carlos).
    */
-  var AUTUMN_NO_SESSION_STAFF_KEYS = ["angel", "giuseppe"];
-  var AUTUMN_NO_SESSION_INSTRUCTOR_RE = /\b(angel|giuseppe)\b/i;
+  var AUTUMN_NO_SESSION_STAFF_KEYS = ["angel", "giuseppe", "andres"];
+  var AUTUMN_NO_SESSION_INSTRUCTOR_RE = /\b(angel|giuseppe|andres|andr[eé]s)\b/i;
 
   function isAutumnNoSessionStaffKey(staffKey) {
     var id = String(staffKey || "")
@@ -2651,15 +2651,15 @@
 
   /**
    * Autumn after-school Climbing @ Westway (Tue / Thu 4–6).
-   * Office holds (Elia label) so seats stay unbookable — not real CLIENT sessions.
-   * Alex / Carlos real climbing books are Sundays only; holds must not owe feedback.
+   * Office holds (Elia label) — fully booked on Booking Portal, not real CLIENT sessions.
+   * Instructors: Andres (Tue) / Angel (Thu). No feedback / alerts until office opens them.
    * Expanded onto every Autumn Tue/Thu (no summer projection).
    */
   var AUTUMN_WEEKDAY_CLIMBING_BOARD = [
-    { day: "Tuesday", staff: "ALEX", name: "Elia", time: "4 to 5", closed: true, session_date: "2026-07-14" },
-    { day: "Tuesday", staff: "ALEX", name: "Elia", time: "5 to 6", closed: true, session_date: "2026-07-14" },
-    { day: "Thursday", staff: "CARLOS", name: "Elia", time: "4 to 5", closed: true, session_date: "2026-07-16" },
-    { day: "Thursday", staff: "CARLOS", name: "Elia", time: "5 to 6", closed: true, session_date: "2026-07-16" },
+    { day: "Tuesday", staff: "ANDRES", name: "Elia", time: "4 to 5", closed: true },
+    { day: "Tuesday", staff: "ANDRES", name: "Elia", time: "5 to 6", closed: true },
+    { day: "Thursday", staff: "ANGEL", name: "Elia", time: "4 to 5", closed: true },
+    { day: "Thursday", staff: "ANGEL", name: "Elia", time: "5 to 6", closed: true },
   ];
 
   function isClimbingService(service) {
@@ -2770,8 +2770,12 @@
   }
 
   function autumnWeekdayClimbingStandingRows() {
+    var tueIso = DAY_CENTRE_STANDING_ISO.tuesday;
+    var thuIso = DAY_CENTRE_STANDING_ISO.thursday;
     return AUTUMN_WEEKDAY_CLIMBING_BOARD.map(function (slot) {
+      var dk = normalizeDowKey(slot.day);
       return {
+        /* CLOSED = no feedback; Places/Booking still label Elia via closed + name. */
         client_name: slot.closed ? "CLOSED" : slot.name,
         day: slot.day,
         instructors: slot.staff,
@@ -2779,7 +2783,8 @@
         area: "Wall",
         time_slot: slot.time,
         venue: "Westway",
-        session_date: slot.session_date,
+        session_date: dk === "thursday" ? thuIso : tueIso,
+        office_hold_label: slot.closed ? slot.name : "",
       };
     });
   }

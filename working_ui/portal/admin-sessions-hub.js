@@ -732,7 +732,7 @@
     return map;
   }
 
-  /** HOLD / waitlist placeholder seats never owe session feedback. */
+  /** HOLD / waitlist / Elia office-hold seats never owe session feedback. */
   function slotIsHoldWaitlistNoFeedback(name) {
     var low = clean(name).toLowerCase();
     if (!low) return false;
@@ -741,6 +741,8 @@
     }
     if (low === "waitlist" || low === "waiting list" || low === "waiting") return true;
     if (/^hold\b/.test(low) && /wait/.test(low)) return true;
+    /* Westway climb office hold label (Tue/Thu Andres/Angel 4–6). */
+    if (low === "elia" || low === "elia · closed" || /^elia\b/.test(low)) return true;
     return false;
   }
 
@@ -9884,6 +9886,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var isCancelled = hub.slotHasCancellation(slot);
       if (isOpenRosterSlot(slot.client_name)) {
         counts.open++;
+        continue;
+      }
+      if (rosterSlotKind(slot.client_name) === "closed") {
         continue;
       }
       if (slotIsHoldWaitlistNoFeedback(slot.client_name)) {
