@@ -80,6 +80,54 @@ function rosterSource() {
   }
 }
 
+/**
+ * Team on shift columns need the full club day — Staff Today keeps a
+ * capacityChainStaffScoped source (only the logged-in worker's seats), which
+ * left teammate columns blank (chips from Timetable, schedules empty).
+ */
+function rosterSourceForLeadTeamBoard(iso) {
+  const day = String(iso || "")
+    .trim()
+    .slice(0, 10);
+  try {
+    const Chain =
+      typeof window !== "undefined" ? window.PortalOverviewCapacityChain : null;
+    if (Chain && typeof Chain.resolve === "function") {
+      const opt = { forSessionsOverview: true };
+      if (/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+        opt.windowFrom = day;
+        opt.windowThrough = day;
+      }
+      const full = Chain.resolve(opt);
+      if (full && Array.isArray(full.rows) && full.rows.length) {
+        const base = rosterSource();
+        if (base && base.staffProfiles && !full.staffProfiles) {
+          return Object.assign({}, full, {
+            staffProfiles: base.staffProfiles,
+            staffPhotosBaseUrl: base.staffPhotosBaseUrl,
+            staffPhotoExtension: base.staffPhotoExtension,
+          });
+        }
+        return full;
+      }
+    }
+  } catch (_) {}
+  try {
+    if (
+      typeof window !== "undefined" &&
+      typeof window.portalResolveStaffDashboardSource === "function"
+    ) {
+      const overview = window.portalResolveStaffDashboardSource({
+        forSessionsOverview: true,
+      });
+      if (overview && Array.isArray(overview.rows) && overview.rows.length) {
+        if (!overview.capacityChainStaffScoped) return overview;
+      }
+    }
+  } catch (_2) {}
+  return rosterSource();
+}
+
 /** Sunday Multi standing remaps only (date covers parked while LOCAL = MADRE start). */
 function resolveInstructorsForSessionDate(instructorsRaw, sessionDate, source, meta) {
   let out = String(instructorsRaw || "").trim();
@@ -1561,16 +1609,19 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
   if (!team) return null;
   const leadKey = ctx && ctx.leadKey ? normKey(ctx.leadKey) : "";
   if (!team.members.length && !leadKey) return null;
-  const src = rosterSource();
+  const src = rosterSourceForLeadTeamBoard(iso);
   const rows = src && Array.isArray(src.rows) ? src.rows : [];
   const dayWord = weekdayFromIso(iso);
   const byStaff = Object.create(null);
+  /* Ops viewers are leadKey "ops" but roster rows use javi / victor / raul. */
+  const viewerStaffKey =
+    leadKey === "ops" ? opsViewerPersonKey(ctx) || leadKey : leadKey;
 
   team.members.forEach(function (m) {
     byStaff[normKey(m.key)] = [];
   });
-  // Viewing programme lead (e.g. Michelle) — always a column, even with no clients.
-  if (leadKey && !byStaff[leadKey]) byStaff[leadKey] = [];
+  // Viewing programme lead / ops person — always a column, even with no clients.
+  if (viewerStaffKey && !byStaff[viewerStaffKey]) byStaff[viewerStaffKey] = [];
 
   rows.forEach(function (row) {
     if (!rosterRowMatchesIso(row, iso)) return;
@@ -1642,9 +1693,12 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
 
   let members = team.members.filter(function (m) {
     const k = normKey(m.key);
+    if (viewerStaffKey && k === viewerStaffKey) return false;
     if (leadKey && k === leadKey) return false;
     /* Sunday MA: Berta stays as Leader column even with no clients. */
     if (k === "berta" && dayWord === "Sunday") return true;
+    /* Ops: keep Timetable peers even if a row failed to resolve — show blank not drop. */
+    if (leadKey === "ops") return true;
     return (byStaff[k] || []).length > 0;
   }).map(function (m) {
     if (normKey(m.key) === "berta" && dayWord === "Sunday") {
@@ -1653,10 +1707,10 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
     return m;
   });
 
-  if (leadKey) {
+  if (viewerStaffKey) {
     members.unshift({
-      key: leadKey,
-      name: staffDisplayName(leadKey),
+      key: viewerStaffKey,
+      name: staffDisplayName(viewerStaffKey),
       chipRole: "lead",
       isViewerLead: true,
     });
@@ -1690,7 +1744,7 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
     programmeLabel: team.programmeLabel || "",
     members: members,
     byStaff: byStaff,
-    viewerLeadKey: leadKey,
+    viewerLeadKey: viewerStaffKey || leadKey,
   };
 }
 
