@@ -590,7 +590,28 @@
         Number(preview.sessionCount) ||
         (Array.isArray(preview.participants) && preview.participants.length)
       ));
-      const noAutumn = standingNoAutumn && !hasNext;
+      let coverDaysAhead = 0;
+      try{
+        if(standingNoAutumn && typeof portalStaffInstructorCoverCalendarIsoKeys === 'function'){
+          const fromIso = String(
+            (typeof dashboardData !== 'undefined' && dashboardData && dashboardData.termDashboardCalendarFrom)
+              || '2026-09-01'
+          ).slice(0, 10);
+          const toIso = String(
+            (typeof dashboardData !== 'undefined' && dashboardData && dashboardData.termDashboardCalendarTo)
+              || '2026-12-31'
+          ).slice(0, 10);
+          const todayIso = (typeof portalLiveCalendarIsoYmd === 'function' && portalLiveCalendarIsoYmd())
+            || (typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(new Date()) : '')
+            || fromIso;
+          coverDaysAhead = (portalStaffInstructorCoverCalendarIsoKeys(rosterId, todayIso, toIso) || [])
+            .filter(function(iso){ return String(iso || '').slice(0, 10) >= String(todayIso).slice(0, 10); })
+            .length;
+        }
+      }catch(_cov){}
+      /* Only say "no sessions this term" when there is no standing book AND no cover days left. */
+      const noAutumn = standingNoAutumn && !hasNext && coverDaysAhead < 1;
+      const coverOnlyTerm = standingNoAutumn && !hasNext && coverDaysAhead > 0;
       const offRequested = mode === 'off_time_requested';
       let html = '<div class="today-day-panel' + (hasNext ? ' today-day-panel--has-next' : ' today-day-panel--solo') + (offRequested ? ' today-day-panel--off-requested' : '') + (mode === 'shift' ? ' today-day-panel--shift' : '') + '" role="status">';
       html += '<div class="today-day-panel__off">';
@@ -604,6 +625,11 @@
         html += '<div class="today-day-panel__off-copy">';
         html += '<p class="today-day-panel__off-title">No sessions today</p>';
         html += '<p class="today-day-panel__off-sub">Your next session is below</p></div></div>';
+      }else if(coverOnlyTerm){
+        html += '<span class="today-day-panel__off-icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>';
+        html += '<div class="today-day-panel__off-copy">';
+        html += '<p class="today-day-panel__off-title">No sessions today</p>';
+        html += '<p class="today-day-panel__off-sub">Open Term to see your cover days</p></div></div>';
       }else if(mode === 'shift' && shiftMeta){
         html += '<div class="today-day-panel__off-copy">';
         html += '<p class="today-day-panel__off-title">Your shift</p>';
@@ -1016,7 +1042,8 @@
           ? portalTodayDayOffPanelSignature({
             preview: preview && !loading && panelMode !== 'sync' ? preview : null,
             loading: loading,
-            mode: panelMode
+            mode: panelMode,
+            staffId: sid
           })
           : '';
         if(dayOffSig && grid.getAttribute('data-day-off-sig') === dayOffSig && grid.querySelector('.today-day-panel')){

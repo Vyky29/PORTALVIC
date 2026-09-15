@@ -179,7 +179,32 @@
       });
       previewSig = parts.join(";");
     }
-    return (mode ? "mode:" + mode + "|" : "") + previewSig;
+    var coverSig = "";
+    try {
+      var sid = String(opts.staffId || "").trim().toLowerCase();
+      if (
+        sid &&
+        typeof global.portalStaffHasNoAutumnTermSessions === "function" &&
+        global.portalStaffHasNoAutumnTermSessions(sid) &&
+        typeof global.portalStaffInstructorCoverCalendarIsoKeys === "function"
+      ) {
+        var fromIso = "2026-09-01";
+        var toIso = "2026-12-31";
+        try {
+          if (typeof dashboardData !== "undefined" && dashboardData) {
+            if (dashboardData.termDashboardCalendarFrom) {
+              fromIso = String(dashboardData.termDashboardCalendarFrom).slice(0, 10);
+            }
+            if (dashboardData.termDashboardCalendarTo) {
+              toIso = String(dashboardData.termDashboardCalendarTo).slice(0, 10);
+            }
+          }
+        } catch (_d) {}
+        var covers = global.portalStaffInstructorCoverCalendarIsoKeys(sid, fromIso, toIso) || [];
+        coverSig = "|covers:" + covers.join(",");
+      }
+    } catch (_c) {}
+    return (mode ? "mode:" + mode + "|" : "") + previewSig + coverSig;
   };
 
   global.portalTomorrowListSignature = function portalTomorrowListSignature(rows) {

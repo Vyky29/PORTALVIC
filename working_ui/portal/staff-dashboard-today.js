@@ -2427,6 +2427,7 @@
         }, {
           staffId: coverKey,
           clientId: coverCid,
+          day: dw,
           __portalScheduleOverride: ov
         });
         if(base) synth.__portalBaseSession = base;
@@ -8084,10 +8085,13 @@
            already inject instructor_reassign covers (e.g. Angel → Carlos Sun 20). */
         var start = new Date(fromNow.getFullYear(), fromNow.getMonth(), fromNow.getDate());
         var todayIso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(start) : '';
+        var overridesReady = !!(typeof window !== 'undefined' && window.__PORTAL_SCHEDULE_OVERRIDES_HYDRATED__);
         try{
           var hit = window.__PORTAL_NEXT_SESSION_CAL_CACHE__;
-          if(hit && hit.id === id && hit.todayIso === todayIso && hit.model === model){
-            return hit.info;
+          if(hit && hit.id === id && hit.todayIso === todayIso && hit.model === model
+            && hit.overridesReady === overridesReady){
+            /* Never keep a null miss from before cover overrides hydrated. */
+            if(hit.info || overridesReady) return hit.info;
           }
         }catch(_){}
         var viewFrom = '';
@@ -8109,7 +8113,7 @@
         // whose tomorrow is off (or whose tomorrow was fully reassigned to a cover)
         // should see the participants of their actual next session (e.g. Tuesday).
         var info = null;
-        for(var i = 1; i <= 30; i++){
+        for(var i = 1; i <= 60; i++){
           var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
           var wname = d.toLocaleDateString('en-GB', { weekday: 'long' });
           var iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(d) : '';
@@ -8121,8 +8125,35 @@
           }
           if(iso && typeof portalTermDayIsOffForStaffOnIso === 'function' && portalTermDayIsOffForStaffOnIso(iso, id)) continue;
         }
+        /* Cover-only book (Angel): Term paints cover ISOs even when candidate inject missed —
+           still open Next Session on the soonest cover day. */
+        if(!info && typeof portalStaffHasNoAutumnTermSessions === 'function'
+          && portalStaffHasNoAutumnTermSessions(id)
+          && typeof portalStaffInstructorCoverCalendarIsoKeys === 'function'){
+          var coverIsos = portalStaffInstructorCoverCalendarIsoKeys(id, todayIso || viewFrom, viewTo) || [];
+          for(var ci = 0; ci < coverIsos.length; ci++){
+            var cIso = String(coverIsos[ci] || '').slice(0, 10);
+            if(!cIso || (todayIso && cIso < todayIso)) continue;
+            if(todayIso && cIso === todayIso) continue;
+            var cParts = cIso.split('-');
+            if(cParts.length !== 3) continue;
+            var cDate = new Date(Number(cParts[0]), Number(cParts[1]) - 1, Number(cParts[2]), 12, 0, 0);
+            if(!Number.isFinite(cDate.getTime())) continue;
+            info = {
+              date: cDate,
+              weekdayName: cDate.toLocaleDateString('en-GB', { weekday: 'long' })
+            };
+            break;
+          }
+        }
         try{
-          window.__PORTAL_NEXT_SESSION_CAL_CACHE__ = { id: id, todayIso: todayIso, model: model, info: info };
+          window.__PORTAL_NEXT_SESSION_CAL_CACHE__ = {
+            id: id,
+            todayIso: todayIso,
+            model: model,
+            overridesReady: overridesReady,
+            info: info
+          };
         }catch(_){}
         return info;
       }
