@@ -95,10 +95,13 @@ export async function portalPublishEmploymentContract(supabase, authUserId, opts
 
   if (annErr) throw new Error(annErr.message || "Contract saved but dashboard notice failed.");
 
-  await supabase
+  const { error: linkErr } = await supabase
     .from("employment_contracts")
     .update({ announcement_id: ann.id })
     .eq("id", contract.id);
+  if (linkErr) {
+    console.warn("[hr-contract-publish] announcement_id link failed", linkErr.message || linkErr);
+  }
 
   const signUrl =
     (typeof location !== "undefined" ? location.origin + location.pathname.replace(/[^/]+$/, "") : "") +
