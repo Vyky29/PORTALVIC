@@ -6,14 +6,14 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-    var VER = "20260915-new-participant-chip";
+    var VER = "20260915-2to1-shared";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260914-raul-fri18-off",
     "/portal/term_calendar_dashboard_shared.js?v=20260914-raul-fri18-off",
     "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260914-no-eddie-may",
     "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260914-office-duty-nofb",
-    "/portal/portal_staff_feedback_data_loader.js?v=20260910-pwa-off-joelle",
+    "/portal/portal_staff_feedback_data_loader.js?v=20260915-2to1-shared",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
       "/portal/portal_roster_canonical.js?v=20260915-bismark-berta-sun20",
@@ -23,7 +23,7 @@
     "/portal/clients_info_embed.js?v=20260910-joelle-406",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
     "/portal/portal_participants_sheet.js?v=20260909-mohamed-new-client",
-    "/portal/portal_staff_lead_aquatic_slots.js?v=20260914-dc-peer-clear",
+    "/portal/portal_staff_lead_aquatic_slots.js?v=20260915-2to1-shared",
     "/portal/portal_participant_identity.js?v=20260712-rayyan-f",
     "/portal/portal_participant_catalog.js?v=20260606-next-dedupe",
     "/portal/staff_roster_resolve.js?v=20260911-emmanuel-no-tue",

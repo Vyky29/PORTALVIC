@@ -699,6 +699,12 @@
             });
             if(bespokePeer) return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
+          if(typeof portalAquaticSessionIsTwoToOneShared === 'function'
+            && portalAquaticSessionIsTwoToOneShared(s, iso)
+            && typeof bridge.anySubmittedCoversRosterSession === 'function'
+            && bridge.anySubmittedCoversRosterSession(iso, s, notes)){
+            return portalReviewFlagsForResolvedSession(iso, sid, s);
+          }
           const src = window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
           if(src && Array.isArray(src.rows)){
             for(let si = 0; si < src.rows.length; si++){

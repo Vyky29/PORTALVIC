@@ -323,11 +323,12 @@
     try {
       if (typeof global.portalTwoToOneSupportLabelForSession === "function") {
         var lab = global.portalTwoToOneSupportLabelForSession(s, s.staffId, s.clientId);
-        if (lab) {
-          var labelledStart =
-            canonicalHmToken((s && s.start) || "") || labelClockStartHm((s && s.time) || "");
-          return aquaticTwoToOneStaffCountOnSlot(iso, s.clientId || s.client, labelledStart, day) >= 2;
-        }
+        /*
+         * Standing 2:1 pairs (Joelle Thu Acton Aurora+Simon): either instructor's
+         * feedback completes both. Trust the pair label even when dated overrides
+         * leave only one roster row on that clock (half-cancel / seat clear).
+         */
+        if (lab) return true;
       }
     } catch (_) {}
     var start =

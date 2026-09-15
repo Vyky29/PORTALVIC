@@ -1164,6 +1164,21 @@
     if (submittedSundaySwimfarmSiblingCovers(iso, staffId, s, clientNotesById)) {
       return true;
     }
+    /* Aquatic 2:1 (Joelle Thu Acton): either instructor's submit clears both cards. */
+    if (
+      typeof window !== "undefined" &&
+      typeof window.portalAquaticSessionIsTwoToOneShared === "function" &&
+      window.portalAquaticSessionIsTwoToOneShared(s, iso)
+    ) {
+      return submittedRowsForDateAll(iso).some(function (r) {
+        return (
+          !submittedRowMarksAbsent(r) &&
+          submittedRowIsAquatic(r) &&
+          submittedRowCoversRosterSession(r, s, clientNotesById) &&
+          submittedRowMatchesRosterServiceUnit(r, s)
+        );
+      });
+    }
     return submittedRowsForStaffDate(iso, staffId).some(function (r) {
       return (
         !submittedRowMarksAbsent(r) &&
@@ -1174,7 +1189,13 @@
   }
 
   function anySubmittedCoversRosterSession(iso, s, clientNotesById) {
-    return staffSubmittedCoversRosterSession(iso, "", s, clientNotesById);
+    return submittedRowsForDateAll(iso).some(function (r) {
+      return (
+        !submittedRowMarksAbsent(r) &&
+        submittedRowCoversRosterSession(r, s, clientNotesById) &&
+        submittedRowMatchesRosterServiceUnit(r, s)
+      );
+    });
   }
 
   function anyAbsentSubmittedCoversRosterSession(iso, s, clientNotesById) {
