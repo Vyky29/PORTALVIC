@@ -1083,8 +1083,8 @@
       "</div>" +
       '<div class="pp-hub-reenrol__actions">' +
       '<a class="pp-btn pp-btn--primary" href="' +
-      esc(bookingPortalHref({ intent: "trial" })) +
-      '" rel="noopener noreferrer">Book a trial</a>' +
+      esc(bookingPortalHref({})) +
+      '" rel="noopener noreferrer">Booking Portal</a>' +
       '<a class="pp-btn pp-btn--ghost" href="' +
       esc(OFFICE_CONTACT_MAILTO) +
       '">Contact the office</a>' +
@@ -2099,8 +2099,8 @@
       "</div>" +
       '<div class="pp-hub-slot-live__actions">' +
       '<a class="pp-btn pp-btn--primary" href="' +
-      esc(bookingPortalHref({ intent: "trial" })) +
-      '" rel="noopener noreferrer">Book a trial</a>' +
+      esc(bookingPortalHref({})) +
+      '" rel="noopener noreferrer">Booking Portal</a>' +
       '<a class="pp-btn pp-btn--ghost" href="' +
       esc(OFFICE_CONTACT_MAILTO) +
       '">Contact the office</a>' +

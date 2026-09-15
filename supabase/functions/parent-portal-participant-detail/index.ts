@@ -2098,8 +2098,16 @@ Deno.serve(async (req) => {
     }
   }
 
-  const inClassFlag = participant.in_class ?? contactRow?.in_class ?? null;
-  const isFormerClient = inClassFlag === false;
+  /* True wins if either table was restored (office often updates contacts first). */
+  const inClassFlag =
+    participant.in_class === true || contactRow?.in_class === true
+      ? true
+      : participant.in_class === false || contactRow?.in_class === false
+        ? false
+        : participant.in_class ?? contactRow?.in_class ?? null;
+  /* Office term place pending pay is CLIENT, not OLD — even if an in_class flag lagged. */
+  let isFormerClient = inClassFlag === false;
+  if (isFormerClient && hasOfficeTermInvoice) isFormerClient = false;
   const hasSessionFeedback =
     sessionsOut.length > 0 ||
     rawFeedback.length > 0 ||
