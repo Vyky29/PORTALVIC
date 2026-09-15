@@ -3549,8 +3549,15 @@
       var covers = [];
       data.team.forEach(function (m) {
         if (!m) return;
+        var covDate = String(m.cover_session_date || "").slice(0, 10);
+        /* Prefer stamped cover day (MA may list covers without role=cover). */
+        if (covDate && covDate === iso) {
+          var n0 = String(m.name || "").trim();
+          if (n0) covers.push(n0);
+          return;
+        }
         if (String(m.role || "").toLowerCase() !== "cover") return;
-        if (String(m.cover_session_date || "").slice(0, 10) !== iso) return;
+        if (covDate && covDate !== iso) return;
         var n = String(m.name || "").trim();
         if (n) covers.push(n);
       });
@@ -7414,10 +7421,28 @@
     );
   }
 
-  function teamMemberCardHtml(m) {
+  function participantHasMultiActivity(data) {
+    var detail =
+      data && data.general && Array.isArray(data.general.services_detail)
+        ? data.general.services_detail
+        : [];
+    for (var i = 0; i < detail.length; i++) {
+      var lab = String((detail[i] && (detail[i].label || detail[i].service)) || "");
+      if (/multi/i.test(lab)) return true;
+    }
+    var services = data && data.general && Array.isArray(data.general.services) ? data.general.services : [];
+    for (var j = 0; j < services.length; j++) {
+      if (/multi/i.test(String(services[j] || ""))) return true;
+    }
+    return false;
+  }
+
+  function teamMemberCardHtml(m, quietMa) {
     m = m || {};
-    /* Badge only from effective assignment (API role=cover) — never from message heuristics. */
-    var isCover = String(m.role || "").toLowerCase() === "cover" || !!m.is_cover;
+    /* Badge only from effective assignment (API role=cover) — never from message heuristics.
+     * Multi-Activity: no "Instructor change" badge (no WA reminder; card shows day staff). */
+    var isCover =
+      !quietMa && (String(m.role || "").toLowerCase() === "cover" || !!m.is_cover);
     var badgeHtml = isCover
       ? '<span class="pp-team-card__badge" title="Covering after an instructor change">Instructor change</span>'
       : "";
@@ -7456,6 +7481,7 @@
   function renderTeam(host, data, opts) {
     var p = (data && data.participant) || {};
     var pName = p.display_name || "Participant";
+    var quietMa = participantHasMultiActivity(data);
     setParticipantPageTitle(pName + "\u2019s Team");
 
     function paint(members, changeNote) {
@@ -7468,22 +7494,34 @@
               ? " pp-team-grid--2"
               : " pp-team-grid--1";
       var bodyHtml = members.length
-        ? '<div class="pp-team-grid' + colClass + '">' + members.map(teamMemberCardHtml).join("") + "</div>"
+        ? '<div class="pp-team-grid' +
+          colClass +
+          '">' +
+          members
+            .map(function (m) {
+              return teamMemberCardHtml(m, quietMa);
+            })
+            .join("") +
+          "</div>"
         : '<p class="pp-muted">No instructors listed yet for this term. They appear here once places and session staff are confirmed.</p>';
-      var noteHtml = changeNote
-        ? '<div class="pp-team-change-note" role="status">' +
-          "<strong>Recent instructor change</strong>" +
-          '<p class="pp-muted" style="margin:4px 0 0">' +
-          esc(changeNote) +
-          "</p></div>"
-        : "";
+      var noteHtml =
+        !quietMa && changeNote
+          ? '<div class="pp-team-change-note" role="status">' +
+            "<strong>Recent instructor change</strong>" +
+            '<p class="pp-muted" style="margin:4px 0 0">' +
+            esc(changeNote) +
+            "</p></div>"
+          : "";
+      var intro = quietMa
+        ? '<p class="pp-muted pp-team-intro">Instructors for this term\'s Multi-Activity sessions. Everyone who may deliver your child\'s Hub sessions is listed here. On each day card you only see who is with them that day.</p>'
+        : '<p class="pp-muted pp-team-intro">Instructors for this term\'s sessions. If someone is covering after a change, they appear here with an <strong>Instructor change</strong> badge — show this to your child so they know who to expect.</p>';
       host.innerHTML =
         '<div class="pp-pax-shell" data-pp-view="team">' +
         '<div class="pp-pax-sticky-hero pp-team-backbar">' +
         hubBackButtonHtml(data) +
         "</div>" +
         '<div class="pp-pax-subview-body">' +
-        '<p class="pp-muted pp-team-intro">Instructors for this term\'s sessions. If someone is covering after a change, they appear here with an <strong>Instructor change</strong> badge — show this to your child so they know who to expect.</p>' +
+        intro +
         noteHtml +
         bodyHtml +
         "</div></div>";
@@ -7505,6 +7543,7 @@
       });
     }
 
+    if (quietMa) return;
     if (!opts || typeof opts.loadMessages !== "function") return;
     void opts
       .loadMessages({ markRead: false })

@@ -110,6 +110,17 @@ function parseSections(raw: unknown): Set<DetailSection> {
 /** Parent Team: this academic term only (not prior summer / prior years). */
 const TEAM_TERM_START_ISO = PARENT_SESSION_TERM_START_ISO;
 
+/**
+ * Sunday Hub Multi Lead — people who may cover Berta across Autumn cover Sundays.
+ * Shown in Team for MA Hub kids without an "Instructor change" badge / WA reminder.
+ */
+const SUNDAY_HUB_COVER_POOL: Array<{ id: string; name: string }> = [
+  { id: "bismark", name: "Bismark" },
+  { id: "victor", name: "Victor" },
+  { id: "raul", name: "Raul" },
+  { id: "javi", name: "Javi" },
+];
+
 /** Roster staff_id from a name or id — never invents cover_needed. */
 function staffIdFromRaw(raw: string): string {
   const id = canonicalStaffMatchKey(raw);
@@ -314,6 +325,32 @@ async function buildParentTeam(
 
   await loadStandingInstructorsForTeam(supabase, identityInput, lookupNames, map);
 
+  let hasMultiActivity = false;
+  try {
+    const slugs = [
+      ...new Set(
+        expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput))
+          .map((s) => slugifyParticipantKey(s))
+          .filter(Boolean),
+      ),
+    ];
+    if (slugs.length) {
+      const { data: slRows } = await supabase
+        .from("portal_participant_service_lines")
+        .select("sessions")
+        .in("client_key", slugs)
+        .limit(12);
+      for (const row of slRows || []) {
+        for (const slot of Array.isArray(row.sessions) ? row.sessions : []) {
+          const svc = clean((slot as Record<string, unknown>)?.service, 80);
+          if (/multi/i.test(svc)) hasMultiActivity = true;
+        }
+      }
+    }
+  } catch (_e) {
+    /* ignore */
+  }
+
   for (const row of feedbackRows || []) {
     const date = isoFromAny(row.session_date);
     if (!date || date < TEAM_TERM_START_ISO) continue;
@@ -365,14 +402,26 @@ async function buildParentTeam(
           clean(pl.covering_staff_name, 120) ||
           clean(pl.to_staff_name, 120) ||
           coverId.charAt(0).toUpperCase() + coverId.slice(1);
-        /* Badge only for today/future covers — past covers are history, not "Instructor change". */
         const activeCover = !!sessionDate && sessionDate >= todayIso;
-        upsertTeamMember(map, coverId, {
-          name,
-          role: activeCover ? "cover" : "instructor",
-          force_standing: !activeCover,
-          ...(activeCover ? { cover_session_date: sessionDate } : {}),
-        });
+        /*
+         * MA: list covers in Team as normal instructors (no "Instructor change" badge /
+         * WA reminder). Still stamp cover_session_date so the hub card shows who is on that day.
+         */
+        if (hasMultiActivity) {
+          upsertTeamMember(map, coverId, {
+            name,
+            role: "instructor",
+            force_standing: true,
+            ...(activeCover ? { cover_session_date: sessionDate } : {}),
+          });
+        } else {
+          upsertTeamMember(map, coverId, {
+            name,
+            role: activeCover ? "cover" : "instructor",
+            force_standing: !activeCover,
+            ...(activeCover ? { cover_session_date: sessionDate } : {}),
+          });
+        }
       } else if (ot === "client_replace_in_slot") {
         /* Child placed into an instructor's slot (trial / makeup) — standing instructor for that seat. */
         const staffSlug = staffIdFromRaw(clean(ov.anchor_staff_id, 80));
@@ -382,6 +431,21 @@ async function buildParentTeam(
           staffSlug.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
         upsertTeamMember(map, staffSlug, {
           name: nice || staffSlug,
+          role: "instructor",
+          force_standing: true,
+        });
+      }
+    }
+  }
+
+  /* Hub Multi: always offer the Sunday Lead cover pool in Team (who could be on the day). */
+  if (hasMultiActivity) {
+    const hubKeys = new Set(["berta", "bismark", "victor", "raul", "javi", "emmanuel", "godsway"]);
+    const touchesHub = [...map.keys()].some((k) => hubKeys.has(String(k || "").toLowerCase()));
+    if (touchesHub) {
+      for (const c of SUNDAY_HUB_COVER_POOL) {
+        upsertTeamMember(map, c.id, {
+          name: c.name,
           role: "instructor",
           force_standing: true,
         });
