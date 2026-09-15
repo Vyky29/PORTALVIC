@@ -827,9 +827,10 @@
   }
 
   var _pingLast = { surface: "", at: 0 };
+  var _pingDisabled = false;
   function pingActivity(surface, contactId, detail) {
     var s = String(surface || "").trim().toLowerCase();
-    if (!s || !state.session.token) return Promise.resolve();
+    if (!s || !state.session.token || _pingDisabled) return Promise.resolve();
     var now = Date.now();
     if (_pingLast.surface === s && now - _pingLast.at < 20000) return Promise.resolve();
     _pingLast = { surface: s, at: now };
@@ -846,9 +847,14 @@
         contact_id: contactId || state.participant.contactId || null,
         detail: detail || null,
       }),
-    }).catch(function () {
-      /* presence ping is best-effort */
-    });
+    })
+      .then(function (res) {
+        /* Office presence only — stop hammering if session header is rejected. */
+        if (res && res.status === 401) _pingDisabled = true;
+      })
+      .catch(function () {
+        /* presence ping is best-effort */
+      });
   }
 
   function saveSession() {
