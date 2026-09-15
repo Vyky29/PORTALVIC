@@ -31,7 +31,10 @@ const ADMIN_ORIGIN = String(
   process.env.PORTAL_ADMIN_ORIGIN || "https://portalvic.vercel.app",
 ).replace(/\/$/, "");
 const FAMILY_ORIGIN = String(
-  process.env.PORTAL_FAMILY_ORIGIN || process.env.CLUBSENSATIONAL_FAMILY_ORIGIN || "https://family.clubsensational.org",
+  process.env.PORTAL_FAMILY_ORIGIN || process.env.CLUBSENSATIONAL_FAMILY_ORIGIN || "https://www.clubsensational.org",
+).replace(/\/$/, "");
+const BOOKING_PORTAL_URL = String(
+  process.env.PORTAL_BOOKING_PORTAL_URL || `${FAMILY_ORIGIN}/bookingportal`,
 ).replace(/\/$/, "");
 
 const EXCLUDE_FILES = new Set([
@@ -108,6 +111,7 @@ function writeStaffAppConfig(destDir) {
   global.PORTAL_PRODUCT_NAME = "clubSENsational Staff";
   global.PORTAL_CANONICAL_ORIGIN = global.PORTAL_CANONICAL_ORIGIN || "${STAFF_ORIGIN}";
   global.PORTAL_FAMILY_ORIGIN = global.PORTAL_FAMILY_ORIGIN || "${FAMILY_ORIGIN}";
+  global.PORTAL_BOOKING_PORTAL_URL = global.PORTAL_BOOKING_PORTAL_URL || "${BOOKING_PORTAL_URL}";
   global.portalFamilyPortalUrl = function (path) {
     path = String(path || "").replace(/^\\//, "");
     var base = String(global.PORTAL_FAMILY_ORIGIN || "${FAMILY_ORIGIN}").replace(/\\/$/, "");

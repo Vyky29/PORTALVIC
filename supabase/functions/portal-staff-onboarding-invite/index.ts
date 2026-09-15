@@ -12,20 +12,19 @@ import {
 } from "../_shared/portal_parent_messaging.ts";
 
 /**
- * Staff onboarding lives on PORTALVIC (login + onboarding_portal.html).
- * Do NOT use PORTAL_PUBLIC_ORIGIN — that is often the family site
- * (www.clubsensational.org) and sends new hires to the wrong login.
+ * Staff login + onboarding hub = clubsensational-staff (not family site, not admin portalvic).
+ * Do NOT use PORTAL_PUBLIC_ORIGIN — that is www.clubsensational.org for parents/booking.
  */
 function staffOnboardingOrigin(): string {
   const fromEnv = (
     Deno.env.get("PORTAL_STAFF_ONBOARDING_ORIGIN") ||
-    Deno.env.get("PORTALVIC_PUBLIC_ORIGIN") ||
+    Deno.env.get("CLUBSENSATIONAL_STAFF_ORIGIN") ||
     ""
   )
     .trim()
     .replace(/\/$/, "");
   if (fromEnv) return fromEnv;
-  return "https://portalvic.vercel.app";
+  return "https://clubsensational-staff.vercel.app";
 }
 
 function randomPassword(): string {

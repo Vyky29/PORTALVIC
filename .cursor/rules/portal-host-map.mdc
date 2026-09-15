@@ -1,0 +1,28 @@
+---
+description: Canonical public hosts for staff, admin, parent, and booking
+alwaysApply: true
+---
+
+# Portal host map (PORTALVIC)
+
+Use these origins when minting links, emails, WhatsApp, redirects, or env defaults. Do not send staff to the family site or parents to the staff app.
+
+| Surface | Origin / URL |
+|---------|----------------|
+| **Staff** (login, dashboard, onboarding hub, timesheet, staff flows) | `https://clubsensational-staff.vercel.app` |
+| **Admin / CEO / office** | `https://portalvic.vercel.app` |
+| **Parent portal** | `https://www.clubsensational.org/parent` |
+| **Booking portal** | `https://www.clubsensational.org/bookingportal` |
+
+## Do not confuse
+
+- `PORTAL_PUBLIC_ORIGIN` / family site (`www.clubsensational.org`) is for **parents and booking**, not staff login or onboarding invites.
+- Staff onboarding invite emails must use **clubsensational-staff** (`login.html` + `onboarding_portal.html`), never `www.clubsensational.org` or portalvic for the hire’s day-to-day login.
+- Admin deep links (admin_dashboard, ceo_dashboard, office) stay on **portalvic**; the staff app may redirect those paths there.
+
+## When unsure
+
+- New hire / Support Worker / instructor email → staff host
+- Sessions Overview / HR / payments admin → portalvic
+- Parent hub / finish-booking / invoices for families → clubsensational.org `/parent`
+- Places / booking offer for families → clubsensational.org `/bookingportal`

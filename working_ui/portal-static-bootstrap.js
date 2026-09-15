@@ -19,12 +19,17 @@
     window.PORTAL_SHARED_JS_BASE = "/portal-shared-js";
   }
 
-  /** Canonical Portal host — induction/My documents 404 on www.clubsensational.org. */
+  /** Admin / CEO / office host. */
   window.PORTAL_CANONICAL_ORIGIN =
     window.PORTAL_CANONICAL_ORIGIN || "https://portalvic.vercel.app";
+  /** Staff app (login, dashboard, onboarding). */
+  window.CLUBSENSATIONAL_STAFF_ORIGIN =
+    window.CLUBSENSATIONAL_STAFF_ORIGIN || "https://clubsensational-staff.vercel.app";
   /** Family portal (parents) — public club site (not the staff app host). */
   window.PORTAL_FAMILY_ORIGIN =
     window.PORTAL_FAMILY_ORIGIN || "https://www.clubsensational.org";
+  window.PORTAL_BOOKING_PORTAL_URL =
+    window.PORTAL_BOOKING_PORTAL_URL || "https://www.clubsensational.org/bookingportal";
   window.portalFamilyPortalUrl = function portalFamilyPortalUrl(path) {
     path = String(path || "").replace(/^\//, "");
     if (path === "parents") path = "parent";
