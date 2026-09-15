@@ -155,12 +155,26 @@ Deno.serve(async (req) => {
       for (const f of data || []) {
         if (!f?.name || f.name.endsWith("/")) continue;
         const low = f.name.toLowerCase();
-        let docType = "certificate";
-        if (folder === "passport") docType = "passport";
-        else if (folder === "checklist") docType = "checklist";
-        else if (folder === "first_aid" || low.startsWith("firstaid-")) {
+        let docType: string = "certificate";
+        if (low.includes("safeguarding") || low.includes("nspcc")) {
+          docType = "safeguarding";
+        } else if (
+          folder === "first_aid" ||
+          low.startsWith("firstaid-") ||
+          /first[_-]?aid/.test(low)
+        ) {
           docType = "firstaid";
-        } else if (low.includes("safeguarding")) docType = "safeguarding";
+        } else if (folder === "checklist" || low.includes("checklist")) {
+          docType = "checklist";
+        } else if (
+          folder === "passport" ||
+          low.includes("passport") ||
+          /\bdbs\b/.test(low)
+        ) {
+          docType = "passport";
+        } else if (folder === "certificate") {
+          docType = "certificate";
+        }
         uploads.push({
           doc_type: docType,
           name: f.name,

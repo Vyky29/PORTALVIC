@@ -54,7 +54,8 @@
     { key: 'checklist', label: 'Checklists' },
     { key: 'passport', label: 'Passports' },
     { key: 'certificate', label: 'Certificates' },
-    { key: 'firstaid', label: 'First aids' }
+    { key: 'firstaid', label: 'First aids' },
+    { key: 'safeguarding', label: 'Safeguarding' }
   ];
 
   var state = {
@@ -194,16 +195,22 @@
     return (rows || []).map(function (r) {
       var type = r.type || 'other';
       var n = String(r.name || r.path || '').toLowerCase();
-      if (type === 'certificate' && n.indexOf('firstaid-') >= 0) type = 'firstaid';
+      if (type === 'certificate' || type === 'other') {
+        if (n.indexOf('safeguarding') >= 0 || n.indexOf('nspcc') >= 0) type = 'safeguarding';
+        else if (n.indexOf('firstaid-') >= 0 || /first[_-]?aid/.test(n)) type = 'firstaid';
+      }
+      if (type === 'firstaid' && (n.indexOf('safeguarding') >= 0 || n.indexOf('nspcc') >= 0)) {
+        type = 'safeguarding';
+      }
       var obName = r.name || r.path || 'File';
       var obPath = r.path || '';
       return {
         type: type,
         name: obName,
         path: obPath,
-        storageBucket: r.storage_bucket || r.bucket || 'club-files',
+        storageBucket: r.storage_bucket || r.bucket || r.storageBucket || 'club-files',
         size: r.size || null,
-        created: r.created_at || r.uploaded_at || deriveCreatedFromName(obName, obPath),
+        created: r.created_at || r.uploaded_at || r.created || deriveCreatedFromName(obName, obPath),
         source: r.source || 'onboarding',
         details: r
       };
@@ -428,7 +435,8 @@
       checklist: countByType(items, 'checklist'),
       passport: countByType(items, 'passport'),
       certificate: countByType(items, 'certificate'),
-      firstaid: countByType(items, 'firstaid')
+      firstaid: countByType(items, 'firstaid'),
+      safeguarding: countByType(items, 'safeguarding')
     };
     document.querySelectorAll('[data-portal-doc-stat]').forEach(function (el) {
       var k = el.getAttribute('data-portal-doc-stat');
@@ -950,10 +958,12 @@
       state.search = presetSearch;
       if (search) search.value = presetSearch;
     }
+    var preferredPath = String(global.__portalDocsPreferredPath || '').trim();
     var autoOpen = global.__portalDocsAutoOpen === true;
     // One-shot presets: clear so a later plain visit is not stuck filtered.
     global.__portalDocsPresetFilter = '';
     global.__portalDocsPresetSearch = '';
+    global.__portalDocsPreferredPath = '';
     global.__portalDocsAutoOpen = false;
     applyActiveCard();
 
@@ -967,7 +977,24 @@
     refresh().then(function () {
       if (!autoOpen) return;
       var items = global._portalDocumentsCurrent || [];
-      if (items.length) void openPreview(0);
+      if (!items.length) return;
+      var idx = 0;
+      if (preferredPath) {
+        for (var i = 0; i < items.length; i++) {
+          if (String(items[i].path || '') === preferredPath) {
+            idx = i;
+            break;
+          }
+        }
+      } else if (state.filter && state.filter !== 'all') {
+        for (var j = 0; j < items.length; j++) {
+          if (items[j].type === state.filter) {
+            idx = j;
+            break;
+          }
+        }
+      }
+      void openPreview(idx);
     });
   }
 

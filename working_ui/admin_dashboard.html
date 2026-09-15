@@ -87,7 +87,7 @@
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
   <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260913-register-freeze"></script>
-  <script src="/portal/admin-portal-documents.js?v=20260905-expense-amount"></script>
+  <script src="/portal/admin-portal-documents.js?v=20260915-ob-doc-chips"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260813-office-phone-create"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20260905-buckets"></script>
@@ -130,7 +130,7 @@
   <script src="/portal/admin-commissioning-terms.js?v=20260720-la-terms"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
   <script src="/portal/portal-admin-settings-hub.js?v=20260703-settings-timeout-fix"></script>
-  <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
+  <script src="/portal/admin-onboarding.js?v=20260915-ob-doc-chips"></script>
   <script src="/portal/admin-interviews.js?v=20260908-no-interview-dob"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260908-onboarding-hub"></script>
@@ -29525,6 +29525,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               opts = opts || {};
               window.__portalDocsPresetFilter = opts.filter || 'all';
               window.__portalDocsPresetSearch = opts.sessionId || opts.name || '';
+              window.__portalDocsPreferredPath = opts.path || '';
               window.__portalDocsAutoOpen = true;
               setView('portal_documents');
             }
