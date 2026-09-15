@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260912-amaar-mon-keep";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260915-cyrus-cancel-fb";
   // Optional "Notes" (relevant_information) only became a genuinely separate,
   // worker-written optional field on 7 Jul 2026. Before that date,
   // relevant_information was the AI "internal relevant" split of the feedback and
@@ -3702,7 +3702,10 @@
     var bStart = b.time_start || "";
     var bEnd = b.time_end || bStart;
     if (!aStart || !bStart) return false;
-    return aStart < bEnd && bStart < aEnd;
+    /* Overlap (strict) OR abutting halves (e.g. Cyrus Wed 4–4.30 + 4.30–5). */
+    if (aStart < bEnd && bStart < aEnd) return true;
+    if (aEnd === bStart || bEnd === aStart) return true;
+    return false;
   }
 
   function autoConsecutiveSwimInstructorMergeKey(slot, daySlots) {
@@ -3816,9 +3819,27 @@
       }
       var sub = rule.slots || [];
       for (var j = 0; j < sub.length; j++) {
+        var ruleSvc = serviceKey(sub[j].service);
+        var slotSvc = serviceKey(slot.service);
+        if (ruleSvc !== slotSvc) continue;
+        var ruleTs = clean(sub[j].time_slot);
+        var slotTs = clean(slot.time_slot);
+        if (ruleTs === slotTs) {
+          return (
+            clean(rule.mergeKey) ||
+            canonicalClientSlug(rule.client_name) + "_" + slugify(rule.instructors) + "_merged"
+          );
+        }
+        /* Label variants: "4.30 to 5" vs "4.30 to 5.00" — match on parsed bounds. */
+        var rulePt = parseTimeSlot(ruleTs, wd);
+        var slotPt = parseTimeSlot(slotTs, wd);
         if (
-          clean(sub[j].time_slot) === clean(slot.time_slot) &&
-          serviceKey(sub[j].service) === serviceKey(slot.service)
+          rulePt &&
+          slotPt &&
+          rulePt.start &&
+          slotPt.start &&
+          rulePt.start === slotPt.start &&
+          rulePt.end === slotPt.end
         ) {
           return (
             clean(rule.mergeKey) ||
@@ -6549,9 +6570,9 @@
           typeof global.portalCancellationTimingNeedsFeedback === "function"
             ? global.portalCancellationTimingNeedsFeedback(c.cancellation_timing)
             : /during/i.test(String(c.cancellation_timing || ""));
-        /* Before-start wins if both exist. */
+        /* Feedbacks ratios: every cancel counts as submitted (before-start and during). */
         if (can[ck] && can[ck].countsAsSubmitted) continue;
-        can[ck] = { countsAsSubmitted: !needsFb, during: !!needsFb, row: c };
+        can[ck] = { countsAsSubmitted: true, during: !!needsFb, row: c };
       }
     }
     var listOv = this.payload.schedule_overrides || [];
@@ -6587,7 +6608,7 @@
     return !!(this._cancelByDateClient && this._cancelByDateClient[k]);
   };
 
-  /** Before-start (or admin override) cancel counts as Submitted; during-session cancel still awaits feedback. */
+  /** Cancelled (before-start or during) counts as Feedback Submitted; Absent already does via slotIsAbsent. */
   AdminSessionsHub.prototype.slotCancellationCountsAsSubmitted = function (slot) {
     if (hubSlotIsTrial(slot)) return false;
     if (hubSlotIsFadiDcCancelled(slot)) return true;
@@ -6596,12 +6617,7 @@
     if (ovCan) return true;
     var k = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
     var meta = this._cancelByDateClient && this._cancelByDateClient[k];
-    if (!meta) return false;
-    if (meta.countsAsSubmitted) return true;
-    /* During cancel + real feedback already submitted. */
-    if (this.findFeedbackForSlot(slot) && !isAbsentFeedbackRow(this.findFeedbackForSlot(slot))) {
-      return true;
-    }
+    if (meta) return true;
     return false;
   };
 

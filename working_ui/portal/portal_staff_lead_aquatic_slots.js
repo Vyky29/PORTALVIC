@@ -644,7 +644,7 @@
       mergeKey: "cyrus_javier_wed_swim",
       slots: [
         { time_slot: "4 to 4.30", service: "Aquatic Activity" },
-        { time_slot: "4.30 to 5.15", service: "Multi-Activity" },
+        { time_slot: "4.30 to 5", service: "Aquatic Activity" },
       ],
     },
     {

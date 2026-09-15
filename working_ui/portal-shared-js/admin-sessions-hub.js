@@ -2113,7 +2113,10 @@
     var bStart = b.time_start || "";
     var bEnd = b.time_end || bStart;
     if (!aStart || !bStart) return false;
-    return aStart < bEnd && bStart < aEnd;
+    /* Overlap (strict) OR abutting halves (e.g. Cyrus Wed 4–4.30 + 4.30–5). */
+    if (aStart < bEnd && bStart < aEnd) return true;
+    if (aEnd === bStart || bEnd === aStart) return true;
+    return false;
   }
 
   function autoConsecutiveSwimInstructorMergeKey(slot) {
