@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>LOCAL preview · Anas parent portal · instructor cover</title>
+  <style>
+    :root {
+      --blue: #1d4ed8;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --card: #fff;
+      --bg: #f1f5f9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: linear-gradient(160deg, #e2e8f0 0%, #f8fafc 40%, #dbeafe 100%);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+    .wrap {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 16px 14px 40px;
+    }
+    .banner {
+      background: #0f172a;
+      color: #fff;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .banner strong { color: #93c5fd; }
+    .phone {
+      background: var(--card);
+      border-radius: 28px;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+    }
+    .phone-top {
+      background: #0f172a;
+      color: #fff;
+      padding: 14px 16px 12px;
+    }
+    .phone-top h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .phone-top p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .tabs {
+      display: flex;
+      gap: 6px;
+      padding: 10px 12px 0;
+      background: #fff;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 8px 6px;
+      border-radius: 10px 10px 0 0;
+      border: 1px solid #e2e8f0;
+      border-bottom: 0;
+      background: #f8fafc;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .tab.is-on {
+      background: #fff;
+      color: var(--blue);
+      box-shadow: 0 -1px 0 #fff;
+    }
+    .pane { display: none; padding: 14px 14px 20px; min-height: 420px; }
+    .pane.is-on { display: block; }
+    .pp-muted { color: var(--muted); font-size: 13px; line-height: 1.45; margin: 0 0 12px; }
+    .pp-team-change-note {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+    }
+    .pp-team-change-note strong { color: var(--blue); font-size: 13px; }
+    .pp-team-grid { display: grid; gap: 10px; }
+    .pp-team-card {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      min-width: 0;
+    }
+    .pp-team-card--cover {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.08);
+    }
+    .pp-team-photo {
+      width: 72px;
+      height: 72px;
+      border-radius: 16px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #e2e8f0;
+    }
+    .pp-team-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .pp-team-card__name-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 8px;
+      margin: 0 0 4px;
+      min-width: 0;
+    }
+    .pp-team-card__name {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .pp-team-card__badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      color: #1d4ed8;
+      background: #dbeafe;
+      border: 1px solid #93c5fd;
+      border-radius: 999px;
+      padding: 2px 8px;
+    }
+    .pp-team-card__bio {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+    .msg {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      background: #f8fafc;
+      margin-bottom: 10px;
+    }
+    .msg h3 { margin: 0 0 4px; font-size: 14px; color: var(--blue); }
+    .msg .when { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+    .msg p { margin: 0; font-size: 13px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: break-word; }
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 0;
+    }
+    .chip {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: #ecfdf5;
+      border: 1px solid #86efac;
+      color: #166534;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .chip--note {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      color: #1d4ed8;
+      font-weight: 600;
+    }
+    .wa {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      background: #052e16;
+      color: #ecfdf5;
+      font-size: 13px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+    }
+    .wa strong { color: #86efac; }
+    .status {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #9a3412;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="banner">
+      <strong>LOCAL preview only</strong> — how Heba / Anas parent portal should look after today's move
+      (Anas 5.30–6 Acton · Aurora away · Javi covering). Not live data.
+    </div>
+
+    <div class="phone">
+      <div class="phone-top">
+        <h1>Anas Ismail</h1>
+        <p>Family portal · Tuesday 15 Sep 2026</p>
+      </div>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab is-on" data-pane="hub">Hub</button>
+        <button type="button" class="tab" data-pane="team">Team</button>
+        <button type="button" class="tab" data-pane="messages">Messages</button>
+      </div>
+
+      <section class="pane is-on" id="pane-hub">
+        <p class="pp-muted">Next session card (parents do not see COVER NEEDED — only the cover name when assigned).</p>
+        <div class="msg">
+          <h3>Next session</h3>
+          <div class="when">Tuesday 15 Sep · 5.30 to 6 · Acton</div>
+          <p>Aquatic Activity · Teaching Pool</p>
+          <div class="chip-row">
+            <span class="chip">With Javi Palankas today</span>
+            <span class="chip chip--note">Aurora not available today</span>
+          </div>
+        </div>
+        <div class="status">
+          Today live hub chips only show absent / cancelled / trial. The cover line above is the proposed parent-facing copy for instructor changes (to build next).
+        </div>
+      </section>
+
+      <section class="pane" id="pane-team">
+        <p class="pp-muted pp-team-intro">Instructors for this term's sessions. If someone is covering after a change, they appear here with an <strong>Instructor change</strong> badge — show this to your child so they know who to expect.</p>
+        <div class="pp-team-change-note" role="status">
+          <strong>Recent instructor change</strong>
+          <p class="pp-muted" style="margin:4px 0 0">
+            Tuesday 15 Sep, 5.30 to 6 at Acton: Aurora is not available today. Javi Palankas is covering Anas's session.
+          </p>
+        </div>
+        <div class="pp-team-grid">
+          <article class="pp-team-card pp-team-card--cover">
+            <div class="pp-team-photo"><img src="/portal/staff_photos/javi.png" alt="" width="72" height="72" /></div>
+            <div class="pp-team-card__body">
+              <div class="pp-team-card__name-row">
+                <h4 class="pp-team-card__name">Javi Palankas</h4>
+                <span class="pp-team-card__badge" title="Covering after an instructor change">Instructor change</span>
+              </div>
+              <p class="pp-team-card__bio">Covering Anas today 5.30–6 at Acton (Aurora not available today).</p>
+            </div>
+          </article>
+          <article class="pp-team-card">
+            <div class="pp-team-photo"><img src="/portal/staff_photos/aurora.png" alt="" width="72" height="72" /></div>
+            <div class="pp-team-card__body">
+              <div class="pp-team-card__name-row">
+                <h4 class="pp-team-card__name">Aurora</h4>
+              </div>
+              <p class="pp-team-card__bio">Usual instructor for this book (not teaching this session).</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="pane" id="pane-messages">
+        <p class="pp-muted">WhatsApp + in-app message every time office saves a cover / instructor change (draft below — not sent yet for today's move).</p>
+        <div class="msg">
+          <h3>Instructor update</h3>
+          <div class="when">Just now · WhatsApp</div>
+          <p>Hi Heba,
+
+This is ClubSENsational.
+
+We are writing about Anas's session on Tuesday 15 Sep, 5.30 to 6 at Acton.
+
+There has been a change of instructor. The session will now be with Javi Palankas (instead of Aurora).
+
+Photo of Javi Palankas (your instructor): https://www.clubsensational.org/portal/staff_photos/javi.png
+
+Please show Anas the photo above so they know who to expect.
+
+If you have any questions, just reply to this message.
+
+Thank you,
+ClubSENsational</p>
+        </div>
+        <div class="wa"><strong>WhatsApp draft (same text)</strong>
+
+Hi Heba,
+
+This is ClubSENsational.
+
+We are writing about Anas's session on Tuesday 15 Sep, 5.30 to 6 at Acton.
+
+There has been a change of instructor. The session will now be with Javi Palankas (instead of Aurora).
+
+Please show Anas the photo so they know who to expect.</div>
+        <div class="status">
+          Right now Schedule &amp; Covers does <strong>not</strong> auto-send this. After a cover save, office still taps Parent notify → Instructor change. Goal: auto-draft + send (or at least auto-create the Family Portal message) on every instructor_reassign with a real cover.
+        </div>
+      </section>
+    </div>
+  </div>
+  <script>
+    document.querySelectorAll(".tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.querySelectorAll(".tab").forEach(function (b) { b.classList.remove("is-on"); });
+        document.querySelectorAll(".pane").forEach(function (p) { p.classList.remove("is-on"); });
+        btn.classList.add("is-on");
+        var id = "pane-" + btn.getAttribute("data-pane");
+        var pane = document.getElementById(id);
+        if (pane) pane.classList.add("is-on");
+      });
+    });
+  </script>
+</body>
+</html>
