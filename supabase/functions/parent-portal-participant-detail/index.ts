@@ -777,6 +777,27 @@ function sessionsFromReenrolKeptSlots(
   return out;
 }
 
+/** Split roster instructor blobs ("BERTA, EMMANUEL" / "Berta & John") into tokens. */
+function splitInstructorTokens(raw: string): string[] {
+  return clean(raw, 120)
+    .split(/\s*[,/&+]+\s*|\s+\band\b\s+/i)
+    .map((p) => clean(p, 40))
+    .filter(Boolean);
+}
+
+/** Merge instructor names when Multi halves / co-taught rows collapse to one day. */
+function mergeInstructorNames(existing: string, next: string): string {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const tok of [...splitInstructorTokens(existing), ...splitInstructorTokens(next)]) {
+    const key = tok.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(tok);
+  }
+  return out.join(", ");
+}
+
 function buildServicesDetail(
   sessions: unknown,
 ): Array<{
@@ -839,9 +860,11 @@ function buildServicesDetail(
     }
     if (!g.venue) g.venue = clean(s.venue, 80);
     if (!g.area) g.area = clean(s.area, 80);
-    if (!g.instructor) {
-      g.instructor = clean(s.instructor || s.instructors, 80);
-    }
+    /* Multi / co-taught slots: keep every unique instructor on one line. */
+    g.instructor = mergeInstructorNames(
+      g.instructor,
+      clean(s.instructor || s.instructors, 80),
+    );
     const tok = parseSlotTokens(s.timeSlot, day);
     if (tok) {
       if (tok.start != null && (g.startMin == null || tok.start < g.startMin)) {

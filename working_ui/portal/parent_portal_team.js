@@ -980,5 +980,6 @@
     memberFromFeedbackName: memberFromFeedbackName,
     staffKeyFromFeedbackName: staffKeyFromFeedbackName,
     staffHasTeamPhoto: staffHasTeamPhoto,
+    standingInstructorKeyForBookedSlot: standingInstructorKeyForBookedSlot,
   };
 })(typeof window !== "undefined" ? window : global);

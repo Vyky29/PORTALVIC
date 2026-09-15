@@ -3514,6 +3514,122 @@
     return m ? String(m[1]).trim() + " – " + String(m[2]).trim() : s;
   }
 
+  /** Split "BERTA, EMMANUEL" / "Berta & John" into tokens for hub cards. */
+  function hubOpsSplitInstructorTokens(raw) {
+    return String(raw || "")
+      .split(/\s*[,/&+]+\s*|\s+\band\b\s+/i)
+      .map(function (p) {
+        return String(p || "").trim();
+      })
+      .filter(Boolean);
+  }
+
+  function hubOpsPrettyInstructorToken(tok) {
+    var s = String(tok || "").trim();
+    if (!s) return "";
+    return s
+      .split(/\s+/)
+      .map(function (w) {
+        if (!w) return "";
+        if (w.length <= 2 && w === w.toUpperCase()) return w;
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      })
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  /**
+   * Parent-facing instructor name(s) for a hub session card.
+   * Prefer today's cover from Team; else slot / services_detail; Multi keeps all on one line.
+   */
+  function hubOpsInstructorNamesForSession(s, data) {
+    var iso = String((s && s.iso) || "").slice(0, 10);
+    var raw = "";
+    if (iso && data && Array.isArray(data.team)) {
+      var covers = [];
+      data.team.forEach(function (m) {
+        if (!m) return;
+        if (String(m.role || "").toLowerCase() !== "cover") return;
+        if (String(m.cover_session_date || "").slice(0, 10) !== iso) return;
+        var n = String(m.name || "").trim();
+        if (n) covers.push(n);
+      });
+      if (covers.length) raw = covers.join(", ");
+    }
+    if (!raw) {
+      raw = String((s && (s.instructor || s.instructors)) || "").trim();
+    }
+    if (!raw && data && data.general && Array.isArray(data.general.services_detail)) {
+      var dayTok = String((s && s.day) || "").trim().toLowerCase().slice(0, 3);
+      if (!dayTok && iso) {
+        try {
+          var p = iso.split("-");
+          var dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+          dayTok = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][dt.getDay()] || "";
+        } catch (_e) {}
+      }
+      var wantStart = s && s._start != null ? s._start : parseServiceStartMinutes(s && s.time);
+      var labBlob = String((s && (s.rawLabel || s.label)) || "").toLowerCase();
+      var best = "";
+      data.general.services_detail.forEach(function (row) {
+        if (!row) return;
+        var rd = String(row.day || "")
+          .trim()
+          .toLowerCase()
+          .slice(0, 3);
+        if (dayTok && rd && rd !== dayTok) return;
+        var rLab = String(row.label || row.service || "").toLowerCase();
+        if (labBlob && rLab) {
+          var aquaticWant = /aquatic|swim/.test(labBlob) && !/multi/.test(labBlob);
+          var multiWant = /multi/.test(labBlob);
+          var climbWant = /climb/.test(labBlob);
+          if (aquaticWant && !/aquatic|swim/.test(rLab)) return;
+          if (multiWant && !/multi/.test(rLab)) return;
+          if (climbWant && !/climb/.test(rLab)) return;
+        }
+        var inst = String(row.instructor || row.instructors || "").trim();
+        if (!inst) return;
+        var rStart = parseServiceStartMinutes(row.time);
+        if (wantStart < 9999 && rStart < 9999 && Math.abs(rStart - wantStart) > 45) {
+          if (best) return;
+        }
+        best = inst;
+      });
+      if (best) raw = best;
+    }
+    if (!raw) {
+      var Team = global.PortalParentTeam;
+      if (Team && typeof Team.staffKeyFromFeedbackName === "function") {
+        var keyGuess = "";
+        if (typeof Team.standingInstructorKeyForBookedSlot === "function") {
+          keyGuess = Team.standingInstructorKeyForBookedSlot(s, data) || "";
+        }
+        if (keyGuess) {
+          var card0 =
+            typeof Team.catalogMember === "function" ? Team.catalogMember(keyGuess) : null;
+          raw = (card0 && card0.name) || hubOpsPrettyInstructorToken(keyGuess);
+        }
+      }
+    }
+    if (!raw) return [];
+    var Team2 = global.PortalParentTeam;
+    var seen = Object.create(null);
+    var names = [];
+    hubOpsSplitInstructorTokens(raw).forEach(function (tok) {
+      var card =
+        Team2 && typeof Team2.memberFromFeedbackName === "function"
+          ? Team2.memberFromFeedbackName(tok)
+          : null;
+      var name = (card && card.name) || hubOpsPrettyInstructorToken(tok);
+      if (!name) return;
+      var k = name.toLowerCase();
+      if (seen[k]) return;
+      seen[k] = true;
+      names.push(name);
+    });
+    return names;
+  }
+
   /** Venue line for hub cards — programme defaults beat a generic SwimFarm preferred venue. */
   function hubOpsDisplayPlace(s, data) {
     var lab = String((s && (s.rawLabel || s.label)) || "").toLowerCase();
@@ -3749,6 +3865,7 @@
           time: hubOpsDisplayTime(s.time) || s.time || "",
           venue: String(s.venue || "").trim(),
           area: String(s.area || "").trim(),
+          instructor: String(s.instructor || s.instructors || "").trim(),
           isToday: iso === todayIso,
           isTomorrow: iso === tomorrowIso,
           source: "roster",
@@ -3802,6 +3919,7 @@
         time: hubOpsDisplayTime(raw.time) || raw.time || "",
         venue: String(raw.venue || "").trim(),
         area: String(raw.area || "").trim(),
+        instructor: String(raw.instructor || raw.instructors || "").trim(),
         isToday: iso === todayIso,
         isTomorrow: iso === tomorrowIso,
         source: "booking",
@@ -5566,9 +5684,12 @@
     var absent = status === "absent";
     var awaiting = status === "awaiting_feedback";
     var place = hubOpsDisplayPlace(s, data);
+    var instructorNames = hubOpsInstructorNamesForSession(s, data);
     var clock = hubOpsDisplayTime(s.time);
     var pinIco =
       '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+    var personIco =
+      '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     var clockIco =
       '<svg class="pp-hub-ops__meta-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
     var statusChip = "";
@@ -5598,6 +5719,18 @@
         : awaiting
           ? " — awaiting feedback"
           : "";
+    var instructorLine = "";
+    if (instructorNames.length) {
+      var instructorLabel = instructorNames.join(" · ");
+      instructorLine =
+        '<div class="pp-hub-ops__slot-instructor">' +
+        personIco +
+        '<button type="button" class="pp-hub-ops__slot-instructor-link" data-pp-open="team" aria-label="Open Team — ' +
+        esc(instructorLabel) +
+        '">' +
+        esc(instructorLabel) +
+        "</button></div>";
+    }
     return (
       '<li class="pp-hub-ops__slot pp-hub-ops__slot--' +
       esc(tone) +
@@ -5618,6 +5751,7 @@
         : '<div class="pp-hub-ops__slot-place pp-hub-ops__slot-place--empty" aria-hidden="true">' +
           pinIco +
           "<span>—</span></div>") +
+      instructorLine +
       "</div>" +
       timeBlock +
       "</li>"
