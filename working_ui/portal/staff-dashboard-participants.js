@@ -1530,9 +1530,9 @@
           }
         }catch(_){}
       }
-      // Make-up / trial cards carry their own pink/purple identity and must NOT also
-      // show the yellow "Updated by admin" chip — that chip is reserved for a plain
-      // move-slot admin change. NEW CLIENT first session may show both New Client + Updated.
+      // Make-up / trial / new-client bookings carry their own chip and must NOT also
+      // show yellow "Updated by admin" — that chip is only for last-minute admin changes
+      // with no booking identity chip.
       const isMakeUpOrTrialItem = isMakeUpSym || isTrialSym || !!item.portalOverrideMakeUpTag || !!item.portalOverrideTrialTag;
       const chips = [];
       const push = function(html){ if(html) chips.push(html); };
@@ -1576,7 +1576,15 @@
         push('<span class="portal-session-slot-chip portal-session-slot-chip--plain" aria-label="' + tx + '"><span>' + tx + '</span></span>');
       }
 
-      if(!isMakeUpOrTrialItem && !portalTodayItemIsSpecialSegmentedCard(item) && item.kind === 'client' && item.sessionKey && !item.noSessionFeedbackRequired && !item.portalOverrideSuppressReviewOrange){
+      if(
+        !isMakeUpOrTrialItem &&
+        !isNewClientItem &&
+        !portalTodayItemIsSpecialSegmentedCard(item) &&
+        item.kind === 'client' &&
+        item.sessionKey &&
+        !item.noSessionFeedbackRequired &&
+        !item.portalOverrideSuppressReviewOrange
+      ){
         const ended = isSessionEndedForFeedback(item);
         const started = isSessionStartedForItem(item);
         const timeUpdated = portalSessionItemRosterTimeUpdated(item);
@@ -1585,16 +1593,28 @@
         }
       }
 
-      if(!isMakeUpOrTrialItem && item.scheduleAdminAdjusted && !item.portalOverrideHideAdminBadge && !portalTodayItemIsSpecialSegmentedCard(item)){
+      if(
+        !isMakeUpOrTrialItem &&
+        !isNewClientItem &&
+        item.scheduleAdminAdjusted &&
+        !item.portalOverrideHideAdminBadge &&
+        !portalTodayItemIsSpecialSegmentedCard(item)
+      ){
         const alreadyUpdated = chips.some(function(h){ return String(h || '').indexOf('portal-session-slot-chip--updated') >= 0; });
         const pillBlocksUpdated = !!(item.portalOverrideAlertPill && pillNorm !== 'UPDATED');
-        if(!alreadyUpdated && (isNewClientItem || !chips.length || pillNorm === 'UPDATED') && !pillBlocksUpdated){
+        /* Only when no other status chip — bookings use New Client / Trial alone. */
+        if(!alreadyUpdated && (!chips.length || pillNorm === 'UPDATED') && !pillBlocksUpdated){
           push(portalSessionUpdatedChipHtml());
         }
       }
-      /* New Client under Updated by admin (not side-by-side). */
       if(isNewClientItem && !chips.some(function(h){ return String(h || '').indexOf('portal-session-slot-chip--new-client') >= 0; })){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--new-client" aria-label="New Client"><span>New Client</span></span>');
+      }
+      /* If Updated by admin is stacked with another chip, keep the other (last) chip only. */
+      const updatedOnly = chips.filter(function(h){ return String(h || '').indexOf('portal-session-slot-chip--updated') >= 0; });
+      const nonUpdated = chips.filter(function(h){ return String(h || '').indexOf('portal-session-slot-chip--updated') < 0; });
+      if(updatedOnly.length && nonUpdated.length){
+        return nonUpdated[nonUpdated.length - 1] || nonUpdated.join('');
       }
       return chips.join('');
     }
