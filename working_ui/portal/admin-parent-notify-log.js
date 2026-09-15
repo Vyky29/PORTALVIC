@@ -546,6 +546,47 @@
     }
   }
 
+  /** Prefer CLIENT over OLD/Former when several children share one parent WhatsApp. */
+  function isReleasedOldChildName(name) {
+    var n = String(name || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+    if (!n) return false;
+    var first = n.split(/\s+/)[0] || "";
+    /* Aug 15 unpaid release — Karo / Shire stay OLD; never label the family thread as them. */
+    return first === "karo" || first === "shire";
+  }
+
+  function contactPreferenceScore(c) {
+    if (!c) return 0;
+    var score = 0;
+    if (c.inClass) score += 100;
+    var kind = String(c.contactKind || "").toLowerCase();
+    if (kind === "client") score += 50;
+    else if (kind === "lead") score += 20;
+    else if (kind === "former") score += 5;
+    if (isReleasedOldChildName(c.child)) score -= 80;
+    return score;
+  }
+
+  function applyPreferredChildOnto(existing, c) {
+    if (!existing || !c || !c.child) return;
+    if (
+      existing.child &&
+      contactPreferenceScore(c) < contactPreferenceScore(existing)
+    ) {
+      return;
+    }
+    existing.child = c.child;
+    existing.childNorm = c.childNorm || existing.childNorm;
+    if (c.contactKind) existing.contactKind = c.contactKind;
+    if (c.fundingLabel) existing.fundingLabel = c.fundingLabel;
+    existing.inClass = !!c.inClass;
+    existing.onWaitingList = !!c.onWaitingList;
+    if (c.contactId) existing.contactId = c.contactId;
+  }
+
   function mergeContactDirectories(preferred, fallback) {
     var byPhone = Object.create(null);
     var byParentKey = Object.create(null);
@@ -570,18 +611,11 @@
             existing.sendDigits = c.sendDigits || existing.sendDigits;
           }
           if (c.parent) existing.parent = c.parent;
-          if (c.child) {
-            existing.child = c.child;
-            existing.childNorm = c.childNorm || existing.childNorm;
-          }
+          applyPreferredChildOnto(existing, c);
           if (c.contactId && !existing.contactId) existing.contactId = c.contactId;
           if (c.parentPersonId && !existing.parentPersonId) {
             existing.parentPersonId = c.parentPersonId;
           }
-          if (c.contactKind) existing.contactKind = c.contactKind;
-          if (c.fundingLabel) existing.fundingLabel = c.fundingLabel;
-          existing.inClass = !!c.inClass;
-          existing.onWaitingList = !!c.onWaitingList;
         } else {
           if (!existing.mobile && c.mobile) {
             existing.mobile = c.mobile;
@@ -589,18 +623,9 @@
             existing.sendDigits = c.sendDigits || existing.sendDigits;
           }
           if (!existing.parent && c.parent) existing.parent = c.parent;
-          if (!existing.child && c.child) {
-            existing.child = c.child;
-            existing.childNorm = c.childNorm || existing.childNorm;
-          }
+          applyPreferredChildOnto(existing, c);
           if (!existing.parentPersonId && c.parentPersonId) {
             existing.parentPersonId = c.parentPersonId;
-          }
-          if (!existing.contactKind && c.contactKind) existing.contactKind = c.contactKind;
-          if (!existing.fundingLabel && c.fundingLabel) existing.fundingLabel = c.fundingLabel;
-          if (existing.inClass == null && c.inClass != null) existing.inClass = !!c.inClass;
-          if (existing.onWaitingList == null && c.onWaitingList != null) {
-            existing.onWaitingList = !!c.onWaitingList;
           }
         }
         if (existing.matchKey) byPhone[existing.matchKey] = existing;
@@ -625,20 +650,27 @@
     var list = directory || state.contactDirectory || [];
     if (!t || !list.length) return null;
     var i;
+    var hits = [];
     /* Match by WhatsApp thread phone only — never by child (co-parents share a child). */
     var threadKey = phoneMatchKey(t.phone);
     if (threadKey) {
       for (i = 0; i < list.length; i++) {
-        if (list[i].matchKey && list[i].matchKey === threadKey) return list[i];
+        if (list[i].matchKey && list[i].matchKey === threadKey) hits.push(list[i]);
       }
     }
-    var threadDigits = canonicalPhoneDigits(t.phone) || phoneDigits(t.phone);
-    if (threadDigits) {
-      for (i = 0; i < list.length; i++) {
-        if (list[i].sendDigits && list[i].sendDigits === threadDigits) return list[i];
+    if (!hits.length) {
+      var threadDigits = canonicalPhoneDigits(t.phone) || phoneDigits(t.phone);
+      if (threadDigits) {
+        for (i = 0; i < list.length; i++) {
+          if (list[i].sendDigits && list[i].sendDigits === threadDigits) hits.push(list[i]);
+        }
       }
     }
-    return null;
+    if (!hits.length) return null;
+    hits.sort(function (a, b) {
+      return contactPreferenceScore(b) - contactPreferenceScore(a);
+    });
+    return hits[0];
   }
 
   function enrichThreadsWithProfilePhones(threads) {
@@ -819,7 +851,13 @@
       .trim();
     if (!na || !nb) return false;
     if (na === nb) return true;
-    if (na.indexOf(nb) === 0 || nb.indexOf(na) === 0) return true;
+    /*
+     * First-token match only when one side is a single token (e.g. "Kareena" vs
+     * "Kareena Al hassani"). Do NOT prefix-match "Karo" → "Kareena".
+     */
+    var pa = na.split(/\s+/);
+    var pb = nb.split(/\s+/);
+    if (pa[0] && pa[0] === pb[0] && (pa.length === 1 || pb.length === 1)) return true;
     return false;
   }
 
