@@ -1614,7 +1614,7 @@
         }
       }
       if(isNewClientItem && !chips.some(function(h){ return String(h || '').indexOf('portal-session-slot-chip--new-client') >= 0; })){
-        push('<span class="portal-session-slot-chip portal-session-slot-chip--new-client" aria-label="New Client"><span>New Client</span></span>');
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--new-client" aria-label="New Participant"><span>New Participant</span></span>');
       }
       /* If Updated by admin is stacked with another chip, keep the other (last) chip only. */
       const updatedOnly = chips.filter(function(h){ return String(h || '').indexOf('portal-session-slot-chip--updated') >= 0; });
@@ -4446,7 +4446,7 @@
             portalOverrideTrialTag: false,
             portalOverrideNewClientTag: true,
             portalOverrideCardTone: it.portalOverrideCardTone === 'pink' ? 'blue' : (it.portalOverrideCardTone || 'blue'),
-            portalOverrideSymbolText: 'New Client',
+            portalOverrideSymbolText: 'New Participant',
             portalOverrideAlertPill: String(it.portalOverrideAlertPill || '').trim().toUpperCase() === 'MAKE UP' ? '' : it.portalOverrideAlertPill,
             scheduleAdminAdjusted: true,
             portalOverrideHideAdminBadge: false,
@@ -4681,7 +4681,7 @@
         portalOverrideTrialTag: isTrial,
         portalOverrideNewClientTag: !!isNewClient,
         portalOverrideCardTone: isMakeUpCard ? 'pink' : (isNewClient || slotWasUpdated ? 'blue' : (isTrial ? 'trial' : '')),
-        portalOverrideSymbolText: isTrial ? 'Trial' : (isNewClient ? 'New Client' : (isMakeUpCard ? 'Make Up' : '')),
+        portalOverrideSymbolText: isTrial ? 'Trial' : (isNewClient ? 'New Participant' : (isMakeUpCard ? 'Make Up' : '')),
         portalOverrideHideAdminBadge: false,
         portalOverrideAlertPill: slotWasUpdated ? 'UPDATED' : '',
         portalRosterTimeUpdated: !!slotWasUpdated,

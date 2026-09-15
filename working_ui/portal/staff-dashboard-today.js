@@ -3956,7 +3956,7 @@
             portalOverrideNewClientTag: !!isNewClientOv,
             portalOverrideMoveInTag: !!isClientMoveIn,
             portalOverrideCardTone: fadiDcCancel ? 'red' : (isMakeUpCard ? 'pink' : (isClientMoveIn || isNewClientOv || slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : ''))),
-            portalOverrideSymbolText: isTrialOv ? 'Trial' : (isNewClientOv ? 'New Client' : (isClientMoveIn ? 'Move in' : (isMakeUpCard ? 'Make Up' : ''))),
+            portalOverrideSymbolText: isTrialOv ? 'Trial' : (isNewClientOv ? 'New Participant' : (isClientMoveIn ? 'Move in' : (isMakeUpCard ? 'Make Up' : ''))),
             portalOverrideHideAdminBadge: !!isClientMoveIn,
             portalOverrideAlertPill: fadiDcCancel ? 'CANCELLED' : (slotWasUpdated && !isClientMoveIn ? 'UPDATED' : ''),
             noSessionFeedbackRequired: !!fadiDcCancel,

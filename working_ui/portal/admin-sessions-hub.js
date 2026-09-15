@@ -2306,7 +2306,7 @@
     if (overrideIsInstructorCoverNeededType(ov)) return "COVER NEEDED";
     if (overrideIsInstructorReassignType(ov)) return "Changed instructor";
     if (overrideIsTrialType(ov)) return "Trial";
-    if (overrideIsNewClientReplace(ov)) return "NEW CLIENT";
+    if (overrideIsNewClientReplace(ov)) return "NEW PARTICIPANT";
     if (overrideIsDayReassignReplace(ov)) return "Moved";
     if (overrideIsMakeupReplaceType(ov)) return "MakeUp";
     return String(ov.override_type || "").trim() || "Override";
@@ -11058,7 +11058,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     } else if (st.isTrial) {
       chips.push('<span class="override-chip override--trial">Trial</span>');
     } else if (st.isNewClient) {
-      chips.push('<span class="override-chip override--updated">NEW CLIENT</span>');
+      chips.push('<span class="override-chip override--updated">NEW PARTICIPANT</span>');
       if (st.isUpdated) {
         chips.push(
           '<span class="override-chip override--updated">' +
