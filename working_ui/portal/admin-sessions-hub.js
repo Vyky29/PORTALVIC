@@ -635,14 +635,19 @@
     return false;
   }
 
-  /** Fallback when capacity chain wiped bundle starts (admin Overview often has no bundle). */
+  /**
+   * Fallback when capacity chain wiped bundle starts (admin Overview often has no bundle).
+   * Weekend Multi/Aquatic standing for Adaam / Aydaan / Amaar began Autumn Sun 6 Sep —
+   * do NOT stamp weekday Acton NEW CLIENT (Mon/Tue 14–15) here or Overview hides Sun 6/13 seats.
+   * Muhammad climbing trial first day was Sun 13 Sep.
+   */
   var ASH_FALLBACK_CLIENT_STARTS = {
     "Emmanuel Abate": "2026-09-15",
     "Christian Abate": "2026-09-15",
-    "Amaar Ah": "2026-09-14",
-    "Muhammad": "2026-09-14",
-    "Adaam Ah": "2026-09-14",
-    "Aydaan Ah": "2026-09-14",
+    "Amaar Ah": "2026-09-06",
+    Muhammad: "2026-09-13",
+    "Adaam Ah": "2026-09-06",
+    "Aydaan Ah": "2026-09-06",
     Ayman: "2026-09-16",
     "Ayman El Bakry": "2026-09-16",
   };
@@ -662,6 +667,7 @@
       if (!b) return a;
       return String(a) <= String(b) ? a : b;
     }
+    /* Prefer earliest start across sources so weekday Acton first_session cannot hide earlier Sunday standing. */
     start = earlierIso(earlierIso(start, ovStart), fbStart);
     if (start && /^\d{4}-\d{2}-\d{2}$/.test(String(start)) && isoDate < String(start)) {
       return false;

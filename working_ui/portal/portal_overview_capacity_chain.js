@@ -1037,10 +1037,11 @@
       {
         "Emmanuel Abate": "2026-09-15",
         "Christian Abate": "2026-09-15",
-        "Amaar Ah": "2026-09-14",
-        "Muhammad": "2026-09-14",
-        "Adaam Ah": "2026-09-14",
-        "Aydaan Ah": "2026-09-14",
+        /* Weekend standing from Autumn Sun 6; weekday Acton NEW CLIENT is 14/15 Sep. */
+        "Amaar Ah": "2026-09-06",
+        Muhammad: "2026-09-13",
+        "Adaam Ah": "2026-09-06",
+        "Aydaan Ah": "2026-09-06",
         Ayman: "2026-09-16",
         "Ayman El Bakry": "2026-09-16",
       },
