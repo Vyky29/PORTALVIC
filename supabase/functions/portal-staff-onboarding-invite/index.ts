@@ -11,11 +11,21 @@ import {
   sendParentEmailViaSmtp,
 } from "../_shared/portal_parent_messaging.ts";
 
-function portalOrigin(): string {
-  return (
-    (Deno.env.get("PORTAL_PUBLIC_ORIGIN") ?? "").trim().replace(/\/$/, "") ||
-    "https://portalvic.vercel.app"
-  );
+/**
+ * Staff onboarding lives on PORTALVIC (login + onboarding_portal.html).
+ * Do NOT use PORTAL_PUBLIC_ORIGIN — that is often the family site
+ * (www.clubsensational.org) and sends new hires to the wrong login.
+ */
+function staffOnboardingOrigin(): string {
+  const fromEnv = (
+    Deno.env.get("PORTAL_STAFF_ONBOARDING_ORIGIN") ||
+    Deno.env.get("PORTALVIC_PUBLIC_ORIGIN") ||
+    ""
+  )
+    .trim()
+    .replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+  return "https://portalvic.vercel.app";
 }
 
 function randomPassword(): string {
@@ -337,7 +347,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  const origin = portalOrigin();
+  const origin = staffOnboardingOrigin();
   const loginUrl = `${origin}/login.html`;
   const hubUrl = `${origin}/onboarding_portal.html`;
   const subject = "clubSENsational — your onboarding portal login";
