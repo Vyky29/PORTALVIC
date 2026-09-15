@@ -618,6 +618,22 @@
       if(type === 'slot_clear_client' && item && item.__portalScheduleOverride && item.__portalScheduleOverride.payload && item.__portalScheduleOverride.payload.cancelled_by_admin) return 'override--portal-cancelled';
       if(item && item.portalOverrideTrialTag) return 'override--trial';
       if(type === 'client_replace_in_slot' && item && item.__portalScheduleOverride && portalOverrideIsTrial(item.__portalScheduleOverride)) return 'override--trial';
+      /* Move in / New Client use ov-blue — never Make Up pink override--replace. */
+      if(item && (item.portalOverrideMoveInTag || item.portalOverrideNewClientTag)) return '';
+      if(type === 'client_replace_in_slot' && item && item.__portalScheduleOverride){
+        if(typeof portalOverrideIsClientMoveInReplace === 'function' && portalOverrideIsClientMoveInReplace(item.__portalScheduleOverride)){
+          return '';
+        }
+        try{
+          const P = window.PortalParticipantsSheet;
+          if(P && (
+            (typeof P.overrideIsFinishBookingNewClient === 'function' && P.overrideIsFinishBookingNewClient(item.__portalScheduleOverride))
+            || (typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(item.__portalScheduleOverride))
+          )){
+            return '';
+          }
+        }catch(_){}
+      }
       if(type) return portalOverrideTypeClass(type);
       const manual = String(item && item.__portalBaseSession && item.__portalBaseSession.override || '').trim().toUpperCase();
       if(manual === 'CANCELLED') return 'override--portal-cancelled';

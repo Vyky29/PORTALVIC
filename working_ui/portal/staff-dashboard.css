@@ -4176,6 +4176,32 @@
       border-color:#a01047;
       box-shadow:0 4px 14px rgba(194,24,91,.22);
     }
+    /* Move in / New Client: keep blue card (never Make Up pink or admin yellow). */
+    .section-card--today .session-card.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done),
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done),
+    .section-card--today .session-card.session-card--ov-blue.override--replace:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done){
+      background:linear-gradient(180deg,#dbeafe 0%,#eff6ff 55%,#f8fbff 100%);
+      border-color:rgba(37,99,235,.58);
+      box-shadow:0 1px 6px rgba(37,99,235,.14);
+    }
+    .section-card--today .session-card.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover,
+    .section-card--today .session-card.session-card--admin-adjusted.session-card--ov-blue:not(.session-card--review-needed):not(.session-card--review-incident):not(.session-card--review-done):hover{
+      border-color:rgba(29,78,216,.72);
+      box-shadow:0 4px 14px rgba(37,99,235,.2);
+    }
+    /* Teaching Pool / area note must stay readable on blue Move in cards. */
+    .section-card--today .session-card.session-card--ov-blue .session-area-note-label{
+      color:#0f172a;
+      font-weight:750;
+      text-shadow:0 1px 0 rgba(255,255,255,.65);
+    }
+    .section-card--today .session-card.session-card--ov-blue .session-area-note-icon,
+    .section-card--today .session-card.session-card--ov-blue .session-venue-visual{
+      filter:saturate(1.15) contrast(1.12);
+    }
+    .section-card--today .session-card.session-card--ov-blue .session-area-note-stack{
+      --area-note-accent:#0f172a;
+    }
     .session-card--ov-green{
       background:var(--reviewGreenBg);
       border-color:var(--reviewGreenBorder);
@@ -4249,8 +4275,8 @@
       border-color:rgba(124,58,237,.48);
     }
     .session-card--ov-blue{
-      background:linear-gradient(180deg,rgba(227,242,253,.85) 0%,rgba(255,255,255,.98) 100%);
-      border-color:rgba(25,118,210,.32);
+      background:linear-gradient(180deg,#dbeafe 0%,#eff6ff 55%,#f8fbff 100%);
+      border-color:rgba(37,99,235,.55);
     }
     .session-card--ov-red{
       background:linear-gradient(180deg,#ffe3e3 0%,#ffd6d6 100%);

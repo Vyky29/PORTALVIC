@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-    var VER = "20260915-nc-chip-stack";
+    var VER = "20260915-move-in-blue";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260914-raul-fri18-off",
