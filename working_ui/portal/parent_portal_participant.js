@@ -5764,6 +5764,7 @@
   function hubAlertKindLabel(kind) {
     var k = String(kind || "").toLowerCase();
     if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
+    if (k === "time_change" || k === "session_time_change") return "Time change";
     if (k === "session_cancelled") return "Session cancelled";
     if (k === "absence_announced") return "Absence noted";
     return k.replace(/_/g, " ") || "Club update";
@@ -7148,6 +7149,8 @@
       var title = "";
       if (k === "instructor_change" || k === "instructor_reassign") {
         title = "Instructor update";
+      } else if (k === "time_change" || k === "session_time_change") {
+        title = "Time change";
       } else if (k === "session_cancelled") {
         title = "Session cancelled";
       } else if (k === "absence_announced") {
@@ -7426,6 +7429,7 @@
     var k = String(m.kind || "").trim();
     if (k === "custom" || k === "reply") return "Club message";
     if (k === "instructor_change" || k === "instructor_reassign") return "Instructor update";
+    if (k === "time_change" || k === "session_time_change") return "Time change";
     if (k === "session_cancelled") return "Session cancelled";
     if (k === "absence_announced") return "Absence noted";
     if (!k) return "Club message";
@@ -7674,6 +7678,8 @@
       return (
         k === "instructor_change" ||
         k === "instructor_reassign" ||
+        k === "time_change" ||
+        k === "session_time_change" ||
         k === "session_cancelled" ||
         k === "absence_announced" ||
         k === "makeup_scheduled"

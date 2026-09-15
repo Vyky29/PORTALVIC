@@ -142,13 +142,13 @@
   <script src="/portal/portal_incident_parent_notify.js?v=20260703-incident-notify"></script>
   <script src="/portal/portal_wa_thread_refresh.js?v=20260716-wa-audio-guard"></script>
   <script src="/portal/portal_chat_bubble_icons.js?v=20260904-comms-13"></script>
-  <script src="/portal/admin-parent-notify-log.js?v=20260915-wa-131049"></script>
+  <script src="/portal/admin-parent-notify-log.js?v=20260915-time-change"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260915-wa-131049"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
   <script src="/portal/admin-open-places-2627.js?v=20260913-slots-live"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260909-reply-only" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
-  <script src="/portal/portal-parent-notify-templates.js?v=20260707-cancel-reason-policy"></script>
+  <script src="/portal/portal-parent-notify-templates.js?v=20260915-time-change"></script>
   <script src="/portal/cfk-app.js?v=20260912-drop-mock-cap"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260911-sched-mobile-cards"></script>
@@ -14986,6 +14986,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="muted" style="margin:6px 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Draft email or WhatsApp from a template; edit before sending. Instructor photos from the staff dashboard are included automatically for instructor change and make-up.</p>'+
         '<div style="display:flex;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyInstructor">Instructor change</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyTimeChange">Time change</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsenceThanks">Absence — thanks</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsenceFollowup">Absence — check-in</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsence">Absence (office)</button>'+
@@ -15026,6 +15027,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var snI = $('schedParentNotifyInstructor');
       if(snI) snI.onclick = function(){ schedOpenParentNotifyForKind('instructor_change'); };
+      var snTc = $('schedParentNotifyTimeChange');
+      if(snTc) snTc.onclick = function(){ schedOpenParentNotifyForKind('time_change'); };
       var snA = $('schedParentNotifyAbsence');
       if(snA) snA.onclick = function(){ schedOpenParentNotifyForKind('absence_announced'); };
       var snAT = $('schedParentNotifyAbsenceThanks');

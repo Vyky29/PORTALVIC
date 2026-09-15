@@ -279,6 +279,8 @@
     payment_due: "Payment reminder",
     instructor_change: "Instructor change",
     instructor_reassign: "Instructor change",
+    time_change: "Time change",
+    session_time_change: "Time change",
     absence_announced: "Absence",
     makeup_scheduled: "Make up session",
     trial_scheduled: "Trial session",

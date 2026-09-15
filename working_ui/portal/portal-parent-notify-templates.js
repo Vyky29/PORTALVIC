@@ -320,6 +320,63 @@
     );
   }
 
+  /**
+   * kind: time_change — same-day seat move (client_move) or admin time update.
+   * Uses ov.payload.moved_from_time / moved_to_time when present.
+   */
+  function timeChange(slot, ov, meta, opts) {
+    opts = opts || {};
+    var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
+    var venue = sessionVenue(slot);
+    var payload = (ov && ov.payload) || {};
+    var dateFriendly = friendlyDate(sessionDateIso(slot, ov));
+    var oldTime = String(
+      (opts && opts.oldTime) ||
+        payload.moved_from_time ||
+        payload.from_time ||
+        payload.previous_time ||
+        "",
+    ).trim();
+    var newTime = String(
+      (opts && opts.newTime) ||
+        payload.moved_to_time ||
+        payload.to_time ||
+        sessionWhen(slot) ||
+        "",
+    ).trim();
+    if (newTime.indexOf("\u00b7") >= 0) {
+      newTime = newTime.slice(newTime.lastIndexOf("\u00b7") + 1).trim();
+    }
+    var wherePart = "";
+    if (dateFriendly && venue) wherePart = " on " + dateFriendly + " at " + venue;
+    else if (dateFriendly) wherePart = " on " + dateFriendly;
+    else if (venue) wherePart = " at " + venue;
+    var timesPart = "";
+    if (oldTime && newTime) {
+      timesPart =
+        "\n\nPrevious time: " +
+        oldTime +
+        "\nNew time: " +
+        newTime;
+    } else if (newTime) {
+      timesPart = "\n\nNew time: " + newTime;
+    }
+    return (
+      greet(meta && meta.parentCarerName) +
+      "This is ClubSENsational.\n\n" +
+      "We are writing about " +
+      client +
+      "'s session" +
+      wherePart +
+      ".\n\n" +
+      "There has been a change of time for today only." +
+      timesPart +
+      "\n\n" +
+      "If you have any questions, just reply to this message." +
+      signOff()
+    );
+  }
+
   /** kind: makeup_scheduled — client_replace_in_slot make-up (not trial) */
   function makeup(slot, ov, meta, opts) {
     opts = opts || {};
@@ -522,6 +579,9 @@
     if (k === "instructor_change" || k === "instructor_reassign") {
       return "Instructor update · " + client;
     }
+    if (k === "time_change" || k === "session_time_change") {
+      return "Time change · " + client;
+    }
     if (k === "absence_announced") return "Absence · " + client;
     if (k === "absence_thanks") return "Thank you — absence noted · " + client;
     if (k === "absence_followup") return "Absence check-in · " + client;
@@ -543,6 +603,10 @@
       if (payload.cancelled_by_admin) return "session_cancelled";
     }
     if (t === "client_replace_in_slot" || t === "replace_participant") {
+      var plRep = ov && ov.payload ? ov.payload : {};
+      if (plRep.client_move === true || plRep.client_move === "true") {
+        return "time_change";
+      }
       if (opts && opts.isTrialOverride && opts.isTrialOverride(ov)) {
         return "trial_scheduled";
       }
@@ -587,6 +651,9 @@
     if (k === "absence_followup") return absenceFollowup(slot, ov, meta, opts);
     if (k === "makeup_scheduled") return makeup(slot, ov, meta, opts);
     if (k === "trial_scheduled") return trial(slot, ov, meta, opts);
+    if (k === "time_change" || k === "session_time_change") {
+      return timeChange(slot, ov, meta, opts);
+    }
     if (k === "session_cancelled") return cancelled(slot, ov, meta, opts);
     if (k === "booking_confirmation") {
       return bookingConfirmation(slot, meta, ctx.svc);
@@ -599,6 +666,7 @@
     signOff: signOff,
     payment: payment,
     instructorChange: instructorChange,
+    timeChange: timeChange,
     absence: absence,
     absenceThanks: absenceThanks,
     absenceFollowup: absenceFollowup,
