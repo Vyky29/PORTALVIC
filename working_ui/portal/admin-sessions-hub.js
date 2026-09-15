@@ -2058,8 +2058,17 @@
     var canonSid = canonicalStaffMatchKey(sid);
     for (var i = 0; i < list.length; i++) {
       var inst = clean(list[i]).toLowerCase();
-      if (inst === sid || inst.indexOf(sid) === 0 || sid.indexOf(inst) === 0) return true;
-      if (canonSid && canonicalStaffMatchKey(inst) === canonSid) return true;
+      var canonInst = canonicalStaffMatchKey(inst);
+      if (staffKeysAreJaviJavierPair(canonSid, canonInst)) continue;
+      if (canonSid && canonInst && canonSid === canonInst) return true;
+      if (inst === sid) return true;
+      /* Prefix match only when not javi/javier (otherwise "javi" steals "javier"). */
+      if (
+        !staffKeysAreJaviJavierPair(canonSid || sid, canonInst || inst) &&
+        (inst.indexOf(sid) === 0 || sid.indexOf(inst) === 0)
+      ) {
+        return true;
+      }
     }
     return false;
   }
@@ -3881,27 +3890,42 @@
     return pkArea;
   }
 
+  /** CEO Javi Palankas (javi) vs swimming Javier (javier) — never the same person. */
+  function staffKeysAreJaviJavierPair(a, b) {
+    return (a === "javi" && b === "javier") || (a === "javier" && b === "javi");
+  }
+
   function completedByMatchesInstructor(completedBy, instructorRaw) {
     var by = clean(completedBy).toLowerCase();
     var inst = clean(instructorRaw).toLowerCase();
     if (!by || !inst) return false;
-    if (by === inst) return true;
-    if (by.indexOf(inst) >= 0 || inst.indexOf(by) >= 0) return true;
-    var tokens = by.split(/\s+/).filter(Boolean);
-    if (tokens.indexOf(inst) >= 0) return true;
-    if (tokens[0] && (tokens[0] === inst || inst.indexOf(tokens[0]) >= 0 || tokens[0].indexOf(inst) >= 0)) {
-      return true;
-    }
-    /* Javi Palankas submits as "Palankas Arranz Escorial" — first token / joined surname → javi. */
+    /* Canonical keys first — blocks "javier".indexOf("javi") false positives. */
     var byKey = canonicalStaffMatchKey(by);
     var instKey = canonicalStaffMatchKey(inst);
+    if (staffKeysAreJaviJavierPair(byKey, instKey)) return false;
     if (byKey && instKey && byKey === instKey) return true;
+    if (by === inst) return true;
+    /* Substring only when neither side is the javi/javier pair. */
+    if (!staffKeysAreJaviJavierPair(byKey || by.split(/\s+/)[0], instKey || inst.split(/\s+/)[0])) {
+      if (by.indexOf(inst) >= 0 || inst.indexOf(by) >= 0) return true;
+    }
+    var tokens = by.split(/\s+/).filter(Boolean);
+    if (tokens.indexOf(inst) >= 0) return true;
     if (tokens[0]) {
       var t0Key = canonicalStaffMatchKey(tokens[0]);
+      if (staffKeysAreJaviJavierPair(t0Key, instKey)) return false;
+      if (
+        !staffKeysAreJaviJavierPair(t0Key || tokens[0], instKey || inst.split(/\s+/)[0]) &&
+        (tokens[0] === inst || inst.indexOf(tokens[0]) >= 0 || tokens[0].indexOf(inst) >= 0)
+      ) {
+        return true;
+      }
       if (t0Key && instKey && t0Key === instKey) return true;
     }
+    /* Javi Palankas submits as "Palankas Arranz Escorial" — joined surname → javi. */
     var byJoined = by.replace(/[^a-z0-9]+/g, "");
     var byJoinedKey = canonicalStaffMatchKey(byJoined);
+    if (staffKeysAreJaviJavierPair(byJoinedKey, instKey)) return false;
     if (byJoinedKey && instKey && byJoinedKey === instKey) return true;
     if (
       (instKey === "luliya" || inst === "luliya" || inst === "lulia") &&
@@ -5017,12 +5041,15 @@
   function canonicalInstructorFilterName(name) {
     var n = clean(name);
     if (!n) return "";
+    var key = canonicalStaffMatchKey(n);
+    /* Force distinct labels — never let display helpers collapse swimming Javier into CEO Javi. */
+    if (key === "javier") return "Javier";
+    if (key === "javi") return "Javi Palankas";
+    if (key === "luliya") return "Luliya";
     if (typeof window !== "undefined" && typeof window.portalStaffDisplayName === "function") {
       var portal = window.portalStaffDisplayName(n);
       if (portal) return portal;
     }
-    if (canonicalStaffMatchKey(n) === "luliya") return "Luliya";
-    if (canonicalStaffMatchKey(n) === "javi") return "Javi Palankas";
     if (/^[A-Z]{2,}$/.test(n)) {
       return n.charAt(0) + n.slice(1).toLowerCase();
     }
@@ -5046,8 +5073,14 @@
       var key = canonicalStaffMatchKey(raw) || raw.toLowerCase();
       if (!key) continue;
       var label = canonicalInstructorFilterName(raw);
+      if (key === "javier") label = "Javier";
+      if (key === "javi") label = "Javi Palankas";
       var prev = byKey[key];
       if (!prev) {
+        byKey[key] = label;
+        continue;
+      }
+      if (key === "javier" || key === "javi") {
         byKey[key] = label;
         continue;
       }
