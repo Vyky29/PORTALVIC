@@ -1546,8 +1546,6 @@
         push(portalPlainSessionSlotChipsHtml(item.portalSessionAddChips, item.portalOverrideCardTone));
       } else if(!!item.portalOverrideTrialTag || isTrialSym){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial/New Participant"><span>Trial/New Participant</span></span>');
-      } else if(isNewClientItem){
-        push('<span class="portal-session-slot-chip portal-session-slot-chip--new-client" aria-label="New Client"><span>New Client</span></span>');
       } else if(!!item.portalOverrideMoveInTag || symNorm === 'move in' || symNorm === 'moved in'){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--move-in" aria-label="Move in"><span>Move in</span></span>');
       } else if(isMakeUpSym || !!item.portalOverrideMakeUpTag){
@@ -1555,7 +1553,7 @@
       } else if(pillText && pillNorm !== 'UPDATED'){
         const display = escapeHtml(pillText).replace(/\n/g, ' ');
         push('<span class="portal-session-slot-chip" aria-label="' + display + '"><span>' + display + '</span></span>');
-      } else if(sym && !isMakeUpSym && !isNewClientSym && symNorm !== 'no participant'){
+      } else if(sym && !isMakeUpSym && !isNewClientSym && symNorm !== 'no participant' && symNorm !== 'new client' && symNorm !== 'new participant'){
         // "No Participant" open slots show their yellow card + big red name only —
         // the redundant grey chip is suppressed.
         const tx = escapeHtml(sym);
@@ -1577,6 +1575,10 @@
         if(!alreadyUpdated && (isNewClientItem || !chips.length || pillNorm === 'UPDATED') && !pillBlocksUpdated){
           push(portalSessionUpdatedChipHtml());
         }
+      }
+      /* New Client under Updated by admin (not side-by-side). */
+      if(isNewClientItem && !chips.some(function(h){ return String(h || '').indexOf('portal-session-slot-chip--new-client') >= 0; })){
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--new-client" aria-label="New Client"><span>New Client</span></span>');
       }
       return chips.join('');
     }
@@ -4268,7 +4270,8 @@
     }
     function portalTodayCardUsesReplaceOverride(it){
       if(!it || it.kind !== 'client') return false;
-      if(it.portalOverrideTrialTag || it.portalOverrideMakeUpTag) return true;
+      if(it.portalOverrideTrialTag || it.portalOverrideMakeUpTag
+        || it.portalOverrideNewClientTag || it.portalOverrideMoveInTag) return true;
       const ov = it.__portalScheduleOverride;
       if(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot') return true;
       /* Cover instructor of a MakeUp (Javi Palankas on Anas Thu 10) must review the

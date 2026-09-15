@@ -5895,9 +5895,11 @@
       margin-top:4px;
     }
     .section-card--today .session-chips-below-name--wrap{
+      flex-direction:column;
       flex-wrap:nowrap;
+      align-items:center;
       justify-content:center;
-      gap:3px;
+      gap:4px;
     }
     .section-card--today .session-chips-below-name .portal-session-slot-chip,
     .section-card--today .session-chips-below-name .portal-sched-ov-badge{
@@ -5907,14 +5909,15 @@
     }
     .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip,
     .section-card--today .session-chips-below-name--wrap .portal-sched-ov-badge{
-      max-width:calc(50% - 2px);
-      padding:4px 7px;
+      max-width:100%;
+      width:auto;
+      padding:4px 10px;
       font-size:10px;
     }
     /* "Updated by admin" must stay readable — never 50%-width ellipsis. */
     .section-card--today .session-chips-below-name--wrap .portal-session-slot-chip--updated{
       max-width:100%;
-      flex:1 1 100%;
+      flex:0 1 auto;
       padding:4px 10px;
       font-size:10px;
     }

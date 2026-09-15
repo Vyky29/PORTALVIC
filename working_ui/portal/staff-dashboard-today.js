@@ -1963,6 +1963,20 @@
         if(typeof portalOpenSlotMakeupOverrideForSession === 'function' && portalOpenSlotMakeupOverrideForSession(s, iso)){
           return null;
         }
+        if(typeof portalOpenSlotNewClientOverrideForSession === 'function' && portalOpenSlotNewClientOverrideForSession(s, iso)){
+          return null;
+        }
+        if(typeof portalOpenSlotMoveInOverrideForSession === 'function' && portalOpenSlotMoveInOverrideForSession(s, iso)){
+          return null;
+        }
+        /* Replace / New Client review rows keep Available status but a real clientId —
+           they still owe feedback (Kareena on Javier open 5.30 was painting Submitted). */
+        const cidAvail = String(s.clientId || '').trim().toLowerCase();
+        if(cidAvail
+          && typeof portalScheduleOverrideAnchorIsOpenSlot === 'function'
+          && !portalScheduleOverrideAnchorIsOpenSlot(cidAvail)){
+          return null;
+        }
         return { feedbackDone: true, incident: false, absent: false, cancelled: false };
       }
       if(st === 'Home' || st === 'Manager' || st === 'Admin' || st === 'Office' || st === 'Interview'){
