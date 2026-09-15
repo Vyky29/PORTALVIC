@@ -648,8 +648,9 @@
     Muhammad: "2026-09-13",
     "Adaam Ah": "2026-09-06",
     "Aydaan Ah": "2026-09-06",
-    Ayman: "2026-09-16",
-    "Ayman El Bakry": "2026-09-16",
+    /* Tue Acton Javier 4–5 from Autumn Tue 8; Wed Acton 5–6 NEW CLIENT is 16 Sep (row bookedFrom + scrub). */
+    Ayman: "2026-09-08",
+    "Ayman El Bakry": "2026-09-08",
   };
 
   /** First calendar day this client appears on roster (ISO date). */

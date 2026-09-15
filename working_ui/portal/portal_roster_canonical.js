@@ -3770,11 +3770,11 @@
     var rows = resolveCanonicalRosterRows(opts);
     var starts = Object.assign({}, base.clientRosterStartDates || {}, {
       Fadi: FADI_START_ISO,
-      /* Wed Acton Javier 5–6: first session Wed 16 Sep (finish-booking). */
-      Ayman: "2026-09-16",
-      "Ayman El Bakry": "2026-09-16",
-      ayman: "2026-09-16",
-      ayman_el_bakry: "2026-09-16",
+      /* Tue Acton Javier 4–5 from 8 Sep. Wed Acton 5–6 first session 16 Sep (bookedFrom + scrub). */
+      Ayman: "2026-09-08",
+      "Ayman El Bakry": "2026-09-08",
+      ayman: "2026-09-08",
+      ayman_el_bakry: "2026-09-08",
     });
     return Object.assign({}, base, {
       rows: rows,

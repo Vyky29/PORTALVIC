@@ -1042,8 +1042,9 @@
         Muhammad: "2026-09-13",
         "Adaam Ah": "2026-09-06",
         "Aydaan Ah": "2026-09-06",
-        Ayman: "2026-09-16",
-        "Ayman El Bakry": "2026-09-16",
+        /* Tue Javier 4–5 from 8 Sep; Wed 5–6 NEW CLIENT stays 16 Sep via bookedFrom/scrub. */
+        Ayman: "2026-09-08",
+        "Ayman El Bakry": "2026-09-08",
       },
       C && C.FADI_START_ISO ? { Fadi: C.FADI_START_ISO } : {}
     );
