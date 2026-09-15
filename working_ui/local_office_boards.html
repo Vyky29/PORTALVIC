@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex" />
-  <title>LOCAL · Office boards (MADRE + Autumn roster)</title>
+  <title>LOCAL · Office boards (redirect to Admin)</title>
   <style>
     :root { --ink: #173247; --muted: #728290; --bg: #eef4f9; --card: #fff; --line: rgba(23,50,71,.14); }
     * { box-sizing: border-box; }
@@ -43,29 +43,49 @@
       font-size: 0.88rem;
       overflow-wrap: break-word;
     }
+    .banner {
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+      font-size: 0.9rem;
+      max-width: 40rem;
+      overflow-wrap: break-word;
+    }
     code { font-size: 0.85em; }
   </style>
 </head>
 <body>
-  <h1>LOCAL office boards</h1>
+  <h1>Capacity chain editors</h1>
+  <p class="banner">
+    Production truth lives in <strong>Admin portal</strong> (Services phases + Instructor timetable + Schedule &amp; Covers + Sessions Overview).
+    These links open Admin — not a separate localhost twin.
+  </p>
   <p>
-    Serve from <code>working_ui/</code> at
-    <code>http://127.0.0.1:8765/local_office_boards.html</code> (not file://).
-    Day-of truth stays Sessions Overview — these are authoring / look-at boards only.
-    Summer MADRE grid editor is retired.
+    Chain: Places → Services → Timetable → Covers → Overview.
   </p>
   <div class="grid">
-    <a class="card" href="/local_madre_live.html">
-      <strong>MADRE Autumn (look)</strong>
-      <span>Standing seats on Sep+ calendar dates (e.g. 13-Sep-2026). Not Jun–Jul summer weeks.</span>
+    <a class="card" href="/admin_dashboard.html#open_places_2627">
+      <strong>1 · Places</strong>
+      <span>Admin Open Places (same occupants capacity as the chain).</span>
     </a>
-    <a class="card" href="/local_dc_staff_week.html">
-      <strong>Autumn 2026 roster (LOCAL DC)</strong>
-      <span>The board you first called LOCAL DC — weekday Day Centre / Hub / after-school authoring draft.</span>
+    <a class="card" href="/admin_dashboard.html#c4k_services">
+      <strong>2 · Services</strong>
+      <span>Day Centre phased seats + AS/weekend clients — capacity-chain occupants.</span>
     </a>
-    <a class="card" href="/term_timetable_local.html">
-      <strong>Term timetable (who works)</strong>
-      <span>Staff shift strip for the term.</span>
+    <a class="card" href="/admin_dashboard.html#roster_spreadsheets">
+      <strong>3 · Timetable</strong>
+      <span>Instructor timetable · who works (saves to portal_staff_timetable_cells).</span>
+    </a>
+    <a class="card" href="/admin_dashboard.html#scheduling">
+      <strong>4 · Schedule &amp; Covers</strong>
+      <span>Day patches — staff_unavailability + schedule_overrides.</span>
+    </a>
+    <a class="card" href="/admin_dashboard.html#c4k_sessions">
+      <strong>5 · Sessions Overview</strong>
+      <span>Only day look-here — standing chain + live Covers.</span>
     </a>
   </div>
 </body>

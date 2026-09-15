@@ -9,7 +9,7 @@
 
   var TERM_FROM = "2026-09-01";
   var TERM_THROUGH = "2026-12-18";
-  var TIMETABLE_HOURS_DRAFT_KEY = "term_timetable_local_hours_draft_v1";
+  /* LOCAL draft key retired for capacity chain (Admin Timetable = portal_staff_timetable_cells). */
   var DOW_KEYS = [
     "sunday",
     "monday",
@@ -538,12 +538,8 @@
   }
 
   function timetableCellText(cell) {
-    var drafts = {};
-    try {
-      drafts = JSON.parse(localStorage.getItem(TIMETABLE_HOURS_DRAFT_KEY) || "{}") || {};
-    } catch (_e) {}
-    var k = cell && cell.editKey;
-    if (k && drafts[k] != null) return String(drafts[k]);
+    /* Production: shipped hours + Admin portal_staff_timetable_cells merge only.
+     * Do not honour LOCAL term_timetable_local_hours_draft_v1 (machine twin). */
     return String((cell && cell.text) || "");
   }
 

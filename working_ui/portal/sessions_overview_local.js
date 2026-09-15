@@ -446,12 +446,6 @@
   }
 
   function timetableCellText(cell) {
-    var drafts = {};
-    try {
-      drafts = JSON.parse(localStorage.getItem(TIMETABLE_HOURS_DRAFT_KEY) || "{}") || {};
-    } catch (_e) {}
-    var k = cell && cell.editKey;
-    if (k && drafts[k] != null) return String(drafts[k]);
     return String((cell && cell.text) || "");
   }
 

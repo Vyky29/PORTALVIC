@@ -160,10 +160,10 @@
   <script src="/portal/portal_staff_match_key.js?v=20260911-team-staff-id"></script>
   <script src="/portal/portal_session_status.js?v=20260911-session-status"></script>
   <script src="/portal/portal_roster_canonical.js?v=20260915-ayman-tue"></script>
-  <script src="/portal/autumn_staff_hours_reference.js?v=20260914-youssef-fri-ikram"></script>
-  <script src="/portal/portal_dc_services_local.js?v=20260914-overview-pin2"></script>
-  <script src="/portal/portal_capacity_chain_occupants.js?v=20260914-michelle-office-tue1"></script>
-  <script src="/portal/portal_overview_capacity_chain.js?v=20260915-ayman-tue"></script>
+  <script src="/portal/autumn_staff_hours_reference.js?v=20260915-phases-admin"></script>
+  <script src="/portal/portal_dc_services_local.js?v=20260915-phases-admin"></script>
+  <script src="/portal/portal_capacity_chain_occupants.js?v=20260915-phases-admin"></script>
+  <script src="/portal/portal_overview_capacity_chain.js?v=20260915-phases-admin"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260914-term-open-fast"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
@@ -172,13 +172,13 @@
   <script src="/portal/admin-portal-term-slot.js?v=20260911-roster-dedupe"></script>
   <script src="/portal/portal-staff-timetable-merge.js?v=20260614-changelog"></script>
   <script src="/portal/spreadsheet_reference_data.js?v=20260911-autumn-labels"></script>
-  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260915-sun-phases"></script>
+  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260915-phases-admin"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260912-trial-live" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260915-dc-phase" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -8471,8 +8471,100 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      * Michelle-style Day Centre board: one column per staff, clients stacked
      * with compact time + area (who is with whom).
      */
-    /** Prefer Autumn 26/27 Day Centre board (PortalRosterCanonical); else slot-derived. */
-    function adminServicesDayCentreStaffBoardForDow(dowNorm, slotsForDay, filt){
+    /**
+     * Production DC phases from capacity-chain occupants (same as LOCAL 2).
+     * Prefer dated / week1 / fadi_off / standing seat for the display ISO.
+     */
+    function adminServicesDayCentreStaffBoardFromOccupants(iso){
+      try{
+        var Occ = window.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+        var Dc = window.PortalDcServicesLocal;
+        if(!Occ || !Occ.bySlotId || !Dc || typeof Dc.boardForIso !== 'function') return null;
+        var board = Dc.boardForIso(Occ.bySlotId, iso);
+        if(!board || board.source !== 'services' || !Array.isArray(board.columns) || !board.columns.length){
+          return null;
+        }
+        var byStaff = {};
+        var staffOrder = [];
+        for(var ci = 0; ci < board.columns.length; ci++){
+          var col = board.columns[ci];
+          var snm = String((col && col.staff) || '').trim();
+          if(!snm || adminServiceIsExcludedInstructorName(snm)) continue;
+          var snKey = snm.toLowerCase();
+          if(!byStaff[snKey]){
+            byStaff[snKey] = { key: snKey, name: snm, clients: [] };
+            staffOrder.push(snKey);
+          }
+          var clients = (col && col.clients) || [];
+          for(var cj = 0; cj < clients.length; cj++){
+            var c = clients[cj];
+            var name = String((c && c.name) || '').trim();
+            if(!name) continue;
+            var timeLab = String((c && c.time) || '').trim();
+            var startMin = 0;
+            var duration = 0;
+            if(timeLab){
+              var parsed = adminRosterParseTimeSlot(timeLab, '');
+              if(parsed && parsed.start && parsed.end){
+                var sp = String(parsed.start).split(':');
+                var ep = String(parsed.end).split(':');
+                startMin = (parseInt(sp[0], 10) || 0) * 60 + (parseInt(sp[1], 10) || 0);
+                duration = ((parseInt(ep[0], 10) || 0) * 60 + (parseInt(ep[1], 10) || 0)) - startMin;
+                if(duration < 0) duration += 24 * 60;
+              }
+            }
+            var areaLab = (typeof Dc.areaForDcClient === 'function')
+              ? Dc.areaForDcClient(name)
+              : adminServicesDayCentreAreaLabel('', 'Day Centre');
+            byStaff[snKey].clients.push({
+              client: name,
+              time: timeLab || '\u2014',
+              area: areaLab,
+              startMin: startMin,
+              duration: duration
+            });
+          }
+        }
+        staffOrder.forEach(function(k){
+          byStaff[k].clients.sort(function(a, b){
+            return (a.startMin - b.startMin) || String(a.client).localeCompare(String(b.client));
+          });
+        });
+        if(!staffOrder.length) return null;
+        return {
+          staffOrder: staffOrder,
+          byStaff: byStaff,
+          phase: board.phase || '',
+          phaseLabel: board.phaseLabel || board.phase || '',
+          validFrom: board.validFrom || '',
+          validTo: board.validTo || '',
+          source: 'occupants'
+        };
+      }catch(_occ){
+        return null;
+      }
+    }
+    function adminServicesDcPhaseBadgeHtml(board){
+      if(!board) return '';
+      var label = String(board.phaseLabel || board.phase || '').trim();
+      var from = String(board.validFrom || '').slice(0, 10);
+      var to = String(board.validTo || '').slice(0, 10);
+      if(!label && !from) return '';
+      var range = from && to ? (from === to ? from : from + ' \u2192 ' + to) : '';
+      return (
+        '<span class="c4k-svc-dc-phase" title="Day Centre phase from Services occupants (capacity chain)">' +
+        esc(label || 'DC phase') +
+        (range ? ' \u00b7 ' + esc(range) : '') +
+        '</span>'
+      );
+    }
+    /** Prefer occupants DC phases \u2192 Autumn canonical board \u2192 slot-derived. */
+    function adminServicesDayCentreStaffBoardForDow(dowNorm, slotsForDay, filt, isoHint){
+      var iso = String(isoHint || '').slice(0, 10);
+      if(/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+        var fromOcc = adminServicesDayCentreStaffBoardFromOccupants(iso);
+        if(fromOcc && fromOcc.staffOrder && fromOcc.staffOrder.length) return fromOcc;
+      }
       try{
         if(window.PortalRosterCanonical &&
            typeof window.PortalRosterCanonical.buildDayCentreStaffBoard === 'function'){
@@ -15449,16 +15541,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         view === 'c4k_services' ||
         view === 'servicecap' ||
         view === 'term_roster_edit' ||
+        view === 'roster_spreadsheets' ||
         view === 'absents_refunds' ||
-        /c4k_sessions|scheduling|c4k_services|servicecap|term_roster|absents_refunds/i.test(hash) ||
+        /c4k_sessions|scheduling|c4k_services|servicecap|term_roster|roster_spreadsheets|absents_refunds/i.test(hash) ||
         !!window.__PORTAL_SESSIONS_OVERVIEW_ACTIVE__ ||
         !!window.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__;
       if(typeof window.portalRefreshStaffDashboardSourceFromPortal !== 'function') return;
+      function doRefresh(){
+        try{
+          if(window.PortalOverviewCapacityChain && typeof window.PortalOverviewCapacityChain.clearResolveCache === 'function'){
+            window.PortalOverviewCapacityChain.clearResolveCache();
+          }
+        }catch(_c){}
+        try{
+          window.portalRefreshStaffDashboardSourceFromPortal(
+            wantFullClub ? Object.assign({}, opts, { forSessionsOverview: true }) : opts
+          );
+        }catch(_r){}
+      }
+      /* Merge Admin Timetable DB cells into hours before capacity chain resolve. */
       try{
-        window.portalRefreshStaffDashboardSourceFromPortal(
-          wantFullClub ? Object.assign({}, opts, { forSessionsOverview: true }) : opts
-        );
-      }catch(_r){}
+        var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+        var P = window.PORTAL_AUTUMN_STAFF_HOURS;
+        var hours = P && (P.staffHours || P);
+        if(client && window.PortalStaffTimetableMerge && hours){
+          window.PortalStaffTimetableMerge.loadAndCache(client, 60000).then(function(map){
+            try{
+              window.PortalStaffTimetableMerge.applyToStaffHours(hours, map);
+            }catch(_a){}
+            doRefresh();
+          }).catch(function(){ doRefresh(); });
+          return;
+        }
+      }catch(_m){}
+      doRefresh();
     }
     window.portalAdminRefreshStaffDashboardSource = portalAdminRefreshStaffDashboardSource;
     async function saveSchedOverrideFromDrawer(){
@@ -21437,7 +21553,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 }catch(_dcRaw){}
               }
               if(!slotsDc.length) slotsDc = slotsWd;
-              var dcBoard = adminServicesDayCentreStaffBoardForDow(dk, slotsDc, filt);
+              var dcBoard = adminServicesDayCentreStaffBoardForDow(dk, slotsDc, filt, displayIsoDc);
               if(!dcBoard.staffOrder.length) continue;
               var didDc = 'c4k-svc-dow-'+pidx+'-'+vix+'-'+dix;
               var dowTitleDc = adminServiceDowTitleFromNorm(dk);
@@ -21445,6 +21561,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var hoursHtmlDc = (dayHoursDc && dayHoursDc !== '—')
                 ? '<span class="c4k-svc-day-acc__hours" title="Day Centre hours this weekday (Autumn 26/27 roster).">'+esc(dayHoursDc)+'</span>'
                 : '';
+              var phaseHtmlDc = adminServicesDcPhaseBadgeHtml(dcBoard);
               for(var dci = 0; dci < dcBoard.staffOrder.length; dci++){
                 var dcCol = dcBoard.byStaff[dcBoard.staffOrder[dci]];
                 var dcSn = String((dcCol && dcCol.name) || '').trim();
@@ -21463,9 +21580,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 'data-c4k-svc-programme="'+esc(block.programme)+'" data-venue="'+esc(vn.venue)+'" data-day="'+esc(dk)+'" data-session-date="'+esc(displayIsoDc || '')+'" '+
                 'title="Add an open seat band to Booking Portal for this weekday standing">'+
                 '+ Schedule a Class</button>';
+              var dcHint =
+                dcBoard.source === 'occupants'
+                  ? 'Services · Day Centre phased seats (capacity chain). Phase drives Overview standing; day exceptions live in Schedule &amp; Covers.'
+                  : 'Staff board · Day Centre Autumn 26/27 (who with whom). Day exceptions live in Schedule &amp; Covers.';
               var bodyDc =
                 '<div class="c4k-svc-slots c4k-svc-slots--dc" style="min-width:0;overflow:auto">'+
-                '<p class="c4k-svc-dc-hint muted">Staff board · Day Centre Autumn 26/27 (who with whom). Day exceptions live in Schedule &amp; Covers. Cyrus Tue 3.30–5 with Victor is Bespoke on staff dashboard.</p>'+
+                '<p class="c4k-svc-dc-hint muted">'+dcHint+'</p>'+
                 adminServicesDayCentreStaffBoardHtml(dcBoard)+
                 '<div class="c4k-svc-day-sched-bar">'+schedAddBtnDc+adminServicesOpenPlacesFilterBtnHtml(block.programme, vn.venue, dk)+'</div>'+
                 '</div>';
@@ -21477,6 +21598,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 '<span class="c4k-svc-day-acc__namecol">'+
                 '<span class="c4k-svc-day-acc__name">'+esc(dowTitleDc)+'</span>'+
                 hoursHtmlDc+
+                (phaseHtmlDc || '')+
                 '</span></span>'+
                 '</span>'+
                 '</summary>'+

@@ -15,20 +15,21 @@ Booking (plazas) → Services (clients / seats) → Timetable (staff) → Schedu
 | Layer | Owns | Does not own |
 |-------|------|----------------|
 | **Booking Portal** | Public AS/weekend Places (capacity / taken / free) | Instructor names; DC; Bespoke |
-| **Services** | Who is booked on each seat (term / trial); **DC phased/dated seats** | Day-of covers |
-| **Timetable** | Who works which seat / hours | Public Places |
+| **Services** (Admin `c4k_services`) | Who is booked on each seat (term / trial); **DC phased/dated seats** from `portal_capacity_chain_occupants.js` | Day-of covers |
+| **Timetable** (Admin Instructor timetable) | Who works which seat / hours — base `autumn_staff_hours_reference.js` + **`portal_staff_timetable_cells`** | Public Places |
 | **Schedule & Covers** | Day exceptions (`schedule_overrides` + `staff_unavailability`) | Term-wide capacity redesign |
 | **Sessions Overview** | **Only day look-here** — capacity chain standing (Places AS + Services DC phases + Timetable Bespoke) + live Covers | Authoring drafts; WEEK1/Fadi/Mon14 canonical boards for Overview paint |
-| **LOCAL Overview** | Same chain as prod (`portal_overview_capacity_chain.js`). Covers from local snaps. | Canonical resolve |
 
 ## Capacity chain (Overview standing)
 
 - Shared resolver: `working_ui/portal/portal_overview_capacity_chain.js`
 - Deployed seats: `working_ui/portal/portal_capacity_chain_occupants.js` (`PORTAL_CAPACITY_CHAIN_OCCUPANTS`)
 - DC phases helper: `working_ui/portal/portal_dc_services_local.js`
+- Admin Services paints DC via `PortalDcServicesLocal.boardForIso` (phase badges)
+- Admin Timetable saves to Supabase; Admin refresh merges cells into hours before chain resolve
+- Capacity chain does **not** read `term_timetable_local_hours_draft_v1` (retired twin)
 - Admin Overview calls `portalResolveStaffDashboardSource({ forSessionsOverview: true })` and skips `resolveAutumnInstructorsForCalendarDate` when `capacityChainNoCanonicalRemap`
-- Staff Today uses the same capacity chain (staff-scoped rows). Day patches still from `schedule_overrides` (own anchor + cover-as-me for normal workers; full-day for programme leads / Roberto / directors)
-- Override cleanup (2026-09-14): voided Patrick term `slot_update`, Giuseppe dup Sun-6 covers, Wed 9/16 Tinashe shadow `session_add`; inserted John→Emmanuel Tinashe covers. Keep real Covers (Aurora/Javi, absences, trials, Berta COVER NEEDED, Emanuel-anchored Youssef Sun 6). Script: `database/local-vault/office-void-capacity-chain-redundant-overrides-20260914.ts`
+- Staff Today uses the same capacity chain (staff-scoped rows). Day patches still from `schedule_overrides`
 
 ## Capacity rule (AS / weekend)
 
@@ -40,7 +41,7 @@ Booking (plazas) → Services (clients / seats) → Timetable (staff) → Schedu
 ## Trials on Places
 
 - Active trial (pay hold / paid one-session before term convert) **occupies a Place** (taken++, openSeats--).
-- **Office look** (preview / Open Places seats): label `HOLD BY TRIAL - {Name}` on that seat — not CLIENT standing.
+- **Office look** (Open Places seats): label `HOLD BY TRIAL - {Name}` on that seat — not CLIENT standing.
 - **Public Booking**: no participant names; parents only see free/taken capacity.
 - When they pay for term → CLIENT standing name. When they release / EOD no decision → seat back to `NO PARTICIPANT`.
 - Do **not** fold trials into MADRE as normal CLIENT seats; reservation hold + dated Overview override remain the ops path until convert.
@@ -48,22 +49,22 @@ Booking (plazas) → Services (clients / seats) → Timetable (staff) → Schedu
 ## Day Centre / Bespoke
 
 - Never appear as Booking Places.
-- **Do** appear on Services (office): DC as **phased/dated seat lines** (who-with-whom + windows), not a single standing-only photo.
-- LOCAL Services snap + deployed `portal_capacity_chain_occupants.js`: `day_centre` slots with `phase`, `validFrom`/`validTo`, `seatLines`.
-- Overview / Covers read DC from those seats; Timetable owns staff hours; Covers snaps own day exceptions.
+- **Do** appear on Admin Services: DC as **phased/dated seat lines** (who-with-whom + windows) from occupants.
+- Deployed `portal_capacity_chain_occupants.js`: `day_centre` slots with `phase`, `validFrom`/`validTo`, `seatLines`.
+- Overview / Covers read DC from those seats; Timetable owns staff hours; Covers own day exceptions.
 - Standing from **20 Sep** is term truth; earlier phases are explicit Services seats until then.
 - Admin create/edit seat only for new programme seats or term replan — not day-of.
 
 ## Look-here
 
-- Day: **Sessions Overview** only (Admin, or LOCAL twin `sessions_overview_local.html` for capacity-chain check).
-- LOCAL DC / local MADRE calendar: optional authoring / look — not plaza truth.
+- Day: **Sessions Overview** only (Admin).
+- Do not author new DC / Sunday phases on localhost LOCAL boards — use Admin Services + Instructor timetable.
 - Admin Open Places uses the same live offer payload as Booking (`SLOTS`).
 
-## LOCAL capacity chain pages
+## Admin editors (production)
 
-1. `bookingportal_preview.html` · 2. `services_seats_preview.html` · 3. `term_timetable_local.html` · 4. `schedule_covers_local.html` · 5. `sessions_overview_local.html`
-Open via `http://127.0.0.1:8765/...` (not `file://`).
+1. Places / Open Places · 2. Services (`#c4k_services`) · 3. Instructor timetable (`#roster_spreadsheets`) · 4. Schedule & Covers · 5. Sessions Overview
+Legacy LOCAL HTML paths redirect into Admin.
 
 ## When changing offer capacity
 

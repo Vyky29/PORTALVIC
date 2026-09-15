@@ -799,8 +799,9 @@
       '<div class="asr-root" id="adminSpreadsheetRefRoot">' +
       '<h1 class="page-title">Instructor timetable</h1>' +
       '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-      "<strong>Who works</strong> = instructor name + hours for every Monday (or Tue…) in Autumn — edit and Save. " +
-      "Does not change who is booked in Services / MADRE (use Edit term slot for that). " +
+      "<strong>Production who-works</strong> for the capacity chain (Places → Services → Timetable → Covers → Overview). " +
+      "Sunday and weekday dated rows are the live phases — edit and <strong>Save</strong> to <code>portal_staff_timetable_cells</code> (not a local draft). " +
+      "Does not change who is booked in Services (use Edit term slot for that). " +
       "<strong>Day off · COVER</strong> on a date comes from the same <code>staff_unavailability</code> as Sessions Overview (Validate day / HR). " +
       "<strong>Who is booked</strong> = standing client seats (" +
       weekLbl +
