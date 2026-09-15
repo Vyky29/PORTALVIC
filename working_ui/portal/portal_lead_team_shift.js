@@ -320,6 +320,168 @@ function filterOpsClubTeam(keys) {
   );
 }
 
+/** Real person behind leadKey "ops" (Victor / Javi / Raul). */
+function opsViewerPersonKey(ctx) {
+  if (!ctx || ctx.leadKey !== "ops") return "";
+  try {
+    if (typeof window !== "undefined" && typeof window.portalAuthStaffRosterId === "function") {
+      const k = normKey(window.portalAuthStaffRosterId());
+      if (k === "javi" || k === "victor" || k === "raul") return k;
+      if (k === "stf017") return "javi";
+      if (k === "stf013") return "victor";
+      if (k === "stf007" || k === "stf008") return "raul";
+    }
+  } catch (_) {}
+  const em = String((ctx && ctx.email) || "")
+    .trim()
+    .toLowerCase();
+  if (em.indexOf("victor@") === 0 || em.indexOf("victor") === 0) return "victor";
+  if (em.indexOf("raul@") === 0) return "raul";
+  if (em.indexOf("javi@") === 0 || em.indexOf("javier@clubsensational") === 0) return "javi";
+  const u = normKey(ctx.profile && (ctx.profile.username || ctx.profile.full_name));
+  if (u.indexOf("palankas") >= 0 || u === "javi" || u.indexOf("javiarranz") >= 0) return "javi";
+  if (u.indexOf("victor") >= 0) return "victor";
+  if (u.indexOf("raul") >= 0) return "raul";
+  return "";
+}
+
+function firstNameStaffKeyFromHoursText(text) {
+  const m = String(text || "")
+    .trim()
+    .match(/^([A-Za-z]+)/);
+  if (!m) return "";
+  const raw = normKey(m[1]);
+  if (raw === "javi") return "javi";
+  if (raw === "javier") return "javier";
+  return raw;
+}
+
+/** Venues where this ops viewer works today (Timetable hours + cover overrides + roster). */
+function opsViewerVenuesForIso(iso, viewerKey) {
+  const day = String(iso || "").trim().slice(0, 10);
+  const vk = normKey(viewerKey);
+  const out = [];
+  const seen = Object.create(null);
+  function addVenue(v) {
+    const n = normVenue(v);
+    if (!n || seen[n]) return;
+    seen[n] = true;
+    out.push(n);
+  }
+  if (!vk || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return out;
+
+  scheduleOverrideRowsForIso(day).forEach(function (ov) {
+    if (String(ov.status || "active") !== "active") return;
+    if (String(ov.override_type || "").trim() !== "instructor_reassign") return;
+    const pl = parseOverridePayload(ov);
+    const cover = canonicalStaffKey(pl.covering_staff_id || pl.coveringStaffId);
+    if (cover !== vk) return;
+    addVenue(ov.anchor_venue);
+  });
+
+  try {
+    const hoursRoot =
+      typeof window !== "undefined" && window.PORTAL_AUTUMN_STAFF_HOURS
+        ? window.PORTAL_AUTUMN_STAFF_HOURS.staffHours || window.PORTAL_AUTUMN_STAFF_HOURS
+        : null;
+    const wd = weekdayFromIso(day);
+    const sheet = hoursRoot && wd ? hoursRoot[wd] : null;
+    const groups = (sheet && sheet.venueGroups) || [];
+    const dates = (sheet && sheet.dates) || [];
+    const dr = dates.find(function (d) {
+      return String((d && d.date) || "").slice(0, 10) === day;
+    });
+    if (dr && Array.isArray(dr.cells)) {
+      let col = 0;
+      groups.forEach(function (g) {
+        const span = Number(g.span) || 1;
+        const venue = g.venue || "";
+        for (let i = 0; i < span; i++) {
+          const cell = dr.cells[col + i] || {};
+          const who = firstNameStaffKeyFromHoursText(cell.text);
+          if (who === vk) addVenue(venue);
+        }
+        col += span;
+      });
+    }
+  } catch (_) {}
+
+  const src = rosterSource();
+  const rows = src && Array.isArray(src.rows) ? src.rows : [];
+  rows.forEach(function (row) {
+    if (!rosterRowMatchesIso(row, day)) return;
+    const keys = staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, day, src));
+    if (keys.indexOf(vk) < 0) return;
+    addVenue(row.venue);
+  });
+
+  return out;
+}
+
+/** Who works that venue on Timetable (hours sheet) for this ISO. */
+function collectTimetableMemberKeysForVenues(iso, venueNorms) {
+  const day = String(iso || "").trim().slice(0, 10);
+  const want = Object.create(null);
+  (venueNorms || []).forEach(function (v) {
+    const n = normVenue(v);
+    if (n) want[n] = true;
+  });
+  if (!Object.keys(want).length) return [];
+  const out = [];
+  try {
+    const hoursRoot =
+      typeof window !== "undefined" && window.PORTAL_AUTUMN_STAFF_HOURS
+        ? window.PORTAL_AUTUMN_STAFF_HOURS.staffHours || window.PORTAL_AUTUMN_STAFF_HOURS
+        : null;
+    const wd = weekdayFromIso(day);
+    const sheet = hoursRoot && wd ? hoursRoot[wd] : null;
+    const groups = (sheet && sheet.venueGroups) || [];
+    const dates = (sheet && sheet.dates) || [];
+    const dr = dates.find(function (d) {
+      return String((d && d.date) || "").slice(0, 10) === day;
+    });
+    if (!dr || !Array.isArray(dr.cells)) return out;
+    let col = 0;
+    groups.forEach(function (g) {
+      const span = Number(g.span) || 1;
+      const venue = normVenue(g.venue);
+      const inWant = !!(venue && want[venue]);
+      for (let i = 0; i < span; i++) {
+        if (inWant) {
+          const cell = dr.cells[col + i] || {};
+          const who = firstNameStaffKeyFromHoursText(cell.text);
+          if (who && who !== "closed" && out.indexOf(who) < 0) out.push(who);
+        }
+      }
+      col += span;
+    });
+  } catch (_) {}
+  return out;
+}
+
+function collectRosterMemberKeysForVenues(iso, venueNorms, scopes, source) {
+  const want = Object.create(null);
+  (venueNorms || []).forEach(function (v) {
+    const n = normVenue(v);
+    if (n) want[n] = true;
+  });
+  if (!Object.keys(want).length) return [];
+  const rows = source && Array.isArray(source.rows) ? source.rows : [];
+  const memberKeys = [];
+  rows.forEach(function (row) {
+    if (!rosterRowMatchesIso(row, iso)) return;
+    if (isDutyClientName(row && row.client_name)) return;
+    const venue = normVenue(row.venue);
+    if (!venue || !want[venue]) return;
+    const slot = rosterRowToSlot(row, iso);
+    if (scopes && scopes.length && !portalLeadSlotInScope(slot, scopes)) return;
+    staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, source)).forEach(function (k) {
+      if (k && memberKeys.indexOf(k) < 0) memberKeys.push(k);
+    });
+  });
+  return memberKeys;
+}
+
 function filterRobertoThuDcTeam(keys) {
   return dedupeKeys(
     (keys || []).filter(function (k) {
@@ -687,12 +849,39 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   const src = rosterSource();
   if (!portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes)) return null;
 
-  let memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
-  memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
+  let memberKeys = [];
+  /* Ops (Victor / Javi / Raul): Team of the Day = peers at the venue(s) they work today
+   * (Acton aquatic when covering there; SwimFarm MA Sunday like Berta — not club-wide empty). */
+  if (dayKind === "ops_club_all") {
+    const viewerKey = opsViewerPersonKey(ctx);
+    const venues = opsViewerVenuesForIso(iso, viewerKey);
+    if (viewerKey && venues.length) {
+      memberKeys = collectRosterMemberKeysForVenues(iso, venues, ctx.scopes, src);
+      const fromHours = collectTimetableMemberKeysForVenues(iso, venues);
+      fromHours.forEach(function (k) {
+        if (k && memberKeys.indexOf(k) < 0) memberKeys.push(k);
+      });
+      memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
+      /* Timetable seeds can be dropped when roster rows are thin — keep venue hours peers. */
+      fromHours.forEach(function (k) {
+        if (k && memberKeys.indexOf(k) < 0) memberKeys.push(k);
+      });
+    } else {
+      memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
+      memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
+    }
+  } else {
+    memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
+    memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
+  }
   const roleOverrides = coverChipRoleOverridesForIso(iso, ctx.scopes, src);
   memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey, iso);
   memberKeys = memberKeys.filter(function (k) {
     if (!k || k === ctx.leadKey) return false;
+    if (dayKind === "ops_club_all") {
+      const viewerKey = opsViewerPersonKey(ctx);
+      if (viewerKey && k === viewerKey) return false;
+    }
     if (!staffExpectedOnTeamIso(k, iso)) return false;
     /* Sunday MA: keep peer Leader (Berta/John) on the team strip. */
     if (
