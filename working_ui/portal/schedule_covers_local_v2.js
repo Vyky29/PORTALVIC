@@ -121,18 +121,11 @@
   }
 
   function timetableHoursDrafts() {
-    try {
-      return JSON.parse(localStorage.getItem(TIMETABLE_HOURS_DRAFT_KEY) || "{}") || {};
-    } catch (_e) {
-      return {};
-    }
+    return {};
   }
 
-  /** Cell text as Timetable shows it (draft overlay wins). */
+  /** Cell text from Timetable hours (Admin DB merge / shipped base — no LOCAL draft). */
   function timetableCellText(cell) {
-    var drafts = timetableHoursDrafts();
-    var k = cell && cell.editKey;
-    if (k && drafts[k] != null) return String(drafts[k]);
     return String((cell && cell.text) || "");
   }
 
