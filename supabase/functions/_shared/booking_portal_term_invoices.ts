@@ -207,7 +207,12 @@ export function parseBookingScope(raw: unknown): BookingScope | null {
     s === "this_term_only" ||
     s === "one_term" ||
     s === "term_only" ||
-    s === "single_term"
+    s === "single_term" ||
+    s === "term_place" ||
+    s === "term" ||
+    s === "rest_of_term" ||
+    s === "full_term" ||
+    s === "continuing_place"
   ) {
     return "this_term_only";
   }

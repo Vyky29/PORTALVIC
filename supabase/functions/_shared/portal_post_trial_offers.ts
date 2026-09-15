@@ -15,7 +15,7 @@ import {
   sendParentMessageViaWhatsapp,
 } from "./portal_parent_messaging.ts";
 
-const BOOKING_URL = "https://www.clubsensational.org/bookingportal";
+const BOOKING_PORTAL_FALLBACK = "https://www.clubsensational.org/bookingportal";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -114,7 +114,9 @@ function buildOfferBody(opts: {
   first: string;
   child: string;
   trialLabel: string;
+  slotLabel: string;
   deadlineLabel: string;
+  finishUrl: string;
   wave: 1 | 2;
 }): string {
   const intro =
@@ -124,10 +126,11 @@ function buildOfferBody(opts: {
   return (
     `Hi ${opts.first},\n\n` +
     `${intro}\n\n` +
-    `You can now book a term place — the same slot or a different one — and complete payment here:\n` +
-    `${BOOKING_URL}\n\n` +
-    `Please finish booking by ${opts.deadlineLabel}. ` +
+    `To keep the same place for Autumn term (${opts.slotLabel}), finish booking and pay here:\n` +
+    `${opts.finishUrl}\n\n` +
+    `Please finish by ${opts.deadlineLabel}. ` +
     `If we do not hear from you by then, the place will be released for other families.\n\n` +
+    `If you want a different slot, reply and we will help. ` +
     `If you do not want a continuing place, reply FREE and we will release it now.\n\n` +
     `Thanks,\n` +
     `Office | clubSENsational`
@@ -138,6 +141,86 @@ function firstName(parentName: string): string {
   const p = clean(parentName, 80);
   if (!p) return "there";
   return p.split(/\s+/)[0] || "there";
+}
+
+/**
+ * Mint a finish-booking link locked to TERM (not trial).
+ * Booking Portal cannot be used for the same slot — soft-hold already occupies it.
+ */
+async function mintPostTrialTermFinishLink(
+  admin: SupabaseClient,
+  offer: Record<string, unknown>,
+): Promise<{ url: string; tokenId: string; softHoldId: string } | { error: string }> {
+  const documentId = clean(offer.document_id, 80);
+  const softHoldId = clean(offer.soft_hold_reservation_id, 80);
+  if (!documentId) return { error: "no_document" };
+  if (!softHoldId) return { error: "no_soft_hold" };
+
+  const now = new Date().toISOString();
+  const { error: holdErr } = await admin
+    .from("portal_booking_slot_reservations")
+    .update({
+      notes:
+        "post_trial_term_soft_hold|booking_kind=term|awaits_parent_term_or_free|finish_link_minted",
+      updated_at: now,
+      released_at: null,
+    })
+    .eq("id", softHoldId);
+  if (holdErr) return { error: holdErr.message };
+
+  // Dynamic import avoids circular dependency with portal_booking_finish.ts
+  const { mintFinishBookingToken, finishBookingUrl } = await import(
+    "./portal_booking_finish.ts"
+  );
+  let minted: { tokenId: string; rawToken: string };
+  try {
+    minted = await mintFinishBookingToken(admin, {
+      leadId: null,
+      documentId,
+      reservationId: softHoldId,
+    });
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "mint_failed" };
+  }
+
+  const choices = {
+    booking_scope: "this_term_only",
+    booking_kind: "term",
+    post_trial_convert: true,
+    funding_code: "privately_funded",
+  };
+  const { error: tokErr } = await admin
+    .from("portal_booking_completion_tokens")
+    .update({
+      choices_json: choices,
+      funding_code: "privately_funded",
+      // DB check allows choices_saved (not scope_saved) on Portal today.
+      status: "choices_saved",
+      reservation_id: softHoldId,
+      updated_at: now,
+    })
+    .eq("id", minted.tokenId);
+  if (tokErr) return { error: tokErr.message };
+
+  // Confirm choices stuck (service-role update must not silently no-op).
+  const { data: check } = await admin
+    .from("portal_booking_completion_tokens")
+    .select("status, choices_json, funding_code")
+    .eq("id", minted.tokenId)
+    .maybeSingle();
+  const cj = (check?.choices_json || {}) as Record<string, unknown>;
+  if (
+    String(check?.status || "") !== "choices_saved" ||
+    String(cj.booking_scope || "") !== "this_term_only"
+  ) {
+    return { error: "token_choices_not_saved" };
+  }
+
+  return {
+    url: finishBookingUrl(minted.rawToken),
+    tokenId: minted.tokenId,
+    softHoldId,
+  };
 }
 
 /**
@@ -205,6 +288,13 @@ async function sendOfferWhatsapp(
 ): Promise<{ ok: boolean; error?: string; id?: string }> {
   const phone = normalizeParentPhoneE164(String(offer.parent_phone || ""));
   if (!phone) return { ok: false, error: "bad_phone" };
+
+  const minted = await mintPostTrialTermFinishLink(admin, offer);
+  if ("error" in minted) {
+    console.warn("[post-trial] finish mint", offer.id, minted.error);
+    return { ok: false, error: minted.error };
+  }
+
   const child = clean(offer.participant_name, 80) || "your child";
   const trialLabel = [
     clean(offer.trial_venue, 40),
@@ -214,15 +304,27 @@ async function sendOfferWhatsapp(
   ]
     .filter(Boolean)
     .join(" · ");
+  const slotLabel = [
+    clean(offer.trial_venue, 40),
+    clean(offer.trial_service, 40),
+    clean(offer.trial_time_label, 40),
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const sessionDate = clean(String(offer.trial_session_date || ""), 12);
   const body = buildOfferBody({
     first: firstName(String(offer.parent_name || "")),
     child: child.split(/\s+/)[0] || child,
     trialLabel,
+    slotLabel: slotLabel || trialLabel,
     deadlineLabel: `tonight (${sessionDate}, end of day)`,
+    finishUrl: minted.url,
     wave,
   });
   const flat = flattenWhatsappTemplateBody(body);
+  if (flat.length > 700) {
+    return { ok: false, error: "wa_too_long:" + flat.length };
+  }
   const result = await sendParentMessageViaWhatsapp(phone, flat, {
     kind: "contact_update",
   });
@@ -234,7 +336,7 @@ async function sendOfferWhatsapp(
     parent_phone: phone,
     parent_email: clean(offer.parent_email, 120) || null,
     parent_name: clean(offer.parent_name, 120) || null,
-    subject: `Post-trial offer · ${child} · wave ${wave}`,
+    subject: `Post-trial term finish · ${child} · wave ${wave}`,
     body_text: body,
     whatsapp_status: result.ok ? "sent" : "failed",
     whatsapp_message_id: result.ok ? result.id : null,
@@ -243,10 +345,32 @@ async function sendOfferWhatsapp(
       campaign: kind,
       offer_id: offer.id,
       reservation_id: offer.reservation_id,
+      soft_hold_reservation_id: minted.softHoldId,
+      finish_token_id: minted.tokenId,
+      finish_url: minted.url,
       wave,
-      booking_url: BOOKING_URL,
+      // Kept for older log readers — do not send parents here for same-slot convert.
+      booking_portal_fallback: BOOKING_PORTAL_FALLBACK,
     },
   });
+
+  const prevMeta =
+    offer.meta && typeof offer.meta === "object" && !Array.isArray(offer.meta)
+      ? (offer.meta as Record<string, unknown>)
+      : {};
+  await admin
+    .from("portal_post_trial_offers")
+    .update({
+      meta: {
+        ...prevMeta,
+        finish_url: minted.url,
+        finish_token_id: minted.tokenId,
+        last_wave: wave,
+      },
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", offer.id);
+
   return result.ok
     ? { ok: true, id: result.id }
     : { ok: false, error: result.error || "wa_failed" };
@@ -368,7 +492,7 @@ export async function ensurePostTrialOfferAfterPaid(
     soft_hold_reservation_id: softHoldId,
     status: "pending",
     deadline_at: deadlineAt,
-    meta: { booking_url: BOOKING_URL },
+    meta: { soft_hold: true, convert_via: "finish_booking" },
   });
   if (error) {
     console.warn("[post-trial] insert offer", error.message);

@@ -352,8 +352,26 @@ function bookingKindFromContext(
   ) {
     return "trial";
   }
-  if (scope === "term" || scope === "rest_of_term" || scope === "full_term") {
+  if (
+    scope === "term" ||
+    scope === "rest_of_term" ||
+    scope === "full_term" ||
+    scope === "this_term_only" ||
+    scope === "term_place" ||
+    scope === "auto_reenroll_year" ||
+    scope === "continuing_place"
+  ) {
     return "term";
+  }
+
+  // Prefer the linked reservation over the original registration form.
+  // Post-trial soft-holds are booking_kind=term while the doc was a trial signup.
+  const notes = String(reservation?.notes || "");
+  if (/booking_kind\s*=\s*term/i.test(notes) || /post_trial_term/i.test(notes)) {
+    return "term";
+  }
+  if (/booking_kind\s*=\s*trial/i.test(notes) || /\btrial_(stripe|bank)/i.test(notes)) {
+    return "trial";
   }
 
   const payload = doc?.payload_json;
@@ -370,13 +388,6 @@ function bookingKindFromContext(
     }
   }
 
-  const notes = String(reservation?.notes || "");
-  if (/booking_kind\s*=\s*trial/i.test(notes) || /\btrial_(stripe|bank)/i.test(notes)) {
-    return "trial";
-  }
-  if (/booking_kind\s*=\s*term/i.test(notes)) {
-    return "term";
-  }
   return "term";
 }
 
