@@ -107,7 +107,7 @@
   var HOURS_SERVICE_FILTERS = [
     { id: "all", label: "All" },
     { id: "day_centre", label: "Day Centre" },
-    { id: "pool", label: "Pool / aquatic" },
+    { id: "pool", label: "Afterschool & weekends" },
     { id: "bespoke", label: "Bespoke" },
   ];
 
@@ -1648,20 +1648,26 @@
   function venueServiceUnderName(style) {
     var st = String(style || "");
     if (st === "northolt" || st === "acton") return "Aquatic Activity";
-    if (st === "westway") return "Climbing Activity";
+    if (st === "westway") return "Fitness";
     return "";
   }
 
-  var SUNDAY_SF_SWIM = {
+  /**
+   * Sunday SwimFarm Who-works seats (same as LOCAL term_timetable):
+   * - Aquatic (3): Aurora, Javier, Roberto — also duplicated into Multi.
+   * - Multi (6): Hub Berta / Emmanuel|John / Godsway + the 3 aquatic instructors.
+   */
+  var SUNDAY_SF_AQUATIC = {
     aurora: 1,
-    berta: 1,
-    emmanuel: 1,
-  };
-  var SUNDAY_SF_SUPPORT = {
-    godsway: 1,
     javier: 1,
     javi: 1,
     roberto: 1,
+  };
+  var SUNDAY_SF_MULTI_HUB = {
+    berta: 1,
+    emmanuel: 1,
+    godsway: 1,
+    john: 1,
   };
 
   function staffKeyFromHoursText(text) {
@@ -1671,16 +1677,26 @@
     return m ? m[1].toLowerCase() : "";
   }
 
+  function cellIsOffice(text, band) {
+    if (String(band || "").toLowerCase() === "office") return true;
+    return /\boffice\b/i.test(String(text || ""));
+  }
+
   function columnServiceFromCell(venueStyle, cell, dayName) {
     var st = String(venueStyle || "");
-    if (st === "northolt" || st === "acton") return "Aquatic Activity";
-    if (st === "westway") return "Climbing Activity";
-    if (st.indexOf("swimfarm") < 0) return venueServiceUnderName(st) || "";
     var day = String(dayName || "").toLowerCase();
     var band = String((cell && cell.band) || "")
       .toLowerCase()
       .trim();
     var text = String((cell && cell.text) || "");
+    var closed = /^closed$/i.test(text.trim());
+    if (st === "northolt" || st === "acton") return "Aquatic Activity";
+    if (st === "westway") {
+      /* Weekday Sandra = Fitness; Sunday Alex/Carlos = Climbing. */
+      if (day === "sunday") return "Climbing";
+      return "Fitness";
+    }
+    if (st.indexOf("swimfarm") < 0) return venueServiceUnderName(st) || "";
     if (day === "saturday") {
       return "Aquatic Activity";
     }
@@ -1688,16 +1704,31 @@
       if (band === "day_centre" || band === "dc") return "Day Centre";
       if (band === "bespoke" || /\b4\.15-6\.15\b/.test(text)) return "Bespoke";
       var who = staffKeyFromHoursText(text);
-      if (SUNDAY_SF_SUPPORT[who]) return "Multi-Activity";
-      if (SUNDAY_SF_SWIM[who]) return "Aquatic & Multi-Activity";
-      return "Aquatic & Multi-Activity";
+      if (SUNDAY_SF_AQUATIC[who]) return "Aquatic Activity";
+      if (SUNDAY_SF_MULTI_HUB[who]) return "Multi-Activity";
+      if (closed && band === "pool") return "Aquatic Activity";
+      return "Multi-Activity";
     }
-    if (/\b4\.15\s*-\s*6\.15\b/.test(text) || /\b4\.15-6\.15\b/.test(text)) {
+    if (closed) {
+      if (band === "bespoke") return "Bespoke";
+      if (band === "pool" || band === "aquatic") return "Aquatic Activity";
+      if (band === "day_centre" || band === "dc" || band === "office")
+        return "Day Centre";
+    }
+    if (
+      /\b4\.15\s*-\s*6\.15\b/.test(text) ||
+      /\b4\.15-6\.15\b/.test(text) ||
+      /\b3\.30\s*-\s*5\b/.test(text) ||
+      /\b3\.30-5\b/.test(text)
+    ) {
       return "Bespoke";
     }
     if (band === "bespoke") return "Bespoke";
-    if (band === "day_centre" || band === "dc") return "Day Centre";
-    if (band === "pool" && /4\.15/.test(text)) return "Bespoke";
+    if (band === "day_centre" || band === "dc" || band === "office")
+      return "Day Centre";
+    if (cellIsOffice(text, band)) return "Day Centre";
+    /* Hub Bespoke only — do NOT match Michelle DC paid band 10.45-4.15 */
+    if (band === "pool" && /\b4\.15\s*-\s*6\.15\b/.test(text)) return "Bespoke";
     if (band === "pool" || band === "other" || !band) return "Day Centre";
     return "Day Centre";
   }
@@ -1728,7 +1759,7 @@
       var weekendSat = String(dayName || "").toLowerCase() === "saturday";
       if (String(lab.style || "").indexOf("swimfarm") >= 0) {
         if (weekendSat) return "Aquatic Activity";
-        if (weekendSun) return "Aquatic & Multi-Activity";
+        if (weekendSun) return "Aquatic Activity";
         return "Day Centre";
       }
       return venueServiceUnderName(lab.style) || "";
@@ -1766,16 +1797,136 @@
       .replace(/^-|-$/g, "");
   }
 
+  /** Majority of dated cells in this column are Office duty. */
+  function columnIsOfficeSeat(dates, colIdx) {
+    var officeN = 0;
+    var n = 0;
+    (dates || []).forEach(function (dr) {
+      var cell = (dr.cells || [])[colIdx];
+      if (!cell) return;
+      var raw = String(cell.text || "").trim();
+      if (!raw) return;
+      n += 1;
+      if (cellIsOffice(raw, cell.band)) officeN += 1;
+    });
+    return n > 0 && officeN * 2 >= n;
+  }
+
+  /** SwimFarm: Bespoke, then Aquatic, then Multi / Day Centre. */
   function serviceSortRank(svc, venueStyle) {
     var s = String(svc || "");
     var st = String(venueStyle || "");
     if (st.indexOf("swimfarm") >= 0) {
-      if (s === "Bespoke" || s === "Aquatic & Multi-Activity") return 0;
-      if (s === "Day Centre" || s === "Multi-Activity") return 1;
-      if (s === "Aquatic Activity") return 0;
-      return 2;
+      if (s === "Bespoke") return 0;
+      if (s === "Aquatic Activity" || s === "Aquatic & Multi-Activity") return 1;
+      if (s === "Multi-Activity" || s === "Day Centre") return 2;
+      return 3;
     }
     return 0;
+  }
+
+  /**
+   * Sunday SwimFarm: Aquatic instructors also occupy Multi seats
+   * (3 Aquatic + 6 Multi = Hub trio + the same 3 aquatic columns).
+   */
+  function expandSundayAquaticIntoMulti(groups, dates, columnServices, dayName) {
+    if (String(dayName || "").toLowerCase() !== "sunday") {
+      return { groups: groups, dates: dates, columnServices: columnServices };
+    }
+    var aquaticIdx = [];
+    var multiHubIdx = [];
+    var otherByGroup = [];
+    var col = 0;
+    (groups || []).forEach(function (g, gi) {
+      otherByGroup[gi] = [];
+      var span = Number(g.span) || 1;
+      var isSf = String(g.style || "").indexOf("swimfarm") >= 0;
+      for (var i = 0; i < span; i++) {
+        var idx = col + i;
+        var svc = columnServices[idx] || "";
+        if (!isSf) {
+          otherByGroup[gi].push(idx);
+          continue;
+        }
+        if (svc === "Aquatic Activity" || svc === "Aquatic & Multi-Activity") {
+          aquaticIdx.push(idx);
+        } else if (svc === "Multi-Activity") {
+          multiHubIdx.push(idx);
+        } else {
+          otherByGroup[gi].push(idx);
+        }
+      }
+      col += span;
+    });
+    if (!aquaticIdx.length) {
+      return { groups: groups, dates: dates, columnServices: columnServices };
+    }
+    var multiIdx = multiHubIdx.concat(aquaticIdx);
+    var aquaticInMultiFrom = multiHubIdx.length;
+    var newGroups = [];
+    var order = [];
+    var newServices = [];
+    col = 0;
+    (groups || []).forEach(function (g, gi) {
+      var span = Number(g.span) || 1;
+      var isSf = String(g.style || "").indexOf("swimfarm") >= 0;
+      if (!isSf) {
+        var keep = otherByGroup[gi] || [];
+        keep.forEach(function (oldIdx) {
+          order.push(oldIdx);
+          newServices.push(columnServices[oldIdx] || "");
+        });
+        newGroups.push(
+          Object.assign({}, g, {
+            span: keep.length,
+            labels: keep.map(function () {
+              return g.venue || "SwimFarm";
+            }),
+          })
+        );
+        col += span;
+        return;
+      }
+      var sfOrder = aquaticIdx.concat(multiIdx).concat(otherByGroup[gi] || []);
+      sfOrder.forEach(function (oldIdx, j) {
+        order.push(oldIdx);
+        if (j < aquaticIdx.length) {
+          newServices.push("Aquatic Activity");
+        } else if (j < aquaticIdx.length + multiIdx.length) {
+          newServices.push("Multi-Activity");
+        } else {
+          newServices.push(columnServices[oldIdx] || "");
+        }
+      });
+      newGroups.push(
+        Object.assign({}, g, {
+          span: sfOrder.length,
+          labels: sfOrder.map(function () {
+            return g.venue || "SwimFarm";
+          }),
+        })
+      );
+      col += span;
+    });
+    var newDates = (dates || []).map(function (dr) {
+      var cells = dr.cells || [];
+      return Object.assign({}, dr, {
+        cells: order.map(function (oldIdx, newCol) {
+          var src = cells[oldIdx] || { text: "", editKey: "", band: "" };
+          var aqCount = aquaticIdx.length;
+          var multiCount = multiIdx.length;
+          if (
+            newCol >= aqCount &&
+            newCol < aqCount + multiCount &&
+            newCol - aqCount >= aquaticInMultiFrom
+          ) {
+            return Object.assign({}, src);
+          }
+          return Object.assign({}, src);
+        }),
+      });
+    });
+    return { groups: newGroups, dates: newDates, columnServices: newServices };
   }
 
   function reorderColumnsByService(groups, dates, dayName) {
@@ -1787,11 +1938,20 @@
       var idxs = [];
       for (var i = 0; i < span; i++) idxs.push(col + i);
       idxs.sort(function (a, b) {
-        return (
+        var rank =
           serviceSortRank(columnServices[a], g.style) -
-            serviceSortRank(columnServices[b], g.style) ||
-          a - b
-        );
+          serviceSortRank(columnServices[b], g.style);
+        if (rank) return rank;
+        var oa =
+          columnServices[a] === "Day Centre" && columnIsOfficeSeat(dates, a)
+            ? 0
+            : 1;
+        var ob =
+          columnServices[b] === "Day Centre" && columnIsOfficeSeat(dates, b)
+            ? 0
+            : 1;
+        if (oa !== ob) return oa - ob;
+        return a - b;
       });
       idxs.forEach(function (oldIdx) {
         order.push(oldIdx);
@@ -1801,21 +1961,23 @@
     var changed = order.some(function (oldIdx, newIdx) {
       return oldIdx !== newIdx;
     });
-    if (!changed) {
-      return { groups: groups, dates: dates, columnServices: columnServices };
-    }
-    var newServices = order.map(function (oldIdx) {
-      return columnServices[oldIdx] || "";
-    });
-    var newDates = (dates || []).map(function (dr) {
-      var cells = dr.cells || [];
-      return Object.assign({}, dr, {
-        cells: order.map(function (oldIdx) {
-          return cells[oldIdx] || { text: "", editKey: "", band: "" };
-        }),
+    var newServices = columnServices;
+    var newDates = dates;
+    var newGroups = groups;
+    if (changed) {
+      newServices = order.map(function (oldIdx) {
+        return columnServices[oldIdx] || "";
       });
-    });
-    return { groups: groups, dates: newDates, columnServices: newServices };
+      newDates = (dates || []).map(function (dr) {
+        var cells = dr.cells || [];
+        return Object.assign({}, dr, {
+          cells: order.map(function (oldIdx) {
+            return cells[oldIdx] || { text: "", editKey: "", band: "" };
+          }),
+        });
+      });
+    }
+    return expandSundayAquaticIntoMulti(newGroups, newDates, newServices, dayName);
   }
 
   function renderHoursTableHtml(groups, dates, blockTitle, serviceFilter, dayName) {
@@ -1844,7 +2006,7 @@
     }
     html += '<div class="asr-scroll asr-hours-block"><table class="asr-grid asr-hours"><thead>';
     html +=
-      '<tr><th rowspan="2" class="asr-date"><span class="asr-head">' +
+      '<tr><th rowspan="3" class="asr-date"><span class="asr-head">' +
       asrIcoCalendar() +
       "<span>Dates</span></span></th>";
     groups.forEach(function (g) {
@@ -1874,6 +2036,54 @@
         '">' +
         esc(seg.label || "") +
         "</th>";
+    });
+    html += "</tr><tr>";
+    var seatCol = 0;
+    (groups || []).forEach(function (g) {
+      var span = Number(g.span) || 1;
+      var st = g.style || "default";
+      var isSf = String(st).indexOf("swimfarm") >= 0;
+      if (isSf) {
+        var i = 0;
+        while (i < span) {
+          var svc = columnServices[seatCol] || "";
+          var run = 1;
+          while (i + run < span && columnServices[seatCol + run] === svc) run += 1;
+          var slug = serviceSlug(svc);
+          var floorSeat = 0;
+          for (var s = 1; s <= run; s++) {
+            var labSf = labels[seatCol] || {};
+            var isOfficeSeat =
+              svc === "Day Centre" && columnIsOfficeSeat(dates, seatCol);
+            var seatLabel = isOfficeSeat ? "Office" : "Seat " + ++floorSeat;
+            html +=
+              '<th class="asr-seat asr-venue--' +
+              esc(st) +
+              (labSf.idx === 0 && s === 1 ? " asr-venue-start" : "") +
+              (s === 1 && i > 0 ? " asr-svc-start" : "") +
+              (slug ? " asr-svc--" + esc(slug) : "") +
+              (isOfficeSeat ? " asr-seat--office" : "") +
+              '">' +
+              esc(seatLabel) +
+              "</th>";
+            seatCol += 1;
+          }
+          i += run;
+        }
+      } else {
+        for (var s2 = 1; s2 <= span; s2++) {
+          var slug2 = serviceSlug(columnServices[seatCol] || "");
+          html +=
+            '<th class="asr-seat asr-venue--' +
+            esc(st) +
+            (s2 === 1 ? " asr-venue-start" : "") +
+            (slug2 ? " asr-svc--" + esc(slug2) : "") +
+            '">Seat ' +
+            s2 +
+            "</th>";
+          seatCol += 1;
+        }
+      }
     });
     html += "</tr></thead><tbody>";
     filteredDates.forEach(function (dr) {

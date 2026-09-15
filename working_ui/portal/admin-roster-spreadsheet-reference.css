@@ -458,6 +458,37 @@
   background: #fda4af !important;
   color: #9f1239 !important;
 }
+.asr-hours th.asr-seat {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 4px 6px;
+  white-space: nowrap;
+  color: #475569;
+  background: #f8fafc;
+}
+.asr-hours th.asr-seat.asr-seat--office {
+  color: #9a3412;
+  background: #ffedd5;
+}
+.asr-hours th.asr-seat.asr-svc--aquatic-activity,
+.asr-hours th.asr-seat.asr-svc--aquatic-activity-and-multi-activity {
+  background: #fce7f3;
+  color: #9d174d;
+}
+.asr-hours th.asr-seat.asr-svc--multi-activity {
+  background: #fff1f2;
+  color: #9f1239;
+}
+.asr-hours th.asr-seat.asr-svc--bespoke {
+  background: #fce7f3;
+  color: #9d174d;
+}
+.asr-hours th.asr-seat.asr-svc--day-centre {
+  background: #fff1f2;
+  color: #9f1239;
+}
 .asr-hours td.asr-sf-svc--bespoke { background: #fce7f3 !important; }
 .asr-hours td.asr-sf-svc--day-centre { background: #fff1f2 !important; }
 .asr-hours td.asr-sf-svc--aquatic-activity-and-multi-activity,

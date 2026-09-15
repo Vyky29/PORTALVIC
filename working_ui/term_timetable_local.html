@@ -193,6 +193,14 @@
       padding-top: 4px !important;
       padding-bottom: 4px !important;
     }
+    .ttl-seat {
+      font-size: 10px;
+      font-weight: 700;
+      color: #475569;
+      padding-top: 3px !important;
+      padding-bottom: 3px !important;
+      background: #f8fafc;
+    }
     .ttl-ico {
       width: 14px;
       height: 14px;
@@ -246,6 +254,10 @@
     .ttl-v--swimfarm-ma.ttl-svc--multi-activity {
       background: #fda4af !important;
       color: #9f1239 !important;
+    }
+    .ttl-seat.ttl-seat--office {
+      font-size: 0.72rem;
+      letter-spacing: 0.02em;
     }
     .ttl-sf-svc--bespoke { background: #fce7f3 !important; }
     .ttl-sf-svc--day-centre { background: #fff1f2 !important; }
@@ -325,8 +337,129 @@
       text-align: center;
       overflow-wrap: break-word;
     }
+    .ttl-cell__shadow {
+      display: block;
+      width: 100%;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      color: #64748b;
+      text-align: center;
+      text-transform: uppercase;
+      line-height: 1.15;
+      margin-top: 1px;
+    }
     .ttl-cell.is-draft .ttl-cell__time { color: #3b82f6; }
     .ttl-cell__empty { color: #94a3b8; }
+    .ttl-cell__closed {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+    .ttl-cell.is-closed,
+    .ttl-cell-ro.is-closed {
+      background: #f1f5f9;
+    }
+    .ttl-cell.is-dayoff,
+    .ttl-cell-ro.is-dayoff {
+      background: #fff7ed;
+      border-color: #fdba74;
+      outline: 1px solid #fdba74;
+    }
+    .ttl-cell.is-cover,
+    .ttl-cell-ro.is-cover {
+      border-color: #93c5fd;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    .ttl-cell.is-cover .ttl-cell__name,
+    .ttl-cell-ro.is-cover .ttl-cell__name {
+      color: #1d4ed8;
+    }
+    .ttl-cell.is-cover .ttl-cell__time,
+    .ttl-cell-ro.is-cover .ttl-cell__time {
+      color: #3b82f6;
+    }
+    .ttl-cell.is-dayoff .ttl-cell__name,
+    .ttl-cell-ro.is-dayoff .ttl-cell__name {
+      color: #9a3412;
+    }
+    .ttl-cover-badge {
+      display: block;
+      margin-top: 2px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #93c5fd;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .ttl-dayoff-badge {
+      display: block;
+      margin-top: 2px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #fdba74;
+      background: #fff7ed;
+      color: #9a3412;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+    .ttl-date-dayoffs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+      min-width: 0;
+      justify-content: center;
+    }
+    .ttl-dayoff-chip {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      max-width: 100%;
+      min-width: 0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #fdba74;
+      background: #fff7ed;
+      color: #9a3412;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+    .ttl-dayoff-chip__name {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .ttl-dayoff-chip__label {
+      display: block;
+      width: 100%;
+      font-size: 9px;
+      font-weight: 800;
+      opacity: 0.9;
+    }
+    .ttl-row--has-dayoff > .ttl-date {
+      vertical-align: top;
+    }
+    .ttl-date__label {
+      font-weight: 700;
+    }
     .ttl-cell-ro {
       display: flex;
       flex-direction: column;
@@ -437,7 +570,8 @@
       font-weight: 700;
       color: var(--muted);
     }
-    .ttl-field input {
+    .ttl-field input,
+    .ttl-field select {
       font: inherit;
       font-weight: 600;
       color: var(--ink);
@@ -445,33 +579,122 @@
       border-radius: 10px;
       border: 1px solid var(--line);
       width: 100%;
+      background: #fff;
+      min-width: 0;
+      box-sizing: border-box;
     }
+    .ttl-field select {
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, #64748b 50%),
+        linear-gradient(135deg, #64748b 50%, transparent 50%);
+      background-position: calc(100% - 16px) calc(50% - 2px), calc(100% - 10px) calc(50% - 2px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+      padding-right: 28px;
+    }
+    .ttl-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .ttl-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .ttl-pill input { margin: 0; flex: 0 0 auto; }
+    .ttl-pill--warn { border-color: #fecaca; background: #fff7f7; }
     .ttl-drawer__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     @media (max-width: 720px) {
       .ttl-drawer { grid-template-columns: 1fr; }
       .ttl-drawer__scrim { order: 2; min-height: 18vh; }
       .ttl-drawer__panel { order: 1; max-height: 82vh; }
     }
+
+    .chain-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 14px;
+      max-width: 52rem;
+    }
+    .chain-nav a {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .chain-nav a.is-here {
+      background: #dbeafe;
+      border-color: #2563eb;
+      color: #1e3a8a;
+    }
+    .ttl-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 0 0 8px;
+      max-width: 52rem;
+    }
+    .ttl-top h1 { margin: 0; }
+    .ttl-badge {
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #fff6d8;
+      color: #7a5200;
+      font-size: 12px;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
-  <h1>LOCAL · Term timetable</h1>
+  <div class="ttl-top">
+    <h1>3 · Timetable (Who works)</h1>
+    <div class="ttl-badge">LOCAL · TIMETABLE</div>
+  </div>
+  <nav class="chain-nav" aria-label="Capacity chain">
+    <a href="/bookingportal_preview.html">1 · Places list</a>
+    <a href="/services_seats_preview.html">2 · Services seats</a>
+    <a class="is-here" href="/term_timetable_local.html">3 · Timetable</a>
+      <a href="/schedule_covers_local.html">4 · Schedule &amp; Covers</a>
+      <a href="/sessions_overview_local.html">5 · Overview</a>
+    </nav>
   <p class="banner">
-    <strong>Who works</strong> = instructor hours for every Monday (or Tue…) in Autumn (local drafts only).
-    <strong>Who is booked</strong> = standing seats — click a card to preview the Edit term slot prefill (in admin this opens the real editor).
+    Spreadsheet mode — who works by day (same layout as Admin → Instructor timetable).
+    Instructor hours for every Monday (or Tue…) in Autumn. Local drafts only.
   </p>
   <p class="note">
     Open at <code>http://127.0.0.1:8765/term_timetable_local.html</code>.
-    Production twin: Admin → Instructor timetable.
+    Day-of covers stay in Overview / Schedule &amp; Covers — not this sheet.
   </p>
 
   <div id="ttlToolbar"></div>
   <div id="ttlBoard"></div>
   <div id="ttlDrawer" class="ttl-drawer" hidden></div>
 
-  <script src="/portal/autumn_staff_hours_reference.js?v=20260909-local-tt"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260909-fadi-dc-11-18"></script>
-  <script src="/portal/term_timetable_local.js?v=20260910-area-line"></script>
+  <script src="/portal/autumn_staff_hours_reference.js?v=20260914-mon14-dc"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260911-anas-javi-cover"></script>
+  <script src="/portal/term_timetable_local.js?v=20260915-sun-phases"></script>
   <script>
     if (window.TermTimetableLocal) window.TermTimetableLocal.boot();
   </script>

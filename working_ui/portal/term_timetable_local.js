@@ -17,7 +17,7 @@
   var SERVICE_FILTERS = [
     { id: "all", label: "All" },
     { id: "day_centre", label: "Day Centre" },
-    { id: "pool", label: "Pool / aquatic" },
+    { id: "pool", label: "Afterschool & weekends" },
     { id: "bespoke", label: "Bespoke" },
   ];
   var DRAFT_KEY = "term_timetable_local_hours_draft_v1";
@@ -25,12 +25,15 @@
   var TERM_TO = "2026-12-17";
 
   var state = {
-    tab: "sessions",
+    tab: "hours",
     day: "Monday",
     service: "all",
     drafts: loadDrafts(),
     selectedKey: "",
     selectedSeat: null,
+    /** iso YYYY-MM-DD -> [{ key, label }] from staff_unavailability snap */
+    dayOffByDate: Object.create(null),
+    dayOffLoaded: false,
   };
 
   function esc(s) {
@@ -104,20 +107,137 @@
     if (!parts.name && !parts.time) {
       return '<span class="ttl-cell__empty">·</span>';
     }
-    if (!parts.time) {
+    if (/^closed$/i.test(parts.name) && !parts.time) {
+      return '<span class="ttl-cell__closed">CLOSED</span>';
+    }
+    var shadow = "";
+    var timeShow = parts.time;
+    var sm = String(parts.time || "").match(/^(.*?)(?:\s+)(SHADOWING)\s*$/i);
+    if (sm) {
+      timeShow = String(sm[1] || "").trim();
+      shadow = String(sm[2] || "SHADOWING").toUpperCase();
+    }
+    var badge = "";
+    if (opts.cover) {
+      badge =
+        '<span class="ttl-cover-badge" title="Cover for day off (Dates column)">Cover</span>';
+    } else if (opts.away) {
+      badge =
+        '<span class="ttl-dayoff-badge" title="Day off — no cover named in reason">Day off</span>';
+    }
+    if (!timeShow && !shadow) {
       return (
         '<span class="ttl-cell__name">' +
         esc(parts.name) +
-        "</span>"
+        "</span>" +
+        badge
       );
     }
     return (
       '<span class="ttl-cell__name">' +
       esc(parts.name) +
-      '</span><span class="ttl-cell__time">' +
-      esc(parts.time) +
-      "</span>"
+      "</span>" +
+      (timeShow
+        ? '<span class="ttl-cell__time">' + esc(timeShow) + "</span>"
+        : "") +
+      (shadow
+        ? '<span class="ttl-cell__shadow">' + esc(shadow) + "</span>"
+        : "") +
+      badge
     );
+  }
+
+  function staffNameKey(name) {
+    return String(name || "")
+      .toLowerCase()
+      .replace(/[^a-z]/g, "");
+  }
+
+  function dayOffsForIso(iso) {
+    return state.dayOffByDate[String(iso || "").slice(0, 10)] || [];
+  }
+
+  /** Dates chip: first name only (Aurora Garcia → Aurora). */
+  function dayOffDisplayName(label) {
+    var raw = String(label || "").replace(/\s+/g, " ").trim();
+    if (!raw) return "";
+    return raw.split(/\s+/)[0] || raw;
+  }
+
+  function dayOffEntryForStaff(staffRaw, iso) {
+    var key = staffNameKey(staffRaw);
+    if (!key) return null;
+    var found = null;
+    dayOffsForIso(iso).some(function (x) {
+      var ok = staffNameKey(x.key || x.label || "");
+      if (!ok) return false;
+      if (ok === key || ok.indexOf(key) === 0 || key.indexOf(ok) === 0) {
+        found = x;
+        return true;
+      }
+      return false;
+    });
+    return found;
+  }
+
+  function staffAwayOnIso(staffRaw, iso) {
+    return !!dayOffEntryForStaff(staffRaw, iso);
+  }
+
+  /** Dates column = who requested off. Work cell = cover on rota (same hours). */
+  function applyCoverOnRota(text, iso) {
+    var parts = splitNameTime(text);
+    if (!parts.name || !iso) {
+      return { text: text, cover: false, awayNoCover: false };
+    }
+    var off = dayOffEntryForStaff(parts.name, iso);
+    if (!off) return { text: text, cover: false, awayNoCover: false };
+    var cover = String(off.coverName || "").trim();
+    if (!cover) {
+      return { text: text, cover: false, awayNoCover: true };
+    }
+    var next = cover + (parts.time ? " " + parts.time : "");
+    return { text: next, cover: true, awayNoCover: false };
+  }
+
+  function dateDayOffChipsHtml(iso) {
+    var offs = dayOffsForIso(iso);
+    if (!offs.length) return "";
+    return (
+      '<div class="ttl-date-dayoffs" title="Who requested day off (staff_unavailability)">' +
+      offs
+        .map(function (o) {
+          return (
+            '<span class="ttl-dayoff-chip">' +
+            '<span class="ttl-dayoff-chip__name">' +
+            esc(dayOffDisplayName(o.label || o.key)) +
+            "</span>" +
+            '<span class="ttl-dayoff-chip__label">Day off</span>' +
+            "</span>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function loadDayOffs() {
+    return fetch("/portal/_local_staff_unavailability.json?v=" + Date.now(), {
+      cache: "no-store",
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error("no_snap");
+        return res.json();
+      })
+      .then(function (data) {
+        state.dayOffByDate =
+          data && data.byDate ? data.byDate : Object.create(null);
+        state.dayOffLoaded = true;
+      })
+      .catch(function () {
+        state.dayOffByDate = Object.create(null);
+        state.dayOffLoaded = false;
+      });
   }
 
   function termDates(sheet) {
@@ -145,22 +265,26 @@
   function venueServiceUnderName(style) {
     var st = String(style || "");
     if (st === "northolt" || st === "acton") return "Aquatic Activity";
-    if (st === "westway") return "Climbing Activity";
+    if (st === "westway") return "Fitness";
     return "";
   }
 
-  /** Sunday SwimFarm: swim instructors vs support (by staff first name). */
-  var SUNDAY_SF_SWIM = {
+  /**
+   * Sunday SwimFarm Who-works seats:
+   * - Aquatic (3): Aurora, Javier, Roberto — also duplicated into Multi.
+   * - Multi (6): Hub Berta / Emmanuel|John / Godsway + the 3 aquatic instructors.
+   */
+  var SUNDAY_SF_AQUATIC = {
     aurora: 1,
-    berta: 1,
-    emanuel: 1,
-    emmanuel: 1,
-  };
-  var SUNDAY_SF_SUPPORT = {
-    godsway: 1,
     javier: 1,
     javi: 1,
     roberto: 1,
+  };
+  var SUNDAY_SF_MULTI_HUB = {
+    berta: 1,
+    emmanuel: 1,
+    godsway: 1,
+    john: 1,
   };
 
   function staffKeyFromHoursText(text) {
@@ -170,16 +294,26 @@
     return m ? m[1].toLowerCase() : "";
   }
 
+  function cellIsOffice(text, band) {
+    if (String(band || "").toLowerCase() === "office") return true;
+    return /\boffice\b/i.test(String(text || ""));
+  }
+
   function columnServiceFromCell(venueStyle, cell, dayName) {
     var st = String(venueStyle || "");
-    if (st === "northolt" || st === "acton") return "Aquatic Activity";
-    if (st === "westway") return "Climbing Activity";
-    if (st.indexOf("swimfarm") < 0) return venueServiceUnderName(st) || "";
     var day = String(dayName || "").toLowerCase();
     var band = String((cell && cell.band) || "")
       .toLowerCase()
       .trim();
     var text = String((cell && cell.text) || "");
+    var closed = /^closed$/i.test(text.trim());
+    if (st === "northolt" || st === "acton") return "Aquatic Activity";
+    if (st === "westway") {
+      /* Weekday Sandra = Fitness/Physical; Sunday Alex/Carlos = Climbing. */
+      if (day === "sunday") return "Climbing";
+      return "Fitness";
+    }
+    if (st.indexOf("swimfarm") < 0) return venueServiceUnderName(st) || "";
     if (day === "saturday") {
       return "Aquatic Activity";
     }
@@ -187,16 +321,32 @@
       if (band === "day_centre" || band === "dc") return "Day Centre";
       if (band === "bespoke" || /\b4\.15-6\.15\b/.test(text)) return "Bespoke";
       var who = staffKeyFromHoursText(text);
-      if (SUNDAY_SF_SUPPORT[who]) return "Multi-Activity";
-      if (SUNDAY_SF_SWIM[who]) return "Aquatic & Multi-Activity";
-      return "Aquatic & Multi-Activity";
+      if (SUNDAY_SF_AQUATIC[who]) return "Aquatic Activity";
+      if (SUNDAY_SF_MULTI_HUB[who]) return "Multi-Activity";
+      if (closed && band === "pool") return "Aquatic Activity";
+      return "Multi-Activity";
     }
-    if (/\b4\.15\s*-\s*6\.15\b/.test(text) || /\b4\.15-6\.15\b/.test(text)) {
+    /* Office stays under Day Centre service; seat header says Office (not Seat N). */
+    if (closed) {
+      if (band === "bespoke") return "Bespoke";
+      if (band === "pool" || band === "aquatic") return "Aquatic Activity";
+      if (band === "day_centre" || band === "dc" || band === "office")
+        return "Day Centre";
+    }
+    if (
+      /\b4\.15\s*-\s*6\.15\b/.test(text) ||
+      /\b4\.15-6\.15\b/.test(text) ||
+      /\b3\.30\s*-\s*5\b/.test(text) ||
+      /\b3\.30-5\b/.test(text)
+    ) {
       return "Bespoke";
     }
     if (band === "bespoke") return "Bespoke";
-    if (band === "day_centre" || band === "dc") return "Day Centre";
-    if (band === "pool" && /4\.15/.test(text)) return "Bespoke";
+    if (band === "day_centre" || band === "dc" || band === "office")
+      return "Day Centre";
+    if (cellIsOffice(text, band)) return "Day Centre";
+    /* Hub Bespoke only — do NOT match Michelle DC paid band 10.45-4.15 */
+    if (band === "pool" && /\b4\.15\s*-\s*6\.15\b/.test(text)) return "Bespoke";
     if (band === "pool" || band === "other" || !band) return "Day Centre";
     return "Day Centre";
   }
@@ -266,17 +416,141 @@
       .replace(/^-|-$/g, "");
   }
 
-  /** SwimFarm: swimming instructors (Bespoke) together, then support (Day Centre). */
+  /** Majority of dated cells in this column are Office duty. */
+  function columnIsOfficeSeat(dates, colIdx) {
+    var officeN = 0;
+    var n = 0;
+    (dates || []).forEach(function (dr) {
+      var cell = (dr.cells || [])[colIdx];
+      if (!cell) return;
+      var raw = String(cell.text || "").trim();
+      if (!raw) return;
+      n += 1;
+      if (cellIsOffice(raw, cell.band)) officeN += 1;
+    });
+    return n > 0 && officeN * 2 >= n;
+  }
+
+  /** SwimFarm: Bespoke, then Day Centre / Aquatic / Multi. */
   function serviceSortRank(svc, venueStyle) {
     var s = String(svc || "");
     var st = String(venueStyle || "");
     if (st.indexOf("swimfarm") >= 0) {
-      if (s === "Bespoke" || s === "Aquatic & Multi-Activity") return 0;
-      if (s === "Day Centre" || s === "Multi-Activity") return 1;
-      if (s === "Aquatic Activity") return 0;
-      return 2;
+      if (s === "Bespoke") return 0;
+      if (s === "Aquatic Activity" || s === "Aquatic & Multi-Activity") return 1;
+      if (s === "Multi-Activity" || s === "Day Centre") return 2;
+      return 3;
     }
     return 0;
+  }
+
+  /**
+   * Sunday SwimFarm: Aquatic instructors also occupy Multi seats
+   * (3 Aquatic + 6 Multi = Hub trio + the same 3 aquatic columns).
+   */
+  function expandSundayAquaticIntoMulti(groups, dates, columnServices, dayName) {
+    if (String(dayName || "").toLowerCase() !== "sunday") {
+      return { groups: groups, dates: dates, columnServices: columnServices };
+    }
+    var aquaticIdx = [];
+    var multiHubIdx = [];
+    var otherByGroup = [];
+    var col = 0;
+    (groups || []).forEach(function (g, gi) {
+      otherByGroup[gi] = [];
+      var span = Number(g.span) || 1;
+      var isSf = String(g.style || "").indexOf("swimfarm") >= 0;
+      for (var i = 0; i < span; i++) {
+        var idx = col + i;
+        var svc = columnServices[idx] || "";
+        if (!isSf) {
+          otherByGroup[gi].push(idx);
+          continue;
+        }
+        if (svc === "Aquatic Activity" || svc === "Aquatic & Multi-Activity") {
+          aquaticIdx.push(idx);
+        } else if (svc === "Multi-Activity") {
+          multiHubIdx.push(idx);
+        } else {
+          otherByGroup[gi].push(idx);
+        }
+      }
+      col += span;
+    });
+    if (!aquaticIdx.length) {
+      return { groups: groups, dates: dates, columnServices: columnServices };
+    }
+    /* Multi seats = Hub first, then Aquatic instructors (also in Aquatic). */
+    var multiIdx = multiHubIdx.concat(aquaticIdx);
+    var aquaticInMultiFrom = multiHubIdx.length;
+    var newGroups = [];
+    var order = [];
+    var newServices = [];
+    col = 0;
+    (groups || []).forEach(function (g, gi) {
+      var span = Number(g.span) || 1;
+      var isSf = String(g.style || "").indexOf("swimfarm") >= 0;
+      if (!isSf) {
+        var keep = otherByGroup[gi] || [];
+        keep.forEach(function (oldIdx) {
+          order.push(oldIdx);
+          newServices.push(columnServices[oldIdx] || "");
+        });
+        newGroups.push(
+          Object.assign({}, g, {
+            span: keep.length,
+            labels: keep.map(function () {
+              return g.venue || "SwimFarm";
+            }),
+          }),
+        );
+        col += span;
+        return;
+      }
+      var sfOrder = aquaticIdx.concat(multiIdx).concat(otherByGroup[gi] || []);
+      sfOrder.forEach(function (oldIdx, j) {
+        order.push(oldIdx);
+        if (j < aquaticIdx.length) {
+          newServices.push("Aquatic Activity");
+        } else if (j < aquaticIdx.length + multiIdx.length) {
+          newServices.push("Multi-Activity");
+        } else {
+          newServices.push(columnServices[oldIdx] || "");
+        }
+      });
+      newGroups.push(
+        Object.assign({}, g, {
+          span: sfOrder.length,
+          labels: sfOrder.map(function () {
+            return g.venue || "SwimFarm";
+          }),
+        }),
+      );
+      col += span;
+    });
+    function cellWithMaHours(src) {
+      /* Aquatic instructors keep the same hours in AA and MA columns. */
+      return Object.assign({}, src);
+    }
+    var newDates = (dates || []).map(function (dr) {
+      var cells = dr.cells || [];
+      return Object.assign({}, dr, {
+        cells: order.map(function (oldIdx, newCol) {
+          var src = cells[oldIdx] || { text: "", editKey: "", band: "" };
+          var aqCount = aquaticIdx.length;
+          var multiCount = multiIdx.length;
+          if (
+            newCol >= aqCount &&
+            newCol < aqCount + multiCount &&
+            newCol - aqCount >= aquaticInMultiFrom
+          ) {
+            return cellWithMaHours(src);
+          }
+          return Object.assign({}, src);
+        }),
+      });
+    });
+    return { groups: newGroups, dates: newDates, columnServices: newServices };
   }
 
   function reorderColumnsByService(groups, dates, dayName) {
@@ -288,11 +562,21 @@
       var idxs = [];
       for (var i = 0; i < span; i++) idxs.push(col + i);
       idxs.sort(function (a, b) {
-        return (
+        var rank =
           serviceSortRank(columnServices[a], g.style) -
-            serviceSortRank(columnServices[b], g.style) ||
-          a - b
-        );
+          serviceSortRank(columnServices[b], g.style);
+        if (rank) return rank;
+        /* Within Day Centre, Office seat first. */
+        var oa =
+          columnServices[a] === "Day Centre" && columnIsOfficeSeat(dates, a)
+            ? 0
+            : 1;
+        var ob =
+          columnServices[b] === "Day Centre" && columnIsOfficeSeat(dates, b)
+            ? 0
+            : 1;
+        if (oa !== ob) return oa - ob;
+        return a - b;
       });
       idxs.forEach(function (oldIdx) {
         order.push(oldIdx);
@@ -302,21 +586,28 @@
     var changed = order.some(function (oldIdx, newIdx) {
       return oldIdx !== newIdx;
     });
-    if (!changed) {
-      return { groups: groups, dates: dates, columnServices: columnServices };
-    }
-    var newServices = order.map(function (oldIdx) {
-      return columnServices[oldIdx] || "";
-    });
-    var newDates = (dates || []).map(function (dr) {
-      var cells = dr.cells || [];
-      return Object.assign({}, dr, {
-        cells: order.map(function (oldIdx) {
-          return cells[oldIdx] || { text: "", editKey: "", band: "" };
-        }),
+    var newServices = columnServices;
+    var newDates = dates;
+    var newGroups = groups;
+    if (changed) {
+      newServices = order.map(function (oldIdx) {
+        return columnServices[oldIdx] || "";
       });
-    });
-    return { groups: groups, dates: newDates, columnServices: newServices };
+      newDates = (dates || []).map(function (dr) {
+        var cells = dr.cells || [];
+        return Object.assign({}, dr, {
+          cells: order.map(function (oldIdx) {
+            return cells[oldIdx] || { text: "", editKey: "", band: "" };
+          }),
+        });
+      });
+    }
+    return expandSundayAquaticIntoMulti(
+      newGroups,
+      newDates,
+      newServices,
+      dayName,
+    );
   }
 
   function icoCalendar() {
@@ -355,16 +646,7 @@
   }
 
   function renderTabs() {
-    return (
-      '<div class="ttl-tabs">' +
-      '<button type="button" class="ttl-tab' +
-      (state.tab === "sessions" ? " is-on" : "") +
-      '" data-tab="sessions">Who is booked</button>' +
-      '<button type="button" class="ttl-tab' +
-      (state.tab === "hours" ? " is-on" : "") +
-      '" data-tab="hours">Who works (term)</button>' +
-      "</div>"
-    );
+    return "";
   }
 
   function renderDayServiceChips() {
@@ -461,8 +743,66 @@
         "</th>";
     });
 
+    var headSeats = "";
+    var seatCol = 0;
+    (groups || []).forEach(function (g) {
+      var span = Number(g.span) || 1;
+      var st = g.style || "default";
+      var isSf = String(st).indexOf("swimfarm") >= 0;
+      if (isSf) {
+        /* SwimFarm: Seat 1..n within each service; Office seat labeled Office. */
+        var i = 0;
+        while (i < span) {
+          var svc = columnServices[seatCol] || "";
+          var run = 1;
+          while (
+            i + run < span &&
+            columnServices[seatCol + run] === svc
+          ) {
+            run += 1;
+          }
+          var slug = serviceSlug(svc);
+          var floorSeat = 0;
+          for (var s = 1; s <= run; s++) {
+            var labSf = labels[seatCol] || {};
+            var isOfficeSeat =
+              svc === "Day Centre" && columnIsOfficeSeat(dates, seatCol);
+            var seatLabel = isOfficeSeat ? "Office" : "Seat " + (++floorSeat);
+            headSeats +=
+              '<th class="ttl-seat ttl-v--' +
+              esc(st) +
+              (labSf.idx === 0 && s === 1 ? " ttl-v-start" : "") +
+              (s === 1 && i > 0 ? " ttl-svc-start" : "") +
+              (slug ? " ttl-svc--" + esc(slug) : "") +
+              (isOfficeSeat ? " ttl-seat--office" : "") +
+              '">' +
+              esc(seatLabel) +
+              "</th>";
+            seatCol += 1;
+          }
+          i += run;
+        }
+      } else {
+        /* Each venue (Westway / Northolt / Acton) restarts at Seat 1. */
+        for (var s2 = 1; s2 <= span; s2++) {
+          var lab = labels[seatCol] || {};
+          var slug2 = serviceSlug(columnServices[seatCol] || "");
+          headSeats +=
+            '<th class="ttl-seat ttl-v--' +
+            esc(st) +
+            (s2 === 1 ? " ttl-v-start" : "") +
+            (slug2 ? " ttl-svc--" + esc(slug2) : "") +
+            '">Seat ' +
+            s2 +
+            "</th>";
+          seatCol += 1;
+        }
+      }
+    });
+
     var rowsHtml = filtered
       .map(function (dr) {
+        var iso = String((dr && dr.date) || "").slice(0, 10);
         var cells = dr.cells || [];
         var tds = labels
           .map(function (lab, i) {
@@ -481,14 +821,27 @@
               return '<td class="' + tdCls + ' ttl-muted">—</td>';
             }
             var text = cellText(cell);
+            var painted = applyCoverOnRota(text, iso);
+            text = painted.text;
+            var parts = splitNameTime(text);
+            var isCover = !!painted.cover;
+            var awayNoCover = !!painted.awayNoCover;
+            var isClosed = /^closed$/i.test(String(text || "").trim());
             var draft = cell.editKey && state.drafts[cell.editKey] != null;
             var key = cell.editKey || "";
             if (!key) {
               return (
                 '<td class="' +
                 tdCls +
-                '"><span class="ttl-cell-ro">' +
-                cellTwoLineHtml(text) +
+                '"><span class="ttl-cell-ro' +
+                (isCover ? " is-cover" : "") +
+                (awayNoCover ? " is-dayoff" : "") +
+                (isClosed ? " is-closed" : "") +
+                '">' +
+                cellTwoLineHtml(text, {
+                  cover: isCover,
+                  away: awayNoCover,
+                }) +
                 "</span></td>"
               );
             }
@@ -497,20 +850,33 @@
               tdCls +
               '"><button type="button" class="ttl-cell' +
               (draft ? " is-draft" : "") +
+              (isCover ? " is-cover" : "") +
+              (awayNoCover ? " is-dayoff" : "") +
+              (isClosed ? " is-closed" : "") +
               (text ? "" : " is-empty") +
               '" data-edit-key="' +
               esc(key) +
               '" title="' +
               esc(text || key) +
+              (isCover ? " · Cover on rota" : "") +
+              (awayNoCover ? " · Day off (no cover named)" : "") +
               '">' +
-              cellTwoLineHtml(text) +
+              cellTwoLineHtml(text, {
+                cover: isCover,
+                away: awayNoCover,
+              }) +
               "</button></td>"
             );
           })
           .join("");
         return (
-          "<tr><th class=\"ttl-date\">" +
+          '<tr class="' +
+          (dayOffsForIso(iso).length ? "ttl-row--has-dayoff" : "") +
+          '"><th class="ttl-date">' +
+          '<div class="ttl-date__label">' +
           esc(dr.label || dr.date) +
+          "</div>" +
+          dateDayOffChipsHtml(iso) +
           "</th>" +
           tds +
           "</tr>"
@@ -518,19 +884,27 @@
       })
       .join("");
 
+    var offNote = state.dayOffLoaded
+      ? " · day offs from staff_unavailability snap"
+      : " · no day-off snap (run local-staff-unavailability-snap)";
+
     return (
       '<p class="ttl-meta">' +
       esc(state.day) +
       " · " +
       filtered.length +
-      " dates in Autumn term (1 Sep – 17 Dec) · click a cell to edit locally</p>" +
+      " dates in Autumn term (1 Sep – 17 Dec) · click a cell to edit locally" +
+      offNote +
+      "</p>" +
       '<div class="ttl-scroll"><table class="ttl-hours">' +
-      "<thead><tr><th class=\"ttl-date\" rowspan=\"2\"><span class=\"ttl-head\">" +
+      "<thead><tr><th class=\"ttl-date\" rowspan=\"3\"><span class=\"ttl-head\">" +
       icoCalendar() +
       "<span>Dates</span></span></th>" +
       headVenues +
       "</tr><tr>" +
       headServices +
+      "</tr><tr>" +
+      headSeats +
       "</tr></thead><tbody>" +
       rowsHtml +
       "</tbody></table></div>"
@@ -649,6 +1023,122 @@
     };
   }
 
+  var FIXED_VENUES = ["Acton", "Northolt", "SwimFarm", "Westway", "Home"];
+  var FIXED_AREAS = [
+    "Teaching Pool",
+    "Big Pool",
+    "Small Pool",
+    "Lane (SE)",
+    "Lane (DE)",
+    "Hub Room",
+    "Room 2",
+    "Gym",
+    "Wall",
+    "Day Centre",
+    "Bespoke",
+    "Home",
+  ];
+  var FIXED_SERVICES = [
+    "Aquatic Activity",
+    "Aquatic & Multi-Activity",
+    "Multi-Activity",
+    "Day Centre",
+    "Bespoke",
+    "Bespoke Programme",
+    "Climbing Activity",
+  ];
+
+  function allStandingRows() {
+    var PRC = global.PortalRosterCanonical;
+    if (!PRC || typeof PRC.resolveCanonicalRosterRows !== "function") return [];
+    var all = PRC.resolveCanonicalRosterRows({ skipDb: true }) || [];
+    return all.filter(function (r) {
+      if (!r) return false;
+      var sd = String(r.session_date || "").slice(0, 10);
+      if (sd && !isJulStandingStamp(sd) && /^2026-09-/.test(sd)) return false;
+      return true;
+    });
+  }
+
+  function uniqSorted(list) {
+    var seen = Object.create(null);
+    var out = [];
+    (list || []).forEach(function (v) {
+      var s = String(v == null ? "" : v).trim();
+      if (!s) return;
+      var k = s.toLowerCase();
+      if (seen[k]) return;
+      seen[k] = 1;
+      out.push(s);
+    });
+    out.sort(function (a, b) {
+      return a.localeCompare(b, undefined, { sensitivity: "base" });
+    });
+    return out;
+  }
+
+  function ensureOption(list, current) {
+    var cur = String(current || "").trim();
+    if (!cur) return list.slice();
+    var low = cur.toLowerCase();
+    for (var i = 0; i < list.length; i++) {
+      if (String(list[i]).toLowerCase() === low) return list.slice();
+    }
+    return [cur].concat(list);
+  }
+
+  function selectHtml(id, options, current, emptyLabel) {
+    var cur = String(current || "").trim();
+    var opts = ensureOption(options || [], cur);
+    var html =
+      '<select id="' +
+      esc(id) +
+      '">' +
+      (emptyLabel
+        ? '<option value="">' + esc(emptyLabel) + "</option>"
+        : "");
+    opts.forEach(function (v) {
+      html +=
+        '<option value="' +
+        esc(v) +
+        '"' +
+        (String(v) === cur ? " selected" : "") +
+        ">" +
+        esc(v) +
+        "</option>";
+    });
+    return html + "</select>";
+  }
+
+  function seatEditOptions(pre) {
+    var rows = allStandingRows();
+    var participants = [];
+    var services = FIXED_SERVICES.slice();
+    var times = [];
+    var instructors = [];
+    var venues = FIXED_VENUES.slice();
+    var areas = FIXED_AREAS.slice();
+    rows.forEach(function (r) {
+      participants.push(r.client_name);
+      services.push(r.service);
+      times.push(r.time_slot);
+      venues.push(r.venue);
+      areas.push(r.area);
+      splitInstructors(r.instructors).forEach(function (n) {
+        instructors.push(n);
+      });
+    });
+    if (pre.instructors) instructors.push(pre.instructors);
+    return {
+      participants: ensureOption(uniqSorted(participants), pre.client_name),
+      services: ensureOption(uniqSorted(services), pre.service),
+      times: ensureOption(uniqSorted(times), pre.time_slot),
+      instructors: ensureOption(uniqSorted(instructors), pre.instructors),
+      venues: ensureOption(uniqSorted(venues), pre.venue),
+      areas: ensureOption(uniqSorted(areas), pre.area),
+    };
+  }
+
   function seatKey(r, instr) {
     return [
       String((r && r.client_name) || ""),
@@ -762,35 +1252,47 @@
     var pre = seatPrefill(
       Object.assign({}, r, { instructors: seat.instr || r.instructors }),
     );
+    var opts = seatEditOptions(pre);
+    var wd = esc(state.day);
     el.innerHTML =
       '<div class="ttl-drawer__panel">' +
       '<div class="ttl-drawer__head"><strong>Who is booked → Edit term slot</strong>' +
       '<button type="button" class="ttl-btn ttl-btn--ghost" id="ttlClose">Close</button></div>' +
-      '<p class="ttl-drawer__note">LOCAL preview only. In <strong>admin → Instructor timetable → Who is booked</strong>, this click opens the real Edit term slot with the same fields (scope = every matching weekday).</p>' +
-      '<label class="ttl-field">Anchor date<input readonly value="' +
+      '<p class="ttl-drawer__note">LOCAL preview — all fields selectable (no save). In admin, the same click opens the real Edit term slot.</p>' +
+      '<label class="ttl-field">Anchor date<input type="date" id="ttlSeatAnchor" value="' +
       esc(pre.anchorDate) +
       '" /></label>' +
-      '<label class="ttl-field">Participant<input readonly value="' +
-      esc(pre.client_name) +
-      '" /></label>' +
-      '<label class="ttl-field">Service<input readonly value="' +
-      esc(pre.service) +
-      '" /></label>' +
-      '<label class="ttl-field">Time slot<input readonly value="' +
-      esc(pre.time_slot) +
-      '" /></label>' +
-      '<label class="ttl-field">Instructor(s)<input readonly value="' +
-      esc(pre.instructors) +
-      '" /></label>' +
-      '<label class="ttl-field">Venue<input readonly value="' +
-      esc(pre.venue) +
-      '" /></label>' +
-      '<label class="ttl-field">Pool / area<input readonly value="' +
-      esc(pre.area) +
-      '" /></label>' +
-      '<label class="ttl-field">Apply to<input readonly value="weekday_term (every ' +
-      esc(state.day) +
-      ')" /></label>' +
+      '<label class="ttl-field">Participant' +
+      selectHtml("ttlSeatClient", opts.participants, pre.client_name, "Pick participant") +
+      "</label>" +
+      '<label class="ttl-field">Service' +
+      selectHtml("ttlSeatService", opts.services, pre.service, "Pick service") +
+      "</label>" +
+      '<label class="ttl-field">Time slot' +
+      selectHtml("ttlSeatTime", opts.times, pre.time_slot, "Pick time") +
+      "</label>" +
+      '<label class="ttl-field">Instructor(s)' +
+      selectHtml("ttlSeatInstr", opts.instructors, pre.instructors, "Pick instructor") +
+      "</label>" +
+      '<label class="ttl-field">Venue' +
+      selectHtml("ttlSeatVenue", opts.venues, pre.venue, "Pick venue") +
+      "</label>" +
+      '<label class="ttl-field">Pool / area' +
+      selectHtml("ttlSeatArea", opts.areas, pre.area, "Pick pool / area") +
+      "</label>" +
+      '<div class="ttl-field">Action<div class="ttl-pills" role="group">' +
+      '<label class="ttl-pill"><input type="radio" name="ttlSeatAction" value="update" checked /> Update slot</label>' +
+      '<label class="ttl-pill ttl-pill--warn"><input type="radio" name="ttlSeatAction" value="cancel_service" /> Cancel service</label>' +
+      '<label class="ttl-pill"><input type="radio" name="ttlSeatAction" value="no_participant" /> No participant</label>' +
+      "</div></div>" +
+      '<div class="ttl-field">Apply to<div class="ttl-pills" role="group">' +
+      '<label class="ttl-pill"><input type="radio" name="ttlSeatScope" value="single_day" /> This day only</label>' +
+      '<label class="ttl-pill"><input type="radio" name="ttlSeatScope" value="weekday_term" checked /> Every ' +
+      wd +
+      " until end of term</label>" +
+      '<label class="ttl-pill"><input type="radio" name="ttlSeatScope" value="rest_of_term" /> Rest of term (from anchor)</label>' +
+      '<label class="ttl-pill"><input type="radio" name="ttlSeatScope" value="pick_sessions" /> Selected sessions</label>' +
+      "</div></div>" +
       '<div class="ttl-drawer__actions">' +
       '<button type="button" class="ttl-btn" id="ttlClose2">Close</button>' +
       "</div></div>" +
@@ -820,13 +1322,9 @@
     var board = document.getElementById("ttlBoard");
     if (!toolbar || !board) return;
     toolbar.innerHTML =
-      renderTabs() +
       renderDayServiceChips() +
-      (state.tab === "hours"
-        ? '<div class="ttl-row"><button type="button" class="ttl-btn" id="ttlClearDrafts">Clear local drafts</button></div>'
-        : "");
-    board.innerHTML =
-      state.tab === "hours" ? renderHoursTermTable() : renderSessionsBoard();
+      '<div class="ttl-row"><button type="button" class="ttl-btn" id="ttlClearDrafts">Clear local drafts</button></div>';
+    board.innerHTML = renderHoursTermTable();
     renderDrawer();
     bind();
   }
@@ -849,7 +1347,7 @@
   function bind() {
     document.querySelectorAll("[data-tab]").forEach(function (btn) {
       btn.onclick = function () {
-        state.tab = btn.getAttribute("data-tab") || "sessions";
+        state.tab = "hours";
         state.selectedKey = "";
         state.selectedSeat = null;
         paint();
@@ -924,9 +1422,18 @@
   }
 
   function boot() {
-    var today = new Date();
-    var dow = today.getDay();
-    state.day = DAYS[dow === 0 ? 6 : dow - 1] || "Monday";
+    try {
+      var q = new URLSearchParams(global.location.search || "");
+      state.tab = "hours";
+      var dayQ = String(q.get("day") || "");
+      if (DAYS.indexOf(dayQ) >= 0) state.day = dayQ;
+      else state.day = "Monday";
+    } catch (_e) {
+      state.day = "Monday";
+    }
+    loadDayOffs().then(function () {
+      paint();
+    });
     paint();
   }
 
