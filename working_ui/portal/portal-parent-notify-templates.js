@@ -217,12 +217,23 @@
     var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
     var when = sessionWhenWithDate(slot, ov);
     var venue = sessionVenue(slot);
-    var oldI = String((slot && slot.staffName) || "").trim();
+    var oldI = String(
+      (opts && (opts.previousInstructorName || opts.oldInstructorName)) ||
+        (slot && slot.staffName) ||
+        "",
+    ).trim();
     var newI =
       String(newInstructorName || "").trim() || "[new instructor — edit here]";
     var whenPart = when ? " on " + when : "";
     var venuePart = venue ? " at " + venue + "." : ".";
-    var swapPart = oldI ? " (instead of " + oldI + ")." : ".";
+    var changeLine = oldI
+      ? oldI +
+        " is not available today. There has been a change of instructor. The session will now be with " +
+        newI +
+        "."
+      : "There has been a change of instructor. The session will now be with " +
+        newI +
+        ".";
     var photoUrl = String((opts && opts.instructorPhotoUrl) || "").trim();
     var photoLine = instructorPhotoTextLine(newI, photoUrl);
     return (
@@ -234,9 +245,7 @@
       whenPart +
       venuePart +
       "\n\n" +
-      "There has been a change of instructor. The session will now be with " +
-      newI +
-      swapPart +
+      changeLine +
       photoLine +
       (photoUrl
         ? "Please show " +
