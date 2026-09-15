@@ -572,6 +572,12 @@
       if(portalTodayItemIsSpecialSegmentedCard(item)) return false;
       if(portalTodayItemShowsShadowingHostAlert(item)) return false;
       if(portalTodayItemShowsObserverShadowing(item)) return false;
+      /* Move in / New Client / Trial keep blue or purple cards — not yellow admin-adjusted. */
+      if(item && (item.portalOverrideMoveInTag || item.portalOverrideNewClientTag || item.portalOverrideTrialTag || item.portalOverrideMakeUpTag)){
+        return false;
+      }
+      const tone = String(item && item.portalOverrideCardTone || '').trim().toLowerCase();
+      if(tone === 'blue' || tone === 'trial' || tone === 'purple' || tone === 'pink') return false;
       if(portalTodayItemShowsAdminShiftBadge(item)) return true;
       if(typeof portalSessionItemRosterTimeUpdated === 'function' && portalSessionItemRosterTimeUpdated(item)) return true;
       return false;
