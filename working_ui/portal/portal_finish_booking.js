@@ -803,6 +803,23 @@
     var label = trial.closest("label");
     var hint = label && label.querySelector(".hint");
     var strong = label && label.querySelector("strong");
+    var postTrial =
+      data.post_trial_convert === true ||
+      (data.choices_json && data.choices_json.post_trial_convert === true);
+    if (postTrial) {
+      trial.disabled = true;
+      if (label) label.hidden = true;
+      var termOnly = document.querySelector(
+        'input[name="booking_scope"][value="this_term_only"]',
+      );
+      if (termOnly) termOnly.checked = true;
+      data.booking_scope = data.booking_scope || "this_term_only";
+      data.booking_kind = "term";
+      data.is_trial_intent = false;
+      return;
+    }
+    if (label) label.hidden = false;
+    trial.disabled = false;
     if (data.funding_code === "sw_nhs_referral") {
       if (strong) strong.textContent = "Trial session (office arranges with LA/NHS)";
       if (hint) {
@@ -1082,6 +1099,32 @@
     }
 
     // Office / prior choices already locked trial — never show term £900 pricing flow.
+    // Post-trial convert is the opposite: never show another trial.
+    if (
+      data.post_trial_convert === true ||
+      (data.choices_json && data.choices_json.post_trial_convert === true)
+    ) {
+      data.booking_kind = "term";
+      data.is_trial_intent = false;
+      if (!data.booking_scope || data.booking_scope === "trial_session") {
+        data.booking_scope = "this_term_only";
+      }
+      if (!data.funding_code) data.funding_code = "privately_funded";
+      adaptScopeForFunding(data);
+      if (data.invoice) {
+        showInvoice(data);
+        return;
+      }
+      if (
+        data.status === "choices_saved" ||
+        data.status === "scope_saved" ||
+        data.status === "awaiting_payment"
+      ) {
+        setStep("fbStepPay");
+        showPayChannel(data);
+        return;
+      }
+    }
     if (
       (data.is_trial_intent ||
         data.booking_kind === "trial" ||
@@ -1154,6 +1197,14 @@
           setStep("fbStepFunding");
           showNotice(notice, err.message || "Could not save referral.", "error");
         });
+    } else if (
+      (data.status === "funding_saved" || data.status === "choices_saved") &&
+      data.funding_code &&
+      !data.booking_scope
+    ) {
+      setStep("fbStepScope");
+      adaptScopeForFunding(data);
+      preselectScope(data);
     } else if (data.status === "funding_saved" && data.funding_code) {
       setStep("fbStepScope");
       adaptScopeForFunding(data);

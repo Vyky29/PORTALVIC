@@ -143,6 +143,14 @@ function firstName(parentName: string): string {
   return p.split(/\s+/)[0] || "there";
 }
 
+function nextWeeklyDateIso(isoDate: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return isoDate;
+  // Midday UTC avoids DST edge when adding calendar days.
+  const d = new Date(`${isoDate}T12:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + 7);
+  return d.toISOString().slice(0, 10);
+}
+
 /**
  * Mint a finish-booking link locked to TERM (not trial).
  * Booking Portal cannot be used for the same slot — soft-hold already occupies it.
@@ -156,10 +164,15 @@ async function mintPostTrialTermFinishLink(
   if (!documentId) return { error: "no_document" };
   if (!softHoldId) return { error: "no_soft_hold" };
 
+  const trialDate = clean(String(offer.trial_session_date || ""), 12);
+  const termFirstDate = nextWeeklyDateIso(trialDate);
   const now = new Date().toISOString();
+
+  // Keep seat occupied; stamp booking_kind=term and first remaining weekly date.
   const { error: holdErr } = await admin
     .from("portal_booking_slot_reservations")
     .update({
+      date_iso: termFirstDate || trialDate || null,
       notes:
         "post_trial_term_soft_hold|booking_kind=term|awaits_parent_term_or_free|finish_link_minted",
       updated_at: now,
@@ -167,6 +180,16 @@ async function mintPostTrialTermFinishLink(
     })
     .eq("id", softHoldId);
   if (holdErr) return { error: holdErr.message };
+
+  // Drop any leftover trial capacity hold for the same document/slot.
+  const trialResId = clean(offer.reservation_id, 80);
+  if (trialResId) {
+    await admin
+      .from("portal_booking_slot_reservations")
+      .update({ hold_expires_at: now, updated_at: now })
+      .eq("id", trialResId)
+      .ilike("notes", "%booking_kind=trial%");
+  }
 
   // Dynamic import avoids circular dependency with portal_booking_finish.ts
   const { mintFinishBookingToken, finishBookingUrl } = await import(
@@ -188,13 +211,14 @@ async function mintPostTrialTermFinishLink(
     booking_kind: "term",
     post_trial_convert: true,
     funding_code: "privately_funded",
+    saved_at: now,
   };
+  // Use choices_saved — live DB status check does not yet allow scope_saved/funding_saved.
   const { error: tokErr } = await admin
     .from("portal_booking_completion_tokens")
     .update({
       choices_json: choices,
       funding_code: "privately_funded",
-      // DB check allows choices_saved (not scope_saved) on Portal today.
       status: "choices_saved",
       reservation_id: softHoldId,
       updated_at: now,
@@ -202,16 +226,18 @@ async function mintPostTrialTermFinishLink(
     .eq("id", minted.tokenId);
   if (tokErr) return { error: tokErr.message };
 
-  // Confirm choices stuck (service-role update must not silently no-op).
   const { data: check } = await admin
     .from("portal_booking_completion_tokens")
-    .select("status, choices_json, funding_code")
+    .select("status, choices_json, funding_code, reservation_id")
     .eq("id", minted.tokenId)
     .maybeSingle();
   const cj = (check?.choices_json || {}) as Record<string, unknown>;
   if (
     String(check?.status || "") !== "choices_saved" ||
-    String(cj.booking_scope || "") !== "this_term_only"
+    String(check?.funding_code || "") !== "privately_funded" ||
+    String(cj.booking_scope || "") !== "this_term_only" ||
+    cj.post_trial_convert !== true ||
+    String(cj.booking_kind || "") !== "term"
   ) {
     return { error: "token_choices_not_saved" };
   }
@@ -376,6 +402,42 @@ async function sendOfferWhatsapp(
     : { ok: false, error: result.error || "wa_failed" };
 }
 
+async function notifyOfficeWaveFail(
+  offer: Record<string, unknown>,
+  wave: 1 | 2,
+  err: string,
+): Promise<void> {
+  const child = clean(offer.participant_name, 80) || "Participant";
+  const parent = clean(offer.parent_name, 80) || "Parent";
+  const subject = `Post-trial wave ${wave} FAILED · ${child} — send term finish link`;
+  const bodyText =
+    `Post-trial wave ${wave} could not mint/send the TERM finish-booking link.\n\n` +
+    `Error: ${clean(err, 200)}\n` +
+    `Participant: ${child}\n` +
+    `Parent: ${parent}\n` +
+    `Phone: ${clean(offer.parent_phone, 40)}\n` +
+    `Trial date: ${clean(String(offer.trial_session_date || ""), 12)}\n` +
+    `Soft hold: ${clean(offer.soft_hold_reservation_id, 80)}\n` +
+    `Document: ${clean(offer.document_id, 80)}\n` +
+    `Office must send a term finish-booking link (not Booking Portal).\n` +
+    `— clubSENsational portal`;
+  const smtp = readParentNotifySmtpConfig();
+  const tos = officeNotifyEmails();
+  if (smtp && tos.length) {
+    for (const to of tos) {
+      const mail = await sendParentEmailViaSmtp({
+        config: smtp,
+        to,
+        subject,
+        bodyText,
+      });
+      if (!mail.ok) console.warn("[post-trial-office] wave fail email", to, mail.error);
+    }
+  } else {
+    console.log(`[post-trial-office] ${subject} · ${err}`);
+  }
+}
+
 async function notifyOfficeNoDecision(
   offer: Record<string, unknown>,
 ): Promise<void> {
@@ -447,6 +509,7 @@ export async function ensurePostTrialOfferAfterPaid(
 
   let softHoldId: string | null = null;
   if (slotId) {
+    const termFirstDate = nextWeeklyDateIso(sessionDate);
     const { data: hold, error: holdErr } = await admin
       .from("portal_booking_slot_reservations")
       .insert({
@@ -456,7 +519,7 @@ export async function ensurePostTrialOfferAfterPaid(
         venue: reservation.venue || null,
         day_label: reservation.day_label || null,
         time_label: reservation.time_label || null,
-        date_iso: sessionDate,
+        date_iso: termFirstDate || sessionDate,
         document_id: reservation.document_id || null,
         participant_name: participant,
         parent_name: parent,
@@ -615,6 +678,7 @@ export async function runPostTrialOffersMaintenance(
         } else {
           stats.errors += 1;
           console.warn("[post-trial] wave1", offer.id, sent.error);
+          await notifyOfficeWaveFail(offer, 1, sent.error || "unknown");
         }
       }
 
@@ -637,6 +701,7 @@ export async function runPostTrialOffersMaintenance(
         } else {
           stats.errors += 1;
           console.warn("[post-trial] wave2", offer.id, sent.error);
+          await notifyOfficeWaveFail(offer, 2, sent.error || "unknown");
         }
       }
 

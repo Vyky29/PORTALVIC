@@ -831,7 +831,11 @@ Deno.serve(async (req) => {
     token.choices_json && typeof token.choices_json === "object"
       ? token.choices_json as Record<string, unknown>
       : {};
-  const portalBookingKind = bookingKindFromContext(reservation, doc, earlyChoices);
+  const postTrialConvert =
+    earlyChoices.post_trial_convert === true ||
+    /post_trial_term/i.test(String(reservation?.notes || ""));
+  let portalBookingKind = bookingKindFromContext(reservation, doc, earlyChoices);
+  if (postTrialConvert) portalBookingKind = "term";
   const adminDayOverrides = await loadAdminDayOverridesForBookingWindow(admin, {
     fromIso: todayIso,
     daysAhead: 28,
@@ -930,12 +934,12 @@ Deno.serve(async (req) => {
     Math.round(unit * remainingSessions * 100) / 100;
   const termTotalFull = Math.round(unit * termSessionsFull * 100) / 100;
   const termLabel = bookingTermDisplayLabel(term);
-  const savedChoices =
-    token.choices_json && typeof token.choices_json === "object"
-      ? token.choices_json as Record<string, unknown>
-      : {};
-  const savedScope = parseBookingScope(savedChoices.booking_scope) ||
-    (portalBookingKind === "trial" ? "trial_session" : null);
+  const savedChoices = earlyChoices;
+  // Post-trial finish links are always TERM — never fall back to the original trial registration.
+  const savedScope = postTrialConvert
+    ? (parseBookingScope(savedChoices.booking_scope) || "this_term_only")
+    : (parseBookingScope(savedChoices.booking_scope) ||
+      (portalBookingKind === "trial" ? "trial_session" : null));
   const docPayload =
     doc.payload_json && typeof doc.payload_json === "object" && !Array.isArray(doc.payload_json)
       ? doc.payload_json as Record<string, unknown>
@@ -963,6 +967,7 @@ Deno.serve(async (req) => {
       booking_scope: savedScope,
       booking_kind: portalBookingKind,
       is_trial_intent: portalBookingKind === "trial",
+      post_trial_convert: postTrialConvert,
       participant_name: doc.participant_name,
       parent_name: doc.parent_name,
       registration_support: registrationSupport,
@@ -1026,7 +1031,17 @@ Deno.serve(async (req) => {
     const funding = parseFundingCode(body.funding_code);
     if (!funding) return json(400, { ok: false, error: "funding_required" });
 
-    const scope = parseBookingScope(body.booking_scope) || savedScope;
+    let scope = parseBookingScope(body.booking_scope) || savedScope;
+    if (postTrialConvert) {
+      if (scope === "trial_session") {
+        return json(400, {
+          ok: false,
+          error: "post_trial_term_only",
+          message: "This link is for the continuing Autumn term place, not another trial.",
+        });
+      }
+      scope = scope || "this_term_only";
+    }
     const planOnly = parseNewClientPayPlan(body.pay_plan);
 
     const swContact = funding === "sw_nhs_referral"
@@ -1172,45 +1187,61 @@ Deno.serve(async (req) => {
         funding_code: funding,
         saved_at: now,
       };
-      await admin
+      if (postTrialConvert) choices.post_trial_convert = true;
+      // Live DB status check: use choices_saved (funding_saved may be rejected).
+      const { error: fundErr } = await admin
         .from("portal_booking_completion_tokens")
         .update({
           funding_code: funding,
           pay_plan: null,
-          status: "funding_saved",
+          status: "choices_saved",
           choices_json: choices,
           updated_at: now,
         })
         .eq("id", token.id);
+      if (fundErr) {
+        return json(500, { ok: false, error: fundErr.message });
+      }
       return json(200, {
         ok: true,
         status: "funding_saved",
         funding_code: funding,
+        post_trial_convert: postTrialConvert,
       });
     }
 
     // Funding + scope (step 2) — continue to payment method.
     if (scope && !planOnly) {
       const now = new Date().toISOString();
-      await admin
+      const choices: Record<string, unknown> = {
+        funding_code: funding,
+        booking_scope: scope,
+        booking_kind: scope === "trial_session" ? "trial" : "term",
+        saved_at: now,
+      };
+      if (postTrialConvert) {
+        choices.post_trial_convert = true;
+        choices.booking_kind = "term";
+      }
+      const { error: scopeErr } = await admin
         .from("portal_booking_completion_tokens")
         .update({
           funding_code: funding,
           pay_plan: null,
-          status: "scope_saved",
-          choices_json: {
-            funding_code: funding,
-            booking_scope: scope,
-            saved_at: now,
-          },
+          status: "choices_saved",
+          choices_json: choices,
           updated_at: now,
         })
         .eq("id", token.id);
+      if (scopeErr) {
+        return json(500, { ok: false, error: scopeErr.message });
+      }
       return json(200, {
         ok: true,
         status: "scope_saved",
         funding_code: funding,
         booking_scope: scope,
+        post_trial_convert: postTrialConvert,
       });
     }
 
@@ -1233,22 +1264,30 @@ Deno.serve(async (req) => {
     }
     const now = new Date().toISOString();
     const payPlanColumn = plan === "stripe_instant" ? null : plan;
-    await admin
+    const choicesFinal: Record<string, unknown> = {
+      funding_code: funding,
+      booking_scope: scope,
+      booking_kind: scope === "trial_session" ? "trial" : "term",
+      pay_plan: plan,
+      saved_at: now,
+    };
+    if (postTrialConvert) {
+      choicesFinal.post_trial_convert = true;
+      choicesFinal.booking_kind = "term";
+    }
+    const { error: choicesErr } = await admin
       .from("portal_booking_completion_tokens")
       .update({
         funding_code: funding,
         pay_plan: payPlanColumn,
         status: "choices_saved",
-        choices_json: {
-          funding_code: funding,
-          booking_scope: scope,
-          booking_kind: scope === "trial_session" ? "trial" : "term",
-          pay_plan: plan,
-          saved_at: now,
-        },
+        choices_json: choicesFinal,
         updated_at: now,
       })
       .eq("id", token.id);
+    if (choicesErr) {
+      return json(500, { ok: false, error: choicesErr.message });
+    }
 
     return json(200, {
       ok: true,
@@ -1256,6 +1295,7 @@ Deno.serve(async (req) => {
       funding_code: funding,
       booking_scope: scope,
       pay_plan: plan,
+      post_trial_convert: postTrialConvert,
       quote:
         scope === "trial_session"
           ? quotes.trial_one_off || null
