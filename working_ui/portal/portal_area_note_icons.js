@@ -85,6 +85,7 @@
     if (s === "hub room") return "hub-room";
     if (s === "room 2" || s === "room2") return "room-2";
     if (s === "gym" || s === "fitness" || s === "fitness gym") return "gym";
+    if (s.indexOf("physical") >= 0) return "gym";
     if (s === "wall" || s.indexOf("climbing") >= 0) return "climbing-wall";
     if (s.indexOf("day centre") >= 0 || s.indexOf("day center") >= 0) return "day-center";
     if (s === "bespoke") return "bespoke";

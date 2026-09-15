@@ -1815,9 +1815,15 @@
       let a = String(s.rosterArea != null ? s.rosterArea : '').trim();
       const sundayPool = portalCorrectSundaySwimFarmPoolArea(s, viewDay);
       if(sundayPool && (!a || /^teaching pool$/i.test(a))) a = sundayPool;
+      const svc = String(activity || (s && (s.rosterService || s.activity || s.service)) || '').trim();
+      const ven = String((s && s.venue) || '').trim();
+      /* Westway Physical Activity = Gym (capacity-chain defaultArea); covers often omit rosterArea. */
+      if((!a || /physical\s*activit/i.test(a) || /^fitness$/i.test(a)) &&
+         /westway/i.test(ven) &&
+         /physical|fitness|^gym$/i.test(svc + ' ' + a)){
+        a = 'Gym';
+      }
       if(!a){
-        const svc = String(activity || (s && (s.rosterService || s.activity || s.service)) || '').trim();
-        const ven = String((s && s.venue) || '').trim();
         /* SwimFarm Multi-Activity is always Hub Room — keep note even when admin overrides omit area. */
         if(/multi[\s-]*activity/i.test(svc) && /swimfarm/i.test(ven)){
           a = 'Hub Room';

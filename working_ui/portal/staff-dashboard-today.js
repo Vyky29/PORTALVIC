@@ -3963,6 +3963,63 @@
           base.rosterService = 'Bespoke Programme';
           base.activity = 'Bespoke Programme';
         }
+        /* Cover synthetics often omit area — pull Gym / Wall from capacity-chain occupants. */
+        if(!String(base.rosterArea || base.area || '').trim()){
+          try{
+            const Occ = window.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+            const by = Occ && Occ.bySlotId;
+            const wantCid = portalTodayClientSlugCanon(base.clientId || coverCid);
+            const wantVen = String(base.venue || ov.anchor_venue || '').trim().toLowerCase();
+            const wantDay = String(anchorDayWord || '').trim();
+            if(by && wantCid && wantVen){
+              Object.keys(by).forEach(function(slotId){
+                if(String(base.rosterArea || '').trim()) return;
+                const slot = by[slotId];
+                if(!slot) return;
+                if(String(slot.day || '').trim() !== wantDay) return;
+                if(String(slot.venue || '').trim().toLowerCase() !== wantVen) return;
+                const names = Array.isArray(slot.bookedNames) ? slot.bookedNames : [];
+                let hit = false;
+                for(let ni = 0; ni < names.length; ni++){
+                  if(portalTodayClientSlugCanon(names[ni]) === wantCid){ hit = true; break; }
+                }
+                if(!hit && Array.isArray(slot.seatLines)){
+                  for(let li = 0; li < slot.seatLines.length; li++){
+                    if(portalTodayClientSlugCanon(slot.seatLines[li] && slot.seatLines[li].client) === wantCid){
+                      hit = true; break;
+                    }
+                  }
+                }
+                if(!hit) return;
+                const sid = String(slot.serviceId || '').toLowerCase();
+                if(sid === 'physical'){
+                  base.rosterArea = 'Gym';
+                  base.area = 'Gym';
+                  base.rosterService = base.rosterService || 'Physical Activity';
+                  base.activity = base.activity || 'Physical Activity';
+                } else if(sid === 'climbing'){
+                  base.rosterArea = base.rosterArea || 'Wall';
+                  base.area = base.area || 'Wall';
+                  base.rosterService = base.rosterService || 'Climbing';
+                  base.activity = base.activity || 'Climbing';
+                }
+              });
+            }
+          }catch(_occArea){}
+        }
+        if(
+          /westway/i.test(String(base.venue || ov.anchor_venue || '')) &&
+          /physical|fitness|gym/i.test(
+            String(base.rosterService || base.activity || inferredService || '')
+          )
+        ){
+          base.rosterArea = base.rosterArea || 'Gym';
+          base.area = base.area || 'Gym';
+          if(!base.rosterService || /swimming|multi/i.test(String(base.rosterService))){
+            base.rosterService = 'Physical Activity';
+            base.activity = 'Physical Activity';
+          }
+        }
         const s = Object.assign({}, base, { staffId: cov });
         let st2 = sessionModelStatus(s);
         /* Admin absence / cancellation on a covered slot can be anchored to EITHER the
