@@ -6080,6 +6080,19 @@
       text-overflow:unset;
       text-align:center;
     }
+    .portal-session-slot-chip--move-in{
+      color:#fff;
+      background:linear-gradient(145deg,#38bdf8,#0369a1);
+      border:1px solid rgba(3,105,161,.5);
+      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 2px 8px rgba(3,105,161,.28);
+      text-transform:none;
+    }
+    .portal-session-slot-chip--move-in > span{
+      white-space:normal;
+      overflow-wrap:anywhere;
+      text-overflow:unset;
+      text-align:center;
+    }
     .portal-session-slot-chip--plain{
       color:#fff;
       background:linear-gradient(145deg,#64748b,#475569);

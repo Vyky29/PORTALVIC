@@ -3694,8 +3694,10 @@
           }
           if(ov && ov.override_type === 'slot_clear_client' && !replaceOvSameSlot){
             const plClear = ov.payload || {};
-            const isDayReassignClear = !!(plClear.day_reassign === true || plClear.not_makeup === true);
-            const isCancelledByAdmin = !!(plClear.cancelled_by_admin) && !isDayReassignClear;
+            const isClientMoveClear = !!(plClear.client_move === true || plClear.client_move === 'true')
+              || (typeof portalOverrideIsClientMoveOutClear === 'function' && portalOverrideIsClientMoveOutClear(ov));
+            const isDayReassignClear = !!(plClear.day_reassign === true || plClear.not_makeup === true) && !isClientMoveClear;
+            const isCancelledByAdmin = (!!(plClear.cancelled_by_admin) && !isDayReassignClear) || isClientMoveClear;
             if(isCancelledByAdmin
               && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
                 && sessionDateKey
@@ -3718,7 +3720,9 @@
                 showSpecialty: showSpecCan,
                 specialtyLabel: specialtyInfoTitle(activity),
                 segments: portalTodayKeepDcSegments(s),
-                general: `Cancelled (Today). ${clientGeneralBodyFromNotes(cCan, s)}`.trim(),
+                general: (isClientMoveClear
+                  ? `Cancelled (moved to another slot today). ${clientGeneralBodyFromNotes(cCan, s)}`
+                  : `Cancelled (Today). ${clientGeneralBodyFromNotes(cCan, s)}`).trim(),
                 specialty: showSpecCan ? pickSpecialtyBody(cCan, activity) : '',
                 openSheet: true,
                 sessionKey: `${sessionDateKey}|${s.start}|${String(s.clientId || '').toLowerCase()}`,
@@ -3737,6 +3741,15 @@
             if(makeupFromClear){
               return Object.assign({}, meta, makeupFromClear, {
                 __portalScheduleOverride: makeupFromClear.__portalScheduleOverride,
+                scheduleAdminAdjusted: true
+              });
+            }
+            const moveInFromClear = typeof portalTryMoveInTodayCardFromOpenSlot === 'function'
+              ? portalTryMoveInTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote)
+              : null;
+            if(moveInFromClear){
+              return Object.assign({}, meta, moveInFromClear, {
+                __portalScheduleOverride: moveInFromClear.__portalScheduleOverride,
                 scheduleAdminAdjusted: true
               });
             }
@@ -3781,6 +3794,15 @@
             if(makeupFromOpen){
               return Object.assign({}, meta, makeupFromOpen, {
                 __portalScheduleOverride: makeupFromOpen.__portalScheduleOverride,
+                scheduleAdminAdjusted: true
+              });
+            }
+            const moveInFromOpen = typeof portalTryMoveInTodayCardFromOpenSlot === 'function'
+              ? portalTryMoveInTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote)
+              : null;
+            if(moveInFromOpen){
+              return Object.assign({}, meta, moveInFromOpen, {
+                __portalScheduleOverride: moveInFromOpen.__portalScheduleOverride,
                 scheduleAdminAdjusted: true
               });
             }
@@ -3865,6 +3887,8 @@
           const replacedVisual = manualOv === 'REPLACED';
           const isDayReassignReplace = hasReplaceOv && typeof portalOverrideIsDayReassignReplace === 'function'
             && portalOverrideIsDayReassignReplace(ov);
+          const isClientMoveIn = hasReplaceOv && typeof portalOverrideIsClientMoveInReplace === 'function'
+            && portalOverrideIsClientMoveInReplace(ov);
           let isNewClientOv = false;
           try{
             const Pnc = window.PortalParticipantsSheet;
@@ -3875,7 +3899,7 @@
               );
             }
           }catch(_){}
-          const isMakeUpCard = !isTrialOv && !isDayReassignReplace && !isNewClientOv && (hasReplaceOv || replacedVisual);
+          const isMakeUpCard = !isTrialOv && !isDayReassignReplace && !isNewClientOv && !isClientMoveIn && (hasReplaceOv || replacedVisual);
           const makeUpPink = isMakeUpCard;
           const slotWasUpdated = typeof portalSessionRosterTimeWasUpdated === 'function'
             && portalSessionRosterTimeWasUpdated(s, sessionDateKey);
@@ -3916,15 +3940,17 @@
             portalOverrideMakeUpTag: isMakeUpCard,
             portalOverrideTrialTag: isTrialOv,
             portalOverrideNewClientTag: !!isNewClientOv,
-            portalOverrideCardTone: fadiDcCancel ? 'red' : (isMakeUpCard ? 'pink' : (isNewClientOv || slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : ''))),
-            portalOverrideSymbolText: isTrialOv ? 'Trial' : (isNewClientOv ? 'New Client' : (isMakeUpCard ? 'Make Up' : '')),
-            portalOverrideHideAdminBadge: false,
-            portalOverrideAlertPill: fadiDcCancel ? 'CANCELLED' : (slotWasUpdated ? 'UPDATED' : ''),
+            portalOverrideMoveInTag: !!isClientMoveIn,
+            portalOverrideCardTone: fadiDcCancel ? 'red' : (isMakeUpCard ? 'pink' : (isClientMoveIn || isNewClientOv || slotWasUpdated ? 'blue' : (isTrialOv ? 'trial' : ''))),
+            portalOverrideSymbolText: isTrialOv ? 'Trial' : (isNewClientOv ? 'New Client' : (isClientMoveIn ? 'Move in' : (isMakeUpCard ? 'Make Up' : ''))),
+            portalOverrideHideAdminBadge: !!isClientMoveIn,
+            portalOverrideAlertPill: fadiDcCancel ? 'CANCELLED' : (slotWasUpdated && !isClientMoveIn ? 'UPDATED' : ''),
             noSessionFeedbackRequired: !!fadiDcCancel,
             actionsDisabled: !!fadiDcCancel,
             detailsOpenAllowed: true,
             portalOverrideSuppressReviewOrange: !!fadiDcCancel,
-            portalRosterTimeUpdated: !!slotWasUpdated
+            portalRosterTimeUpdated: !!slotWasUpdated,
+            scheduleAdminAdjusted: !!(isClientMoveIn || isDayReassignReplace || slotWasUpdated)
           }, meta);
         })
         .filter(Boolean),
@@ -4079,6 +4105,73 @@
         if(!coverHasRealClient && (st2 === 'Closed' || coverClientId === 'closed')) return;
         if(!coverHasRealClient && (st2 === 'Available' || coverClientId === 'available'
           || /^(no[_\s-]?client|no[_\s-]?participant|open[_\s-]?slot)$/i.test(coverClientId))){
+          /* Vacated same-day move-out on the covered instructor: show Cancelled + name, not empty open. */
+          const moveOutClear = (slotOvBase && slotOvBase.override_type === 'slot_clear_client'
+            && typeof portalOverrideIsClientMoveOutClear === 'function'
+            && portalOverrideIsClientMoveOutClear(slotOvBase))
+            ? slotOvBase
+            : (typeof portalScheduleOverrideRowsForSessionIso === 'function'
+              ? (portalScheduleOverrideRowsForSessionIso(sessionDateKey).filter(function(r){
+                  if(String(r.status || 'active') !== 'active') return false;
+                  if(String(r.override_type || '').trim() !== 'slot_clear_client') return false;
+                  if(typeof portalOverrideIsClientMoveOutClear !== 'function' || !portalOverrideIsClientMoveOutClear(r)) return false;
+                  if(typeof portalStaffKeysMatch === 'function'){
+                    if(!portalStaffKeysMatch(r.anchor_staff_id, ov.anchor_staff_id)) return false;
+                  }else if(String(r.anchor_staff_id || '').trim().toLowerCase() !== String(ov.anchor_staff_id || '').trim().toLowerCase()) return false;
+                  const rStart = typeof portalCanonicalHmToken === 'function'
+                    ? portalCanonicalHmToken(r.anchor_start)
+                    : String(r.anchor_start || '').slice(0, 5);
+                  const covStart = typeof portalCanonicalHmToken === 'function'
+                    ? portalCanonicalHmToken(ov.anchor_start)
+                    : String(ov.anchor_start || '').slice(0, 5);
+                  return !!(covStart && rStart && covStart === rStart);
+                })[0] || null)
+              : null);
+          if(moveOutClear){
+            const movedCid = String(
+              (moveOutClear.payload && (moveOutClear.payload.moved_client_id || moveOutClear.payload.client_id))
+              || moveOutClear.anchor_client_id || ''
+            ).trim().toLowerCase();
+            const cMoved = (typeof portalClientNotesLookup === 'function' ? portalClientNotesLookup(movedCid) : null)
+              || (movedCid ? { name: String((moveOutClear.payload && moveOutClear.payload.moved_client_name) || movedCid) } : null);
+            if(cMoved && movedCid && movedCid !== 'available'){
+              const activityCan = (s.activity || 'Swimming').trim();
+              const timeCan = rosterSlotTimeLabel(s);
+              let poolLocationCan = resolvePoolLocationLabelFromSession(s, activityCan, cMoved, viewDay);
+              if(supportHidePoolNote) poolLocationCan = null;
+              const areaCan = rosterAreaLabelForSession(s, activityCan, supportHidePoolNote);
+              const showSpecCan = !isBespokeActivity(activityCan);
+              extra.push(Object.assign({
+                time: timeCan,
+                kind: 'client',
+                clientId: movedCid,
+                name: cMoved.name || 'Participant',
+                activity: activityCan,
+                areaLabel: areaCan,
+                poolLocationLabel: poolLocationCan,
+                poolTier: poolTierForAreaNoteRow(s, activityCan, cMoved, viewDay, supportHidePoolNote),
+                showPoolSymbol: !!(poolLocationCan || areaCan),
+                showSpecialty: showSpecCan,
+                specialtyLabel: specialtyInfoTitle(activityCan),
+                segments: portalTodayKeepDcSegments(s),
+                general: (`Cancelled (moved to another slot today). ${clientGeneralBodyFromNotes(cMoved, s)}`).trim(),
+                specialty: showSpecCan ? pickSpecialtyBody(cMoved, activityCan) : '',
+                openSheet: true,
+                sessionKey: `${sessionDateKey}|${s.start}|${movedCid}`,
+                ...portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor),
+                noSessionFeedbackRequired: true,
+                actionsDisabled: true,
+                detailsOpenAllowed: true,
+                portalOverrideSuppressReviewOrange: true,
+                portalOverrideCardTone: 'red',
+                portalOverrideAlertPill: 'CANCELLED',
+                sessionVenue: String(s.venue || '').trim() || '—',
+                __portalBaseSession: Object.assign({}, base, { clientId: movedCid }),
+                __portalScheduleOverride: moveOutClear
+              }));
+              return;
+            }
+          }
           const cOpen = (clientNotesById && clientNotesById.available) || {};
           const activityOpen = (s.activity || base.activity || 'Aquatic Activity').trim();
           const timeOpen = rosterSlotTimeLabel(s);
@@ -4129,8 +4222,10 @@
         }
         if(slotOv && slotOv.override_type === 'slot_clear_client'){
           const plClear = slotOv.payload || {};
-          const isDayReassignClear = !!(plClear.day_reassign === true || plClear.not_makeup === true);
-          const isCancelledByAdmin = !!(plClear.cancelled_by_admin) && !isDayReassignClear;
+          const isClientMoveClear = !!(plClear.client_move === true || plClear.client_move === 'true')
+            || (typeof portalOverrideIsClientMoveOutClear === 'function' && portalOverrideIsClientMoveOutClear(slotOv));
+          const isDayReassignClear = !!(plClear.day_reassign === true || plClear.not_makeup === true) && !isClientMoveClear;
+          const isCancelledByAdmin = (!!(plClear.cancelled_by_admin) && !isDayReassignClear) || isClientMoveClear;
           if(isCancelledByAdmin
             && !(typeof portalStaffHasRequestedTimeOffOnDate === 'function'
               && sessionDateKey
@@ -4155,7 +4250,9 @@
               showSpecialty: showSpecCan,
               specialtyLabel: specialtyInfoTitle(activityCan),
               segments: portalTodayKeepDcSegments(s),
-              general: `Cancelled (Today). ${clientGeneralBodyFromNotes(cCan, s)}`.trim(),
+              general: (isClientMoveClear
+                ? `Cancelled (moved to another slot today). ${clientGeneralBodyFromNotes(cCan, s)}`
+                : `Cancelled (Today). ${clientGeneralBodyFromNotes(cCan, s)}`).trim(),
               specialty: showSpecCan ? pickSpecialtyBody(cCan, activityCan) : '',
               openSheet: true,
               sessionKey: `${sessionDateKey}|${s.start}|${String(base.clientId || '').toLowerCase()}`,
@@ -4166,7 +4263,6 @@
               portalOverrideSuppressReviewOrange: true,
               portalOverrideCardTone: 'red',
               portalOverrideAlertPill: 'CANCELLED',
-              scheduleAdminAdjusted: true,
               sessionVenue: String(s.venue || '').trim() || '—',
               __portalBaseSession: base,
               __portalScheduleOverride: slotOv
@@ -4200,7 +4296,7 @@
             scheduleAdminAdjusted: true,
             sessionVenue: String(s.venue || '').trim() || '—',
             __portalBaseSession: base,
-            __portalScheduleOverride: ov
+            __portalScheduleOverride: slotOv
           }));
           return;
         }
@@ -4265,12 +4361,17 @@
         const showSpec = !isBespokeActivity(activity);
         const hasReplaceCoverOv = !!(slotOv && slotOv.override_type === 'client_replace_in_slot');
         const isTrialCoverOv = hasReplaceCoverOv && portalOverrideIsTrial(slotOv);
+        const isClientMoveInCover = hasReplaceCoverOv
+          && typeof portalOverrideIsClientMoveInReplace === 'function'
+          && portalOverrideIsClientMoveInReplace(slotOv);
         const isInstructorCoverOv = String(ov.override_type || '').trim() === 'instructor_reassign';
         const coverTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
         /* Cover of a MakeUp (Javi Palankas ← Anas on Aurora's open 6-6.30) stays pending
            after the slot ends. Do not drop the MakeUp tag — otherwise review treats the
-           original open seat as Absent and the cover cannot submit feedback. */
+           original open seat as Absent and the cover cannot submit feedback.
+           Same-day client_move replaces are Move in — never Make Up. */
         let siblingMakeupOv = null;
+        let siblingMoveInOv = null;
         if(isInstructorCoverOv && typeof portalScheduleOverrideRowsForSessionIso === 'function'){
           const covStart = typeof portalCanonicalHmToken === 'function'
             ? portalCanonicalHmToken(ov.anchor_start)
@@ -4290,17 +4391,22 @@
               : String(r.anchor_start || '').slice(0, 5);
             if(covStart && rStart && covStart !== rStart) return false;
             if(typeof portalOverrideIsTrial === 'function' && portalOverrideIsTrial(r)) return false;
-            if(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(r)) return false;
             const rep = typeof portalOverrideReplacementClientId === 'function'
               ? String(portalOverrideReplacementClientId(r.payload) || '').trim().toLowerCase()
               : '';
             if(!rep) return false;
             if(covCid && rep !== covCid) return false;
+            if(typeof portalOverrideIsClientMoveInReplace === 'function' && portalOverrideIsClientMoveInReplace(r)){
+              siblingMoveInOv = r;
+              return true;
+            }
+            if(typeof portalOverrideIsDayReassignReplace === 'function' && portalOverrideIsDayReassignReplace(r)) return false;
             siblingMakeupOv = r;
             return true;
           });
         }
-        const makeUpPinkCover = !isTrialCoverOv && (hasReplaceCoverOv || !!siblingMakeupOv);
+        const coverMoveIn = !!(isClientMoveInCover || siblingMoveInOv);
+        const makeUpPinkCover = !isTrialCoverOv && !coverMoveIn && (hasReplaceCoverOv || !!siblingMakeupOv);
         const coverMemberKeys = [];
         if(isInstructorCoverOv && Array.isArray(ov.__portalCoalescedCoverStarts) && ov.__portalCoalescedCoverStarts.length > 1){
           const seenCk = Object.create(null);
@@ -4335,13 +4441,14 @@
           scheduleAdminAdjusted: true,
           portalOverrideMakeUpTag: makeUpPinkCover,
           portalOverrideTrialTag: isTrialCoverOv,
-          portalOverrideCardTone: isTrialCoverOv ? 'trial' : (makeUpPinkCover ? 'pink' : ''),
-          portalOverrideSymbolText: isTrialCoverOv ? 'Trial' : (makeUpPinkCover ? 'Make Up' : ''),
-          portalOverrideHideAdminBadge: false,
+          portalOverrideMoveInTag: coverMoveIn,
+          portalOverrideCardTone: isTrialCoverOv ? 'trial' : (makeUpPinkCover ? 'pink' : (coverMoveIn ? 'blue' : '')),
+          portalOverrideSymbolText: isTrialCoverOv ? 'Trial' : (coverMoveIn ? 'Move in' : (makeUpPinkCover ? 'Make Up' : '')),
+          portalOverrideHideAdminBadge: !!coverMoveIn,
           portalOverrideAlertPill: '',
           sessionVenue: String(s.venue || '').trim() || '—',
           __portalBaseSession: base,
-          __portalScheduleOverride: ov,
+          __portalScheduleOverride: coverMoveIn && siblingMoveInOv ? siblingMoveInOv : (coverMoveIn && isClientMoveInCover ? slotOv : ov),
           __portalFeedbackMergeMemberKeys: coverMemberKeys.length ? coverMemberKeys : undefined
         });
       });
@@ -4421,7 +4528,7 @@
         if(ov){
           const typ = String(ov.override_type || ov.overrideType || '').trim();
           const pl = ov.payload || {};
-          if(typ === 'slot_clear_client' && pl && pl.cancelled_by_admin) return true;
+          if(typ === 'slot_clear_client' && pl && (pl.cancelled_by_admin || pl.client_move === true || pl.client_move === 'true')) return true;
           if(typ === 'slot_close' || typ === 'client_cancelled') return true;
         }
         const manual = String(

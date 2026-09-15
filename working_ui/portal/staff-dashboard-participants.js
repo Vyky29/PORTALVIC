@@ -1548,6 +1548,8 @@
         push('<span class="portal-session-slot-chip portal-session-slot-chip--trial" aria-label="Trial/New Participant"><span>Trial/New Participant</span></span>');
       } else if(isNewClientItem){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--new-client" aria-label="New Client"><span>New Client</span></span>');
+      } else if(!!item.portalOverrideMoveInTag || symNorm === 'move in' || symNorm === 'moved in'){
+        push('<span class="portal-session-slot-chip portal-session-slot-chip--move-in" aria-label="Move in"><span>Move in</span></span>');
       } else if(isMakeUpSym || !!item.portalOverrideMakeUpTag){
         push('<span class="portal-session-slot-chip portal-session-slot-chip--makeup" aria-label="Make up"><span>Make up</span></span>');
       } else if(pillText && pillNorm !== 'UPDATED'){
@@ -2113,6 +2115,88 @@
       return portalBuildMakeupTodayCardFromOverride(s, ncOv, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote);
     }
     try{ window.portalTryNewClientTodayCardFromOpenSlot = portalTryNewClientTodayCardFromOpenSlot; }catch(_){}
+    /** Same-day Schedule move into an open seat (admin "Moved in") — not Make Up. */
+    function portalOpenSlotMoveInOverrideForSession(s, sessionDateIso){
+      const iso = normaliseIsoDate(sessionDateIso);
+      if(!iso || !s) return null;
+      const all = portalScheduleOverrideRowsForSessionIso(iso).filter(function(r){
+        if(String(r.status || 'active') !== 'active') return false;
+        if(String(r.override_type || '').trim() !== 'client_replace_in_slot') return false;
+        if(!portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id)) return false;
+        if(typeof portalOverrideIsClientMoveInReplace !== 'function' || !portalOverrideIsClientMoveInReplace(r)) return false;
+        if(portalLoggedInStaffReassignedOffSlotForRow(r)) return false;
+        return portalScheduleOverrideMatchesSessionWindow(r, s, iso);
+      });
+      all.sort(function(a, b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+      return all[0] || null;
+    }
+    function portalBuildMoveInTodayCardFromOverride(base, ov, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote){
+      if(!base || !ov || !portalOverrideIsClientMoveInReplace(ov)) return null;
+      const s = Object.assign({}, base, { __portalBaseSession: base });
+      const activity = (s.activity || 'Swimming').trim();
+      const time = rosterSlotTimeLabel(s);
+      const effClientId = portalOverrideReplacementClientId(ov.payload) || String(s.clientId || '').trim().toLowerCase();
+      const nameFromReplace = portalOverrideReplacementClientName(ov.payload);
+      const c = portalClientNotesLookup(effClientId) || clientNotesById[effClientId]
+        || (nameFromReplace || effClientId ? {
+          name: nameFromReplace || effClientId,
+          generalLead: '',
+          specialty: '',
+          specialtyClimbing: '',
+          specialtyFitness: '',
+          generalInfoSheet: ''
+        } : null);
+      if(!c) return null;
+      const anchorNotes = portalClientNotesLookup(String(base.clientId || '').trim().toLowerCase()) || { name: '' };
+      let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, anchorNotes, anchorDayWord);
+      if(supportHidePoolNote) poolLocationLabel = null;
+      const areaLabel = rosterAreaLabelForSession(s, activity, supportHidePoolNote, anchorDayWord);
+      const poolTier = poolTierForAreaNoteRow(s, activity, anchorNotes, anchorDayWord, supportHidePoolNote);
+      const showPoolSymbol = !!(poolLocationLabel || areaLabel);
+      const showSpec = !isBespokeActivity(activity);
+      const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effClientId);
+      const rowTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
+      return {
+        time,
+        kind: 'client',
+        clientId: effClientId,
+        name: portalParticipantDisplayName
+          ? portalParticipantDisplayName(c.name || nameFromReplace || effClientId, effClientId)
+          : (c.name || nameFromReplace || effClientId),
+        activity,
+        areaLabel,
+        poolLocationLabel,
+        poolTier,
+        showPoolSymbol,
+        showSpecialty: showSpec,
+        specialtyLabel: specialtyInfoTitle(activity),
+        general: clientGeneralBodyFromNotes(c, s),
+        specialty: showSpec ? pickSpecialtyBody(c, activity) : '',
+        openSheet: true,
+        sessionKey,
+        sessionStartTs: rowTs.sessionStartTs,
+        sessionEndTs: rowTs.sessionEndTs,
+        scheduleAdminAdjusted: true,
+        portalOverrideMakeUpTag: false,
+        portalOverrideTrialTag: false,
+        portalOverrideNewClientTag: false,
+        portalOverrideMoveInTag: true,
+        portalOverrideCardTone: 'blue',
+        portalOverrideSymbolText: 'Move in',
+        portalOverrideHideAdminBadge: true,
+        portalOverrideAlertPill: '',
+        sessionVenue: String(s.venue || '').trim() || '—',
+        __portalBaseSession: base,
+        __portalScheduleOverride: ov
+      };
+    }
+    function portalTryMoveInTodayCardFromOpenSlot(s, sessionDateKey, anchorDayWord, anchor, viewDay, supportHidePoolNote){
+      const moveOv = portalOpenSlotMoveInOverrideForSession(s, sessionDateKey);
+      if(!moveOv) return null;
+      return portalBuildMoveInTodayCardFromOverride(s, moveOv, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote);
+    }
+    try{ window.portalTryMoveInTodayCardFromOpenSlot = portalTryMoveInTodayCardFromOpenSlot; }catch(_){}
+    try{ window.portalBuildMoveInTodayCardFromOverride = portalBuildMoveInTodayCardFromOverride; }catch(_){}
     function portalHmFromDbTime(t){
       const m = String(t || '').match(/(\d{1,2}):(\d{2})/);
       if(!m) return '';
@@ -3980,19 +4064,20 @@
         if(!portalStaffKeysMatch(r.anchor_staff_id, sid)) continue;
         if(!portalScheduleOverrideMatchesSessionWindow(r, s, iso)) continue;
         const anchorMatch = portalRosterClientIdsMatch(r.anchor_client_id, s.clientId);
-        let openSeatNewClientMatch = false;
+        let openSeatReplaceMatch = false;
         if(!anchorMatch && portalScheduleOverrideAnchorIsOpenSlot(r.anchor_client_id)){
           const P = window.PortalParticipantsSheet;
           const isNc = !!(P && (
             (typeof P.overrideIsFinishBookingNewClient === 'function' && P.overrideIsFinishBookingNewClient(r))
             || (typeof P.overrideIsTermNewParticipant === 'function' && P.overrideIsTermNewParticipant(r))
           ));
-          if(isNc){
+          const isMoveIn = typeof portalOverrideIsClientMoveInReplace === 'function' && portalOverrideIsClientMoveInReplace(r);
+          if(isNc || isMoveIn){
             const repId = portalOverrideReplacementClientId(r.payload);
-            openSeatNewClientMatch = !!(repId && portalRosterClientIdsMatch(repId, s.clientId));
+            openSeatReplaceMatch = !!(repId && portalRosterClientIdsMatch(repId, s.clientId));
           }
         }
-        if(!anchorMatch && !openSeatNewClientMatch) continue;
+        if(!anchorMatch && !openSeatReplaceMatch) continue;
         if(!best || new Date(r.created_at || 0) > new Date(best.created_at || 0)) best = r;
       }
       return best;
@@ -4009,11 +4094,28 @@
         return false;
       }
       const pl = ov.payload || {};
+      /* Same-day Schedule move (client_move) is Move in — never Make Up. */
+      if(pl.client_move === true || pl.client_move === 'true') return true;
       if(pl.day_reassign === true || pl.not_makeup === true) return true;
       const kind = String(pl.booking_kind || pl.session_kind || pl.replace_kind || '').trim().toLowerCase();
       return kind === 'day_reassign' || kind === 'instructor_day_cover' || kind === 'slot_move';
     }
     try{ window.portalOverrideIsDayReassignReplace = portalOverrideIsDayReassignReplace; }catch(_){}
+    /** Same-day seat move into this slot (admin Covers "Moved in"). */
+    function portalOverrideIsClientMoveInReplace(ov){
+      if(!ov || String(ov.override_type || '').trim() !== 'client_replace_in_slot') return false;
+      if(portalOverrideIsTrial(ov)) return false;
+      const pl = ov.payload || {};
+      return pl.client_move === true || pl.client_move === 'true';
+    }
+    try{ window.portalOverrideIsClientMoveInReplace = portalOverrideIsClientMoveInReplace; }catch(_){}
+    /** Vacated seat after same-day client move (admin Covers "Moved out"). */
+    function portalOverrideIsClientMoveOutClear(ov){
+      if(!ov || String(ov.override_type || '').trim() !== 'slot_clear_client') return false;
+      const pl = ov.payload || {};
+      return pl.client_move === true || pl.client_move === 'true';
+    }
+    try{ window.portalOverrideIsClientMoveOutClear = portalOverrideIsClientMoveOutClear; }catch(_){}
     /**
      * instructor_reassign anchored on the absent instructor, but this viewer is the cover
      * and already has the client on their dated/canonical roster — attach that override so
@@ -4306,6 +4408,23 @@
             __portalScheduleOverride: ov
           });
         }
+        /* Same-day seat move into this slot — Move in chip (never Make Up / Updated by admin). */
+        if(portalOverrideIsClientMoveInReplace(ov)){
+          const pillMove = String(it.portalOverrideAlertPill || '').trim().toUpperCase();
+          return Object.assign({}, it, {
+            portalOverrideMakeUpTag: false,
+            portalOverrideTrialTag: false,
+            portalOverrideNewClientTag: false,
+            portalOverrideMoveInTag: true,
+            portalOverrideCardTone: 'blue',
+            portalOverrideSymbolText: 'Move in',
+            scheduleAdminAdjusted: true,
+            portalOverrideHideAdminBadge: true,
+            portalOverrideAlertPill: pillMove === 'ABSENT' || pillMove === 'CANCELLED' || pillMove === 'MAKE UP' || pillMove === 'UPDATED' ? '' : (it.portalOverrideAlertPill || ''),
+            __portalScheduleOverride: ov,
+            __portalBaseSession: base || it.__portalBaseSession
+          });
+        }
         /* Day reassign: keep Updated by admin — never force MakeUp (that also spawned fake Absent). */
         if(portalOverrideIsDayReassignReplace(ov)){
           const pill = String(it.portalOverrideAlertPill || '').trim().toUpperCase();
@@ -4557,7 +4676,10 @@
         if(!base) return;
         const startTok = portalCanonicalHmToken(base.start) || portalCanonicalHmToken(ov.anchor_start);
         if(seenRepKeys[repId + '|' + startTok]) return;
-        const card = portalBuildMakeupTodayCardFromOverride(base, ov, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote);
+        const card = (typeof portalOverrideIsClientMoveInReplace === 'function' && portalOverrideIsClientMoveInReplace(ov)
+          && typeof portalBuildMoveInTodayCardFromOverride === 'function')
+          ? portalBuildMoveInTodayCardFromOverride(base, ov, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote)
+          : portalBuildMakeupTodayCardFromOverride(base, ov, sessionDateKey, anchorDayWord, anchor, supportHidePoolNote);
         if(!card) return;
         if(ov.id) seenOvIds[String(ov.id)] = true;
         seenRepKeys[repId + '|' + startTok] = true;
