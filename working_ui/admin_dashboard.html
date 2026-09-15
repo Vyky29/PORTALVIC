@@ -21932,12 +21932,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   aligned.push(hit);
                   if(hit.staffId && alignedIds.indexOf(hit.staffId) < 0) alignedIds.push(hit.staffId);
                 }else{
+                  /* Instructor works other halves today but not this band (e.g. Aurora Acton
+                   * Tue/Thu 4–4.30 CLOSED). Not an open Booking place — show CLOSED. */
                   aligned.push({
                     staffName: col.staffName,
                     staffId: col.staffId,
                     staffKey: col.key,
                     demoId: '',
-                    closed: false,
+                    closed: true,
                     open: false,
                     paxName: '',
                     emptyCol: true
@@ -21966,11 +21968,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               for(var si = 0; si < maxSeats; si++){
                 var seat = DR.seats[si];
                 var paxHtml;
-                if(!seat || seat.emptyCol){
-                  paxHtml =
-                    '<button type="button" class="chip chip--pend c4k-svc-pax-pill c4k-svc-pax-pill--open" data-novo-edit-sched-slot="1" ' +
-                    DR.dataSlot + ' title="Open seat — edit standing place / Booking Portal">No participant</button>';
-                }else if(DR.allClosed || seat.closed){
+                if(!seat){
+                  paxHtml = adminServicesClosedChipHtml('Roster line closed — no bookings on this seat');
+                }else if(DR.allClosed || seat.closed || seat.emptyCol){
                   paxHtml = adminServicesClosedChipHtml('Roster line closed — no bookings on this seat');
                 }else if(seat.open){
                   paxHtml =
