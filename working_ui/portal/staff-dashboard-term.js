@@ -2435,7 +2435,9 @@
             ? getEffectiveSessionReviewRecord(item)
             : null) || {};
           if(rObs.absent) return 'session-card--review-done';
-          if(rObs.cancelled) return 'session-card--review-cancelled';
+          /* Admin cancel = done (green), same as Absent / Submitted — no instructor action. */
+          if(rObs.cancelled && !rObs.cancelNeedsFeedback) return 'session-card--review-done';
+          if(rObs.cancelled && rObs.cancelNeedsFeedback) return 'session-card--review-needed';
           if(rObs.feedbackDone) return 'session-card--review-done';
         }
         return '';
@@ -2449,7 +2451,8 @@
       }
       const r = getEffectiveSessionReviewRecord(item) || {};
       if(r.absent) return 'session-card--review-done';
-      if(r.cancelled) return 'session-card--review-cancelled';
+      if(r.cancelled && !r.cancelNeedsFeedback) return 'session-card--review-done';
+      if(r.cancelled && r.cancelNeedsFeedback) return 'session-card--review-needed';
       if(r.feedbackDone) return 'session-card--review-done';
       /* Hold Pending/orange until Supabase review merge finished — Day Centre shared keys
          arrive with portalServerResolvedRosterKeys and otherwise flip orange→green late. */
