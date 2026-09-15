@@ -354,7 +354,7 @@
   var AUTUMN_ACTON_TUESDAY_BOARD = [
     { staff: "ROBERTO", name: "Christian Abate", time: "4 to 4.30", area: "Lane (DE)" },
     { staff: "ROBERTO", name: "Serine", time: "4.30 to 5.30", area: "Lane (DE)" },
-    { staff: "ROBERTO", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "Rayan Ta", time: "5.30 to 6", area: "Lane (DE)" },
     { staff: "ROBERTO", name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
     /* On shift from 4 — empty seat is open (No participant), never Closed. */
     { staff: "LULIYA", name: "Emmanuel Abate", time: "4 to 4.30", area: "Lane (DE)" },
@@ -365,7 +365,8 @@
     /* Invoice INV-P-0139: Aquatic 60' Tue 4–5 Acton (same as Thu). */
     { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (DE)" },
     { staff: "JAVIER", name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
-    { staff: "JAVIER", name: "Rayan Ta", time: "5.30 to 6", area: "Lane (DE)" },
+    /* Kareena (Chopi) from Tue 15 Sep — Private one-off; was Rayan Ta (now Roberto 5.30). */
+    { staff: "JAVIER", name: "Kareena", time: "5.30 to 6", area: "Lane (DE)", bookedFrom: "2026-09-15" },
     { staff: "JAVIER", name: "Aydaan Ah", time: "6 to 6.30", area: "Lane (SE)" },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
     { staff: "AURORA", name: "Adam Mahmmoud", time: "4.30 to 5", area: "Teaching Pool" },
@@ -386,6 +387,7 @@
         time_slot: slot.time,
         venue: "Acton",
         session_date: iso,
+        bookedFrom: slot.bookedFrom || "",
       };
     });
   }
@@ -3642,7 +3644,8 @@
 
   /**
    * OLD / released clients — never keep their names on Autumn Sessions seats.
-   * Exact Joel only (never Joelle). Aug15 unpaid: Karo, Kareena, Shire.
+   * Exact Joel only (never Joelle). Aug15 unpaid still OFF: Karo, Shire.
+   * Kareena returned Tue 15 Sep 2026 (Javier Acton 5.30) — do not scrub.
    */
   function isAug15ReleasedFormerClient(name) {
     var n = String(name || "")
@@ -3650,9 +3653,36 @@
       .replace(/\s+/g, " ");
     if (!n) return false;
     if (/^karo\b/i.test(n)) return true;
-    if (/^kareena\b/i.test(n)) return true;
     if (/^shire\b/i.test(n)) return true;
     return false;
+  }
+
+  var KAREENA_ACTON_TUE_FROM = "2026-09-15";
+
+  function scrubKareenaActonTueBeforeFirstSession(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (!/^kareena\b/i.test(String(r.client_name || "").trim())) {
+        out.push(r);
+        return;
+      }
+      if (!isActonVenue(r.venue) || !isAquaticService(r.service)) {
+        out.push(r);
+        return;
+      }
+      if (normalizeDowKey(r.day) !== "tuesday") {
+        out.push(r);
+        return;
+      }
+      var d = normIso(r.session_date);
+      if (d && d < KAREENA_ACTON_TUE_FROM) {
+        out.push(Object.assign({}, r, { client_name: "No participant" }));
+        return;
+      }
+      out.push(r);
+    });
+    return out;
   }
 
   /** Joel Hibbert-Nixon — not continuing Autumn 26/27 (exact Joel / Joel …, never Joelle). */
@@ -3756,6 +3786,7 @@
     merged = scrubAndEnsureSep11AmaarLastSession(merged);
     merged = scrubAndEnsureMonNortholtDan630LeilaSwap(merged);
     merged = scrubAndEnsureSerineActonTueFrom(merged);
+    merged = scrubKareenaActonTueBeforeFirstSession(merged);
     merged = scrubAndEnsureSep8ActonRedistribute(merged);
     merged = scrubAndEnsureSep10AnasMakeup(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);
@@ -3775,6 +3806,9 @@
       "Ayman El Bakry": "2026-09-08",
       ayman: "2026-09-08",
       ayman_el_bakry: "2026-09-08",
+      Kareena: KAREENA_ACTON_TUE_FROM,
+      "Kareena Al hassani": KAREENA_ACTON_TUE_FROM,
+      kareena: KAREENA_ACTON_TUE_FROM,
     });
     return Object.assign({}, base, {
       rows: rows,
