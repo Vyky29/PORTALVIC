@@ -179,7 +179,11 @@
       countLabel = noteN === 1 ? "note" : "notes";
       if (noteN > 0) innerPct = 100;
     } else if (hub.tab === "feedback" || hub.mode === "feedback") {
-      var dsFb = hub.dayStats(iso);
+      /* Same seat count as Overview staffing (not collapsed AA+MA merge units). */
+      var dsFb =
+        typeof hub.staffingSessionStats === "function"
+          ? hub.staffingSessionStats(iso)
+          : hub.dayStats(iso);
       if (dsFb.total) {
         innerPct = Math.round((100 * dsFb.done) / dsFb.total);
         if (dsFb.done > 0 && innerPct < 8) innerPct = 8;
@@ -5525,7 +5529,9 @@
       "|" +
       clean(this.serviceFilter) +
       "|" +
-      clean(this.clientSearch)
+      clean(this.clientSearch) +
+      "|" +
+      (this.mode === "feedback" || this.tab === "feedback" ? "fbseat" : "unit")
     );
   };
 
@@ -7096,6 +7102,23 @@
     var cacheKey = hub.dayStatsCacheKey(iso);
     if (!hub._dayStatsByIso) hub._dayStatsByIso = Object.create(null);
     if (hub._dayStatsByIso[cacheKey]) return hub._dayStatsByIso[cacheKey];
+    /*
+     * Feedbacks tab: count each staffing seat (Sun 13 = Luliya 9 + Javier 8 + … = 52).
+     * Merge units (Yusuf AA+MA → 1) under-counted the week strip (46). Completion still
+     * fans out via slotFeedbackComplete so one submit can clear both halves.
+     */
+    if (
+      (hub.mode === "feedback" || hub.tab === "feedback") &&
+      typeof hub.staffingSessionStats === "function"
+    ) {
+      var seatSt = hub.staffingSessionStats(iso);
+      var seatResult = {
+        total: Math.max(0, Number(seatSt && seatSt.total) || 0),
+        done: Math.max(0, Number(seatSt && seatSt.done) || 0),
+      };
+      hub._dayStatsByIso[cacheKey] = seatResult;
+      return seatResult;
+    }
     var slots = this.expandSlotsForDate(iso).filter(function (s) {
       return hub.slotIncludedInDayStats(s);
     });
