@@ -689,6 +689,9 @@
     if (/131047|re-engagement/i.test(d)) {
       return "Outside WhatsApp 24h window — cold message needs the approved template (portal will use it automatically on resend).";
     }
+    if (/131049|healthy ecosystem/i.test(d)) {
+      return "Meta blocked this template (131049). This test number has had too many office templates without a reply from the WhatsApp app. Ask them to message the club number on Phone first, then free-text works. Real parents who already wrote back still receive.";
+    }
     if (/131026|undeliverable|not on whatsapp/i.test(d)) {
       return "Number may not be on WhatsApp or cannot receive messages.";
     }

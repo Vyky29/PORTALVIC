@@ -34,6 +34,7 @@ type ThreadMessage = {
   kind?: string | null;
   used_template?: boolean;
   whatsapp_status?: string | null;
+  error_detail?: string | null;
   message_type?: string | null;
   media_path?: string | null;
   media_mime?: string | null;
@@ -311,7 +312,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
   const { data: outboundRows } = await admin
     .from("portal_staff_notify_log")
     .select(
-      "id, created_at, body_text, kind, meta, whatsapp_status, whatsapp_message_id, whatsapp_delivered_at, whatsapp_read_at, staff_profile_id, staff_phone, message_type, media_path, media_mime",
+      "id, created_at, body_text, kind, meta, whatsapp_status, error_detail, whatsapp_message_id, whatsapp_delivered_at, whatsapp_read_at, staff_profile_id, staff_phone, message_type, media_path, media_mime",
     )
     .eq("staff_profile_id", leader.id)
     .order("created_at", { ascending: true })
@@ -364,6 +365,7 @@ async function handlePortalStaffMessagesList(req: Request): Promise<Response> {
       kind,
       used_template: usedTpl,
       whatsapp_status: status,
+      error_detail: r.error_detail != null ? String(r.error_detail) : null,
       delivery_label: outboundDeliveryLabel(status),
       read_on_whatsapp: String(status || "").toLowerCase() === "read",
       whatsapp_delivered_at:

@@ -648,6 +648,21 @@
     });
   }
 
+  function friendlyStaffWaError(detail) {
+    var d = String(detail || "").trim();
+    if (!d) return "";
+    if (/131049|healthy ecosystem/i.test(d)) {
+      return "Meta blocked this template (131049). This phone has had too many office templates without a reply from the WhatsApp app. Message the club number on Phone first, then free-text works.";
+    }
+    if (/131047|re-engagement/i.test(d)) {
+      return "Outside WhatsApp 24h window — send the approved template, or wait until they reply on Phone.";
+    }
+    if (/131026|undeliverable|not on whatsapp/i.test(d)) {
+      return "Number may not be on WhatsApp or cannot receive messages.";
+    }
+    return d.length > 160 ? d.slice(0, 157) + "…" : d;
+  }
+
   /** Match Family messages: Sent / Delivered ✓✓ / Read ✓✓ */
   function waDeliveryChip(m) {
     var st = String((m && m.whatsapp_status) || "").toLowerCase();
@@ -683,6 +698,10 @@
       cls += " is-muted";
     }
     var titleBits = [];
+    if (st === "failed") {
+      var errTip = friendlyStaffWaError(m && (m.error_detail || m.errorDetail));
+      if (errTip) titleBits.push(errTip);
+    }
     if (portalDelivery) {
       titleBits.push("Staff opened/replied in portal CS WhatsApp");
       titleBits.push("WhatsApp phone delivery failed (Meta undeliverable)");
