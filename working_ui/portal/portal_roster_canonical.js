@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 132;
+  var SOURCE_VERSION = 133;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -1220,6 +1220,20 @@
 
   function isMonNortholtDan630Aquatic(row) {
     if (!row) return false;
+    /* Monday only — Wed Dan 6–6.30 is Mia (do not Leila-swap into Amaar/Adaam). */
+    var day = "";
+    var iso0 = normIso(row.session_date);
+    if (iso0) {
+      try {
+        day = normalizeDowKey(
+          new Date(iso0 + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long" })
+        );
+      } catch (_) {
+        day = "";
+      }
+    }
+    if (!day) day = normalizeDowKey(row.day);
+    if (day !== "monday") return false;
     if (!/northolt/i.test(String(row.venue || ""))) return false;
     if (!/aquatic|swim/i.test(String(row.service || ""))) return false;
     if (!/\bdan\b/i.test(String(row.instructors || ""))) return false;
