@@ -179,17 +179,14 @@
       countLabel = noteN === 1 ? "note" : "notes";
       if (noteN > 0) innerPct = 100;
     } else if (hub.tab === "feedback" || hub.mode === "feedback") {
-      /* Same seat count as Overview staffing (not collapsed AA+MA merge units). */
-      var dsFb =
-        typeof hub.staffingSessionStats === "function"
-          ? hub.staffingSessionStats(iso)
-          : hub.dayStats(iso);
+      /* Expected feedback units (not staffing seats / ghost omit rows). */
+      var dsFb = hub.dayStats(iso);
       if (dsFb.total) {
         innerPct = Math.round((100 * dsFb.done) / dsFb.total);
         if (dsFb.done > 0 && innerPct < 8) innerPct = 8;
       }
       countStrong = dsFb.total ? dsFb.done + "/" + dsFb.total : "0";
-      countLabel = "feedbacks";
+      countLabel = "expected";
       if (dsFb.total && dsFb.done === 0) stateCls = " ash-day-card--none";
       else if (dsFb.total && dsFb.done < dsFb.total) stateCls = " ash-day-card--partial";
       else if (dsFb.total && dsFb.done >= dsFb.total) stateCls = " ash-day-card--complete";
@@ -1992,8 +1989,51 @@
     if (!overrideIsReplaceType(ov)) return false;
     var p = overridePayloadObj(ov);
     if (p.day_reassign === true || p.not_makeup === true) return true;
+    /* Schedule & Covers same-day move uses client_move on the destination replace. */
+    if (p.client_move === true || p.client_move === "true") return true;
     var kind = clean(p.booking_kind || p.session_kind || p.replace_kind).toLowerCase();
     return kind === "day_reassign" || kind === "instructor_day_cover" || kind === "slot_move";
+  }
+
+  /** Source seat of a same-day move — clear standing client so Feedbacks does not ghost them. */
+  function overrideIsClientMoveClear(ov) {
+    if (String(ov && ov.override_type || "").trim() !== "slot_clear_client") return false;
+    if (String(ov && ov.status || "active").trim() !== "active") return false;
+    var p = overridePayloadObj(ov);
+    if (p.client_move === true || p.client_move === "true") return true;
+    if (p.day_reassign === true || p.not_makeup === true) return true;
+    var kind = clean(p.booking_kind || p.session_kind || p.replace_kind || p.clear_kind).toLowerCase();
+    return kind === "day_reassign" || kind === "instructor_day_cover" || kind === "slot_move";
+  }
+
+  /**
+   * Paint slot_clear client_move onto standing seats: Anas left Aurora 6–6.30 → No participant.
+   * Without this, Feedbacks still lists the moved-out half as Awaiting (Aurora).
+   */
+  function applyClientMoveSlotClears(hub, out) {
+    var ovs = (hub && hub.payload && hub.payload.schedule_overrides) || [];
+    if (!out || !out.length || !ovs.length) return out;
+    var clears = [];
+    for (var i = 0; i < ovs.length; i++) {
+      if (overrideIsClientMoveClear(ovs[i])) clears.push(ovs[i]);
+    }
+    if (!clears.length) return out;
+    return out.map(function (slot) {
+      if (!slot || isOpenRosterSlot(slot.client_name)) return slot;
+      for (var c = 0; c < clears.length; c++) {
+        var ov = clears[c];
+        if (!hub.overrideMatchesSlot(slot, ov)) continue;
+        return Object.assign({}, slot, {
+          client_name: "No participant",
+          portalClientMovedOut: true,
+          __portalScheduleOverride: ov,
+          portalOverrideMakeUpTag: false,
+          portalOverrideTrialTag: false,
+          portalOverrideNewClientTag: false,
+        });
+      }
+      return slot;
+    });
   }
 
   function overrideIsTrialType(ov) {
@@ -4716,9 +4756,18 @@
       if ((slots[si].time_start || "") < (rep.time_start || "")) rep = slots[si];
     }
     var unitKey = (unit && unit.key) || clean(rep.feedback_unit_key) || feedbackUnitKey(rep);
+    /*
+     * Day Centre / bespoke teams + aquatic 2:1 (Joelle · Aurora + Simon): one feedback
+     * unit can span several instructor seats — Reviewed by must list every worker who owes.
+     */
     var mergeInstructors =
       slots.length > 1 &&
-      (isDayCentreService(rep.service) || unitKey.indexOf("bespoke_shared") >= 0);
+      (isDayCentreService(rep.service) ||
+        unitKey.indexOf("bespoke_shared") >= 0 ||
+        isAquaticService(rep.service) ||
+        isClimbingService(rep.service) ||
+        isMultiActivityService(rep.service) ||
+        isBespokeService(rep.service));
     if (!mergeInstructors) return rep;
     var last = rep;
     for (si = 0; si < slots.length; si++) {
@@ -7134,6 +7183,8 @@
         (this.payload && this.payload.schedule_overrides) || []
       );
       out = suppressOpenSlotsCoveredByBookedHours(out, wd);
+      /* Same-day moves: clear source seat before cover paint (Anas left Aurora 6–6.30). */
+      out = applyClientMoveSlotClears(this, out);
       out = applyInstructorReassignOverrides(this, out);
       out = annotateBespokeSharedUnitKeys(out);
       out = applyShadowingHostDisplay(this, out);
@@ -7200,22 +7251,10 @@
     if (!hub._dayStatsByIso) hub._dayStatsByIso = Object.create(null);
     if (hub._dayStatsByIso[cacheKey]) return hub._dayStatsByIso[cacheKey];
     /*
-     * Feedbacks tab: count each staffing seat (Sun 13 = Luliya 9 + Javier 8 + … = 52).
-     * Merge units (Yusuf AA+MA → 1) under-counted the week strip (46). Completion still
-     * fans out via slotFeedbackComplete so one submit can clear both halves.
+     * Feedbacks + Overview progress: count expected feedback units (one per unit key),
+     * not raw staffing seats. Omit/ghost seats and 2:1 instructor twins share a unit;
+     * completion still fans out via slotFeedbackComplete / sundayFeedbackMerges.
      */
-    if (
-      (hub.mode === "feedback" || hub.tab === "feedback") &&
-      typeof hub.staffingSessionStats === "function"
-    ) {
-      var seatSt = hub.staffingSessionStats(iso);
-      var seatResult = {
-        total: Math.max(0, Number(seatSt && seatSt.total) || 0),
-        done: Math.max(0, Number(seatSt && seatSt.done) || 0),
-      };
-      hub._dayStatsByIso[cacheKey] = seatResult;
-      return seatResult;
-    }
     var slots = this.expandSlotsForDate(iso).filter(function (s) {
       return hub.slotIncludedInDayStats(s);
     });
