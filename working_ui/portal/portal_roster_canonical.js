@@ -2895,13 +2895,18 @@
    */
   var AUTUMN_ACTON_WEDNESDAY_BOARD = [
     { staff: "YOUSSEF", name: "No participant", time: "4 to 4.30", area: "Teaching Pool" },
-    { staff: "YOUSSEF", name: "Stephanie", time: "4.30 to 5.30", area: "Teaching Pool" },
+    /* Stephanie = two 30' seats (Schedule halves; parent/staff merge). */
+    { staff: "YOUSSEF", name: "Stephanie", time: "4.30 to 5", area: "Teaching Pool" },
+    { staff: "YOUSSEF", name: "Stephanie", time: "5 to 5.30", area: "Teaching Pool" },
     /* Amaar Ah = Mon Northolt only (not Wed). Fri Acton left after 11 Sep. */
     { staff: "YOUSSEF", name: "No participant", time: "5.30 to 6", area: "Teaching Pool" },
     { staff: "YOUSSEF", name: "No participant", time: "6 to 6.30", area: "Teaching Pool" },
-    { staff: "JAVIER", name: "Cyrus", time: "4 to 5", area: "Teaching Pool" },
-    /* Wed Acton: first session Wed 16 Sep (finish-booking). One hour card (not 2×30'). */
-    { staff: "JAVIER", name: "Ayman", time: "5 to 6", area: "Teaching Pool", bookedFrom: "2026-09-16" },
+    /* Aquatic standing = 30' seats only. Parent/staff Today merge consecutive same-instructor halves. */
+    { staff: "JAVIER", name: "Cyrus", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "Cyrus", time: "4.30 to 5", area: "Teaching Pool" },
+    /* Wed Acton: first session Wed 16 Sep (finish-booking). Two 30' seats (Schedule keeps halves). */
+    { staff: "JAVIER", name: "Ayman", time: "5 to 5.30", area: "Teaching Pool", bookedFrom: "2026-09-16" },
+    { staff: "JAVIER", name: "Ayman", time: "5.30 to 6", area: "Teaching Pool", bookedFrom: "2026-09-16" },
     { staff: "JAVIER", name: "Kayden", time: "6 to 6.30", area: "Teaching Pool" },
   ];
 
@@ -3805,7 +3810,7 @@
     var rows = resolveCanonicalRosterRows(opts);
     var starts = Object.assign({}, base.clientRosterStartDates || {}, {
       Fadi: FADI_START_ISO,
-      /* Tue Acton Javier 4–5 from 8 Sep. Wed Acton 5–6 first session 16 Sep (bookedFrom + scrub). */
+      /* Tue Acton Javier 4–5 from 8 Sep. Wed Acton 5–5.30 + 5.30–6 first session 16 Sep (bookedFrom + scrub). */
       Ayman: "2026-09-08",
       "Ayman El Bakry": "2026-09-08",
       ayman: "2026-09-08",

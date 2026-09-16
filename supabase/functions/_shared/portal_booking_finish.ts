@@ -1347,6 +1347,60 @@ function timeLabelToSqlStartEnd(timeLabel: string): { start: string; end: string
   return { start, end };
 }
 
+/** Sheet-style afternoon token (17:00 → "5", 17:30 → "5.30"). */
+function sqlTimeToSheetTok(sqlTime: string): string {
+  const h = Number(String(sqlTime || "").slice(0, 2));
+  const m = Number(String(sqlTime || "").slice(3, 5));
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return "";
+  let hh = h;
+  if (hh >= 13 && hh <= 23) hh -= 12;
+  if (m === 0) return String(hh);
+  if (m === 30) return `${hh}.30`;
+  return `${hh}.${String(m).padStart(2, "0")}`;
+}
+
+/**
+ * Aquatic finish-booking / Schedule truth: always 30' bands.
+ * A 60' (or longer) place becomes N half-hour OV anchors so one half can cancel/reoffer.
+ */
+function aquaticSqlHalfHourBands(
+  startSql: string,
+  endSql: string,
+): Array<{ start: string; end: string; label: string }> {
+  const sm = Number(startSql.slice(0, 2)) * 60 + Number(startSql.slice(3, 5));
+  const em = Number(endSql.slice(0, 2)) * 60 + Number(endSql.slice(3, 5));
+  if (!Number.isFinite(sm) || !Number.isFinite(em) || em <= sm) {
+    return [{ start: startSql, end: endSql, label: `${sqlTimeToSheetTok(startSql)} to ${sqlTimeToSheetTok(endSql)}` }];
+  }
+  if (em - sm <= 30) {
+    return [{
+      start: startSql,
+      end: endSql,
+      label: `${sqlTimeToSheetTok(startSql)} to ${sqlTimeToSheetTok(endSql)}`,
+    }];
+  }
+  const out: Array<{ start: string; end: string; label: string }> = [];
+  for (let t = sm; t < em; t += 30) {
+    const te = Math.min(t + 30, em);
+    if (te <= t) break;
+    const s = `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}:00`;
+    const e = `${String(Math.floor(te / 60) % 24).padStart(2, "0")}:${String(te % 60).padStart(2, "0")}:00`;
+    out.push({ start: s, end: e, label: `${sqlTimeToSheetTok(s)} to ${sqlTimeToSheetTok(e)}` });
+  }
+  return out.length
+    ? out
+    : [{ start: startSql, end: endSql, label: `${sqlTimeToSheetTok(startSql)} to ${sqlTimeToSheetTok(endSql)}` }];
+}
+
+function reservationIsAquatic(reservation: Record<string, unknown>): boolean {
+  return inferServiceTypeLabel({
+    serviceName: clean(reservation.service_name, 120),
+    timeLabel: clean(reservation.time_label, 80),
+    activity: clean(reservation.activity, 80),
+    venue: clean(reservation.venue, 80),
+  }) === "Aquatic Activity";
+}
+
 async function upsertServiceLinesForPaidBooking(
   admin: SupabaseClient,
   opts: {
@@ -1377,17 +1431,13 @@ async function upsertServiceLinesForPaidBooking(
   const instructor = preferredInstructorForReservation(reservation);
   const child = clean(opts.participantName, 120) || "Participant";
   const clientKey = clientKeyFromName(child);
-  const session = {
-    day,
-    service: serviceName,
-    timeSlot,
-    durationMin,
-    venue,
-    instructor: instructor || "",
-    area: /climb/i.test(serviceName) || /westway/i.test(venue) ? "Wall" : "Teaching Pool",
-    weeks: opts.isTrial ? 1 : undefined,
-    isTrial: opts.isTrial || undefined,
-  };
+  const isAquatic = serviceName === "Aquatic Activity";
+  const times = timeLabelToSqlStartEnd(timeSlot);
+  /* Aquatic: store one service-line session per 30' half so Schedule capacity stays cancellable. */
+  const halfLabels =
+    isAquatic && times
+      ? aquaticSqlHalfHourBands(times.start, times.end).map((b) => b.label)
+      : [timeSlot];
   const sessionKey = (s: Record<string, unknown>) =>
     [
       clean(s.day, 40).toLowerCase(),
@@ -1403,9 +1453,30 @@ async function upsertServiceLinesForPaidBooking(
   const prevSessions = Array.isArray(existingLine?.sessions)
     ? (existingLine.sessions as Record<string, unknown>[])
     : [];
-  const nextKey = sessionKey(session as unknown as Record<string, unknown>);
-  const merged = prevSessions.filter((s) => sessionKey(s || {}) !== nextKey);
-  merged.push(session);
+  const nextKeys = new Set(
+    halfLabels.map((lab) =>
+      sessionKey({
+        day,
+        timeSlot: lab,
+        venue,
+        service: serviceName,
+      }),
+    ),
+  );
+  const merged = prevSessions.filter((s) => !nextKeys.has(sessionKey(s || {})));
+  for (const lab of halfLabels) {
+    merged.push({
+      day,
+      service: serviceName,
+      timeSlot: lab,
+      durationMin: isAquatic ? 30 : durationMin,
+      venue,
+      instructor: instructor || "",
+      area: /climb/i.test(serviceName) || /westway/i.test(venue) ? "Wall" : "Teaching Pool",
+      weeks: opts.isTrial ? 1 : undefined,
+      isTrial: opts.isTrial || undefined,
+    });
+  }
   const { error } = await admin.from("portal_participant_service_lines").upsert(
     {
       client_key: clientKey,
@@ -1456,60 +1527,77 @@ async function ensurePaidBookingScheduleOverride(
   const actorId = await resolvePortalInvoiceOwnerUserId(admin);
   if (!actorId) return "override_skip_actor";
 
-  const { data: existing } = await admin
-    .from("schedule_overrides")
-    .select("id, payload")
-    .eq("session_date", iso)
-    .eq("status", "active")
-    .ilike("anchor_staff_id", staffId)
-    .eq("anchor_start", times.start)
-    .eq("override_type", "client_replace_in_slot")
-    .limit(8);
-  const already = (existing || []).some((row) => {
-    const p = row.payload && typeof row.payload === "object"
-      ? (row.payload as Record<string, unknown>)
-      : {};
-    const name = String(p.replacement_client_name || p.to_client_name || "").toLowerCase();
-    if (name && name.indexOf(client.toLowerCase()) >= 0) return true;
-    if (isTrial) {
-      return p.is_trial === true || String(p.booking_kind || "").toLowerCase() === "trial";
-    }
-    return String(p.finish_booking || "") === "true" &&
-      String(p.replacement_client_id || p.to_client_id || "") === clientSlug;
-  });
-  if (already) return "override_exists";
+  const isAquatic = reservationIsAquatic(reservation);
+  const bands = isAquatic
+    ? aquaticSqlHalfHourBands(times.start, times.end)
+    : [{ start: times.start, end: times.end, label: timeLabel }];
 
-  const { error } = await admin.from("schedule_overrides").insert({
-    session_date: iso,
-    anchor_staff_id: staffId,
-    anchor_start: times.start,
-    anchor_end: times.end,
-    anchor_venue: venue,
-    anchor_client_id: "available",
-    anchor_time_slot_label: timeLabel,
-    override_type: "client_replace_in_slot",
-    payload: {
-      booking_kind: isTrial ? "trial" : "term",
-      is_trial: isTrial,
-      session_kind: isTrial ? "trial" : "term",
-      replacement_client_id: clientSlug,
-      replacement_client_name: isTrial ? `${client} (Trial)` : client,
-      to_client_id: clientSlug,
-      to_client_name: isTrial ? `${client} (Trial)` : client,
-      finish_booking: true,
-      new_client: !isTrial,
-      term_new_participant: !isTrial,
-    },
-    reason: `Finish booking ${isTrial ? "trial" : "term"} · ${client} · ${venue} · ${timeLabel}`,
-    status: "active",
-    spreadsheet_revision: "finish_booking_auto",
-    created_by: actorId,
-    updated_by: actorId,
-  });
-  if (error) {
-    console.warn("[syncOpsAfterFinishBookingPaid] schedule_override", error.message);
-    return "override_failed:" + error.message.slice(0, 80);
+  let inserted = 0;
+  let existed = 0;
+  for (const band of bands) {
+    const { data: existing } = await admin
+      .from("schedule_overrides")
+      .select("id, payload")
+      .eq("session_date", iso)
+      .eq("status", "active")
+      .ilike("anchor_staff_id", staffId)
+      .eq("anchor_start", band.start)
+      .eq("override_type", "client_replace_in_slot")
+      .limit(8);
+    const already = (existing || []).some((row) => {
+      const p = row.payload && typeof row.payload === "object"
+        ? (row.payload as Record<string, unknown>)
+        : {};
+      const name = String(p.replacement_client_name || p.to_client_name || "").toLowerCase();
+      if (name && name.indexOf(client.toLowerCase()) >= 0) return true;
+      if (isTrial) {
+        return p.is_trial === true || String(p.booking_kind || "").toLowerCase() === "trial";
+      }
+      return String(p.finish_booking || "") === "true" &&
+        String(p.replacement_client_id || p.to_client_id || "") === clientSlug;
+    });
+    if (already) {
+      existed++;
+      continue;
+    }
+
+    const { error } = await admin.from("schedule_overrides").insert({
+      session_date: iso,
+      anchor_staff_id: staffId,
+      anchor_start: band.start,
+      anchor_end: band.end,
+      anchor_venue: venue,
+      anchor_client_id: "available",
+      anchor_time_slot_label: band.label,
+      override_type: "client_replace_in_slot",
+      payload: {
+        booking_kind: isTrial ? "trial" : "term",
+        is_trial: isTrial,
+        session_kind: isTrial ? "trial" : "term",
+        replacement_client_id: clientSlug,
+        replacement_client_name: isTrial ? `${client} (Trial)` : client,
+        to_client_id: clientSlug,
+        to_client_name: isTrial ? `${client} (Trial)` : client,
+        finish_booking: true,
+        new_client: !isTrial,
+        term_new_participant: !isTrial,
+        aquatic_half_band: isAquatic && bands.length > 1,
+      },
+      reason: `Finish booking ${isTrial ? "trial" : "term"} · ${client} · ${venue} · ${band.label}`,
+      status: "active",
+      spreadsheet_revision: "finish_booking_auto",
+      created_by: actorId,
+      updated_by: actorId,
+    });
+    if (error) {
+      console.warn("[syncOpsAfterFinishBookingPaid] schedule_override", error.message);
+      return "override_failed:" + error.message.slice(0, 80);
+    }
+    inserted++;
   }
+
+  if (inserted === 0 && existed > 0) return "override_exists";
+  if (inserted > 0) return bands.length > 1 ? `override_ok_halves:${inserted}` : "override_ok";
   return "override_ok";
 }
 
@@ -1608,29 +1696,45 @@ export async function syncOpsAfterFinishBookingPaid(
   if (token.document_id) {
     const { data: siblings } = await admin
       .from("portal_booking_slot_reservations")
-      .select("id, notes")
+      .select(
+        "id, notes, participant_name, date_iso, day_label, time_label, venue, service_name, activity, status",
+      )
       .eq("document_id", token.document_id)
       .neq("id", String(reservation.id))
-      .in("status", ["pending", "awaiting_payment"]);
+      .in("status", ["pending", "awaiting_payment", "validated", "confirmed", "paid", "held"]);
     for (const sib of siblings || []) {
-      const sibNotes = mergeReservationNotes(String(sib.notes || ""), [
-        `instructor=${instructor}`,
-        payTag,
-        "linked_hour_validated",
-        isTrial ? "booking_kind=trial" : "booking_kind=term",
-      ]);
-      await admin
-        .from("portal_booking_slot_reservations")
-        .update({
-          status: "validated",
-          validated_at: now,
-          hold_expires_at: holdFar,
-          released_at: null,
-          notes: sibNotes,
-          updated_at: now,
-        })
-        .eq("id", String(sib.id));
-      notes.push("linked_seat_validated:" + String(sib.id).slice(0, 8));
+      const sibStatus = clean(sib.status, 40).toLowerCase();
+      if (["pending", "awaiting_payment", "held"].includes(sibStatus)) {
+        const sibNotes = mergeReservationNotes(String(sib.notes || ""), [
+          `instructor=${instructor}`,
+          payTag,
+          "linked_hour_validated",
+          isTrial ? "booking_kind=trial" : "booking_kind=term",
+        ]);
+        await admin
+          .from("portal_booking_slot_reservations")
+          .update({
+            status: "validated",
+            validated_at: now,
+            hold_expires_at: holdFar,
+            released_at: null,
+            notes: sibNotes,
+            updated_at: now,
+          })
+          .eq("id", String(sib.id));
+        notes.push("linked_seat_validated:" + String(sib.id).slice(0, 8));
+        (sib as Record<string, unknown>).notes = sibNotes;
+      }
+      try {
+        const foldSib = await foldValidatedReservationOntoMadre(admin, String(sib.id));
+        notes.push(
+          foldSib.ok
+            ? `fold_linked:${foldSib.note}`
+            : `fold_linked_fail:${foldSib.note}`,
+        );
+      } catch (_e) {
+        notes.push("fold_linked_error");
+      }
     }
   }
 
@@ -1679,6 +1783,27 @@ export async function syncOpsAfterFinishBookingPaid(
   );
   notes.push(overrideNote);
 
+  /* Linked aquatic halves: one OV per sibling reservation time (not a single hour OV). */
+  if (token.document_id) {
+    const { data: linkedForOv } = await admin
+      .from("portal_booking_slot_reservations")
+      .select(
+        "id, date_iso, day_label, time_label, venue, service_name, activity, notes, participant_name",
+      )
+      .eq("document_id", token.document_id)
+      .neq("id", String(reservation.id))
+      .in("status", ["validated", "confirmed", "paid"]);
+    for (const sib of linkedForOv || []) {
+      const sibOv = await ensurePaidBookingScheduleOverride(
+        admin,
+        sib as Record<string, unknown>,
+        participantName || clean(sib.participant_name, 120) || "Participant",
+        { isTrial },
+      );
+      notes.push("linked_" + sibOv);
+    }
+  }
+
   if (isTrial) {
     try {
       notes.push(await ensurePostTrialOfferAfterPaid(admin, reservation));
@@ -1693,7 +1818,8 @@ export async function syncOpsAfterFinishBookingPaid(
   const overrideOk =
     overrideNote === "override_ok" ||
     overrideNote === "override_exists" ||
-    overrideNote === "override_skip_time";
+    overrideNote === "override_skip_time" ||
+    /^override_ok_halves:\d+$/.test(overrideNote);
   const criticalOk = foldOk && svcOk && overrideOk;
 
   if (criticalOk) {

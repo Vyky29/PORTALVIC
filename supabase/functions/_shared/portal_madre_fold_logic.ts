@@ -249,7 +249,35 @@ function foldParticipantUpsert(madre: MadreDoc, iso: string, payload: Record<str
 
     const bookedRange = parseTimeSlotMinutes(timeSlot);
     const venue = String(payload.venue ?? "");
-    /* Hour+ bookings: drop every open half-hour inside the window, then seat the named client. */
+    const serviceNorm = norm(payload.service);
+    const isAquatic =
+      !serviceNorm ||
+      /aquatic|swim/i.test(serviceNorm) ||
+      (!/climb|physical|multi|bespoke|counsel/i.test(serviceNorm) &&
+        /acton|northolt|pool/i.test(venue));
+    /*
+     * Aquatic hour+ places: seat each open 30' half under the window (keep half labels).
+     * Do not collapse into one 60' MADRE band — Schedule & Covers must keep two cards
+     * so one half can cancel / reoffer independently.
+     */
+    if (replaceOpen && isAquatic && bookedRange && bookedRange.end - bookedRange.start > 35) {
+      const covered = findOpenSeatsCoveredByRange(slots, bookedRange, venue);
+      if (covered.length) {
+        for (const half of covered) {
+          half.client_name = client;
+          if (payload.service) half.service = norm(payload.service);
+          if (payload.venue) half.venue = norm(payload.venue);
+          const area = norm(payload.area ?? payload.pool_note);
+          if (area) {
+            half.area = area;
+            half.pool_note = area;
+          }
+        }
+        day.slots.sort((a, b) => norm(a.time_slot).localeCompare(norm(b.time_slot)));
+        return true;
+      }
+    }
+    /* Non-aquatic (or no open halves): drop covered opens then seat the named client. */
     if (replaceOpen && bookedRange && bookedRange.end - bookedRange.start > 35) {
       const covered = findOpenSeatsCoveredByRange(slots, bookedRange, venue);
       if (covered.length) {
