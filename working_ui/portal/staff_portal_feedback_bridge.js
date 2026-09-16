@@ -638,7 +638,9 @@
       .toLowerCase();
     if (!raw) return false;
     const s = raw.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-    const DC = ["ikram", "fadi", "timi", "emanuel", "emmanuel", "acat"];
+    /* Exact only — do not prefix-match emmanuel_* (Emmanuel Abate aquatic). */
+    if (s === "emanuel" || s === "emmanuel") return true;
+    const DC = ["ikram", "fadi", "timi", "acat"];
     for (let i = 0; i < DC.length; i++) {
       const d = DC[i];
       if (s === d || s.indexOf(d + "_") === 0 || raw.indexOf(d) === 0) return true;

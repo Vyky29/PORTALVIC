@@ -789,9 +789,19 @@
           return false;
         }
       }catch(_e){}
+      /* Past calendar day: New Participant / Trial chip must yield to Pending. */
+      try{
+        const isoStart = typeof portalSessionDateIsoFromItemSessionKey === 'function'
+          ? portalSessionDateIsoFromItemSessionKey(item)
+          : String(item && item.sessionKey || '').split('|')[0].trim();
+        const todayKeyStart = typeof portalTermLocalYmdFromMs === 'function'
+          ? portalTermLocalYmdFromMs(Date.now())
+          : (typeof portalTodayIsoLocal === 'function' ? portalTodayIsoLocal() : '');
+        if(/^\d{4}-\d{2}-\d{2}$/.test(isoStart) && todayKeyStart && isoStart < todayKeyStart) return true;
+      }catch(_){}
       const t = item && item.sessionStartTs;
-      if(t == null) return false;
-      return Date.now() >= t;
+      if(t == null || !Number.isFinite(Number(t))) return false;
+      return Date.now() >= Number(t);
     }
     function portalSessionItemRosterTimeUpdated(item){
       if(!item) return false;
@@ -1587,6 +1597,28 @@
 
       const lifecycleChip = portalTodayFeedbackLifecycleChipHtml(item);
       if(lifecycleChip) return lifecycleChip;
+
+      /* After session start (or past day): never keep New Participant / Trial / Move in —
+         show Pending so the card goes orange until Submitted / Cancel / Absent. */
+      try{
+        const rLife = (typeof getEffectiveSessionReviewRecord === 'function'
+          ? getEffectiveSessionReviewRecord(item)
+          : getSessionReviewRecord(item)) || {};
+        const pastOrStarted = (typeof isSessionEndedForFeedback === 'function' && isSessionEndedForFeedback(item))
+          || isSessionStartedForItem(item);
+        if(
+          pastOrStarted &&
+          item.kind === 'client' &&
+          item.sessionKey &&
+          !item.noSessionFeedbackRequired &&
+          !item.portalOverrideSuppressReviewOrange &&
+          !rLife.feedbackDone &&
+          !rLife.absent &&
+          !rLife.cancelled
+        ){
+          return '<span class="portal-session-slot-chip portal-session-slot-chip--pending" aria-label="Feedback pending"><span>Pending</span></span>';
+        }
+      }catch(_){}
 
       if(typeof portalTodayItemShowsShadowingHostAlert === 'function' && portalTodayItemShowsShadowingHostAlert(item)){
         push(portalShadowingHostBadgeHtml(item.portalShadowingHostLabels));

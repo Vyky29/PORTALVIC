@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260914-dc-peer-clear';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260916-emmanuel-abate-dc';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -247,7 +247,10 @@
       const raw = String(clientIdOrName || '').trim().toLowerCase();
       if(!raw) return false;
       const slug = raw.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-      const DC = ['ikram', 'fadi', 'timi', 'emanuel', 'emmanuel', 'acat'];
+      /* Exact only for Emanuel/Emmanuel — prefix match falsely caught Emmanuel Abate
+         and wiped his aquatic sessionKey (stuck New Participant, Feedback dead). */
+      if(slug === 'emanuel' || slug === 'emmanuel') return true;
+      const DC = ['ikram', 'fadi', 'timi', 'acat'];
       for(let i = 0; i < DC.length; i++){
         const d = DC[i];
         if(slug === d || slug.indexOf(d + '_') === 0 || raw.indexOf(d) === 0) return true;

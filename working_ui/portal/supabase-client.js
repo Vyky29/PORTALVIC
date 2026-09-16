@@ -185,7 +185,7 @@ export async function portalBumpAuthSessionGeneration(supabase, userId) {
  */
 export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys) {
   const out = new Set();
-  const DC = new Set(["ikram", "fadi", "timi", "emanuel", "emmanuel", "acat"]);
+  const DC = new Set(["ikram", "fadi", "timi", "acat"]);
   function isDcClientToken(tok) {
     const t = String(tok || "")
       .trim()
@@ -193,6 +193,8 @@ export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys)
       .replace(/[^a-z0-9]+/g, "_")
       .replace(/^_+|_+$/g, "");
     if (!t) return false;
+    /* Exact only for Emanuel — prefix would match Emmanuel Abate. */
+    if (t === "emanuel" || t === "emmanuel") return true;
     for (const d of DC) {
       if (t === d || t.indexOf(d + "_") === 0) return true;
     }

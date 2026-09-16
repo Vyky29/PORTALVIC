@@ -2230,7 +2230,9 @@
       const activity = String(s.activity || s.rosterService || 'Swimming').trim();
       if(typeof portalStaffLeadIsAquaticActivity === 'function' && portalStaffLeadIsAquaticActivity(activity)){
         if(typeof portalStaffLeadAquaticSessionReviewKey === 'function'){
-          return portalNormalizeSessionReviewKey(portalStaffLeadAquaticSessionReviewKey(sessionDateIso, cid, s, viewDayWord));
+          const aqKey = portalStaffLeadAquaticSessionReviewKey(sessionDateIso, cid, s, viewDayWord);
+          if(aqKey) return portalNormalizeSessionReviewKey(aqKey);
+          /* Fall through when aquatic helper returns "" (e.g. false DC shared match). */
         }
       }
       const suffix = portalSessionFeedbackUnitSuffix(s, activity, portalStaffIsSupportWorkerForAreaNotes());
