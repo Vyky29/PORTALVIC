@@ -5477,19 +5477,18 @@
       }
       return true;
     }
-    function syncClientSwimTermReviewButton(item){
+    function syncClientSwimTermReviewButton(){
+      /* Staff no longer opens Swimming term review from the participant sheet. */
       const row = document.getElementById('clientSwimTermReviewRow');
       const btn = document.getElementById('clientBtnSwimTermReview');
-      if(!row && !btn) return;
-      const show = portalStaffHasSwimmingTermReviewTool()
-        && clientLooksEligibleForSwimmingTermReview(item || currentOpenClientItem);
       if(row){
-        row.hidden = !show;
-        row.setAttribute('aria-hidden', show ? 'false' : 'true');
+        row.hidden = true;
+        row.setAttribute('aria-hidden', 'true');
+        row.style.display = 'none';
       }
       if(btn){
-        btn.hidden = !show;
-        btn.setAttribute('aria-hidden', show ? 'false' : 'true');
+        btn.hidden = true;
+        btn.setAttribute('aria-hidden', 'true');
       }
     }
     function buildSwtermreviewUrlForClient(item){
@@ -5567,21 +5566,8 @@
         openClientSessionsOverviewFullscreen();
       });
     }
-    document.getElementById('clientBtnSwimTermReview')?.addEventListener('click', function(){
-      openClientSwimmingTermReview();
-    });
     document.getElementById('clientSupportPlanSheetBack')?.addEventListener('click', closeClientSupportPlanSheet);
-    const clientBtnSupportPlan = document.getElementById('clientBtnSupportPlan');
-    if(clientBtnSupportPlan){
-      clientBtnSupportPlan.addEventListener('click', () => {
-        const sheet = document.getElementById('clientSupportPlanSheet');
-        if(sheet && sheet.classList.contains('open')){
-          closeClientSupportPlanSheet();
-          return;
-        }
-        openClientSupportPlanFullscreen();
-      });
-    }
+    /* Individual Support Plan is Admin-only (CLIENT drawer) — do not open from staff. */
     document.getElementById('clientServiceButtonsRow')?.addEventListener('click', e => {
       const btn = e.target.closest('.client-info-btn--service');
       if(!btn) return;

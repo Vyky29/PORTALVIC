@@ -684,12 +684,13 @@
         : '';
       const summerOnly = portalCalendarIsoUsesSummerDatedRosterOnly(anchorIso);
 
-      // Autumn: LOCAL standing template ISO for this weekday (Sep stamps), else exact calendar day.
+      // Autumn: prefer the exact calendar day when materialised (capacity chain / dated seats).
+      // Standing stamp (e.g. Tue → 2026-09-08) must NOT win first — Sep 8 Acton redistribute
+      // (Aydaan→Luliya 5.30) was snapping onto every later Tuesday and fighting Overview.
       if(!summerOnly){
+        if(anchorIso && anchorIso >= '2026-09-01' && isos.indexOf(anchorIso) >= 0) return anchorIso;
         const stamp = portalAutumnStandingSnapIsoForWeekday(w);
         if(stamp && stamp >= '2026-09-01' && isos.indexOf(stamp) >= 0) return stamp;
-        /* Dated Autumn exception on this calendar day. */
-        if(anchorIso && anchorIso >= '2026-09-01' && isos.indexOf(anchorIso) >= 0) return anchorIso;
         /* Any other Autumn-dated row for this weekday (never pre-Sep). */
         let bestAut = '';
         let bestDiff = Infinity;
@@ -819,7 +820,8 @@
         }
         /*
          * Tue 8: Acton Aquatic redistributed (Adam/Junaid Roberto, Aydaan Luliya, Anas Javier).
-         * Dated LOCAL only — never project Jul standing Aurora/Javi book onto that day.
+         * Dated LOCAL only — never project Jul standing Aurora/Javi book onto that day,
+         * and never project the Sep 8 redistribute book onto other Tuesdays.
          */
         if(iso === '2026-09-08' && rowIso && rowIso !== iso){
           const svcA = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
@@ -830,6 +832,13 @@
             venueA.indexOf('acton') >= 0 &&
             /\b(roberto|luliya|lulia|javier|aurora|javi)\b/.test(instA)
           ){
+            return false;
+          }
+        }
+        if(rowIso === '2026-09-08' && iso && iso !== '2026-09-08'){
+          const svcOut = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
+          const venueOut = String((s && s.venue) || '').toLowerCase();
+          if(/aquatic|swim/.test(svcOut) && venueOut.indexOf('acton') >= 0){
             return false;
           }
         }

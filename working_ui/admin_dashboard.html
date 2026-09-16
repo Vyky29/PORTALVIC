@@ -31021,6 +31021,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="card card-pad pax-drawer-anchor" style="margin-top:12px;min-width:0" id="pax-drawer-incidents">'+
         paxDrawerKpiHeadingHtml('<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>', 'Incidents', true, 'alert')+
         incHist+'</div>';
+      var ispDetailBlock =
+        '<div class="card card-pad pax-drawer-anchor" style="margin-top:12px;min-width:0" id="pax-drawer-isp">'+
+        paxDrawerKpiHeadingHtml('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>', 'Individual Support Plan', false, '')+
+        '<p class="muted" style="margin:6px 0 8px;font-size:12px;line-height:1.45;overflow-wrap:break-word">Staff no longer open ISP from their app. Office reviews the live plan here.</p>'+
+        '<div id="paxDrawerIspBody" class="muted" style="font-size:13px;line-height:1.45;min-width:0;overflow-wrap:break-word">Loading…</div>'+
+        '</div>';
       var cancellationsDetailBlock =
         '<div class="card card-pad pax-drawer-anchor" style="margin-top:12px;min-width:0" id="pax-drawer-cancellations">'+
         paxDrawerKpiHeadingHtml('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>', 'Cancellations', true, 'alert')+
@@ -31052,6 +31058,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ppMissingBanner+
         fbFeedHtml+
         incidentsDetailBlock+
+        ispDetailBlock+
         cancellationsDetailBlock+
         '<div class="card pax-sheet-sessions" style="margin-top:14px;min-width:0;overflow:hidden">'+
         '<div class="card-h" style="min-width:0">'+
@@ -31064,6 +31071,62 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         body = body.replace(/<details class="pax-fam-details"/g, '<details class="pax-fam-details" open');
       }
       $('drawerBody').innerHTML = body;
+      (function loadPaxDrawerIsp(){
+        var host = document.getElementById('paxDrawerIspBody');
+        if(!host) return;
+        var nm = String((c && c.name) || '').trim();
+        var cid = String(linkedCid || (c && c.id) || '').trim();
+        function paint(html){ host.innerHTML = html; }
+        function escIsp(s){
+          return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        }
+        try{
+          var box = window.__PORTAL_SUPABASE__;
+          var client = box && box.client ? box.client : null;
+          if(!client || !client.from){
+            paint('<span class="muted">Sign in to load the support plan.</span>');
+            return;
+          }
+          var q = Promise.resolve(null);
+          if(cid){
+            q = client.from('portal_support_plans').select('*').eq('status', 'active').eq('participant_contact_id', cid).limit(1).maybeSingle()
+              .then(function(res){ return res && res.data ? res.data : null; });
+          }
+          q.then(function(plan){
+            if(plan || !nm) return plan;
+            return client.from('portal_support_plans').select('*').eq('status', 'active').ilike('participant_name', nm).limit(1).maybeSingle()
+              .then(function(res){ return res && res.data ? res.data : null; });
+          }).then(function(plan){
+            if(!plan){
+              paint('<span class="muted">No active Individual Support Plan on file for this participant.</span>');
+              return null;
+            }
+            return client.from('portal_support_plan_items').select('*').eq('plan_id', plan.id).order('sort_order', { ascending: true })
+              .then(function(itemsRes){
+                var items = (itemsRes && itemsRes.data) || [];
+                if(!items.length){
+                  paint('<p style="margin:0">Plan on file · no strategy rows yet.</p>');
+                  return;
+                }
+                var rows = items.map(function(it){
+                  return '<tr><td style="min-width:0;overflow-wrap:break-word"><strong>'+escIsp(it.risk_behaviour || '—')+'</strong></td>'+
+                    '<td style="min-width:0;overflow-wrap:break-word">'+escIsp(it.strategy_in_place || '—')+'</td>'+
+                    '<td style="white-space:nowrap">'+escIsp(it.risk_level || '—')+'</td></tr>';
+                }).join('');
+                paint(
+                  '<table class="tbl tbl--center pax-sheet-tbl" style="min-width:0;width:100%"><thead><tr><th>Risk / behaviour</th><th>Strategy</th><th>Level</th></tr></thead><tbody>'+
+                  rows+'</tbody></table>'
+                );
+              });
+          }).catch(function(err){
+            paint('<span class="muted">Could not load support plan'+(err && err.message ? (': '+escIsp(err.message)) : '')+'.</span>');
+          });
+        }catch(e){
+          paint('<span class="muted">Could not load support plan.</span>');
+        }
+      })();
       (function bindPaxDrawerQuickJump(){
         var root = $('drawerBody');
         if(!root || !root.querySelectorAll) return;
@@ -31106,6 +31169,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<button type="button" class="btn btn--pri" id="drOpwfPrev">Report preview (mock)</button>'+
           '<button type="button" class="btn btn--pri" id="drGenRep">Prepare report</button>'+
           '<button type="button" class="btn btn--pri" id="drParent">Parent summary</button>'+
+          '<button type="button" class="btn btn--sec" id="drIspJump">Individual Support Plan</button>'+
           '<button type="button" class="btn btn--sec" id="drFb">Review feedback</button>'+
           '<button type="button" class="btn btn--sec" id="drInc">Review incidents</button>'+
           '<button type="button" class="btn btn--sec" id="drComms">Communications</button>'+
@@ -31172,6 +31236,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         sessionFeedbackEnsureState().clientQ = nm;
         openSessionsHubTab('feedback');
       };
+      var drIsp = $('drIspJump');
+      if(drIsp){
+        drIsp.onclick = function(){
+          var el = document.getElementById('pax-drawer-isp');
+          if(!el) return;
+          try{ el.scrollIntoView({ behavior:'smooth', block:'start' }); }catch(_e){
+            try{ el.scrollIntoView(true); }catch(_e2){}
+          }
+        };
+      }
       $('drInc').onclick = function(){ closeDrawer(); setView('reports'); };
       $('drNote').onclick = function(){
         if(!linkedCid){
