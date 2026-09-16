@@ -295,12 +295,6 @@
   ],
   "overviewOmitRosterSlots": [
     {
-      "weekday": "Wednesday",
-      "client_slug": "cyrus",
-      "time_slot": "4 to 4.30",
-      "service": "Aquatic Activity"
-    },
-    {
       "weekday": "Sunday",
       "client_slug": "yusuf_ah",
       "time_slot": "9 to 9.30",
