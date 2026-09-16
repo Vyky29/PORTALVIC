@@ -19,12 +19,11 @@
   var TEMPLATE_END = "2026-07-19";
 
   /**
-   * Feedback 20:30 still remaps in supabase/functions/_shared/portal_feedback_2030_match.ts
-   * (Mon Raul→Victor, Amaar↔Adaam, Thu Joelle drop, …). Do not copy those here —
-   * next B1 follow-up is to feed outstanding debts from resolveDayBoard seats instead.
+   * B1b: Feedback 20:30 uses applyFeedback2030BoardPolicy (no cover twin remaps).
+   * Remaining: feed seats from capacity-chain JSON on Edge when MADRE is thin.
    */
   var FEEDBACK_2030_PENDING =
-    "portal_feedback_2030_match.remapAutumnFeedback2030Slots — retire after board feed";
+    "portal_feedback_2030_match — prefer capacity-chain occupants on Edge when roster thin";
 
   function clean(v) {
     return String(v == null ? "" : v).trim();

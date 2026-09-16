@@ -22,13 +22,13 @@ import {
   sendParentMobileMessage,
 } from "../_shared/portal_parent_messaging.ts";
 import {
+  applyFeedback2030BoardPolicy,
   applyScheduleOverridesToFeedback2030Slots,
   datedFallbackSlots,
   dropSlotsForUnavailableStaff,
   FEEDBACK_2030_MADRE_TERM_KEYS,
   mergeFeedback2030Slots,
   outstandingByStaff,
-  remapAutumnFeedback2030Slots,
   resolveProfileForStaffKey,
   scrubFadiOffDayCentreSlots,
   slotsFromMadre,
@@ -261,13 +261,15 @@ Deno.serve(async (req) => {
       .select("name_key, staff_name")
       .eq("off_date", dayIso);
 
+    /* B1b: board-aligned merge — roster / dated boards win over MADRE standing.
+     * First list in mergeFeedback2030Slots wins on dedupe key. */
     let slots = mergeFeedback2030Slots([
+      slotsFromRosterRows([...(datedRoster || []), ...(templateRoster || [])], dayIso),
       datedFallbackSlots(dayIso),
       slotsFromMadre(madreDoc, dayIso),
-      slotsFromRosterRows([...(datedRoster || []), ...(templateRoster || [])], dayIso),
     ]);
     slots = scrubFadiOffDayCentreSlots(slots, dayIso);
-    slots = remapAutumnFeedback2030Slots(slots, dayIso);
+    slots = applyFeedback2030BoardPolicy(slots, dayIso);
     slots = applyScheduleOverridesToFeedback2030Slots(
       slots,
       (overrideRows || []) as Feedback2030OverrideRow[],

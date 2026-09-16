@@ -250,63 +250,72 @@ function isAutumnStandingWeek(start: string, end: string): boolean {
     (start <= AUTUMN_STANDING_WEEK_START && (!end || end >= AUTUMN_STANDING_WEEK_END));
 }
 
-/** Day-of cover remaps that Overview / canonical already paint for Autumn. */
-export function remapAutumnFeedback2030Slots(
+/** Day-of board policy for Autumn Feedback 20:30 (B1b).
+ * Aligns MADRE/roster seats with Overview capacity-chain truth:
+ * - client start / Leila Mon swap / dated cancels
+ * Cover remaps (Raul→Victor, Sandra→Javi) retired — schedule_overrides owns those.
+ * Browser twin: working_ui/portal/portal_resolve_day_board.js */
+export function applyFeedback2030BoardPolicy(
   slots: Feedback2030Slot[],
   iso: string,
 ): Feedback2030Slot[] {
   if (!slots.length) return slots;
-  return slots.map((s) => {
-    let staff = s.staff;
-    let client = s.client;
-    const day = weekdayLongUtcNoon(iso).toLowerCase();
-    const svc = String(s.service || "");
-    if (iso === "2026-09-07" && day === "monday") {
-      if (normalizeStaffKey(staff) === "raul") staff = "VICTOR";
+  const day = weekdayLongUtcNoon(iso).toLowerCase();
+  return slots
+    .map((s) => {
+      let client = s.client;
+      /* Mon Dan Northolt 6–6.30: Adaam through Mon 7; Amaar from Mon 14 (Leila swap). */
       if (
-        normalizeStaffKey(staff) === "sandra" &&
-        /physical/i.test(svc)
+        iso < "2026-09-14" &&
+        day === "monday" &&
+        /^amaar\b/i.test(String(client || "").trim())
       ) {
-        staff = "JAVI";
-      }
-    }
-    /* Mon Dan Northolt 6–6.30: Adaam through Mon 7; Amaar from Mon 14 (Leila swap). */
-    if (iso < "2026-09-14" && day === "monday" && /^amaar\b/i.test(String(client || "").trim())) {
-      const t = String(s.time || "").trim().toLowerCase().replace(/[–—:]/g, ".");
-      if (/\b6(\.00)?\s*(?:to|-)\s*6\.30\b/.test(t) || /\b18\.00\b/.test(t)) {
-        client = "Adaam Ah";
-      }
-    }
-    if (staff === s.staff && client === s.client) return s;
-    return { ...s, staff, client };
-  }).filter((s) => {
-    /* Thu 10 Sep: Joelle 6–6.30 cancelled (Aurora Cancelled + Anas makeup; Simon open).
-     * Clock parser can read "6 to 6.30" as 6.30 (390), not 6:00 — match the label too. */
-    if (iso === "2026-09-10") {
-      if (!/^joelle\b/i.test(String(s.client || "").trim())) {
-        /* fall through */
-      } else {
-        const t = String(s.time || "").trim().toLowerCase().replace(/[–—]/g, "-");
-        if (/\b6\s*(?:to|-)\s*6\s*[.:]?30\b/.test(t)) return false;
-        if (/\b18[:.]00\b/.test(t) && /\b18[:.]30\b/.test(t)) return false;
-        const m = feedbackClockMinutes(s.time);
-        if (m === 6 * 60 || m === 18 * 60 || m === 6 * 60 + 30 || m === 18 * 60 + 30) {
-          return false;
-        }
-      }
-    }
-    /* Adaam / Aydaan Tue Acton 6–6.30 NEW CLIENT from 15 Sep — no feedback debt before. */
-    if (iso < "2026-09-15" && /^(adaam|aydaan)\b/i.test(String(s.client || "").trim())) {
-      const day = weekdayLongUtcNoon(iso).toLowerCase();
-      if (day === "tuesday") {
         const t = String(s.time || "").trim().toLowerCase().replace(/[–—:]/g, ".");
         if (/\b6(\.00)?\s*(?:to|-)\s*6\.30\b/.test(t) || /\b18\.00\b/.test(t)) {
-          return false;
+          client = "Adaam Ah";
         }
       }
-    }
-    return true;
-  });
+      if (client === s.client) return s;
+      return { ...s, client };
+    })
+    .filter((s) => {
+      /* Thu 10 Sep: Joelle 6–6.30 cancelled (Aurora Cancelled + Anas makeup; Simon open).
+       * Clock parser can read "6 to 6.30" as 6.30 (390), not 6:00 — match the label too. */
+      if (iso === "2026-09-10") {
+        if (/^joelle\b/i.test(String(s.client || "").trim())) {
+          const t = String(s.time || "").trim().toLowerCase().replace(/[–—]/g, "-");
+          if (/\b6\s*(?:to|-)\s*6\s*[.:]?30\b/.test(t)) return false;
+          if (/\b18[:.]00\b/.test(t) && /\b18[:.]30\b/.test(t)) return false;
+          const m = feedbackClockMinutes(s.time);
+          if (
+            m === 6 * 60 ||
+            m === 18 * 60 ||
+            m === 6 * 60 + 30 ||
+            m === 18 * 60 + 30
+          ) {
+            return false;
+          }
+        }
+      }
+      /* Adaam / Aydaan Tue Acton 6–6.30 NEW CLIENT from 15 Sep — no feedback debt before. */
+      if (iso < "2026-09-15" && /^(adaam|aydaan)\b/i.test(String(s.client || "").trim())) {
+        if (day === "tuesday") {
+          const t = String(s.time || "").trim().toLowerCase().replace(/[–—:]/g, ".");
+          if (/\b6(\.00)?\s*(?:to|-)\s*6\.30\b/.test(t) || /\b18\.00\b/.test(t)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    });
+}
+
+/** @deprecated Use applyFeedback2030BoardPolicy — cover twin remaps retired in B1b. */
+export function remapAutumnFeedback2030Slots(
+  slots: Feedback2030Slot[],
+  iso: string,
+): Feedback2030Slot[] {
+  return applyFeedback2030BoardPolicy(slots, iso);
 }
 
 export function slotsFromMadre(doc: MadreLike | null | undefined, iso: string): Feedback2030Slot[] {
@@ -350,7 +359,7 @@ export function slotsFromMadre(doc: MadreLike | null | undefined, iso: string): 
       }
     }
   }
-  return remapAutumnFeedback2030Slots(out, iso);
+  return out;
 }
 
 export function slotsFromRosterRows(

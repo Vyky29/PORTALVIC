@@ -19,7 +19,7 @@ Victor chose **all of it**, starting with **A**. Capacity-chain **phases / occup
 - Gate: standing projection onto an ISO only if **Autumn Instructor Timetable** names that worker that day (`PORTAL_AUTUMN_STAFF_HOURS`). Exact dated rows + cover injects still apply.
 - Example fixed: John Hub Multi **Sun 6** cover must not paint **Sun 13 / 20** (Timetable has no John those days; Hub standing = Berta / Emmanuel / Godsway).
 
-## Option B1 — LANDED (shared day-board core module)
+## Option B1 — LANDED (shared day-board core + Feedback 20:30 board policy)
 
 Module: `working_ui/portal/portal_resolve_day_board.js` (`PortalResolveDayBoard`)
 
@@ -37,7 +37,7 @@ resolveDayBoard(iso, audience) → { seats, meta }
 | **Timesheet** | `workerOnAutumnTimetableIso` + `standingSnapIsoForDow` delegated to module |
 | **Overview** | `hubLatestStandingIsoForDow` prefers module snap |
 | **Staff** | `portalAutumnStandingSnapIsoForWeekday` prefers module stamp |
-| **Feedback 20:30** | **Pending** — still `remapAutumnFeedback2030Slots` in Edge Function; module documents `FEEDBACK_2030_PENDING` |
+| **Feedback 20:30** | `applyFeedback2030BoardPolicy` — roster wins over MADRE; cover twin remaps (Raul→Victor / Sandra→Javi) retired; OV owns covers |
 
 Audience paint (aquatic merge, staff columns, pay bands) stays outside the core.
 
@@ -45,7 +45,7 @@ Audience paint (aquatic merge, staff columns, pay bands) stays outside the core.
 
 | Phase | Audience | Goal |
 |-------|----------|------|
-| **B1b** | feedback | Feed outstanding debts from resolveDayBoard seats; retire TS twin remaps |
+| **B1c** | feedback | Optional: Edge reads capacity-chain occupants when `portal_roster_rows` thin |
 | **B2** | `booking` | Plazas counts from same standing (or MADRE derived from it) |
 | **B3** | `parent` | Chips / Team from board projection (not inventing standing only via service_lines) |
 
