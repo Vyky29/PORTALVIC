@@ -5512,6 +5512,18 @@
         btn.hidden = true;
         btn.setAttribute('aria-hidden', 'true');
       }
+      const ispRow = document.getElementById('clientSupportPlanRow');
+      const ispBtn = document.getElementById('clientBtnSupportPlan');
+      if(ispRow){
+        ispRow.hidden = true;
+        ispRow.setAttribute('aria-hidden', 'true');
+        ispRow.style.display = 'none';
+      }
+      if(ispBtn){
+        ispBtn.hidden = true;
+        ispBtn.setAttribute('aria-hidden', 'true');
+        ispBtn.setAttribute('tabindex', '-1');
+      }
     }
     function buildSwtermreviewUrlForClient(item){
       const base = 'swtermreview.html';

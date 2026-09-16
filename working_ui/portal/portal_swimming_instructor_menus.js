@@ -80,7 +80,7 @@
     },
     angel: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -89,7 +89,7 @@
     },
     aurora: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -127,7 +127,7 @@
     },
     dan: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -154,7 +154,7 @@
     },
     javier: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -174,7 +174,7 @@
     },
     lulia: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -204,7 +204,7 @@
     },
     sevitha: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: true,
       venue: true,
       pickup: true,
@@ -215,7 +215,7 @@
     },
     simon: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -224,7 +224,7 @@
     },
     youssef: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -233,7 +233,7 @@
     },
     roberto: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: false,
       venue: true,
       pickup: true,
@@ -243,7 +243,7 @@
     },
     victor: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: true,
       venue: true,
       pickup: true,
@@ -254,7 +254,7 @@
     },
     raul: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: true,
       venue: true,
       pickup: true,
@@ -265,7 +265,7 @@
     },
     javi: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: true,
       venue: true,
       pickup: true,
@@ -276,7 +276,7 @@
     },
     palankas: {
       photo: true,
-      swReview: true,
+      swReview: false,
       leadReview: true,
       venue: true,
       pickup: true,
@@ -590,7 +590,8 @@
       visible: true,
     });
     /* Swim Rev is for swimming instructors only — never for Berta/John/Michelle (or lead shell). */
-    var showSwReview = !!profile.swReview && !isProgrammeLead && !isLeadShell && staffKey !== "michelle";
+    /* Swimming term review is off staff UI (Admin / dedicated office tools only). */
+    var showSwReview = false;
     setTopbarToolGroup(SWIMMING_TERM_REVIEW_IDS, showSwReview, { visible: showSwReview });
     var showInterviews = !!profile.interviews || staffKey === "michelle";
     setTopbarToolGroup(INTERVIEWS_TOOL_IDS, showInterviews, { visible: showInterviews });
@@ -793,7 +794,7 @@
       if (portalTopbarPhotoVisibleForProfile(profile, opts.referenceDate)) out.push("photo");
       if (venueOn) out.push("venue");
       if (profile.pickup) out.push("pickup");
-      if (profile.swReview) out.push("swReview");
+      if (false && profile.swReview) out.push("swReview");
       if (plannerOn) out.push("plan");
       if (showLeadExtras) {
         out.push("lead");
@@ -804,7 +805,7 @@
     if (portalTopbarPhotoVisibleForProfile(profile, opts.referenceDate)) out.push("photo");
     if (venueOn) out.push("venue");
     if (profile.pickup) out.push("pickup");
-    if (profile.swReview) out.push("swReview");
+    if (false && profile.swReview) out.push("swReview");
     /* Team Rev is Quick Menu only — not a halo icon. */
     if (plannerOn) out.push("plan");
     if (showLeadExtras) {

@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-    var VER = "20260916-emmanuel-abate-dc";
+    var VER = "20260916-isp-admin-only";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260914-raul-fri18-off",
@@ -36,7 +36,7 @@
     "/portal/portal_participant_photos.js?v=20260903-chip-photos",
     "/portal/portal_topbar_header.js?v=20260904-michelle-interviews",
     "/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category",
-    "/portal/portal_swimming_instructor_menus.js?v=20260914-dayoff-fast",
+    "/portal/portal_swimming_instructor_menus.js?v=20260916-isp-admin-only",
     "/portal/portal_area_note_icons.js?v=20260916-ayman-area-nc",
     "/portal/portal_today_next_chips.js?v=20260903-photo-repair",
     "/portal/portal_staff_photos.js?v=20260911-emmanuel-photo",
