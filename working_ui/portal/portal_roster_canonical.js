@@ -3937,6 +3937,178 @@
     return false;
   }
 
+  /**
+   * Capacity chain defaults Acton/Northolt aquatic to Teaching Pool. Staff Today / Overview
+   * must prefer standing pool notes (Lane SE/DE, Teaching Pool) from Autumn boards.
+   */
+  function poolAreaClientKey(name) {
+    return String(name || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\(trial\)/gi, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+  function poolAreaStaffKey(raw) {
+    return String(raw || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+  }
+  function poolAreaParseMins(label) {
+    var s = String(label || "")
+      .toLowerCase()
+      .replace(/[–—−]/g, "-")
+      .replace(/\s*-\s*/g, " to ")
+      .replace(/\s+/g, " ")
+      .trim();
+    var m = s.match(/(\d{1,2})(?:[.:](\d{2}))?\s*to\s*(\d{1,2})(?:[.:](\d{2}))?/);
+    if (!m) return null;
+    function hm(h, mm) {
+      var hh = Number(h);
+      var mi = mm != null && mm !== "" ? Number(mm) : 0;
+      if (!Number.isFinite(hh) || !Number.isFinite(mi)) return -1;
+      if (hh >= 1 && hh <= 6) hh += 12;
+      return hh * 60 + mi;
+    }
+    var a = hm(m[1], m[2]);
+    var b = hm(m[3], m[4]);
+    if (a < 0 || b < 0 || b <= a) return null;
+    return { start: a, end: b };
+  }
+  function poolAreaSlotsOverlap(aLabel, bLabel) {
+    var a = poolAreaParseMins(aLabel);
+    var b = poolAreaParseMins(bLabel);
+    if (!a || !b) return false;
+    return a.start < b.end && b.start < a.end;
+  }
+  var _standingPoolAreaIndex = null;
+  function standingPoolAreaIndex() {
+    if (_standingPoolAreaIndex) return _standingPoolAreaIndex;
+    var entries = [];
+    function pushBoard(day, venue, board) {
+      (Array.isArray(board) ? board : []).forEach(function (slot) {
+        if (!slot || !slot.area) return;
+        var name = String(slot.name || slot.client_name || "").trim();
+        if (!name || /^(no participant|closed|available)$/i.test(name)) return;
+        entries.push({
+          day: String(day || "").toLowerCase(),
+          venue: String(venue || "").toLowerCase(),
+          clientKey: poolAreaClientKey(name),
+          staffKey: poolAreaStaffKey(slot.staff || slot.instructors),
+          time: String(slot.time || slot.time_slot || "").trim(),
+          area: String(slot.area).trim(),
+        });
+      });
+    }
+    pushBoard("Monday", "Acton", AUTUMN_ACTON_MONDAY_YOUSSEF_BOARD);
+    pushBoard("Tuesday", "Acton", AUTUMN_ACTON_TUESDAY_BOARD);
+    pushBoard("Wednesday", "Acton", AUTUMN_ACTON_WEDNESDAY_BOARD);
+    pushBoard("Thursday", "Acton", AUTUMN_ACTON_THURSDAY_BOARD);
+    pushBoard("Saturday", "Acton", AUTUMN_SATURDAY_ACTON_BOARD);
+    (Array.isArray(YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO) ? YOUSSEF_FRIDAY_ACTON_FROM_ROBERTO : []).forEach(
+      function (row) {
+        if (!row || !row.area) return;
+        var name = String(row.client_name || "").trim();
+        if (!name || /^(no participant|closed|available)$/i.test(name)) return;
+        entries.push({
+          day: "friday",
+          venue: "acton",
+          clientKey: poolAreaClientKey(name),
+          staffKey: poolAreaStaffKey(row.instructors),
+          time: String(row.time_slot || "").trim(),
+          area: String(row.area).trim(),
+        });
+      }
+    );
+    Object.keys(AUTUMN_NORTHOLT_AQUATIC_BOARD || {}).forEach(function (dk) {
+      var cols = AUTUMN_NORTHOLT_AQUATIC_BOARD[dk] || [];
+      (Array.isArray(cols) ? cols : []).forEach(function (col) {
+        var staff = col && col.staff;
+        (Array.isArray(col && col.clients) ? col.clients : []).forEach(function (slot) {
+          if (!slot) return;
+          var area = String(slot.area || "Teaching Pool").trim();
+          var name = String(slot.name || "").trim();
+          if (!name || /^(no participant|closed|available)$/i.test(name)) return;
+          entries.push({
+            day: String(dk || "").toLowerCase(),
+            venue: "northolt",
+            clientKey: poolAreaClientKey(name),
+            staffKey: poolAreaStaffKey(staff),
+            time: String(slot.time || "").trim(),
+            area: area,
+          });
+        });
+      });
+    });
+    _standingPoolAreaIndex = entries;
+    return entries;
+  }
+  function lookupStandingPoolArea(opts) {
+    opts = opts || {};
+    var clientKey = poolAreaClientKey(opts.client_name || opts.name || "");
+    if (!clientKey) return "";
+    var day = String(opts.day || "").trim().toLowerCase();
+    var venue = String(opts.venue || "").trim().toLowerCase();
+    var time = String(opts.time_slot || opts.time || "").trim();
+    var staffKey = poolAreaStaffKey(opts.instructors || opts.staff || "");
+    var best = null;
+    var bestScore = -1;
+    standingPoolAreaIndex().forEach(function (e) {
+      var sameClient =
+        e.clientKey === clientKey ||
+        e.clientKey.indexOf(clientKey) === 0 ||
+        clientKey.indexOf(e.clientKey) === 0;
+      if (!sameClient) {
+        var e0 = e.clientKey.split(" ")[0];
+        var c0 = clientKey.split(" ")[0];
+        if (!e0 || e0 !== c0) return;
+      }
+      if (day && e.day) {
+        var d0 = day.slice(0, 3);
+        var e0d = e.day.slice(0, 3);
+        if (e.day !== day && e0d !== d0) return;
+      }
+      if (venue && e.venue && venue.indexOf(e.venue) < 0 && e.venue.indexOf(venue) < 0) return;
+      var score = 10;
+      if (staffKey && e.staffKey) {
+        if (
+          staffKey === e.staffKey ||
+          staffKey.indexOf(e.staffKey) === 0 ||
+          e.staffKey.indexOf(staffKey) === 0
+        ) {
+          score += 5;
+        } else {
+          score -= 2;
+        }
+      }
+      if (time && e.time) {
+        if (time.toLowerCase() === e.time.toLowerCase()) score += 8;
+        else if (poolAreaSlotsOverlap(time, e.time)) score += 6;
+        else score -= 4;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = e;
+      }
+    });
+    return best && bestScore >= 10 ? best.area : "";
+  }
+  function overlayStandingPoolAreasOntoRows(rows) {
+    return (Array.isArray(rows) ? rows : []).map(function (r) {
+      if (!r) return r;
+      var svc = String(r.service || "").toLowerCase();
+      if (!/aquatic|multi/.test(svc)) return r;
+      var hit = lookupStandingPoolArea(r);
+      if (!hit) return r;
+      if (String(r.area || "").trim() === hit) return r;
+      return Object.assign({}, r, { area: hit });
+    });
+  }
+
   global.PortalRosterCanonical = {
     SOURCE_ID: SOURCE_ID,
     SOURCE_VERSION: SOURCE_VERSION,
@@ -3996,5 +4168,7 @@
     isAug15ReleasedFormerClient: isAug15ReleasedFormerClient,
     purgeSummerHistoryOutsideAutumnTemplates: purgeSummerHistoryOutsideAutumnTemplates,
     normIso: normIso,
+    lookupStandingPoolArea: lookupStandingPoolArea,
+    overlayStandingPoolAreasOntoRows: overlayStandingPoolAreasOntoRows,
   };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -1028,6 +1028,12 @@
       dc = [];
     }
     var rows = phases.concat(bespoke).concat(dc);
+    try {
+      var Canon = global.PortalRosterCanonical;
+      if (Canon && typeof Canon.overlayStandingPoolAreasOntoRows === "function") {
+        rows = Canon.overlayStandingPoolAreasOntoRows(rows);
+      }
+    } catch (_area) {}
     var baseSrc = global.STAFF_DASHBOARD_SOURCE || {};
     var starts = Object.assign(
       {},
