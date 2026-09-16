@@ -5166,12 +5166,19 @@
     }
     async function handleClientQuickFeedback(){
       const item = currentOpenClientItem;
-      if(!item || !item.sessionKey) return;
+      if(!item || !item.sessionKey){
+        try{ alert('No session linked for feedback. Open this client from the day board (Today / Week / Term) for the session date, not only from Participants.'); }catch(_){}
+        return;
+      }
       if(item.actionsDisabled) return;
       const rec = (typeof getEffectiveSessionReviewRecord === 'function'
         ? getEffectiveSessionReviewRecord(item)
         : getSessionReviewRecord(item)) || {};
       if(rec.feedbackDone || rec.absent || (rec.cancelled && !rec.cancelNeedsFeedback)) return;
+      if(!portalStaffIsDemoAccount() && typeof isSessionEndedForFeedback === 'function' && !isSessionEndedForFeedback(item) && !rec.cancelNeedsFeedback){
+        try{ alert('Feedback opens from 15 minutes before the session ends. For a past day, open that date from Week or Term first.'); }catch(_){}
+        return;
+      }
       if(typeof portalEnsureLateSubmissionAllowed === 'function' && !portalStaffIsDemoAccount()){
         const gate = await portalEnsureLateSubmissionAllowed(item, 'feedback');
         if(!gate.allowed) return;

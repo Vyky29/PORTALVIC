@@ -1033,6 +1033,11 @@
       if (Canon && typeof Canon.overlayStandingPoolAreasOntoRows === "function") {
         rows = Canon.overlayStandingPoolAreasOntoRows(rows);
       }
+      /* Overview uses capacityChainNoCanonicalRemap — still need Tue 8 Acton redistribute
+         and Adaam/Aydaan/Kareena/Serine Acton bookedFrom scrubs so day boards match Staff. */
+      if (Canon && typeof Canon.applyCapacityChainDayExceptions === "function") {
+        rows = Canon.applyCapacityChainDayExceptions(rows);
+      }
     } catch (_area) {}
     var baseSrc = global.STAFF_DASHBOARD_SOURCE || {};
     var starts = Object.assign(
@@ -1041,7 +1046,7 @@
       {
         "Emmanuel Abate": "2026-09-15",
         "Christian Abate": "2026-09-15",
-        /* Weekend standing from Autumn Sun 6; weekday Acton NEW CLIENT is 14/15 Sep. */
+        /* Weekend standing from Autumn Sun 6; weekday Acton NEW CLIENT is seat bookedFrom 15 Sep. */
         "Amaar Ah": "2026-09-06",
         Muhammad: "2026-09-13",
         "Adaam Ah": "2026-09-06",

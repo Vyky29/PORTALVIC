@@ -4247,5 +4247,29 @@
     normIso: normIso,
     lookupStandingPoolArea: lookupStandingPoolArea,
     overlayStandingPoolAreasOntoRows: overlayStandingPoolAreasOntoRows,
+    scrubAdaamAydaanActonTueBeforeFirstSession: scrubAdaamAydaanActonTueBeforeFirstSession,
+    scrubKareenaActonTueBeforeFirstSession: scrubKareenaActonTueBeforeFirstSession,
+    scrubAndEnsureSep8ActonRedistribute: scrubAndEnsureSep8ActonRedistribute,
+    scrubAndEnsureSerineActonTueFrom: scrubAndEnsureSerineActonTueFrom,
+    /**
+     * Capacity-chain Overview skips full canonical remap. Still apply dated Acton
+     * exceptions so Tue 8 redistribute + NEW CLIENT bookedFrom match Sessions truth.
+     */
+    applyCapacityChainDayExceptions: function applyCapacityChainDayExceptions(rows) {
+      var out = Array.isArray(rows) ? rows.slice() : [];
+      try {
+        out = scrubAndEnsureSerineActonTueFrom(out);
+      } catch (_) {}
+      try {
+        out = scrubKareenaActonTueBeforeFirstSession(out);
+      } catch (_) {}
+      try {
+        out = scrubAdaamAydaanActonTueBeforeFirstSession(out);
+      } catch (_) {}
+      try {
+        out = scrubAndEnsureSep8ActonRedistribute(out);
+      } catch (_) {}
+      return out;
+    },
   };
 })(typeof window !== "undefined" ? window : globalThis);

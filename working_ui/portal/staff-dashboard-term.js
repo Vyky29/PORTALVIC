@@ -2515,17 +2515,19 @@
           return false;
         }
       }catch(_e){}
+      /* Past calendar day always unlocks feedback — even if sessionEndTs was stamped
+         for a later repeat (e.g. next Tuesday) and wrongly kept Feedback disabled. */
+      try{
+        const isoPast = typeof portalSessionDateIsoFromItemSessionKey === 'function'
+          ? portalSessionDateIsoFromItemSessionKey(item)
+          : String(item && item.sessionKey || '').split('|')[0].trim();
+        const todayKeyPast = typeof portalTermLocalYmdFromMs === 'function'
+          ? portalTermLocalYmdFromMs(Date.now())
+          : (typeof portalTodayIsoLocal === 'function' ? portalTodayIsoLocal() : '');
+        if(/^\d{4}-\d{2}-\d{2}$/.test(isoPast) && todayKeyPast && isoPast < todayKeyPast) return true;
+      }catch(_){}
       const t = item && item.sessionEndTs;
       if(t == null){
-        try{
-          const iso = typeof portalSessionDateIsoFromItemSessionKey === 'function'
-            ? portalSessionDateIsoFromItemSessionKey(item)
-            : String(item && item.sessionKey || '').split('|')[0].trim();
-          const todayKey = typeof portalTermLocalYmdFromMs === 'function'
-            ? portalTermLocalYmdFromMs(Date.now())
-            : '';
-          if(/^\d{4}-\d{2}-\d{2}$/.test(iso) && todayKey && iso < todayKey) return true;
-        }catch(_){}
         return false;
       }
       const lead = portalFeedbackLeadMsForItem(item);
