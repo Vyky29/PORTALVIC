@@ -3385,6 +3385,22 @@
     return rosterSlotKind(name) === "client";
   }
 
+  /**
+   * Overview staffing board seats: clients + opens + duty (Office / Manager / HOME / …).
+   * Feedback stats still exclude duty via slotIsStaffDutyNoFeedback / slotIncludedInDayStats.
+   */
+  function isOverviewExpandableSeat(name) {
+    var k = rosterSlotKind(name);
+    return (
+      k === "client" ||
+      k === "open" ||
+      k === "closed" ||
+      k === "staff_duty" ||
+      k === "manager" ||
+      k === "home"
+    );
+  }
+
   /** Shadowing / training / meeting / Office / Interviews never owe parent session feedback. */
   function slotIsStaffDutyNoFeedback(slot) {
     if (!slot) return false;
@@ -7378,9 +7394,12 @@
         var r = candidates[i];
         if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
         if (!rosterServiceAllowedOnAutumnDate(r.service, isoDate)) continue;
-        if (!isRosterClient(r.client_name) && !isOpenRosterSlot(r.client_name)) continue;
-        if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
-        if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
+        if (!isOverviewExpandableSeat(r.client_name)) continue;
+        /* Start/gone maps apply to real clients only — never drop Office / Manager duty seats. */
+        if (isRosterClient(r.client_name)) {
+          if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
+          if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
+        }
         if (sunSwimOv && sunSwimOv.replaceSwimFarm && clean(r.venue) === "SwimFarm") continue;
         var slotRow = rosterRowToSlot(isoDate, wd, r);
         if (slotRow) out.push(slotRow);
@@ -11512,8 +11531,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '<span class="ash-db-card__name-text">' +
         esc(tName || "Trial") +
         "</span>";
-    } else if (st.isOpenSlot || st.isClosed || st.isDuty) {
+    } else if (st.isOpenSlot || st.isClosed) {
       nameHtml = htmlParticipantPill(slot.client_name, esc, slot);
+    } else if (st.isDuty) {
+      /* Match Staff Today: OFFICE / MANAGER as board name, not muted pill. */
+      var dutyDisp = clean(slot.client_name) || "Duty";
+      var dutyLow = dutyDisp.toLowerCase();
+      if (dutyLow === "office") dutyDisp = "OFFICE";
+      else if (dutyLow === "manager") dutyDisp = "MANAGER";
+      else if (dutyLow === "interview" || dutyLow === "interviews") dutyDisp = "INTERVIEW";
+      else if (dutyLow === "admin") dutyDisp = "ADMIN";
+      else if (dutyLow === "home" || dutyLow === "casa") dutyDisp = "HOME";
+      else dutyDisp = dutyDisp.toUpperCase();
+      nameHtml = '<span class="ash-db-card__name-text">' + esc(dutyDisp) + "</span>";
     } else {
       nameHtml =
         '<span class="ash-db-card__name-text">' +
