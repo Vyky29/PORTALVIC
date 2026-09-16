@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 131;
+  var SOURCE_VERSION = 132;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -4268,6 +4268,10 @@
       } catch (_) {}
       try {
         out = scrubAndEnsureSep8ActonRedistribute(out);
+      } catch (_) {}
+      /* Mon Dan Northolt 6–6.30: Adaam through Mon 7; Amaar from Mon 14 (Leila swap). */
+      try {
+        out = scrubAndEnsureMonNortholtDan630LeilaSwap(out);
       } catch (_) {}
       return out;
     },

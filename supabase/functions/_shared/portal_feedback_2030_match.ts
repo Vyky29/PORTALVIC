@@ -258,6 +258,7 @@ export function remapAutumnFeedback2030Slots(
   if (!slots.length) return slots;
   return slots.map((s) => {
     let staff = s.staff;
+    let client = s.client;
     const day = weekdayLongUtcNoon(iso).toLowerCase();
     const svc = String(s.service || "");
     if (iso === "2026-09-07" && day === "monday") {
@@ -269,7 +270,15 @@ export function remapAutumnFeedback2030Slots(
         staff = "JAVI";
       }
     }
-    return staff === s.staff ? s : { ...s, staff };
+    /* Mon Dan Northolt 6–6.30: Adaam through Mon 7; Amaar from Mon 14 (Leila swap). */
+    if (iso < "2026-09-14" && day === "monday" && /^amaar\b/i.test(String(client || "").trim())) {
+      const t = String(s.time || "").trim().toLowerCase().replace(/[–—:]/g, ".");
+      if (/\b6(\.00)?\s*(?:to|-)\s*6\.30\b/.test(t) || /\b18\.00\b/.test(t)) {
+        client = "Adaam Ah";
+      }
+    }
+    if (staff === s.staff && client === s.client) return s;
+    return { ...s, staff, client };
   }).filter((s) => {
     /* Thu 10 Sep: Joelle 6–6.30 cancelled (Aurora Cancelled + Anas makeup; Simon open).
      * Clock parser can read "6 to 6.30" as 6.30 (390), not 6:00 — match the label too. */
@@ -288,9 +297,12 @@ export function remapAutumnFeedback2030Slots(
     }
     /* Adaam / Aydaan Tue Acton 6–6.30 NEW CLIENT from 15 Sep — no feedback debt before. */
     if (iso < "2026-09-15" && /^(adaam|aydaan)\b/i.test(String(s.client || "").trim())) {
-      const t = String(s.time || "").trim().toLowerCase().replace(/[–—:]/g, ".");
-      if (/\b6(\.00)?\s*(?:to|-)\s*6\.30\b/.test(t) || /\b18\.00\b/.test(t)) {
-        return false;
+      const day = weekdayLongUtcNoon(iso).toLowerCase();
+      if (day === "tuesday") {
+        const t = String(s.time || "").trim().toLowerCase().replace(/[–—:]/g, ".");
+        if (/\b6(\.00)?\s*(?:to|-)\s*6\.30\b/.test(t) || /\b18\.00\b/.test(t)) {
+          return false;
+        }
       }
     }
     return true;

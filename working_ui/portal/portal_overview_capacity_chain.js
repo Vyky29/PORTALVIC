@@ -1034,7 +1034,8 @@
         rows = Canon.overlayStandingPoolAreasOntoRows(rows);
       }
       /* Overview uses capacityChainNoCanonicalRemap — still need Tue 8 Acton redistribute
-         and Adaam/Aydaan/Kareena/Serine Acton bookedFrom scrubs so day boards match Staff. */
+         and Adaam/Aydaan/Kareena/Serine Acton bookedFrom scrubs + Mon Dan Amaar Leila swap
+         so day boards match Staff. */
       if (Canon && typeof Canon.applyCapacityChainDayExceptions === "function") {
         rows = Canon.applyCapacityChainDayExceptions(rows);
       }
