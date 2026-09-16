@@ -472,6 +472,15 @@
       if (t || paintingBadge) return;
       t = global.setTimeout(function () {
         t = 0;
+        if (
+          !isCommsAppPage() &&
+          !document.getElementById("topbarStaffWaBtn") &&
+          (document.getElementById("topbarToolsGridRight") ||
+            document.getElementById("topbarToolsGrid") ||
+            document.getElementById("topbarWaRow"))
+        ) {
+          ensureButton(currentStaffKey());
+        }
         if (!(lastUnreadCount > 0) || paintingBadge) return;
         var host = document.getElementById("topbarStaffWaBtn") || document.getElementById("btnComunicaciones");
         var badge = host && host.querySelector("[data-comms-unread]");
@@ -481,7 +490,7 @@
         applyUnreadBadge(lastUnreadCount);
       }, 80);
     });
-    ["adminTopbar", "topbarToolCellStaffWa", "btnComunicaciones", "topbarStaffWaBtn"].forEach(function (id) {
+    ["adminTopbar", "topbarToolCellStaffWa", "btnComunicaciones", "topbarStaffWaBtn", "topbarToolsGridRight", "topbarToolsGrid"].forEach(function (id) {
       var n = document.getElementById(id);
       if (n) {
         try {
@@ -2080,19 +2089,27 @@
     if (right && cell.parentNode !== right) right.appendChild(cell);
   }
 
+  var placingWa = false;
+
   function syncWaTopbarPlacement() {
+    if (placingWa) return;
+    placingWa = true;
+    try {
     var btn = document.getElementById("topbarStaffWaBtn");
+    if (!btn) {
+      ensureButton(currentStaffKey());
+      btn = document.getElementById("topbarStaffWaBtn");
+    }
     var cell = document.getElementById("topbarToolCellStaffWa");
     var lead = document.querySelector(".topbar-lead");
     if (!btn) {
-      if (cell) {
-        cell.hidden = true;
-        cell.setAttribute("aria-hidden", "true");
-      }
-      if (lead) lead.classList.remove("topbar-lead--wa-in-grid");
       return;
     }
     placeWaInGrid(btn);
+    if (cell) {
+      cell.hidden = false;
+      cell.setAttribute("aria-hidden", "false");
+    }
     if (lead) lead.classList.add("topbar-lead--wa-in-grid");
     if (lastUnreadCount > 0) applyUnreadBadge(lastUnreadCount);
     try {
@@ -2101,6 +2118,9 @@
       }
     } catch (_e) {}
     if (lastUnreadCount > 0) applyUnreadBadge(lastUnreadCount);
+    } finally {
+      placingWa = false;
+    }
   }
 
   function ensureButton(staffKey) {

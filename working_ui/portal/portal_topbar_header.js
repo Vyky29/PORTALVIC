@@ -887,7 +887,11 @@
       portalSyncHaloFlankToolPlacement();
     } catch (_flank) {}
     try {
-      if (typeof global.portalStaffWaSyncPlacement === "function") {
+      if (typeof global.portalStaffWaSyncTopbar === "function") {
+        global.portalStaffWaSyncTopbar(
+          typeof global.resolveTopbarStaffKey === "function" ? global.resolveTopbarStaffKey() || "" : "",
+        );
+      } else if (typeof global.portalStaffWaSyncPlacement === "function") {
         global.portalStaffWaSyncPlacement();
       }
     } catch (_waPlace) {}
