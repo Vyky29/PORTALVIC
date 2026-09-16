@@ -2118,6 +2118,136 @@
     return next;
   }
 
+  /** Previous clock on a term/Schedule time edit (standing still has this until we paint). */
+  function slotUpdatePreviousStart(ov, wd) {
+    var p = overridePayloadObj(ov);
+    return (
+      normTimeShort(p.previous_start) ||
+      normTimeShort(normTimeKey(p.previous_time_slot, wd)) ||
+      ""
+    );
+  }
+
+  /**
+   * New window from slot_update. When previous_start differs from anchor_start, anchors win
+   * (label on the OV sometimes lags, e.g. still "12 to 1" after a 4.30 move).
+   */
+  function slotUpdateNewBounds(ov, wd) {
+    var p = overridePayloadObj(ov);
+    var prev = slotUpdatePreviousStart(ov, wd);
+    var anchorStart = normTimeShort(ov.anchor_start);
+    var anchorEnd = normTimeShort(ov.anchor_end);
+    var labelRaw =
+      clean(p.time_slot) ||
+      clean(p.new_time_slot) ||
+      clean(ov.anchor_time_slot_label) ||
+      "";
+    var parsed = labelRaw ? parseTimeSlot(labelRaw, wd) : { start: "", end: "", label: "" };
+    var start = anchorStart || (parsed && parsed.start) || "";
+    var end = anchorEnd || (parsed && parsed.end) || "";
+    if (prev && anchorStart && prev !== anchorStart) {
+      start = anchorStart;
+      end = anchorEnd || start;
+    } else if (parsed && parsed.start) {
+      start = parsed.start;
+      end = parsed.end || end || start;
+    }
+    var label =
+      rosterTimeSlotLabelFromBounds(start, end, wd) ||
+      labelRaw ||
+      (start && end ? start + " to " + end : "");
+    return { start: start, end: end, label: label };
+  }
+
+  /**
+   * Paint schedule_overrides slot_update onto standing seats so Feedbacks / Overview clocks
+   * match Staff Today when dated roster rows are thin.
+   */
+  function applySlotUpdateOverrides(hub, out) {
+    var ovs = (hub && hub.payload && hub.payload.schedule_overrides) || [];
+    if (!out || !out.length || !ovs.length) return out;
+    var updates = [];
+    for (var i = 0; i < ovs.length; i++) {
+      if (overrideIsSlotUpdateType(ovs[i])) updates.push(ovs[i]);
+    }
+    if (!updates.length) return out;
+    return out.map(function (slot) {
+      if (!slot || isOpenRosterSlot(slot.client_name)) return slot;
+      /* Stronger paints already on the seat — do not clobber move/replace/cover. */
+      if (
+        slot.portalClientMovedOut ||
+        slot.portalOverrideMakeUpTag ||
+        slot.portalOverrideTrialTag ||
+        slot.portalOverrideNewClientTag ||
+        slot.portalInstructorReassigned
+      ) {
+        return slot;
+      }
+      var wd = slot.day || weekdayLongFromIso(slot.session_date);
+      var sCid = canonicalClientSlug(slot.client_name);
+      var sStart = normTimeShort(slot.time_start || normTimeKey(slot.time_slot, wd));
+      var sVenue = clean(slot.venue).toLowerCase();
+      var best = null;
+      for (var u = 0; u < updates.length; u++) {
+        var ov = updates[u];
+        if (clean(ov.session_date) !== clean(slot.session_date)) continue;
+        var p = overridePayloadObj(ov);
+        /* Brand-new participant on open seat is handled by replace/inject, not clock paint. */
+        if (p.term_new_participant === true || p.term_new_participant === "true") continue;
+        var oCid = canonicalClientSlug(ov.anchor_client_id);
+        var toName = canonicalClientSlug(overrideReplacementClientName(p) || p.to_client_name);
+        if (oCid && sCid && oCid !== sCid && (!toName || toName !== sCid)) continue;
+        if (
+          clean(ov.anchor_staff_id) &&
+          !staffIdMatchesInstructorWithSwimAliases(ov.anchor_staff_id, slot.instructors)
+        ) {
+          continue;
+        }
+        var oVen = clean(ov.anchor_venue).toLowerCase();
+        if (oVen && sVenue && oVen !== sVenue) continue;
+        var prev = slotUpdatePreviousStart(ov, wd);
+        var next = slotUpdateNewBounds(ov, wd).start;
+        var timeOk = false;
+        if (prev && sStart && prev === sStart) timeOk = true;
+        else if (next && sStart && next === sStart) timeOk = true;
+        else if (
+          !prev &&
+          next &&
+          sStart &&
+          next !== sStart &&
+          clean(ov.anchor_time_slot_label).toLowerCase() === clean(slot.time_slot).toLowerCase()
+        ) {
+          timeOk = true;
+        }
+        if (!timeOk) continue;
+        if (
+          !best ||
+          (ov.created_at && (!best.created_at || String(ov.created_at) > String(best.created_at)))
+        ) {
+          best = ov;
+        }
+      }
+      if (!best) return slot;
+      var bounds = slotUpdateNewBounds(best, wd);
+      if (!bounds.start) return slot;
+      if (sStart && bounds.start === sStart && (!bounds.end || bounds.end === normTimeShort(slot.time_end))) {
+        return Object.assign({}, slot, {
+          __portalScheduleOverride: slot.__portalScheduleOverride || best,
+          portalRosterTimeUpdated: true,
+          scheduleAdminAdjusted: true,
+        });
+      }
+      return Object.assign({}, slot, {
+        time_start: bounds.start,
+        time_end: bounds.end || bounds.start,
+        time_slot: bounds.label || slot.time_slot,
+        __portalScheduleOverride: best,
+        portalRosterTimeUpdated: true,
+        scheduleAdminAdjusted: true,
+      });
+    });
+  }
+
   function overrideIsTrialType(ov) {
     if (!ov || !overrideIsReplaceType(ov)) return false;
     var p = overridePayloadObj(ov);
@@ -7271,6 +7401,8 @@
       out = suppressOpenSlotsCoveredByBookedHours(out, wd);
       /* Same-day moves: clear source seat before cover paint (Anas left Aurora 6–6.30). */
       out = applyClientMoveSlotClears(this, out);
+      /* Term/Schedule time edits: rewrite standing clocks before cover match. */
+      out = applySlotUpdateOverrides(this, out);
       out = applyInstructorReassignOverrides(this, out);
       out = annotateBespokeSharedUnitKeys(out);
       out = applyShadowingHostDisplay(this, out);
@@ -7855,10 +7987,20 @@
       }
       return false;
     }
-    if (oStart && sStart && oStart !== sStart) {
+    /* slot_update: standing may still be on previous_start until expand paints the new clock. */
+    if (overrideIsSlotUpdateType(ov) && oStart && sStart && oStart !== sStart) {
+      var wdUp = slot.day || weekdayLongFromIso(slot.session_date);
+      var prevStart = slotUpdatePreviousStart(ov, wdUp);
+      if (prevStart && prevStart === sStart) return true;
       var oLabel = clean(ov.anchor_time_slot_label).toLowerCase();
       var sLabel = clean(slot.time_slot).toLowerCase();
       if (oLabel && sLabel && oLabel === sLabel) return true;
+      return false;
+    }
+    if (oStart && sStart && oStart !== sStart) {
+      var oLabel2 = clean(ov.anchor_time_slot_label).toLowerCase();
+      var sLabel2 = clean(slot.time_slot).toLowerCase();
+      if (oLabel2 && sLabel2 && oLabel2 === sLabel2) return true;
       return false;
     }
     return true;
