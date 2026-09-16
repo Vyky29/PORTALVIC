@@ -401,7 +401,11 @@ body.comms-app {
 .comms-bubble.is-call .comms-bubble-who { display: none; }
 .comms-bubble.is-call .comms-bubble-meta { text-align: center; }
 .comms-bubble-who { font-size: 11px; font-weight: 800; color: var(--blueDeep); margin-bottom: 4px; }
-.comms-bubble-meta { margin: 6px 0 0; font-size: 11px; color: var(--muted); }
+.comms-bubble-meta { margin: 6px 0 0; font-size: 11px; color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+.comms-receipt { font-weight: 800; margin-left: 4px; }
+.comms-receipt.is-sent { color: var(--muted); }
+.comms-receipt.is-delivered { color: var(--text); }
+.comms-receipt.is-read { color: var(--blueDeep); }
 .comms-file {
   display: inline-flex;
   gap: 8px;

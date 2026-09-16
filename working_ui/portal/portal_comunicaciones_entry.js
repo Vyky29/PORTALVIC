@@ -668,6 +668,9 @@
         lastAdminCount = administration.ok ? administration.n : lastAdminCount;
         applyUnreadFromServer(n, true);
         updateCommsLaunchLinks(personal.ok && personal.n > 0 ? "personal" : "");
+        try {
+          await c.rpc("communication_mark_delivered", {});
+        } catch (_d) {}
       } catch (_t) {
       } finally {
         ticking = false;

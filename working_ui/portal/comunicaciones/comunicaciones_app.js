@@ -465,8 +465,23 @@ function bubbleIsMine(m) {
   return String(m.performed_by_user_id) === String(state.me.id);
 }
 
+function receiptMeta(m, show) {
+  if (!show || m.message_type === "call") return "";
+  const read = !!m.delivered_read;
+  const delivered = !!m.delivered || read;
+  let cls = "is-sent";
+  let text = "sent";
+  if (read) {
+    cls = "is-read";
+    text = "read";
+  } else if (delivered) {
+    cls = "is-delivered";
+    text = "delivered";
+  }
+  return ' <span class="comms-receipt ' + cls + '">' + text + "</span>";
+}
+
 function bubbleHtml(m) {
-  const fromMe = String(m.performed_by_user_id) === String(state.me.id);
   const mine = bubbleIsMine(m);
   const admin = isAdminContext(m);
   let klass = "comms-bubble" + (mine ? " is-mine" : "") + (admin && !mine ? " is-admin" : "");
@@ -501,8 +516,7 @@ function bubbleHtml(m) {
   } else {
     body = esc(m.body || "");
   }
-  const read =
-    m.message_type === "call" ? "" : fromMe ? (m.read_count > 1 || m.delivered_read ? " · read" : " · sent") : "";
+  const read = receiptMeta(m, mine);
   return (
     '<article class="' +
     klass +
@@ -1064,6 +1078,15 @@ async function sendMessage(ev) {
   }
 }
 
+async function markDelivered(conversationId) {
+  try {
+    await rpc(
+      "communication_mark_delivered",
+      conversationId ? { p_conversation_id: conversationId } : {}
+    );
+  } catch (_e) {}
+}
+
 function subscribeRealtime() {
   const c = client();
   if (!c) return;
@@ -1089,6 +1112,7 @@ function subscribeRealtime() {
           return;
         }
         await pingIncomingMessage(row);
+        await markDelivered(row.conversation_id);
         if (state.open && String(row.conversation_id) === String(state.open.conversation_id)) {
           await openConversation(state.open.conversation_id, state.open, { silent: true });
         } else {
@@ -1106,6 +1130,29 @@ function subscribeRealtime() {
         } else {
           await loadInbox();
         }
+      }
+    )
+    .subscribe();
+  const receipts = c
+    .channel("comms-receipts")
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "communication_message_deliveries" },
+      async (payload) => {
+        const mid = payload && payload.new && payload.new.message_id;
+        if (!state.open || !state.open.conversation_id || !mid) return;
+        if (!state.messages.some((m) => String(m.id) === String(mid))) return;
+        await openConversation(state.open.conversation_id, state.open, { silent: true });
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "communication_message_reads" },
+      async (payload) => {
+        const mid = payload && payload.new && payload.new.message_id;
+        if (!state.open || !state.open.conversation_id || !mid) return;
+        if (!state.messages.some((m) => String(m.id) === String(mid))) return;
+        await openConversation(state.open.conversation_id, state.open, { silent: true });
       }
     )
     .subscribe();
@@ -1132,7 +1179,7 @@ function subscribeRealtime() {
       }
     )
     .subscribe();
-  state.channels.push(msgs, calls);
+  state.channels.push(msgs, receipts, calls);
 }
 
 function showModal(html) {
@@ -2209,6 +2256,7 @@ async function boot() {
     bindUi();
     $("commsCallOverlay").hidden = true;
     await withTimeout(loadInbox(), 15000, "Could not load conversations.");
+    void markDelivered();
     renderThread();
     showShell();
     subscribeRealtime();
@@ -2228,6 +2276,7 @@ async function boot() {
     window.setInterval(function () {
       rpc("communication_heartbeat", { p_status: state.call ? "in_call" : "available" }).catch(function () {});
       loadInbox().catch(function () {});
+      markDelivered().catch(function () {});
       paintTyping();
     }, 25000);
     window.setInterval(paintTyping, 1000);

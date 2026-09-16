@@ -19,7 +19,7 @@
   <script src="/portal/portal_ensure_web_push.js?v=20260619-denied-help"></script>
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260906-comms-inapp-39"></script>
   <script src="/portal/portal-admin-alerts-sheet.js?v=20260615-admin-alerts-perf"></script>
-  <script src="/portal/portal_comunicaciones_entry.js?v=20260916-comms-stay"></script>
+  <script src="/portal/portal_comunicaciones_entry.js?v=20260916-receipts"></script>
   <script>
     /* Register push SW on admin so Send test alert / background push work. */
     (function () {
@@ -81,7 +81,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260727-role-names"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260710-incident-followup"></script>
-  <script src="/portal/admin-portal-incident-followup.js?v=20260710-isp-library"></script>
+  <script src="/portal/admin-portal-incident-followup.js?v=20260916-isp-admin-only"></script>
   <script src="/portal/portal_session_feedback_narrative_audit.js?v=20260703-narrative-audit-v2"></script>
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
@@ -31024,7 +31024,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var ispDetailBlock =
         '<div class="card card-pad pax-drawer-anchor" style="margin-top:12px;min-width:0" id="pax-drawer-isp">'+
         paxDrawerKpiHeadingHtml('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>', 'Individual Support Plan', false, '')+
-        '<p class="muted" style="margin:6px 0 8px;font-size:12px;line-height:1.45;overflow-wrap:break-word">Staff no longer open ISP from their app. Office reviews the live plan here.</p>'+
+        '<p class="muted" style="margin:6px 0 8px;font-size:12px;line-height:1.45;overflow-wrap:break-word">Office-only. Not shown on staff tablets or the parent / family portal.</p>'+
         '<div id="paxDrawerIspBody" class="muted" style="font-size:13px;line-height:1.45;min-width:0;overflow-wrap:break-word">Loading…</div>'+
         '</div>';
       var cancellationsDetailBlock =
