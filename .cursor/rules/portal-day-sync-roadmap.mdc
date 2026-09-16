@@ -13,6 +13,12 @@ Victor chose **all of it**, starting with **A**. Capacity-chain **phases / occup
 - Overview (`admin-sessions-hub.js`) and Staff Today (`staff-dashboard-today.js`) use the **same** `clientAllowedOnDate` / weekday / Fadi-off / gone-from / fallback starts / finish-booking first_session index.
 - Staff still applies audience projection at the end: worker scope + aquatic merge + covers. Do **not** reintroduce a second start-date map on Staff only.
 
+## Hygiene (same root cause, before / during B)
+
+- **Timesheet** is another parallel reader. Do not invent shifts by projecting a dated cover onto later same-weekdays.
+- Gate: standing projection onto an ISO only if **Autumn Instructor Timetable** names that worker that day (`PORTAL_AUTUMN_STAFF_HOURS`). Exact dated rows + cover injects still apply.
+- Example fixed: John Hub Multi **Sun 6** cover must not paint **Sun 13 / 20** (Timetable has no John those days; Hub standing = Berta / Emmanuel / Godsway).
+
 ## Option B — resolveDayBoard (remaining)
 
 One resolver; audience is a **projection**, not a second truth.
@@ -28,16 +34,16 @@ resolveDayBoard(iso, audience) → seats
 
 | Phase | Audience | Goal |
 |-------|----------|------|
-| **B1** | `admin` + `staff` | Same board core; drop duplicate remaps; Feedback 20:30 reads this (retire TS twin remaps) |
+| **B1** | `admin` + `staff` + **timesheet** + feedback | Same board core; timesheet stops private DOW snaps; Feedback 20:30 retires TS twin remaps |
 | **B2** | `booking` | Plazas counts from same standing (or MADRE derived from it) |
 | **B3** | `parent` | Chips / Team from board projection (not inventing standing only via service_lines) |
 
 ### Rules while B ships
 
 - Do not add new `clientRosterStartDates` / Leila / Adaam copies outside `PortalClientDayVisibility` + one exception table.
-- Do not “fix” Booking/Parent by hardcoding Overview-only patches — that is the old failure mode.
+- Do not “fix” Booking/Parent/Timesheet by hardcoding Overview-only patches — that is the old failure mode.
 - After each B phase: smoke Overview vs Staff (same ISO), then that audience.
 
 ### Look-here until B1 lands
 
-Day look-here remains **Sessions Overview**. Staff should now match Overview on **who is allowed that day**; card shape may still differ (aquatic merge).
+Day look-here remains **Sessions Overview**. Staff should now match Overview on **who is allowed that day**; card shape may still differ (aquatic merge). Timesheet days should match **Timetable** (plus dated covers / day offs), not ghost projections.
