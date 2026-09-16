@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 130;
+  var SOURCE_VERSION = 131;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -363,13 +363,27 @@
     { staff: "LULIYA", name: "No participant", time: "4.30 to 5", area: "Lane (DE)" },
     { staff: "LULIYA", name: "Logan", time: "5 to 5.30", area: "Teaching Pool" },
     { staff: "LULIYA", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
-    { staff: "LULIYA", name: "Adaam Ah", time: "6 to 6.30", area: "Teaching Pool" },
+    /* Adaam NEW CLIENT first session Tue 15 Sep — open seat before (never paint / feedback early). */
+    {
+      staff: "LULIYA",
+      name: "Adaam Ah",
+      time: "6 to 6.30",
+      area: "Teaching Pool",
+      bookedFrom: "2026-09-15",
+    },
     /* Invoice INV-P-0139: Aquatic 60' Tue 4–5 Acton (same as Thu). */
     { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (DE)" },
     { staff: "JAVIER", name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
     /* Kareena (Chopi) from Tue 15 Sep — Private one-off; was Rayan Ta (now Roberto 5.30). */
     { staff: "JAVIER", name: "Kareena", time: "5.30 to 6", area: "Lane (SE)", bookedFrom: "2026-09-15" },
-    { staff: "JAVIER", name: "Aydaan Ah", time: "6 to 6.30", area: "Lane (SE)" },
+    /* Aydaan NEW CLIENT first session Tue 15 Sep with Javier (not before). */
+    {
+      staff: "JAVIER",
+      name: "Aydaan Ah",
+      time: "6 to 6.30",
+      area: "Lane (SE)",
+      bookedFrom: "2026-09-15",
+    },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
     { staff: "AURORA", name: "Adam Mahmmoud", time: "4.30 to 5", area: "Teaching Pool" },
     { staff: "AURORA", name: "Junaid", time: "5 to 5.30", area: "Lane (SE)" },
@@ -3189,6 +3203,7 @@
   /**
    * Clone one standing template row onto every Autumn term date of that weekday.
    * This replaces Jul / single-Sunday stamp projection.
+   * Rows with bookedFrom stay "No participant" until that ISO (NEW CLIENT / first session).
    */
   function expandStandingRowAcrossAutumnTerm(row) {
     if (!row) return [];
@@ -3214,10 +3229,23 @@
     }
     if (!dk) return [Object.assign({}, row)];
     var dates = enumerateAutumnTermIsosForDow(dk);
+    var bookedFrom = normIso(row.bookedFrom || row.booked_from);
     var out = [];
     for (var i = 0; i < dates.length; i++) {
       var iso = dates[i];
       if (!autumnStandingServiceAllowedOnIso(row.service, iso)) continue;
+      if (bookedFrom && iso < bookedFrom) {
+        out.push(
+          Object.assign({}, row, {
+            session_date: iso,
+            day: DOW_TITLE[dk] || row.day,
+            client_name: "No participant",
+            bookedFrom: "",
+            booked_from: "",
+          })
+        );
+        continue;
+      }
       out.push(
         Object.assign({}, row, {
           session_date: iso,
@@ -3669,6 +3697,8 @@
   }
 
   var KAREENA_ACTON_TUE_FROM = "2026-09-15";
+  /** Tue Acton 6–6.30 NEW CLIENT (Adaam Luliya / Aydaan Javier) — not before Tue 15. */
+  var ADAAM_AYDAAN_ACTON_TUE_FROM = "2026-09-15";
 
   function scrubKareenaActonTueBeforeFirstSession(rows) {
     var out = [];
@@ -3688,6 +3718,52 @@
       }
       var d = normIso(r.session_date);
       if (d && d < KAREENA_ACTON_TUE_FROM) {
+        out.push(Object.assign({}, r, { client_name: "No participant" }));
+        return;
+      }
+      out.push(r);
+    });
+    return out;
+  }
+
+  function isAdaamOrAydaanActonTue630Seat(row) {
+    if (!row) return false;
+    var name = String(row.client_name || "").trim();
+    if (!/^(adaam|aydaan)\b/i.test(name)) return false;
+    if (!isActonVenue(row.venue) || !isAquaticService(row.service)) return false;
+    var day = normalizeDowKey(row.day);
+    if (!day) {
+      var iso0 = normIso(row.session_date);
+      if (iso0) {
+        try {
+          day = normalizeDowKey(
+            new Date(iso0 + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long" })
+          );
+        } catch (_) {
+          day = "";
+        }
+      }
+    }
+    if (day !== "tuesday") return false;
+    var slot = String(row.time_slot || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+      .replace(/:/g, ".");
+    return /^6(\.00)?\s*to\s*6\.30$/.test(slot);
+  }
+
+  /** DB / MADRE may still name Adaam·Aydaan on Tue Acton 6–6.30 before first session. */
+  function scrubAdaamAydaanActonTueBeforeFirstSession(rows) {
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (!r) return;
+      if (!isAdaamOrAydaanActonTue630Seat(r)) {
+        out.push(r);
+        return;
+      }
+      var d = normIso(r.session_date);
+      if (d && d < ADAAM_AYDAAN_ACTON_TUE_FROM) {
         out.push(Object.assign({}, r, { client_name: "No participant" }));
         return;
       }
@@ -3798,6 +3874,7 @@
     merged = scrubAndEnsureMonNortholtDan630LeilaSwap(merged);
     merged = scrubAndEnsureSerineActonTueFrom(merged);
     merged = scrubKareenaActonTueBeforeFirstSession(merged);
+    merged = scrubAdaamAydaanActonTueBeforeFirstSession(merged);
     merged = scrubAndEnsureSep8ActonRedistribute(merged);
     merged = scrubAndEnsureSep10AnasMakeup(merged);
     merged = scrubAug15ReleasedFormerClientRows(merged);

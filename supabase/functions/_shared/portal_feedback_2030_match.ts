@@ -273,14 +273,25 @@ export function remapAutumnFeedback2030Slots(
   }).filter((s) => {
     /* Thu 10 Sep: Joelle 6–6.30 cancelled (Aurora Cancelled + Anas makeup; Simon open).
      * Clock parser can read "6 to 6.30" as 6.30 (390), not 6:00 — match the label too. */
-    if (iso !== "2026-09-10") return true;
-    if (!/^joelle\b/i.test(String(s.client || "").trim())) return true;
-    const t = String(s.time || "").trim().toLowerCase().replace(/[–—]/g, "-");
-    if (/\b6\s*(?:to|-)\s*6\s*[.:]?30\b/.test(t)) return false;
-    if (/\b18[:.]00\b/.test(t) && /\b18[:.]30\b/.test(t)) return false;
-    const m = feedbackClockMinutes(s.time);
-    if (m === 6 * 60 || m === 18 * 60 || m === 6 * 60 + 30 || m === 18 * 60 + 30) {
-      return false;
+    if (iso === "2026-09-10") {
+      if (!/^joelle\b/i.test(String(s.client || "").trim())) {
+        /* fall through */
+      } else {
+        const t = String(s.time || "").trim().toLowerCase().replace(/[–—]/g, "-");
+        if (/\b6\s*(?:to|-)\s*6\s*[.:]?30\b/.test(t)) return false;
+        if (/\b18[:.]00\b/.test(t) && /\b18[:.]30\b/.test(t)) return false;
+        const m = feedbackClockMinutes(s.time);
+        if (m === 6 * 60 || m === 18 * 60 || m === 6 * 60 + 30 || m === 18 * 60 + 30) {
+          return false;
+        }
+      }
+    }
+    /* Adaam / Aydaan Tue Acton 6–6.30 NEW CLIENT from 15 Sep — no feedback debt before. */
+    if (iso < "2026-09-15" && /^(adaam|aydaan)\b/i.test(String(s.client || "").trim())) {
+      const t = String(s.time || "").trim().toLowerCase().replace(/[–—:]/g, ".");
+      if (/\b6(\.00)?\s*(?:to|-)\s*6\.30\b/.test(t) || /\b18\.00\b/.test(t)) {
+        return false;
+      }
     }
     return true;
   });
