@@ -10642,21 +10642,24 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     if (!names.length) {
       try {
-        var PRC = global.PortalRosterCanonical;
-        if (PRC && typeof PRC.resolveAutumnInstructorsForCalendarDate === "function") {
-          var mapped = clean(
-            PRC.resolveAutumnInstructorsForCalendarDate(awayStaff, iso, {
-              service: slot && slot.service,
-              venue: slot && slot.venue,
-              area: slot && slot.area,
-              day: slot && slot.day,
-              client_name: slot && slot.client_name,
-              clientName: slot && slot.client_name,
-            })
-          );
-          if (mapped && !dayBoardStaffKeysEqual(mapped, awayStaff)) {
-            var mappedParts = normalizeInstructorList(mapped);
-            for (var m = 0; m < mappedParts.length; m++) pushName(mappedParts[m]);
+        /* Do not probe Day Centre with awayStaff name — Wed 9 Emanuel remap turned John→Roberto. */
+        if (!isDayCentreService(slot && slot.service)) {
+          var PRC = global.PortalRosterCanonical;
+          if (PRC && typeof PRC.resolveAutumnInstructorsForCalendarDate === "function") {
+            var mapped = clean(
+              PRC.resolveAutumnInstructorsForCalendarDate(awayStaff, iso, {
+                service: slot && slot.service,
+                venue: slot && slot.venue,
+                area: slot && slot.area,
+                day: slot && slot.day,
+                client_name: slot && slot.client_name,
+                clientName: slot && slot.client_name,
+              })
+            );
+            if (mapped && !dayBoardStaffKeysEqual(mapped, awayStaff)) {
+              var mappedParts = normalizeInstructorList(mapped);
+              for (var m = 0; m < mappedParts.length; m++) pushName(mappedParts[m]);
+            }
           }
         }
       } catch (_mapCover) {}
@@ -10684,7 +10687,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return out;
   }
 
-  /** True when this slot still belongs on the away worker's Overview column. */
+  /**
+   * Standing Hub Bespoke seat remapped off this away worker (John Wed 9/16 Tinashe).
+   * Clone the live Tinashe card onto their day-off column instead of "No sessions".
+   * Never use this path for Day Centre — John has no DC standing (Emanuel = Roberto).
+   */
   function hubSlotShouldStayOnAwayColumn(hub, slot, iso, staffRaw) {
     if (!hub || !slot || !staffRaw) return false;
     var want = dayBoardStaffKey(staffRaw);
@@ -10698,6 +10705,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     for (i = 0; i < cur.length; i++) {
       if (dayBoardStaffKeysEqual(cur[i], staffRaw)) return true;
     }
+    /* Day Centre / climbing: only stay if this worker was on the seat (above).
+     * Autumn remap probes with staffRaw="John" + client Emanuel wrongly became ROBERTO. */
+    if (isDayCentreService(slot.service) || isClimbingService(slot.service)) return false;
     try {
       var PRC = global.PortalRosterCanonical;
       if (PRC && typeof PRC.resolveAutumnInstructorsForCalendarDate === "function") {

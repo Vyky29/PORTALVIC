@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 133;
+  var SOURCE_VERSION = 134;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -2167,7 +2167,9 @@
       }
     }
     /* Wed 9 Sep: Fadi absent — Victor has no DC after reshuffle (not a day-off request).
-     * Roberto covers full Emanuel; Raul takes Victor Ikram 3-4. */
+     * Roberto covers full Emanuel; Raul takes Victor Ikram 3-4.
+     * Only rewrite Victor/Raul (or empty) seat lists — never invent DC ownership for John
+     * (Hub Bespoke only). Away-column probes pass staffRaw="John" here. */
     if (iso === "2026-09-09" && day === "wednesday" && isDayCentreService(service)) {
       var clientWed9 = String((meta && meta.clientName) || (meta && meta.client_name) || "")
         .trim()
@@ -2175,7 +2177,11 @@
         .replace(/\s+/g, " ");
       if (!clientWed9 && meta && meta.client_id) clientWed9 = String(meta.client_id).toLowerCase();
       if (/^emanuel\b/.test(clientWed9) || clientWed9 === "emanuel") {
-        s = "ROBERTO";
+        if (/\bjohn\b/i.test(s) && !/\b(victor|raul|roberto)\b/i.test(s)) {
+          /* keep John — not his DC seat */
+        } else {
+          s = "ROBERTO";
+        }
       } else if (/^ikram\b/.test(clientWed9) || clientWed9 === "ikram") {
         /* Michelle 11-4 + Luliya 11-3 stay; Raul takes 3-4 (Victor's block). */
         if (/\bvictor\b/i.test(s)) s = s.replace(/\bVICTOR\b/gi, "RAUL");
