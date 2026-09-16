@@ -153,6 +153,30 @@
         ? String(item.areaLabel).trim()
         : "";
     var pool = item.poolLocationLabel ? String(item.poolLocationLabel).trim() : "";
+    /* Last gate: capacity/open-seat Teaching Pool → Autumn standing note for this participant. */
+    try {
+      var Canon = global.PortalRosterCanonical;
+      if (
+        Canon &&
+        typeof Canon.lookupStandingPoolArea === "function" &&
+        (!area || /^teaching pool$/i.test(area) || !portalNormalizeAreaNoteKey(area))
+      ) {
+        var base = item.__portalBaseSession || {};
+        var hit = Canon.lookupStandingPoolArea({
+          client_name: item.name || item.clientId || base.clientName || base.clientId || "",
+          day: item.day || base.day || (typeof DEMO_VIEW_DAY !== "undefined" ? DEMO_VIEW_DAY : "") || "",
+          time_slot:
+            item.time ||
+            base.timeSlotLabel ||
+            base.time_slot ||
+            "",
+          instructors: base.__portalRosterInstructorsRaw || base.staffId || item.staffId || "",
+          venue: item.sessionVenue || base.venue || "",
+          service: item.activity || base.rosterService || "",
+        });
+        if (hit) area = hit;
+      }
+    } catch (_e) {}
     if (area) {
       var areaKey = portalNormalizeAreaNoteKey(area);
       if (areaKey) return area;

@@ -3890,10 +3890,18 @@
           const poolNotesForRow = hasReplaceOv && anchorNotesForMakeup
             ? anchorNotesForMakeup
             : c;
-          let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, poolNotesForRow, viewDay);
+          const sForArea = hasReplaceOv
+            ? Object.assign({}, s, {
+                clientId: effClientId,
+                clientName: (c && c.name) || nameFromReplace || effClientId,
+                clientDisplay: (c && c.name) || nameFromReplace || effClientId,
+                name: (c && c.name) || nameFromReplace || effClientId
+              })
+            : s;
+          let poolLocationLabel = resolvePoolLocationLabelFromSession(sForArea, activity, poolNotesForRow, viewDay);
           if(supportHidePoolNote) poolLocationLabel = null;
-          const areaLabel = rosterAreaLabelForSession(s, activity, supportHidePoolNote, viewDay);
-          const poolTier = poolTierForAreaNoteRow(s, activity, poolNotesForRow, viewDay, supportHidePoolNote);
+          const areaLabel = rosterAreaLabelForSession(sForArea, activity, supportHidePoolNote, viewDay);
+          const poolTier = poolTierForAreaNoteRow(sForArea, activity, poolNotesForRow, viewDay, supportHidePoolNote);
           const showPoolSymbol = !!(poolLocationLabel || areaLabel);
           const showSpec = !isBespokeActivity(activity);
           const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effClientId);

@@ -4691,10 +4691,17 @@
         } : null);
       if(!c) return null;
       const anchorNotes = portalClientNotesLookup(String(base.clientId || '').trim().toLowerCase()) || { name: '' };
-      let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, anchorNotes, anchorDayWord);
+      /* Area notes must follow the seated participant (Ayman), not the open-seat anchor. */
+      const sForArea = Object.assign({}, s, {
+        clientId: effClientId,
+        clientName: (c && c.name) || nameFromReplace || effClientId,
+        clientDisplay: (c && c.name) || nameFromReplace || effClientId,
+        name: (c && c.name) || nameFromReplace || effClientId
+      });
+      let poolLocationLabel = resolvePoolLocationLabelFromSession(sForArea, activity, anchorNotes, anchorDayWord);
       if(supportHidePoolNote) poolLocationLabel = null;
-      const areaLabel = rosterAreaLabelForSession(s, activity, supportHidePoolNote, anchorDayWord);
-      const poolTier = poolTierForAreaNoteRow(s, activity, anchorNotes, anchorDayWord, supportHidePoolNote);
+      const areaLabel = rosterAreaLabelForSession(sForArea, activity, supportHidePoolNote, anchorDayWord);
+      const poolTier = poolTierForAreaNoteRow(sForArea, activity, anchorNotes, anchorDayWord, supportHidePoolNote);
       const showPoolSymbol = !!(poolLocationLabel || areaLabel);
       const showSpec = !isBespokeActivity(activity);
       const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effClientId);
