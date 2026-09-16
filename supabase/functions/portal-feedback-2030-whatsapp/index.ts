@@ -31,14 +31,19 @@ import {
   outstandingByStaff,
   resolveProfileForStaffKey,
   scrubFadiOffDayCentreSlots,
+  slotsFromCapacityChainOccupants,
   slotsFromMadre,
   slotsFromRosterRows,
   type Feedback2030KeyRow,
+  type Feedback2030OccupantSlot,
   type Feedback2030OverrideRow,
   type Feedback2030Row,
   type Feedback2030StaffDebt,
   type Feedback2030UnavailabilityRow,
 } from "../_shared/portal_feedback_2030_match.ts";
+import standingOccupants from "../_shared/portal_capacity_chain_standing_occupants.json" with {
+  type: "json",
+};
 
 const DEDUPE_TABLE = "portal_feedback_2030_wa_sent";
 /** Staff app host (Vercel). Override with PORTAL_STAFF_DASHBOARD_URL if needed. */
@@ -261,10 +266,19 @@ Deno.serve(async (req) => {
       .select("name_key, staff_name")
       .eq("off_date", dayIso);
 
-    /* B1b: board-aligned merge — roster / dated boards win over MADRE standing.
-     * First list in mergeFeedback2030Slots wins on dedupe key. */
+    /* B1b/B1c: roster first; capacity-chain occupants gap-fill when roster thin;
+     * dated fallback + MADRE last. First list in mergeFeedback2030Slots wins. */
+    const rosterSlots = slotsFromRosterRows(
+      [...(datedRoster || []), ...(templateRoster || [])],
+      dayIso,
+    );
+    const occupantsSlots = slotsFromCapacityChainOccupants(
+      (standingOccupants as { bySlotId?: Record<string, Feedback2030OccupantSlot> })?.bySlotId,
+      dayIso,
+    );
     let slots = mergeFeedback2030Slots([
-      slotsFromRosterRows([...(datedRoster || []), ...(templateRoster || [])], dayIso),
+      rosterSlots,
+      occupantsSlots,
       datedFallbackSlots(dayIso),
       slotsFromMadre(madreDoc, dayIso),
     ]);

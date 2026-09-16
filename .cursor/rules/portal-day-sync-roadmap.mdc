@@ -37,7 +37,7 @@ resolveDayBoard(iso, audience) → { seats, meta }
 | **Timesheet** | `workerOnAutumnTimetableIso` + `standingSnapIsoForDow` delegated to module |
 | **Overview** | `hubLatestStandingIsoForDow` prefers module snap |
 | **Staff** | `portalAutumnStandingSnapIsoForWeekday` prefers module stamp |
-| **Feedback 20:30** | `applyFeedback2030BoardPolicy` — roster wins over MADRE; cover twin remaps (Raul→Victor / Sandra→Javi) retired; OV owns covers |
+| **Feedback 20:30** | `applyFeedback2030BoardPolicy` — roster wins over MADRE; cover twin remaps (Raul→Victor / Sandra→Javi) retired; OV owns covers; **B1c** occupants gap-fill when roster thin |
 
 Audience paint (aquatic merge, staff columns, pay bands) stays outside the core.
 
@@ -53,11 +53,11 @@ Audience paint (aquatic merge, staff columns, pay bands) stays outside the core.
 - Client: `parent_portal_team.js` drops Northolt invent; uses `services_detail.instructor` when upcoming rows omit staff
 - OV absence / cancel / cover paint unchanged
 
-### Optional remaining
+## Option B1c — LANDED (Feedback Edge occupants gap-fill)
 
-| Phase | Audience | Goal |
-|-------|----------|------|
-| **B1c** | feedback | Optional: Edge reads capacity-chain occupants when `portal_roster_rows` thin |
+- `slotsFromCapacityChainOccupants` in `portal_feedback_2030_match.ts`
+- `portal-feedback-2030-whatsapp` merge order: roster → occupants → dated fallback → MADRE
+- Roster still wins on dedupe; occupants fill missing seats when `portal_roster_rows` thin
 
 ### Rules while B ships
 

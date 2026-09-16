@@ -9,7 +9,7 @@
  *   5. PortalClientDayVisibility for client start / gone-from / Fadi
  *
  * Audience is a projection after the core (staffId filter, Timetable gate, no aquatic merge).
- * Feedback 20:30 still has server twin remaps — retire those once this board feeds it (see FEEDBACK_2030_PENDING).
+ * Feedback 20:30 Edge: applyFeedback2030BoardPolicy + B1c occupants gap-fill (roster → occupants → MADRE).
  */
 (function (global) {
   "use strict";
@@ -18,12 +18,8 @@
   var TEMPLATE_START = "2026-04-13";
   var TEMPLATE_END = "2026-07-19";
 
-  /**
-   * B1b: Feedback 20:30 uses applyFeedback2030BoardPolicy (no cover twin remaps).
-   * Remaining: feed seats from capacity-chain JSON on Edge when MADRE is thin.
-   */
-  var FEEDBACK_2030_PENDING =
-    "portal_feedback_2030_match — prefer capacity-chain occupants on Edge when roster thin";
+  /** B1b + B1c landed — Edge portal_feedback_2030_match occupants gap-fill. */
+  var FEEDBACK_2030_PENDING = "";
 
   function clean(v) {
     return String(v == null ? "" : v).trim();

@@ -402,6 +402,103 @@ export function slotsFromRosterRows(
   return out;
 }
 
+/** Capacity-chain standing seat (B1c / B3 twin). */
+export type Feedback2030OccupantSeatLine = {
+  kind?: string | null;
+  client?: string | null;
+  instructor?: string | null;
+  bookedFrom?: string | null;
+  trialDate?: string | null;
+  trialClient?: string | null;
+};
+
+export type Feedback2030OccupantSlot = {
+  serviceId?: string | null;
+  day?: string | null;
+  venue?: string | null;
+  timeLabel?: string | null;
+  seatLines?: Feedback2030OccupantSeatLine[] | null;
+};
+
+function occupantsServiceLabel(raw: unknown): string {
+  const id = String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+  if (id === "aquatic") return "Aquatic Activity";
+  if (id === "climbing") return "Climbing Activity";
+  if (id === "physical") return "Physical Activity";
+  if (id === "multi") return "Multi-Activity";
+  if (id === "day_centre" || id === "daycentre") return "Day Centre";
+  if (id === "bespoke") return "Bespoke";
+  return String(raw || "").trim() || "Service";
+}
+
+function occupantsTimeLabel(raw: unknown): string {
+  return String(raw || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s*[–—−]\s*/g, " to ")
+    .replace(/\s*-\s*/g, " to ");
+}
+
+function occupantsArea(venue: unknown): string | undefined {
+  const v = String(venue || "").toLowerCase();
+  if (/acton|northolt|westway|swimfarm|hub/.test(v)) return "West London";
+  return undefined;
+}
+
+/**
+ * B1c: standing seats from capacity-chain occupants (same board as Overview).
+ * Merged after portal_roster_rows so roster still wins on dedupe; fills gaps when
+ * dated/template roster is thin (MADRE was the old gap-filler).
+ */
+export function slotsFromCapacityChainOccupants(
+  bySlotId: Record<string, Feedback2030OccupantSlot> | null | undefined,
+  iso: string,
+): Feedback2030Slot[] {
+  if (!bySlotId || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return [];
+  const wd = weekdayLongUtcNoon(iso);
+  const out: Feedback2030Slot[] = [];
+  for (const slot of Object.values(bySlotId)) {
+    if (!slot) continue;
+    if (String(slot.day || "").trim().toLowerCase() !== wd.toLowerCase()) continue;
+    const service = occupantsServiceLabel(slot.serviceId);
+    if (/crash|intensiv/i.test(service)) continue;
+    const time = occupantsTimeLabel(slot.timeLabel);
+    if (!time) continue;
+    const area = occupantsArea(slot.venue);
+    for (const line of slot.seatLines || []) {
+      if (!line) continue;
+      const kind = String(line.kind || "").trim().toLowerCase();
+      if (kind === "open" || kind === "closed" || kind === "hold" || !kind) continue;
+      let client = "";
+      if (kind === "trial") {
+        const trialDate = String(line.trialDate || "").slice(0, 10);
+        if (trialDate && trialDate !== iso) continue;
+        client = String(line.trialClient || line.client || "").trim();
+      } else if (kind === "booked") {
+        const from = String(line.bookedFrom || "").slice(0, 10);
+        if (from && iso < from) continue;
+        client = String(line.client || "").trim();
+      } else {
+        continue;
+      }
+      if (!isRealFeedbackClient(client)) continue;
+      const staff = String(line.instructor || "").trim();
+      if (!staff) continue;
+      out.push({
+        staff,
+        client,
+        time,
+        service,
+        ...(area ? { area } : {}),
+      });
+    }
+  }
+  return out;
+}
+
 export function mergeFeedback2030Slots(lists: Feedback2030Slot[][]): Feedback2030Slot[] {
   const seen = new Set<string>();
   const out: Feedback2030Slot[] = [];
