@@ -12130,8 +12130,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       this.render();
       return;
     }
-    /* Drop only the painted day — full invalidate recomputes every ISO and can hang Chrome. */
-    var dayKey = String(this.selectedIso || this.overviewIso || "").trim().substring(0, 10);
+    /* Drop only the painted day — full invalidate recomputes every ISO and can hang Chrome.
+     * Must use selectedDay (selectedIso / overviewIso were never set — soft refresh left a
+     * stale _slotsByIso from the pre-capacity-chain paint, e.g. Dan Wed without Mia). */
+    var dayKey = String(this.selectedDay || "").trim().substring(0, 10);
     if (dayKey && this._slotsByIso) delete this._slotsByIso[dayKey];
     if (dayKey && this._dayStatsByIso) {
       var statsKeys = Object.keys(this._dayStatsByIso);
@@ -12175,6 +12177,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         return;
       }
       try {
+        /* Roster may have become ready after an early expand cached a sparse day. */
+        var paintIso = String(hub.selectedDay || "").trim().substring(0, 10);
+        if (paintIso && hub._slotsByIso) delete hub._slotsByIso[paintIso];
         mount.innerHTML = hub.htmlTrackingBody();
       } catch (err) {
         console.warn("[AdminSessionsHub] overview body", err);
