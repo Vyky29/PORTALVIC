@@ -3,7 +3,8 @@
  * One policy for "is this client allowed on this calendar ISO" across
  * Sessions Overview and Staff Today / Term.
  *
- * Phase B will fold this into resolveDayBoard(iso, audience).
+ * Phase B1: shared core is `portal_resolve_day_board.js` (PortalResolveDayBoard).
+ * This module remains the client start/gone/Fadi policy used by that resolver.
  */
 (function (global) {
   "use strict";

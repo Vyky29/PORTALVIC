@@ -1215,6 +1215,17 @@
       _hubStandingIsoByDowCacheN = n;
     }
     if (_hubStandingIsoByDowCache[want] !== undefined) return _hubStandingIsoByDowCache[want];
+    /* B1: shared snap picker (same as timesheet / Staff). */
+    try {
+      var RDB = global.PortalResolveDayBoard;
+      if (RDB && typeof RDB.standingSnapIsoForDow === "function") {
+        var shared = RDB.standingSnapIsoForDow(rosterRows, want, {});
+        if (shared) {
+          _hubStandingIsoByDowCache[want] = shared;
+          return shared;
+        }
+      }
+    } catch (_rdb) {}
     var canon = global.PortalRosterCanonical;
     var weekendKey = String(want || "").trim().toLowerCase();
     if (canon && canon.WEEKEND_STANDING_ISO && canon.WEEKEND_STANDING_ISO[weekendKey]) {

@@ -1,5 +1,5 @@
 ---
-description: Portal day sync — Option A done; Option B phased resolveDayBoard roadmap
+description: Portal day sync — Option A done; Option B1 core landed; B2/B3 remaining
 alwaysApply: true
 ---
 
@@ -19,22 +19,33 @@ Victor chose **all of it**, starting with **A**. Capacity-chain **phases / occup
 - Gate: standing projection onto an ISO only if **Autumn Instructor Timetable** names that worker that day (`PORTAL_AUTUMN_STAFF_HOURS`). Exact dated rows + cover injects still apply.
 - Example fixed: John Hub Multi **Sun 6** cover must not paint **Sun 13 / 20** (Timetable has no John those days; Hub standing = Berta / Emmanuel / Godsway).
 
-## Option B — resolveDayBoard (remaining)
+## Option B1 — LANDED (shared day-board core module)
 
-One resolver; audience is a **projection**, not a second truth.
+Module: `working_ui/portal/portal_resolve_day_board.js` (`PortalResolveDayBoard`)
 
 ```
-resolveDayBoard(iso, audience) → seats
-  1. standing = capacity chain (occupants + timetable)  // phases work
-  2. dated portal_roster_rows
-  3. schedule_overrides + staff_unavailability
-  4. one exception table (Leila Monday-only, Tue redistribute, …)
-  5. PortalClientDayVisibility (already shared)
+resolveDayBoard(iso, audience) → { seats, meta }
+  1. standing = capacity chain rows (STAFF_DASHBOARD_SOURCE)
+  2. dated overlays (session_date === iso) in those rows
+  3. schedule_overrides / unavailability — still hydrated by Overview/Staff callers
+  4. exceptions via PortalRosterCanonical.applyCapacityChainDayExceptions (on chain resolve)
+  5. PortalClientDayVisibility filter
 ```
+
+| Wired | How |
+|-------|-----|
+| **Timesheet** | `workerOnAutumnTimetableIso` + `standingSnapIsoForDow` delegated to module |
+| **Overview** | `hubLatestStandingIsoForDow` prefers module snap |
+| **Staff** | `portalAutumnStandingSnapIsoForWeekday` prefers module stamp |
+| **Feedback 20:30** | **Pending** — still `remapAutumnFeedback2030Slots` in Edge Function; module documents `FEEDBACK_2030_PENDING` |
+
+Audience paint (aquatic merge, staff columns, pay bands) stays outside the core.
+
+## Option B — remaining
 
 | Phase | Audience | Goal |
 |-------|----------|------|
-| **B1** | `admin` + `staff` + **timesheet** + feedback | Same board core; timesheet stops private DOW snaps; Feedback 20:30 retires TS twin remaps |
+| **B1b** | feedback | Feed outstanding debts from resolveDayBoard seats; retire TS twin remaps |
 | **B2** | `booking` | Plazas counts from same standing (or MADRE derived from it) |
 | **B3** | `parent` | Chips / Team from board projection (not inventing standing only via service_lines) |
 
@@ -44,6 +55,6 @@ resolveDayBoard(iso, audience) → seats
 - Do not “fix” Booking/Parent/Timesheet by hardcoding Overview-only patches — that is the old failure mode.
 - After each B phase: smoke Overview vs Staff (same ISO), then that audience.
 
-### Look-here until B1 lands
+### Look-here
 
-Day look-here remains **Sessions Overview**. Staff should now match Overview on **who is allowed that day**; card shape may still differ (aquatic merge). Timesheet days should match **Timetable** (plus dated covers / day offs), not ghost projections.
+Day look-here remains **Sessions Overview**. Staff should match on **who is allowed that day**; card shape may still differ (aquatic merge). Timesheet days should match **Timetable** (plus dated covers / day offs), not ghost projections.

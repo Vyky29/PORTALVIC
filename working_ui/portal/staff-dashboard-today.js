@@ -663,6 +663,11 @@
     /** Exact Autumn standing template ISO for a weekday (Sep LOCAL board stamp). */
     function portalAutumnStandingSnapIsoForWeekday(weekdayLong){
       try{
+        const RDB = typeof window !== 'undefined' ? window.PortalResolveDayBoard : null;
+        if(RDB && typeof RDB.canonicalStandingStampForDow === 'function'){
+          const shared = RDB.canonicalStandingStampForDow(weekdayLong);
+          if(shared) return shared;
+        }
         const PRC = typeof window !== 'undefined' ? window.PortalRosterCanonical : null;
         const w = String(weekdayLong || '').trim().toLowerCase();
         let dk = '';

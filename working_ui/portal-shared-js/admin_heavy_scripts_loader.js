@@ -19,6 +19,7 @@
       "/portal/portal_capacity_chain_occupants.js?v=20260916-emmanuel-abate-dc",
       "/portal/portal_overview_capacity_chain.js?v=20260916-muhammad-mon7",
       "/portal/portal_client_day_visibility.js?v=20260916-option-a",
+      "/portal/portal_resolve_day_board.js?v=20260916-b1",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260914-term-open-fast",
     ],
     feedback: [
