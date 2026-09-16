@@ -12,8 +12,10 @@ import type { PortalInvoiceVatMode } from "./portal_tax_invoice_pdf.ts";
 import {
   isEalingFunder,
   isHammersmithFulhamFunder,
+  isNhsFunder,
   laBillToAdminNote,
   EALING_BST_BILL_TO,
+  NHS_WNL_ICB_BILL_TO,
   resolveHfBandOverride,
   resolveHfBillToProfile,
   type LaBillToProfile,
@@ -328,6 +330,14 @@ export async function resolveLaFunderBillTo(
     isEalingFunder(fundingLabel)
   ) {
     return profileToBillTo(EALING_BST_BILL_TO);
+  }
+
+  if (
+    isNhsFunder(funderBlob) ||
+    isNhsFunder(funder) ||
+    isNhsFunder(fundingLabel)
+  ) {
+    return profileToBillTo(NHS_WNL_ICB_BILL_TO);
   }
 
   if (funder) {

@@ -74,6 +74,25 @@ export const EALING_BST_BILL_TO: LaBillToProfile = {
   paymentInstruction: "",
 };
 
+/**
+ * NHS West and North London ICB (Tradeshift / SBS Day Centre PO XXPRASHERV1).
+ * Replaces the short "NHS · SBS" / UNITED KINGDOM stub on funder PDFs.
+ */
+export const NHS_WNL_ICB_BILL_TO: LaBillToProfile = {
+  key: "nhs_wnl_icb",
+  name: "NHS WEST AND NORTH LONDON INTEGRATED CARE BOARD (Z9B2Z0)",
+  lines: [
+    "PO BOX 312",
+    "Munroe Court",
+    "LEEDS",
+    "LS11 1HP",
+    "United Kingdom",
+  ],
+  paymentEmail: "",
+  paymentCcEmail: "",
+  paymentInstruction: "",
+};
+
 /** True when funding text points at London Borough of Ealing. */
 export function isEalingFunder(text: unknown): boolean {
   const s = String(text || "").toLowerCase();
@@ -84,6 +103,18 @@ export function isEalingFunder(text: unknown): boolean {
 export function isHammersmithFulhamFunder(text: unknown): boolean {
   const s = String(text || "").toLowerCase();
   return /h\s*&\s*f|hammersmith|fulham|lbhf/.test(s);
+}
+
+/** True when funding text points at NHS / SBS (Day Centre ICB invoices). */
+export function isNhsFunder(text: unknown): boolean {
+  const s = String(text || "").toLowerCase();
+  if (!s) return false;
+  if (/\bnhs\b/.test(s)) return true;
+  if (/\bsbs\b/.test(s)) return true;
+  if (/north.?west.?london|west and north london|z9b2z0|xxprasherv1/i.test(s)) {
+    return true;
+  }
+  return false;
 }
 
 /**
