@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 129;
+  var SOURCE_VERSION = 130;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -2900,9 +2900,8 @@
     { staff: "YOUSSEF", name: "No participant", time: "5.30 to 6", area: "Teaching Pool" },
     { staff: "YOUSSEF", name: "No participant", time: "6 to 6.30", area: "Teaching Pool" },
     { staff: "JAVIER", name: "Cyrus", time: "4 to 5", area: "Teaching Pool" },
-    /* Wed Acton: first session Wed 16 Sep (finish-booking). Open before that. */
-    { staff: "JAVIER", name: "Ayman", time: "5 to 5.30", area: "Teaching Pool", bookedFrom: "2026-09-16" },
-    { staff: "JAVIER", name: "Ayman", time: "5.30 to 6", area: "Teaching Pool", bookedFrom: "2026-09-16" },
+    /* Wed Acton: first session Wed 16 Sep (finish-booking). One hour card (not 2×30'). */
+    { staff: "JAVIER", name: "Ayman", time: "5 to 6", area: "Teaching Pool", bookedFrom: "2026-09-16" },
     { staff: "JAVIER", name: "Kayden", time: "6 to 6.30", area: "Teaching Pool" },
   ];
 
