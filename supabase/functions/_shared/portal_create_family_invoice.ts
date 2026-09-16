@@ -239,6 +239,35 @@ export function isHfLaInvoice(input: {
   );
 }
 
+/**
+ * NHS Day Centre funder INV-Ps (Fadi / Ikram / Emanuel / Timi + NHS sheet).
+ * PDF body uses Client's ID (NWL…) + Reference = PO (e.g. XXPRASHERV1).
+ * Top invoice Reference box stays the month label (September 2026).
+ */
+export function isNhsFunderInvoice(input: {
+  readyBy?: string | null;
+  notes?: string | null;
+  poLabel?: string | null;
+}): boolean {
+  const readyBy = clean(input.readyBy, 160);
+  const notes = clean(input.notes, 800);
+  const po = clean(input.poLabel, 80).toUpperCase();
+  if (/office_funder_2627_nhs_/i.test(readyBy)) return true;
+  if (/office_.*_nhs_/i.test(readyBy) && !/office_la_nhs_/i.test(readyBy)) return true;
+  if (po === "XXPRASHERV1") return true;
+  if (/\bnwl\b/i.test(notes) && /\bnhs\b/i.test(notes)) return true;
+  return false;
+}
+
+/** NHS Client ID on PDF: always NWL + digits (e.g. 474280 → NWL474280). */
+export function formatNhsClientIdLabel(raw: string | null | undefined): string {
+  const s = clean(raw, 80);
+  if (!s || s === "—") return "—";
+  if (/^NWL/i.test(s)) return `NWL${s.replace(/^NWL/i, "")}`;
+  const digits = s.replace(/^[A-Z]+/i, "");
+  return digits ? `NWL${digits}` : `NWL${s}`;
+}
+
 /** Office marker: [[hf_months:September 2026=150.00|October 2026=200.00|…]] */
 export function formatHfMonthlyScheduleMarker(
   months: Array<{ label: string; amountGbp: number }>,
@@ -430,6 +459,8 @@ function invoiceDescriptionLines(input: {
   hfYearDraft?: boolean;
   /** H&F LA: PO Number line under Client ID (Ealing year has no PO). */
   hfLaInvoice?: boolean;
+  /** NHS funder: Client's ID NWL… + Reference = PO (not month). */
+  nhsInvoice?: boolean;
   ealingService?: string | null;
   ealingSlot?: string | null;
   ealingVenue?: string | null;
@@ -475,6 +506,16 @@ function invoiceDescriptionLines(input: {
           : null,
         // Year already shown in the invoice Reference box — do not repeat here.
       ].filter((x): x is string => x !== null);
+    }
+    /* NHS: month stays in the top Reference box only.
+     * Body: Client's ID NWL… + Reference = shared PO (XXPRASHERV1). */
+    if (input.nhsInvoice) {
+      return [
+        ...descriptionBody,
+        "",
+        `Client's ID: ${formatNhsClientIdLabel(input.clientIdLabel)}`,
+        `Reference: ${input.poLabel || "XXPRASHERV1"}`,
+      ];
     }
     return [
       ...descriptionBody,
@@ -667,6 +708,11 @@ export async function createPortalFamilyInvoice(
     readyBy: input.readyBy,
     notes: input.notes,
   });
+  const nhsInvoice = isNhsFunderInvoice({
+    readyBy: input.readyBy,
+    notes: input.notes,
+    poLabel,
+  });
   const hfMonthlySchedule = hfYearDraft ? parseHfMonthlySchedule(input.notes) : null;
   const bookingHdr =
     parseBookingPdfHeader(notes) ||
@@ -704,6 +750,7 @@ export async function createPortalFamilyInvoice(
     omitPoLine: laServiceHeader,
     hfYearDraft,
     hfLaInvoice,
+    nhsInvoice,
     ealingService: laHdr?.service || null,
     ealingSlot: laHdr?.slot || null,
     ealingVenue: laHdr?.venue || null,
@@ -993,6 +1040,11 @@ export async function regeneratePortalInvoiceSharePdf(
     readyBy: share.ready_by,
     notes: share.notes,
   });
+  const nhsInvoice = isNhsFunderInvoice({
+    readyBy: share.ready_by,
+    notes: share.notes,
+    poLabel,
+  });
   const hfMonthlySchedule = hfYearDraft ? parseHfMonthlySchedule(share.notes) : null;
   const laHdr = isLaServiceHeader ? parseLaPdfHeader(share.notes) : null;
   const shareNotes = clean(share.notes, 800) || null;
@@ -1031,6 +1083,7 @@ export async function regeneratePortalInvoiceSharePdf(
     omitPoLine: isLaServiceHeader,
     hfYearDraft,
     hfLaInvoice,
+    nhsInvoice,
     ealingService: laHdr?.service || null,
     ealingSlot: laHdr?.slot || null,
     ealingVenue: laHdr?.venue || null,

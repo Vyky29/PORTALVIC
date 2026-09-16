@@ -35,6 +35,8 @@ function pickPo(data: Record<string, unknown>): string {
 function looksLikeAuthorityClientId(v: string): boolean {
   const s = clean(v, 80);
   if (!s) return false;
+  /* NHS PDFs use NWL + digits (e.g. NWL474280). */
+  if (/^NWL\d{4,}$/i.test(s)) return true;
   /* H&F / Ealing / NHS IDs are numeric (sometimes with letters). Reject pure slugs. */
   if (/^\d{4,}$/.test(s)) return true;
   if (/\d{4,}/.test(s) && !/^[a-z]+(?:-[a-z0-9]+)*$/i.test(s)) return true;
