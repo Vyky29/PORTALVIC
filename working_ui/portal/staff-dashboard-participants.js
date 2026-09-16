@@ -398,7 +398,10 @@
         if(corrected === 'Small Pool') return 'small';
         if(corrected === 'Big Pool') return 'shark';
       }
-      const area = String(sessionRow && (sessionRow.rosterArea != null ? sessionRow.rosterArea : sessionRow.area) || '').trim().toLowerCase();
+      const fromLabel = typeof rosterAreaToPoolLabel === 'function'
+        ? rosterAreaToPoolLabel(sessionRow, viewDay)
+        : null;
+      const area = String(fromLabel || (sessionRow && (sessionRow.rosterArea != null && String(sessionRow.rosterArea).trim() ? sessionRow.rosterArea : sessionRow.area)) || '').trim().toLowerCase();
       if(area === 'teaching pool') return 'fish';
       if(area === 'small pool') return 'small';
       if(area === 'big pool') return 'shark';
@@ -409,7 +412,30 @@
     function rosterAreaToPoolLabel(sessionRow, viewDay){
       const corrected = portalCorrectSundaySwimFarmPoolArea(sessionRow, viewDay);
       if(corrected) return corrected;
-      const raw = String(sessionRow && (sessionRow.rosterArea != null ? sessionRow.rosterArea : sessionRow.area) || '').trim();
+      let raw = String(
+        sessionRow && sessionRow.rosterArea != null && String(sessionRow.rosterArea).trim()
+          ? sessionRow.rosterArea
+          : (sessionRow && sessionRow.area) || ''
+      ).trim();
+      /* Capacity chain Teaching Pool default — standing Autumn notes win for Acton/Northolt. */
+      try{
+        const Canon = window.PortalRosterCanonical;
+        if(Canon && typeof Canon.lookupStandingPoolArea === 'function'){
+          const ven = String((sessionRow && sessionRow.venue) || '').toLowerCase();
+          const svc = String((sessionRow && (sessionRow.rosterService || sessionRow.activity || sessionRow.service)) || '').toLowerCase();
+          if((!raw || /^teaching pool$/i.test(raw)) && /acton|northolt/.test(ven) && /aquatic|multi|swim/.test(svc)){
+            const hit = Canon.lookupStandingPoolArea({
+              client_name: (sessionRow && (sessionRow.clientDisplay || sessionRow.clientName || sessionRow.name || sessionRow.clientId)) || '',
+              day: viewDay || (sessionRow && sessionRow.day) || '',
+              time_slot: (sessionRow && (sessionRow.timeSlotLabel || sessionRow.time_slot)) || '',
+              instructors: (sessionRow && (sessionRow.__portalRosterInstructorsRaw || sessionRow.staffId || sessionRow.instructors)) || '',
+              venue: (sessionRow && sessionRow.venue) || '',
+              service: (sessionRow && sessionRow.rosterService) || ''
+            });
+            if(hit) raw = hit;
+          }
+        }
+      }catch(_stand){}
       if(!raw) return null;
       const low = raw.toLowerCase();
       if(low === 'teaching pool') return 'Teaching Pool';
@@ -1873,9 +1899,35 @@
     }
     /** Support workers: roster room (Hub Room, Room 2). Swimming instructors: roster pool area or activity fallback. */
     function rosterAreaLabelForSession(s, activity, supportWorkerMode, viewDay){
-      let a = String(s.rosterArea != null ? s.rosterArea : '').trim();
+      let a = String(
+        (s && s.rosterArea != null && String(s.rosterArea).trim())
+          ? s.rosterArea
+          : (s && s.area != null ? s.area : '')
+      ).trim();
       const sundayPool = portalCorrectSundaySwimFarmPoolArea(s, viewDay);
       if(sundayPool && (!a || /^teaching pool$/i.test(a))) a = sundayPool;
+      /* Capacity chain defaults Acton aquatic to Teaching Pool — prefer Autumn standing notes. */
+      try{
+        const Canon = window.PortalRosterCanonical;
+        if(Canon && typeof Canon.lookupStandingPoolArea === 'function'){
+          const needStanding = !a || /^teaching pool$/i.test(a);
+          const ven = String((s && s.venue) || '').toLowerCase();
+          const svc = String(activity || (s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
+          if(needStanding && /acton|northolt/.test(ven) && /aquatic|multi|swim/.test(svc)){
+            const hit = Canon.lookupStandingPoolArea({
+              client_name: (s && (s.clientDisplay || s.clientName || s.name || s.clientId)) || '',
+              day: viewDay || (s && s.day) || '',
+              time_slot: (s && (s.timeSlotLabel || s.time_slot)) || (
+                typeof rosterSlotTimeLabel === 'function' ? rosterSlotTimeLabel(s) : ''
+              ),
+              instructors: (s && (s.__portalRosterInstructorsRaw || s.staffId || s.instructors)) || '',
+              venue: (s && s.venue) || '',
+              service: activity || (s && s.rosterService) || ''
+            });
+            if(hit) a = hit;
+          }
+        }
+      }catch(_stand){}
       const svc = String(activity || (s && (s.rosterService || s.activity || s.service)) || '').trim();
       const ven = String((s && s.venue) || '').trim();
       /* Westway Physical Activity = Gym (capacity-chain defaultArea); covers often omit rosterArea. */
