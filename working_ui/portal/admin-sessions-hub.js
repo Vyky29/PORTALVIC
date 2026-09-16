@@ -605,6 +605,10 @@
   }
 
   function clientAllowedOnWeekday(clientName, weekdayLong) {
+    var Vis = global.PortalClientDayVisibility;
+    if (Vis && typeof Vis.clientAllowedOnWeekday === "function") {
+      return Vis.clientAllowedOnWeekday(clientName, weekdayLong);
+    }
     var allow = clientConfigMapEntry(
       global.STAFF_DASHBOARD_SOURCE && global.STAFF_DASHBOARD_SOURCE.clientWeekdaysOnly,
       clientName
@@ -615,6 +619,10 @@
 
   /** Fadi CLIENT is off worker rotas 1-19 Sep 2026 (starts 20 Sep) — not Cancelled. */
   function clientIsFadiOffRota(clientName, isoDate) {
+    var Vis = global.PortalClientDayVisibility;
+    if (Vis && typeof Vis.isFadiOffRota === "function") {
+      return Vis.isFadiOffRota(clientName, isoDate);
+    }
     var name = clean(clientName);
     var canon = global.PortalRosterCanonical;
     var isFadi =
@@ -639,24 +647,27 @@
 
   /**
    * Fallback when capacity chain wiped bundle starts (admin Overview often has no bundle).
-   * Weekend Multi/Aquatic standing for Adaam / Aydaan / Amaar began Autumn Sun 6 Sep —
-   * do NOT stamp weekday Acton NEW CLIENT (Mon/Tue 14–15) here or Overview hides Sun 6/13 seats.
-   * Muhammad aquatic Mon Northolt from Mon 7; climb trial Sun 13 is seat trialDate only.
+   * Kept in sync with PortalClientDayVisibility.FALLBACK_CLIENT_STARTS (Option A shared).
    */
-  var ASH_FALLBACK_CLIENT_STARTS = {
-    "Emmanuel Abate": "2026-09-15",
-    "Christian Abate": "2026-09-15",
-    "Amaar Ah": "2026-09-06",
-    Muhammad: "2026-09-07",
-    "Adaam Ah": "2026-09-06",
-    "Aydaan Ah": "2026-09-06",
-    /* Tue Acton Javier 4–5 from Autumn Tue 8; Wed Acton 5–6 NEW CLIENT is 16 Sep (row bookedFrom + scrub). */
-    Ayman: "2026-09-08",
-    "Ayman El Bakry": "2026-09-08",
-  };
+  var ASH_FALLBACK_CLIENT_STARTS =
+    (global.PortalClientDayVisibility && global.PortalClientDayVisibility.FALLBACK_CLIENT_STARTS) ||
+    {
+      "Emmanuel Abate": "2026-09-15",
+      "Christian Abate": "2026-09-15",
+      "Amaar Ah": "2026-09-06",
+      Muhammad: "2026-09-07",
+      "Adaam Ah": "2026-09-06",
+      "Aydaan Ah": "2026-09-06",
+      Ayman: "2026-09-08",
+      "Ayman El Bakry": "2026-09-08",
+    };
 
-  /** First calendar day this client appears on roster (ISO date). */
+  /** First calendar day this client appears on roster (ISO date). Shared with Staff Today. */
   function clientAllowedOnDate(clientName, isoDate) {
+    var Vis = global.PortalClientDayVisibility;
+    if (Vis && typeof Vis.clientAllowedOnDate === "function") {
+      return Vis.clientAllowedOnDate(clientName, isoDate);
+    }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return true;
     if (clientIsFadiOffRota(clientName, isoDate)) return false;
     var start = clientConfigMapEntry(
@@ -670,12 +681,10 @@
       if (!b) return a;
       return String(a) <= String(b) ? a : b;
     }
-    /* Prefer earliest start across sources so weekday Acton first_session cannot hide earlier Sunday standing. */
     start = earlierIso(earlierIso(start, ovStart), fbStart);
     if (start && /^\d{4}-\d{2}-\d{2}$/.test(String(start)) && isoDate < String(start)) {
       return false;
     }
-    /* Exclusive: first day they are no longer on Sessions / standing (former clients). */
     var goneFrom = clientConfigMapEntry(
       global.STAFF_DASHBOARD_SOURCE && global.STAFF_DASHBOARD_SOURCE.clientRosterGoneFromDates,
       clientName
@@ -691,6 +700,10 @@
    * list "Awaiting feedback" on earlier weeks when MADRE already folded the seat.
    */
   function rebuildClientFirstSessionIndex(overrides) {
+    var Vis = global.PortalClientDayVisibility;
+    if (Vis && typeof Vis.noteFirstSessionFromOverrides === "function") {
+      return Vis.noteFirstSessionFromOverrides(overrides);
+    }
     var map = Object.create(null);
     function note(name, iso) {
       var n = clean(name);

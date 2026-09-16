@@ -1,0 +1,43 @@
+---
+description: Portal day sync — Option A done; Option B phased resolveDayBoard roadmap
+alwaysApply: true
+---
+
+# Portal day sync roadmap (A → B)
+
+Victor chose **all of it**, starting with **A**. Capacity-chain **phases / occupants standing stay** — this roadmap consumes them; it does not replace them.
+
+## Option A — DONE (Staff = Overview client visibility)
+
+- Shared module: `working_ui/portal/portal_client_day_visibility.js` (`PortalClientDayVisibility`)
+- Overview (`admin-sessions-hub.js`) and Staff Today (`staff-dashboard-today.js`) use the **same** `clientAllowedOnDate` / weekday / Fadi-off / gone-from / fallback starts / finish-booking first_session index.
+- Staff still applies audience projection at the end: worker scope + aquatic merge + covers. Do **not** reintroduce a second start-date map on Staff only.
+
+## Option B — resolveDayBoard (remaining)
+
+One resolver; audience is a **projection**, not a second truth.
+
+```
+resolveDayBoard(iso, audience) → seats
+  1. standing = capacity chain (occupants + timetable)  // phases work
+  2. dated portal_roster_rows
+  3. schedule_overrides + staff_unavailability
+  4. one exception table (Leila Monday-only, Tue redistribute, …)
+  5. PortalClientDayVisibility (already shared)
+```
+
+| Phase | Audience | Goal |
+|-------|----------|------|
+| **B1** | `admin` + `staff` | Same board core; drop duplicate remaps; Feedback 20:30 reads this (retire TS twin remaps) |
+| **B2** | `booking` | Plazas counts from same standing (or MADRE derived from it) |
+| **B3** | `parent` | Chips / Team from board projection (not inventing standing only via service_lines) |
+
+### Rules while B ships
+
+- Do not add new `clientRosterStartDates` / Leila / Adaam copies outside `PortalClientDayVisibility` + one exception table.
+- Do not “fix” Booking/Parent by hardcoding Overview-only patches — that is the old failure mode.
+- After each B phase: smoke Overview vs Staff (same ISO), then that audience.
+
+### Look-here until B1 lands
+
+Day look-here remains **Sessions Overview**. Staff should now match Overview on **who is allowed that day**; card shape may still differ (aquatic merge).

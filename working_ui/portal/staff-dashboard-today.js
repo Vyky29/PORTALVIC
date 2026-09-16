@@ -617,7 +617,27 @@
       const iso = normaliseIsoDate(isoYmd);
       if(!iso) return true;
       const cid = String(s && s.clientId || '').trim().toLowerCase();
-      const name = String(s && (s.clientName || s.clientDisplay || s.clientId) || '').trim();
+      const name = String(s && (s.clientName || s.clientDisplay || s.client_name || s.clientId) || '').trim();
+      const Vis = typeof window !== 'undefined' ? window.PortalClientDayVisibility : null;
+      if(Vis && typeof Vis.clientAllowedOnDate === 'function'){
+        const extra = Object.create(null);
+        const sheetFirst = portalClientFirstSessionDateIso(cid) || portalClientFirstSessionDateIso(name);
+        if(sheetFirst){
+          extra[name || cid] = sheetFirst;
+          if(cid) extra[cid] = sheetFirst;
+        }
+        /* Same gate as Sessions Overview (Option A). Open/empty seats stay visible. */
+        if(!name && !cid) return true;
+        if(/^(no participant|open|closed|hold|cover needed|unassigned)$/i.test(name)) return true;
+        if(!Vis.clientAllowedOnDate(name || cid, iso, { extraStarts: extra })) return false;
+        if(typeof Vis.clientAllowedOnWeekday === 'function'){
+          try{
+            const wd = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+            if(wd && !Vis.clientAllowedOnWeekday(name || cid, wd)) return false;
+          }catch(_wd){}
+        }
+        return true;
+      }
       try{
         const canon = typeof window !== 'undefined' ? window.PortalRosterCanonical : null;
         const isFadi = canon && typeof canon.isFadiClientName === 'function'
@@ -1318,6 +1338,12 @@
             window.portalRebuildScheduleOverrideIsoIndex(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__);
           }
         }catch(_ix){}
+        try{
+          var VisFs = window.PortalClientDayVisibility;
+          if(VisFs && typeof VisFs.noteFirstSessionFromOverrides === 'function'){
+            VisFs.noteFirstSessionFromOverrides(window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ || []);
+          }
+        }catch(_fs){}
         if(!merged.length && fetchErrors){
           console.warn('[portal] schedule_overrides empty after', fetchErrors, 'chunk error(s)');
         }
