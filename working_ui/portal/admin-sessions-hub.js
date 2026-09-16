@@ -873,22 +873,39 @@
 
   function makeupOpenAnchorKey(ov, wd) {
     var oStart = normTimeShort(ov.anchor_start) || normTimeKey(ov.anchor_time_slot_label, wd);
+    var staffRaw = clean(ov.anchor_staff_id);
     return [
       clean(ov.session_date),
       clean(ov.anchor_venue).toLowerCase(),
-      normalizeAnchorStaffId(ov.anchor_staff_id),
+      canonicalStaffMatchKey(staffRaw) || normalizeAnchorStaffId(staffRaw),
       oStart || "",
     ].join("|");
   }
 
   function openSlotMakeupAnchorKey(slot, wd) {
     var st = slot.time_start || normTimeKey(slot.time_slot, wd);
+    var insts = slotInstructors(slot);
+    var staffRaw = insts.length ? insts[0] : clean(slot.anchor_staff_id);
     return [
       clean(slot.session_date),
       clean(slot.venue).toLowerCase(),
-      slotAnchorStaffKey(slot),
+      canonicalStaffMatchKey(staffRaw) || slotAnchorStaffKey(slot),
       st || "",
     ].join("|");
+  }
+
+  /** Mark every SwimFarm / alias twin so suppress does not miss open seats. */
+  function markMakeupOpenConsumedKeys(consumed, ov, wd) {
+    var base = makeupOpenAnchorKey(ov, wd);
+    if (base) consumed[base] = true;
+    var aliases = swimfarmInstructorAnchorAliases(ov.anchor_staff_id);
+    if (!aliases || aliases.length < 2) return;
+    var oStart = normTimeShort(ov.anchor_start) || normTimeKey(ov.anchor_time_slot_label, wd);
+    var venue = clean(ov.anchor_venue).toLowerCase();
+    var day = clean(ov.session_date);
+    for (var i = 0; i < aliases.length; i++) {
+      consumed[[day, venue, aliases[i], oStart || ""].join("|")] = true;
+    }
   }
 
   /** MakeUp on NO PARTICIPANT anchor replaces the open line — do not show both rows. */
@@ -900,7 +917,7 @@
       if (!overrideIsReplaceType(ov)) continue;
       if (clean(ov.session_date) !== isoDate) continue;
       if (!overrideAnchorIsOpenSlot(ov.anchor_client_id)) continue;
-      consumed[makeupOpenAnchorKey(ov, wd)] = true;
+      markMakeupOpenConsumedKeys(consumed, ov, wd);
     }
     if (!Object.keys(consumed).length) return out;
     return out.filter(function (slot) {
@@ -1790,11 +1807,12 @@
   function overrideIsCancelledType(ov) {
     var t = String(ov && ov.override_type || "").trim();
     if (String(ov && ov.status || "active").trim() !== "active") return false;
-    if (t === "slot_close") return true;
+    if (t === "slot_close" || t === "client_cancelled") return true;
     var p = overridePayloadObj(ov);
     if (t !== "slot_clear_client" || !p.cancelled_by_admin) return false;
     /* Day reassign / seat move: clear source seat, not a true cancel (Junaid→Roberto Tue 8). */
     if (p.day_reassign === true || p.not_makeup === true) return false;
+    if (p.client_move === true || p.client_move === "true") return false;
     var kind = clean(p.booking_kind || p.session_kind || p.replace_kind || p.clear_kind).toLowerCase();
     if (kind === "day_reassign" || kind === "instructor_day_cover" || kind === "slot_move") {
       return false;
@@ -2036,6 +2054,70 @@
     });
   }
 
+  /**
+   * Staff Today paints replace onto the open card in place. Hub used to inject a synthetic
+   * row + suppress the open — fragile when staff aliases / venue differ. Prefer mutate open.
+   */
+  function applyOpenSeatReplaceInPlace(hub, out, isoDate, wd) {
+    var ovs = (hub && hub.payload && hub.payload.schedule_overrides) || [];
+    hub._openSeatReplacePaintedIds = Object.create(null);
+    if (!out || !out.length || !ovs.length) return out;
+    var paintedOvIds = hub._openSeatReplacePaintedIds;
+    var next = out.map(function (slot) {
+      if (!slot || !isOpenRosterSlot(slot.client_name)) return slot;
+      var sStart = normTimeShort(slot.time_start || normTimeKey(slot.time_slot, wd));
+      var sVenue = clean(slot.venue).toLowerCase();
+      var sStaff = canonicalStaffMatchKey(
+        (slotInstructors(slot)[0] || clean(slot.anchor_staff_id) || "")
+      );
+      var best = null;
+      for (var i = 0; i < ovs.length; i++) {
+        var ov = ovs[i];
+        if (!overrideIsReplaceType(ov)) continue;
+        if (clean(ov.session_date) !== isoDate) continue;
+        if (!overrideAnchorIsOpenSlot(ov.anchor_client_id)) continue;
+        var p = overridePayloadObj(ov);
+        if (!overrideReplacementClientId(p) && !overrideReplacementClientName(p)) continue;
+        var oStart =
+          normTimeShort(ov.anchor_start) ||
+          normTimeShort(normTimeKey(ov.anchor_time_slot_label, wd));
+        if (oStart && sStart && oStart !== sStart) continue;
+        var oVenue = clean(ov.anchor_venue).toLowerCase();
+        if (oVenue && sVenue && oVenue !== sVenue) continue;
+        var oStaff = canonicalStaffMatchKey(ov.anchor_staff_id);
+        if (oStaff && sStaff && oStaff !== sStaff) {
+          var aliases = swimfarmInstructorAnchorAliases(ov.anchor_staff_id);
+          if (!aliases.length || aliases.indexOf(sStaff) < 0) continue;
+        }
+        if (
+          !best ||
+          (ov.created_at && (!best.created_at || String(ov.created_at) > String(best.created_at)))
+        ) {
+          best = ov;
+        }
+      }
+      if (!best) return slot;
+      if (best.id) paintedOvIds[String(best.id)] = true;
+      var bp = overridePayloadObj(best);
+      var repId = overrideReplacementClientId(bp);
+      var repName = overrideReplacementClientName(bp);
+      var clientName = repName || resolveRosterClientName(repId) || (repId ? repId.replace(/_/g, " ") : "");
+      if (!clientName) return slot;
+      var rosterName = resolveRosterClientName(canonicalClientSlug(clientName || repId));
+      if (rosterName) clientName = rosterName;
+      return Object.assign({}, slot, {
+        client_name: clientName,
+        __portalScheduleOverride: best,
+        portalOverrideMakeUpTag: overrideIsMakeupReplaceType(best),
+        portalOverrideTrialTag: overrideIsTrialType(best),
+        portalOverrideNewClientTag: overrideIsNewClientReplace(best),
+        portalOverrideDayMoveTag: overrideIsDayReassignReplace(best),
+      });
+    });
+    hub._openSeatReplacePaintedIds = paintedOvIds;
+    return next;
+  }
+
   function overrideIsTrialType(ov) {
     if (!ov || !overrideIsReplaceType(ov)) return false;
     var p = overridePayloadObj(ov);
@@ -2267,6 +2349,7 @@
   function injectOrphanMakeupOverrideSlots(hub, out, isoDate, wd) {
     var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
     if (!ovs.length) return out;
+    var paintedOpen = hub._openSeatReplacePaintedIds || Object.create(null);
     var seenOvIds = Object.create(null);
     var seenRepKeys = Object.create(null);
     for (var i = 0; i < out.length; i++) {
@@ -2282,7 +2365,7 @@
       var ov = ovs[j];
       if (!overrideIsReplaceType(ov)) continue;
       if (clean(ov.session_date) !== isoDate) continue;
-      if (ov.id && seenOvIds[String(ov.id)]) continue;
+      if (ov.id && (seenOvIds[String(ov.id)] || paintedOpen[String(ov.id)])) continue;
       var p = overridePayloadObj(ov);
       if (!overrideReplacementClientId(p) && !overrideReplacementClientName(p)) continue;
       var syn = slotFromMakeupOverride(isoDate, wd, ov);
@@ -2323,6 +2406,8 @@
       var ov = ovs[i];
       if (!overrideIsReplaceType(ov)) continue;
       if (overrideIsTrialType(ov)) continue;
+      /* Seat moves / NEW CLIENT are not absence-makeup displacement. */
+      if (overrideIsDayReassignReplace(ov) || overrideIsNewClientReplace(ov)) continue;
       if (clean(ov.session_date) !== slot.session_date) continue;
       if (overrideAnchorIsOpenSlot(ov.anchor_client_id)) continue;
       if (canonicalClientSlug(ov.anchor_client_id) !== sCid) continue;
@@ -7175,6 +7260,7 @@
         var cb = clean(b && b.client_name) || "";
         return ca.localeCompare(cb, "en", { sensitivity: "base" });
       });
+      out = applyOpenSeatReplaceInPlace(this, out, isoDate, wd);
       out = injectOrphanMakeupOverrideSlots(this, out, isoDate, wd);
       out = suppressOpenSlotsConsumedByMakeupOverrides(
         out,
@@ -11140,7 +11226,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     } else if (st.isAbsent) {
       chips.push('<span class="override-chip override--absent">Absent</span>');
     } else if (st.makeupDisp) {
-      chips.push('<span class="override-chip override--replace">MakeUp</span>');
+      var dispLab =
+        (st.makeupDisp.ov && hubOverrideLabel(st.makeupDisp.ov)) || "MakeUp";
+      chips.push(
+        '<span class="override-chip ' +
+          esc(hubOverrideChipClass(st.makeupDisp.ov) || "override--replace") +
+          '">' +
+          esc(dispLab) +
+          "</span>"
+      );
     } else if (st.isTrial) {
       chips.push('<span class="override-chip override--trial">Trial</span>');
     } else if (st.isNewClient) {
@@ -11815,7 +11909,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           );
         }
         var statusCell = makeupDisp
-          ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip override--replace">MakeUp</span>'
+          ? '<span class="ash-badge ash-badge--booked">Booked</span> <span class="override-chip ' +
+            esc(hubOverrideChipClass(makeupDisp.ov) || "override--replace") +
+            '">' +
+            esc((makeupDisp.ov && hubOverrideLabel(makeupDisp.ov)) || "MakeUp") +
+            "</span>"
           : st.isOpenSlot
           ? htmlOpenSlotStatusBadge(esc)
           : st.isTrial
