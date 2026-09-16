@@ -82,6 +82,7 @@
     if (!s) return "";
     if (s === "amar_rai") return "amar_ra";
     if (s === "zaid_alfadhl" || s === "zaid_al" || s === "zaid_trial" || s === "trial_zaid") return "zaid";
+    if (s === "ayman_el_bakry") return "ayman";
     return s;
   }
 

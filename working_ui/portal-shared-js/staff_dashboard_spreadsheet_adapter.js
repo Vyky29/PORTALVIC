@@ -215,6 +215,7 @@
     steven_ce: "steven",
     yusuf: "yusuf_ah",
     yusef: "yusuf_ah",
+    ayman_el_bakry: "ayman",
   };
 
   /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */

@@ -221,6 +221,7 @@
     trial_zaid: "zaid",
     trial_zaid_alfadhl: "zaid",
     trial_zaid_al: "zaid",
+    ayman_el_bakry: "ayman",
   };
 
   /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */

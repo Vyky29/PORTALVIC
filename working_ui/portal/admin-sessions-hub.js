@@ -468,6 +468,8 @@
     yunis_hussein: "yunis",
     zaid_alfadhl: "zaid",
     zaid_al: "zaid",
+    /* Same CLIENT — finish-booking often stores full legal name vs short roster id. */
+    ayman_el_bakry: "ayman",
     /* Feedback sometimes stores Saib; roster / LOCAL use Saaib. */
     saib: "saaib",
   };
@@ -1996,9 +1998,10 @@
     var p = payload;
     if (!p) return "";
     var toId = p.to_client_id != null ? String(p.to_client_id).trim().toLowerCase() : "";
-    if (toId) return toId;
     var repId = p.replacement_client_id != null ? String(p.replacement_client_id).trim().toLowerCase() : "";
-    return repId || "";
+    var raw = toId || repId || "";
+    /* Canonicalize so "ayman_el_bakry" OV paints onto standing "Ayman" (not a duplicate card). */
+    return raw ? canonicalClientSlug(raw) : "";
   }
 
   function overrideReplacementClientName(payload) {

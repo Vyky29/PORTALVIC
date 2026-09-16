@@ -336,13 +336,19 @@ export function inferServiceKey(serviceName?: string | null, timeLabel?: string 
 }
 
 export function clientKeyFromName(name: string): string {
-  return clean(name, 80)
+  const raw = clean(name, 80)
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 40) || "client";
+  /* Full legal / finish-booking names → short roster ids (avoid duplicate cards). */
+  const ALIAS: Record<string, string> = {
+    "ayman-el-bakry": "ayman",
+    ayman_el_bakry: "ayman",
+  };
+  return ALIAS[raw] || ALIAS[raw.replace(/-/g, "_")] || raw;
 }
 
 export async function loadCompletionByRawToken(
@@ -1522,8 +1528,10 @@ async function ensurePaidBookingScheduleOverride(
   if (!instructor) return "override_skip_staff";
 
   const staffId = instructor.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-  const client = clean(participantName, 80) || (isTrial ? "Trial" : "Participant");
+  let client = clean(participantName, 80) || (isTrial ? "Trial" : "Participant");
   const clientSlug = clientKeyFromName(client).replace(/-/g, "_");
+  /* Prefer short roster label when finish doc used full legal name (Ayman El Bakry → Ayman). */
+  if (clientSlug === "ayman") client = "Ayman";
   const actorId = await resolvePortalInvoiceOwnerUserId(admin);
   if (!actorId) return "override_skip_actor";
 

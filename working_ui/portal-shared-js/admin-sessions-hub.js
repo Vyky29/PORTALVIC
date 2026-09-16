@@ -332,6 +332,8 @@
     rayyan: "rayyan_fi",
     rayyan_f: "rayyan_fi",
     junaid: "junaid_f",
+    /* Finish-booking full name vs short roster id — same CLIENT. */
+    ayman_el_bakry: "ayman",
   };
 
   function canonicalClientSlug(name) {
@@ -1112,9 +1114,9 @@
     var p = payload;
     if (!p) return "";
     var toId = p.to_client_id != null ? String(p.to_client_id).trim().toLowerCase() : "";
-    if (toId) return toId;
     var repId = p.replacement_client_id != null ? String(p.replacement_client_id).trim().toLowerCase() : "";
-    return repId || "";
+    var raw = toId || repId || "";
+    return raw ? canonicalClientSlug(raw) : "";
   }
 
   function overrideReplacementClientName(payload) {

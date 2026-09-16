@@ -582,6 +582,8 @@
     yosiyas_sium: "yossi",
     /* Office short label — never show full surname on boards. */
     yunis_hussein: "yunis",
+    /* Finish-booking legal name vs short roster id (Wed Acton Ayman). */
+    ayman_el_bakry: "ayman",
     // Worker display label is "Eddie Mc"; collapse its slug back to the roster id "eddie".
     eddie_mc: "eddie",
     rayyan_fi: "rayyan_f",
