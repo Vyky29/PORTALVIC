@@ -575,6 +575,36 @@
       }
       return list;
     }
+    /**
+     * Hire Emmanuel Amoakohene: did not work Sun 6 Sep (John had the Hub book).
+     * Wed 9 + Fri 11 Tinashe were shadowing (£13.50). Contract £18/h from 13 Sep.
+     */
+    const EMMANUEL_HIRE_PAID_FROM_ISO = "2026-09-13";
+    const EMMANUEL_HIRE_SHADOW_ISOS = new Set(["2026-09-09", "2026-09-11"]);
+    const EMMANUEL_HIRE_SKIP_ISOS = new Set(["2026-09-06"]);
+    function isEmmanuelHireRosterKey(key) {
+      return String(key != null ? key : state.staffRosterKey || "").trim().toLowerCase() === "emmanuel";
+    }
+    function emmanuelHireTimesheetIncludeIso(iso) {
+      const d = String(iso || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return true;
+      if (EMMANUEL_HIRE_SKIP_ISOS.has(d)) return false;
+      if (d < EMMANUEL_HIRE_PAID_FROM_ISO) return EMMANUEL_HIRE_SHADOW_ISOS.has(d);
+      return true;
+    }
+    function applyEmmanuelHireShadowingEntry(e) {
+      if (!e) return e;
+      const iso = String(e.date || "").slice(0, 10);
+      if (!EMMANUEL_HIRE_SHADOW_ISOS.has(iso)) return e;
+      const timeRange = String(e.timeRange || "").trim();
+      e.service = "Shadowing";
+      e.serviceName = "Shadowing";
+      e.serviceLabel = timeRange ? timeRange + " Shadowing" : "Shadowing";
+      e.role = "Shadowing";
+      e.roleLabel = "Shadowing";
+      e.rate = 13.5;
+      return e;
+    }
     function fixedMonthlySalaryForRosterKey(key) {
       const k = String(key || "").trim().toLowerCase();
       if (k === "roberto" && robertoHybridPayActive(k)) return ROBERTO_PT_MONTHLY;
@@ -682,6 +712,7 @@
         roleScales: { "Support Worker": "Scale 2" },
       },
       berta: { hourly_rate: 30, role_label: "Service Lead" },
+      /* Emmanuel Amoakohene: £18 from 13 Sep 2026 (Wed 9 + Fri 11 shadowing @ £13.50). */
       emmanuel: { hourly_rate: 18, role_label: "Support Worker 1" },
       luliya: {
         roleRates: { "Support Worker": 18, "Swimming Instructor": 22 },
@@ -1296,6 +1327,9 @@
     }
 
     function timesheetSessionActiveOnCalendarDate(session, dateKey, rosterKey) {
+      if (isEmmanuelHireRosterKey(rosterKey) && !emmanuelHireTimesheetIncludeIso(dateKey)) {
+        return false;
+      }
       const ptd =
         typeof window !== "undefined" ? window.PortalTermCalendarDashboard : null;
       if (
@@ -1618,6 +1652,7 @@
       const k = normTimesheetStaffKey(v);
       if (k === "lulia" || k === "aida" || k === "stf021") return "luliya";
       if (k === "yousef" || k === "yusef") return "youssef";
+      if (k === "emanuel") return "emmanuel";
       return k;
     }
 
@@ -1822,6 +1857,9 @@
 
     function timesheetDayRowsForPay(sessions, dateObj, rosterKey) {
       const dateKey = isoDate(dateObj);
+      if (isEmmanuelHireRosterKey(rosterKey) && !emmanuelHireTimesheetIncludeIso(dateKey)) {
+        return [];
+      }
       /* Keep open seats (status available) for paid hours — staff still worked the band.
          Closed seats stay out. Feedback completion treats available as done. */
       const rosterSessions = sessionsForCalendarDate(sessions, dateObj).filter((s) => {
@@ -2000,7 +2038,16 @@
         .flatMap((d) => dailyEntriesFromSessions(sessionsWithCover, d, reviewMap, state.staffRosterKey))
         .filter(Boolean);
       if (Array.isArray(extraSessions) && extraSessions.length) {
-        state.entries = state.entries.concat(extraSessions);
+        const haveIso = new Set(state.entries.map((e) => String((e && e.date) || "").slice(0, 10)));
+        state.entries = state.entries.concat(
+          extraSessions.filter((e) => {
+            const iso = String((e && e.date) || "").slice(0, 10);
+            if (isEmmanuelHireRosterKey() && EMMANUEL_HIRE_SHADOW_ISOS.has(iso) && haveIso.has(iso)) {
+              return false;
+            }
+            return true;
+          })
+        );
       }
       const offDates = Object.create(null);
       (Array.isArray(dayOffRows) ? dayOffRows : []).forEach((r) => {
@@ -2015,6 +2062,9 @@
         });
       }
       state.entries.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      if (isEmmanuelHireRosterKey()) {
+        state.entries = state.entries.filter((e) => emmanuelHireTimesheetIncludeIso(e && e.date));
+      }
       const lateDateSet = new Set(
         (Array.isArray(state.lateFeedbackDates) ? state.lateFeedbackDates : [])
           .map((d) => String(d || "").slice(0, 10))
@@ -2031,6 +2081,7 @@
         if (e.rate == null) {
           e.rate = flat != null ? flat : rateForRole(e.role);
         }
+        if (isEmmanuelHireRosterKey()) applyEmmanuelHireShadowingEntry(e);
         const iso = String(e.date || "").slice(0, 10);
         const todayIso = isoDate(londonPayrollAnchor(new Date()));
         e.upcoming = !!(/^\d{4}-\d{2}-\d{2}$/.test(iso) && /^\d{4}-\d{2}-\d{2}$/.test(todayIso) && iso > todayIso);
@@ -3098,7 +3149,7 @@
 
     /** Training/shadowing sessions an admin added via schedule_overrides (override_type='session_add'). */
     async function fetchTrainingShadowingEntries(supabase, rosterKey, startIso, endIso){
-      const key = String(rosterKey || "").trim().toLowerCase();
+      const key = timesheetNormStaffKey(rosterKey);
       if (!key) return [];
       const { data, error } = await supabase
         .from("schedule_overrides")
@@ -3109,7 +3160,7 @@
         .lte("session_date", endIso);
       if (error || !data) return [];
       return data
-        .filter((r) => String(r.anchor_staff_id || "").trim().toLowerCase() === key)
+        .filter((r) => timesheetNormStaffKey(r.anchor_staff_id) === key)
         .map((r) => {
           const kind = String((r.payload && r.payload.kind) || "").toLowerCase();
           const label = kind === "shadowing" ? "Shadowing" : "Training";
