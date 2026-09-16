@@ -347,26 +347,28 @@
   var SERINE_ACTON_TUE_AQUATIC_FROM = "2026-09-15";
 
   /**
-   * Acton Tue pool notes: match Summer where known (Junaid Lane SE; Adam Mahmmoud = Teaching Pool).
+   * Acton Tue pool notes (office 16 Sep): summer keep / FIX / NEW.
+   * Abate brothers Teaching Pool; Logan Teaching Pool; Rayan Ta Teaching Pool;
+   * Ayman always Lane (DE); Kareena Lane (SE).
    * Overview seats: 1 Aurora · 2 Javier · 3 Roberto · 4 Luliya.
    * Brothers: Aydaan Javier 6–6.30; Adaam Luliya 6–6.30. Aurora 5.30 open.
    */
   var AUTUMN_ACTON_TUESDAY_BOARD = [
-    { staff: "ROBERTO", name: "Christian Abate", time: "4 to 4.30", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "Christian Abate", time: "4 to 4.30", area: "Teaching Pool" },
     { staff: "ROBERTO", name: "Serine", time: "4.30 to 5.30", area: "Lane (DE)" },
-    { staff: "ROBERTO", name: "Rayan Ta", time: "5.30 to 6", area: "Lane (DE)" },
+    { staff: "ROBERTO", name: "Rayan Ta", time: "5.30 to 6", area: "Teaching Pool" },
     { staff: "ROBERTO", name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
     /* On shift from 4 — empty seat is open (No participant), never Closed. */
-    { staff: "LULIYA", name: "Emmanuel Abate", time: "4 to 4.30", area: "Lane (DE)" },
+    { staff: "LULIYA", name: "Emmanuel Abate", time: "4 to 4.30", area: "Teaching Pool" },
     { staff: "LULIYA", name: "No participant", time: "4.30 to 5", area: "Lane (DE)" },
-    { staff: "LULIYA", name: "Logan", time: "5 to 5.30", area: "Lane (DE)" },
+    { staff: "LULIYA", name: "Logan", time: "5 to 5.30", area: "Teaching Pool" },
     { staff: "LULIYA", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
     { staff: "LULIYA", name: "Adaam Ah", time: "6 to 6.30", area: "Teaching Pool" },
     /* Invoice INV-P-0139: Aquatic 60' Tue 4–5 Acton (same as Thu). */
     { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (DE)" },
     { staff: "JAVIER", name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
     /* Kareena (Chopi) from Tue 15 Sep — Private one-off; was Rayan Ta (now Roberto 5.30). */
-    { staff: "JAVIER", name: "Kareena", time: "5.30 to 6", area: "Lane (DE)", bookedFrom: "2026-09-15" },
+    { staff: "JAVIER", name: "Kareena", time: "5.30 to 6", area: "Lane (SE)", bookedFrom: "2026-09-15" },
     { staff: "JAVIER", name: "Aydaan Ah", time: "6 to 6.30", area: "Lane (SE)" },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
     { staff: "AURORA", name: "Adam Mahmmoud", time: "4.30 to 5", area: "Teaching Pool" },
@@ -1397,11 +1399,11 @@
         };
       });
     }
-    /* Pool notes follow Summer (Adam Teaching Pool; Junaid + Aydaan Lane SE). */
+    /* Pool notes: Logan Teaching Pool; Rayan Ta Teaching Pool; Ayman Lane (DE). */
     var roberto = [
       { name: "Ayman", time: "4 to 4.30", area: "Lane (DE)" },
       { name: "Adam Mahmmoud", time: "4.30 to 5", area: "Teaching Pool" },
-      { name: "Logan", time: "5 to 5.30", area: "Lane (DE)" },
+      { name: "Logan", time: "5 to 5.30", area: "Teaching Pool" },
       { name: "Junaid", time: "5.30 to 6", area: "Lane (SE)" },
       { name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
     ];
@@ -1414,7 +1416,7 @@
     var javiPalankas = [
       { name: "Ayman", time: "4.30 to 5", area: "Lane (DE)" },
       { name: "Linda", time: "5 to 5.30", area: "Lane (SE)" },
-      { name: "Rayan Ta", time: "5.30 to 6", area: "Lane (DE)" },
+      { name: "Rayan Ta", time: "5.30 to 6", area: "Teaching Pool" },
     ];
     return []
       .concat(mapBook("ROBERTO", roberto))
@@ -2533,25 +2535,25 @@
    * Yunis + Maiyar with Roberto; Joelle 5.30–6.30 Aurora + Simon 2:1 (both halves).
    */
   var AUTUMN_ACTON_THURSDAY_BOARD = [
-    { staff: "ROBERTO", name: "Tom", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "ROBERTO", name: "Tom", time: "4 to 4.30", area: "Lane (SE)" },
     /* Yassir last session Thu 10 Sep — standing open from Thu 17 (dated row keeps today). */
-    { staff: "ROBERTO", name: "No participant", time: "4.30 to 5", area: "Teaching Pool" },
+    { staff: "ROBERTO", name: "No participant", time: "4.30 to 5", area: "Lane (SE)" },
     { staff: "ROBERTO", name: "Yossi", time: "5 to 5.30", area: "Lane (DE)" },
     { staff: "ROBERTO", name: "Yunis", time: "5.30 to 6", area: "Lane (SE)" },
-    { staff: "ROBERTO", name: "Maiyar", time: "6 to 6.30", area: "Lane (DE)" },
-    { staff: "SIMON", name: "Elijah", time: "4 to 4.30", area: "Teaching Pool" },
-    { staff: "SIMON", name: "No participant", time: "4.30 to 5", area: "Teaching Pool" },
-    { staff: "SIMON", name: "Yuri", time: "5 to 5.30", area: "Teaching Pool" },
-    { staff: "SIMON", name: "Joelle", time: "5.30 to 6", area: "Teaching Pool" },
-    { staff: "SIMON", name: "Joelle", time: "6 to 6.30", area: "Teaching Pool" },
-    { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Teaching Pool" },
-    { staff: "JAVIER", name: "Khalid Ab", time: "5 to 5.30", area: "Teaching Pool" },
+    { staff: "ROBERTO", name: "Maiyar", time: "6 to 6.30", area: "Teaching Pool" },
+    { staff: "SIMON", name: "Elijah", time: "4 to 4.30", area: "Lane (SE)" },
+    { staff: "SIMON", name: "No participant", time: "4.30 to 5", area: "Lane (SE)" },
+    { staff: "SIMON", name: "Yuri", time: "5 to 5.30", area: "Lane (SE)" },
+    { staff: "SIMON", name: "Joelle", time: "5.30 to 6", area: "Lane (DE)" },
+    { staff: "SIMON", name: "Joelle", time: "6 to 6.30", area: "Lane (DE)" },
+    { staff: "JAVIER", name: "Ayman", time: "4 to 5", area: "Lane (DE)" },
+    { staff: "JAVIER", name: "Khalid Ab", time: "5 to 5.30", area: "Lane (SE)" },
     /* Mohamed Yusuf / Anab — seated CLIENT (INV-P-0478); Thu Acton 5.30–6.30 Javier. */
-    { staff: "JAVIER", name: "Mohamed", time: "5.30 to 6.30", area: "Lane (DE)" },
-    { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Teaching Pool" },
-    { staff: "AURORA", name: "Aqsa", time: "4.30 to 5.30", area: "Teaching Pool" },
-    { staff: "AURORA", name: "Joelle", time: "5.30 to 6", area: "Teaching Pool" },
-    { staff: "AURORA", name: "Joelle", time: "6 to 6.30", area: "Teaching Pool" },
+    { staff: "JAVIER", name: "Mohamed", time: "5.30 to 6.30", area: "Lane (SE)" },
+    { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
+    { staff: "AURORA", name: "Aqsa", time: "4.30 to 5.30", area: "Lane (DE)" },
+    { staff: "AURORA", name: "Joelle", time: "5.30 to 6", area: "Lane (DE)" },
+    { staff: "AURORA", name: "Joelle", time: "6 to 6.30", area: "Lane (DE)" },
   ];
 
   function autumnActonThursdayStandingRows() {
@@ -2905,8 +2907,8 @@
     { staff: "JAVIER", name: "Cyrus", time: "4 to 4.30", area: "Teaching Pool" },
     { staff: "JAVIER", name: "Cyrus", time: "4.30 to 5", area: "Teaching Pool" },
     /* Wed Acton: first session Wed 16 Sep (finish-booking). Two 30' seats (Schedule keeps halves). */
-    { staff: "JAVIER", name: "Ayman", time: "5 to 5.30", area: "Teaching Pool", bookedFrom: "2026-09-16" },
-    { staff: "JAVIER", name: "Ayman", time: "5.30 to 6", area: "Teaching Pool", bookedFrom: "2026-09-16" },
+    { staff: "JAVIER", name: "Ayman", time: "5 to 5.30", area: "Lane (DE)", bookedFrom: "2026-09-16" },
+    { staff: "JAVIER", name: "Ayman", time: "5.30 to 6", area: "Lane (DE)", bookedFrom: "2026-09-16" },
     { staff: "JAVIER", name: "Kayden", time: "6 to 6.30", area: "Teaching Pool" },
   ];
 
