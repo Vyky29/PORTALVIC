@@ -215,6 +215,30 @@ const admin = createClient(
   );
 }
 
+/* --- 6) Angel covering Carlos Sun 20 must not be scrubbed as "no Autumn session" --- */
+{
+  const iso = "2026-09-20";
+  const { data: ovs } = await admin
+    .from("schedule_overrides")
+    .select("override_type,anchor_staff_id,anchor_client_id,payload,status")
+    .eq("session_date", iso)
+    .eq("status", "active");
+  const angelCovers = (ovs || []).filter((o) => {
+    if (String(o.override_type || "") !== "instructor_reassign") return false;
+    if (String(o.anchor_staff_id || "").toLowerCase() !== "carlos") return false;
+    const cover = String((o.payload as { covering_staff_name?: string })?.covering_staff_name || "");
+    return /^angel$/i.test(cover.trim());
+  });
+  ok("Sun20 Angel covers Carlos climb seats in DB", angelCovers.length >= 5, "n=" + angelCovers.length);
+  const hub = readFileSync("working_ui/portal/admin-sessions-hub.js", "utf8");
+  ok(
+    "hub omit keeps dated cover for no-session staff",
+    hub.includes("Do NOT omit when they are a real dated cover") &&
+      hub.includes("isDatedCover"),
+  );
+}
+
+
 if (fails.length) {
   console.log("\nSMOKE FAIL (" + fails.length + ")");
   for (const f of fails) console.log(" - " + f);

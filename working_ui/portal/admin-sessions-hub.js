@@ -3823,7 +3823,11 @@
       if (slotMatchesOverviewOmitRule(slot, omitRules[oi])) return true;
     }
     if (shouldOmitAutoMergedSwimDuplicate(slot)) return true;
-    /* Angel / Giuseppe / Andres have no Autumn sessions — never paint their leftover summer seats. */
+    /*
+     * Angel / Giuseppe / Andres have no Autumn standing — scrub summer leftovers.
+     * Do NOT omit when they are a real dated cover (e.g. Angel → Carlos Westway Sun 20):
+     * that seat still owes Feedbacks and must count in expected units.
+     */
     try {
       var PRC = global.PortalRosterCanonical;
       if (PRC && typeof PRC.isAutumnNoSessionStaffKey === "function") {
@@ -3836,7 +3840,15 @@
               break;
             }
           }
-          if (!anyAutumn) return true;
+          if (!anyAutumn) {
+            var isDatedCover =
+              !!(slot.portalInstructorReassigned ||
+                slot.portalCoveringStaffId ||
+                slot.portalCoveringStaffName ||
+                (slot.__portalScheduleOverride &&
+                  overrideIsInstructorReassignType(slot.__portalScheduleOverride)));
+            if (!isDatedCover) return true;
+          }
         }
       }
     } catch (_omitNs) {}
