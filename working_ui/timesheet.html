@@ -1259,8 +1259,10 @@
       if (!want) return "";
       const TEMPLATE_START = "2026-04-13";
       const TEMPLATE_END = "2026-07-19";
+      const iso = String(dateKey || "").slice(0, 10);
       let bestSummer = "";
       let bestWeekend = "";
+      let bestAutumnOrEqual = "";
       const weekendStamps =
         (typeof window !== "undefined" &&
           window.PortalRosterCanonical &&
@@ -1282,9 +1284,15 @@
         if (weekendWant && sd === String(weekendWant).slice(0, 10)) {
           bestWeekend = sd;
         }
+        /* Autumn-only staff (e.g. Simon Thu Acton from 10 Sep): no summer snap —
+           use latest same-weekday dated row on/before this calendar day. */
+        if (/^\d{4}-\d{2}-\d{2}$/.test(iso) && sd <= iso && sd >= "2026-09-01") {
+          if (!bestAutumnOrEqual || sd > bestAutumnOrEqual) bestAutumnOrEqual = sd;
+        }
       });
       if (bestWeekend) return bestWeekend;
-      return bestSummer;
+      if (bestSummer) return bestSummer;
+      return bestAutumnOrEqual;
     }
 
     function timesheetSessionActiveOnCalendarDate(session, dateKey, rosterKey) {
@@ -1363,10 +1371,17 @@
       const exactActive = exact.filter((s) =>
         timesheetSessionActiveOnCalendarDate(s, dateKey, rosterKey)
       );
-      if (exactActive.length && standing.length) {
-        return timesheetMergeExactAndStandingSessions(exactActive, standing, dateObj);
+      /* If every exact seat is closed, fall back to standing (Aurora Thu Acton was
+         all-closed dated rows → empty timesheet while day-offs still painted). */
+      const exactOpen = exactActive.filter((s) => {
+        const st = String((s && s.status) || "").toLowerCase();
+        return st !== "closed";
+      });
+      const exactForMerge = exactOpen.length ? exactActive : [];
+      if (exactForMerge.length && standing.length) {
+        return timesheetMergeExactAndStandingSessions(exactForMerge, standing, dateObj);
       }
-      if (exactActive.length) return exactActive;
+      if (exactForMerge.length) return exactForMerge;
       if (standing.length) return standing;
       /* Legacy undated-only rosters (no session_date anywhere). */
       const rosterUsesDates = list.some((s) =>
