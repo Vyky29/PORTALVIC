@@ -641,13 +641,13 @@
    * Fallback when capacity chain wiped bundle starts (admin Overview often has no bundle).
    * Weekend Multi/Aquatic standing for Adaam / Aydaan / Amaar began Autumn Sun 6 Sep —
    * do NOT stamp weekday Acton NEW CLIENT (Mon/Tue 14–15) here or Overview hides Sun 6/13 seats.
-   * Muhammad climbing trial first day was Sun 13 Sep.
+   * Muhammad aquatic Mon Northolt from Mon 7; climb trial Sun 13 is seat trialDate only.
    */
   var ASH_FALLBACK_CLIENT_STARTS = {
     "Emmanuel Abate": "2026-09-15",
     "Christian Abate": "2026-09-15",
     "Amaar Ah": "2026-09-06",
-    Muhammad: "2026-09-13",
+    Muhammad: "2026-09-07",
     "Adaam Ah": "2026-09-06",
     "Aydaan Ah": "2026-09-06",
     /* Tue Acton Javier 4–5 from Autumn Tue 8; Wed Acton 5–6 NEW CLIENT is 16 Sep (row bookedFrom + scrub). */

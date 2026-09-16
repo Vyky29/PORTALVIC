@@ -1049,7 +1049,8 @@
         "Christian Abate": "2026-09-15",
         /* Weekend standing from Autumn Sun 6; weekday Acton NEW CLIENT is seat bookedFrom 15 Sep. */
         "Amaar Ah": "2026-09-06",
-        Muhammad: "2026-09-13",
+        /* Aquatic Mon Northolt Dan from Mon 7; climb trial Alex Sun 13 is trialDate on that seat only. */
+        Muhammad: "2026-09-07",
         "Adaam Ah": "2026-09-06",
         "Aydaan Ah": "2026-09-06",
         /* Tue Javier 4–5 from 8 Sep; Wed 5–6 NEW CLIENT stays 16 Sep via bookedFrom/scrub. */
