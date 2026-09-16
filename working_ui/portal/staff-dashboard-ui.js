@@ -2973,7 +2973,6 @@
       try{ if(typeof window !== 'undefined') window.__PORTAL_TERM_REBUILD_IN_PROGRESS__ = true; }catch(_){}
       try{
       const worked = Array.isArray(dashboardData.termWorkedWeekdays) ? dashboardData.termWorkedWeekdays.map(Number) : [];
-      if(!worked.length) return;
       const baseRealTerm = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
       const endMap = {};
       const fbMap = {};
@@ -3005,9 +3004,10 @@
         || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.toIso
           && PortalTermCalendarDashboard.toIso(staffId))
         || String(t.lastDate || '2026-07-17').slice(0, 10);
+      /* Cover-only staff (Javi Palankas): empty standing weekdays — still paint cover ISO greens. */
       const cur = new Date(String(viewFrom) + 'T12:00:00');
       const last = new Date(String(viewTo) + 'T12:00:00');
-      while(cur.getTime() <= last.getTime()){
+      while(worked.length && cur.getTime() <= last.getTime()){
         if(opts.requestId && opts.requestId !== window.__PORTAL_TERM_REBUILD_REQ__) return;
         const w = cur.getDay();
         if(!worked.includes(w)){
@@ -3106,13 +3106,15 @@
         return out;
       })();
       termExtraCatchUpIsoKeys.forEach(function(isoKey){
-        if(Object.prototype.hasOwnProperty.call(fbMap, isoKey)) return;
         const curExtra = new Date(String(isoKey) + 'T12:00:00');
         const w = curExtra.getDay();
         const isExtraCatchUp = portalTermStaffExtraCalendarDates(staffId).indexOf(isoKey) >= 0;
         const isCoverDay = typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
           && portalStaffHasInstructorCoverOnCalendarDate(isoKey, staffId);
         if(!isExtraCatchUp && !isCoverDay && !worked.includes(w)) return;
+        /* Cover / catch-up days always re-resolve — standing weekday loop may have skipped them
+           (empty worked[]) or left a stale pending while feedback is already submitted. */
+        if(!isCoverDay && !isExtraCatchUp && Object.prototype.hasOwnProperty.call(fbMap, isoKey)) return;
         const dayWord = curExtra.toLocaleDateString('en-GB', { weekday: 'long' });
         if(portalTermDateForcedComplete(isoKey, staffId)) {
           fbMap[isoKey] = 'complete';
@@ -3221,7 +3223,20 @@
       }catch(_win){}
 
       const worked = Array.isArray(dashboardData.termWorkedWeekdays) ? dashboardData.termWorkedWeekdays.map(Number) : [];
-      if(!worked.length) return;
+      const viewFromProbe = dashboardData.termDashboardCalendarFrom
+        || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.fromIso())
+        || String(t.termResumeDate || '2026-06-01').slice(0, 10);
+      const viewToProbe = dashboardData.termDashboardCalendarTo
+        || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.toIso
+          && PortalTermCalendarDashboard.toIso(staffId))
+        || String(t.lastDate || '2026-07-17').slice(0, 10);
+      const coverProbe = (typeof portalStaffInstructorCoverCalendarIsoKeys === 'function'
+        ? portalStaffInstructorCoverCalendarIsoKeys(staffId, viewFromProbe, viewToProbe)
+        : []) || [];
+      const extraProbe = (typeof portalTermStaffExtraCalendarDates === 'function'
+        ? portalTermStaffExtraCalendarDates(staffId)
+        : []) || [];
+      if(!worked.length && !coverProbe.length && !extraProbe.length) return;
       const rebuildSig = portalTermRebuildInputSignature()
         + (opts.throughTodayOnly ? '|throughToday' : '|full');
       if(typeof window !== 'undefined'
@@ -3376,13 +3391,13 @@
           if(requestId && requestId !== window.__PORTAL_TERM_REBUILD_REQ__) return;
           const isoKey = termExtraCatchUpIsoKeys[ei];
           if(opts.throughTodayOnly && todayKeyCap && isoKey > todayKeyCap) continue;
-          if(Object.prototype.hasOwnProperty.call(fbMap, isoKey)) continue;
           const curExtra = new Date(String(isoKey) + 'T12:00:00');
           const w = curExtra.getDay();
           const isExtraCatchUp = portalTermStaffExtraCalendarDates(staffId).indexOf(isoKey) >= 0;
           const isCoverDay = typeof portalStaffHasInstructorCoverOnCalendarDate === 'function'
             && portalStaffHasInstructorCoverOnCalendarDate(isoKey, staffId);
           if(!isExtraCatchUp && !isCoverDay && !worked.includes(w)) continue;
+          if(!isCoverDay && !isExtraCatchUp && Object.prototype.hasOwnProperty.call(fbMap, isoKey)) continue;
           const dayWord = curExtra.toLocaleDateString('en-GB', { weekday: 'long' });
           if(portalTermDateForcedComplete(isoKey, staffId)) {
             fbMap[isoKey] = 'complete';

@@ -8295,6 +8295,47 @@
         }catch(_){}
         return info;
       }
+      function portalDisplayNameForNextSessionClient(clientId, notes, ov){
+        var cid = String(clientId || '').trim();
+        if(!cid) return '';
+        var low = cid.toLowerCase();
+        var slug = low.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        var book = notes && typeof notes === 'object' ? notes : null;
+        if(book){
+          var hit = book[cid] || book[low] || book[slug] || book[slug.replace(/_/g, ' ')];
+          if(hit && hit.name) return String(hit.name).trim();
+          try{
+            if(typeof portalTodayClientSlugCanon === 'function'){
+              var canon = portalTodayClientSlugCanon(cid);
+              if(canon && book[canon] && book[canon].name) return String(book[canon].name).trim();
+            }
+          }catch(_){}
+          var keys = Object.keys(book);
+          for(var i = 0; i < keys.length; i++){
+            var row = book[keys[i]];
+            if(!row || !row.name) continue;
+            var nm = String(row.name).trim().toLowerCase();
+            if(nm === low || nm.replace(/[^a-z0-9]+/g, '_') === slug) return String(row.name).trim();
+          }
+        }
+        try{
+          if(ov && typeof portalClientDisplayNameForOverride === 'function'){
+            var fromOv = portalClientDisplayNameForOverride(ov);
+            if(fromOv) return fromOv;
+          }
+        }catch(_){}
+        try{
+          var A = window.StaffDashboardSpreadsheetAdapter;
+          if(A && typeof A.canonicalParticipantClientId === 'function'){
+            var c2 = A.canonicalParticipantClientId(cid);
+            if(c2 && book && book[c2] && book[c2].name) return String(book[c2].name).trim();
+          }
+        }catch(_){}
+        /* "jack w" / "adam_ab" → Jack W / Adam Ab */
+        return cid.replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/\b([a-z])/g, function(m, ch){
+          return ch.toUpperCase();
+        });
+      }
       function portalBuildNextSessionRows(staffId, fromNow, model, notes, infoOpt){
         var info = infoOpt || portalFindNextSessionCalendarInfo(staffId, fromNow, model);
         if(!info) return [];
@@ -8322,7 +8363,7 @@
                 nameFromReplace = portalOverrideReplacementClientName(ov.payload);
               }
             }
-            var c = (notes || {})[effClientId] || (nameFromReplace ? { name: nameFromReplace, avatarFile: '' } : {});
+            var c = (notes || {})[effClientId] || {};
             var slotRaw = String(s.timeSlotLabel || '').trim();
             var slot = typeof stripMeridiemFromSlotLabel === 'function' ? stripMeridiemFromSlotLabel(slotRaw) : slotRaw;
             var activity = String(s.activity || s.rosterService || 'Swimming').trim();
@@ -8411,7 +8452,16 @@
                 futureOverrideTone = String(ovMeta.tone || '').trim();
               }
             }
-            var displayName = c.name || nameFromReplace || (s.status === 'closed' ? 'Closed' : 'NO PARTICIPANT');
+            var displayName = nameFromReplace
+              || (c && c.name)
+              || portalDisplayNameForNextSessionClient(effClientId, notes, ov)
+              || (s.status === 'closed' ? 'Closed' : '');
+            if(!displayName || /^no participant$/i.test(displayName)){
+              if(effClientId && effClientId !== 'available' && effClientId !== 'closed'){
+                displayName = portalDisplayNameForNextSessionClient(effClientId, notes, ov) || displayName;
+              }
+              if(!displayName) displayName = 'NO PARTICIPANT';
+            }
             var photoUrl = typeof resolveParticipantPhotoUrl === 'function'
               ? resolveParticipantPhotoUrl(displayName, effClientId)
               : '';
