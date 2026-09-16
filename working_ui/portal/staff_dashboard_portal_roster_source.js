@@ -415,7 +415,8 @@
         prev &&
         Array.isArray(prev.rows) &&
         prev.rows.length &&
-        !prev.capacityChainStaffScoped
+        !prev.capacityChainStaffScoped &&
+        !opts.force
       ) {
         dispatchStaffDashboardSourceUpdated();
         return;

@@ -326,10 +326,10 @@
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=roster-19c3aeeb8d"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260906-yunis-short"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260903-luliya-open-stamp"></script>
-  <script src="/portal/portal_roster_canonical.js?v=20260911-anas-javi-cover"></script>
+  <script src="/portal/portal_roster_canonical.js?v=20260916-timesheet-roberto"></script>
   <script src="/portal/portal_madre_canonical.js?v=20260622-madre-live"></script>
   <script src="/portal/portal_madre_fold.js?v=20260903-cover-needed"></script>
-  <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260705-live-madre-autorefresh"></script>
+  <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260916-timesheet-roberto"></script>
   <script src="/portal/portal_staff_shift_window.js?v=20260909-michelle-1045"></script>
   <script src="/portal/portal_staff_lead_aquatic_slots.js?v=20260805-cover-half-merge"></script>
 </head>
@@ -1247,15 +1247,133 @@
       }
     }
 
+    /**
+     * Prefer exact session_date rows for the calendar day. When missing (or sparse),
+     * project weekday standing templates the same way Overview/Services do — summer
+     * MADRE dates are standing snaps, not "only that summer day". Without this,
+     * Autumn timesheets only show days that happen to have a dated portal_roster_rows
+     * overlay (e.g. Roberto Sep showing Tue 8 / Wed 9 / Wed 16 only).
+     */
+    function timesheetStandingSnapIsoForDow(sessions, dayName, dateKey) {
+      const want = String(dayName || "").trim();
+      if (!want) return "";
+      const TEMPLATE_START = "2026-04-13";
+      const TEMPLATE_END = "2026-07-19";
+      let bestSummer = "";
+      let bestWeekend = "";
+      const weekendStamps =
+        (typeof window !== "undefined" &&
+          window.PortalRosterCanonical &&
+          window.PortalRosterCanonical.WEEKEND_STANDING_ISO) ||
+        null;
+      const weekendWant =
+        weekendStamps &&
+        (weekendStamps[want.toLowerCase()] ||
+          weekendStamps[String(want || "").trim()]);
+      (sessions || []).forEach((s) => {
+        if (String((s && s.day) || "").trim() !== want) return;
+        const sd = String((s && s.session_date) || "")
+          .trim()
+          .slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(sd)) return;
+        if (sd >= TEMPLATE_START && sd <= TEMPLATE_END) {
+          if (!bestSummer || sd > bestSummer) bestSummer = sd;
+        }
+        if (weekendWant && sd === String(weekendWant).slice(0, 10)) {
+          bestWeekend = sd;
+        }
+      });
+      if (bestWeekend) return bestWeekend;
+      return bestSummer;
+    }
+
+    function timesheetSessionActiveOnCalendarDate(session, dateKey, rosterKey) {
+      const ptd =
+        typeof window !== "undefined" ? window.PortalTermCalendarDashboard : null;
+      if (
+        ptd &&
+        typeof ptd.staffSessionServiceActiveOnDate === "function" &&
+        rosterKey
+      ) {
+        return !!ptd.staffSessionServiceActiveOnDate(rosterKey, session, dateKey);
+      }
+      return true;
+    }
+
+    function timesheetMergeExactAndStandingSessions(exact, standing, dateObj) {
+      const out = [];
+      const seen = new Set();
+      (exact || []).concat(standing || []).forEach((s) => {
+        if (!s) return;
+        const k = timesheetCoverSessionDedupeKey(s, dateObj);
+        if (seen.has(k)) return;
+        seen.add(k);
+        out.push(s);
+      });
+      return out;
+    }
+
     function sessionsForCalendarDate(sessions, dateObj) {
       const dateKey = isoDate(dateObj);
       const dayName = WEEKDAY[dateObj.getDay()];
       const list = sessions || [];
-      const dated = list.filter((s) => String(s.session_date || "").trim().slice(0, 10) === dateKey);
-      if (dated.length) return dated;
-      const rosterUsesDates = list.some((s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s.session_date || "").trim().slice(0, 10)));
-      if (rosterUsesDates) return [];
-      return list.filter((s) => String(s.day || "").trim() === dayName);
+      const rosterKey = String(state.staffRosterKey || "")
+        .trim()
+        .toLowerCase();
+      const exact = list.filter(
+        (s) => String(s.session_date || "").trim().slice(0, 10) === dateKey
+      );
+      const sameDow = list.filter((s) => String(s.day || "").trim() === dayName);
+      const undated = sameDow.filter(
+        (s) =>
+          !/^\d{4}-\d{2}-\d{2}$/.test(String(s.session_date || "").trim().slice(0, 10))
+      );
+      const snapIso = timesheetStandingSnapIsoForDow(list, dayName, dateKey);
+      let standing = undated.length
+        ? undated
+        : snapIso
+          ? sameDow.filter(
+              (s) => String(s.session_date || "").trim().slice(0, 10) === snapIso
+            )
+          : [];
+      /* Do not project a standing snap onto its own calendar day twice. */
+      if (snapIso && snapIso === dateKey) standing = [];
+      const canon =
+        typeof window !== "undefined" ? window.PortalRosterCanonical : null;
+      const week1Dc =
+        canon && typeof canon.isAutumnWeek1DcIso === "function" && canon.isAutumnWeek1DcIso(dateKey);
+      const fadiAbsentDc =
+        canon &&
+        typeof canon.isFadiAbsentDcBoardIso === "function" &&
+        canon.isFadiAbsentDcBoardIso(dateKey);
+      if ((week1Dc || fadiAbsentDc) && standing.length) {
+        standing = standing.filter((s) => {
+          if (canon && typeof canon.isAutumnDcStandingTemplateRow === "function") {
+            return !canon.isAutumnDcStandingTemplateRow({
+              service: s.rosterService || s.service || s.activity,
+              session_date: s.session_date,
+            });
+          }
+          return !/day\s*centre/i.test(String(s.rosterService || s.service || s.activity || ""));
+        });
+      }
+      standing = standing.filter((s) =>
+        timesheetSessionActiveOnCalendarDate(s, dateKey, rosterKey)
+      );
+      const exactActive = exact.filter((s) =>
+        timesheetSessionActiveOnCalendarDate(s, dateKey, rosterKey)
+      );
+      if (exactActive.length && standing.length) {
+        return timesheetMergeExactAndStandingSessions(exactActive, standing, dateObj);
+      }
+      if (exactActive.length) return exactActive;
+      if (standing.length) return standing;
+      /* Legacy undated-only rosters (no session_date anywhere). */
+      const rosterUsesDates = list.some((s) =>
+        /^\d{4}-\d{2}-\d{2}$/.test(String(s.session_date || "").trim().slice(0, 10))
+      );
+      if (!rosterUsesDates) return sameDow;
+      return [];
     }
 
     function timesheetSlugAreaKey(area) {
@@ -1689,9 +1807,11 @@
 
     function timesheetDayRowsForPay(sessions, dateObj, rosterKey) {
       const dateKey = isoDate(dateObj);
+      /* Keep open seats (status available) for paid hours — staff still worked the band.
+         Closed seats stay out. Feedback completion treats available as done. */
       const rosterSessions = sessionsForCalendarDate(sessions, dateObj).filter((s) => {
         const st = String(s.status || "").toLowerCase();
-        return st !== "closed" && st !== "available";
+        return st !== "closed";
       });
       const me = timesheetNormStaffKey(rosterKey);
       /* One-off instructor_reassign overrides hand the worker's own shift to a cover instructor.
@@ -2107,12 +2227,22 @@
       if (sessionIsCompleted(rec)) return true;
       const dateKey = isoDate(dateObj);
       if (timesheetDayMarkedComplete(dateKey, staffKey)) return true;
-      const cid = String(
+      const st = String((session && session.status) || "").toLowerCase();
+      const cidRaw = String(
         (session && (session.clientId || session.client_id || session.client_name)) || ""
       )
         .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "_");
+        .toLowerCase();
+      if (
+        st === "available" ||
+        cidRaw === "available" ||
+        cidRaw === "no_participant" ||
+        cidRaw === "noparticipant" ||
+        /^no\s*participant$/.test(cidRaw.replace(/_/g, " "))
+      ) {
+        return true;
+      }
+      const cid = cidRaw.replace(/\s+/g, "_");
       return timesheetCatchUpClientMarkedDone(dateKey, staffKey, cid);
     }
 
@@ -2203,6 +2333,9 @@
       }
       if (dayName === "Sunday" && key === "roberto") {
         return { startMin: 8 * 60 + 45, endMin: 15 * 60 + 15 };
+      }
+      if (isRobertoActonZhBand(dayName, key, rows, dateKey || isoDateFromDayRows(rows))) {
+        return { startMin: ROBERTO_ACTON_ZH_START_MIN, endMin: ROBERTO_ACTON_ZH_END_MIN };
       }
       /* Weekday MA/Bespoke Support only — not Day Centre / other morning support. */
       const looksMaBespoke = (rows || []).some((s) => isMaOrBespokeService(sessionServiceLower(s)));
@@ -2590,10 +2723,8 @@
         return timesheetOverrideCompletionFlag(ov) === "cancelled";
       });
       function isFadiWindowCancel(s) {
-        const blob = String((s && (s.clientId || s.clientName || s.client_name)) || "");
-        if (!/\bfadi\b/i.test(blob)) return false;
-        if (!/day\s*centre/.test(sessionServiceLower(s))) return false;
-        return iso >= "2026-09-01" && iso < "2026-09-21";
+        /* Fadi is off rota until 20 Sep — not a Cancelled seat that zeros a DC day. */
+        return false;
       }
       return dcRows.every(
         (s) =>
@@ -2671,6 +2802,12 @@
     /** Roberto Sunday SwimFarm pool lead: 8:45–3:15 (6.5h). Other swim instructors: 9–3 (6h). */
     const SUNDAY_SWIM_PAY_HOURS = 6;
     const SUNDAY_ROBERTO_SWIM_PAY_HOURS = 6.5;
+    /** Roberto weekday Acton aquatic from 6 Sep 2026: Mon/Tue/Thu 4:00–6:30 (2.5h @ £28). */
+    const ROBERTO_ACTON_ZH_FROM_ISO = "2026-09-06";
+    const ROBERTO_ACTON_ZH_PAY_HOURS = 2.5;
+    const ROBERTO_ACTON_ZH_DAYS = new Set(["Monday", "Tuesday", "Thursday"]);
+    const ROBERTO_ACTON_ZH_START_MIN = 16 * 60;
+    const ROBERTO_ACTON_ZH_END_MIN = 18 * 60 + 30;
 
     function sundaySwimInstructorPayHours(rosterKey) {
       const key = String(rosterKey || "").trim().toLowerCase();
@@ -2684,6 +2821,26 @@
         return { startMin: 8 * 60 + 45, endMin: 15 * 60 + 15 };
       }
       return { startMin: 9 * 60, endMin: 15 * 60 };
+    }
+
+    function isRobertoActonZhBand(dayName, rosterKey, dayRows, dateKey) {
+      if (!isRobertoRosterKey(rosterKey)) return false;
+      if (!robertoHybridPayActive(rosterKey)) return false;
+      const iso = String(dateKey || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || iso < ROBERTO_ACTON_ZH_FROM_ISO) return false;
+      if (!ROBERTO_ACTON_ZH_DAYS.has(String(dayName || ""))) return false;
+      const rows = dayRows || [];
+      if (!rows.length) return false;
+      return rows.some((s) => {
+        if (isRobertoTrainingSession(s)) return false;
+        return sessionVenueBlob(s).indexOf("acton") >= 0;
+      });
+    }
+
+    function robertoActonZhPayableHours(dayName, rosterKey, role, computedHours, dayRows, dateKey) {
+      if (!isRobertoActonZhBand(dayName, rosterKey, dayRows, dateKey)) return computedHours;
+      if (String(role || "").trim() !== "Swimming Instructor") return computedHours;
+      return ROBERTO_ACTON_ZH_PAY_HOURS;
     }
 
     /** Sunday SwimFarm day where this worker is paid as swimming instructor (aquatic and/or pool MA). */
@@ -3216,6 +3373,9 @@
       if (isYoussefSwimfarmMiddayAquatic(dayName, rosterKey, dominantRole, rows)) {
         applySupportBuffer = false;
       }
+      if (isRobertoActonZhBand(dayName, rosterKey, rows, dateKey)) {
+        applySupportBuffer = false;
+      }
       if (
         applySupportBuffer &&
         (typeof portalStaffShouldApplyPayrollBandBuffer === "function"
@@ -3236,6 +3396,7 @@
       hours = sundaySwimPayableHours(dayName, rosterKey, dominantRole, dominantService, dateKey, hours, rows);
       hours = youssefActonAfternoonPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
       hours = youssefActonSaturdayPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
+      hours = robertoActonZhPayableHours(dayName, rosterKey, dominantRole, hours, rows, dateKey);
       /* Admin cancel with notice (e.g. Fadi DC): day not payable — not a day-off request. */
       if (dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, rows)) hours = 0;
       if (!(hours > 0)) return null;
@@ -3325,6 +3486,7 @@
             !isWeekdayMaBespokeGroup &&
             !isYoussefActonAfternoonGroup &&
             !skipYoussefMiddayBuffer &&
+            !isRobertoActonZhBand(dayName, rosterKey, groupRows, dateKey) &&
             ((role === "Support Worker" &&
               typeof portalStaffSupportShiftBufferApplies === "function" &&
               portalStaffSupportShiftBufferApplies(svc, dayName)) ||
@@ -3360,6 +3522,7 @@
           hours = sundaySwimPayableHours(dayName, rosterKey, role, svc, dateKey, hours, groupRows);
           hours = youssefActonAfternoonPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
           hours = youssefActonSaturdayPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
+          hours = robertoActonZhPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
           if (dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, groupRows)) hours = 0;
           if (!(hours > 0)) return;
           const serviceName =
@@ -3659,13 +3822,40 @@
     }
 
     async function timesheetEnsureLiveRoster(supabase) {
+      function timesheetApplyAutumnCanonicalRoster() {
+        try {
+          if (
+            window.PortalRosterCanonical &&
+            typeof window.PortalRosterCanonical.resolveCanonicalStaffDashboardSource === "function"
+          ) {
+            window.STAFF_DASHBOARD_SOURCE =
+              window.PortalRosterCanonical.resolveCanonicalStaffDashboardSource(
+                window.STAFF_DASHBOARD_SOURCE
+              );
+            return;
+          }
+          if (typeof window.portalRefreshStaffDashboardSourceFromPortal === "function") {
+            /* Non-staff pages keep the summer bundle unless force is honored — call canon above first. */
+            window.portalRefreshStaffDashboardSourceFromPortal({ force: true });
+          }
+        } catch (e) {
+          console.warn("[timesheet] autumn canonical roster skipped", e);
+        }
+      }
       try {
+        /*
+         * Timesheet is neither Staff Today nor Sessions Overview — portal source
+         * refresh otherwise keeps the summer bundle. Always expand Autumn standing
+         * so DC from 1 Sep + AS/weekend from 6 Sep appear (Roberto hybrid pay).
+         */
+        timesheetApplyAutumnCanonicalRoster();
         if (typeof window.portalRefreshPortalRosterRowsFromSupabase === "function") {
           await withTimeout(
             window.portalRefreshPortalRosterRowsFromSupabase(supabase),
             10000,
             "live_madre_roster"
           );
+          timesheetApplyAutumnCanonicalRoster();
           return;
         }
         if (
@@ -3677,12 +3867,11 @@
             10000,
             "live_madre"
           );
-          if (typeof window.portalRefreshStaffDashboardSourceFromPortal === "function") {
-            window.portalRefreshStaffDashboardSourceFromPortal();
-          }
+          timesheetApplyAutumnCanonicalRoster();
         }
       } catch (e) {
         console.warn("[timesheet] live MADRE skipped; using static bundle", e);
+        timesheetApplyAutumnCanonicalRoster();
       }
     }
 
