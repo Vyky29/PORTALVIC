@@ -22,7 +22,11 @@ export type Feedback2030StaffDebt = {
   sample: string[];
 };
 
-const SKIP_CLIENT = /^(home|manager|closed|available|no[_ ]participant|no[_ ]client|open|cover[_ ]needed|off|day[_ ]off|casa|na|office)$/i;
+const SKIP_CLIENT = /^(home|manager|closed|available|no[_ ]participant|no[_ ]client|open|cover[_ ]needed|off|day[_ ]off|casa|na|office|interview|interviews|admin|ops|operations|shadowing|training|meeting|team[_ ]meeting)$/i;
+
+/** Duty / board labels that never owe parent session feedback (exact or "Office · 11 – 3"). */
+const SKIP_CLIENT_PREFIX =
+  /^(home|manager|closed|available|no[_ ]participant|no[_ ]client|open|cover[_ ]needed|off|day[_ ]off|casa|na|office|interview|interviews|admin|ops|operations|shadowing|training|meeting|team[_ ]meeting)(_|$)/i;
 
 /** Sun 6 Sep 2026 dated books (Overview / LOCAL). Used when DB roster is still thin. */
 const SUNDAY_2026_09_06: Feedback2030Slot[] = [
@@ -179,7 +183,24 @@ function slotDedupeKey(s: Feedback2030Slot): string {
 export function isRealFeedbackClient(name: string): boolean {
   const n = String(name || "").trim();
   if (!n) return false;
-  return !SKIP_CLIENT.test(slugClient(n).replace(/_/g, " ")) && !SKIP_CLIENT.test(n);
+  /* Capacity-chain DC seats encode bands in the label: "Office · 11 – 3", "Manager · 12 – 3". */
+  const parts = n.split(/\s*[·•|]\s*/).map(function (p) {
+    return String(p || "").trim();
+  }).filter(Boolean);
+  for (var pi = 0; pi < parts.length; pi++) {
+    const part = parts[pi];
+    if (SKIP_CLIENT.test(part) || SKIP_CLIENT.test(slugClient(part).replace(/_/g, " "))) {
+      return false;
+    }
+  }
+  const slug = slugClient(n);
+  if (SKIP_CLIENT_PREFIX.test(slug)) return false;
+  /* Hub · Office / area-style duty labels. */
+  if (/(^|_)(office|manager|interview|interviews|home|closed|available)(_|$)/i.test(slug)) {
+    return false;
+  }
+  if (SKIP_CLIENT.test(slug.replace(/_/g, " ")) || SKIP_CLIENT.test(n)) return false;
+  return true;
 }
 
 function weekdayLongUtcNoon(iso: string): string {
@@ -999,6 +1020,7 @@ export function outstandingByStaff(
 ): Feedback2030StaffDebt[] {
   const map = new Map<string, Feedback2030StaffDebt>();
   for (const slot of slots) {
+    if (!isRealFeedbackClient(slot.client)) continue;
     if (slotIsResolved(slot, iso, ctx)) continue;
     if (!isUsableCoverStaff(slot.staff)) continue;
     const key = canonStaffKey(slot.staff);

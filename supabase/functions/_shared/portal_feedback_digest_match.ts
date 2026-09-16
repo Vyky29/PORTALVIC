@@ -209,6 +209,7 @@ export function missingFeedbackClientsForShift(
   for (const r of rosterRows) {
     const client = String(r.client_name || "").trim();
     if (!client || /^closed$/i.test(client)) continue;
+    if (/^(office|manager|home|interview)\b/i.test(client)) continue;
     const slotKey = rosterDigestSlotKey(r, shiftDateIso);
     if (seenSlots.has(slotKey)) continue;
     seenSlots.add(slotKey);
