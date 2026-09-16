@@ -698,9 +698,13 @@
       alex: { hourly_rate: 30, role_label: "Climbing Instructor 3" },
       carlos: { hourly_rate: 30, role_label: "Climbing Instructor 3" },
       sandra: { hourly_rate: 28, role_label: "Fitness Instructor 1" },
+      /* Godsway 2026/27: Scale 2 £20 (not new-hire Scale 1 £18). */
       godsway: {
-        hourly_rate: 18,
-        role_label: "Support Worker 1"
+        hourly_rate: 20,
+        role_label: "Support Worker 2",
+        primaryRole: "Support Worker",
+        roleRates: { "Support Worker": 20 },
+        roleScales: { "Support Worker": "Scale 2" }
       },
       giuseppe: { hourly_rate: 20, role_label: "Support Worker 2" },
       bismark: { hourly_rate: 23, role_label: "Support Worker 3" },
@@ -1480,6 +1484,15 @@
       if (timesheetSessionIsBespokeShared(s)) {
         return `${dateKey}|${cid}|bespoke_shared`;
       }
+      /* Hub support Sunday Multi feedback is stored as hub_room, not aquatic/pool. */
+      if (
+        dayWord === "Sunday" &&
+        isSundayHubSupportRosterKey() &&
+        /multi[-\s]?activity|bespoke/.test(act)
+      ) {
+        const start = String(s.start || "").trim();
+        return `${dateKey}|${start}|${cid}|hub_room`;
+      }
       if (
         typeof window.portalStaffLeadIsAquaticActivity === "function" &&
         window.portalStaffLeadIsAquaticActivity(act)
@@ -1891,7 +1904,18 @@
         seen.add(k);
         rows.push(s);
       });
-      return me === "luliya" ? timesheetApplyLuliaIkramMorningCutoff(rows) : rows;
+      let out = me === "luliya" ? timesheetApplyLuliaIkramMorningCutoff(rows) : rows;
+      /* Godsway / Hub support: Sunday pay + feedback is Hub Multi only — drop stray pool SI seats. */
+      if (isSundayHubSupportRosterKey(me) && WEEKDAY[dateObj.getDay()] === "Sunday") {
+        out = out.filter((s) => {
+          const svc = String((s && (s.rosterService || s.service || s.activity)) || "").toLowerCase();
+          const area = String((s && (s.rosterArea || s.area)) || "").toLowerCase();
+          if (/aquatic/.test(svc) && !/multi/.test(svc)) return false;
+          if (/big pool|small pool|teaching pool|\blane\b/.test(area) && !/hub/.test(area)) return false;
+          return true;
+        });
+      }
+      return out;
     }
 
     /** Mirror dashboard: admin absence / cancel / no-pax counts as done for timesheet pay. */
@@ -2464,6 +2488,9 @@
         if (/aquatic/.test(svc)) return "Swimming Instructor";
         if (/multi[-\s]?activity|day\s*centre|bespoke|support|hub/.test(svc)) return "Support Worker";
       }
+      /* Hub Room / Room 2 Multi-Bespoke is Support even if a pool area leaked onto the row. */
+      if (/hub\s*room|room\s*2/.test(area)) return "Support Worker";
+      if (/multi[-\s]?activity|bespoke/.test(svc) && /hub/.test(area)) return "Support Worker";
       /* Day-centre aquatic hour (e.g. Emanuel Big Pool) — swim rate before generic day-centre support. */
       if (/big pool|small pool|teaching pool|\blane\b/.test(area)) {
         return "Swimming Instructor";
@@ -2492,6 +2519,20 @@
     const SUNDAY_LEAD_MA_PAY_HOURS = 5.5;
     const SUNDAY_MA_LEAD_KEYS = new Set(["berta", "michelle"]);
     const SUNDAY_JOHN_SUPPORT_KEYS = new Set(["john"]);
+    /** Hub Multi books — never the Sunday 6h swim-instructor band (pool leftovers must not steal pay/feedback). */
+    const SUNDAY_HUB_SUPPORT_KEYS = new Set([
+      "godsway",
+      "emmanuel",
+      "emanuel",
+      "john",
+      "bismark",
+      "giuseppe"
+    ]);
+    function isSundayHubSupportRosterKey(key) {
+      return SUNDAY_HUB_SUPPORT_KEYS.has(
+        String(key != null ? key : state.staffRosterKey || "").trim().toLowerCase()
+      );
+    }
 
     /** Michelle day-centre Mon–Wed + Fri: 10:45–16:15 (5.5h) even when clients are 11–4. */
     const MICHELLE_DAY_CENTRE_PAY_HOURS = 5.5;
@@ -2915,7 +2956,7 @@
       const key = String(rosterKey != null ? rosterKey : state.staffRosterKey || "")
         .trim()
         .toLowerCase();
-      if (SUNDAY_MA_LEAD_KEYS.has(key)) return false;
+      if (SUNDAY_MA_LEAD_KEYS.has(key) || isSundayHubSupportRosterKey(key)) return false;
       const rows = dayRows || [];
       if (!rows.length) return false;
       let onSwimfarm = false;
@@ -3003,6 +3044,7 @@
         dan: 1,
         javier: 1,
         john: 1,
+        godsway: 1,
       };
       if (forceKeys[key] && fb.roleRates && typeof fb.roleRates === "object") {
         /* Authoritative map replaces DB roles (avoids stale Service Lead £30 next to John £25). */
