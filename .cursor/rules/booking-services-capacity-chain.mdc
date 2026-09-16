@@ -34,6 +34,11 @@ Booking (plazas) → Services (clients / seats) → Timetable (staff) → Schedu
 ## Capacity rule (AS / weekend)
 
 - Public `capacity` = standing **seat line count** for that band (`booked` + `NO PARTICIPANT` / open lines).
+- **B2 source:** `buildWeeklyOfferFromOccupants` reads Places from
+  `supabase/functions/_shared/portal_capacity_chain_places_occupants.json`
+  (twin of `portal_capacity_chain_occupants.js`). MADRE is fallback only.
+- After editing Places seats in occupants JS: run
+  `python3 database/local-vault/sync-booking-places-occupants-json.py` then deploy `portal-booking-offer`.
 - **Do not** inflate capacity from `instructorCount` (phantom Places).
 - Intentional hardcap only: **Sunday SwimFarm Multi-Activity = 6** (product band). Document any new hardcap here before coding.
 - Wed Multi Acton is filtered off the public offer (not a Places band).

@@ -823,19 +823,32 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     });
   }
 
+  const folded = applyPublicOfferGatesAndSort(slots);
+
+  return {
+    services: buildServicesCatalog(venueSets),
+    slots: folded,
+    termFrom,
+    termTo,
+    rowCount: rows.length,
+  };
+}
+
+/** Shared public Places gates (Elia / Alex / DC aquatic / sort). */
+export function finalizePublicOfferSlots(slots: OfferSlot[]): OfferSlot[] {
+  return applyPublicOfferGatesAndSort(slots);
+}
+
+function applyPublicOfferGatesAndSort(slots: OfferSlot[]): OfferSlot[] {
   let folded = foldMultiActivityOfferSlots(slots);
   folded = ensureClimbingSundayOpenBand(folded);
   folded = gateAlexClimbSundayThreeFour(folded);
   folded = ensureWeekdayClimbEliaOfficeHoldFullyBooked(folded);
-  /* Day Centre + Bespoke are office-arranged only — never expose MADRE capacity as bookable slots. */
   folded = folded.filter((s) => s.serviceId !== "day_centre" && s.serviceId !== "bespoke");
-  /* Defence in depth: Wed Multi stays off the public offer. */
   folded = folded.filter(
     (s) => !(s.serviceId === "multi" && s.day === "Wednesday"),
   );
-  /* Weekday SwimFarm midday aquatic = Day Centre pool — never public Places. */
   folded = folded.filter((s) => !isWeekdaySwimFarmDayCentreAquaticSlot(s));
-
   folded.sort((a, b) => {
     const dayOrder: Record<string, number> = {
       Monday: 1,
@@ -852,7 +865,10 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     if (t) return t;
     return a.venue.localeCompare(b.venue);
   });
+  return folded;
+}
 
+function buildServicesCatalog(venueSets: Map<PublicServiceId, Set<string>>): OfferService[] {
   const defaults: Record<PublicServiceId, string[]> = {
     aquatic: ["Acton", "Northolt", "SwimFarm"],
     climbing: ["Westway"],
@@ -871,12 +887,11 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     "day_centre",
     "counselling",
   ];
-  const fullServices: OfferService[] = always.map((id) => {
-    let fromMadre = [...(venueSets.get(id) || [])].sort();
+  return always.map((id) => {
+    let fromSrc = [...(venueSets.get(id) || [])].sort();
     if (id === "multi") {
-      fromMadre = fromMadre.filter((v) => v !== "Acton");
+      fromSrc = fromSrc.filter((v) => v !== "Acton");
     }
-    // Counselling is office-arranged (Chiswick / Zoom) — never MADRE venues.
     if (id === "counselling") {
       return {
         ...SERVICE_META[id],
@@ -885,16 +900,146 @@ export function buildWeeklyOfferFromMadre(madre: MadreDoc): {
     }
     return {
       ...SERVICE_META[id],
-      venues: fromMadre.length ? fromMadre : defaults[id],
+      venues: fromSrc.length ? fromSrc : defaults[id],
     };
   });
+}
+
+export type CapacityChainPlacesOccupantSlot = {
+  serviceId?: string;
+  day?: string;
+  venue?: string;
+  timeLabel?: string;
+  capacity?: number;
+  taken?: number;
+  openSeats?: number;
+  instructors?: string[];
+  openInstructors?: string[];
+  bookedNames?: string[];
+  seatLines?: Array<{
+    kind?: string;
+    client?: string | null;
+    instructor?: string | null;
+    trialDate?: string | null;
+    trialClient?: string | null;
+  }>;
+};
+
+const PLACES_SERVICE_IDS = new Set(["aquatic", "climbing", "physical", "multi"]);
+const OCCUPANTS_REFERENCE_DATE = "2026-09-15";
+
+/**
+ * B2: public Places from capacity-chain occupants (same seat lines as Services / Overview).
+ * Does not expand aquatic 60′ bands — occupants are already 30′.
+ */
+export function buildWeeklyOfferFromOccupants(
+  bySlotId: Record<string, CapacityChainPlacesOccupantSlot> | null | undefined,
+): {
+  services: OfferService[];
+  slots: OfferSlot[];
+  termFrom: string | null;
+  termTo: string | null;
+  rowCount: number;
+  source: "capacity_chain_occupants";
+} {
+  const slots: OfferSlot[] = [];
+  const venueSets = new Map<PublicServiceId, Set<string>>();
+  const root = bySlotId || {};
+  let rowCount = 0;
+
+  for (const slot of Object.values(root)) {
+    if (!slot) continue;
+    const serviceId = mapServiceId(slot.serviceId);
+    if (!serviceId || !PLACES_SERVICE_IDS.has(serviceId)) continue;
+    const day = normalizeWeekday(slot.day);
+    const venue = normalizeVenue(slot.venue);
+    if (!day || !venue) continue;
+    const lines = Array.isArray(slot.seatLines) ? slot.seatLines : [];
+    rowCount += Math.max(1, lines.length);
+    let openSeats = 0;
+    let takenLines = 0;
+    const instructors = new Set<string>();
+    const openInstructors = new Set<string>();
+    const bookedKeys = new Set<string>();
+    const bookedNames = new Map<string, string>();
+
+    for (const line of lines) {
+      const kind = String(line?.kind || "").trim().toLowerCase();
+      const inst = norm(line?.instructor);
+      if (inst) instructors.add(inst.toUpperCase());
+      if (kind === "open") {
+        openSeats += 1;
+        if (inst) openInstructors.add(inst.toUpperCase());
+        continue;
+      }
+      if (kind === "closed") {
+        takenLines += 1;
+        continue;
+      }
+      /* booked | hold | trial — occupy a Place */
+      takenLines += 1;
+      const rawName = String(line?.client || line?.trialClient || "").trim();
+      const ck = clientKey(rawName);
+      if (ck) {
+        bookedKeys.add(ck);
+        if (!bookedNames.has(ck)) bookedNames.set(ck, rawName);
+      }
+    }
+
+    const lineCount = openSeats + takenLines || Number(slot.capacity) || 0;
+    if (lineCount < 1) continue;
+    const cap = displayCapacity(serviceId, venue, day, lineCount, instructors.size);
+    const open = Math.max(0, Math.min(cap, openSeats));
+    const taken = Math.max(0, cap - open);
+    const { sortTime, timeLabel } = parseTimeSlot(slot.timeLabel);
+
+    for (const name of slot.instructors || []) {
+      const n = norm(name);
+      if (n) instructors.add(n.toUpperCase());
+    }
+    for (const name of slot.openInstructors || []) {
+      const n = norm(name);
+      if (n) openInstructors.add(n.toUpperCase());
+    }
+    for (const name of slot.bookedNames || []) {
+      const ck = clientKey(name);
+      if (ck && !bookedNames.has(ck)) bookedNames.set(ck, String(name).trim());
+    }
+
+    slots.push({
+      id: slotId(serviceId, venue, day, sortTime, timeLabel),
+      serviceId,
+      venue,
+      day,
+      timeLabel,
+      sortTime,
+      capacity: cap,
+      taken,
+      openSeats: open,
+      referenceDate: OCCUPANTS_REFERENCE_DATE,
+      instructors: [...instructors].sort(),
+      openInstructors: [...openInstructors].sort(),
+      bookedKeys: [...bookedKeys],
+      bookedNames: [...bookedNames.values()].sort((a, b) =>
+        a.localeCompare(b, "en", { sensitivity: "base" }),
+      ),
+    });
+
+    let vs = venueSets.get(serviceId);
+    if (!vs) {
+      vs = new Set();
+      venueSets.set(serviceId, vs);
+    }
+    vs.add(venue);
+  }
 
   return {
-    services: fullServices,
-    slots: folded,
-    termFrom,
-    termTo,
-    rowCount: rows.length,
+    services: buildServicesCatalog(venueSets),
+    slots: applyPublicOfferGatesAndSort(slots),
+    termFrom: "2026-09-01",
+    termTo: "2027-07-31",
+    rowCount,
+    source: "capacity_chain_occupants",
   };
 }
 

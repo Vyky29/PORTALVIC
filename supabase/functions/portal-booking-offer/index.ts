@@ -2,12 +2,16 @@
 //
 // portal-booking-offer
 // Public weekly offer + capacity from live MADRE (no participant names).
-// Intensive July crash seats come from portal_crash_summer_booking_lines.
+// Intensive seats: half-term enquire blocks. July 2026 crash is off the public offer
+// (CRASH_SUMMER_ON_PUBLIC_OFFER) — booking tables remain for history.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders } from "../_shared/parent_portal_auth.ts";
 import type { MadreDoc } from "../_shared/portal_madre_fold_logic.ts";
-import { buildWeeklyOfferFromMadre, applyBookingSlotHoldsToOffer } from "../_shared/portal_booking_seat_helper.ts";
+import { buildWeeklyOfferFromMadre, buildWeeklyOfferFromOccupants, applyBookingSlotHoldsToOffer } from "../_shared/portal_booking_seat_helper.ts";
+import placesOccupants from "../_shared/portal_capacity_chain_places_occupants.json" with {
+  type: "json",
+};
 import { resolveSessionDateIso, calendarDateIsoInLondon } from "../_shared/portal_booking_context.ts";
 import {
   loadAdminDayOverridesForBookingWindow,
@@ -25,6 +29,8 @@ import {
   CRASH_INDIVIDUAL_WINDOWS,
   CRASH_PRICES,
   CRASH_SUMMER_FULLY_BOOKED,
+  CRASH_SUMMER_ON_PUBLIC_OFFER,
+  INTENSIVE_ON_PUBLIC_OFFER,
   CRASH_SUMMER_WEEKS,
   CRASH_SWIM_TIME_BANDS,
   crashIndividualDaysOpenForWeek,
@@ -159,6 +165,8 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   const intensiveSlots: Record<string, unknown>[] = [];
 
   // Weekly packs: one row per time unit (parents book another row to add more time).
+  // July 2026 crash finished — omit from public Places once CRASH_SUMMER_ON_PUBLIC_OFFER is false.
+  if (CRASH_SUMMER_ON_PUBLIC_OFFER) {
   for (const week of weeks) {
     for (const act of activities) {
       const weekLabel =
@@ -237,6 +245,7 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
       }
     }
   }
+  }
 
   const halfTermBlocks: {
     id: string;
@@ -296,6 +305,7 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
   ];
 
   for (const block of halfTermBlocks) {
+    if (!INTENSIVE_ON_PUBLIC_OFFER) break;
     for (const act of activities) {
       intensiveSlots.push({
         id: `ht-${block.id}-${act.id}`,
@@ -319,6 +329,28 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     ? "FULLY BOOKED · Week 1 (20–24 July) and Week 2 (28–31 July)"
     : crashSummerOfferRangeCopy(week2Open);
 
+  const summerJulyBlock = CRASH_SUMMER_ON_PUBLIC_OFFER
+    ? [{
+      id: "summer_july",
+      badge: "JULY 2026",
+      title: "July Intensive Courses & Camps",
+      range: summerRange,
+      badgeIcon: "sun",
+      sort: 1,
+      bookAsWeekPack: true,
+      individualDaysOpen: individualOpen,
+      individualDaysOpenByWeek: { w1: w1Open, w2: w2Open },
+      week2Open,
+      week1FillPct: fill.week1_fill_pct,
+      dates: weeks.flatMap((w) =>
+        w.dates.map((iso) => ({
+          iso,
+          label: `${Number(iso.slice(8, 10))} Jul`,
+        })),
+      ),
+    }]
+    : [];
+
   return {
     hold_minutes: CRASH_HOLD_MINUTES,
     individual_days_open: individualOpen,
@@ -330,28 +362,12 @@ async function loadCrashIntensive(admin: ReturnType<typeof createClient>) {
     weeks_open: CRASH_SUMMER_FULLY_BOOKED ? ["w1", "w2"] : fill.weeks_open,
     fully_booked: CRASH_SUMMER_FULLY_BOOKED,
     slots: intensiveSlots,
-    blocks: [
-      {
-        id: "summer_july",
-        badge: "JULY 2026",
-        title: "July Intensive Courses & Camps",
-        range: summerRange,
-        badgeIcon: "sun",
-        sort: 1,
-        bookAsWeekPack: true,
-        individualDaysOpen: individualOpen,
-        individualDaysOpenByWeek: { w1: w1Open, w2: w2Open },
-        week2Open,
-        week1FillPct: fill.week1_fill_pct,
-        dates: weeks.flatMap((w) =>
-          w.dates.map((iso) => ({
-            iso,
-            label: `${Number(iso.slice(8, 10))} Jul`,
-          })),
-        ),
-      },
-      ...halfTermBlocks,
-    ],
+    blocks: INTENSIVE_ON_PUBLIC_OFFER
+      ? [
+        ...summerJulyBlock,
+        ...halfTermBlocks,
+      ]
+      : [...summerJulyBlock],
   };
 }
 
@@ -420,7 +436,24 @@ Deno.serve(async (req) => {
     return json(404, { ok: false, error: "madre_missing" });
   }
 
-  const weekly = buildWeeklyOfferFromMadre(madreRow.document as MadreDoc);
+  /* B2: Places plazas from capacity-chain occupants (same seat lines as Services).
+   * MADRE kept for release side-effects + fallback if occupants empty. */
+  const occupantsWeekly = buildWeeklyOfferFromOccupants(
+    (placesOccupants && placesOccupants.bySlotId) || {},
+  );
+  const weekly =
+    occupantsWeekly.slots.length > 0
+      ? occupantsWeekly
+      : buildWeeklyOfferFromMadre(madreRow.document as MadreDoc);
+  if (occupantsWeekly.slots.length > 0) {
+    console.log(
+      "[portal-booking-offer] B2 occupants Places",
+      occupantsWeekly.slots.length,
+      "slots",
+    );
+  } else {
+    console.warn("[portal-booking-offer] occupants empty — MADRE fallback");
+  }
   const intensive = await loadCrashIntensive(supabase);
 
   // Soft holds from new-client registration forms (Booking Portal → registration).
@@ -513,13 +546,22 @@ Deno.serve(async (req) => {
     name: "Intensive Courses & Camps",
     tier: "more",
     ageHint: "From 3 years+",
-    durationHint: "Summer crash + half-term blocks",
+    durationHint: "Half-term intensives (enquire)",
     pricePerSession: null,
     blurb:
-      "Holiday crash courses and camps for continuity outside term time — swimming, climbing, and more in short intensive blocks (summer and half terms). Predictable routines, specialist staff, and limited daily places for participants.",
+      "Holiday intensives and camps outside term time — swimming, climbing, and more in short blocks (half terms). Predictable routines, specialist staff, and limited places. July 2026 crash courses have finished.",
     venues: ["Westway", "Acton"],
     intensiveBlocks: true,
   };
+
+  const showIntensive =
+    INTENSIVE_ON_PUBLIC_OFFER ||
+    CRASH_SUMMER_ON_PUBLIC_OFFER ||
+    (Array.isArray(intensive.slots) && intensive.slots.length > 0);
+
+  const liveSlots = showIntensive
+    ? [...weeklySlotsPublic, ...intensive.slots]
+    : [...weeklySlotsPublic];
 
   return json(200, {
     ok: true,
@@ -539,13 +581,22 @@ Deno.serve(async (req) => {
     TERM_RANGE: AUTUMN_TERM.range,
     TERM_CALENDAR: bookingCalendarAfterSchool(),
     TERM_CALENDAR_DAY_CENTRE: bookingCalendarDayCentre(),
-    SERVICES: [...weekly.services, intensiveService],
-    MOCK_SLOTS: [...weeklySlotsPublic, ...intensive.slots],
-    INTENSIVE_BLOCKS: intensive.blocks,
+    SERVICES: showIntensive
+      ? [...weekly.services, intensiveService]
+      : [...weekly.services],
+    /** Live AS/weekend Places from capacity-chain occupants (+ holds). MADRE fallback only. */
+    SLOTS: liveSlots,
+    /** @deprecated use SLOTS — kept one release for old cached clients */
+    MOCK_SLOTS: liveSlots,
+    INTENSIVE_BLOCKS: showIntensive ? intensive.blocks : [],
     stats: {
       madre_rows: weekly.rowCount,
       weekly_slots: weekly.slots.length,
-      intensive_slots: intensive.slots.length,
+      places_source:
+        weekly && "source" in weekly && weekly.source
+          ? weekly.source
+          : "madre",
+      intensive_slots: showIntensive ? intensive.slots.length : 0,
       madre_meta_from: weekly.termFrom,
       madre_meta_to: weekly.termTo,
       pending_slot_holds: holdApply.applied,

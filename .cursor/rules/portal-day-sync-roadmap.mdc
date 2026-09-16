@@ -46,7 +46,7 @@ Audience paint (aquatic merge, staff columns, pay bands) stays outside the core.
 | Phase | Audience | Goal |
 |-------|----------|------|
 | **B1c** | feedback | Optional: Edge reads capacity-chain occupants when `portal_roster_rows` thin |
-| **B2** | `booking` | Plazas counts from same standing (or MADRE derived from it) |
+| **B2** | `booking` | **LANDED** — Places from capacity-chain occupants JSON (`buildWeeklyOfferFromOccupants`); sync script after seat edits |
 | **B3** | `parent` | Chips / Team from board projection (not inventing standing only via service_lines) |
 
 ### Rules while B ships
