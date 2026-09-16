@@ -59,7 +59,7 @@ const AREA_BY_CLIENT_DAY: Array<{
   { client: /^elijah\b/i, day: /^thu/i, area: "Lane (SE)" },
   { client: /^yuri\b/i, day: /^thu/i, area: "Lane (SE)" },
   { client: /^khalid\b/i, day: /^thu/i, area: "Lane (SE)" },
-  { client: /^joelle\b/i, day: /^thu/i, area: "Lane (DE)" },
+  { client: /^joelle\b/i, day: /^thu/i, area: "Teaching Pool" },
   { client: /^mohamed\b/i, day: /^thu/i, area: "Lane (SE)" },
   { client: /^mohammed\b/i, day: /^thu/i, area: "Lane (SE)" },
   { client: /^maiyar\b/i, day: /^thu/i, area: "Teaching Pool" },
