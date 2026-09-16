@@ -913,6 +913,17 @@ const PORTAL_ROSTER_CLIENT_SLUG_CANON = Object.freeze({
   zaid: "zaid",
   chaitanya_trial_28_06: "chaitanya",
   chaitanya: "chaitanya",
+  mia_mesi: "mia",
+  mia: "mia",
+  christian_abate: "christian",
+  christian: "christian",
+  emmanuel_abate: "emmanuel",
+  emmanuel: "emmanuel",
+  adam_mahmmoud: "adam_ma",
+  adam_mahmoud: "adam_ma",
+  adam_ma: "adam_ma",
+  yunis_hussein: "yunis",
+  yunis: "yunis",
 });
 
 /** Known client_id / slug aliases (roster spreadsheet vs ClassForKids). */

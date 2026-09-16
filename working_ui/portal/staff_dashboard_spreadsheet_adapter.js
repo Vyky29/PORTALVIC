@@ -587,6 +587,13 @@
     // Worker display label is "Eddie Mc"; collapse its slug back to the roster id "eddie".
     eddie_mc: "eddie",
     rayyan_fi: "rayyan_f",
+    /* Board short "Mia"; feedback often "Mia Mesi". */
+    mia_mesi: "mia",
+    /* Abate twins — unique first names (no full surname on worker boards). */
+    christian_abate: "christian",
+    emmanuel_abate: "emmanuel",
+    adam_mahmmoud: "adam_ma",
+    adam_mahmoud: "adam_ma",
   };
 
   /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */
@@ -638,6 +645,14 @@
     put("rayyan_fi", "Rayyan F");
     put("zaid", "Zaid");
     put("zaid_alfadhl", "Zaid");
+    put("mia", "Mia");
+    put("mia_mesi", "Mia");
+    put("christian", "Christian");
+    put("christian_abate", "Christian");
+    put("emmanuel", "Emmanuel");
+    put("emmanuel_abate", "Emmanuel");
+    put("adam_ma", "Adam Ma");
+    put("adam_mahmmoud", "Adam Ma");
     put("yossi", "Yossi");
     put("yossi_sium", "Yossi");
     put("yosiyas", "Yossi");

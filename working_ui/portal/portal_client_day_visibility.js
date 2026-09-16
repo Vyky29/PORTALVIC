@@ -17,7 +17,9 @@
    */
   var FALLBACK_CLIENT_STARTS = {
     "Emmanuel Abate": "2026-09-15",
+    "Emmanuel": "2026-09-15",
     "Christian Abate": "2026-09-15",
+    "Christian": "2026-09-15",
     "Amaar Ah": "2026-09-06",
     Muhammad: "2026-09-07",
     "Adaam Ah": "2026-09-06",

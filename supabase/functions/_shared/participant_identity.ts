@@ -99,6 +99,13 @@ const PORTAL_PARTICIPANT_SLUG_ALIASES: Record<string, string> = {
   yosiyas: "yossi",
   yosiyas_sium: "yossi",
   hazem_kei: "hazem",
+  // Board short labels vs fuller feedback / portal names
+  mia_mesi: "mia",
+  christian_abate: "christian",
+  emmanuel_abate: "emmanuel",
+  adam_mahmmoud: "adam_ma",
+  adam_mahmoud: "adam_ma",
+  yunis_hussein: "yunis",
 };
 
 /** Collective roster / feedback client for Monday 11–12 ACAT aquatic. */

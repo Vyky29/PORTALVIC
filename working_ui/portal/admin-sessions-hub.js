@@ -472,6 +472,14 @@
     ayman_el_bakry: "ayman",
     /* Feedback sometimes stores Saib; roster / LOCAL use Saaib. */
     saib: "saaib",
+    /* Board short label "Mia"; feedback / portal often "Mia Mesi". */
+    mia_mesi: "mia",
+    /* Abate twins — unique first names on board (never full surname for workers). */
+    christian_abate: "christian",
+    emmanuel_abate: "emmanuel",
+    /* Repeated Adam → two letters of surname (Mahmmoud). */
+    adam_mahmmoud: "adam_ma",
+    adam_mahmoud: "adam_ma",
   };
 
   function canonicalClientSlug(name) {
@@ -653,7 +661,9 @@
     (global.PortalClientDayVisibility && global.PortalClientDayVisibility.FALLBACK_CLIENT_STARTS) ||
     {
       "Emmanuel Abate": "2026-09-15",
+      "Emmanuel": "2026-09-15",
       "Christian Abate": "2026-09-15",
+      "Christian": "2026-09-15",
       "Amaar Ah": "2026-09-06",
       Muhammad: "2026-09-07",
       "Adaam Ah": "2026-09-06",

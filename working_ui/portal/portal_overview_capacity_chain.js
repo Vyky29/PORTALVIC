@@ -1046,7 +1046,9 @@
       baseSrc.clientRosterStartDates || {},
       {
         "Emmanuel Abate": "2026-09-15",
+        "Emmanuel": "2026-09-15",
         "Christian Abate": "2026-09-15",
+        "Christian": "2026-09-15",
         /* Weekend standing from Autumn Sun 6; weekday Acton NEW CLIENT is seat bookedFrom 15 Sep. */
         "Amaar Ah": "2026-09-06",
         /* Aquatic Mon Northolt Dan from Mon 7; climb trial Alex Sun 13 is trialDate on that seat only. */

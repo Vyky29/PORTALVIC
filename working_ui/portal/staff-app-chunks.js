@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-    var VER = "20260916-b1";
+    var VER = "20260916-short-names";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260914-raul-fri18-off",
@@ -16,11 +16,11 @@
     "/portal/portal_staff_feedback_data_loader.js?v=20260915-2to1-shared",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
-      "/portal/portal_roster_canonical.js?v=20260916-john-no-dc",
+      "/portal/portal_roster_canonical.js?v=20260916-short-names",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
-    "/portal/portal_client_day_visibility.js?v=20260916-option-a",
-    "/portal/portal_resolve_day_board.js?v=20260916-b1",
+    "/portal/portal_client_day_visibility.js?v=20260916-short-names",
+    "/portal/portal_resolve_day_board.js?v=20260916-short-names",
     "/portal/staff_dashboard_portal_roster_source.js?v=20260622-canonical-roster",
     "/portal/clients_info_embed.js?v=20260910-joelle-406",
     "/portal/clients_gender_embed.js?v=20260605-gender3",

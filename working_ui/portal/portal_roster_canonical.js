@@ -354,12 +354,12 @@
    * Brothers: Aydaan Javier 6–6.30; Adaam Luliya 6–6.30. Aurora 5.30 open.
    */
   var AUTUMN_ACTON_TUESDAY_BOARD = [
-    { staff: "ROBERTO", name: "Christian Abate", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "ROBERTO", name: "Christian", time: "4 to 4.30", area: "Teaching Pool" },
     { staff: "ROBERTO", name: "Serine", time: "4.30 to 5.30", area: "Lane (DE)" },
     { staff: "ROBERTO", name: "Rayan Ta", time: "5.30 to 6", area: "Teaching Pool" },
     { staff: "ROBERTO", name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
     /* On shift from 4 — empty seat is open (No participant), never Closed. */
-    { staff: "LULIYA", name: "Emmanuel Abate", time: "4 to 4.30", area: "Teaching Pool" },
+    { staff: "LULIYA", name: "Emmanuel", time: "4 to 4.30", area: "Teaching Pool" },
     { staff: "LULIYA", name: "No participant", time: "4.30 to 5", area: "Lane (DE)" },
     { staff: "LULIYA", name: "Logan", time: "5 to 5.30", area: "Teaching Pool" },
     { staff: "LULIYA", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
@@ -385,7 +385,7 @@
       bookedFrom: "2026-09-15",
     },
     { staff: "AURORA", name: "Closed", time: "4 to 4.30", area: "Lane (DE)" },
-    { staff: "AURORA", name: "Adam Mahmmoud", time: "4.30 to 5", area: "Teaching Pool" },
+    { staff: "AURORA", name: "Adam Ma", time: "4.30 to 5", area: "Teaching Pool" },
     { staff: "AURORA", name: "Junaid", time: "5 to 5.30", area: "Lane (SE)" },
     { staff: "AURORA", name: "No participant", time: "5.30 to 6", area: "Lane (SE)" },
     { staff: "AURORA", name: "Anas", time: "6 to 6.30", area: "Lane (DE)" },
@@ -1406,7 +1406,7 @@
 
   /**
    * Tue 8 Sep: Aurora OFF — redistribute Acton Aquatic.
-   * Adam Mahmmoud → Roberto 4.30–5 · Junaid → Roberto 5.30–6 (+30') ·
+   * Adam Ma → Roberto 4.30–5 · Junaid → Roberto 5.30–6 (+30') ·
    * Aydaan Ah → Luliya 5.30–6 · Anas was on Javier then moved with his book.
    * Javier Marquez OFF same day: Ayman 4–4.30 → Roberto; Ayman 4.30–5 + Linda / Rayan Ta → Javi Palankas.
    * Anas: absent Tue 8 (was cover→Luliya); makeup Thu 10 Aurora only 6–6.30 (Simon leaves at 6).
@@ -1430,7 +1430,7 @@
     /* Pool notes: Logan Teaching Pool; Rayan Ta Teaching Pool; Ayman Lane (DE). */
     var roberto = [
       { name: "Ayman", time: "4 to 4.30", area: "Lane (DE)" },
-      { name: "Adam Mahmmoud", time: "4.30 to 5", area: "Teaching Pool" },
+      { name: "Adam Ma", time: "4.30 to 5", area: "Teaching Pool" },
       { name: "Logan", time: "5 to 5.30", area: "Teaching Pool" },
       { name: "Junaid", time: "5.30 to 6", area: "Lane (SE)" },
       { name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
