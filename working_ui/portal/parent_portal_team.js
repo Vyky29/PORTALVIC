@@ -696,8 +696,9 @@
   }
 
   /**
-   * One instructor for a booked aquatic slot (not the whole pool pair).
-   * Northolt Mon 4.30–5 trials / open band → Dan (ops standing).
+   * One instructor for a booked slot when the Edge team/services_detail left
+   * the seat unnamed. Prefer slot.instructor from the board (B3); venue heuristics
+   * are last-resort only (no Northolt invent when the board already named staff).
    */
   function normalizeSlotTimeToken(time) {
     return String(time || "")
@@ -710,70 +711,31 @@
 
   function standingInstructorKeyForBookedSlot(slot, data) {
     if (!slot) return "";
-    var venue = String(slot.venue || slot.area || "").toLowerCase();
-    var dayTok = dayTokenFromIsoOrLabel(slot.iso, slot.day);
-    var time = normalizeSlotTimeToken(slot.time || slot.time_label || "");
-    var kind = String(slot.kind || "").toLowerCase();
-    var isTrial =
-      kind === "trial" ||
-      (data && (data.is_trial_booking === true || data.place_kind === "trial"));
     var named = staffKeyFromFeedbackName(
       slot.instructor || slot.staff || slot.instructors || "",
     );
     if (named && STAFF_CATALOG[named]) return named;
 
-    if (/northolt/.test(venue) && dayTok === "mon") {
-      /* Trial / first band 4.30–5 → Dan (see autumn crossref). */
-      if (isTrial || /^4\.?30\s+to\s+5(\.00)?$/.test(time) || time === "4.30 to 5") {
-        return "dan";
-      }
-      if (/^5\s+to\s+5\.?30$/.test(time)) return "luliya";
-      if (/^5\.?30\s+to\s+6(\.00)?$/.test(time)) return "luliya";
-      if (/^5\s+to\s+6(\.00)?$/.test(time)) return "dan";
-      if (/^6\s+to\s+6\.?30$/.test(time)) {
-        var pax = String(
-          (data && data.participant && (data.participant.display_name || data.participant.first_name)) ||
-            "",
-        )
-          .toLowerCase()
-          .trim();
-        if (/yamik/.test(pax)) return "luliya";
-        return "dan";
-      }
-      return "dan";
+    /* services_detail.instructor from Edge board — often on the chip, not the upcoming row */
+    var detail = data && Array.isArray(data.services_detail) ? data.services_detail : [];
+    var dayTok = dayTokenFromIsoOrLabel(slot.iso, slot.day);
+    var time = normalizeSlotTimeToken(slot.time || slot.time_label || "");
+    for (var i = 0; i < detail.length; i++) {
+      var d = detail[i] || {};
+      var dDay = dayTokenFromIsoOrLabel("", d.day);
+      if (dayTok && dDay && dayTok !== dDay) continue;
+      var dNamed = staffKeyFromFeedbackName(d.instructor || "");
+      if (dNamed && STAFF_CATALOG[dNamed]) return dNamed;
     }
 
-    if (/northolt/.test(venue) && dayTok === "wed") {
-      if (/^4\.?30\s+to\s+5/.test(time)) {
-        var paxW = String(
-          (data && data.participant && (data.participant.display_name || data.participant.first_name)) ||
-            "",
-        )
-          .toLowerCase()
-          .trim();
-        if (/vithura/.test(paxW)) return "luliya";
-        return "dan";
-      }
-      if (/^5\s+to\s+5\.?30$/.test(time)) return "dan";
-      if (/^5\s+to\s+6/.test(time)) return "dan";
-      if (/^5\.?30\s+to\s+6/.test(time)) return "dan";
-      if (/^6\s+to\s+6\.?30$/.test(time)) return "luliya";
-      return "dan";
-    }
-
-    if (/acton/.test(venue) && (dayTok === "tue" || dayTok === "thu")) {
-      /* Named instructor already returned above when the slot has one. */
-      return "";
-    }
-
-    if (/westway/.test(venue)) {
-      if (named && STAFF_CATALOG[named]) return named;
-      return "sandra";
-    }
+    var venue = String(slot.venue || slot.area || "").toLowerCase();
+    var kind = String(slot.kind || "").toLowerCase();
+    if (/westway/.test(venue) && !named) return "sandra";
     if (/swimfarm|hub/.test(venue) || /multi/.test(kind + " " + String(slot.service || slot.label || ""))) {
-      if (named && STAFF_CATALOG[named]) return named;
       return "";
     }
+    /* Dropped Northolt Mon/Wed invent — board / Edge must name Dan/Luliya. */
+    void time;
     return "";
   }
 

@@ -41,13 +41,23 @@ resolveDayBoard(iso, audience) → { seats, meta }
 
 Audience paint (aquatic merge, staff columns, pay bands) stays outside the core.
 
-## Option B — remaining
+## Option B2 — LANDED (Booking Places from capacity-chain occupants)
+
+- Edge: `buildWeeklyOfferFromOccupants` + `portal_capacity_chain_places_occupants.json`
+- Sync: `database/local-vault/sync-booking-places-occupants-json.py` (also writes parent standing twin)
+
+## Option B3 — LANDED (Parent chips / Team from capacity-chain board)
+
+- Edge: `portal_parent_standing_from_occupants.ts` + `portal_capacity_chain_standing_occupants.json`
+- `parent-portal-participant-detail`: chips prefer board → standing `portal_roster_rows` → `service_lines`; Team seeds instructors from board first
+- Client: `parent_portal_team.js` drops Northolt invent; uses `services_detail.instructor` when upcoming rows omit staff
+- OV absence / cancel / cover paint unchanged
+
+### Optional remaining
 
 | Phase | Audience | Goal |
 |-------|----------|------|
 | **B1c** | feedback | Optional: Edge reads capacity-chain occupants when `portal_roster_rows` thin |
-| **B2** | `booking` | **LANDED** — Places from capacity-chain occupants JSON (`buildWeeklyOfferFromOccupants`); sync script after seat edits |
-| **B3** | `parent` | Chips / Team from board projection (not inventing standing only via service_lines) |
 
 ### Rules while B ships
 

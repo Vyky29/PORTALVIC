@@ -60,6 +60,18 @@ import {
   servicesDetailHasDayCentre,
 } from "../_shared/parent_reenrol_ui.ts";
 import { identityLooksLikeDayCentreWeeklyNotes } from "../_shared/parent_weekly_notes.ts";
+import {
+  standingInstructorNamesFromOccupants,
+  standingSessionsForParticipantFromOccupants,
+  type CapacityChainStandingSlot,
+} from "../_shared/portal_parent_standing_from_occupants.ts";
+import standingOccupants from "../_shared/portal_capacity_chain_standing_occupants.json" with {
+  type: "json",
+};
+
+function capacityChainStandingBySlotId(): Record<string, CapacityChainStandingSlot> | undefined {
+  return (standingOccupants as { bySlotId?: Record<string, CapacityChainStandingSlot> })?.bySlotId;
+}
 
 const ACH_BUCKET = "participant-achievements";
 const DOC_BUCKET = "documents";
@@ -209,8 +221,8 @@ function addStandingInstructorNames(
 }
 
 /**
- * Standing instructors for this child from live roster + service-line snapshot
- * (who delivers their sessions this term), before any session feedback exists.
+ * Standing instructors for this child: capacity-chain board first, then live
+ * roster + service-line snapshot (legacy fill).
  */
 async function loadStandingInstructorsForTeam(
   // deno-lint-ignore no-explicit-any
@@ -224,6 +236,12 @@ async function loadStandingInstructorsForTeam(
   lookupNames: string[],
   map: Map<string, Record<string, unknown>>,
 ) {
+  const fromBoard = standingInstructorNamesFromOccupants(
+    capacityChainStandingBySlotId(),
+    identityInput,
+  );
+  for (const name of fromBoard) addStandingInstructorNames(map, name);
+
   const slugs = [
     ...new Set(
       expandParticipantClientSlugs(resolveParticipantClientSlugs(identityInput))
@@ -1067,6 +1085,22 @@ async function fetchRosterServiceLines(
   const lookupKeys = memberSlugs.length ? memberSlugs : slugs;
   if (!lookupKeys.length) return null;
 
+  // B3: capacity-chain board first (same standing as Overview / Places).
+  const fromOccupants = standingSessionsForParticipantFromOccupants(
+    capacityChainStandingBySlotId(),
+    identityInput,
+  );
+  if (fromOccupants.length) {
+    const boardDetail = buildServicesDetail(fromOccupants);
+    if (boardDetail.length) return { count: boardDetail.length, detail: boardDetail };
+  }
+
+  const standing = await fetchStandingWeeklyRosterSessions(supabase, identityInput);
+  if (standing.length) {
+    const standingDetail = buildServicesDetail(standing);
+    if (standingDetail.length) return { count: standingDetail.length, detail: standingDetail };
+  }
+
   // Payment sheet often splits one child across keys (e.g. tinashe Mon/Wed LA +
   // tinashe-nhs Friday). Include hyphenated / *-nhs variants + same display name.
   const rawKeys = [
@@ -1119,12 +1153,6 @@ async function fetchRosterServiceLines(
         if (key) seen.add(key);
       }
     }
-  }
-
-  const standing = await fetchStandingWeeklyRosterSessions(supabase, identityInput);
-  if (standing.length) {
-    const standingDetail = buildServicesDetail(standing);
-    if (standingDetail.length) return { count: standingDetail.length, detail: standingDetail };
   }
 
   if (!rows.length) return null;
