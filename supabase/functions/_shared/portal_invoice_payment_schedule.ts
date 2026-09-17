@@ -256,6 +256,26 @@ export function shareNextInstalmentIsCollectingNow(share: {
   return instalmentDueIsCollectingNow(nextDue);
 }
 
+/**
+ * Parent My invoices: hide unpaid future-term INV-Ps until the collect window
+ * (same 7-day rule as admin Unpaid chip). Paid / partial stay visible so
+ * families see money already sitting on Spring/Summer. Pending confirmation
+ * always shows.
+ */
+export function parentInvoiceDueForParentView(share: {
+  payment_status?: unknown;
+  payment_schedule?: unknown;
+  next_instalment_due?: unknown;
+  due_date?: unknown;
+}): boolean {
+  const st = String(share.payment_status || "")
+    .trim()
+    .toLowerCase();
+  if (st === "void") return false;
+  if (st === "paid" || st === "partial" || st === "pending_confirmation") return true;
+  return shareNextInstalmentIsCollectingNow(share);
+}
+
 export type ApplyInstalmentPaymentResult = {
   schedule: InvoicePaymentScheduleRow[];
   amount_paid_gbp: number;
