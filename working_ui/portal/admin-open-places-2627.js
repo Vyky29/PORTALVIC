@@ -1,7 +1,7 @@
 /**
- * Admin — Open places 2026/27 (Autumn).
+ * Admin — Places / Booking Portal publication (office).
  * Live seats from portal-booking-offer (same source as the public Booking Portal).
- * No participant PII — capacity / taken / free only.
+ * Public JSON stays anonymous; office UI resolves taken names from the local roster.
  */
 (function (global) {
   "use strict";
@@ -160,18 +160,145 @@
       ".op2627-tbl th.op2627-th,.op2627-tbl td.op2627-td{" +
       "text-align:center;vertical-align:middle;min-width:0;" +
       "overflow-wrap:break-word;word-break:break-word}" +
-      ".op2627-tbl .op2627-td--svc{width:22%}" +
-      ".op2627-tbl .op2627-td--venue{width:12%}" +
-      ".op2627-tbl .op2627-td--time{width:16%}" +
-      ".op2627-tbl .op2627-td--num{width:8%}" +
-      ".op2627-tbl .op2627-td--free{width:12%}" +
-      ".op2627-tbl .op2627-td--place{width:22%}" +
+      ".op2627-tbl .op2627-td--svc{width:16%}" +
+      ".op2627-tbl .op2627-td--venue{width:10%}" +
+      ".op2627-tbl .op2627-td--time{width:12%}" +
+      ".op2627-tbl .op2627-td--staff{width:12%}" +
+      ".op2627-tbl .op2627-td--num{width:6%}" +
+      ".op2627-tbl .op2627-td--taken{width:16%;text-align:left}" +
+      ".op2627-tbl .op2627-td--free{width:10%}" +
+      ".op2627-tbl .op2627-td--place{width:18%}" +
+      ".op2627-taken-names{display:block;font-size:12px;font-weight:600;color:#0f172a;line-height:1.35;overflow-wrap:break-word;min-width:0}" +
+      ".op2627-taken-count{display:block;font-size:11px;color:#64748b;margin-top:2px}" +
+      ".op2627-staff{font-size:12px;font-weight:700;color:#1e3a8a;overflow-wrap:break-word;min-width:0}" +
       ".op2627-tbl .op2627-td--free .chip{justify-content:center;margin:0 auto}" +
       ".op2627-place{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;min-width:0}" +
       ".op2627-place .btn{white-space:nowrap}" +
       ".op2627-band-hint{margin:0 0 10px;font-size:13px;min-width:0;overflow-wrap:break-word}" +
       "</style>"
     );
+  }
+
+  function normOfferTimeKey(raw) {
+    return String(raw || "")
+      .toLowerCase()
+      .replace(/\u2013|\u2014/g, "-")
+      .replace(/\s*to\s*/g, "-")
+      .replace(/\s+/g, "")
+      .replace(/(\d)\.(\d)/g, "$1:$2")
+      .replace(/:(\d)\b/g, ":$10")
+      .replace(/\.00/g, "")
+      .replace(/:00/g, "");
+  }
+
+  function isOpenSeatName(name) {
+    var up = String(name || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[_\s-]+/g, " ");
+    if (!up) return true;
+    return (
+      up === "NO PARTICIPANT" ||
+      up === "NO CLIENT" ||
+      up === "NOPARTICIPANT" ||
+      up === "OPEN" ||
+      up === "AVAILABLE" ||
+      up === "FREE" ||
+      up === "CLOSED"
+    );
+  }
+
+  /** Office-only: who occupies this Booking band, from standing roster (not public offer JSON). */
+  function rosterTakenNamesForSlot(slot) {
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    var rows = src && Array.isArray(src.rows) ? src.rows : [];
+    if (!rows.length || !slot) return [];
+    var day = String(slot.day || "").trim();
+    var venue = String(slot.venue || "")
+      .trim()
+      .toLowerCase();
+    var wantTime = normOfferTimeKey(slot.timeLabel || slot.sortTime || "");
+    var wantSvc = String(serviceName(slot.serviceId) || slot.service || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    var seen = Object.create(null);
+    var out = [];
+    rows.forEach(function (r) {
+      if (!r) return;
+      var nm = String(r.client_name || "").trim();
+      if (!nm || isOpenSeatName(nm)) return;
+      var rowDay = String(r.day || "").trim();
+      if (day && rowDay && rowDay !== day) return;
+      var rowVenue = String(r.venue || "")
+        .trim()
+        .toLowerCase();
+      if (venue && rowVenue && rowVenue.indexOf(venue) < 0 && venue.indexOf(rowVenue) < 0) {
+        return;
+      }
+      if (wantSvc) {
+        var rowSvc = String(r.service || "")
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, " ");
+        if (rowSvc && rowSvc.indexOf(wantSvc) < 0 && wantSvc.indexOf(rowSvc) < 0) return;
+      }
+      var rowTime = normOfferTimeKey(r.time_slot || "");
+      if (wantTime && rowTime && rowTime !== wantTime && rowTime.indexOf(wantTime) < 0 && wantTime.indexOf(rowTime) < 0) {
+        return;
+      }
+      var key = nm.toLowerCase();
+      if (seen[key]) return;
+      seen[key] = 1;
+      out.push(nm);
+    });
+    out.sort(function (a, b) {
+      return a.localeCompare(b, undefined, { sensitivity: "base" });
+    });
+    return out;
+  }
+
+  /** Staff on the band: offer JSON first, else standing roster instructors for matching seats. */
+  function staffLabelForSlot(slot) {
+    var list = [];
+    function pushAll(arr) {
+      (arr || []).forEach(function (n) {
+        var s = String(n || "").trim();
+        if (!s) return;
+        s.split(/[,+/|]+/).forEach(function (part) {
+          var t = String(part || "").trim();
+          if (t && list.indexOf(t) < 0) list.push(t);
+        });
+      });
+    }
+    pushAll(slot && slot.instructors);
+    pushAll(slot && slot.openInstructors);
+    if (list.length) return list.join(", ");
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    var rows = src && Array.isArray(src.rows) ? src.rows : [];
+    if (!rows.length || !slot) return "";
+    var day = String(slot.day || "").trim();
+    var venue = String(slot.venue || "")
+      .trim()
+      .toLowerCase();
+    var wantTime = normOfferTimeKey(slot.timeLabel || slot.sortTime || "");
+    rows.forEach(function (r) {
+      if (!r) return;
+      var rowDay = String(r.day || "").trim();
+      if (day && rowDay && rowDay !== day) return;
+      var rowVenue = String(r.venue || "")
+        .trim()
+        .toLowerCase();
+      if (venue && rowVenue && rowVenue.indexOf(venue) < 0 && venue.indexOf(rowVenue) < 0) {
+        return;
+      }
+      var rowTime = normOfferTimeKey(r.time_slot || "");
+      if (wantTime && rowTime && rowTime !== wantTime && rowTime.indexOf(wantTime) < 0 && wantTime.indexOf(rowTime) < 0) {
+        return;
+      }
+      pushAll([r.instructors]);
+    });
+    return list.join(", ");
   }
 
   /**
@@ -181,16 +308,16 @@
   function viewHtml(opts) {
     var embedded = !!(opts && opts.embedded);
     var head = embedded
-      ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:28px;min-width:0;scroll-margin-top:14px;border-top:1px solid var(--line,#e5e7eb);padding-top:16px">' +
-        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">2 · Publicación en Booking Portal</h2>' +
+      ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:0;min-width:0;scroll-margin-top:14px;padding-top:4px">' +
+        '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">1 · Places (Booking Portal)</h2>' +
         '<p class="page-intro" style="max-width:52rem;margin:0 0 12px;min-width:0;overflow-wrap:break-word">' +
-        "Public bands and free seats (capacity / taken / free — no names). Same source as the Booking Portal. " +
-        "Weekly Autumn term days are listed first; Intensive Courses &amp; Camps (July weeks) are grouped separately below." +
+        "Same bands as the public Booking Portal: capacity, who is taken (office names from roster), free seats, and staff on the seat. " +
+        "Weekly Autumn days first; Intensive / Camps grouped below." +
         "</p>"
       : '<div class="page-head" style="min-width:0">' +
-        '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Open places 2026/27</h2>' +
+        '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Places 2026/27</h2>' +
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-        "This board now lives under <strong>Services</strong> (section 3). Opening this shortcut takes you there." +
+        "This board lives under <strong>Services</strong> (section 1 · Places). Opening this shortcut takes you there." +
         "</p></div>";
     var close = embedded ? "</div>" : "";
     return (
@@ -441,6 +568,21 @@
         var free = freeOf(slot);
         var tone = free > 0 ? "ok" : "warn";
         var payload = encodeSlotAttr(slot);
+        var takenNames = rosterTakenNamesForSlot(slot);
+        var staffLbl = staffLabelForSlot(slot);
+        var takenHtml = takenNames.length
+          ? '<span class="op2627-taken-names">' +
+            esc(takenNames.join(", ")) +
+            '</span><span class="op2627-taken-count">' +
+            esc(String(takenNames.length)) +
+            " / " +
+            esc(String(slot.capacity || 0)) +
+            " taken</span>"
+          : Number(slot.taken || 0) > 0
+            ? '<span class="op2627-taken-names">' +
+              esc(String(slot.taken)) +
+              ' taken</span><span class="op2627-taken-count">Names not matched on standing roster</span>'
+            : '<span class="muted">—</span>';
         var placeBtns =
           free > 0
             ? '<div class="op2627-place">' +
@@ -463,11 +605,14 @@
           '<td class="op2627-td op2627-td--time">' +
           esc(slot.timeLabel || "—") +
           "</td>" +
+          '<td class="op2627-td op2627-td--staff"><span class="op2627-staff">' +
+          esc(staffLbl || "—") +
+          "</span></td>" +
           '<td class="op2627-td op2627-td--num">' +
           esc(String(slot.capacity || 0)) +
           "</td>" +
-          '<td class="op2627-td op2627-td--num">' +
-          esc(String(slot.taken || 0)) +
+          '<td class="op2627-td op2627-td--taken">' +
+          takenHtml +
           "</td>" +
           '<td class="op2627-td op2627-td--free"><span class="chip chip--' +
           tone +
@@ -497,8 +642,9 @@
       '<th class="op2627-th op2627-td--svc">Service</th>' +
       '<th class="op2627-th op2627-td--venue">Venue</th>' +
       '<th class="op2627-th op2627-td--time">Time</th>' +
+      '<th class="op2627-th op2627-td--staff">Staff</th>' +
       '<th class="op2627-th op2627-td--num">Cap</th>' +
-      '<th class="op2627-th op2627-td--num">Taken</th>' +
+      '<th class="op2627-th op2627-td--taken">Taken</th>' +
       '<th class="op2627-th op2627-td--free">Free</th>' +
       '<th class="op2627-th op2627-td--place">Place</th>' +
       "</tr></thead><tbody>" +

@@ -145,11 +145,11 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260915-chopi-kareena"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260915-wa-131049"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
-  <script src="/portal/admin-open-places-2627.js?v=20260913-slots-live"></script>
+  <script src="/portal/admin-open-places-2627.js?v=20260917-taken-staff"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260909-reply-only" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260917-instructor-update2"></script>
-  <script src="/portal/cfk-app.js?v=20260912-drop-mock-cap"></script>
+  <script src="/portal/cfk-app.js?v=20260917-places-first"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260911-sched-mobile-cards"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
@@ -180,7 +180,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260917-no-title-focus2" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260917-seat-staff" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -8198,18 +8198,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         dataSlot+' title="Open seat — edit standing place / Booking Portal">No participant</button>'
       );
     }
-    /** One table per 90′ group: time + participant seats only (staff lives on Instructor timetable / Overview). */
+    /** One table per 90′ group: time + seats (participant + normal instructor). */
     function adminServicesMultiSundayGroupTableHtml(band, cols, dataSlot){
       var ths = [
         '<th scope="col" class="c4k-svc-slot-th-time">Time</th>',
         '<th scope="col" class="c4k-svc-slot-th-slots" title="Standing seats in this Multi-Activity group">Seats</th>'
       ];
-      var ci, pax, rowTds;
+      var ci, pax, rowTds, staffLbl;
       for(ci = 0; ci < cols.length; ci++){
+        pax = cols[ci];
+        staffLbl = String(
+          (pax && (pax.staffName || pax.instructor || (pax.halfA && pax.halfA.instructors) || (pax.halfB && pax.halfB.instructors))) ||
+          ''
+        ).trim();
         ths.push(
           '<th scope="col" class="c4k-svc-slot-th-seat">'+
           '<span class="c4k-svc-slot-th-seat__stack">'+
           '<span class="c4k-svc-slot-th-seat__line">Seat '+esc(String(ci + 1))+'</span>'+
+          (staffLbl
+            ? '<span class="c4k-svc-slot-th-seat__staff" title="Normal instructor">'+esc(staffLbl)+'</span>'
+            : '')+
           '</span></th>'
         );
       }
@@ -8223,9 +8231,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       ];
       for(ci = 0; ci < cols.length; ci++){
         pax = cols[ci];
+        staffLbl = String(
+          (pax && (pax.staffName || pax.instructor || (pax.halfA && pax.halfA.instructors) || (pax.halfB && pax.halfB.instructors))) ||
+          ''
+        ).trim();
         rowTds.push(
           '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">'+
-          '<div class="c4k-svc-seat c4k-svc-seat--pax-only">'+
+          '<div class="c4k-svc-seat">'+
+          (staffLbl ? '<div class="c4k-svc-seat__staff" title="Normal instructor">'+esc(staffLbl)+'</div>' : '')+
           '<div class="c4k-svc-seat__pax">'+adminServicesMultiSundaySeatCellHtml(pax, dataSlot)+'</div>'+
           '</div></td>'
         );
@@ -8465,7 +8478,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           trCells.push(
             '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">'+
-            '<div class="c4k-svc-seat c4k-svc-seat--pax-only"><div class="c4k-svc-seat__pax">'+cellHtml+'</div></div></td>'
+            '<div class="c4k-svc-seat">'+
+            '<div class="c4k-svc-seat__staff" title="Normal instructor">'+esc(String(sn || '').trim() || '—')+'</div>'+
+            '<div class="c4k-svc-seat__pax">'+cellHtml+'</div></div></td>'
           );
         }
         dataSlot =
@@ -8701,13 +8716,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var seen = {};
       model.staffOrder.forEach(function(k){
         var col = model.byStaff[k];
+        var staffLabel = String((col && col.name) || k || '').trim();
         (col.clients || []).forEach(function(h){
           var client = String((h && h.client) || '').trim();
           if(!client || client === '—') return;
           var key = client.toLowerCase() + '|' + String((h && h.time) || '') + '|' + String((h && h.area) || '');
           if(seen[key]) return;
           seen[key] = true;
-          seats.push(h);
+          seats.push(Object.assign({}, h, { staffName: staffLabel }));
         });
       });
       seats.sort(function(a, b){
@@ -8721,9 +8737,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var nameHtml = pCid
           ? ('<button type="button" class="c4k-svc-dc-client-name" data-client="'+esc(pCid)+'" title="Open participant info">'+esc(h.client)+'</button>')
           : ('<div class="c4k-svc-dc-client-name">'+esc(h.client)+'</div>');
+        var staffNm = String((h && h.staff) || (h && h.staffName) || '').trim();
         return (
           '<tr class="c4k-svc-dc-seat-tr">'+
           '<td class="c4k-svc-dc-seat-td c4k-svc-dc-seat-td--time">'+esc(adminServicesDayCentreTimeCompact(h.time))+'</td>'+
+          '<td class="c4k-svc-dc-seat-td c4k-svc-dc-seat-td--staff">'+esc(staffNm || '—')+'</td>'+
           '<td class="c4k-svc-dc-seat-td c4k-svc-dc-seat-td--pax">'+nameHtml+'</td>'+
           '<td class="c4k-svc-dc-seat-td c4k-svc-dc-seat-td--area">'+esc(h.area ? String(h.area).toUpperCase() : '—')+'</td>'+
           '</tr>'
@@ -8734,6 +8752,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<table class="c4k-svc-slot-table c4k-svc-dc-seat-table" aria-label="Day Centre standing seats">'+
         '<thead><tr>'+
         '<th scope="col" class="c4k-svc-slot-th-time">Time</th>'+
+        '<th scope="col">Instructor</th>'+
         '<th scope="col" class="c4k-svc-slot-th-seat">Participant</th>'+
         '<th scope="col">Area</th>'+
         '</tr></thead><tbody>'+rows+'</tbody></table></div>'
@@ -22426,10 +22445,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(maxSeats < 1) maxSeats = 1;
             var seatHead = '';
             for(var shi = 0; shi < maxSeats; shi++){
+              var headStaff = '';
+              for(var driH = 0; driH < dayBandRows.length; driH++){
+                var hs = dayBandRows[driH].seats && dayBandRows[driH].seats[shi];
+                if(hs && hs.staffName){ headStaff = String(hs.staffName).trim(); break; }
+              }
               seatHead +=
                 '<th scope="col" class="c4k-svc-slot-th-seat">'+
                 '<span class="c4k-svc-slot-th-seat__stack">'+
                 '<span class="c4k-svc-slot-th-seat__line">Seat '+esc(String(shi + 1))+'</span>'+
+                (headStaff
+                  ? '<span class="c4k-svc-slot-th-seat__staff" title="Normal instructor (Timetable / standing)">' + esc(headStaff) + '</span>'
+                  : '')+
                 '</span></th>';
             }
             var rowChunks = [];
@@ -22466,7 +22493,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 }
                 seatCells +=
                   '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">' +
-                  '<div class="c4k-svc-seat c4k-svc-seat--pax-only">' +
+                  '<div class="c4k-svc-seat">' +
+                  (seat && seat.staffName
+                    ? '<div class="c4k-svc-seat__staff" title="Normal instructor">' + esc(String(seat.staffName).trim()) + '</div>'
+                    : '') +
                   '<div class="c4k-svc-seat__pax">' + paxHtml + '</div>' +
                   '</div></td>';
               }
@@ -26627,9 +26657,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         dashboard:'Live sessions on site — feedback, incidents, venue checks and day tools for staff on the rota.',
         operations_admin:'Participants (orders, finance, reports) and staff (HR, contracts, documents).',
         operator:'Control centre · KPIs · suggestions · new leads',
-        c4k_services:'Standing term roster, Places seats (free/occupied), and Assign on open seats. Day make-ups stay in Schedule & Covers.',
-        open_places_2627:'Places board inside Services — free / occupied seats (Booking Portal mirror).',
-        servicecap:'Shortcut — opens Services and scrolls to Booking Portal places (§2).',
+        c4k_services:'1 · Places (Booking seats + who is taken). 2 · Services roster (participant + normal instructor). Day covers on Schedule & Covers.',
+        open_places_2627:'Places board inside Services — free / occupied seats + who is taken (Booking Portal mirror).',
+        servicecap:'Shortcut — opens Services Places (Booking Portal seats).',
         c4k_sessions:'Live roster grid — who worked today, pending feedback, absents and flags.',
         roster_spreadsheets:'Staff rota (day / shift / paid). Places = Services open seats. Chain: Places → Timetable → Services → Schedule & Covers.',
         term_roster_edit:'Participant first — see current seat, pick an available open seat, then save (day / every weekday / rest of term).',

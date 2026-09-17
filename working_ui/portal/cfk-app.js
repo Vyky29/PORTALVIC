@@ -14,7 +14,7 @@
   var PRODUCT_NAME = "CFK";
   var PAGE_TITLE = "Services";
   var PAGE_INTRO =
-    "Services manages permanent term configuration and standing roster. Daily covers, day offs and make-ups are in Schedule & Covers. Effective day result is checked in Sessions Overview. Public seats are checked in Booking Portal (section 3).";
+    "Places first (Booking Portal seats + who is taken), then Services roster (who is booked + normal instructor). Day covers / day offs stay on Schedule & Covers; Timetable owns who-works shift/paid (dated overrides can differ from standing).";
 
   var deps = {
     $: function (id) {
@@ -304,10 +304,10 @@
       "</span>" +
       ' <span class="chip" style="vertical-align:middle;margin-left:4px">Autumn 26/27</span></p>' +
       '<div class="c4k-svc-jumpbar" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px;min-width:0" role="navigation" aria-label="Jump on this page">' +
-      '<button type="button" class="btn btn--ghost btn--sm" id="c4kServicesJumpRoster" title="Jump to permanent roster">' +
-      "1 · Roster permanente</button>" +
       '<button type="button" class="btn btn--pri btn--sm" id="c4kServicesJumpOpenPlaces" title="Jump to Booking Portal places">' +
-      "2 · Publicación en Booking Portal</button></div>" +
+      "1 · Places (Booking Portal)</button>" +
+      '<button type="button" class="btn btn--ghost btn--sm" id="c4kServicesJumpRoster" title="Jump to standing roster">' +
+      "2 · Services roster</button></div>" +
       '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>' +
       '<details class="c4k-svc-filters" id="c4kServicesFiltersPanel" open>' +
       '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class, instructor or participant</summary>' +
@@ -340,14 +340,14 @@
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterSpace"><span>Space available</span> <input type="checkbox" id="c4kSvcFilterSpace" /></label>' +
       '<label class="c4k-svc-filters__check" for="c4kSvcFilterWait"><span>Participants on waiting list</span> <input type="checkbox" id="c4kSvcFilterWait" /></label>' +
       "</div></div></details>" +
+      openPlacesEmbedHtml() +
+      capacityEmbedHtml() +
       '<section id="c4kServicesRosterAnchor" aria-label="Roster" style="min-width:0;scroll-margin-top:14px">' +
-      '<h2 class="page-title" style="font-size:1.15rem;margin:14px 0 6px;min-width:0;overflow-wrap:break-word">1 · Roster permanente</h2>' +
-      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Standing Places aligned with Booking Portal (weekday seats from Mon 14 Sep pattern). Open = No participant. Day covers / make-ups stay on Schedule &amp; Overview; staff rota on Instructor timetable.</p>' +
+      '<h2 class="page-title" style="font-size:1.15rem;margin:28px 0 6px;min-width:0;overflow-wrap:break-word">2 · Services roster</h2>' +
+      '<p class="page-intro" style="margin:0 0 8px;max-width:52rem;min-width:0;overflow-wrap:break-word">Who is booked on each standing seat + the <strong>normal instructor</strong> for that seat (from Timetable / roster). Day covers stay on Schedule &amp; Overview; shift/paid edits on Instructor timetable.</p>' +
       '<div id="c4kServicesRosterRoot" style="min-width:0">' +
       rosterPart +
-      "</div></section>" +
-      capacityEmbedHtml() +
-      openPlacesEmbedHtml()
+      "</div></section>"
     );
   }
 
