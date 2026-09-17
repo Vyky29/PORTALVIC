@@ -229,9 +229,20 @@
             return;
           }
           cfg.toast(
-            act === 'mark_refunded' ? 'Marked refunded' : act === 'mark_applied' ? 'Credit applied' : 'Cancelled',
+            act === 'mark_refunded'
+              ? 'Marked refunded'
+              : act === 'mark_applied'
+                ? 'Credit applied — see All tab'
+                : 'Cancelled',
             'ok'
           );
+          if (act === 'mark_applied' || act === 'mark_refunded') {
+            state.filter = 'all';
+            global.document.querySelectorAll('[data-credits-filter]').forEach(function (b) {
+              var on = b.getAttribute('data-credits-filter') === state.filter;
+              b.classList.toggle('btn--ghost', !on);
+            });
+          }
           void renderHost(global.document.getElementById('portalParentCreditsHost'));
         });
       });
@@ -244,7 +255,7 @@
       '<div class="card-h"><h3>Family credits &amp; refunds</h3>' +
       '<span class="chip chip--pend" id="portalParentCreditsMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Ledger rows from excused absences or <strong>Add credit / refund</strong> when a parent phones. Families see open balances in the parent hub. Mark refunded after the bank/Stripe transfer; mark applied when a credit is used on a booking.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Ledger rows from excused absences or <strong>Add credit / refund</strong> when a parent phones. Families see open balances in the parent hub. <strong>Mark applied</strong> moves the row out of Open — find it again under <strong>All</strong> (status applied). Mark refunded after the bank/Stripe transfer.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-credits-filter="open">Open</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-credits-filter="all">All</button>' +

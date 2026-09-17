@@ -107,7 +107,10 @@
         esc(g.id) +
         '" data-venue="' +
         esc(g.preferred_venue || '') +
-        '">Offer slot</button>';
+        '">Offer slot</button>' +
+        ' <button type="button" class="btn btn--sm btn--ghost" data-makeup-cancel="' +
+        esc(g.id) +
+        '">Cancel grant</button>';
     } else if (g.status === 'offered' && pending) {
       actions =
         '<span class="muted" style="display:block;margin-bottom:4px;overflow-wrap:break-word">' +
@@ -117,7 +120,10 @@
         '</span>' +
         '<button type="button" class="btn btn--sm btn--ghost" data-makeup-withdraw="' +
         esc(pending.id) +
-        '">Withdraw offer</button>';
+        '">Withdraw offer</button>' +
+        ' <button type="button" class="btn btn--sm btn--ghost" data-makeup-cancel="' +
+        esc(g.id) +
+        '">Cancel grant</button>';
     } else if (g.status === 'consumed') {
       var accepted = (g.offers || []).find(function (o) {
         return o && o.status === 'accepted';
@@ -183,7 +189,7 @@
       '<div class="card-h"><h3>Makeup grants (by venue)</h3>' +
       '<span class="chip chip--pend" id="portalMakeupMeta">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Waiting-list style: offer a concrete slot at the family&apos;s <strong>preferred venue</strong> (instructor + time required). If they <strong>Accept</strong>, MakeUp is written to the roster automatically. If they <strong>Decline</strong>, they forfeit the grant and the slot can go to the next family. Use <strong>Add makeup</strong> when a parent phones in.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Waiting-list style: offer a concrete slot at the family&apos;s <strong>preferred venue</strong> (instructor + time required). If they <strong>Accept</strong>, MakeUp is written to the roster automatically. If they <strong>Decline</strong>, they forfeit the grant and the slot can go to the next family. Wrong grant? <strong>Cancel grant</strong>. Use <strong>Add makeup</strong> when a parent phones in.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-makeup-filter="open">Open</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-makeup-filter="offered">Offered</button>' +
@@ -280,6 +286,30 @@
               return;
             }
             cfg.toast('Offer withdrawn', 'ok');
+            void renderHost(global.document.getElementById('portalMakeupHost'));
+          }
+        );
+      });
+    });
+    hostEl.querySelectorAll('[data-makeup-cancel]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var grantId = btn.getAttribute('data-makeup-cancel');
+        if (
+          !global.confirm(
+            'Cancel this makeup grant? It leaves the Open list (view under All as cancelled).'
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        void api('portal-admin-makeup-grant', { action: 'cancel', grant_id: grantId }).then(
+          function (r) {
+            if (r.error) {
+              cfg.toast(r.message || r.error, 'error');
+              btn.disabled = false;
+              return;
+            }
+            cfg.toast('Makeup grant cancelled', 'ok');
             void renderHost(global.document.getElementById('portalMakeupHost'));
           }
         );

@@ -421,6 +421,19 @@
         esc(r.id) +
         '">Grant makeup</button>' +
         '<span class="muted" style="display:block;margin-top:4px;font-size:11px;overflow-wrap:break-word">Pick venue + open roster seat</span>';
+    } else if (
+      r.status === 'excused' ||
+      r.status === 'noted' ||
+      r.status === 'rejected' ||
+      r.status === 'expired'
+    ) {
+      actions =
+        '<span class="muted" style="display:block;margin-bottom:4px;overflow-wrap:break-word">' +
+        esc(r.outcome ? 'Outcome: ' + r.outcome : r.review_notes || '—') +
+        '</span>' +
+        '<button type="button" class="btn btn--sm btn--ghost" data-absence-reopen="' +
+        esc(r.id) +
+        '">Reopen to decide again</button>';
     } else {
       actions =
         '<span class="muted">' +
@@ -483,7 +496,7 @@
     return (
       '<div class="portal-parent-absences-embed">' +
       '<h1 class="page-title">Absents &amp; cancelled (decision queue)</h1>' +
-      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Decide credit, refund, makeup or none. None = no parent message. Makeup picks an open roster seat — or place MakeUp in Schedule &amp; Covers and this row closes automatically.</p>' +
+      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Decide credit, refund, makeup or none. None = no parent message — find those under <strong>Decided</strong>. Wrong call? Use <strong>Reopen to decide again</strong>. Makeup picks an open roster seat — or place MakeUp in Schedule &amp; Covers and this row closes automatically.</p>' +
       '<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-absence-filter="needs_decision">Open (decide)</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="decided">Decided</button>' +
@@ -816,6 +829,33 @@
 
   function bindRowActions(hostEl) {
     if (!hostEl) return;
+    hostEl.querySelectorAll('[data-absence-reopen]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-absence-reopen');
+        if (
+          !global.confirm(
+            'Reopen this row to decide again? Linked open makeup grants / open credits for this row will be cancelled.'
+          )
+        ) {
+          return;
+        }
+        btn.disabled = true;
+        void decide(id, 'reopen', '', 'Reopened by office to decide again', '').then(function (r) {
+          if (r.error) {
+            cfg.toast(r.message || r.error || 'Reopen failed', 'error');
+            btn.disabled = false;
+            return;
+          }
+          cfg.toast('Reopened — back in Open (decide). Refresh Makeup / Credits if needed.', 'ok');
+          state.filter = 'needs_decision';
+          global.document.querySelectorAll('[data-absence-filter]').forEach(function (b) {
+            var on = b.getAttribute('data-absence-filter') === state.filter;
+            b.classList.toggle('btn--ghost', !on);
+          });
+          void renderHost(global.document.getElementById('portalParentAbsenceHost'));
+        });
+      });
+    });
     hostEl.querySelectorAll('[data-absence-approve]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var id = btn.getAttribute('data-absence-approve');
@@ -1000,7 +1040,7 @@
       '<div class="card-h"><h3>Absents &amp; cancellations — decide</h3>' +
       '<span class="chip chip--pend" id="portalParentAbsenceMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Pick outcome → <strong>Approve</strong>. <strong>None</strong> = nothing owed, no parent message. <strong>Credit / refund</strong> = ledger + aviso. <strong>Makeup</strong> = pick venue + open roster seat here, or place MakeUp in Schedule &amp; Covers (auto-closes the oldest open row for that child). See <strong>Decided</strong> after.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Pick outcome → <strong>Approve</strong>. <strong>None</strong> = nothing owed, no parent message (then leaves Open — find them under <strong>Decided</strong>). <strong>Credit / refund</strong> = ledger + aviso. <strong>Makeup</strong> = pick venue + open roster seat here, or place MakeUp in Schedule &amp; Covers (auto-closes the oldest open row for that child). Wrong decision? Open <strong>Decided</strong> → <strong>Reopen to decide again</strong>.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-absence-filter="needs_decision">Open (decide)</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="decided">Decided</button>' +

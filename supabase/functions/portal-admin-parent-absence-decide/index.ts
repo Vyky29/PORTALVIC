@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
   }
 
   if (!reportId) return portalAdminJson(400, { ok: false, error: "report_id_required" });
-  if (!["approve", "reject", "grant_makeup"].includes(action)) {
+  if (!["approve", "reject", "grant_makeup", "reopen"].includes(action)) {
     return portalAdminJson(400, { ok: false, error: "action_required" });
   }
   if (action === "approve" && !OUTCOMES.has(outcome)) {
@@ -87,6 +87,81 @@ Deno.serve(async (req) => {
   }
 
   const now = new Date().toISOString();
+
+  // Undo a previous decision so the row returns to Open (decide) for a fresh outcome.
+  if (action === "reopen") {
+    const st = String(report.status || "");
+    if (!["excused", "noted", "rejected", "expired"].includes(st)) {
+      return portalAdminJson(409, {
+        ok: false,
+        error: "not_reopenable",
+        message: "Only decided / closed rows can be reopened.",
+        status: st,
+      });
+    }
+    const reopenNote = notes || "Reopened by office to decide again";
+    const { data: linkedGrants } = await admin
+      .from("portal_parent_makeup_grants")
+      .select("id, status")
+      .eq("absence_report_id", reportId);
+    const grantIds = (linkedGrants || []).map((g: { id: string }) => g.id).filter(Boolean);
+    if (grantIds.length) {
+      await admin
+        .from("portal_parent_makeup_offers")
+        .update({ status: "withdrawn", updated_at: now, responded_at: now })
+        .in("grant_id", grantIds)
+        .eq("status", "pending");
+      await admin
+        .from("portal_parent_makeup_grants")
+        .update({
+          status: "cancelled",
+          closed_at: now,
+          updated_at: now,
+          notes: reopenNote,
+        })
+        .in("id", grantIds)
+        .in("status", ["open", "offered"]);
+    }
+    // Cancel linked open credits / refunds (not already applied/refunded).
+    await admin
+      .from("portal_parent_family_credits")
+      .update({
+        status: "cancelled",
+        closed_at: now,
+        closed_by: verified.userId || null,
+        close_notes: reopenNote,
+        updated_at: now,
+      })
+      .eq("absence_report_id", reportId)
+      .eq("status", "open");
+
+    const fromSchedule = !!clean(report.schedule_override_id, 60);
+    const isCancellation = clean(report.case_kind, 20).toLowerCase() === "cancellation";
+    const backStatus =
+      report.proof_storage_path || fromSchedule || isCancellation ? "pending_review" : "missed";
+
+    const { data: reopened, error: reErr } = await admin
+      .from("portal_parent_absence_reports")
+      .update({
+        status: backStatus,
+        outcome: null,
+        outcome_notes: null,
+        review_notes: reopenNote,
+        reviewed_at: null,
+        reviewed_by: null,
+        updated_at: now,
+      })
+      .eq("id", reportId)
+      .select(
+        "id, status, outcome, outcome_notes, review_notes, participant_display, session_date, service_label",
+      )
+      .maybeSingle();
+    if (reErr || !reopened) {
+      console.error("[portal-admin-parent-absence-decide] reopen", reErr?.message);
+      return portalAdminJson(500, { ok: false, error: "reopen_failed" });
+    }
+    return portalAdminJson(200, { ok: true, report: reopened, reopened: true });
+  }
 
   if (action === "grant_makeup") {
     if (!["missed", "expired", "rejected"].includes(String(report.status))) {
