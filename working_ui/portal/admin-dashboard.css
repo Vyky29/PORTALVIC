@@ -1030,6 +1030,16 @@
       min-width:0;
       overflow-wrap:break-word;
     }
+    /* Programmatic focus on view change (a11y / scroll reset) — no blue focus ring on titles */
+    .page-title:focus,
+    .page-title:focus-visible,
+    .admin-page-head__title:focus,
+    .admin-page-head__title:focus-visible,
+    #workspace h1:focus,
+    #workspace h1:focus-visible{
+      outline:none;
+      box-shadow:none;
+    }
     .page-desc{
       margin:0 0 14px;
       font-size:13px;
