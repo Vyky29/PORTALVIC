@@ -16083,10 +16083,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         await schedCancelDuplicateInstructorReassigns(client, row, ins0.id);
         await schedCancelCoverNeededForSlot(client, slot, ins0.id);
       }
-      /* Club cancel / admin cancel / clear client → Absents & credits decision queue. */
+      /* Club cancel / admin cancel / clear client → Absents & credits decision queue.
+       * Same-day / day reassign clears are moves (Moved out / Moved in), not cancellations. */
       if(ovType === 'slot_close' || ovType === 'client_cancelled' || ovType === 'slot_clear_client'){
         var clearPl = payload || {};
-        var isMoveClear = !!(clearPl.client_move || clearPl.moved_to_staff_id || clearPl.moved_client_id);
+        var isMoveClear = !!(
+          clearPl.client_move ||
+          clearPl.moved_to_staff_id ||
+          clearPl.moved_client_id ||
+          clearPl.day_reassign === true ||
+          String(clearPl.replace_kind || '').toLowerCase() === 'day_reassign'
+        );
         if(!(ovType === 'slot_clear_client' && isMoveClear)){
           try{
             await schedEnqueueCancelDecisionQueue(client, slot, ins0.id, ovType, reason);
@@ -16103,17 +16110,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           console.warn('[portal] absent decision queue enqueue failed', _enqA);
         }
       }
-      /* Confirmed MakeUp (not trial): notify + close matching Absents queue row. */
+      /* Confirmed MakeUp (not trial, not same-day reassign): notify + close Absents row. */
       if(ovType === 'client_replace_in_slot' && !isTrial){
-        try{
-          await schedNotifyMakeupConfirmed(client, slot, ins0.id, payload, row);
-        }catch(_mkN){
-          console.warn('[portal] makeup confirmed notify failed', _mkN);
-        }
-        try{
-          await schedResolveOpenAbsenceAfterMakeup(client, slot, ins0.id, payload);
-        }catch(_mkA){
-          console.warn('[portal] makeup → absents sync failed', _mkA);
+        var mkPl = payload || {};
+        var isDayReassignFill = !!(
+          mkPl.day_reassign === true ||
+          mkPl.not_makeup === true ||
+          mkPl.client_move ||
+          String(mkPl.replace_kind || mkPl.booking_kind || '').toLowerCase() === 'day_reassign'
+        );
+        if(!isDayReassignFill){
+          try{
+            await schedNotifyMakeupConfirmed(client, slot, ins0.id, payload, row);
+          }catch(_mkN){
+            console.warn('[portal] makeup confirmed notify failed', _mkN);
+          }
+          try{
+            await schedResolveOpenAbsenceAfterMakeup(client, slot, ins0.id, payload);
+          }catch(_mkA){
+            console.warn('[portal] makeup → absents sync failed', _mkA);
+          }
         }
       }
       var evRow = {
