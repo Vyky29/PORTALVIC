@@ -39,6 +39,7 @@ const SLUG_TO_CONTACT: Record<string, string> = {
   adam_pi: "354",
   amaar_ah: "105",
   amar_rai: "130",
+  amar_ra: "130",
   anas: "7560101",
   cyrus: "79",
   gabriel: "99",
@@ -48,6 +49,9 @@ const SLUG_TO_CONTACT: Record<string, string> = {
   yamik: "gap-yamik-limbu",
   yassir: "119",
   yunis: "232",
+  mia: "385",
+  mia_mesi: "385",
+  mia_m: "385",
 };
 
 function clean(v: unknown, max = 500): string {
@@ -79,13 +83,27 @@ function isMoveNotCancel(ov: Record<string, unknown>): boolean {
 }
 
 async function resolveParticipant(slug: string) {
-  const mapped = SLUG_TO_CONTACT[slug] || slug;
-  const { data } = await admin
+  const raw = clean(slug, 80).toLowerCase();
+  if (!raw) return null;
+  const mapped = SLUG_TO_CONTACT[raw] || raw;
+  const { data: byId } = await admin
     .from("portal_participants")
     .select("contact_id, display_name, parent_person_id")
     .eq("contact_id", mapped)
     .maybeSingle();
-  return data;
+  if (byId?.contact_id && byId.parent_person_id) return byId;
+
+  const nameGuess = raw.replace(/_/g, " ").trim();
+  if (nameGuess) {
+    const { data: byName } = await admin
+      .from("portal_participants")
+      .select("contact_id, display_name, parent_person_id")
+      .ilike("display_name", nameGuess + "%")
+      .limit(3);
+    const rows = (byName || []).filter((r) => r.contact_id && r.parent_person_id);
+    if (rows.length === 1) return rows[0];
+  }
+  return null;
 }
 
 const { data: ovs, error } = await admin
