@@ -180,7 +180,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260917-nav-split" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260917-nav-today" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -279,7 +279,7 @@
         <div class="admin-sidebar-width-controls" role="presentation">
           <button type="button" class="admin-sidebar-rail-btn" id="adminSidebarPinToggle" aria-label="Expand sidebar to full width" title="Expand to full width">+</button>
         </div>
-        <span class="admin-sidebar-foot__txt">Demo mode · <a href="admin_roster_guide.html" target="_blank" rel="noopener" style="color:inherit">Roster guide</a></span>
+        <span class="admin-sidebar-foot__txt"><a href="admin_roster_guide.html" target="_blank" rel="noopener" style="color:inherit">Roster guide</a></span>
       </div>
     </aside>
     <div class="admin-main">
@@ -458,7 +458,13 @@
       { id:'reenrol_payments', label:'Finance', hubLabel:'Finance' },
       { id:'commissioning_terms', label:'LA / Commissioning Terms', hubLabel:'LA Terms' },
       { id:'invoices', label:'Finance', hubLabel:'Finance' },
-      { id:'c4k_sessions', label:'Sessions overview' },
+      { id:'c4k_sessions', label:'Sessions overview', hubLabel:'Overview' },
+      { id:'sessions_register', label:'Register', dayOpsAct:'sessions_hub_feedback' },
+      { id:'sessions_feedback', label:'Session Feedback', hubLabel:'Feedback', dayOpsAct:'sessions_hub_positive' },
+      { id:'sessions_absents', label:'Day absents', hubLabel:'Absents (day)', dayOpsAct:'sessions_hub_absents' },
+      { id:'sessions_incidents', label:'Incidents', dayOpsAct:'sessions_hub_incidents' },
+      { id:'sessions_notes', label:'Session notes', hubLabel:'Notes', dayOpsAct:'sessions_hub_relevant' },
+      { id:'c4k_late_submissions', label:'Late feedback' },
       { id:'session_disruptions', label:'Session disruptions' },
       { id:'c4k_waitlist', label:'WAITING' },
       { id:'office_calendar', label:'Office calendar', hubLabel:'Office calendar' },
@@ -509,15 +515,17 @@
     ];
     /** Touch layout (<900px): short bottom bar — full menu via sidebar. */
     var ADMIN_MOBILE_MAX_WIDTH = 899;
-    var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'operations_admin', 'nav_all_menu'];
+    var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'c4k_sessions', 'scheduling', 'nav_all_menu'];
     var NAV_GROUPS = [
-      { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator','office_calendar','scheduling','__h:People buckets','leads','portal_participant_documents','receptionist'] },
-      { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','__h:Orders','orders_all'] },
-      { id:'g_clients', label:'Clients & families', children:['clients','c4k_waitlist','c4k_reviews','c4k_reports','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
-      { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','roster_spreadsheets','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews'] },
-      { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Day Centre','day_centre_documents','__h:Forms','portal_climbing_registrations','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
-      { id:'g_xero', label:'Finance', children:['reenrol_payments','absents_refunds','commissioning_terms'] },
-      { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','admin_office_help','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
+      { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','sessions_feedback','sessions_absents','c4k_late_submissions','office_calendar','__h:More day tools','sessions_incidents','sessions_notes'] },
+      { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','orders_all'] },
+      { id:'g_clients', label:'Clients & families', children:['clients','c4k_waitlist','leads','portal_participant_documents'] },
+      { id:'g_xero', label:'Money', children:['reenrol_payments','absents_refunds'] },
+      { id:'g_messages', label:'Messages', children:['portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
+      { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews'] },
+      { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Forms','portal_climbing_registrations','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','__h:More files','day_centre_documents','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
+      { id:'g_more', label:'More', children:['__h:Extra hubs','dashboard','operations_admin','operator','receptionist','session_disruptions','c4k_reviews','c4k_reports','comms_ops','comms_bookings','commissioning_terms','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport'] },
+      { id:'g_settings_portal', label:'Settings', children:['settings','admin_office_help','portal_device_notifications','logs','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
     var NAV_ICON_SVGS = {
@@ -531,6 +539,13 @@
       clients:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
       c4k_services:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
       c4k_sessions:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+      sessions_register:'<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/>',
+      sessions_feedback:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+      sessions_absents:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="16" x2="15" y2="16"/>',
+      sessions_incidents:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+      sessions_notes:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+      g_messages:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',
+      g_more:'<circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/>',
       session_disruptions:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="13" x2="12" y2="16"/><line x1="12" y1="18.5" x2="12" y2="18.5"/>',
       scheduling:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/>',
       term_roster_edit:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14v4"/><path d="M10 16h4"/>',
@@ -1186,7 +1201,7 @@
       }
     };
 
-    var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_services:false, g_clients:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, capAvailFilter:'open', capVenueFilter:'', portalLatePendingCount:0, financeTab:'payments', hrContractsTab:'create', hrContractsIssueDoc:'checklist' };
+    var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_services:false, g_clients:false, g_xero:false, g_messages:false, g_zoho:false, g_supabase:false, g_more:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, capAvailFilter:'open', capVenueFilter:'', portalLatePendingCount:0, financeTab:'payments', hrContractsTab:'create', hrContractsIssueDoc:'checklist' };
     var sched = { slotsById:{}, overrides:[], termEvents:[], rosterLogRows:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
     /**
      * Schedule &amp; Covers + Sessions week window — Autumn Term 2026 (full first term).
@@ -2299,13 +2314,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return null;
     }
     function navGroupForView(viewId){
-      if(viewId === 'comms_ops_order') return 'g_clients';
+      if(viewId === 'comms_ops_order') return 'g_messages';
       if(viewId === 'settings') return 'g_settings_portal';
+      if(viewId === 'sessions_register' || viewId === 'sessions_feedback' || viewId === 'sessions_absents' || viewId === 'sessions_incidents' || viewId === 'sessions_notes') return 'g_operator';
       for(var i=0;i<NAV_GROUPS.length;i++){
         var g = NAV_GROUPS[i];
         if((g.children||[]).indexOf(viewId)>=0) return g.id;
       }
-      /* Legacy: anything that used to live under CFK but is not listed maps by known ids. */
       if(viewId === 'g_c4k') return 'g_services';
       return '';
     }
@@ -26475,15 +26490,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(item.navAction === 'device_notifications'){
         return '<button type="button" class="dash-hub__tile" data-admin-nav-action="device_notifications">'+band+label+descHtml+'</button>';
       }
+      if(item.dayOpsAct){
+        return '<button type="button" class="dash-hub__tile" data-dayops-act="'+esc(String(item.dayOpsAct))+'">'+band+label+descHtml+'</button>';
+      }
       return '<button type="button" class="dash-hub__tile" data-view-target="'+esc(item.id)+'">'+band+label+descHtml+'</button>';
     }
     var OPS_HUB_CARD_ICON_IDS = {
-      operator: 'operator',
+      today: 'c4k_sessions',
       services: 'g_services',
       clients: 'g_clients',
+      finance: 'g_xero',
+      messages: 'g_messages',
       staffhr: 'staffhr',
       documents: 'portal_documents',
-      finance: 'g_xero'
+      more: 'g_more'
     };
     function opsHubCardIconHtml(card){
       if(!card) return '';
@@ -26493,62 +26513,42 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     var OPS_HUB_CARDS = [
       {
-        id:'operator',
-        icon:'⚡',
-        title:'Operator',
-        description:'Daily operational workflow for managing today\u2019s sessions, urgent actions, covers, cancellations and staff communication.',
-        preview:['Today\u2019s live sessions','Covers and cancellations','Urgent operational actions','Receptionist workflow','Staff communication'],
-        status:'Use this area first when managing live day-to-day operations.',
-        primary:['dashboard','operations_admin','operator','scheduling'],
-        secondary:['office_calendar','receptionist','leads']
+        id:'today',
+        icon:'📅',
+        title:'Today',
+        description:'Day board tools used all the time — overview, covers, register and feedback.',
+        preview:[],
+        status:'',
+        primary:['c4k_sessions','scheduling','sessions_register','sessions_feedback','sessions_absents','c4k_late_submissions'],
+        secondary:['office_calendar','sessions_incidents','sessions_notes']
       },
       {
         id:'services',
         icon:'🎯',
         title:'Services & places',
-        description:'Capacity board, open places, standing seat edits and bookings.',
-        preview:['Services board','Edit term slot','Bookings'],
-        status:'Use this area for capacity and standing places.',
-        primary:['c4k_services','term_roster_edit','orders_all'],
-        secondary:[]
+        description:'Capacity, open places and standing seat edits.',
+        preview:[],
+        status:'',
+        primary:['c4k_services','term_roster_edit'],
+        secondary:['orders_all']
       },
       {
         id:'clients',
         icon:'👥',
         title:'Clients & families',
-        description:'CLIENT list, waiting list, reviews and family communications.',
-        preview:['CLIENT','WAITING','Reviews','Family messages'],
-        status:'Use this area for people and family follow-up.',
-        primary:['clients','c4k_waitlist','c4k_reviews'],
-        secondary:['c4k_reports','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast']
-      },
-      {
-        id:'staffhr',
-        icon:'👥',
-        title:'H&R',
-        description:'Staff roster, Timetable (who works), onboarding, contracts, recruitment and interviews.',
-        preview:['Staff roster','Timetable','Onboarding progress','Contracts'],
-        status:'Use this area for workers and rota hours — not client seats.',
-        primary:['staffhr','roster_spreadsheets','onboarding',{ id:'staffhr_contracts', label:'Employment contracts / CONTRACTS' },{ id:'staffhr_training_records', label:'Training records' },{ id:'staffhr_uniform', label:'Uniform stock' },'recruitment','interviews'],
-        secondary:['comms_bookings']
-      },
-      {
-        id:'documents',
-        icon:'📄',
-        title:'Documents & Compliance',
-        description:'Company policies, participant files and consents, plus worker payslips, timesheets, expenses and compliance uploads.',
-        preview:['Policies portal','Policy sign-offs','Registration forms','Climbing registrations','Parent consents','Payslips'],
-        status:'Use this area for policies, participant records and worker documents.',
-        primary:['policies_portal','policies','portal_participant_documents','portal_climbing_registrations','portal_parent_consents','portal_payslips'],
-        secondary:['portal_documents','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid','portal_docs_certificate']
+        description:'People buckets — CLIENT, WAITING, LEADS, REGISTERED.',
+        preview:[],
+        status:'',
+        primary:['clients','c4k_waitlist','leads','portal_participant_documents'],
+        secondary:[]
       },
       {
         id:'finance',
         icon:'💷',
-        title:'Finance',
-        description:'Create and share family invoices in Portal, track payments, and review credits.',
-        preview:['Finance','Create invoice','Re-enrolments & Bookings','Term payments'],
-        status:'Finance: create invoices, track re-enrolment and Booking Portal instalments, and review payments by term (Summer 25/26 · Autumn 26/27).',
+        title:'Money',
+        description:'Invoices, payments, refunds and credits.',
+        preview:[],
+        status:'',
         primary:[
           { id:'reenrol_payments', label:'Finance' },
           { id:'absents_refunds', label:'Refunds & credits' }
@@ -26556,23 +26556,57 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         secondary:[]
       },
       {
-        id:'monitoring',
-        icon:'📡',
-        title:'Monitoring & Settings',
-        description:'Review portal activity, training readiness, staff live map, activity logs, alerts and system settings.',
-        preview:['Portal activity','Training readiness','Staff live map','Alerts inbox','Device notifications','System settings'],
-        status:'Use this area to monitor usage, readiness and system activity.',
-        primary:['portal_activity','portal_training_progress','staff_live_map','settings','logs'],
-        secondary:[{ id:'admin_office_help', label:'Office help' },'portal_device_notifications','portal_nav_alerts','nav_all_menu']
+        id:'messages',
+        icon:'💬',
+        title:'Messages',
+        description:'Family and staff WhatsApp / notify.',
+        preview:[],
+        status:'',
+        primary:['portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'],
+        secondary:[]
+      },
+      {
+        id:'staffhr',
+        icon:'👥',
+        title:'H&R',
+        description:'Staff roster and Timetable (who works).',
+        preview:[],
+        status:'',
+        primary:['staffhr','roster_spreadsheets','onboarding'],
+        secondary:[{ id:'staffhr_contracts', label:'Contracts' },{ id:'staffhr_training_records', label:'Training records' },{ id:'staffhr_uniform', label:'Uniform' },'recruitment','interviews']
+      },
+      {
+        id:'documents',
+        icon:'📄',
+        title:'Documents',
+        description:'Policies, consents and worker uploads.',
+        preview:[],
+        status:'',
+        primary:['policies_portal','policies','portal_parent_consents','portal_payslips'],
+        secondary:['portal_climbing_registrations','portal_docs_timesheet','portal_docs_expense','day_centre_documents']
+      },
+      {
+        id:'more',
+        icon:'⋯',
+        title:'More',
+        description:'Extra hubs, monitoring and older tools.',
+        preview:[],
+        status:'',
+        primary:['admin_office_help','settings','logs','portal_nav_alerts'],
+        secondary:['dashboard','operations_admin','operator','portal_activity','staff_live_map','c4k_reviews','c4k_reports']
       }
     ];
     function opsHubResolveAction(action){
       if(!action) return null;
-      if(typeof action === 'string') return navGetItem(action);
+      if(typeof action === 'string'){
+        var direct = navGetItem(action);
+        if(!direct) return null;
+        return { id:direct.id, label:direct.hubLabel || direct.label, externalUrl:direct.externalUrl, navAction:direct.navAction, dayOpsAct:direct.dayOpsAct };
+      }
       if(action && action.id){
         var item = navGetItem(action.id);
         if(!item) return null;
-        return { id:item.id, label:action.label || item.hubLabel || item.label, externalUrl:item.externalUrl, navAction:item.navAction };
+        return { id:item.id, label:action.label || item.hubLabel || item.label, externalUrl:item.externalUrl, navAction:item.navAction, dayOpsAct:item.dayOpsAct };
       }
       return null;
     }
@@ -26601,6 +26635,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(item.navAction === 'fullnav'){
         return '<button type="button" class="'+cls+'" data-admin-nav-action="fullnav">'+inner+'</button>';
+      }
+      if(item.dayOpsAct){
+        return '<button type="button" class="'+cls+'" data-dayops-act="'+esc(String(item.dayOpsAct))+'">'+inner+'</button>';
       }
       return '<button type="button" class="'+cls+'" data-view-target="'+esc(item.id)+'">'+inner+'</button>';
     }
@@ -32803,6 +32840,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             btn = '<button type="button" data-admin-nav-action="alerts" title="'+escAttr(lab)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(lab)+'</span></button>';
           }else if(item.navAction === 'device_notifications'){
             btn = '<button type="button" data-admin-nav-action="device_notifications" title="'+escAttr(lab)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(lab)+'</span></button>';
+          }else if(item.dayOpsAct){
+            btn = '<button type="button" data-dayops-act="'+esc(String(item.dayOpsAct))+'" title="'+escAttr(lab)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(lab)+'</span></button>';
           }else{
             btn = '<button type="button" data-view="'+esc(item.id)+'" title="'+escAttr(lab)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(lab)+'</span>';
             if(item.id === 'c4k_late_submissions' && state.portalLatePendingCount > 0){
@@ -32947,6 +32986,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             ev.preventDefault();
             toggleAlerts();
             closeSidebarMob();
+            return;
+          }
+          var dayOpsBtn = ev.target.closest ? ev.target.closest('button[data-dayops-act]') : null;
+          if(dayOpsBtn && navEl.contains(dayOpsBtn)){
+            ev.preventDefault();
+            portalRunDayOpsAct(String(dayOpsBtn.getAttribute('data-dayops-act') || '').trim());
+            closeSidebarMob();
+            if(!document.body.classList.contains('admin-touch-compact')){
+              adminSidebarSuppressExpandUntilLeave();
+            }
             return;
           }
           var viewBtn = ev.target.closest ? ev.target.closest('button[data-view]') : null;

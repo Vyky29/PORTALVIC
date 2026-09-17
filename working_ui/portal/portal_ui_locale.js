@@ -100,18 +100,24 @@
   };
 
   var ADMIN_GROUP_ES = {
-    g_operator: "Operador",
+    g_operator: "Hoy",
     g_services: "Servicios y plazas",
     g_clients: "Clientes y familias",
+    g_messages: "Mensajes",
+    g_more: "Más",
     g_c4k: "Servicios y participantes (CFK)",
     g_zoho: "H&R",
     g_supabase: "Documentos",
-    g_xero: "Finance",
-    g_settings_portal: "Ajustes y dashboards",
+    g_xero: "Dinero",
+    g_settings_portal: "Ajustes",
   };
 
   var ADMIN_SUBHEAD_ES = {
     Sessions: "Sesiones",
+    "More day tools": "Más del día",
+    "More HR": "Más H&R",
+    "More files": "Más archivos",
+    "Extra hubs": "Hubs extra",
     Intake: "Ingreso",
     Services: "Servicios",
     Participants: "Participantes",
@@ -119,6 +125,7 @@
     Communications: "Comunicaciones",
     Policies: "Políticas",
     "Day Centre": "Day Centre",
+    Forms: "Formularios",
     Workers: "Trabajadores",
     "This app": "Esta app",
     Monitoring: "Monitorización",
