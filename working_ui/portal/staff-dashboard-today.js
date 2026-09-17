@@ -6551,26 +6551,26 @@
         if(dashboardData.portalAnnouncementAcksMerged !== true) return false;
         if(typeof portalActiveAnnouncementItems !== 'function') return false;
         const pending = portalActiveAnnouncementItems();
-        if(!pending || !pending.length) return false;
+        if(!pending || !pending.length){
+          try{
+            document.body.classList.remove('announcement-gate-active', 'dock-context-announcement-lock');
+            document.documentElement.classList.remove('announcement-gate-active');
+          }catch(_off){}
+          return false;
+        }
         try{
           if(document.body && document.body.classList.contains('portal-achievements-camera-open')) return false;
         }catch(_cam){}
-        try{
-          const ach = document.getElementById('achievementsSheet');
-          if(ach && ach.classList.contains('open')) return false;
-        }catch(_ach){}
         const annSheet = document.getElementById('announcementsSheet');
         const annOpen = !!(annSheet && annSheet.classList.contains('open'));
-        const menuOpen = !!(document.getElementById('menuSheet') &&
-          document.getElementById('menuSheet').classList.contains('open'));
         if(annOpen){
-          if(portalAnnouncementsSheetEntry !== 'signedLog' && typeof renderAnnouncementsSheetContent === 'function'){
-            renderAnnouncementsSheetContent();
-          }
+          portalAnnouncementsSheetEntry = 'newNotice';
+          if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
+          if(typeof portalSyncAnnouncementGateBodyClass === 'function') portalSyncAnnouncementGateBodyClass();
           return true;
         }
-        if(menuOpen && !opts.force) return false;
         portalOpenAnnouncementsSheet('newNotice');
+        if(typeof portalSyncAnnouncementGateBodyClass === 'function') portalSyncAnnouncementGateBodyClass();
         return true;
       }catch(_gate){
         return false;
@@ -6592,6 +6592,7 @@
       _portalSignedRowsMemo = null;
       _portalSignedRowsMemoAt = 0;
     }
+    try{ window.portalInvalidateAnnouncementUiMemos = portalInvalidateAnnouncementUiMemos; }catch(_inv){}
     function portalAnnouncementAckMapLoad(){
       try{
         var now = Date.now();
@@ -7467,19 +7468,8 @@
       return list[0];
     }
     function portalAnnouncementNeedsPicker(){
-      if(portalAnnouncementsSheetEntry === 'signedLog') return false;
-      const list = portalActiveAnnouncementItems();
-      if(list.length < 2) return false;
-      const selectedKey = String(portalAnnouncementsSelectedKey || '').trim();
-      if(!selectedKey) return true;
-      for(let i = 0; i < list.length; i++){
-        const k = typeof portalSignableSignatureKey === 'function'
-          ? portalSignableSignatureKey(list[i])
-          : portalAnnouncementSignatureKey(list[i]);
-        if(String(k || '') === selectedKey) return false;
-      }
-      portalAnnouncementsSelectedKey = '';
-      return true;
+      /* Gate mode: sign one-by-one in order — no chooser escape hatch. */
+      return false;
     }
     window.portalActiveAnnouncementItems = portalActiveAnnouncementItems;
     window.portalAnnouncementPendingItem = portalAnnouncementPendingItem;
@@ -7491,10 +7481,31 @@
       return String(portalAnnouncementsSelectedKey || '').trim();
     };
     window.portalMountCalendar202627AnnouncementCard = portalMountCalendar202627AnnouncementCard;
+    function portalAnnouncementGatePending(){
+      try{
+        if(!dashboardData || !dashboardData.portalIdentityResolved) return false;
+        if(dashboardData.portalAnnouncementAcksMerged !== true) return false;
+        if(typeof portalActiveAnnouncementItems !== 'function') return false;
+        return portalActiveAnnouncementItems().length > 0;
+      }catch(_g){
+        return false;
+      }
+    }
     function portalAnnouncementLockActive(){
       const annOpen = !!document.getElementById('announcementsSheet')?.classList.contains('open');
-      return !!(portalAnnouncementLockRequired && annOpen && portalAnnouncementPendingItem());
+      return !!(portalAnnouncementGatePending() && annOpen);
     }
+    function portalSyncAnnouncementGateBodyClass(){
+      try{
+        const on = portalAnnouncementLockActive();
+        document.body.classList.toggle('announcement-gate-active', on);
+        document.body.classList.toggle('dock-context-announcement-lock', on);
+        document.documentElement.classList.toggle('announcement-gate-active', on);
+      }catch(_b){}
+    }
+    try{ window.portalAnnouncementGatePending = portalAnnouncementGatePending; }catch(_w3){}
+    try{ window.portalSyncAnnouncementGateBodyClass = portalSyncAnnouncementGateBodyClass; }catch(_w4){}
+    try{ window.portalAnnouncementLockActive = portalAnnouncementLockActive; }catch(_w5){}
     function portalLiveAnnouncementIdSet(){
       const map = dashboardData && dashboardData.portalLiveAnnouncementIdSet;
       return map && typeof map === 'object' ? map : {};
@@ -7714,66 +7725,6 @@
       const hostHistory = document.getElementById('announcementHistoryHost');
       if(!hostPending || !hostHistory) return;
       const signedLogView = portalAnnouncementsSheetEntry === 'signedLog';
-      if(!signedLogView && portalAnnouncementNeedsPicker()){
-        const list = portalActiveAnnouncementItems();
-        portalAnnouncementLockRequired = false;
-        hostHistory.innerHTML = '';
-        hostHistory.hidden = true;
-        hostHistory.setAttribute('aria-hidden', 'true');
-        hostPending.innerHTML =
-          '<article class="announcement-picker-card">' +
-            '<p class="announcement-picker-head">Choose which to do first</p>' +
-            '<p class="announcement-picker-sub muted">You have ' + String(list.length) +
-            ' to read and sign. Tap one to open it.</p>' +
-            '<div class="announcement-picker-list" role="list">' +
-            list.map(function(item, i){
-              const isReminder = typeof portalSignableItemIsReminder === 'function'
-                && portalSignableItemIsReminder(item);
-              const kind = String(item && item.type || '') === 'contract'
-                ? 'contract'
-                : (isReminder ? 'reminder' : 'announcement');
-              const kindLabel = kind === 'contract'
-                ? 'Contract'
-                : (kind === 'reminder' ? 'Reminder' : 'Announcement');
-              const t = portalFixMojibakeText(String(item && item.title || kindLabel).trim() || kindLabel);
-              const lines = typeof portalAnnouncementHistoryHeadingLines === 'function'
-                ? portalAnnouncementHistoryHeadingLines(t)
-                : { line1: t, line2: '' };
-              const signKey = typeof portalSignableSignatureKey === 'function'
-                ? portalSignableSignatureKey(item)
-                : portalAnnouncementSignatureKey(item);
-              const dt = item && item.created_at
-                ? (typeof portalAnnouncementHistoryDateLabel === 'function'
-                  ? portalAnnouncementHistoryDateLabel(Date.parse(item.created_at) || item.created_at)
-                  : '')
-                : '';
-              return (
-                '<button type="button" class="announcement-picker-item announcement-picker-item--' +
-                kind +
-                '" role="listitem" data-announcement-pick-key="' +
-                escapeHtml(String(signKey || '')) +
-                '" aria-label="Open ' + escapeHtml(kindLabel) + ': ' + escapeHtml(t) + '">' +
-                '<span class="announcement-picker-item__main">' +
-                '<span class="announcement-history-kind">' + escapeHtml(kindLabel) + '</span>' +
-                '<span class="announcement-history-title-line">' + escapeHtml(lines.line1 || t) + '</span>' +
-                (lines.line2
-                  ? '<span class="announcement-history-title-line">' + escapeHtml(lines.line2) + '</span>'
-                  : '') +
-                (dt ? '<span class="announcement-picker-item__when muted">' + escapeHtml(dt) + '</span>' : '') +
-                '</span>' +
-                '<span class="announcement-picker-item__chev" aria-hidden="true">›</span>' +
-                '</button>'
-              );
-            }).join('') +
-            '</div></article>';
-        try{
-          const bodyEl = document.getElementById('announcementsSheetBody');
-          if(bodyEl) bodyEl.scrollTop = 0;
-        }catch(_){}
-        syncAnnouncementsSheetBackBtn();
-        if(typeof syncDockNavContext === 'function') syncDockNavContext();
-        return;
-      }
       const pending = signedLogView ? null : portalAnnouncementPendingItem();
       if(signedLogView){
         hostPending.innerHTML = '';
@@ -7833,14 +7784,14 @@
             )
           : '';
         const pendingCount = portalActiveAnnouncementItems().length;
-        const chooseAnother = pendingCount > 1
-          ? '<button type="button" class="announcement-choose-another btn btn--ghost btn--sm" id="announcementChooseAnother">← Choose another</button>'
+        const progressHtml = pendingCount > 1
+          ? '<p class="announcement-gate-progress">1 of ' + String(pendingCount) + ' left to sign</p>'
           : '';
         if(String(pending.type || '') === 'contract' && pending.portalContractId){
           const signHref = 'contract_sign.html?contract_id=' + encodeURIComponent(String(pending.portalContractId));
           hostPending.innerHTML =
-            '<article class="announcement-lock-card">' +
-              chooseAnother +
+            '<article class="announcement-lock-card announcement-lock-card--gate">' +
+              progressHtml +
               '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong></div>' +
               '<p class="announcement-message-p">Review your employment contract below, then sign to save a PDF in My Documents.</p>' +
               '<div id="contractAnnPreview" class="contract-preview-shell" style="margin:0.75rem 0;"></div>' +
@@ -7854,8 +7805,8 @@
           portalSignableItemIsAnnualProfileCampaign(pending)
         ){
           hostPending.innerHTML =
-            '<article class="announcement-lock-card announcement-lock-card--annual-profile">' +
-              chooseAnother +
+            '<article class="announcement-lock-card announcement-lock-card--annual-profile announcement-lock-card--gate">' +
+              progressHtml +
               '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
               '<span class="announcement-lock-badge announcement-lock-badge--announcement">Profile</span></div>' +
               '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
@@ -7866,8 +7817,8 @@
             '</article>';
         }else{
         hostPending.innerHTML =
-          '<article class="announcement-lock-card announcement-lock-card--' + (isReminder ? 'reminder' : 'announcement') + '">' +
-            chooseAnother +
+          '<article class="announcement-lock-card announcement-lock-card--' + (isReminder ? 'reminder' : 'announcement') + ' announcement-lock-card--gate">' +
+            progressHtml +
             '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
             '<span class="announcement-lock-badge announcement-lock-badge--' + (isReminder ? 'reminder' : 'announcement') + '">' + escapeHtml(kindLabel) + '</span></div>' +
             '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + photoHtml + '</div>' +
@@ -7916,6 +7867,7 @@
         }catch(_){}
       }
       syncAnnouncementsSheetBackBtn();
+      if(typeof portalSyncAnnouncementGateBodyClass === 'function') portalSyncAnnouncementGateBodyClass();
       if(typeof syncDockNavContext === 'function') syncDockNavContext();
     }
 
@@ -7925,7 +7877,8 @@
       const annOpen = !!document.getElementById('announcementsSheet')?.classList.contains('open');
       const signedLogView = portalAnnouncementsSheetEntry === 'signedLog';
       const lockActive = !!(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive());
-      const show = annOpen && (signedLogView || !lockActive);
+      /* Gate: no back to dashboard until every pending item is signed. */
+      const show = annOpen && signedLogView && !lockActive;
       btn.hidden = !show;
       btn.setAttribute('aria-hidden', show ? 'false' : 'true');
     }
@@ -8027,8 +7980,8 @@
       const dmUnread = (parseInt(window.__PORTAL_STAFF_DM_UNREAD_COUNT__, 10) || 0) > 0 || !!window.__PORTAL_STAFF_DM_HAS_UNREAD__;
       return {
         chat: false,
-        /* Calendar 2026/27 is informational (Reference) — not a signature-required pending item. */
-        announcement: portalActiveAnnouncementItems().length > 0,
+        /* Unsigned announcements are a full-screen gate — never a red halo alert. */
+        announcement: false,
         feedback: hasFeedback || hasReminderOther,
         schedule: !!scheduleMode,
         scheduleMode: scheduleMode,

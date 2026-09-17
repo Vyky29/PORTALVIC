@@ -8242,22 +8242,119 @@
     .sheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:100;
     }
-    /* Pending announcement / safeguarding / alerts: above dashboard; dock stays tappable. */
+    /* Pending announcement / safeguarding / alerts: above dashboard. */
     #announcementsSheet.sheet--fullscreen.sheet--mobile-frame.open,
     #safeguardingFeedbackPolicySheet.sheet--fullscreen.sheet--mobile-frame.open,
     #alertsNotificationsSheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:130;
+    }
+    /* —— Announcement hard gate (booking-portal style): blur dashboard, hide dock, popup only —— */
+    html.announcement-gate-active,
+    body.announcement-gate-active{
+      overflow:hidden !important;
+    }
+    body.announcement-gate-active #appBodyScroll,
+    body.announcement-gate-active .topbar,
+    body.announcement-gate-active .app-main,
+    body.announcement-gate-active .dashboard-shell,
+    body.announcement-gate-active #dashboardRoot,
+    body.announcement-gate-active .session-day-panel{
+      filter:blur(6px);
+      pointer-events:none !important;
+      user-select:none !important;
+    }
+    body.announcement-gate-active .dock-bar,
+    body.dock-context-announcement-lock .dock-bar,
+    body.announcement-gate-active #dockClientQuickActions{
+      display:none !important;
+      pointer-events:none !important;
+      visibility:hidden !important;
+    }
+    body.announcement-gate-active #announcementsSheet.sheet--fullscreen.sheet--mobile-frame.open{
+      z-index:220 !important;
+      background:rgba(23,50,71,.34);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      border:none;
+      box-shadow:none;
+      padding-bottom:max(16px, env(safe-area-inset-bottom, 0px));
+    }
+    body.announcement-gate-active #announcementsSheet .sheet-handle{
+      display:none !important;
+    }
+    body.announcement-gate-active #announcementsSheet .sheet-head{
+      background:transparent;
+      color:#fff;
+      text-shadow:0 1px 2px rgba(15,23,42,.35);
+    }
+    body.announcement-gate-active #announcementsSheet .sheet-head h3,
+    body.announcement-gate-active #announcementsSheet .sheet-head p{
+      color:#fff;
+    }
+    body.announcement-gate-active #announcementsSheet .sheet-body{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding-top:8px;
+    }
+    body.announcement-gate-active #announcementPendingHost{
+      width:min(100%, 420px);
+      margin:0 auto;
+      min-width:0;
+    }
+    body.announcement-gate-active .announcement-lock-card--gate{
+      background:#fff !important;
+      border:1px solid rgba(23,50,71,.12) !important;
+      box-shadow:0 24px 60px rgba(23,50,71,.28);
+      color:var(--ink,#173247);
+    }
+    body.announcement-gate-active .announcement-lock-card--gate .announcement-lock-head strong,
+    body.announcement-gate-active .announcement-lock-card--gate .announcement-message-p,
+    body.announcement-gate-active .announcement-lock-card--gate .announcement-lock-copy,
+    body.announcement-gate-active .announcement-lock-card--gate .announcement-lock-check{
+      color:var(--ink,#173247) !important;
+    }
+    .announcement-gate-progress{
+      margin:0 0 10px;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      color:#7f1d1d;
+      overflow-wrap:break-word;
+    }
+    /* Picker / list rows: ink on blush — never blue-on-red */
+    .announcement-picker-item,
+    .announcement-picker-item .announcement-history-kind,
+    .announcement-picker-item .announcement-history-title-line,
+    .announcement-picker-item .announcement-picker-item__when{
+      color:#7f1d1d !important;
+    }
+    .announcement-picker-item--contract,
+    .announcement-picker-item--contract .announcement-history-kind,
+    .announcement-picker-item--contract .announcement-history-title-line,
+    .announcement-picker-item--contract .announcement-picker-item__when{
+      color:#1e3a5f !important;
     }
     body.dock-context-announcement-lock .dock-bar,
     body:has(#announcementsSheet.sheet.open) .dock-bar,
     body:has(#safeguardingFeedbackPolicySheet.sheet.open) .dock-bar{
       z-index:136;
     }
+    body.announcement-gate-active.dock-context-announcement-lock .dock-bar,
+    body.announcement-gate-active:has(#announcementsSheet.sheet.open) .dock-bar{
+      display:none !important;
+      z-index:auto;
+    }
     /* Quick menu opened from dock while a mandatory sheet was showing — menu must sit above it. */
     body.dock-context-menu #menuSheet.sheet--fullscreen.sheet--mobile-frame.open,
     body.dock-context-announcement-lock.dock-context-menu #menuSheet.sheet--fullscreen.sheet--mobile-frame.open,
     body:has(#announcementsSheet.sheet.open).dock-context-menu #menuSheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:137;
+    }
+    body.announcement-gate-active #menuSheet{
+      display:none !important;
     }
 
     /* Tomorrow / week / term: fullscreen, centred in the viewport */
@@ -10638,7 +10735,7 @@
       outline:2px solid rgba(200,140,30,.55);
       outline-offset:2px;
     }
-    /* Pending announcement: block dashboard scroll behind sheet; keep dock so staff can open Quick menu / sign out. */
+    /* Pending announcement: hard gate hides dock (see announcement-gate-active). */
     body.dock-context-announcement-lock:has(#announcementsSheet.open) #appBodyScroll{
       pointer-events:none;
       user-select:none;
