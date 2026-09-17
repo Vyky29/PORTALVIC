@@ -1,0 +1,2118 @@
+{
+  "localOnly": true,
+  "note": "LOCAL Schedule & Covers — active schedule_overrides for Autumn. Standing truth stays Places/Services/Timetable; these rows patch the day before Overview paints. Scrubbed 2026-09-14: Patrick term slot_update, Giuseppe dup Sun6 covers, Wed9/16 Tinashe shadow session_add (John→Emmanuel reassign kept).",
+  "term_from": "2026-09-01",
+  "term_to": "2026-12-17",
+  "generated_at": "2026-09-14T11:56:48.000Z",
+  "count": 113,
+  "byDate": {
+    "2026-09-06": [
+      {
+        "id": "9457a9d7-5fbd-4f43-89d4-3673e897bac5",
+        "session_date": "2026-09-06",
+        "override_type": "instructor_reassign",
+        "reason": "Youssef covers Emanuel Sunday Multi Hub SwimFarm 2026-09-06",
+        "status": "active",
+        "anchor_start": "13:15:00",
+        "anchor_end": "14:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "1.15 to 2",
+        "anchor_staff_id": "emanuel",
+        "anchor_client_id": "rayyan_f",
+        "payload": {
+          "covering_staff_id": "youssef",
+          "portal_session_key": "2026-09-06|13:15|rayyan_f",
+          "covering_staff_name": "Youssef"
+        },
+        "created_at": "2026-09-03T00:47:58.103527+00:00"
+      },
+      {
+        "id": "35dd3dce-fa85-48b7-a751-4662a448155a",
+        "session_date": "2026-09-06",
+        "override_type": "client_replace_in_slot",
+        "reason": "Finish booking trial · Zaid Alfadhl · SwimFarm · 9.00 – 9.30",
+        "status": "active",
+        "anchor_start": "09:00:00",
+        "anchor_end": "09:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "9.00 – 9.30",
+        "anchor_staff_id": "javier",
+        "anchor_client_id": "available",
+        "payload": {
+          "is_trial": true,
+          "booking_kind": "trial",
+          "session_kind": "trial",
+          "to_client_id": "zaid_alfadhl",
+          "finish_booking": true,
+          "to_client_name": "Zaid Alfadhl (Trial)",
+          "replacement_client_id": "zaid_alfadhl",
+          "replacement_client_name": "Zaid Alfadhl (Trial)"
+        },
+        "created_at": "2026-09-05T15:00:25.00351+00:00"
+      },
+      {
+        "id": "1cb63c4a-ed4e-4421-9a09-b3cac63ce74d",
+        "session_date": "2026-09-06",
+        "override_type": "instructor_reassign",
+        "reason": "Youssef covers Emanuel Sunday Multi Hub SwimFarm 2026-09-06",
+        "status": "active",
+        "anchor_start": "09:30:00",
+        "anchor_end": "10:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "9.30 to 10.15",
+        "anchor_staff_id": "emanuel",
+        "anchor_client_id": "zaid",
+        "payload": {
+          "covering_staff_id": "youssef",
+          "portal_session_key": "2026-09-06|09:30|zaid",
+          "covering_staff_name": "Youssef"
+        },
+        "created_at": "2026-09-03T00:47:58.103527+00:00"
+      },
+      {
+        "id": "aeb2e747-7eff-4ac3-a0fe-b3cbc9b12e6a",
+        "session_date": "2026-09-06",
+        "override_type": "instructor_reassign",
+        "reason": "Youssef covers Emanuel Sunday Multi Hub SwimFarm 2026-09-06",
+        "status": "active",
+        "anchor_start": "10:15:00",
+        "anchor_end": "11:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "10.15 to 11",
+        "anchor_staff_id": "emanuel",
+        "anchor_client_id": "jack_s",
+        "payload": {
+          "covering_staff_id": "youssef",
+          "portal_session_key": "2026-09-06|10:15|jack_s",
+          "covering_staff_name": "Youssef"
+        },
+        "created_at": "2026-09-03T00:47:58.103527+00:00"
+      },
+      {
+        "id": "b84099d7-b12f-46ac-9e48-bd3a6ba73135",
+        "session_date": "2026-09-06",
+        "override_type": "instructor_reassign",
+        "reason": "Youssef covers Emanuel Sunday Multi Hub SwimFarm 2026-09-06",
+        "status": "active",
+        "anchor_start": "11:00:00",
+        "anchor_end": "11:45:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11 to 11.45",
+        "anchor_staff_id": "emanuel",
+        "anchor_client_id": "eiji",
+        "payload": {
+          "covering_staff_id": "youssef",
+          "portal_session_key": "2026-09-06|11:00|eiji",
+          "covering_staff_name": "Youssef"
+        },
+        "created_at": "2026-09-03T00:47:58.103527+00:00"
+      },
+      {
+        "id": "54d828b9-41be-4e7e-8e72-30bf7646dff3",
+        "session_date": "2026-09-06",
+        "override_type": "instructor_reassign",
+        "reason": "Youssef covers Emanuel Sunday Multi Hub SwimFarm 2026-09-06",
+        "status": "active",
+        "anchor_start": "11:45:00",
+        "anchor_end": "12:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11.45 to 12.30",
+        "anchor_staff_id": "emanuel",
+        "anchor_client_id": "hazem",
+        "payload": {
+          "covering_staff_id": "youssef",
+          "portal_session_key": "2026-09-06|11:45|hazem",
+          "covering_staff_name": "Youssef"
+        },
+        "created_at": "2026-09-03T00:47:58.103527+00:00"
+      },
+      {
+        "id": "c7016189-1354-4ef6-9d93-decb6f901eed",
+        "session_date": "2026-09-06",
+        "override_type": "instructor_reassign",
+        "reason": "Youssef covers Emanuel Sunday Multi Hub SwimFarm 2026-09-06",
+        "status": "active",
+        "anchor_start": "12:30:00",
+        "anchor_end": "13:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "12.30 to 1.15",
+        "anchor_staff_id": "emanuel",
+        "anchor_client_id": "haneef",
+        "payload": {
+          "covering_staff_id": "youssef",
+          "portal_session_key": "2026-09-06|12:30|haneef",
+          "covering_staff_name": "Youssef"
+        },
+        "created_at": "2026-09-03T00:47:58.103527+00:00"
+      }
+    ],
+    "2026-09-07": [
+      {
+        "id": "ed18d15a-4676-4c37-b4b1-937e37d49963",
+        "session_date": "2026-09-07",
+        "override_type": "instructor_reassign",
+        "reason": "Javi covers Sandra — Ayaan Westway Physical 4–5 2026-09-07",
+        "status": "active",
+        "anchor_start": "16:00:00",
+        "anchor_end": "17:00:00",
+        "anchor_venue": "Westway",
+        "anchor_time_slot_label": "4 to 5",
+        "anchor_staff_id": "sandra",
+        "anchor_client_id": "ayaan",
+        "payload": {
+          "covering_staff_id": "javi",
+          "portal_session_key": "2026-09-07|16:00|ayaan",
+          "covering_staff_name": "Javi"
+        },
+        "created_at": "2026-09-06T20:12:26.345511+00:00"
+      },
+      {
+        "id": "c5371a02-4e57-4d09-a9dc-a9f803ba1fac",
+        "session_date": "2026-09-07",
+        "override_type": "instructor_reassign",
+        "reason": "Javi covers Sandra — Serine Westway Physical 5–6 2026-09-07",
+        "status": "active",
+        "anchor_start": "17:00:00",
+        "anchor_end": "18:00:00",
+        "anchor_venue": "Westway",
+        "anchor_time_slot_label": "5 to 6",
+        "anchor_staff_id": "sandra",
+        "anchor_client_id": "serine",
+        "payload": {
+          "covering_staff_id": "javi",
+          "portal_session_key": "2026-09-07|17:00|serine",
+          "covering_staff_name": "Javi"
+        },
+        "created_at": "2026-09-06T20:12:26.345511+00:00"
+      },
+      {
+        "id": "61ba5c27-4aa9-4114-85f5-b08efe3ebe5d",
+        "session_date": "2026-09-07",
+        "override_type": "client_absence_announced",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "17:30:00",
+        "anchor_end": "18:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "17.30 to 18.30",
+        "anchor_staff_id": "youssef",
+        "anchor_client_id": "abodi_pa",
+        "payload": {
+          "portal_session_key": "2026-09-07|17:30|abodi_pa",
+          "feedback_resolution": "absent",
+          "aquatic_full_band_absent": true
+        },
+        "created_at": "2026-09-07T09:04:37.810211+00:00"
+      }
+    ],
+    "2026-09-08": [
+      {
+        "id": "fafad843-864c-48a1-8713-e80d1561ef71",
+        "session_date": "2026-09-08",
+        "override_type": "instructor_reassign",
+        "reason": "Javi Palankas covers Javier Marquez — ayman 4.30 to 5 2026-09-08",
+        "status": "active",
+        "anchor_start": "16:30:00",
+        "anchor_end": "17:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "4.30 to 5",
+        "anchor_staff_id": "javier",
+        "anchor_client_id": "ayman",
+        "payload": {
+          "area": "Lane (DE)",
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "absent_staff_id": "javier",
+          "covering_staff_id": "javi",
+          "portal_session_key": "2026-09-08|16:30|ayman",
+          "covering_staff_name": "Javi Palankas"
+        },
+        "created_at": "2026-09-08T15:03:26.743858+00:00"
+      },
+      {
+        "id": "d347bc03-f79a-4b69-9d89-959f9fafc0ae",
+        "session_date": "2026-09-08",
+        "override_type": "client_absence_announced",
+        "reason": "Anas absent Tue 8 Sep — makeup Thu 10 Aurora 6-6.30",
+        "status": "active",
+        "anchor_start": "18:00:00",
+        "anchor_end": "18:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "6 to 6.30",
+        "anchor_staff_id": "luliya",
+        "anchor_client_id": "anas",
+        "payload": {
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "portal_session_key": "2026-09-08|18:00|anas",
+          "feedback_resolution": "absent"
+        },
+        "created_at": "2026-09-08T16:22:47.490624+00:00"
+      },
+      {
+        "id": "784c8f6f-db8f-471a-b500-d80fe48c3dac",
+        "session_date": "2026-09-08",
+        "override_type": "instructor_reassign",
+        "reason": "Roberto covers Aurora — adam_mahmmoud 16.30 to 17 2026-09-08 (Javi free)",
+        "status": "active",
+        "anchor_start": "16:30:00",
+        "anchor_end": "17:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "16.30 to 17",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "adam_mahmmoud",
+        "payload": {
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "absent_staff_id": "aurora",
+          "covering_staff_id": "roberto",
+          "portal_session_key": "2026-09-08|16:30|adam_mahmmoud",
+          "covering_staff_name": "Roberto",
+          "prior_covering_staff_id": "javi",
+          "prior_covering_staff_ids": [
+            "javi"
+          ],
+          "prior_covering_staff_name": "Javi",
+          "prior_covering_staff_names": [
+            "Javi"
+          ]
+        },
+        "created_at": "2026-09-06T21:03:05.827345+00:00"
+      },
+      {
+        "id": "7558ca43-2737-46cd-ae58-41e10a2e98a9",
+        "session_date": "2026-09-08",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — aydaan_ah 17.30 to 18 2026-09-08 (Javi free)",
+        "status": "active",
+        "anchor_start": "17:30:00",
+        "anchor_end": "18:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "17.30 to 18",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "aydaan_ah",
+        "payload": {
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "absent_staff_id": "aurora",
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-09-08|17:30|aydaan_ah",
+          "covering_staff_name": "Luliya",
+          "display_from_staff_id": "roberto",
+          "display_from_staff_name": "Roberto",
+          "prior_covering_staff_ids": [],
+          "prior_covering_staff_names": []
+        },
+        "created_at": "2026-09-06T21:05:58.249874+00:00"
+      },
+      {
+        "id": "9c782385-066d-4127-8cfc-de6bbcf0f589",
+        "session_date": "2026-09-08",
+        "override_type": "slot_clear_client",
+        "reason": "Junaid Aurora 5–5.30 cleared — day reassign to Roberto 5.30–6 (not MakeUp)",
+        "status": "active",
+        "anchor_start": "17:00:00",
+        "anchor_end": "17:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "17 to 17.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "junaid_f",
+        "payload": {
+          "note": "Junaid moved +30' to Roberto 5.30–6 (Aurora OFF redistribute)",
+          "not_makeup": true,
+          "client_name": "Junaid",
+          "day_reassign": true,
+          "cancelled_by_admin": true
+        },
+        "created_at": "2026-09-08T08:27:48.862174+00:00"
+      },
+      {
+        "id": "d2a8189a-4858-4d5a-805c-65a0cf238f87",
+        "session_date": "2026-09-08",
+        "override_type": "client_replace_in_slot",
+        "reason": "Junaid onto Roberto open 5.30–6 (day reassign, not MakeUp)",
+        "status": "active",
+        "anchor_start": "17:30:00",
+        "anchor_end": "18:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "17.30 to 18",
+        "anchor_staff_id": "roberto",
+        "anchor_client_id": "available",
+        "payload": {
+          "service": "Aquatic Activity",
+          "not_makeup": true,
+          "day_reassign": true,
+          "replace_kind": "day_reassign",
+          "to_client_id": "junaid_f",
+          "roster_service": "Aquatic Activity",
+          "to_client_name": "Junaid",
+          "portal_session_key": "2026-09-08|17:30|junaid_f",
+          "replacement_client_id": "junaid_f",
+          "replacement_client_name": "Junaid"
+        },
+        "created_at": "2026-09-08T08:27:48.862174+00:00"
+      },
+      {
+        "id": "3fd76580-c7b7-42e5-8730-afd3a592da84",
+        "session_date": "2026-09-08",
+        "override_type": "instructor_reassign",
+        "reason": "Roberto covers Javier Marquez — ayman 4 to 4.30 2026-09-08",
+        "status": "active",
+        "anchor_start": "16:00:00",
+        "anchor_end": "16:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "4 to 4.30",
+        "anchor_staff_id": "javier",
+        "anchor_client_id": "ayman",
+        "payload": {
+          "area": "Lane (DE)",
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "absent_staff_id": "javier",
+          "covering_staff_id": "roberto",
+          "portal_session_key": "2026-09-08|16:00|ayman",
+          "covering_staff_name": "Roberto"
+        },
+        "created_at": "2026-09-08T14:41:09.257057+00:00"
+      },
+      {
+        "id": "29d1f04d-8667-4fed-8107-dd20474536a1",
+        "session_date": "2026-09-08",
+        "override_type": "instructor_reassign",
+        "reason": "Javi Palankas covers Javier Marquez — linda 5 to 5.30 2026-09-08",
+        "status": "active",
+        "anchor_start": "17:00:00",
+        "anchor_end": "17:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "5 to 5.30",
+        "anchor_staff_id": "javier",
+        "anchor_client_id": "linda",
+        "payload": {
+          "area": "Lane (SE)",
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "absent_staff_id": "javier",
+          "covering_staff_id": "javi",
+          "portal_session_key": "2026-09-08|17:00|linda",
+          "covering_staff_name": "Javi Palankas"
+        },
+        "created_at": "2026-09-08T14:41:09.257057+00:00"
+      },
+      {
+        "id": "28ed93f4-6e7d-4c40-92c8-66849f2d252a",
+        "session_date": "2026-09-08",
+        "override_type": "instructor_reassign",
+        "reason": "Javi Palankas covers Javier Marquez — rayan_ta 5.30 to 6 2026-09-08",
+        "status": "active",
+        "anchor_start": "17:30:00",
+        "anchor_end": "18:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "5.30 to 6",
+        "anchor_staff_id": "javier",
+        "anchor_client_id": "rayan_ta",
+        "payload": {
+          "area": "Lane (DE)",
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "absent_staff_id": "javier",
+          "covering_staff_id": "javi",
+          "portal_session_key": "2026-09-08|17:30|rayan_ta",
+          "covering_staff_name": "Javi Palankas"
+        },
+        "created_at": "2026-09-08T14:41:09.257057+00:00"
+      }
+    ],
+    "2026-09-09": [
+      {
+        "id": "cd37e177-fd00-489f-ac14-c1833bb8ec5c",
+        "session_date": "2026-09-09",
+        "override_type": "client_absence_announced",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "17:00:00",
+        "anchor_end": "17:30:00",
+        "anchor_venue": "Northolt",
+        "anchor_time_slot_label": "17 to 17.30",
+        "anchor_staff_id": "luliya",
+        "anchor_client_id": "amar_rai",
+        "payload": {
+          "portal_session_key": "2026-09-09|17:00|amar_ra",
+          "feedback_resolution": "absent"
+        },
+        "created_at": "2026-09-09T15:03:05.33103+00:00"
+      },
+      {
+        "id": "2694d60e-0215-4e95-8054-5cbe5de0dc72",
+        "session_date": "2026-09-09",
+        "override_type": "client_absence_announced",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "17:30:00",
+        "anchor_end": "18:00:00",
+        "anchor_venue": "Northolt",
+        "anchor_time_slot_label": "17.30 to 18",
+        "anchor_staff_id": "dan",
+        "anchor_client_id": "amar_rai",
+        "payload": {
+          "portal_session_key": "2026-09-09|17:30|amar_ra",
+          "feedback_resolution": "absent"
+        },
+        "created_at": "2026-09-09T15:03:12.470303+00:00"
+      },
+      {
+        "id": "0ea459fc-c925-4b0d-b2bd-b5a4592dca8b",
+        "session_date": "2026-09-09",
+        "override_type": "instructor_reassign",
+        "reason": "Victor OFF — Roberto covers Emanuel 12.30-3 (full Emanuel 11-4)",
+        "status": "active",
+        "anchor_start": "12:30:00",
+        "anchor_end": "15:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "12.30 to 3",
+        "anchor_staff_id": "victor",
+        "anchor_client_id": "emanuel",
+        "payload": {
+          "service": "Day Centre",
+          "activity": "Day Centre",
+          "absent_staff_id": "victor",
+          "covering_staff_id": "roberto",
+          "portal_session_key": "2026-09-09|12:30|emanuel",
+          "covering_staff_name": "Roberto"
+        },
+        "created_at": "2026-09-08T22:05:15.138558+00:00"
+      },
+      {
+        "id": "a5d330b1-5cd2-4fee-99db-056d6fbbf172",
+        "session_date": "2026-09-09",
+        "override_type": "instructor_reassign",
+        "reason": "Victor OFF — Raul covers Ikram 3-4",
+        "status": "active",
+        "anchor_start": "15:00:00",
+        "anchor_end": "16:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "3 to 4",
+        "anchor_staff_id": "victor",
+        "anchor_client_id": "ikram",
+        "payload": {
+          "service": "Day Centre",
+          "activity": "Day Centre",
+          "absent_staff_id": "victor",
+          "covering_staff_id": "raul",
+          "portal_session_key": "2026-09-09|15:00|ikram",
+          "covering_staff_name": "Raul"
+        },
+        "created_at": "2026-09-08T22:05:15.138558+00:00"
+      },
+      {
+        "id": "2bb74b1f-ef38-4e52-8a5a-de2d707bbb09",
+        "session_date": "2026-09-09",
+        "override_type": "instructor_reassign",
+        "reason": "Fadi/Victor OFF day — Roberto takes Raul Emanuel 3-4",
+        "status": "active",
+        "anchor_start": "15:00:00",
+        "anchor_end": "16:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "3 to 4",
+        "anchor_staff_id": "raul",
+        "anchor_client_id": "emanuel",
+        "payload": {
+          "service": "Day Centre",
+          "activity": "Day Centre",
+          "absent_staff_id": "raul",
+          "covering_staff_id": "roberto",
+          "portal_session_key": "2026-09-09|15:00|emanuel",
+          "covering_staff_name": "Roberto"
+        },
+        "created_at": "2026-09-08T22:05:15.138558+00:00"
+      },
+      {
+        "id": "local-john-off-emmanuel-tinashe-2026-09-09",
+        "session_date": "2026-09-09",
+        "override_type": "instructor_reassign",
+        "reason": "Emmanuel covers John — Tinashe Hub Bespoke 4.30–6 2026-09-09",
+        "status": "active",
+        "anchor_start": "16:30:00",
+        "anchor_end": "18:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "4.30 to 6",
+        "anchor_staff_id": "john",
+        "anchor_client_id": "tinashe",
+        "payload": {
+          "service": "Bespoke Programme",
+          "activity": "Bespoke Programme",
+          "absent_staff_id": "john",
+          "absent_staff_name": "John",
+          "covering_staff_id": "emmanuel",
+          "covering_staff_name": "Emmanuel",
+          "portal_session_key": "2026-09-09|16:30|tinashe|john",
+          "area": "Hub Room"
+        },
+        "created_at": "2026-09-14T11:56:48.000000+00:00"
+      }
+    ],
+    "2026-09-10": [
+      {
+        "id": "969aeafd-911b-42e7-9254-c56cf8cafff1",
+        "session_date": "2026-09-10",
+        "override_type": "client_absence_announced",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "16:30:00",
+        "anchor_end": "17:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "16.30 to 17",
+        "anchor_staff_id": "roberto",
+        "anchor_client_id": "yassir",
+        "payload": {
+          "portal_session_key": "2026-09-10|16:30|yassir",
+          "feedback_resolution": "absent"
+        },
+        "created_at": "2026-09-10T12:53:16.0119+00:00"
+      },
+      {
+        "id": "453553e7-af77-4001-afdb-0d8454b037c7",
+        "session_date": "2026-09-10",
+        "override_type": "client_replace_in_slot",
+        "reason": "Finish booking term · Mohamed · Acton · 5.30 – 6.30",
+        "status": "active",
+        "anchor_start": "17:30:00",
+        "anchor_end": "18:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "5.30 – 6.30",
+        "anchor_staff_id": "javier",
+        "anchor_client_id": "available",
+        "payload": {
+          "is_trial": false,
+          "new_client": true,
+          "booking_kind": "term",
+          "session_kind": "term",
+          "to_client_id": "mohamed",
+          "finish_booking": true,
+          "to_client_name": "Mohamed",
+          "term_new_participant": true,
+          "replacement_client_id": "mohamed",
+          "replacement_client_name": "Mohamed"
+        },
+        "created_at": "2026-09-09T13:09:49.697283+00:00"
+      },
+      {
+        "id": "800e6044-cdb8-4738-8814-f9074766540b",
+        "session_date": "2026-09-10",
+        "override_type": "slot_clear_client",
+        "reason": "Joelle cancelled second half Thu 10 · Aurora 6-6.30",
+        "status": "active",
+        "anchor_start": "18:00:00",
+        "anchor_end": "18:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "6 to 6.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "joelle",
+        "payload": {
+          "area": "Teaching Pool",
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "cancelled_by_admin": true,
+          "portal_session_key": "2026-09-10|18:00|joelle|aurora",
+          "feedback_resolution": "cancelled"
+        },
+        "created_at": "2026-09-10T14:12:17.792137+00:00"
+      },
+      {
+        "id": "939609a8-61f8-4557-888c-77541d3b26a2",
+        "session_date": "2026-09-10",
+        "override_type": "client_absence_announced",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "17:30:00",
+        "anchor_end": "18:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "17.30 to 18",
+        "anchor_staff_id": "roberto",
+        "anchor_client_id": "yunis",
+        "payload": {
+          "portal_session_key": "2026-09-10|17:30|yunis",
+          "feedback_resolution": "absent"
+        },
+        "created_at": "2026-09-10T15:11:43.713605+00:00"
+      },
+      {
+        "id": "c27daccd-e00d-4cb2-ab0a-e23077c987b0",
+        "session_date": "2026-09-10",
+        "override_type": "slot_clear_client",
+        "reason": "Joelle cancelled second half Thu 10 · Simon 6-6.30",
+        "status": "active",
+        "anchor_start": "18:00:00",
+        "anchor_end": "18:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "6 to 6.30",
+        "anchor_staff_id": "simon",
+        "anchor_client_id": "joelle",
+        "payload": {
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "cancelled_by_admin": true,
+          "portal_session_key": "2026-09-10|18:00|joelle|simon"
+        },
+        "created_at": "2026-09-10T20:45:10.798802+00:00"
+      },
+      {
+        "id": "3878d57b-88d8-4bf8-a5ed-ba30562e6428",
+        "session_date": "2026-09-10",
+        "override_type": "client_replace_in_slot",
+        "reason": "Makeup — Anas (absent Tue 8) Aurora only Thu 10 6-6.30 (Simon leaves at 6)",
+        "status": "active",
+        "anchor_start": "18:00:00",
+        "anchor_end": "18:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "6 to 6.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "available",
+        "payload": {
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "is_makeup": true,
+          "to_client_id": "anas",
+          "to_client_name": "Anas",
+          "makeup_for_date": "2026-09-08",
+          "portal_session_key": "2026-09-10|18:00|anas",
+          "replacement_client_id": "anas",
+          "replacement_client_name": "Anas"
+        },
+        "created_at": "2026-09-08T22:36:24.98887+00:00"
+      },
+      {
+        "id": "1a7af603-9286-4887-b34b-878e41f6cd4c",
+        "session_date": "2026-09-10",
+        "override_type": "instructor_reassign",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "18:00:00",
+        "anchor_end": "18:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "18 to 18.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "available",
+        "payload": {
+          "covering_staff_id": "javi",
+          "portal_session_key": "2026-09-10|18:00|anas",
+          "covering_staff_name": "Javi Palankas"
+        },
+        "created_at": "2026-09-11T07:25:09.956026+00:00"
+      }
+    ],
+    "2026-09-11": [
+      {
+        "id": "e37768a3-ecaf-425a-8fc8-2b6a98b1485b",
+        "session_date": "2026-09-11",
+        "override_type": "session_add",
+        "reason": "Emanuel shadowing Bismark — Tinashe Fri 11 4.15-6.15 (Roberto + Bismark hosts)",
+        "status": "active",
+        "anchor_start": "16:15:00",
+        "anchor_end": "18:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "4.15 to 6.15",
+        "anchor_staff_id": "emanuel",
+        "anchor_client_id": "tinashe",
+        "payload": {
+          "kind": "shadowing",
+          "service": "Bespoke Programme",
+          "trainer": "Bismark",
+          "activity": "Bespoke Programme",
+          "trainer_staff_id": "bismark",
+          "portal_session_key": "2026-09-11|16:15|tinashe|shadow-emanuel"
+        },
+        "created_at": "2026-09-11T09:06:14.348367+00:00"
+      },
+      {
+        "id": "4b70d699-1970-4744-afaf-be64a76be063",
+        "session_date": "2026-09-11",
+        "override_type": "client_absence_announced",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "16:00:00",
+        "anchor_end": "17:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "16 to 17.30",
+        "anchor_staff_id": "youssef",
+        "anchor_client_id": "adam_p",
+        "payload": {
+          "portal_session_key": "2026-09-11|16:00|adam_p",
+          "feedback_resolution": "absent",
+          "aquatic_full_band_absent": true
+        },
+        "created_at": "2026-09-11T13:46:31.628054+00:00"
+      },
+      {
+        "id": "43c82841-d033-4c92-bdce-041304eaffb4",
+        "session_date": "2026-09-11",
+        "override_type": "client_absence_announced",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "17:30:00",
+        "anchor_end": "18:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "17.30 to 18",
+        "anchor_staff_id": "youssef",
+        "anchor_client_id": "amaar_ah",
+        "payload": {
+          "portal_session_key": "2026-09-11|17:30|amaar_ah",
+          "feedback_resolution": "absent"
+        },
+        "created_at": "2026-09-11T14:46:07.258696+00:00"
+      }
+    ],
+    "2026-09-13": [
+      {
+        "id": "7df03848-a0db-4147-859d-c6383c26d900",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Adam Ab Multi 9.30–10.15 2026-09-13",
+        "status": "active",
+        "anchor_start": "09:30:00",
+        "anchor_end": "10:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "9.30 to 10.15",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "adam_ab",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-09-13|09:30|adam_ab",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "93617a86-48c0-46a6-81d7-116767f944f7",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Jack W Multi 10.15–11 2026-09-13",
+        "status": "active",
+        "anchor_start": "10:15:00",
+        "anchor_end": "11:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "10.15 to 11",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "jack_w",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-09-13|10:15|jack_w",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "7e70d8b7-7873-4612-bbb3-9e025c10cda6",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Arthur Ma Multi 11–11.45 2026-09-13",
+        "status": "active",
+        "anchor_start": "11:00:00",
+        "anchor_end": "11:45:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11 to 11.45",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "arthur_ma",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-09-13|11:00|arthur_ma",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "9a8593ca-76b5-499e-b6d5-bfeb9405b76f",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Cyrus Multi 11.45–12.30 2026-09-13",
+        "status": "active",
+        "anchor_start": "11:45:00",
+        "anchor_end": "12:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11.45 to 12.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "cyrus",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-09-13|11:45|cyrus",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "0d38a9ee-2fcf-466e-aea0-b1265e9b70f6",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Aydaan Ah Multi 12.30–1.15 2026-09-13",
+        "status": "active",
+        "anchor_start": "12:30:00",
+        "anchor_end": "13:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "12.30 to 1.15",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "aydaan_ah",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-09-13|12:30|aydaan_ah",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "22e1f462-495f-4ffb-9b33-f1c0148ce5d2",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Erik Multi 1.15–2 2026-09-13",
+        "status": "active",
+        "anchor_start": "13:15:00",
+        "anchor_end": "14:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "1.15 to 2",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "erik",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-09-13|13:15|erik",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "496c96dd-be81-453e-89c2-81ce95397b8b",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Zakariya Aquatic 2–2.30 2026-09-13",
+        "status": "active",
+        "anchor_start": "14:00:00",
+        "anchor_end": "14:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "2 to 2.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "zakariya",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-09-13|14:00|zakariya",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "ae710bd8-4456-4cab-820a-b9ec8dca1e9b",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Faris Aquatic 2.30–3 2026-09-13",
+        "status": "active",
+        "anchor_start": "14:30:00",
+        "anchor_end": "15:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "2.30 to 3",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "faris",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-09-13|14:30|faris",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "014fa0bf-69ff-4fa3-92ee-edcc0364e745",
+        "session_date": "2026-09-13",
+        "override_type": "client_absence_announced",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "11:00:00",
+        "anchor_end": "11:45:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11 to 11.45",
+        "anchor_staff_id": "roberto",
+        "anchor_client_id": "gabriel",
+        "payload": {
+          "portal_session_key": "2026-09-13|11:00|gabriel",
+          "feedback_resolution": "absent"
+        },
+        "created_at": "2026-09-09T09:40:26.313471+00:00"
+      },
+      {
+        "id": "9badff1a-dfc4-467a-af20-50c927f179ee",
+        "session_date": "2026-09-13",
+        "override_type": "client_absence_announced",
+        "reason": "Gabriel absent — follows to Raul Hub 11.45 after swap",
+        "status": "active",
+        "anchor_start": "11:45:00",
+        "anchor_end": "12:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11.45 to 12.30",
+        "anchor_staff_id": "raul",
+        "anchor_client_id": "gabriel",
+        "payload": {
+          "portal_session_key": "2026-09-13|11:45|gabriel",
+          "feedback_resolution": "absent"
+        },
+        "created_at": "2026-09-09T09:40:36.683168+00:00"
+      },
+      {
+        "id": "c7db42cc-fdcf-44aa-a4a6-fe4d2348c326",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "09:00:00",
+        "anchor_end": "09:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "9 to 9.30",
+        "anchor_staff_id": "luliya",
+        "anchor_client_id": "simon",
+        "payload": {
+          "covering_staff_id": "javier",
+          "portal_session_key": "2026-09-13|09:00|simon",
+          "covering_staff_name": "Javier"
+        },
+        "created_at": "2026-09-11T17:11:20.00295+00:00"
+      },
+      {
+        "id": "86b7c4ef-4a0e-4851-abf6-32c15dd723a9",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Raul covers Berta — Jack W Hub 9.30–10.15 2026-09-13",
+        "status": "active",
+        "anchor_start": "09:30:00",
+        "anchor_end": "10:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "9.30 to 10.15",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "jack w",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "covering_staff_id": "raul",
+          "portal_session_key": "2026-09-13|09:30|jack w",
+          "covering_staff_name": "Raul"
+        },
+        "created_at": "2026-09-12T19:41:23.335955+00:00"
+      },
+      {
+        "id": "46253e8d-291b-4b95-92c9-01c4930244b4",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Raul covers Berta — Adam Ab Hub 10.15–11 2026-09-13",
+        "status": "active",
+        "anchor_start": "10:15:00",
+        "anchor_end": "11:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "10.15 to 11",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "adam ab",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "covering_staff_id": "raul",
+          "portal_session_key": "2026-09-13|10:15|adam ab",
+          "covering_staff_name": "Raul"
+        },
+        "created_at": "2026-09-12T19:41:23.335955+00:00"
+      },
+      {
+        "id": "461e19ac-ecc7-4905-a53d-ff88a3acaa50",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Raul covers Berta — Cyrus Hub 11–11.45 2026-09-13",
+        "status": "active",
+        "anchor_start": "11:00:00",
+        "anchor_end": "11:45:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11 to 11.45",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "cyrus",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "covering_staff_id": "raul",
+          "portal_session_key": "2026-09-13|11:00|cyrus",
+          "covering_staff_name": "Raul"
+        },
+        "created_at": "2026-09-12T19:41:23.335955+00:00"
+      },
+      {
+        "id": "0e5ce3b3-81be-4141-9661-521b75c82f4e",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Raul covers Berta — Erik Hub 12.30–1.15 2026-09-13",
+        "status": "active",
+        "anchor_start": "12:30:00",
+        "anchor_end": "13:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "12.30 to 1.15",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "erik",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "covering_staff_id": "raul",
+          "portal_session_key": "2026-09-13|12:30|erik",
+          "covering_staff_name": "Raul"
+        },
+        "created_at": "2026-09-12T19:41:23.335955+00:00"
+      },
+      {
+        "id": "7dbd4717-6fdc-4f65-bb4e-1f12a9d08272",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Raul covers Berta — Aydaan Ah Hub 1.15–2 2026-09-13",
+        "status": "active",
+        "anchor_start": "13:15:00",
+        "anchor_end": "14:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "1.15 to 2",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "aydaan ah",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "covering_staff_id": "raul",
+          "portal_session_key": "2026-09-13|13:15|aydaan ah",
+          "covering_staff_name": "Raul"
+        },
+        "created_at": "2026-09-12T19:41:23.335955+00:00"
+      },
+      {
+        "id": "b627833e-cc7c-464a-88d7-09c092d3aebc",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Change instructor — Arthur Ma Hub 11.45 to Godsway (swap with Gabriel) 2026-09-13",
+        "status": "active",
+        "anchor_start": "11:45:00",
+        "anchor_end": "12:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11.45 to 12.30",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "arthur ma",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "covering_staff_id": "godsway",
+          "portal_session_key": "2026-09-13|11:45|arthur ma",
+          "covering_staff_name": "Godsway"
+        },
+        "created_at": "2026-09-12T19:41:23.335955+00:00"
+      },
+      {
+        "id": "5550f92d-40df-4001-a962-b79fa00a5345",
+        "session_date": "2026-09-13",
+        "override_type": "instructor_reassign",
+        "reason": "Change instructor — Gabriel Hub 11.45 to Raul (swap with Arthur Ma; Gabriel absent) 2026-09-13",
+        "status": "active",
+        "anchor_start": "11:45:00",
+        "anchor_end": "12:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11.45 to 12.30",
+        "anchor_staff_id": "godsway",
+        "anchor_client_id": "gabriel",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "godsway",
+          "covering_staff_id": "raul",
+          "portal_session_key": "2026-09-13|11:45|gabriel",
+          "covering_staff_name": "Raul"
+        },
+        "created_at": "2026-09-12T19:41:23.335955+00:00"
+      },
+      {
+        "id": "08b1c73f-85dc-4692-9f96-121c849f93ee",
+        "session_date": "2026-09-13",
+        "override_type": "client_replace_in_slot",
+        "reason": "Finish booking trial · Muhammad · Westway · 12.00 – 1.00 · Alex (moved from Carlos 2-3)",
+        "status": "active",
+        "anchor_start": "12:00:00",
+        "anchor_end": "13:00:00",
+        "anchor_venue": "Westway",
+        "anchor_time_slot_label": "12 to 1",
+        "anchor_staff_id": "alex",
+        "anchor_client_id": "available",
+        "payload": {
+          "is_trial": true,
+          "booking_kind": "trial",
+          "session_kind": "trial",
+          "to_client_id": "muhammad",
+          "finish_booking": true,
+          "to_client_name": "Muhammad (Trial)",
+          "replacement_client_id": "muhammad",
+          "replacement_client_name": "Muhammad (Trial)",
+          "office_move_climb_noon_20260913": true
+        },
+        "created_at": "2026-09-12T19:52:59.94707+00:00"
+      }
+    ],
+    "2026-09-15": [
+      {
+        "id": "690d24c9-6757-4740-8c1e-060d93507672",
+        "session_date": "2026-09-15",
+        "override_type": "client_replace_in_slot",
+        "reason": "Finish booking trial · Reggie Conlon · Acton · Luliya 4.30 – 5.00",
+        "status": "active",
+        "anchor_start": "16:30:00",
+        "anchor_end": "17:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "4.30 – 5.00",
+        "anchor_staff_id": "luliya",
+        "anchor_client_id": "available",
+        "payload": {
+          "is_trial": true,
+          "new_client": false,
+          "booking_kind": "trial",
+          "session_kind": "trial",
+          "to_client_id": "reggie_conlon",
+          "finish_booking": true,
+          "to_client_name": "Reggie Conlon (Trial)",
+          "term_new_participant": false,
+          "replacement_client_id": "reggie_conlon",
+          "replacement_client_name": "Reggie Conlon (Trial)",
+          "area": "Lane (DE)",
+          "service": "Aquatic Activity",
+          "portal_session_key": "2026-09-15|16:30|reggie_conlon|luliya",
+          "moved_from_staff_id": "aurora",
+          "office_note": "Reggie trial seat is Luliya (Seat 4), not Aurora"
+        },
+        "created_at": "2026-09-10T12:37:26.808611+00:00"
+      },
+      {
+        "id": "fe069fc4-21d1-45f2-8f67-54f54715aa27",
+        "session_date": "2026-09-15",
+        "override_type": "instructor_reassign",
+        "reason": "Javi covers Aurora — Closed Acton 4–4.30 2026-09-15",
+        "status": "active",
+        "anchor_start": "16:00:00",
+        "anchor_end": "16:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "4 to 4.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "closed",
+        "payload": {
+          "covering_staff_id": "javi",
+          "portal_session_key": "2026-09-15|16:00|closed",
+          "covering_staff_name": "Javi"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "6ea85b23-b72a-49a6-bde3-c479b29965b3",
+        "session_date": "2026-09-15",
+        "override_type": "instructor_reassign",
+        "reason": "Javi covers Aurora — Adam Mahmmoud Acton 4.30–5 2026-09-15",
+        "status": "active",
+        "anchor_start": "16:30:00",
+        "anchor_end": "17:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "4.30 to 5",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "adam_mahmmoud",
+        "payload": {
+          "covering_staff_id": "javi",
+          "portal_session_key": "2026-09-15|16:30|adam_mahmmoud",
+          "covering_staff_name": "Javi"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "90479d29-d9d3-4dc7-85bc-60b7eba5b13b",
+        "session_date": "2026-09-15",
+        "override_type": "instructor_reassign",
+        "reason": "Javi covers Aurora — Junaid F Acton 5–5.30 2026-09-15",
+        "status": "active",
+        "anchor_start": "17:00:00",
+        "anchor_end": "17:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "5 to 5.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "junaid_f",
+        "payload": {
+          "covering_staff_id": "javi",
+          "portal_session_key": "2026-09-15|17:00|junaid_f",
+          "covering_staff_name": "Javi"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "94c2fd9a-025b-4944-8ac7-2e3de538385d",
+        "session_date": "2026-09-15",
+        "override_type": "instructor_reassign",
+        "reason": "Javi covers Aurora — Aydaan Ah Acton 5.30–6 2026-09-15",
+        "status": "active",
+        "anchor_start": "17:30:00",
+        "anchor_end": "18:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "5.30 to 6",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "aydaan_ah",
+        "payload": {
+          "covering_staff_id": "javi",
+          "portal_session_key": "2026-09-15|17:30|aydaan_ah",
+          "covering_staff_name": "Javi"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "3acbde7a-ebed-45be-afa4-9d44174e3b57",
+        "session_date": "2026-09-15",
+        "override_type": "instructor_reassign",
+        "reason": "Javi covers Aurora — Anas Acton 6–6.30 2026-09-15",
+        "status": "active",
+        "anchor_start": "18:00:00",
+        "anchor_end": "18:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "6 to 6.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "anas",
+        "payload": {
+          "covering_staff_id": "javi",
+          "portal_session_key": "2026-09-15|18:00|anas",
+          "covering_staff_name": "Javi"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "001fee02-4b2a-4eea-98a1-3eecddb9bdef",
+        "session_date": "2026-09-15",
+        "override_type": "client_replace_in_slot",
+        "reason": "Paid first session Tue 15 Sep · Christian Abate · Acton 4.00-4.30 · Roberto · Tide £50",
+        "status": "active",
+        "anchor_start": "16:00:00",
+        "anchor_end": "16:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "4.00 – 4.30",
+        "anchor_staff_id": "roberto",
+        "anchor_client_id": "available",
+        "payload": {
+          "area": "Lane (DE)",
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "is_trial": false,
+          "new_client": true,
+          "not_makeup": true,
+          "office_hold": false,
+          "booking_kind": "term",
+          "session_kind": "term",
+          "to_client_id": "christian_abate",
+          "first_session": "2026-09-15",
+          "finish_booking": true,
+          "to_client_name": "Christian Abate",
+          "term_new_participant": true,
+          "replacement_client_id": "christian_abate",
+          "replacement_client_name": "Christian Abate"
+        },
+        "created_at": "2026-09-11T12:33:21.28166+00:00"
+      },
+      {
+        "id": "1f14181d-eb93-4f5f-8858-57a459803a25",
+        "session_date": "2026-09-15",
+        "override_type": "client_replace_in_slot",
+        "reason": "Paid first session Tue 15 Sep · Emmanuel Abate · Acton 4.00-4.30 · Luliya · Tide £50",
+        "status": "active",
+        "anchor_start": "16:00:00",
+        "anchor_end": "16:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "4 to 4.30",
+        "anchor_staff_id": "luliya",
+        "anchor_client_id": "available",
+        "payload": {
+          "area": "Lane (DE)",
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "is_trial": false,
+          "new_client": true,
+          "not_makeup": true,
+          "office_hold": false,
+          "booking_kind": "term",
+          "hold_purpose": null,
+          "session_kind": "term",
+          "to_client_id": "emmanuel_abate",
+          "first_session": "2026-09-15",
+          "finish_booking": true,
+          "to_client_name": "Emmanuel Abate",
+          "portal_session_key": "2026-09-15|16:00|emmanuel_abate|luliya",
+          "term_start_remains": "2026-09-22",
+          "term_new_participant": true,
+          "replacement_client_id": "emmanuel_abate",
+          "replacement_client_name": "Emmanuel Abate"
+        },
+        "created_at": "2026-09-08T23:04:57.186216+00:00"
+      }
+    ],
+    "2026-09-16": [
+      {
+        "id": "f5308bed-7ea6-4df7-9418-44bc388a6eae",
+        "session_date": "2026-09-16",
+        "override_type": "instructor_reassign",
+        "reason": "Fadi absent Wed 16 — Roberto covers Emanuel 12.30-3 (full Emanuel 11-4)",
+        "status": "active",
+        "anchor_start": "12:30:00",
+        "anchor_end": "15:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "12.30 to 3",
+        "anchor_staff_id": "victor",
+        "anchor_client_id": "emanuel",
+        "payload": {
+          "service": "Day Centre",
+          "activity": "Day Centre",
+          "absent_staff_id": "victor",
+          "covering_staff_id": "roberto",
+          "portal_session_key": "2026-09-16|12:30|emanuel",
+          "covering_staff_name": "Roberto"
+        },
+        "created_at": "2026-09-09T16:24:55.102142+00:00"
+      },
+      {
+        "id": "e6a1e06a-0bb4-4663-b32e-188058a7e6b6",
+        "session_date": "2026-09-16",
+        "override_type": "instructor_reassign",
+        "reason": "Fadi absent Wed 16 — Raul covers Ikram 3-4",
+        "status": "active",
+        "anchor_start": "15:00:00",
+        "anchor_end": "16:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "3 to 4",
+        "anchor_staff_id": "victor",
+        "anchor_client_id": "ikram",
+        "payload": {
+          "service": "Day Centre",
+          "activity": "Day Centre",
+          "absent_staff_id": "victor",
+          "covering_staff_id": "raul",
+          "portal_session_key": "2026-09-16|15:00|ikram",
+          "covering_staff_name": "Raul"
+        },
+        "created_at": "2026-09-09T16:24:55.102142+00:00"
+      },
+      {
+        "id": "local-john-off-emmanuel-tinashe-2026-09-16",
+        "session_date": "2026-09-16",
+        "override_type": "instructor_reassign",
+        "reason": "Emmanuel covers John — Tinashe Hub Bespoke 4.30–6 2026-09-16",
+        "status": "active",
+        "anchor_start": "16:30:00",
+        "anchor_end": "18:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "4.30 to 6",
+        "anchor_staff_id": "john",
+        "anchor_client_id": "tinashe",
+        "payload": {
+          "service": "Bespoke Programme",
+          "activity": "Bespoke Programme",
+          "absent_staff_id": "john",
+          "absent_staff_name": "John",
+          "covering_staff_id": "emmanuel",
+          "covering_staff_name": "Emmanuel",
+          "portal_session_key": "2026-09-16|16:30|tinashe|john",
+          "area": "Hub Room"
+        },
+        "created_at": "2026-09-14T11:56:48.000000+00:00"
+      }
+    ],
+    "2026-09-17": [
+      {
+        "id": "1ec87fe6-bebb-408d-90e6-87e71bb8e01d",
+        "session_date": "2026-09-17",
+        "override_type": "client_absence_announced",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "18:00:00",
+        "anchor_end": "18:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "18 to 18.30",
+        "anchor_staff_id": "roberto",
+        "anchor_client_id": "maiyar",
+        "payload": {
+          "portal_session_key": "2026-09-17|18:00|maiyar",
+          "feedback_resolution": "absent"
+        },
+        "created_at": "2026-09-11T08:38:08.02175+00:00"
+      }
+    ],
+    "2026-09-20": [
+      {
+        "id": "local-sun20-victor-berta-jack-w",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Victor covers Berta — jack w Hub 9.30 to 10.15 2026-09-20",
+        "status": "active",
+        "anchor_start": "09:30:00",
+        "anchor_end": "10:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "9.30 to 10.15",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "jack w",
+        "payload": {
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "area": "Hub Room",
+          "absent_staff_id": "berta",
+          "absent_staff_name": "Berta",
+          "covering_staff_id": "victor",
+          "covering_staff_name": "Victor",
+          "portal_session_key": "2026-09-20|09:30|jack w|berta"
+        }
+      },
+      {
+        "id": "local-sun20-victor-berta-adam-ab",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Victor covers Berta — adam ab Hub 10.15 to 11 2026-09-20",
+        "status": "active",
+        "anchor_start": "10:15:00",
+        "anchor_end": "11:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "10.15 to 11",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "adam ab",
+        "payload": {
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "area": "Hub Room",
+          "absent_staff_id": "berta",
+          "absent_staff_name": "Berta",
+          "covering_staff_id": "victor",
+          "covering_staff_name": "Victor",
+          "portal_session_key": "2026-09-20|10:15|adam ab|berta"
+        }
+      },
+      {
+        "id": "local-sun20-victor-berta-cyrus",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Victor covers Berta — cyrus Hub 11 to 11.45 2026-09-20",
+        "status": "active",
+        "anchor_start": "11:00:00",
+        "anchor_end": "11:45:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11 to 11.45",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "cyrus",
+        "payload": {
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "area": "Hub Room",
+          "absent_staff_id": "berta",
+          "absent_staff_name": "Berta",
+          "covering_staff_id": "victor",
+          "covering_staff_name": "Victor",
+          "portal_session_key": "2026-09-20|11:00|cyrus|berta"
+        }
+      },
+      {
+        "id": "local-sun20-victor-berta-arthur-ma",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Victor covers Berta — arthur ma Hub 11.45 to 12.30 2026-09-20",
+        "status": "active",
+        "anchor_start": "11:45:00",
+        "anchor_end": "12:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11.45 to 12.30",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "arthur ma",
+        "payload": {
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "area": "Hub Room",
+          "absent_staff_id": "berta",
+          "absent_staff_name": "Berta",
+          "covering_staff_id": "victor",
+          "covering_staff_name": "Victor",
+          "portal_session_key": "2026-09-20|11:45|arthur ma|berta"
+        }
+      },
+      {
+        "id": "local-sun20-victor-berta-erik",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Victor covers Berta — erik Hub 12.30 to 1.15 2026-09-20",
+        "status": "active",
+        "anchor_start": "12:30:00",
+        "anchor_end": "13:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "12.30 to 1.15",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "erik",
+        "payload": {
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "area": "Hub Room",
+          "absent_staff_id": "berta",
+          "absent_staff_name": "Berta",
+          "covering_staff_id": "victor",
+          "covering_staff_name": "Victor",
+          "portal_session_key": "2026-09-20|12:30|erik|berta"
+        }
+      },
+      {
+        "id": "local-sun20-victor-berta-aydaan-ah",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Victor covers Berta — aydaan ah Hub 1.15 to 2 2026-09-20",
+        "status": "active",
+        "anchor_start": "13:15:00",
+        "anchor_end": "14:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "1.15 to 2",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "aydaan ah",
+        "payload": {
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "area": "Hub Room",
+          "absent_staff_id": "berta",
+          "absent_staff_name": "Berta",
+          "covering_staff_id": "victor",
+          "covering_staff_name": "Victor",
+          "portal_session_key": "2026-09-20|13:15|aydaan ah|berta"
+        }
+      },
+      {
+        "id": "local-sun20-andres-carlos-hazem",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Andres covers Carlos — hazem Westway Climb 10 to 11 2026-09-20",
+        "status": "active",
+        "anchor_start": "10:00:00",
+        "anchor_end": "11:00:00",
+        "anchor_venue": "Westway",
+        "anchor_time_slot_label": "10 to 11",
+        "anchor_staff_id": "carlos",
+        "anchor_client_id": "hazem",
+        "payload": {
+          "service": "Climbing Activity",
+          "activity": "Climbing Activity",
+          "area": "Wall",
+          "absent_staff_id": "carlos",
+          "absent_staff_name": "Carlos",
+          "covering_staff_id": "andres",
+          "covering_staff_name": "Andres",
+          "portal_session_key": "2026-09-20|10:00|hazem|carlos"
+        }
+      },
+      {
+        "id": "local-sun20-andres-carlos-zaid",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Andres covers Carlos — zaid Westway Climb 11 to 12 2026-09-20",
+        "status": "active",
+        "anchor_start": "11:00:00",
+        "anchor_end": "12:00:00",
+        "anchor_venue": "Westway",
+        "anchor_time_slot_label": "11 to 12",
+        "anchor_staff_id": "carlos",
+        "anchor_client_id": "zaid",
+        "payload": {
+          "service": "Climbing Activity",
+          "activity": "Climbing Activity",
+          "area": "Wall",
+          "absent_staff_id": "carlos",
+          "absent_staff_name": "Carlos",
+          "covering_staff_id": "andres",
+          "covering_staff_name": "Andres",
+          "portal_session_key": "2026-09-20|11:00|zaid|carlos"
+        }
+      },
+      {
+        "id": "local-sun20-andres-carlos-serine",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Andres covers Carlos — serine Westway Climb 12 to 1 2026-09-20",
+        "status": "active",
+        "anchor_start": "12:00:00",
+        "anchor_end": "13:00:00",
+        "anchor_venue": "Westway",
+        "anchor_time_slot_label": "12 to 1",
+        "anchor_staff_id": "carlos",
+        "anchor_client_id": "serine",
+        "payload": {
+          "service": "Climbing Activity",
+          "activity": "Climbing Activity",
+          "area": "Wall",
+          "absent_staff_id": "carlos",
+          "absent_staff_name": "Carlos",
+          "covering_staff_id": "andres",
+          "covering_staff_name": "Andres",
+          "portal_session_key": "2026-09-20|12:00|serine|carlos"
+        }
+      },
+      {
+        "id": "local-sun20-andres-carlos-zakariya",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Andres covers Carlos — zakariya Westway Climb 1 to 2 2026-09-20",
+        "status": "active",
+        "anchor_start": "13:00:00",
+        "anchor_end": "14:00:00",
+        "anchor_venue": "Westway",
+        "anchor_time_slot_label": "1 to 2",
+        "anchor_staff_id": "carlos",
+        "anchor_client_id": "zakariya",
+        "payload": {
+          "service": "Climbing Activity",
+          "activity": "Climbing Activity",
+          "area": "Wall",
+          "absent_staff_id": "carlos",
+          "absent_staff_name": "Carlos",
+          "covering_staff_id": "andres",
+          "covering_staff_name": "Andres",
+          "portal_session_key": "2026-09-20|13:00|zakariya|carlos"
+        }
+      },
+      {
+        "id": "local-sun20-andres-carlos-available",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Andres covers Carlos — available Westway Climb 2 to 3 2026-09-20",
+        "status": "active",
+        "anchor_start": "14:00:00",
+        "anchor_end": "15:00:00",
+        "anchor_venue": "Westway",
+        "anchor_time_slot_label": "2 to 3",
+        "anchor_staff_id": "carlos",
+        "anchor_client_id": "available",
+        "payload": {
+          "service": "Climbing Activity",
+          "activity": "Climbing Activity",
+          "area": "Wall",
+          "absent_staff_id": "carlos",
+          "absent_staff_name": "Carlos",
+          "covering_staff_id": "andres",
+          "covering_staff_name": "Andres",
+          "portal_session_key": "2026-09-20|14:00|available|carlos"
+        }
+      },
+      {
+        "id": "local-sun20-andres-carlos-patrick",
+        "session_date": "2026-09-20",
+        "override_type": "instructor_reassign",
+        "reason": "Andres covers Carlos — patrick Westway Climb 3 to 4 2026-09-20",
+        "status": "active",
+        "anchor_start": "15:00:00",
+        "anchor_end": "16:00:00",
+        "anchor_venue": "Westway",
+        "anchor_time_slot_label": "3 to 4",
+        "anchor_staff_id": "carlos",
+        "anchor_client_id": "patrick",
+        "payload": {
+          "service": "Climbing Activity",
+          "activity": "Climbing Activity",
+          "area": "Wall",
+          "absent_staff_id": "carlos",
+          "absent_staff_name": "Carlos",
+          "covering_staff_id": "andres",
+          "covering_staff_name": "Andres",
+          "portal_session_key": "2026-09-20|15:00|patrick|carlos"
+        }
+      }
+    ],
+    "2026-09-27": [],
+    "2026-10-04": [
+      {
+        "id": "f13dffe1-02c6-4d54-9da7-a88c0de6fe8a",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_cover_needed",
+        "reason": "Berta day off — Hub Lead book COVER NEEDED",
+        "status": "active",
+        "anchor_start": "09:30:00",
+        "anchor_end": "10:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "9.30 to 10.15",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "jack w",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "portal_session_key": "2026-10-04|09:30|jack w"
+        },
+        "created_at": "2026-09-09T16:24:55.102142+00:00"
+      },
+      {
+        "id": "78ee33d6-4790-4317-bfde-b718b95d8e63",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_cover_needed",
+        "reason": "Berta day off — Hub Lead book COVER NEEDED",
+        "status": "active",
+        "anchor_start": "10:15:00",
+        "anchor_end": "11:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "10.15 to 11",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "adam ab",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "portal_session_key": "2026-10-04|10:15|adam ab"
+        },
+        "created_at": "2026-09-09T16:24:55.102142+00:00"
+      },
+      {
+        "id": "28af83ef-a5e1-4e8a-a0d0-c34cb6459314",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_cover_needed",
+        "reason": "Berta day off — Hub Lead book COVER NEEDED",
+        "status": "active",
+        "anchor_start": "11:00:00",
+        "anchor_end": "11:45:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11 to 11.45",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "cyrus",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "portal_session_key": "2026-10-04|11:00|cyrus"
+        },
+        "created_at": "2026-09-09T16:24:55.102142+00:00"
+      },
+      {
+        "id": "3c31b30f-198f-4a8b-818b-93bb668a631b",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_cover_needed",
+        "reason": "Berta day off — Hub Lead book COVER NEEDED",
+        "status": "active",
+        "anchor_start": "11:45:00",
+        "anchor_end": "12:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11.45 to 12.30",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "arthur ma",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "portal_session_key": "2026-10-04|11:45|arthur ma"
+        },
+        "created_at": "2026-09-09T16:24:55.102142+00:00"
+      },
+      {
+        "id": "e7be6004-f29f-4065-b817-98adc14c9678",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_cover_needed",
+        "reason": "Berta day off — Hub Lead book COVER NEEDED",
+        "status": "active",
+        "anchor_start": "12:30:00",
+        "anchor_end": "13:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "12.30 to 1.15",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "erik",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "portal_session_key": "2026-10-04|12:30|erik"
+        },
+        "created_at": "2026-09-09T16:24:55.102142+00:00"
+      },
+      {
+        "id": "6db1f62d-2c72-4f8d-b501-a87c42d9c3df",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_cover_needed",
+        "reason": "Berta day off — Hub Lead book COVER NEEDED",
+        "status": "active",
+        "anchor_start": "13:15:00",
+        "anchor_end": "14:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "1.15 to 2",
+        "anchor_staff_id": "berta",
+        "anchor_client_id": "aydaan ah",
+        "payload": {
+          "area": "Hub Room",
+          "service": "Multi-Activity",
+          "activity": "Multi-Activity",
+          "absent_staff_id": "berta",
+          "portal_session_key": "2026-10-04|13:15|aydaan ah"
+        },
+        "created_at": "2026-09-09T16:24:55.102142+00:00"
+      },
+      {
+        "id": "2c0aff98-f5b6-476f-a541-c118393dbac5",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Simon Aquatic 9–9.30 2026-10-04",
+        "status": "active",
+        "anchor_start": "09:00:00",
+        "anchor_end": "09:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "9 to 9.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "simon",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-10-04|09:00|simon",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "beb1300e-924b-4eaa-ad4d-61dc76fd1e08",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Adam Ab Multi 9.30–10.15 2026-10-04",
+        "status": "active",
+        "anchor_start": "09:30:00",
+        "anchor_end": "10:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "9.30 to 10.15",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "adam_ab",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-10-04|09:30|adam_ab",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "2c15becd-9ac2-452a-96f6-1ada42040e1d",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Jack W Multi 10.15–11 2026-10-04",
+        "status": "active",
+        "anchor_start": "10:15:00",
+        "anchor_end": "11:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "10.15 to 11",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "jack_w",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-10-04|10:15|jack_w",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "213b302f-b98f-40c2-948c-b2ffb8a7629d",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Arthur Ma Multi 11–11.45 2026-10-04",
+        "status": "active",
+        "anchor_start": "11:00:00",
+        "anchor_end": "11:45:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11 to 11.45",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "arthur_ma",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-10-04|11:00|arthur_ma",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "37a2997e-edcc-4433-a9fb-0ac7f51158b5",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Cyrus Multi 11.45–12.30 2026-10-04",
+        "status": "active",
+        "anchor_start": "11:45:00",
+        "anchor_end": "12:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "11.45 to 12.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "cyrus",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-10-04|11:45|cyrus",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "b6a11f6f-e46f-4497-a89d-b9c20b18cc3a",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Aydaan Ah Multi 12.30–1.15 2026-10-04",
+        "status": "active",
+        "anchor_start": "12:30:00",
+        "anchor_end": "13:15:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "12.30 to 1.15",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "aydaan_ah",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-10-04|12:30|aydaan_ah",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "61fb4aef-7c0a-4198-b18d-12d48f0f0094",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Erik Multi 1.15–2 2026-10-04",
+        "status": "active",
+        "anchor_start": "13:15:00",
+        "anchor_end": "14:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "1.15 to 2",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "erik",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-10-04|13:15|erik",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "2dce1ff5-1739-4810-ab12-b78685d99a42",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Zakariya Aquatic 2–2.30 2026-10-04",
+        "status": "active",
+        "anchor_start": "14:00:00",
+        "anchor_end": "14:30:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "2 to 2.30",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "zakariya",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-10-04|14:00|zakariya",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      },
+      {
+        "id": "4eba2947-55c7-40ba-aa67-dc6fe213579b",
+        "session_date": "2026-10-04",
+        "override_type": "instructor_reassign",
+        "reason": "Luliya covers Aurora — Faris Aquatic 2.30–3 2026-10-04",
+        "status": "active",
+        "anchor_start": "14:30:00",
+        "anchor_end": "15:00:00",
+        "anchor_venue": "SwimFarm",
+        "anchor_time_slot_label": "2.30 to 3",
+        "anchor_staff_id": "aurora",
+        "anchor_client_id": "faris",
+        "payload": {
+          "covering_staff_id": "luliya",
+          "portal_session_key": "2026-10-04|14:30|faris",
+          "covering_staff_name": "Luliya"
+        },
+        "created_at": "2026-09-06T21:10:22.289528+00:00"
+      }
+    ],
+    "2026-10-08": [
+      {
+        "id": "2a052bce-2336-40dc-a540-26f0004399af",
+        "session_date": "2026-10-08",
+        "override_type": "client_absence_announced",
+        "reason": "",
+        "status": "active",
+        "anchor_start": "18:00:00",
+        "anchor_end": "18:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "18 to 18.30",
+        "anchor_staff_id": "roberto",
+        "anchor_client_id": "maiyar",
+        "payload": {
+          "portal_session_key": "2026-10-08|18:00|maiyar",
+          "feedback_resolution": "absent"
+        },
+        "created_at": "2026-09-11T08:38:38.315262+00:00"
+      }
+    ],
+    "2026-10-11": [],
+    "2026-10-18": [],
+    "2026-10-25": [],
+    "2026-11-01": [],
+    "2026-11-08": [],
+    "2026-11-15": [],
+    "2026-11-22": [],
+    "2026-11-29": [],
+    "2026-12-06": [],
+    "2026-12-13": [],
+    "2026-09-14": [
+      {
+        "id": "0ce1614e-d235-4406-8f42-45666ae9c237",
+        "session_date": "2026-09-14",
+        "override_type": "client_absence_announced",
+        "reason": "Adam P absent Mon 14 Sep — Roberto DC Emanuel to 4, Acton from 5.30",
+        "status": "active",
+        "anchor_start": "16:00:00",
+        "anchor_end": "16:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "4 to 4.30",
+        "anchor_staff_id": "roberto",
+        "anchor_client_id": "adam_p",
+        "payload": {
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "portal_session_key": "2026-09-14|16:00|adam_p",
+          "feedback_resolution": "absent",
+          "local_office": true
+        },
+        "created_at": "2026-09-14T10:43:31.519850+00:00"
+      },
+      {
+        "id": "8a7ac530-1d03-472c-953b-2d23931dfbaa",
+        "session_date": "2026-09-14",
+        "override_type": "client_absence_announced",
+        "reason": "Adam P absent Mon 14 Sep — Roberto DC Emanuel to 4, Acton from 5.30",
+        "status": "active",
+        "anchor_start": "16:30:00",
+        "anchor_end": "17:00:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "4.30 to 5",
+        "anchor_staff_id": "roberto",
+        "anchor_client_id": "adam_p",
+        "payload": {
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "portal_session_key": "2026-09-14|16:30|adam_p",
+          "feedback_resolution": "absent",
+          "local_office": true
+        },
+        "created_at": "2026-09-14T10:43:31.519850+00:00"
+      },
+      {
+        "id": "0edad0f7-542e-4026-9891-38c23c8121f6",
+        "session_date": "2026-09-14",
+        "override_type": "client_absence_announced",
+        "reason": "Adam P absent Mon 14 Sep — Roberto DC Emanuel to 4, Acton from 5.30",
+        "status": "active",
+        "anchor_start": "17:00:00",
+        "anchor_end": "17:30:00",
+        "anchor_venue": "Acton",
+        "anchor_time_slot_label": "5 to 5.30",
+        "anchor_staff_id": "roberto",
+        "anchor_client_id": "adam_p",
+        "payload": {
+          "service": "Aquatic Activity",
+          "activity": "Aquatic Activity",
+          "portal_session_key": "2026-09-14|17:00|adam_p",
+          "feedback_resolution": "absent",
+          "local_office": true
+        },
+        "created_at": "2026-09-14T10:43:31.519850+00:00"
+      }
+    ]
+  }
+}
