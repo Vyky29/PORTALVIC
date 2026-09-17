@@ -12,7 +12,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260916-emmanuel-abate-dc';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260917-review-antiflicker';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1688,15 +1688,53 @@
           perStaffOwnFeedbackOnlyKeys: perStaffOwnKeys
         };
         const keys = await mod.portalFetchSubmittedReviewSessionKeys(box.client, uid, syncOpts);
+        const fetchDegraded = !!(keys && keys.fetchDegraded);
+        function portalUnionReviewKeySet(prevSet, nextArr) {
+          const out = new Set();
+          if (prevSet && typeof prevSet.forEach === "function") {
+            prevSet.forEach(function (k) {
+              const s = String(k || "").trim();
+              if (s) out.add(s);
+            });
+          }
+          (nextArr || []).forEach(function (k) {
+            const s = String(k || "").trim();
+            if (s) out.add(s);
+          });
+          return out;
+        }
+        function portalApplyReviewKeySet(field, nextArr) {
+          if (!dashboardData) return;
+          const prev = dashboardData[field];
+          const nextLen = (nextArr || []).filter(Boolean).length;
+          const prevSize = prev && prev.size ? prev.size : 0;
+          /* Anti-flicker (same idea as schedule_overrides): never wipe a non-empty
+             server key set with an empty/thin pack from a failed or racing refetch —
+             that paints cards incomplete then complete again (Simon / Yuri 17 Sep). */
+          if (fetchDegraded && prevSize > 0 && nextLen === 0) {
+            return;
+          }
+          if (!fetchDegraded && prevSize > 0 && nextLen === 0 && dashboardData.portalFeedbackServerSynced) {
+            dashboardData[field] = portalUnionReviewKeySet(prev, nextArr);
+            return;
+          }
+          if (dashboardData.portalFeedbackServerSynced && prevSize > 0) {
+            dashboardData[field] = portalUnionReviewKeySet(prev, nextArr);
+            return;
+          }
+          dashboardData[field] = new Set(
+            (nextArr || []).map(function (k) { return String(k || "").trim(); }).filter(Boolean)
+          );
+        }
         if(dashboardData){
-          dashboardData.portalServerSubmittedFeedbackKeys = new Set(keys.feedbackKeys || []);
-          dashboardData.portalServerSubmittedFeedbackPortalKeys = new Set(keys.feedbackKeys || []);
-          dashboardData.portalServerOwnFeedbackKeys = new Set(keys.ownFeedbackKeys || []);
-          dashboardData.portalServerOwnFeedbackPortalKeys = new Set(keys.ownFeedbackPortalKeys || []);
+          portalApplyReviewKeySet("portalServerSubmittedFeedbackKeys", keys.feedbackKeys || []);
+          portalApplyReviewKeySet("portalServerSubmittedFeedbackPortalKeys", keys.feedbackKeys || []);
+          portalApplyReviewKeySet("portalServerOwnFeedbackKeys", keys.ownFeedbackKeys || []);
+          portalApplyReviewKeySet("portalServerOwnFeedbackPortalKeys", keys.ownFeedbackPortalKeys || []);
           dashboardData.portalPerStaffOwnFeedbackOnlyKeys = new Set(perStaffOwnKeys);
-          dashboardData.portalLateFeedbackDates = new Set(keys.lateFeedbackDates || []);
-          dashboardData.portalLatePayClearedDates = new Set(keys.latePayClearedDates || []);
-          dashboardData.portalLateFeedbackKeys = new Set(keys.lateFeedbackKeys || []);
+          portalApplyReviewKeySet("portalLateFeedbackDates", keys.lateFeedbackDates || []);
+          portalApplyReviewKeySet("portalLatePayClearedDates", keys.latePayClearedDates || []);
+          portalApplyReviewKeySet("portalLateFeedbackKeys", keys.lateFeedbackKeys || []);
         }
         const mergeFanOutOpts = {
           rosterSessionKeys: rosterKeys,
@@ -1711,9 +1749,7 @@
           window.__PORTAL_CLIENT_SLUG_EQUIV__ = mod.portalClientSlugTokensEquivalent;
         }
         if(dashboardData){
-          dashboardData.portalServerAbsentQuickMarkKeys = new Set(
-            (keys.absentKeys || []).map(function(k){ return String(k || '').trim(); }).filter(Boolean)
-          );
+          portalApplyReviewKeySet("portalServerAbsentQuickMarkKeys", keys.absentKeys || []);
         }
         /* Peer absent/feedback keys just changed — bust the reminder + outstanding caches so the
            term calendar colour, halo and "Outstanding feedbacks" count recompute against them
@@ -1746,15 +1782,29 @@
           }
         }catch(_lateAbsent){}
         const floorIso = typeof portalMachineRosterFeedbackFloorIso === 'function' ? portalMachineRosterFeedbackFloorIso() : '2026-06-01';
-        const reconciled = typeof mod.portalReconcileReviewMemoryWithServer === 'function'
-          ? mod.portalReconcileReviewMemoryWithServer(sessionReviewMapMemory, rosterKeys, keys, {
-              serverTruthFromIso: floorIso,
-              catchUpSessionDates: catchUpDates,
-              feedbackMergeRules: feedbackMergeRules,
-              perStaffOwnFeedbackOnlyKeys: perStaffOwnKeys,
-              ownFeedbackKeys: keys.ownFeedbackKeys || []
-            })
-          : false;
+        const skipReconcileWipe = !!(
+          fetchDegraded ||
+          (dashboardData &&
+            dashboardData.portalFeedbackServerSynced &&
+            !(keys.feedbackKeys || []).length &&
+            !(keys.absentKeys || []).length &&
+            ((dashboardData.portalServerSubmittedFeedbackKeys &&
+              dashboardData.portalServerSubmittedFeedbackKeys.size) ||
+              (dashboardData.portalServerAbsentQuickMarkKeys &&
+                dashboardData.portalServerAbsentQuickMarkKeys.size)))
+        );
+        const reconciled =
+          skipReconcileWipe
+            ? false
+            : typeof mod.portalReconcileReviewMemoryWithServer === "function"
+              ? mod.portalReconcileReviewMemoryWithServer(sessionReviewMapMemory, rosterKeys, keys, {
+                  serverTruthFromIso: floorIso,
+                  catchUpSessionDates: catchUpDates,
+                  feedbackMergeRules: feedbackMergeRules,
+                  perStaffOwnFeedbackOnlyKeys: perStaffOwnKeys,
+                  ownFeedbackKeys: keys.ownFeedbackKeys || [],
+                })
+              : false;
         if(seeded || merged || reconciled){
           persistSessionReviewMap();
           if(typeof portalEnrichClientNotesFromPortalFeedback === 'function') portalEnrichClientNotesFromPortalFeedback();

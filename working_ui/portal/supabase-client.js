@@ -781,6 +781,15 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     return cancelSplit.before.indexOf(k) < 0;
   });
 
+  const fetchDegraded = !!(
+    (fb && fb.error) ||
+    (inc && inc.error) ||
+    (can && can.error) ||
+    (quickMarks && quickMarks.error) ||
+    (fbCatchUp && fbCatchUp.error) ||
+    (rosterSessionKeys.length && fbPeerShared && fbPeerShared.error)
+  );
+
   return {
     feedbackKeys: feedbackMerged,
     ownFeedbackKeys,
@@ -794,6 +803,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     lateFeedbackKeys,
     lateFeedbackDates,
     latePayClearedDates,
+    fetchDegraded,
   };
 }
 
