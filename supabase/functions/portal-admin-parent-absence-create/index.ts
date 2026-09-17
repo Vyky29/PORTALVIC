@@ -106,6 +106,7 @@ Deno.serve(async (req) => {
   const reasonCode = clean(body.reason_code, 40).toLowerCase().replace(/\s+/g, "_");
   const reasonNote = clean(body.reason_text, 800);
   const statusOverride = clean(body.status, 20).toLowerCase();
+  const scheduleOverrideId = clean(body.schedule_override_id, 60) || null;
   let caseKind = clean(body.case_kind, 20).toLowerCase() || "absence";
   if (caseKind !== "absence" && caseKind !== "cancellation") caseKind = "absence";
   // Cancellation reasons force the shared decision queue (pending_review, no proof).
@@ -200,8 +201,16 @@ Deno.serve(async (req) => {
 
   const payloadExtra = {
     reason_code: reasonCode,
-    source: caseKind === "cancellation" ? "office_cancel" : "office_phone",
+    source:
+      caseKind === "cancellation"
+        ? scheduleOverrideId
+          ? "schedule_covers"
+          : "office_cancel"
+        : scheduleOverrideId
+          ? "schedule_covers_absent"
+          : "office_phone",
     case_kind: caseKind,
+    schedule_override_id: scheduleOverrideId,
     created_by_admin: verified.userId || null,
   };
 
@@ -214,6 +223,7 @@ Deno.serve(async (req) => {
     participant_display: participantDisplay || "",
     proof_deadline: proofDeadline,
     payload: payloadExtra,
+    schedule_override_id: scheduleOverrideId,
     updated_at: now,
   };
 

@@ -359,43 +359,87 @@ async function main() {
     );
   }
 
-  // --- C) Cancellation case_kind row in same queue
+  // --- C) Cancellation via Schedule path (admin edge create) or direct insert fallback
   let reportId = "";
-  try {
-    const sessionDate = new Date().toISOString().slice(0, 10);
-    const serviceLabel = `Smoke cancel ${stamp}`;
-    const { data: report, error } = await admin
-      .from("portal_parent_absence_reports")
-      .insert({
-        parent_person_id: PARENT,
-        contact_id: CONTACT,
-        participant_display: part?.display_name || "Elia",
-        session_date: sessionDate,
-        service_label: serviceLabel,
-        session_time: "5 to 5.30",
-        status: "pending_review",
-        case_kind: "cancellation",
-        reason_code: "club_cancelled",
-        reason_text: "Smoke · Office cancel · Club cancelled session",
-        proof_deadline: sessionDate,
-        payload: { source: "smoke", case_kind: "cancellation" },
-      })
-      .select("id, status, case_kind, reason_code")
-      .maybeSingle();
-    if (error || !report) throw new Error(error?.message || "report insert failed");
-    reportId = report.id;
-    cleanupIds.reports.push(reportId);
+  const sessionDate = new Date().toISOString().slice(0, 10);
+  const serviceLabel = `Smoke cancel ${stamp}`;
+  const token = await adminToken();
+  if (!token) {
     log(
-      "queue.cancel_row",
-      report.case_kind === "cancellation" && report.status === "pending_review",
-      JSON.stringify(report),
+      "edge.absence_create",
+      true,
+      "SKIP — set PORTAL_SMOKE_ADMIN_EMAIL + PORTAL_SMOKE_ADMIN_PASSWORD",
     );
-  } catch (e) {
-    log("queue.cancel_row", false, String((e as Error).message || e));
+    try {
+      const { data: report, error } = await admin
+        .from("portal_parent_absence_reports")
+        .insert({
+          parent_person_id: PARENT,
+          contact_id: CONTACT,
+          participant_display: part?.display_name || "Elia",
+          session_date: sessionDate,
+          service_label: serviceLabel,
+          session_time: "5 to 5.30",
+          status: "pending_review",
+          case_kind: "cancellation",
+          reason_code: "club_cancelled",
+          reason_text: "Smoke · Office cancel · Club cancelled session",
+          proof_deadline: sessionDate,
+          payload: { source: "smoke", case_kind: "cancellation" },
+        })
+        .select("id, status, case_kind, reason_code")
+        .maybeSingle();
+      if (error || !report) throw new Error(error?.message || "report insert failed");
+      reportId = report.id;
+      cleanupIds.reports.push(reportId);
+      log(
+        "queue.cancel_row",
+        report.case_kind === "cancellation" && report.status === "pending_review",
+        JSON.stringify(report),
+      );
+    } catch (e) {
+      log("queue.cancel_row", false, String((e as Error).message || e));
+    }
+  } else {
+    const created = await callAdminFn("portal-admin-parent-absence-create", token, {
+      contact_id: CONTACT,
+      parent_person_id: PARENT,
+      participant_display: part?.display_name || "Elia",
+      session_date: sessionDate,
+      service_label: serviceLabel,
+      session_time: "5 to 5.30",
+      reason_code: "club_cancelled",
+      reason_text: "Smoke · Schedule & Covers club cancel",
+      case_kind: "cancellation",
+      schedule_override_id: null,
+    });
+    const rep = (created.json?.report || created.json) as Record<string, unknown> | undefined;
+    reportId = String(rep?.id || created.json?.id || "");
+    if (reportId) cleanupIds.reports.push(reportId);
+    log(
+      "edge.absence_create_cancel",
+      created.status === 200 &&
+        created.json?.ok === true &&
+        (String(rep?.case_kind || "") === "cancellation" ||
+          String(rep?.status || "") === "pending_review" ||
+          created.json?.already_reported === true),
+      `http=${created.status} ${JSON.stringify(created.json).slice(0, 220)}`,
+    );
+    if (reportId) {
+      const { data: liveRep } = await admin
+        .from("portal_parent_absence_reports")
+        .select("id, status, case_kind, reason_code, payload")
+        .eq("id", reportId)
+        .maybeSingle();
+      log(
+        "queue.cancel_row",
+        liveRep?.case_kind === "cancellation" && liveRep?.status === "pending_review",
+        JSON.stringify(liveRep),
+      );
+    }
   }
 
-  // --- D) Optional live Edge: Add cancelled + decide credit
-  const token = await adminToken();
+  // --- D) Live Edge: decide (none — no money movement)
   if (!token) {
     log(
       "edge.absence_decide",

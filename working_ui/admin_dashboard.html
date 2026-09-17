@@ -15617,6 +15617,96 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       doRefresh();
     }
     window.portalAdminRefreshStaffDashboardSource = portalAdminRefreshStaffDashboardSource;
+    async function schedResolveParticipantForDecisionQueue(client, slot){
+      if(!client || !slot) return null;
+      if(typeof schedIsRealBookedParticipantSlug === 'function' && !schedIsRealBookedParticipantSlug(slot.clientSlug)){
+        return null;
+      }
+      var slug = String(slot.clientSlug || '').trim();
+      var display = String(slot.clientDisplay || slot.clientName || slot.client || '').trim();
+      if(!slug && !display) return null;
+      if(slug){
+        var byId = await client
+          .from('portal_participants')
+          .select('contact_id, display_name, parent_person_id')
+          .eq('contact_id', slug)
+          .maybeSingle();
+        if(byId && byId.data && byId.data.contact_id) return byId.data;
+      }
+      if(display){
+        var byName = await client
+          .from('portal_participants')
+          .select('contact_id, display_name, parent_person_id')
+          .ilike('display_name', display)
+          .limit(1)
+          .maybeSingle();
+        if(byName && byName.data && byName.data.contact_id) return byName.data;
+      }
+      return null;
+    }
+    function schedDecisionQueueServiceLabel(slot){
+      var bits = [
+        String(slot.programme || slot.rosterService || '').trim(),
+        String(slot.venue || '').trim(),
+        String(slot.whenLabel || slot.anchorTimeLabel || '').trim()
+      ].filter(Boolean);
+      return bits.join(' · ').slice(0, 160) || 'Session';
+    }
+    async function schedEnqueueCancelDecisionQueue(client, slot, overrideId, ovType, reason){
+      var pax = await schedResolveParticipantForDecisionQueue(client, slot);
+      if(!pax) return { skipped: 'no_participant' };
+      var reasonCode = 'club_cancelled';
+      var rLow = String(reason || '').toLowerCase();
+      if(/pool|venue|facility|closed/.test(rLow)) reasonCode = 'pool_closed';
+      else if(/instructor|staff/.test(rLow)) reasonCode = 'instructor_cancelled';
+      else if(/bank.?holiday|strike/.test(rLow)) reasonCode = /strike/.test(rLow) ? 'strike' : 'bank_holiday';
+      var body = {
+        contact_id: pax.contact_id,
+        parent_person_id: pax.parent_person_id || '',
+        participant_display: pax.display_name || String(slot.clientDisplay || '').trim(),
+        session_date: String(slot.sessionDate || '').slice(0, 10),
+        service_label: schedDecisionQueueServiceLabel(slot),
+        session_time: String(slot.whenLabel || slot.anchorTimeLabel || '').trim(),
+        reason_code: reasonCode,
+        reason_text: String(reason || '').trim() ||
+          (ovType === 'client_cancelled' ? 'Admin cancelled (Schedule & Covers)' : 'Club cancelled (Schedule & Covers)'),
+        case_kind: 'cancellation',
+        schedule_override_id: overrideId || null
+      };
+      var res = await adminEdgePost('portal-admin-parent-absence-create', body);
+      if(res && res.error){
+        console.warn('[portal] cancel → decision queue', res.error, res.message || '');
+        return res;
+      }
+      if(sched && !sched.lastMsg) sched.lastMsg = 'Override saved.';
+      sched.lastMsg = String(sched.lastMsg || 'Override saved.') +
+        (res && res.already_reported
+          ? ' Decision queue already had this cancel.'
+          : ' Queued in Absents & credits for credit / refund / makeup.');
+      return res;
+    }
+    async function schedEnqueueAbsentDecisionQueue(client, slot, overrideId, reason){
+      var pax = await schedResolveParticipantForDecisionQueue(client, slot);
+      if(!pax) return { skipped: 'no_participant' };
+      var body = {
+        contact_id: pax.contact_id,
+        parent_person_id: pax.parent_person_id || '',
+        participant_display: pax.display_name || String(slot.clientDisplay || '').trim(),
+        session_date: String(slot.sessionDate || '').slice(0, 10),
+        service_label: schedDecisionQueueServiceLabel(slot),
+        session_time: String(slot.whenLabel || slot.anchorTimeLabel || '').trim(),
+        reason_code: 'unwell',
+        reason_text: String(reason || '').trim() || 'Absent announced (Schedule & Covers)',
+        case_kind: 'absence',
+        status: 'missed',
+        schedule_override_id: overrideId || null
+      };
+      var res = await adminEdgePost('portal-admin-parent-absence-create', body);
+      if(res && res.error){
+        console.warn('[portal] absent → decision queue', res.error, res.message || '');
+      }
+      return res;
+    }
     async function saveSchedOverrideFromDrawer(){
       var msgEl = $('schedFormErr');
       if(msgEl) msgEl.textContent = '';
@@ -15824,6 +15914,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(ovType === 'instructor_reassign'){
         await schedCancelDuplicateInstructorReassigns(client, row, ins0.id);
         await schedCancelCoverNeededForSlot(client, slot, ins0.id);
+      }
+      /* Club cancel / admin cancel → same Absents & credits decision queue (no auto money). */
+      if(ovType === 'slot_close' || ovType === 'client_cancelled'){
+        try{
+          await schedEnqueueCancelDecisionQueue(client, slot, ins0.id, ovType, reason);
+        }catch(_enq){
+          console.warn('[portal] cancel decision queue enqueue failed', _enq);
+        }
+      }
+      /* Instructor/admin announced absent → Missed list (proof still required before credit). */
+      if(ovType === 'client_absence_announced'){
+        try{
+          await schedEnqueueAbsentDecisionQueue(client, slot, ins0.id, reason);
+        }catch(_enqA){
+          console.warn('[portal] absent decision queue enqueue failed', _enqA);
+        }
       }
       var evRow = {
         override_id: ins0.id,
