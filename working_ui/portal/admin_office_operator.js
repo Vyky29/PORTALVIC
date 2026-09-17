@@ -131,6 +131,44 @@
     return { kind: "guide", query: q };
   }
 
+  function buildPinWhatsAppDraft(f) {
+    f = f || {};
+    var url = String(f.portal_url || "https://www.clubsensational.org/parent").trim();
+    var names = String(f.login_names || "").trim() || "your child's first name";
+    var pin = String(f.pin || "").trim();
+    return [
+      "Hi,",
+      "",
+      "Here is your clubSENsational Parent portal login:",
+      "",
+      "Link: " + url,
+      "Sign in with: " + names,
+      "PIN: " + pin,
+      "",
+      "After you sign in, open Invoices and tap the red Set up Direct Payment button to authorise Direct Debit with your bank (we cannot do that bank step for you).",
+      "",
+      "Thank you,",
+      "clubSENsational office",
+    ].join("\n");
+  }
+
+  function renderCopyDraft(draft, label) {
+    var text = String(draft || "").trim();
+    if (!text) return "";
+    return (
+      '<div class="oh-op-draft">' +
+      '<p class="oh-op-draft__label">' +
+      esc(label || "WhatsApp draft — copy and paste (Operator does not send)") +
+      "</p>" +
+      '<textarea class="oh-op-draft__text" readonly rows="12">' +
+      esc(text) +
+      "</textarea>" +
+      '<div class="oh-bot__actions">' +
+      '<button type="button" class="oh-bot__open" data-oh-op-copy-draft="1">Copy message</button>' +
+      '<span class="oh-op-draft__copied" hidden>Copied</span></div></div>'
+    );
+  }
+
   function renderFamilies(list) {
     if (!list || !list.length) {
       return '<p class="oh-bot__miss">None found.</p>';
@@ -277,22 +315,14 @@
     if (j.tool === "lookup_family_access") {
       if (j.confirmed && j.family) {
         var f = j.family;
-        var pinDemo = "";
-        if (typeof global.PortalOfficeHelpRenderDemos === "function") {
-          pinDemo = global.PortalOfficeHelpRenderDemos([
-            {
-              demo: "pin_confirm",
-              caption: "PIN only shows after Confirm reveal — copy into WhatsApp yourself.",
-            },
-          ]);
-        }
+        var draft = String(j.whatsapp_draft || "").trim() || buildPinWhatsAppDraft(f);
         return (
           '<p class="oh-bot__title">Parent portal access (revealed)</p>' +
           '<p class="oh-bot__sum">' +
           esc(f.parent || "") +
           (f.children && f.children.length ? " · " + esc(f.children.join(", ")) : "") +
+          (f.mobile ? " · " + esc(f.mobile) : "") +
           "</p>" +
-          pinDemo +
           '<p class="oh-bot__where"><strong>URL:</strong> ' +
           esc(f.portal_url || "https://www.clubsensational.org/parent") +
           "<br><strong>Login names:</strong> " +
@@ -300,10 +330,8 @@
           "<br><strong>PIN:</strong> <code>" +
           esc(f.pin || "") +
           "</code></p>" +
-          (j.whatsapp_hint
-            ? '<p class="oh-bot__sum">' + esc(j.whatsapp_hint) + "</p>"
-            : "") +
-          '<p class="oh-bot__miss">Copy into WhatsApp yourself — operator does not send messages.</p>'
+          renderCopyDraft(draft) +
+          '<p class="oh-bot__miss">Operator does not send WhatsApp — tap Copy message, then paste to the parent.</p>'
         );
       }
       var matchDemo = "";

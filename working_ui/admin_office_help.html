@@ -299,6 +299,23 @@
     .oh-op-gate__go:hover,.oh-op-gate__go:focus-visible{
       background:#9a3412;outline:none;
     }
+    .oh-op-draft{
+      margin:12px 0 0;padding:12px;border-radius:12px;
+      border:1px solid #9fc6db;background:#f0f9ff;min-width:0;
+    }
+    .oh-op-draft__label{
+      margin:0 0 8px;font-size:12px;font-weight:800;color:var(--oh-navy);
+      overflow-wrap:break-word;
+    }
+    .oh-op-draft__text{
+      display:block;width:100%;min-width:0;min-height:10rem;resize:vertical;
+      padding:10px 12px;border-radius:10px;border:1px solid var(--oh-line);
+      background:#fff;font:inherit;font-size:13px;line-height:1.45;color:var(--oh-navy);
+      white-space:pre-wrap;overflow-wrap:break-word;
+    }
+    .oh-op-draft__copied{
+      align-self:center;font-size:12px;font-weight:800;color:#15803d;
+    }
     .oh-mock--gate{
       border-radius:12px;border:2px solid #c2410c;background:#fff7ed;padding:12px;min-width:0;
     }
@@ -410,7 +427,7 @@
 
     <section class="oh-ask" aria-label="Ask Office help">
       <p class="oh-ask__label">Ask Office help / Operator</p>
-      <p class="oh-op-banner">Operator (phase 1): can list families still needing Direct Payment mandate authorisation, and reveal a parent portal PIN after Confirm. It does not write covers, day offs, or invoices alone.</p>
+      <p class="oh-op-banner">Operator (phase 1): list pending Direct Payment mandates; reveal parent portal PIN after orange Final check; give a WhatsApp draft to Copy (does not send). It does not write covers, day offs, or invoices alone.</p>
       <form class="oh-ask__row" id="ohAskForm">
         <input
           class="oh-ask__input"
@@ -433,10 +450,10 @@
     <p class="oh-foot">PORTALVIC · Office help · v<span id="ohVer">-</span></p>
   </div>
   <script src="/portal/portal-admin-supabase-bridge.js?v=20260917-op1"></script>
-  <script src="/portal/admin_office_operator.js?v=20260917-op3"></script>
+  <script src="/portal/admin_office_operator.js?v=20260917-op4"></script>
   <script>
 (function () {
-  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v6";
+  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v7";
   var MIN_SCORE = 5;
   var data = null;
   var view = { mode: "cats", catId: "", lessonId: "" };
@@ -1115,6 +1132,41 @@
           }
           return;
         }
+        var copyBtn = ev.target.closest("[data-oh-op-copy-draft]");
+        if (copyBtn) {
+          var box = copyBtn.closest(".oh-op-draft");
+          var ta = box && box.querySelector(".oh-op-draft__text");
+          var text = ta ? String(ta.value || "") : "";
+          var done = function () {
+            var ok = box && box.querySelector(".oh-op-draft__copied");
+            if (ok) {
+              ok.hidden = false;
+              setTimeout(function () {
+                ok.hidden = true;
+              }, 2000);
+            }
+            copyBtn.textContent = "Copied";
+            setTimeout(function () {
+              copyBtn.textContent = "Copy message";
+            }, 2000);
+          };
+          if (text && navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done).catch(function () {
+              if (ta) {
+                ta.focus();
+                ta.select();
+              }
+            });
+          } else if (ta) {
+            ta.focus();
+            ta.select();
+            try {
+              document.execCommand("copy");
+              done();
+            } catch (_) {}
+          }
+          return;
+        }
         var gateCancel = ev.target.closest("[data-oh-op-gate-cancel]");
         if (gateCancel) {
           showBotHtml(
@@ -1146,7 +1198,7 @@
               bullets: [
                 fam || kids ? "Family: " + (fam || "") + (kids ? " · " + kids : "") : "Selected family from the list",
                 "PIN will appear on this page (sensitive)",
-                "Operator will not send WhatsApp — you copy it yourself",
+                "A WhatsApp draft will be ready to Copy — Operator does not send it",
                 "Wrong family? Cancel and pick again",
               ],
               action: "reveal_pin",

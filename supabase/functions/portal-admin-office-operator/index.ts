@@ -269,6 +269,23 @@ async function lookupFamilyAccess(
       .map((k) => k.split(/\s+/)[0])
       .filter(Boolean)
       .join(" / ");
+    const portalUrl = "https://www.clubsensational.org/parent";
+    const pin = clean(cred.pin_display, 20);
+    const whatsappDraft = [
+      "Hi,",
+      "",
+      "Here is your clubSENsational Parent portal login:",
+      "",
+      "Link: " + portalUrl,
+      "Sign in with: " + (loginNames || "your child's first name"),
+      "PIN: " + pin,
+      "",
+      "After you sign in, open Invoices and tap the red Set up Direct Payment button to authorise Direct Debit with your bank (we cannot do that bank step for you).",
+      "",
+      "Thank you,",
+      "clubSENsational office",
+    ].join("\n");
+
     return portalAdminJson(200, {
       ok: true,
       tool: "lookup_family_access",
@@ -280,12 +297,13 @@ async function lookupFamilyAccess(
         login_names: loginNames,
         email: clean(contacts?.[0]?.email, 120),
         mobile: clean(contacts?.[0]?.mobile, 40),
-        pin: clean(cred.pin_display, 20),
+        pin,
         changed_by_parent: !!cred.changed_by_parent,
-        portal_url: "https://www.clubsensational.org/parent",
+        portal_url: portalUrl,
       },
+      whatsapp_draft: whatsappDraft,
       whatsapp_hint:
-        "Parent portal: https://www.clubsensational.org/parent — use child first name + PIN to sign in. Then open invoices and tap Set up Direct Payment if still needed.",
+        "Copy the WhatsApp draft below and paste it to the parent. Operator does not send messages.",
     });
   }
 

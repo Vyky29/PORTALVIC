@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-17-v6",
+  "version": "2026-09-17-v7",
   "title": "Office help guide",
-  "subtitle": "Ask the Operator or browse categories. Lessons include visual replicas of where to tap. Orange Final check before Operator acts.",
+  "subtitle": "Ask the Operator or browse categories. Orange Final check before Operator acts. WhatsApp drafts are copy-only (not auto-sent).",
   "categories": [
     {
       "id": "day_ops",
@@ -40,12 +40,12 @@
           "steps": [
             "Stay signed in on the admin portal (same browser), then open Office help.",
             "Ask: Who has not authorised Direct Payment? — live list + phone script.",
-            "Ask: PIN for [child or parent name] — pick the family, then the orange Final check screen, then Confirm — Operator proceed.",
-            "Copy PIN into WhatsApp yourself — Operator never sends messages automatically.",
+            "Ask: PIN for [child or parent name] — pick the family, orange Final check, then Confirm. Copy the WhatsApp draft and paste to the parent.",
+            "Operator never sends WhatsApp automatically — only prepares the message for you to copy.",
             "How-to questions still open guide lessons (Schedule & Covers, Overview, etc.)."
           ],
           "tips": [
-            "Phase 1 is read-only plus confirm-gated PIN reveal. The orange Final check screen is mandatory before Operator acts — same pattern for future write tools.",
+            "Phase 1: list pending mandates + reveal PIN with orange Final check + copy-ready WhatsApp draft. Schedule writes, day offs and mark paid stay manual.",
             "After each new portal flow ships, update this guide so Ask and Operator stay the same truth."
           ]
         },
