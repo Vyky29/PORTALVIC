@@ -257,6 +257,54 @@
       margin-top:8px;display:inline-block;padding:8px 12px;border-radius:8px;background:var(--oh-blue);
       color:#fff;font-size:12px;font-weight:800;
     }
+    /* Final gate before Operator acts (PIN reveal now; writes in later phases) */
+    .oh-op-gate{
+      margin:0;padding:14px 16px;border-radius:14px;
+      border:2px solid #c2410c;background:#fff7ed;
+      box-shadow:0 0 0 4px rgba(194,65,12,.12);
+      min-width:0;
+    }
+    .oh-op-gate__eyebrow{
+      margin:0 0 6px;font-size:11px;font-weight:800;letter-spacing:.08em;
+      text-transform:uppercase;color:#c2410c;
+    }
+    .oh-op-gate__title{
+      margin:0 0 8px;font-size:17px;font-weight:800;color:#7c2d12;
+      overflow-wrap:break-word;
+    }
+    .oh-op-gate__sum{
+      margin:0 0 10px;font-size:14px;line-height:1.5;color:#9a3412;
+      overflow-wrap:break-word;
+    }
+    .oh-op-gate__list{
+      margin:0 0 12px;padding:0 0 0 18px;color:#7c2d12;
+    }
+    .oh-op-gate__list li{
+      margin:0 0 6px;font-size:13px;line-height:1.45;overflow-wrap:break-word;
+    }
+    .oh-op-gate__actions{
+      display:flex;flex-wrap:wrap;gap:8px;min-width:0;
+    }
+    .oh-op-gate__cancel{
+      padding:10px 14px;border-radius:10px;border:1px solid #fdba74;
+      background:#fff;color:#9a3412;font:inherit;font-size:13px;font-weight:800;cursor:pointer;
+    }
+    .oh-op-gate__cancel:hover,.oh-op-gate__cancel:focus-visible{
+      background:#ffedd5;outline:none;
+    }
+    .oh-op-gate__go{
+      padding:10px 14px;border-radius:10px;border:0;
+      background:#c2410c;color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer;
+    }
+    .oh-op-gate__go:hover,.oh-op-gate__go:focus-visible{
+      background:#9a3412;outline:none;
+    }
+    .oh-mock--gate{
+      border-radius:12px;border:2px solid #c2410c;background:#fff7ed;padding:12px;min-width:0;
+    }
+    .oh-mock--gate .oh-mock__confirm{
+      background:#c2410c;
+    }
     .oh-crumb{
       display:flex;flex-wrap:wrap;gap:6px;align-items:center;
       margin:0 0 14px;font-size:13px;color:var(--oh-muted);min-width:0;
@@ -385,10 +433,10 @@
     <p class="oh-foot">PORTALVIC · Office help · v<span id="ohVer">-</span></p>
   </div>
   <script src="/portal/portal-admin-supabase-bridge.js?v=20260917-op1"></script>
-  <script src="/portal/admin_office_operator.js?v=20260917-op2"></script>
+  <script src="/portal/admin_office_operator.js?v=20260917-op3"></script>
   <script>
 (function () {
-  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v5";
+  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v6";
   var MIN_SCORE = 5;
   var data = null;
   var view = { mode: "cats", catId: "", lessonId: "" };
@@ -481,10 +529,11 @@
     }
     if (k === "pin_confirm") {
       return (
-        '<div class="oh-mock oh-mock--pin" aria-hidden="true">' +
-        '<div class="oh-mock__title">Parent · Child name</div>' +
-        '<div class="oh-mock__inv-meta">email · mobile · PIN hidden</div>' +
-        '<span class="oh-mock__confirm is-target">Confirm reveal PIN</span></div>'
+        '<div class="oh-mock oh-mock--gate" aria-hidden="true">' +
+        '<div class="oh-demo__tag" style="margin:0 0 6px;color:#c2410c">Final check — Operator about to act</div>' +
+        '<div class="oh-mock__title" style="color:#7c2d12">Reveal parent portal PIN</div>' +
+        '<div class="oh-mock__inv-meta" style="color:#9a3412">Machine will show the PIN on screen. Check the family is correct.</div>' +
+        '<span class="oh-mock__confirm is-target">Confirm — Operator proceed</span></div>'
       );
     }
     if (k === "finance") {
@@ -530,8 +579,47 @@
     return inner ? '<div class="oh-demos">' + inner + "</div>" : "";
   }
 
-  window.PortalOfficeHelpBuildDemo = buildDemo;
-  window.PortalOfficeHelpRenderDemos = renderDemos;
+  function renderOperatorGate(opts) {
+    opts = opts || {};
+    var bullets = Array.isArray(opts.bullets) ? opts.bullets : [];
+    var list =
+      bullets.length > 0
+        ? '<ul class="oh-op-gate__list">' +
+          bullets
+            .map(function (b) {
+              return "<li>" + esc(b) + "</li>";
+            })
+            .join("") +
+          "</ul>"
+        : "";
+    return (
+      '<div class="oh-op-gate" role="alertdialog" aria-labelledby="ohOpGateTitle">' +
+      '<p class="oh-op-gate__eyebrow">Final check — Operator about to act</p>' +
+      '<p class="oh-op-gate__title" id="ohOpGateTitle">' +
+      esc(opts.title || "Confirm before Operator proceeds") +
+      "</p>" +
+      '<p class="oh-op-gate__sum">' +
+      esc(
+        opts.summary ||
+          "This is the last screen before the machine runs. Check the details are correct.",
+      ) +
+      "</p>" +
+      list +
+      '<div class="oh-op-gate__actions">' +
+      '<button type="button" class="oh-op-gate__cancel" data-oh-op-gate-cancel="1">Cancel</button>' +
+      '<button type="button" class="oh-op-gate__go" data-oh-op-gate-go="' +
+      esc(opts.action || "") +
+      '" data-oh-op-gate-id="' +
+      esc(opts.id || "") +
+      '" data-oh-op-gate-label="' +
+      esc(opts.label || "") +
+      '">' +
+      esc(opts.goLabel || "Confirm — Operator proceed") +
+      "</button></div></div>"
+    );
+  }
+
+  window.PortalOfficeHelpRenderOperatorGate = renderOperatorGate;
 
   function normalize(text) {
     return String(text || "")
@@ -1007,21 +1095,66 @@
     }
     if (bot) {
       bot.addEventListener("click", function (ev) {
+        var gateGo = ev.target.closest("[data-oh-op-gate-go]");
+        if (gateGo && window.PortalOfficeOperator) {
+          var action = gateGo.getAttribute("data-oh-op-gate-go") || "";
+          var gid = gateGo.getAttribute("data-oh-op-gate-id") || "";
+          var glabel = gateGo.getAttribute("data-oh-op-gate-label") || lastAsk || "Operator";
+          if (action === "reveal_pin" && gid) {
+            showBotHtml(glabel, '<p class="oh-bot__miss">Operator running…</p>');
+            window.PortalOfficeOperator.run(glabel, {
+              intent: {
+                kind: "lookup_family_access",
+                parent_person_id: gid,
+                confirm: true,
+                query: "",
+              },
+            }).then(function (res) {
+              showBotHtml(glabel, (res && res.html) || "");
+            });
+          }
+          return;
+        }
+        var gateCancel = ev.target.closest("[data-oh-op-gate-cancel]");
+        if (gateCancel) {
+          showBotHtml(
+            lastAsk || "Cancelled",
+            '<p class="oh-bot__miss">Cancelled — Operator did not run. Ask again or pick another family if needed.</p>',
+          );
+          return;
+        }
         var confirmBtn = ev.target.closest("[data-oh-op-confirm-pin]");
-        if (confirmBtn && window.PortalOfficeOperator) {
+        if (confirmBtn) {
           var pid = confirmBtn.getAttribute("data-oh-op-confirm-pin");
-          var label = lastAsk || "Confirm reveal PIN";
-          showBotHtml(label, '<p class="oh-bot__miss">Revealing PIN…</p>');
-          window.PortalOfficeOperator.run(label, {
-            intent: {
-              kind: "lookup_family_access",
-              parent_person_id: pid,
-              confirm: true,
-              query: "",
-            },
-          }).then(function (res) {
-            showBotHtml(label, (res && res.html) || "");
-          });
+          var fam = confirmBtn.getAttribute("data-oh-op-family") || "";
+          var kids = confirmBtn.getAttribute("data-oh-op-kids") || "";
+          var label = lastAsk || "Reveal parent portal PIN";
+          var gateFn =
+            typeof window.PortalOfficeHelpRenderOperatorGate === "function"
+              ? window.PortalOfficeHelpRenderOperatorGate
+              : null;
+          if (!gateFn) {
+            showBotHtml(label, '<p class="oh-bot__miss">Confirm UI missing — refresh the page.</p>');
+            return;
+          }
+          showBotHtml(
+            label,
+            gateFn({
+              title: "Reveal parent portal PIN",
+              summary:
+                "You are about to let the Operator show a live PIN on screen. Check this is the right family before you continue.",
+              bullets: [
+                fam || kids ? "Family: " + (fam || "") + (kids ? " · " + kids : "") : "Selected family from the list",
+                "PIN will appear on this page (sensitive)",
+                "Operator will not send WhatsApp — you copy it yourself",
+                "Wrong family? Cancel and pick again",
+              ],
+              action: "reveal_pin",
+              id: pid,
+              label: label,
+              goLabel: "Confirm — Operator proceed",
+            }),
+          );
           return;
         }
         var pinSearch = ev.target.closest("[data-oh-op-pin-search]");

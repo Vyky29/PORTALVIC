@@ -186,7 +186,11 @@
             " · PIN hidden</div>" +
             '<button type="button" class="oh-bot__open" data-oh-op-confirm-pin="' +
             esc(m.parent_person_id) +
-            '">Confirm reveal PIN</button>' +
+            '" data-oh-op-family="' +
+            esc(m.parent || "") +
+            '" data-oh-op-kids="' +
+            esc(kids) +
+            '">Review before Operator acts</button>' +
             "</div>"
           );
         })
@@ -307,14 +311,14 @@
         matchDemo = global.PortalOfficeHelpRenderDemos([
           {
             demo: "pin_confirm",
-            caption: "Tap Confirm reveal PIN on the matching family below.",
+            caption: "Orange Final check before Operator reveals the PIN.",
           },
         ]);
       }
       return (
         '<p class="oh-bot__title">Parent portal access</p>' +
         '<p class="oh-bot__sum">' +
-        esc(j.confirm_message || "Confirm to reveal PIN.") +
+        esc(j.confirm_message || "Review before Operator acts — then Confirm on the orange screen.") +
         "</p>" +
         matchDemo +
         renderMatches(j.matches)

@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-17-v5",
+  "version": "2026-09-17-v6",
   "title": "Office help guide",
-  "subtitle": "Ask the Operator or browse categories. Lessons include visual replicas of where to tap.",
+  "subtitle": "Ask the Operator or browse categories. Lessons include visual replicas of where to tap. Orange Final check before Operator acts.",
   "categories": [
     {
       "id": "day_ops",
@@ -34,18 +34,18 @@
             },
             {
               "demo": "pin_confirm",
-              "caption": "PIN stay hidden until Confirm reveal."
+              "caption": "PIN stays hidden until the orange Final check — then Confirm — Operator proceed."
             }
           ],
           "steps": [
             "Stay signed in on the admin portal (same browser), then open Office help.",
             "Ask: Who has not authorised Direct Payment? — live list + phone script.",
-            "Ask: PIN for [child or parent name] — pick the family, then Confirm reveal PIN.",
+            "Ask: PIN for [child or parent name] — pick the family, then the orange Final check screen, then Confirm — Operator proceed.",
             "Copy PIN into WhatsApp yourself — Operator never sends messages automatically.",
             "How-to questions still open guide lessons (Schedule & Covers, Overview, etc.)."
           ],
           "tips": [
-            "Phase 1 is read-only plus confirm-gated PIN reveal. Schedule writes, day offs and mark paid stay manual.",
+            "Phase 1 is read-only plus confirm-gated PIN reveal. The orange Final check screen is mandatory before Operator acts — same pattern for future write tools.",
             "After each new portal flow ships, update this guide so Ask and Operator stay the same truth."
           ]
         },
