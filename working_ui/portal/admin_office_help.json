@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-17-v1",
+  "version": "2026-09-17-v2",
   "title": "Office help guide",
   "subtitle": "How to run day-to-day work in the admin portal — pick a category, then a lesson.",
   "categories": [
@@ -97,7 +97,7 @@
           "id": "services_board",
           "title": "Services board (capacity & open places)",
           "summary": "See filled vs open seats for the term — the capacity / places view for booking and office.",
-          "where": "Services → Services",
+          "where": "Services & places → Services",
           "steps": [
             "Open Services and pick the venue / day filter you need.",
             "Read filled seats vs open places — this is capacity truth for offering places.",
@@ -128,7 +128,7 @@
           "id": "edit_term_slot",
           "title": "Edit term slot (standing clients)",
           "summary": "Change who is booked for the rest of term (or that weekday pattern). This is clients/places — not staff hours.",
-          "where": "Services / Operator → Edit term slot (or from Timetable name click → Edit term slot)",
+          "where": "Services & places → Edit term slot (or from Timetable name → Edit term slot)",
           "steps": [
             "Open Edit term slot for the venue, weekday and time band.",
             "Change the participant, open seat, or pool / area as needed.",
@@ -319,7 +319,7 @@
           "id": "timetable",
           "title": "Timetable (staff hours / rota)",
           "summary": "Who works which hours. Does not change who is booked as a client.",
-          "where": "H&R / Operator → Instructor timetable (Who works)",
+          "where": "H&R → Timetable (Who works)",
           "steps": [
             "Open Timetable / Who works for the week.",
             "Read instructor hours for each day — this gates timesheet and standing projection.",
