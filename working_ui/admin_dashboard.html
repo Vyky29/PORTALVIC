@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260915-sun-phases" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-ops-cal-center" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-ops-pending" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260727-role-names"></script>
@@ -16434,6 +16434,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(prev !== state.portalLatePendingCount){
           try{ renderNav(); }catch(_rn){}
           try{ portalLateAdminPatchSessionsBanner(); }catch(_pb){}
+          try{ opsHubPatchPendingGlance(); }catch(_pg){}
         }
         var soundNew = opts.allowSound === true || (n > prev && prev >= 0);
         return portalAdminBellSyncLatePending({ silent: !soundNew }).then(function(){
@@ -26602,18 +26603,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           toggleAlerts();
         }
       }
-      function bindAlertsGlance(el){
-        if(!el || el.dataset.bound) return;
-        el.dataset.bound = '1';
-        el.addEventListener('click', openAlertsFromGlance);
-        el.addEventListener('keydown', function(ev){
+      var alertsGlance = $('opsHubAlertsGlance');
+      if(alertsGlance && !alertsGlance.dataset.bound){
+        alertsGlance.dataset.bound = '1';
+        alertsGlance.addEventListener('click', openAlertsFromGlance);
+        alertsGlance.addEventListener('keydown', function(ev){
           if(ev.key === 'Enter' || ev.key === ' '){
             openAlertsFromGlance(ev);
           }
         });
       }
-      bindAlertsGlance($('opsHubAlertsGlance'));
-      bindAlertsGlance($('opsHubAlertsGlanceRight'));
       var calGlance = $('opsHubCalendarGlance');
       if(calGlance && !calGlance.dataset.bound){
         calGlance.dataset.bound = '1';
@@ -26622,26 +26621,64 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           setView('office_calendar');
         });
       }
+      var pendingGlance = $('opsHubPendingGlance');
+      if(pendingGlance && !pendingGlance.dataset.bound){
+        pendingGlance.dataset.bound = '1';
+        pendingGlance.addEventListener('click', function(ev){
+          if(ev) ev.preventDefault();
+          var lateN = Number(state.portalLatePendingCount || 0);
+          var absN = portalAbsentsPendingCount();
+          // Prefer the queue that actually has work; absents if both empty.
+          if(lateN > 0 && !(absN > lateN)) setView('c4k_late_submissions');
+          else setView('absents_refunds');
+        });
+      }
       opsHubPatchCalendarGlance();
+      opsHubPatchPendingGlance();
       void portalAdminBootstrapActivityAlerts().finally(function(){
         opsHubPatchLiveAside();
         var n = opsHubGlanceValueAlerts();
-        document.querySelectorAll('#opsHubAlertsGlance .ops-hub__today-v, #opsHubAlertsGlanceRight .ops-hub__today-v, [data-ops-hub-alerts-n]').forEach(function(el){
-          el.textContent = String(n);
-          el.className = 'ops-hub__today-v' + (n > 0 ? ' ops-hub__today-v--alert' : '');
-        });
+        var alertsV = document.querySelector('#opsHubAlertsGlance .ops-hub__today-v');
+        if(alertsV){
+          alertsV.textContent = String(n);
+          alertsV.className = 'ops-hub__today-v' + (n > 0 ? ' ops-hub__today-v--alert' : '');
+        }
+        opsHubPatchPendingGlance();
       });
+    }
+    function opsHubPatchPendingGlance(){
+      var countEl = $('opsHubPendingGlanceCount');
+      var subEl = $('opsHubPendingGlanceSub');
+      if(!countEl && !subEl) return;
+      var lateN = Number(state.portalLatePendingCount || 0);
+      var absN = portalAbsentsPendingCount();
+      var pendingN = lateN + absN;
+      if(countEl){
+        countEl.textContent = String(pendingN);
+        countEl.className = 'ops-hub__today-v' + (pendingN > 0 ? ' ops-hub__today-v--warn' : '');
+      }
+      if(subEl){
+        subEl.textContent = lateN && absN
+          ? (lateN + ' late · ' + absN + ' absents')
+          : (lateN ? 'Late forms awaiting approval' : (absN ? 'Absents & credits to decide' : 'Late forms & absents'));
+      }
     }
     function opsHubGlanceHtml(){
       refreshKpisFromDemo();
       var alertsN = opsHubGlanceValueAlerts();
+      var lateN = Number(state.portalLatePendingCount || 0);
+      var absN = portalAbsentsPendingCount();
+      var pendingN = lateN + absN;
+      var pendingSub = lateN && absN
+        ? (lateN + ' late · ' + absN + ' absents')
+        : (lateN ? 'Late forms awaiting approval' : (absN ? 'Absents & credits to decide' : 'Late forms & absents'));
       var calStrip = '<div class="ops-hub-cal-week ops-hub-cal-week--placeholder" aria-hidden="true">' +
         ['M','T','W','T','F','S','S'].map(function(l){
           return '<span class="ops-hub-cal-day"><span class="ops-hub-cal-day__d">'+l+'</span><span class="ops-hub-cal-day__n">·</span></span>';
         }).join('') +
         '</div>';
       return (
-        '<div class="ops-hub__today ops-hub__today--cal-focus" role="region" aria-label="Alerts and office calendar">' +
+        '<div class="ops-hub__today ops-hub__today--cal-focus" role="region" aria-label="Alerts, calendar and pending actions">' +
         '<div class="ops-hub__today-item ops-hub__today-item--alerts" id="opsHubAlertsGlance" role="button" tabindex="0" aria-label="Open alerts">' +
         '<span class="ops-hub__today-k">Alerts</span>' +
         '<span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span>' +
@@ -26653,11 +26690,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<span class="ops-hub__today-s" id="opsHubCalendarGlanceSub">Office notes &amp; meetings — tap to open</span>' +
         '<span id="opsHubCalendarGlanceStrip">'+calStrip+'</span>' +
         '</button>' +
-        '<div class="ops-hub__today-item ops-hub__today-item--alerts ops-hub__today-item--alerts-side" id="opsHubAlertsGlanceRight" role="button" tabindex="0" aria-label="Open alerts">' +
-        '<span class="ops-hub__today-k">Alerts</span>' +
-        '<span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'" data-ops-hub-alerts-n>'+esc(String(alertsN))+'</span>' +
-        '<span class="ops-hub__today-s">Incidents, cancellations, expenses &amp; wellbeing</span>' +
-        '</div>' +
+        '<button type="button" class="ops-hub__today-item ops-hub__today-item--pending" id="opsHubPendingGlance" aria-label="Open pending late forms and absents">' +
+        '<span class="ops-hub__today-k">Pending actions</span>' +
+        '<span class="ops-hub__today-v'+(pendingN > 0 ? ' ops-hub__today-v--warn' : '')+'" id="opsHubPendingGlanceCount">'+esc(String(pendingN))+'</span>' +
+        '<span class="ops-hub__today-s" id="opsHubPendingGlanceSub">'+esc(pendingSub)+'</span>' +
+        '</button>' +
         '</div>'
       );
     }
@@ -34356,7 +34393,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.addEventListener('click', function(ev){
         var ap = $('alertsPop');
         if(!ap || !ap.classList.contains('open')) return;
-        if(ev.target && ev.target.closest && (ev.target.closest('#btnAlerts') || ev.target.closest('#alertsPop') || ev.target.closest('#opsHubAlertsGlance') || ev.target.closest('#opsHubAlertsGlanceRight'))) return;
+        if(ev.target && ev.target.closest && (ev.target.closest('#btnAlerts') || ev.target.closest('#alertsPop') || ev.target.closest('#opsHubAlertsGlance'))) return;
         ap.classList.remove('open');
       });
       var apEl = $('alertsPop');

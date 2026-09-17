@@ -1793,7 +1793,8 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   text-align:center;
 }
 .ops-hub__today-item--alerts,
-.ops-hub__today-item--calendar{
+.ops-hub__today-item--calendar,
+.ops-hub__today-item--pending{
   cursor:pointer;
   transition:border-color .15s,box-shadow .15s,background .15s;
   font:inherit;
@@ -1803,7 +1804,9 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
 .ops-hub__today-item--alerts:hover,
 .ops-hub__today-item--alerts:focus-visible,
 .ops-hub__today-item--calendar:hover,
-.ops-hub__today-item--calendar:focus-visible{
+.ops-hub__today-item--calendar:focus-visible,
+.ops-hub__today-item--pending:hover,
+.ops-hub__today-item--pending:focus-visible{
   border-color:#93c5fd;
   background:#f8fafc;
   box-shadow:0 0 0 1px rgba(45,132,179,.12);
