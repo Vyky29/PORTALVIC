@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Office help guide</title>
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-ops-help" />
+  <style>
+    :root{
+      --oh-navy:#173247;
+      --oh-blue:#2d84b3;
+      --oh-gold:#f4b740;
+      --oh-line:#e8eef4;
+      --oh-muted:#64748b;
+      --oh-bg:#f4f7fa;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{
+      margin:0;min-height:100%;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:var(--oh-bg);color:var(--oh-navy);
+    }
+    .oh-wrap{
+      max-width:960px;margin:0 auto;padding:clamp(16px,2.5vw,28px);
+      padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));
+      min-width:0;
+    }
+    .oh-top{
+      display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;
+      gap:12px;margin:0 0 18px;min-width:0;
+    }
+    .oh-top h1{
+      margin:0;font-size:clamp(22px,2vw + 14px,28px);font-weight:800;
+      letter-spacing:-.03em;line-height:1.15;min-width:0;
+    }
+    .oh-top p{
+      margin:6px 0 0;font-size:14px;line-height:1.45;color:var(--oh-muted);
+      max-width:40rem;overflow-wrap:break-word;
+    }
+    .oh-back{
+      display:inline-flex;align-items:center;gap:6px;padding:8px 12px;
+      border-radius:10px;border:1px solid var(--oh-line);background:#fff;
+      color:var(--oh-navy);font-size:13px;font-weight:700;text-decoration:none;
+      cursor:pointer;font:inherit;
+    }
+    .oh-back:hover,.oh-back:focus-visible{
+      border-color:#9fc6db;background:#eaf5fb;outline:none;
+    }
+    .oh-crumb{
+      display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+      margin:0 0 14px;font-size:13px;color:var(--oh-muted);min-width:0;
+    }
+    .oh-crumb button{
+      border:0;background:none;padding:0;font:inherit;font-weight:700;
+      color:var(--oh-blue);cursor:pointer;text-decoration:underline;
+    }
+    .oh-grid{
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:12px;min-width:0;
+    }
+    .oh-cat{
+      display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+      text-align:left;padding:16px;border-radius:14px;border:1px solid var(--oh-line);
+      background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);
+      cursor:pointer;font:inherit;color:inherit;min-width:0;width:100%;
+      transition:border-color .15s,box-shadow .15s;
+    }
+    .oh-cat:hover,.oh-cat:focus-visible{
+      border-color:#9fc6db;box-shadow:0 4px 16px rgba(23,50,71,.08);outline:none;
+    }
+    .oh-cat__prio{
+      font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+      color:var(--oh-blue);
+    }
+    .oh-cat__title{
+      font-size:16px;font-weight:800;line-height:1.2;overflow-wrap:break-word;
+    }
+    .oh-cat__blurb{
+      font-size:13px;line-height:1.4;color:var(--oh-muted);overflow-wrap:break-word;
+    }
+    .oh-cat__n{
+      margin-top:auto;padding-top:8px;font-size:12px;font-weight:700;color:var(--oh-navy);
+    }
+    .oh-list{display:flex;flex-direction:column;gap:8px;min-width:0}
+    .oh-lesson{
+      display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+      text-align:left;padding:14px 16px;border-radius:12px;border:1px solid var(--oh-line);
+      background:#fff;cursor:pointer;font:inherit;color:inherit;width:100%;min-width:0;
+    }
+    .oh-lesson:hover,.oh-lesson:focus-visible{
+      border-color:#9fc6db;background:#f8fafc;outline:none;
+    }
+    .oh-lesson__title{font-size:15px;font-weight:800;overflow-wrap:break-word}
+    .oh-lesson__sum{font-size:13px;line-height:1.4;color:var(--oh-muted);overflow-wrap:break-word}
+    .oh-detail{
+      border:1px solid var(--oh-line);border-radius:14px;background:#fff;
+      padding:clamp(16px,2vw,22px);min-width:0;box-shadow:0 1px 2px rgba(15,23,42,.04);
+    }
+    .oh-detail h2{
+      margin:0 0 8px;font-size:clamp(18px,1.2vw + 14px,22px);font-weight:800;
+      letter-spacing:-.02em;overflow-wrap:break-word;
+    }
+    .oh-detail__sum{
+      margin:0 0 12px;font-size:14px;line-height:1.5;color:var(--oh-muted);
+      overflow-wrap:break-word;
+    }
+    .oh-where{
+      margin:0 0 16px;padding:10px 12px;border-radius:10px;
+      background:#eef6fc;border:1px solid rgba(45,132,179,.25);
+      font-size:13px;line-height:1.45;overflow-wrap:break-word;
+    }
+    .oh-where strong{color:var(--oh-navy)}
+    .oh-steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+    .oh-steps li{
+      display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;
+      min-width:0;
+    }
+    .oh-steps__n{
+      width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+      background:var(--oh-navy);color:#fff;font-size:12px;font-weight:800;flex-shrink:0;
+    }
+    .oh-steps__t{
+      margin:0;padding-top:4px;font-size:14px;line-height:1.5;overflow-wrap:break-word;
+    }
+    .oh-tips{
+      margin:18px 0 0;padding:12px 14px;border-radius:12px;
+      border:1px solid rgba(244,183,64,.55);background:#fff8e8;min-width:0;
+    }
+    .oh-tips h3{
+      margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--oh-navy);
+    }
+    .oh-tips ul{margin:0;padding:0 0 0 18px}
+    .oh-tips li{margin:0 0 6px;font-size:13px;line-height:1.45;overflow-wrap:break-word}
+    .oh-loading,.oh-err{padding:24px;text-align:center;color:var(--oh-muted);font-size:14px}
+    .oh-err{color:#b91c1c}
+    .oh-foot{
+      margin:28px 0 0;font-size:12px;color:var(--oh-muted);text-align:center;
+    }
+  </style>
+</head>
+<body>
+  <div class="oh-wrap">
+    <div class="oh-top">
+      <div>
+        <h1 id="ohTitle">Office help guide</h1>
+        <p id="ohSub">How to run day-to-day work in the admin portal.</p>
+      </div>
+      <a class="oh-back" id="ohHubLink" href="/admin_dashboard.html">Back to Operations Hub</a>
+    </div>
+    <nav class="oh-crumb" id="ohCrumb" hidden></nav>
+    <div id="ohRoot"><p class="oh-loading">Loading guide...</p></div>
+    <p class="oh-foot">PORTALVIC · Office help · v<span id="ohVer">-</span></p>
+  </div>
+  <script>
+(function () {
+  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v1";
+  var data = null;
+  var view = { mode: "cats", catId: "", lessonId: "" };
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function catById(id) {
+    if (!data || !data.categories) return null;
+    for (var i = 0; i < data.categories.length; i++) {
+      if (data.categories[i].id === id) return data.categories[i];
+    }
+    return null;
+  }
+
+  function lessonById(cat, id) {
+    var list = (cat && cat.lessons) || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) return list[i];
+    }
+    return null;
+  }
+
+  function syncHash() {
+    if (view.mode === "lesson" && view.catId && view.lessonId) {
+      location.hash = "cat=" + encodeURIComponent(view.catId) + "&lesson=" + encodeURIComponent(view.lessonId);
+    } else if (view.mode === "lessons" && view.catId) {
+      location.hash = "cat=" + encodeURIComponent(view.catId);
+    } else {
+      if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+    }
+  }
+
+  function parseHash() {
+    var h = String(location.hash || "").replace(/^#/, "");
+    if (!h) return;
+    var parts = h.split("&");
+    var map = {};
+    parts.forEach(function (p) {
+      var kv = p.split("=");
+      map[decodeURIComponent(kv[0] || "")] = decodeURIComponent(kv[1] || "");
+    });
+    if (map.cat) {
+      view.catId = map.cat;
+      view.mode = map.lesson ? "lesson" : "lessons";
+      view.lessonId = map.lesson || "";
+    }
+  }
+
+  function renderCrumb() {
+    var el = document.getElementById("ohCrumb");
+    if (!el) return;
+    if (view.mode === "cats") {
+      el.hidden = true;
+      el.innerHTML = "";
+      return;
+    }
+    el.hidden = false;
+    var cat = catById(view.catId);
+    var html =
+      '<button type="button" data-oh-nav="cats">All categories</button>' +
+      '<span aria-hidden="true">/</span>' +
+      '<button type="button" data-oh-nav="cat">' +
+      esc(cat ? cat.title : view.catId) +
+      "</button>";
+    if (view.mode === "lesson") {
+      var les = lessonById(cat, view.lessonId);
+      html +=
+        '<span aria-hidden="true">/</span><span>' +
+        esc(les ? les.title : view.lessonId) +
+        "</span>";
+    }
+    el.innerHTML = html;
+  }
+
+  function renderCats() {
+    var cats = (data.categories || []).slice().sort(function (a, b) {
+      return (a.priority || 9) - (b.priority || 9);
+    });
+    var html = '<div class="oh-grid">';
+    cats.forEach(function (c) {
+      var n = (c.lessons || []).length;
+      html +=
+        '<button type="button" class="oh-cat" data-oh-cat="' +
+        esc(c.id) +
+        '">' +
+        '<span class="oh-cat__prio">Priority ' +
+        esc(String(c.priority || "")) +
+        "</span>" +
+        '<span class="oh-cat__title">' +
+        esc(c.title) +
+        "</span>" +
+        '<span class="oh-cat__blurb">' +
+        esc(c.blurb || "") +
+        "</span>" +
+        '<span class="oh-cat__n">' +
+        n +
+        (n === 1 ? " lesson" : " lessons") +
+        "</span></button>";
+    });
+    html += "</div>";
+    return html;
+  }
+
+  function renderLessons(cat) {
+    var html = '<div class="oh-list">';
+    (cat.lessons || []).forEach(function (l) {
+      html +=
+        '<button type="button" class="oh-lesson" data-oh-lesson="' +
+        esc(l.id) +
+        '">' +
+        '<span class="oh-lesson__title">' +
+        esc(l.title) +
+        "</span>" +
+        '<span class="oh-lesson__sum">' +
+        esc(l.summary || "") +
+        "</span></button>";
+    });
+    html += "</div>";
+    return html;
+  }
+
+  function renderLesson(cat, les) {
+    var steps = (les.steps || [])
+      .map(function (t, i) {
+        return (
+          '<li><span class="oh-steps__n">' +
+          (i + 1) +
+          '</span><p class="oh-steps__t">' +
+          esc(t) +
+          "</p></li>"
+        );
+      })
+      .join("");
+    var tips = (les.tips || []).filter(Boolean);
+    var tipsHtml = "";
+    if (tips.length) {
+      tipsHtml =
+        '<div class="oh-tips"><h3>Tips</h3><ul>' +
+        tips
+          .map(function (t) {
+            return "<li>" + esc(t) + "</li>";
+          })
+          .join("") +
+        "</ul></div>";
+    }
+    return (
+      '<article class="oh-detail">' +
+      "<h2>" +
+      esc(les.title) +
+      "</h2>" +
+      '<p class="oh-detail__sum">' +
+      esc(les.summary || "") +
+      "</p>" +
+      (les.where
+        ? '<p class="oh-where"><strong>Where:</strong> ' + esc(les.where) + "</p>"
+        : "") +
+      '<ol class="oh-steps">' +
+      steps +
+      "</ol>" +
+      tipsHtml +
+      "</article>"
+    );
+  }
+
+  function render() {
+    var root = document.getElementById("ohRoot");
+    var title = document.getElementById("ohTitle");
+    var sub = document.getElementById("ohSub");
+    if (!root || !data) return;
+    renderCrumb();
+    syncHash();
+    if (view.mode === "cats") {
+      if (title) title.textContent = data.title || "Office help guide";
+      if (sub) sub.textContent = data.subtitle || "";
+      root.innerHTML = renderCats();
+      return;
+    }
+    var cat = catById(view.catId);
+    if (!cat) {
+      view.mode = "cats";
+      render();
+      return;
+    }
+    if (view.mode === "lessons") {
+      if (title) title.textContent = cat.title;
+      if (sub) sub.textContent = cat.blurb || "";
+      root.innerHTML = renderLessons(cat);
+      return;
+    }
+    var les = lessonById(cat, view.lessonId);
+    if (!les) {
+      view.mode = "lessons";
+      render();
+      return;
+    }
+    if (title) title.textContent = les.title;
+    if (sub) sub.textContent = cat.title;
+    root.innerHTML = renderLesson(cat, les);
+  }
+
+  function bind() {
+    var root = document.getElementById("ohRoot");
+    var crumb = document.getElementById("ohCrumb");
+    if (root) {
+      root.addEventListener("click", function (ev) {
+        var t = ev.target.closest("[data-oh-cat],[data-oh-lesson]");
+        if (!t) return;
+        if (t.getAttribute("data-oh-cat")) {
+          view.catId = t.getAttribute("data-oh-cat");
+          view.lessonId = "";
+          view.mode = "lessons";
+          render();
+          window.scrollTo(0, 0);
+          return;
+        }
+        if (t.getAttribute("data-oh-lesson")) {
+          view.lessonId = t.getAttribute("data-oh-lesson");
+          view.mode = "lesson";
+          render();
+          window.scrollTo(0, 0);
+        }
+      });
+    }
+    if (crumb) {
+      crumb.addEventListener("click", function (ev) {
+        var t = ev.target.closest("[data-oh-nav]");
+        if (!t) return;
+        var nav = t.getAttribute("data-oh-nav");
+        if (nav === "cats") {
+          view.mode = "cats";
+          view.catId = "";
+          view.lessonId = "";
+        } else if (nav === "cat") {
+          view.mode = "lessons";
+          view.lessonId = "";
+        }
+        render();
+        window.scrollTo(0, 0);
+      });
+    }
+    window.addEventListener("hashchange", function () {
+      parseHash();
+      render();
+    });
+  }
+
+  fetch(DATA_URL, { credentials: "same-origin" })
+    .then(function (r) {
+      if (!r.ok) throw new Error("Could not load guide");
+      return r.json();
+    })
+    .then(function (json) {
+      data = json;
+      var ver = document.getElementById("ohVer");
+      if (ver) ver.textContent = json.version || "-";
+      parseHash();
+      bind();
+      render();
+    })
+    .catch(function (err) {
+      var root = document.getElementById("ohRoot");
+      if (root) {
+        root.innerHTML =
+          '<p class="oh-err">' +
+          esc(err && err.message ? err.message : "Load failed") +
+          "</p>";
+      }
+    });
+})();
+  </script>
+</body>
+</html>

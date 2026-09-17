@@ -1,0 +1,406 @@
+{
+  "version": "2026-09-17-v1",
+  "title": "Office help guide",
+  "subtitle": "How to run day-to-day work in the admin portal — pick a category, then a lesson.",
+  "categories": [
+    {
+      "id": "day_ops",
+      "title": "Day operations",
+      "blurb": "Live day board, covers, day offs, pending actions and alerts.",
+      "priority": 1,
+      "lessons": [
+        {
+          "id": "sessions_overview",
+          "title": "Sessions Overview (day look-here)",
+          "summary": "Overview is the only day board to trust. Standing seats repeat; exceptions come from Schedule & Covers and day offs.",
+          "where": "Operator → Day operations → Sessions overview",
+          "steps": [
+            "Open Sessions Overview and pick the day you care about.",
+            "Check booked kids, open seats, covers and day-off chrome on that date only.",
+            "If something looks wrong, fix it in Schedule & Covers or Validate / HR day off — do not edit LOCAL for day-of checks.",
+            "After a change, wait for the board to refresh (or use the in-page refresh if shown)."
+          ],
+          "tips": [
+            "Parents do not see instructor day offs or COVER NEEDED — that is office/staff only.",
+            "Aquatic halves may merge on Staff Today; Overview / Schedule keep 30-minute cards when needed."
+          ]
+        },
+        {
+          "id": "schedule_covers",
+          "title": "Schedule & Covers (one day)",
+          "summary": "One-day exceptions: cancel a slot, assign cover, client absence, replace for that date only.",
+          "where": "Operator → Schedule & Covers",
+          "steps": [
+            "Open Schedule & Covers and select the date and session band.",
+            "Choose the action for that day only (cancel, cover, absence, reassign).",
+            "Save — Overview, Staff Today and parent chips update from schedule_overrides.",
+            "If the change should last for the rest of term, stop and use Edit term slot instead."
+          ],
+          "tips": [
+            "Do not use Schedule & Covers to swap a client for every Monday of the term — that is Edit term slot.",
+            "Orange / red banners warn when a one-day action fights the standing roster."
+          ]
+        },
+        {
+          "id": "validate_day_off",
+          "title": "Validate day / add day off",
+          "summary": "Mark a worker off for a day. Booked slots get COVER NEEDED so the office can fill them.",
+          "where": "Day operations / H&R Add day off / Validate day",
+          "steps": [
+            "Choose the staff member and the date they are off.",
+            "Confirm — the system writes staff_unavailability and COVER NEEDED overrides where seats are booked.",
+            "Check Sessions Overview for that date: day-off chrome and cover gaps should show.",
+            "Assign a real cover later in Schedule & Covers when you have someone."
+          ],
+          "tips": [
+            "Parents never see instructor day offs.",
+            "Prefer DB day offs over hardcoding in LOCAL / canonical."
+          ]
+        },
+        {
+          "id": "pending_alerts",
+          "title": "Pending actions and Alerts",
+          "summary": "Ops Hub strip: late forms, absents to decide, and the alerts inbox.",
+          "where": "Operations Hub (top strip) → Pending / Alerts",
+          "steps": [
+            "From Operations Hub, tap Alerts for incidents, cancellations, expenses and wellbeing.",
+            "Tap Pending for late feedback forms and absents / credits waiting for a decision.",
+            "Work the queue: approve / reject late forms; decide absents (none, credit, close).",
+            "Return to Overview if the decision should change the day board."
+          ],
+          "tips": [
+            "Keep outstanding-feedback and alert lanes live unless Victor pauses them."
+          ]
+        },
+        {
+          "id": "office_calendar",
+          "title": "Office calendar (notes & meetings)",
+          "summary": "Shared office notes on dates — tap the month glance on Ops Hub to open the full calendar.",
+          "where": "Operations Hub → Calendar / Notes → Office calendar",
+          "steps": [
+            "Tap the Calendar card on Operations Hub (month glance).",
+            "Add or edit a note / meeting on a date.",
+            "Mark items Done when finished so open counts drop.",
+            "Anyone with portal admin access sees the same calendar."
+          ],
+          "tips": []
+        }
+      ]
+    },
+    {
+      "id": "services_places",
+      "title": "Services & places",
+      "blurb": "Capacity board, open places, finish-booking, and standing seat edits.",
+      "priority": 1,
+      "lessons": [
+        {
+          "id": "services_board",
+          "title": "Services board (capacity & open places)",
+          "summary": "See filled vs open seats for the term — the capacity / places view for booking and office.",
+          "where": "Services → Services",
+          "steps": [
+            "Open Services and pick the venue / day filter you need.",
+            "Read filled seats vs open places — this is capacity truth for offering places.",
+            "Use open places when talking to families or checking Booking Portal offer.",
+            "Standing who-is-booked changes go through Edit term slot or finish-booking paid — not Timetable."
+          ],
+          "tips": [
+            "Booking Portal aquatic offer is always 30-minute slots."
+          ]
+        },
+        {
+          "id": "finish_booking",
+          "title": "Finish-booking / trial paid → Overview",
+          "summary": "When a family pays finish-booking, the trial seat appears on the day board without editing LOCAL.",
+          "where": "Booking / pay link → then Sessions Overview",
+          "steps": [
+            "Family completes finish-booking payment (Stripe or bank confirm).",
+            "Ops sync folds MADRE + trial schedule_overrides (+ dated roster row).",
+            "Open Sessions Overview on the first session date — the child should appear.",
+            "If missing, check payment status and Schedule & Covers / overrides for that date."
+          ],
+          "tips": [
+            "Do not put suitability wording on pay links.",
+            "Aquatic: one override per 30-minute half, not one 60-minute band."
+          ]
+        },
+        {
+          "id": "edit_term_slot",
+          "title": "Edit term slot (standing clients)",
+          "summary": "Change who is booked for the rest of term (or that weekday pattern). This is clients/places — not staff hours.",
+          "where": "Services / Operator → Edit term slot (or from Timetable name click → Edit term slot)",
+          "steps": [
+            "Open Edit term slot for the venue, weekday and time band.",
+            "Change the participant, open seat, or pool / area as needed.",
+            "Choose scope: rest of term / matching weekdays — not a one-day-only exception.",
+            "Save — Services, Overview and parent term chips update from the live roster."
+          ],
+          "tips": [
+            "One day only → Schedule & Covers.",
+            "Staff who-works hours → Timetable (H&R), not Edit term slot.",
+            "Example: Joel → Anas every Monday for the rest of Autumn = Edit term slot."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clients_families",
+      "title": "Clients & families",
+      "blurb": "People buckets, CLIENT list, waiting list and profiles — separate from capacity.",
+      "priority": 1,
+      "lessons": [
+        {
+          "id": "buckets",
+          "title": "Participant buckets",
+          "summary": "Office language: CLIENT, REGISTERED, LEADS, WAITING, OLD — use only these labels.",
+          "where": "Nav people buckets / CLIENT filters",
+          "steps": [
+            "CLIENT — on services now (Autumn seats).",
+            "REGISTERED — finished registration, never been a seated client.",
+            "LEADS — OTP / enquiry, registration not finished.",
+            "WAITING — want a full service; on the wait list.",
+            "OLD — were clients but no slots from September 2026 (e.g. unpaid Aug release)."
+          ],
+          "tips": [
+            "Do not say former / alumni in office chat — say OLD.",
+            "Kareena returned Tue 15 Sep 2026 → CLIENT again."
+          ]
+        },
+        {
+          "id": "clients_list",
+          "title": "CLIENT list and profiles",
+          "summary": "Browse active clients and open a profile / services.",
+          "where": "Clients & families → CLIENT",
+          "steps": [
+            "Open CLIENT to see families on services now.",
+            "Open a person for profile, services and related tools.",
+            "Use OLD filter only when looking at people with no current slots.",
+            "Do not put OLD / REGISTERED / LEADS on Sessions as booked kids."
+          ],
+          "tips": []
+        },
+        {
+          "id": "waiting_list",
+          "title": "WAITING list",
+          "summary": "Families waiting for a full service place.",
+          "where": "Clients & families → WAITING",
+          "steps": [
+            "Open WAITING when a service is full and someone wants in.",
+            "When a place opens (Services / Edit term slot / finish-booking), move them through your usual offer flow.",
+            "Keep WAITING separate from LEADS and REGISTERED."
+          ],
+          "tips": []
+        },
+        {
+          "id": "parent_vs_office",
+          "title": "What parents see vs office",
+          "summary": "Parent hub chips and Team names vs office-only chrome.",
+          "where": "Parent portal vs Sessions Overview",
+          "steps": [
+            "Parents see term chips: cancelled, absent, cover name when a real cover is assigned.",
+            "Parents do not see instructor day off / COVER NEEDED / Cover TBC.",
+            "Office uses Overview + Schedule & Covers for the full picture.",
+            "If a parent asks why a cover shows, check instructor_reassign has a real cover name."
+          ],
+          "tips": []
+        }
+      ]
+    },
+    {
+      "id": "money",
+      "title": "Money",
+      "blurb": "Invoices, payments, refunds, credits and make-ups.",
+      "priority": 1,
+      "lessons": [
+        {
+          "id": "create_invoice",
+          "title": "Create and share an invoice",
+          "summary": "Build a family invoice in Portal Finance and send the pay / view link.",
+          "where": "Finance → Finance",
+          "steps": [
+            "Open Finance.",
+            "Create the invoice for the family / term lines you need.",
+            "Share the link (WhatsApp / email) using the portal send tools.",
+            "Track status until paid or followed up."
+          ],
+          "tips": [
+            "Keep finish-booking copy free of suitability wording."
+          ]
+        },
+        {
+          "id": "validate_paid",
+          "title": "Validate / mark paid",
+          "summary": "Confirm payment so the family and ops state match.",
+          "where": "Finance → Finance (payments / invoice status)",
+          "steps": [
+            "Open the invoice or payment row.",
+            "Confirm bank / Stripe payment as your process requires.",
+            "Mark paid / validate so re-enrol and booking status update.",
+            "If a finish-booking trial was waiting, check Overview for the first session date."
+          ],
+          "tips": []
+        },
+        {
+          "id": "refunds_credits",
+          "title": "Absents, refunds and credits",
+          "summary": "Decide missed sessions: no action, credit, refund path, or close.",
+          "where": "Finance → Refunds & credits (or Pending → absents)",
+          "steps": [
+            "Open Absents / Refunds & credits (or Pending on Ops Hub).",
+            "Pick the absent / cancellation row.",
+            "Choose the decision (credit, none, close — follow office policy).",
+            "Notify parent when the flow says to; check credit balance if relevant."
+          ],
+          "tips": [
+            "Sep+ absents and cancellations share one decide queue."
+          ]
+        },
+        {
+          "id": "makeup",
+          "title": "Confirm a make-up",
+          "summary": "When a makeup is confirmed, parent and instructor get notified.",
+          "where": "Absents / makeup tools linked from refunds & credits",
+          "steps": [
+            "Agree the makeup date / slot with the family.",
+            "Confirm makeup in the portal tool for that case.",
+            "Check parent and instructor notifications went out.",
+            "Verify Overview / Staff show the makeup seat on the new date."
+          ],
+          "tips": []
+        }
+      ]
+    },
+    {
+      "id": "messages",
+      "title": "Messages",
+      "blurb": "Parent WhatsApp / notify, staff announcements and broadcasts.",
+      "priority": 2,
+      "lessons": [
+        {
+          "id": "parent_notify",
+          "title": "Parent notify / WhatsApp",
+          "summary": "Send approved template updates (payment, absence, makeup drafts, etc.).",
+          "where": "Communications → Parent notify / Staff WhatsApp tools",
+          "steps": [
+            "Open the parent notify or WhatsApp tool for the family.",
+            "Use an approved Meta template when WhatsApp requires it.",
+            "Preview the body; keep under template length limits.",
+            "Send and check the notify log if delivery fails."
+          ],
+          "tips": [
+            "API WhatsApp number — not the company mobile.",
+            "Template portal_parent_update covers common drafts."
+          ]
+        },
+        {
+          "id": "announcements",
+          "title": "Staff announcements / reminders",
+          "summary": "Workers must confirm pending announcements before using the app.",
+          "where": "Day operations / Announcements",
+          "steps": [
+            "Compose the announcement or reminder.",
+            "Pick audience (group roster shows who is in the group).",
+            "Publish — staff see a blocking sheet until they confirm.",
+            "Use reminders for time-bound nags."
+          ],
+          "tips": [
+            "Audience is admin/staff — not parents."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hr",
+      "title": "H&R",
+      "blurb": "Staff roster, onboarding, contracts — and Timetable (who works).",
+      "priority": 2,
+      "lessons": [
+        {
+          "id": "timetable",
+          "title": "Timetable (staff hours / rota)",
+          "summary": "Who works which hours. Does not change who is booked as a client.",
+          "where": "H&R / Operator → Instructor timetable (Who works)",
+          "steps": [
+            "Open Timetable / Who works for the week.",
+            "Read instructor hours for each day — this gates timesheet and standing projection.",
+            "Click a participant name only if you need Edit term slot for booked kids — that is a different tool.",
+            "One-day staff cover for sessions still goes through Schedule & Covers."
+          ],
+          "tips": [
+            "Timetable = workers. Edit term slot = client seats. Schedule & Covers = one-day exceptions."
+          ]
+        },
+        {
+          "id": "staff_roster",
+          "title": "Staff roster and profiles",
+          "summary": "Browse workers, open a profile, check onboarding.",
+          "where": "H&R → H&R / Onboarding",
+          "steps": [
+            "Open H&R to browse staff.",
+            "Open a worker for profile and employment tools.",
+            "Use Onboarding for new-hire progress.",
+            "Contracts / training / uniform live under the same H&R card."
+          ],
+          "tips": [
+            "Staff login host is clubsensational-staff — not the family site."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "documents",
+      "title": "Documents",
+      "blurb": "REGISTERED forms, consents, policies and worker uploads.",
+      "priority": 3,
+      "lessons": [
+        {
+          "id": "registered_docs",
+          "title": "REGISTERED documents",
+          "summary": "Registration forms for people who registered but are not seated clients yet.",
+          "where": "Documents → REGISTERED",
+          "steps": [
+            "Open REGISTERED to review submitted registration packs.",
+            "Move people toward WAITING or CLIENT when a place and payment path exist.",
+            "Do not show them as booked Sessions kids until they are CLIENT."
+          ],
+          "tips": []
+        },
+        {
+          "id": "consents_policies",
+          "title": "Consents and policies",
+          "summary": "Parent consents, climbing regs and policy sign-offs.",
+          "where": "Documents → Parent consents / Climbing / Policies",
+          "steps": [
+            "Open the relevant documents screen.",
+            "Check outstanding sign-offs or missing consents.",
+            "Chase families or staff as needed."
+          ],
+          "tips": []
+        }
+      ]
+    },
+    {
+      "id": "portals_map",
+      "title": "Map of portals",
+      "blurb": "Which site is which — admin, staff, parent, booking.",
+      "priority": 2,
+      "lessons": [
+        {
+          "id": "hosts",
+          "title": "Admin vs staff vs parent vs booking",
+          "summary": "Never send staff to the family site or parents to the staff app.",
+          "where": "Settings / other portals links",
+          "steps": [
+            "Admin / office (this app): portalvic.vercel.app — Overview, Finance, Schedule, H&R.",
+            "Staff app: clubsensational-staff.vercel.app — login, Today, timesheet, onboarding.",
+            "Parent hub: www.clubsensational.org/parent — chips, Team, invoices for families.",
+            "Booking: www.clubsensational.org/bookingportal — places offer for families."
+          ],
+          "tips": [
+            "New-hire invite emails use the staff host, not portalvic or clubsensational.org home."
+          ]
+        }
+      ]
+    }
+  ]
+}

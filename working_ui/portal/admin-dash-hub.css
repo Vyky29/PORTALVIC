@@ -1738,6 +1738,14 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   padding-bottom:2px;
   border-bottom:none;
 }
+.ops-hub__intro-row{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  min-width:0;
+}
 .ops-hub__intro-title{
   margin:0;
   font-size:clamp(20px,1vw + 1rem,26px);
@@ -1745,6 +1753,27 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   letter-spacing:-0.03em;
   color:#173247;
   line-height:1.1;
+  min-width:0;
+}
+.ops-hub__help-link{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 12px;
+  border-radius:10px;
+  border:1px solid #d7e3ec;
+  background:#fff;
+  color:#173247;
+  font-size:13px;
+  font-weight:700;
+  text-decoration:none;
+  flex-shrink:0;
+}
+.ops-hub__help-link:hover,
+.ops-hub__help-link:focus-visible{
+  border-color:#9fc6db;
+  background:#eaf5fb;
+  outline:none;
 }
 .ops-hub__intro-sub{display:none}
 .ops-hub__today{
