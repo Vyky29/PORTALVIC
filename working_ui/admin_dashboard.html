@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260915-sun-phases" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-head-stack" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-ops-corporate" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260727-role-names"></script>
@@ -93,7 +93,7 @@
   <script src="/portal/admin-portal-booking-leads.js?v=20260905-buckets"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
   <script src="/portal/admin-office-calendar.js?v=20260917-cal-month2"></script>
-  <script src="/portal/admin-portal-parent-credits.js?v=20260917-applied-all"></script>
+  <script src="/portal/admin-portal-parent-credits.js?v=20260917-apply-invoice"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20260909-gemma-keeper"></script>
   <script src="/portal/admin-portal-parent-makeups.js?v=20260917-cancel-grant"></script>
@@ -15646,13 +15646,47 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var slug = String(slot.clientSlug || '').trim();
       var display = String(slot.clientDisplay || slot.clientName || slot.client || '').trim();
       if(!slug && !display) return null;
-      if(slug){
-        var byId = await client
+      /* Roster slug → portal_participants.contact_id when they differ. */
+      var SLUG_CONTACT = {
+        abodi_pa: '155', abodi_p: '155', abodi: '155',
+        adam_p: '354', adam_pi: '354',
+        amaar_ah: '105', amar_rai: '130', amar_ra: '130',
+        anas: '7560101',
+        cyrus: '79', gabriel: '99', joelle: '406', junaid_f: '368',
+        maiyar: '48', yamik: 'gap-yamik-limbu', yassir: '119', yunis: '232',
+        mia: '385', mia_mesi: '385', mia_m: '385'
+      };
+      function okRow(row){
+        return !!(row && row.contact_id && row.parent_person_id);
+      }
+      async function byContactId(id){
+        if(!id) return null;
+        var q = await client
           .from('portal_participants')
           .select('contact_id, display_name, parent_person_id')
-          .eq('contact_id', slug)
+          .eq('contact_id', id)
           .maybeSingle();
-        if(byId && byId.data && byId.data.contact_id) return byId.data;
+        return q && q.data && okRow(q.data) ? q.data : null;
+      }
+      var hit = null;
+      if(slug){
+        hit = await byContactId(slug);
+        if(hit) return hit;
+        var mapped = SLUG_CONTACT[slug.toLowerCase()];
+        if(mapped){
+          hit = await byContactId(mapped);
+          if(hit) return hit;
+        }
+        var fromSlugName = slug.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+        if(fromSlugName && fromSlugName !== slug){
+          var bySlugName = await client
+            .from('portal_participants')
+            .select('contact_id, display_name, parent_person_id')
+            .ilike('display_name', fromSlugName + '%')
+            .limit(3);
+          var slugRows = bySlugName && Array.isArray(bySlugName.data) ? bySlugName.data.filter(okRow) : [];
+          if(slugRows.length === 1) return slugRows[0];
+        }
       }
       if(display){
         var byName = await client
@@ -15661,16 +15695,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .ilike('display_name', display)
           .limit(1)
           .maybeSingle();
-        if(byName && byName.data && byName.data.contact_id) return byName.data;
-        /* Schedule MakeUp often stores first name only (Maiyar → Maiyar Alolabi). */
+        if(byName && byName.data && okRow(byName.data)) return byName.data;
+        /* Schedule often stores first name only (Maiyar → Maiyar Alolabi). */
         if(display.indexOf(' ') < 0){
           var byFirst = await client
             .from('portal_participants')
             .select('contact_id, display_name, parent_person_id')
             .ilike('display_name', display + '%')
-            .limit(2);
-          var firstRows = byFirst && Array.isArray(byFirst.data) ? byFirst.data : [];
-          if(firstRows.length === 1 && firstRows[0].contact_id) return firstRows[0];
+            .limit(3);
+          var firstRows = byFirst && Array.isArray(byFirst.data) ? byFirst.data.filter(okRow) : [];
+          if(firstRows.length === 1) return firstRows[0];
         }
       }
       return null;
@@ -15685,7 +15719,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     async function schedEnqueueCancelDecisionQueue(client, slot, overrideId, ovType, reason){
       var pax = await schedResolveParticipantForDecisionQueue(client, slot);
-      if(!pax) return { skipped: 'no_participant' };
+      if(!pax){
+        var who = String(slot.clientDisplay || slot.clientSlug || 'participant').trim();
+        console.warn('[portal] cancel → decision queue skipped (no participant match)', who, slot.sessionDate);
+        if(sched){
+          sched.lastMsg = String(sched.lastMsg || 'Override saved.') +
+            ' ⚠ Cancel saved on Schedule, but Absents & credits could not match ' + who +
+            ' — use Add cancelled in the decision queue.';
+        }
+        if(typeof portalAdminToast === 'function'){
+          portalAdminToast('Cancel on Schedule OK — open Absents & credits → Add cancelled for ' + who, 'warn');
+        }
+        return { skipped: 'no_participant' };
+      }
       var reasonCode = 'club_cancelled';
       var rLow = String(reason || '').toLowerCase();
       if(/pool|venue|facility|closed/.test(rLow)) reasonCode = 'pool_closed';
@@ -15693,6 +15739,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(/bank.?holiday|strike/.test(rLow)) reasonCode = /strike/.test(rLow) ? 'strike' : 'bank_holiday';
       var body = {
         contact_id: pax.contact_id,
+        roster_slug: String(slot.clientSlug || '').trim(),
         parent_person_id: pax.parent_person_id || '',
         participant_display: pax.display_name || String(slot.clientDisplay || '').trim(),
         session_date: String(slot.sessionDate || '').slice(0, 10),
@@ -15700,27 +15747,47 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         session_time: String(slot.whenLabel || slot.anchorTimeLabel || '').trim(),
         reason_code: reasonCode,
         reason_text: String(reason || '').trim() ||
-          (ovType === 'client_cancelled' ? 'Admin cancelled (Schedule & Covers)' : 'Club cancelled (Schedule & Covers)'),
+          (ovType === 'client_cancelled' || ovType === 'slot_clear_client'
+            ? 'Admin cancelled (Schedule & Covers)'
+            : 'Club cancelled (Schedule & Covers)'),
         case_kind: 'cancellation',
         schedule_override_id: overrideId || null
       };
       var res = await adminEdgePost('portal-admin-parent-absence-create', body);
       if(res && res.error){
         console.warn('[portal] cancel → decision queue', res.error, res.message || '');
+        if(sched){
+          sched.lastMsg = String(sched.lastMsg || 'Override saved.') +
+            ' ⚠ Decision queue failed: ' + String(res.error);
+        }
         return res;
       }
+      var payload = res && res.data ? res.data : res;
       if(sched && !sched.lastMsg) sched.lastMsg = 'Override saved.';
       sched.lastMsg = String(sched.lastMsg || 'Override saved.') +
-        (res && res.already_reported
+        (payload && payload.already_reported
           ? ' Decision queue already had this cancel.'
           : ' Queued in Absents & credits for credit / refund / makeup.');
-      return res;
+      return payload || res;
     }
     async function schedEnqueueAbsentDecisionQueue(client, slot, overrideId, reason){
       var pax = await schedResolveParticipantForDecisionQueue(client, slot);
-      if(!pax) return { skipped: 'no_participant' };
+      if(!pax){
+        var whoA = String(slot.clientDisplay || slot.clientSlug || 'participant').trim();
+        console.warn('[portal] absent → decision queue skipped (no participant match)', whoA, slot.sessionDate);
+        if(sched){
+          sched.lastMsg = String(sched.lastMsg || 'Override saved.') +
+            ' ⚠ Absent saved on Schedule, but Absents & credits could not match ' + whoA +
+            ' — use Add absent in the decision queue.';
+        }
+        if(typeof portalAdminToast === 'function'){
+          portalAdminToast('Absent on Schedule OK — open Absents & credits → Add absent for ' + whoA, 'warn');
+        }
+        return { skipped: 'no_participant' };
+      }
       var body = {
         contact_id: pax.contact_id,
+        roster_slug: String(slot.clientSlug || '').trim(),
         parent_person_id: pax.parent_person_id || '',
         participant_display: pax.display_name || String(slot.clientDisplay || '').trim(),
         session_date: String(slot.sessionDate || '').slice(0, 10),
@@ -15735,8 +15802,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var res = await adminEdgePost('portal-admin-parent-absence-create', body);
       if(res && res.error){
         console.warn('[portal] absent → decision queue', res.error, res.message || '');
+        if(sched){
+          sched.lastMsg = String(sched.lastMsg || 'Override saved.') +
+            ' ⚠ Decision queue failed: ' + String(res.error);
+        }
+        return res;
       }
-      return res;
+      var payloadA = res && res.data ? res.data : res;
+      if(sched){
+        sched.lastMsg = String(sched.lastMsg || 'Override saved.') +
+          (payloadA && payloadA.already_reported
+            ? ' Decision queue already had this absent.'
+            : ' Queued in Absents & credits.');
+      }
+      return payloadA || res;
     }
     async function schedNotifyMakeupConfirmed(client, slot, overrideId, payload, row){
       var pl = payload || {};
@@ -26719,7 +26798,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function opsHubButtonInner(item, label){
       var iconHtml = adminNavIconHtml(item.id) || adminNavIconHtml('nav_hub');
       var labelHtml = '<span class="ops-hub-button__label">'+label+'</span>';
-      return iconHtml + labelHtml;
+      var chev = '<span class="ops-hub-button__chev" aria-hidden="true">›</span>';
+      return iconHtml + labelHtml + chev;
     }
     function opsHubActionBtn(action, variant){
       var item = opsHubResolveAction(action);
@@ -26997,12 +27077,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<span class="ops-hub__today-k">Alerts</span>' +
         '<span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span>' +
         '<span class="ops-hub__today-s">Inbox</span>' +
+        '<span class="ops-hub__today-go" aria-hidden="true">Open →</span>' +
         '</div>' +
         '<button type="button" class="ops-hub__today-item ops-hub__today-item--calendar" id="opsHubCalendarGlance" aria-label="Open office calendar">' +
         '<span class="ops-hub-cal-glance__copy">' +
         '<span class="ops-hub__today-k">Calendar</span>' +
         '<span class="ops-hub__today-v" id="opsHubCalendarGlanceCount">Notes</span>' +
         '<span class="ops-hub__today-s" id="opsHubCalendarGlanceSub">Notes &amp; meetings</span>' +
+        '<span class="ops-hub__today-go" aria-hidden="true">Open →</span>' +
         '</span>' +
         '<span class="ops-hub-cal-glance__grid" id="opsHubCalendarGlanceStrip">'+calStrip+'</span>' +
         '</button>' +
@@ -27010,6 +27092,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<span class="ops-hub__today-k">Pending</span>' +
         '<span class="ops-hub__today-v'+(pendingN > 0 ? ' ops-hub__today-v--warn' : '')+'" id="opsHubPendingGlanceCount">'+esc(String(pendingN))+'</span>' +
         '<span class="ops-hub__today-s" id="opsHubPendingGlanceSub">'+esc(pendingSub)+'</span>' +
+        '<span class="ops-hub__today-go" aria-hidden="true">Open →</span>' +
         '</button>' +
         '</div>'
       );

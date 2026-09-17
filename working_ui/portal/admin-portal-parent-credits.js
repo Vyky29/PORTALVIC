@@ -126,7 +126,7 @@
         actions =
           '<button type="button" class="btn btn--sm btn--sec" data-credit-act="mark_applied" data-credit-id="' +
           esc(e.id) +
-          '">Mark applied</button>';
+          '">Apply to invoice</button>';
       }
       actions +=
         ' <button type="button" class="btn btn--sm btn--ghost" data-credit-act="cancel" data-credit-id="' +
@@ -212,7 +212,7 @@
           act === 'mark_refunded'
             ? 'Notes for refunded (optional):'
             : act === 'mark_applied'
-              ? 'Notes for applied credit (optional):'
+              ? 'Notes (optional). Applies £ to open/partial invoice (flexi OK); if none, keeps credit for next term:'
               : 'Cancel reason (optional):';
         var notes = global.prompt(promptLabel, '') || '';
         var amountRaw = '';
@@ -228,21 +228,41 @@
             btn.disabled = false;
             return;
           }
-          cfg.toast(
-            act === 'mark_refunded'
-              ? 'Marked refunded'
-              : act === 'mark_applied'
-                ? 'Credit applied — see All tab'
-                : 'Cancelled',
-            'ok'
-          );
-          if (act === 'mark_applied' || act === 'mark_refunded') {
-            state.filter = 'all';
-            global.document.querySelectorAll('[data-credits-filter]').forEach(function (b) {
-              var on = b.getAttribute('data-credits-filter') === state.filter;
-              b.classList.toggle('btn--ghost', !on);
+          if (act === 'mark_applied') {
+            var apps = (r.credit_apply && r.credit_apply.applications) || [];
+            var okApp = apps.find(function (a) {
+              return a && a.ok;
             });
+            if (okApp) {
+              cfg.toast(
+                'Credit applied to invoice' +
+                  (okApp.applied_gbp != null ? ' (£' + Number(okApp.applied_gbp).toFixed(2) + ')' : '') +
+                  (okApp.invoice_remaining_gbp != null
+                    ? ' · remaining £' + Number(okApp.invoice_remaining_gbp).toFixed(2)
+                    : ''),
+                'ok'
+              );
+              state.filter = 'all';
+            } else if (r.held_for_next_term || (r.entry && r.entry.status === 'open')) {
+              cfg.toast(
+                r.credit_apply && r.credit_apply.skipped === 'gocardless_held_for_next_term'
+                  ? 'No bank/card invoice — credit kept open for next term (GoCardless)'
+                  : 'No open invoice — credit kept open for next term',
+                'ok'
+              );
+              state.filter = 'open';
+            } else {
+              cfg.toast('Credit updated', 'ok');
+              state.filter = 'all';
+            }
+          } else {
+            cfg.toast(act === 'mark_refunded' ? 'Marked refunded' : 'Cancelled', 'ok');
+            if (act === 'mark_refunded') state.filter = 'all';
           }
+          global.document.querySelectorAll('[data-credits-filter]').forEach(function (b) {
+            var on = b.getAttribute('data-credits-filter') === state.filter;
+            b.classList.toggle('btn--ghost', !on);
+          });
           void renderHost(global.document.getElementById('portalParentCreditsHost'));
         });
       });
@@ -255,7 +275,7 @@
       '<div class="card-h"><h3>Family credits &amp; refunds</h3>' +
       '<span class="chip chip--pend" id="portalParentCreditsMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Ledger rows from excused absences or <strong>Add credit / refund</strong> when a parent phones. Families see open balances in the parent hub. <strong>Mark applied</strong> moves the row out of Open — find it again under <strong>All</strong> (status applied). Mark refunded after the bank/Stripe transfer.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Ledger from excused absences or <strong>Add credit / refund</strong>. <strong>Apply to invoice</strong> discounts an open/partial INV-P (incl. flexi remaining half). If they only have GoCardless or no invoice yet, the £ stays <strong>open for next term</strong>. Mark refunded after bank/Stripe.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-credits-filter="open">Open</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-credits-filter="all">All</button>' +

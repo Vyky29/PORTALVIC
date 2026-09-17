@@ -121,17 +121,96 @@ Deno.serve(async (req) => {
     return portalAdminJson(409, { ok: false, error: "not_open", status: entry.status });
   }
 
+  // Apply credit to open/partial INV-P (incl. flexi remaining half). If none
+  // (or only GoCardless), keep credit open for next term — do not fake-close.
+  if (action === "mark_applied") {
+    if (entry.kind !== "credit") {
+      return portalAdminJson(400, { ok: false, error: "not_a_credit" });
+    }
+    const notes = clean(body.notes, 800);
+    let credit_apply = null;
+    try {
+      credit_apply = await autoApplyOpenCreditToNextInvoices(admin, entryId);
+    } catch (err) {
+      console.error("[portal-admin-parent-credits-update] mark_applied auto-apply", err);
+      return portalAdminJson(500, { ok: false, error: "auto_apply_failed" });
+    }
+
+    const { data: refreshed } = await admin
+      .from("portal_parent_family_credits")
+      .select("*")
+      .eq("id", entryId)
+      .maybeSingle();
+
+    if (refreshed && refreshed.status === "open" && notes) {
+      await admin
+        .from("portal_parent_family_credits")
+        .update({
+          notes: refreshed.notes
+            ? String(refreshed.notes).slice(0, 700) + " | " + notes
+            : notes,
+          updated_at: now,
+        })
+        .eq("id", entryId);
+    } else if (
+      refreshed &&
+      refreshed.status === "applied" &&
+      notes &&
+      !refreshed.close_notes
+    ) {
+      await admin
+        .from("portal_parent_family_credits")
+        .update({
+          close_notes: notes,
+          closed_by: userId,
+          updated_at: now,
+        })
+        .eq("id", entryId);
+    } else if (refreshed && refreshed.status === "open" && credit_apply?.skipped) {
+      const holdNote =
+        credit_apply.skipped === "gocardless_held_for_next_term"
+          ? "Held for next term (GoCardless instalments — not applied to GC mandate)"
+          : credit_apply.skipped === "no_open_invoice"
+            ? "No open invoice to apply — credit kept for next term"
+            : String(credit_apply.skipped);
+      await admin
+        .from("portal_parent_family_credits")
+        .update({
+          notes: refreshed.notes
+            ? String(refreshed.notes).slice(0, 650) + " | " + holdNote
+            : holdNote,
+          updated_at: now,
+        })
+        .eq("id", entryId);
+    }
+
+    const { data: finalEntry } = await admin
+      .from("portal_parent_family_credits")
+      .select("*")
+      .eq("id", entryId)
+      .maybeSingle();
+
+    return portalAdminJson(200, {
+      ok: true,
+      entry: finalEntry || refreshed || entry,
+      credit_apply,
+      applied_to_invoice: !!(
+        credit_apply?.applications || []
+      ).some((a: { ok?: boolean }) => a && a.ok),
+      held_for_next_term:
+        finalEntry?.status === "open" &&
+        !!(credit_apply?.skipped === "no_open_invoice" ||
+          credit_apply?.skipped === "gocardless_held_for_next_term" ||
+          credit_apply?.gocardless_held),
+    });
+  }
+
   let nextStatus = "";
   if (action === "mark_refunded") {
     if (entry.kind !== "refund") {
       return portalAdminJson(400, { ok: false, error: "not_a_refund" });
     }
     nextStatus = "refunded";
-  } else if (action === "mark_applied") {
-    if (entry.kind !== "credit") {
-      return portalAdminJson(400, { ok: false, error: "not_a_credit" });
-    }
-    nextStatus = "applied";
   } else if (action === "cancel") {
     nextStatus = "cancelled";
   } else {
