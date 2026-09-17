@@ -397,7 +397,7 @@
     var canGrantMakeup =
       !isCancel &&
       !canDecide &&
-      (r.status === 'missed' || r.status === 'expired' || r.status === 'rejected') &&
+      (r.status === 'missed' || r.status === 'expired') &&
       !r.proof_storage_path;
     var actions = '';
     if (canDecide) {
@@ -406,24 +406,21 @@
         '<select data-absence-outcome="' +
         esc(r.id) +
         '" aria-label="Outcome">' +
+        '<option value="none">None (no money / no message)</option>' +
         '<option value="credit">Credit</option>' +
         '<option value="refund">Refund</option>' +
         '<option value="makeup">Makeup</option>' +
-        '<option value="none">None</option>' +
         '</select>' +
         '<button type="button" class="btn btn--sm btn--primary" data-absence-approve="' +
         esc(r.id) +
         '">Approve</button>' +
-        '<button type="button" class="btn btn--sm btn--ghost" data-absence-reject="' +
-        esc(r.id) +
-        '" title="Close without credit/refund/makeup — no parent message">Close</button>' +
         '</div>';
     } else if (canGrantMakeup) {
       actions =
         '<button type="button" class="btn btn--sm btn--sec" data-absence-grant-makeup="' +
         esc(r.id) +
         '">Grant makeup</button>' +
-        '<span class="muted" style="display:block;margin-top:4px;font-size:11px;overflow-wrap:break-word">No valid proof — venue-scoped waiting list</span>';
+        '<span class="muted" style="display:block;margin-top:4px;font-size:11px;overflow-wrap:break-word">Pick venue + open roster seat</span>';
     } else {
       actions =
         '<span class="muted">' +
@@ -486,12 +483,11 @@
     return (
       '<div class="portal-parent-absences-embed">' +
       '<h1 class="page-title">Absents &amp; cancelled (decision queue)</h1>' +
-      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Absents need proof then validate. Cancelled sessions (club/admin) land here too — decide credit, refund, makeup or none. Credit with £ auto-applies to the next unpaid invoice.</p>' +
+      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Decide credit, refund, makeup or none. None = no parent message. Makeup picks an open roster seat.</p>' +
       '<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
-      '<button type="button" class="btn btn--sm" data-absence-filter="pending_review">Pending decision</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="missed">Missed (no proof)</button>' +
+      '<button type="button" class="btn btn--sm" data-absence-filter="needs_decision">Open (decide)</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="decided">Decided</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="excused">Excused</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentAbsenceRefresh">Refresh</button>' +
       '<button type="button" class="btn btn--primary btn--sm" id="portalParentAbsenceAdd">Add absent</button>' +
       '<button type="button" class="btn btn--sm" id="portalParentAbsenceAddCancel">Add cancelled</button>' +
@@ -535,6 +531,289 @@
     bindRowActions(hostEl);
   }
 
+  function normName(s) {
+    return String(s || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  function timeLabelToOffer(label) {
+    var s = String(label || '')
+      .replace(/\u2013|\u2014|–|—/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim();
+    var m = s.match(/(\d{1,2}(?:\.\d{1,2})?)\s*[-to]+\s*(\d{1,2}(?:\.\d{1,2})?)/i);
+    if (!m) return s.replace(/\./g, '.');
+    function fmt(x) {
+      var n = String(x).replace(/^0+/, '') || '0';
+      return n;
+    }
+    return fmt(m[1]) + ' to ' + fmt(m[2]);
+  }
+
+  function nextIsoForWeekday(dayName) {
+    var map = {
+      sunday: 0,
+      monday: 1,
+      tuesday: 2,
+      wednesday: 3,
+      thursday: 4,
+      friday: 5,
+      saturday: 6
+    };
+    var want = map[String(dayName || '').toLowerCase()];
+    if (want == null) return '';
+    var d = new Date();
+    var cur = d.getDay();
+    var add = (want - cur + 7) % 7;
+    if (add === 0) add = 7;
+    d.setDate(d.getDate() + add);
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  function standingInstructorForParticipant(displayName) {
+    var occ = global.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+    var by = occ && occ.bySlotId;
+    if (!by) return '';
+    var target = normName(displayName);
+    if (!target) return '';
+    var hit = '';
+    Object.keys(by).forEach(function (id) {
+      if (hit) return;
+      var slot = by[id] || {};
+      (slot.seatLines || []).forEach(function (line) {
+        if (hit) return;
+        if (String(line.kind || '') !== 'booked') return;
+        var cn = normName(line.client);
+        if (!cn) return;
+        if (cn === target || cn.indexOf(target) === 0 || target.indexOf(cn) === 0) {
+          hit = String(line.instructor || '').trim();
+        }
+      });
+    });
+    return hit;
+  }
+
+  function listOpenMakeupSlots(opts) {
+    opts = opts || {};
+    var venueFilter = String(opts.venue || '').trim().toLowerCase();
+    var preferInstr = normName(opts.preferInstructor || '');
+    var occ = global.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+    var by = occ && occ.bySlotId;
+    if (!by) return [];
+    var rows = [];
+    Object.keys(by).forEach(function (id) {
+      var slot = by[id] || {};
+      if (String(slot.phase || '').indexOf('week1') === 0) return;
+      if (String(slot.phase || '').indexOf('dated_') === 0) return;
+      if (Number(slot.openSeats || 0) < 1 && !(slot.openInstructors || []).length) return;
+      var venue = String(slot.venue || '').trim();
+      if (venueFilter && venue.toLowerCase() !== venueFilter) return;
+      (slot.seatLines || []).forEach(function (line) {
+        if (String(line.kind || '') !== 'open') return;
+        var instr = String(line.instructor || '').trim();
+        if (!instr) return;
+        var same = preferInstr && normName(instr) === preferInstr;
+        rows.push({
+          slotId: id,
+          venue: venue,
+          day: String(slot.day || '').trim(),
+          timeLabel: String(slot.timeLabel || '').trim(),
+          serviceId: String(slot.serviceId || '').trim(),
+          instructor: instr,
+          sameStanding: !!same,
+          nextDate: nextIsoForWeekday(slot.day)
+        });
+      });
+    });
+    rows.sort(function (a, b) {
+      if (a.sameStanding !== b.sameStanding) return a.sameStanding ? -1 : 1;
+      if (a.venue !== b.venue) return a.venue < b.venue ? -1 : 1;
+      if (a.day !== b.day) return a.day < b.day ? -1 : 1;
+      return String(a.timeLabel).localeCompare(String(b.timeLabel));
+    });
+    return rows;
+  }
+
+  function openMakeupSlotModal(report, onPicked) {
+    if (typeof cfg.openModal !== 'function') {
+      cfg.toast('Modal unavailable', 'error');
+      return;
+    }
+    var preferInstr = standingInstructorForParticipant(report.participant_display);
+    var hintVenue = '';
+    var svc = String(report.service_label || '');
+    ['Acton', 'Northolt', 'SwimFarm', 'Westway'].forEach(function (v) {
+      if (!hintVenue && svc.toLowerCase().indexOf(v.toLowerCase()) >= 0) hintVenue = v;
+    });
+    var venues = [];
+    listOpenMakeupSlots({}).forEach(function (s) {
+      if (venues.indexOf(s.venue) < 0) venues.push(s.venue);
+    });
+    venues.sort();
+    if (hintVenue && venues.indexOf(hintVenue) < 0) venues.unshift(hintVenue);
+
+    cfg.openModal(
+      '<div class="modal-h"><h2 id="modalTitle">Makeup — pick open roster seat</h2></div>' +
+        '<div class="modal-b" style="min-width:0">' +
+        '<p class="muted" style="margin:0 0 10px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Open seats from capacity-chain roster. Prefer same standing instructor' +
+        (preferInstr ? ' (<strong>' + esc(preferInstr) + '</strong>)' : '') +
+        '; other open plazas still listed if that instructor is full.</p>' +
+        '<label class="muted">Venue</label>' +
+        '<select class="inp" id="ppMakeupVenuePick" style="max-width:100%;box-sizing:border-box">' +
+        venues
+          .map(function (v) {
+            return (
+              '<option value="' +
+              esc(v) +
+              '"' +
+              (v === hintVenue ? ' selected' : '') +
+              '>' +
+              esc(v) +
+              '</option>'
+            );
+          })
+          .join('') +
+        '</select>' +
+        '<label class="muted" style="display:block;margin-top:10px">Session date</label>' +
+        '<input class="inp" id="ppMakeupDatePick" type="date" style="max-width:100%;box-sizing:border-box" />' +
+        '<div id="ppMakeupSlotList" style="margin-top:10px;max-height:280px;overflow:auto;min-width:0"></div>' +
+        '<p id="ppMakeupSlotErr" class="muted" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:13px"></p>' +
+        '</div>' +
+        '<div class="modal-f">' +
+        '<button type="button" class="btn btn--ghost" id="ppMakeupSlotCancel">Cancel</button>' +
+        '<button type="button" class="btn btn--pri" id="ppMakeupSlotSave" disabled>Approve makeup + offer</button>' +
+        '</div>'
+    );
+
+    var picked = null;
+    function paintSlots() {
+      var venueEl = global.document.getElementById('ppMakeupVenuePick');
+      var listEl = global.document.getElementById('ppMakeupSlotList');
+      var dateEl = global.document.getElementById('ppMakeupDatePick');
+      var saveBtn = global.document.getElementById('ppMakeupSlotSave');
+      if (!listEl) return;
+      var venue = venueEl ? venueEl.value : hintVenue;
+      var slots = listOpenMakeupSlots({ venue: venue, preferInstructor: preferInstr });
+      picked = null;
+      if (saveBtn) saveBtn.disabled = true;
+      if (!slots.length) {
+        listEl.innerHTML =
+          '<p class="muted" style="margin:0;overflow-wrap:break-word">No open seats at this venue on the standing roster.</p>';
+        return;
+      }
+      listEl.innerHTML = slots
+        .map(function (s, i) {
+          return (
+            '<button type="button" class="btn btn--ghost btn--sm" data-mk-slot="' +
+            i +
+            '" style="display:block;width:100%;text-align:left;margin:0 0 6px;min-width:0;overflow-wrap:break-word">' +
+            (s.sameStanding ? '<span class="chip chip--ok" style="font-size:10px">Same instructor</span> ' : '') +
+            '<strong>' +
+            esc(s.instructor) +
+            '</strong> · ' +
+            esc(s.day) +
+            ' · ' +
+            esc(s.timeLabel) +
+            ' · ' +
+            esc(s.venue) +
+            '</button>'
+          );
+        })
+        .join('');
+      listEl.querySelectorAll('[data-mk-slot]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var idx = Number(btn.getAttribute('data-mk-slot'));
+          picked = slots[idx];
+          listEl.querySelectorAll('[data-mk-slot]').forEach(function (b) {
+            b.classList.toggle('btn--pri', b === btn);
+            b.classList.toggle('btn--ghost', b !== btn);
+          });
+          if (dateEl && picked && picked.nextDate) dateEl.value = picked.nextDate;
+          if (saveBtn) saveBtn.disabled = false;
+        });
+      });
+      if (slots[0] && dateEl && !dateEl.value) dateEl.value = slots[0].nextDate || '';
+    }
+
+    var venueEl = global.document.getElementById('ppMakeupVenuePick');
+    if (venueEl) venueEl.addEventListener('change', paintSlots);
+    paintSlots();
+
+    var cancel = global.document.getElementById('ppMakeupSlotCancel');
+    if (cancel) {
+      cancel.onclick = function () {
+        if (typeof cfg.closeModal === 'function') cfg.closeModal();
+      };
+    }
+    var save = global.document.getElementById('ppMakeupSlotSave');
+    if (save) {
+      save.onclick = function () {
+        var errEl = global.document.getElementById('ppMakeupSlotErr');
+        var dateEl = global.document.getElementById('ppMakeupDatePick');
+        function showErr(msg) {
+          if (!errEl) return;
+          errEl.style.display = 'block';
+          errEl.textContent = msg;
+        }
+        if (!picked) {
+          showErr('Pick an open seat.');
+          return;
+        }
+        var sessionDate = dateEl ? String(dateEl.value || '').trim() : '';
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
+          showErr('Session date required.');
+          return;
+        }
+        save.disabled = true;
+        onPicked({
+          venue: picked.venue,
+          instructor: picked.instructor,
+          session_date: sessionDate,
+          session_time: timeLabelToOffer(picked.timeLabel),
+          service_label: (picked.serviceId || 'session') + ' · ' + picked.venue
+        });
+      };
+    }
+  }
+
+  async function createMakeupOffer(grantId, slot) {
+    var token = await portalAuthToken();
+    if (!token) return { error: 'session_expired' };
+    var res = await fetch(supabaseBase() + '/functions/v1/portal-admin-makeup-offer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+        apikey: cfg.getAnonKey()
+      },
+      body: JSON.stringify({
+        action: 'create',
+        grant_id: grantId,
+        venue: slot.venue,
+        session_date: slot.session_date,
+        session_time: slot.session_time,
+        instructor_name: slot.instructor,
+        service_label: slot.service_label || '',
+        offer_notes: 'Offered from Absents decide queue'
+      })
+    });
+    var j = null;
+    try {
+      j = await res.json();
+    } catch (_e) {
+      j = null;
+    }
+    if (!res.ok || !j || !j.ok) {
+      return { error: (j && j.error) || 'offer_failed', message: (j && j.message) || '' };
+    }
+    return j;
+  }
+
   function bindRowActions(hostEl) {
     if (!hostEl) return;
     hostEl.querySelectorAll('[data-absence-approve]').forEach(function (btn) {
@@ -542,17 +821,80 @@
         var id = btn.getAttribute('data-absence-approve');
         var sel = hostEl.querySelector('[data-absence-outcome="' + id + '"]');
         var outcome = sel ? sel.value : 'none';
-        var notes = global.prompt('Optional notes for the family / file:', '') || '';
-        var venue = '';
-        var amount = null;
-        if (outcome === 'makeup') {
-          venue = global.prompt('Preferred venue for makeup offers (required):', '') || '';
-          if (!String(venue).trim()) {
-            cfg.toast('Venue required for makeup grants', 'error');
-            return;
+        var report = null;
+        for (var i = 0; i < state.reports.length; i++) {
+          if (String(state.reports[i].id) === String(id)) {
+            report = state.reports[i];
+            break;
           }
         }
+
+        function runApprove(notes, venue, amount, slot) {
+          btn.disabled = true;
+          void decide(id, 'approve', outcome, notes || '', venue || '', amount).then(function (r) {
+            if (r.error) {
+              cfg.toast(r.message || r.error || 'Approve failed', 'error');
+              btn.disabled = false;
+              return;
+            }
+            var finish = function () {
+              var extra = r.credit ? ' · ledger row created' : '';
+              if (outcome === 'credit' && r.credit_apply) {
+                if (r.credit_apply.skipped === 'gocardless_held_for_next_term') {
+                  extra += ' — credit held for next term (GoCardless)';
+                } else if (r.credit_apply.skipped === 'no_open_invoice') {
+                  extra += ' — credit open (no unpaid invoice yet)';
+                } else if (r.credit_apply.applications && r.credit_apply.applications.length) {
+                  extra += ' — applied to next invoice';
+                }
+              }
+              if (r.parent_notify) {
+                if (r.parent_notify.ok) extra += ' · parent notified';
+                else if (r.parent_notify.skipped) extra += ' · notify skipped';
+                else extra += ' · notify failed';
+              }
+              if (slot) extra += ' · makeup offer sent';
+              cfg.toast(
+                outcome === 'none'
+                  ? 'Decided: none (no parent message)' + extra
+                  : 'Excused — outcome: ' + outcome + extra,
+                'ok'
+              );
+              void renderHost(global.document.getElementById('portalParentAbsenceHost'));
+            };
+            if (outcome === 'makeup' && slot && r.grant && r.grant.id) {
+              void createMakeupOffer(r.grant.id, slot).then(function (o) {
+                if (o.error) {
+                  cfg.toast(
+                    'Makeup granted but offer failed: ' + (o.message || o.error),
+                    'error'
+                  );
+                }
+                if (typeof cfg.closeModal === 'function') cfg.closeModal();
+                finish();
+              });
+              return;
+            }
+            if (typeof cfg.closeModal === 'function') cfg.closeModal();
+            finish();
+          });
+        }
+
+        if (outcome === 'makeup') {
+          if (!report) {
+            cfg.toast('Report not found', 'error');
+            return;
+          }
+          openMakeupSlotModal(report, function (slot) {
+            runApprove('', slot.venue, null, slot);
+          });
+          return;
+        }
+
+        var notes = '';
+        var amount = null;
         if (outcome === 'credit' || outcome === 'refund') {
+          notes = global.prompt('Optional notes for the family / file:', '') || '';
           var amountRaw =
             global.prompt(
               '£ amount for the family ledger (optional — leave blank for session credit without cash figure):',
@@ -566,75 +908,48 @@
             }
           }
         }
-        btn.disabled = true;
-        void decide(id, 'approve', outcome, notes, venue, amount).then(function (r) {
-          if (r.error) {
-            cfg.toast(r.message || r.error || 'Approve failed', 'error');
-            btn.disabled = false;
-            return;
-          }
-          var extra = r.credit ? ' · ledger row created' : '';
-          if (outcome === 'credit' && r.credit_apply) {
-            if (r.credit_apply.skipped === 'gocardless_held_for_next_term') {
-              extra += ' — credit held for next term (GoCardless)';
-            } else if (r.credit_apply.skipped === 'no_open_invoice') {
-              extra += ' — credit open (no unpaid invoice yet)';
-            } else if (r.credit_apply.applications && r.credit_apply.applications.length) {
-              extra += ' — applied to next invoice';
-            }
-          }
-          if (r.parent_notify) {
-            if (r.parent_notify.ok) extra += ' · parent notified';
-            else if (r.parent_notify.skipped) extra += ' · notify skipped';
-            else extra += ' · notify failed';
-          }
-          cfg.toast('Excused — outcome: ' + outcome + extra, 'ok');
-          void renderHost(global.document.getElementById('portalParentAbsenceHost'));
-        });
-      });
-    });
-    hostEl.querySelectorAll('[data-absence-reject]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var id = btn.getAttribute('data-absence-reject');
-        var notes =
-          global.prompt(
-            'Internal note only — does NOT email / WhatsApp the parent. Leave blank or cancel to abort:',
-            'Closed — already recorded as absent / no credit'
-          ) || '';
-        if (!String(notes).trim()) {
-          cfg.toast('Close cancelled', 'info');
-          return;
-        }
-        btn.disabled = true;
-        void decide(id, 'reject', 'none', notes).then(function (r) {
-          if (r.error) {
-            cfg.toast(r.error || 'Close failed', 'error');
-            btn.disabled = false;
-            return;
-          }
-          cfg.toast('Closed (no parent message)', 'ok');
-          void renderHost(global.document.getElementById('portalParentAbsenceHost'));
-        });
+        runApprove(notes, '', amount, null);
       });
     });
     hostEl.querySelectorAll('[data-absence-grant-makeup]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var id = btn.getAttribute('data-absence-grant-makeup');
-        var venue = global.prompt('Preferred venue (offers stay at this centre):', '') || '';
-        if (!String(venue).trim()) {
-          cfg.toast('Venue required', 'error');
+        var report = null;
+        for (var i = 0; i < state.reports.length; i++) {
+          if (String(state.reports[i].id) === String(id)) {
+            report = state.reports[i];
+            break;
+          }
+        }
+        if (!report) {
+          cfg.toast('Report not found', 'error');
           return;
         }
-        var notes = global.prompt('Optional notes:', '') || '';
-        btn.disabled = true;
-        void decide(id, 'grant_makeup', 'makeup', notes, venue).then(function (r) {
-          if (r.error) {
-            cfg.toast(r.message || r.error || 'Grant failed', 'error');
-            btn.disabled = false;
-            return;
-          }
-          cfg.toast(r.already ? 'Makeup grant already exists' : 'Makeup grant added to venue waiting list', 'ok');
-          void renderHost(global.document.getElementById('portalParentAbsenceHost'));
+        openMakeupSlotModal(report, function (slot) {
+          btn.disabled = true;
+          void decide(id, 'grant_makeup', 'makeup', '', slot.venue).then(function (r) {
+            if (r.error) {
+              cfg.toast(r.message || r.error || 'Grant failed', 'error');
+              btn.disabled = false;
+              return;
+            }
+            var grantId = r.grant && r.grant.id;
+            if (!grantId) {
+              cfg.toast(r.already ? 'Makeup grant already exists' : 'Grant saved', 'ok');
+              if (typeof cfg.closeModal === 'function') cfg.closeModal();
+              void renderHost(global.document.getElementById('portalParentAbsenceHost'));
+              return;
+            }
+            void createMakeupOffer(grantId, slot).then(function (o) {
+              if (typeof cfg.closeModal === 'function') cfg.closeModal();
+              if (o.error) {
+                cfg.toast('Grant ok; offer failed: ' + (o.message || o.error), 'error');
+              } else {
+                cfg.toast('Makeup grant + offer (parent can Accept / Decline)', 'ok');
+              }
+              void renderHost(global.document.getElementById('portalParentAbsenceHost'));
+            });
+          });
         });
       });
     });
@@ -685,12 +1000,10 @@
       '<div class="card-h"><h3>Absents &amp; cancellations — decide</h3>' +
       '<span class="chip chip--pend" id="portalParentAbsenceMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Pick an outcome in the dropdown, then press <strong>Approve</strong> (select alone does nothing). <strong>None + Approve</strong> = file closed, already absent on the board, <em>no</em> parent message. <strong>Credit / refund</strong> = ledger + parent aviso. <strong>Close</strong> = same as none for office (no email). See <strong>Decided</strong> for everything after outcome.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Pick outcome → <strong>Approve</strong>. <strong>None</strong> = nothing owed, no parent message. <strong>Credit / refund</strong> = ledger + aviso. <strong>Makeup</strong> = pick venue + open roster seat (same standing instructor first). See <strong>Decided</strong> after.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-absence-filter="needs_decision">Open (decide)</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="decided">Decided</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="excused">Excused only</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="rejected">Closed / rejected</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All since 1 Sep</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentAbsenceRefreshEmbed">Refresh</button>' +
       '<button type="button" class="btn btn--primary btn--sm" id="portalParentAbsenceAddEmbed">Add absent</button>' +

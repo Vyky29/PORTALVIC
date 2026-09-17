@@ -89,7 +89,7 @@
   <script src="/portal/admin-portal-day-ops.js?v=20260913-register-freeze"></script>
   <script src="/portal/admin-portal-documents.js?v=20260915-ob-doc-chips"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
-  <script src="/portal/admin-portal-parent-absences.js?v=20260917-decide-none"></script>
+  <script src="/portal/admin-portal-parent-absences.js?v=20260917-makeup-slot"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20260905-buckets"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
   <script src="/portal/admin-office-calendar.js?v=20260917-cal-month2"></script>
@@ -515,7 +515,7 @@
       { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator','office_calendar','scheduling','__h:People buckets','leads','portal_participant_documents','receptionist'] },
       { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','__h:Orders','orders_all'] },
       { id:'g_clients', label:'Clients & families', children:['clients','c4k_waitlist','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
-      { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','roster_spreadsheets','staffhr_contracts','staffhr_training_records','staffhr_uniform','interviews'] },
+      { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','roster_spreadsheets','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews'] },
       { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Day Centre','day_centre_documents','__h:Forms','portal_climbing_registrations','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance', children:['reenrol_payments','absents_refunds','commissioning_terms'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','admin_office_help','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
@@ -26353,8 +26353,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return portalAdminCanOpenAllCeoGroup();
     }
     function navGroupById(gid){
+      var id = String(gid || '').trim();
+      /* Legacy combined CFK group → Services & places (Clients is g_clients). */
+      if(id === 'g_c4k') id = 'g_services';
       for(var gi = 0; gi < NAV_GROUPS.length; gi++){
-        if(NAV_GROUPS[gi].id === gid) return NAV_GROUPS[gi];
+        if(NAV_GROUPS[gi].id === id) return NAV_GROUPS[gi];
       }
       return null;
     }
@@ -26369,8 +26372,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else portalNavHubRerender();
     }
     function openNavHubGroup(gid){
-      state.navHubGroup = String(gid || '').trim() || null;
+      var id = String(gid || '').trim() || null;
+      if(id === 'g_c4k') id = 'g_services';
+      state.navHubGroup = id;
       if(!state.navHubGroup) return openNavHubIndex();
+      if(!navGroupById(state.navHubGroup)){
+        state.navHubGroup = null;
+        return openNavHubIndex();
+      }
       if(state.view !== 'nav_hub'){
         state._navHubKeepGroup = true;
         setView('nav_hub');
