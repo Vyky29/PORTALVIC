@@ -2368,7 +2368,14 @@ Deno.serve(async (req) => {
       /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(String(row.notes || "")),
     );
 
-    upcomingBookedSessions = futureBooked
+    /* Past trials stay on the hub as purple chips (e.g. Reggie trial 15 Sep, term from 22). */
+    const pastTrialBooked = bookedRows.filter((row) => {
+      const iso = clean(row.date_iso, 12).slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || iso >= todayIso) return false;
+      return /booking_kind\s*=\s*trial|\btrial_paid|\btrial\b/i.test(String(row.notes || ""));
+    });
+
+    upcomingBookedSessions = [...pastTrialBooked, ...futureBooked]
       .map((row) => {
         const iso = clean(row.date_iso, 12).slice(0, 10);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
