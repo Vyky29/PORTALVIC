@@ -89,7 +89,7 @@
   <script src="/portal/admin-portal-day-ops.js?v=20260913-register-freeze"></script>
   <script src="/portal/admin-portal-documents.js?v=20260915-ob-doc-chips"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
-  <script src="/portal/admin-portal-parent-absences.js?v=20260917-makeup-slot"></script>
+  <script src="/portal/admin-portal-parent-absences.js?v=20260917-makeup-sync"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20260905-buckets"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
   <script src="/portal/admin-office-calendar.js?v=20260917-cal-month2"></script>
@@ -15790,6 +15790,81 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return res;
     }
+    /**
+     * Schedule MakeUp placed → close one open Absents row for that child
+     * (oldest pending_review / missed). Seat is already real; no second grant/offer.
+     */
+    async function schedResolveOpenAbsenceAfterMakeup(client, slot, overrideId, payload){
+      var pl = payload || {};
+      var display =
+        String(pl.to_client_name || pl.replacement_client_name || pl.replacement_name || '').trim() ||
+        String(slot.clientDisplay || '').trim();
+      var repSlug = String(pl.to_client_id || pl.replacement_client_id || '').trim();
+      var pax = null;
+      if(repSlug){
+        try{
+          var byRep = await client
+            .from('portal_participants')
+            .select('contact_id, display_name, parent_person_id')
+            .eq('contact_id', repSlug)
+            .maybeSingle();
+          if(byRep && byRep.data) pax = byRep.data;
+        }catch(_r){}
+      }
+      if(!pax){
+        var fakeSlot = Object.assign({}, slot, {
+          clientSlug: repSlug || slot.clientSlug,
+          clientDisplay: display || slot.clientDisplay
+        });
+        pax = await schedResolveParticipantForDecisionQueue(client, fakeSlot);
+      }
+      var contactId = String((pax && pax.contact_id) || repSlug || '').trim();
+      if(!contactId) return { skipped: 'no_contact' };
+      var makeupIso = String(slot.sessionDate || '').slice(0, 10);
+      var makeupWhen = String(slot.whenLabel || slot.anchorTimeLabel || '').trim();
+      var note =
+        'Makeup placed via Schedule & Covers' +
+        (makeupIso ? ' · ' + makeupIso : '') +
+        (makeupWhen ? ' · ' + makeupWhen : '') +
+        (overrideId ? ' · OV ' + String(overrideId).slice(0, 8) : '');
+      var q = await client
+        .from('portal_parent_absence_reports')
+        .select('id, session_date, status, outcome, participant_display')
+        .eq('contact_id', contactId)
+        .in('status', ['pending_review', 'missed'])
+        .order('session_date', { ascending: true })
+        .order('created_at', { ascending: true })
+        .limit(5);
+      if(q.error){
+        console.warn('[portal] makeup → absents sync list', q.error);
+        return { error: q.error.message || 'list_failed' };
+      }
+      var rows = Array.isArray(q.data) ? q.data : [];
+      var open = rows.filter(function(r){
+        var st = String(r && r.status || '').toLowerCase();
+        var out = String(r && r.outcome || '').toLowerCase();
+        return (st === 'pending_review' || st === 'missed') && !out;
+      });
+      if(!open.length) return { skipped: 'no_open_absence' };
+      var target = open[0];
+      var res = await adminEdgePost('portal-admin-parent-absence-decide', {
+        report_id: target.id,
+        action: 'approve',
+        outcome: 'makeup',
+        notes: note
+      });
+      if(res && res.error){
+        console.warn('[portal] makeup → absents decide', res.error, res.message || '');
+        return res;
+      }
+      if(sched){
+        var who = String(target.participant_display || display || 'participant').trim();
+        var absIso = String(target.session_date || '').slice(0, 10);
+        sched.lastMsg = String(sched.lastMsg || 'Override saved.') +
+          ' · Absents closed (' + who + (absIso ? ' · ' + absIso : '') + ' → makeup)';
+      }
+      return { ok: true, report_id: target.id, session_date: target.session_date };
+    }
     async function saveSchedOverrideFromDrawer(){
       var msgEl = $('schedFormErr');
       if(msgEl) msgEl.textContent = '';
@@ -16018,12 +16093,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           console.warn('[portal] absent decision queue enqueue failed', _enqA);
         }
       }
-      /* Confirmed MakeUp (not trial): auto-notify parent + instructor. */
+      /* Confirmed MakeUp (not trial): notify + close matching Absents queue row. */
       if(ovType === 'client_replace_in_slot' && !isTrial){
         try{
           await schedNotifyMakeupConfirmed(client, slot, ins0.id, payload, row);
         }catch(_mkN){
           console.warn('[portal] makeup confirmed notify failed', _mkN);
+        }
+        try{
+          await schedResolveOpenAbsenceAfterMakeup(client, slot, ins0.id, payload);
+        }catch(_mkA){
+          console.warn('[portal] makeup → absents sync failed', _mkA);
         }
       }
       var evRow = {

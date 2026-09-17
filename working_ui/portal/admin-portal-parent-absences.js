@@ -483,7 +483,7 @@
     return (
       '<div class="portal-parent-absences-embed">' +
       '<h1 class="page-title">Absents &amp; cancelled (decision queue)</h1>' +
-      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Decide credit, refund, makeup or none. None = no parent message. Makeup picks an open roster seat.</p>' +
+      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Decide credit, refund, makeup or none. None = no parent message. Makeup picks an open roster seat — or place MakeUp in Schedule &amp; Covers and this row closes automatically.</p>' +
       '<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-absence-filter="needs_decision">Open (decide)</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="decided">Decided</button>' +
@@ -1000,7 +1000,7 @@
       '<div class="card-h"><h3>Absents &amp; cancellations — decide</h3>' +
       '<span class="chip chip--pend" id="portalParentAbsenceMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Pick outcome → <strong>Approve</strong>. <strong>None</strong> = nothing owed, no parent message. <strong>Credit / refund</strong> = ledger + aviso. <strong>Makeup</strong> = pick venue + open roster seat (same standing instructor first). See <strong>Decided</strong> after.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Pick outcome → <strong>Approve</strong>. <strong>None</strong> = nothing owed, no parent message. <strong>Credit / refund</strong> = ledger + aviso. <strong>Makeup</strong> = pick venue + open roster seat here, or place MakeUp in Schedule &amp; Covers (auto-closes the oldest open row for that child). See <strong>Decided</strong> after.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-absence-filter="needs_decision">Open (decide)</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="decided">Decided</button>' +
