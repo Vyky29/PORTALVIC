@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260915-sun-phases" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260709-ops-hub-fullwidth" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-ops-cal-glance" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260727-role-names"></script>
@@ -92,7 +92,7 @@
   <script src="/portal/admin-portal-parent-absences.js?v=20260917-cancel-credit-auto"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20260905-buckets"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
-  <script src="/portal/admin-office-calendar.js?v=20260814-office-cal-nav"></script>
+  <script src="/portal/admin-office-calendar.js?v=20260917-done-chip"></script>
   <script src="/portal/admin-portal-parent-credits.js?v=20260813-office-phone-create"></script>
   <script src="/portal/admin-portal-xero-products.js?v=20260716-add-product-rows"></script>
   <script src="/portal/admin-portal-parent-invoices.js?v=20260909-gemma-keeper"></script>
@@ -26557,6 +26557,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     window.opsHubPatchLiveAside = opsHubPatchLiveAside;
 
+    function opsHubPatchCalendarGlance(){
+      var stripHost = $('opsHubCalendarGlanceStrip');
+      var countEl = $('opsHubCalendarGlanceCount');
+      var subEl = $('opsHubCalendarGlanceSub');
+      var btn = $('opsHubCalendarGlance');
+      if(!stripHost || !window.PortalOfficeCalendar) return;
+      portalOfficeCalendarConfigureOnce();
+      var cal = window.PortalOfficeCalendar;
+      if(typeof cal.listRange !== 'function' || typeof cal.glanceWeekStripHtml !== 'function') return;
+      var now = new Date();
+      var dow = (now.getDay() + 6) % 7;
+      var monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow);
+      var sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+      function iso(d){
+        return cal.isoFromYmd(d.getFullYear(), d.getMonth(), d.getDate());
+      }
+      void cal.listRange(iso(monday), iso(sunday)).then(function(res){
+        if(!stripHost.isConnected) return;
+        var entries = (res && res.entries) || [];
+        var glance = cal.glanceWeekStripHtml(entries);
+        stripHost.innerHTML = glance.html || '';
+        var openN = Number(glance.openCount || 0);
+        if(countEl) countEl.textContent = openN > 0 ? String(openN) : 'Notes';
+        if(countEl) countEl.className = 'ops-hub__today-v' + (openN > 0 ? ' ops-hub__today-v--cal' : '');
+        if(subEl) subEl.textContent = openN > 0
+          ? (openN === 1 ? '1 open note this week' : openN + ' open notes this week')
+          : 'Office notes & meetings';
+        if(btn){
+          if(openN > 0) btn.classList.add('ops-hub__today-item--calendar-hot');
+          else btn.classList.remove('ops-hub__today-item--calendar-hot');
+        }
+      }).catch(function(){ /* silent */ });
+    }
+
     function bindNavHubLive(){
       portalAdminMountLivePresenceBar();
       var alertsGlance = $('opsHubAlertsGlance');
@@ -26578,6 +26612,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
         });
       }
+      var calGlance = $('opsHubCalendarGlance');
+      if(calGlance && !calGlance.dataset.bound){
+        calGlance.dataset.bound = '1';
+        calGlance.addEventListener('click', function(ev){
+          if(ev) ev.preventDefault();
+          setView('office_calendar');
+        });
+      }
+      opsHubPatchCalendarGlance();
       void portalAdminBootstrapActivityAlerts().finally(function(){
         opsHubPatchLiveAside();
       });
@@ -26592,6 +26635,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var alertsN = opsHubGlanceValueAlerts();
       var onlineN = opsHubGlanceValueOnline();
       var pendingN = Number(state.portalLatePendingCount || 0) + portalAbsentsPendingCount();
+      var calStrip = '<div class="ops-hub-cal-week ops-hub-cal-week--placeholder" aria-hidden="true">' +
+        ['M','T','W','T','F','S','S'].map(function(l){
+          return '<span class="ops-hub-cal-day"><span class="ops-hub-cal-day__d">'+l+'</span><span class="ops-hub-cal-day__n">·</span></span>';
+        }).join('') +
+        '</div>';
       return (
         '<div class="ops-hub__today" role="region" aria-label="Today at a glance">' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Today</span><span class="ops-hub__today-v">'+esc(weekday)+'</span><span class="ops-hub__today-s">'+esc(dateStr)+'</span></div>' +
@@ -26599,6 +26647,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<span class="ops-hub__today-k">Alerts</span><span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span><span class="ops-hub__today-s">Incidents, cancellations, expenses &amp; wellbeing</span></div>' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Online users</span><span class="ops-hub__today-v">'+esc(String(onlineN))+'</span><span class="ops-hub__today-s">Staff connected now</span></div>' +
         '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Pending actions</span><span class="ops-hub__today-v'+(pendingN > 0 ? ' ops-hub__today-v--warn' : '')+'">'+esc(String(pendingN))+'</span><span class="ops-hub__today-s">Late forms &amp; absents</span></div>' +
+        '<button type="button" class="ops-hub__today-item ops-hub__today-item--calendar" id="opsHubCalendarGlance" aria-label="Open office calendar">' +
+        '<span class="ops-hub__today-k">Calendar</span>' +
+        '<span class="ops-hub__today-v" id="opsHubCalendarGlanceCount">Notes</span>' +
+        '<span class="ops-hub__today-s" id="opsHubCalendarGlanceSub">Office notes &amp; meetings</span>' +
+        '<span id="opsHubCalendarGlanceStrip">'+calStrip+'</span>' +
+        '</button>' +
         '</div>'
       );
     }

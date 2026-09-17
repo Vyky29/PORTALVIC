@@ -15,6 +15,9 @@ import {
 } from "../_shared/portal_admin_auth.ts";
 
 const ENTRY_TYPES = new Set(["meeting", "note", "event"]);
+const ENTRY_STATUSES = new Set(["open", "done"]);
+const ENTRY_SELECT =
+  "id, entry_date, entry_type, title, body, start_time, end_time, all_day, status, done_at, done_by, created_by, created_by_name, updated_by, created_at, updated_at";
 
 function clean(v: unknown): string {
   return String(v ?? "").trim();
@@ -91,9 +94,7 @@ Deno.serve(async (req) => {
     }
     const { data, error } = await admin
       .from("portal_office_calendar_entries")
-      .select(
-        "id, entry_date, entry_type, title, body, start_time, end_time, all_day, created_by, created_by_name, updated_by, created_at, updated_at",
-      )
+      .select(ENTRY_SELECT)
       .gte("entry_date", from)
       .lte("entry_date", to)
       .order("entry_date", { ascending: true })
@@ -104,6 +105,35 @@ Deno.serve(async (req) => {
       return portalAdminJson(500, { ok: false, error: "query_failed" });
     }
     return portalAdminJson(200, { ok: true, entries: data || [] });
+  }
+
+  if (action === "set_status") {
+    const id = clean(body.id);
+    const status = clean(body.status).toLowerCase();
+    if (!id) return portalAdminJson(400, { ok: false, error: "missing_id" });
+    if (!ENTRY_STATUSES.has(status)) {
+      return portalAdminJson(400, { ok: false, error: "invalid_status" });
+    }
+    const now = new Date().toISOString();
+    const patch = {
+      status,
+      done_at: status === "done" ? now : null,
+      done_by: status === "done" ? actorId : null,
+      updated_by: actorId,
+      updated_at: now,
+    };
+    const { data, error } = await admin
+      .from("portal_office_calendar_entries")
+      .update(patch)
+      .eq("id", id)
+      .select(ENTRY_SELECT)
+      .maybeSingle();
+    if (error) {
+      console.error("[portal-admin-office-calendar] set_status", error.message);
+      return portalAdminJson(500, { ok: false, error: "update_failed" });
+    }
+    if (!data) return portalAdminJson(404, { ok: false, error: "not_found" });
+    return portalAdminJson(200, { ok: true, entry: data });
   }
 
   if (action === "upsert") {
@@ -143,9 +173,7 @@ Deno.serve(async (req) => {
         .from("portal_office_calendar_entries")
         .update(row)
         .eq("id", id)
-        .select(
-          "id, entry_date, entry_type, title, body, start_time, end_time, all_day, created_by, created_by_name, updated_by, created_at, updated_at",
-        )
+        .select(ENTRY_SELECT)
         .maybeSingle();
       if (error) {
         console.error("[portal-admin-office-calendar] update", error.message);
@@ -162,13 +190,12 @@ Deno.serve(async (req) => {
       .insert([
         {
           ...row,
+          status: "open",
           created_by: actorId,
           created_by_name: actorName,
         },
       ])
-      .select(
-        "id, entry_date, entry_type, title, body, start_time, end_time, all_day, created_by, created_by_name, updated_by, created_at, updated_at",
-      )
+      .select(ENTRY_SELECT)
       .single();
     if (error) {
       console.error("[portal-admin-office-calendar] insert", error.message);
