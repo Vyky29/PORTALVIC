@@ -402,6 +402,273 @@
     return pool[0] || null;
   }
 
+  function collectParticipantRowsAnyDay(clientName, anchorIso) {
+    var want = normName(resolveClientName(clientName) || clientName);
+    if (!want) return [];
+    var seen = Object.create(null);
+    var out = [];
+    rosterRows().forEach(function (r) {
+      var nm = String(r.client_name || "").trim();
+      if (!nm || isOpenSeatParticipantName(nm)) return;
+      if (normName(nm) !== want) return;
+      var rowIso = normIso(r.session_date);
+      if (rowIso && anchorIso && !rowInSameTermWindow(rowIso, anchorIso)) return;
+      var key =
+        String(r.day || weekdayLongFromIso(rowIso) || "") +
+        "|" +
+        normName(r.service) +
+        "|" +
+        normSlotTime(r.time_slot) +
+        "|" +
+        normName(r.instructors);
+      if (seen[key]) return;
+      seen[key] = 1;
+      out.push(r);
+    });
+    out.sort(function (a, b) {
+      var da = String(a.day || "").localeCompare(String(b.day || ""));
+      if (da) return da;
+      return String(a.time_slot || "").localeCompare(String(b.time_slot || ""));
+    });
+    return out;
+  }
+
+  function serviceBandLabel(service) {
+    var s = normName(service);
+    if (/aquatic|swim/.test(s)) return "Aquatic";
+    if (/climb/.test(s)) return "Climbing";
+    if (/bespoke/.test(s)) return "Bespoke";
+    if (/multi|day\s*centre|daycentre/.test(s)) return "Multi / DC";
+    if (/fitness|physical/.test(s)) return "Fitness";
+    return String(service || "Session").trim() || "Session";
+  }
+
+  function htmlMiniSlotCard(opts) {
+    opts = opts || {};
+    var tone = opts.tone || "ok";
+    var band = opts.band || serviceBandLabel(opts.service);
+    var name = opts.name || "—";
+    var when = opts.when || "";
+    var venue = opts.venue || "";
+    var meta = opts.meta || "";
+    var pickAttrs = opts.pickAttrs || "";
+    var tag = pickAttrs ? "button" : "article";
+    var typeAttr = pickAttrs ? ' type="button"' : "";
+    return (
+      "<" +
+      tag +
+      typeAttr +
+      ' class="trs-mini-card trs-mini-card--' +
+      esc(tone) +
+      (pickAttrs ? " trs-mini-card--pick" : "") +
+      '"' +
+      pickAttrs +
+      ">" +
+      '<div class="trs-mini-card__band">' +
+      esc(band) +
+      "</div>" +
+      '<div class="trs-mini-card__name">' +
+      esc(name) +
+      "</div>" +
+      (when ? '<div class="trs-mini-card__when">' + esc(when) + "</div>" : "") +
+      (venue ? '<div class="trs-mini-card__venue">' + esc(venue) + "</div>" : "") +
+      (meta ? '<div class="trs-mini-card__meta">' + esc(meta) + "</div>" : "") +
+      "</" +
+      tag +
+      ">"
+    );
+  }
+
+  function encodeSeatPick(row) {
+    try {
+      return encodeURIComponent(
+        JSON.stringify({
+          service: String(row.service || "").trim(),
+          time_slot: String(row.time_slot || "").trim(),
+          instructors: String(row.instructors || "").trim(),
+          venue: String(row.venue || "").trim(),
+          area: String(row.area || "").trim(),
+          day: String(row.day || "").trim(),
+        })
+      );
+    } catch (_e) {
+      return "";
+    }
+  }
+
+  function decodeSeatPick(raw) {
+    try {
+      return JSON.parse(decodeURIComponent(String(raw || "")));
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function collectOpenSeatsForVisual(anchorIso, serviceFilter, timeFilter) {
+    var weekday = weekdayLongFromIso(anchorIso);
+    if (!weekday) return [];
+    var wantSvc = normName(serviceFilter);
+    var wantTime = String(timeFilter || "").trim();
+    var seen = Object.create(null);
+    var out = [];
+    rosterRows().forEach(function (r) {
+      if (!isOpenSeatParticipantName(r.client_name)) return;
+      if (!rowMatchesAnchorWeekday(r, anchorIso, weekday)) return;
+      if (wantSvc && normName(r.service) !== wantSvc) return;
+      if (wantTime && !timeSlotNormMatchesOrWithin(r.time_slot, wantTime, weekday)) return;
+      var key =
+        normName(r.service) +
+        "|" +
+        normSlotTime(r.time_slot) +
+        "|" +
+        normName(r.instructors) +
+        "|" +
+        normName(r.venue);
+      if (seen[key]) return;
+      seen[key] = 1;
+      out.push(r);
+    });
+    out.sort(function (a, b) {
+      var ta = String(a.time_slot || "").localeCompare(String(b.time_slot || ""));
+      if (ta) return ta;
+      return String(a.instructors || "").localeCompare(String(b.instructors || ""));
+    });
+    return out.slice(0, 36);
+  }
+
+  function refreshTermSlotVisualBoard(root) {
+    if (!root) return;
+    var nowHost = root.querySelector("#trsNowBoard");
+    var availHost = root.querySelector("#trsAvailBoard");
+    var hint = root.querySelector("#trsVisualHint");
+    if (!nowHost || !availHost) return;
+    var clientEl = root.querySelector("#trsClient");
+    var svcEl = root.querySelector("#trsService");
+    var anchorEl = root.querySelector("#trsAnchorDate");
+    var timeEl = root.querySelector("#trsTimeSlot");
+    var part = resolveClientName((clientEl && clientEl.value) || "") || String((clientEl && clientEl.value) || "").trim();
+    var service = String((svcEl && svcEl.value) || "").trim();
+    var anchor = normIso(anchorEl && anchorEl.value);
+    var timeFilter = String((timeEl && timeEl.value) || "").trim();
+    var weekday = weekdayLongFromIso(anchor);
+
+    if (!part) {
+      nowHost.innerHTML =
+        '<p class="trs-visual-empty">Pick a participant to see where they sit now (Overview-style card).</p>';
+      availHost.innerHTML =
+        '<p class="trs-visual-empty">Open seats for the anchor day appear here once a participant (and ideally a service) is set.</p>';
+      if (hint) {
+        hint.textContent =
+          "Start with the participant — then day / service filter who is available.";
+      }
+      return;
+    }
+
+    var nowSlots = service
+      ? (function () {
+          var one = findBundleSlotByParticipantService(anchor, part, service);
+          return one ? [one] : collectParticipantRows(part, anchor);
+        })()
+      : collectParticipantRowsAnyDay(part, anchor);
+    if (!nowSlots.length) {
+      nowHost.innerHTML =
+        '<p class="trs-visual-empty">No standing seat found for <strong>' +
+        esc(part) +
+        "</strong> in this term yet — pick an open seat below to place them.</p>";
+    } else {
+      nowHost.innerHTML = nowSlots
+        .map(function (r) {
+          var dayLbl = String(r.day || weekdayLongFromIso(r.session_date) || weekday || "").trim();
+          var when =
+            (dayLbl ? dayLbl + " · " : "") +
+            String(r.time_slot || "").trim() +
+            (r.area ? " · " + String(r.area).trim() : "");
+          var pick =
+            ' data-trs-now-pick="' +
+            encodeSeatPick(r) +
+            '" title="Load this seat into the form"';
+          return htmlMiniSlotCard({
+            tone: "now",
+            band: serviceBandLabel(r.service),
+            name: String(r.instructors || "Staff TBC").trim() || "Staff TBC",
+            when: when,
+            venue: String(r.venue || "").trim(),
+            meta: String(r.service || "").trim() + " · " + part,
+            pickAttrs: pick,
+          });
+        })
+        .join("");
+    }
+
+    var opens = collectOpenSeatsForVisual(anchor, service, timeFilter);
+    if (!anchor) {
+      availHost.innerHTML =
+        '<p class="trs-visual-empty">Set an anchor date to list open seats that day.</p>';
+    } else if (!opens.length) {
+      availHost.innerHTML =
+        '<p class="trs-visual-empty">No open seats on <strong>' +
+        esc(weekday || anchor) +
+        "</strong>" +
+        (service ? " for " + esc(service) : "") +
+        (timeFilter ? " at " + esc(timeFilter) : "") +
+        ". Widen filters or check Places in Services.</p>";
+    } else {
+      availHost.innerHTML = opens
+        .map(function (r) {
+          var when =
+            String(r.time_slot || "").trim() +
+            (r.area ? " · " + String(r.area).trim() : "");
+          return htmlMiniSlotCard({
+            tone: "open",
+            band: serviceBandLabel(r.service),
+            name: String(r.instructors || "Open seat").trim() || "Open seat",
+            when: when,
+            venue: String(r.venue || "").trim(),
+            meta: "Available · " + String(r.service || "").trim(),
+            pickAttrs:
+              ' data-trs-avail-pick="' +
+              encodeSeatPick(r) +
+              '" title="Place participant on this open seat"',
+          });
+        })
+        .join("");
+    }
+
+    if (hint) {
+      hint.textContent =
+        "Now = current instructor seat. Available = open seats on " +
+        (weekday || "anchor day") +
+        (service ? " · " + service : "") +
+        (timeFilter ? " · " + timeFilter : "") +
+        ". Click a card to fill the form.";
+    }
+  }
+
+  function applySeatPickToForm(root, seat, opts) {
+    opts = opts || {};
+    if (!root || !seat) return;
+    if (seat.service) {
+      var part = String((root.querySelector("#trsClient") || {}).value || "").trim();
+      var anchor = normIso((root.querySelector("#trsAnchorDate") || {}).value);
+      rebuildTermSlotServiceSelect(root, part, seat.service, anchor);
+    }
+    if (seat.time_slot) setFormField(root, "#trsTimeSlot", seat.time_slot);
+    if (seat.instructors) setFormField(root, "#trsInstructors", seat.instructors);
+    if (seat.venue) setFormField(root, "#trsVenue", seat.venue);
+    if (seat.area != null) setFormField(root, "#trsArea", seat.area);
+    refreshTermSlotTimeBandPicker(
+      root,
+      seat.service,
+      isAquaticServiceName(seat.service)
+        ? aquaticHalfHourBands(seat.time_slot, seat.day)
+        : [],
+      seat.time_slot
+    );
+    refreshTermSlotSessionPicker(root);
+    refreshTermSlotVisualBoard(root);
+    if (opts.toast) deps.toast(opts.toast);
+  }
+
   function findBundleSlotByParticipantService(anchorIso, clientName, service) {
     var wantSvc = normName(service);
     if (!wantSvc) return null;
@@ -617,6 +884,7 @@
       rebuildTermSlotServiceSelect(root, "", "", anchor);
       if (forceFromRoster || !hasAssignPrefill) clearAutofilledSlotFields(root);
       refreshTermSlotSessionPicker(root);
+      refreshTermSlotVisualBoard(root);
       return false;
     }
     var chosenSvc = rebuildTermSlotServiceSelect(root, part, svcEl.value, anchor);
@@ -627,6 +895,7 @@
         deps.toast("Pick a service for " + part + (wd ? " on " + wd : "") + ".");
       }
       refreshTermSlotSessionPicker(root);
+      refreshTermSlotVisualBoard(root);
       return false;
     }
     var slot = findBundleSlotByParticipantService(anchor, part, chosenSvc);
@@ -634,11 +903,13 @@
       // Assign / capacity already filled time+staff — keep them for a new Autumn placement.
       if (!forceFromRoster && hasAssignPrefill) {
         refreshTermSlotSessionPicker(root);
+        refreshTermSlotVisualBoard(root);
         return true;
       }
       clearAutofilledSlotFields(root);
       if (opts.toastIfMissing) deps.toast("No roster row for that participante and service on this date.");
       refreshTermSlotSessionPicker(root);
+      refreshTermSlotVisualBoard(root);
       return false;
     }
     applyBundleSlotToForm(root, slot, {
@@ -647,6 +918,7 @@
     });
     if (opts.toastOnSuccess) deps.toast("Loaded from roster — check fields then Save.");
     refreshTermSlotSessionPicker(root);
+    refreshTermSlotVisualBoard(root);
     return true;
   }
 
@@ -1749,7 +2021,6 @@
   }
 
   function injectStyleOnce() {
-    if (document.getElementById("adminTermSlotStyle")) return;
     var css = [
       "body.admin-view-term-slot .admin-workspace{padding:14px 18px 32px;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}",
       "body.admin-view-term-slot .admin-term-slot-root{width:100%;max-width:none;min-width:0}",
@@ -1768,6 +2039,24 @@
       ".trs-row--control{grid-template-columns:minmax(0,1.05fr) minmax(0,1.35fr) minmax(0,1fr);align-items:start}",
       "@media(max-width:1100px){.trs-row--identity,.trs-row--details{grid-template-columns:repeat(2,minmax(0,1fr))}.trs-row--control{grid-template-columns:1fr}}",
       "@media(max-width:640px){.trs-row--identity,.trs-row--details,.trs-row--control{grid-template-columns:1fr}.trs-panel__head,.trs-panel__body,.trs-panel__foot{padding-left:14px;padding-right:14px}}",
+      ".trs-visual{margin:14px 0 0;padding:14px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc;min-width:0}",
+      ".trs-visual-hint{margin:0 0 10px;font-size:12px;line-height:1.45;color:#64748b;overflow-wrap:break-word}",
+      ".trs-visual-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 16px;min-width:0}",
+      "@media(max-width:900px){.trs-visual-cols{grid-template-columns:1fr}}",
+      ".trs-visual-col{min-width:0}",
+      ".trs-visual-title{margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:#334155}",
+      ".trs-visual-cards{display:flex;flex-wrap:wrap;gap:8px;min-width:0;align-items:stretch}",
+      ".trs-visual-empty{margin:0;font-size:13px;line-height:1.45;color:#64748b;overflow-wrap:break-word;min-width:0}",
+      ".trs-mini-card{display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left;min-width:0;width:min(100%,11.5rem);padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);overflow-wrap:break-word}",
+      ".trs-mini-card--pick{cursor:pointer;font:inherit;color:inherit}",
+      ".trs-mini-card--pick:hover{border-color:#93c5fd;box-shadow:0 0 0 2px rgba(59,130,246,.18)}",
+      ".trs-mini-card--now{border-color:#bfdbfe;background:#eff6ff}",
+      ".trs-mini-card--open{border-color:#bbf7d0;background:#f0fdf4}",
+      ".trs-mini-card__band{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b}",
+      ".trs-mini-card__name{font-size:14px;font-weight:800;color:#0f172a;min-width:0;overflow-wrap:break-word}",
+      ".trs-mini-card__when{font-size:12px;font-weight:600;color:#475569;min-width:0;overflow-wrap:break-word}",
+      ".trs-mini-card__venue{font-size:11px;color:#64748b;min-width:0;overflow-wrap:break-word}",
+      ".trs-mini-card__meta{font-size:11px;color:#0369a1;min-width:0;overflow-wrap:break-word}",
       ".trs-field{display:flex;flex-direction:column;gap:4px;min-width:0}",
       ".trs-field label{font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#64748b}",
       ".trs-field input,.trs-field select{font:inherit;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a;min-width:0;width:100%;box-sizing:border-box}",
@@ -1814,10 +2103,13 @@
       ".trs-msg{min-width:0;flex:1 1 220px;font-size:13px;color:#64748b;margin:0;overflow-wrap:break-word;text-align:right}",
       "@media(max-width:640px){.trs-msg{text-align:left}}",
     ].join("\n");
-    var st = document.createElement("style");
-    st.id = "adminTermSlotStyle";
+    var st = document.getElementById("adminTermSlotStyle");
+    if (!st) {
+      st = document.createElement("style");
+      st.id = "adminTermSlotStyle";
+      document.head.appendChild(st);
+    }
     st.textContent = css;
-    document.head.appendChild(st);
   }
 
   function wireTermSlotAutofill(root) {
@@ -1847,6 +2139,7 @@
     if (svcEl) {
       svcEl.addEventListener("change", function () {
         refreshTermSlotAutofill(root);
+        refreshTermSlotVisualBoard(root);
       });
     }
     wire(root.querySelector("#trsInstructors"), root.querySelector("#trsInstructorsSuggest"), {
@@ -1896,7 +2189,7 @@
       '<div class="trs-panel__head">' +
       '<div class="trs-panel__title">' +
       "<h1>Edit term slot</h1>" +
-      "<p>Pick <strong>participante</strong> then <strong>service</strong>. Use <strong>Selected sessions</strong> to cancel some future dates and keep others attending.</p>" +
+      "<p><strong>Participant first</strong> — see where they sit now, then pick an <strong>available</strong> seat for the anchor day. Scope (this day / every weekday / …) still controls the save.</p>" +
       "</div>" +
       '<div class="trs-panel__head-actions">' +
       '<button type="button" class="btn btn--sec" id="trsLoadBundle">Reload from roster</button>' +
@@ -1904,16 +2197,30 @@
       "</div>" +
       '<div class="trs-panel__body">' +
       '<div class="trs-row trs-row--identity">' +
-      '<div class="trs-field"><label for="trsAnchorDate">Anchor date</label><input type="date" id="trsAnchorDate" value="' + esc(anchor) + '"/></div>' +
-      '<div class="trs-field"><label>Weekday</label><input type="text" id="trsWeekday" readonly value="' + esc(weekday) + '"/></div>' +
       '<div class="trs-field"><label for="trsClient">Participant</label><div class="participant-field-wrap"><input type="text" id="trsClient" value="' + esc(pre.client_name || "") + '" placeholder="Start typing name…" autocomplete="off"/><div id="trsClientSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Participants"></div></div></div>' +
       '<div class="trs-field"><label for="trsService">Service</label><select id="trsService"><option value="">Pick participante first</option></select></div>' +
+      '<div class="trs-field"><label for="trsAnchorDate">Anchor date</label><input type="date" id="trsAnchorDate" value="' + esc(anchor) + '"/></div>' +
+      '<div class="trs-field"><label>Weekday</label><input type="text" id="trsWeekday" readonly value="' + esc(weekday) + '"/></div>' +
+      "</div>" +
+      '<div class="trs-visual" id="trsVisualBoard" aria-live="polite">' +
+      '<p class="trs-visual-hint" id="trsVisualHint">Start with the participant — then day / service filter who is available.</p>' +
+      '<div class="trs-visual-cols">' +
+      '<section class="trs-visual-col" aria-labelledby="trsNowTitle">' +
+      '<h2 class="trs-visual-title" id="trsNowTitle">Now (current seat)</h2>' +
+      '<div class="trs-visual-cards" id="trsNowBoard"></div>' +
+      "</section>" +
+      '<section class="trs-visual-col" aria-labelledby="trsAvailTitle">' +
+      '<h2 class="trs-visual-title" id="trsAvailTitle">Available on anchor day</h2>' +
+      '<div class="trs-visual-cards" id="trsAvailBoard"></div>' +
+      "</section>" +
+      "</div>" +
+      '<p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Full Places board (all free/occupied seats) → <button type="button" class="btn btn--ghost btn--sm" data-view-target="open_places_2627" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Places in Services</button>.</p>' +
       "</div>" +
       '<div class="trs-row trs-row--details" id="trsDetailsRow">' +
-      '<div class="trs-field trs-field--time"><label for="trsTimeSlot">Time slot</label><input type="text" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '" placeholder="Auto from roster"/><div class="trs-time-band-wrap" id="trsTimeSlotPickWrap" hidden><span class="trs-control-label">30-minute band (Aquatic)</span><div class="trs-pills" id="trsTimeSlotOptions"></div></div></div>' +
-      '<div class="trs-field"><label for="trsInstructors">Instructor(s)</label><div class="participant-field-wrap"><input type="text" id="trsInstructors" value="' + esc(pre.instructors || "") + '" placeholder="Auto from roster" autocomplete="off"/><div id="trsInstructorsSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Instructors"></div></div></div>' +
-      '<div class="trs-field"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="Auto from roster" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
-      '<div class="trs-field"><label for="trsArea">Pool / area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="Auto from roster"/></div>' +
+      '<div class="trs-field trs-field--time"><label for="trsTimeSlot">Time slot</label><input type="text" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '" placeholder="From card or roster"/><div class="trs-time-band-wrap" id="trsTimeSlotPickWrap" hidden><span class="trs-control-label">30-minute band (Aquatic)</span><div class="trs-pills" id="trsTimeSlotOptions"></div></div></div>' +
+      '<div class="trs-field"><label for="trsInstructors">Instructor(s)</label><div class="participant-field-wrap"><input type="text" id="trsInstructors" value="' + esc(pre.instructors || "") + '" placeholder="From available card" autocomplete="off"/><div id="trsInstructorsSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Instructors"></div></div></div>' +
+      '<div class="trs-field"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="From available card" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
+      '<div class="trs-field"><label for="trsArea">Pool / area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="From available card"/></div>' +
       "</div>" +
       '<div class="trs-row trs-row--sessions" id="trsSessionPickerBlock" hidden>' +
       '<div class="trs-control-block trs-control-block--sessions">' +
@@ -1960,6 +2267,44 @@
         var scopeWd = root.querySelector("#trsScopeWeekdayLabel");
         if (scopeWd) scopeWd.textContent = wdEl.value;
         refreshTermSlotAutofill(root);
+        refreshTermSlotVisualBoard(root);
+      });
+    }
+    var visual = root.querySelector("#trsVisualBoard");
+    if (visual && !visual._trsPickBound) {
+      visual._trsPickBound = true;
+      visual.addEventListener("click", function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        var nowBtn = t.closest("[data-trs-now-pick]");
+        if (nowBtn) {
+          e.preventDefault();
+          var seatNow = decodeSeatPick(nowBtn.getAttribute("data-trs-now-pick"));
+          applySeatPickToForm(root, seatNow, { toast: "Loaded current seat into the form." });
+          return;
+        }
+        var availBtn = t.closest("[data-trs-avail-pick]");
+        if (availBtn) {
+          e.preventDefault();
+          var seatAvail = decodeSeatPick(availBtn.getAttribute("data-trs-avail-pick"));
+          applySeatPickToForm(root, seatAvail, {
+            toast: "Open seat applied — check scope then Save.",
+          });
+        }
+      });
+    }
+    var timeEl = root.querySelector("#trsTimeSlot");
+    if (timeEl && !timeEl._trsVisualBound) {
+      timeEl._trsVisualBound = true;
+      var timeTimer = null;
+      timeEl.addEventListener("input", function () {
+        clearTimeout(timeTimer);
+        timeTimer = setTimeout(function () {
+          refreshTermSlotVisualBoard(root);
+        }, 250);
+      });
+      timeEl.addEventListener("change", function () {
+        refreshTermSlotVisualBoard(root);
       });
     }
     root.querySelectorAll('input[name="trsAction"]').forEach(function (inp) {
@@ -1997,6 +2342,7 @@
       if (pre.area) setFormField(root, "#trsArea", pre.area);
     }
     refreshTermSlotSessionPicker(root);
+    refreshTermSlotVisualBoard(root);
   }
 
   function openWithPrefill(prefill) {
