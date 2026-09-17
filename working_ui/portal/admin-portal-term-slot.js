@@ -2138,7 +2138,10 @@
       ".trs-mini-card--pick{cursor:pointer;font:inherit;color:inherit}",
       ".trs-mini-card--pick:hover{border-color:#93c5fd;box-shadow:0 0 0 2px rgba(59,130,246,.18)}",
       ".trs-mini-card--now{border-color:#93c5fd;background:#fff}",
+      ".trs-mini-card--now-selected{border-color:#2563eb;background:#dbeafe;box-shadow:0 0 0 2px rgba(37,99,235,.35)}",
       ".trs-mini-card--open{border-color:#bbf7d0;background:#f0fdf4}",
+      ".trs-changing{color:#1e3a8a}",
+      ".trs-finance-note[hidden]{display:none!important}",
       ".trs-mini-card__band{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b}",
       ".trs-mini-card__name{font-size:14px;font-weight:800;color:#0f172a;min-width:0;overflow-wrap:break-word}",
       ".trs-mini-card__when{font-size:12px;font-weight:600;color:#475569;min-width:0;overflow-wrap:break-word}",
@@ -2204,6 +2207,7 @@
     var wire = global.portalWireFieldSuggest;
 
     function onParticipantChange() {
+      state.sourceSeat = null;
       refreshTermSlotAutofill(root);
     }
 
