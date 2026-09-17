@@ -38,6 +38,8 @@
   var state = {
     hoursDay: "Monday",
     hoursService: "all",
+    /** all | staff key (e.g. victor, javier) — mute cells that are not this instructor */
+    hoursInstructor: "all",
     /** term = all Autumn dates for that weekday; week = one Mon-Sun strip */
     hoursRange: "term",
     hoursWeekStart: null,
@@ -111,6 +113,37 @@
     { id: "pool", label: "Afterschool & weekends" },
     { id: "bespoke", label: "Bespoke" },
   ];
+
+  /** Canonical instructor chips (aliases collapse: Javi→Javier, Emanuel→Emmanuel, Yusuf→Youssef). */
+  var HOURS_INSTRUCTOR_FILTERS = [
+    { id: "all", label: "All instructors" },
+    { id: "alex", label: "Alex" },
+    { id: "aurora", label: "Aurora" },
+    { id: "berta", label: "Berta" },
+    { id: "carlos", label: "Carlos" },
+    { id: "emmanuel", label: "Emmanuel" },
+    { id: "fadi", label: "Fadi" },
+    { id: "godsway", label: "Godsway" },
+    { id: "javier", label: "Javier" },
+    { id: "joelle", label: "Joelle" },
+    { id: "john", label: "John" },
+    { id: "michelle", label: "Michelle" },
+    { id: "patrick", label: "Patrick" },
+    { id: "raul", label: "Raul" },
+    { id: "roberto", label: "Roberto" },
+    { id: "simon", label: "Simon" },
+    { id: "victor", label: "Victor" },
+    { id: "youssef", label: "Youssef" },
+  ];
+
+  var INSTRUCTOR_ALIAS_KEYS = {
+    javi: "javier",
+    javier: "javier",
+    emanuel: "emmanuel",
+    emmanuel: "emmanuel",
+    yusuf: "youssef",
+    youssef: "youssef",
+  };
 
   var WEEKDAYS = [
     "Monday",
@@ -651,6 +684,18 @@
     return String(name || "")
       .toLowerCase()
       .replace(/[^a-z]/g, "");
+  }
+
+  function instructorFilterKey(name) {
+    var k = staffNameKey(name);
+    return INSTRUCTOR_ALIAS_KEYS[k] || k;
+  }
+
+  function cellMatchesInstructorFilter(cell, instructorFilter) {
+    if (!instructorFilter || instructorFilter === "all") return true;
+    var parts = splitStaffHoursNameTime((cell && cell.text) || "");
+    if (!parts.name) return false;
+    return instructorFilterKey(parts.name) === instructorFilterKey(instructorFilter);
   }
 
   function isHiddenFromAutumnHours(name) {
@@ -1801,8 +1846,26 @@
   }
 
   function serviceSubtabs(active, attr) {
-    var html = '<div class="asr-subtabs asr-subtabs--service" role="tablist">';
+    var html = '<div class="asr-subtabs asr-subtabs--service" role="tablist" aria-label="Service filter">';
     HOURS_SERVICE_FILTERS.forEach(function (f) {
+      html +=
+        '<button type="button" class="btn btn--ghost btn--sm' +
+        (f.id === active ? " is-active" : "") +
+        '" ' +
+        attr +
+        '="' +
+        esc(f.id) +
+        '">' +
+        esc(f.label) +
+        "</button>";
+    });
+    return html + "</div>";
+  }
+
+  function instructorSubtabs(active, attr) {
+    var html =
+      '<div class="asr-subtabs asr-subtabs--instructor" role="tablist" aria-label="Instructor filter" style="flex-wrap:wrap;max-width:100%;min-width:0">';
+    HOURS_INSTRUCTOR_FILTERS.forEach(function (f) {
       html +=
         '<button type="button" class="btn btn--ghost btn--sm' +
         (f.id === active ? " is-active" : "") +
@@ -2198,23 +2261,29 @@
     return expandSundayAquaticIntoMulti(newGroups, newDates, newServices, dayName);
   }
 
-  function renderHoursTableHtml(groups, dates, blockTitle, serviceFilter, dayName) {
+  function renderHoursTableHtml(groups, dates, blockTitle, serviceFilter, dayName, instructorFilter) {
     if (!groups.length) {
       return '<p class="muted">No columns.</p>';
     }
     var sf = serviceFilter || "all";
+    var ifr = instructorFilter || "all";
     var reordered = reorderColumnsByService(groups, dates, dayName);
     groups = reordered.groups;
     dates = reordered.dates;
     var columnServices = reordered.columnServices;
     var filteredDates = (dates || []).filter(function (dr) {
-      if (sf === "all") return true;
       return (dr.cells || []).some(function (cell) {
-        return cellMatchesServiceFilter(cell, sf);
+        if (sf !== "all" && !cellMatchesServiceFilter(cell, sf)) return false;
+        if (ifr !== "all" && !cellMatchesInstructorFilter(cell, ifr)) return false;
+        return true;
       });
     });
     if (!filteredDates.length) {
-      return '<p class="muted">No assignments for this service on the selected day.</p>';
+      var emptyMsg =
+        ifr !== "all"
+          ? "No shifts for this instructor on the selected day / filters."
+          : "No assignments for this service on the selected day.";
+      return '<p class="muted">' + emptyMsg + "</p>";
     }
     var labels = flattenHoursVenueLabels(groups);
     var svcSegs = serviceHeaderSegments(groups, columnServices);
@@ -2327,7 +2396,10 @@
             ? " asr-sf-svc--" + esc(svcSlug)
             : "") +
           (svcSlug && prevSlug && svcSlug !== prevSlug ? " asr-svc-start" : "");
-        if (sf !== "all" && !cellMatchesServiceFilter(cell, sf)) {
+        var muted =
+          (sf !== "all" && !cellMatchesServiceFilter(cell, sf)) ||
+          (ifr !== "all" && !cellMatchesInstructorFilter(cell, ifr));
+        if (muted) {
           html += '<td class="' + tdCls + ' asr-cell--muted-filter">—</td>';
           return;
         }
@@ -2354,7 +2426,8 @@
           block.dates || [],
           "",
           state.hoursService,
-          day
+          day,
+          state.hoursInstructor
         );
       });
       return html;
@@ -2364,7 +2437,8 @@
       sheet.dates || [],
       "",
       state.hoursService,
-      day
+      day,
+      state.hoursInstructor
     );
   }
 
@@ -2375,12 +2449,26 @@
     }
     ensureHoursWeekStart();
     var day = state.hoursDay;
+    var instrLabel = "";
+    if (state.hoursInstructor && state.hoursInstructor !== "all") {
+      for (var ii = 0; ii < HOURS_INSTRUCTOR_FILTERS.length; ii++) {
+        if (HOURS_INSTRUCTOR_FILTERS[ii].id === state.hoursInstructor) {
+          instrLabel = HOURS_INSTRUCTOR_FILTERS[ii].label;
+          break;
+        }
+      }
+      if (!instrLabel) instrLabel = state.hoursInstructor;
+    }
     var rangeHint =
       state.hoursRange === "term"
         ? "Showing <strong>every " +
           (day === "all" ? "weekday" : day) +
-          "</strong> in Autumn Term 2026 (1 Sep - 17 Dec). <strong>Click a cell</strong> to pick staff, shift and paid hours, then <strong>Save staff hours</strong>."
-        : "Showing <strong>one week</strong> only. Click a cell to pick staff, shift and paid hours. Switch to Whole term to see all Mondays (etc.).";
+          "</strong> in Autumn Term 2026 (1 Sep - 17 Dec)" +
+          (instrLabel ? " for <strong>" + esc(instrLabel) + "</strong>" : "") +
+          ". <strong>Click a cell</strong> to pick staff, shift and paid hours, then <strong>Save staff hours</strong>."
+        : "Showing <strong>one week</strong> only" +
+          (instrLabel ? " for <strong>" + esc(instrLabel) + "</strong>" : "") +
+          ". Click a cell to pick staff, shift and paid hours. Switch to Whole term to see all Mondays (etc.).";
     var html =
       '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">' +
       rangeHint +
@@ -2393,7 +2481,8 @@
         allLabel: "All weekdays",
         allValue: "all",
       }) +
-      serviceSubtabs(state.hoursService, "data-asr-hours-service");
+      serviceSubtabs(state.hoursService, "data-asr-hours-service") +
+      instructorSubtabs(state.hoursInstructor, "data-asr-hours-instructor");
     var gridHtml = "";
     if (day === "all") {
       WEEKDAYS.forEach(function (wd) {
@@ -2616,6 +2705,12 @@
     root.querySelectorAll("[data-asr-hours-service]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         state.hoursService = btn.getAttribute("data-asr-hours-service") || "all";
+        refreshPanel();
+      });
+    });
+    root.querySelectorAll("[data-asr-hours-instructor]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.hoursInstructor = btn.getAttribute("data-asr-hours-instructor") || "all";
         refreshPanel();
       });
     });
