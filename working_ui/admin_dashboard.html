@@ -454,7 +454,6 @@
       { id:'portal_staff_whatsapp', label:'CS WhatsApp' },
       { id:'portal_parent_broadcast', label:'Family broadcast' },
       { id:'clients', label:'CLIENT' },
-      { id:'portal_nav_client_services', label:'Client services review', externalUrl:'/client_services_review.html', skipBottomNav:true },
       { id:'c4k_payments', label:'Programme payments (operations)', hubLabel:'Ops payments' },
       { id:'reenrol_payments', label:'Finance', hubLabel:'Finance' },
       { id:'commissioning_terms', label:'LA / Commissioning Terms', hubLabel:'LA Terms' },
@@ -514,7 +513,7 @@
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','__h:Sessions','c4k_sessions','session_disruptions','operations_admin','operator','office_calendar','scheduling','__h:People buckets','leads','portal_participant_documents','receptionist'] },
       { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','__h:Orders','orders_all'] },
-      { id:'g_clients', label:'Clients & families', children:['clients','c4k_waitlist','portal_nav_client_services','c4k_reviews','c4k_reports','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
+      { id:'g_clients', label:'Clients & families', children:['clients','c4k_waitlist','c4k_reviews','c4k_reports','__h:Communications','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','onboarding','roster_spreadsheets','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews'] },
       { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Day Centre','day_centre_documents','__h:Forms','portal_climbing_registrations','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance', children:['reenrol_payments','absents_refunds','commissioning_terms'] },
@@ -26521,7 +26520,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'CLIENT list, waiting list, reviews and family communications.',
         preview:['CLIENT','WAITING','Reviews','Family messages'],
         status:'Use this area for people and family follow-up.',
-        primary:['clients','c4k_waitlist','c4k_reviews','portal_nav_client_services'],
+        primary:['clients','c4k_waitlist','c4k_reviews'],
         secondary:['c4k_reports','comms_ops','portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast']
       },
       {
