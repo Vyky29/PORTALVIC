@@ -338,6 +338,17 @@
         }).then(function (res) {
           return res.json().then(function (j) {
             if (!res.ok || !j.ok) throw new Error("messages_load_failed");
+            if (!messagesBelongToSignedInFamily(j)) {
+              console.warn("[parent-portal] messages session mismatch — clearing session");
+              clearSession();
+              setStep("identify");
+              showNotice(
+                $("ppNotice"),
+                "error",
+                "That login does not match this child’s family (another parent account may still be open on this computer). Sign in again with the correct parent.",
+              );
+              throw new Error("messages_session_mismatch");
+            }
             if (opts.markRead || j.unread_messages_count === 0) {
               clearMessagingCounts();
             } else {
@@ -891,13 +902,44 @@
     state.session.token = "";
     state.session.expiresAt = 0;
     state.home = null;
+    state.participant = { contactId: "", data: null, loaded: {} };
     clearMessagingCounts();
     try {
       localStorage.removeItem(SESSION_KEY);
+      /* Avoid opening child A from family 1 after signing in as family 2 on the same browser. */
+      localStorage.removeItem("pp_last_contact_id");
     } catch (_e) {}
     if (typeof global.portalFamilyWebPushClear === "function") {
       global.portalFamilyWebPushClear();
     }
+  }
+
+  function parentEmailsFromHome() {
+    var out = Object.create(null);
+    var kids = (state.home && state.home.children) || [];
+    kids.forEach(function (c) {
+      var e = String((c && c.email) || "")
+        .trim()
+        .toLowerCase();
+      if (e) out[e] = true;
+    });
+    var pe = String((state.home && state.home.parent && state.home.parent.email) || "")
+      .trim()
+      .toLowerCase();
+    if (pe) out[pe] = true;
+    return out;
+  }
+
+  /** Messages follow the signed-in parent session — not the child photo on screen. */
+  function messagesBelongToSignedInFamily(payload) {
+    var got = String((payload && payload.parent && payload.parent.email) || "")
+      .trim()
+      .toLowerCase();
+    if (!got) return true;
+    var allowed = parentEmailsFromHome();
+    var keys = Object.keys(allowed);
+    if (!keys.length) return true;
+    return !!allowed[got];
   }
 
   function familyViewFromPortalOpen(portalOpen) {
