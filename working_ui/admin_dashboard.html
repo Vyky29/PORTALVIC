@@ -15707,6 +15707,68 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return res;
     }
+    async function schedNotifyMakeupConfirmed(client, slot, overrideId, payload, row){
+      var pl = payload || {};
+      var display =
+        String(pl.to_client_name || pl.replacement_client_name || pl.replacement_name || '').trim() ||
+        String(slot.clientDisplay || '').trim();
+      var repSlug = String(pl.to_client_id || pl.replacement_client_id || '').trim();
+      var pax = null;
+      if(repSlug){
+        try{
+          var byRep = await client
+            .from('portal_participants')
+            .select('contact_id, display_name, parent_person_id')
+            .eq('contact_id', repSlug)
+            .maybeSingle();
+          if(byRep && byRep.data) pax = byRep.data;
+        }catch(_r){}
+      }
+      if(!pax){
+        var fakeSlot = Object.assign({}, slot, {
+          clientSlug: repSlug || slot.clientSlug,
+          clientDisplay: display || slot.clientDisplay
+        });
+        pax = await schedResolveParticipantForDecisionQueue(client, fakeSlot);
+      }
+      if(pax && pax.display_name && !display) display = pax.display_name;
+      var instructorName =
+        String(pl.covering_staff_name || '').trim() ||
+        String(slot.staffName || '').trim();
+      var staffKey =
+        String(row && row.anchor_staff_id || slot.staffRosterId || pl.covering_staff_id || '').trim();
+      var body = {
+        contact_id: (pax && pax.contact_id) || repSlug || '',
+        parent_person_id: (pax && pax.parent_person_id) || '',
+        participant_display: display,
+        venue: String(slot.venue || (row && row.anchor_venue) || '').trim(),
+        session_date: String(slot.sessionDate || (row && row.session_date) || '').slice(0, 10),
+        session_time: String(slot.whenLabel || slot.anchorTimeLabel || '').trim(),
+        service_label: schedDecisionQueueServiceLabel(slot),
+        instructor_name: instructorName,
+        instructor_staff_key: staffKey,
+        anchor_staff_id: staffKey,
+        override_id: overrideId || null,
+        source: 'schedule_covers'
+      };
+      var res = await adminEdgePost('portal-admin-makeup-confirmed-notify', body);
+      if(res && res.error){
+        console.warn('[portal] makeup confirmed notify', res.error, res.message || '');
+        if(sched) sched.lastMsg = String(sched.lastMsg || 'Override saved.') + ' Makeup notify failed.';
+        return res;
+      }
+      var n = res && res.notify;
+      var bits = [];
+      if(n && n.parent && n.parent.ok) bits.push('parent notified');
+      else if(n && n.parent && n.parent.skipped) bits.push('parent notify skipped');
+      if(n && n.instructor && n.instructor.ok) bits.push('instructor notified');
+      else if(n && n.instructor && n.instructor.skipped) bits.push('instructor notify skipped');
+      if(sched){
+        sched.lastMsg = String(sched.lastMsg || 'Override saved.') +
+          (bits.length ? ' · ' + bits.join(' · ') : ' · makeup notify sent');
+      }
+      return res;
+    }
     async function saveSchedOverrideFromDrawer(){
       var msgEl = $('schedFormErr');
       if(msgEl) msgEl.textContent = '';
@@ -15929,6 +15991,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           await schedEnqueueAbsentDecisionQueue(client, slot, ins0.id, reason);
         }catch(_enqA){
           console.warn('[portal] absent decision queue enqueue failed', _enqA);
+        }
+      }
+      /* Confirmed MakeUp (not trial): auto-notify parent + instructor. */
+      if(ovType === 'client_replace_in_slot' && !isTrial){
+        try{
+          await schedNotifyMakeupConfirmed(client, slot, ins0.id, payload, row);
+        }catch(_mkN){
+          console.warn('[portal] makeup confirmed notify failed', _mkN);
         }
       }
       var evRow = {
