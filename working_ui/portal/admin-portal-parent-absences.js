@@ -416,7 +416,7 @@
         '">Approve</button>' +
         '<button type="button" class="btn btn--sm btn--ghost" data-absence-reject="' +
         esc(r.id) +
-        '">Reject</button>' +
+        '" title="Close without credit/refund/makeup — no parent message">Close</button>' +
         '</div>';
     } else if (canGrantMakeup) {
       actions =
@@ -451,6 +451,9 @@
       '</td>' +
       '<td>' +
       statusChip(r.status) +
+      (r.outcome
+        ? ' <span class="chip chip--ok" style="font-size:10px">' + esc(String(r.outcome)) + '</span>'
+        : '') +
       '</td>' +
       '<td class="muted" style="white-space:nowrap">' +
       esc(formatDate(r.proof_deadline)) +
@@ -467,12 +470,12 @@
 
   function tableHtml(reports) {
     if (!reports.length) {
-      return '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">No reports in this filter.</p>';
+      return '<p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">No reports in this filter. Try <strong>Decided</strong> or <strong>All since 1 Sep</strong>.</p>';
     }
     return (
       '<div class="card" style="margin-top:0"><div class="card-pad" style="overflow:auto;padding:0">' +
       '<table class="tbl tbl--center tbl--dense"><thead><tr>' +
-      '<th>Participant</th><th>Session</th><th>Service</th><th>Note</th><th>Status</th><th>Proof deadline</th><th>Proof</th><th>Actions</th>' +
+      '<th>Participant</th><th>Session</th><th>Service</th><th>Note</th><th>Status / outcome</th><th>Proof deadline</th><th>Proof</th><th>Actions</th>' +
       '</tr></thead><tbody>' +
       reports.map(rowHtml).join('') +
       '</tbody></table></div></div>'
@@ -593,15 +596,23 @@
     hostEl.querySelectorAll('[data-absence-reject]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var id = btn.getAttribute('data-absence-reject');
-        var notes = global.prompt('Reason for rejection (shown to parent):', 'Proof not accepted') || '';
+        var notes =
+          global.prompt(
+            'Internal note only — does NOT email / WhatsApp the parent. Leave blank or cancel to abort:',
+            'Closed — already recorded as absent / no credit'
+          ) || '';
+        if (!String(notes).trim()) {
+          cfg.toast('Close cancelled', 'info');
+          return;
+        }
         btn.disabled = true;
         void decide(id, 'reject', 'none', notes).then(function (r) {
           if (r.error) {
-            cfg.toast(r.error || 'Reject failed', 'error');
+            cfg.toast(r.error || 'Close failed', 'error');
             btn.disabled = false;
             return;
           }
-          cfg.toast('Rejected', 'ok');
+          cfg.toast('Closed (no parent message)', 'ok');
           void renderHost(global.document.getElementById('portalParentAbsenceHost'));
         });
       });
@@ -674,12 +685,12 @@
       '<div class="card-h"><h3>Absents &amp; cancellations — decide</h3>' +
       '<span class="chip chip--pend" id="portalParentAbsenceMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">All Schedule absents and admin cancels since <strong>1 Sep 2026</strong>, plus parent portal proofs. Approve with credit, refund, makeup or none. Makeup offers and family ledger sit below after you decide.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Pick an outcome in the dropdown, then press <strong>Approve</strong> (select alone does nothing). <strong>None + Approve</strong> = file closed, already absent on the board, <em>no</em> parent message. <strong>Credit / refund</strong> = ledger + parent aviso. <strong>Close</strong> = same as none for office (no email). See <strong>Decided</strong> for everything after outcome.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-absence-filter="needs_decision">Open (decide)</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="pending_review">Pending review</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="missed">Missed</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="excused">Decided</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="decided">Decided</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="excused">Excused only</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="rejected">Closed / rejected</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All since 1 Sep</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentAbsenceRefreshEmbed">Refresh</button>' +
       '<button type="button" class="btn btn--primary btn--sm" id="portalParentAbsenceAddEmbed">Add absent</button>' +

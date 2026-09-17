@@ -92,6 +92,8 @@ Deno.serve(async (req) => {
 
   if (statusFilter === "needs_decision" || statusFilter === "open" || !statusFilter) {
     query = query.in("status", ["pending_review", "missed"]);
+  } else if (statusFilter === "decided") {
+    query = query.in("status", ["excused", "rejected", "expired", "noted"]);
   } else if (statusFilter && statusFilter !== "all") {
     query = query.eq("status", statusFilter);
   }

@@ -150,10 +150,11 @@ Deno.serve(async (req) => {
 
   const caseKind = clean(report.case_kind, 20).toLowerCase() || "absence";
   const isCancellationCase = caseKind === "cancellation";
-
-  // Absences need proof. Cancellations (club/admin) land in the same queue but
-  // can be decided without medical proof.
-  if (action === "approve" && !report.proof_storage_path && !isCancellationCase) {
+  const fromSchedule = !!clean(report.schedule_override_id, 60);
+  // Parent proof absences need a file. Schedule / office / cancellation rows
+  // are already on the board — office may decide credit/refund/makeup/none without proof.
+  const mayDecideWithoutProof = isCancellationCase || fromSchedule;
+  if (action === "approve" && !report.proof_storage_path && !mayDecideWithoutProof) {
     return portalAdminJson(400, {
       ok: false,
       error: "proof_required",
