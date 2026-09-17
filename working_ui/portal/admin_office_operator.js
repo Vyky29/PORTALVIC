@@ -235,6 +235,15 @@
     if (j.tool === "list_pending_mandates") {
       var script = j.phone_script || {};
       var steps = Array.isArray(script.steps) ? script.steps : [];
+      var demoHtml = "";
+      if (typeof global.PortalOfficeHelpRenderDemos === "function") {
+        demoHtml = global.PortalOfficeHelpRenderDemos([
+          {
+            demo: "parent_gc_setup",
+            caption: "Parent portal invoice card — blinking Set up Direct Payment.",
+          },
+        ]);
+      }
       return (
         '<p class="oh-bot__title">Direct Payment — mandate not authorised</p>' +
         '<p class="oh-bot__sum">' +
@@ -242,6 +251,7 @@
         " famil" +
         (j.count === 1 ? "y" : "ies") +
         " with open GoCardless invoices and no live mandate.</p>" +
+        demoHtml +
         renderFamilies(j.families) +
         (steps.length
           ? '<div class="oh-tips" style="margin-top:12px"><h3>' +
@@ -263,12 +273,22 @@
     if (j.tool === "lookup_family_access") {
       if (j.confirmed && j.family) {
         var f = j.family;
+        var pinDemo = "";
+        if (typeof global.PortalOfficeHelpRenderDemos === "function") {
+          pinDemo = global.PortalOfficeHelpRenderDemos([
+            {
+              demo: "pin_confirm",
+              caption: "PIN only shows after Confirm reveal — copy into WhatsApp yourself.",
+            },
+          ]);
+        }
         return (
           '<p class="oh-bot__title">Parent portal access (revealed)</p>' +
           '<p class="oh-bot__sum">' +
           esc(f.parent || "") +
           (f.children && f.children.length ? " · " + esc(f.children.join(", ")) : "") +
           "</p>" +
+          pinDemo +
           '<p class="oh-bot__where"><strong>URL:</strong> ' +
           esc(f.portal_url || "https://www.clubsensational.org/parent") +
           "<br><strong>Login names:</strong> " +
@@ -282,11 +302,21 @@
           '<p class="oh-bot__miss">Copy into WhatsApp yourself — operator does not send messages.</p>'
         );
       }
+      var matchDemo = "";
+      if (typeof global.PortalOfficeHelpRenderDemos === "function") {
+        matchDemo = global.PortalOfficeHelpRenderDemos([
+          {
+            demo: "pin_confirm",
+            caption: "Tap Confirm reveal PIN on the matching family below.",
+          },
+        ]);
+      }
       return (
         '<p class="oh-bot__title">Parent portal access</p>' +
         '<p class="oh-bot__sum">' +
         esc(j.confirm_message || "Confirm to reveal PIN.") +
         "</p>" +
+        matchDemo +
         renderMatches(j.matches)
       );
     }

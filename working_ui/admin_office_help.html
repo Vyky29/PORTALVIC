@@ -160,6 +160,103 @@
       background:#eef6fc;border:1px solid rgba(45,132,179,.28);
       font-size:12px;line-height:1.4;color:var(--oh-navy);overflow-wrap:break-word;
     }
+    .oh-demos{margin:16px 0 0;display:flex;flex-direction:column;gap:12px;min-width:0}
+    .oh-demo{
+      border:1px solid var(--oh-line);border-radius:12px;background:#f8fafc;
+      padding:12px;min-width:0;overflow:hidden;
+    }
+    .oh-demo__tag{
+      margin:0 0 8px;font-size:10px;font-weight:800;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--oh-blue);
+    }
+    .oh-demo__cap{
+      margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--oh-muted);
+      overflow-wrap:break-word;
+    }
+    .oh-mock{pointer-events:none;user-select:none;min-width:0}
+    .oh-mock--ops{
+      border-radius:10px;border:1px solid #d7e4ee;background:#fff;padding:10px;min-width:0;
+    }
+    .oh-mock__row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+    .oh-mock__title{font-size:14px;font-weight:800;color:var(--oh-navy)}
+    .oh-mock__help{
+      font-size:11px;font-weight:800;color:var(--oh-blue);padding:4px 8px;
+      border-radius:8px;border:1px solid #9fc6db;background:#eaf5fb;
+    }
+    .oh-mock__help.is-target,.oh-mock .is-target{
+      outline:2px solid var(--oh-gold);outline-offset:2px;
+      box-shadow:0 0 0 4px rgba(244,183,64,.25);
+    }
+    .oh-mock__glance{
+      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px;
+    }
+    .oh-mock__g{
+      padding:8px;border-radius:8px;border:1px solid var(--oh-line);background:#f4f7fa;
+      font-size:10px;font-weight:700;color:var(--oh-muted);min-width:0;
+    }
+    .oh-mock__g strong{display:block;font-size:13px;color:var(--oh-navy);margin-top:2px}
+    .oh-mock__cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}
+    .oh-mock__card{
+      padding:8px;border-radius:8px;border:1px solid var(--oh-line);background:#fff;
+      font-size:11px;font-weight:700;color:var(--oh-navy);min-width:0;overflow-wrap:break-word;
+    }
+    .oh-mock__card span{display:block;font-weight:600;color:var(--oh-muted);font-size:10px;margin-top:2px}
+    .oh-mock--board .oh-mock__seat{
+      display:flex;justify-content:space-between;gap:8px;padding:8px 10px;margin-top:6px;
+      border-radius:8px;border:1px solid var(--oh-line);background:#fff;font-size:12px;min-width:0;
+    }
+    .oh-mock__seat{
+      display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;margin-top:6px;
+      border-radius:8px;border:1px solid var(--oh-line);background:#fff;font-size:12px;min-width:0;
+    }
+    .oh-mock--board .oh-mock__seat strong,.oh-mock__seat strong{overflow-wrap:break-word;min-width:0}
+    .oh-mock--board .oh-mock__seat em,.oh-mock__seat em{font-style:normal;font-size:10px;font-weight:800;color:#b45309}
+    .oh-mock--sched{
+      display:grid;gap:8px;
+    }
+    .oh-mock__pill{
+      display:inline-block;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:800;
+      background:#eaf5fb;color:var(--oh-navy);margin-right:4px;margin-bottom:4px;
+    }
+    .oh-mock__pill--hot{background:#fff1f2;color:#be123c}
+    .oh-mock--parent{
+      border-radius:12px;border:1px solid #d7e4ee;background:#fff;padding:12px;min-width:0;
+    }
+    .oh-mock__inv-title{font-size:13px;font-weight:800;margin:0 0 4px}
+    .oh-mock__inv-meta{font-size:11px;color:var(--oh-muted);margin:0 0 10px}
+    .oh-mock__gc-btn{
+      display:block;width:100%;text-align:center;padding:11px 12px;border-radius:10px;
+      border:0;background:#dc2626;color:#fff;font-size:13px;font-weight:800;
+      animation:ohPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes ohPulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.45)}
+      50%{box-shadow:0 0 0 6px rgba(220,38,38,.08)}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .oh-mock__gc-btn{animation:none}
+    }
+    .oh-mock--ask{
+      border-radius:10px;border:1px solid rgba(45,132,179,.28);background:#fff;padding:10px;min-width:0;
+    }
+    .oh-mock__ask-bar{
+      display:flex;gap:6px;margin-top:8px;min-width:0;
+    }
+    .oh-mock__ask-bar span{
+      flex:1;min-width:0;padding:8px;border-radius:8px;border:1px solid var(--oh-line);
+      background:#f8fafc;font-size:11px;color:var(--oh-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .oh-mock__ask-bar b{
+      flex:0 0 auto;padding:8px 10px;border-radius:8px;background:var(--oh-navy);color:#fff;
+      font-size:11px;font-weight:800;
+    }
+    .oh-mock--pin{
+      border-radius:10px;border:1px solid var(--oh-line);background:#fff;padding:10px;min-width:0;
+    }
+    .oh-mock__confirm{
+      margin-top:8px;display:inline-block;padding:8px 12px;border-radius:8px;background:var(--oh-blue);
+      color:#fff;font-size:12px;font-weight:800;
+    }
     .oh-crumb{
       display:flex;flex-wrap:wrap;gap:6px;align-items:center;
       margin:0 0 14px;font-size:13px;color:var(--oh-muted);min-width:0;
@@ -288,10 +385,10 @@
     <p class="oh-foot">PORTALVIC · Office help · v<span id="ohVer">-</span></p>
   </div>
   <script src="/portal/portal-admin-supabase-bridge.js?v=20260917-op1"></script>
-  <script src="/portal/admin_office_operator.js?v=20260917-op1"></script>
+  <script src="/portal/admin_office_operator.js?v=20260917-op2"></script>
   <script>
 (function () {
-  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v4";
+  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v5";
   var MIN_SCORE = 5;
   var data = null;
   var view = { mode: "cats", catId: "", lessonId: "" };
@@ -322,6 +419,119 @@
       .replace(/</g, "&lt;")
       .replace(/"/g, "&quot;");
   }
+
+  function buildDemo(key) {
+    var k = String(key || "").trim();
+    if (k === "ops_hub") {
+      return (
+        '<div class="oh-mock oh-mock--ops" aria-hidden="true">' +
+        '<div class="oh-mock__row">' +
+        '<span class="oh-mock__title">Operations Hub</span>' +
+        '<span class="oh-mock__help is-target">Office help</span></div>' +
+        '<div class="oh-mock__glance">' +
+        '<div class="oh-mock__g">Alerts<strong>3</strong></div>' +
+        '<div class="oh-mock__g">Calendar<strong>Notes</strong></div>' +
+        '<div class="oh-mock__g">Pending<strong>2</strong></div></div>' +
+        '<div class="oh-mock__cards">' +
+        '<div class="oh-mock__card">Sessions overview<span>Day board</span></div>' +
+        '<div class="oh-mock__card">Schedule &amp; Covers<span>One day</span></div>' +
+        '<div class="oh-mock__card">Finance<span>Invoices</span></div>' +
+        '<div class="oh-mock__card">H&amp;R<span>Timetable</span></div></div></div>'
+      );
+    }
+    if (k === "sessions_overview") {
+      return (
+        '<div class="oh-mock oh-mock--ops oh-mock--board" aria-hidden="true">' +
+        '<div class="oh-mock__row"><span class="oh-mock__title">Sessions Overview</span>' +
+        '<span class="oh-mock__pill">Tue 16 Sep</span></div>' +
+        '<div class="oh-mock__seat"><strong>Javier · Acton Aquatic 5.30</strong><em>COVER NEEDED</em></div>' +
+        '<div class="oh-mock__seat is-target"><strong>Berta · Hub Multi 4.00</strong><span>Booked</span></div>' +
+        '<div class="oh-mock__seat"><strong>Open seat · Community 5.00</strong><span>No participant</span></div></div>'
+      );
+    }
+    if (k === "schedule_covers") {
+      return (
+        '<div class="oh-mock oh-mock--ops oh-mock--sched" aria-hidden="true">' +
+        '<div class="oh-mock__title">Schedule &amp; Covers</div>' +
+        '<div><span class="oh-mock__pill">Date</span><span class="oh-mock__pill">Band</span></div>' +
+        '<div>' +
+        '<span class="oh-mock__pill">Cancel slot</span>' +
+        '<span class="oh-mock__pill is-target">Assign cover</span>' +
+        '<span class="oh-mock__pill">Client absence</span>' +
+        '<span class="oh-mock__pill">Replace</span></div>' +
+        '<div class="oh-mock__seat" style="margin:0"><strong>This date only</strong><span>Not rest of term</span></div></div>'
+      );
+    }
+    if (k === "parent_gc_setup") {
+      return (
+        '<div class="oh-mock oh-mock--parent" aria-hidden="true">' +
+        '<p class="oh-mock__inv-title">Parent portal · Invoices</p>' +
+        '<p class="oh-mock__inv-meta">Autumn Direct Payment · amount due</p>' +
+        '<span class="oh-mock__gc-btn is-target">Set up Direct Payment</span></div>'
+      );
+    }
+    if (k === "office_ask") {
+      return (
+        '<div class="oh-mock oh-mock--ask" aria-hidden="true">' +
+        '<div class="oh-demo__tag" style="margin:0">Ask Office help / Operator</div>' +
+        '<div class="oh-mock__ask-bar">' +
+        '<span>Who has not authorised Direct Payment?</span>' +
+        '<b class="is-target">Ask</b></div></div>'
+      );
+    }
+    if (k === "pin_confirm") {
+      return (
+        '<div class="oh-mock oh-mock--pin" aria-hidden="true">' +
+        '<div class="oh-mock__title">Parent · Child name</div>' +
+        '<div class="oh-mock__inv-meta">email · mobile · PIN hidden</div>' +
+        '<span class="oh-mock__confirm is-target">Confirm reveal PIN</span></div>'
+      );
+    }
+    if (k === "finance") {
+      return (
+        '<div class="oh-mock oh-mock--ops" aria-hidden="true">' +
+        '<div class="oh-mock__title">Finance</div>' +
+        '<div class="oh-mock__cards" style="margin-top:8px">' +
+        '<div class="oh-mock__card is-target">Create invoice<span>Family / term</span></div>' +
+        '<div class="oh-mock__card">Mark paid<span>Bank / Stripe</span></div>' +
+        '<div class="oh-mock__card">Refunds &amp; credits<span>Absents</span></div>' +
+        '<div class="oh-mock__card">Direct Payments<span>GC stream</span></div></div></div>'
+      );
+    }
+    if (k === "pending_strip") {
+      return (
+        '<div class="oh-mock oh-mock--ops" aria-hidden="true">' +
+        '<div class="oh-mock__glance">' +
+        '<div class="oh-mock__g is-target">Alerts<strong>Inbox</strong></div>' +
+        '<div class="oh-mock__g">Calendar<strong>Notes</strong></div>' +
+        '<div class="oh-mock__g is-target">Pending<strong>Late / absents</strong></div></div></div>'
+      );
+    }
+    return "";
+  }
+
+  function renderDemos(list) {
+    if (!Array.isArray(list) || !list.length) return "";
+    var inner = list
+      .map(function (d) {
+        var key = String((d && d.demo) || "").trim();
+        var html = buildDemo(key);
+        if (!html) return "";
+        var cap = String((d && d.caption) || "").trim();
+        return (
+          '<figure class="oh-demo">' +
+          '<p class="oh-demo__tag">Where it looks</p>' +
+          html +
+          (cap ? '<figcaption class="oh-demo__cap">' + esc(cap) + "</figcaption>" : "") +
+          "</figure>"
+        );
+      })
+      .join("");
+    return inner ? '<div class="oh-demos">' + inner + "</div>" : "";
+  }
+
+  window.PortalOfficeHelpBuildDemo = buildDemo;
+  window.PortalOfficeHelpRenderDemos = renderDemos;
 
   function normalize(text) {
     return String(text || "")
@@ -518,6 +728,7 @@
         (les.where
           ? '<p class="oh-bot__where"><strong>Where:</strong> ' + esc(les.where) + "</p>"
           : "") +
+        renderDemos(les.demos) +
         '<ol class="oh-bot__steps">' +
         steps +
         "</ol>" +
@@ -728,6 +939,7 @@
       (les.where
         ? '<p class="oh-where"><strong>Where:</strong> ' + esc(les.where) + "</p>"
         : "") +
+      renderDemos(les.demos) +
       '<ol class="oh-steps">' +
       steps +
       "</ol>" +

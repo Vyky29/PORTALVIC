@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-17-v4",
+  "version": "2026-09-17-v5",
   "title": "Office help guide",
-  "subtitle": "Ask the Operator or browse categories. Same truth as the admin portal.",
+  "subtitle": "Ask the Operator or browse categories. Lessons include visual replicas of where to tap.",
   "categories": [
     {
       "id": "day_ops",
@@ -23,6 +23,20 @@
             "que puede el operator",
             "phase 1"
           ],
+          "demos": [
+            {
+              "demo": "ops_hub",
+              "caption": "Ops Hub → Office help (gold ring) opens this guide."
+            },
+            {
+              "demo": "office_ask",
+              "caption": "Type at the top of Office help — Operator tools run when the question matches."
+            },
+            {
+              "demo": "pin_confirm",
+              "caption": "PIN stay hidden until Confirm reveal."
+            }
+          ],
           "steps": [
             "Stay signed in on the admin portal (same browser), then open Office help.",
             "Ask: Who has not authorised Direct Payment? — live list + phone script.",
@@ -40,6 +54,16 @@
           "title": "Sessions Overview (day look-here)",
           "summary": "Overview is the only day board to trust. Standing seats repeat; exceptions come from Schedule & Covers and day offs.",
           "where": "Operator → Day operations → Sessions overview",
+          "demos": [
+            {
+              "demo": "ops_hub",
+              "caption": "From Operations Hub open Sessions overview."
+            },
+            {
+              "demo": "sessions_overview",
+              "caption": "Day board: booked seats, open seats, COVER NEEDED chrome."
+            }
+          ],
           "steps": [
             "Open Sessions Overview and pick the day you care about.",
             "Check booked kids, open seats, covers and day-off chrome on that date only.",
@@ -56,6 +80,12 @@
           "title": "Schedule & Covers (one day)",
           "summary": "One-day exceptions: cancel a slot, assign cover, client absence, replace for that date only.",
           "where": "Operator → Schedule & Covers",
+          "demos": [
+            {
+              "demo": "schedule_covers",
+              "caption": "Pick date + band, then a one-day action (cover ring). Rest-of-term = Edit term slot."
+            }
+          ],
           "steps": [
             "Open Schedule & Covers and select the date and session band.",
             "Choose the action for that day only (cancel, cover, absence, reassign).",
@@ -88,6 +118,12 @@
           "title": "Pending actions and Alerts",
           "summary": "Ops Hub strip: late forms, absents to decide, and the alerts inbox.",
           "where": "Operations Hub (top strip) → Pending / Alerts",
+          "demos": [
+            {
+              "demo": "pending_strip",
+              "caption": "Top strip on Ops Hub — Alerts inbox and Pending queue."
+            }
+          ],
           "steps": [
             "From Operations Hub, tap Alerts for incidents, cancellations, expenses and wellbeing.",
             "Tap Pending for late feedback forms and absents / credits waiting for a decision.",
@@ -262,6 +298,16 @@
             "phone",
             "parent portal pay"
           ],
+          "demos": [
+            {
+              "demo": "parent_gc_setup",
+              "caption": "What the parent sees: blinking red Set up Direct Payment on the invoice card."
+            },
+            {
+              "demo": "office_ask",
+              "caption": "Office: ask Who has not authorised Direct Payment? for the live list."
+            }
+          ],
           "steps": [
             "Ask them to open the Parent portal: https://www.clubsensational.org/parent and sign in (PIN / email on file).",
             "Open the child / invoices / payment area for that family.",
@@ -282,6 +328,12 @@
           "summary": "Build a family invoice in Portal Finance and send the pay / view link.",
           "where": "Finance → Finance",
           "keywords": ["invoice", "create invoice", "share invoice", "finance", "pay link", "factura"],
+          "demos": [
+            {
+              "demo": "finance",
+              "caption": "Finance area — create invoice is the first card path."
+            }
+          ],
           "steps": [
             "Open Finance.",
             "Create the invoice for the family / term lines you need.",
