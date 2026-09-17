@@ -24,6 +24,9 @@ const REASON_LABELS: Record<string, string> = {
   bank_holiday: "Bank holiday",
   strike: "Strike / disruption",
   office_other: "Office note",
+  club_cancelled: "Club cancelled session",
+  pool_closed: "Pool / venue closed",
+  facility: "Facility issue",
 };
 
 const NON_MISSED = new Set([
@@ -36,6 +39,15 @@ const NON_MISSED = new Set([
   "bank_holiday",
   "strike",
   "office_other",
+]);
+
+const CANCELLATION_REASONS = new Set([
+  "club_cancelled",
+  "pool_closed",
+  "facility",
+  "instructor_cancelled",
+  "bank_holiday",
+  "strike",
 ]);
 
 function clean(v: unknown, max = 500): string {
@@ -94,6 +106,18 @@ Deno.serve(async (req) => {
   const reasonCode = clean(body.reason_code, 40).toLowerCase().replace(/\s+/g, "_");
   const reasonNote = clean(body.reason_text, 800);
   const statusOverride = clean(body.status, 20).toLowerCase();
+  let caseKind = clean(body.case_kind, 20).toLowerCase() || "absence";
+  if (caseKind !== "absence" && caseKind !== "cancellation") caseKind = "absence";
+  // Cancellation reasons force the shared decision queue (pending_review, no proof).
+  if (CANCELLATION_REASONS.has(reasonCode) && clean(body.case_kind, 20) === "cancellation") {
+    caseKind = "cancellation";
+  }
+  if (caseKind === "cancellation" && !CANCELLATION_REASONS.has(reasonCode)) {
+    // Still allow office_other as cancellation when explicitly flagged.
+    if (reasonCode !== "office_other") {
+      return portalAdminJson(400, { ok: false, error: "cancellation_reason_required" });
+    }
+  }
 
   if (!contactId) return portalAdminJson(400, { ok: false, error: "contact_id_required" });
   if (!isIsoDate(sessionDate)) {
@@ -142,20 +166,25 @@ Deno.serve(async (req) => {
   }
 
   let status = resolveStatus(reasonCode);
-  if (statusOverride === "missed" || statusOverride === "noted") {
+  if (statusOverride === "missed" || statusOverride === "noted" || statusOverride === "pending_review") {
     status = statusOverride;
+  }
+  if (caseKind === "cancellation") {
+    // Same Absents & credits queue — awaiting office credit/refund/makeup decision.
+    status = "pending_review";
   }
 
   const proofDeadline = addDaysIso(sessionDate, 14);
   const now = new Date().toISOString();
   const reasonLabel = REASON_LABELS[reasonCode];
+  const sourceLabel = caseKind === "cancellation" ? "Office cancel" : "Office phone";
   const reasonText = reasonNote
-    ? `Office phone · ${reasonLabel} — ${reasonNote}`
-    : `Office phone · ${reasonLabel}`;
+    ? `${sourceLabel} · ${reasonLabel} — ${reasonNote}`
+    : `${sourceLabel} · ${reasonLabel}`;
 
   const { data: existing } = await admin
     .from("portal_parent_absence_reports")
-    .select("id, status, proof_deadline")
+    .select("id, status, proof_deadline, case_kind")
     .eq("contact_id", contactId)
     .eq("session_date", sessionDate)
     .eq("service_label", serviceLabel)
@@ -171,7 +200,8 @@ Deno.serve(async (req) => {
 
   const payloadExtra = {
     reason_code: reasonCode,
-    source: "office_phone",
+    source: caseKind === "cancellation" ? "office_cancel" : "office_phone",
+    case_kind: caseKind,
     created_by_admin: verified.userId || null,
   };
 
@@ -179,6 +209,7 @@ Deno.serve(async (req) => {
     reason_code: reasonCode,
     reason_text: reasonText,
     status,
+    case_kind: caseKind,
     session_time: sessionTime || "",
     participant_display: participantDisplay || "",
     proof_deadline: proofDeadline,

@@ -10,6 +10,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+import { autoApplyOpenCreditToNextInvoices } from "../_shared/portal_family_credit_apply.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -146,7 +147,12 @@ Deno.serve(async (req) => {
     return portalAdminJson(409, { ok: false, error: "not_reviewable", status: report.status });
   }
 
-  if (action === "approve" && !report.proof_storage_path) {
+  const caseKind = clean(report.case_kind, 20).toLowerCase() || "absence";
+  const isCancellationCase = caseKind === "cancellation";
+
+  // Absences need proof. Cancellations (club/admin) land in the same queue but
+  // can be decided without medical proof.
+  if (action === "approve" && !report.proof_storage_path && !isCancellationCase) {
     return portalAdminJson(400, {
       ok: false,
       error: "proof_required",
@@ -215,7 +221,9 @@ Deno.serve(async (req) => {
 
   // Credit / refund → family-visible ledger row (phase 1: internal, no Stripe).
   let credit = null;
+  let credit_apply = null;
   if (action === "approve" && (outcome === "credit" || outcome === "refund")) {
+    const creditSource = isCancellationCase ? "club_cancellation" : "excused_absence";
     const { data: existingCredit } = await admin
       .from("portal_parent_family_credits")
       .select("id, kind, status, amount_gbp")
@@ -238,7 +246,7 @@ Deno.serve(async (req) => {
           service_label: updated.service_label || "",
           session_date: updated.session_date || null,
           notes: notes || null,
-          source: "excused_absence",
+          source: creditSource,
           created_by: verified.userId || null,
           updated_at: now,
         })
@@ -250,7 +258,24 @@ Deno.serve(async (req) => {
         credit = c;
       }
     }
+    // Office-issued credit: auto-apply to next INV-P (hidden OK). Parents do not need to tap Use credit.
+    if (outcome === "credit" && credit && credit.id) {
+      try {
+        credit_apply = await autoApplyOpenCreditToNextInvoices(admin, credit.id);
+        if (credit_apply?.final_credit_status) {
+          const { data: refreshed } = await admin
+            .from("portal_parent_family_credits")
+            .select("*")
+            .eq("id", credit.id)
+            .maybeSingle();
+          if (refreshed) credit = refreshed;
+        }
+      } catch (err) {
+        console.error("[portal-admin-parent-absence-decide] auto-apply", err);
+        credit_apply = { ok: false, error: "auto_apply_failed" };
+      }
+    }
   }
 
-  return portalAdminJson(200, { ok: true, report: updated, grant, credit });
+  return portalAdminJson(200, { ok: true, report: updated, grant, credit, credit_apply });
 });

@@ -210,16 +210,40 @@
     });
   }
 
-  function openCreateModal() {
+  function openCreateModal(mode) {
+    var isCancel = mode === 'cancellation';
     if (typeof cfg.openModal !== 'function') {
-      cfg.toast('Add absent modal unavailable', 'error');
+      cfg.toast('Add modal unavailable', 'error');
       return;
     }
     state.pick = null;
+    var title = isCancel ? 'Add cancelled session (office)' : 'Add absent (office phone)';
+    var intro = isCancel
+      ? 'Club / admin cancelled a booked session. Lands in the same decision queue as absents — choose credit, refund, makeup or none after you validate. No medical proof required.'
+      : 'Record a missed / noted session when a parent calls. Unwell → Missed (proof then approve). Other reasons → Noted. Credit only after proof + approve.';
+    var reasonOpts = isCancel
+      ? '<option value="club_cancelled">Club cancelled session</option>' +
+        '<option value="pool_closed">Pool / venue closed</option>' +
+        '<option value="facility">Facility issue</option>' +
+        '<option value="instructor_cancelled">Instructor cancelled</option>' +
+        '<option value="bank_holiday">Bank holiday</option>' +
+        '<option value="strike">Strike / disruption</option>' +
+        '<option value="office_other">Office note</option>'
+      : '<option value="unwell">Unwell (Missed)</option>' +
+        '<option value="other_commitments">Other commitments (Noted)</option>' +
+        '<option value="party">Party (Noted)</option>' +
+        '<option value="holidays">Holidays (Noted)</option>' +
+        '<option value="travel">Travel (Noted)</option>' +
+        '<option value="birthday">Birthday (Noted)</option>' +
+        '<option value="office_other">Office note (Noted)</option>';
     cfg.openModal(
-      '<div class="modal-h"><h2 id="modalTitle">Add absent (office phone)</h2></div>' +
+      '<div class="modal-h"><h2 id="modalTitle">' +
+        title +
+        '</h2></div>' +
         '<div class="modal-b" style="min-width:0">' +
-        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Record a missed / noted session when a parent calls. Unwell → Missed (can then grant makeup / approve). Other reasons → Noted.</p>' +
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;overflow-wrap:break-word">' +
+        intro +
+        '</p>' +
         '<label class="muted">Search participant</label>' +
         '<input class="inp" id="ppAbsenceCreateSearch" type="search" placeholder="Name or contact id" autocomplete="off" style="max-width:100%;box-sizing:border-box" />' +
         '<div id="ppAbsenceCreateHits" hidden style="margin:6px 0"></div>' +
@@ -233,24 +257,17 @@
         '<input class="inp" id="ppAbsenceCreateTime" placeholder="e.g. 5 to 5.30" style="max-width:100%;box-sizing:border-box" />' +
         '<label class="muted" style="display:block;margin-top:10px">Reason</label>' +
         '<select class="inp" id="ppAbsenceCreateReason" style="max-width:100%;box-sizing:border-box">' +
-        '<option value="unwell">Unwell (Missed)</option>' +
-        '<option value="other_commitments">Other commitments (Noted)</option>' +
-        '<option value="party">Party (Noted)</option>' +
-        '<option value="holidays">Holidays (Noted)</option>' +
-        '<option value="travel">Travel (Noted)</option>' +
-        '<option value="birthday">Birthday (Noted)</option>' +
-        '<option value="instructor_cancelled">Instructor cancelled (Noted)</option>' +
-        '<option value="bank_holiday">Bank holiday (Noted)</option>' +
-        '<option value="strike">Strike / disruption (Noted)</option>' +
-        '<option value="office_other">Office note (Noted)</option>' +
+        reasonOpts +
         '</select>' +
         '<label class="muted" style="display:block;margin-top:10px">Notes (optional)</label>' +
-        '<textarea class="inp" id="ppAbsenceCreateNotes" rows="2" placeholder="What the parent said…" style="max-width:100%;box-sizing:border-box;resize:vertical"></textarea>' +
+        '<textarea class="inp" id="ppAbsenceCreateNotes" rows="2" placeholder="Context…" style="max-width:100%;box-sizing:border-box;resize:vertical"></textarea>' +
         '<p id="ppAbsenceCreateErr" class="muted" style="display:none;margin:10px 0 0;color:#b91c1c;font-size:13px;overflow-wrap:break-word"></p>' +
         '</div>' +
         '<div class="modal-f">' +
         '<button type="button" class="btn btn--ghost" id="ppAbsenceCreateCancel">Cancel</button>' +
-        '<button type="button" class="btn btn--pri" id="ppAbsenceCreateSave">Save absent</button>' +
+        '<button type="button" class="btn btn--pri" id="ppAbsenceCreateSave">' +
+        (isCancel ? 'Save cancelled' : 'Save absent') +
+        '</button>' +
         '</div>'
     );
 
@@ -306,8 +323,9 @@
           session_date: sessionDate,
           service_label: serviceLabel,
           session_time: timeEl ? String(timeEl.value || '').trim() : '',
-          reason_code: reasonEl ? reasonEl.value : 'unwell',
-          reason_text: notesEl ? String(notesEl.value || '').trim() : ''
+          reason_code: reasonEl ? reasonEl.value : isCancel ? 'club_cancelled' : 'unwell',
+          reason_text: notesEl ? String(notesEl.value || '').trim() : '',
+          case_kind: isCancel ? 'cancellation' : 'absence'
         }).then(function (r) {
           save.disabled = false;
           if (r.error) {
@@ -317,8 +335,10 @@
           if (typeof cfg.closeModal === 'function') cfg.closeModal();
           cfg.toast(
             r.already_reported
-              ? 'Absent already on file for that session'
-              : 'Absent recorded from office phone',
+              ? 'Already on file for that session'
+              : isCancel
+                ? 'Cancelled session queued for credit / refund / makeup decision'
+                : 'Absent recorded from office phone',
             'ok'
           );
           void renderHost(global.document.getElementById('portalParentAbsenceHost'));
@@ -358,16 +378,23 @@
     if (!res.ok || !j || !j.ok) {
       return { error: (j && j.error) || 'request_failed', message: (j && j.message) || '' };
     }
-    return { report: j.report, grant: j.grant, credit: j.credit };
+    return { report: j.report, grant: j.grant, credit: j.credit, credit_apply: j.credit_apply };
   }
 
   function rowHtml(r) {
     var proof = r.proof_signed_url
       ? '<a href="' + esc(r.proof_signed_url) + '" target="_blank" rel="noopener">Open proof</a>'
       : '<span class="muted">No proof</span>';
-    var canDecide = r.status === 'pending_review' || (r.status === 'missed' && r.proof_storage_path);
+    var isCancel = String(r.case_kind || '') === 'cancellation';
+    var canDecide =
+      r.status === 'pending_review' ||
+      (r.status === 'missed' && r.proof_storage_path) ||
+      (isCancel && r.status === 'pending_review');
+    if (isCancel && r.status === 'pending_review') canDecide = true;
     var canGrantMakeup =
-      (r.status === 'missed' || r.status === 'expired' || r.status === 'rejected') && !r.proof_storage_path;
+      !isCancel &&
+      (r.status === 'missed' || r.status === 'expired' || r.status === 'rejected') &&
+      !r.proof_storage_path;
     var actions = '';
     if (canDecide) {
       actions =
@@ -403,7 +430,11 @@
       '<tr>' +
       '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
       esc(r.participant_display || '—') +
-      '</strong></td>' +
+      '</strong>' +
+      (String(r.case_kind || '') === 'cancellation'
+        ? ' <span class="chip chip--pend" style="font-size:10px">Cancel</span>'
+        : '') +
+      '</td>' +
       '<td class="muted" style="white-space:nowrap">' +
       esc(formatDate(r.session_date)) +
       '</td>' +
@@ -447,15 +478,16 @@
   function viewHtml() {
     return (
       '<div class="portal-parent-absences-embed">' +
-      '<h1 class="page-title">Parent absents (proof queue)</h1>' +
-      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Parents report <strong>Absent</strong> → Missed session. Proof upload within <strong>2 weeks</strong> of the session date. Admin must always validate before credit, refund, or makeup. After the deadline, parents cannot upload and must contact the office.</p>' +
+      '<h1 class="page-title">Absents &amp; cancelled (decision queue)</h1>' +
+      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Absents need proof then validate. Cancelled sessions (club/admin) land here too — decide credit, refund, makeup or none. Credit with £ auto-applies to the next unpaid invoice.</p>' +
       '<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
-      '<button type="button" class="btn btn--sm" data-absence-filter="pending_review">Pending proof</button>' +
+      '<button type="button" class="btn btn--sm" data-absence-filter="pending_review">Pending decision</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="missed">Missed (no proof)</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="excused">Excused</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentAbsenceRefresh">Refresh</button>' +
       '<button type="button" class="btn btn--primary btn--sm" id="portalParentAbsenceAdd">Add absent</button>' +
+      '<button type="button" class="btn btn--sm" id="portalParentAbsenceAddCancel">Add cancelled</button>' +
       '<span class="chip chip--pend" id="portalParentAbsenceMeta"></span>' +
       '</div>' +
       '<div id="portalParentAbsenceHost"><p class="muted">Loading…</p></div>' +
@@ -535,6 +567,13 @@
             return;
           }
           var extra = r.credit ? ' · ledger row created' : '';
+          if (outcome === 'credit' && r.credit_apply) {
+            if (r.credit_apply.skipped === 'no_open_invoice') {
+              extra += ' — credit open (no unpaid invoice yet)';
+            } else if (r.credit_apply.applications && r.credit_apply.applications.length) {
+              extra += ' — applied to next invoice';
+            }
+          }
           cfg.toast('Excused — outcome: ' + outcome + extra, 'ok');
           void renderHost(global.document.getElementById('portalParentAbsenceHost'));
         });
@@ -580,12 +619,17 @@
   }
 
   function bindAddButtons() {
-    ['portalParentAbsenceAdd', 'portalParentAbsenceAddEmbed'].forEach(function (id) {
-      var btn = global.document.getElementById(id);
+    [
+      { id: 'portalParentAbsenceAdd', mode: 'absence' },
+      { id: 'portalParentAbsenceAddEmbed', mode: 'absence' },
+      { id: 'portalParentAbsenceAddCancel', mode: 'cancellation' },
+      { id: 'portalParentAbsenceAddCancelEmbed', mode: 'cancellation' }
+    ].forEach(function (item) {
+      var btn = global.document.getElementById(item.id);
       if (!btn || btn.getAttribute('data-bound') === '1') return;
       btn.setAttribute('data-bound', '1');
       btn.addEventListener('click', function () {
-        openCreateModal();
+        openCreateModal(item.mode);
       });
     });
   }
@@ -619,14 +663,15 @@
       '<div class="card-h"><h3>Parent portal — proof validation</h3>' +
       '<span class="chip chip--pend" id="portalParentAbsenceMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Missed sessions from the parent app <strong>or office phone</strong>. Validate proof within the family&apos;s 2-week window; after that they must contact admin. Use <strong>Add absent</strong> when a parent calls.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">One queue for <strong>absents</strong> (proof → validate → credit/refund/makeup) and <strong>cancelled sessions</strong> (office decide credit/refund/makeup — no proof). Credit with £ auto-applies to the next unpaid invoice.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
-      '<button type="button" class="btn btn--sm" data-absence-filter="pending_review">Pending proof</button>' +
+      '<button type="button" class="btn btn--sm" data-absence-filter="pending_review">Pending decision</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="missed">Missed</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="noted">Noted</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentAbsenceRefreshEmbed">Refresh</button>' +
       '<button type="button" class="btn btn--primary btn--sm" id="portalParentAbsenceAddEmbed">Add absent</button>' +
+      '<button type="button" class="btn btn--sm" id="portalParentAbsenceAddCancelEmbed">Add cancelled</button>' +
       '</div>' +
       '<div id="portalParentAbsenceHost"><p class="muted">Loading…</p></div>' +
       '</div></div>'

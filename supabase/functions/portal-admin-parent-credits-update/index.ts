@@ -9,6 +9,7 @@ import {
   portalAdminJson,
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
+import { autoApplyOpenCreditToNextInvoices } from "../_shared/portal_family_credit_apply.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -85,7 +86,26 @@ Deno.serve(async (req) => {
       console.error("[portal-admin-parent-credits-update] create", error.message);
       return portalAdminJson(500, { ok: false, error: "create_failed" });
     }
-    return portalAdminJson(200, { ok: true, entry: data });
+    let credit_apply = null;
+    if (kind === "credit" && data && data.id && amount != null && amount > 0) {
+      try {
+        credit_apply = await autoApplyOpenCreditToNextInvoices(admin, data.id);
+        if (credit_apply?.final_credit_status) {
+          const { data: refreshed } = await admin
+            .from("portal_parent_family_credits")
+            .select("*")
+            .eq("id", data.id)
+            .maybeSingle();
+          if (refreshed) {
+            return portalAdminJson(200, { ok: true, entry: refreshed, credit_apply });
+          }
+        }
+      } catch (err) {
+        console.error("[portal-admin-parent-credits-update] auto-apply", err);
+        credit_apply = { ok: false, error: "auto_apply_failed" };
+      }
+    }
+    return portalAdminJson(200, { ok: true, entry: data, credit_apply });
   }
 
   const entryId = clean(body.entry_id, 60);
