@@ -637,6 +637,8 @@ body:has(#workspace .dash-hub--nav-index:not(.dash-hub--nav-index-pick)) .admin-
   grid-template-columns:repeat(3,minmax(0,1fr));
 }
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"] .dash-hub__grid--inline,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_services"] .dash-hub__grid--inline,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_clients"] .dash-hub__grid--inline,
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_c4k"] .dash-hub__grid--inline,
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"] .dash-hub__grid--inline{
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -768,7 +770,9 @@ body:has(#workspace .dash-hub--nav-index:not(.dash-hub--nav-index-pick)) .admin-
   .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"] .dash-hub__grid--inline{
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
-  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_c4k"] .dash-hub__grid--inline{
+  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_services"] .dash-hub__grid--inline,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_clients"] .dash-hub__grid--inline,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_c4k"] .dash-hub__grid--inline{
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
   .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"] .dash-hub__grid--inline{
@@ -812,6 +816,7 @@ body:has(#workspace .dash-hub--nav-index:not(.dash-hub--nav-index-pick)) .admin-
   --hub-tile-border:rgba(244,114,182,.32);
   --hub-glow:rgba(244,114,182,.18);
 }
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_services"],
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_c4k"]{
   --hub-accent:#fbbf24;
   --hub-soft:rgba(251,191,36,.14);
@@ -819,6 +824,14 @@ body:has(#workspace .dash-hub--nav-index:not(.dash-hub--nav-index-pick)) .admin-
   --hub-tile-bg:linear-gradient(180deg,rgba(251,191,36,.16) 0%,#fff 48%);
   --hub-tile-border:rgba(245,158,11,.38);
   --hub-glow:rgba(251,191,36,.2);
+}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_clients"]{
+  --hub-accent:#a78bfa;
+  --hub-soft:rgba(167,139,250,.14);
+  --hub-band-bg:rgba(167,139,250,.22);
+  --hub-tile-bg:linear-gradient(180deg,rgba(167,139,250,.14) 0%,#fff 48%);
+  --hub-tile-border:rgba(139,92,246,.35);
+  --hub-glow:rgba(167,139,250,.18);
 }
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"]{
   --hub-accent:#ef4444;
@@ -861,6 +874,8 @@ body:has(#workspace .dash-hub--nav-index:not(.dash-hub--nav-index-pick)) .admin-
   --hub-tile-border:rgba(244,114,182,.32);
   --hub-glow:rgba(244,114,182,.18);
 }
+.dash-hub--nav-group[data-hub-group="g_services"],
+.dash-hub--nav-group[data-hub-group="g_clients"],
 .dash-hub--nav-group[data-hub-group="g_c4k"]{
   --hub-accent:#fbbf24;
   --hub-soft:rgba(251,191,36,.14);
@@ -1455,6 +1470,8 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
 .dash-hub--nav-index-pick .dash-hub-cat--pick[data-hub-cat="g_operator"]{
   --hub-accent:#f472b6;--hub-soft:rgba(244,114,182,.12);--hub-band-bg:rgba(244,114,182,.22);--hub-glow:rgba(244,114,182,.18);
 }
+.dash-hub--nav-index-pick .dash-hub-cat--pick[data-hub-cat="g_services"],
+.dash-hub--nav-index-pick .dash-hub-cat--pick[data-hub-cat="g_clients"],
 .dash-hub--nav-index-pick .dash-hub-cat--pick[data-hub-cat="g_c4k"]{
   --hub-accent:#fbbf24;--hub-soft:rgba(251,191,36,.12);--hub-band-bg:rgba(251,191,36,.24);--hub-glow:rgba(251,191,36,.2);
 }
@@ -2158,7 +2175,7 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
 .ops-hub__grid{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
-  grid-template-rows:repeat(2,minmax(0,1fr));
+  grid-template-rows:repeat(auto-fit,minmax(0,1fr));
   gap:clamp(8px,1vh,12px);
   flex:1 1 auto;
   min-height:0;

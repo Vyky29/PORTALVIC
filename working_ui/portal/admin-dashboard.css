@@ -157,7 +157,9 @@
       font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
       color:rgba(226,232,240,.55);padding:10px 10px 4px;margin-top:4px;min-width:0;overflow-wrap:break-word;line-height:1.3
     }
-    .admin-nav-group[data-group-id="g_c4k"] .admin-nav-subhead{color:rgba(254,243,199,.5)}
+    .admin-nav-group[data-group-id="g_c4k"] .admin-nav-subhead,
+    .admin-nav-group[data-group-id="g_services"] .admin-nav-subhead{color:rgba(254,243,199,.5)}
+    .admin-nav-group[data-group-id="g_clients"] .admin-nav-subhead{color:rgba(237,233,254,.5)}
     .admin-nav-toggle-inner{display:flex;align-items:center;gap:10px;min-width:0;flex:1;text-align:left}
     .admin-nav-label{min-width:0;flex:1;overflow-wrap:break-word;text-align:left}
     /* Sidebar nav: one accent hue per accordion group (keeps dark shell; breaks “all sky blue”) */
@@ -176,6 +178,8 @@
     .admin-nav-direct.is-active .admin-nav-ico{color:var(--nav-g-accent);opacity:1}
     .admin-nav-group[data-group-id="g_operator"]{--nav-g-accent:#f472b6;--nav-g-text:#fce7f3;--nav-g-soft:rgba(244,114,182,.16)}
     .admin-nav-group[data-group-id="g_reception"]{--nav-g-accent:#4ade80;--nav-g-text:#dcfce7;--nav-g-soft:rgba(74,222,128,.14)}
+    .admin-nav-group[data-group-id="g_services"]{--nav-g-accent:#fbbf24;--nav-g-text:#fef3c7;--nav-g-soft:rgba(251,191,36,.14)}
+    .admin-nav-group[data-group-id="g_clients"]{--nav-g-accent:#a78bfa;--nav-g-text:#ede9fe;--nav-g-soft:rgba(167,139,250,.16)}
     .admin-nav-group[data-group-id="g_c4k"]{--nav-g-accent:#fbbf24;--nav-g-text:#fef3c7;--nav-g-soft:rgba(251,191,36,.14)}
     .admin-nav-group[data-group-id="g_zoho"]{--nav-g-accent:#ef4444;--nav-g-text:#fee2e2;--nav-g-soft:rgba(239,68,68,.16)}
     .admin-nav-group[data-group-id="g_xero"]{--nav-g-accent:#2dd4bf;--nav-g-text:#ccfbf1;--nav-g-soft:rgba(45,212,191,.14)}
