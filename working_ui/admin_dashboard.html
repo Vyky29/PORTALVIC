@@ -495,6 +495,7 @@
       { id:'policies_portal', label:'Policies portal', externalUrl:'/policies_portal.html', skipBottomNav:true },
       { id:'policies', label:'Policy sign-offs' },
       { id:'settings', label:'Settings' },
+      { id:'admin_office_help', label:'Office help guide', hubLabel:'Office help', externalUrl:'/admin_office_help.html', skipBottomNav:true },
       { id:'portal_device_notifications', label:'Device notifications', navAction:'device_notifications', skipBottomNav:true },
       { id:'logs', label:'Activity log' },
       { id:'portal_nav_alerts', label:'Alerts inbox', navAction:'alerts', skipBottomNav:true },
@@ -26537,7 +26538,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         preview:['Portal activity','Training readiness','Staff live map','Alerts inbox','Device notifications','System settings'],
         status:'Use this area to monitor usage, readiness and system activity.',
         primary:['portal_activity','portal_training_progress','staff_live_map','settings','logs'],
-        secondary:['portal_device_notifications','portal_nav_alerts','nav_all_menu']
+        secondary:[{ id:'admin_office_help', label:'Office help' },'portal_device_notifications','portal_nav_alerts','nav_all_menu']
       }
     ];
     function opsHubResolveAction(action){
