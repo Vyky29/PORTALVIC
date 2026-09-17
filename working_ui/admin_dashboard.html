@@ -89,7 +89,7 @@
   <script src="/portal/admin-portal-day-ops.js?v=20260913-register-freeze"></script>
   <script src="/portal/admin-portal-documents.js?v=20260915-ob-doc-chips"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
-  <script src="/portal/admin-portal-parent-absences.js?v=20260917-outcome-notify"></script>
+  <script src="/portal/admin-portal-parent-absences.js?v=20260917-decide-sep1"></script>
   <script src="/portal/admin-portal-booking-leads.js?v=20260905-buckets"></script>
   <script src="/portal/admin-portal-waitlist.js?v=20260813-live-waitlist"></script>
   <script src="/portal/admin-office-calendar.js?v=20260917-done-chip"></script>
@@ -15695,10 +15695,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         session_date: String(slot.sessionDate || '').slice(0, 10),
         service_label: schedDecisionQueueServiceLabel(slot),
         session_time: String(slot.whenLabel || slot.anchorTimeLabel || '').trim(),
-        reason_code: 'unwell',
+        reason_code: 'office_other',
         reason_text: String(reason || '').trim() || 'Absent announced (Schedule & Covers)',
         case_kind: 'absence',
-        status: 'missed',
+        status: 'pending_review',
         schedule_override_id: overrideId || null
       };
       var res = await adminEdgePost('portal-admin-parent-absence-create', body);
@@ -15977,15 +15977,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         await schedCancelDuplicateInstructorReassigns(client, row, ins0.id);
         await schedCancelCoverNeededForSlot(client, slot, ins0.id);
       }
-      /* Club cancel / admin cancel → same Absents & credits decision queue (no auto money). */
-      if(ovType === 'slot_close' || ovType === 'client_cancelled'){
-        try{
-          await schedEnqueueCancelDecisionQueue(client, slot, ins0.id, ovType, reason);
-        }catch(_enq){
-          console.warn('[portal] cancel decision queue enqueue failed', _enq);
+      /* Club cancel / admin cancel / clear client → Absents & credits decision queue. */
+      if(ovType === 'slot_close' || ovType === 'client_cancelled' || ovType === 'slot_clear_client'){
+        var clearPl = payload || {};
+        var isMoveClear = !!(clearPl.client_move || clearPl.moved_to_staff_id || clearPl.moved_client_id);
+        if(!(ovType === 'slot_clear_client' && isMoveClear)){
+          try{
+            await schedEnqueueCancelDecisionQueue(client, slot, ins0.id, ovType, reason);
+          }catch(_enq){
+            console.warn('[portal] cancel decision queue enqueue failed', _enq);
+          }
         }
       }
-      /* Instructor/admin announced absent → Missed list (proof still required before credit). */
+      /* Instructor/admin announced absent → same decide queue (credit/refund/makeup). */
       if(ovType === 'client_absence_announced'){
         try{
           await schedEnqueueAbsentDecisionQueue(client, slot, ins0.id, reason);
@@ -26151,7 +26155,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var meta = usePortal && adminAbsentsCreditsPortalSource() && adminAbsentsCreditsPortalSource().meta;
       var metaLine = usePortal && meta
         ? (' <span class="chip chip--ok">Term workbook</span> <span class="muted" style="font-size:12px">' + esc(String(meta.sourceFile || 'Absentees & Credits (PORTAL).xlsx')) + ' · ' + esc(String(meta.rowCount != null ? meta.rowCount : total)) + ' rows</span>')
-        : ' <span class="chip chip--info">Demo queue</span>';
+        : '';
       var rows = cases.map(absentsCreditsCaseRowHtml).join('');
       if(!rows) rows = '<tr><td colspan="10" class="muted">No cases in the demo list.</td></tr>';
       var srcChip = usePortal ? 'workbook' : 'demo';
@@ -26160,25 +26164,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalParentAbsencesConfigureOnce();
         parentQueue = window.PortalParentAbsences.embedHtml();
       }
+      var secondary = '';
       if(window.PortalParentMakeups && typeof window.PortalParentMakeups.embedHtml === 'function'){
         portalParentMakeupsConfigureOnce();
-        parentQueue += window.PortalParentMakeups.embedHtml();
+        secondary += window.PortalParentMakeups.embedHtml();
       }
       if(window.PortalParentCredits && typeof window.PortalParentCredits.embedHtml === 'function'){
         portalParentCreditsConfigureOnce();
-        parentQueue += window.PortalParentCredits.embedHtml();
+        secondary += window.PortalParentCredits.embedHtml();
       }
       return '<h1 class="page-title">Absents, refunds &amp; credits</h1>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Work through missed sessions, refunds, credits, and what was agreed with each family. '+metaLine+'</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">One decide queue for absents and cancellations since 1 Sep. Approve credit / refund / makeup here; makeup waiting list and family ledger are secondary.'+metaLine+'</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec" data-view-target="dashboard">Day operations</button> <button type="button" class="btn btn--sec" data-view-target="bookings">Bookings</button> <button type="button" class="btn btn--ghost" data-view-target="communications">Comms log</button></div>'+
         parentQueue+
-        '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Workbook / legacy queue</h3><span class="chip '+(pend?'chip--pend':'chip--ok')+'">'+esc(String(pend))+' pending · '+esc(String(total))+' rows ('+srcChip+')</span></div>'+
-        '<div class="card-pad" style="overflow:auto"><table class="tbl tbl--center"><thead><tr><th>Participant</th><th>Time / value</th><th>Date</th><th>Service</th><th>Reason</th><th>Notice</th><th>Policy</th><th>Resolution</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
-        '<p class="muted" style="margin:0;font-size:12px;line-height:1.5;max-width:48rem;overflow-wrap:break-word"><strong>Note:</strong> '+
-        (usePortal
-          ? 'Resolution text comes from the workbook <strong>Status</strong> column. Roster changes (cover, replace-in-slot, closed slot) stay in <strong>Scheduling &amp; Cover</strong>.'
-          : 'Mark resolved updates this demo list. Roster changes (cover, replace-in-slot, closed slot, etc.) are under <strong>Scheduling &amp; Cover</strong> in the sidebar.')+
-        '</p>';
+        '<details style="margin:0 0 14px;min-width:0">'+
+        '<summary style="cursor:pointer;font-weight:700;font-size:14px;padding:8px 0;overflow-wrap:break-word">Makeup grants &amp; family credits / refunds (after you decide above)</summary>'+
+        '<div style="margin-top:8px">'+secondary+'</div>'+
+        '</details>'+
+        '<details style="margin:0 0 14px;min-width:0">'+
+        '<summary style="cursor:pointer;font-weight:600;font-size:13px;padding:8px 0;overflow-wrap:break-word">Workbook / legacy queue <span class="chip '+(pend?'chip--pend':'chip--ok')+'" style="font-weight:500">'+esc(String(pend))+' pending · '+esc(String(total))+' ('+srcChip+')</span></summary>'+
+        '<div class="card" style="margin-top:8px"><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center"><thead><tr><th>Participant</th><th>Time / value</th><th>Date</th><th>Service</th><th>Reason</th><th>Notice</th><th>Policy</th><th>Resolution</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
+        '</details>';
     }
 
     /** KPI-style hub tile (Day operations / Operations admin / Operator). Same routing attrs as legacy dayops tiles. */

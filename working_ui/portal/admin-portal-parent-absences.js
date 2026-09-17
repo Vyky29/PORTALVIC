@@ -22,7 +22,7 @@
     closeModal: null
   };
 
-  var state = { filter: 'pending_review', reports: [], meta: {}, pick: null };
+  var state = { filter: 'needs_decision', reports: [], meta: {}, pick: null, since: '2026-09-01' };
 
   function configure(options) {
     if (!options) return;
@@ -95,7 +95,11 @@
         Authorization: 'Bearer ' + token,
         apikey: cfg.getAnonKey()
       },
-      body: JSON.stringify({ status: status || 'all', limit: 150 })
+      body: JSON.stringify({
+        status: status || state.filter || 'needs_decision',
+        since: state.since || '2026-09-01',
+        limit: 300
+      })
     });
     var j = null;
     try {
@@ -386,13 +390,13 @@
       ? '<a href="' + esc(r.proof_signed_url) + '" target="_blank" rel="noopener">Open proof</a>'
       : '<span class="muted">No proof</span>';
     var isCancel = String(r.case_kind || '') === 'cancellation';
+    var fromSchedule = !!(r.schedule_override_id);
     var canDecide =
       r.status === 'pending_review' ||
-      (r.status === 'missed' && r.proof_storage_path) ||
-      (isCancel && r.status === 'pending_review');
-    if (isCancel && r.status === 'pending_review') canDecide = true;
+      (r.status === 'missed' && (r.proof_storage_path || fromSchedule));
     var canGrantMakeup =
       !isCancel &&
+      !canDecide &&
       (r.status === 'missed' || r.status === 'expired' || r.status === 'rejected') &&
       !r.proof_storage_path;
     var actions = '';
@@ -508,22 +512,22 @@
     }
     state.reports = res.reports || [];
     state.meta = res.meta || {};
+    function metaLine() {
+      return (
+        String(state.meta.total != null ? state.meta.total : state.reports.length) +
+        ' open since ' +
+        String(state.meta.since || state.since || '1 Sep') +
+        ' · ' +
+        String(state.meta.absences || 0) +
+        ' absent · ' +
+        String(state.meta.cancellations || 0) +
+        ' cancel'
+      );
+    }
     var metaEl = global.document.getElementById('portalParentAbsenceMeta');
-    if (metaEl) {
-      metaEl.textContent =
-        String(state.meta.pending_review || 0) +
-        ' pending · ' +
-        String(state.meta.missed_open || 0) +
-        ' missed open';
-    }
+    if (metaEl) metaEl.textContent = metaLine();
     var metaEmbed = global.document.getElementById('portalParentAbsenceMetaEmbed');
-    if (metaEmbed) {
-      metaEmbed.textContent =
-        String(state.meta.pending_review || 0) +
-        ' pending · ' +
-        String(state.meta.missed_open || 0) +
-        ' missed';
-    }
+    if (metaEmbed) metaEmbed.textContent = metaLine();
     hostEl.innerHTML = tableHtml(state.reports);
     bindRowActions(hostEl);
   }
@@ -663,19 +667,20 @@
     });
   }
 
-  /** Embed block for Absents & credits page (above workbook queue). */
+  /** Embed block for Absents & credits page — primary decide queue. */
   function embedHtml() {
     return (
       '<div class="card" style="margin-bottom:14px">' +
-      '<div class="card-h"><h3>Parent portal — proof validation</h3>' +
+      '<div class="card-h"><h3>Absents &amp; cancellations — decide</h3>' +
       '<span class="chip chip--pend" id="portalParentAbsenceMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">One queue for <strong>absents</strong> (proof → validate → credit/refund/makeup) and <strong>cancelled sessions</strong> (office decide credit/refund/makeup — no proof). Credit with £ auto-applies to the next unpaid invoice.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">All Schedule absents and admin cancels since <strong>1 Sep 2026</strong>, plus parent portal proofs. Approve with credit, refund, makeup or none. Makeup offers and family ledger sit below after you decide.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
-      '<button type="button" class="btn btn--sm" data-absence-filter="pending_review">Pending decision</button>' +
+      '<button type="button" class="btn btn--sm" data-absence-filter="needs_decision">Open (decide)</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="pending_review">Pending review</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="missed">Missed</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="noted">Noted</button>' +
-      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="excused">Decided</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All since 1 Sep</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentAbsenceRefreshEmbed">Refresh</button>' +
       '<button type="button" class="btn btn--primary btn--sm" id="portalParentAbsenceAddEmbed">Add absent</button>' +
       '<button type="button" class="btn btn--sm" id="portalParentAbsenceAddCancelEmbed">Add cancelled</button>' +
@@ -686,33 +691,17 @@
   }
 
   function bindEmbed() {
-    state.filter = 'pending_review';
+    state.filter = 'needs_decision';
+    state.since = '2026-09-01';
     bindModule();
     bindAddButtons();
-    var meta = global.document.getElementById('portalParentAbsenceMetaEmbed');
     var refresh = global.document.getElementById('portalParentAbsenceRefreshEmbed');
     if (refresh) {
       refresh.addEventListener('click', function () {
-        void renderHost(global.document.getElementById('portalParentAbsenceHost')).then(function () {
-          if (meta) {
-            meta.textContent =
-              String(state.meta.pending_review || 0) +
-              ' pending · ' +
-              String(state.meta.missed_open || 0) +
-              ' missed';
-          }
-        });
+        void renderHost(global.document.getElementById('portalParentAbsenceHost'));
       });
     }
-    void renderHost(global.document.getElementById('portalParentAbsenceHost')).then(function () {
-      if (meta) {
-        meta.textContent =
-          String(state.meta.pending_review || 0) +
-          ' pending · ' +
-          String(state.meta.missed_open || 0) +
-          ' missed';
-      }
-    });
+    void renderHost(global.document.getElementById('portalParentAbsenceHost'));
   }
 
   global.PortalParentAbsences = {

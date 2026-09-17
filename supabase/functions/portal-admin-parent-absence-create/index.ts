@@ -174,6 +174,14 @@ Deno.serve(async (req) => {
     // Same Absents & credits queue — awaiting office credit/refund/makeup decision.
     status = "pending_review";
   }
+  // Schedule & Covers announced absent → decision queue (no parent proof required).
+  if (
+    caseKind === "absence" &&
+    scheduleOverrideId &&
+    (statusOverride === "pending_review" || statusOverride === "missed" || !statusOverride)
+  ) {
+    status = "pending_review";
+  }
 
   const proofDeadline = addDaysIso(sessionDate, 14);
   const now = new Date().toISOString();
