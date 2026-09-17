@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260915-sun-phases" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-cal-month2" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-ops-clean" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260727-role-names"></script>
@@ -26721,8 +26721,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(countEl) countEl.textContent = openN > 0 ? String(openN) : 'Notes';
         if(countEl) countEl.className = 'ops-hub__today-v' + (openN > 0 ? ' ops-hub__today-v--cal' : '');
         if(subEl) subEl.textContent = openN > 0
-          ? (openN === 1 ? '1 open note this month' : openN + ' open notes this month')
-          : 'Office notes & meetings';
+          ? (openN === 1 ? '1 open' : openN + ' open')
+          : 'Notes & meetings';
         if(btn){
           if(openN > 0) btn.classList.add('ops-hub__today-item--calendar-hot');
           else btn.classList.remove('ops-hub__today-item--calendar-hot');
@@ -26798,7 +26798,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(subEl){
         subEl.textContent = lateN && absN
           ? (lateN + ' late · ' + absN + ' absents')
-          : (lateN ? 'Late forms awaiting approval' : (absN ? 'Absents & credits to decide' : 'Late forms & absents'));
+          : (lateN ? 'Late forms' : (absN ? 'Absents & credits' : 'Late & absents'));
       }
     }
     function opsHubGlanceHtml(){
@@ -26809,7 +26809,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var pendingN = lateN + absN;
       var pendingSub = lateN && absN
         ? (lateN + ' late · ' + absN + ' absents')
-        : (lateN ? 'Late forms awaiting approval' : (absN ? 'Absents & credits to decide' : 'Late forms & absents'));
+        : (lateN ? 'Late forms' : (absN ? 'Absents & credits' : 'Late & absents'));
       var calStrip = '<div class="ops-hub-cal-month ops-hub-cal-month--placeholder" aria-hidden="true">' +
         '<div class="ops-hub-cal-month__label">…</div>' +
         '<div class="ops-hub-cal-month__head">' +
@@ -26827,36 +26827,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="ops-hub__today-item ops-hub__today-item--alerts" id="opsHubAlertsGlance" role="button" tabindex="0" aria-label="Open alerts">' +
         '<span class="ops-hub__today-k">Alerts</span>' +
         '<span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span>' +
-        '<span class="ops-hub__today-s">Incidents, cancellations, expenses &amp; wellbeing</span>' +
+        '<span class="ops-hub__today-s">Inbox</span>' +
         '</div>' +
         '<button type="button" class="ops-hub__today-item ops-hub__today-item--calendar" id="opsHubCalendarGlance" aria-label="Open office calendar">' +
         '<span class="ops-hub-cal-glance__copy">' +
         '<span class="ops-hub__today-k">Calendar</span>' +
         '<span class="ops-hub__today-v" id="opsHubCalendarGlanceCount">Notes</span>' +
-        '<span class="ops-hub__today-s" id="opsHubCalendarGlanceSub">Office notes &amp; meetings</span>' +
+        '<span class="ops-hub__today-s" id="opsHubCalendarGlanceSub">Notes &amp; meetings</span>' +
         '</span>' +
         '<span class="ops-hub-cal-glance__grid" id="opsHubCalendarGlanceStrip">'+calStrip+'</span>' +
         '</button>' +
         '<button type="button" class="ops-hub__today-item ops-hub__today-item--pending" id="opsHubPendingGlance" aria-label="Open pending late forms and absents">' +
-        '<span class="ops-hub__today-k">Pending actions</span>' +
+        '<span class="ops-hub__today-k">Pending</span>' +
         '<span class="ops-hub__today-v'+(pendingN > 0 ? ' ops-hub__today-v--warn' : '')+'" id="opsHubPendingGlanceCount">'+esc(String(pendingN))+'</span>' +
         '<span class="ops-hub__today-s" id="opsHubPendingGlanceSub">'+esc(pendingSub)+'</span>' +
         '</button>' +
         '</div>'
       );
     }
-    function opsHubPreviewHtml(card){
-      var items = card && card.preview;
-      if(!items || !items.length) return '';
-      var chips = items.map(function(line){
-        return '<li class="ops-hub-chip"><span class="ops-hub-chip__dot" aria-hidden="true"></span><span class="ops-hub-chip__text">'+esc(line)+'</span></li>';
-      }).join('');
-      return (
-        '<div class="ops-hub-card__preview" aria-label="What\u2019s inside">' +
-        '<p class="ops-hub-card__preview-label">What\u2019s inside</p>' +
-        '<ul class="ops-hub-card__preview-list">'+chips+'</ul>' +
-        '</div>'
-      );
+    function opsHubPreviewHtml(){
+      return '';
     }
     function opsHubCardHtml(card){
       if(!card) return '';
@@ -26866,20 +26856,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var primaryHtml = opsHubActionsHtml(primary, 'primary');
       var secondaryHtml = opsHubActionsHtml(secondary, 'secondary');
       var moreHtml = secondaryHtml
-        ? '<details class="ops-hub-card__more"><summary class="ops-hub-card__more-summary">More tools</summary><div class="ops-hub-card__actions ops-hub-card__actions--secondary">'+secondaryHtml+'</div></details>'
+        ? '<details class="ops-hub-card__more"><summary class="ops-hub-card__more-summary">More</summary><div class="ops-hub-card__actions ops-hub-card__actions--secondary">'+secondaryHtml+'</div></details>'
         : '';
       return (
         '<article class="ops-hub-card" data-ops-hub-card="'+esc(card.id)+'" aria-labelledby="ops-hub-title-'+esc(card.id)+'">' +
         '<header class="ops-hub-card__header">' +
         '<span class="ops-hub-card__badge" aria-hidden="true">'+opsHubCardIconHtml(card)+'</span>' +
-        '<div class="ops-hub-card__headings">' +
         '<h2 class="ops-hub-card__title" id="ops-hub-title-'+esc(card.id)+'">'+esc(card.title)+'</h2>' +
-        '<p class="ops-hub-card__description">'+esc(card.description)+'</p>' +
-        '</div></header>' +
-        opsHubPreviewHtml(card) +
+        '</header>' +
         '<div class="ops-hub-card__actions ops-hub-card__actions--primary">'+primaryHtml+'</div>' +
         moreHtml +
-        '<p class="ops-hub-card__status">'+esc(card.status)+'</p>' +
         '</article>'
       );
     }
@@ -26907,7 +26893,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub">' +
         '<header class="ops-hub__intro">' +
         '<h1 class="ops-hub__intro-title">Operations Hub</h1>' +
-        '<p class="ops-hub__intro-sub">Choose the area you need. Each section groups the main tools used to manage sessions, participants, staff, documents, finance and monitoring.</p>' +
         '</header>' +
         opsHubGlanceHtml() +
         '<div class="ops-hub__body">' +
