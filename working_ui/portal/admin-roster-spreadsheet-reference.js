@@ -1,7 +1,7 @@
 /**
- * Admin — Instructor timetable (ex Spreadsheet reference).
- * Who is booked = same standing roster as Services (canonical) → Edit term slot.
- * Who works = standing week from that roster + editable dated overrides (Supabase).
+ * Admin — Instructor timetable (staff rota only).
+ * Per cell: day + shift hours + paid hours (default = shift). Standing seats → Edit term slot.
+ * Capacity chain copy: Places → Timetable → Services → Schedule & Covers.
  */
 (function (global) {
   "use strict";
@@ -21,7 +21,7 @@
   };
 
   /**
-   * Standing snap dates for Who is booked / standing hours summary.
+   * Standing snap dates for standing-hours summary.
    * Autumn week after DC standing starts (Mon 7). Sunday uses 20 Sep so the
    * sample is a normal Aurora Sunday (not Aurora-off cover days 13 Sep / 4 Oct).
    */
@@ -36,8 +36,6 @@
   };
 
   var state = {
-    tab: "hours",
-    sessionDay: "Monday",
     hoursDay: "Monday",
     hoursService: "all",
     /** term = all Autumn dates for that weekday; week = one Mon-Sun strip */
@@ -45,6 +43,9 @@
     hoursWeekStart: null,
     dirty: Object.create(null),
     dirtyBaseline: Object.create(null),
+    /** paid_hours per editKey; empty string = same as shift */
+    dirtyPaid: Object.create(null),
+    dirtyPaidBaseline: Object.create(null),
     saving: false,
     mergedData: null,
     overrideLog: [],
@@ -793,23 +794,16 @@
   }
 
   function viewHtml() {
-    var meta = (data() && data().meta) || (baseData() && baseData().meta) || {};
-    var weekLbl = esc(meta.sessionWeekLabel || "Autumn Term 2026 standing week");
     return (
       '<div class="asr-root" id="adminSpreadsheetRefRoot">' +
       '<h1 class="page-title">Instructor timetable</h1>' +
       '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-      "<strong>Production who-works</strong> for the capacity chain (Places → Services → Timetable → Covers → Overview). " +
-      "Sunday and weekday dated rows are the live phases — edit and <strong>Save</strong> to <code>portal_staff_timetable_cells</code> (not a local draft). " +
-      "Does not change who is booked in Services (use Edit term slot for that). " +
-      "<strong>Day off · COVER</strong> on a date comes from the same <code>staff_unavailability</code> as Sessions Overview (Validate day / HR). " +
-      "<strong>Who is booked</strong> = standing client seats (" +
-      weekLbl +
-      ") — click a name to open Edit term slot (every matching weekday).</p>" +
-      '<div class="asr-tabs" role="tablist">' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-asr-tab="sessions">Who is booked</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm is-active" data-asr-tab="hours">Who works</button>' +
-      "</div>" +
+      "<strong>Staff rota only</strong> — day, shift hours, and paid hours (default = shift) for the capacity chain: " +
+      "<strong>Places</strong> (booking seats) → <strong>Timetable</strong> (who works) → <strong>Services</strong> (who is booked + who works the seat) → <strong>Schedule &amp; Covers</strong> (day retouches). " +
+      "Edit and <strong>Save</strong> to <code>portal_staff_timetable_cells</code>. " +
+      "<strong>Day off · COVER</strong> comes from the same <code>staff_unavailability</code> as Sessions Overview.</p>" +
+      '<p class="muted" style="margin:0 0 12px;max-width:52rem;min-width:0;overflow-wrap:break-word">' +
+      'Standing seats / who is booked → <button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Edit term slot</button>.</p>' +
       '<div class="asr-toolbar" id="asrToolbar">' +
       '<button type="button" class="btn btn--pri btn--sm" id="asrSaveBtn">Save staff hours</button>' +
       '<span class="muted" id="asrSaveStatus" style="font-size:12px;min-width:0;overflow-wrap:break-word"></span>' +
@@ -836,7 +830,7 @@
       "<span>Scroll horizontally for all venues · edits sync to dashboards after Save</span>" +
       '<span><i class="asr-swatch" style="background:#eff6ff;border-color:#93c5fd"></i> Saved override (blue text)</span>' +
       '<span><i class="asr-swatch" style="background:#fff7ed;border-color:#fdba74"></i> Day off · COVER (staff_unavailability)</span>' +
-      "<span>Click cell → pick staff / hours</span>" +
+      "<span>Click cell → pick staff / shift / paid hours</span>" +
       "</div>"
     );
   }
@@ -1356,13 +1350,18 @@
     return out;
   }
 
-  function updateCellWrapFace(wrap, val, iso) {
+  function updateCellWrapFace(wrap, val, iso, paidRaw) {
     if (!wrap) return;
     var parts = splitStaffHoursNameTime(val);
+    var paid =
+      paidRaw != null
+        ? String(paidRaw || "").trim()
+        : String(wrap.getAttribute("data-asr-paid") || "").trim();
     var away = !!(iso && parts.name && staffAwayOnIso(parts.name, iso));
     wrap.classList.toggle("asr-cell-wrap--dayoff", away);
     var nameEl = wrap.querySelector(".asr-cell-face__name");
     var timeEl = wrap.querySelector(".asr-cell-face__time");
+    var paidEl = wrap.querySelector(".asr-cell-face__paid");
     var badge = wrap.querySelector(".asr-dayoff-badge");
     if (nameEl) nameEl.textContent = parts.name || (val ? val : "·");
     if (timeEl) {
@@ -1372,6 +1371,17 @@
       } else {
         timeEl.textContent = "";
         timeEl.hidden = true;
+      }
+    }
+    if (paidEl) {
+      var shift = String(parts.time || "").replace(/\s+/g, "").trim();
+      var paidNorm = String(paid || "").replace(/\s+/g, "").trim();
+      if (paidNorm && paidNorm !== shift) {
+        paidEl.textContent = "paid " + paidNorm;
+        paidEl.hidden = false;
+      } else {
+        paidEl.textContent = "";
+        paidEl.hidden = true;
       }
     }
     if (away && !badge) {
@@ -1388,19 +1398,38 @@
     }
   }
 
-  function setCellAssignment(wrap, val) {
-    if (!wrap) return;
-    var key = wrap.getAttribute("data-asr-edit-key") || "";
-    if (!key) return;
+  function ensureDirtyBaselines(key) {
     if (!Object.prototype.hasOwnProperty.call(state.dirtyBaseline, key)) {
       var cell = findCellInStaffHours(data() && data().staffHours, key);
       state.dirtyBaseline[key] = cell ? String(cell.text || "") : "";
     }
-    var next = String(val || "").trim();
-    var base = state.dirtyBaseline[key];
-    if (next === String(base || "").trim()) {
-      delete state.dirty[key];
-      wrap.classList.remove("asr-cell-input--dirty");
+    if (!Object.prototype.hasOwnProperty.call(state.dirtyPaidBaseline, key)) {
+      var cellP = findCellInStaffHours(data() && data().staffHours, key);
+      state.dirtyPaidBaseline[key] = cellP ? String(cellP.paidHours || "").trim() : "";
+    }
+  }
+
+  function assignmentForKey(key) {
+    if (state.dirty[key] != null) return String(state.dirty[key] || "").trim();
+    var cell = findCellInStaffHours(data() && data().staffHours, key);
+    return cell ? String(cell.text || "").trim() : "";
+  }
+
+  function paidForKey(key) {
+    if (state.dirtyPaid[key] != null) return String(state.dirtyPaid[key] || "").trim();
+    var cell = findCellInStaffHours(data() && data().staffHours, key);
+    return cell ? String(cell.paidHours || "").trim() : "";
+  }
+
+  function syncDirtyClass(wrap, key) {
+    if (!wrap || !key) return;
+    var assignDirty = state.dirty[key] != null;
+    var paidDirty = state.dirtyPaid[key] != null;
+    var dirty = assignDirty || paidDirty;
+    wrap.classList.toggle("asr-cell-input--dirty", dirty);
+    if (dirty) {
+      wrap.classList.remove("asr-cell-input--saved");
+    } else {
       wrap.classList.toggle(
         "asr-cell-input--saved",
         !!(function () {
@@ -1408,16 +1437,52 @@
           return c && (c.overridden || c.tone === "updated");
         })()
       );
+    }
+  }
+
+  function setCellAssignment(wrap, val) {
+    if (!wrap) return;
+    var key = wrap.getAttribute("data-asr-edit-key") || "";
+    if (!key) return;
+    ensureDirtyBaselines(key);
+    var next = String(val || "").trim();
+    var base = state.dirtyBaseline[key];
+    if (next === String(base || "").trim()) {
+      delete state.dirty[key];
     } else {
       state.dirty[key] = next;
-      wrap.classList.add("asr-cell-input--dirty");
-      wrap.classList.remove("asr-cell-input--saved");
     }
     wrap.setAttribute("data-asr-value", next);
     var iso = wrap.getAttribute("data-asr-iso") || "";
-    updateCellWrapFace(wrap, next, iso);
+    var paid = paidForKey(key);
+    wrap.setAttribute("data-asr-paid", paid);
+    updateCellWrapFace(wrap, next, iso, paid);
     var typeInp = wrap.querySelector(".asr-cell-input--type");
     if (typeInp) typeInp.value = next;
+    syncDirtyClass(wrap, key);
+    updateToolbar();
+  }
+
+  function setCellPaid(wrap, paidVal) {
+    if (!wrap) return;
+    var key = wrap.getAttribute("data-asr-edit-key") || "";
+    if (!key) return;
+    ensureDirtyBaselines(key);
+    var next = String(paidVal || "")
+      .replace(/\s+/g, "")
+      .trim();
+    var base = String(state.dirtyPaidBaseline[key] || "").trim();
+    if (next === base) {
+      delete state.dirtyPaid[key];
+    } else {
+      state.dirtyPaid[key] = next;
+    }
+    wrap.setAttribute("data-asr-paid", next);
+    var iso = wrap.getAttribute("data-asr-iso") || "";
+    var assign = assignmentForKey(key);
+    wrap.setAttribute("data-asr-value", assign);
+    updateCellWrapFace(wrap, assign, iso, next);
+    syncDirtyClass(wrap, key);
     updateToolbar();
   }
 
@@ -1434,27 +1499,42 @@
   function renderPickChips(host, items, kind, activeVal) {
     if (!host) return;
     var activeKey =
-      kind === "staff" ? staffNameKey(activeVal) : String(activeVal || "").replace(/\s+/g, "");
+      kind === "staff"
+        ? staffNameKey(activeVal)
+        : String(activeVal || "").replace(/\s+/g, "");
     host.innerHTML = items
       .map(function (item) {
-        var label = String(item);
+        var label = typeof item === "object" ? String(item.label || "") : String(item);
+        var val =
+          typeof item === "object" ? String(item.val != null ? item.val : label) : String(item);
         var isActive =
           kind === "staff"
             ? staffNameKey(label) === activeKey
-            : String(label).replace(/\s+/g, "") === activeKey;
+            : kind === "paid"
+              ? String(val || "").replace(/\s+/g, "") === activeKey
+              : String(val || "").replace(/\s+/g, "") === activeKey;
         return (
           '<button type="button" class="asr-pick-chip' +
           (isActive ? " is-active" : "") +
           '" data-asr-pick="' +
           esc(kind) +
           '" data-asr-pick-val="' +
-          esc(label) +
+          esc(val) +
           '">' +
           esc(label) +
           "</button>"
         );
       })
       .join("");
+  }
+
+  function collectPaidPickBands(dayName, colIdx) {
+    var bands = collectTimePickBands(dayName, colIdx);
+    return [{ label: "Same as shift", val: "" }].concat(
+      bands.map(function (b) {
+        return { label: b, val: b };
+      })
+    );
   }
 
   function openStaffHoursPick(wrap) {
@@ -1466,6 +1546,7 @@
     state.pick = { editKey: wrap.getAttribute("data-asr-edit-key") || "", wrap: wrap };
     wrap.classList.add("asr-cell-wrap--picking");
     var val = wrap.getAttribute("data-asr-value") || "";
+    var paid = wrap.getAttribute("data-asr-paid") || "";
     var parts = splitStaffHoursNameTime(val);
     var dayName = wrap.getAttribute("data-asr-day") || state.hoursDay || "Monday";
     var colIdx = Number(wrap.getAttribute("data-asr-col") || 0);
@@ -1481,12 +1562,18 @@
       "time",
       parts.time
     );
+    renderPickChips(
+      pop.querySelector("[data-asr-pick-paid]"),
+      collectPaidPickBands(dayName, colIdx),
+      "paid",
+      paid
+    );
     pop.hidden = false;
     var rect = wrap.getBoundingClientRect();
     var rootRect = root.getBoundingClientRect();
     var top = rect.bottom - rootRect.top + root.scrollTop + 6;
     var left = rect.left - rootRect.left + root.scrollLeft;
-    var maxLeft = Math.max(8, root.clientWidth - 320);
+    var maxLeft = Math.max(8, root.clientWidth - 340);
     if (left > maxLeft) left = maxLeft;
     if (left < 8) left = 8;
     pop.style.top = top + "px";
@@ -1495,12 +1582,14 @@
 
   function staffHoursPickHtml() {
     return (
-      '<div id="asrStaffHoursPick" class="asr-pick" hidden role="dialog" aria-label="Pick staff and hours">' +
-      '<p class="asr-pick__title">Pick staff + hours</p>' +
+      '<div id="asrStaffHoursPick" class="asr-pick" hidden role="dialog" aria-label="Pick staff, shift and paid hours">' +
+      '<p class="asr-pick__title">Pick staff + shift + paid</p>' +
       '<div class="asr-pick__sec"><div class="asr-pick__lbl">Staff</div>' +
       '<div class="asr-pick__chips" data-asr-pick-staff></div></div>' +
-      '<div class="asr-pick__sec"><div class="asr-pick__lbl">Hours</div>' +
+      '<div class="asr-pick__sec"><div class="asr-pick__lbl">Shift hours</div>' +
       '<div class="asr-pick__chips" data-asr-pick-times></div></div>' +
+      '<div class="asr-pick__sec"><div class="asr-pick__lbl">Paid hours</div>' +
+      '<div class="asr-pick__chips" data-asr-pick-paid></div></div>' +
       '<div class="asr-pick__actions">' +
       '<button type="button" class="btn btn--ghost btn--sm" data-asr-pick-clear>Clear</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-asr-pick-type>Type…</button>' +
@@ -1512,18 +1601,30 @@
   function cellInputHtml(cell, iso, colIdx, dayName) {
     var key = cell.editKey || "";
     var val = state.dirty[key] != null ? state.dirty[key] : cell.text || "";
+    var paid =
+      state.dirtyPaid[key] != null
+        ? String(state.dirtyPaid[key] || "").trim()
+        : String(cell.paidHours || "").trim();
     var parts = splitStaffHoursNameTime(val);
-    var dirtyCls = state.dirty[key] != null ? " asr-cell-input--dirty" : "";
+    var dirtyCls =
+      state.dirty[key] != null || state.dirtyPaid[key] != null
+        ? " asr-cell-input--dirty"
+        : "";
     var savedCls =
-      state.dirty[key] == null && (cell.overridden || cell.tone === "updated")
+      state.dirty[key] == null &&
+      state.dirtyPaid[key] == null &&
+      (cell.overridden || cell.tone === "updated")
         ? " asr-cell-input--saved asr-tone--updated"
         : "";
     var tone =
-      cell.tone && state.dirty[key] == null && !savedCls
+      cell.tone && state.dirty[key] == null && state.dirtyPaid[key] == null && !savedCls
         ? " asr-tone--" + cell.tone
         : "";
     var away = !!(iso && parts.name && staffAwayOnIso(parts.name, iso));
     var dayOffCls = away ? " asr-cell-wrap--dayoff" : "";
+    var shiftNorm = String(parts.time || "").replace(/\s+/g, "").trim();
+    var paidNorm = String(paid || "").replace(/\s+/g, "").trim();
+    var showPaid = !!(paidNorm && paidNorm !== shiftNorm);
     var face =
       '<span class="asr-cell-face" aria-hidden="true">' +
       '<span class="asr-cell-face__name">' +
@@ -1532,6 +1633,9 @@
       (parts.time
         ? '<span class="asr-cell-face__time">' + esc(parts.time) + "</span>"
         : '<span class="asr-cell-face__time" hidden></span>') +
+      (showPaid
+        ? '<span class="asr-cell-face__paid">paid ' + esc(paidNorm) + "</span>"
+        : '<span class="asr-cell-face__paid" hidden></span>') +
       (away
         ? '<span class="asr-dayoff-badge" title="staff_unavailability — same as Overview">Day off · COVER</span>'
         : "") +
@@ -1542,10 +1646,12 @@
       savedCls +
       tone +
       dayOffCls +
-      '" role="button" tabindex="0" title="Click to pick staff + hours" data-asr-edit-key="' +
+      '" role="button" tabindex="0" title="Click to pick staff, shift and paid hours" data-asr-edit-key="' +
       esc(key) +
       '" data-asr-value="' +
       esc(val) +
+      '" data-asr-paid="' +
+      esc(paid) +
       '" data-asr-iso="' +
       esc(iso || "") +
       '" data-asr-col="' +
@@ -2162,13 +2268,13 @@
       state.hoursRange === "term"
         ? "Showing <strong>every " +
           (day === "all" ? "weekday" : day) +
-          "</strong> in Autumn Term 2026 (1 Sep - 17 Dec). <strong>Click a cell</strong> to pick staff + hours (chips), then <strong>Save staff hours</strong>."
-        : "Showing <strong>one week</strong> only. Click a cell to pick staff + hours. Switch to Whole term to see all Mondays (etc.).";
+          "</strong> in Autumn Term 2026 (1 Sep - 17 Dec). <strong>Click a cell</strong> to pick staff, shift and paid hours, then <strong>Save staff hours</strong>."
+        : "Showing <strong>one week</strong> only. Click a cell to pick staff, shift and paid hours. Switch to Whole term to see all Mondays (etc.).";
     var html =
       renderStandingHoursBlock() +
       '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">' +
       rangeHint +
-      " Saves update dashboards — they do <strong>not</strong> change MADRE / who is booked (use Edit term slot).</p>" +
+      " Saves update dashboards — they do <strong>not</strong> change who is booked (use Edit term slot).</p>" +
       hoursRangeToggleHtml() +
       (state.hoursRange === "week" ? hoursWeekNavHtml() : "") +
       hoursLegendHtml() +
@@ -2216,10 +2322,21 @@
     return html + renderHoursDaySection(day, one) + renderChangeLogHtml();
   }
 
+  function dirtyKeyCount() {
+    var keys = Object.create(null);
+    Object.keys(state.dirty).forEach(function (k) {
+      keys[k] = 1;
+    });
+    Object.keys(state.dirtyPaid).forEach(function (k) {
+      keys[k] = 1;
+    });
+    return Object.keys(keys).length;
+  }
+
   function updateToolbar() {
     var bar = document.getElementById("asrToolbar");
-    if (bar) bar.hidden = state.tab !== "hours";
-    var dirtyCount = Object.keys(state.dirty).length;
+    if (bar) bar.hidden = false;
+    var dirtyCount = dirtyKeyCount();
     var st = document.getElementById("asrSaveStatus");
     if (st) {
       st.textContent = dirtyCount
@@ -2234,7 +2351,7 @@
     closeStaffHoursPick();
     var panel = document.getElementById("adminSpreadsheetRefPanel");
     if (!panel) return;
-    panel.innerHTML = state.tab === "sessions" ? renderSessionsPanel() : renderHoursPanel();
+    panel.innerHTML = renderHoursPanel();
     bindPanel(panel);
     updateToolbar();
   }
@@ -2250,16 +2367,25 @@
   }
 
   function collectDirtyRows() {
+    var keys = Object.create(null);
+    Object.keys(state.dirty).forEach(function (k) {
+      keys[k] = 1;
+    });
+    Object.keys(state.dirtyPaid).forEach(function (k) {
+      keys[k] = 1;
+    });
     var out = [];
-    Object.keys(state.dirty).forEach(function (key) {
+    Object.keys(keys).forEach(function (key) {
       var parsed = parseEditKey(key);
       if (!parsed) return;
+      var raw = assignmentForKey(key);
       out.push({
         session_date: parsed.session_date,
         day: parsed.day,
         column_key: parsed.column_key,
-        raw_assignment: String(state.dirty[key] || "").trim(),
-        status: String(state.dirty[key] || "").trim() ? "active" : "cleared",
+        raw_assignment: raw,
+        paid_hours: paidForKey(key),
+        status: raw ? "active" : "cleared",
       });
     });
     return out;
@@ -2293,6 +2419,7 @@
         day: row.day,
         column_key: row.column_key,
         raw_assignment: row.raw_assignment,
+        paid_hours: row.paid_hours || null,
         status: row.status,
         created_by: uid,
         updated_by: uid,
@@ -2307,7 +2434,11 @@
         Object.keys(state.dirty).forEach(function (key) {
           delete state.dirtyBaseline[key];
         });
+        Object.keys(state.dirtyPaid).forEach(function (key) {
+          delete state.dirtyPaidBaseline[key];
+        });
         state.dirty = Object.create(null);
+        state.dirtyPaid = Object.create(null);
         return applyOverridesToMerged();
       })
       .then(function () {
@@ -2335,6 +2466,8 @@
         var msg = String((err && err.message) || err || "Unknown error");
         if (/portal_staff_timetable_cells|relation.*does not exist/i.test(msg)) {
           msg += " — run migration 20260611120000_portal_staff_timetable_cells on Portal Supabase.";
+        } else if (/paid_hours|column.*does not exist/i.test(msg)) {
+          msg += " — run migration 20260917193000_portal_staff_timetable_paid_hours on Portal Supabase.";
         }
         cfg.toast("Save failed: " + msg);
       })
@@ -2446,8 +2579,13 @@
           setCellAssignment(wrap, composeStaffHoursText(pickVal, cur.time));
         } else if (kind === "time") {
           setCellAssignment(wrap, composeStaffHoursText(cur.name, pickVal));
+        } else if (kind === "paid") {
+          setCellPaid(wrap, pickVal);
         }
         var parts = splitStaffHoursNameTime(wrap.getAttribute("data-asr-value") || "");
+        var paidNow = wrap.getAttribute("data-asr-paid") || "";
+        var dayName = wrap.getAttribute("data-asr-day") || state.hoursDay || "Monday";
+        var colIdx = Number(wrap.getAttribute("data-asr-col") || 0);
         var pop = document.getElementById("asrStaffHoursPick");
         if (pop) {
           renderPickChips(
@@ -2458,12 +2596,15 @@
           );
           renderPickChips(
             pop.querySelector("[data-asr-pick-times]"),
-            collectTimePickBands(
-              wrap.getAttribute("data-asr-day") || state.hoursDay || "Monday",
-              Number(wrap.getAttribute("data-asr-col") || 0)
-            ),
+            collectTimePickBands(dayName, colIdx),
             "time",
             parts.time
+          );
+          renderPickChips(
+            pop.querySelector("[data-asr-pick-paid]"),
+            collectPaidPickBands(dayName, colIdx),
+            "paid",
+            paidNow
           );
         }
         return;
@@ -2471,6 +2612,7 @@
       if (t.closest("[data-asr-pick-clear]") && state.pick && state.pick.wrap) {
         e.preventDefault();
         setCellAssignment(state.pick.wrap, "");
+        setCellPaid(state.pick.wrap, "");
         closeStaffHoursPick();
         return;
       }
@@ -2501,15 +2643,6 @@
     var root = document.getElementById("adminSpreadsheetRefRoot");
     if (!root) return;
     bindStaffHoursPickOnce();
-    root.querySelectorAll("[data-asr-tab]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        state.tab = btn.getAttribute("data-asr-tab") || "sessions";
-        root.querySelectorAll("[data-asr-tab]").forEach(function (b) {
-          b.classList.toggle("is-active", b.getAttribute("data-asr-tab") === state.tab);
-        });
-        refreshPanel();
-      });
-    });
     var saveBtn = document.getElementById("asrSaveBtn");
     if (saveBtn && !saveBtn._asrSaveBound) {
       saveBtn._asrSaveBound = true;

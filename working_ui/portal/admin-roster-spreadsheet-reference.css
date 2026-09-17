@@ -74,6 +74,15 @@
   text-align: center;
   overflow-wrap: break-word;
 }
+.asr-cell-face__paid {
+  display: block;
+  width: 100%;
+  font-size: 10px;
+  font-weight: 600;
+  color: #0369a1;
+  text-align: center;
+  overflow-wrap: break-word;
+}
 .asr-cell-wrap .asr-cell-input {
   position: absolute;
   inset: 0;
@@ -108,9 +117,9 @@
 .asr-pick {
   position: absolute;
   z-index: 40;
-  width: min(18rem, calc(100% - 16px));
-  max-width: 20rem;
-  max-height: min(70vh, 28rem);
+  width: min(20rem, calc(100% - 16px));
+  max-width: 22rem;
+  max-height: min(75vh, 34rem);
   overflow: auto;
   padding: 10px 12px;
   border: 1px solid #cbd5e1;
@@ -180,7 +189,8 @@
   background: #eff6ff;
 }
 .asr-cell-wrap.asr-cell-input--dirty .asr-cell-face__name,
-.asr-cell-wrap.asr-cell-input--dirty .asr-cell-face__time {
+.asr-cell-wrap.asr-cell-input--dirty .asr-cell-face__time,
+.asr-cell-wrap.asr-cell-input--dirty .asr-cell-face__paid {
   color: #2563eb;
 }
 .asr-cell-wrap.asr-cell-input--saved .asr-cell-face,
