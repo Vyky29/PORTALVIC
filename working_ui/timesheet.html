@@ -3752,6 +3752,7 @@
         date: dateKey,
         day: dayName,
         hours,
+        /* Feedback complete → green / payable; pending → orange, hours still show Timetable minimum. */
         completed: completedAll,
         service: serviceName || dominantService,
         serviceName: serviceName || dominantService,
@@ -3762,6 +3763,37 @@
         rate,
         blendedRate: null
       };
+    }
+
+    /**
+     * Timetable green paid_hours = payable band (minimum / agreed pay).
+     * Feedback completion only flips completed (orange vs green) — never shrinks hours to
+     * "only the 1h session that has feedback".
+     */
+    function applyTimetablePaidBandToDayEntries(entries, rosterKey, dateKey) {
+      const list = Array.isArray(entries) ? entries : [];
+      if (!list.length) return list;
+      const tt = timesheetTimetablePaidForStaffDay(rosterKey, dateKey);
+      if (!tt || !(tt.hours > 0)) return list;
+      const live = list.filter((e) => e && !e.dayOff && Number(e.hours) > 0);
+      if (!live.length) return list;
+      if (live.length === 1) {
+        live[0].hours = tt.hours;
+        if (tt.startMin != null && tt.endMin != null) {
+          const tr = clubTimeRangeFromMinutes(tt.startMin, tt.endMin);
+          live[0].timeRange = tr;
+          const named = timesheetStripVenueSuffix(live[0].serviceName || live[0].service || "") || "";
+          live[0].serviceLabel = tr ? `${tr} ${named}`.trim() : named;
+        }
+        return list;
+      }
+      const sum = live.reduce((acc, e) => acc + Number(e.hours || 0), 0);
+      if (!(sum > 0)) return list;
+      const factor = tt.hours / sum;
+      live.forEach((e) => {
+        e.hours = Number((Number(e.hours || 0) * factor).toFixed(2));
+      });
+      return list;
     }
 
     /** Split AM support / PM swim (etc.): one row per role + service group. */
@@ -3857,6 +3889,10 @@
           hours = youssefActonSaturdayPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
           hours = robertoActonZhPayableHours(dayName, rosterKey, role, hours, groupRows, dateKey);
           if (dayCentreSessionsAllAdminCancelled(dateKey, rosterKey, groupRows)) hours = 0;
+          /*
+           * Day-level Timetable paid_hours applied after all groups (see
+           * applyTimetablePaidBandToDayEntries). Keep session/hardcode hours here.
+           */
           if (!(hours > 0)) return;
           const serviceName =
             timesheetStripVenueSuffix(
@@ -4026,6 +4062,7 @@
         dateObj,
         rosterKey
       );
+      out = applyTimetablePaidBandToDayEntries(out, rosterKey, isoDate(dateObj));
       /* Fully cancelled Saturday Acton morning → Day Off row (Time off requested), not a blank day. */
       if (
         isYoussefRosterKey(rosterKey) &&
@@ -4304,10 +4341,10 @@
             ? ` ${lateN} day(s) submitted late are green at £0 until an admin validates them.`
             : "";
           note.textContent = state.pendingEntries.length
-            ? `${state.pendingEntries.length} day(s) pending feedback are shown in orange and are excluded from payable total.${lateBit}${offBit}`
+            ? `${state.pendingEntries.length} day(s) pending feedback are orange (unpaid until complete). Hours stay the Timetable paid band / minimum — not only sessions already reviewed.${lateBit}${offBit}`
             : (lateN
               ? `Feedback is complete; late days stay at £0 (green) until admin validates.${offBit}`
-              : `All shift days are completed (green) and included in payable total.${offBit}`);
+              : `All shift days are completed (green) and included in payable total. Hours follow Timetable paid (green line) when set.${offBit}`);
         }
       }
       document.getElementById("totalHours").textContent = money(state.totalHours);
