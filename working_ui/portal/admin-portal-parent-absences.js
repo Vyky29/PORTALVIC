@@ -385,6 +385,25 @@
     return { report: j.report, grant: j.grant, credit: j.credit, credit_apply: j.credit_apply };
   }
 
+  function serviceCellHtml(r) {
+    var label = String(r.service_label || '').trim();
+    var time = String(r.session_time || '').trim();
+    if (!label && !time) return '—';
+    if (!time) return esc(label || '—');
+    if (!label) return esc(time);
+    var norm = function (s) {
+      return String(s || '')
+        .toLowerCase()
+        .replace(/\u2013|\u2014|–|—/g, ' to ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+    var nLabel = norm(label);
+    var nTime = norm(time);
+    if (nLabel.indexOf(nTime) !== -1) return esc(label);
+    return esc(label) + ' · ' + esc(time);
+  }
+
   function rowHtml(r) {
     var proof = r.proof_signed_url
       ? '<a href="' + esc(r.proof_signed_url) + '" target="_blank" rel="noopener">Open proof</a>'
@@ -453,10 +472,9 @@
       esc(formatDate(r.session_date)) +
       '</td>' +
       '<td style="min-width:0;overflow-wrap:break-word">' +
-      esc(r.service_label || '—') +
-      (r.session_time ? ' · ' + esc(r.session_time) : '') +
+      serviceCellHtml(r) +
       '</td>' +
-      '<td style="min-width:0;max-width:12rem;overflow-wrap:break-word">' +
+      '<td style="min-width:16rem;max-width:28rem;width:28%;overflow-wrap:break-word;white-space:normal">' +
       esc(r.reason_text || '—') +
       '</td>' +
       '<td>' +
@@ -496,9 +514,8 @@
     return (
       '<div class="portal-parent-absences-embed">' +
       '<h1 class="page-title">Absents &amp; cancelled (decision queue)</h1>' +
-      '<p class="page-intro" style="max-width:52rem;overflow-wrap:break-word">Decide credit, refund, makeup or none. None = no parent message — find those under <strong>Decided</strong>. Wrong call? Use <strong>Reopen to decide again</strong>. Makeup picks an open roster seat — or place MakeUp in Schedule &amp; Covers and this row closes automatically.</p>' +
       '<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
-      '<button type="button" class="btn btn--sm" data-absence-filter="needs_decision">Open (decide)</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="needs_decision" hidden>Open</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="decided">Decided</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentAbsenceRefresh">Refresh</button>' +
@@ -540,8 +557,24 @@
     if (metaEl) metaEl.textContent = metaLine();
     var metaEmbed = global.document.getElementById('portalParentAbsenceMetaEmbed');
     if (metaEmbed) metaEmbed.textContent = metaLine();
+    syncAbsenceFilterButtons();
     hostEl.innerHTML = tableHtml(state.reports);
     bindRowActions(hostEl);
+  }
+
+  function syncAbsenceFilterButtons() {
+    var f = state.filter || 'needs_decision';
+    global.document.querySelectorAll('[data-absence-filter]').forEach(function (b) {
+      var key = b.getAttribute('data-absence-filter') || '';
+      var on = key === f;
+      b.classList.toggle('btn--ghost', !on);
+      if (key === 'needs_decision') {
+        b.hidden = f === 'needs_decision';
+        if (!b.hidden) b.classList.remove('btn--ghost');
+      } else {
+        b.hidden = false;
+      }
+    });
   }
 
   function normName(s) {
@@ -846,12 +879,9 @@
             btn.disabled = false;
             return;
           }
-          cfg.toast('Reopened — back in Open (decide). Refresh Makeup / Credits if needed.', 'ok');
+          cfg.toast('Reopened — back in Open. Refresh Makeup / Credits if needed.', 'ok');
           state.filter = 'needs_decision';
-          global.document.querySelectorAll('[data-absence-filter]').forEach(function (b) {
-            var on = b.getAttribute('data-absence-filter') === state.filter;
-            b.classList.toggle('btn--ghost', !on);
-          });
+          syncAbsenceFilterButtons();
           void renderHost(global.document.getElementById('portalParentAbsenceHost'));
         });
       });
@@ -1027,10 +1057,7 @@
     global.document.querySelectorAll('[data-absence-filter]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         state.filter = btn.getAttribute('data-absence-filter') || 'all';
-        global.document.querySelectorAll('[data-absence-filter]').forEach(function (b) {
-          var on = b.getAttribute('data-absence-filter') === state.filter;
-          b.classList.toggle('btn--ghost', !on);
-        });
+        syncAbsenceFilterButtons();
         void renderHost(global.document.getElementById('portalParentAbsenceHost'));
       });
     });
@@ -1043,9 +1070,8 @@
       '<div class="card-h"><h3>Absents &amp; cancellations — decide</h3>' +
       '<span class="chip chip--pend" id="portalParentAbsenceMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Pick outcome → <strong>Approve</strong>. <strong>None</strong> = nothing owed, no parent message (then leaves Open — find them under <strong>Decided</strong>). <strong>Credit / refund</strong> = ledger + aviso. <strong>Makeup</strong> = pick venue + open roster seat here, or place MakeUp in Schedule &amp; Covers (auto-closes the oldest open row for that child). Wrong decision? Open <strong>Decided</strong> → <strong>Reopen to decide again</strong>.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
-      '<button type="button" class="btn btn--sm" data-absence-filter="needs_decision">Open (decide)</button>' +
+      '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="needs_decision" hidden>Open</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="decided">Decided</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-absence-filter="all">All since 1 Sep</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentAbsenceRefreshEmbed">Refresh</button>' +
