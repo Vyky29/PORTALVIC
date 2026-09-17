@@ -1376,8 +1376,9 @@
     if (paidEl) {
       var shift = String(parts.time || "").replace(/\s+/g, "").trim();
       var paidNorm = String(paid || "").replace(/\s+/g, "").trim();
-      if (paidNorm && paidNorm !== shift) {
-        paidEl.textContent = "paid " + paidNorm;
+      var effectivePaid = paidNorm || shift;
+      if (effectivePaid) {
+        paidEl.textContent = effectivePaid;
         paidEl.hidden = false;
       } else {
         paidEl.textContent = "";
@@ -1624,7 +1625,7 @@
     var dayOffCls = away ? " asr-cell-wrap--dayoff" : "";
     var shiftNorm = String(parts.time || "").replace(/\s+/g, "").trim();
     var paidNorm = String(paid || "").replace(/\s+/g, "").trim();
-    var showPaid = !!(paidNorm && paidNorm !== shiftNorm);
+    var effectivePaid = paidNorm || shiftNorm;
     var face =
       '<span class="asr-cell-face" aria-hidden="true">' +
       '<span class="asr-cell-face__name">' +
@@ -1633,8 +1634,10 @@
       (parts.time
         ? '<span class="asr-cell-face__time">' + esc(parts.time) + "</span>"
         : '<span class="asr-cell-face__time" hidden></span>') +
-      (showPaid
-        ? '<span class="asr-cell-face__paid">paid ' + esc(paidNorm) + "</span>"
+      (effectivePaid
+        ? '<span class="asr-cell-face__paid" title="Paid hours">' +
+          esc(effectivePaid) +
+          "</span>"
         : '<span class="asr-cell-face__paid" hidden></span>') +
       (away
         ? '<span class="asr-dayoff-badge" title="staff_unavailability — same as Overview">Day off · COVER</span>'
