@@ -3037,7 +3037,14 @@
     d.past = finished;
     if (finished) d.isNext = false;
     var paidFrom = participantPaidFromIso(data);
-    if (paidFrom && d.iso < paidFrom) {
+    var isTrialDay =
+      !!d.trialBooked ||
+      trialBookedDateRows(data).some(function (t) {
+        return t && t.iso === d.iso;
+      });
+    if (isTrialDay) d.trialBooked = true;
+    /* Mid-term join: weekdays before paid start paint red — except the trial day (purple). */
+    if (paidFrom && d.iso < paidFrom && !isTrialDay) {
       d.notBooked = true;
       d.isNext = false;
     }
@@ -4228,6 +4235,14 @@
   function termChipToneMeta(d, statusByIso) {
     statusByIso = statusByIso || {};
     var st = statusByIso[d.iso] || "";
+    /* Purple — paid trial day wins over absent / not-yet-term paint. */
+    if (d.trialBooked) {
+      return {
+        tone: "trial",
+        title: "Trial session — " + d.iso,
+        icon: "",
+      };
+    }
     /* Orange — parent / staff absent. */
     if (st === "absent") {
       return {
@@ -4258,13 +4273,6 @@
         tone: "unconfirmed",
         title: "Not confirmed for 2026/27 — re-enrol to keep this place — " + d.iso,
         icon: CHIP_X_SVG,
-      };
-    }
-    if (d.trialBooked) {
-      return {
-        tone: "trial",
-        title: "Trial session — " + d.iso,
-        icon: "",
       };
     }
     /* Green — attended / completed (past booked day, or explicit completed). */
