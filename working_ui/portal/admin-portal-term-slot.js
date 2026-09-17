@@ -504,18 +504,20 @@
     }
   }
 
-  function collectOpenSeatsForVisual(anchorIso, serviceFilter, timeFilter) {
+  function collectOpenSeatsForVisual(anchorIso, serviceFilter, venueFilter) {
     var weekday = weekdayLongFromIso(anchorIso);
     if (!weekday) return [];
     var wantSvc = normName(serviceFilter);
-    var wantTime = String(timeFilter || "").trim();
+    var wantVenue = normName(venueFilter);
     var seen = Object.create(null);
     var out = [];
     rosterRows().forEach(function (r) {
       if (!isOpenSeatParticipantName(r.client_name)) return;
       if (!rowMatchesAnchorWeekday(r, anchorIso, weekday)) return;
       if (wantSvc && normName(r.service) !== wantSvc) return;
-      if (wantTime && !timeSlotNormMatchesOrWithin(r.time_slot, wantTime, weekday)) return;
+      if (wantVenue && normName(r.venue).indexOf(wantVenue) < 0 && wantVenue.indexOf(normName(r.venue)) < 0) {
+        return;
+      }
       var key =
         normName(r.service) +
         "|" +
@@ -545,21 +547,20 @@
     var clientEl = root.querySelector("#trsClient");
     var svcEl = root.querySelector("#trsService");
     var anchorEl = root.querySelector("#trsAnchorDate");
-    var timeEl = root.querySelector("#trsTimeSlot");
+    var venueEl = root.querySelector("#trsVenue");
     var part = resolveClientName((clientEl && clientEl.value) || "") || String((clientEl && clientEl.value) || "").trim();
     var service = String((svcEl && svcEl.value) || "").trim();
     var anchor = normIso(anchorEl && anchorEl.value);
-    var timeFilter = String((timeEl && timeEl.value) || "").trim();
+    var venueFilter = String((venueEl && venueEl.value) || "").trim();
     var weekday = weekdayLongFromIso(anchor);
 
     if (!part) {
       nowHost.innerHTML =
-        '<p class="trs-visual-empty">Pick a participant to see where they sit now (Overview-style card).</p>';
+        '<p class="trs-visual-empty">Pick a participant to see where they sit now.</p>';
       availHost.innerHTML =
-        '<p class="trs-visual-empty">Open seats for the anchor day appear here once a participant (and ideally a service) is set.</p>';
+        '<p class="trs-visual-empty">Open seats appear here when you set the day (and optional service / venue).</p>';
       if (hint) {
-        hint.textContent =
-          "Start with the participant — then day / service filter who is available.";
+        hint.textContent = "Left: who they are with now. Right: filters + available seats.";
       }
       return;
     }
@@ -574,7 +575,7 @@
       nowHost.innerHTML =
         '<p class="trs-visual-empty">No standing seat found for <strong>' +
         esc(part) +
-        "</strong> in this term yet — pick an open seat below to place them.</p>";
+        "</strong> in this term yet — pick an open seat on the right.</p>";
     } else {
       nowHost.innerHTML = nowSlots
         .map(function (r) {
@@ -600,7 +601,7 @@
         .join("");
     }
 
-    var opens = collectOpenSeatsForVisual(anchor, service, timeFilter);
+    var opens = collectOpenSeatsForVisual(anchor, service, venueFilter);
     if (!anchor) {
       availHost.innerHTML =
         '<p class="trs-visual-empty">Set an anchor date to list open seats that day.</p>';
@@ -610,8 +611,8 @@
         esc(weekday || anchor) +
         "</strong>" +
         (service ? " for " + esc(service) : "") +
-        (timeFilter ? " at " + esc(timeFilter) : "") +
-        ". Widen filters or check Places in Services.</p>";
+        (venueFilter ? " at " + esc(venueFilter) : "") +
+        ". Widen filters or open Places in Services.</p>";
     } else {
       availHost.innerHTML = opens
         .map(function (r) {
@@ -636,11 +637,11 @@
 
     if (hint) {
       hint.textContent =
-        "Now = current instructor seat. Available = open seats on " +
+        "Available = open seats on " +
         (weekday || "anchor day") +
         (service ? " · " + service : "") +
-        (timeFilter ? " · " + timeFilter : "") +
-        ". Click a card to fill the form.";
+        (venueFilter ? " · " + venueFilter : "") +
+        ". Click a card to set time + instructor.";
     }
   }
 
@@ -836,7 +837,7 @@
     svcEl.innerHTML = "";
     var ph = document.createElement("option");
     ph.value = "";
-    ph.textContent = part ? "Select service" : "Pick participante first";
+    ph.textContent = part ? "All services" : "Pick participante first";
     svcEl.appendChild(ph);
     var list = part ? collectServicesForParticipantOnAnchor(part, anchorIso) : [];
     list.forEach(function (svc) {
@@ -2035,22 +2036,23 @@
       ".trs-panel__body{padding:18px 22px 20px;min-width:0}",
       ".trs-row{display:grid;gap:12px 16px;min-width:0}",
       ".trs-row + .trs-row{margin-top:14px;padding-top:14px;border-top:1px solid #eef2f7}",
-      ".trs-row--identity,.trs-row--details{grid-template-columns:repeat(4,minmax(0,1fr))}",
+      ".trs-row--filters{grid-template-columns:repeat(4,minmax(0,1fr))}",
       ".trs-row--control{grid-template-columns:minmax(0,1.05fr) minmax(0,1.35fr) minmax(0,1fr);align-items:start}",
-      "@media(max-width:1100px){.trs-row--identity,.trs-row--details{grid-template-columns:repeat(2,minmax(0,1fr))}.trs-row--control{grid-template-columns:1fr}}",
-      "@media(max-width:640px){.trs-row--identity,.trs-row--details,.trs-row--control{grid-template-columns:1fr}.trs-panel__head,.trs-panel__body,.trs-panel__foot{padding-left:14px;padding-right:14px}}",
-      ".trs-visual{margin:14px 0 0;padding:14px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc;min-width:0}",
+      "@media(max-width:1100px){.trs-row--filters{grid-template-columns:repeat(2,minmax(0,1fr))}.trs-row--control{grid-template-columns:1fr}}",
+      "@media(max-width:640px){.trs-row--filters,.trs-row--control{grid-template-columns:1fr}.trs-panel__head,.trs-panel__body,.trs-panel__foot{padding-left:14px;padding-right:14px}}",
+      ".trs-split{display:grid;grid-template-columns:minmax(15rem,0.9fr) minmax(0,1.6fr);gap:16px 20px;min-width:0;align-items:start}",
+      "@media(max-width:960px){.trs-split{grid-template-columns:1fr}}",
+      ".trs-split__left{min-width:0;padding:14px;border:1px solid #bfdbfe;border-radius:14px;background:#eff6ff}",
+      ".trs-split__right{min-width:0;padding:14px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}",
+      ".trs-split__left .trs-field{margin:0 0 12px}",
       ".trs-visual-hint{margin:0 0 10px;font-size:12px;line-height:1.45;color:#64748b;overflow-wrap:break-word}",
-      ".trs-visual-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 16px;min-width:0}",
-      "@media(max-width:900px){.trs-visual-cols{grid-template-columns:1fr}}",
-      ".trs-visual-col{min-width:0}",
       ".trs-visual-title{margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:#334155}",
       ".trs-visual-cards{display:flex;flex-wrap:wrap;gap:8px;min-width:0;align-items:stretch}",
       ".trs-visual-empty{margin:0;font-size:13px;line-height:1.45;color:#64748b;overflow-wrap:break-word;min-width:0}",
       ".trs-mini-card{display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left;min-width:0;width:min(100%,11.5rem);padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);overflow-wrap:break-word}",
       ".trs-mini-card--pick{cursor:pointer;font:inherit;color:inherit}",
       ".trs-mini-card--pick:hover{border-color:#93c5fd;box-shadow:0 0 0 2px rgba(59,130,246,.18)}",
-      ".trs-mini-card--now{border-color:#bfdbfe;background:#eff6ff}",
+      ".trs-mini-card--now{border-color:#93c5fd;background:#fff}",
       ".trs-mini-card--open{border-color:#bbf7d0;background:#f0fdf4}",
       ".trs-mini-card__band{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b}",
       ".trs-mini-card__name{font-size:14px;font-weight:800;color:#0f172a;min-width:0;overflow-wrap:break-word}",
@@ -2142,15 +2144,13 @@
         refreshTermSlotVisualBoard(root);
       });
     }
-    wire(root.querySelector("#trsInstructors"), root.querySelector("#trsInstructorsSuggest"), {
-      kind: "instructor",
-      strict: false,
-      match: "contains",
-    });
     wire(root.querySelector("#trsVenue"), root.querySelector("#trsVenueSuggest"), {
       kind: "venue",
       strict: false,
       match: "contains",
+      onPick: function () {
+        refreshTermSlotVisualBoard(root);
+      },
     });
   }
 
@@ -2189,39 +2189,33 @@
       '<div class="trs-panel__head">' +
       '<div class="trs-panel__title">' +
       "<h1>Edit term slot</h1>" +
-      "<p><strong>Participant first</strong> — see where they sit now, then pick an <strong>available</strong> seat for the anchor day. Scope (this day / every weekday / …) still controls the save.</p>" +
+      "<p><strong>Left:</strong> participant + current seat. <strong>Right:</strong> service, day, venue → available cards. Time and instructor come from the card you click.</p>" +
       "</div>" +
       '<div class="trs-panel__head-actions">' +
       '<button type="button" class="btn btn--sec" id="trsLoadBundle">Reload from roster</button>' +
       "</div>" +
       "</div>" +
       '<div class="trs-panel__body">' +
-      '<div class="trs-row trs-row--identity">' +
+      '<div class="trs-split" id="trsVisualBoard" aria-live="polite">' +
+      '<aside class="trs-split__left" aria-labelledby="trsNowTitle">' +
       '<div class="trs-field"><label for="trsClient">Participant</label><div class="participant-field-wrap"><input type="text" id="trsClient" value="' + esc(pre.client_name || "") + '" placeholder="Start typing name…" autocomplete="off"/><div id="trsClientSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Participants"></div></div></div>' +
-      '<div class="trs-field"><label for="trsService">Service</label><select id="trsService"><option value="">Pick participante first</option></select></div>' +
-      '<div class="trs-field"><label for="trsAnchorDate">Anchor date</label><input type="date" id="trsAnchorDate" value="' + esc(anchor) + '"/></div>' +
-      '<div class="trs-field"><label>Weekday</label><input type="text" id="trsWeekday" readonly value="' + esc(weekday) + '"/></div>' +
-      "</div>" +
-      '<div class="trs-visual" id="trsVisualBoard" aria-live="polite">' +
-      '<p class="trs-visual-hint" id="trsVisualHint">Start with the participant — then day / service filter who is available.</p>' +
-      '<div class="trs-visual-cols">' +
-      '<section class="trs-visual-col" aria-labelledby="trsNowTitle">' +
-      '<h2 class="trs-visual-title" id="trsNowTitle">Now (current seat)</h2>' +
+      '<h2 class="trs-visual-title" id="trsNowTitle">Now</h2>' +
       '<div class="trs-visual-cards" id="trsNowBoard"></div>' +
-      "</section>" +
-      '<section class="trs-visual-col" aria-labelledby="trsAvailTitle">' +
-      '<h2 class="trs-visual-title" id="trsAvailTitle">Available on anchor day</h2>' +
+      "</aside>" +
+      '<div class="trs-split__right">' +
+      '<div class="trs-row trs-row--filters" id="trsFiltersRow">' +
+      '<div class="trs-field"><label for="trsService">Service</label><select id="trsService"><option value="">All services</option></select></div>' +
+      '<div class="trs-field"><label for="trsAnchorDate">Anchor date</label><input type="date" id="trsAnchorDate" value="' + esc(anchor) + '"/></div>' +
+      '<div class="trs-field"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="e.g. Acton, SwimFarm…" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
+      '<div class="trs-field" id="trsDetailsRow"><label for="trsArea">Area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="Wall, gym, big pool, lane…"/></div>' +
+      "</div>" +
+      '<p class="trs-visual-hint" id="trsVisualHint">Filter by service, day and venue — click an available card to set time + instructor.</p>' +
+      '<h2 class="trs-visual-title" id="trsAvailTitle">Available</h2>' +
       '<div class="trs-visual-cards" id="trsAvailBoard"></div>' +
-      "</section>" +
-      "</div>" +
-      '<p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Full Places board (all free/occupied seats) → <button type="button" class="btn btn--ghost btn--sm" data-view-target="open_places_2627" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Places in Services</button>.</p>' +
-      "</div>" +
-      '<div class="trs-row trs-row--details" id="trsDetailsRow">' +
-      '<div class="trs-field trs-field--time"><label for="trsTimeSlot">Time slot</label><input type="text" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '" placeholder="From card or roster"/><div class="trs-time-band-wrap" id="trsTimeSlotPickWrap" hidden><span class="trs-control-label">30-minute band (Aquatic)</span><div class="trs-pills" id="trsTimeSlotOptions"></div></div></div>' +
-      '<div class="trs-field"><label for="trsInstructors">Instructor(s)</label><div class="participant-field-wrap"><input type="text" id="trsInstructors" value="' + esc(pre.instructors || "") + '" placeholder="From available card" autocomplete="off"/><div id="trsInstructorsSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Instructors"></div></div></div>' +
-      '<div class="trs-field"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="From available card" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
-      '<div class="trs-field"><label for="trsArea">Pool / area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="From available card"/></div>' +
-      "</div>" +
+      '<p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Full Places board → <button type="button" class="btn btn--ghost btn--sm" data-view-target="open_places_2627" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Places in Services</button>.</p>' +
+      '<input type="hidden" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '"/>' +
+      '<input type="hidden" id="trsInstructors" value="' + esc(pre.instructors || "") + '"/>' +
+      '<div class="trs-time-band-wrap" id="trsTimeSlotPickWrap" hidden><span class="trs-control-label">30-minute band (Aquatic)</span><div class="trs-pills" id="trsTimeSlotOptions"></div></div>' +
       '<div class="trs-row trs-row--sessions" id="trsSessionPickerBlock" hidden>' +
       '<div class="trs-control-block trs-control-block--sessions">' +
       '<span class="trs-control-label">Sessions in term <span id="trsSessionPickerMeta"></span></span>' +
@@ -2250,6 +2244,8 @@
       "</div>" +
       "</div>" +
       "</div>" +
+      "</div>" +
+      "</div>" +
       '<div class="trs-panel__foot">' +
       '<div class="trs-foot-actions">' +
       '<button type="button" class="btn btn--pri" id="trsSave"' + (state.saving ? " disabled" : "") + ">" + (state.saving ? "Saving…" : "Save term slot") + "</button>" +
@@ -2260,12 +2256,11 @@
       "</div></div>";
 
     var anchorEl = root.querySelector("#trsAnchorDate");
-    var wdEl = root.querySelector("#trsWeekday");
-    if (anchorEl && wdEl) {
+    if (anchorEl) {
       anchorEl.addEventListener("change", function () {
-        wdEl.value = weekdayLongFromIso(normIso(anchorEl.value));
+        var wd = weekdayLongFromIso(normIso(anchorEl.value));
         var scopeWd = root.querySelector("#trsScopeWeekdayLabel");
-        if (scopeWd) scopeWd.textContent = wdEl.value;
+        if (scopeWd) scopeWd.textContent = wd || "weekday";
         refreshTermSlotAutofill(root);
         refreshTermSlotVisualBoard(root);
       });
@@ -2293,17 +2288,17 @@
         }
       });
     }
-    var timeEl = root.querySelector("#trsTimeSlot");
-    if (timeEl && !timeEl._trsVisualBound) {
-      timeEl._trsVisualBound = true;
-      var timeTimer = null;
-      timeEl.addEventListener("input", function () {
-        clearTimeout(timeTimer);
-        timeTimer = setTimeout(function () {
+    var venueEl = root.querySelector("#trsVenue");
+    if (venueEl && !venueEl._trsVisualBound) {
+      venueEl._trsVisualBound = true;
+      var venueTimer = null;
+      venueEl.addEventListener("input", function () {
+        clearTimeout(venueTimer);
+        venueTimer = setTimeout(function () {
           refreshTermSlotVisualBoard(root);
         }, 250);
       });
-      timeEl.addEventListener("change", function () {
+      venueEl.addEventListener("change", function () {
         refreshTermSlotVisualBoard(root);
       });
     }
