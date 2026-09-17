@@ -148,7 +148,7 @@
   <script src="/portal/admin-open-places-2627.js?v=20260913-slots-live"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260909-reply-only" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
-  <script src="/portal/portal-parent-notify-templates.js?v=20260915-not-available-today"></script>
+  <script src="/portal/portal-parent-notify-templates.js?v=20260917-instructor-update2"></script>
   <script src="/portal/cfk-app.js?v=20260912-drop-mock-cap"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
   <script src="/portal/admin-scheduling-module.js?v=20260911-sched-mobile-cards"></script>
@@ -12307,6 +12307,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return { name: name, slug: slug };
     }
+    /** Previous cover name for "2nd instructor change" parent message. */
+    function notifyParentPreviousCoverFromSlot(slot, ov){
+      var pl = (ov && ov.payload) || {};
+      var prior = String(pl.prior_covering_staff_name || '').trim();
+      if(prior) return prior;
+      if(Array.isArray(pl.prior_covering_staff_names) && pl.prior_covering_staff_names[0]){
+        prior = String(pl.prior_covering_staff_names[0] || '').trim();
+        if(prior) return prior;
+      }
+      try{
+        if(typeof schedInstructorPriorCoverEntries === 'function'){
+          var ents = schedInstructorPriorCoverEntries(ov) || [];
+          if(ents[0] && ents[0].name) return String(ents[0].name).trim();
+        }
+      }catch(_pe){}
+      /* Fall back: standing / painted staff before the new cover (often first cover or original). */
+      var painted = String((slot && (slot.staffName || slot.staffRosterId)) || '').trim();
+      var newCover = notifyParentCoverInstructorFromDrawer();
+      if(painted && newCover.name && painted.toLowerCase() !== newCover.name.toLowerCase()){
+        return painted;
+      }
+      return painted || '';
+    }
     // Make-up / trial: read the replacement participant from the open Scheduling drawer
     // so a drafted (unsaved) message names the NEW client, not the original anchor.
     function notifyParentReplacementFromDrawer(){
@@ -12506,10 +12529,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var snap = kind === 'payment_due' ? bookingFinanceSnapshot(slot) : null;
             var newName = (opts && opts.newInstructorName) ? String(opts.newInstructorName).trim() : '';
             var coverStaffId = (opts && opts.coverStaffId) ? String(opts.coverStaffId).trim() : '';
-            if(kind === 'instructor_change' && !newName){
+            if((kind === 'instructor_change' || kind === 'instructor_change_update') && !newName){
               var coverMeta = notifyParentCoverInstructorFromDrawer();
               if(coverMeta.name) newName = coverMeta.name;
               if(coverMeta.slug) coverStaffId = coverMeta.slug;
+            }
+            var prevCoverName = (opts && opts.previousInstructorName) ? String(opts.previousInstructorName).trim() : '';
+            if(kind === 'instructor_change_update' && !prevCoverName){
+              prevCoverName = notifyParentPreviousCoverFromSlot(slot, ov);
             }
             var body = notifyParentBodyForKind(kind, {
               slot: slot,
@@ -12517,7 +12544,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               meta: meta,
               snap: snap || { outstanding:0, nextDue:null },
               newInstructorName: newName,
-              coverStaffId: coverStaffId
+              coverStaffId: coverStaffId,
+              previousInstructorName: prevCoverName
             });
             return { ov: ov, meta: meta, snap: snap, body: body };
           });
@@ -12555,20 +12583,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         newInstructorName: (opts && opts.newInstructorName) ? String(opts.newInstructorName).trim() : '',
         coverStaffId: ''
       };
-      if(kind === 'instructor_change' || kind === 'makeup_scheduled'){
+      if(kind === 'instructor_change' || kind === 'instructor_change_update' || kind === 'makeup_scheduled'){
         var coverMeta = notifyParentCoverInstructorFromDrawer();
         if(!notifyPhotoCtx.newInstructorName && coverMeta.name) notifyPhotoCtx.newInstructorName = coverMeta.name;
         if(coverMeta.slug) notifyPhotoCtx.coverStaffId = coverMeta.slug;
       }
+      if(kind === 'instructor_change_update' && !notifyPhotoCtx.previousInstructorName){
+        notifyPhotoCtx.previousInstructorName = notifyParentPreviousCoverFromSlot(slot, pack.ov);
+      }
       var instructorPhoto = notifyParentInstructorPhotoPack(kind, notifyPhotoCtx);
-      if(instructorPhoto.url && (kind === 'instructor_change' || kind === 'makeup_scheduled')){
+      if(instructorPhoto.url && (kind === 'instructor_change' || kind === 'instructor_change_update' || kind === 'makeup_scheduled')){
         var freshBody = notifyParentBodyForKind(kind, {
           slot: slot,
           ov: pack.ov,
           meta: meta,
           snap: pack.snap || { outstanding:0, nextDue:null },
           newInstructorName: notifyPhotoCtx.newInstructorName,
-          coverStaffId: notifyPhotoCtx.coverStaffId
+          coverStaffId: notifyPhotoCtx.coverStaffId,
+          previousInstructorName: notifyPhotoCtx.previousInstructorName || ''
         });
         if(freshBody) pack.body = freshBody;
       }
@@ -12622,7 +12654,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<p class="muted" style="margin:0;display:none;font-size:12px;overflow-wrap:break-word">Photo could not load — hard-refresh the page (Shift+Reload) if you still see old text above.</p>'+
             '<div style="min-width:0;overflow-wrap:break-word"><strong style="display:block">'+esc(instructorPhoto.name || 'Instructor')+'</strong>'+
             '<span class="muted" style="font-size:13px">Photo from staff dashboard — included in email and WhatsApp when you send now.</span></div></div>'
-          : ((kind === 'instructor_change' || kind === 'makeup_scheduled') && notifyPhotoCtx.newInstructorName
+          : ((kind === 'instructor_change' || kind === 'instructor_change_update' || kind === 'makeup_scheduled') && notifyPhotoCtx.newInstructorName
             ? '<p class="muted" style="margin-top:10px;padding:10px 12px;border:1px solid #fecaca;border-radius:10px;background:#fff7ed;overflow-wrap:break-word">No staff photo found for <strong>'+esc(notifyPhotoCtx.newInstructorName)+'</strong>. Hard-refresh (Shift+Reload) if this modal still shows old &quot;separate photo&quot; wording — then check <code>portal/staff_photos/</code>.</p>'
             : ''))+
         '<div class="grid-2" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px">'+
@@ -14988,6 +15020,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="muted" style="margin:6px 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Draft email or WhatsApp from a template; edit before sending. Instructor photos from the staff dashboard are included automatically for instructor change and make-up.</p>'+
         '<div style="display:flex;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyInstructor">Instructor change</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyInstructorUpdate">Instructor update (2nd cover)</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyTimeChange">Time change</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsenceThanks">Absence — thanks</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsenceFollowup">Absence — check-in</button>'+
@@ -15029,6 +15062,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var snI = $('schedParentNotifyInstructor');
       if(snI) snI.onclick = function(){ schedOpenParentNotifyForKind('instructor_change'); };
+      var snIU = $('schedParentNotifyInstructorUpdate');
+      if(snIU) snIU.onclick = function(){ schedOpenParentNotifyForKind('instructor_change_update'); };
       var snTc = $('schedParentNotifyTimeChange');
       if(snTc) snTc.onclick = function(){ schedOpenParentNotifyForKind('time_change'); };
       var snA = $('schedParentNotifyAbsence');
@@ -15716,6 +15751,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         if(!coverName) coverName = coverTyped;
         if(coverName) payload.covering_staff_name = coverName;
+      }
+      /* Second cover on same slot: keep prior cover so "2nd update" parent message can name them. */
+      if(ovType === 'instructor_reassign'){
+        try{
+          var prevRe = findOverrideForSlotOfTypes(slot, ['instructor_reassign']);
+          var prevPl = (prevRe && prevRe.payload) || {};
+          var prevId = normalizeSchedAnchorStaffId(prevPl.covering_staff_id || '');
+          var prevName = String(prevPl.covering_staff_name || '').trim();
+          if(prevId && prevId !== covering_staff_id){
+            payload.prior_covering_staff_id = prevId;
+            if(prevName) payload.prior_covering_staff_name = prevName;
+            var priorIds = Array.isArray(prevPl.prior_covering_staff_ids)
+              ? prevPl.prior_covering_staff_ids.slice()
+              : [];
+            var priorNames = Array.isArray(prevPl.prior_covering_staff_names)
+              ? prevPl.prior_covering_staff_names.slice()
+              : [];
+            if(prevId && priorIds.indexOf(prevId) < 0){
+              priorIds.push(prevId);
+              priorNames.push(prevName || prevId);
+            }
+            if(priorIds.length){
+              payload.prior_covering_staff_ids = priorIds;
+              payload.prior_covering_staff_names = priorNames;
+            }
+          }
+        }catch(_prior){}
       }
       var row = {
         session_date: slot.sessionDate,

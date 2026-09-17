@@ -39,6 +39,7 @@
     if (
       k !== "instructor_change" &&
       k !== "instructor_reassign" &&
+      k !== "instructor_change_update" &&
       k !== "makeup_scheduled"
     ) {
       return { url: "", name: "", slug: "" };
@@ -47,7 +48,11 @@
     var pl = (ov && ov.payload) || {};
     var slug = String(pl.covering_staff_id || "").trim();
     var name = String(pl.covering_staff_name || pl.to_staff_name || "").trim();
-    if (k === "instructor_change" || k === "instructor_reassign") {
+    if (
+      k === "instructor_change" ||
+      k === "instructor_reassign" ||
+      k === "instructor_change_update"
+    ) {
       if (ctx.newInstructorName) name = String(ctx.newInstructorName).trim();
       if (ctx.coverStaffId) slug = String(ctx.coverStaffId).trim();
     }
@@ -211,7 +216,7 @@
     );
   }
 
-  /** kind: instructor_change | instructor_reassign */
+  /** kind: instructor_change | instructor_reassign — first cover notice */
   function instructorChange(slot, ov, meta, newInstructorName, opts) {
     opts = opts || {};
     var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
@@ -253,6 +258,54 @@
           " the photo above so they know who to expect.\n\n"
         : "\n") +
       "If you have any questions, just reply to this message." +
+      signOff()
+    );
+  }
+
+  /**
+   * kind: instructor_change_update — second (or later) cover change after parents
+   * already had a first instructor-change message (e.g. Aurora → Javier).
+   */
+  function instructorChangeUpdate(slot, ov, meta, newInstructorName, opts) {
+    opts = opts || {};
+    var client = participantLabel(slot, ov, opts.effectiveParticipantLabel);
+    var when = sessionWhenWithDate(slot, ov);
+    var venue = sessionVenue(slot);
+    var prevCover = String(
+      (opts && (opts.previousInstructorName || opts.oldInstructorName)) || "",
+    ).trim();
+    var newI =
+      String(newInstructorName || "").trim() || "[new instructor - edit here]";
+    var whenPart = when ? " on " + when : "";
+    var venuePart = venue ? " at " + venue + "." : ".";
+    var changeLine = prevCover
+      ? "A quick update: we previously told you the session would be with " +
+        prevCover +
+        ". There has been a further change of instructor. The session will now be with " +
+        newI +
+        "."
+      : "A quick update on the instructor for this session: there has been a further change. The session will now be with " +
+        newI +
+        ".";
+    var photoUrl = String((opts && opts.instructorPhotoUrl) || "").trim();
+    var photoLine = instructorPhotoTextLine(newI, photoUrl);
+    return (
+      greet(meta && meta.parentCarerName) +
+      "This is ClubSENsational.\n\n" +
+      "We are writing about " +
+      client +
+      "'s session" +
+      whenPart +
+      venuePart +
+      "\n\n" +
+      changeLine +
+      photoLine +
+      (photoUrl
+        ? "Please show " +
+          client +
+          " the photo above so they know who to expect.\n\n"
+        : "\n") +
+      "Sorry for the extra change - if you have any questions, just reply to this message." +
       signOff()
     );
   }
@@ -588,6 +641,9 @@
     if (k === "instructor_change" || k === "instructor_reassign") {
       return "Instructor update · " + client;
     }
+    if (k === "instructor_change_update") {
+      return "Instructor update (further change) · " + client;
+    }
     if (k === "time_change" || k === "session_time_change") {
       return "Time change · " + client;
     }
@@ -638,6 +694,23 @@
         opts.instructorName = photo.name;
       }
     }
+    if (
+      String(kind || "")
+        .trim()
+        .toLowerCase() === "instructor_change_update"
+    ) {
+      if (ctx.previousInstructorName) {
+        opts.previousInstructorName = String(ctx.previousInstructorName).trim();
+      } else {
+        var pl = (ctx.ov && ctx.ov.payload) || {};
+        var prior =
+          String(pl.prior_covering_staff_name || "").trim() ||
+          (Array.isArray(pl.prior_covering_staff_names) &&
+            String(pl.prior_covering_staff_names[0] || "").trim()) ||
+          "";
+        if (prior) opts.previousInstructorName = prior;
+      }
+    }
     return opts;
   }
 
@@ -667,6 +740,9 @@
     if (k === "booking_confirmation") {
       return bookingConfirmation(slot, meta, ctx.svc);
     }
+    if (k === "instructor_change_update") {
+      return instructorChangeUpdate(slot, ov, meta, ctx.newInstructorName, opts);
+    }
     return instructorChange(slot, ov, meta, ctx.newInstructorName, opts);
   }
 
@@ -675,6 +751,7 @@
     signOff: signOff,
     payment: payment,
     instructorChange: instructorChange,
+    instructorChangeUpdate: instructorChangeUpdate,
     timeChange: timeChange,
     absence: absence,
     absenceThanks: absenceThanks,
