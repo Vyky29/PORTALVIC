@@ -25,7 +25,7 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 
-const DEMO_EMAIL = "victor.matilla.demo@clubsensational.org";
+const DEMO_EMAIL = "victor@clubsensational.org";
 const REENROL_YEAR = "2026-27";
 
 type Audience = "in_class" | "waiting_list" | "enquiries" | "otp_no_booking" | "all";
