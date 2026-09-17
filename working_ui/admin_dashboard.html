@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260915-sun-phases" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-ops-corporate" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-ops-today-first" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260727-role-names"></script>
@@ -180,7 +180,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260917-title-no-focus-ring" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260917-no-title-focus2" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -16158,6 +16158,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       /* Club cancel / admin cancel / clear client → Absents & credits decision queue.
        * Same-day / day reassign clears are moves (Moved out / Moved in), not cancellations. */
+      var openParentCancelNotify = false;
       if(ovType === 'slot_close' || ovType === 'client_cancelled' || ovType === 'slot_clear_client'){
         var clearPl = payload || {};
         var isMoveClear = !!(
@@ -16168,6 +16169,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           String(clearPl.replace_kind || '').toLowerCase() === 'day_reassign'
         );
         if(!(ovType === 'slot_clear_client' && isMoveClear)){
+          openParentCancelNotify = true;
           try{
             await schedEnqueueCancelDecisionQueue(client, slot, ins0.id, ovType, reason);
           }catch(_enq){
@@ -16243,8 +16245,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }catch(_lg){}
       try{
+        var enqueueNote = String(sched.lastMsg || '').trim();
         closeSchedDrawer();
-        sched.lastMsg = 'Override saved.';
+        sched.lastMsg = enqueueNote && enqueueNote.indexOf('Override saved') >= 0
+          ? enqueueNote
+          : (enqueueNote
+            ? ('Override saved. ' + enqueueNote)
+            : 'Override saved.');
         if(window.PortalMadreFold && typeof window.PortalMadreFold.queueScheduleOverrideChange === 'function'){
           window.PortalMadreFold.queueScheduleOverrideChange(client, {
             row: row,
@@ -16256,9 +16263,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         await portalSyncOverviewDayTruth(client, { refreshScheduling: false, forceOverviewRender: false });
         await refreshSchedulingModule();
+        /* After Cancelled: draft parent cancellation (office still sends), decide queue already queued. */
+        if(openParentCancelNotify && typeof openParentNotifyModal === 'function'){
+          try{
+            openParentNotifyModal({
+              kind: 'session_cancelled',
+              slot: slot,
+              useSchedOverrides: true,
+              dateIso: String(slot.sessionDate || '').slice(0, 10)
+            });
+          }catch(_pn){
+            console.warn('[portal] parent cancel notify modal failed', _pn);
+          }
+        }
       }catch(postErr){
         console.warn('[portal] override saved; post-save refresh failed', postErr);
-        sched.lastMsg = 'Override saved. Refresh if the table still looks stale.';
+        if(!String(sched.lastMsg || '').trim()){
+          sched.lastMsg = 'Override saved. Refresh if the table still looks stale.';
+        }
         try{ await refreshSchedulingModule(); }catch(_rf){}
       }
     }
@@ -27115,6 +27137,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</article>'
       );
     }
+    function opsHubSectionHtml(title, actions, variant, sectionClass){
+      var pol = window.PortalAdminModulePolicy;
+      var list = (pol && typeof pol.filterHubActionIds === 'function')
+        ? pol.filterHubActionIds(actions)
+        : actions;
+      var btns = opsHubActionsHtml(list, variant || 'primary');
+      if(!btns) return '';
+      return (
+        '<section class="ops-hub__section '+(sectionClass || '')+'" aria-label="'+esc(title)+'">' +
+        '<h2 class="ops-hub__section-title">'+esc(title)+'</h2>' +
+        '<div class="ops-hub__action-row">'+btns+'</div>' +
+        '</section>'
+      );
+    }
     function viewNavHubDashboard(){
       if(state.navHubGroup){
         var group = navGroupById(state.navHubGroup);
@@ -27134,9 +27170,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           );
         }
       }
-      var cards = OPS_HUB_CARDS.map(opsHubCardHtml).join('');
+      /* Home = Today board + frequent jumps. Full nav stays in the left menu. */
+      var todayActions = [
+        'c4k_sessions',
+        'scheduling',
+        'sessions_register',
+        'sessions_feedback',
+        'sessions_absents',
+        'c4k_late_submissions'
+      ];
+      var frequentActions = [
+        { id:'reenrol_payments', label:'Finance' },
+        { id:'absents_refunds', label:'Refunds & credits' },
+        'clients',
+        'c4k_waitlist',
+        'portal_parent_notify_log',
+        'portal_staff_whatsapp',
+        'staffhr',
+        'c4k_services',
+        'office_calendar',
+        'onboarding'
+      ];
       return (
-        '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub">' +
+        '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub ops-hub--today-first">' +
         '<header class="ops-hub__intro">' +
         '<div class="ops-hub__intro-row">' +
         '<h1 class="ops-hub__intro-title">Operations Hub</h1>' +
@@ -27144,10 +27200,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>' +
         '</header>' +
         opsHubGlanceHtml() +
-        '<div class="ops-hub__body">' +
-        '<div class="ops-hub__main">' +
-        '<div class="ops-hub__grid admin-dashboard-grid">'+cards+'</div>' +
-        '</div>' +
+        '<div class="ops-hub__body ops-hub__body--flat">' +
+        opsHubSectionHtml('Today', todayActions, 'primary', 'ops-hub__section--today') +
+        opsHubSectionHtml('Frequent', frequentActions, 'secondary', 'ops-hub__section--frequent') +
         '</div>' +
         '</div>'
       );
