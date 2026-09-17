@@ -2347,8 +2347,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return block;
       });
       s = s.replace(/^(\s*<div class="dash-hub__hub-toolbar"[\s\S]*?<\/div>\s*)+/i, '');
-      s = s.replace(/^(\s*<h[12]\s+class="page-title"[^>]*>[\s\S]*?<\/h[12]>\s*)+/i, '');
-      s = s.replace(/^(\s*<p class="page-intro"[^>]*>[\s\S]*?<\/p>\s*)+/i, function(block){
+      /* First page-title / plain page-intro only — even when wrapped (style, root div, toolbar).
+         Shell redraws them in admin-page-head; leaving them caused duplicated titles/intros. */
+      s = s.replace(/<h[12]\s+class="page-title"[^>]*>[\s\S]*?<\/h[12]>/i, '');
+      s = s.replace(/<p class="page-intro"[^>]*>[\s\S]*?<\/p>/i, function(block){
         if(/<button|<\/?a\s/i.test(block)) return block;
         return '';
       });
@@ -25136,7 +25138,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<h1 class="page-title">WAITING</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Registered families waiting for a full service — triage, match, and progress offers. '+metaLine+' Day context: <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services</button>.</p>'+optHint+
         focusBanner+
-        '<div class="section"><div class="section-h"><h2>WAITING (pipeline)</h2><p>Live Booking Portal joins first; workbook history kept below.</p></div>'+
+        '<div class="section"><div class="section-h"><h2>Pipeline</h2><p>Live Booking Portal joins first; workbook history kept below.</p></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" id="bookingWaitlistTable"><thead><tr><th>Participant</th><th>Source</th><th>Stage</th><th>Since</th></tr></thead><tbody></tbody></table></div></div></div>'+
         '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Service matching queue</h2><p>Desired service, slot time, and preferences when present.</p></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" id="c4kWaitlistMatchTable" style="min-width:1120px"><thead><tr><th>Participant</th><th>Service</th><th>Slot time</th><th>Pref. time</th><th>Ratio</th><th>Location</th><th>Pri</th><th>Possible match</th><th>Contact</th><th>Last booking</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+foot+'</div></div>'
