@@ -26,6 +26,9 @@
     event: { label: "Event", color: "#15803d", bg: "#dcfce7" },
   };
 
+  /** Quick title picks for office notes (who the note is about / for). */
+  var TITLE_SUGGESTIONS = ["Victor", "Javi", "Raul", "Sevitha"];
+
   var state = {
     year: 0,
     month: 0, // 0-11
@@ -358,9 +361,14 @@
       '<label>Type<select class="inp" id="pocType" required>' +
       typeOpts +
       "</select></label>" +
-      '<label>Title<input class="inp" id="pocTitle" type="text" maxlength="200" required value="' +
+      '<label>Title<input class="inp" id="pocTitle" type="text" maxlength="200" required list="pocTitleSuggest" autocomplete="off" value="' +
       esc(p.title || "") +
       '" placeholder="e.g. Call with Ealing LA" /></label>' +
+      '<datalist id="pocTitleSuggest">' +
+      TITLE_SUGGESTIONS.map(function (n) {
+        return '<option value="' + esc(n) + '"></option>';
+      }).join("") +
+      "</datalist>" +
       '<label class="poc-form-span"><span>Details</span><textarea class="inp" id="pocBody" rows="3" maxlength="8000" placeholder="Optional notes…">' +
       esc(p.body || "") +
       "</textarea></label>" +
