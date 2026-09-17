@@ -798,12 +798,19 @@
       '<div class="asr-root" id="adminSpreadsheetRefRoot">' +
       '<h1 class="page-title">Instructor timetable</h1>' +
       '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-      "<strong>Staff rota only</strong> — day, shift hours, and paid hours (default = shift) for the capacity chain: " +
-      "<strong>Places</strong> (booking seats) → <strong>Timetable</strong> (who works) → <strong>Services</strong> (who is booked + who works the seat) → <strong>Schedule &amp; Covers</strong> (day retouches). " +
-      "Edit and <strong>Save</strong> to <code>portal_staff_timetable_cells</code>. " +
-      "<strong>Day off · COVER</strong> comes from the same <code>staff_unavailability</code> as Sessions Overview.</p>" +
-      '<p class="muted" style="margin:0 0 12px;max-width:52rem;min-width:0;overflow-wrap:break-word">' +
-      'Standing seats / who is booked → <button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Edit term slot</button>.</p>' +
+      "<strong>Staff rota only</strong> — day, shift hours, and paid hours (default = shift). " +
+      "Capacity chain: " +
+      "<strong>Places</strong> → <strong>Timetable</strong> → <strong>Services</strong> → <strong>Schedule &amp; Covers</strong>. " +
+      "Edit cells and <strong>Save</strong> (or use <strong>Every [weekday] in term</strong> in the picker for the whole term). " +
+      "<strong>Day off · COVER</strong> comes from <code>staff_unavailability</code> (same as Overview).</p>" +
+      '<p class="asr-chain-links muted" style="margin:0 0 12px;max-width:52rem;min-width:0;overflow-wrap:break-word;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center">' +
+      '<span style="font-weight:600;color:#334155">Open:</span>' +
+      '<button type="button" class="btn btn--sec btn--sm" data-view-target="open_places_2627" title="Services — standing Places board (seats free / occupied)">Places</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_services">Services</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="scheduling">Schedule &amp; Covers</button>' +
+      '<span style="font-size:12px;min-width:0;overflow-wrap:break-word">Places lives inside <strong>Services</strong> (open seats + who occupies) — not a separate Timetable tab.</span>' +
+      "</p>" +
       '<div class="asr-toolbar" id="asrToolbar">' +
       '<button type="button" class="btn btn--pri btn--sm" id="asrSaveBtn">Save staff hours</button>' +
       '<span class="muted" id="asrSaveStatus" style="font-size:12px;min-width:0;overflow-wrap:break-word"></span>' +
@@ -954,9 +961,9 @@
     var day = state.hoursDay;
     var days = day === "all" ? WEEKDAYS : [day];
     var html =
-      '<div class="asr-standing-hours" style="margin:0 0 16px;padding:12px 14px;border:1px solid var(--border,#d7e2e8);border-radius:12px;background:#f8fafc;min-width:0">' +
-      '<p class="asr-tab-hint" style="margin:0 0 8px;font-weight:600;max-width:52rem;overflow-wrap:break-word">Autumn Term 2026 standing week · instructor timetable (synced with Services)</p>' +
-      '<p class="muted" style="margin:0 0 10px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Who is on when for Autumn: Day Centre from 1 Sep, weekends from Sat 5 Sep, after-school from Mon 7 Sep. Editable dated overrides for payroll stay in the sheet below. Orange Day off · COVER badges on dated rows come from live staff_unavailability (not this standing snapshot).</p>';
+      '<div class="asr-standing-hours" style="margin:16px 0 0;padding:12px 14px;border:1px solid var(--border,#d7e2e8);border-radius:12px;background:#f8fafc;min-width:0">' +
+      '<p class="asr-tab-hint" style="margin:0 0 8px;font-weight:600;max-width:52rem;overflow-wrap:break-word">Standing week snapshot (reference)</p>' +
+      '<p class="muted" style="margin:0 0 10px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Who is on when for Autumn standing week (sample dates). Editable dated overrides for payroll are in the <strong>sheet above</strong> — Save those, not this summary. Orange Day off · COVER on dated rows comes from live <code>staff_unavailability</code>.</p>';
     days.forEach(function (wd) {
       var block = stand[wd];
       if (!block || !block.lines || !block.lines.length) {
@@ -986,11 +993,11 @@
             .join(" ") +
           "</p>";
       }
-      html += "<ul style=\"margin:0;padding-left:1.1rem;max-width:52rem\">";
+      html += '<ul style="margin:0;padding-left:1.1rem;max-width:52rem">';
       block.lines.forEach(function (line) {
         var away = sampleIso && staffAwayOnIso(line.name, sampleIso);
         html +=
-          "<li style=\"overflow-wrap:break-word;min-width:0\">" +
+          '<li style="overflow-wrap:break-word;min-width:0">' +
           esc(line.text) +
           (line.venue ? ' <span class="muted">(' + esc(line.venue) + ")</span>" : "") +
           (away
@@ -1569,6 +1576,11 @@
       "paid",
       paid
     );
+    var applyBtn = document.getElementById("asrPickApplyTerm");
+    if (applyBtn) {
+      var dayLbl = String(dayName || "weekday").trim() || "weekday";
+      applyBtn.textContent = "Every " + dayLbl + " (term)";
+    }
     pop.hidden = false;
     var rect = wrap.getBoundingClientRect();
     var rootRect = root.getBoundingClientRect();
@@ -1594,8 +1606,93 @@
       '<div class="asr-pick__actions">' +
       '<button type="button" class="btn btn--ghost btn--sm" data-asr-pick-clear>Clear</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-asr-pick-type>Type…</button>' +
-      '<button type="button" class="btn btn--sec btn--sm" data-asr-pick-done>Done</button>' +
-      "</div></div>"
+      '<button type="button" class="btn btn--sec btn--sm" data-asr-pick-done>This date</button>' +
+      '<button type="button" class="btn btn--pri btn--sm" data-asr-pick-apply-term id="asrPickApplyTerm">Every weekday (term)</button>' +
+      "</div>" +
+      '<p class="muted" style="margin:8px 0 0;font-size:11px;line-height:1.35;overflow-wrap:break-word">' +
+      "<strong>This date</strong> = one cell. <strong>Every … (term)</strong> = same seat on every matching weekday in Autumn, then Save.</p>" +
+      "</div>"
+    );
+  }
+
+  function markAssignmentDirty(key, next) {
+    if (!key) return;
+    ensureDirtyBaselines(key);
+    next = String(next || "").trim();
+    var base = String(state.dirtyBaseline[key] || "").trim();
+    if (next === base) delete state.dirty[key];
+    else state.dirty[key] = next;
+  }
+
+  function markPaidDirty(key, next) {
+    if (!key) return;
+    ensureDirtyBaselines(key);
+    next = String(next || "")
+      .replace(/\s+/g, "")
+      .trim();
+    var base = String(state.dirtyPaidBaseline[key] || "").trim();
+    if (next === base) delete state.dirtyPaid[key];
+    else state.dirtyPaid[key] = next;
+  }
+
+  /** All editKeys for the same weekday + column across the full term sheet. */
+  function findSiblingEditKeys(dayName, columnKey) {
+    var out = [];
+    var seen = Object.create(null);
+    var sh = data() && data().staffHours;
+    var sheet = sh && sh[dayName];
+    if (!sheet || !columnKey) return out;
+    function scan(dates) {
+      (dates || []).forEach(function (dr) {
+        (dr.cells || []).forEach(function (cell) {
+          if (!cell || !cell.editKey) return;
+          var parsed = parseEditKey(cell.editKey);
+          if (!parsed) return;
+          if (parsed.day !== dayName || parsed.column_key !== columnKey) return;
+          if (seen[cell.editKey]) return;
+          seen[cell.editKey] = 1;
+          out.push(cell.editKey);
+        });
+      });
+    }
+    scan(sheet.dates);
+    (sheet.blocks || []).forEach(function (block) {
+      scan(block.dates);
+    });
+    return out;
+  }
+
+  function applyPickToEveryWeekdayInTerm() {
+    if (!state.pick || !state.pick.wrap) return;
+    var wrap = state.pick.wrap;
+    var key =
+      state.pick.editKey || wrap.getAttribute("data-asr-edit-key") || "";
+    var parsed = parseEditKey(key);
+    if (!parsed) {
+      cfg.toast("Could not apply — missing cell key.");
+      return;
+    }
+    var assign = assignmentForKey(key);
+    var paid = paidForKey(key);
+    var keys = findSiblingEditKeys(parsed.day, parsed.column_key);
+    if (!keys.length) {
+      cfg.toast("No matching " + parsed.day + " cells in term.");
+      return;
+    }
+    keys.forEach(function (k) {
+      markAssignmentDirty(k, assign);
+      markPaidDirty(k, paid);
+    });
+    closeStaffHoursPick();
+    refreshPanel();
+    cfg.toast(
+      "Applied to every " +
+        parsed.day +
+        " (" +
+        keys.length +
+        " cell" +
+        (keys.length === 1 ? "" : "s") +
+        ") — click Save staff hours."
     );
   }
 
@@ -2274,10 +2371,9 @@
           "</strong> in Autumn Term 2026 (1 Sep - 17 Dec). <strong>Click a cell</strong> to pick staff, shift and paid hours, then <strong>Save staff hours</strong>."
         : "Showing <strong>one week</strong> only. Click a cell to pick staff, shift and paid hours. Switch to Whole term to see all Mondays (etc.).";
     var html =
-      renderStandingHoursBlock() +
       '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">' +
       rangeHint +
-      " Saves update dashboards — they do <strong>not</strong> change who is booked (use Edit term slot).</p>" +
+      " Saves update dashboards — they do <strong>not</strong> change who is booked (use Edit term slot). For the same seat on every matching weekday, use <strong>Every … (term)</strong> in the picker, then Save.</p>" +
       hoursRangeToggleHtml() +
       (state.hoursRange === "week" ? hoursWeekNavHtml() : "") +
       hoursLegendHtml() +
@@ -2287,10 +2383,11 @@
         allValue: "all",
       }) +
       serviceSubtabs(state.hoursService, "data-asr-hours-service");
+    var gridHtml = "";
     if (day === "all") {
       WEEKDAYS.forEach(function (wd) {
         var sheet = sheetForHoursRange(d.staffHours[wd]);
-        html +=
+        gridHtml +=
           '<section class="asr-hours-day-section" aria-labelledby="asr-hours-day-' +
           esc(wd) +
           '">' +
@@ -2300,29 +2397,30 @@
           esc(wd) +
           "</h3>";
         if (!sheet || (!(sheet.dates && sheet.dates.length) && !(sheet.blocks && sheet.blocks.length))) {
-          html +=
+          gridHtml +=
             '<p class="muted" style="margin:0 0 12px">No Autumn shifts for ' +
             esc(wd) +
             ".</p>";
         } else {
-          html += renderHoursDaySection(wd, sheet);
+          gridHtml += renderHoursDaySection(wd, sheet);
         }
-        html += "</section>";
+        gridHtml += "</section>";
       });
-      return html + renderChangeLogHtml();
+    } else {
+      var one = sheetForHoursRange(d.staffHours[day]);
+      if (!one || (!(one.dates && one.dates.length) && !(one.blocks && one.blocks.length))) {
+        gridHtml +=
+          '<p class="muted" style="margin:12px 0">No Autumn shifts for ' +
+          esc(day) +
+          (state.hoursRange === "week"
+            ? ". Use Next week, or switch to Whole term."
+            : ".") +
+          "</p>";
+      } else {
+        gridHtml += renderHoursDaySection(day, one);
+      }
     }
-    var one = sheetForHoursRange(d.staffHours[day]);
-    if (!one || (!(one.dates && one.dates.length) && !(one.blocks && one.blocks.length))) {
-      html +=
-        '<p class="muted" style="margin:12px 0">No Autumn shifts for ' +
-        esc(day) +
-        (state.hoursRange === "week"
-          ? ". Use Next week, or switch to Whole term."
-          : ".") +
-        "</p>";
-      return html + renderChangeLogHtml();
-    }
-    return html + renderHoursDaySection(day, one) + renderChangeLogHtml();
+    return html + gridHtml + renderStandingHoursBlock() + renderChangeLogHtml();
   }
 
   function dirtyKeyCount() {
@@ -2622,6 +2720,11 @@
       if (t.closest("[data-asr-pick-done]")) {
         e.preventDefault();
         closeStaffHoursPick();
+        return;
+      }
+      if (t.closest("[data-asr-pick-apply-term]") && state.pick && state.pick.wrap) {
+        e.preventDefault();
+        applyPickToEveryWeekdayInTerm();
         return;
       }
       if (t.closest("[data-asr-pick-type]") && state.pick && state.pick.wrap) {
