@@ -61,6 +61,8 @@
     sessionPickerSelection: null,
     /** Selected Now card — the standing seat being moved / swapped. */
     sourceSeat: null,
+    /** After cross-service Save — soft finance checklist (no auto-reprice). */
+    invoiceReviewBanner: null,
   };
 
   function esc(s) { return deps.esc(s); }
@@ -574,7 +576,7 @@
       esc(srcSvc) +
       " → " +
       esc(destSvc) +
-      ". Different fee / session count may apply — check the family invoice (more or fewer dates than the previous service) before Save.";
+      ". On Save the old seat opens again and the new seat is placed. Fees / session count are <strong>not</strong> auto-rewritten — review the family invoice in Finance after Save.";
   }
 
   function refreshTermSlotVisualBoard(root) {
@@ -1456,6 +1458,126 @@
     }, Promise.resolve());
   }
 
+  function cloneSourceSeat(source) {
+    if (!source) return null;
+    return {
+      service: String(source.service || "").trim(),
+      time_slot: String(source.time_slot || "").trim(),
+      instructors: String(source.instructors || "").trim(),
+      venue: String(source.venue || "").trim(),
+      area: String(source.area || "").trim(),
+      day: String(source.day || "").trim(),
+    };
+  }
+
+  function isCrossServiceMove(p, source) {
+    if (!source) return false;
+    var a = String(source.service || "").trim();
+    var b = String((p && p.service) || "").trim();
+    if (!a || !b) return false;
+    return normName(a) !== normName(b);
+  }
+
+  function isSourceSeatDifferent(p, source) {
+    if (!source || !p) return false;
+    if (isCrossServiceMove(p, source)) return true;
+    if (normSlotTime(source.time_slot) !== normSlotTime(p.time_slot)) return true;
+    var srcDay = String(source.day || "").trim().toLowerCase();
+    var destDay = String(p.day || "").trim().toLowerCase();
+    if (srcDay && destDay && srcDay !== destDay) return true;
+    if (normName(source.instructors) !== normName(p.instructors)) return true;
+    if (normName(source.venue) !== normName(p.venue)) return true;
+    return false;
+  }
+
+  function beforeFromSourceSeat(p, source) {
+    return {
+      client_name: p.client_name,
+      day: String(source.day || "").trim() || p.day,
+      time_slot: source.time_slot,
+      instructors: source.instructors || "",
+      service: source.service || "",
+      area: source.area || "",
+      venue: source.venue || "",
+      session_date: p.scope === "weekday_term" ? null : p.anchorDate,
+    };
+  }
+
+  function isoNearAnchorForWeekday(anchorIso, weekdayLong) {
+    var want = String(weekdayLong || "").trim();
+    if (!want || !anchorIso) return anchorIso;
+    if (weekdayLongFromIso(anchorIso) === want) return anchorIso;
+    var d;
+    for (d = -6; d <= 6; d++) {
+      var cand = isoAddDays(anchorIso, d);
+      if (cand && weekdayLongFromIso(cand) === want) return cand;
+    }
+    return anchorIso;
+  }
+
+  /** Open the Now (source) seat again after a move — cancel named row + No client placeholder. */
+  function releaseSourceSeatForMove(client, p, source, bounds) {
+    var openRow = {
+      client_name: p.client_name,
+      day: String(source.day || "").trim() || p.day,
+      time_slot: source.time_slot,
+      instructors: source.instructors || "",
+      service: source.service || "",
+      area: source.area || "",
+      venue: source.venue || "",
+    };
+    var srcDay = openRow.day;
+    if (p.scope === "pick_sessions") {
+      var pickDates = (p.selectedSessionDates || []).filter(function (iso) {
+        var wd = weekdayLongFromIso(iso);
+        return !srcDay || wd === srcDay;
+      });
+      if (!pickDates.length) {
+        return ensureCancelledTemplate(client, openRow).then(function () {
+          return upsertNoClientRow(client, openRow, null, srcDay);
+        });
+      }
+      return pickDates.reduce(function (acc, iso) {
+        return acc.then(function () {
+          var wd = weekdayLongFromIso(iso) || srcDay;
+          return ensureCancelledDated(client, openRow, iso, wd).then(function () {
+            return upsertNoClientRow(client, openRow, iso, wd);
+          });
+        });
+      }, Promise.resolve());
+    }
+    if (p.scope === "single_day") {
+      var iso = isoNearAnchorForWeekday(p.anchorDate, srcDay);
+      return ensureCancelledDated(client, openRow, iso, srcDay).then(function () {
+        return upsertNoClientRow(client, openRow, iso, srcDay);
+      });
+    }
+    if (p.scope === "weekday_term") {
+      return ensureCancelledTemplate(client, openRow)
+        .then(function () {
+          return cancelDatedRowsForWeekday(
+            client,
+            srcDay,
+            p.client_name,
+            openRow.time_slot,
+            bounds.firstDate,
+            bounds.lastDate,
+          );
+        })
+        .then(function () {
+          return upsertNoClientRow(client, openRow, null, srcDay);
+        });
+    }
+    var dates = weekdaysMatchingFromThrough(srcDay, p.anchorDate, bounds.lastDate, bounds);
+    return dates.reduce(function (acc, iso) {
+      return acc.then(function () {
+        return ensureCancelledDated(client, openRow, iso, srcDay).then(function () {
+          return upsertNoClientRow(client, openRow, iso, srcDay);
+        });
+      });
+    }, Promise.resolve());
+  }
+
   function writeScheduleOverridesForTermEditInsert(client, p, before, afterSnap, eventAction) {
     var isCancel = eventAction === "cancel" || String(afterSnap.action || "") === "cancel_service";
     var isNoPax = String(afterSnap.action || "") === "no_participant";
@@ -1796,9 +1918,12 @@
     var fromAssignPrefill =
       !String(pre.client_name || "").trim() &&
       !!(String(pre.time_slot || "").trim() || String(pre.instructors || "").trim());
+    var invoiceReview = !!p._invoiceReview;
     // Unpaid INV-P only when placing someone onto a vacant/open band (Assign / new),
-    // not when tweaking an already-named standing slot.
+    // not when tweaking an already-named standing slot, and never on cross-service moves
+    // (those need a human invoice / fee review — do not blind-reprice).
     var shouldBill =
+      !invoiceReview &&
       assignNamed &&
       !isCancelish &&
       !!String(p.client_name || "").trim() &&
@@ -1825,6 +1950,8 @@
             module: "term_roster_edit",
             term_action: p.action,
             reason: p.reason || null,
+            invoice_review: invoiceReview || null,
+            source_service: p._sourceService || null,
           },
         }).then(function (res) {
           if (res.error) console.warn("[term-slot] portal_roster_row_events", res.error);
@@ -1881,6 +2008,19 @@
           });
       })
       .then(function (rowRef) {
+        if (invoiceReview) {
+          state.invoiceReviewBanner = {
+            client: String(p.client_name || "").trim(),
+            from: String(p._sourceService || "").trim(),
+            to: String(p.service || "").trim(),
+          };
+          deps.toast(
+            (toastMsg || "Term slot saved.") +
+              " · Review family invoice in Finance (fees / dates not auto-changed).",
+          );
+          return rowRef;
+        }
+        state.invoiceReviewBanner = null;
         if (!shouldBill) {
           deps.toast(toastMsg || "Term slot saved.");
           return rowRef;
@@ -1916,6 +2056,9 @@
       .then(function () {
         if (global.PortalChangeLog && typeof global.PortalChangeLog.record === "function") {
           var logAction = eventAction === "cancel" ? "cancel" : before ? "update" : "create";
+          var summaryExtra = invoiceReview
+            ? " · invoice review (no auto-reprice)"
+            : "";
           global.PortalChangeLog.record({
             area: "Timetable",
             entity: afterSnap.client_name || p.client_name,
@@ -1927,7 +2070,8 @@
               " · " +
               (p.action || "update").replace(/_/g, " ") +
               " · " +
-              p.scope.replace(/_/g, " "),
+              p.scope.replace(/_/g, " ") +
+              summaryExtra,
             details: {
               session_date: p.anchorDate,
               scope: p.scope,
@@ -1939,6 +2083,9 @@
               venue: p.venue,
               service: p.service,
               reason: p.reason || "",
+              invoice_review: invoiceReview || false,
+              source_service: p._sourceService || null,
+              dest_service: invoiceReview ? p.service : null,
             },
             source: "term_roster_edit",
           });
@@ -1950,6 +2097,7 @@
       .finally(function () {
         state.saving = false;
         state.prefill = null;
+        state.sourceSeat = null;
         render(root);
       });
   }
@@ -2061,13 +2209,24 @@
     state.saving = true;
     render(root);
 
-    var before =
-      findBundleSlotByParticipantService(p.anchorDate, p.client_name, p.service) ||
-      findBundleSlot(p.anchorDate, p.client_name, p.time_slot);
+    var sourceSnap = cloneSourceSeat(state.sourceSeat);
+    var crossService = isCrossServiceMove(p, sourceSnap);
+    var movingSeat = isSourceSeatDifferent(p, sourceSnap);
+    var before = sourceSnap
+      ? beforeFromSourceSeat(p, sourceSnap)
+      : findBundleSlotByParticipantService(p.anchorDate, p.client_name, p.service) ||
+        findBundleSlot(p.anchorDate, p.client_name, p.time_slot);
     var afterSnap = snapshotRow(p);
+    if (crossService) {
+      p._invoiceReview = true;
+      p._sourceService = String(sourceSnap.service || "").trim();
+    }
     var chain = supersedeTermRosterScheduleOverrides(client, p).then(function () {
       return cancelNoClientRowsForScope(client, p);
     }).then(function () {
+      if (movingSeat && sourceSnap) {
+        return releaseSourceSeatForMove(client, p, sourceSnap, bounds);
+      }
       return cancelFormerDefaultSlotWhenTimeChanged(client, p, before);
     });
 
@@ -2103,7 +2262,23 @@
       });
     }
 
-    finishTermSlotSave(chain, root, p, before, afterSnap, before ? "update" : "create", client, "Term slot saved.");
+    var saveToast = crossService
+      ? "Moved " +
+        String(sourceSnap.service || "old service") +
+        " → " +
+        String(p.service || "new service") +
+        " · old seat opened"
+      : "Term slot saved.";
+    finishTermSlotSave(
+      chain,
+      root,
+      p,
+      before,
+      afterSnap,
+      before ? "update" : "create",
+      client,
+      saveToast,
+    );
   }
 
   function injectStyleOnce() {
@@ -2142,6 +2317,8 @@
       ".trs-mini-card--open{border-color:#bbf7d0;background:#f0fdf4}",
       ".trs-changing{color:#1e3a8a}",
       ".trs-finance-note[hidden]{display:none!important}",
+      ".trs-invoice-review{margin:10px 0 0;padding:10px 12px;border-radius:10px;border:1px solid #fcd34d;background:#fffbeb;font-size:12px;line-height:1.45;color:#92400e;overflow-wrap:break-word;min-width:0}",
+      ".trs-invoice-review[hidden]{display:none!important}",
       ".trs-mini-card__band{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b}",
       ".trs-mini-card__name{font-size:14px;font-weight:800;color:#0f172a;min-width:0;overflow-wrap:break-word}",
       ".trs-mini-card__when{font-size:12px;font-weight:600;color:#475569;min-width:0;overflow-wrap:break-word}",
@@ -2303,6 +2480,20 @@
       '<h2 class="trs-visual-title" id="trsAvailTitle">Available (new seat)</h2>' +
       '<div class="trs-visual-cards" id="trsAvailBoard"></div>' +
       '<p class="trs-finance-note" id="trsFinanceNote" hidden style="margin:10px 0 0;padding:10px 12px;border-radius:10px;border:1px solid #fcd34d;background:#fffbeb;font-size:12px;line-height:1.45;color:#92400e;overflow-wrap:break-word"></p>' +
+      (state.invoiceReviewBanner
+        ? '<p class="trs-invoice-review" id="trsInvoiceReviewBanner" role="status">' +
+          "<strong>Invoice review:</strong> moved " +
+          esc(state.invoiceReviewBanner.from || "old service") +
+          " → " +
+          esc(state.invoiceReviewBanner.to || "new service") +
+          (state.invoiceReviewBanner.client
+            ? " for <strong>" + esc(state.invoiceReviewBanner.client) + "</strong>"
+            : "") +
+          ". Roster updated; fees and Xero lines were <strong>not</strong> auto-changed. " +
+          '<button type="button" class="btn btn--ghost btn--sm" data-view-target="reenrol_payments" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Open Finance</button>' +
+          "." +
+          "</p>"
+        : "") +
       '<p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Full Places board → <button type="button" class="btn btn--ghost btn--sm" data-view-target="open_places_2627" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Places in Services</button>.</p>' +
       '<input type="hidden" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '"/>' +
       '<input type="hidden" id="trsInstructors" value="' + esc(pre.instructors || "") + '"/>' +
