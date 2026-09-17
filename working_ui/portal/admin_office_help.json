@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-17-v3",
+  "version": "2026-09-17-v4",
   "title": "Office help guide",
-  "subtitle": "Ask a question above, or pick a category then a lesson. Same truth as the admin portal.",
+  "subtitle": "Ask the Operator or browse categories. Same truth as the admin portal.",
   "categories": [
     {
       "id": "day_ops",
@@ -9,6 +9,32 @@
       "blurb": "Live day board, covers, day offs, pending actions and alerts.",
       "priority": 1,
       "lessons": [
+        {
+          "id": "office_operator",
+          "title": "Office Operator (phase 1)",
+          "summary": "Ask box can run live tools: pending Direct Payment mandates, and parent portal PIN after Confirm. It does not write covers or invoices alone.",
+          "where": "Office help → Ask Office help / Operator (top of this page)",
+          "keywords": [
+            "operator",
+            "cursor",
+            "agent",
+            "bot tools",
+            "what can the operator",
+            "que puede el operator",
+            "phase 1"
+          ],
+          "steps": [
+            "Stay signed in on the admin portal (same browser), then open Office help.",
+            "Ask: Who has not authorised Direct Payment? — live list + phone script.",
+            "Ask: PIN for [child or parent name] — pick the family, then Confirm reveal PIN.",
+            "Copy PIN into WhatsApp yourself — Operator never sends messages automatically.",
+            "How-to questions still open guide lessons (Schedule & Covers, Overview, etc.)."
+          ],
+          "tips": [
+            "Phase 1 is read-only plus confirm-gated PIN reveal. Schedule writes, day offs and mark paid stay manual.",
+            "After each new portal flow ships, update this guide so Ask and Operator stay the same truth."
+          ]
+        },
         {
           "id": "sessions_overview",
           "title": "Sessions Overview (day look-here)",

@@ -746,3 +746,7 @@ verify_jwt = false
 
 [functions.commissioning-terms-admin]
 verify_jwt = false
+
+# Office Operator phase 1 (admin JWT checked inside; read + confirm PIN).
+[functions.portal-admin-office-operator]
+verify_jwt = false

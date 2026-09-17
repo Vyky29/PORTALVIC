@@ -143,6 +143,23 @@
     }
     .oh-bot__chip-t{font-size:14px;font-weight:800;overflow-wrap:break-word}
     .oh-bot__chip-s{font-size:12px;line-height:1.35;color:var(--oh-muted);overflow-wrap:break-word}
+    .oh-op-list{display:flex;flex-direction:column;gap:8px;margin:10px 0 0;min-width:0}
+    .oh-op-card{
+      padding:10px 12px;border-radius:10px;border:1px solid var(--oh-line);
+      background:#f8fafc;min-width:0;
+    }
+    .oh-op-card__t{font-size:14px;font-weight:800;overflow-wrap:break-word}
+    .oh-op-card__s{margin-top:2px;font-size:12px;line-height:1.35;color:var(--oh-muted);overflow-wrap:break-word}
+    .oh-op-mini{
+      margin-top:8px;padding:6px 10px;border-radius:8px;border:1px solid var(--oh-line);
+      background:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer;color:var(--oh-navy);
+    }
+    .oh-op-mini:hover,.oh-op-mini:focus-visible{border-color:#9fc6db;background:#eaf5fb;outline:none}
+    .oh-op-banner{
+      margin:0 0 12px;padding:8px 12px;border-radius:10px;
+      background:#eef6fc;border:1px solid rgba(45,132,179,.28);
+      font-size:12px;line-height:1.4;color:var(--oh-navy);overflow-wrap:break-word;
+    }
     .oh-crumb{
       display:flex;flex-wrap:wrap;gap:6px;align-items:center;
       margin:0 0 14px;font-size:13px;color:var(--oh-muted);min-width:0;
@@ -247,7 +264,8 @@
     </div>
 
     <section class="oh-ask" aria-label="Ask Office help">
-      <p class="oh-ask__label">Ask Office help</p>
+      <p class="oh-ask__label">Ask Office help / Operator</p>
+      <p class="oh-op-banner">Operator (phase 1): can list families still needing Direct Payment mandate authorisation, and reveal a parent portal PIN after Confirm. It does not write covers, day offs, or invoices alone.</p>
       <form class="oh-ask__row" id="ohAskForm">
         <input
           class="oh-ask__input"
@@ -255,7 +273,7 @@
           type="search"
           name="q"
           autocomplete="off"
-          placeholder="e.g. How do parents authorise Direct Payment?"
+          placeholder="e.g. who has not authorised Direct Payment? / PIN for Adaam"
           aria-label="Your question"
         />
         <button class="oh-ask__go" type="submit">Ask</button>
@@ -269,9 +287,11 @@
     <div id="ohRoot"><p class="oh-loading">Loading guide...</p></div>
     <p class="oh-foot">PORTALVIC · Office help · v<span id="ohVer">-</span></p>
   </div>
+  <script src="/portal/portal-admin-supabase-bridge.js?v=20260917-op1"></script>
+  <script src="/portal/admin_office_operator.js?v=20260917-op1"></script>
   <script>
 (function () {
-  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v3";
+  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v4";
   var MIN_SCORE = 5;
   var data = null;
   var view = { mode: "cats", catId: "", lessonId: "" };
@@ -283,17 +303,17 @@
     you: 1, please: 1, so: 1, them: 1, about: 1, this: 1, that: 1, with: 1,
     de: 1, como: 1, donde: 1, que: 1, el: 1, la: 1, los: 1, las: 1, un: 1,
     una: 1, por: 1, con: 1, if: 1, who: 1, have: 1, has: 1, had: 1, now: 1,
-    send: 1, make: 1, make: 1
+    send: 1, make: 1
   };
 
   var HINTS = [
+    "Who has not authorised Direct Payment?",
+    "PIN for parent portal (type a child name)",
     "Help parent authorise Direct Payment mandate",
     "Sessions Overview day board",
     "Schedule and Covers one day",
-    "Add staff day off",
-    "Edit term slot standing client",
-    "Create invoice",
-    "Parent notify WhatsApp"
+    "What can the operator do?",
+    "Create invoice"
   ];
 
   function esc(s) {
@@ -445,6 +465,16 @@
     );
   }
 
+  function showBotHtml(question, html) {
+    var el = document.getElementById("ohBot");
+    if (!el) return;
+    lastAsk = question;
+    el.hidden = false;
+    el.classList.add("is-on");
+    el.innerHTML =
+      '<p class="oh-bot__q">For: “' + esc(question) + '”</p>' + html;
+  }
+
   function renderBotAnswer(question, match) {
     var el = document.getElementById("ohBot");
     if (!el) return;
@@ -514,9 +544,36 @@
     if (!q || !data) return;
     var input = document.getElementById("ohAskInput");
     if (input) input.value = q;
-    renderBotAnswer(q, matchQuestion(q));
     var bot = document.getElementById("ohBot");
-    if (bot) bot.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (bot) {
+      bot.hidden = false;
+      bot.classList.add("is-on");
+      bot.innerHTML =
+        '<p class="oh-bot__q">For: “' + esc(q) + '”</p><p class="oh-bot__miss">Working…</p>';
+      bot.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    var op = window.PortalOfficeOperator;
+    var goGuide = function () {
+      renderBotAnswer(q, matchQuestion(q));
+    };
+
+    if (!op || typeof op.run !== "function") {
+      goGuide();
+      return;
+    }
+
+    op.run(q)
+      .then(function (res) {
+        if (res && res.handled) {
+          showBotHtml(q, res.html || "");
+          return;
+        }
+        goGuide();
+      })
+      .catch(function () {
+        goGuide();
+      });
   }
 
   function renderHints() {
@@ -738,6 +795,28 @@
     }
     if (bot) {
       bot.addEventListener("click", function (ev) {
+        var confirmBtn = ev.target.closest("[data-oh-op-confirm-pin]");
+        if (confirmBtn && window.PortalOfficeOperator) {
+          var pid = confirmBtn.getAttribute("data-oh-op-confirm-pin");
+          var label = lastAsk || "Confirm reveal PIN";
+          showBotHtml(label, '<p class="oh-bot__miss">Revealing PIN…</p>');
+          window.PortalOfficeOperator.run(label, {
+            intent: {
+              kind: "lookup_family_access",
+              parent_person_id: pid,
+              confirm: true,
+              query: "",
+            },
+          }).then(function (res) {
+            showBotHtml(label, (res && res.html) || "");
+          });
+          return;
+        }
+        var pinSearch = ev.target.closest("[data-oh-op-pin-search]");
+        if (pinSearch) {
+          runAsk("PIN for " + pinSearch.getAttribute("data-oh-op-pin-search"));
+          return;
+        }
         var t = ev.target.closest("[data-oh-open-cat][data-oh-open-lesson]");
         if (!t) return;
         openLesson(t.getAttribute("data-oh-open-cat"), t.getAttribute("data-oh-open-lesson"));
