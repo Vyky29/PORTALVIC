@@ -343,9 +343,10 @@ export function applyInstalmentPayment(
 }
 
 /**
- * Reduce pending instalments by a credit amount (first pending onwards).
- * The invoice total (amount_gbp) is reduced by the same credit elsewhere, so
- * the schedule keeps matching the total. Fully covered instalments drop out.
+ * Reduce pending instalments by a credit amount.
+ * Flexi (exactly 2 rows): prefer the last unpaid half (2nd payment).
+ * Longer schedules: apply forward from the next unpaid row.
+ * Fully covered instalments drop out.
  */
 export function applyCreditToSchedule(
   rawSchedule: unknown,
@@ -353,6 +354,20 @@ export function applyCreditToSchedule(
 ): { schedule: InvoicePaymentScheduleRow[]; next_instalment_due: string | null } {
   const schedule = normalizePaymentSchedule(rawSchedule).map((r) => ({ ...r }));
   let remaining = round2(creditGbp);
+  const isFlexiPair = schedule.length === 2;
+
+  if (isFlexiPair) {
+    for (let i = schedule.length - 1; i >= 0 && remaining > 0; i--) {
+      const row = schedule[i];
+      if (row.status === "paid") continue;
+      const applied = Math.min(remaining, row.amount_gbp);
+      row.amount_gbp = round2(row.amount_gbp - applied);
+      remaining = round2(remaining - applied);
+    }
+    const out = schedule.filter((row) => !(row.status !== "paid" && row.amount_gbp <= 0));
+    return { schedule: out, next_instalment_due: nextInstalmentDueDate(out) };
+  }
+
   const out: InvoicePaymentScheduleRow[] = [];
   for (const row of schedule) {
     if (remaining > 0 && row.status !== "paid") {

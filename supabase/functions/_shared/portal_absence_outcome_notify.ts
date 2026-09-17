@@ -141,6 +141,7 @@ export async function notifyParentAbsenceOutcome(
     const firstOk = (apply?.applications || []).find((a) => a && a.ok);
     const gcHeld =
       apply?.gocardless_held === true ||
+      apply?.skipped === "gocardless_held_for_spring_mandate" ||
       apply?.skipped === "gocardless_held_for_next_term";
 
     if (firstOk) {
@@ -164,14 +165,14 @@ export async function notifyParentAbsenceOutcome(
         `\n\nSee Credits & refunds in the parent portal: ${portalHint}\n\n— clubSENsational`;
     } else if (gcHeld) {
       subject = amountLabel
-        ? `Credit for next term · ${child} · ${amountLabel}`
-        : `Credit for next term · ${child}`;
+        ? `Credit for Spring · ${child} · ${amountLabel}`
+        : `Credit for Spring · ${child}`;
       bodyText =
         `Hi ${parentName},\n\n` +
         `We have added` +
         (amountLabel ? ` a ${amountLabel}` : " a") +
         ` credit for ${child}.\n\n` +
-        `Because you pay by GoCardless, this credit will reduce your next term invoice (not this month's collection).\n\n` +
+        `Because you pay by GoCardless, this credit is held for your Spring Direct Payment mandate (monthly). It is not taken off this Autumn collection.\n\n` +
         `See Credits & refunds in the parent portal: ${portalHint}\n\n— clubSENsational`;
     } else {
       subject = amountLabel

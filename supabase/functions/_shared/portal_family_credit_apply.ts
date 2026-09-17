@@ -56,7 +56,8 @@ function invoiceEligibleForCreditApply(
   if (st !== "unpaid" && st !== "partial") return false;
   const hint = clean(share.payment_method_hint, 40).toLowerCase();
   if (hint === "la_funded") return false;
-  // Office auto-apply: GoCardless monthly instalments stay on mandate — credit waits for next term.
+  // Office auto-apply: never touch open GoCardless invoices — credit waits for
+  // Spring GC mandate (monthly). Even if Autumn GC rows are still open/partial.
   if (opts.skipGocardless && hint === "gocardless") return false;
   const shareStatus = clean(share.share_status, 40).toLowerCase();
   if (!opts.allowHidden && shareStatus !== "ready") return false;
@@ -76,7 +77,7 @@ export function invoiceIsGocardlessHint(share: { payment_method_hint?: unknown }
  * Pick next INV-P for auto-apply: Autumn → Spring → Summer, then due date.
  * Includes hidden shares when allowHidden (office path).
  * When skipGocardless (office default), GC monthly instalments are skipped so credit
- * lands on the next term / bank-card invoice instead.
+ * is held for the Spring GoCardless mandate (not applied to open Autumn GC invoices).
  */
 export async function findNextInvoiceForCreditApply(
   admin: { from: (t: string) => any },
@@ -420,7 +421,7 @@ export async function autoApplyOpenCreditToNextInvoices(
         skipped: applications.length
           ? undefined
           : gcHeld
-            ? "gocardless_held_for_next_term"
+            ? "gocardless_held_for_spring_mandate"
             : "no_open_invoice",
         applications,
         credit_id: id,

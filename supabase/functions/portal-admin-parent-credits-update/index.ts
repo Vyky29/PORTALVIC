@@ -168,10 +168,11 @@ Deno.serve(async (req) => {
         .eq("id", entryId);
     } else if (refreshed && refreshed.status === "open" && credit_apply?.skipped) {
       const holdNote =
+        credit_apply.skipped === "gocardless_held_for_spring_mandate" ||
         credit_apply.skipped === "gocardless_held_for_next_term"
-          ? "Held for next term (GoCardless instalments — not applied to GC mandate)"
+          ? "Held for Spring GoCardless mandate (monthly) — not applied to open Autumn GC invoice"
           : credit_apply.skipped === "no_open_invoice"
-            ? "No open invoice to apply — credit kept for next term"
+            ? "No open bank/flexi invoice — credit kept for next term"
             : String(credit_apply.skipped);
       await admin
         .from("portal_parent_family_credits")
@@ -190,6 +191,7 @@ Deno.serve(async (req) => {
       .eq("id", entryId)
       .maybeSingle();
 
+    const skipped = String(credit_apply?.skipped || "");
     return portalAdminJson(200, {
       ok: true,
       entry: finalEntry || refreshed || entry,
@@ -199,9 +201,19 @@ Deno.serve(async (req) => {
       ).some((a: { ok?: boolean }) => a && a.ok),
       held_for_next_term:
         finalEntry?.status === "open" &&
-        !!(credit_apply?.skipped === "no_open_invoice" ||
-          credit_apply?.skipped === "gocardless_held_for_next_term" ||
-          credit_apply?.gocardless_held),
+        !!(
+          skipped === "no_open_invoice" ||
+          skipped === "gocardless_held_for_spring_mandate" ||
+          skipped === "gocardless_held_for_next_term" ||
+          credit_apply?.gocardless_held
+        ),
+      held_for_spring_gc:
+        finalEntry?.status === "open" &&
+        !!(
+          skipped === "gocardless_held_for_spring_mandate" ||
+          skipped === "gocardless_held_for_next_term" ||
+          credit_apply?.gocardless_held
+        ),
     });
   }
 

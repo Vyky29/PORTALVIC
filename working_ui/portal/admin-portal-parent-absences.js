@@ -880,12 +880,15 @@
             var finish = function () {
               var extra = r.credit ? ' · ledger row created' : '';
               if (outcome === 'credit' && r.credit_apply) {
-                if (r.credit_apply.skipped === 'gocardless_held_for_next_term') {
-                  extra += ' — credit held for next term (GoCardless)';
+                if (
+                  r.credit_apply.skipped === 'gocardless_held_for_spring_mandate' ||
+                  r.credit_apply.skipped === 'gocardless_held_for_next_term'
+                ) {
+                  extra += ' — credit held for Spring GC mandate (monthly)';
                 } else if (r.credit_apply.skipped === 'no_open_invoice') {
-                  extra += ' — credit open (no unpaid invoice yet)';
+                  extra += ' — credit open (no unpaid bank/flexi invoice yet)';
                 } else if (r.credit_apply.applications && r.credit_apply.applications.length) {
-                  extra += ' — applied to next invoice';
+                  extra += ' — applied to invoice (flexi → 2nd half when open)';
                 }
               }
               if (r.parent_notify) {

@@ -212,7 +212,7 @@
           act === 'mark_refunded'
             ? 'Notes for refunded (optional):'
             : act === 'mark_applied'
-              ? 'Notes (optional). Applies £ to open/partial invoice (flexi OK); if none, keeps credit for next term:'
+              ? 'Notes (optional). Flexi → 2nd half; GoCardless → hold for Spring mandate (monthly):'
               : 'Cancel reason (optional):';
         var notes = global.prompt(promptLabel, '') || '';
         var amountRaw = '';
@@ -239,17 +239,19 @@
                   (okApp.applied_gbp != null ? ' (£' + Number(okApp.applied_gbp).toFixed(2) + ')' : '') +
                   (okApp.invoice_remaining_gbp != null
                     ? ' · remaining £' + Number(okApp.invoice_remaining_gbp).toFixed(2)
-                    : ''),
+                    : '') +
+                  ' (flexi → 2nd half when open)',
                 'ok'
               );
               state.filter = 'all';
-            } else if (r.held_for_next_term || (r.entry && r.entry.status === 'open')) {
+            } else if (r.held_for_spring_gc) {
               cfg.toast(
-                r.credit_apply && r.credit_apply.skipped === 'gocardless_held_for_next_term'
-                  ? 'No bank/card invoice — credit kept open for next term (GoCardless)'
-                  : 'No open invoice — credit kept open for next term',
+                'GoCardless — credit kept open for Spring mandate (monthly). Not applied to Autumn GC.',
                 'ok'
               );
+              state.filter = 'open';
+            } else if (r.held_for_next_term || (r.entry && r.entry.status === 'open')) {
+              cfg.toast('No open bank/flexi invoice — credit kept open for next term', 'ok');
               state.filter = 'open';
             } else {
               cfg.toast('Credit updated', 'ok');
@@ -275,7 +277,7 @@
       '<div class="card-h"><h3>Family credits &amp; refunds</h3>' +
       '<span class="chip chip--pend" id="portalParentCreditsMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Ledger from excused absences or <strong>Add credit / refund</strong>. <strong>Apply to invoice</strong> discounts an open/partial INV-P (incl. flexi remaining half). If they only have GoCardless or no invoice yet, the £ stays <strong>open for next term</strong>. Mark refunded after bank/Stripe.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Ledger from excused absences or <strong>Add credit / refund</strong>. <strong>Apply to invoice</strong>: bank/flexi open → discount the <strong>2nd flexi half</strong> (or remaining unpaid half). <strong>GoCardless</strong> (even with Autumn open) → keep £ <strong>open for Spring GC mandate</strong> (monthly). Mark refunded after bank/Stripe.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sm" data-credits-filter="open">Open</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-credits-filter="all">All</button>' +
