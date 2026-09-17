@@ -180,7 +180,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260917-seat-staff" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260917-seat-head-only" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -8231,14 +8231,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       ];
       for(ci = 0; ci < cols.length; ci++){
         pax = cols[ci];
-        staffLbl = String(
-          (pax && (pax.staffName || pax.instructor || (pax.halfA && pax.halfA.instructors) || (pax.halfB && pax.halfB.instructors))) ||
-          ''
-        ).trim();
         rowTds.push(
           '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">'+
-          '<div class="c4k-svc-seat">'+
-          (staffLbl ? '<div class="c4k-svc-seat__staff" title="Normal instructor">'+esc(staffLbl)+'</div>' : '')+
+          '<div class="c4k-svc-seat c4k-svc-seat--pax-only">'+
           '<div class="c4k-svc-seat__pax">'+adminServicesMultiSundaySeatCellHtml(pax, dataSlot)+'</div>'+
           '</div></td>'
         );
@@ -8478,8 +8473,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           trCells.push(
             '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">'+
-            '<div class="c4k-svc-seat">'+
-            '<div class="c4k-svc-seat__staff" title="Normal instructor">'+esc(String(sn || '').trim() || '—')+'</div>'+
+            '<div class="c4k-svc-seat c4k-svc-seat--pax-only">'+
             '<div class="c4k-svc-seat__pax">'+cellHtml+'</div></div></td>'
           );
         }
@@ -22493,10 +22487,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 }
                 seatCells +=
                   '<td class="c4k-svc-slot-td c4k-svc-slot-td--seat">' +
-                  '<div class="c4k-svc-seat">' +
-                  (seat && seat.staffName
-                    ? '<div class="c4k-svc-seat__staff" title="Normal instructor">' + esc(String(seat.staffName).trim()) + '</div>'
-                    : '') +
+                  '<div class="c4k-svc-seat c4k-svc-seat--pax-only">' +
                   '<div class="c4k-svc-seat__pax">' + paxHtml + '</div>' +
                   '</div></td>';
               }

@@ -2557,7 +2557,8 @@
       min-width:0;max-width:100%;width:100%;margin:0 auto;text-align:center
     }
     .c4k-svc-slot-th-seat__line{
-      display:block;min-width:0;max-width:100%;overflow-wrap:break-word;text-align:center;font-size:10px;font-weight:800
+      display:block;min-width:0;max-width:100%;overflow-wrap:break-word;text-align:center;
+      font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em
     }
     .c4k-svc-slot-th-seat__role{
       display:block;min-width:0;max-width:100%;overflow-wrap:break-word;text-align:center;
@@ -2606,11 +2607,13 @@
     }
     .c4k-svc-seat--pax-only{gap:0}
     .c4k-svc-seat{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;width:100%}
-    .c4k-svc-seat__staff,.c4k-svc-slot-th-seat__staff{
-      display:block;width:100%;min-width:0;font-size:10px;font-weight:800;letter-spacing:.02em;
-      text-transform:uppercase;color:#1e3a8a;line-height:1.2;overflow-wrap:break-word;text-align:center
+    /* Instructor lives only under Seat N in thead — not repeated in every pax cell. */
+    .c4k-svc-seat__staff{display:none!important}
+    .c4k-svc-slot-th-seat__staff{
+      display:block;width:100%;min-width:0;margin-top:3px;font-size:13px;font-weight:800;
+      letter-spacing:0;text-transform:none;color:#1e3a8a;line-height:1.25;
+      overflow-wrap:break-word;text-align:center
     }
-    .c4k-svc-slot-th-seat__staff{margin-top:2px;font-weight:700;text-transform:none;letter-spacing:0;color:#334155}
     .c4k-svc-dc-seat-table{width:100%;min-width:0}
     .c4k-svc-dc-seat-td{min-width:0;overflow-wrap:break-word;vertical-align:middle;padding:8px 6px}
     .c4k-svc-dc-seat-td--time{white-space:nowrap;width:1%;font-weight:600}
