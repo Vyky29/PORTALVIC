@@ -130,7 +130,8 @@
   }
 
   function freeOf(slot) {
-    return Math.max(0, Number(slot.capacity || 0) - Number(slot.taken || 0));
+    var occ = rosterSeatOccupancy(slot);
+    return Math.max(0, Number(occ.freeSeats) || 0);
   }
 
   function serviceName(id) {
@@ -158,20 +159,21 @@
       ".op2627-tbl-wrap{overflow-x:auto;min-width:0;width:100%}" +
       ".op2627-tbl{table-layout:fixed;width:100%;min-width:0}" +
       ".op2627-tbl th.op2627-th,.op2627-tbl td.op2627-td{" +
-      "text-align:center;vertical-align:middle;min-width:0;" +
+      "text-align:center;vertical-align:top;min-width:0;" +
       "overflow-wrap:break-word;word-break:break-word}" +
-      ".op2627-tbl .op2627-td--svc{width:16%}" +
-      ".op2627-tbl .op2627-td--venue{width:10%}" +
-      ".op2627-tbl .op2627-td--time{width:12%}" +
-      ".op2627-tbl .op2627-td--staff{width:12%}" +
-      ".op2627-tbl .op2627-td--num{width:6%}" +
-      ".op2627-tbl .op2627-td--taken{width:16%;text-align:left}" +
-      ".op2627-tbl .op2627-td--free{width:10%}" +
+      ".op2627-tbl .op2627-td--svc{width:18%}" +
+      ".op2627-tbl .op2627-td--venue{width:12%}" +
+      ".op2627-tbl .op2627-td--time{width:14%}" +
+      ".op2627-tbl .op2627-td--seats{width:38%;text-align:left}" +
       ".op2627-tbl .op2627-td--place{width:18%}" +
-      ".op2627-taken-names{display:block;font-size:12px;font-weight:600;color:#0f172a;line-height:1.35;overflow-wrap:break-word;min-width:0}" +
-      ".op2627-taken-count{display:block;font-size:11px;color:#64748b;margin-top:2px}" +
-      ".op2627-staff{font-size:12px;font-weight:700;color:#1e3a8a;overflow-wrap:break-word;min-width:0}" +
-      ".op2627-tbl .op2627-td--free .chip{justify-content:center;margin:0 auto}" +
+      ".op2627-seat-summary{font-size:12px;font-weight:700;color:#0f172a;margin:0 0 6px;line-height:1.35;overflow-wrap:break-word}" +
+      ".op2627-seat-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;min-width:0}" +
+      ".op2627-seat-list li{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 10px;font-size:12px;line-height:1.35;min-width:0;padding:4px 8px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0}" +
+      ".op2627-seat-list li.is-open{background:#f0fdf4;border-color:#bbf7d0;color:#166534}" +
+      ".op2627-seat-list .op2627-seat-name{font-weight:700;color:#0f172a;min-width:0;overflow-wrap:break-word}" +
+      ".op2627-seat-list li.is-open .op2627-seat-name{color:#166534}" +
+      ".op2627-seat-list .op2627-seat-n{font-weight:600;color:#64748b;white-space:nowrap;flex:0 0 auto}" +
+      ".op2627-seat-fallback{font-size:12px;color:#64748b;line-height:1.35;overflow-wrap:break-word}" +
       ".op2627-place{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;min-width:0}" +
       ".op2627-place .btn{white-space:nowrap}" +
       ".op2627-band-hint{margin:0 0 10px;font-size:13px;min-width:0;overflow-wrap:break-word}" +
@@ -208,97 +210,172 @@
     );
   }
 
-  /** Office-only: who occupies this Booking band, from standing roster (not public offer JSON). */
-  function rosterTakenNamesForSlot(slot) {
-    var src = global.STAFF_DASHBOARD_SOURCE;
-    var rows = src && Array.isArray(src.rows) ? src.rows : [];
-    if (!rows.length || !slot) return [];
-    var day = String(slot.day || "").trim();
-    var venue = String(slot.venue || "")
-      .trim()
-      .toLowerCase();
-    var wantTime = normOfferTimeKey(slot.timeLabel || slot.sortTime || "");
-    var wantSvc = String(serviceName(slot.serviceId) || slot.service || "")
+  function venueKeysMatch(a, b) {
+    var va = String(a || "").trim().toLowerCase();
+    var vb = String(b || "").trim().toLowerCase();
+    if (!va || !vb) return !va && !vb;
+    return va === vb || va.indexOf(vb) >= 0 || vb.indexOf(va) >= 0;
+  }
+
+  function serviceKeysMatch(a, b) {
+    var sa = String(a || "")
       .trim()
       .toLowerCase()
       .replace(/\s+/g, " ");
-    var seen = Object.create(null);
-    var out = [];
-    rows.forEach(function (r) {
-      if (!r) return;
-      var nm = String(r.client_name || "").trim();
-      if (!nm || isOpenSeatName(nm)) return;
-      var rowDay = String(r.day || "").trim();
-      if (day && rowDay && rowDay !== day) return;
-      var rowVenue = String(r.venue || "")
-        .trim()
-        .toLowerCase();
-      if (venue && rowVenue && rowVenue.indexOf(venue) < 0 && venue.indexOf(rowVenue) < 0) {
-        return;
-      }
-      if (wantSvc) {
-        var rowSvc = String(r.service || "")
-          .trim()
-          .toLowerCase()
-          .replace(/\s+/g, " ");
-        if (rowSvc && rowSvc.indexOf(wantSvc) < 0 && wantSvc.indexOf(rowSvc) < 0) return;
-      }
-      var rowTime = normOfferTimeKey(r.time_slot || "");
-      if (wantTime && rowTime && rowTime !== wantTime && rowTime.indexOf(wantTime) < 0 && wantTime.indexOf(rowTime) < 0) {
-        return;
-      }
-      var key = nm.toLowerCase();
-      if (seen[key]) return;
-      seen[key] = 1;
-      out.push(nm);
-    });
-    out.sort(function (a, b) {
-      return a.localeCompare(b, undefined, { sensitivity: "base" });
-    });
-    return out;
+    var sb = String(b || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    if (!sa || !sb) return true;
+    return sa === sb || sa.indexOf(sb) >= 0 || sb.indexOf(sa) >= 0;
   }
 
-  /** Staff on the band: offer JSON first, else standing roster instructors for matching seats. */
-  function staffLabelForSlot(slot) {
-    var list = [];
-    function pushAll(arr) {
-      (arr || []).forEach(function (n) {
-        var s = String(n || "").trim();
-        if (!s) return;
-        s.split(/[,+/|]+/).forEach(function (part) {
-          var t = String(part || "").trim();
-          if (t && list.indexOf(t) < 0) list.push(t);
-        });
-      });
-    }
-    pushAll(slot && slot.instructors);
-    pushAll(slot && slot.openInstructors);
-    if (list.length) return list.join(", ");
+  function timesExactMatch(a, b) {
+    var ta = normOfferTimeKey(a);
+    var tb = normOfferTimeKey(b);
+    if (!ta || !tb) return false;
+    return ta === tb;
+  }
+
+  /**
+   * Seat occupancy for a Booking band from standing roster lines (1 row = 1 seat).
+   * Instructors stay on Services — Places only shows who fills how many seats.
+   */
+  function rosterSeatOccupancy(slot) {
+    var cap = Math.max(0, Number(slot && slot.capacity) || 0);
+    var offerTaken = Math.max(0, Number(slot && slot.taken) || 0);
+    var offerFree = Math.max(0, cap - offerTaken);
     var src = global.STAFF_DASHBOARD_SOURCE;
     var rows = src && Array.isArray(src.rows) ? src.rows : [];
-    if (!rows.length || !slot) return "";
+    var empty = {
+      capacity: cap,
+      takenSeats: offerTaken,
+      freeSeats: offerFree,
+      byParticipant: [],
+      matchedRows: 0,
+      fromRoster: false,
+    };
+    if (!rows.length || !slot) return empty;
+
     var day = String(slot.day || "").trim();
-    var venue = String(slot.venue || "")
-      .trim()
-      .toLowerCase();
-    var wantTime = normOfferTimeKey(slot.timeLabel || slot.sortTime || "");
+    var venue = String(slot.venue || "").trim();
+    var wantTime = slot.timeLabel || slot.sortTime || "";
+    var wantSvc = serviceName(slot.serviceId) || slot.service || "";
+    var counts = Object.create(null);
+    var order = [];
+    var openSeats = 0;
+    var takenSeats = 0;
+    var matched = 0;
+
     rows.forEach(function (r) {
       if (!r) return;
       var rowDay = String(r.day || "").trim();
       if (day && rowDay && rowDay !== day) return;
-      var rowVenue = String(r.venue || "")
-        .trim()
-        .toLowerCase();
-      if (venue && rowVenue && rowVenue.indexOf(venue) < 0 && venue.indexOf(rowVenue) < 0) {
+      if (!venueKeysMatch(venue, r.venue)) return;
+      if (!serviceKeysMatch(wantSvc, r.service)) return;
+      if (!timesExactMatch(wantTime, r.time_slot)) return;
+      matched += 1;
+      var nm = String(r.client_name || "").trim();
+      if (!nm || isOpenSeatName(nm)) {
+        openSeats += 1;
         return;
       }
-      var rowTime = normOfferTimeKey(r.time_slot || "");
-      if (wantTime && rowTime && rowTime !== wantTime && rowTime.indexOf(wantTime) < 0 && wantTime.indexOf(rowTime) < 0) {
-        return;
+      takenSeats += 1;
+      var key = nm.toLowerCase();
+      if (!counts[key]) {
+        counts[key] = { name: nm, seats: 0 };
+        order.push(key);
       }
-      pushAll([r.instructors]);
+      counts[key].seats += 1;
     });
-    return list.join(", ");
+
+    if (!matched) return empty;
+
+    order.sort(function (a, b) {
+      return counts[a].name.localeCompare(counts[b].name, undefined, {
+        sensitivity: "base",
+      });
+    });
+
+    var freeSeats =
+      cap > 0 ? Math.max(0, cap - takenSeats) : Math.max(openSeats, offerFree);
+    if (cap > 0 && openSeats > freeSeats) freeSeats = openSeats;
+
+    return {
+      capacity: cap || matched,
+      takenSeats: takenSeats,
+      freeSeats: freeSeats,
+      byParticipant: order.map(function (k) {
+        return counts[k];
+      }),
+      matchedRows: matched,
+      fromRoster: true,
+    };
+  }
+
+  function seatOccupancyHtml(slot) {
+    var occ = rosterSeatOccupancy(slot);
+    var cap = occ.capacity;
+    var summary =
+      '<div class="op2627-seat-summary">' +
+      esc(String(occ.takenSeats)) +
+      " / " +
+      esc(String(cap || "—")) +
+      " seats taken · " +
+      esc(String(occ.freeSeats)) +
+      " free</div>";
+
+    if (!occ.fromRoster) {
+      if (occ.takenSeats > 0) {
+        return (
+          summary +
+          '<p class="op2627-seat-fallback" style="margin:0">Booking says ' +
+          esc(String(occ.takenSeats)) +
+          " taken — standing roster names not matched for this band.</p>"
+        );
+      }
+      return (
+        summary +
+        '<p class="op2627-seat-fallback" style="margin:0">All seats open on this band.</p>'
+      );
+    }
+
+    var items = occ.byParticipant
+      .map(function (p) {
+        var n = Number(p.seats) || 0;
+        return (
+          "<li>" +
+          '<span class="op2627-seat-name">' +
+          esc(p.name) +
+          "</span>" +
+          '<span class="op2627-seat-n">' +
+          esc(String(n)) +
+          " seat" +
+          (n === 1 ? "" : "s") +
+          "</span>" +
+          "</li>"
+        );
+      })
+      .join("");
+    if (occ.freeSeats > 0) {
+      items +=
+        '<li class="is-open">' +
+        '<span class="op2627-seat-name">Open</span>' +
+        '<span class="op2627-seat-n">' +
+        esc(String(occ.freeSeats)) +
+        " seat" +
+        (occ.freeSeats === 1 ? "" : "s") +
+        "</span>" +
+        "</li>";
+    }
+    if (!items) {
+      items =
+        '<li class="is-open"><span class="op2627-seat-name">Open</span>' +
+        '<span class="op2627-seat-n">' +
+        esc(String(cap || 0)) +
+        " seats</span></li>";
+    }
+    return summary + '<ul class="op2627-seat-list">' + items + "</ul>";
   }
 
   /**
@@ -311,8 +388,8 @@
       ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:0;min-width:0;scroll-margin-top:14px;padding-top:4px">' +
         '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">1 · Places (Booking Portal)</h2>' +
         '<p class="page-intro" style="max-width:52rem;margin:0 0 12px;min-width:0;overflow-wrap:break-word">' +
-        "Same bands as the public Booking Portal: capacity, who is taken (office names from roster), free seats, and staff on the seat. " +
-        "Weekly Autumn days first; Intensive / Camps grouped below." +
+        "Same bands as the public Booking Portal: how many seats each participant takes, and how many are still free. " +
+        "Who works each seat (instructor) is on <strong>Services</strong> below. Weekly Autumn days first; Intensive / Camps grouped below." +
         "</p>"
       : '<div class="page-head" style="min-width:0">' +
         '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Places 2026/27</h2>' +
@@ -566,23 +643,7 @@
     var body = rows
       .map(function (slot) {
         var free = freeOf(slot);
-        var tone = free > 0 ? "ok" : "warn";
         var payload = encodeSlotAttr(slot);
-        var takenNames = rosterTakenNamesForSlot(slot);
-        var staffLbl = staffLabelForSlot(slot);
-        var takenHtml = takenNames.length
-          ? '<span class="op2627-taken-names">' +
-            esc(takenNames.join(", ")) +
-            '</span><span class="op2627-taken-count">' +
-            esc(String(takenNames.length)) +
-            " / " +
-            esc(String(slot.capacity || 0)) +
-            " taken</span>"
-          : Number(slot.taken || 0) > 0
-            ? '<span class="op2627-taken-names">' +
-              esc(String(slot.taken)) +
-              ' taken</span><span class="op2627-taken-count">Names not matched on standing roster</span>'
-            : '<span class="muted">—</span>';
         var placeBtns =
           free > 0
             ? '<div class="op2627-place">' +
@@ -593,7 +654,7 @@
               esc(payload) +
               '">Place new</button>' +
               "</div>"
-            : '<span class="muted">—</span>';
+            : '<span class="muted">Full</span>';
         return (
           "<tr>" +
           '<td class="op2627-td op2627-td--svc">' +
@@ -605,20 +666,9 @@
           '<td class="op2627-td op2627-td--time">' +
           esc(slot.timeLabel || "—") +
           "</td>" +
-          '<td class="op2627-td op2627-td--staff"><span class="op2627-staff">' +
-          esc(staffLbl || "—") +
-          "</span></td>" +
-          '<td class="op2627-td op2627-td--num">' +
-          esc(String(slot.capacity || 0)) +
+          '<td class="op2627-td op2627-td--seats">' +
+          seatOccupancyHtml(slot) +
           "</td>" +
-          '<td class="op2627-td op2627-td--taken">' +
-          takenHtml +
-          "</td>" +
-          '<td class="op2627-td op2627-td--free"><span class="chip chip--' +
-          tone +
-          '">' +
-          esc(String(free)) +
-          " free</span></td>" +
           '<td class="op2627-td op2627-td--place">' +
           placeBtns +
           "</td>" +
@@ -642,10 +692,7 @@
       '<th class="op2627-th op2627-td--svc">Service</th>' +
       '<th class="op2627-th op2627-td--venue">Venue</th>' +
       '<th class="op2627-th op2627-td--time">Time</th>' +
-      '<th class="op2627-th op2627-td--staff">Staff</th>' +
-      '<th class="op2627-th op2627-td--num">Cap</th>' +
-      '<th class="op2627-th op2627-td--taken">Taken</th>' +
-      '<th class="op2627-th op2627-td--free">Free</th>' +
+      '<th class="op2627-th op2627-td--seats">Seats</th>' +
       '<th class="op2627-th op2627-td--place">Place</th>' +
       "</tr></thead><tbody>" +
       body +

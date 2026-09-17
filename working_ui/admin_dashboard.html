@@ -145,7 +145,7 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260915-chopi-kareena"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260915-wa-131049"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
-  <script src="/portal/admin-open-places-2627.js?v=20260917-taken-staff"></script>
+  <script src="/portal/admin-open-places-2627.js?v=20260917-seats-ui"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260909-reply-only" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260917-instructor-update2"></script>
@@ -519,11 +519,11 @@
     var NAV_GROUPS = [
       { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','sessions_feedback','sessions_absents','c4k_late_submissions','office_calendar','__h:More day tools','sessions_incidents','sessions_notes'] },
       { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','orders_all'] },
-      { id:'g_clients', label:'Clients & families', children:['clients','c4k_waitlist','leads','portal_participant_documents'] },
+      { id:'g_clients', label:'Clients & families', children:['clients','c4k_waitlist','leads','portal_participant_documents','portal_parent_consents'] },
       { id:'g_xero', label:'Money', children:['reenrol_payments','absents_refunds'] },
       { id:'g_messages', label:'Messages', children:['portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
-      { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews'] },
-      { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Forms','portal_climbing_registrations','portal_parent_consents','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','__h:More files','day_centre_documents','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
+      { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews'] },
+      { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Forms','portal_climbing_registrations','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','__h:More files','day_centre_documents','portal_docs_portalpin','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_more', label:'More', children:['__h:Extra hubs','dashboard','operations_admin','operator','receptionist','session_disruptions','c4k_reviews','c4k_reports','comms_ops','comms_bookings','commissioning_terms','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport'] },
       { id:'g_settings_portal', label:'Settings', children:['settings','admin_office_help','portal_device_notifications','logs','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','portal_nav_logout'] }
     ];
@@ -26763,7 +26763,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'People buckets — CLIENT, WAITING, LEADS, REGISTERED.',
         preview:[],
         status:'',
-        primary:['clients','c4k_waitlist','leads','portal_participant_documents'],
+        primary:['clients','c4k_waitlist','leads','portal_participant_documents','portal_parent_consents'],
         secondary:[]
       },
       {
@@ -26793,20 +26793,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         id:'staffhr',
         icon:'👥',
         title:'H&R',
-        description:'Staff roster and Timetable (who works).',
+        description:'Staff roster, Timetable, certificates and passports.',
         preview:[],
         status:'',
-        primary:['staffhr','roster_spreadsheets','onboarding'],
+        primary:['staffhr','roster_spreadsheets','onboarding','portal_docs_certificate','portal_docs_passport'],
         secondary:[{ id:'staffhr_contracts', label:'Contracts' },{ id:'staffhr_training_records', label:'Training records' },{ id:'staffhr_uniform', label:'Uniform' },'recruitment','interviews']
       },
       {
         id:'documents',
         icon:'📄',
         title:'Documents',
-        description:'Policies, consents and worker uploads.',
+        description:'Policies and worker uploads (payslips, timesheets).',
         preview:[],
         status:'',
-        primary:['policies_portal','policies','portal_parent_consents','portal_payslips'],
+        primary:['policies_portal','policies','portal_payslips'],
         secondary:['portal_climbing_registrations','portal_docs_timesheet','portal_docs_expense','day_centre_documents']
       },
       {
