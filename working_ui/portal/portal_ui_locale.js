@@ -101,6 +101,8 @@
 
   var ADMIN_GROUP_ES = {
     g_operator: "Operador",
+    g_services: "Servicios y plazas",
+    g_clients: "Clientes y familias",
     g_c4k: "Servicios y participantes (CFK)",
     g_zoho: "H&R",
     g_supabase: "Documentos",
