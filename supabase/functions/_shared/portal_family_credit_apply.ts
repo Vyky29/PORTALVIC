@@ -46,8 +46,8 @@ export type ApplyCreditResult = {
 };
 
 function invoiceEligibleForCreditApply(
-  share: PaySequenceShare & { amount_gbp?: unknown },
-  opts: { allowHidden: boolean },
+  share: PaySequenceShare & { amount_gbp?: unknown; payment_method_hint?: unknown },
+  opts: { allowHidden: boolean; skipGocardless?: boolean },
 ): boolean {
   const st = clean(share.payment_status, 40).toLowerCase();
   if (st === "void" || st === "cancelled" || st === "paid" || st === "pending_confirmation") {
@@ -56,6 +56,8 @@ function invoiceEligibleForCreditApply(
   if (st !== "unpaid" && st !== "partial") return false;
   const hint = clean(share.payment_method_hint, 40).toLowerCase();
   if (hint === "la_funded") return false;
+  // Office auto-apply: GoCardless monthly instalments stay on mandate — credit waits for next term.
+  if (opts.skipGocardless && hint === "gocardless") return false;
   const shareStatus = clean(share.share_status, 40).toLowerCase();
   if (!opts.allowHidden && shareStatus !== "ready") return false;
   if (opts.allowHidden && shareStatus && shareStatus !== "ready" && shareStatus !== "hidden") {
@@ -65,18 +67,26 @@ function invoiceEligibleForCreditApply(
   return Number.isFinite(amt) && amt > 0;
 }
 
+/** True when family only has open GoCardless instalments (no bank/card/term invoice to apply to). */
+export function invoiceIsGocardlessHint(share: { payment_method_hint?: unknown }): boolean {
+  return clean(share.payment_method_hint, 40).toLowerCase() === "gocardless";
+}
+
 /**
  * Pick next INV-P for auto-apply: Autumn → Spring → Summer, then due date.
  * Includes hidden shares when allowHidden (office path).
+ * When skipGocardless (office default), GC monthly instalments are skipped so credit
+ * lands on the next term / bank-card invoice instead.
  */
 export async function findNextInvoiceForCreditApply(
   admin: { from: (t: string) => any },
   contactId: string,
-  opts?: { allowHidden?: boolean; preferInvoiceId?: string },
-): Promise<(PaySequenceShare & { amount_gbp?: unknown; payment_schedule?: unknown; xero_invoice_id?: unknown; invoice_number?: unknown }) | null> {
+  opts?: { allowHidden?: boolean; preferInvoiceId?: string; skipGocardless?: boolean },
+): Promise<(PaySequenceShare & { amount_gbp?: unknown; payment_schedule?: unknown; xero_invoice_id?: unknown; invoice_number?: unknown; payment_method_hint?: unknown }) | null> {
   const cid = clean(contactId, 120);
   if (!cid) return null;
   const allowHidden = opts?.allowHidden !== false;
+  const skipGocardless = opts?.skipGocardless === true;
   const preferId = clean(opts?.preferInvoiceId, 80);
 
   const { data, error } = await admin
@@ -92,7 +102,7 @@ export async function findNextInvoiceForCreditApply(
   }
 
   const eligible = (data || []).filter((s: PaySequenceShare) =>
-    invoiceEligibleForCreditApply(s, { allowHidden }),
+    invoiceEligibleForCreditApply(s, { allowHidden, skipGocardless }),
   );
   if (!eligible.length) return null;
 
@@ -357,6 +367,7 @@ export async function autoApplyOpenCreditToNextInvoices(
   credit_id: string;
   final_credit_status?: string;
   final_credit_gbp?: number | null;
+  gocardless_held?: boolean;
 }> {
   const id = clean(creditId, 60);
   const maxInvoices = Math.min(Math.max(Number(opts?.maxInvoices) || 6, 1), 12);
@@ -395,15 +406,27 @@ export async function autoApplyOpenCreditToNextInvoices(
 
     const nextInv = await findNextInvoiceForCreditApply(admin, contactId, {
       allowHidden: true,
+      skipGocardless: true,
     });
     if (!nextInv) {
+      // Distinguish: no invoice at all vs only GC instalments left.
+      const anyOpen = await findNextInvoiceForCreditApply(admin, contactId, {
+        allowHidden: true,
+        skipGocardless: false,
+      });
+      const gcHeld = !!anyOpen && invoiceIsGocardlessHint(anyOpen);
       return {
         ok: true,
-        skipped: applications.length ? undefined : "no_open_invoice",
+        skipped: applications.length
+          ? undefined
+          : gcHeld
+            ? "gocardless_held_for_next_term"
+            : "no_open_invoice",
         applications,
         credit_id: id,
         final_credit_status: "open",
         final_credit_gbp: left,
+        gocardless_held: gcHeld,
       };
     }
 

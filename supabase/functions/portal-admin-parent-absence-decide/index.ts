@@ -11,6 +11,7 @@ import {
   verifyPortalAdminAccessToken,
 } from "../_shared/portal_admin_auth.ts";
 import { autoApplyOpenCreditToNextInvoices } from "../_shared/portal_family_credit_apply.ts";
+import { notifyParentAbsenceOutcome } from "../_shared/portal_absence_outcome_notify.ts";
 
 function clean(v: unknown, max = 500): string {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, max);
@@ -222,6 +223,7 @@ Deno.serve(async (req) => {
   // Credit / refund → family-visible ledger row (phase 1: internal, no Stripe).
   let credit = null;
   let credit_apply = null;
+  let parent_notify = null;
   if (action === "approve" && (outcome === "credit" || outcome === "refund")) {
     const creditSource = isCancellationCase ? "club_cancellation" : "excused_absence";
     const { data: existingCredit } = await admin
@@ -258,7 +260,7 @@ Deno.serve(async (req) => {
         credit = c;
       }
     }
-    // Office-issued credit: auto-apply to next INV-P (hidden OK). Parents do not need to tap Use credit.
+    // Office-issued credit: auto-apply to next INV-P (hidden OK; skip GoCardless monthly).
     if (outcome === "credit" && credit && credit.id) {
       try {
         credit_apply = await autoApplyOpenCreditToNextInvoices(admin, credit.id);
@@ -275,7 +277,53 @@ Deno.serve(async (req) => {
         credit_apply = { ok: false, error: "auto_apply_failed" };
       }
     }
+
+    // Proactive parent avisos for credit / refund only (not makeup).
+    try {
+      let invoiceNumber: string | null = null;
+      const applied = (credit_apply?.applications || []).find((a: { ok?: boolean; invoice_id?: string }) => a && a.ok);
+      if (applied?.invoice_id) {
+        const { data: invRow } = await admin
+          .from("portal_parent_invoice_share")
+          .select("invoice_number")
+          .eq("id", applied.invoice_id)
+          .maybeSingle();
+        invoiceNumber = invRow?.invoice_number ? String(invRow.invoice_number) : null;
+      }
+      const notifyAmount =
+        amountGbp != null
+          ? amountGbp
+          : credit?.amount_gbp != null
+            ? Number(credit.amount_gbp)
+            : null;
+      parent_notify = await notifyParentAbsenceOutcome(admin, {
+        outcome: outcome === "refund" ? "refund" : "credit",
+        report: {
+          id: updated.id,
+          parent_person_id: updated.parent_person_id,
+          contact_id: updated.contact_id,
+          participant_display: updated.participant_display,
+          service_label: updated.service_label,
+          session_date: updated.session_date,
+          session_time: report.session_time,
+        },
+        amountGbp: notifyAmount,
+        creditApply: credit_apply,
+        invoiceNumber,
+        actorEmail: verified.email || null,
+      });
+    } catch (err) {
+      console.error("[portal-admin-parent-absence-decide] parent_notify", err);
+      parent_notify = { ok: false, error: "notify_failed" };
+    }
   }
 
-  return portalAdminJson(200, { ok: true, report: updated, grant, credit, credit_apply });
+  return portalAdminJson(200, {
+    ok: true,
+    report: updated,
+    grant,
+    credit,
+    credit_apply,
+    parent_notify,
+  });
 });

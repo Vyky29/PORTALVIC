@@ -439,7 +439,7 @@ async function main() {
     }
   }
 
-  // --- D) Live Edge: decide (none — no money movement)
+  // --- D) Live Edge: decide refund (parent notify) + credit (notify, no makeup)
   if (!token) {
     log(
       "edge.absence_decide",
@@ -450,14 +450,64 @@ async function main() {
     const decided = await callAdminFn("portal-admin-parent-absence-decide", token, {
       report_id: reportId,
       action: "approve",
-      outcome: "none",
-      notes: "smoke decide none (no money)",
+      outcome: "refund",
+      amount_gbp: 12.5,
+      notes: "smoke refund notify",
     });
+    const pn = decided.json?.parent_notify as Record<string, unknown> | undefined;
     log(
-      "edge.absence_decide_none",
-      decided.status === 200 && decided.json?.ok === true,
-      `http=${decided.status} ${JSON.stringify(decided.json).slice(0, 180)}`,
+      "edge.absence_decide_refund_notify",
+      decided.status === 200 &&
+        decided.json?.ok === true &&
+        !!pn &&
+        (pn.ok === true || pn.skipped === true),
+      `http=${decided.status} notify=${JSON.stringify(pn || {}).slice(0, 160)}`,
     );
+
+    // Second row: credit decide (makeup must stay silent — we only check credit returns notify)
+    const creditLabel = `Smoke credit ${stamp}`;
+    const createdCredit = await callAdminFn("portal-admin-parent-absence-create", token, {
+      contact_id: CONTACT,
+      parent_person_id: PARENT,
+      participant_display: part?.display_name || "Elia",
+      session_date: sessionDate,
+      service_label: creditLabel,
+      session_time: "6 to 6.30",
+      reason_code: "club_cancelled",
+      reason_text: "Smoke · credit notify",
+      case_kind: "cancellation",
+    });
+    const creditRep = (createdCredit.json?.report || {}) as Record<string, unknown>;
+    const creditReportId = String(creditRep.id || "");
+    if (creditReportId) cleanupIds.reports.push(creditReportId);
+    if (creditReportId) {
+      const creditDecide = await callAdminFn("portal-admin-parent-absence-decide", token, {
+        report_id: creditReportId,
+        action: "approve",
+        outcome: "credit",
+        amount_gbp: 8,
+        notes: "smoke credit notify",
+      });
+      const cPn = creditDecide.json?.parent_notify as Record<string, unknown> | undefined;
+      const cApply = creditDecide.json?.credit_apply as Record<string, unknown> | undefined;
+      log(
+        "edge.absence_decide_credit_notify",
+        creditDecide.status === 200 &&
+          creditDecide.json?.ok === true &&
+          !!cPn &&
+          (cPn.ok === true || cPn.skipped === true),
+        `http=${creditDecide.status} notify=${JSON.stringify(cPn || {}).slice(0, 140)} apply=${JSON.stringify({ skipped: cApply?.skipped, gc: cApply?.gocardless_held }).slice(0, 80)}`,
+      );
+      if (creditDecide.json?.credit?.id) {
+        cleanupIds.credits.push(String(creditDecide.json.credit.id));
+      }
+    } else {
+      log("edge.absence_decide_credit_notify", false, "no credit report id");
+    }
+
+    if (decided.json?.credit?.id) {
+      cleanupIds.credits.push(String(decided.json.credit.id));
+    }
   }
 
   // Cleanup
