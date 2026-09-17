@@ -799,7 +799,7 @@
       '<h1 class="page-title">Instructor timetable</h1>' +
       '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">' +
       "<strong>Staff rota only</strong> — day, shift hours, and paid hours (default = shift). " +
-      "Capacity chain: " +
+      "Green paid line drives Timesheet pay when set (late / gaps). Capacity chain: " +
       "<strong>Places</strong> → <strong>Timetable</strong> → <strong>Services</strong> → <strong>Schedule &amp; Covers</strong>. " +
       "Edit cells and <strong>Save</strong> (or use <strong>Every [weekday] in term</strong> in the picker for the whole term). " +
       "<strong>Day off · COVER</strong> comes from <code>staff_unavailability</code> (same as Overview).</p>" +
@@ -1538,11 +1538,20 @@
 
   function collectPaidPickBands(dayName, colIdx) {
     var bands = collectTimePickBands(dayName, colIdx);
-    return [{ label: "Same as shift", val: "" }].concat(
-      bands.map(function (b) {
-        return { label: b, val: b };
-      })
-    );
+    var durs = [
+      { label: "1h", val: "1" },
+      { label: "1.5h", val: "1.5" },
+      { label: "2h", val: "2" },
+      { label: "2.5h", val: "2.5" },
+      { label: "3h", val: "3" },
+    ];
+    return [{ label: "Same as shift", val: "" }]
+      .concat(durs)
+      .concat(
+        bands.map(function (b) {
+          return { label: b, val: b };
+        }),
+      );
   }
 
   function openStaffHoursPick(wrap) {
@@ -1605,12 +1614,14 @@
       '<div class="asr-pick__chips" data-asr-pick-paid></div></div>' +
       '<div class="asr-pick__actions">' +
       '<button type="button" class="btn btn--ghost btn--sm" data-asr-pick-clear>Clear</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-asr-pick-type>Type…</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-asr-pick-type>Type shift…</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-asr-pick-type-paid>Type paid…</button>' +
       '<button type="button" class="btn btn--sec btn--sm" data-asr-pick-done>This date</button>' +
       '<button type="button" class="btn btn--pri btn--sm" data-asr-pick-apply-term id="asrPickApplyTerm">Every weekday (term)</button>' +
       "</div>" +
       '<p class="muted" style="margin:8px 0 0;font-size:11px;line-height:1.35;overflow-wrap:break-word">' +
-      "<strong>This date</strong> = one cell. <strong>Every … (term)</strong> = same seat on every matching weekday in Autumn, then Save.</p>" +
+      "<strong>Paid (green)</strong> = what Timesheet pays (e.g. late / gap: <code>10.30-12.30</code> or <code>1.5</code>). " +
+      "Same as shift unless you change it. <strong>This date</strong> = one cell; <strong>Every … (term)</strong> = all matching weekdays, then Save.</p>" +
       "</div>"
     );
   }
@@ -2737,6 +2748,19 @@
           inp.focus();
           inp.select();
         }
+        return;
+      }
+      if (t.closest("[data-asr-pick-type-paid]") && state.pick && state.pick.wrap) {
+        e.preventDefault();
+        var wp = state.pick.wrap;
+        var curPaid = String(wp.getAttribute("data-asr-paid") || "").trim();
+        var typed = window.prompt(
+          "Paid hours for Timesheet (green line).\nExamples: 10.30-12.30  or  1.5  or leave blank = same as shift",
+          curPaid,
+        );
+        if (typed == null) return;
+        setCellPaid(wp, String(typed || "").trim());
+        closeStaffHoursPick();
         return;
       }
       if (t.closest("#asrStaffHoursPick")) return;
