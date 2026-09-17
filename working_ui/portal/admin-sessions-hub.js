@@ -12222,24 +12222,28 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var hub = this;
     if (hubDayIsClubClosed(hub, this.selectedDay)) {
       return (
+        '<div class="ash-overview-pin">' +
         this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
+        '<div class="ash-overview-scroll">' +
         this.overviewFilterRowHtml() +
         '<h3 class="ash-table-title">' +
         esc(formatLongDate(this.selectedDay)) +
         ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Closed</span></h3>' +
         '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="9">' +
-        '<div class="ash-empty">Club closed \u2014 no sessions on this date.</div></td></tr></tbody></table></div>'
+        '<div class="ash-empty">Club closed \u2014 no sessions on this date.</div></td></tr></tbody></table></div>' +
+        "</div></div>"
       );
     }
-    var useBoard = true;
     var srcNote = global.STAFF_DASHBOARD_SOURCE || {};
     var chainOn = !!(srcNote.capacityChainNoCanonicalRemap || global.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__);
     var boardHint = chainOn
       ? "Capacity chain + Schedule & Covers — who works and which seats today."
       : "Staffing board — who works and which seats today.";
-    /* Shell first — board body fills via scheduleOverviewBodyPaint (keeps tab responsive). */
+    /* Pin week chrome; only the board body scrolls (sticky was letting cards paint above/below). */
     return (
+      '<div class="ash-overview-pin">' +
       this.htmlFeedbackWeekDaysRow({ overviewPicker: true, staffingGuide: true }) +
+      '<div class="ash-overview-scroll">' +
       '<p class="ash-feedback-filter-hint" role="status" data-ash-overview-source="' +
       esc(chainOn ? "capacity-chain" : "other") +
       '">' +
@@ -12259,7 +12263,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "</div>" +
       '<div data-ash-overview-body class="ash-overview-body">' +
       '<p class="ash-feedback-filter-hint" role="status">Building day board…</p>' +
-      "</div>"
+      "</div>" +
+      "</div></div>"
     );
   };
 

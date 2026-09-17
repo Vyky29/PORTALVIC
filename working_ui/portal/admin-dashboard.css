@@ -794,6 +794,48 @@
     .c4k-hub-sess-card__lbl{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--muted);margin-top:4px}
     .c4k-hub-fb-title{margin:0 0 10px;font-size:15px;font-weight:700;color:var(--ink)}
     .c4k-sessions-hub-panel[hidden]{display:none!important}
+    /* Overview: workspace does not scroll — title/tabs/week stay put; only the board scrolls. */
+    body:has(#c4kHubPanelOverview:not([hidden])) .admin-workspace{
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      min-height:0;
+    }
+    body:has(#c4kHubPanelOverview:not([hidden])) .c4k-sessions-hub.portal-day-ops-embed,
+    body:has(#c4kHubPanelOverview:not([hidden])) .c4k-sessions-hub{
+      flex:1 1 auto;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+    body:has(#c4kHubPanelOverview:not([hidden])) .c4k-sessions-hub__head,
+    body:has(#c4kHubPanelOverview:not([hidden])) .c4k-sessions-hub__toolbar,
+    body:has(#c4kHubPanelOverview:not([hidden])) #portalDayOpsStatus{
+      flex:0 0 auto;
+    }
+    body:has(#c4kHubPanelOverview:not([hidden])) #c4kHubPanelOverview{
+      flex:1 1 auto;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+    body:has(#c4kHubPanelOverview:not([hidden])) #adminSessionsHubRoot{
+      flex:1 1 auto;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      margin-top:0;
+    }
+    body:has(#c4kHubPanelOverview:not([hidden])) #adminSessionsHubRoot > .ash-panels{
+      flex:1 1 auto;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
 
     .c4k-bridgesched{border:2px solid #7dd3fc;background:linear-gradient(135deg,#f0f9ff 0%,#fff 60%);border-radius:var(--radiusLg)}
 
@@ -3812,6 +3854,10 @@
       overflow-y:auto;
       align-self:stretch;
       width:100%
+    }
+    /* Sessions Overview pin wins over dayops workspace scroll. */
+    body:has(#c4kHubPanelOverview:not([hidden])) .admin-workspace{
+      overflow:hidden;
     }
     body:has(#workspace .dayops-ops-fold){
       background:#fff
