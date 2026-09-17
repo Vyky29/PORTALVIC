@@ -682,6 +682,11 @@
     }
     .c4k-sessions-hub__title{margin:0;font-size:22px;font-weight:800;color:#1e3a5f;letter-spacing:.02em;min-width:0}
     .c4k-sessions-hub__sub{margin:6px 0 0;font-size:13px;color:var(--muted);max-width:40rem;overflow-wrap:break-word}
+    .c4k-sessions-hub__title-actions{
+      display:flex;flex-wrap:wrap;align-items:center;gap:10px;flex-shrink:0;margin-left:auto
+    }
+    .c4k-sessions-hub__title-actions #c4kHubRefresh[hidden],
+    .c4k-sessions-hub__title-actions #c4kHubRefreshAt[hidden]{display:none!important}
     .c4k-sessions-hub__dash-jump{
       display:inline-flex;align-items:center;gap:8px;flex-shrink:0;
       padding:8px 12px;border-radius:10px;border:1px solid #fdba74;

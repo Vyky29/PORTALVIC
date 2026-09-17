@@ -71,7 +71,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260911-en-only"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260914-andres-absent-orange" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260917-sticky-week" />
   <script src="/portal/portal_staff_display_names.js?v=20260909-luliya-first"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260915-sun-phases" />
@@ -180,7 +180,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260915-dc-phase" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260917-sticky-week" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -22277,7 +22277,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       { id:'pickup', label:'Pick up', iconId:'scheduling', mode:'panelPickup' }
     ];
     var SESSIONS_HUB_HEAD_META = {
-      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Day truth you look at — covers, trials and absents from Schedule & Covers / bookings land here. Feedback status is on Register.' },
+      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Day truth you look at — covers, trials and absents from Schedule & Covers / bookings land here.' },
       feedback:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it — engagement, emotions, independence, narrative and notes.' },
       positive:{ iconId:'c4k_reviews', tone:'positive', title:'SESSION FEEDBACK', sub:'Raw session feedback next to the parent-safe filtered version generated on review.' },
       relevant:{ iconId:'c4k_relevant', tone:'relevant', title:'NOTES', sub:'Internal notes — informational only, with an option to email CEOs or other staff.' },
@@ -23177,6 +23177,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function sessionsHubHeadHtml(tab){
       var meta = SESSIONS_HUB_HEAD_META[tab] || SESSIONS_HUB_HEAD_META.overview;
+      var showRefresh = sessionsHubTabShowsRefresh(tab);
       return (
         '<div class="c4k-sessions-hub__head">' +
         '<div class="c4k-sessions-hub__title-row">' +
@@ -23184,7 +23185,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="c4k-sessions-hub__title-block">' +
         '<div class="c4k-sessions-hub__title-line">' +
         '<h1 class="c4k-sessions-hub__title">' + esc(meta.title) + '</h1>' +
+        '<div class="c4k-sessions-hub__title-actions" id="c4kHubToolbarActions">' +
+        '<button type="button" class="btn btn--ghost btn--sm" id="c4kHubRefresh"' + (showRefresh ? '' : ' hidden') + '>Refresh</button>' +
+        '<span class="c4k-sessions-hub__refresh-at" id="c4kHubRefreshAt" aria-live="polite"' + (showRefresh ? '' : ' hidden') + '></span>' +
         sessionsHubDashJumpHtml() +
+        '</div>' +
         '</div>' +
         '<p class="c4k-sessions-hub__sub">' + esc(meta.sub) + '</p>' +
         '</div></div></div>'
@@ -23467,12 +23472,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="c4k-sessions-hub__toolbar">' +
         '<div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Day operations">' + sessionsHubTabsHtml(tab) + '</div>' +
-        '<div class="c4k-sessions-hub__actions" id="c4kHubToolbarActions"' +
-        (sessionsHubTabShowsRefresh(tab) ? '' : ' hidden') +
-        '>' +
-        '<button type="button" class="btn btn--ghost btn--sm" id="c4kHubRefresh">Refresh</button>' +
-        '<span class="c4k-sessions-hub__refresh-at" id="c4kHubRefreshAt" aria-live="polite"></span>' +
-        '</div></div>'
+        '</div>'
       );
     }
     function portalAdminHeavyScriptsReady(){
@@ -23505,7 +23505,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260916-office-card';
+    var PORTAL_ADMIN_HUB_BUILD = '20260917-sticky-week';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -23553,8 +23553,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(wn) wn.hidden = true;
       var head = document.querySelector('.c4k-sessions-hub__head');
       if(head) head.outerHTML = sessionsHubHeadHtml(h.tab);
-      var hubActs = $('c4kHubToolbarActions');
-      if(hubActs) hubActs.hidden = !sessionsHubTabShowsRefresh(h.tab);
+      var showRefresh = sessionsHubTabShowsRefresh(h.tab);
+      var hubRefBtn = $('c4kHubRefresh');
+      var hubRefAt = $('c4kHubRefreshAt');
+      if(hubRefBtn) hubRefBtn.hidden = !showRefresh;
+      if(hubRefAt) hubRefAt.hidden = !showRefresh;
       if(showTrack) sessionsHubShowLoading('adminSessionsHubRoot', 'Loading sessions overview…');
       if(showFb) sessionsHubShowLoading('adminSessionFeedbacksRoot', 'Loading session feedback…');
       function onHubRefreshDone(){

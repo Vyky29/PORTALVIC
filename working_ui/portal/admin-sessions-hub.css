@@ -119,15 +119,21 @@
       border-color: #256f96;
       box-shadow: 0 0 0 2px rgba(45, 132, 179, 0.25);
     }
+    /* Live feedback tip + week day strip stick together under the scroll top.
+       Do NOT set overflow on this node (Chrome can crash when sticky + overflow-x share it). */
+    .ash-sticky-chrome,
     .ash-week-sticky-anchor {
-      /* Sticky week strip — do NOT set overflow on this node (Chrome can crash on scroll
-         when sticky + overflow-x share the same element). Scroll the inner week block. */
       position: sticky;
       top: 0;
       z-index: 25;
       background: #f8fafc;
       padding-bottom: 10px;
       margin-bottom: 8px;
+      box-shadow: 0 8px 14px -12px rgba(15, 23, 42, 0.35);
+    }
+    .ash-sticky-chrome > .ash-feedback-filter-hint,
+    .ash-sticky-chrome > .ash-bundle-warn {
+      margin: 0 0 8px;
     }
     .ash-log-jump, .ash-log-day-link {
       display: inline-block;

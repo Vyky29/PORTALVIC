@@ -10013,6 +10013,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
   };
 
+  AdminSessionsHub.prototype.htmlStickyWeekChrome = function (innerHtml) {
+    var top = this._stickyTopHtml || "";
+    return (
+      '<div class="ash-sticky-chrome ash-week-sticky-anchor">' +
+      top +
+      innerHtml +
+      "</div>"
+    );
+  };
+
   AdminSessionsHub.prototype.htmlWeekHeader = function () {
     var hub = this;
     var esc = this.escapeHtml;
@@ -10023,8 +10033,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         return htmlWeekDayCard(hub, iso, idx, esc);
       })
       .join("");
-    return (
-      '<div class="ash-week-sticky-anchor"><div class="ash-week-block">' +
+    return this.htmlStickyWeekChrome(
+      '<div class="ash-week-block">' +
       '<div class="ash-week-head">' +
       '<div class="ash-week-head__row">' +
       '<div class="ash-week-head__titles">' +
@@ -10036,7 +10046,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "</div></div>" +
       '<div class="ash-day-row ash-day-row--week">' +
       cards +
-      "</div></div></div>"
+      "</div></div>"
     );
   };
 
@@ -12225,8 +12235,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var srcNote = global.STAFF_DASHBOARD_SOURCE || {};
     var chainOn = !!(srcNote.capacityChainNoCanonicalRemap || global.__PORTAL_SESSIONS_OVERVIEW_CAPACITY_PIN__);
     var boardHint = chainOn
-      ? "Capacity chain + Schedule & Covers — who works and which seats today. Feedback status is on Register."
-      : "Staffing board — who works and which seats today. Feedback status is on Register / Session Feedback.";
+      ? "Capacity chain + Schedule & Covers — who works and which seats today."
+      : "Staffing board — who works and which seats today.";
     /* Shell first — board body fills via scheduleOverviewBodyPaint (keeps tab responsive). */
     return (
       this.htmlFeedbackWeekDaysRow({ overviewPicker: true, staffingGuide: true }) +
@@ -13075,8 +13085,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var weekTitle = opts.staffingGuide
       ? "Week (Mon-Sun)"
       : "Feedback progress";
-    return (
-      '<div class="ash-week-sticky-anchor"><div class="ash-feedback-week">' +
+    return this.htmlStickyWeekChrome(
+      '<div class="ash-feedback-week">' +
       '<div class="ash-feedback-week__head">' +
       '<h4 class="ash-feedback-week__title">' +
       esc(weekTitle) +
@@ -13087,7 +13097,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "</div>" +
       '<div class="ash-day-row ash-day-row--feedback">' +
       cards +
-      "</div></div></div>"
+      "</div></div>"
     );
   };
 
@@ -13733,11 +13743,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '</strong> rows from Supabase.</p>';
     }
     if (this.mode === "feedback") {
-      this.root.innerHTML = warn + '<div class="ash-panels ash-panels--feedback-only"></div>';
+      this._stickyTopHtml = warn;
+      this.root.innerHTML = '<div class="ash-panels ash-panels--feedback-only"></div>';
       this.renderPanels();
       return;
     }
     if (this.opts && this.opts.externalTabs) {
+      this._stickyTopHtml = warn;
       /* Soft path: keep week strip + filters; only refresh day board (no flicker). */
       if (
         this.tab === "tracking" &&
@@ -13747,21 +13759,31 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       ) {
         var panels = this.root.querySelector(".ash-panels");
         if (panels) {
-          var tip = this.root.querySelector(":scope > .ash-feedback-filter-hint, :scope > .ash-bundle-warn");
-          if (warn) {
-            if (!tip) {
-              this.root.insertAdjacentHTML("afterbegin", warn);
-            }
+          var chrome = this.root.querySelector(".ash-sticky-chrome");
+          if (chrome) {
+            Array.prototype.slice
+              .call(
+                chrome.querySelectorAll(
+                  ":scope > .ash-feedback-filter-hint, :scope > .ash-bundle-warn"
+                )
+              )
+              .forEach(function (el) {
+                el.remove();
+              });
+            if (warn) chrome.insertAdjacentHTML("afterbegin", warn);
+          } else if (warn) {
+            this.root.insertAdjacentHTML("afterbegin", warn);
           }
           this.softRefreshOverview();
           return;
         }
       }
       this._forceFullOverviewRender = false;
-      this.root.innerHTML = warn + '<div class="ash-panels"></div>';
+      this.root.innerHTML = '<div class="ash-panels"></div>';
       this.renderPanels();
       return;
     }
+    this._stickyTopHtml = warn;
     var tabs =
       '<button type="button" class="ash-tab' +
       (this.tab === "tracking" ? " is-active" : "") +
@@ -13777,7 +13799,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '" data-ash-tab="feedback">Session feedback</button>';
     }
     this.root.innerHTML =
-      '<div class="ash-tabs ash-tabs--service-overview">' + tabs + "</div>" + warn + '<div class="ash-panels"></div>';
+      '<div class="ash-tabs ash-tabs--service-overview">' + tabs + "</div>" + '<div class="ash-panels"></div>';
     this.renderPanels();
   };
 
