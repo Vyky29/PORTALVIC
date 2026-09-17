@@ -2153,13 +2153,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             document.scrollingElement.scrollTop = 0;
           }
         }catch(_w){}
-        try{
-          var heading = document.querySelector('#workspace .page-title, #workspace h1.page-title, #workspace h1');
-          if(heading){
-            if(!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
-            heading.focus({ preventScroll: true });
-          }
-        }catch(_f){}
+        /* Do not focus the page title — browsers draw a blue focus ring around h1. */
         portalAdminClampWorkspaceScroll();
       };
       /* Double rAF: wait until new view layout is committed. */

@@ -1030,15 +1030,20 @@
       min-width:0;
       overflow-wrap:break-word;
     }
-    /* Programmatic focus on view change (a11y / scroll reset) — no blue focus ring on titles */
+    /* Kill any leftover focus styling if an h1 was focused before this fix */
     .page-title:focus,
     .page-title:focus-visible,
+    .page-title:focus-within,
     .admin-page-head__title:focus,
     .admin-page-head__title:focus-visible,
+    .admin-page-head__title-stack:focus,
+    .admin-page-head__title-stack:focus-within,
     #workspace h1:focus,
-    #workspace h1:focus-visible{
-      outline:none;
-      box-shadow:none;
+    #workspace h1:focus-visible,
+    #workspace .admin-page-head h1:focus{
+      outline:none !important;
+      box-shadow:none !important;
+      border-color:transparent !important;
     }
     .page-desc{
       margin:0 0 14px;
