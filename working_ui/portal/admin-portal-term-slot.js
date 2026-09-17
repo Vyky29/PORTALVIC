@@ -59,6 +59,8 @@
     saving: false,
     prefill: null,
     sessionPickerSelection: null,
+    /** Selected Now card — the standing seat being moved / swapped. */
+    sourceSeat: null,
   };
 
   function esc(s) { return deps.esc(s); }
@@ -538,44 +540,86 @@
     return out.slice(0, 36);
   }
 
+  function seatPickKey(seat) {
+    if (!seat) return "";
+    return [
+      normName(seat.service),
+      normSlotTime(seat.time_slot),
+      normName(seat.instructors),
+      normName(seat.venue),
+      String(seat.day || "").trim().toLowerCase(),
+    ].join("|");
+  }
+
+  function refreshTermSlotFinanceNote(root) {
+    var note = root && root.querySelector("#trsFinanceNote");
+    if (!note) return;
+    var src = state.sourceSeat;
+    var destSvc = String((root.querySelector("#trsService") || {}).value || "").trim();
+    var destTime = String((root.querySelector("#trsTimeSlot") || {}).value || "").trim();
+    if (!src || !destSvc || !destTime) {
+      note.hidden = true;
+      note.innerHTML = "";
+      return;
+    }
+    var srcSvc = String(src.service || "").trim();
+    if (!srcSvc || normName(srcSvc) === normName(destSvc)) {
+      note.hidden = true;
+      note.innerHTML = "";
+      return;
+    }
+    note.hidden = false;
+    note.innerHTML =
+      "<strong>Service change:</strong> " +
+      esc(srcSvc) +
+      " → " +
+      esc(destSvc) +
+      ". Different fee / session count may apply — check the family invoice (more or fewer dates than the previous service) before Save.";
+  }
+
   function refreshTermSlotVisualBoard(root) {
     if (!root) return;
     var nowHost = root.querySelector("#trsNowBoard");
     var availHost = root.querySelector("#trsAvailBoard");
     var hint = root.querySelector("#trsVisualHint");
+    var changing = root.querySelector("#trsChangingLabel");
     if (!nowHost || !availHost) return;
     var clientEl = root.querySelector("#trsClient");
     var svcEl = root.querySelector("#trsService");
     var anchorEl = root.querySelector("#trsAnchorDate");
     var venueEl = root.querySelector("#trsVenue");
     var part = resolveClientName((clientEl && clientEl.value) || "") || String((clientEl && clientEl.value) || "").trim();
-    var service = String((svcEl && svcEl.value) || "").trim();
+    var destService = String((svcEl && svcEl.value) || "").trim();
     var anchor = normIso(anchorEl && anchorEl.value);
     var venueFilter = String((venueEl && venueEl.value) || "").trim();
     var weekday = weekdayLongFromIso(anchor);
+    var sourceKey = seatPickKey(state.sourceSeat);
 
     if (!part) {
+      state.sourceSeat = null;
       nowHost.innerHTML =
-        '<p class="trs-visual-empty">Pick a participant to see where they sit now.</p>';
+        '<p class="trs-visual-empty">Pick a participant to see all their standing seats.</p>';
       availHost.innerHTML =
-        '<p class="trs-visual-empty">Open seats appear here when you set the day (and optional service / venue).</p>';
+        '<p class="trs-visual-empty">Then pick one Now card to change, filter Available (service / day / venue), and click an open seat.</p>';
       if (hint) {
-        hint.textContent = "Left: who they are with now. Right: filters + available seats.";
+        hint.textContent =
+          "Now = all their seats. Service filter only shapes Available (new seat).";
       }
+      if (changing) {
+        changing.hidden = true;
+        changing.textContent = "";
+      }
+      refreshTermSlotFinanceNote(root);
       return;
     }
 
-    var nowSlots = service
-      ? (function () {
-          var one = findBundleSlotByParticipantService(anchor, part, service);
-          return one ? [one] : collectParticipantRows(part, anchor);
-        })()
-      : collectParticipantRowsAnyDay(part, anchor);
+    /* Now always lists every standing seat for the participant — service filter is for Available only. */
+    var nowSlots = collectParticipantRowsAnyDay(part, anchor);
     if (!nowSlots.length) {
       nowHost.innerHTML =
         '<p class="trs-visual-empty">No standing seat found for <strong>' +
         esc(part) +
-        "</strong> in this term yet — pick an open seat on the right.</p>";
+        "</strong> in this term yet — pick an open seat on the right to place them.</p>";
     } else {
       nowHost.innerHTML = nowSlots
         .map(function (r) {
@@ -584,12 +628,16 @@
             (dayLbl ? dayLbl + " · " : "") +
             String(r.time_slot || "").trim() +
             (r.area ? " · " + String(r.area).trim() : "");
+          var key = seatPickKey(r);
+          var selected = sourceKey && key === sourceKey;
           var pick =
             ' data-trs-now-pick="' +
             encodeSeatPick(r) +
-            '" title="Load this seat into the form"';
+            '"' +
+            (selected ? ' aria-pressed="true"' : "") +
+            ' title="Select this seat to change / move"';
           return htmlMiniSlotCard({
-            tone: "now",
+            tone: selected ? "now-selected" : "now",
             band: serviceBandLabel(r.service),
             name: String(r.instructors || "Staff TBC").trim() || "Staff TBC",
             when: when,
@@ -601,7 +649,28 @@
         .join("");
     }
 
-    var opens = collectOpenSeatsForVisual(anchor, service, venueFilter);
+    if (changing) {
+      if (state.sourceSeat) {
+        var s = state.sourceSeat;
+        changing.hidden = false;
+        changing.innerHTML =
+          "<strong>Changing:</strong> " +
+          esc(String(s.service || "").trim() || "seat") +
+          " · " +
+          esc(String(s.instructors || "").trim() || "staff") +
+          " · " +
+          esc(String(s.day || "").trim()) +
+          " " +
+          esc(String(s.time_slot || "").trim()) +
+          " — pick an Available card for the new seat.";
+      } else {
+        changing.hidden = false;
+        changing.innerHTML =
+          "<strong>Step 1:</strong> click a Now card to choose which seat to change.";
+      }
+    }
+
+    var opens = collectOpenSeatsForVisual(anchor, destService, venueFilter);
     if (!anchor) {
       availHost.innerHTML =
         '<p class="trs-visual-empty">Set an anchor date to list open seats that day.</p>';
@@ -610,7 +679,7 @@
         '<p class="trs-visual-empty">No open seats on <strong>' +
         esc(weekday || anchor) +
         "</strong>" +
-        (service ? " for " + esc(service) : "") +
+        (destService ? " for " + esc(destService) : "") +
         (venueFilter ? " at " + esc(venueFilter) : "") +
         ". Widen filters or open Places in Services.</p>";
     } else {
@@ -629,7 +698,7 @@
             pickAttrs:
               ' data-trs-avail-pick="' +
               encodeSeatPick(r) +
-              '" title="Place participant on this open seat"',
+              '" title="Move / place onto this open seat"',
           });
         })
         .join("");
@@ -637,17 +706,33 @@
 
     if (hint) {
       hint.textContent =
-        "Available = open seats on " +
+        "Available filter: " +
         (weekday || "anchor day") +
-        (service ? " · " + service : "") +
+        (destService ? " · " + destService : " · all services") +
         (venueFilter ? " · " + venueFilter : "") +
-        ". Click a card to set time + instructor.";
+        ". Does not hide Now cards.";
     }
+    refreshTermSlotFinanceNote(root);
   }
 
   function applySeatPickToForm(root, seat, opts) {
     opts = opts || {};
     if (!root || !seat) return;
+    var asSource = !!opts.asSource;
+    if (asSource) {
+      state.sourceSeat = {
+        service: String(seat.service || "").trim(),
+        time_slot: String(seat.time_slot || "").trim(),
+        instructors: String(seat.instructors || "").trim(),
+        venue: String(seat.venue || "").trim(),
+        area: String(seat.area || "").trim(),
+        day: String(seat.day || "").trim(),
+      };
+      /* Source pick only selects which seat to change — do not overwrite destination filters. */
+      refreshTermSlotVisualBoard(root);
+      if (opts.toast) deps.toast(opts.toast);
+      return;
+    }
     if (seat.service) {
       var part = String((root.querySelector("#trsClient") || {}).value || "").trim();
       var anchor = normIso((root.querySelector("#trsAnchorDate") || {}).value);
@@ -2189,7 +2274,7 @@
       '<div class="trs-panel__head">' +
       '<div class="trs-panel__title">' +
       "<h1>Edit term slot</h1>" +
-      "<p><strong>Left:</strong> participant + current seat. <strong>Right:</strong> service, day, venue → available cards. Time and instructor come from the card you click.</p>" +
+      "<p><strong>Left:</strong> all of their seats — click one to change. <strong>Right:</strong> Service / day / venue filter Available only (new seat). Cross-service moves can change fees and invoice dates.</p>" +
       "</div>" +
       '<div class="trs-panel__head-actions">' +
       '<button type="button" class="btn btn--sec" id="trsLoadBundle">Reload from roster</button>' +
@@ -2204,14 +2289,16 @@
       "</aside>" +
       '<div class="trs-split__right">' +
       '<div class="trs-row trs-row--filters" id="trsFiltersRow">' +
-      '<div class="trs-field"><label for="trsService">Service</label><select id="trsService"><option value="">All services</option></select></div>' +
+      '<div class="trs-field"><label for="trsService">New seat service</label><select id="trsService"><option value="">All services</option></select></div>' +
       '<div class="trs-field"><label for="trsAnchorDate">Anchor date</label><input type="date" id="trsAnchorDate" value="' + esc(anchor) + '"/></div>' +
       '<div class="trs-field"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="e.g. Acton, SwimFarm…" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
       '<div class="trs-field" id="trsDetailsRow"><label for="trsArea">Area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="Wall, gym, big pool, lane…"/></div>' +
       "</div>" +
-      '<p class="trs-visual-hint" id="trsVisualHint">Filter by service, day and venue — click an available card to set time + instructor.</p>' +
-      '<h2 class="trs-visual-title" id="trsAvailTitle">Available</h2>' +
+      '<p class="trs-changing" id="trsChangingLabel" style="margin:0 0 8px;font-size:12px;line-height:1.45;overflow-wrap:break-word"></p>' +
+      '<p class="trs-visual-hint" id="trsVisualHint">Service filter shapes Available only — Now always shows every seat for this participant.</p>' +
+      '<h2 class="trs-visual-title" id="trsAvailTitle">Available (new seat)</h2>' +
       '<div class="trs-visual-cards" id="trsAvailBoard"></div>' +
+      '<p class="trs-finance-note" id="trsFinanceNote" hidden style="margin:10px 0 0;padding:10px 12px;border-radius:10px;border:1px solid #fcd34d;background:#fffbeb;font-size:12px;line-height:1.45;color:#92400e;overflow-wrap:break-word"></p>' +
       '<p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Full Places board → <button type="button" class="btn btn--ghost btn--sm" data-view-target="open_places_2627" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Places in Services</button>.</p>' +
       '<input type="hidden" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '"/>' +
       '<input type="hidden" id="trsInstructors" value="' + esc(pre.instructors || "") + '"/>' +
@@ -2275,15 +2362,22 @@
         if (nowBtn) {
           e.preventDefault();
           var seatNow = decodeSeatPick(nowBtn.getAttribute("data-trs-now-pick"));
-          applySeatPickToForm(root, seatNow, { toast: "Loaded current seat into the form." });
+          applySeatPickToForm(root, seatNow, {
+            asSource: true,
+            toast: "Seat selected — pick an Available card for the new place.",
+          });
           return;
         }
         var availBtn = t.closest("[data-trs-avail-pick]");
         if (availBtn) {
           e.preventDefault();
+          if (!state.sourceSeat) {
+            deps.toast("First click a Now card (which seat to change).");
+            return;
+          }
           var seatAvail = decodeSeatPick(availBtn.getAttribute("data-trs-avail-pick"));
           applySeatPickToForm(root, seatAvail, {
-            toast: "Open seat applied — check scope then Save.",
+            toast: "New seat applied — check scope / finance note, then Save.",
           });
         }
       });
