@@ -702,6 +702,72 @@
     };
   }
 
+  /** Full month grid for Ops Hub glance — title sits beside; grid fills the box. */
+  function glanceMonthGridHtml(entries, year, monthIndex) {
+    ensureMonth();
+    var today = todayIso();
+    var y = year != null ? Number(year) : new Date().getFullYear();
+    var m = monthIndex != null ? Number(monthIndex) : new Date().getMonth();
+    var byIso = {};
+    (entries || []).forEach(function (e) {
+      var iso = String(e.entry_date || "").slice(0, 10);
+      if (!iso) return;
+      if (!byIso[iso]) byIso[iso] = [];
+      byIso[iso].push(e);
+    });
+    var first = new Date(y, m, 1);
+    var startDow = (first.getDay() + 6) % 7; // Mon=0
+    var gridStart = new Date(y, m, 1 - startDow);
+    var monthLabel = first.toLocaleString("en-GB", { month: "long", year: "numeric" });
+    var labels = ["M", "T", "W", "T", "F", "S", "S"];
+    var head = labels
+      .map(function (l) {
+        return '<span class="ops-hub-cal-month__wd">' + l + "</span>";
+      })
+      .join("");
+    var cells = [];
+    var openMonth = 0;
+    for (var i = 0; i < 42; i++) {
+      var d = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+      var iso = isoFromYmd(d.getFullYear(), d.getMonth(), d.getDate());
+      var inMonth = d.getMonth() === m;
+      var list = byIso[iso] || [];
+      var openN = list.filter(function (e) {
+        return String(e.status || "open").toLowerCase() !== "done";
+      }).length;
+      if (inMonth) openMonth += openN;
+      cells.push(
+        '<span class="ops-hub-cal-day' +
+          (inMonth ? "" : " is-outside") +
+          (iso === today ? " is-today" : "") +
+          (openN ? " has-notes" : list.length ? " has-done" : "") +
+          '" title="' +
+          esc(iso) +
+          (openN ? " · " + openN + " open" : list.length ? " · done" : "") +
+          '">' +
+          '<span class="ops-hub-cal-day__n">' +
+          d.getDate() +
+          "</span>" +
+          "</span>"
+      );
+    }
+    return {
+      html:
+        '<div class="ops-hub-cal-month" aria-hidden="true">' +
+        '<div class="ops-hub-cal-month__label">' +
+        esc(monthLabel) +
+        "</div>" +
+        '<div class="ops-hub-cal-month__head">' +
+        head +
+        "</div>" +
+        '<div class="ops-hub-cal-month__grid">' +
+        cells.join("") +
+        "</div></div>",
+      openCount: openMonth,
+      monthLabel: monthLabel,
+    };
+  }
+
   function viewHtml() {
     return (
       '<div id="portalOfficeCalRoot" class="portal-office-cal-embed" data-bound="0">' +
@@ -730,6 +796,7 @@
     refresh: loadMonth,
     listRange: listRange,
     glanceWeekStripHtml: glanceWeekStripHtml,
+    glanceMonthGridHtml: glanceMonthGridHtml,
     todayIso: todayIso,
     isoFromYmd: isoFromYmd,
   };
