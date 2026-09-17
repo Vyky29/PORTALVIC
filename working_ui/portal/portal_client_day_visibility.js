@@ -27,6 +27,8 @@
     /* Tue Acton Javier 4–5 from Autumn Tue 8; Wed Acton 5–6 NEW CLIENT is 16 Sep (row bookedFrom + scrub). */
     Ayman: "2026-09-08",
     "Ayman El Bakry": "2026-09-08",
+    "Reggie Conlon": "2026-09-22",
+    Reggie: "2026-09-22",
   };
 
   function clean(v) {

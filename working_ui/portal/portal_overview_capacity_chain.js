@@ -1058,6 +1058,8 @@
         /* Tue Javier 4–5 from 8 Sep; Wed 5–6 NEW CLIENT stays 16 Sep via bookedFrom/scrub. */
         Ayman: "2026-09-08",
         "Ayman El Bakry": "2026-09-08",
+        "Reggie Conlon": "2026-09-22",
+        Reggie: "2026-09-22",
       },
       C && C.FADI_START_ISO ? { Fadi: C.FADI_START_ISO } : {}
     );

@@ -360,7 +360,14 @@
     { staff: "ROBERTO", name: "Richard", time: "6 to 6.30", area: "Lane (DE)" },
     /* On shift from 4 — empty seat is open (No participant), never Closed. */
     { staff: "LULIYA", name: "Emmanuel", time: "4 to 4.30", area: "Teaching Pool" },
-    { staff: "LULIYA", name: "No participant", time: "4.30 to 5", area: "Lane (DE)" },
+    /* Reggie term from Tue 22 Sep — trial was Luliya 15 Sep; not Aurora (Adam Ma). */
+    {
+      staff: "LULIYA",
+      name: "Reggie Conlon",
+      time: "4.30 to 5",
+      area: "Lane (DE)",
+      bookedFrom: "2026-09-22",
+    },
     { staff: "LULIYA", name: "Logan", time: "5 to 5.30", area: "Teaching Pool" },
     { staff: "LULIYA", name: "No participant", time: "5.30 to 6", area: "Lane (DE)" },
     /* Adaam NEW CLIENT first session Tue 15 Sep — open seat before (never paint / feedback early). */
@@ -3917,6 +3924,11 @@
       Kareena: KAREENA_ACTON_TUE_FROM,
       "Kareena Al hassani": KAREENA_ACTON_TUE_FROM,
       kareena: KAREENA_ACTON_TUE_FROM,
+      /* Term after Luliya trial 15 Sep — first standing Tue 22. */
+      "Reggie Conlon": "2026-09-22",
+      Reggie: "2026-09-22",
+      reggie: "2026-09-22",
+      reggie_conlon: "2026-09-22",
     });
     var gone = Object.assign({}, base.clientRosterGoneFromDates || {});
     /* Kareena returned Tue 15 Sep 2026 — never keep Aug15 gone-from on live source. */

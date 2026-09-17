@@ -97,14 +97,17 @@ export function preferredInstructorForReservation(row: {
   ) {
     return "Luliya";
   }
-  /* Tue Acton 4.30-5 standing band is Aurora (Autumn AS pool). */
+  /*
+   * Tue Acton 4.30-5: Aurora already has Adam Ma. Open / post-trial term seat is Luliya
+   * (Reggie Conlon). Do NOT hardcode Aurora — that double-books Adam + new client.
+   */
   if (
     /acton/.test(venue) &&
     /^tue/.test(day) &&
     /4\.?30\s*[-–to]+\s*5(\.00)?/.test(time) &&
     !/climb/.test(service)
   ) {
-    return "Aurora";
+    return "Luliya";
   }
   /* SwimFarm Sunday aquatic 9-9.30 open seat is Javier (Aurora has Simon that band). */
   if (
