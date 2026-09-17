@@ -27,7 +27,7 @@
     }
     .oh-top{
       display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;
-      gap:12px;margin:0 0 18px;min-width:0;
+      gap:12px;margin:0 0 14px;min-width:0;
     }
     .oh-top h1{
       margin:0;font-size:clamp(22px,2vw + 14px,28px);font-weight:800;
@@ -46,6 +46,103 @@
     .oh-back:hover,.oh-back:focus-visible{
       border-color:#9fc6db;background:#eaf5fb;outline:none;
     }
+    .oh-ask{
+      margin:0 0 16px;padding:14px 16px;border-radius:14px;
+      border:1px solid rgba(45,132,179,.28);background:#fff;
+      box-shadow:0 1px 2px rgba(15,23,42,.04);min-width:0;
+    }
+    .oh-ask__label{
+      margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.05em;
+      text-transform:uppercase;color:var(--oh-blue);
+    }
+    .oh-ask__row{
+      display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;min-width:0;
+    }
+    .oh-ask__input{
+      flex:1 1 220px;min-width:0;padding:11px 12px;border-radius:10px;
+      border:1px solid var(--oh-line);font:inherit;font-size:15px;color:var(--oh-navy);
+      background:#f8fafc;
+    }
+    .oh-ask__input:focus{
+      outline:none;border-color:#9fc6db;background:#fff;
+      box-shadow:0 0 0 3px rgba(45,132,179,.15);
+    }
+    .oh-ask__go{
+      flex:0 0 auto;padding:11px 16px;border-radius:10px;border:0;
+      background:var(--oh-navy);color:#fff;font:inherit;font-size:14px;font-weight:800;
+      cursor:pointer;
+    }
+    .oh-ask__go:hover,.oh-ask__go:focus-visible{background:#0f2433;outline:none}
+    .oh-ask__hints{
+      display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;min-width:0;
+    }
+    .oh-ask__hint{
+      max-width:100%;padding:6px 10px;border-radius:999px;
+      border:1px solid var(--oh-line);background:#f8fafc;
+      font:inherit;font-size:12px;font-weight:700;color:var(--oh-navy);
+      cursor:pointer;overflow-wrap:break-word;text-align:left;
+    }
+    .oh-ask__hint:hover,.oh-ask__hint:focus-visible{
+      border-color:#9fc6db;background:#eaf5fb;outline:none;
+    }
+    .oh-bot{
+      margin:0 0 16px;padding:14px 16px;border-radius:14px;
+      border:1px solid var(--oh-line);background:#fff;min-width:0;
+      display:none;
+    }
+    .oh-bot.is-on{display:block}
+    .oh-bot__q{
+      margin:0 0 8px;font-size:13px;color:var(--oh-muted);overflow-wrap:break-word;
+    }
+    .oh-bot__title{
+      margin:0 0 6px;font-size:17px;font-weight:800;overflow-wrap:break-word;
+    }
+    .oh-bot__sum{
+      margin:0 0 10px;font-size:14px;line-height:1.5;color:var(--oh-muted);
+      overflow-wrap:break-word;
+    }
+    .oh-bot__where{
+      margin:0 0 12px;padding:8px 10px;border-radius:8px;background:#eef6fc;
+      font-size:13px;line-height:1.4;overflow-wrap:break-word;
+    }
+    .oh-bot__steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+    .oh-bot__steps li{
+      display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:start;
+      min-width:0;font-size:14px;line-height:1.45;overflow-wrap:break-word;
+    }
+    .oh-bot__n{
+      width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+      background:var(--oh-navy);color:#fff;font-size:11px;font-weight:800;flex-shrink:0;
+    }
+    .oh-bot__actions{
+      display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0;min-width:0;
+    }
+    .oh-bot__open{
+      padding:9px 12px;border-radius:10px;border:0;background:var(--oh-blue);
+      color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer;
+    }
+    .oh-bot__open:hover,.oh-bot__open:focus-visible{background:#246d96;outline:none}
+    .oh-bot__miss{
+      margin:0;font-size:14px;line-height:1.5;color:var(--oh-muted);overflow-wrap:break-word;
+    }
+    .oh-bot__related{
+      margin:14px 0 0;padding-top:12px;border-top:1px solid var(--oh-line);min-width:0;
+    }
+    .oh-bot__related h3{
+      margin:0 0 8px;font-size:11px;font-weight:800;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--oh-muted);
+    }
+    .oh-bot__chips{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .oh-bot__chip{
+      display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+      text-align:left;width:100%;min-width:0;padding:10px 12px;border-radius:10px;
+      border:1px solid var(--oh-line);background:#f8fafc;cursor:pointer;font:inherit;color:inherit;
+    }
+    .oh-bot__chip:hover,.oh-bot__chip:focus-visible{
+      border-color:#9fc6db;background:#eaf5fb;outline:none;
+    }
+    .oh-bot__chip-t{font-size:14px;font-weight:800;overflow-wrap:break-word}
+    .oh-bot__chip-s{font-size:12px;line-height:1.35;color:var(--oh-muted);overflow-wrap:break-word}
     .oh-crumb{
       display:flex;flex-wrap:wrap;gap:6px;align-items:center;
       margin:0 0 14px;font-size:13px;color:var(--oh-muted);min-width:0;
@@ -144,25 +241,89 @@
     <div class="oh-top">
       <div>
         <h1 id="ohTitle">Office help guide</h1>
-        <p id="ohSub">How to run day-to-day work in the admin portal.</p>
+        <p id="ohSub">Ask a question, or browse by category.</p>
       </div>
       <a class="oh-back" id="ohHubLink" href="/admin_dashboard.html">Back to Operations Hub</a>
     </div>
+
+    <section class="oh-ask" aria-label="Ask Office help">
+      <p class="oh-ask__label">Ask Office help</p>
+      <form class="oh-ask__row" id="ohAskForm">
+        <input
+          class="oh-ask__input"
+          id="ohAskInput"
+          type="search"
+          name="q"
+          autocomplete="off"
+          placeholder="e.g. How do parents authorise Direct Payment?"
+          aria-label="Your question"
+        />
+        <button class="oh-ask__go" type="submit">Ask</button>
+      </form>
+      <div class="oh-ask__hints" id="ohAskHints"></div>
+    </section>
+
+    <div class="oh-bot" id="ohBot" hidden aria-live="polite"></div>
+
     <nav class="oh-crumb" id="ohCrumb" hidden></nav>
     <div id="ohRoot"><p class="oh-loading">Loading guide...</p></div>
     <p class="oh-foot">PORTALVIC · Office help · v<span id="ohVer">-</span></p>
   </div>
   <script>
 (function () {
-  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v2";
+  var DATA_URL = "/portal/admin_office_help.json?v=20260917-v3";
+  var MIN_SCORE = 5;
   var data = null;
   var view = { mode: "cats", catId: "", lessonId: "" };
+  var lastAsk = "";
+
+  var STOP_WORDS = {
+    how: 1, do: 1, i: 1, the: 1, a: 1, an: 1, to: 1, where: 1, is: 1, what: 1,
+    can: 1, my: 1, me: 1, of: 1, on: 1, in: 1, at: 1, for: 1, and: 1, or: 1,
+    you: 1, please: 1, so: 1, them: 1, about: 1, this: 1, that: 1, with: 1,
+    de: 1, como: 1, donde: 1, que: 1, el: 1, la: 1, los: 1, las: 1, un: 1,
+    una: 1, por: 1, con: 1, if: 1, who: 1, have: 1, has: 1, had: 1, now: 1,
+    send: 1, make: 1, make: 1
+  };
+
+  var HINTS = [
+    "Help parent authorise Direct Payment mandate",
+    "Sessions Overview day board",
+    "Schedule and Covers one day",
+    "Add staff day off",
+    "Edit term slot standing client",
+    "Create invoice",
+    "Parent notify WhatsApp"
+  ];
 
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function normalize(text) {
+    return String(text || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function allLessons() {
+    var out = [];
+    var cats = (data && data.categories) || [];
+    for (var i = 0; i < cats.length; i++) {
+      var cat = cats[i];
+      var list = cat.lessons || [];
+      for (var j = 0; j < list.length; j++) {
+        out.push({ cat: cat, lesson: list[j] });
+      }
+    }
+    return out;
   }
 
   function catById(id) {
@@ -181,13 +342,208 @@
     return null;
   }
 
+  function scoreLesson(queryNorm, tokens, row) {
+    var les = row.lesson;
+    var cat = row.cat;
+    var score = 0;
+    var titleNorm = normalize(les.title);
+    var blob = normalize(
+      [les.title, les.summary, les.where, cat.title, cat.blurb]
+        .concat(les.steps || [])
+        .concat(les.tips || [])
+        .concat(les.keywords || [])
+        .join(" ")
+    );
+    var kws = les.keywords || [];
+    var i;
+    var nk;
+
+    for (i = 0; i < kws.length; i++) {
+      nk = normalize(kws[i]);
+      if (!nk) continue;
+      if (queryNorm.indexOf(nk) !== -1) score += nk.indexOf(" ") !== -1 ? 12 : 6;
+    }
+
+    for (i = 0; i < tokens.length; i++) {
+      var t = tokens[i];
+      if (titleNorm.indexOf(t) !== -1) score += 4;
+      if (blob.indexOf(t) !== -1) score += 2;
+      for (var j = 0; j < kws.length; j++) {
+        nk = normalize(kws[j]);
+        if (!nk) continue;
+        if (nk.indexOf(t) !== -1 || t.indexOf(nk) !== -1) score += 3;
+      }
+    }
+
+    if (queryNorm.indexOf(normalize(les.id).replace(/_/g, " ")) !== -1) score += 6;
+    return score;
+  }
+
+  function matchQuestion(question) {
+    var queryNorm = normalize(question);
+    if (!queryNorm) return { ok: false, reason: "empty", ranked: [] };
+    var tokens = queryNorm.split(" ").filter(function (t) {
+      return t.length > 1 && !STOP_WORDS[t];
+    });
+    var ranked = [];
+    var rows = allLessons();
+    for (var i = 0; i < rows.length; i++) {
+      var sc = scoreLesson(queryNorm, tokens, rows[i]);
+      if (sc > 0) ranked.push({ row: rows[i], score: sc });
+    }
+    ranked.sort(function (a, b) {
+      return b.score - a.score;
+    });
+    var best = ranked[0];
+    if (best && best.score >= MIN_SCORE) {
+      return {
+        ok: true,
+        best: best.row,
+        score: best.score,
+        related: ranked.slice(1, 5).map(function (r) {
+          return r.row;
+        })
+      };
+    }
+    return {
+      ok: false,
+      score: best ? best.score : 0,
+      related: ranked.slice(0, 5).map(function (r) {
+        return r.row;
+      })
+    };
+  }
+
+  function openLesson(catId, lessonId) {
+    view.catId = catId;
+    view.lessonId = lessonId;
+    view.mode = "lesson";
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function relatedHtml(rows) {
+    if (!rows || !rows.length) return "";
+    return (
+      '<div class="oh-bot__related"><h3>Related options</h3><div class="oh-bot__chips">' +
+      rows
+        .map(function (r) {
+          return (
+            '<button type="button" class="oh-bot__chip" data-oh-open-cat="' +
+            esc(r.cat.id) +
+            '" data-oh-open-lesson="' +
+            esc(r.lesson.id) +
+            '"><span class="oh-bot__chip-t">' +
+            esc(r.lesson.title) +
+            '</span><span class="oh-bot__chip-s">' +
+            esc(r.cat.title + (r.lesson.summary ? " · " + r.lesson.summary : "")) +
+            "</span></button>"
+          );
+        })
+        .join("") +
+      "</div></div>"
+    );
+  }
+
+  function renderBotAnswer(question, match) {
+    var el = document.getElementById("ohBot");
+    if (!el) return;
+    lastAsk = question;
+    el.hidden = false;
+    el.classList.add("is-on");
+    if (match.ok && match.best) {
+      var les = match.best.lesson;
+      var cat = match.best.cat;
+      var steps = (les.steps || [])
+        .map(function (t, i) {
+          return (
+            "<li><span class=\"oh-bot__n\">" +
+            (i + 1) +
+            "</span><span>" +
+            esc(t) +
+            "</span></li>"
+          );
+        })
+        .join("");
+      var tips = (les.tips || []).filter(Boolean);
+      var tipsHtml = tips.length
+        ? '<div class="oh-tips" style="margin-top:12px"><h3>Tips</h3><ul>' +
+          tips
+            .map(function (t) {
+              return "<li>" + esc(t) + "</li>";
+            })
+            .join("") +
+          "</ul></div>"
+        : "";
+      el.innerHTML =
+        '<p class="oh-bot__q">For: “' +
+        esc(question) +
+        '”</p>' +
+        '<p class="oh-bot__title">' +
+        esc(les.title) +
+        "</p>" +
+        '<p class="oh-bot__sum">' +
+        esc(les.summary || "") +
+        "</p>" +
+        (les.where
+          ? '<p class="oh-bot__where"><strong>Where:</strong> ' + esc(les.where) + "</p>"
+          : "") +
+        '<ol class="oh-bot__steps">' +
+        steps +
+        "</ol>" +
+        tipsHtml +
+        '<div class="oh-bot__actions">' +
+        '<button type="button" class="oh-bot__open" data-oh-open-cat="' +
+        esc(cat.id) +
+        '" data-oh-open-lesson="' +
+        esc(les.id) +
+        '">Open full lesson</button></div>' +
+        relatedHtml(match.related);
+      return;
+    }
+    el.innerHTML =
+      '<p class="oh-bot__q">For: “' +
+      esc(question) +
+      '”</p>' +
+      '<p class="oh-bot__miss">No exact match yet. Try one of these related lessons, or browse categories below. If this keeps coming up, tell Victor so we can add it to the guide.</p>' +
+      relatedHtml(match.related);
+  }
+
+  function runAsk(raw) {
+    var q = String(raw || "").trim();
+    if (!q || !data) return;
+    var input = document.getElementById("ohAskInput");
+    if (input) input.value = q;
+    renderBotAnswer(q, matchQuestion(q));
+    var bot = document.getElementById("ohBot");
+    if (bot) bot.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function renderHints() {
+    var el = document.getElementById("ohAskHints");
+    if (!el) return;
+    el.innerHTML = HINTS.map(function (h) {
+      return (
+        '<button type="button" class="oh-ask__hint" data-oh-hint="' +
+        esc(h) +
+        '">' +
+        esc(h) +
+        "</button>"
+      );
+    }).join("");
+  }
+
   function syncHash() {
     if (view.mode === "lesson" && view.catId && view.lessonId) {
-      location.hash = "cat=" + encodeURIComponent(view.catId) + "&lesson=" + encodeURIComponent(view.lessonId);
+      location.hash =
+        "cat=" +
+        encodeURIComponent(view.catId) +
+        "&lesson=" +
+        encodeURIComponent(view.lessonId);
     } else if (view.mode === "lessons" && view.catId) {
       location.hash = "cat=" + encodeURIComponent(view.catId);
-    } else {
-      if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+    } else if (location.hash) {
+      history.replaceState(null, "", location.pathname + location.search);
     }
   }
 
@@ -362,6 +718,31 @@
   function bind() {
     var root = document.getElementById("ohRoot");
     var crumb = document.getElementById("ohCrumb");
+    var form = document.getElementById("ohAskForm");
+    var hints = document.getElementById("ohAskHints");
+    var bot = document.getElementById("ohBot");
+
+    if (form) {
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var input = document.getElementById("ohAskInput");
+        runAsk(input ? input.value : "");
+      });
+    }
+    if (hints) {
+      hints.addEventListener("click", function (ev) {
+        var t = ev.target.closest("[data-oh-hint]");
+        if (!t) return;
+        runAsk(t.getAttribute("data-oh-hint"));
+      });
+    }
+    if (bot) {
+      bot.addEventListener("click", function (ev) {
+        var t = ev.target.closest("[data-oh-open-cat][data-oh-open-lesson]");
+        if (!t) return;
+        openLesson(t.getAttribute("data-oh-open-cat"), t.getAttribute("data-oh-open-lesson"));
+      });
+    }
     if (root) {
       root.addEventListener("click", function (ev) {
         var t = ev.target.closest("[data-oh-cat],[data-oh-lesson]");
@@ -415,8 +796,12 @@
       var ver = document.getElementById("ohVer");
       if (ver) ver.textContent = json.version || "-";
       parseHash();
+      renderHints();
       bind();
       render();
+      var params = new URLSearchParams(location.search);
+      var q = params.get("q") || params.get("ask");
+      if (q) runAsk(q);
     })
     .catch(function (err) {
       var root = document.getElementById("ohRoot");

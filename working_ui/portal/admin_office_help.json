@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-17-v2",
+  "version": "2026-09-17-v3",
   "title": "Office help guide",
-  "subtitle": "How to run day-to-day work in the admin portal — pick a category, then a lesson.",
+  "subtitle": "Ask a question above, or pick a category then a lesson. Same truth as the admin portal.",
   "categories": [
     {
       "id": "day_ops",
@@ -209,14 +209,53 @@
     {
       "id": "money",
       "title": "Money",
-      "blurb": "Invoices, payments, refunds, credits and make-ups.",
+      "blurb": "Invoices, payments, Direct Payment mandate, refunds, credits and make-ups.",
       "priority": 1,
       "lessons": [
+        {
+          "id": "gocardless_mandate",
+          "title": "Help a parent authorise Direct Payment (GoCardless)",
+          "summary": "Phone script for families who still need to authorise the bank mandate. Office cannot do this for them.",
+          "where": "Parent portal → child / invoices → Set up Direct Payment (not admin Finance)",
+          "keywords": [
+            "mandate",
+            "gocardless",
+            "go cardless",
+            "direct payment",
+            "direct debit",
+            "authorise",
+            "authorize",
+            "authorisation",
+            "authorization",
+            "set up direct payment",
+            "bank mandate",
+            "gc mandate",
+            "havent authorised",
+            "haven't authorised",
+            "speak to them",
+            "phone",
+            "parent portal pay"
+          ],
+          "steps": [
+            "Ask them to open the Parent portal: https://www.clubsensational.org/parent and sign in (PIN / email on file).",
+            "Open the child / invoices / payment area for that family.",
+            "Find the blinking red button: Set up Direct Payment.",
+            "They tap it — GoCardless opens so they can authorise Direct Debit with their bank.",
+            "They complete bank authorisation (app / online banking as GoCardless asks).",
+            "Back in the parent portal it should show Direct Payment set up (mandate active). Later invoices collect on due dates."
+          ],
+          "tips": [
+            "Office cannot authorise the mandate for them — the payer must finish GoCardless.",
+            "If they do not see the button: refresh; confirm the path is Direct Payment (GoCardless), not bank transfer / Flexi only; office can resend parent portal access / PIN.",
+            "Use this when they already chose Direct Payment but never finished bank authorisation."
+          ]
+        },
         {
           "id": "create_invoice",
           "title": "Create and share an invoice",
           "summary": "Build a family invoice in Portal Finance and send the pay / view link.",
           "where": "Finance → Finance",
+          "keywords": ["invoice", "create invoice", "share invoice", "finance", "pay link", "factura"],
           "steps": [
             "Open Finance.",
             "Create the invoice for the family / term lines you need.",
@@ -232,6 +271,7 @@
           "title": "Validate / mark paid",
           "summary": "Confirm payment so the family and ops state match.",
           "where": "Finance → Finance (payments / invoice status)",
+          "keywords": ["mark paid", "validate paid", "bank payment", "stripe", "tide", "confirm payment"],
           "steps": [
             "Open the invoice or payment row.",
             "Confirm bank / Stripe payment as your process requires.",
@@ -245,6 +285,7 @@
           "title": "Absents, refunds and credits",
           "summary": "Decide missed sessions: no action, credit, refund path, or close.",
           "where": "Finance → Refunds & credits (or Pending → absents)",
+          "keywords": ["refund", "credit", "absent", "absents", "cancel credit", "decide absent"],
           "steps": [
             "Open Absents / Refunds & credits (or Pending on Ops Hub).",
             "Pick the absent / cancellation row.",
@@ -260,6 +301,7 @@
           "title": "Confirm a make-up",
           "summary": "When a makeup is confirmed, parent and instructor get notified.",
           "where": "Absents / makeup tools linked from refunds & credits",
+          "keywords": ["makeup", "make-up", "make up", "reschedule session"],
           "steps": [
             "Agree the makeup date / slot with the family.",
             "Confirm makeup in the portal tool for that case.",
