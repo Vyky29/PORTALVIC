@@ -67,21 +67,17 @@
     "Carlos",
     "Emmanuel",
     "Emanuel",
-    "Fadi",
     "Godsway",
     "Javier",
     "Javi",
-    "Joelle",
     "John",
     "Luliya",
     "Michelle",
-    "Patrick",
     "Raul",
     "Roberto",
     "Simon",
     "Victor",
     "Youssef",
-    "Yusuf",
   ];
 
   var COMMON_HOURS_BANDS = [
@@ -114,7 +110,7 @@
     { id: "bespoke", label: "Bespoke" },
   ];
 
-  /** Canonical instructor chips (aliases collapse: Javi→Javier, Emanuel→Emmanuel, Yusuf→Youssef). */
+  /** Canonical instructor chips (staff only — never participants e.g. Joelle / Fadi / Patrick). */
   var HOURS_INSTRUCTOR_FILTERS = [
     { id: "all", label: "All instructors" },
     { id: "alex", label: "Alex" },
@@ -122,13 +118,11 @@
     { id: "berta", label: "Berta" },
     { id: "carlos", label: "Carlos" },
     { id: "emmanuel", label: "Emmanuel" },
-    { id: "fadi", label: "Fadi" },
     { id: "godsway", label: "Godsway" },
     { id: "javier", label: "Javier" },
-    { id: "joelle", label: "Joelle" },
     { id: "john", label: "John" },
+    { id: "luliya", label: "Luliya" },
     { id: "michelle", label: "Michelle" },
-    { id: "patrick", label: "Patrick" },
     { id: "raul", label: "Raul" },
     { id: "roberto", label: "Roberto" },
     { id: "simon", label: "Simon" },

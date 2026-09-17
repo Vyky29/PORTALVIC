@@ -174,7 +174,7 @@
   <script src="/portal/admin-portal-term-slot.js?v=20260917-cross-svc-finance"></script>
   <script src="/portal/portal-staff-timetable-merge.js?v=20260917-paid-hours"></script>
   <script src="/portal/spreadsheet_reference_data.js?v=20260911-autumn-labels"></script>
-  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260917-instructor-filter"></script>
+  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260917-staff-only-filter"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
@@ -14396,9 +14396,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedOverrideActionChoices(canTrial, canMoveClient){
       var out = [
         { value: 'client_absence_announced', label: 'Absent' },
-        { value: 'client_cancelled', label: 'Cancelled' },
-        { value: 'client_replace_in_slot', label: 'MakeUp' }
+        { value: 'client_cancelled', label: 'Cancelled' }
       ];
+      /* MakeUp / parent makeup grants → Absents, refunds & credits (Offer slot). Not here. */
       if(canTrial) out.push({ value: 'client_trial', label: 'Trial' });
       out.push({ value: 'instructor_reassign', label: 'Change Instructor' });
       if(canMoveClient) out.push({ value: 'client_move_same_day', label: 'Move to another slot today' });
@@ -15018,6 +15018,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="card card-pad"><div class="kpi-l">New override</div>'+
         '<div class="kpi-l" style="margin-top:10px">Action</div>'+
         schedOverrideActionPickerHtml(canTrial, canMoveClient)+
+        '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Parent <strong>MakeUp</strong> (grants / Offer slot) is only under <button type="button" class="btn btn--ghost btn--sm" data-view-target="absents_refunds" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Absents, refunds &amp; credits</button>. Use <strong>Trial</strong> here for a paid trial seat.</p>'+
         '<p id="schedTermMismatchWarn" role="status" hidden class="muted" style="margin:10px 0 0;padding:10px 12px;background:#fff7ed;border:1px solid rgba(234,88,12,.35);border-radius:8px;font-size:12px;line-height:1.5;min-width:0;overflow-wrap:break-word"></p>'+
         '<div id="schedWrapMoveTarget" style="display:none">'+
         '<label class="muted" for="schedFormMoveTarget" style="display:block;margin-top:12px">Target slot (same day)</label>'+
@@ -26760,7 +26761,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         id:'clients',
         icon:'👥',
         title:'Clients & families',
-        description:'People buckets — CLIENT, WAITING, LEADS, REGISTERED.',
+        description:'People buckets — CLIENT, WAITING, LEADS, REGISTERED — plus parent consents.',
         preview:[],
         status:'',
         primary:['clients','c4k_waitlist','leads','portal_participant_documents','portal_parent_consents'],
