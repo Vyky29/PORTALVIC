@@ -6540,6 +6540,44 @@
       portalAnnouncementsSelectedKey = '';
       openSheet('announcementsSheet');
     }
+    /**
+     * Mandatory gate: unsigned announcements/reminders open as a full-screen
+     * lock before the dashboard (photo / day). Not a halo alert tile.
+     */
+    function portalMaybeGateUnsignedAnnouncements(opts){
+      opts = opts && typeof opts === 'object' ? opts : {};
+      try{
+        if(!dashboardData || !dashboardData.portalIdentityResolved) return false;
+        if(dashboardData.portalAnnouncementAcksMerged !== true) return false;
+        if(typeof portalActiveAnnouncementItems !== 'function') return false;
+        const pending = portalActiveAnnouncementItems();
+        if(!pending || !pending.length) return false;
+        try{
+          if(document.body && document.body.classList.contains('portal-achievements-camera-open')) return false;
+        }catch(_cam){}
+        try{
+          const ach = document.getElementById('achievementsSheet');
+          if(ach && ach.classList.contains('open')) return false;
+        }catch(_ach){}
+        const annSheet = document.getElementById('announcementsSheet');
+        const annOpen = !!(annSheet && annSheet.classList.contains('open'));
+        const menuOpen = !!(document.getElementById('menuSheet') &&
+          document.getElementById('menuSheet').classList.contains('open'));
+        if(annOpen){
+          if(portalAnnouncementsSheetEntry !== 'signedLog' && typeof renderAnnouncementsSheetContent === 'function'){
+            renderAnnouncementsSheetContent();
+          }
+          return true;
+        }
+        if(menuOpen && !opts.force) return false;
+        portalOpenAnnouncementsSheet('newNotice');
+        return true;
+      }catch(_gate){
+        return false;
+      }
+    }
+    try{ window.portalOpenAnnouncementsSheet = portalOpenAnnouncementsSheet; }catch(_w1){}
+    try{ window.portalMaybeGateUnsignedAnnouncements = portalMaybeGateUnsignedAnnouncements; }catch(_w2){}
     var _portalAckMapCache = null;
     var _portalAckMapCacheAt = 0;
     var _portalAnnItemsMemo = null;
@@ -7123,6 +7161,12 @@
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function'){
           portalSyncAnnouncementsAndRemindersUi({ force: true });
         }
+        /* After hydrate: open unsigned announcements as the first screen. */
+        setTimeout(function(){
+          if(typeof portalMaybeGateUnsignedAnnouncements === 'function'){
+            portalMaybeGateUnsignedAnnouncements({ force: true });
+          }
+        }, 120);
       }catch(_){
       }finally{
         if(dashboardData) dashboardData.portalAnnouncementAcksMerged = true;

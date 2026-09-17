@@ -129,11 +129,15 @@
     }
 
     function portalOpenLogoLiteQuickMenuFromIosAlertPreview(){
-      if(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive()){
-        if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
-      }
+      /* Keep mandatory announcement gate under the menu — do not dismiss unsigned notices. */
       portalQuickMenuEntryMode = 'logo-lite';
-      if(typeof openSheet === 'function') openSheet('menuSheet', { skipReminderSync: false, bypassAnnouncementLock: true });
+      if(typeof openSheet === 'function'){
+        openSheet('menuSheet', {
+          skipReminderSync: false,
+          bypassAnnouncementLock: true,
+          preserveAnnouncementGate: true
+        });
+      }
     }
     function handleHeaderLogoAlertsClick(){
       if(window.__PORTAL_HALO_MENU_OPENING__) return;
@@ -149,7 +153,14 @@
       const openSheets = $$('.sheet.open');
       const onlyMenuOpen = openSheets.length === 1 && menu && menu.classList.contains('open');
       if(onlyMenuOpen){
-        if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+        if(typeof closeSheet === 'function'){
+          const pendingLeft = typeof portalActiveAnnouncementItems === 'function'
+            && portalActiveAnnouncementItems().length > 0;
+          closeSheet({
+            bypassAnnouncementLock: true,
+            preserveAnnouncementGate: !!pendingLeft
+          });
+        }
         return;
       }
       portalOpenLogoLiteQuickMenuFromIosAlertPreview();
@@ -327,9 +338,6 @@
       const noticesGrid = document.getElementById('portalQuickMenuNoticesGrid');
       if(!noticesGrid) return;
       noticesGrid.innerHTML = '';
-      const activeAnnouncementCount = typeof portalActiveAnnouncementItems === 'function'
-        ? portalActiveAnnouncementItems().length
-        : 0;
       noticesGrid.className = 'menu-grid menu-grid--portal-notices menu-grid--portal-announcements-split';
       const svgAnn = noticeIconSvg('announcement');
       function appendAnnouncementSubcategory(subtitle, btn, variant){
@@ -375,24 +383,7 @@
           'reference'
         );
       }
-      if(activeAnnouncementCount > 0){
-        const annLabel = activeAnnouncementCount > 1
-          ? ('New Announcement/Reminder x' + String(activeAnnouncementCount))
-          : 'New Announcement/Reminder';
-        const annAria = activeAnnouncementCount > 1
-          ? (String(activeAnnouncementCount) + ' new announcements or reminders — open to read and sign before continuing')
-          : 'New announcement or reminder — open to read and sign before continuing';
-        appendAnnouncementSubcategory(
-          'Need your signature',
-          buildAnnouncementQuickRow(
-            'announcementNewNotice',
-            annLabel,
-            annAria,
-            'menu-btn--announcement-attention'
-          ),
-          'pending'
-        );
-      }
+      /* Pending unsigned announcements open as a full-screen gate — not listed here. */
       const signedHistoryRows = typeof portalSignedMessageHistoryRows === 'function'
         ? portalSignedMessageHistoryRows()
         : (typeof portalAnnouncementHistoryRows === 'function' ? portalAnnouncementHistoryRows() : []);
@@ -522,6 +513,11 @@
       if(!sheetOpen && typeof portalMaybeNotifyUnsignedAnnouncementPending === 'function'){
         if(!dashboardData || dashboardData.portalAnnouncementAcksMerged !== false){
           portalMaybeNotifyUnsignedAnnouncementPending();
+        }
+      }
+      if(typeof portalMaybeGateUnsignedAnnouncements === 'function'){
+        if(!dashboardData || dashboardData.portalAnnouncementAcksMerged === true){
+          portalMaybeGateUnsignedAnnouncements();
         }
       }
       if(!dataUnchanged){
@@ -4110,14 +4106,30 @@
         portalRecordSheetNavigation(id);
       }
       if(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive() && id !== 'announcementsSheet' && id !== 'menuSheet'){
-        closeSheet({ bypassAnnouncementLock: true });
+        closeSheet({ bypassAnnouncementLock: true, preserveAnnouncementGate: true });
       }
-      if(closeSheet({ preserveNavStack: true, bypassAnnouncementLock: !!opts.bypassAnnouncementLock }) === false){
+      if(closeSheet({
+        preserveNavStack: true,
+        bypassAnnouncementLock: !!opts.bypassAnnouncementLock,
+        preserveAnnouncementGate: !!(opts.preserveAnnouncementGate || id === 'menuSheet')
+      }) === false){
         if(id === 'announcementsSheet' && document.getElementById('announcementsSheet')?.classList.contains('open')){
           if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
           syncDockNavContext();
         }
         return;
+      }
+      /* Menu on top of an unsigned announcement gate: keep the lock sheet open underneath. */
+      if(id === 'menuSheet' && opts.preserveAnnouncementGate){
+        try{
+          const pendingN = typeof portalActiveAnnouncementItems === 'function'
+            ? portalActiveAnnouncementItems().length
+            : 0;
+          const annSheetKeep = document.getElementById('announcementsSheet');
+          if(pendingN > 0 && annSheetKeep && !annSheetKeep.classList.contains('open')){
+            if(typeof portalOpenAnnouncementsSheet === 'function') portalOpenAnnouncementsSheet('newNotice');
+          }
+        }catch(_keep){}
       }
       currentSheet = document.getElementById(id);
       if(!currentSheet) return;
@@ -4398,15 +4410,24 @@
     }
     function closeSheet(opts){
       const bypass = !!(opts && opts.bypassAnnouncementLock);
+      const preserveGate = !!(opts && opts.preserveAnnouncementGate);
+      const pendingLeft = (typeof portalActiveAnnouncementItems === 'function'
+        ? portalActiveAnnouncementItems().length
+        : 0) > 0;
       if(!bypass && typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive()){
         return false;
       }
       /* Cancel in-flight NEXT/WEEK/TERM/PARTICIPANTS work immediately — do not wait. */
       try{ if(typeof portalAbortHeavyPanelWork === 'function') portalAbortHeavyPanelWork(); }catch(_){}
       if(bypass){
-        try{ portalAnnouncementLockRequired = false; }catch(_){}
+        /* Never clear the mandatory gate while unsigned notices remain. */
+        if(!pendingLeft){
+          try{ portalAnnouncementLockRequired = false; }catch(_){}
+        }
       }
-      try{ portalAnnouncementsSheetEntry = ''; }catch(_){}
+      try{
+        if(!(preserveGate && pendingLeft)) portalAnnouncementsSheetEntry = '';
+      }catch(_){}
       try{
         if(window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.stopCamera === 'function'){
           window.PortalParticipantAchievements.stopCamera();
@@ -4421,6 +4442,9 @@
           const ae = document.activeElement;
           if(ae && s.contains(ae) && typeof ae.blur === 'function') ae.blur();
         }catch(_blur){}
+        if(preserveGate && pendingLeft && s && s.id === 'announcementsSheet'){
+          return;
+        }
         s.classList.remove('open');
         s.setAttribute('aria-hidden', 'true');
       });
@@ -4462,6 +4486,12 @@
           }
         }
       }catch(_photoRepair){}
+      /* Menu closed while gate still pending → bring announcements back on top. */
+      try{
+        if(preserveGate && pendingLeft && typeof portalMaybeGateUnsignedAnnouncements === 'function'){
+          setTimeout(function(){ portalMaybeGateUnsignedAnnouncements({ force: true }); }, 40);
+        }
+      }catch(_regate){}
       return true;
     }
 
@@ -6125,6 +6155,16 @@
           }
           return;
         }
+        /* All signed → leave the lock and land on the dashboard. */
+        try{
+          const stillPending = typeof portalActiveAnnouncementItems === 'function'
+            ? portalActiveAnnouncementItems().length
+            : 0;
+          if(!stillPending && typeof closeSheet === 'function'){
+            closeSheet({ bypassAnnouncementLock: true });
+            return;
+          }
+        }catch(_closeGate){}
         var hideMs = isReminder ? null : portalAnnouncementHideDelayMs(pending);
         if(hideMs && hideMs > 0 && hideMs < 7 * 24 * 60 * 60 * 1000){
           setTimeout(function(){
