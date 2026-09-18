@@ -82,6 +82,7 @@
     else if (s === 'rejected' || s === 'expired') tone = 'warn';
     else if (s === 'missed') tone = 'info';
     else if (s === 'noted') tone = 'ok';
+    else if (s === 'cancelled') tone = 'urg';
     return '<span class="chip chip--' + tone + '">' + esc(s.replace(/_/g, ' ')) + '</span>';
   }
 
@@ -92,7 +93,32 @@
     else if (o === 'none') tone = 'urg';
     else if (o === 'credit') tone = 'info';
     else if (o === 'refund') tone = 'refund';
+    else if (o === 'pending') tone = 'pend';
     return '<span class="chip chip--' + tone + '" style="font-size:10px">' + esc(o) + '</span>';
+  }
+
+  function statusOutcomeCellHtml(r) {
+    var isCancel = String(r.case_kind || '') === 'cancellation';
+    var st = String(r.status || '');
+    var out = String(r.outcome || '').trim().toLowerCase();
+    var chips = '';
+    if (isCancel) {
+      chips = statusChip('cancelled');
+      if (st === 'pending_review' || !out) {
+        chips += ' ' + outcomeChip('pending');
+      } else {
+        chips += ' ' + outcomeChip(out);
+      }
+    } else {
+      chips = statusChip(st);
+      if (out) chips += ' ' + outcomeChip(out);
+    }
+    return (
+      '<td style="min-width:0">' +
+      '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:0">' +
+      chips +
+      '</div></td>'
+    );
   }
 
   async function fetchReports(status) {
@@ -473,11 +499,7 @@
       '<tr>' +
       '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
       esc(r.participant_display || '—') +
-      '</strong>' +
-      (String(r.case_kind || '') === 'cancellation'
-        ? ' <span class="chip chip--pend" style="font-size:10px">Cancel</span>'
-        : '') +
-      '</td>' +
+      '</strong></td>' +
       '<td class="muted" style="white-space:nowrap">' +
       esc(formatDate(r.session_date)) +
       '</td>' +
@@ -487,10 +509,7 @@
       '<td style="min-width:16rem;max-width:28rem;width:28%;overflow-wrap:break-word;white-space:normal">' +
       esc(r.reason_text || '—') +
       '</td>' +
-      '<td>' +
-      statusChip(r.status) +
-      (r.outcome ? ' ' + outcomeChip(r.outcome) : '') +
-      '</td>' +
+      statusOutcomeCellHtml(r) +
       '<td class="muted" style="white-space:nowrap">' +
       esc(formatDate(r.proof_deadline)) +
       '</td>' +
