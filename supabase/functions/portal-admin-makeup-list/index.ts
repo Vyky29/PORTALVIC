@@ -80,6 +80,28 @@ Deno.serve(async (req) => {
     }
   }
 
+  const absenceIds = Array.from(
+    new Set(
+      (grants || [])
+        .map((g) => String(g.absence_report_id || "").trim())
+        .filter(Boolean),
+    ),
+  );
+  const absenceById: Record<string, Record<string, unknown>> = {};
+  if (absenceIds.length) {
+    const { data: absRows, error: aErr } = await admin
+      .from("portal_parent_absence_reports")
+      .select("id, session_date, session_time, service_label, status, outcome")
+      .in("id", absenceIds);
+    if (aErr) {
+      console.error("[portal-admin-makeup-list] absences", aErr.message);
+    } else {
+      for (const a of absRows || []) {
+        absenceById[String(a.id)] = a;
+      }
+    }
+  }
+
   const offersByGrant: Record<string, Record<string, unknown>[]> = {};
   for (const o of offers) {
     const gid = String(o.grant_id || "");
@@ -87,10 +109,55 @@ Deno.serve(async (req) => {
     offersByGrant[gid].push(o);
   }
 
+  function makeupDayFromNotes(notes: unknown): string {
+    const raw = String(notes || "");
+    const iso = raw.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
+    if (iso) return iso[1];
+    const m = raw.match(
+      /\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+(20\d{2})\b/i,
+    );
+    if (!m) return "";
+    const months: Record<string, string> = {
+      jan: "01",
+      feb: "02",
+      mar: "03",
+      apr: "04",
+      may: "05",
+      jun: "06",
+      jul: "07",
+      aug: "08",
+      sep: "09",
+      sept: "09",
+      oct: "10",
+      nov: "11",
+      dec: "12",
+    };
+    const mon = months[String(m[2] || "").toLowerCase()] || "";
+    if (!mon) return "";
+    return m[3] + "-" + mon + "-" + String(m[1]).padStart(2, "0");
+  }
+
   const rows = (grants || []).map((g) => {
     const list = offersByGrant[g.id] || [];
     const pending = list.find((o) => o.status === "pending") || null;
-    return { ...g, pending_offer: pending, offers: list };
+    const accepted = list.find((o) => o.status === "accepted") || null;
+    const abs = g.absence_report_id ? absenceById[String(g.absence_report_id)] : null;
+    const makeupDay =
+      String((accepted && accepted.session_date) || (pending && pending.session_date) || "")
+        .slice(0, 10) || makeupDayFromNotes(g.notes);
+    const makeupTime = String(
+      (accepted && accepted.session_time) || (pending && pending.session_time) || "",
+    ).trim();
+    return {
+      ...g,
+      pending_offer: pending,
+      offers: list,
+      absence_session_date: abs ? String(abs.session_date || "").slice(0, 10) : "",
+      absence_session_time: abs ? String(abs.session_time || "").trim() : "",
+      makeup_day: makeupDay,
+      makeup_time: makeupTime,
+      makeup_offer: accepted || pending || null,
+    };
   });
 
   const openCount = rows.filter((r) => r.status === "open").length;
