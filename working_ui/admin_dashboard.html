@@ -33628,9 +33628,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       state.portalDisruptionPendingCount = n;
       try{ renderNav(); }catch(_n){}
-      try{
-        if(state.view === 'nav_hub') setView('nav_hub');
-      }catch(_h){}
+      try{ portalAdminPatchSessionDisruptionHubBadge(); }catch(_h){}
+    }
+
+    function portalAdminPatchSessionDisruptionHubBadge(){
+      var n = Number(state.portalDisruptionPendingCount || 0);
+      var root = $('workspace');
+      if(!root) return;
+      var btns = root.querySelectorAll('.ops-hub-button[data-view-target="session_disruptions"]');
+      if(!btns || !btns.length) return;
+      for(var i = 0; i < btns.length; i++){
+        var btn = btns[i];
+        var badge = btn.querySelector('.ops-hub-button__badge');
+        if(n > 0){
+          btn.classList.add('ops-hub-button--pending');
+          if(!badge){
+            badge = document.createElement('span');
+            badge.className = 'ops-hub-button__badge';
+            btn.appendChild(badge);
+          }
+          badge.textContent = String(Math.min(99, n));
+          badge.setAttribute('aria-label', String(n) + ' pending');
+        }else{
+          btn.classList.remove('ops-hub-button--pending');
+          if(badge) badge.remove();
+        }
+      }
+      var alertsV = document.querySelector('#opsHubAlertsGlance .ops-hub__today-v');
+      if(alertsV && typeof opsHubGlanceValueAlerts === 'function'){
+        var an = opsHubGlanceValueAlerts();
+        alertsV.textContent = String(an);
+        alertsV.className = 'ops-hub__today-v' + (an > 0 ? ' ops-hub__today-v--alert' : '');
+      }
     }
 
     function portalAdminRemoveSessionDisruptionAlert(reportId){
@@ -34076,7 +34105,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
             state.portalDisruptionPendingCount = Number(state.portalDisruptionPendingCount || 0) + 1;
             try{ renderNav(); }catch(_n){}
-            try{ if(state.view === 'nav_hub') setView('nav_hub'); }catch(_h){}
+            try{ portalAdminPatchSessionDisruptionHubBadge(); }catch(_h){}
           })
           .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'session_disruption_reports' }, function(payload){
             var row = payload && payload.new;
@@ -34085,7 +34114,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               portalAdminRemoveSessionDisruptionAlert(row.id);
               state.portalDisruptionPendingCount = Math.max(0, Number(state.portalDisruptionPendingCount || 0) - 1);
               try{ renderNav(); }catch(_n){}
-              try{ if(state.view === 'nav_hub') setView('nav_hub'); }catch(_h){}
+              try{ portalAdminPatchSessionDisruptionHubBadge(); }catch(_h){}
             }
           })
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_participant_general_info_log' }, function(payload){
