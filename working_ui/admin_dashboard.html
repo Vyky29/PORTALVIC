@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260917-places-apply" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260917-ops-corporate-scale" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260918-session-disruption-badge" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260727-role-names"></script>
@@ -406,7 +406,7 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260914-sched-term-snappy"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260724-release-ts"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260910-general-info"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260918-session-disruption"></script>
   <script type="module">
     import { mountPortalLivePresenceBar } from "/portal/portal_live_presence.js?v=20260909-parent-booking-live";
     window.portalAdminMountLivePresenceBarFn = function portalAdminMountLivePresenceBarFn(){
@@ -428,7 +428,7 @@
     if(document.documentElement.classList.contains("portal-auth-ready")) bootPresence();
     window.addEventListener("portal:supabase-ready", bootPresence);
   </script>
-  <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
+  <script src="/portal/portal_admin_dayops_badges.js?v=20260918-session-disruption"></script>
 <script>
   (function(){
     'use strict';
@@ -1201,7 +1201,7 @@
       }
     };
 
-    var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_services:false, g_clients:false, g_xero:false, g_messages:false, g_zoho:false, g_supabase:false, g_more:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, capAvailFilter:'open', capVenueFilter:'', portalLatePendingCount:0, financeTab:'payments', hrContractsTab:'create', hrContractsIssueDoc:'checklist' };
+    var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_services:false, g_clients:false, g_xero:false, g_messages:false, g_zoho:false, g_supabase:false, g_more:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, capAvailFilter:'open', capVenueFilter:'', portalLatePendingCount:0, portalDisruptionPendingCount:0, financeTab:'payments', hrContractsTab:'create', hrContractsIssueDoc:'checklist' };
     var sched = { slotsById:{}, overrides:[], termEvents:[], rosterLogRows:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
     /**
      * Schedule &amp; Covers + Sessions week window — Autumn Term 2026 (full first term).
@@ -25803,6 +25803,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }catch(_r){}
         }
         await portalSdLoad();
+        try{
+          var pending = (window.__PORTAL_SESSION_DISRUPTION_REPORTS__ || []).filter(function(r){ return r && !r.validated_at; });
+          portalAdminSyncDisruptionPendingCount(pending);
+          if(action === 'validate') portalAdminRemoveSessionDisruptionAlert(reportId);
+          if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
+        }catch(_sdBadge){}
         return true;
       }catch(e){
         if(btn){ btn.disabled = false; btn.textContent = prev; }
@@ -26853,7 +26859,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!item) return '';
       var label = esc(item.label || '');
       var inner = opsHubButtonInner(item, label);
+      var pendingN = 0;
+      if(item.id === 'session_disruptions') pendingN = Number(state.portalDisruptionPendingCount || 0);
+      else if(item.id === 'c4k_late_submissions') pendingN = Number(state.portalLatePendingCount || 0);
+      if(pendingN > 0){
+        inner += '<span class="ops-hub-button__badge" aria-label="'+esc(String(pendingN))+' pending">'+esc(String(Math.min(99, pendingN)))+'</span>';
+      }
       var cls = 'ops-hub-button' + (variant === 'secondary' ? ' ops-hub-button--secondary' : ' ops-hub-button--primary');
+      if(pendingN > 0) cls += ' ops-hub-button--pending';
       if(item.externalUrl){
         return '<a class="'+cls+'" href="'+esc(String(item.externalUrl))+'">'+inner+'</a>';
       }
@@ -33118,6 +33131,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(item.id === 'c4k_late_submissions' && state.portalLatePendingCount > 0){
               btn += '<span class="admin-nav-pending-badge" aria-label="'+esc(state.portalLatePendingCount)+' pending">'+esc(String(Math.min(99, state.portalLatePendingCount)))+'</span>';
             }
+            if(item.id === 'session_disruptions' && state.portalDisruptionPendingCount > 0){
+              btn += '<span class="admin-nav-pending-badge" aria-label="'+esc(state.portalDisruptionPendingCount)+' pending">'+esc(String(Math.min(99, state.portalDisruptionPendingCount)))+'</span>';
+            }
             btn += '</button>';
           }
           if(item.id === 'c4k_services' && state.view === 'c4k_services' && state.c4kServicesRegisterOpen){
@@ -33525,7 +33541,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             cancellations: edge.data.cancellations || [],
             incidents: edge.data.incidents || [],
             absents: edge.data.absents || [],
-            late_requests: edge.data.late_requests || []
+            late_requests: edge.data.late_requests || [],
+            session_disruptions: edge.data.session_disruptions || []
           };
         }
         if(edge.error && edge.error !== 'session_expired'){
@@ -33581,6 +33598,51 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         clientName: client,
         sessionDate: String(row.session_date || '').trim().slice(0, 10)
       };
+    }
+
+    function portalAdminActivityFromSessionDisruption(row){
+      if(!row || !row.id) return null;
+      if(row.validated_at) return null;
+      var who = String(row.submitted_by_name || 'Staff').trim() || 'Staff';
+      var typ = String(row.disruption_type || 'Disruption').trim() || 'Disruption';
+      var d = String(row.session_date || '').trim().slice(0, 10);
+      var venue = String(row.venue || '').trim();
+      var reason = String(row.reason_category || '').trim();
+      return {
+        id: 'sd-' + row.id,
+        title: 'Session disruption · ' + who,
+        sub: typ + (d ? ' · ' + d : '') + (venue ? ' · ' + venue : '') + (reason ? ' — ' + reason : ''),
+        created_at: row.created_at,
+        kind: 'session_disruption',
+        view: 'session_disruptions',
+        recordId: String(row.id || ''),
+        clientName: who,
+        sessionDate: d
+      };
+    }
+
+    function portalAdminSyncDisruptionPendingCount(rows){
+      var n = 0;
+      (rows || []).forEach(function(r){
+        if(r && !r.validated_at) n += 1;
+      });
+      state.portalDisruptionPendingCount = n;
+      try{ renderNav(); }catch(_n){}
+      try{
+        if(state.view === 'nav_hub') setView('nav_hub');
+      }catch(_h){}
+    }
+
+    function portalAdminRemoveSessionDisruptionAlert(reportId){
+      var id = 'sd-' + String(reportId || '').trim();
+      if(!id || id === 'sd-') return;
+      var list = window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || [];
+      window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list.filter(function(a){
+        return !(a && a.id === id);
+      });
+      if(typeof window.__portalAdminRenderAlerts === 'function'){
+        window.__portalAdminRenderAlerts();
+      }
     }
 
     function portalAdminClientFromSessionKey(sk){
@@ -33670,6 +33732,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(tab === 'c4k_late_submissions'){
         setView('c4k_late_submissions');
+        return;
+      }
+      if(tab === 'session_disruptions'){
+        setView('session_disruptions');
         return;
       }
       if(tab === 'clients'){
@@ -33894,6 +33960,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               window.portalAdminPushActivityAlert(a, { silent: true });
             }
           });
+          (bundle.session_disruptions || []).forEach(function(r){
+            var a = portalAdminActivityFromSessionDisruption(r);
+            if(a && typeof window.portalAdminPushActivityAlert === 'function'){
+              window.portalAdminPushActivityAlert(a, { silent: true });
+            }
+          });
+          portalAdminSyncDisruptionPendingCount(bundle.session_disruptions || []);
           if(bundle.late_requests && bundle.late_requests.length){
             bundle.late_requests.forEach(function(r){
               if(String(r.status || '').toLowerCase() !== 'pending') return;
@@ -33994,6 +34067,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var a = portalAdminActivityFromIncident(payload && payload.new);
             if(a && typeof window.portalAdminPushActivityAlert === 'function'){
               window.portalAdminPushActivityAlert(a);
+            }
+          })
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'session_disruption_reports' }, function(payload){
+            var a = portalAdminActivityFromSessionDisruption(payload && payload.new);
+            if(a && typeof window.portalAdminPushActivityAlert === 'function'){
+              window.portalAdminPushActivityAlert(a);
+            }
+            state.portalDisruptionPendingCount = Number(state.portalDisruptionPendingCount || 0) + 1;
+            try{ renderNav(); }catch(_n){}
+            try{ if(state.view === 'nav_hub') setView('nav_hub'); }catch(_h){}
+          })
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'session_disruption_reports' }, function(payload){
+            var row = payload && payload.new;
+            if(!row || !row.id) return;
+            if(row.validated_at){
+              portalAdminRemoveSessionDisruptionAlert(row.id);
+              state.portalDisruptionPendingCount = Math.max(0, Number(state.portalDisruptionPendingCount || 0) - 1);
+              try{ renderNav(); }catch(_n){}
+              try{ if(state.view === 'nav_hub') setView('nav_hub'); }catch(_h){}
             }
           })
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_participant_general_info_log' }, function(payload){
@@ -34956,6 +35048,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         if(portalOpenParams.get('portal_open') === 'leads'){
           try{ setView('leads'); }catch(_leadsOpen){}
+        }
+        if(portalOpenParams.get('portal_open') === 'session_disruptions'){
+          try{ setView('session_disruptions'); }catch(_sdOpen){}
         }
         if(portalOpenParams.get('portal_open') === 'cs_cliq' || portalOpenParams.get('portal_open') === 'new_chat' || portalOpenParams.get('portal_chat_thread') || portalOpenParams.get('portal_chat_group')){
           var portalCliqChannel = portalOpenParams.get('portal_cliq_channel');

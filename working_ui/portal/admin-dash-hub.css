@@ -2634,6 +2634,7 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   min-height:40px;
   font-size:12px;
   font-weight:650;
+  position:relative;
   transition:background .12s ease, border-color .12s ease, color .12s ease, transform .12s ease;
 }
 .ops-hub-button--primary{
@@ -2675,6 +2676,31 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
 .ops-hub-button:focus-visible .ops-hub-button__chev{
   opacity:1;
   transform:translateX(2px);
+}
+.ops-hub-button__badge{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  z-index:2;
+  min-width:18px;
+  height:18px;
+  padding:0 5px;
+  border-radius:99px;
+  background:#b42318;
+  color:#fff;
+  font-size:10px;
+  font-weight:800;
+  line-height:18px;
+  text-align:center;
+  box-shadow:0 0 0 2px var(--ops-panel, #fff);
+  pointer-events:none;
+}
+.ops-hub-button--pending{
+  border-color:rgba(180,35,24,0.45);
+  box-shadow:0 0 0 1px rgba(180,35,24,0.12);
+}
+.ops-hub--today-first .ops-hub__section--today .ops-hub-button--pending{
+  border-color:rgba(180,35,24,0.55);
 }
 .ops-hub-card__more-summary{
   color:var(--ops-muted);

@@ -15,6 +15,7 @@
     "wellbeing",
     "feedback",
     "relevant",
+    "session_disruption",
   ];
 
   /** Same identity key as admin DM read acks — per auth user, not shared across admins. */
@@ -252,6 +253,7 @@
   var VIEW_TO_BADGE = {
     c4k_late_submissions: "late_approval",
     c4k_registers: "feedback",
+    session_disruptions: "session_disruption",
   };
 
   function markSeenForHubTab(tabId) {

@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const [inc, can, absent, late] = await Promise.all([
+  const [inc, can, absent, late, disruptions] = await Promise.all([
     admin
       .from("incident_reports")
       .select("id,created_at,client_name,session_date,submitted_by_name,incident_category")
@@ -64,14 +64,24 @@ Deno.serve(async (req) => {
       .eq("status", "pending")
       .order("created_at", { ascending: false })
       .limit(40),
+    admin
+      .from("session_disruption_reports")
+      .select(
+        "id,created_at,session_date,submitted_by_name,disruption_type,venue,reason_category,validated_at",
+      )
+      .is("validated_at", null)
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(40),
   ]);
 
-  if (inc.error || can.error || absent.error || late.error) {
+  if (inc.error || can.error || absent.error || late.error || disruptions.error) {
     console.error("[portal-admin-activity-alerts-list]", {
       inc: inc.error?.message,
       can: can.error?.message,
       absent: absent.error?.message,
       late: late.error?.message,
+      disruptions: disruptions.error?.message,
     });
     return portalAdminJson(500, { ok: false, error: "query_failed" });
   }
@@ -83,5 +93,6 @@ Deno.serve(async (req) => {
     cancellations: can.data || [],
     absents: absent.data || [],
     late_requests: late.data || [],
+    session_disruptions: disruptions.data || [],
   });
 });

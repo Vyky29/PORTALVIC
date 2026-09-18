@@ -18,6 +18,7 @@
 //   INSERT → session_feedback (late_session_feedback or past session_date)
 //   INSERT → cancellation_reports
 //   INSERT → incident_reports
+//   INSERT → session_disruption_reports
 //   INSERT → portal_staff_dm_messages
 //   INSERT → portal_ceo_group_message
 //   URL: https://<ref>.supabase.co/functions/v1/portal-push-dispatch-admin-alert
@@ -54,6 +55,7 @@ const ALLOWED_TABLES = new Set([
   "session_feedback",
   "cancellation_reports",
   "incident_reports",
+  "session_disruption_reports",
   "portal_staff_dm_messages",
   "portal_ceo_group_message",
   "portal_staff_whatsapp_inbound",
@@ -164,6 +166,14 @@ function buildBookingLeadsUrl(base: string): string {
   return `${root}?portal_open=leads`;
 }
 
+function buildSessionDisruptionsUrl(base: string): string {
+  const root = String(base || "").replace(/\/$/, "");
+  if (/admin_dashboard\.html/i.test(root)) {
+    return `${root}?portal_open=session_disruptions`;
+  }
+  return `${root}?portal_open=session_disruptions`;
+}
+
 function lateTypeLabel(t: string): string {
   const x = String(t || "").toLowerCase();
   if (x === "cancellation") return "Cancellation";
@@ -243,6 +253,22 @@ function buildAlert(
       sourceId: id,
       title: `${cat} · ${client}`,
       body: clampPushBody(`${who} · ${d}`),
+    };
+  }
+
+  if (table === "session_disruption_reports") {
+    if (record.validated_at) return null;
+    const who = String(record.submitted_by_name ?? "Staff").trim() || "Staff";
+    const typ = String(record.disruption_type ?? "Disruption").trim() ||
+      "Disruption";
+    const d = String(record.session_date ?? "").slice(0, 10);
+    const venue = String(record.venue ?? "").trim();
+    return {
+      sourceId: id,
+      title: `Session disruption · ${who}`,
+      body: clampPushBody(
+        `${typ}${d ? " · " + d : ""}${venue ? " · " + venue : ""} — validate in admin`,
+      ),
     };
   }
 
@@ -612,6 +638,9 @@ Deno.serve(async (req) => {
   } else if (table === "portal_booking_leads") {
     portalOpen = "leads";
     notifyUrl = buildBookingLeadsUrl(openBase);
+  } else if (table === "session_disruption_reports") {
+    portalOpen = "session_disruptions";
+    notifyUrl = buildSessionDisruptionsUrl(openBase);
   }
 
   const { data: profRows } = await admin

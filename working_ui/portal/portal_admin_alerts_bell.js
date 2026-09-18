@@ -16,6 +16,7 @@
     expense_unpaid: true,
     staff_support: false,
     general_info: true,
+    session_disruption: true,
   };
 
   var bootstrapSilent = false;
