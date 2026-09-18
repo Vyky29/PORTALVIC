@@ -560,6 +560,10 @@ verify_jwt = false
 [functions.portal-admin-makeup-offer]
 verify_jwt = false
 
+# Schedule & Covers: auto parent WhatsApp on instructor / cancel / move save.
+[functions.portal-admin-schedule-override-notify]
+verify_jwt = false
+
 # After Assign (Edit term slot): ensure unpaid INV-P for parent pay button.
 [functions.portal-admin-term-slot-assign-complete]
 verify_jwt = false

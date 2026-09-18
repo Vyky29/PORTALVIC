@@ -14393,20 +14393,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var k = String(val == null ? '' : val).trim();
       return map[k] || k || 'None';
     }
-    function schedOverrideActionChoices(canTrial, canMoveClient){
+    function schedOverrideActionChoices(canMoveClient){
       var out = [
         { value: 'client_absence_announced', label: 'Absent' },
         { value: 'client_cancelled', label: 'Cancelled' }
       ];
       /* MakeUp / parent makeup grants → Absents, refunds & credits (Offer slot). Not here. */
-      if(canTrial) out.push({ value: 'client_trial', label: 'Trial' });
+      /* Trial → booking portal (finish-booking), not Schedule & Covers. */
       out.push({ value: 'instructor_reassign', label: 'Change Instructor' });
       if(canMoveClient) out.push({ value: 'client_move_same_day', label: 'Move to another slot today' });
       out.push({ value: 'slot_open', label: 'Open closed slot' });
       return out;
     }
-    function schedOverrideActionPickerHtml(canTrial, canMoveClient){
-      var choices = schedOverrideActionChoices(canTrial, canMoveClient);
+    function schedOverrideActionPickerHtml(canMoveClient){
+      var choices = schedOverrideActionChoices(canMoveClient);
       var btns = choices.map(function(c){
         return '<button type="button" class="btn btn--sec btn--sm sched-ov-type-btn" data-ov="'+esc(c.value)+'" aria-pressed="false">'+esc(c.label)+'</button>';
       }).join('');
@@ -14432,12 +14432,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var coverList = schedBuildInstructorPickList();
       function syncFieldVisibility(){
         var ovType = typeEl && typeEl.value ? typeEl.value : '';
-        if(wrapRep) wrapRep.style.display = (ovType === 'client_replace_in_slot' || ovType === 'client_trial') ? '' : 'none';
+        if(wrapRep) wrapRep.style.display = 'none';
         if(wrapCov) wrapCov.style.display = ovType === 'instructor_reassign' ? '' : 'none';
         if(wrapMove) wrapMove.style.display = ovType === 'client_move_same_day' ? '' : 'none';
         if(wrapRea) wrapRea.style.display = '';
         var repLab = document.querySelector('label[for="schedFormReplaceInput"]');
-        if(repLab) repLab.textContent = ovType === 'client_trial' ? 'Trial participant' : 'Replacement participant';
+        if(repLab) repLab.textContent = 'Replacement participant';
         if(ovType === 'client_move_same_day' && sched.activeSlot){
           schedPopulateMoveTargetSelect(sched.activeSlot);
         }
@@ -14997,7 +14997,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var moveTargetCount = schedBuildMoveTargetOptions(slot, movePool).length;
       var srcSlug = String(slot.clientSlug || '').trim().toLowerCase();
       var canMoveClient = !!(srcSlug && srcSlug !== 'available' && srcSlug !== 'closed' && srcSlug !== 'noclient' && srcSlug !== 'no client' && moveTargetCount > 0);
-      var canTrial = schedCanAssignTrialToSlot(slot);
       $('schedDrawerSub').textContent = slot.whenLabel+' · '+slot.venue;
       var ovBlock = ov
         ? '<div class="card card-pad" style="margin-bottom:12px"><div class="kpi-l">Current override</div><p style="margin:6px 0 0;font-size:13px"><span class="override-chip '+esc(schedOverrideTypeClass(ov.override_type, ov))+'">'+esc(schedOverrideLabelForRow(ov))+'</span> · Changed by: '+esc(schedResolveOverrideAuthorName(ov))+(schedFormatOverrideWhenShort(ov) ? ' · '+esc(schedFormatOverrideWhenShort(ov)) : '')+' · '+esc(ov.reason||'—')+'</p><p class="muted" style="margin:8px 0 0;font-size:12px;overflow-wrap:break-word">Row id: '+esc(String(ov.id))+'</p><p style="margin:10px 0 0"><button type="button" class="btn btn--sec btn--sm" id="schedUndoOverrideBtn">Undo change</button></p></div>'
@@ -15017,8 +15016,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</ul><p style="margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec btn--sm" id="schedOpenTermSlotBtn">Edit term slot (this band)</button><button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot (blank)</button></p></div>'+ovBlock+
         '<div class="card card-pad"><div class="kpi-l">New override</div>'+
         '<div class="kpi-l" style="margin-top:10px">Action</div>'+
-        schedOverrideActionPickerHtml(canTrial, canMoveClient)+
-        '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Parent <strong>MakeUp</strong> (grants / Offer slot) is only under <button type="button" class="btn btn--ghost btn--sm" data-view-target="absents_refunds" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Absents, refunds &amp; credits</button>. Use <strong>Trial</strong> here for a paid trial seat.</p>'+
+        schedOverrideActionPickerHtml(canMoveClient)+
+        '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Parent <strong>MakeUp</strong> (grants / Offer slot) is only under <button type="button" class="btn btn--ghost btn--sm" data-view-target="absents_refunds" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Absents, refunds &amp; credits</button>. Trials come from the booking portal. Saving Change Instructor, Cancelled, or Move sends the parent WhatsApp automatically (like Absents decide).</p>'+
         '<p id="schedTermMismatchWarn" role="status" hidden class="muted" style="margin:10px 0 0;padding:10px 12px;background:#fff7ed;border:1px solid rgba(234,88,12,.35);border-radius:8px;font-size:12px;line-height:1.5;min-width:0;overflow-wrap:break-word"></p>'+
         '<div id="schedWrapMoveTarget" style="display:none">'+
         '<label class="muted" for="schedFormMoveTarget" style="display:block;margin-top:12px">Target slot (same day)</label>'+
@@ -15046,21 +15045,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label class="muted" for="schedFormReason" style="display:block;margin-top:12px">Reason / notes</label>'+
         '<textarea class="txa" id="schedFormReason" style="min-height:88px" placeholder="Short operational reason"></textarea>'+
         '</div>'+
-        '<div class="card card-pad" style="margin-top:12px;border-style:dashed">'+
-        '<div class="kpi-l">Parent messaging</div>'+
-        '<p class="muted" style="margin:6px 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Draft email or WhatsApp from a template; edit before sending. Instructor photos from the staff dashboard are included automatically for instructor change and make-up.</p>'+
-        '<div style="display:flex;flex-wrap:wrap;gap:8px">'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyInstructor">Instructor change</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyInstructorUpdate">Instructor update (2nd cover)</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyTimeChange">Time change</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsenceThanks">Absence — thanks</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsenceFollowup">Absence — check-in</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyAbsence">Absence (office)</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyTrial">Trial</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyMakeup">Make up</button>'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedParentNotifyCancelled">Cancelled</button>'+
-        '<button type="button" class="btn btn--ghost btn--sm" id="schedParentNotifyPay">Payment reminder</button>'+
-        '</div></div>'+
         '<p class="muted" id="schedFormErr" style="margin:10px 0 0;min-height:1.2em;color:var(--danger)"></p></div>';
       $('schedDrawerActions').innerHTML =
         '<button type="button" class="btn btn--ghost" id="schedDrawerCancel">Cancel</button>'+
@@ -15088,29 +15072,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{ bindSchedDrawerFormControls(); }catch(e){}
       try{ schedUpdateTermMismatchBanner(slot, ''); }catch(_tw0){}
       try{ schedPopulateMoveTargetSelect(slot); }catch(_mv){}
-      function schedOpenParentNotifyForKind(notifyKind){
-        openParentNotifyModal({ kind: notifyKind, slot: slot, useSchedOverrides: true });
-      }
-      var snI = $('schedParentNotifyInstructor');
-      if(snI) snI.onclick = function(){ schedOpenParentNotifyForKind('instructor_change'); };
-      var snIU = $('schedParentNotifyInstructorUpdate');
-      if(snIU) snIU.onclick = function(){ schedOpenParentNotifyForKind('instructor_change_update'); };
-      var snTc = $('schedParentNotifyTimeChange');
-      if(snTc) snTc.onclick = function(){ schedOpenParentNotifyForKind('time_change'); };
-      var snA = $('schedParentNotifyAbsence');
-      if(snA) snA.onclick = function(){ schedOpenParentNotifyForKind('absence_announced'); };
-      var snAT = $('schedParentNotifyAbsenceThanks');
-      if(snAT) snAT.onclick = function(){ schedOpenParentNotifyForKind('absence_thanks'); };
-      var snAF = $('schedParentNotifyAbsenceFollowup');
-      if(snAF) snAF.onclick = function(){ schedOpenParentNotifyForKind('absence_followup'); };
-      var snT = $('schedParentNotifyTrial');
-      if(snT) snT.onclick = function(){ schedOpenParentNotifyForKind('trial_scheduled'); };
-      var snM = $('schedParentNotifyMakeup');
-      if(snM) snM.onclick = function(){ schedOpenParentNotifyForKind('makeup_scheduled'); };
-      var snC = $('schedParentNotifyCancelled');
-      if(snC) snC.onclick = function(){ schedOpenParentNotifyForKind('session_cancelled'); };
-      var snP = $('schedParentNotifyPay');
-      if(snP) snP.onclick = function(){ schedOpenParentNotifyForKind('payment_due'); };
       var termBtn = $('schedOpenTermSlotBtn');
       if(termBtn) termBtn.onclick = function(){
         closeSchedDrawer();
@@ -15344,6 +15305,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_ev){}
       closeSchedDrawer();
       sched.lastMsg = participantName + ' moved to ' + (targetSlot.anchorTimeLabel || normTimeShort(targetSlot.anchorStart)) + ' · ' + String(targetSlot.venue || '') + '.';
+      try{
+        await schedNotifyOverrideParent(client, sourceSlot, (insRep.data && insRep.data[0] && insRep.data[0].id) || null, {
+          kind: 'time_change',
+          participantDisplay: participantName,
+          contactId: participantSlug,
+          venue: targetSlot.venue || sourceSlot.venue,
+          sessionDate: sourceSlot.sessionDate,
+          sessionTime: targetSlot.anchorTimeLabel || normTimeShort(targetSlot.anchorStart),
+          oldTime: sourceSlot.anchorTimeLabel || normTimeShort(sourceSlot.anchorStart),
+          newTime: targetSlot.anchorTimeLabel || normTimeShort(targetSlot.anchorStart),
+          reason: reason
+        });
+      }catch(_mvN){
+        console.warn('[portal] move parent notify failed', _mvN);
+      }
       try{ if(typeof portalAdminToast === 'function') portalAdminToast(sched.lastMsg); }catch(_toast){}
       await portalSyncOverviewDayTruth(client, { refreshScheduling: false, forceOverviewRender: false });
       await refreshSchedulingModule();
@@ -15890,6 +15866,74 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return res;
     }
     /**
+     * Auto parent WhatsApp after instructor / cancel / move save (silent, like Absents decide).
+     * opts.kind: instructor_change | instructor_change_update | session_cancelled | time_change
+     */
+    async function schedNotifyOverrideParent(client, slot, overrideId, opts){
+      opts = opts || {};
+      var kind = String(opts.kind || '').trim();
+      if(!kind) return null;
+      var display = String(opts.participantDisplay || slot.clientDisplay || '').trim();
+      var contactHint = String(opts.contactId || slot.clientSlug || '').trim();
+      var pax = null;
+      try{
+        pax = await schedResolveParticipantForDecisionQueue(client, Object.assign({}, slot, {
+          clientSlug: contactHint || slot.clientSlug,
+          clientDisplay: display || slot.clientDisplay
+        }));
+      }catch(_p){}
+      if(pax && pax.display_name && !display) display = pax.display_name;
+      var photoUrl = '';
+      try{
+        if(typeof window.portalStaffPhotoUrl === 'function' && (opts.coveringStaffKey || opts.coveringStaffName)){
+          var rel = window.portalStaffPhotoUrl(opts.coveringStaffKey || opts.coveringStaffName, {
+            username: opts.coveringStaffKey || ''
+          });
+          if(rel){
+            if(/^https?:\/\//i.test(rel)) photoUrl = rel;
+            else photoUrl = (location && location.origin ? location.origin : 'https://portalvic.vercel.app') + (rel.charAt(0) === '/' ? rel : '/' + rel);
+          }
+        }
+      }catch(_ph){}
+      var body = {
+        kind: kind,
+        override_id: overrideId || null,
+        contact_id: (pax && pax.contact_id) || contactHint || '',
+        parent_person_id: (pax && pax.parent_person_id) || '',
+        participant_display: display,
+        venue: String(opts.venue || slot.venue || '').trim(),
+        session_date: String(opts.sessionDate || slot.sessionDate || '').slice(0, 10),
+        session_time: String(opts.sessionTime || slot.whenLabel || slot.anchorTimeLabel || '').trim(),
+        service_label: typeof schedDecisionQueueServiceLabel === 'function' ? schedDecisionQueueServiceLabel(slot) : String(slot.programme || '').trim(),
+        reason: String(opts.reason || '').trim(),
+        absent_instructor_name: String(opts.absentInstructorName || slot.staffName || '').trim(),
+        covering_staff_name: String(opts.coveringStaffName || '').trim(),
+        covering_staff_key: String(opts.coveringStaffKey || '').trim(),
+        prior_covering_staff_name: String(opts.priorCoveringStaffName || '').trim(),
+        old_time: String(opts.oldTime || '').trim(),
+        new_time: String(opts.newTime || '').trim(),
+        instructor_photo_url: photoUrl,
+        source: 'schedule_covers'
+      };
+      var res = await adminEdgePost('portal-admin-schedule-override-notify', body);
+      if(res && res.error){
+        console.warn('[portal] schedule override notify', res.error, res.message || '');
+        if(sched) sched.lastMsg = String(sched.lastMsg || 'Override saved.') + ' Parent notify failed.';
+        try{ if(typeof portalAdminToast === 'function') portalAdminToast('Override saved — parent notify failed'); }catch(_t){}
+        return res;
+      }
+      var n = res && res.data && res.data.notify ? res.data.notify : (res && res.notify);
+      var bit = '';
+      if(n && n.ok) bit = 'parent notified';
+      else if(n && n.skipped) bit = 'parent notify skipped' + (n.reason ? ' (' + n.reason + ')' : '');
+      else bit = 'parent notify failed';
+      if(sched){
+        sched.lastMsg = String(sched.lastMsg || 'Override saved.') + (bit ? ' · ' + bit : '');
+      }
+      try{ if(typeof portalAdminToast === 'function' && bit) portalAdminToast(String(sched.lastMsg || bit)); }catch(_t2){}
+      return res;
+    }
+    /**
      * Schedule MakeUp placed → close one open Absents row for that child
      * (oldest pending_review / missed). Seat is already real; no second grant/offer.
      */
@@ -15981,8 +16025,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         await saveSchedClientMoveFromDrawer();
         return;
       }
-      var isTrial = ovTypeRaw === 'client_trial';
-      var ovType = ovTypeRaw === 'client_cancelled' ? 'slot_clear_client' : (isTrial ? 'client_replace_in_slot' : ovTypeRaw);
+      if(ovTypeRaw === 'client_trial'){
+        if(msgEl) msgEl.textContent = 'Trials are booked via the booking portal, not Schedule & Covers.';
+        return;
+      }
+      var isTrial = false;
+      var ovType = ovTypeRaw === 'client_cancelled' ? 'slot_clear_client' : ovTypeRaw;
       var reason = '';
       reason = ($('schedFormReason') && $('schedFormReason').value) || '';
       var pickList = schedBuildReplacementPickList();
@@ -16002,16 +16050,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var coverSlug = ($('schedFormCoverSlug') && $('schedFormCoverSlug').value.trim()) || '';
       var coverTyped = ($('schedFormCoverInput') && $('schedFormCoverInput').value.trim()) || '';
-      if((ovType === 'client_replace_in_slot' || isTrial) && !repSlug){
-        if(msgEl) msgEl.textContent = isTrial
-          ? 'Choose the trial participant from the suggestions, or type until your choice matches exactly.'
-          : 'Choose a replacement participant from the suggestions, or type until your choice matches exactly.';
-        return;
-      }
-      if(isTrial && !schedCanAssignTrialToSlot(slot)){
-        if(msgEl) msgEl.textContent = 'Trial applies to open roster lines (No participant).';
-        return;
-      }
       if(ovType === 'instructor_reassign'){
         var coverListResolve = schedBuildInstructorPickList();
         if(!coverSlug){
@@ -16174,16 +16212,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       /* Club cancel / admin cancel / clear client → Absents & credits decision queue.
        * Same-day / day reassign clears are moves (Moved out / Moved in), not cancellations. */
-      var openParentCancelNotify = false;
-      var openParentInstructorNotify = false;
-      var openParentInstructorNotifyKind = 'instructor_change';
+      var autoNotifyKind = '';
       if(ovType === 'instructor_reassign' && covering_staff_id && covering_staff_id !== 'cover_needed'){
         var coverNm = String(payload.covering_staff_name || '').trim().toLowerCase();
         if(coverNm && coverNm !== 'cover needed'){
-          openParentInstructorNotify = true;
-          if(String(payload.prior_covering_staff_name || '').trim()){
-            openParentInstructorNotifyKind = 'instructor_change_update';
-          }
+          autoNotifyKind = String(payload.prior_covering_staff_name || '').trim()
+            ? 'instructor_change_update'
+            : 'instructor_change';
         }
       }
       if(ovType === 'slot_close' || ovType === 'client_cancelled' || ovType === 'slot_clear_client'){
@@ -16196,7 +16231,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           String(clearPl.replace_kind || '').toLowerCase() === 'day_reassign'
         );
         if(!(ovType === 'slot_clear_client' && isMoveClear)){
-          openParentCancelNotify = true;
+          autoNotifyKind = 'session_cancelled';
           try{
             await schedEnqueueCancelDecisionQueue(client, slot, ins0.id, ovType, reason);
           }catch(_enq){
@@ -16232,6 +16267,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }catch(_mkA){
             console.warn('[portal] makeup → absents sync failed', _mkA);
           }
+        }
+      }
+      if(autoNotifyKind){
+        try{
+          await schedNotifyOverrideParent(client, slot, ins0.id, {
+            kind: autoNotifyKind,
+            reason: reason,
+            coveringStaffName: payload.covering_staff_name || '',
+            coveringStaffKey: covering_staff_id || payload.covering_staff_id || '',
+            priorCoveringStaffName: payload.prior_covering_staff_name || '',
+            absentInstructorName: slot.staffName || '',
+            participantDisplay: slot.clientDisplay || '',
+            contactId: slot.clientSlug || ''
+          });
+        }catch(_autoN){
+          console.warn('[portal] schedule override auto parent notify failed', _autoN);
         }
       }
       var evRow = {
@@ -16290,32 +16341,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         await portalSyncOverviewDayTruth(client, { refreshScheduling: false, forceOverviewRender: false });
         await refreshSchedulingModule();
-        /* After Cancelled: draft parent cancellation (office still sends), decide queue already queued. */
-        if(openParentCancelNotify && typeof openParentNotifyModal === 'function'){
-          try{
-            openParentNotifyModal({
-              kind: 'session_cancelled',
-              slot: slot,
-              useSchedOverrides: true,
-              dateIso: String(slot.sessionDate || '').slice(0, 10)
-            });
-          }catch(_pn){
-            console.warn('[portal] parent cancel notify modal failed', _pn);
-          }
-        }else if(openParentInstructorNotify && typeof openParentNotifyModal === 'function'){
-          try{
-            openParentNotifyModal({
-              kind: openParentInstructorNotifyKind,
-              slot: slot,
-              useSchedOverrides: true,
-              dateIso: String(slot.sessionDate || '').slice(0, 10),
-              newInstructorName: String(payload.covering_staff_name || '').trim(),
-              previousInstructorName: String(payload.prior_covering_staff_name || '').trim()
-            });
-          }catch(_pnI){
-            console.warn('[portal] parent instructor notify modal failed', _pnI);
-          }
-        }
       }catch(postErr){
         console.warn('[portal] override saved; post-save refresh failed', postErr);
         if(!String(sched.lastMsg || '').trim()){
