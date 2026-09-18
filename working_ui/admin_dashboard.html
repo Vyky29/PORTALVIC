@@ -16175,6 +16175,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       /* Club cancel / admin cancel / clear client → Absents & credits decision queue.
        * Same-day / day reassign clears are moves (Moved out / Moved in), not cancellations. */
       var openParentCancelNotify = false;
+      var openParentInstructorNotify = false;
+      var openParentInstructorNotifyKind = 'instructor_change';
+      if(ovType === 'instructor_reassign' && covering_staff_id && covering_staff_id !== 'cover_needed'){
+        var coverNm = String(payload.covering_staff_name || '').trim().toLowerCase();
+        if(coverNm && coverNm !== 'cover needed'){
+          openParentInstructorNotify = true;
+          if(String(payload.prior_covering_staff_name || '').trim()){
+            openParentInstructorNotifyKind = 'instructor_change_update';
+          }
+        }
+      }
       if(ovType === 'slot_close' || ovType === 'client_cancelled' || ovType === 'slot_clear_client'){
         var clearPl = payload || {};
         var isMoveClear = !!(
@@ -16290,6 +16301,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             });
           }catch(_pn){
             console.warn('[portal] parent cancel notify modal failed', _pn);
+          }
+        }else if(openParentInstructorNotify && typeof openParentNotifyModal === 'function'){
+          try{
+            openParentNotifyModal({
+              kind: openParentInstructorNotifyKind,
+              slot: slot,
+              useSchedOverrides: true,
+              dateIso: String(slot.sessionDate || '').slice(0, 10),
+              newInstructorName: String(payload.covering_staff_name || '').trim(),
+              previousInstructorName: String(payload.prior_covering_staff_name || '').trim()
+            });
+          }catch(_pnI){
+            console.warn('[portal] parent instructor notify modal failed', _pnI);
           }
         }
       }catch(postErr){
