@@ -8221,10 +8221,11 @@
     return "£" + v.toFixed(2);
   }
 
-  function creditStatusLabel(status) {
+  function creditStatusLabel(status, kind) {
     var s = String(status || "");
-    if (s === "open") return "Open";
-    if (s === "applied") return "Applied";
+    var k = String(kind || "").toLowerCase();
+    if (s === "open") return k === "refund" ? "Pending payout" : "Available";
+    if (s === "applied") return "Applied to invoice";
     if (s === "refunded") return "Refunded";
     if (s === "cancelled") return "Cancelled";
     return s || "—";
@@ -8243,7 +8244,7 @@
       esc(title) +
       "</strong>" +
       '<span class="pp-absence-chip">' +
-      esc(creditStatusLabel(e.status)) +
+      esc(creditStatusLabel(e.status, e.kind)) +
       "</span></div>" +
       (money
         ? '<p class="pp-credit-card__amount">' + esc(money) + "</p>"
@@ -8254,6 +8255,9 @@
         ? " · " + esc(formatHubDateLabel(e.session_date) || e.session_date)
         : "") +
       "</p>" +
+      (String(e.status) === "open" && String(e.kind || "").toLowerCase() !== "refund"
+        ? '<p class="pp-muted pp-absence-card__hint">On your account — reduces the next term invoice (or Spring Direct Debit if you pay monthly).</p>'
+        : "") +
       (e.notes ? '<p class="pp-absence-card__reason">' + esc(e.notes) + "</p>" : "") +
       (e.close_notes && e.status !== "open"
         ? '<p class="pp-absence-card__meta muted">' + esc(e.close_notes) + "</p>"
@@ -8267,7 +8271,7 @@
       data,
       "balance",
       '<h3 class="pp-pax-subview-title">Credits &amp; refunds</h3>' +
-        '<p class="pp-muted pp-pax-subview-note">Balances appear here after the office validates an excused absence as a credit or refund. Open credits with a £ amount can be applied to an unpaid invoice under Invoices. Refunds stay open until the office marks them paid.</p>' +
+        '<p class="pp-muted pp-pax-subview-note">Balances appear here after the office validates an excused absence as a credit or refund. <strong>Available</strong> credits with a £ amount reduce the next invoice (or Spring Direct Debit if you pay monthly). Refunds stay as pending payout until the office marks them paid.</p>' +
         '<div id="ppBalanceSummary" class="pp-balance-summary" hidden></div>' +
         '<div id="ppBalanceNotice" class="pp-notice" hidden></div>' +
         '<div id="ppBalanceListHost"><p class="pp-muted">Loading…</p></div>',

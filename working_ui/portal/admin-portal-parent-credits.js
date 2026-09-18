@@ -105,13 +105,24 @@
     return j;
   }
 
-  function statusChip(status) {
+  /** DB keeps status=open; UI says Available so it does not read as "still to do". */
+  function statusLabel(status, kind) {
+    var s = String(status || '').toLowerCase();
+    var k = String(kind || '').toLowerCase();
+    if (s === 'open') return k === 'refund' ? 'Pending payout' : 'Available';
+    if (s === 'applied') return 'Applied to invoice';
+    if (s === 'refunded') return 'Refunded';
+    if (s === 'cancelled') return 'Cancelled';
+    return s || '—';
+  }
+
+  function statusChip(status, kind) {
     var s = String(status || '');
     var tone = 'info';
-    if (s === 'open') tone = 'pend';
+    if (s === 'open') tone = 'ok';
     else if (s === 'refunded' || s === 'applied') tone = 'ok';
     else if (s === 'cancelled') tone = 'warn';
-    return '<span class="chip chip--' + tone + '">' + esc(s) + '</span>';
+    return '<span class="chip chip--' + tone + '">' + esc(statusLabel(s, kind)) + '</span>';
   }
 
   function rowHtml(e) {
@@ -149,7 +160,7 @@
       (e.session_date ? ' · ' + esc(formatDate(e.session_date)) : '') +
       '</td>' +
       '<td>' +
-      statusChip(e.status) +
+      statusChip(e.status, e.kind) +
       '</td>' +
       '<td class="muted" style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
       esc(e.notes || e.close_notes || '—') +
@@ -194,9 +205,9 @@
     if (metaEl) {
       metaEl.textContent =
         String(state.meta.open_credits || 0) +
-        ' open credits · ' +
+        ' available · ' +
         String(state.meta.open_refunds || 0) +
-        ' open refunds';
+        ' pending payout';
     }
     hostEl.innerHTML = tableHtml(state.entries);
     bindRowActions(hostEl);
@@ -246,12 +257,12 @@
               state.filter = 'all';
             } else if (r.held_for_spring_gc) {
               cfg.toast(
-                'GoCardless — credit kept open for Spring mandate (monthly). Not applied to Autumn GC.',
+                'GoCardless — credit stays Available for Spring mandate (monthly). Not taken off Autumn GC.',
                 'ok'
               );
               state.filter = 'open';
             } else if (r.held_for_next_term || (r.entry && r.entry.status === 'open')) {
-              cfg.toast('No open bank/flexi invoice — credit kept open for next term', 'ok');
+              cfg.toast('No bank/flexi invoice yet — credit stays Available for next term', 'ok');
               state.filter = 'open';
             } else {
               cfg.toast('Credit updated', 'ok');
@@ -275,11 +286,11 @@
     return (
       '<div class="card" style="margin-bottom:14px">' +
       '<div class="card-h"><h3>Family credits &amp; refunds</h3>' +
-      '<span class="chip chip--pend" id="portalParentCreditsMetaEmbed">…</span></div>' +
+      '<span class="chip chip--ok" id="portalParentCreditsMetaEmbed">…</span></div>' +
       '<div class="card-pad">' +
-      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Ledger from excused absences or <strong>Add credit / refund</strong>. <strong>Apply to invoice</strong>: bank/flexi open → discount the <strong>2nd flexi half</strong> (or remaining unpaid half). <strong>GoCardless</strong> (even with Autumn open) → keep £ <strong>open for Spring GC mandate</strong> (monthly). Mark refunded after bank/Stripe.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:48rem;overflow-wrap:break-word">Ledger from excused absences or <strong>Add credit / refund</strong>. <strong>Available</strong> = on the family account (nothing left to decide) — GoCardless holds it for <strong>Spring</strong>; bank/flexi can <strong>Apply to invoice</strong> (2nd flexi half). Mark refunded after bank/Stripe.</p>' +
       '<div class="toolbar" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">' +
-      '<button type="button" class="btn btn--sm" data-credits-filter="open">Open</button>' +
+      '<button type="button" class="btn btn--sm" data-credits-filter="open">Available</button>' +
       '<button type="button" class="btn btn--sm btn--ghost" data-credits-filter="all">All</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalParentCreditsRefreshEmbed">Refresh</button>' +
       '<button type="button" class="btn btn--primary btn--sm" id="portalParentCreditsAdd">Add credit / refund</button>' +
@@ -374,7 +385,7 @@
     cfg.openModal(
       '<div class="modal-h"><h2 id="modalTitle">Add credit / refund (office phone)</h2></div>' +
         '<div class="modal-b" style="min-width:0">' +
-        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Creates an open ledger row the family can see. Use Credit for carry-forward; Refund when you will transfer money back.</p>' +
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.45;overflow-wrap:break-word">Creates an <strong>Available</strong> ledger row the family can see. Credit = on account for next invoice / Spring GC; Refund = money back after you pay out.</p>' +
         '<label class="muted">Search participant</label>' +
         '<input class="inp" id="ppCreditCreateSearch" type="search" placeholder="Name or contact id" autocomplete="off" style="max-width:100%;box-sizing:border-box" />' +
         '<div id="ppCreditCreateHits" hidden style="margin:6px 0"></div>' +
