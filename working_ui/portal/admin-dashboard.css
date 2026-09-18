@@ -4428,7 +4428,47 @@
     tr.sched-slot-row:hover td{background:#f0f9ff}
     tr.sched-slot-row.is-muted td{opacity:.55}
     #schedDrawerBackdrop{z-index:12150}
-    #schedSlotDrawer{z-index:12190}
+    #schedDrawerBackdrop.drawer-backdrop.open{
+      background:rgba(15,23,42,.42);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+    }
+    /* Schedule slot: centered popup, not a side drawer. */
+    #schedSlotDrawer.drawer{
+      z-index:12190;
+      top:50%;
+      left:50%;
+      right:auto;
+      width:min(960px, calc(100vw - 48px));
+      max-width:calc(100vw - 48px);
+      height:min(88dvh, 920px);
+      max-height:min(88dvh, 920px);
+      border-radius:18px;
+      border:1px solid var(--line);
+      box-shadow:0 28px 80px rgba(15,23,42,.28);
+      overflow:hidden;
+      transform:translate(-50%, -48%) scale(.98);
+      opacity:0;
+      pointer-events:none;
+    }
+    #schedSlotDrawer.drawer.open{
+      transform:translate(-50%, -50%) scale(1);
+      opacity:1;
+      pointer-events:auto;
+    }
+    #schedSlotDrawer .drawer-h,
+    #schedSlotDrawer .drawer-body,
+    #schedSlotDrawer .drawer-actions{min-width:0}
+    #schedSlotDrawer .drawer-body{min-height:0}
+    @media screen and (max-width:782px){
+      #schedSlotDrawer.drawer{
+        width:calc(100vw - 20px);
+        max-width:calc(100vw - 20px);
+        height:min(92dvh, 920px);
+        max-height:min(92dvh, 920px);
+        border-radius:14px;
+      }
+    }
     /* Override action pills — native <select> dropdown is clipped inside drawer scroll */
     .sched-ov-type-picker{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;min-width:0}
     .sched-ov-type-picker .sched-ov-type-btn{max-width:100%;min-width:0;overflow-wrap:break-word;text-align:left;line-height:1.35}
