@@ -54,6 +54,8 @@
     authorById: Object.create(null),
     /** iso YYYY-MM-DD -> [{ key, label }] from staff_unavailability (same as Overview). */
     dayOffByDate: Object.create(null),
+    /** iso -> [{ staffKey, venue, name }] active instructor_reassign covers. */
+    coversByDate: Object.create(null),
     /** Active cell picker: { editKey, wrap } */
     pick: null,
   };
@@ -685,11 +687,25 @@
     return INSTRUCTOR_ALIAS_KEYS[k] || k;
   }
 
-  function cellMatchesInstructorFilter(cell, instructorFilter) {
+  function cellAssignmentRaw(cell) {
+    var key = cell && cell.editKey;
+    if (key && state.dirty[key] != null) return state.dirty[key];
+    return (cell && cell.text) || "";
+  }
+
+  function cellMatchesInstructorFilter(cell, instructorFilter, iso, venue) {
     if (!instructorFilter || instructorFilter === "all") return true;
-    var parts = splitStaffHoursNameTime((cell && cell.text) || "");
+    var parts = splitStaffHoursNameTime(cellAssignmentRaw(cell));
     if (!parts.name) return false;
-    return instructorFilterKey(parts.name) === instructorFilterKey(instructorFilter);
+    var want = instructorFilterKey(instructorFilter);
+    if (instructorFilterKey(parts.name) === want) return true;
+    var face = resolveHoursFace(parts, iso, venue);
+    if (!face.name) return false;
+    return String(face.name)
+      .split(/\s*\/\s*/)
+      .some(function (n) {
+        return instructorFilterKey(n) === want;
+      });
   }
 
   function isHiddenFromAutumnHours(name) {
@@ -841,7 +857,7 @@
       "Green paid line drives Timesheet pay when set (late / gaps). Capacity chain: " +
       "<strong>Places</strong> → <strong>Timetable</strong> → <strong>Services</strong> → <strong>Schedule &amp; Covers</strong>. " +
       "Edit cells and <strong>Save</strong> (or use <strong>Every [weekday] in term</strong> in the picker for the whole term). " +
-      "<strong>Day off · COVER</strong> comes from <code>staff_unavailability</code> (same as Overview).</p>" +
+      "A granted <strong>day off</strong> stays on the date cell only. The slot shows the Schedule cover, or stays blank (no paid hours) if there was no cover.</p>" +
       '<p class="asr-chain-links muted" style="margin:0 0 12px;max-width:52rem;min-width:0;overflow-wrap:break-word;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center">' +
       '<span style="font-weight:600;color:#334155">Open:</span>' +
       '<button type="button" class="btn btn--sec btn--sm" data-view-target="open_places_2627" title="Services — standing Places board (seats free / occupied)">Places</button>' +
@@ -875,8 +891,8 @@
       '<div class="asr-legend" aria-label="Staff hours legend">' +
       "<span>Scroll horizontally for all venues · edits sync to dashboards after Save</span>" +
       '<span><i class="asr-swatch" style="background:#eff6ff;border-color:#93c5fd"></i> Saved override (blue text)</span>' +
-      '<span><i class="asr-swatch" style="background:#fff7ed;border-color:#fdba74"></i> Day off · COVER (staff_unavailability)</span>' +
-      "<span>Click cell → pick staff / shift / paid hours</span>" +
+      '<span><i class="asr-swatch" style="background:#fff7ed;border-color:#fdba74"></i> Day off (date cell only)</span>' +
+      "<span>Off slot shows the cover, or blank if there was none</span>" +
       "</div>"
     );
   }
@@ -1002,7 +1018,7 @@
     var html =
       '<div class="asr-standing-hours" style="margin:16px 0 0;padding:12px 14px;border:1px solid var(--border,#d7e2e8);border-radius:12px;background:#f8fafc;min-width:0">' +
       '<p class="asr-tab-hint" style="margin:0 0 8px;font-weight:600;max-width:52rem;overflow-wrap:break-word">Standing week snapshot (reference)</p>' +
-      '<p class="muted" style="margin:0 0 10px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Who is on when for Autumn standing week (sample dates). Editable dated overrides for payroll are in the <strong>sheet above</strong> — Save those, not this summary. Orange Day off · COVER on dated rows comes from live <code>staff_unavailability</code>.</p>';
+      '<p class="muted" style="margin:0 0 10px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Who is on when for Autumn standing week (sample dates). Editable dated overrides for payroll are in the <strong>sheet above</strong> — Save those, not this summary. A day off is listed under the date, not on the hours line.</p>';
     days.forEach(function (wd) {
       var block = stand[wd];
       if (!block || !block.lines || !block.lines.length) {
@@ -1035,13 +1051,11 @@
       html += '<ul style="margin:0;padding-left:1.1rem;max-width:52rem">';
       block.lines.forEach(function (line) {
         var away = sampleIso && staffAwayOnIso(line.name, sampleIso);
+        if (away) return;
         html +=
           '<li style="overflow-wrap:break-word;min-width:0">' +
           esc(line.text) +
           (line.venue ? ' <span class="muted">(' + esc(line.venue) + ")</span>" : "") +
-          (away
-            ? ' <span class="asr-dayoff-chip">Day off · COVER</span>'
-            : "") +
           "</li>";
       });
       html += "</ul></div>";
@@ -1219,16 +1233,168 @@
       });
   }
 
+  function venueMatchKey(raw) {
+    return String(raw || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  }
+
+  function venuesMatch(a, b) {
+    var x = venueMatchKey(a);
+    var y = venueMatchKey(b);
+    if (!x || !y) return false;
+    if (x === y || x.indexOf(y) === 0 || y.indexOf(x) === 0) return true;
+    var stems = ["swimfarm", "acton", "westway", "northolt", "hub"];
+    var i = 0;
+    for (; i < stems.length; i++) {
+      if (x.indexOf(stems[i]) >= 0 && y.indexOf(stems[i]) >= 0) return true;
+    }
+    return false;
+  }
+
+  function hoursStaffKey(raw) {
+    var first = instructorFilterKey(String(raw || "").trim().split(/[\s/]+/)[0]);
+    return first || instructorFilterKey(raw);
+  }
+
+  function staffNameTokens(raw) {
+    var keys = [];
+    String(raw || "")
+      .trim()
+      .split(/[\s/]+/)
+      .forEach(function (part) {
+        var k = instructorFilterKey(part);
+        if (k && keys.indexOf(k) < 0) keys.push(k);
+      });
+    var whole = instructorFilterKey(raw);
+    if (whole && keys.indexOf(whole) < 0) keys.push(whole);
+    return keys;
+  }
+
+  function staffKeysMatch(a, b) {
+    var as = staffNameTokens(a);
+    var bs = staffNameTokens(b);
+    var i = 0;
+    var j = 0;
+    for (i = 0; i < as.length; i++) {
+      for (j = 0; j < bs.length; j++) {
+        var x = as[i];
+        var y = bs[j];
+        if (x === y) return true;
+        if (x.length >= 5 && y.length >= 4 && (x.indexOf(y) >= 0 || y.indexOf(x) >= 0)) return true;
+        if (y.length >= 5 && x.length >= 4 && (y.indexOf(x) >= 0 || x.indexOf(y) >= 0)) return true;
+      }
+    }
+    return false;
+  }
+
+  function coverFirstName(raw) {
+    var n = String(raw || "").trim();
+    if (!n || /cover\s*needed/i.test(n)) return "";
+    var first = n.split(/\s+/)[0];
+    if (!first) return "";
+    return first.charAt(0).toUpperCase() + first.slice(1);
+  }
+
+  function indexCovers(rows) {
+    var map = Object.create(null);
+    (rows || []).forEach(function (r) {
+      if (!r) return;
+      var iso = String(r.session_date || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+      var pl = r.payload || {};
+      var coverId = String(pl.covering_staff_id || "").toLowerCase();
+      if (coverId === "cover_needed" || coverId === "coverneeded") return;
+      var label = coverFirstName(pl.covering_staff_name || "");
+      if (!label) return;
+      var staffKey = hoursStaffKey(r.anchor_staff_id || pl.anchor_staff_id || pl.original_staff_id || "");
+      if (!staffKey) return;
+      if (!map[iso]) map[iso] = [];
+      map[iso].push({
+        staffKey: staffKey,
+        venue: String(r.anchor_venue || "").trim(),
+        name: label,
+      });
+    });
+    state.coversByDate = map;
+  }
+
+  function loadCovers() {
+    var client = cfg.getClient();
+    if (!client) {
+      state.coversByDate = Object.create(null);
+      return Promise.resolve();
+    }
+    var all = [];
+    function page(from) {
+      return client
+        .from("schedule_overrides")
+        .select("session_date,anchor_staff_id,anchor_venue,payload")
+        .eq("status", "active")
+        .eq("override_type", "instructor_reassign")
+        .gte("session_date", HOURS_TERM_FROM)
+        .lte("session_date", HOURS_TERM_TO)
+        .range(from, from + 999)
+        .then(function (res) {
+          if (res.error) throw res.error;
+          var rows = res.data || [];
+          all = all.concat(rows);
+          if (rows.length === 1000) return page(from + 1000);
+        });
+    }
+    return page(0)
+      .then(function () {
+        indexCovers(all);
+      })
+      .catch(function () {
+        state.coversByDate = Object.create(null);
+      });
+  }
+
   function dayOffsForIso(iso) {
     return state.dayOffByDate[String(iso || "").slice(0, 10)] || [];
   }
 
   function staffAwayOnIso(staffRaw, iso) {
-    var key = staffNameKey(staffRaw);
-    if (!key) return false;
+    if (!hoursStaffKey(staffRaw)) return false;
     return dayOffsForIso(iso).some(function (x) {
-      return x.key === key;
+      return staffKeysMatch(staffRaw, x.key) || staffKeysMatch(staffRaw, x.label);
     });
+  }
+
+  function coversForAwayCell(staffName, iso, venue) {
+    var rows = state.coversByDate[String(iso || "").slice(0, 10)] || [];
+    var names = [];
+    rows.forEach(function (r) {
+      if (!r || !staffKeysMatch(staffName, r.staffKey)) return;
+      if (venue && r.venue && !venuesMatch(r.venue, venue)) return;
+      if (names.indexOf(r.name) < 0) names.push(r.name);
+    });
+    return names;
+  }
+
+  /** Standing name stays in the editor. The face is the cover, or blank if they are off. */
+  function resolveHoursFace(parts, iso, venue) {
+    var name = (parts && parts.name) || "";
+    var time = (parts && parts.time) || "";
+    if (!name || !iso || !staffAwayOnIso(name, iso)) {
+      return { name: name, time: time, mode: "standing", title: "" };
+    }
+    var covers = coversForAwayCell(name, iso, venue);
+    if (covers.length) {
+      return {
+        name: covers.join(" / "),
+        time: time,
+        mode: "cover",
+        title: "Cover for " + name + " (day off). Hours count for the cover, not " + name + ".",
+      };
+    }
+    return {
+      name: "",
+      time: "",
+      mode: "blank",
+      title: name + " is off. No cover — hours not counted.",
+    };
   }
 
   function dateDayOffChipsHtml(iso) {
@@ -1399,20 +1565,25 @@
   function updateCellWrapFace(wrap, val, iso, paidRaw) {
     if (!wrap) return;
     var parts = splitStaffHoursNameTime(val);
+    var venue = wrap.getAttribute("data-asr-venue") || "";
+    var faceParts = resolveHoursFace(parts, iso, venue);
     var paid =
       paidRaw != null
         ? String(paidRaw || "").trim()
         : String(wrap.getAttribute("data-asr-paid") || "").trim();
-    var away = !!(iso && parts.name && staffAwayOnIso(parts.name, iso));
-    wrap.classList.toggle("asr-cell-wrap--dayoff", away);
+    wrap.classList.remove("asr-cell-wrap--dayoff");
+    if (faceParts.title) wrap.setAttribute("title", faceParts.title);
+    else wrap.setAttribute("title", "Click to pick staff, shift and paid hours");
     var nameEl = wrap.querySelector(".asr-cell-face__name");
     var timeEl = wrap.querySelector(".asr-cell-face__time");
     var paidEl = wrap.querySelector(".asr-cell-face__paid");
     var badge = wrap.querySelector(".asr-dayoff-badge");
-    if (nameEl) nameEl.textContent = parts.name || (val ? val : "·");
+    if (badge) badge.remove();
+    var showName = faceParts.name || (faceParts.mode === "standing" && val ? val : "·");
+    if (nameEl) nameEl.textContent = showName;
     if (timeEl) {
-      if (parts.time) {
-        timeEl.textContent = parts.time;
+      if (faceParts.time) {
+        timeEl.textContent = faceParts.time;
         timeEl.hidden = false;
       } else {
         timeEl.textContent = "";
@@ -1420,9 +1591,9 @@
       }
     }
     if (paidEl) {
-      var shift = String(parts.time || "").replace(/\s+/g, "").trim();
+      var shift = String(faceParts.time || "").replace(/\s+/g, "").trim();
       var paidNorm = String(paid || "").replace(/\s+/g, "").trim();
-      var effectivePaid = paidNorm || shift;
+      var effectivePaid = faceParts.mode === "blank" ? "" : paidNorm || shift;
       if (effectivePaid) {
         paidEl.textContent = effectivePaid;
         paidEl.hidden = false;
@@ -1430,18 +1601,6 @@
         paidEl.textContent = "";
         paidEl.hidden = true;
       }
-    }
-    if (away && !badge) {
-      var face = wrap.querySelector(".asr-cell-face");
-      if (face) {
-        var span = document.createElement("span");
-        span.className = "asr-dayoff-badge";
-        span.title = "staff_unavailability — same as Overview";
-        span.textContent = "Day off · COVER";
-        face.appendChild(span);
-      }
-    } else if (!away && badge) {
-      badge.remove();
     }
   }
 
@@ -1746,7 +1905,7 @@
     );
   }
 
-  function cellInputHtml(cell, iso, colIdx, dayName) {
+  function cellInputHtml(cell, iso, colIdx, dayName, venue) {
     var key = cell.editKey || "";
     var val = state.dirty[key] != null ? state.dirty[key] : cell.text || "";
     var paid =
@@ -1754,6 +1913,7 @@
         ? String(state.dirtyPaid[key] || "").trim()
         : String(cell.paidHours || "").trim();
     var parts = splitStaffHoursNameTime(val);
+    var faceParts = resolveHoursFace(parts, iso, venue);
     var dirtyCls =
       state.dirty[key] != null || state.dirtyPaid[key] != null
         ? " asr-cell-input--dirty"
@@ -1768,35 +1928,33 @@
       cell.tone && state.dirty[key] == null && state.dirtyPaid[key] == null && !savedCls
         ? " asr-tone--" + cell.tone
         : "";
-    var away = !!(iso && parts.name && staffAwayOnIso(parts.name, iso));
-    var dayOffCls = away ? " asr-cell-wrap--dayoff" : "";
-    var shiftNorm = String(parts.time || "").replace(/\s+/g, "").trim();
+    var shiftNorm = String(faceParts.time || "").replace(/\s+/g, "").trim();
     var paidNorm = String(paid || "").replace(/\s+/g, "").trim();
-    var effectivePaid = paidNorm || shiftNorm;
+    var effectivePaid = faceParts.mode === "blank" ? "" : paidNorm || shiftNorm;
+    var faceName = faceParts.name || (faceParts.mode === "standing" && val ? val : "·");
+    var faceTitle = faceParts.title || "Click to pick staff, shift and paid hours";
     var face =
       '<span class="asr-cell-face" aria-hidden="true">' +
       '<span class="asr-cell-face__name">' +
-      esc(parts.name || (val ? val : "·")) +
+      esc(faceName) +
       "</span>" +
-      (parts.time
-        ? '<span class="asr-cell-face__time">' + esc(parts.time) + "</span>"
+      (faceParts.time
+        ? '<span class="asr-cell-face__time">' + esc(faceParts.time) + "</span>"
         : '<span class="asr-cell-face__time" hidden></span>') +
       (effectivePaid
         ? '<span class="asr-cell-face__paid" title="Paid hours">' +
           esc(effectivePaid) +
           "</span>"
         : '<span class="asr-cell-face__paid" hidden></span>') +
-      (away
-        ? '<span class="asr-dayoff-badge" title="staff_unavailability — same as Overview">Day off · COVER</span>'
-        : "") +
       "</span>";
     return (
       '<div class="asr-cell-wrap' +
       dirtyCls +
       savedCls +
       tone +
-      dayOffCls +
-      '" role="button" tabindex="0" title="Click to pick staff, shift and paid hours" data-asr-edit-key="' +
+      '" role="button" tabindex="0" title="' +
+      esc(faceTitle) +
+      '" data-asr-edit-key="' +
       esc(key) +
       '" data-asr-value="' +
       esc(val) +
@@ -1804,6 +1962,8 @@
       esc(paid) +
       '" data-asr-iso="' +
       esc(iso || "") +
+      '" data-asr-venue="' +
+      esc(venue || "") +
       '" data-asr-col="' +
       esc(String(colIdx == null ? 0 : colIdx)) +
       '" data-asr-day="' +
@@ -2265,10 +2425,13 @@
     groups = reordered.groups;
     dates = reordered.dates;
     var columnServices = reordered.columnServices;
+    var labels = flattenHoursVenueLabels(groups);
     var filteredDates = (dates || []).filter(function (dr) {
-      return (dr.cells || []).some(function (cell) {
+      var iso = String(dr.date || "").slice(0, 10);
+      return (dr.cells || []).some(function (cell, colIdx) {
         if (sf !== "all" && !cellMatchesServiceFilter(cell, sf)) return false;
-        if (ifr !== "all" && !cellMatchesInstructorFilter(cell, ifr)) return false;
+        var venue = (labels[colIdx] && labels[colIdx].venue) || "";
+        if (ifr !== "all" && !cellMatchesInstructorFilter(cell, ifr, iso, venue)) return false;
         return true;
       });
     });
@@ -2279,7 +2442,6 @@
           : "No assignments for this service on the selected day.";
       return '<p class="muted">' + emptyMsg + "</p>";
     }
-    var labels = flattenHoursVenueLabels(groups);
     var svcSegs = serviceHeaderSegments(groups, columnServices);
     var html = "";
     if (blockTitle) {
@@ -2392,12 +2554,12 @@
           (svcSlug && prevSlug && svcSlug !== prevSlug ? " asr-svc-start" : "");
         var muted =
           (sf !== "all" && !cellMatchesServiceFilter(cell, sf)) ||
-          (ifr !== "all" && !cellMatchesInstructorFilter(cell, ifr));
+          (ifr !== "all" && !cellMatchesInstructorFilter(cell, ifr, iso, lab.venue || ""));
         if (muted) {
           html += '<td class="' + tdCls + ' asr-cell--muted-filter">—</td>';
           return;
         }
-        html += '<td class="' + tdCls + '">' + cellInputHtml(cell, iso, idx, dayName) + "</td>";
+        html += '<td class="' + tdCls + '">' + cellInputHtml(cell, iso, idx, dayName, lab.venue || "") + "</td>";
       });
       html += "</tr>";
     });
@@ -2878,7 +3040,7 @@
         return;
       }
       state.mergedData = null;
-      Promise.all([applyOverridesToMerged(), loadChangeLog(), loadDayOffs()]).then(refreshPanel);
+      Promise.all([applyOverridesToMerged(), loadChangeLog(), loadDayOffs(), loadCovers()]).then(refreshPanel);
     }
 
     if (!global.__ASR_ROSTER_SYNC_BOUND__) {
@@ -2886,7 +3048,7 @@
       try {
         global.addEventListener("portal:staff-dashboard-source-updated", function () {
           if (!document.getElementById("adminSpreadsheetRefRoot")) return;
-          Promise.all([applyOverridesToMerged(), loadDayOffs()]).then(refreshPanel);
+          Promise.all([applyOverridesToMerged(), loadDayOffs(), loadCovers()]).then(refreshPanel);
         });
       } catch (_e) {}
     }
