@@ -151,7 +151,7 @@
   <script src="/portal/portal-parent-notify-templates.js?v=20260917-instructor-update2"></script>
   <script src="/portal/cfk-app.js?v=20260917-places-first"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
-  <script src="/portal/admin-scheduling-module.js?v=20260911-sched-mobile-cards"></script>
+  <script src="/portal/admin-scheduling-module.js?v=20260918-sched-center"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -180,7 +180,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260918-sched-modal" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260918-sched-center" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -283,6 +283,7 @@
       </div>
     </aside>
     <div class="admin-main">
+      <div id="schedPageBackdrop" class="sched-page-backdrop" aria-hidden="true"></div>
       <header class="admin-topbar" id="adminTopbar">
         <a href="office_portal.html" id="portalOfficeAdminBack" class="portal-office-admin-back">← Office portal</a>
         <button type="button" class="admin-menu-mob" id="btnMenuMob" aria-label="Open menu" aria-controls="adminSidebar" aria-expanded="false">☰</button>
@@ -2251,6 +2252,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       state.pendingBookingsScroll = (id === 'orders_all' ? (bookingsScroll || null) : null);
       state.view = id;
             document.body.classList.toggle('admin-view-term-slot', id === 'term_roster_edit');
+      document.body.classList.toggle('admin-view-scheduling', id === 'scheduling');
+      if(id === 'scheduling' && prevViewId && prevViewId !== 'scheduling'){
+        state.schedReturnView = prevViewId;
+      }
       if(id === 'cs_cliq'){
         setView('nav_hub');
         return;
@@ -18650,6 +18655,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void refreshSchedulingModule({ forceRosterReload: true });
       };
       if(dateEl) dateEl.onchange = function(){ void refreshSchedulingModule(); };
+      var pageClose = $('schedPageClose');
+      if(pageClose) pageClose.onclick = function(){
+        var back = state.schedReturnView && state.schedReturnView !== 'scheduling' ? state.schedReturnView : 'dashboard';
+        setView(back);
+      };
       bindSchedAddSessionForm();
       if(window.PortalAdminSearchCombo){
         ['schedVenueFilter','schedStaffFilter','schedParticipantFilter'].forEach(function(fid){
@@ -35091,6 +35101,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(sdc) sdc.onclick = closeSchedDrawer;
       var sdb = $('schedDrawerBackdrop');
       if(sdb) sdb.onclick = function(e){ if(e.target=== $('schedDrawerBackdrop')) closeSchedDrawer(); };
+      var schedPageBd = $('schedPageBackdrop');
+      if(schedPageBd) schedPageBd.onclick = function(){
+        if(!document.body.classList.contains('admin-view-scheduling')) return;
+        var back = state.schedReturnView && state.schedReturnView !== 'scheduling' ? state.schedReturnView : 'dashboard';
+        setView(back);
+      };
       document.addEventListener('keydown', function(e){
         if(e.key === 'Escape'){
           if(document.body.classList.contains('sidebar-open')){
@@ -35104,7 +35120,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           closeModal();
           closeDrawer();
+          var schedDrEsc = $('schedSlotDrawer');
+          var schedWasOpen = !!(schedDrEsc && schedDrEsc.classList.contains('open'));
           closeSchedDrawer();
+          if(!schedWasOpen && document.body.classList.contains('admin-view-scheduling')){
+            var schedBack = state.schedReturnView && state.schedReturnView !== 'scheduling' ? state.schedReturnView : 'dashboard';
+            setView(schedBack);
+          }
           var apEsc = $('alertsPop');
           if(apEsc) apEsc.classList.remove('open');
         }

@@ -4433,28 +4433,72 @@
       backdrop-filter:blur(10px);
       -webkit-backdrop-filter:blur(10px);
     }
-    /* Schedule slot: centered popup, not a side drawer. */
+    /* Schedule slot: centered popup, not a side drawer. !important beats .drawer.open translateX. */
     #schedSlotDrawer.drawer{
-      z-index:12190;
-      top:50%;
-      left:50%;
-      right:auto;
-      width:min(960px, calc(100vw - 48px));
-      max-width:calc(100vw - 48px);
-      height:min(88dvh, 920px);
-      max-height:min(88dvh, 920px);
+      position:fixed !important;
+      z-index:12190 !important;
+      top:50% !important;
+      left:50% !important;
+      right:auto !important;
+      bottom:auto !important;
+      width:min(960px, calc(100vw - 48px)) !important;
+      max-width:calc(100vw - 48px) !important;
+      height:min(88dvh, 920px) !important;
+      max-height:min(88dvh, 920px) !important;
       border-radius:18px;
       border:1px solid var(--line);
       box-shadow:0 28px 80px rgba(15,23,42,.28);
       overflow:hidden;
-      transform:translate(-50%, -48%) scale(.98);
+      transform:translate(-50%, -48%) scale(.98) !important;
       opacity:0;
       pointer-events:none;
     }
     #schedSlotDrawer.drawer.open{
-      transform:translate(-50%, -50%) scale(1);
+      transform:translate(-50%, -50%) scale(1) !important;
       opacity:1;
       pointer-events:auto;
+    }
+    /* Schedule & Covers page: same centered popup, blurred dashboard behind. */
+    #schedPageBackdrop{display:none}
+    body.admin-view-scheduling #schedPageBackdrop{
+      display:block;
+      position:fixed;
+      inset:0;
+      z-index:80;
+      background:rgba(15,23,42,.42);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+    }
+    body.admin-view-scheduling #workspace{
+      position:fixed;
+      z-index:90;
+      top:50%;
+      left:50%;
+      right:auto;
+      width:min(1120px, calc(100vw - 40px));
+      max-width:calc(100vw - 40px);
+      height:min(90dvh, 960px);
+      max-height:min(90dvh, 960px);
+      transform:translate(-50%, -50%);
+      overflow:auto;
+      background:var(--surface, #fff);
+      border-radius:18px;
+      border:1px solid var(--line);
+      box-shadow:0 28px 80px rgba(15,23,42,.28);
+      padding:14px 16px 20px;
+      min-width:0;
+    }
+    body.admin-view-scheduling #workspace .page-title,
+    body.admin-view-scheduling #workspace .page-intro,
+    body.admin-view-scheduling #workspace .sched-tbl{
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    .sched-page-pop__bar{
+      display:flex;
+      justify-content:flex-end;
+      margin:0 0 8px;
+      min-width:0;
     }
     #schedSlotDrawer .drawer-h,
     #schedSlotDrawer .drawer-body,
