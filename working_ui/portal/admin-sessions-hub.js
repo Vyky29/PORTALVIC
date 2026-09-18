@@ -9331,7 +9331,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         " \u2013 " +
         esc(formatLongDate(opts.filterDayIso)) +
         "</summary>" +
-        '<p class="ash-feedback-log__note">Includes attended feedback, <strong>absents</strong>, and <strong>cancellations</strong> (N/A except Reviewed by / reason). See also Absents and Cancellations tabs.</p>' +
+        '<p class="ash-feedback-log__note">Includes attended feedback, <strong>absents</strong>, and <strong>cancellations</strong> (N/A except Reviewed by / reason). Decide credit / makeup under <strong>Absents &amp; credits</strong>.</p>' +
         '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback"><thead><tr>' +
         AdminSessionsHub.FEEDBACK_TABLE_HEAD +
         "</tr></thead><tbody>" +
@@ -13795,8 +13795,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '" data-ash-tab="tracking">Overview</button>' +
       '<button type="button" class="ash-tab ash-tab--portal" data-ash-portal-nav="sessions-feedback">Feedback</button>' +
       '<button type="button" class="ash-tab ash-tab--portal" data-ash-portal-nav="lead-reports">Lead report</button>' +
-      '<button type="button" class="ash-tab ash-tab--portal" data-ash-portal-nav="incidents">Incidents</button>' +
-      '<button type="button" class="ash-tab ash-tab--portal" data-ash-portal-nav="cancellations">Cancellations</button>';
+      '<button type="button" class="ash-tab ash-tab--portal" data-ash-portal-nav="incidents">Incidents</button>';
     if (this.mode === "full") {
       tabs +=
         '<button type="button" class="ash-tab' +

@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
   <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260913-register-freeze"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260918-drop-absent-cancel-tabs"></script>
   <script src="/portal/admin-portal-documents.js?v=20260915-ob-doc-chips"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260918-outcome-chips"></script>
@@ -443,7 +443,7 @@
       { id:'scheduling', label:'Schedule & Covers' },
       { id:'term_roster_edit', label:'Edit term slot' },
       { id:'roster_spreadsheets', label:'Instructor timetable', hubLabel:'Timetable' },
-      { id:'absents_refunds', label:'Absents, refunds & credits', hubLabel:'Refunds & credits' },
+      { id:'absents_refunds', label:'Absents & credits', hubLabel:'Absents & credits' },
       { id:'receptionist', label:'Receptionist hub' },
       { id:'leads', label:'LEADS' },
       { id:'c4k_services', label:'Services' },
@@ -517,7 +517,7 @@
     var ADMIN_MOBILE_MAX_WIDTH = 899;
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'c4k_sessions', 'scheduling', 'nav_all_menu'];
     var NAV_GROUPS = [
-      { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','sessions_feedback','sessions_absents','c4k_late_submissions','office_calendar','__h:More day tools','sessions_incidents','sessions_notes'] },
+      { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','sessions_feedback','c4k_late_submissions','office_calendar','__h:More day tools','sessions_incidents','sessions_notes'] },
       { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','orders_all'] },
       { id:'g_clients', label:'Clients & families', children:['clients','c4k_waitlist','leads','portal_participant_documents','portal_parent_consents'] },
       { id:'g_xero', label:'Money', children:['reenrol_payments','absents_refunds'] },
@@ -22697,19 +22697,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       { id:'positive', label:'Session Feedback', iconId:'c4k_reviews', mode:'panel' },
       { id:'relevant', label:'Notes', iconId:'c4k_relevant', mode:'panel' },
       { id:'incidents', label:'Incidents', iconId:'analytics', mode:'panel' },
-      { id:'cancellations', label:'Cancellations', iconId:'absents_refunds', mode:'panel' },
-      { id:'absents', label:'Absents', iconId:'absents', mode:'panel' },
       { id:'lead', label:'Lead report', iconId:'portal_nav_lead', mode:'panelLead' },
       { id:'venue', label:'Venue', iconId:'c4k_services', mode:'panelVenue' },
       { id:'pickup', label:'Pick up', iconId:'scheduling', mode:'panelPickup' }
     ];
     var SESSIONS_HUB_HEAD_META = {
-      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Day truth you look at — covers, trials and absents from Schedule & Covers / bookings land here.' },
+      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Day truth you look at — covers, trials and absents from Schedule & Covers / bookings land here. Decide absents / cancels under Absents & credits.' },
       feedback:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it — engagement, emotions, independence, narrative and notes.' },
       positive:{ iconId:'c4k_reviews', tone:'positive', title:'SESSION FEEDBACK', sub:'Raw session feedback next to the parent-safe filtered version generated on review.' },
       relevant:{ iconId:'c4k_relevant', tone:'relevant', title:'NOTES', sub:'Internal notes — informational only, with an option to email CEOs or other staff.' },
-      absents:{ iconId:'absents', tone:'absents', title:'ABSENTS', sub:'Clients marked absent by staff for the selected day.' },
-      cancellations:{ iconId:'absents_refunds', tone:'cancellations', title:'CANCELLATIONS', sub:'Cancellation reports by session week and day.' },
+      absents:{ iconId:'absents', tone:'absents', title:'ABSENTS', sub:'Moved to Absents & credits.' },
+      cancellations:{ iconId:'absents_refunds', tone:'cancellations', title:'CANCELLATIONS', sub:'Moved to Absents & credits.' },
       incidents:{ iconId:'analytics', tone:'incidents', title:'INCIDENT REPORTS', sub:'Submitted incident reports with session and outcome detail.' },
       lead:{ iconId:'portal_nav_lead', tone:'lead', title:'LEAD REPORTS', sub:'Lead session reports submitted from the field.' },
       venue:{ iconId:'c4k_services', tone:'venue', title:'VENUE REVIEWS', sub:'Opening and closing venue checklist reviews.' },
@@ -22730,6 +22728,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!h.weekAnchorIso) h.weekAnchorIso = isoDateLocal(new Date());
       if(h.selectedIso === undefined) h.selectedIso = null;
       if(!h.tab) h.tab = 'overview';
+      /* Retired hub tabs — Absents & credits owns decide + cancels. */
+      if(h.tab === 'absents' || h.tab === 'cancellations') h.tab = 'overview';
       if(h.clientQ === undefined) h.clientQ = '';
       if(h.instructorQ === undefined) h.instructorQ = '';
       if(!h.sfSection) h.sfSection = 'main';
@@ -23932,7 +23932,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260917-pin-week';
+    var PORTAL_ADMIN_HUB_BUILD = '20260918-drop-absent-cancel-tabs';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -24101,11 +24101,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     function openSessionsHubTab(tabId){
-      sessionsHubEnsureState().tab = tabId || 'overview';
+      var tab = tabId || 'overview';
+      /* Day Absents / Cancellations screens retired — Absents & credits owns decide queue. */
+      if(tab === 'absents' || tab === 'cancellations'){
+        setView('absents_refunds');
+        return;
+      }
+      sessionsHubEnsureState().tab = tab;
       sessionsHubEnsureState().sfSection = 'main';
       try{
         if(typeof window.portalAdminDayOpsBadgesMarkSeenHubTab === 'function'){
-          window.portalAdminDayOpsBadgesMarkSeenHubTab(tabId);
+          window.portalAdminDayOpsBadgesMarkSeenHubTab(tab);
         }
       }catch(_badgeTab){}
       setView('c4k_sessions');
@@ -26744,7 +26750,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         description:'Day board tools used all the time — overview, covers, register and feedback.',
         preview:[],
         status:'',
-        primary:['c4k_sessions','scheduling','sessions_register','sessions_feedback','sessions_notes','sessions_absents','c4k_late_submissions','sessions_incidents'],
+        primary:['c4k_sessions','scheduling','sessions_register','sessions_feedback','sessions_notes','c4k_late_submissions','sessions_incidents'],
         secondary:['office_calendar']
       },
       {
@@ -26776,7 +26782,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         status:'',
         primary:[
           { id:'reenrol_payments', label:'Finance' },
-          { id:'absents_refunds', label:'Refunds & credits' }
+          { id:'absents_refunds', label:'Absents & credits' }
         ],
         secondary:[]
       },
@@ -27201,13 +27207,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         'sessions_register',
         'sessions_feedback',
         'sessions_notes',
-        'sessions_absents',
         'c4k_late_submissions',
         'sessions_incidents'
       ];
       var frequentActions = [
         { id:'reenrol_payments', label:'Finance' },
-        { id:'absents_refunds', label:'Refunds & credits' },
+        { id:'absents_refunds', label:'Absents & credits' },
         'clients',
         'c4k_waitlist',
         'portal_parent_notify_log',
@@ -27240,11 +27245,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Register', 'Raw session feedback', false, 'feedback', 'sessions_hub_feedback')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_reviews', 'Session Feedback', 'Raw + parent-safe filtered', false, 'feedback', 'sessions_hub_positive')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Notes', 'Optional notes — share to CEOs/staff', false, 'analytics', 'sessions_hub_relevant')+
-        portalDashTileHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents');
+        portalDashTileHtml('absents_refunds', '', 'absents_refunds', 'Absents & credits', 'Absents, cancels, refunds, makeup', false, 'absents');
       var sessionsRow2 =
         portalDashTileHtml('c4k_sessions', '', 'portal_nav_lead', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead')+
         portalDashTileHtml('c4k_sessions', '', 'analytics', 'Incidents', 'Safeguarding & logs', false, 'analytics', 'sessions_hub_incidents')+
-        portalDashTileHtml('absents_refunds', '', 'absents_refunds', 'Absents & credits', 'Refunds, credits, missed sessions', false, 'absents')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_services', 'Venue review', 'Venue opening reviews', false, 'scheduling', 'sessions_hub_venue')+
         portalDashTileHtml('c4k_sessions', '', 'scheduling', 'Pick up / drop off', 'Drop off & pick up portal', false, 'scheduling', 'sessions_hub_pickup');
       var teamTiles =
@@ -29696,9 +29700,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(a === 'sessions_hub_feedback'){ closeSidebarMob(); openSessionsHubTab('feedback'); return; }
       if(a === 'sessions_hub_positive'){ closeSidebarMob(); openSessionsHubTab('positive'); return; }
       if(a === 'sessions_hub_relevant'){ closeSidebarMob(); openSessionsHubTab('relevant'); return; }
-      if(a === 'sessions_hub_cancellations'){ closeSidebarMob(); openSessionsHubTab('cancellations'); return; }
+      if(a === 'sessions_hub_cancellations'){ closeSidebarMob(); setView('absents_refunds'); return; }
       if(a === 'sessions_hub_incidents'){ closeSidebarMob(); openSessionsHubTab('incidents'); return; }
-      if(a === 'sessions_hub_absents'){ closeSidebarMob(); openSessionsHubTab('absents'); return; }
+      if(a === 'sessions_hub_absents'){ closeSidebarMob(); setView('absents_refunds'); return; }
       if(a === 'sessions_hub_lead'){ closeSidebarMob(); openSessionsHubTab('lead'); return; }
       if(a === 'sessions_hub_venue'){ closeSidebarMob(); openSessionsHubTab('venue'); return; }
       if(a === 'sessions_hub_pickup'){ closeSidebarMob(); openSessionsHubTab('pickup'); return; }
