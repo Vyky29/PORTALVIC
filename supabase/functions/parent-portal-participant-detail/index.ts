@@ -1636,6 +1636,42 @@ Deno.serve(async (req) => {
       feedbackTermStartIso,
       quickMarkRows,
     );
+    /* Staff/office cancellation decide rows (no slot_close OV yet) still paint cancelled chips. */
+    if (contactId) {
+      const { data: cancelAbs, error: caErr } = await supabase
+        .from("portal_parent_absence_reports")
+        .select("session_date, case_kind, reason_code, status")
+        .eq("contact_id", contactId)
+        .gte("session_date", feedbackTermStartIso)
+        .lte("session_date", feedbackTermEndIso)
+        .limit(200);
+      if (caErr) {
+        console.error("[parent-portal-participant-detail] cancel absences", caErr.message);
+      } else {
+        const cancelSet = new Set(attendanceSummary.cancelled_dates || []);
+        const absentSet = new Set(attendanceSummary.absent_dates || []);
+        for (const row of cancelAbs || []) {
+          const iso = String(row.session_date || "").slice(0, 10);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+          const kind = String(row.case_kind || "").toLowerCase();
+          const reason = String(row.reason_code || "").toLowerCase();
+          if (
+            kind === "cancellation" ||
+            reason === "instructor_cancelled" ||
+            reason === "admin_cancelled"
+          ) {
+            cancelSet.add(iso);
+            absentSet.delete(iso);
+          }
+        }
+        attendanceSummary = {
+          ...attendanceSummary,
+          cancelled_dates: [...cancelSet].sort(),
+          absent_dates: [...absentSet].sort(),
+          absent: Math.max(0, [...absentSet].length),
+        };
+      }
+    }
   } else if (wantAttendanceChips && rawFeedback.length) {
     attendanceSummary = buildParentAttendanceSummary(
       rawFeedback,

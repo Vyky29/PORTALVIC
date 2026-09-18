@@ -85,6 +85,16 @@
     return '<span class="chip chip--' + tone + '">' + esc(s.replace(/_/g, ' ')) + '</span>';
   }
 
+  function outcomeChip(outcome) {
+    var o = String(outcome || '').toLowerCase();
+    var tone = 'ok';
+    if (o === 'makeup') tone = 'makeup';
+    else if (o === 'none') tone = 'urg';
+    else if (o === 'credit') tone = 'info';
+    else if (o === 'refund') tone = 'refund';
+    return '<span class="chip chip--' + tone + '" style="font-size:10px">' + esc(o) + '</span>';
+  }
+
   async function fetchReports(status) {
     var token = await portalAuthToken();
     if (!token) return { error: 'session_expired', reports: [] };
@@ -479,9 +489,7 @@
       '</td>' +
       '<td>' +
       statusChip(r.status) +
-      (r.outcome
-        ? ' <span class="chip chip--ok" style="font-size:10px">' + esc(String(r.outcome)) + '</span>'
-        : '') +
+      (r.outcome ? ' ' + outcomeChip(r.outcome) : '') +
       '</td>' +
       '<td class="muted" style="white-space:nowrap">' +
       esc(formatDate(r.proof_deadline)) +

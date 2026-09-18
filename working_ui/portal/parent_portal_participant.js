@@ -4251,11 +4251,11 @@
         icon: CHIP_X_SVG,
       };
     }
-    /* Red — club cancel. */
+    /* Red — club cancel (admin / instructor). */
     if (st === "cancelled") {
       return {
         tone: "cancelled",
-        title: "Cancelled — " + d.iso,
+        title: "Cancelled (club) — " + d.iso,
         icon: CHIP_X_SVG,
       };
     }
@@ -4673,8 +4673,11 @@
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--orange" aria-hidden="true"></span>' +
       '<span class="pp-hub-ops__chip-legend__text"><strong>Orange</strong> — absent</span></li>' +
       '<li class="pp-hub-ops__chip-legend__item">' +
+      '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--burgundy" aria-hidden="true"></span>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Burgundy</strong> — cancelled (club / instructor)</span></li>' +
+      '<li class="pp-hub-ops__chip-legend__item">' +
       '<span class="pp-hub-ops__chip-legend__swatch pp-hub-ops__chip-legend__swatch--red" aria-hidden="true"></span>' +
-      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — cancelled or not booked</span></li>' +
+      '<span class="pp-hub-ops__chip-legend__text"><strong>Red</strong> — not booked</span></li>' +
       "</ul>"
     );
   }
@@ -5568,6 +5571,17 @@
           ((j && j.reports) || []).forEach(function (r) {
             var iso = String((r && r.session_date) || "").slice(0, 10);
             if (!iso) return;
+            var kind = String((r && r.case_kind) || "").toLowerCase();
+            var reason = String((r && r.reason_code) || "").toLowerCase();
+            // Club / instructor cancel → burgundy cancelled chip (not orange absent).
+            if (
+              kind === "cancellation" ||
+              reason === "instructor_cancelled" ||
+              reason === "admin_cancelled"
+            ) {
+              if (statusByIso[iso] !== "absent") statusByIso[iso] = "cancelled";
+              return;
+            }
             // Parent Absent report → orange absent chip.
             statusByIso[iso] = "absent";
           });

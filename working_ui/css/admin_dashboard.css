@@ -2248,6 +2248,7 @@
     .card--premium{box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 40px rgba(15,23,42,.08);border-color:#e8ecf1}
     .chip--pink{background:rgba(252,228,236,.95);color:#a81f63;border:1px solid rgba(194,24,91,.22)}
     .chip--makeup{background:rgba(252,228,236,.95);color:#a81f63;border:1px solid rgba(194,24,91,.28)}
+    .chip--refund{background:rgba(237,233,254,.95);color:#6d28d9;border:1px solid rgba(124,58,237,.28)}
     .chip--pri{background:#fef3c7;color:#b45309}
     .chip--blk{background:#e0f2fe;color:#0369a1}
     .pr-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}

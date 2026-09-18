@@ -136,8 +136,12 @@ export function scheduleOverrideCountsAsMissedForClient(
 
   const type = cleanStr(ov.override_type, 80);
   if (type === "client_absence_announced") return true;
-  /** Cleared place / left mid-term — count as missed for parent hub chips. */
-  if (type === "slot_clear_client") return true;
+  /** Cleared place / left mid-term — count as missed for parent hub chips.
+   *  Admin/instructor cancel (cancelled_by_admin) is cancelled, not absent. */
+  if (type === "slot_clear_client") {
+    if (overrideIsAdminOrClubCancel(ov.payload)) return false;
+    return true;
+  }
 
   if (type === "client_replace_in_slot") {
     const rep = rosterParticipantSlugAlias(slugifyParticipantKey(overrideReplacementClientId(ov.payload)));
@@ -145,6 +149,15 @@ export function scheduleOverrideCountsAsMissedForClient(
   }
 
   return false;
+}
+
+function overrideIsAdminOrClubCancel(payload: unknown): boolean {
+  const p = payload && typeof payload === "object"
+    ? (payload as Record<string, unknown>)
+    : {};
+  if (p.cancelled_by_admin === true) return true;
+  const res = cleanStr(p.feedback_resolution, 40).toLowerCase();
+  return res === "cancelled" || res === "cancel";
 }
 
 /** Club closed the child's slot (cancel chip) — does not require parent notify message. */
@@ -163,7 +176,9 @@ export function scheduleOverrideCountsAsCancelledForClient(
   if (!anchor || !clientSlugs.has(anchor) || isOpenSlotAnchor(anchor)) return false;
 
   const type = cleanStr(ov.override_type, 80);
-  return type === "slot_close" || type === "client_cancelled";
+  if (type === "slot_close" || type === "client_cancelled") return true;
+  if (type === "slot_clear_client" && overrideIsAdminOrClubCancel(ov.payload)) return true;
+  return false;
 }
 
 export type ParentQuickMarkRow = {
