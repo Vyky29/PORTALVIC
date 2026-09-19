@@ -83,6 +83,7 @@
     else if (s === 'missed') tone = 'info';
     else if (s === 'noted') tone = 'ok';
     else if (s === 'cancelled') tone = 'urg';
+    else if (s === 'absent') tone = 'info';
     return '<span class="chip chip--' + tone + '">' + esc(s.replace(/_/g, ' ')) + '</span>';
   }
 
@@ -91,7 +92,7 @@
     var tone = 'ok';
     if (o === 'makeup') tone = 'makeup';
     else if (o === 'none') tone = 'urg';
-    else if (o === 'credit') tone = 'info';
+    else if (o === 'credit') tone = 'credit';
     else if (o === 'refund') tone = 'refund';
     else if (o === 'pending') tone = 'pend';
     return '<span class="chip chip--' + tone + '" style="font-size:10px">' + esc(o) + '</span>';
@@ -101,17 +102,12 @@
     var isCancel = String(r.case_kind || '') === 'cancellation';
     var st = String(r.status || '');
     var out = String(r.outcome || '').trim().toLowerCase();
-    var chips = '';
-    if (isCancel) {
-      chips = statusChip('cancelled');
-      if (st === 'pending_review' || !out) {
-        chips += ' ' + outcomeChip('pending');
-      } else {
-        chips += ' ' + outcomeChip(out);
-      }
-    } else {
-      chips = statusChip(st);
-      if (out) chips += ' ' + outcomeChip(out);
+    var waiting = st === 'pending_review' || st === 'missed';
+    var chips = isCancel ? statusChip('cancelled') : statusChip('absent');
+    if (waiting || (isCancel && !out)) {
+      chips += ' ' + outcomeChip('pending');
+    } else if (out) {
+      chips += ' ' + outcomeChip(out);
     }
     return (
       '<td style="min-width:0">' +

@@ -130,8 +130,10 @@
     var st = String(status || '').toLowerCase();
     if (st === 'open') return 'pend';
     if (st === 'offered') return 'info';
-    if (st === 'consumed') return 'ok';
-    return 'ok';
+    if (st === 'consumed') return 'makeup';
+    if (st === 'cancelled') return 'urg';
+    if (st === 'forfeited') return 'warn';
+    return 'pend';
   }
 
   function rowHtml(g) {

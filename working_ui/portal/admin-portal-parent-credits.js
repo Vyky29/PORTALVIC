@@ -118,11 +118,20 @@
 
   function statusChip(status, kind) {
     var s = String(status || '');
+    var k = String(kind || '').toLowerCase();
     var tone = 'info';
-    if (s === 'open') tone = 'ok';
-    else if (s === 'refunded' || s === 'applied') tone = 'ok';
-    else if (s === 'cancelled') tone = 'warn';
+    if (s === 'cancelled') tone = 'urg';
+    else if (s === 'refunded' || k === 'refund') tone = 'refund';
+    else if (s === 'applied' || k === 'credit') tone = 'credit';
+    else if (s === 'open') tone = k === 'refund' ? 'refund' : 'credit';
     return '<span class="chip chip--' + tone + '">' + esc(statusLabel(s, kind)) + '</span>';
+  }
+
+  function kindChip(kind) {
+    var k = String(kind || '').toLowerCase();
+    var tone = k === 'refund' ? 'refund' : 'credit';
+    var label = k === 'refund' ? 'refund' : 'credit';
+    return '<span class="chip chip--' + tone + '">' + esc(label) + '</span>';
   }
 
   function rowHtml(e) {
@@ -150,7 +159,7 @@
       esc(e.participant_display || '—') +
       '</strong></td>' +
       '<td>' +
-      esc(e.kind) +
+      kindChip(e.kind) +
       '</td>' +
       '<td class="muted" style="white-space:nowrap">' +
       esc(formatMoney(e.amount_gbp)) +
