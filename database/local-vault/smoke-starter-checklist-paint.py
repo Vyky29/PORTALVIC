@@ -27,8 +27,8 @@ COORDS = {
     "addr1": (334, H - 321.5),
     "addr2": (334, H - 338.5),
     "addr3": (334, H - 355.5),
-    "postcode": (334, H - 372.5),
-    "country": (334, H - 389.5),
+    "postcode": (334, H - 370),
+    "country": (334, H - 387),
     "niNumber": {
         "y": H - 438.5,
         "xs": [334.3, 349.9, 372.6, 388.1, 410.8, 426.4, 449.1, 464.7, 487.4],
@@ -89,9 +89,13 @@ def main() -> int:
     doc = fitz.open(PDF)
     p0, p1 = doc[0], doc[1]
 
-    # Clear printed Postcode / Country labels (same idea as clearLabel in HTML)
-    whiteout(p0, 330, H - 378, 56, 14)
-    whiteout(p0, 330, H - 395, 52, 14)
+    # Remove printed Postcode (right) / Country (left) labels, same as clearLabel in HTML
+    for term in ("Postcode", "Country"):
+        for r in p0.search_for(term):
+            # Only the address-block labels (not other pages/sections)
+            if 360 < r.y0 < 400:
+                p0.add_redact_annot(r, fill=(1, 1, 1))
+    p0.apply_redactions()
 
     draw_text(p0, *COORDS["lastName"], "SMITHSON-WILLIAMS")
     draw_text(p0, *COORDS["firstNames"], "ALEXANDER JAMES")
