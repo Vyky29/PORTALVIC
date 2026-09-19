@@ -26845,17 +26845,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function viewAbsentsRefundsCredits(){
-      var pend = portalAbsentsPendingCount();
-      var cases = adminAbsentsCreditsUnifiedCases();
-      var total = cases.length;
-      var usePortal = adminAbsentsCreditsPortalRows().length > 0;
-      var meta = usePortal && adminAbsentsCreditsPortalSource() && adminAbsentsCreditsPortalSource().meta;
-      var metaLine = usePortal && meta
-        ? (' <span class="chip chip--ok">Term workbook</span> <span class="muted" style="font-size:12px">' + esc(String(meta.sourceFile || 'Absentees & Credits (PORTAL).xlsx')) + ' · ' + esc(String(meta.rowCount != null ? meta.rowCount : total)) + ' rows</span>')
-        : '';
-      var rows = cases.map(absentsCreditsCaseRowHtml).join('');
-      if(!rows) rows = '<tr><td colspan="10" class="muted">No cases in the demo list.</td></tr>';
-      var srcChip = usePortal ? 'workbook' : 'demo';
       var parentQueue = '';
       if(window.PortalParentAbsences && typeof window.PortalParentAbsences.embedHtml === 'function'){
         portalParentAbsencesConfigureOnce();
@@ -26871,16 +26860,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         secondary += window.PortalParentCredits.embedHtml();
       }
       return '<h1 class="page-title">Absents, refunds &amp; credits</h1>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">One decide queue for absents and cancellations since 1 Sep. Approve credit / refund / makeup here; makeup waiting list and family ledger are secondary.'+metaLine+'</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">One decide queue for absents and cancellations since 1 Sep. Approve credit / refund / makeup here; makeup waiting list and family ledger are secondary.</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec" data-view-target="dashboard">Day operations</button> <button type="button" class="btn btn--sec" data-view-target="bookings">Bookings</button> <button type="button" class="btn btn--ghost" data-view-target="communications">Comms log</button></div>'+
         parentQueue+
         '<details style="margin:0 0 14px;min-width:0">'+
         '<summary style="cursor:pointer;font-weight:700;font-size:14px;padding:8px 0;overflow-wrap:break-word">Makeup grants &amp; family credits / refunds (after you decide above)</summary>'+
         '<div style="margin-top:8px">'+secondary+'</div>'+
-        '</details>'+
-        '<details style="margin:0 0 14px;min-width:0">'+
-        '<summary style="cursor:pointer;font-weight:600;font-size:13px;padding:8px 0;overflow-wrap:break-word">Workbook / legacy queue <span class="chip '+(pend?'chip--pend':'chip--ok')+'" style="font-weight:500">'+esc(String(pend))+' pending · '+esc(String(total))+' ('+srcChip+')</span></summary>'+
-        '<div class="card" style="margin-top:8px"><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center"><thead><tr><th>Participant</th><th>Time / value</th><th>Date</th><th>Service</th><th>Reason</th><th>Notice</th><th>Policy</th><th>Resolution</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
         '</details>';
     }
 
