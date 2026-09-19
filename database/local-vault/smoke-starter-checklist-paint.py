@@ -75,12 +75,6 @@ def draw_date(page, cfg, iso):
     draw_boxed(page, cfg, f"{d.day:02d}{d.month:02d}{d.year}")
 
 
-def whiteout(page, x, pdf_y, w, h):
-    # pdf-lib rect uses bottom-left; fitz uses top-left
-    top = H - (pdf_y + h)
-    page.draw_rect(fitz.Rect(x, top, x + w, top + h), color=(1, 1, 1), fill=(1, 1, 1), width=0)
-
-
 def main() -> int:
     if not PDF.is_file():
         print("missing PDF", PDF, file=sys.stderr)
