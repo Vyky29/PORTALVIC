@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
   <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260919-register-fast"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260919-register-fast2"></script>
   <script src="/portal/admin-portal-documents.js?v=20260915-ob-doc-chips"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260919-chip-center"></script>
@@ -23622,6 +23622,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_LEAD_SESSION_REPORTS__ = null;
       window.__PORTAL_ADMIN_LIVE_LOAD__ = null;
       window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = null;
+      window.__PORTAL_ADMIN_SESSION_FEEDBACK_CACHE__ = null;
+      try{
+        __adminSessionFeedbackCache = null;
+        __adminSessionFeedbackWideDone = false;
+        __adminSessionFeedbackInflight = null;
+      }catch(_fbInv){}
       adminHubQuickMarksBySessionKey._m = null;
       if(window.PortalDayOps && typeof window.PortalDayOps.invalidatePayload === 'function'){
         window.PortalDayOps.invalidatePayload();
@@ -24374,7 +24380,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260919-register-fast';
+    var PORTAL_ADMIN_HUB_BUILD = '20260919-register-fast2';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -24874,6 +24880,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     var __adminSessionFeedbackInflight = null;
     var __adminSessionFeedbackCache = null;
+    var __adminSessionFeedbackWideDone = false;
     function adminFeedbackSinceIso(days){
       var since = new Date();
       since.setDate(since.getDate() - days);
@@ -24927,6 +24934,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     async function adminFetchSessionFeedbackForHub(){
+      if(__adminSessionFeedbackCache && __adminSessionFeedbackCache.length){
+        return __adminSessionFeedbackCache.slice();
+      }
       if(__adminSessionFeedbackInflight) return __adminSessionFeedbackInflight;
       __adminSessionFeedbackInflight = (async function(){
         try{
@@ -25000,8 +25010,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           loadErr = loadErr || 'using_cached_rows';
           console.warn('[admin] session_feedback: live empty — using', rows.length, 'cached rows');
         }
-        if(rows.length) adminPublishSessionFeedbackCache(rows, via, loadErr);
-        else {
+        if(rows.length){
+          __adminSessionFeedbackWideDone = true;
+          adminPublishSessionFeedbackCache(rows, via, loadErr);
+        } else {
           try{
             window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = {
               at: new Date().toISOString(),
@@ -25016,17 +25028,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return rows;
       }
 
-      if(rows.length){
-        void wideP.then(function(wideResult){
-          mergeWideAndFallback(wideResult);
-        }).catch(function(wideErr){
-          console.warn('[admin] session_feedback wide merge failed', wideErr);
-        });
+      try{
+        var wideResult = await wideP;
+        return await mergeWideAndFallback(wideResult);
+      }catch(wideErr){
+        console.warn('[admin] session_feedback wide merge failed', wideErr);
+        if(rows.length){
+          __adminSessionFeedbackWideDone = true;
+          adminPublishSessionFeedbackCache(rows, via, loadErr);
+        }
         return rows;
       }
-
-      var wideResult = await wideP;
-      return await mergeWideAndFallback(wideResult);
     }
     function adminJwtExpiringSoon(token, skewSec){
       try{
@@ -25415,7 +25427,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               };
               void window.portalSyncAdminTopbarProfileAsync(syncOpts);
             }
-            if(state.view === 'c4k_sessions' && typeof sessionsHubRefreshActiveTab === 'function'){
+            if(
+              state.view === 'c4k_sessions' &&
+              typeof sessionsHubRefreshActiveTab === 'function' &&
+              !(window.__PORTAL_ADMIN_SESSION_FEEDBACK_CACHE__ && window.__PORTAL_ADMIN_SESSION_FEEDBACK_CACHE__.length)
+            ){
               sessionsHubRefreshActiveTab();
             }
           }catch(_hubReady){}

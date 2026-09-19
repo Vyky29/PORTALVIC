@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260911-register-day';
+  var PORTAL_DAY_OPS_BUILD = '20260919-register-fast2';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -339,16 +339,20 @@
     } catch (_syncOff) {}
   }
 
+  function portalDayOpsHubIsLive(hub) {
+    return !!(hub && hub.root && hub.root.isConnected);
+  }
+
   function portalDayOpsAfterFeedbackPayloadMerge() {
     syncScheduleOverridesIntoPayload();
     if (typeof window.portalInvalidateAdminFeedbackStatusCache === 'function') {
       window.portalInvalidateAdminFeedbackStatusCache();
     }
-    if (feedbackHub && typeof feedbackHub.setPayload === 'function') {
+    if (portalDayOpsHubIsLive(feedbackHub) && typeof feedbackHub.setPayload === 'function') {
       feedbackHub.setPayload(payload, { quiet: true });
     }
     /* Overview is a staffing board — do not re-paint on every feedback poll/realtime tick. */
-    if (trackingHub && typeof trackingHub.setPayload === 'function') {
+    if (portalDayOpsHubIsLive(trackingHub) && typeof trackingHub.setPayload === 'function') {
       trackingHub.setPayload(payload, { quiet: true });
     }
     exposePortalAdminDebugGlobals();
@@ -1977,6 +1981,7 @@
   if (typeof global.addEventListener === 'function') {
     global.addEventListener('portal:supabase-ready', function () {
       if (!cfg.fetchSessionFeedback) return;
+      if (payload.session_feedback && payload.session_feedback.length) return;
       void refreshSessionFeedbackLive();
     });
   }

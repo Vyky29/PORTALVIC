@@ -9265,7 +9265,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var day = clean(this.selectedDay);
     if (!day) return [];
     var rows = this.feedbackLogRowsForDay(day);
-    if (hub.opts && hub.opts.feedbackMixAwaitingSlots) {
+    if (hub.opts && hub.opts.feedbackMixAwaitingSlots && !hub._registerLitePaint) {
       var mixed = this.feedbackMixRowsForDay(day);
       var seen = {};
       for (var i = 0; i < rows.length; i++) {
@@ -10351,6 +10351,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   };
 
   AdminSessionsHub.prototype.renderPanels = function () {
+    if (!this.root || !this.root.isConnected) return;
     this.adoptLiveSessionFeedbackIfEmpty();
     /* Overview staffing board does not need feedback indexes (1000+ rows). */
     if (this.tab !== "tracking") {
@@ -12740,6 +12741,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
   };
 
+  AdminSessionsHub.prototype.hubIsLive = function () {
+    return !!(this.root && this.root.isConnected);
+  };
+
   AdminSessionsHub.prototype.htmlFeedbackRegisterTableBody = function () {
     var hub = this;
     var esc = this.escapeHtml;
@@ -12770,6 +12775,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
    * (that full render hangs Chrome after the 1000-row payload lands).
    */
   AdminSessionsHub.prototype.softPaintFeedbackDay = function () {
+    if (!this.hubIsLive()) return;
     if (!this.feedbackSurfaceReady()) {
       this.renderPanels();
       return;
@@ -12790,15 +12796,23 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   AdminSessionsHub.prototype.scheduleRegisterBodyPaint = function () {
     var hub = this;
+    if (!hub.hubIsLive || !hub.hubIsLive()) return;
     if (hub._registerBodyRaf != null && typeof cancelAnimationFrame === "function") {
       cancelAnimationFrame(hub._registerBodyRaf);
     }
-    var paint = function () {
-      hub._registerBodyRaf = 0;
+    if (hub._registerBodyIdle != null && typeof cancelIdleCallback === "function") {
+      try {
+        cancelIdleCallback(hub._registerBodyIdle);
+      } catch (_c) {}
+      hub._registerBodyIdle = null;
+    }
+    var paint = function (lite) {
+      if (!hub.hubIsLive()) return;
       var tbody =
         hub.root &&
         hub.root.querySelector("table.ash-table--register tbody[data-ash-client-filter-tbody]");
       if (!tbody) return;
+      hub._registerLitePaint = !!lite;
       try {
         tbody.innerHTML = hub.htmlFeedbackRegisterTableBody();
       } catch (err) {
@@ -12806,13 +12820,26 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         tbody.innerHTML =
           '<tr><td colspan="7"><div class="ash-empty">Could not paint register.</div></td></tr>';
       }
+      hub._registerLitePaint = false;
+    };
+    var paintLiteThenMix = function () {
+      hub._registerBodyRaf = 0;
+      paint(true);
+      var mix = function () {
+        hub._registerBodyIdle = null;
+        if (!hub.hubIsLive()) return;
+        paint(false);
+      };
+      if (typeof requestIdleCallback === "function") {
+        hub._registerBodyIdle = requestIdleCallback(mix, { timeout: 1200 });
+      } else {
+        setTimeout(mix, 0);
+      }
     };
     if (typeof requestAnimationFrame === "function") {
-      hub._registerBodyRaf = requestAnimationFrame(function () {
-        requestAnimationFrame(paint);
-      });
+      hub._registerBodyRaf = requestAnimationFrame(paintLiteThenMix);
     } else {
-      setTimeout(paint, 0);
+      setTimeout(paintLiteThenMix, 0);
     }
   };
 
@@ -12910,10 +12937,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.scheduleOverviewBodyPaint = function () {
     var hub = this;
     var root = hub.root;
-    if (!root) return;
+    if (!root || !root.isConnected) return;
     var token = (hub._overviewPaintToken = (hub._overviewPaintToken || 0) + 1);
     var run = function () {
       if (hub._overviewPaintToken !== token) return;
+      if (!root.isConnected) return;
       if (hub.tab !== "tracking") return;
       var mount = root.querySelector("[data-ash-overview-body]");
       if (!mount) return;
@@ -12925,10 +12953,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           var onReady = function () {
             hub._overviewReadyListenerBound = false;
             global.removeEventListener("portal:staff-roster-live-ready", onReady);
+            if (!root.isConnected) return;
             if (hub.tab === "tracking") hub.scheduleOverviewBodyPaint();
           };
           global.addEventListener("portal:staff-roster-live-ready", onReady);
           setTimeout(function () {
+            if (!root.isConnected) return;
             if (hub._overviewPaintToken === token && hub.tab === "tracking") {
               hub._overviewReadyListenerBound = false;
               global.removeEventListener("portal:staff-roster-live-ready", onReady);
@@ -14119,6 +14149,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   };
 
   AdminSessionsHub.prototype.render = function () {
+    if (!this.root || !this.root.isConnected) return;
     this.adoptLiveSessionFeedbackIfEmpty();
     var skipHeavyIndex = this.tab === "tracking" && this.opts && this.opts.externalTabs;
     try {
@@ -14155,6 +14186,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '</strong> rows from Supabase.</p>';
     }
     if (this.mode === "feedback") {
+      if (!this.hubIsLive()) return;
       this._stickyTopHtml = warn;
       if (
         this.feedbackSurfaceReady() &&
