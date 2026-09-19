@@ -173,9 +173,11 @@
   background: #eff6ff;
 }
 .asr-pick-chip.is-active {
-  border-color: #2563eb;
-  background: #dbeafe;
-  color: #1e3a8a;
+  border-color: var(--blue, #2d84b3);
+  background: var(--blue, #2d84b3);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 0 0 3px rgba(45, 132, 179, 0.32);
 }
 .asr-pick__actions {
   display: flex;
@@ -669,6 +671,19 @@
 .asr-subtabs .btn {
   font-size: 12px;
   padding: 5px 10px;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+/* Ghost buttons lock color with !important — selected chip must win or you cannot see who is on. */
+.asr-subtabs .btn.is-active,
+.asr-subtabs .btn.btn--ghost.is-active,
+.asr-tabs .btn.is-active,
+.asr-tabs .btn.btn--ghost.is-active {
+  background: var(--blue, #2d84b3) !important;
+  border-color: var(--blue, #2d84b3) !important;
+  color: #fff !important;
+  font-weight: 800;
+  box-shadow: 0 0 0 3px rgba(45, 132, 179, 0.32);
 }
 
 /* Day off / COVER — same source as Overview (staff_unavailability) */

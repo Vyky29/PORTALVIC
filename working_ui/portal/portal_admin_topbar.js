@@ -456,6 +456,67 @@
     run();
   }
 
+  function currentAdminViewId() {
+    try {
+      var h = String(global.location && global.location.hash ? global.location.hash : "").replace(/^#/, "");
+      if (h) return h;
+    } catch (_h) {}
+    return "";
+  }
+
+  function markTopbarBtnCurrent(el, on) {
+    if (!el) return;
+    el.classList.toggle("is-current", !!on);
+    if (on) el.setAttribute("aria-current", "page");
+    else el.removeAttribute("aria-current");
+  }
+
+  global.portalSyncAdminTopbarCurrent = function portalSyncAdminTopbarCurrent(viewId) {
+    var v = String(viewId || currentAdminViewId() || "").trim();
+    markTopbarBtnCurrent(document.getElementById("btnFamilyMsgs"), v === "portal_parent_notify_log");
+    markTopbarBtnCurrent(document.getElementById("btnStaffWa"), v === "portal_staff_whatsapp");
+    var comms = document.getElementById("btnComunicaciones");
+    if (comms) {
+      var onComms = false;
+      try {
+        onComms = /comunicaciones\.html/i.test(String(global.location && global.location.pathname ? global.location.pathname : ""));
+      } catch (_c) {}
+      markTopbarBtnCurrent(comms, onComms);
+    }
+    var alertsBtn = document.getElementById("btnAlerts");
+    var alertsPop = document.getElementById("alertsPop");
+    markTopbarBtnCurrent(alertsBtn, !!(alertsPop && alertsPop.classList.contains("open")));
+  };
+
+  function hookReplaceStateForTopbar() {
+    try {
+      if (!global.history || typeof global.history.replaceState !== "function") return;
+      if (global.history.replaceState.__portalTopbarCurrent) return;
+      var orig = global.history.replaceState.bind(global.history);
+      function wrapped() {
+        orig.apply(null, arguments);
+        global.portalSyncAdminTopbarCurrent();
+      }
+      wrapped.__portalTopbarCurrent = true;
+      global.history.replaceState = wrapped;
+    } catch (_rs) {}
+  }
+
+  hookReplaceStateForTopbar();
+  global.addEventListener("hashchange", function () {
+    global.portalSyncAdminTopbarCurrent();
+  });
+  global.addEventListener("portal:supabase-ready", function () {
+    global.portalSyncAdminTopbarCurrent();
+  });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      global.portalSyncAdminTopbarCurrent();
+    });
+  } else {
+    global.portalSyncAdminTopbarCurrent();
+  }
+
   global.addEventListener("portal:supabase-ready", syncFromPortalSession);
   if (global.__PORTAL_SUPABASE__ && (global.__PORTAL_SUPABASE__.session || global.__PORTAL_SUPABASE__.staff_profile)) {
     syncFromPortalSession();

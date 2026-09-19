@@ -343,10 +343,14 @@
       '<div class="asr-subtabs asr-subtabs--range" role="tablist" aria-label="Hours date range">' +
       '<button type="button" class="btn btn--ghost btn--sm' +
       (state.hoursRange === "term" ? " is-active" : "") +
-      '" data-asr-hours-range="term">Whole term</button>' +
+      '" data-asr-hours-range="term" role="tab" aria-selected="' +
+      (state.hoursRange === "term" ? "true" : "false") +
+      '">Whole term</button>' +
       '<button type="button" class="btn btn--ghost btn--sm' +
       (state.hoursRange === "week" ? " is-active" : "") +
-      '" data-asr-hours-range="week">One week</button>' +
+      '" data-asr-hours-range="week" role="tab" aria-selected="' +
+      (state.hoursRange === "week" ? "true" : "false") +
+      '">One week</button>' +
       "</div>"
     );
   }
@@ -910,18 +914,23 @@
         attr +
         '="' +
         esc(allVal) +
+        '" role="tab" aria-selected="' +
+        (active === allVal ? "true" : "false") +
         '">' +
         esc(allLbl) +
         "</button>";
     }
     WEEKDAYS.forEach(function (day) {
+      var on = day === active;
       html +=
         '<button type="button" class="btn btn--ghost btn--sm' +
-        (day === active ? " is-active" : "") +
+        (on ? " is-active" : "") +
         '" ' +
         attr +
         '="' +
         esc(day) +
+        '" role="tab" aria-selected="' +
+        (on ? "true" : "false") +
         '">' +
         esc(day.slice(0, 3)) +
         "</button>";
@@ -2002,13 +2011,16 @@
   function serviceSubtabs(active, attr) {
     var html = '<div class="asr-subtabs asr-subtabs--service" role="tablist" aria-label="Service filter">';
     HOURS_SERVICE_FILTERS.forEach(function (f) {
+      var on = f.id === active;
       html +=
         '<button type="button" class="btn btn--ghost btn--sm' +
-        (f.id === active ? " is-active" : "") +
+        (on ? " is-active" : "") +
         '" ' +
         attr +
         '="' +
         esc(f.id) +
+        '" role="tab" aria-selected="' +
+        (on ? "true" : "false") +
         '">' +
         esc(f.label) +
         "</button>";
@@ -2020,13 +2032,16 @@
     var html =
       '<div class="asr-subtabs asr-subtabs--instructor" role="tablist" aria-label="Instructor filter" style="flex-wrap:wrap;max-width:100%;min-width:0">';
     HOURS_INSTRUCTOR_FILTERS.forEach(function (f) {
+      var on = f.id === active;
       html +=
         '<button type="button" class="btn btn--ghost btn--sm' +
-        (f.id === active ? " is-active" : "") +
+        (on ? " is-active" : "") +
         '" ' +
         attr +
         '="' +
         esc(f.id) +
+        '" role="tab" aria-selected="' +
+        (on ? "true" : "false") +
         '">' +
         esc(f.label) +
         "</button>";

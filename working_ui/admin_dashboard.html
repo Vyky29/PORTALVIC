@@ -74,7 +74,7 @@
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260917-pin-week" />
   <script src="/portal/portal_staff_display_names.js?v=20260909-luliya-first"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
-  <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260917-places-apply" />
+  <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260918-session-disruption-badge" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
@@ -114,7 +114,7 @@
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-ios-gallery-upload-fix" />
   <script src="/portal/admin-portal-staff-map.js?v=20260610-live-map-all"></script>
 <script src="/portal/portal_ops_admin_display.js?v=20260630-sevitha-admin-fix"></script>
-<script src="/portal/portal_admin_topbar.js?v=20260902-luliya-display"></script>
+<script src="/portal/portal_admin_topbar.js?v=20260919-sel-chip"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260704-login-map-fix"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260911-teleport-iso" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260911-teleport-iso"></script>
@@ -174,13 +174,13 @@
   <script src="/portal/admin-portal-term-slot.js?v=20260917-cross-svc-finance"></script>
   <script src="/portal/portal-staff-timetable-merge.js?v=20260917-paid-hours"></script>
   <script src="/portal/spreadsheet_reference_data.js?v=20260911-autumn-labels"></script>
-  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260919-paid-save"></script>
+  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260919-sel-chip"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260918-sched-center" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/office-admin-mode.css?v=20260609-sevitha-full-admin" />
   <style>
@@ -11033,8 +11033,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ids.push(o.id);
       });
       if(!ids.length) return;
+      var dropped = (sched.overrides || []).filter(function(o){ return ids.indexOf(o.id) >= 0; });
+      var newCover = '';
+      try{
+        newCover = normalizeSchedAnchorStaffId((row.payload && row.payload.covering_staff_id) || '');
+      }catch(_nc){}
       var up = await client.from('schedule_overrides').update({ status: 'cancelled' }).in('id', ids);
-      if(up.error) console.warn('[sched] cancel duplicate instructor_reassign', up.error);
+      if(up.error){
+        console.warn('[sched] cancel duplicate instructor_reassign', up.error);
+        return;
+      }
+      for(var di = 0; di < dropped.length; di++){
+        var oldPl = dropped[di] && dropped[di].payload ? dropped[di].payload : {};
+        var oldCover = normalizeSchedAnchorStaffId(oldPl.covering_staff_id || '');
+        if(newCover && oldCover && newCover === oldCover) continue;
+        try{ await schedNotifyCoverRemoved(client, dropped[di]); }catch(_nr){}
+      }
     }
     /** When a real cover is assigned, drop COVER NEEDED placeholders for the same slot. */
     async function schedCancelCoverNeededForSlot(client, slot, keepId){
@@ -15133,6 +15147,55 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return false;
     }
+    async function schedNotifyCoverRemoved(client, ov){
+      if(!client || !ov) return;
+      if(String(ov.override_type || '').trim() !== 'instructor_reassign') return;
+      var pl = ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
+      var coverName = String(pl.covering_staff_name || '').trim();
+      var coverKey = String(pl.covering_staff_id || '').trim().toLowerCase();
+      if(!coverName || /cover\s*needed/i.test(coverName) || coverKey === 'cover_needed' || coverKey === 'coverneeded') return;
+      var slug = coverKey || coverName.split(/\s+/)[0].toLowerCase();
+      var profRes = await client.from('staff_profiles')
+        .select('id,username,full_name')
+        .ilike('username', slug)
+        .limit(3);
+      var prof = null;
+      var rows = profRes && profRes.data ? profRes.data : [];
+      for(var i = 0; i < rows.length; i++){
+        if(String(rows[i].username || '').trim().toLowerCase() === slug){ prof = rows[i]; break; }
+      }
+      if(!prof && rows[0]) prof = rows[0];
+      if(!prof || !prof.id){
+        console.warn('[sched] cover removed: no staff profile for', slug);
+        return;
+      }
+      var box = window.__PORTAL_SUPABASE__ || {};
+      var createdBy = box.session && box.session.user && box.session.user.id;
+      if(!createdBy) return;
+      var who = String(ov.anchor_client_id || '').replace(/_/g, ' ');
+      var when = String(ov.anchor_time_slot_label || '').trim();
+      var venue = String(ov.anchor_venue || '').trim();
+      var iso = String(ov.session_date || '').slice(0, 10);
+      var title = who ? ('Cover removed: ' + who) : 'Cover removed';
+      var body = (who || 'This session') + ' is no longer on your rota'
+        + (when ? ' · ' + when : '')
+        + (venue ? ' · ' + venue : '')
+        + (iso ? '. Date: ' + iso : '')
+        + '. You are not covering this session.';
+      var ends = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+      var ins = await client.from('portal_staff_announcements').insert({
+        created_by: createdBy,
+        title: title.slice(0, 160),
+        body: body.slice(0, 2000),
+        message_type: 'schedule',
+        priority: 'high',
+        audience_scope: 'all_staff',
+        delivery_scope: 'single_user',
+        target_user_id: prof.id,
+        ends_at: ends
+      });
+      if(ins.error) console.warn('[sched] cover removed notice', ins.error);
+    }
     async function undoSchedOverrideFromDrawer(slot){
       var msgEl = $('schedFormErr');
       if(msgEl) msgEl.textContent = '';
@@ -15164,6 +15227,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(msgEl) msgEl.textContent = 'Override cancelled but audit log failed: '+esc(String(evRes.error.message||evRes.error))+'.';
       }else{
         sched.lastMsg = 'Change undone for this slot.';
+      }
+      if(String(ov.override_type || '').trim() === 'instructor_reassign'){
+        try{ await schedNotifyCoverRemoved(client, ov); }catch(_covN){}
       }
       var demoId = slot && slot.demoId;
       var clientUndo = getSchedSupabaseClient();
@@ -34388,6 +34454,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function toggleAlerts(){
       var p = $('alertsPop');
       if(p) p.classList.toggle('open');
+      try{
+        if(typeof window.portalSyncAdminTopbarCurrent === 'function') window.portalSyncAdminTopbarCurrent();
+      }catch(_alCur){}
     }
 
     function initMobileToggle(){
@@ -35041,6 +35110,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var v = String(btn.getAttribute('data-alert-view') || '').trim();
           if(!v) return;
           alertsPopEl.classList.remove('open');
+          try{ if(typeof window.portalSyncAdminTopbarCurrent === 'function') window.portalSyncAdminTopbarCurrent(); }catch(_alCur2){}
           portalAdminOpenActivityAlert({
             view: v,
             recordId: String(btn.getAttribute('data-alert-record-id') || '').trim(),
@@ -35057,6 +35127,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!ap || !ap.classList.contains('open')) return;
         if(ev.target && ev.target.closest && (ev.target.closest('#btnAlerts') || ev.target.closest('#alertsPop') || ev.target.closest('#opsHubAlertsGlance'))) return;
         ap.classList.remove('open');
+        try{ if(typeof window.portalSyncAdminTopbarCurrent === 'function') window.portalSyncAdminTopbarCurrent(); }catch(_alCur3){}
       });
       var apEl = $('alertsPop');
       if(apEl) apEl.addEventListener('click', function(e){ e.stopPropagation(); });
@@ -35128,7 +35199,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             setView(schedBack);
           }
           var apEsc = $('alertsPop');
-          if(apEsc) apEsc.classList.remove('open');
+          if(apEsc){
+            apEsc.classList.remove('open');
+            try{ if(typeof window.portalSyncAdminTopbarCurrent === 'function') window.portalSyncAdminTopbarCurrent(); }catch(_alCur4){}
+          }
         }
       });
       try{
