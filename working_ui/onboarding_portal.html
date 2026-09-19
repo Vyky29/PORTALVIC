@@ -14,7 +14,7 @@
       await bootstrapDashboardSupabase({ page: "onboarding" });
     })();
   </script>
-  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260919-corporate" />
+  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260919-icons" />
 </head>
 <body>
   <main class="ob-form-page">
@@ -48,17 +48,17 @@
       <p>Job application, health, HMRC starter checklist, then documents (photo and passport).</p>
       <p id="obFormSession" class="ob-form-session" hidden aria-live="polite"></p>
       <nav class="ob-hub-nav" aria-label="Onboarding sections">
-        <a href="#job">Job application</a>
-        <a href="#health">Health</a>
-        <a href="#starter">Starter checklist</a>
-        <a href="#docs">Documents</a>
+        <a href="#job"><svg class="ob-hub-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 2h4a2 2 0 0 1 2 2v2h3a2 2 0 0 1 2 2v3h-8v-1H9v1H1V8a2 2 0 0 1 2-2h3V4a2 2 0 0 1 2-2zm0 4h4V4h-4v2zM1 12h8v1a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1h8v6a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-6z"/></svg>Job</a>
+        <a href="#health"><svg class="ob-hub-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>Health</a>
+        <a href="#starter"><svg class="ob-hub-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>Starter</a>
+        <a href="#docs"><svg class="ob-hub-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>Documents</a>
       </nav>
     </header>
 
     <div class="ob-hub-acc" id="obHubAccordions">
       <section class="ob-hub-acc__item" id="job">
         <button type="button" class="ob-hub-acc__btn" data-ob-hub-toggle="obHubPanelJob" aria-expanded="true">
-          <span class="ob-hub-acc__title"><span class="ob-hub-acc__num">1</span> Job application</span>
+          <span class="ob-hub-acc__title"><span class="ob-hub-acc__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M10 2h4a2 2 0 0 1 2 2v2h3a2 2 0 0 1 2 2v3h-8v-1H9v1H1V8a2 2 0 0 1 2-2h3V4a2 2 0 0 1 2-2zm0 4h4V4h-4v2zM1 12h8v1a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1h8v6a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-6z"/></svg></span> Job application</span>
           <span class="ob-hub-acc__chev" aria-hidden="true"></span>
         </button>
         <div class="ob-hub-acc__panel" id="obHubPanelJob">
@@ -178,7 +178,7 @@
 
       <section class="ob-hub-acc__item" id="health">
         <button type="button" class="ob-hub-acc__btn" data-ob-hub-toggle="obHubPanelHealth" aria-expanded="false">
-          <span class="ob-hub-acc__title"><span class="ob-hub-acc__num">2</span> Health questionnaire</span>
+          <span class="ob-hub-acc__title"><span class="ob-hub-acc__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span> Health questionnaire</span>
           <span class="ob-hub-acc__chev" aria-hidden="true"></span>
         </button>
         <div class="ob-hub-acc__panel" id="obHubPanelHealth" hidden>
@@ -328,7 +328,7 @@
 
       <section class="ob-hub-acc__item" id="starter">
         <button type="button" class="ob-hub-acc__btn" data-ob-hub-toggle="obHubPanelStarter" aria-expanded="false">
-          <span class="ob-hub-acc__title"><span class="ob-hub-acc__num">3</span> Starter checklist</span>
+          <span class="ob-hub-acc__title"><span class="ob-hub-acc__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></span> Starter checklist</span>
           <span class="ob-hub-acc__chev" aria-hidden="true"></span>
         </button>
         <div class="ob-hub-acc__panel" id="obHubPanelStarter" hidden>
@@ -345,7 +345,7 @@
 
       <section class="ob-hub-acc__item" id="docs">
         <button type="button" class="ob-hub-acc__btn" data-ob-hub-toggle="obHubPanelDocs" aria-expanded="false">
-          <span class="ob-hub-acc__title"><span class="ob-hub-acc__num">4</span> Documents</span>
+          <span class="ob-hub-acc__title"><span class="ob-hub-acc__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg></span> Documents</span>
           <span class="ob-hub-acc__chev" aria-hidden="true"></span>
         </button>
         <div class="ob-hub-acc__panel" id="obHubPanelDocs" hidden>

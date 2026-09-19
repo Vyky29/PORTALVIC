@@ -365,6 +365,7 @@ body {
 .ob-hub-nav a {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   padding: 8px 14px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.95);
@@ -381,6 +382,15 @@ body {
   border-color: var(--gold);
   color: var(--navy-deep);
   background: var(--gold-soft);
+}
+.ob-hub-nav__icon {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  color: var(--navy-soft);
+}
+.ob-hub-nav a:hover .ob-hub-nav__icon {
+  color: var(--navy-deep);
 }
 
 /* Accordions */
@@ -436,7 +446,8 @@ body {
   min-width: 0;
   overflow-wrap: break-word;
 }
-.ob-hub-acc__num {
+.ob-hub-acc__num,
+.ob-hub-acc__icon {
   flex: 0 0 auto;
   width: 28px;
   height: 28px;
@@ -449,6 +460,11 @@ body {
   font-size: 12px;
   font-weight: 700;
   box-shadow: 0 0 0 2px var(--gold-soft);
+}
+.ob-hub-acc__icon svg {
+  width: 15px;
+  height: 15px;
+  display: block;
 }
 .ob-hub-acc__chev {
   flex: 0 0 auto;
