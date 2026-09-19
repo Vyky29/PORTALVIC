@@ -29436,11 +29436,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return '<tr><td>'+esc(who)+'</td><td>'+esc(portalAdminFormatAckWhen(r.signed_at))+'</td></tr>';
         }).join('') : '<tr><td colspan="2"><span class="muted">'+esc(emptyLabel)+'</span></td></tr>';
         var kind = String(msg.message_type || 'announcement').toLowerCase();
-        var kindLabel = kind === 'reminder' ? 'Reminder' : 'Announcement';
+        var kindLabel = kind === 'reminder'
+          ? 'Reminder'
+          : (kind === 'schedule' ? 'Schedule notice' : 'Announcement');
+        var audienceBits = [];
+        if(kind === 'schedule' || String(msg.delivery_scope || '') === 'single_user'){
+          audienceBits.push('personal');
+        }
+        var metaLine = esc(kindLabel) +
+          (audienceBits.length ? ' · ' + esc(audienceBits.join(' · ')) : '') +
+          ' · Published ' + esc(portalAdminFormatAckWhen(msg.created_at)) +
+          ' · <strong>' + esc(String(rows.length)) + '</strong> ' + esc(signedLabel.toLowerCase());
         return (
           '<div class="card" style="margin-bottom:12px;min-width:0">'+
           '<div class="card-h"><div style="min-width:0"><h3 style="margin:0;font-size:15px;overflow-wrap:break-word">'+esc(String(msg.title||kindLabel))+'</h3>'+
-          '<p class="muted" style="margin:6px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">'+esc(kindLabel)+' · Published '+esc(portalAdminFormatAckWhen(msg.created_at))+' · <strong>'+esc(String(rows.length))+'</strong> '+esc(signedLabel.toLowerCase())+'</p></div></div>'+
+          '<p class="muted" style="margin:6px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">'+metaLine+'</p></div></div>'+
           '<div class="card-pad" style="overflow:auto;padding:0"><table class="tbl" style="min-width:280px"><thead><tr><th>Staff</th><th>'+esc(signedLabel)+'</th></tr></thead><tbody>'+bodyRows+'</tbody></table></div></div>'
         );
       }).join('');
@@ -29453,8 +29463,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .limit(1000),
         client.from('portal_staff_announcements')
           .select('id,message_type')
-          .in('message_type', ['announcement', 'reminder'])
-          .limit(200)
+          .in('message_type', ['announcement', 'reminder', 'schedule'])
+          .limit(300)
       ]).then(function(results){
         var ackRes = results[0];
         var msgRes = results[1];
@@ -29485,7 +29495,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       openModal(
         '<div class="modal-h"><h2 id="modalTitle">Signed announcements</h2></div>'+
         '<div class="modal-b" style="min-width:0">'+
-        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Who has signed each staff announcement (live from Supabase).</p>'+
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Who has signed each staff announcement and schedule notice (cover removed, session cancelled, etc.) — live from Supabase.</p>'+
         '<div id="portalAdminAnnSignedHost"><p class="muted" style="margin:0">Loading…</p></div>'+
         '</div>'+
         '<div class="modal-f"><button type="button" class="btn btn--ghost" id="portalAdminAnnSignedClose">Close</button></div>'
@@ -29498,14 +29508,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(bd) bd.onclick = function(e){ if(e.target === bd) closeFn(); };
       Promise.all([
         client.from('portal_staff_announcements')
-          .select('id,title,created_at,message_type')
-          .eq('message_type', 'announcement')
+          .select('id,title,created_at,message_type,delivery_scope,target_user_id')
+          .in('message_type', ['announcement', 'schedule'])
           .order('created_at', { ascending: false })
-          .limit(20),
+          .limit(40),
         client.from('portal_staff_announcement_acks')
           .select('announcement_id,staff_id,signed_at,staff_full_name,staff_username')
           .order('signed_at', { ascending: false })
-          .limit(500)
+          .limit(800)
       ]).then(function(results){
         if(!host) return;
         var annRes = results[0];
@@ -29524,7 +29534,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
         var acks = Array.isArray(ackRes.data) ? ackRes.data : [];
         if(!announcements.length){
-          host.innerHTML = '<p class="muted" style="margin:0">No announcements published yet (live from 2 Jun 2026).</p>';
+          host.innerHTML = '<p class="muted" style="margin:0">No announcements or schedule notices published yet (live from 2 Jun 2026).</p>';
           return;
         }
         var ackByAnn = {};
