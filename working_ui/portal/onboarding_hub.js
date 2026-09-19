@@ -155,9 +155,9 @@
         photo: "obHubPanelDocs",
         docs: "obHubPanelDocs",
         documents: "obHubPanelDocs",
-        starter: "obHubPanelDocs",
-        checklist: "obHubPanelDocs",
-        "starter-checklist": "obHubPanelDocs",
+        starter: "obHubPanelStarter",
+        checklist: "obHubPanelStarter",
+        "starter-checklist": "obHubPanelStarter",
         job: "obHubPanelJob",
         health: "obHubPanelHealth",
       };

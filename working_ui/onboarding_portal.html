@@ -45,11 +45,12 @@
         <p class="ob-brand-name">clubSENsational</p>
       </div>
       <h1>Onboarding</h1>
-      <p>Job application, health questionnaire, then documents (photo, passport, starter checklist).</p>
+      <p>Job application, health, HMRC starter checklist, then documents (photo and passport).</p>
       <p id="obFormSession" class="ob-form-session" hidden aria-live="polite"></p>
       <nav class="ob-hub-nav" aria-label="Onboarding sections">
         <a href="#job">Job application</a>
         <a href="#health">Health</a>
+        <a href="#starter">Starter checklist</a>
         <a href="#docs">Documents</a>
       </nav>
     </header>
@@ -96,13 +97,30 @@
         </div>
       </section>
 
+      <section class="ob-hub-acc__item" id="starter">
+        <button type="button" class="ob-hub-acc__btn" data-ob-hub-toggle="obHubPanelStarter" aria-expanded="false">
+          <span class="ob-hub-acc__title"><span class="ob-hub-acc__num">3</span> Starter checklist</span>
+          <span class="ob-hub-acc__chev" aria-hidden="true"></span>
+        </button>
+        <div class="ob-hub-acc__panel" id="obHubPanelStarter" hidden>
+          <p class="ob-form-block-desc">Official HMRC tax starter form for payroll. Fill it step by step; we paint the PDF and send a copy to Admin Onboarding.</p>
+          <article class="ob-form-card ob-hub-action-card">
+            <p class="ob-hub-action-kicker"><span class="ob-hub-req">Required</span> HMRC starter checklist</p>
+            <p class="ob-form-block-desc">Statement A/B/C, National Insurance and student loan. Not the annual profile update.</p>
+            <div class="ob-form-actions">
+              <a class="ob-btn ob-btn--primary" id="obHubStarterLink" href="starter_checklist.html?v=20260919">Open starter checklist</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <section class="ob-hub-acc__item" id="docs">
         <button type="button" class="ob-hub-acc__btn" data-ob-hub-toggle="obHubPanelDocs" aria-expanded="false">
-          <span class="ob-hub-acc__title"><span class="ob-hub-acc__num">3</span> Documents</span>
+          <span class="ob-hub-acc__title"><span class="ob-hub-acc__num">4</span> Documents</span>
           <span class="ob-hub-acc__chev" aria-hidden="true"></span>
         </button>
         <div class="ob-hub-acc__panel" id="obHubPanelDocs" hidden>
-          <p class="ob-form-block-desc">Portal photo, passport and HMRC starter checklist are required. Certificates and first aid are optional. Safeguarding training is in the staff portal.</p>
+          <p class="ob-form-block-desc">Portal photo and passport are required. Certificates and first aid are optional. Safeguarding training is in the staff portal.</p>
           <div class="ob-hub-chip-block">
             <p class="ob-hub-chip-legend">Upload status</p>
             <div id="obHubDocChips" class="ob-hub-chips" aria-live="polite"></div>
@@ -148,13 +166,6 @@
             </form>
           </article>
 
-          <article class="ob-form-card ob-hub-action-card">
-            <p class="ob-hub-action-kicker"><span class="ob-hub-req">Required</span> Starter checklist (HMRC)</p>
-            <p class="ob-form-block-desc">Digital tax starter checklist — fills the official HMRC PDF (Statement A/B/C, NI, student loan). Not the annual profile update.</p>
-            <div class="ob-form-actions">
-              <a class="ob-btn ob-btn--primary" id="obHubStarterLink" href="starter_checklist.html?v=20260919">Open HMRC starter checklist</a>
-            </div>
-          </article>
 
           <article class="ob-form-card ob-hub-action-card">
             <p class="ob-hub-action-kicker">Optional certificates</p>
@@ -187,7 +198,7 @@
   <script src="/portal/onboarding_job_form.js?v=20260614-sections"></script>
   <script src="/portal/onboarding_health_form.js?v=20260614-sections"></script>
   <script src="/portal/onboarding_applicant_form.js?v=20260614-sections"></script>
-  <script src="/portal/onboarding_hub.js?v=20260919-order"></script>
+  <script src="/portal/onboarding_hub.js?v=20260919-starter-section"></script>
   <script>
     (function () {
       async function boot() {
