@@ -50,7 +50,7 @@
       day: "",
       service: "",
       venue: "",
-      openOnly: true,
+      openOnly: false,
     },
   };
 
@@ -130,7 +130,7 @@
   }
 
   function freeOf(slot) {
-    var occ = rosterSeatOccupancy(slot);
+    var occ = bandSlotOccupancy(slot);
     return Math.max(0, Number(occ.freeSeats) || 0);
   }
 
@@ -170,8 +170,10 @@
       ".op2627-seat-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;min-width:0}" +
       ".op2627-seat-list li{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 10px;font-size:12px;line-height:1.35;min-width:0;padding:4px 8px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0}" +
       ".op2627-seat-list li.is-open{background:#f0fdf4;border-color:#bbf7d0;color:#166534}" +
+      ".op2627-seat-list li.is-hold{background:#fff7ed;border-color:#fed7aa;color:#9a3412}" +
       ".op2627-seat-list .op2627-seat-name{font-weight:700;color:#0f172a;min-width:0;overflow-wrap:break-word}" +
       ".op2627-seat-list li.is-open .op2627-seat-name{color:#166534}" +
+      ".op2627-seat-list li.is-hold .op2627-seat-name{color:#9a3412}" +
       ".op2627-seat-list .op2627-seat-n{font-weight:600;color:#64748b;white-space:nowrap;flex:0 0 auto}" +
       ".op2627-seat-fallback{font-size:12px;color:#64748b;line-height:1.35;overflow-wrap:break-word}" +
       ".op2627-place{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;min-width:0}" +
@@ -193,7 +195,7 @@
       .replace(/:00/g, "");
   }
 
-  function isOpenSeatName(name) {
+  function isEmptySeatName(name) {
     var up = String(name || "")
       .trim()
       .toUpperCase()
@@ -205,9 +207,23 @@
       up === "NOPARTICIPANT" ||
       up === "OPEN" ||
       up === "AVAILABLE" ||
-      up === "FREE" ||
-      up === "CLOSED"
+      up === "FREE"
     );
+  }
+
+  function isClosedSeatName(name) {
+    var up = String(name || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[_\s-]+/g, " ");
+    return up === "CLOSED";
+  }
+
+  function isOfficeHoldName(name) {
+    var up = String(name || "")
+      .trim()
+      .toUpperCase();
+    return up === "ELIA" || up.indexOf("ELIA ") === 0;
   }
 
   function venueKeysMatch(a, b) {
@@ -237,122 +253,128 @@
     return ta === tb;
   }
 
+  function occupantsSlotForOffer(slot) {
+    var root = global.PORTAL_CAPACITY_CHAIN_OCCUPANTS;
+    var by = root && root.bySlotId;
+    if (!by || !slot) return null;
+    if (slot.id && by[slot.id]) return by[slot.id];
+    var keys = Object.keys(by);
+    var i;
+    for (i = 0; i < keys.length; i++) {
+      var o = by[keys[i]];
+      if (!o) continue;
+      if (String(o.day || "") !== String(slot.day || "")) continue;
+      if (!venueKeysMatch(o.venue, slot.venue)) continue;
+      if (String(o.serviceId || "") !== String(slot.serviceId || "")) continue;
+      if (timesExactMatch(o.timeLabel, slot.timeLabel)) return o;
+    }
+    return null;
+  }
+
   /**
-   * Seat occupancy for a Booking band from standing roster lines (1 row = 1 seat).
-   * Instructors stay on Services — Places only shows who fills how many seats.
+   * One standing slot per instructor that day — not every term week.
+   * Live Booking offer owns taken/free (what parents can still book).
+   * Occupant seat lines own the names for this office board.
    */
-  function rosterSeatOccupancy(slot) {
+  function bandSlotOccupancy(slot) {
     var cap = Math.max(0, Number(slot && slot.capacity) || 0);
-    var offerTaken = Math.max(0, Number(slot && slot.taken) || 0);
-    var offerFree = Math.max(0, cap - offerTaken);
-    var src = global.STAFF_DASHBOARD_SOURCE;
-    var rows = src && Array.isArray(src.rows) ? src.rows : [];
-    var empty = {
-      capacity: cap,
-      takenSeats: offerTaken,
-      freeSeats: offerFree,
-      byParticipant: [],
-      matchedRows: 0,
-      fromRoster: false,
-    };
-    if (!rows.length || !slot) return empty;
-
-    var day = String(slot.day || "").trim();
-    var venue = String(slot.venue || "").trim();
-    var wantTime = slot.timeLabel || slot.sortTime || "";
-    var wantSvc = serviceName(slot.serviceId) || slot.service || "";
-    var counts = Object.create(null);
-    var order = [];
-    var openSeats = 0;
-    var takenSeats = 0;
-    var matched = 0;
-
-    rows.forEach(function (r) {
-      if (!r) return;
-      var rowDay = String(r.day || "").trim();
-      if (day && rowDay && rowDay !== day) return;
-      if (!venueKeysMatch(venue, r.venue)) return;
-      if (!serviceKeysMatch(wantSvc, r.service)) return;
-      if (!timesExactMatch(wantTime, r.time_slot)) return;
-      matched += 1;
-      var nm = String(r.client_name || "").trim();
-      if (!nm || isOpenSeatName(nm)) {
-        openSeats += 1;
-        return;
+    var takenSeats = Math.max(0, Number(slot && slot.taken) || 0);
+    var freeSeats = Math.max(0, Number(slot && slot.openSeats) || 0);
+    if (cap > 0) {
+      if (takenSeats + freeSeats !== cap) {
+        if (freeSeats > cap) freeSeats = cap;
+        takenSeats = Math.max(0, cap - freeSeats);
       }
-      takenSeats += 1;
+    } else {
+      cap = takenSeats + freeSeats;
+    }
+
+    var occ = occupantsSlotForOffer(slot);
+    var lines = occ && Array.isArray(occ.seatLines) ? occ.seatLines : [];
+    var byParticipant = [];
+    var seen = Object.create(null);
+
+    function pushName(raw, hold) {
+      var nm = String(raw || "").trim();
+      if (!nm || isEmptySeatName(nm) || isClosedSeatName(nm)) return;
       var key = nm.toLowerCase();
-      if (!counts[key]) {
-        counts[key] = { name: nm, seats: 0 };
-        order.push(key);
+      if (seen[key]) return;
+      seen[key] = true;
+      byParticipant.push({
+        name: nm,
+        hold: !!hold || isOfficeHoldName(nm),
+      });
+    }
+
+    if (lines.length) {
+      var lineTaken = 0;
+      var lineOpen = 0;
+      lines.forEach(function (line) {
+        if (!line) return;
+        var kind = String(line.kind || "").trim().toLowerCase();
+        if (kind === "open") {
+          lineOpen += 1;
+          return;
+        }
+        lineTaken += 1;
+        pushName(line.client || line.trialClient, kind === "closed" || kind === "hold");
+      });
+      cap = lines.length;
+      /* Live offer still wins for Place buttons when a hold has just landed. */
+      if (slot && slot.openSeats != null && Number(slot.capacity) > 0) {
+        cap = Math.max(0, Number(slot.capacity) || cap);
+        freeSeats = Math.max(0, Number(slot.openSeats) || 0);
+        takenSeats = Math.max(0, cap - freeSeats);
+      } else {
+        takenSeats = lineTaken;
+        freeSeats = lineOpen;
       }
-      counts[key].seats += 1;
-    });
+    } else {
+      (slot && slot.bookedNames ? slot.bookedNames : []).forEach(function (nm) {
+        pushName(nm, isOfficeHoldName(nm));
+      });
+    }
 
-    if (!matched) return empty;
-
-    order.sort(function (a, b) {
-      return counts[a].name.localeCompare(counts[b].name, undefined, {
+    byParticipant.sort(function (a, b) {
+      return String(a.name || "").localeCompare(String(b.name || ""), undefined, {
         sensitivity: "base",
       });
     });
 
-    var freeSeats =
-      cap > 0 ? Math.max(0, cap - takenSeats) : Math.max(openSeats, offerFree);
-    if (cap > 0 && openSeats > freeSeats) freeSeats = openSeats;
-
     return {
-      capacity: cap || matched,
+      capacity: cap,
       takenSeats: takenSeats,
       freeSeats: freeSeats,
-      byParticipant: order.map(function (k) {
-        return counts[k];
-      }),
-      matchedRows: matched,
-      fromRoster: true,
+      byParticipant: byParticipant,
+      fromOccupants: lines.length > 0,
     };
   }
 
   function seatOccupancyHtml(slot) {
-    var occ = rosterSeatOccupancy(slot);
+    var occ = bandSlotOccupancy(slot);
     var cap = occ.capacity;
     var summary =
       '<div class="op2627-seat-summary">' +
       esc(String(occ.takenSeats)) +
       " / " +
       esc(String(cap || "—")) +
-      " seats taken · " +
-      esc(String(occ.freeSeats)) +
-      " free</div>";
-
-    if (!occ.fromRoster) {
-      if (occ.takenSeats > 0) {
-        return (
-          summary +
-          '<p class="op2627-seat-fallback" style="margin:0">Booking says ' +
-          esc(String(occ.takenSeats)) +
-          " taken — standing roster names not matched for this band.</p>"
-        );
-      }
-      return (
-        summary +
-        '<p class="op2627-seat-fallback" style="margin:0">All seats open on this band.</p>'
-      );
-    }
+      (occ.freeSeats > 0
+        ? " · " + esc(String(occ.freeSeats)) + " free"
+        : "") +
+      "</div>";
 
     var items = occ.byParticipant
       .map(function (p) {
-        var n = Number(p.seats) || 0;
         return (
-          "<li>" +
+          "<li" +
+          (p.hold ? ' class="is-hold"' : "") +
+          ">" +
           '<span class="op2627-seat-name">' +
           esc(p.name) +
           "</span>" +
-          '<span class="op2627-seat-n">' +
-          esc(String(n)) +
-          " seat" +
-          (n === 1 ? "" : "s") +
-          "</span>" +
+          (p.hold
+            ? '<span class="op2627-seat-n">office hold</span>'
+            : "") +
           "</li>"
         );
       })
@@ -363,17 +385,17 @@
         '<span class="op2627-seat-name">Open</span>' +
         '<span class="op2627-seat-n">' +
         esc(String(occ.freeSeats)) +
-        " seat" +
-        (occ.freeSeats === 1 ? "" : "s") +
         "</span>" +
         "</li>";
     }
     if (!items) {
       items =
-        '<li class="is-open"><span class="op2627-seat-name">Open</span>' +
-        '<span class="op2627-seat-n">' +
-        esc(String(cap || 0)) +
-        " seats</span></li>";
+        occ.takenSeats >= cap && cap > 0
+          ? '<li><span class="op2627-seat-name">Full</span></li>'
+          : '<li class="is-open"><span class="op2627-seat-name">Open</span>' +
+            '<span class="op2627-seat-n">' +
+            esc(String(cap || 0)) +
+            "</span></li>";
     }
     return summary + '<ul class="op2627-seat-list">' + items + "</ul>";
   }
@@ -388,8 +410,9 @@
       ? '<div id="op2627Anchor" class="op2627-embed" style="margin-top:0;min-width:0;scroll-margin-top:14px;padding-top:4px">' +
         '<h2 class="page-title" style="font-size:1.15rem;margin:0 0 6px;min-width:0;overflow-wrap:break-word">1 · Places (Booking Portal)</h2>' +
         '<p class="page-intro" style="max-width:52rem;margin:0 0 12px;min-width:0;overflow-wrap:break-word">' +
-        "Same bands as the public Booking Portal: how many seats each participant takes, and how many are still free. " +
-        "Who works each seat (instructor) is on <strong>Services</strong> below. Weekly Autumn days first; Intensive / Camps grouped below." +
+        "Same bands as the public Booking Portal. Numbers are slots that day (taken / capacity), not weeks of term. " +
+        "Tuesday Acton 4.00 is 3 slots because Aurora starts at 4.30; from 4.30 it is 4 instructors. Climbing Tue/Thu Elia is an office hold (not bookable). " +
+        "Who works each seat is on <strong>Services</strong> below. Weekly Autumn days first; Intensive / Camps grouped below." +
         "</p>"
       : '<div class="page-head" style="min-width:0">' +
         '<h2 class="page-title" style="min-width:0;overflow-wrap:break-word">Places 2026/27</h2>' +
@@ -593,7 +616,7 @@
       '<div class="kpi card--premium"><div class="kpi-l">Open bands</div><div class="kpi-v">' +
       esc(String(openBands)) +
       '</div><div class="kpi-s muted">with at least 1 free</div></div>' +
-      '<div class="kpi card--premium"><div class="kpi-l">Free seats</div><div class="kpi-v">' +
+      '<div class="kpi card--premium"><div class="kpi-l">Free slots</div><div class="kpi-v">' +
       esc(String(freeSeats)) +
       '</div><div class="kpi-s muted">across filtered list</div></div>' +
       '<div class="kpi card--premium"><div class="kpi-l">Full bands</div><div class="kpi-v">' +
@@ -692,7 +715,7 @@
       '<th class="op2627-th op2627-td--svc">Service</th>' +
       '<th class="op2627-th op2627-td--venue">Venue</th>' +
       '<th class="op2627-th op2627-td--time">Time</th>' +
-      '<th class="op2627-th op2627-td--seats">Seats</th>' +
+      '<th class="op2627-th op2627-td--seats">Slots</th>' +
       '<th class="op2627-th op2627-td--place">Place</th>' +
       "</tr></thead><tbody>" +
       body +
@@ -882,7 +905,7 @@
     state.filters.day = dayEl ? String(dayEl.value || "") : "";
     state.filters.service = svcEl ? String(svcEl.value || "") : "";
     state.filters.venue = venueEl ? String(venueEl.value || "") : "";
-    state.filters.openOnly = openEl ? !!openEl.checked : true;
+    state.filters.openOnly = openEl ? !!openEl.checked : false;
   }
 
   function onRootClick(ev) {
@@ -897,7 +920,7 @@
       state.filters.day = "";
       state.filters.venue = "";
       state.filters.service = "";
-      state.filters.openOnly = true;
+      state.filters.openOnly = false;
       render();
       return;
     }
@@ -948,7 +971,11 @@
     (data.SERVICES || []).forEach(function (svc) {
       if (svc && svc.id) state.servicesById[svc.id] = svc;
     });
-    state.slots = Array.isArray(data.MOCK_SLOTS) ? data.MOCK_SLOTS.slice() : [];
+    state.slots = Array.isArray(data.SLOTS)
+      ? data.SLOTS.slice()
+      : Array.isArray(data.MOCK_SLOTS)
+        ? data.MOCK_SLOTS.slice()
+        : [];
   }
 
   function load(opts) {
