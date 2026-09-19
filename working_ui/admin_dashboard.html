@@ -71,12 +71,12 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_ui_locale_dict.js?v=20260820-es-full"></script>
   <script src="/portal/portal_ui_locale.js?v=20260911-en-only"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260917-pin-week" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260919-register-only" />
   <script src="/portal/portal_staff_display_names.js?v=20260909-luliya-first"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260919-ops-hub-tiles" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260919-ops-hub-cal-right" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260727-role-names"></script>
@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
   <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260918-drop-absent-cancel-tabs"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260919-register-only"></script>
   <script src="/portal/admin-portal-documents.js?v=20260915-ob-doc-chips"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260919-chip-center"></script>
@@ -428,7 +428,7 @@
     if(document.documentElement.classList.contains("portal-auth-ready")) bootPresence();
     window.addEventListener("portal:supabase-ready", bootPresence);
   </script>
-  <script src="/portal/portal_admin_dayops_badges.js?v=20260918-session-disruption"></script>
+  <script src="/portal/portal_admin_dayops_badges.js?v=20260919-register-only"></script>
 <script>
   (function(){
     'use strict';
@@ -460,10 +460,10 @@
       { id:'invoices', label:'Finance', hubLabel:'Finance' },
       { id:'c4k_sessions', label:'Sessions overview', hubLabel:'Overview' },
       { id:'sessions_register', label:'Register', dayOpsAct:'sessions_hub_feedback' },
-      { id:'sessions_feedback', label:'Session Feedback', hubLabel:'Feedback', dayOpsAct:'sessions_hub_positive' },
+      { id:'sessions_feedback', label:'Register', hubLabel:'Register', dayOpsAct:'sessions_hub_feedback' },
       { id:'sessions_absents', label:'Day absents', hubLabel:'Absents (day)', dayOpsAct:'sessions_hub_absents' },
       { id:'sessions_incidents', label:'Incidents', dayOpsAct:'sessions_hub_incidents' },
-      { id:'sessions_notes', label:'Session notes', hubLabel:'Notes', dayOpsAct:'sessions_hub_relevant' },
+      { id:'sessions_notes', label:'Register', hubLabel:'Register', dayOpsAct:'sessions_hub_feedback' },
       { id:'c4k_late_submissions', label:'Late feedback' },
       { id:'session_disruptions', label:'Session disruptions' },
       { id:'c4k_waitlist', label:'WAITING' },
@@ -517,7 +517,7 @@
     var ADMIN_MOBILE_MAX_WIDTH = 899;
     var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'c4k_sessions', 'scheduling', 'nav_all_menu'];
     var NAV_GROUPS = [
-      { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','sessions_feedback','c4k_late_submissions','office_calendar','__h:More day tools','sessions_incidents','sessions_notes','session_disruptions'] },
+      { id:'g_operator', label:'Today', children:['c4k_sessions','scheduling','sessions_register','c4k_late_submissions','office_calendar','__h:More day tools','sessions_incidents','session_disruptions'] },
       { id:'g_services', label:'Services & places', children:['c4k_services','term_roster_edit','orders_all'] },
       { id:'g_clients', label:'Clients & families', children:['clients','c4k_waitlist','leads','portal_participant_documents','portal_parent_consents'] },
       { id:'g_xero', label:'Money', children:['reenrol_payments','absents_refunds'] },
@@ -2224,6 +2224,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         id = 'orders_all';
       }
       if(id === 'communications') id = 'comms_ops';
+      if(id === 'sessions_register' || id === 'sessions_feedback' || id === 'sessions_notes' || id === 'c4k_registers'){
+        openSessionsHubTab('feedback');
+        return;
+      }
       if(id === 'c4k_home') id = 'c4k_services';
       if(id === 'c4k_service_register') id = 'c4k_services';
       if(id === 'operations') id = 'dashboard';
@@ -23133,8 +23137,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     var C4K_SESSIONS_HUB_TABS = [
       { id:'overview', label:'Sessions overview', iconId:'c4k_sessions', mode:'panel' },
       { id:'feedback', label:'Register', iconId:'c4k_registers', mode:'panel' },
-      { id:'positive', label:'Session Feedback', iconId:'c4k_reviews', mode:'panel' },
-      { id:'relevant', label:'Notes', iconId:'c4k_relevant', mode:'panel' },
       { id:'incidents', label:'Incidents', iconId:'analytics', mode:'panel' },
       { id:'lead', label:'Lead report', iconId:'portal_nav_lead', mode:'panelLead' },
       { id:'venue', label:'Venue', iconId:'c4k_services', mode:'panelVenue' },
@@ -23142,9 +23144,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     ];
     var SESSIONS_HUB_HEAD_META = {
       overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Day truth you look at — covers, trials and absents from Schedule & Covers / bookings land here. Decide absents / cancels under Absents & credits.' },
-      feedback:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it — engagement, emotions, independence, narrative and notes.' },
-      positive:{ iconId:'c4k_reviews', tone:'positive', title:'SESSION FEEDBACK', sub:'Raw session feedback next to the parent-safe filtered version generated on review.' },
-      relevant:{ iconId:'c4k_relevant', tone:'relevant', title:'NOTES', sub:'Internal notes — informational only, with an option to email CEOs or other staff.' },
+      feedback:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it. Click Session feedback to filter for parents, or Notes to escalate internally / ask the instructor. Notes stay internal.' },
+      positive:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it. Click Session feedback to filter for parents, or Notes to escalate internally / ask the instructor. Notes stay internal.' },
+      relevant:{ iconId:'c4k_registers', tone:'feedback', title:'REGISTER', sub:'Raw session feedback as staff submitted it. Click Session feedback to filter for parents, or Notes to escalate internally / ask the instructor. Notes stay internal.' },
       absents:{ iconId:'absents', tone:'absents', title:'ABSENTS', sub:'Moved to Absents & credits.' },
       cancellations:{ iconId:'absents_refunds', tone:'cancellations', title:'CANCELLATIONS', sub:'Moved to Absents & credits.' },
       incidents:{ iconId:'analytics', tone:'incidents', title:'INCIDENT REPORTS', sub:'Submitted incident reports with session and outcome detail.' },
@@ -23167,14 +23169,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!h.weekAnchorIso) h.weekAnchorIso = isoDateLocal(new Date());
       if(h.selectedIso === undefined) h.selectedIso = null;
       if(!h.tab) h.tab = 'overview';
-      /* Retired hub tabs — Absents & credits owns decide + cancels. */
+      /* Retired hub tabs — Absents & credits owns decide + cancels. Feedback/Notes folded into Register. */
       if(h.tab === 'absents' || h.tab === 'cancellations') h.tab = 'overview';
+      if(h.tab === 'positive' || h.tab === 'relevant') h.tab = 'feedback';
       if(h.clientQ === undefined) h.clientQ = '';
       if(h.instructorQ === undefined) h.instructorQ = '';
       if(!h.sfSection) h.sfSection = 'main';
       state.sessionOverview = state.sessionOverview || {};
       if(!state.sessionOverview.iso) state.sessionOverview.iso = h.selectedIso || h.weekAnchorIso;
-      /* Keep overview + Register / Session Feedback on the same day + week. */
+      /* Keep overview + Register on the same day + week. */
       if(h.selectedIso) state.sessionOverview.iso = h.selectedIso;
       var st = sessionFeedbackEnsureState();
       st.anchorIso = h.weekAnchorIso;
@@ -24036,10 +24039,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
     }
     function sessionsHubIsFeedbackTab(tab){
-      return tab === 'feedback' || ['positive','relevant','incidents'].indexOf(tab) >= 0;
+      return tab === 'feedback' || tab === 'incidents';
     }
     function sessionsHubIsNotesTab(tab){
-      return tab === 'positive' || tab === 'relevant';
+      return false;
     }
     function sessionsHubHeadHtml(tab){
       var meta = SESSIONS_HUB_HEAD_META[tab] || SESSIONS_HUB_HEAD_META.overview;
@@ -24371,7 +24374,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260919-dayoff-no-feedback';
+    var PORTAL_ADMIN_HUB_BUILD = '20260919-register-only';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -24546,6 +24549,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         setView('absents_refunds');
         return;
       }
+      if(tab === 'positive' || tab === 'relevant') tab = 'feedback';
       sessionsHubEnsureState().tab = tab;
       sessionsHubEnsureState().sfSection = 'main';
       try{
@@ -25266,8 +25270,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function adminAshHubTabFromSessionsHub(tab){
       if(tab === 'incidents') return 'incidents';
-      if(tab === 'positive') return 'positive';
-      if(tab === 'relevant') return 'relevant';
       if(tab === 'absents') return 'absents';
       if(tab === 'cancellations') return 'cancellations';
       return 'feedback';
@@ -27178,10 +27180,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         id:'today',
         icon:'📅',
         title:'Today',
-        description:'Day board tools used all the time — overview, covers, register and feedback.',
+        description:'Day board tools used all the time — overview, covers and register.',
         preview:[],
         status:'',
-        primary:['c4k_sessions','scheduling','sessions_register','sessions_feedback','sessions_notes','c4k_late_submissions','sessions_incidents','session_disruptions','absents_refunds'],
+        primary:['c4k_sessions','scheduling','sessions_register','c4k_late_submissions','sessions_incidents','session_disruptions','absents_refunds'],
         secondary:['office_calendar']
       },
       {
@@ -27536,13 +27538,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function opsHubGlanceHtml(){
       refreshKpisFromDemo();
-      var alertsN = opsHubGlanceValueAlerts();
-      var lateN = Number(state.portalLatePendingCount || 0);
-      var absN = portalAbsentsPendingCount();
-      var pendingN = lateN + absN;
-      var pendingSub = lateN && absN
-        ? (lateN + ' late · ' + absN + ' absents')
-        : (lateN ? 'Late forms' : (absN ? 'Absents & credits' : 'Late & absents'));
       var calStrip = '<div class="ops-hub-cal-month ops-hub-cal-month--placeholder" aria-hidden="true">' +
         '<div class="ops-hub-cal-month__label">…</div>' +
         '<div class="ops-hub-cal-month__head">' +
@@ -27556,27 +27551,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }).join('') +
         '</div></div>';
       return (
-        '<div class="ops-hub__today ops-hub__today--cal-focus" role="region" aria-label="Alerts, calendar and pending actions">' +
-        '<div class="ops-hub__today-item ops-hub__today-item--alerts" id="opsHubAlertsGlance" role="button" tabindex="0" aria-label="Open alerts">' +
-        '<span class="ops-hub__today-k">Alerts</span>' +
-        '<span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span>' +
-        '<span class="ops-hub__today-s">Inbox</span>' +
-        '<span class="ops-hub__today-go" aria-hidden="true">Open →</span>' +
-        '</div>' +
+        '<div class="ops-hub__today ops-hub__today--cal-focus ops-hub__today--cal-right" role="region" aria-label="Schedule, sessions and calendar">' +
+        portalDashTileHtml('scheduling', '', 'scheduling', 'Schedule & Covers', 'Weekly anchors &amp; swap cover', false, 'scheduling', '', 'ops-hub__feature') +
+        portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid &amp; feedback', false, 'sessions', 'sessions_hub_overview', 'ops-hub__feature') +
         '<button type="button" class="ops-hub__today-item ops-hub__today-item--calendar" id="opsHubCalendarGlance" aria-label="Open office calendar">' +
         '<span class="ops-hub-cal-glance__copy">' +
         '<span class="ops-hub__today-k">Calendar</span>' +
         '<span class="ops-hub__today-v" id="opsHubCalendarGlanceCount">Notes</span>' +
         '<span class="ops-hub__today-s" id="opsHubCalendarGlanceSub">Notes &amp; meetings</span>' +
-        '<span class="ops-hub__today-go" aria-hidden="true">Open →</span>' +
         '</span>' +
         '<span class="ops-hub-cal-glance__grid" id="opsHubCalendarGlanceStrip">'+calStrip+'</span>' +
-        '</button>' +
-        '<button type="button" class="ops-hub__today-item ops-hub__today-item--pending" id="opsHubPendingGlance" aria-label="Open pending late forms and absents">' +
-        '<span class="ops-hub__today-k">Pending</span>' +
-        '<span class="ops-hub__today-v'+(pendingN > 0 ? ' ops-hub__today-v--warn' : '')+'" id="opsHubPendingGlanceCount">'+esc(String(pendingN))+'</span>' +
-        '<span class="ops-hub__today-s" id="opsHubPendingGlanceSub">'+esc(pendingSub)+'</span>' +
-        '<span class="ops-hub__today-go" aria-hidden="true">Open →</span>' +
         '</button>' +
         '</div>'
       );
@@ -27608,9 +27592,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     var OPS_HUB_TILE_DESC = {
       c4k_sessions: 'Live grid &amp; feedback',
       scheduling: 'Weekly anchors &amp; swap cover',
-      sessions_register: 'Raw session feedback',
-      sessions_feedback: 'Raw + parent-safe filtered',
-      sessions_notes: 'Optional notes - share to CEOs/staff',
+      sessions_register: 'Session feedback — filter or notes on click',
+      sessions_feedback: 'Session feedback — filter or notes on click',
+      sessions_notes: 'Session feedback — filter or notes on click',
       c4k_late_submissions: 'Outstanding after the session day',
       sessions_incidents: 'Safeguarding &amp; logs',
       session_disruptions: 'Same-day disruption reports',
@@ -27687,11 +27671,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       /* Home = Today board + frequent jumps. Full nav stays in the left menu. */
       var todayActions = [
-        'c4k_sessions',
-        'scheduling',
         'sessions_register',
-        'sessions_feedback',
-        'sessions_notes',
         'c4k_late_submissions',
         'sessions_incidents',
         'session_disruptions',
@@ -27721,7 +27701,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="dash-hub__stack ops-hub__body ops-hub__body--flat">' +
         portalDashPanel({
           title: 'Today',
-          subtitle: 'Day board tools - overview, covers, register and feedback',
+          subtitle: 'Day board tools - overview, covers and register',
           iconId: 'c4k_sessions',
           panelClass: 'dash-hub__panel--sessions',
           gridClass: 'dash-hub__grid--5',
@@ -27745,9 +27725,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var sessionsRow1 =
         portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid & feedback', false, 'sessions', 'sessions_hub_overview')+
         portalDashTileHtml('participant_achievements', '', 'clients', 'Achievement photos', 'Session photos after feedback', false, 'feedback')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Register', 'Raw session feedback', false, 'feedback', 'sessions_hub_feedback')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_reviews', 'Session Feedback', 'Raw + parent-safe filtered', false, 'feedback', 'sessions_hub_positive')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Notes', 'Optional notes — share to CEOs/staff', false, 'analytics', 'sessions_hub_relevant')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Register', 'Session feedback — filter or notes on click', false, 'feedback', 'sessions_hub_feedback')+
         portalDashTileHtml('absents_refunds', '', 'absents_refunds', 'Absents & credits', 'Absents, cancels, refunds, makeup', false, 'absents');
       var sessionsRow2 =
         portalDashTileHtml('c4k_sessions', '', 'portal_nav_lead', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead')+
@@ -30211,8 +30189,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_badgeAct){}
       if(a === 'sessions_hub_overview'){ closeSidebarMob(); openSessionsHubTab('overview'); return; }
       if(a === 'sessions_hub_feedback'){ closeSidebarMob(); openSessionsHubTab('feedback'); return; }
-      if(a === 'sessions_hub_positive'){ closeSidebarMob(); openSessionsHubTab('positive'); return; }
-      if(a === 'sessions_hub_relevant'){ closeSidebarMob(); openSessionsHubTab('relevant'); return; }
+      if(a === 'sessions_hub_positive'){ closeSidebarMob(); openSessionsHubTab('feedback'); return; }
+      if(a === 'sessions_hub_relevant'){ closeSidebarMob(); openSessionsHubTab('feedback'); return; }
       if(a === 'sessions_hub_cancellations'){ closeSidebarMob(); setView('absents_refunds'); return; }
       if(a === 'sessions_hub_incidents'){ closeSidebarMob(); openSessionsHubTab('incidents'); return; }
       if(a === 'sessions_hub_absents'){ closeSidebarMob(); setView('absents_refunds'); return; }
@@ -34427,6 +34405,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
       window.setTimeout(function(){
         if(tab === 'feedback' || tab === 'positive' || tab === 'relevant'){
+          tab = 'feedback';
           var fh = ops && ops.getFeedbackHub ? ops.getFeedbackHub() : null;
           if(fh){
             if(client) fh.clientSearch = client;

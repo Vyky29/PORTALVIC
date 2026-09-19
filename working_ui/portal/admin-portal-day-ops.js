@@ -1110,7 +1110,8 @@
     // "positive" tab = Feedback (filtered) — all submitted narratives, not positive_feedback notes.
     hub.feedbackNoteFilter = nf === 'relevant' ? 'relevant' : '';
     pendingFeedbackNoteFilter = undefined;
-    if (hub.tab === 'positive' || hub.tab === 'relevant') {
+    if (hub.tab === 'positive' || hub.tab === 'relevant') hub.tab = 'feedback';
+    if (hub.tab === 'feedback') {
       if (typeof hub.syncWeekPickerToCurrentWeek === 'function') hub.syncWeekPickerToCurrentWeek();
     }
     hub.render();
@@ -1124,8 +1125,6 @@
   }
 
   function feedbackSetupForC4k(tabId) {
-    if (tabId === 'positive') return { tab: 'positive', filter: '' };
-    if (tabId === 'relevant') return { tab: 'relevant', filter: 'relevant' };
     return { tab: 'feedback', filter: '' };
   }
 
