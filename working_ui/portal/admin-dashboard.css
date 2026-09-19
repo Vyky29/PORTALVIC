@@ -3100,6 +3100,10 @@
     .exec-triple{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
     @media (max-width:1000px){.exec-triple{grid-template-columns:1fr}}
     .tbl--dense th,.tbl--dense td{padding:7px 8px;font-size:12px;vertical-align:top}
+    .tbl.tbl--dense.pp-queue-tbl th,.tbl.tbl--dense.pp-queue-tbl td{vertical-align:middle}
+    .tbl.tbl--dense.pp-queue-tbl .pp-queue-chips{
+      display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;min-width:0
+    }
     .decision-block{font-size:13px;line-height:1.5}
     .decision-block dt{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-top:12px}
     .decision-block dt:first-of-type{margin-top:0}

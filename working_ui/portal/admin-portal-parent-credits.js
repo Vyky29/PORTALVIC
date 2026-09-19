@@ -158,7 +158,7 @@
       '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
       esc(e.participant_display || '—') +
       '</strong></td>' +
-      '<td>' +
+      '<td style="text-align:center">' +
       kindChip(e.kind) +
       '</td>' +
       '<td class="muted" style="white-space:nowrap">' +
@@ -168,7 +168,7 @@
       esc(e.service_label || '—') +
       (e.session_date ? ' · ' + esc(formatDate(e.session_date)) : '') +
       '</td>' +
-      '<td>' +
+      '<td style="text-align:center">' +
       statusChip(e.status, e.kind) +
       '</td>' +
       '<td class="muted" style="min-width:0;max-width:14rem;overflow-wrap:break-word">' +
@@ -189,7 +189,7 @@
       return '<p class="muted" style="margin:0">No ledger rows for this filter.</p>';
     }
     return (
-      '<div style="overflow:auto"><table class="tbl tbl--center tbl--dense"><thead><tr>' +
+      '<div style="overflow:auto"><table class="tbl tbl--center tbl--dense pp-queue-tbl"><thead><tr>' +
       '<th>Participant</th><th>Kind</th><th>£</th><th>Service / session</th><th>Status</th><th>Notes</th><th>Created</th><th>Actions</th>' +
       '</tr></thead><tbody>' +
       entries.map(rowHtml).join('') +

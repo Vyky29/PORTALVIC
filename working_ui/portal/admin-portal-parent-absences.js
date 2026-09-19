@@ -110,8 +110,8 @@
       chips += ' ' + outcomeChip(out);
     }
     return (
-      '<td style="min-width:0">' +
-      '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:0">' +
+      '<td style="min-width:0;text-align:center">' +
+      '<div class="pp-queue-chips">' +
       chips +
       '</div></td>'
     );
@@ -525,7 +525,7 @@
     }
     return (
       '<div class="card" style="margin-top:0"><div class="card-pad" style="overflow:auto;padding:0">' +
-      '<table class="tbl tbl--center tbl--dense"><thead><tr>' +
+      '<table class="tbl tbl--center tbl--dense pp-queue-tbl"><thead><tr>' +
       '<th>Participant</th><th>Session</th><th>Service</th><th>Note</th><th>Status / outcome</th><th>Proof deadline</th><th>Proof</th><th>Actions</th>' +
       '</tr></thead><tbody>' +
       reports.map(rowHtml).join('') +

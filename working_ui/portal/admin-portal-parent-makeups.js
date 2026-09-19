@@ -211,7 +211,7 @@
       '<td style="min-width:0;overflow-wrap:break-word"><strong>' +
       esc(g.preferred_venue || '—') +
       '</strong></td>' +
-      '<td><span class="chip chip--' +
+      '<td style="text-align:center;vertical-align:middle"><span class="chip chip--' +
       statusChipClass(g.status) +
       '">' +
       esc(statusLabel(g.status)) +
@@ -238,7 +238,7 @@
     }
     return (
       '<div class="card" style="margin-top:0"><div class="card-pad" style="overflow:auto;padding:0">' +
-      '<table class="tbl tbl--center tbl--dense"><thead><tr>' +
+      '<table class="tbl tbl--center tbl--dense pp-queue-tbl"><thead><tr>' +
       '<th>Participant</th><th>Venue</th><th>Status</th><th>Source</th><th>Absent date</th><th>Makeup day</th><th>Actions</th>' +
       '</tr></thead><tbody>' +
       grants.map(rowHtml).join('') +
