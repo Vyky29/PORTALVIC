@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260918-session-disruption-badge" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260919-ops-hub-tiles" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260727-role-names"></script>
@@ -27605,6 +27605,53 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</article>'
       );
     }
+    var OPS_HUB_TILE_DESC = {
+      c4k_sessions: 'Live grid &amp; feedback',
+      scheduling: 'Weekly anchors &amp; swap cover',
+      sessions_register: 'Raw session feedback',
+      sessions_feedback: 'Raw + parent-safe filtered',
+      sessions_notes: 'Optional notes - share to CEOs/staff',
+      c4k_late_submissions: 'Outstanding after the session day',
+      sessions_incidents: 'Safeguarding &amp; logs',
+      session_disruptions: 'Same-day disruption reports',
+      absents_refunds: 'Absents, cancels, refunds, makeup',
+      reenrol_payments: 'Invoices, payments &amp; shares',
+      clients: 'Families on services now',
+      c4k_waitlist: 'Waiting for a full place',
+      portal_parent_notify_log: 'Parent family messages',
+      portal_staff_whatsapp: 'Staff WhatsApp threads',
+      staffhr: 'Staff, contracts &amp; training',
+      c4k_services: 'Places, capacity &amp; standing seats',
+      office_calendar: 'Notes &amp; meetings',
+      onboarding: 'New staff hub'
+    };
+    function opsHubTileDesc(item){
+      if(!item) return '';
+      if(item.id === 'absents_refunds' && /credits/i.test(String(item.label || '')) && !/cancel/i.test(String(item.label || ''))){
+        return 'Refunds, credits &amp; makeup';
+      }
+      return OPS_HUB_TILE_DESC[item.id] || '';
+    }
+    /** Same tile shape as Day operations (icon band, title, subtitle). Routing stays the existing hub action. */
+    function opsHubDashTilesHtml(actions, tone){
+      var pol = window.PortalAdminModulePolicy;
+      var list = (pol && typeof pol.filterHubActionIds === 'function')
+        ? pol.filterHubActionIds(actions)
+        : actions;
+      return (list || []).map(function(action){
+        var item = opsHubResolveAction(action);
+        if(!item) return '';
+        var desc = opsHubTileDesc(item);
+        var toneKey = String(tone || '').trim();
+        if(item.externalUrl){
+          return portalDashTileHtml('', '', item.id, item.label, desc, false, toneKey, '', '', item.externalUrl);
+        }
+        if(item.dayOpsAct){
+          return portalDashTileHtml('', '', item.id, item.label, desc, false, toneKey, item.dayOpsAct);
+        }
+        return portalDashTileHtml(item.id, '', item.id, item.label, desc, false, toneKey);
+      }).filter(Boolean).join('');
+    }
     function opsHubSectionHtml(title, actions, variant, sectionClass){
       var pol = window.PortalAdminModulePolicy;
       var list = (pol && typeof pol.filterHubActionIds === 'function')
@@ -27671,9 +27718,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>' +
         '</header>' +
         opsHubGlanceHtml() +
-        '<div class="ops-hub__body ops-hub__body--flat">' +
-        opsHubSectionHtml('Today', todayActions, 'primary', 'ops-hub__section--today') +
-        opsHubSectionHtml('Frequent', frequentActions, 'secondary', 'ops-hub__section--frequent') +
+        '<div class="dash-hub__stack ops-hub__body ops-hub__body--flat">' +
+        portalDashPanel({
+          title: 'Today',
+          subtitle: 'Day board tools - overview, covers, register and feedback',
+          iconId: 'c4k_sessions',
+          panelClass: 'dash-hub__panel--sessions',
+          gridClass: 'dash-hub__grid--5',
+          tiles: opsHubDashTilesHtml(todayActions, 'sessions'),
+          ariaLabel: 'Today'
+        }) +
+        portalDashPanel({
+          title: 'Frequent',
+          subtitle: 'People, money, messages and office tools you open often',
+          iconId: 'staffhr',
+          panelClass: 'dash-hub__panel--team',
+          gridClass: 'dash-hub__grid--5',
+          tiles: opsHubDashTilesHtml(frequentActions, 'scheduling'),
+          ariaLabel: 'Frequent'
+        }) +
         '</div>' +
         '</div>'
       );

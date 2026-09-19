@@ -2733,7 +2733,7 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   flex-shrink:0;
 }
 .ops-hub--today-first .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
-  min-height:clamp(280px,34vh,380px);
+  min-height:clamp(168px,20vh,220px);
   padding:clamp(14px,1.5vw,18px);
   border-radius:10px;
   grid-template-columns:minmax(120px,150px) minmax(0,1fr);
@@ -2753,7 +2753,7 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   padding:clamp(16px,1.8vw,22px) clamp(14px,1.4vw,18px);
   border-radius:10px;
   gap:6px;
-  min-height:clamp(280px,34vh,380px);
+  min-height:clamp(168px,20vh,220px);
 }
 .ops-hub--today-first .ops-hub__today-item--alerts .ops-hub__today-k,
 .ops-hub--today-first .ops-hub__today-item--pending .ops-hub__today-k{
@@ -2893,6 +2893,110 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   color:var(--ops-ink, #0b1f33);
   box-shadow:0 4px 14px rgba(11,31,51,.07);
 }
+/* Operations Hub tiles — same shape as Day operations (coloured band, title, subtitle) */
+.ops-hub--today-first .dash-hub__stack{
+  gap:clamp(14px,1.8vh,20px);
+}
+.ops-hub--today-first .dash-hub__panel{
+  background:#fff;
+  border:1px solid var(--ops-line, #c5d0db);
+  border-radius:14px;
+  box-shadow:0 1px 2px rgba(11,31,51,.04);
+  padding:clamp(12px,1.4vw,16px);
+}
+.ops-hub--today-first .dash-hub__panel--sessions .dash-hub__panel-ico{
+  background:rgba(251,191,36,.22);
+  color:#b45309;
+}
+.ops-hub--today-first .dash-hub__panel--team .dash-hub__panel-ico{
+  background:#fde0e2;
+  color:#dc2626;
+}
+.ops-hub--today-first .dash-hub__panel--sessions .dash-hub__tile{
+  --dh-tile-bg:rgba(251,191,36,.22);
+  --dh-tile-fg:#b45309;
+}
+.ops-hub--today-first .dash-hub__panel--team .dash-hub__tile{
+  --dh-tile-bg:rgba(220,38,38,.16);
+  --dh-tile-fg:#b91c1c;
+}
+.ops-hub--today-first .dash-hub__tile{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-start;
+  min-height:116px;
+  height:auto;
+  padding:0 0 10px;
+  overflow:hidden;
+  text-align:center;
+  text-decoration:none;
+}
+.ops-hub--today-first .dash-hub__tile-band{
+  position:relative;
+  top:auto;
+  left:auto;
+  right:auto;
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex:none;
+  min-height:52px;
+  max-height:none;
+  margin:0;
+  padding:8px;
+  box-sizing:border-box;
+  border-radius:13px 13px 0 0;
+  background:var(--dh-tile-bg,#eef2ff);
+  color:var(--dh-tile-fg,#4f46e5);
+}
+.ops-hub--today-first .dash-hub__tile-band .admin-nav-ico{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+}
+.ops-hub--today-first .dash-hub__tile-band .admin-nav-ico svg{
+  width:24px;
+  height:24px;
+  display:block;
+}
+.ops-hub--today-first .dash-hub__tile-label{
+  flex:0 0 auto;
+  width:100%;
+  margin:0;
+  padding:8px 8px 0;
+  box-sizing:border-box;
+  font-size:12.5px;
+  font-weight:800;
+  letter-spacing:.03em;
+  line-height:1.28;
+  text-transform:uppercase;
+  overflow-wrap:break-word;
+}
+.ops-hub--today-first .dash-hub__tile-desc{
+  flex:1 1 auto;
+  width:100%;
+  min-height:0;
+  margin:0;
+  padding:4px 8px 2px;
+  box-sizing:border-box;
+  font-size:12px;
+  line-height:1.35;
+  color:var(--dh-muted, #64748b);
+  overflow-wrap:break-word;
+}
+.ops-hub--today-first .dash-hub__grid--5{
+  grid-template-columns:repeat(auto-fill, minmax(min(100%,148px), 1fr));
+}
+@media (min-width:1100px){
+  .ops-hub--today-first .dash-hub__grid--5{
+    grid-template-columns:repeat(5, minmax(0, 1fr));
+  }
+}
 @media (max-width:980px){
   .ops-hub--today-first .ops-hub__today{
     grid-template-columns:1fr 1fr;
@@ -2901,7 +3005,7 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   .ops-hub--today-first .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
     grid-column:1 / -1;
     grid-row:1;
-    min-height:clamp(240px,32vh,320px);
+    min-height:clamp(168px,22vh,200px);
   }
   .ops-hub--today-first .ops-hub__today-item--alerts,
   .ops-hub--today-first .ops-hub__today-item--pending{
