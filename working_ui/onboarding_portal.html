@@ -66,7 +66,7 @@
           <span class="ob-hub-acc__chev" aria-hidden="true"></span>
         </button>
         <div class="ob-hub-acc__panel" id="obHubPanelDocs">
-          <p class="ob-form-block-desc">Passport is required. Complete the starter checklist in the portal. Safeguarding opens NSPCC training. Certificates and first aid are optional uploads.</p>
+          <p class="ob-form-block-desc">Passport is required. Complete the HMRC starter checklist here. Certificates and first aid are optional uploads. Safeguarding training is in the staff portal.</p>
           <div class="ob-hub-chip-block">
             <p class="ob-hub-chip-legend">Upload status</p>
             <div id="obHubDocChips" class="ob-hub-chips" aria-live="polite"></div>
@@ -90,18 +90,10 @@
           </article>
 
           <article class="ob-form-card ob-hub-action-card">
-            <p class="ob-hub-action-kicker"><span class="ob-hub-req">Required</span> Starter checklist</p>
-            <p class="ob-form-block-desc">Fill the digital HMRC starter checklist in this portal. It builds the official PDF and sends it to Admin Onboarding (Checklist).</p>
+            <p class="ob-hub-action-kicker"><span class="ob-hub-req">Required</span> Starter checklist (HMRC)</p>
+            <p class="ob-form-block-desc">Digital tax starter checklist — fills the official HMRC PDF (Statement A/B/C, NI, student loan). Not the annual profile update.</p>
             <div class="ob-form-actions">
-              <a class="ob-btn ob-btn--primary" id="obHubStarterLink" href="starter_checklist.html">Open starter checklist</a>
-            </div>
-          </article>
-
-          <article class="ob-form-card ob-hub-action-card">
-            <p class="ob-hub-action-kicker"><span class="ob-hub-req">Required</span> Safeguarding</p>
-            <p class="ob-form-block-desc">Mandatory training with NSPCC My Learning. Opens in a new tab. After you finish, keep the certificate for the office.</p>
-            <div class="ob-form-actions">
-              <a class="ob-btn ob-btn--primary" id="obHubSafeguardingLink" href="https://mylearning.nspcc.org.uk/UserInfo.aspx" target="_blank" rel="noopener noreferrer">Open safeguarding training</a>
+              <a class="ob-btn ob-btn--primary" id="obHubStarterLink" href="starter_checklist.html?v=20260919">Open HMRC starter checklist</a>
             </div>
           </article>
 
@@ -112,8 +104,7 @@
               <label class="ob-field">Document type
                 <select name="doc_type" required>
                   <option value="">Select…</option>
-                  <option value="safeguarding">Safeguarding certificate</option>
-                  <option value="certificate">Other certificate</option>
+                  <option value="certificate">Certificate</option>
                   <option value="firstaid">First aid</option>
                 </select>
               </label>
@@ -407,7 +398,7 @@
   <script src="/portal/onboarding_job_form.js?v=20260614-sections"></script>
   <script src="/portal/onboarding_health_form.js?v=20260614-sections"></script>
   <script src="/portal/onboarding_applicant_form.js?v=20260614-sections"></script>
-  <script src="/portal/onboarding_hub.js?v=20260919-starter-checklist"></script>
+  <script src="/portal/onboarding_hub.js?v=20260919-starter-hmrc"></script>
   <script>
     (function () {
       async function boot() {

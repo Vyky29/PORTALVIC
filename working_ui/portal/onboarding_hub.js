@@ -411,6 +411,20 @@
     if (typeof portalOnboardingFormApplyBackLink === "function") {
       portalOnboardingFormApplyBackLink();
     }
+    // Never point "Starter checklist" at annual profile update.
+    try {
+      var starter = global.document.getElementById("obHubStarterLink");
+      if (starter) {
+        starter.setAttribute("href", "starter_checklist.html?v=20260919");
+        starter.textContent = "Open HMRC starter checklist";
+      }
+      var sg = global.document.getElementById("obHubSafeguardingLink");
+      if (sg) {
+        var card = sg.closest("article");
+        if (card) card.remove();
+        else sg.remove();
+      }
+    } catch (_) {}
     await refreshPhotoPreview();
     await initPhoto();
     await initDocs();
