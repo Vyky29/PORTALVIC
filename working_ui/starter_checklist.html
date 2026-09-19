@@ -1589,39 +1589,41 @@
       });
     }
 
-    // ----- PDF coordinate map (calibrated from the HMRC PDF — page height 841.89) -----
-    // pdf-lib uses bottom-left origin. Each entry: { x, y } in PDF points, where the bottom
-    // of the writing line sits. For ticks, x/y is the baseline of the "X" we draw.
+    // ----- PDF coordinate map (calibrated from HMRC PDF drawings — page height 841.89) -----
+    // pdf-lib uses bottom-left origin. Text baselines sit ~4pt above underlines / inside boxes
+    // so glyphs do not sit on rules or on printed "Postcode"/"Country" labels.
+    // Boxed digits use per-box x lists (HMRC pairs boxes with wider gaps — not uniform spacing).
     var H = 841.89;
     var COORDS = {
-      // PAGE 0 (page index 0)
-      lastName:        { page: 0, x: 66, y: H - 326 },
-      firstNames:      { page: 0, x: 66, y: H - 408 },
-      addr1:           { page: 0, x: 334, y: H - 326 },
-      addr2:           { page: 0, x: 334, y: H - 348 },
-      addr3:           { page: 0, x: 334, y: H - 370 },
-      postcode:        { page: 0, x: 444, y: H - 370 },
-      country:         { page: 0, x: 334, y: H - 391 },
-      niNumber:        { page: 0, x: 334, y: H - 433, spacing: 14.7, max: 9 },
-      empStart:        { page: 0, ddX: 334, mmX: 374, yyyyX: 416, y: H - 487, charSpacing: 13.5 },
-      dob:             { page: 0, ddX: 66,  mmX: 106, yyyyX: 148, y: H - 511, charSpacing: 13.5 },
-      maleTick:        { page: 0, x: 92, y: 378 },
-      femaleTick:      { page: 0, x: 161, y: 378 },
-      // Checkbox squares measured from HMRC PDF (PyMuPDF drawings)
-      statementA:      { page: 0, x: 180, y: 48 },
-      statementB:      { page: 0, x: 343, y: 48 },
-      statementC:      { page: 0, x: 505, y: 48 },
+      // PAGE 0 — fill lines measured from template underlines / character boxes
+      lastName:        { page: 0, x: 66, y: H - 321.5 },
+      firstNames:      { page: 0, x: 66, y: H - 396 },
+      addr1:           { page: 0, x: 334, y: H - 321.5 },
+      addr2:           { page: 0, x: 334, y: H - 338.5 },
+      addr3:           { page: 0, x: 334, y: H - 355.5 },
+      postcode:        { page: 0, x: 334, y: H - 372.5, clearLabel: { x: 330, y: H - 378, w: 56, h: 14 } },
+      country:         { page: 0, x: 334, y: H - 389.5, clearLabel: { x: 330, y: H - 395, w: 52, h: 14 } },
+      // NI: nine boxes at x0 330.5 / 346.1 / 368.8 / 384.3 / 407.0 / 422.6 / 445.3 / 460.9 / 483.6
+      niNumber:        { page: 0, y: H - 438.5, xs: [334.3, 349.9, 372.6, 388.1, 410.8, 426.4, 449.1, 464.7, 487.4], max: 9 },
+      // Emp start DD MM YYYY boxes (x0 + ~4 so digit sits inside each square)
+      empStart:        { page: 0, y: H - 489, xs: [334.5, 350.1, 372.8, 388.3, 411.0, 426.6, 442.2, 457.8] },
+      dob:             { page: 0, y: H - 513, xs: [66.6, 82.2, 104.9, 120.5, 143.1, 158.7, 174.3, 189.9] },
+      maleTick:        { page: 0, x: 93.5, y: 380 },
+      femaleTick:      { page: 0, x: 161.0, y: 380 },
+      statementA:      { page: 0, x: 180.5, y: 50 },
+      statementB:      { page: 0, x: 343.5, y: 50 },
+      statementC:      { page: 0, x: 505.5, y: 50 },
 
-      // PAGE 1 (page index 1) — Q9/Q10 boxes at x≈253 (not the right-hand guidance column)
-      ifNo:            { page: 1, x: 257, y: 605 },
-      ifYes:           { page: 1, x: 257, y: 568 },
-      plan1:           { page: 1, x: 257, y: 477 },
-      plan2:           { page: 1, x: 257, y: 452 },
-      plan4:           { page: 1, x: 257, y: 427 },
-      planPG:          { page: 1, x: 257, y: 402 },
+      // PAGE 1 — Q9/Q10 tick boxes (left column, not the guidance column)
+      ifNo:            { page: 1, x: 256.8, y: 608.5 },
+      ifYes:           { page: 1, x: 256.8, y: 571 },
+      plan1:           { page: 1, x: 256.8, y: 480 },
+      plan2:           { page: 1, x: 256.8, y: 455 },
+      plan4:           { page: 1, x: 256.8, y: 430 },
+      planPG:          { page: 1, x: 256.8, y: 405 },
       signatureBox:    { page: 1, x: 42, y: 242, w: 212, h: 33 },
-      declFullName:    { page: 1, x: 312, y: H - 580 },
-      declDate:        { page: 1, ddX: 312, mmX: 346, yyyyX: 380, y: H - 632, charSpacing: 13.5 }
+      declFullName:    { page: 1, x: 312, y: H - 579.5, size: 10 },
+      declDate:        { page: 1, y: H - 627.5, xs: [311.1, 326.7, 349.3, 364.9, 387.6, 403.2, 418.8, 434.4] }
     };
 
     // ----- PDF generation -----
@@ -1644,10 +1646,21 @@
       function drawText(coord, text, opts) {
         if (text == null || text === '') return;
         opts = opts || {};
+        if (coord.clearLabel) {
+          var cl = coord.clearLabel;
+          pages[coord.page].drawRectangle({
+            x: cl.x,
+            y: cl.y,
+            width: cl.w,
+            height: cl.h,
+            color: PDFLib.rgb(1, 1, 1),
+            borderWidth: 0
+          });
+        }
         pages[coord.page].drawText(String(text), {
           x: coord.x,
           y: coord.y,
-          size: opts.size || 11,
+          size: opts.size || coord.size || 11,
           font: opts.bold ? helvBold : helv,
           color: PDFLib.rgb(0.05, 0.13, 0.30)
         });
@@ -1684,43 +1697,28 @@
           height: drawH
         });
       }
-      function drawSpaced(coord, text) {
-        if (!text) return;
-        var spacing = coord.spacing || 14;
+      /** Paint one character per measured HMRC box (xs[]), not uniform tracking. */
+      function drawBoxedChars(coord, text) {
+        if (!text || !coord || !coord.xs || !coord.xs.length) return;
+        var max = coord.max != null ? coord.max : coord.xs.length;
         var i;
-        for (i = 0; i < text.length && i < (coord.max || text.length); i++) {
+        for (i = 0; i < text.length && i < max && i < coord.xs.length; i++) {
           pages[coord.page].drawText(text[i], {
-            x: coord.x + i * spacing,
+            x: coord.xs[i],
             y: coord.y,
-            size: 11,
+            size: coord.size || 11,
             font: helv,
             color: PDFLib.rgb(0.05, 0.13, 0.30)
           });
         }
       }
       function drawDate(coord, iso) {
-        if (!iso) return;
+        if (!iso || !coord) return;
         var d = new Date(iso + 'T00:00:00');
         if (isNaN(d.getTime())) return;
         var pad = function (x) { return x < 10 ? '0' + x : '' + x; };
-        var dd = pad(d.getDate());
-        var mm = pad(d.getMonth() + 1);
-        var yy = String(d.getFullYear());
-        var cs = coord.charSpacing || 13;
-        [['ddX', dd], ['mmX', mm], ['yyyyX', yy]].forEach(function (pair) {
-          var startX = coord[pair[0]];
-          var s = pair[1];
-          var i;
-          for (i = 0; i < s.length; i++) {
-            pages[coord.page].drawText(s[i], {
-              x: startX + i * cs,
-              y: coord.y,
-              size: 11,
-              font: helv,
-              color: PDFLib.rgb(0.05, 0.13, 0.30)
-            });
-          }
-        });
+        var digits = pad(d.getDate()) + pad(d.getMonth() + 1) + String(d.getFullYear());
+        drawBoxedChars(coord, digits);
       }
 
       // ---------- Page 1 ----------
@@ -1732,10 +1730,10 @@
       drawText(COORDS.postcode, (state.postcode || '').toUpperCase());
       drawText(COORDS.country, state.country);
 
-      // NI number (digits/letters spaced over the small boxes)
-      drawSpaced(COORDS.niNumber, (state.niNumber || '').replace(/\s+/g, '').toUpperCase());
+      // NI number — one glyph per printed box (paired gaps on the HMRC form)
+      drawBoxedChars(COORDS.niNumber, (state.niNumber || '').replace(/\s+/g, '').toUpperCase());
 
-      // Dates
+      // Dates — DDMMYYYY into the eight character boxes
       drawDate(COORDS.empStart, state.empStart);
       drawDate(COORDS.dob, state.dob);
 

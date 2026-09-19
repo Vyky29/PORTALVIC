@@ -419,7 +419,7 @@
     try {
       var starter = global.document.getElementById("obHubStarterLink");
       if (starter) {
-        starter.setAttribute("href", "starter_checklist.html?v=20260919");
+        starter.setAttribute("href", "starter_checklist.html?v=20260919-paint");
         starter.textContent = "Open HMRC starter checklist";
       }
       var sg = global.document.getElementById("obHubSafeguardingLink");
