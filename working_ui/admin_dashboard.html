@@ -151,7 +151,7 @@
   <script src="/portal/portal-parent-notify-templates.js?v=20260917-instructor-update2"></script>
   <script src="/portal/cfk-app.js?v=20260917-places-first"></script>
   <script src="/portal/portal-admin-search-combo.js?v=20260705-combo-rebind"></script>
-  <script src="/portal/admin-scheduling-module.js?v=20260919-sched-fullpage"></script>
+  <script src="/portal/admin-scheduling-module.js?v=20260919-create-card"></script>
   <script src="/portal/admin-portal-module-policy.js?v=20260614-hide-bookings"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -4314,7 +4314,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return window.StaffDashboardSpreadsheetAdapter.canonicalParticipantClientId(value);
       }
       var s = adminRosterSlugify(value);
-      var ALIASES = { abodi_p: 'abodi_pa', abodi: 'abodi_pa', adam_a: 'adam_ab', junaid: 'junaid_f' };
+      var ALIASES = {
+        abodi_p: 'abodi_pa', abodi: 'abodi_pa',
+        adam_a: 'adam_ab',
+        adam_pi: 'adam_p', adam_pilcher: 'adam_p', adam_pilch: 'adam_p',
+        junaid: 'junaid_f'
+      };
       return ALIASES[s] || s;
     }
     function schedTimeRangesOverlap(aStart, aEnd, bStart, bEnd){
@@ -4702,6 +4707,66 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         .trim()
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '');
+    }
+    function schedStaffMatchKeysEqual(aRaw, bRaw){
+      function keysFor(raw){
+        var out = [];
+        var canon = (typeof window.portalCanonicalStaffMatchKey === 'function'
+          ? window.portalCanonicalStaffMatchKey(raw)
+          : '') || '';
+        var norm = normalizeSchedAnchorStaffId(raw);
+        if(canon) out.push(canon);
+        if(norm && out.indexOf(norm) < 0) out.push(norm);
+        return out;
+      }
+      var a = keysFor(aRaw);
+      var b = keysFor(bRaw);
+      for(var i = 0; i < a.length; i++){
+        for(var j = 0; j < b.length; j++){
+          if(a[i] && b[j] && a[i] === b[j]) return true;
+          /* name_key youssefmoustafa vs roster youssef */
+          if(a[i] && b[j] && a[i].length >= 5 && b[j].length >= 5 &&
+            (a[i].indexOf(b[j]) === 0 || b[j].indexOf(a[i]) === 0)) return true;
+        }
+      }
+      return false;
+    }
+    /** Day-off requested (staff_unavailability) — same source as Overview. */
+    function schedStaffAwayOnIso(iso, staffRaw){
+      var want = String(iso || '').slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(want)) return false;
+      var staffKey = (typeof window.portalCanonicalStaffMatchKey === 'function'
+        ? window.portalCanonicalStaffMatchKey(staffRaw)
+        : '') || normalizeSchedAnchorStaffId(staffRaw);
+      if(!staffKey || staffKey === 'coverneeded') return false;
+      var rows = window.__PORTAL_STAFF_UNAVAILABILITY__ || [];
+      if(!Array.isArray(rows) || !rows.length) return false;
+      for(var i = 0; i < rows.length; i++){
+        var r = rows[i];
+        if(!r) continue;
+        if(String(r.off_date || '').slice(0, 10) !== want) continue;
+        if(schedStaffMatchKeysEqual(staffRaw, r.name_key) ||
+          schedStaffMatchKeysEqual(staffRaw, r.staff_name) ||
+          schedStaffMatchKeysEqual(staffKey, r.name_key) ||
+          schedStaffMatchKeysEqual(staffKey, r.staff_name)) return true;
+      }
+      return false;
+    }
+    function schedSyntheticCoverNeededOv(slot){
+      return {
+        override_type: 'instructor_cover_needed',
+        status: 'active',
+        session_date: slot && slot.sessionDate,
+        anchor_staff_id: slot && slot.staffRosterId,
+        anchor_client_id: slot && slot.clientSlug,
+        payload: {
+          cover_needed: true,
+          covering_staff_id: 'cover_needed',
+          covering_staff_name: 'COVER NEEDED',
+          source: 'day_off_requested'
+        },
+        reason: 'Day off requested — COVER NEEDED'
+      };
     }
     /** All roster keys tied to a slot row (booked + override original/cover) for instructor filter. */
     function schedStaffFilterKeysForSlot(slot, ov){
@@ -10933,6 +10998,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         );
         if(repCid && sCid && repCid === sCid) return true;
       }
+      /* Adam P / Adam Pi / Adam Pilcher must match the same aquatic seat. */
       if(oCid && sCid && oCid !== sCid) return false;
       if(oType === 'client_absence_announced'){
         return schedTimeRangesOverlap(o.anchor_start, o.anchor_end, slot.anchorStart, slot.anchorEnd);
@@ -14015,6 +14081,69 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var s = String(slug || '').trim().toLowerCase();
       return !s || s === 'available' || s === 'noclient' || s === 'no_client' || s === 'no client' || s === 'no participant' || s === 'no_participant';
     }
+    function schedIsCreatedSessionOverride(ov){
+      if(!ov || String(ov.status || 'active') !== 'active') return false;
+      if(String(ov.override_type || '').trim() !== 'session_add') return false;
+      var k = String((ov.payload && ov.payload.kind) || ov.anchor_client_id || '').trim().toLowerCase();
+      return k === 'session' || k === 'client' || k === 'office';
+    }
+    function schedSlotFromCreatedSessionOverride(ov, iso){
+      if(!schedIsCreatedSessionOverride(ov)) return null;
+      var p = ov.payload || {};
+      var start = String(ov.anchor_start || '').slice(0, 8);
+      var end = String(ov.anchor_end || '').slice(0, 8) || start;
+      var staff = normalizeSchedAnchorStaffId(ov.anchor_staff_id);
+      var clientSlug = adminCanonicalClientSlug(p.client_id || ov.anchor_client_id || '');
+      if(clientSlug === 'training' || clientSlug === 'shadowing' || clientSlug === 'meeting') return null;
+      var clientName = String(p.client_name || p.to_client_name || '').trim()
+        || schedParticipantDisplayName(clientSlug)
+        || clientSlug;
+      var wd = portalWeekdayLongFromIsoDate(iso);
+      var service = String(p.service || p.activity || 'Day Centre').trim() || 'Day Centre';
+      return {
+        sessionDate: iso,
+        sheetDay: wd,
+        clientDisplay: clientName,
+        clientSlug: clientSlug,
+        staffRosterId: staff,
+        staffName: schedStaffDisplayName(staff, staff),
+        venue: String(ov.anchor_venue || '').trim() || 'SwimFarm',
+        programme: service,
+        rosterService: service,
+        rosterArea: String(p.area || '').trim(),
+        anchorStart: start,
+        anchorEnd: end,
+        anchorTimeLabel: ov.anchor_time_slot_label || rosterBandLabelFromPg(start, end, wd),
+        rosterSheetLabel: 'Added',
+        demoId: 'created|' + String(ov.id || ''),
+        portalCreatedSession: true,
+        __portalScheduleOverride: ov
+      };
+    }
+    function schedInjectCreatedSessionSlots(slots, iso, overrides){
+      var out = Array.isArray(slots) ? slots.slice() : [];
+      var rows = Array.isArray(overrides) ? overrides : [];
+      for(var i = 0; i < rows.length; i++){
+        var syn = schedSlotFromCreatedSessionOverride(rows[i], iso);
+        if(!syn) continue;
+        var dup = false;
+        for(var j = 0; j < out.length; j++){
+          if(normalizeSchedAnchorStaffId(out[j].staffRosterId) !== syn.staffRosterId) continue;
+          if(adminCanonicalClientSlug(out[j].clientSlug || out[j].clientDisplay) !== syn.clientSlug) continue;
+          if(normTimeShort(out[j].anchorStart) !== normTimeShort(syn.anchorStart)) continue;
+          if(String(out[j].venue || '').toLowerCase() !== String(syn.venue || '').toLowerCase()) continue;
+          dup = true;
+          break;
+        }
+        if(!dup) out.push(syn);
+      }
+      out.sort(function(a, b){
+        return (a.anchorStart || '').localeCompare(b.anchorStart || '')
+          || (a.venue || '').localeCompare(b.venue || '')
+          || (a.staffRosterId || '').localeCompare(b.staffRosterId || '');
+      });
+      return out;
+    }
     function schedIsClosedParticipantSlot(slot){
       if(!slot) return false;
       var slug = String(slot.clientSlug || '').trim().toLowerCase();
@@ -14167,34 +14296,48 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(hits.length === 1) return hits[0];
       return '';
     }
-    /** Collapsible form to add a Training / Shadowing session (override_type='session_add'). */
+    /** Collapsible form to add a session card, or training / shadowing. */
     function schedAddSessionFormHtml(){
       var today = schedClampIsoToTerm(isoDateLocal(new Date()));
       return '<details class="section" id="schedAddSessionWrap" style="margin:0 0 18px">'+
-        '<summary style="cursor:pointer;font-weight:600;color:var(--ink)">+ Add training / shadowing session</summary>'+
+        '<summary style="cursor:pointer;font-weight:600;color:var(--ink)">+ Add session card (new hours / instructor / participant)</summary>'+
         '<div class="card" style="margin-top:10px"><div class="card-pad">'+
-        '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Adds an extra session (not on the roster) for one staff member. It shows on their dashboard and is paid at <strong>&pound;13.50/h</strong> on the timesheet.</p>'+
+        '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Creates a <strong>new row</strong> on this day. Use this when someone already on the board (e.g. Michelle on Ikram) picks up extra hours \u2014 do not Change Instructor over the person who is off. Training / shadowing still pays at <strong>&pound;13.50/h</strong>.</p>'+
         '<div class="filter-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end">'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Staff'+
-          (window.PortalAdminSearchCombo ? window.PortalAdminSearchCombo.comboHtml('schedAddStaff', 'Select staff…', '220px') :
+          (window.PortalAdminSearchCombo ? window.PortalAdminSearchCombo.comboHtml('schedAddStaff', 'Select staff\u2026', '220px') :
           '<select class="sel" id="schedAddStaff" style="max-width:220px"></select>')+'</label>'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Type'+
-          '<select class="sel" id="schedAddKind" style="max-width:160px"><option value="training">Training</option><option value="shadowing">Shadowing</option></select></label>'+
+          '<select class="sel" id="schedAddKind" style="max-width:180px"><option value="session">Session</option><option value="training">Training</option><option value="shadowing">Shadowing</option></select></label>'+
+        '<label id="schedAddPaxWrap" style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Participant'+
+          (window.PortalAdminSearchCombo ? window.PortalAdminSearchCombo.comboHtml('schedAddPax', 'Select participant\u2026', '220px') :
+          '<select class="sel" id="schedAddPax" style="max-width:220px"></select>')+'</label>'+
+        '<label id="schedAddServiceWrap" style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Service'+
+          '<select class="sel" id="schedAddService" style="max-width:200px">'+
+          '<option value="Day Centre">Day Centre</option>'+
+          '<option value="Aquatic Activity">Aquatic Activity</option>'+
+          '<option value="Multi-Activity">Multi-Activity</option>'+
+          '<option value="Climbing">Climbing</option>'+
+          '<option value="Bespoke Programme">Bespoke Programme</option>'+
+          '<option value="Office">Office</option>'+
+          '</select></label>'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Date'+
           '<input type="date" id="schedAddDate" class="inp" style="max-width:170px" min="'+esc(SCHED_COVER_TERM_START)+'" max="'+esc(SCHED_COVER_TERM_END)+'" value="'+esc(today)+'" /></label>'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Start'+
-          '<input type="time" id="schedAddStart" class="inp" style="max-width:120px" value="09:00" /></label>'+
+          '<input type="time" id="schedAddStart" class="inp" style="max-width:120px" value="11:00" /></label>'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">End'+
-          '<input type="time" id="schedAddEnd" class="inp" style="max-width:120px" value="10:00" /></label>'+
-        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Venue (optional)'+
-          '<input type="text" id="schedAddVenue" class="inp" style="max-width:160px" placeholder="e.g. Acton" /></label>'+
-        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Who gives it (optional)'+
+          '<input type="time" id="schedAddEnd" class="inp" style="max-width:120px" value="15:00" /></label>'+
+        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Venue'+
+          '<input type="text" id="schedAddVenue" class="inp" style="max-width:160px" placeholder="e.g. SwimFarm" value="SwimFarm" /></label>'+
+        '<label id="schedAddAreaWrap" style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Notes / area'+
+          '<input type="text" id="schedAddArea" class="inp" style="max-width:160px" placeholder="e.g. Hub Room" /></label>'+
+        '<label id="schedAddTrainerWrap" style="display:none;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Who gives it (optional)'+
           '<input type="text" id="schedAddTrainer" class="inp" style="max-width:170px" placeholder="e.g. Laura" /></label>'+
-        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Where'+
-          '<select class="sel" id="schedAddLocation" style="max-width:140px"><option value="">—</option><option value="room">Room</option><option value="pool">Pool</option><option value="both">Both</option></select></label>'+
+        '<label id="schedAddLocationWrap" style="display:none;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Where'+
+          '<select class="sel" id="schedAddLocation" style="max-width:140px"><option value="">\u2014</option><option value="room">Room</option><option value="pool">Pool</option><option value="both">Both</option></select></label>'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);flex:1;min-width:160px">Note (optional)'+
           '<input type="text" id="schedAddNote" class="inp" placeholder="What is it for" /></label>'+
-        '<button type="button" class="btn btn--pri btn--sm" id="schedAddSaveBtn">Add session</button>'+
+        '<button type="button" class="btn btn--pri btn--sm" id="schedAddSaveBtn">Add card</button>'+
         '<button type="button" class="btn btn--ghost btn--sm" id="schedAddCancelEdit" style="display:none">Cancel edit</button>'+
         '</div>'+
         '<p id="schedAddMsg" class="muted" style="margin:10px 0 0;min-height:1.2em;overflow-wrap:break-word"></p>'+
@@ -14225,11 +14368,54 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       if(cur) sel.value = cur;
     }
+    function schedFillAddPaxSelect(){
+      var list = schedBuildReplacementPickList();
+      list.unshift({ slug: 'office', display: 'Office' });
+      list.unshift({ slug: 'no_participant', display: 'No participant' });
+      var cur = ($('schedAddPax') && $('schedAddPax').value) || '';
+      if(window.PortalAdminSearchCombo){
+        PortalAdminSearchCombo.ensure({
+          id: 'schedAddPax',
+          placeholder: 'Select participant…',
+          allLabel: 'Select participant…',
+          showAllOnEmptyFocus: true,
+          maxVisible: 24
+        });
+        PortalAdminSearchCombo.setOptions('schedAddPax', list.map(function(it){
+          return { value: it.slug, label: it.display };
+        }), { keepValue: true });
+        if(cur) PortalAdminSearchCombo.setValue('schedAddPax', cur);
+        return;
+      }
+      var sel = $('schedAddPax');
+      if(!sel) return;
+      sel.innerHTML = '<option value="">Select participant...</option>' + list.map(function(it){
+        return '<option value="'+esc(it.slug)+'">'+esc(it.display)+'</option>';
+      }).join('');
+      if(cur) sel.value = cur;
+    }
+    function schedToggleAddKindFields(){
+      var kind = String((($('schedAddKind')||{}).value) || 'session').toLowerCase();
+      var isSession = kind === 'session';
+      function show(id, on){
+        var el = $(id);
+        if(!el) return;
+        el.style.display = on ? 'flex' : 'none';
+      }
+      show('schedAddPaxWrap', isSession);
+      show('schedAddServiceWrap', isSession);
+      show('schedAddAreaWrap', isSession);
+      show('schedAddTrainerWrap', !isSession);
+      show('schedAddLocationWrap', !isSession);
+      var btn = $('schedAddSaveBtn');
+      if(btn && !sched.addEditingId) btn.textContent = isSession ? 'Add card' : 'Add session';
+    }
     async function saveSchedAddSession(){
       var msg = $('schedAddMsg');
       function showMsg(t, tone){ if(msg){ msg.textContent = t; msg.style.color = tone === 'err' ? 'var(--danger)' : (tone === 'ok' ? 'var(--success)' : ''); } }
       var staffSlug = normalizeSchedAnchorStaffId((($('schedAddStaff')||{}).value) || '');
-      var kind = String((($('schedAddKind')||{}).value) || 'training').toLowerCase();
+      var kind = String((($('schedAddKind')||{}).value) || 'session').toLowerCase();
+      if(kind !== 'session' && kind !== 'shadowing' && kind !== 'training') kind = 'session';
       var dateIso = schedClampIsoToTerm(String((($('schedAddDate')||{}).value) || '').trim());
       var start = String((($('schedAddStart')||{}).value) || '').trim();
       var end = String((($('schedAddEnd')||{}).value) || '').trim();
@@ -14237,31 +14423,48 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var trainer = String((($('schedAddTrainer')||{}).value) || '').trim();
       var location = String((($('schedAddLocation')||{}).value) || '').trim().toLowerCase();
       var note = String((($('schedAddNote')||{}).value) || '').trim();
+      var paxSlug = String((($('schedAddPax')||{}).value) || '').trim().toLowerCase();
+      var service = String((($('schedAddService')||{}).value) || 'Day Centre').trim();
+      var area = String((($('schedAddArea')||{}).value) || '').trim();
       if(!staffSlug){ showMsg('Pick a staff member.', 'err'); return; }
       if(!dateIso){ showMsg('Pick a date.', 'err'); return; }
       if(!start || !end){ showMsg('Set a start and end time.', 'err'); return; }
       if(end <= start){ showMsg('End time must be after start time.', 'err'); return; }
+      var paxName = '';
+      if(kind === 'session'){
+        if(!paxSlug){ showMsg('Pick a participant (or Office / No participant).', 'err'); return; }
+        var paxList = schedBuildReplacementPickList();
+        paxList.unshift({ slug: 'office', display: 'Office' });
+        paxList.unshift({ slug: 'no_participant', display: 'No participant' });
+        for(var pi = 0; pi < paxList.length; pi++){
+          if(String(paxList[pi].slug).toLowerCase() === paxSlug){ paxName = paxList[pi].display; break; }
+        }
+        if(!paxName) paxName = paxSlug === 'no_participant' ? 'No participant' : (paxSlug === 'office' ? 'Office' : paxSlug);
+      }
       var client = getSchedSupabaseClient();
       if(!client){ showMsg('Supabase not connected yet - try again in a moment.', 'err'); return; }
-      var label = kind === 'shadowing' ? 'Shadowing' : 'Training';
+      var label = kind === 'session' ? 'Session' : (kind === 'shadowing' ? 'Shadowing' : 'Training');
       var btn = $('schedAddSaveBtn');
       if(btn) btn.disabled = true;
       showMsg('Saving...');
       try{
+        var payload = kind === 'session'
+          ? { kind: 'session', label: label, note: note, client_id: paxSlug, client_name: paxName, service: service, area: area }
+          : { kind: kind, label: label, note: note, trainer: trainer, location: location };
         var row = {
           session_date: dateIso,
           anchor_staff_id: staffSlug,
           anchor_start: toPgTime(start),
           anchor_end: toPgTime(end),
-          anchor_venue: venue || null,
-          anchor_client_id: kind,
+          anchor_venue: venue || (kind === 'session' ? 'SwimFarm' : null),
+          anchor_client_id: kind === 'session' ? paxSlug : kind,
           anchor_time_slot_label: start + ' to ' + end,
           override_type: 'session_add',
-          payload: { kind: kind, label: label, note: note, trainer: trainer, location: location },
-          reason: note || (label + ' session'),
+          payload: payload,
+          reason: note || (kind === 'session' ? (paxName + ' · ' + service) : (label + ' session')),
           status: 'active',
           superseded_by: null,
-          spreadsheet_revision: 'admin-dashboard:training-shadowing'
+          spreadsheet_revision: kind === 'session' ? 'admin-dashboard:session-card' : 'admin-dashboard:training-shadowing'
         };
         var editId = sched.addEditingId;
         if(editId){
@@ -14280,11 +14483,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var dayLongA = (typeof portalWeekdayLongFromIsoDate === 'function' ? portalWeekdayLongFromIsoDate(dateIso) : '');
               window.PortalChangeLog.record({
                 area: 'Scheduling',
-                entity: (trainer ? String(trainer) : label),
+                entity: (kind === 'session' ? paxName : (trainer ? String(trainer) : label)),
                 action: 'add',
-                summary: (dayLongA ? dayLongA + ' ' : '') + dNiceA + ' · ' + label + ' · ' + (start + ' to ' + end) + (venue ? ' · ' + venue : ''),
-                details: { session_date: dateIso, override_type: 'session_add', kind: kind, venue: venue || '', time: start + ' to ' + end, note: note || '' },
-                source: 'scheduling_training'
+                summary: (dayLongA ? dayLongA + ' ' : '') + dNiceA + ' · ' + label + (kind === 'session' ? ' · ' + paxName : '') + ' · ' + (start + ' to ' + end) + (venue ? ' · ' + venue : ''),
+                details: { session_date: dateIso, override_type: 'session_add', kind: kind, venue: venue || '', time: start + ' to ' + end, note: note || '', client: paxSlug || '' },
+                source: kind === 'session' ? 'scheduling_session_card' : 'scheduling_training'
               });
             }
           }catch(_lgA){}
@@ -14299,20 +14502,79 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function bindSchedAddSessionForm(){
       schedFillAddStaffSelect();
+      schedFillAddPaxSelect();
+      schedToggleAddKindFields();
       sched.addEditingId = null;
       var btn = $('schedAddSaveBtn');
       if(btn && !btn.__schedAddBound){ btn.__schedAddBound = true; btn.onclick = function(){ void saveSchedAddSession(); }; }
       var cx = $('schedAddCancelEdit');
       if(cx && !cx.__schedAddBound){ cx.__schedAddBound = true; cx.onclick = function(){ schedAddSessionFormReset(); var m=$('schedAddMsg'); if(m){ m.textContent=''; } }; }
+      var kindSel = $('schedAddKind');
+      if(kindSel && !kindSel.__schedAddBound){
+        kindSel.__schedAddBound = true;
+        kindSel.onchange = function(){ schedToggleAddKindFields(); };
+      }
     }
     function schedTimeInputValue(t){ return String(t == null ? '' : t).slice(0, 5); }
+    /** Prefill Add session card from a standing row without overriding that seat. */
+    function schedPrefillAddCardFromSlot(slot){
+      if(!slot) return;
+      schedAddSessionFormReset();
+      var wrap = $('schedAddSessionWrap');
+      if(wrap) wrap.open = true;
+      var kindSel = $('schedAddKind');
+      if(kindSel) kindSel.value = 'session';
+      schedToggleAddKindFields();
+      var iso = String(slot.sessionDate || (($('schedDate') || {}).value) || '').slice(0, 10);
+      var dEl = $('schedAddDate'); if(dEl && iso) dEl.value = iso;
+      var sEl = $('schedAddStart'); if(sEl) sEl.value = schedTimeInputValue(slot.anchorStart);
+      var eEl = $('schedAddEnd'); if(eEl) eEl.value = schedTimeInputValue(slot.anchorEnd);
+      var vEl = $('schedAddVenue'); if(vEl) vEl.value = String(slot.venue || 'SwimFarm');
+      var aEl = $('schedAddArea'); if(aEl) aEl.value = String(slot.rosterArea || '');
+      var svcEl = $('schedAddService');
+      if(svcEl){
+        var svc = String(slot.programme || slot.rosterService || 'Day Centre').trim();
+        svcEl.value = svc;
+        if(svcEl.value !== svc){
+          var opt = document.createElement('option');
+          opt.value = svc;
+          opt.textContent = svc;
+          svcEl.appendChild(opt);
+          svcEl.value = svc;
+        }
+      }
+      var paxSlug = String(slot.clientSlug || '').trim().toLowerCase();
+      if(window.PortalAdminSearchCombo && paxSlug){
+        PortalAdminSearchCombo.setValue('schedAddPax', paxSlug);
+      }else{
+        var paxSel = $('schedAddPax');
+        if(paxSel && paxSlug) paxSel.value = paxSlug;
+      }
+      if(window.PortalAdminSearchCombo){
+        PortalAdminSearchCombo.setValue('schedAddStaff', '');
+      }else{
+        var staffSel = $('schedAddStaff');
+        if(staffSel) staffSel.value = '';
+      }
+      var msg = $('schedAddMsg');
+      if(msg){
+        msg.style.color = '';
+        msg.textContent = 'Pick who is working this extra card. This does not override ' +
+          (String(slot.staffName || slot.staffRosterId || 'the original instructor')) + '.';
+      }
+      try{
+        if(wrap && wrap.scrollIntoView) wrap.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }catch(_sc){}
+    }
     /** Clears the add/edit form back to "new session" mode. */
     function schedAddSessionFormReset(){
       sched.addEditingId = null;
-      ['schedAddVenue','schedAddTrainer','schedAddNote'].forEach(function(id){ var e=$(id); if(e) e.value=''; });
+      ['schedAddVenue','schedAddTrainer','schedAddNote','schedAddArea'].forEach(function(id){ var e=$(id); if(e) e.value=''; });
       var loc=$('schedAddLocation'); if(loc) loc.value='';
-      var btn=$('schedAddSaveBtn'); if(btn) btn.textContent='Add session';
+      var kind=$('schedAddKind'); if(kind) kind.value='session';
+      var btn=$('schedAddSaveBtn'); if(btn) btn.textContent='Add card';
       var cx=$('schedAddCancelEdit'); if(cx) cx.style.display='none';
+      schedToggleAddKindFields();
     }
     /** Load an existing session_add override into the form for editing. */
     function schedEditAddedSession(id){
@@ -14329,8 +14591,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
         staffSel.value = matched || target;
       }
-      var kind=String((ov.payload&&ov.payload.kind)||ov.anchor_client_id||'training').toLowerCase();
-      var kindSel=$('schedAddKind'); if(kindSel) kindSel.value=(kind==='shadowing'?'shadowing':'training');
+      var kind=String((ov.payload&&ov.payload.kind)||ov.anchor_client_id||'session').toLowerCase();
+      if(kind !== 'session' && kind !== 'shadowing' && kind !== 'training') kind = 'session';
+      var kindSel=$('schedAddKind'); if(kindSel) kindSel.value=kind;
+      schedToggleAddKindFields();
       var dEl=$('schedAddDate'); if(dEl) dEl.value=String(ov.session_date||'').slice(0,10);
       var sEl=$('schedAddStart'); if(sEl) sEl.value=schedTimeInputValue(ov.anchor_start);
       var eEl=$('schedAddEnd'); if(eEl) eEl.value=schedTimeInputValue(ov.anchor_end);
@@ -14338,9 +14602,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var tEl=$('schedAddTrainer'); if(tEl) tEl.value=String((ov.payload&&ov.payload.trainer)||'');
       var lEl=$('schedAddLocation'); if(lEl) lEl.value=String((ov.payload&&ov.payload.location)||'').toLowerCase();
       var nEl=$('schedAddNote'); if(nEl) nEl.value=String((ov.payload&&ov.payload.note)||ov.reason||'');
-      var btn=$('schedAddSaveBtn'); if(btn) btn.textContent='Update session';
+      var aEl=$('schedAddArea'); if(aEl) aEl.value=String((ov.payload&&ov.payload.area)||'');
+      var svcEl=$('schedAddService'); if(svcEl) svcEl.value=String((ov.payload&&ov.payload.service)||'Day Centre');
+      var paxVal = kind === 'session' ? String((ov.payload&&ov.payload.client_id)||ov.anchor_client_id||'') : '';
+      var paxSel=$('schedAddPax');
+      if(paxSel && paxVal) paxSel.value = paxVal;
+      if(window.PortalAdminSearchCombo && paxVal){
+        try{ PortalAdminSearchCombo.setValue('schedAddPax', paxVal); }catch(_p){}
+      }
+      var btn=$('schedAddSaveBtn'); if(btn) btn.textContent='Update card';
       var cx=$('schedAddCancelEdit'); if(cx) cx.style.display='';
-      var msg=$('schedAddMsg'); if(msg){ msg.textContent='Editing existing '+(kind==='shadowing'?'shadowing':'training')+' session — change anything and Update.'; msg.style.color=''; }
+      var msg=$('schedAddMsg'); if(msg){ msg.textContent='Editing existing '+kind+' card — change anything and Update.'; msg.style.color=''; }
       try{ if(wrap) wrap.scrollIntoView({ behavior:'smooth', block:'nearest' }); }catch(_e){}
     }
     async function schedRemoveAddedSession(id){
@@ -14361,18 +14633,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var box=$('schedAddedList');
       if(!box) return;
       var rows=(sched.overrides||[]).filter(function(o){ return o.override_type==='session_add' && String(o.status||'active')==='active'; });
-      if(!rows.length){ box.innerHTML='<p class="muted" style="margin:0;font-size:12px">No added training/shadowing sessions for this date.</p>'; return; }
-      var html='<div class="card" style="margin:0"><div class="card-h"><h3 style="font-size:13px;margin:0">Added training / shadowing (this date)</h3></div><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" style="font-size:13px"><thead><tr><th>Time</th><th>Type</th><th>Staff</th><th>Who gives it</th><th>Where</th><th>Venue</th><th></th></tr></thead><tbody>';
+      if(!rows.length){ box.innerHTML='<p class="muted" style="margin:0;font-size:12px">No added cards for this date. Session cards also appear in the table above.</p>'; return; }
+      var html='<div class="card" style="margin:0"><div class="card-h"><h3 style="font-size:13px;margin:0">Added cards (this date)</h3></div><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" style="font-size:13px"><thead><tr><th>Time</th><th>Type</th><th>Staff</th><th>Participant / detail</th><th>Venue</th><th></th></tr></thead><tbody>';
       rows.forEach(function(o){
         var kind=String((o.payload&&o.payload.kind)||o.anchor_client_id||'training').toLowerCase();
-        var loc=String((o.payload&&o.payload.location)||'').toLowerCase();
-        var locLab=loc==='both'?'Room &amp; Pool':(loc==='pool'?'Pool':(loc==='room'?'Room':'—'));
+        var kindLab=kind==='session'?'Session':(kind==='shadowing'?'Shadowing':'Training');
+        var detail=kind==='session'
+          ? String((o.payload&&o.payload.client_name)||o.anchor_client_id||'—')
+          : String((o.payload&&o.payload.trainer)||'—');
         html+='<tr>'+
           '<td style="white-space:nowrap">'+esc(schedTimeInputValue(o.anchor_start))+'\u2013'+esc(schedTimeInputValue(o.anchor_end))+'</td>'+
-          '<td>'+esc(kind==='shadowing'?'Shadowing':'Training')+'</td>'+
+          '<td>'+esc(kindLab)+'</td>'+
           '<td style="overflow-wrap:break-word">'+esc(String(o.anchor_staff_id||'—'))+'</td>'+
-          '<td style="overflow-wrap:break-word">'+esc(String((o.payload&&o.payload.trainer)||'—'))+'</td>'+
-          '<td>'+locLab+'</td>'+
+          '<td style="overflow-wrap:break-word">'+esc(detail)+'</td>'+
           '<td style="overflow-wrap:break-word">'+esc(String(o.anchor_venue||'—'))+'</td>'+
           '<td class="toolbar" style="white-space:nowrap"><button type="button" class="btn btn--sec btn--sm" data-sched-add-edit="'+esc(o.id)+'">Edit</button> <button type="button" class="btn btn--ghost btn--sm" data-sched-add-remove="'+esc(o.id)+'">Remove</button></td>'+
           '</tr>';
@@ -14687,7 +14960,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         slot_close: 'Closed',
         slot_open: 'Open closed slot',
         override_void: 'Void',
-        session_add: 'Training / Shadowing',
+        session_add: 'Added card',
         slot_update: 'Updated'
       };
       return map[k] || k;
@@ -14782,6 +15055,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         String(payload.replace_kind || '').toLowerCase() === 'slot_move'
       )) return 'Day reassign';
       if(t === 'slot_clear_client' && payload && payload.cancelled_by_admin) return 'Cancelled';
+      if(t === 'session_add'){
+        var kAdd = String(payload.kind || ov.anchor_client_id || '').toLowerCase();
+        if(kAdd === 'session' || kAdd === 'client') return 'Added card';
+        if(kAdd === 'shadowing') return 'Shadowing';
+        return 'Training';
+      }
       return schedOverrideTypeLabel(t);
     }
     function schedOverrideTypeClass(key, ov){
@@ -15031,7 +15310,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<li><strong style="color:var(--ink)">Participant:</strong> '+esc(slot.clientDisplay)+' <span class="muted">(slug '+esc(slot.clientSlug)+')</span></li>'+
         '<li><strong style="color:var(--ink)">Roster cell:</strong> '+esc(slot.rosterSheetLabel||'—')+' <span class="muted">(raw: '+esc(String(slot.status||'—'))+')</span></li>'+
         '<li><strong style="color:var(--ink)">Notes (sheet + embed):</strong> <span style="color:var(--text);overflow-wrap:break-word">'+esc(String(slot.notesPreview||'').trim()||'—')+'</span></li>'+
-        '</ul><p style="margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--sec btn--sm" id="schedOpenTermSlotBtn">Edit term slot (this band)</button><button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot (blank)</button></p></div>'+ovBlock+
+        '</ul><p style="margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri btn--sm" id="schedCreateCardFromSlotBtn">Add a new card (keep this seat)</button><button type="button" class="btn btn--sec btn--sm" id="schedOpenTermSlotBtn">Edit term slot (this band)</button><button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot (blank)</button></p><p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">Add a new card when another worker already on this client picks up extra hours \u2014 Change Instructor would overwrite this row.</p></div>'+ovBlock+
         '<div class="card card-pad"><div class="kpi-l">New override</div>'+
         '<div class="kpi-l" style="margin-top:10px">Action</div>'+
         schedOverrideActionPickerHtml(canMoveClient)+
@@ -15084,6 +15363,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
       var undoBtn = $('schedUndoOverrideBtn');
       if(undoBtn) undoBtn.onclick = function(){ void undoSchedOverrideFromDrawer(slot); };
+      var createCardBtn = $('schedCreateCardFromSlotBtn');
+      if(createCardBtn) createCardBtn.onclick = function(){
+        closeSchedDrawer();
+        schedPrefillAddCardFromSlot(slot);
+      };
       $('schedDrawerBackdrop').classList.add('open');
       $('schedSlotDrawer').classList.add('open');
       $('schedSlotDrawer').setAttribute('aria-hidden','false');
@@ -18051,6 +18335,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return slots.map(function(slot){
         var ov = findOverrideForSlot(slot);
         var ovStaff = findOverrideForSlotOfTypes(slot, ['instructor_reassign', 'instructor_cover_needed']) || ov;
+        var cancelled = !!(ov && (String(ov.override_type || '').trim() === 'slot_clear_client' || String(ov.override_type || '').trim() === 'slot_close'));
+        var realCover = !!(ovStaff && String(ovStaff.override_type || '').trim() === 'instructor_reassign'
+          && ovStaff.payload && ovStaff.payload.covering_staff_id
+          && !/^cover[\s_]*needed$/i.test(String(ovStaff.payload.covering_staff_id || '')));
+        if(!cancelled && !realCover && schedStaffAwayOnIso(schedIso, slot.staffRosterId)){
+          if(!ovStaff || String(ovStaff.override_type || '').trim() !== 'instructor_cover_needed'){
+            ovStaff = schedSyntheticCoverNeededOv(slot);
+          }
+          if(!ov) ov = ovStaff;
+        }
         var hasOv = !!ov;
         var ovChip = '';
         var chipOvs = [];
@@ -18083,7 +18377,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var notesCell = notesRaw
           ? '<span class="sched-notes-cell">'+esc(notesRaw)+'</span>'
           : '<span class="muted">—</span>';
-        var coverNeededRow = !!(ov && String(ov.override_type || '').trim() === 'instructor_cover_needed');
+        var coverNeededRow = !!(ovStaff && String(ovStaff.override_type || '').trim() === 'instructor_cover_needed');
         return '<tr class="sched-slot-row'+(coverNeededRow ? ' sched-slot-row--cover-needed' : '')+'" data-sched-demo-id="'+esc(slot.demoId)+'" data-venue="'+esc(slot.venue)+'" data-staff="'+esc(staffKey)+'"'+staffAllAttr+' data-pax-slug="'+esc(paxSlug)+'"'+(paxSlug2 ? ' data-pax-slug2="'+esc(paxSlug2)+'"' : '')+' data-has-ov="'+(hasOv?'1':'0')+'">'+
           '<td data-label="Participant" style="min-width:0">'+clientCellHtml+'</td>'+
           '<td data-label="Service" style="min-width:0">'+serviceCell+'</td>'+
@@ -18623,7 +18917,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             .select('id,created_at,updated_at,created_by,updated_by,client_name,day,time_slot,instructors,venue,session_date,status')
             .eq('status', 'cancelled')
             .is('session_date', null)
-            .order('updated_at', { ascending: false })
+            .order('updated_at', { ascending: false }),
+          client.from('staff_unavailability')
+            .select('id,name_key,staff_name,staff_id,off_date,reason')
+            .eq('off_date', iso)
         ];
         if(!termCacheFresh){
           fetchJobs.push(
@@ -18638,10 +18935,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var resRosterDated = fetched[1];
         var resNoClient = fetched[2];
         var resRosterTpl = fetched[3];
+        var resOff = fetched[4];
         var resTerm = termCacheFresh
           ? { data: sched._termEventsCache, error: null }
-          : fetched[4];
-        if(!termCacheFresh && !resTerm.error){
+          : fetched[5];
+        if(resOff && resOff.error){
+          console.warn('[sched] staff_unavailability:', resOff.error);
+        }else if(resOff){
+          var liveOff = resOff.data || [];
+          var prevOff = Array.isArray(window.__PORTAL_STAFF_UNAVAILABILITY__)
+            ? window.__PORTAL_STAFF_UNAVAILABILITY__
+            : [];
+          var keepOff = prevOff.filter(function(r){
+            return String(r && r.off_date || '').slice(0, 10) !== iso;
+          });
+          window.__PORTAL_STAFF_UNAVAILABILITY__ = keepOff.concat(liveOff);
+        }
+        if(!termCacheFresh && resTerm && !resTerm.error){
           sched._termEventsCache = resTerm.data || [];
           sched._termEventsCacheAt = Date.now();
         }
@@ -18652,9 +18962,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!res.error && client){
           await schedAutoCancelDuplicateActiveOverridesOnDate(client, iso);
         }
-        if(resTerm.error){
+        if(resTerm && resTerm.error){
           console.warn('[sched] portal_roster_row_events:', resTerm.error);
-        }else{
+        }else if(resTerm){
           sched.termEvents = (resTerm.data || []).filter(function(ev){ return schedTermEventAppliesToDate(ev, iso); });
         }
         var queryBuckets = {
@@ -18680,6 +18990,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       slots = schedDedupeMakeupTwinSlots(slots);
       slots = schedDedupeInstructorCoverTwinSlots(slots);
+      slots = schedInjectCreatedSessionSlots(slots, iso, sched.overrides);
+      slots = slots.filter(function(slot){
+        if(!schedStaffAwayOnIso(iso, slot.staffRosterId)) return true;
+        var ov = findOverrideForSlot(slot);
+        if(ov && (String(ov.override_type || '').trim() === 'slot_clear_client' || String(ov.override_type || '').trim() === 'slot_close')) return true;
+        if(schedIsOpenParticipantSlot(slot) || schedIsClosedParticipantSlot(slot)) return false;
+        return true;
+      });
       sched.cachedDaySlots = slots;
       sched.slotsById = {};
       for(var sxi2 = 0; sxi2 < slots.length; sxi2++) sched.slotsById[slots[sxi2].demoId] = slots[sxi2];
@@ -18691,6 +19009,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       fillSchedFilterSelects(slots);
       schedFillAddStaffSelect();
+      schedFillAddPaxSelect();
+      schedToggleAddKindFields();
       var logBody = document.querySelector('#schedLogTable tbody');
       if(logBody){
         var logCount = (sched.overrides && sched.overrides.length) + (sched.termEvents && sched.termEvents.length) + (sched.rosterLogRows && sched.rosterLogRows.length);
