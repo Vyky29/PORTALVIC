@@ -80,6 +80,7 @@
     if (!host) return;
     var labels = [
       ["passport", "Passport"],
+      ["checklist", "Checklist"],
       ["certificate", "Certificate"],
       ["firstaid", "First aid"],
     ];
@@ -154,6 +155,9 @@
         photo: "obHubPanelPhoto",
         docs: "obHubPanelDocs",
         documents: "obHubPanelDocs",
+        starter: "obHubPanelDocs",
+        checklist: "obHubPanelDocs",
+        "starter-checklist": "obHubPanelDocs",
         job: "obHubPanelJob",
         health: "obHubPanelHealth",
       };

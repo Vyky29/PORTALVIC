@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <title>Starter Checklist - clubSENsational</title>
+    <script src="/portal-static-bootstrap.js"></script>
+  <script type="module">
+    window.__portalOnboardingFormReady = (async function () {
+      const { bootstrapDashboardSupabase } = await import("/portal/auth-handler.js?v=20260919-starter-checklist");
+      await bootstrapDashboardSupabase({ page: "onboarding" });
+    })();
+  </script>
+  <meta name="description" content="Digital Starter Checklist. Fill it in step by step and we'll prepare the official HMRC PDF for you to sign and upload." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand: #1d5fbf;
+      --brand-deep: #0f3a82;
+      --brand-soft: #e6efff;
+      --accent: #f5b500;
+      --navy: #0f2f5f;
+      --text: #243447;
+      --muted: #6a7a8c;
+      --border: rgba(15, 35, 65, 0.10);
+      --ring: rgba(29, 95, 191, 0.18);
+      --ok: #1e9d6b;
+      --err: #d64545;
+      --shadow-card: 0 30px 60px -22px rgba(15, 35, 65, 0.20), 0 8px 18px -10px rgba(15, 35, 65, 0.10);
+      --shadow-card-hover: 0 38px 70px -18px rgba(15, 35, 65, 0.26), 0 14px 28px -12px rgba(15, 35, 65, 0.14);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 100% -10%, rgba(29, 95, 191, 0.10), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(245, 181, 0, 0.10), transparent 55%),
+        linear-gradient(180deg, #f6fafd 0%, #ecf3fb 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 28px 20px 80px;
+    }
+
+    .form-nav-links {
+      text-align: center;
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .form-nav-links a {
+      color: var(--brand);
+      text-decoration: none;
+    }
+    .form-nav-links a:hover {
+      text-decoration: underline;
+    }
+
+    .topbar {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 22px;
+      padding-top: 6px;
+    }
+    .brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--navy);
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      text-align: center;
+    }
+    .brand-mark {
+      position: relative;
+      width: 96px;
+      height: 96px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+    }
+    .brand-orbits {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+    .brand-orbit-layer {
+      transform-origin: 50% 50%;
+      transform-box: view-box;
+    }
+    .brand-orbit-layer-a { animation: brand-orbit-cw 18s linear infinite; }
+    .brand-orbit-layer-b { animation: brand-orbit-ccw 22s linear infinite; }
+    @keyframes brand-orbit-cw  { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes brand-orbit-ccw { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+    .brand-logo {
+      position: relative;
+      z-index: 1;
+      width: 72%;
+      height: 72%;
+      object-fit: contain;
+      display: block;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .brand-orbit-layer-a, .brand-orbit-layer-b { animation: none; }
+    }
+    @media print {
+      .brand-orbit-layer-a, .brand-orbit-layer-b { animation: none; }
+    }
+    .brand-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+    .brand-sub {
+      display: block;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--navy);
+      text-transform: none;
+      margin-top: 2px;
+    }
+
+    /* HMRC official-form badge (static — not a link; white stays white on hover for PNG edge) */
+    .hmrc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 18px;
+      padding: 16px 22px 16px 18px;
+      margin-top: 14px;
+      background: #fff;
+      border: 1px solid rgba(11,12,12,0.18);
+      border-radius: 18px;
+      color: #0b0c0c;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      cursor: default;
+      max-width: 100%;
+      box-sizing: border-box;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .hmrc-badge:hover {
+      background: #fff;
+      border-color: rgba(22, 50, 92, 0.28);
+      box-shadow: 0 4px 14px rgba(15, 35, 65, 0.08);
+    }
+    .hmrc-logo-wrap {
+      flex-shrink: 0;
+      background: #fff;
+      padding: 4px 6px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hmrc-logo {
+      height: 56px;
+      width: auto;
+      max-width: min(280px, 52vw);
+      display: block;
+      vertical-align: middle;
+    }
+    .hmrc-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.25;
+      text-align: left;
+      border-left: 1px solid rgba(11,12,12,0.18);
+      padding-left: 18px;
+      min-width: 0;
+    }
+    .hmrc-text .hmrc-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: #5b6473;
+    }
+    .hmrc-text .hmrc-name {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #0b0c0c;
+      margin-top: 4px;
+    }
+    @media print {
+      .hmrc-badge { display: none; }
+    }
+    .back-link {
+      position: absolute;
+      top: 4px;
+      left: 0;
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--navy);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      padding: 9px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.6);
+      transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.18s;
+    }
+    .back-link:hover {
+      background: var(--navy);
+      color: #fff;
+      border-color: var(--navy);
+      transform: translateY(-1px);
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(22, 50, 92, 0.06);
+      border-radius: 28px;
+      box-shadow: var(--shadow-card);
+      padding: 28px 28px 26px;
+    }
+
+    .panel-header h1 {
+      margin: 0 0 6px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      font-size: 26px;
+      color: var(--navy);
+    }
+    .panel-header .lede {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14.5px;
+      line-height: 1.55;
+    }
+
+    /* Progress */
+    .progress {
+      display: flex; align-items: center; gap: 8px;
+      margin: 18px 0 22px;
+      flex-wrap: wrap;
+    }
+    .step-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px 6px 6px;
+      border-radius: 999px;
+      background: #f3f6fb;
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+    .step-chip .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #dfe6ef; color: var(--navy);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11.5px; font-weight: 800;
+    }
+    .step-chip.active {
+      background: var(--brand-soft);
+      color: var(--brand-deep);
+      border-color: rgba(29, 95, 191, 0.18);
+    }
+    .step-chip.active .step-num { background: var(--brand); color: #fff; }
+    .step-chip.done .step-num { background: var(--ok); color: #fff; }
+    .step-chip.done { color: var(--ok); }
+
+    /* Form steps */
+    .step { display: none; }
+    .step.active { display: block; animation: stepIn 0.2s ease both; }
+    @keyframes stepIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .step h2 {
+      margin: 6px 0 4px;
+      font-size: 19px;
+      color: var(--navy);
+      letter-spacing: -0.005em;
+    }
+    .step .step-hint {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    /* Form grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .grid.cols-1 { grid-template-columns: 1fr; }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label {
+      font-size: 13.5px;
+      color: var(--navy);
+      font-weight: 600;
+    }
+    .field .help {
+      font-size: 12px;
+      color: var(--muted);
+      margin: -2px 0 4px;
+      line-height: 1.45;
+    }
+
+    .input, select.input, textarea.input {
+      width: 100%;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-family: inherit;
+      font-size: 14.5px;
+      color: var(--text);
+      transition: border-color 0.16s, box-shadow 0.16s;
+      min-height: 44px;
+    }
+    textarea.input { min-height: 80px; resize: vertical; }
+    .input:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 4px var(--ring);
+    }
+    .input.invalid {
+      border-color: var(--err);
+      box-shadow: 0 0 0 4px rgba(214, 69, 69, 0.12);
+    }
+    .field .error {
+      font-size: 12px;
+      color: var(--err);
+      display: none;
+    }
+    .field.has-error .error { display: block; }
+
+    /* Choice tiles (radio / checkbox cards) */
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .choices.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 720px) {
+      .choices, .choices.cols-2 { grid-template-columns: 1fr; }
+    }
+    .choice {
+      position: relative;
+      display: block;
+      padding: 16px 16px 14px;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: border-color 0.16s, box-shadow 0.16s, transform 0.16s, background 0.16s;
+    }
+    .choice:hover {
+      border-color: rgba(29, 95, 191, 0.45);
+      transform: translateY(-1px);
+    }
+    .choice input { position: absolute; opacity: 0; pointer-events: none; }
+    .choice .ctitle {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700; color: var(--navy);
+      font-size: 14.5px;
+    }
+    .choice .ctitle .badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 26px; height: 22px; padding: 0 8px;
+      background: #f3f6fb; color: var(--navy);
+      border-radius: 999px; font-size: 11.5px; font-weight: 800;
+    }
+    .choice .cdesc {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .choice .clist {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+    .choice .clist li { margin-bottom: 3px; }
+    .choice.is-selected {
+      border-color: var(--brand);
+      background: var(--brand-soft);
+      box-shadow: 0 0 0 4px var(--ring);
+    }
+    .choice.is-selected .ctitle .badge { background: var(--brand); color: #fff; }
+
+    /* Checkbox row (inline) */
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.16s, background 0.16s;
+    }
+    .check-row input { position: absolute; opacity: 0; pointer-events: none; }
+    .check-row .box {
+      width: 20px; height: 20px;
+      border: 1.5px solid #c4cdd9;
+      border-radius: 6px;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex: 0 0 auto;
+      margin-top: 1px;
+      transition: background 0.16s, border-color 0.16s;
+    }
+    .check-row .box svg { width: 14px; height: 14px; stroke: #fff; opacity: 0; }
+    .check-row.is-checked { border-color: var(--brand); background: var(--brand-soft); }
+    .check-row.is-checked .box { background: var(--brand); border-color: var(--brand); }
+    .check-row.is-checked .box svg { opacity: 1; }
+    .check-row .text { font-size: 14px; color: var(--text); line-height: 1.5; }
+    .check-row .text strong { color: var(--navy); }
+
+    .portal-upload-status {
+      margin: 0 auto 16px;
+      max-width: 520px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: left;
+    }
+    .portal-upload-status--ok {
+      background: #e6f7ed;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+    }
+    .portal-upload-status--warn {
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      color: #9a3412;
+    }
+
+    .sig-pad-block { margin-top: 18px; }
+    .sig-pad-wrap {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .sig-pad-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 140px;
+      cursor: crosshair;
+    }
+    .sig-pad-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .sig-pad-actions .help { margin: 0; }
+    .btn-clear-sig {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--navy);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-clear-sig:hover { background: #f8fafc; }
+
+    /* Action bar */
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 26px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 22px;
+      border-radius: 999px;
+      border: 1.5px solid transparent;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: transform 0.16s, box-shadow 0.16s, background 0.16s, color 0.16s, border-color 0.16s;
+      min-height: 44px;
+      background: #fff;
+      color: var(--navy);
+      border-color: var(--border);
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px -10px rgba(15, 35, 65, 0.25); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 10px 24px -8px rgba(29, 95, 191, 0.45);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 16px 30px -10px rgba(29, 95, 191, 0.55);
+    }
+    .btn-ghost {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--navy);
+    }
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Review */
+    .review {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 640px) { .review { grid-template-columns: 1fr; } }
+    .review-item {
+      background: #fafbfd;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .review-item .label {
+      font-size: 11.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+    .review-item .value {
+      color: var(--navy);
+      font-weight: 600;
+      font-size: 14.5px;
+      word-break: break-word;
+    }
+    .review-item .value.empty { color: var(--muted); font-style: italic; font-weight: 500; }
+
+    /* Done screen */
+    .done-wrap { text-align: center; padding: 14px 0; }
+    .done-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #1e9d6b, #0d7a52);
+      color: #fff; margin-bottom: 14px;
+      box-shadow: 0 14px 28px -10px rgba(30, 157, 107, 0.45);
+    }
+    .done-icon svg { width: 32px; height: 32px; stroke: #fff; }
+
+    /* Spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Section title within step */
+    .subhead {
+      margin: 18px 0 8px;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    /* Date triple */
+    .date-triple { display: grid; grid-template-columns: 80px 80px 110px; gap: 8px; }
+    .date-triple .input { text-align: center; }
+
+    /* Toast */
+    .toast {
+      position: fixed; left: 50%; bottom: 24px;
+      transform: translateX(-50%) translateY(20px);
+      padding: 12px 20px;
+      background: var(--navy); color: #fff;
+      border-radius: 999px;
+      font-size: 13.5px; font-weight: 600;
+      box-shadow: 0 14px 30px -10px rgba(15, 35, 65, 0.45);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 50;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.err { background: var(--err); }
+    .toast.ok { background: var(--ok); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg class="brand-orbits" viewBox="0 0 240 240">
+            <g class="brand-orbit-layer brand-orbit-layer-a">
+              <circle cx="212" cy="120" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="148.43" cy="207.50" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="45.57" cy="174.04" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="45.57" cy="65.96" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="148.43" cy="32.50" r="3" fill="#16325c" opacity="0.92"></circle>
+            </g>
+            <g class="brand-orbit-layer brand-orbit-layer-b">
+              <circle cx="213.53" cy="174" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="120" cy="228" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="26.47" cy="174" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="26.47" cy="66" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="120" cy="12" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="213.53" cy="66" r="5" fill="#f5b500" opacity="0.95"></circle>
+            </g>
+          </svg>
+          <img class="brand-logo" src="portal/F-02-1.png" alt="" />
+        </div>
+        <div>
+          <div class="brand-text">clubSENsational</div>
+          <h1 class="brand-sub">Starter checklist</h1>
+          <div class="hmrc-badge" role="note" aria-label="Based on the official HMRC Starter Checklist form">
+            <span class="hmrc-logo-wrap">
+              <img class="hmrc-logo" src="portal/hmrc.png" alt="HM Revenue & Customs" />
+            </span>
+            <span class="hmrc-text">
+              <span class="hmrc-kicker">Based on the official</span>
+              <span class="hmrc-name">Starter checklist form</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <p class="form-nav-links">
+        <a id="navOnboarding" href="onboarding_portal.html#docs">← Onboarding</a>
+        <span> · </span>
+        <a id="navJob" href="#">Job application</a>
+        <span> · </span>
+        <a id="navHealth" href="#">Health questionnaire</a>
+      </p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <p class="lede">Complete this short form and we'll prepare the official HMRC Starter Checklist PDF, pre-filled with your answers, for you to sign and upload. If you already saved a <strong>job application</strong> draft in this session, your name, DOB and address may load automatically. Takes about 3 minutes.</p>
+      </div>
+
+      <div class="progress" id="progress">
+        <div class="step-chip" data-step="1"><span class="step-num">1</span> Your details</div>
+        <div class="step-chip" data-step="2"><span class="step-num">2</span> Employment</div>
+        <div class="step-chip" data-step="3"><span class="step-num">3</span> Student loans</div>
+        <div class="step-chip" data-step="4"><span class="step-num">4</span> Review &amp; sign</div>
+        <div class="step-chip" data-step="5"><span class="step-num">5</span> Done</div>
+      </div>
+
+      <!-- STEP 1: PERSONAL DETAILS -->
+      <section class="step" data-step="1">
+        <h2>Personal details</h2>
+        <p class="step-hint">All information stays on your device until you download or upload the PDF.</p>
+
+        <div class="grid">
+          <div class="field full">
+            <label for="firstNames">First name(s) <span aria-hidden="true" style="color:var(--err)">*</span></label>
+            <div class="help">Use your full first name(s) — not initials or shortened versions (e.g. James, not Jim).</div>
+            <input class="input" id="firstNames" type="text" autocomplete="given-name" required />
+            <div class="error">Please enter your first name(s).</div>
+          </div>
+          <div class="field full">
+            <label for="lastName">Last name <span aria-hidden="true" style="color:var(--err)">*</span></label>
+            <input class="input" id="lastName" type="text" autocomplete="family-name" required />
+            <div class="error">Please enter your last name.</div>
+          </div>
+          <div class="field">
+            <label>Are you male or female? <span aria-hidden="true" style="color:var(--err)">*</span></label>
+            <div class="choices cols-2" id="genderChoices" role="radiogroup" aria-label="Gender">
+              <label class="choice"><input type="radio" name="gender" value="male" /><div class="ctitle">Male</div></label>
+              <label class="choice"><input type="radio" name="gender" value="female" /><div class="ctitle">Female</div></label>
+            </div>
+            <div class="error">Please select an option.</div>
+          </div>
+          <div class="field">
+            <label for="dob">Date of birth <span aria-hidden="true" style="color:var(--err)">*</span></label>
+            <input class="input" id="dob" type="date" required />
+            <div class="error">Please enter your date of birth.</div>
+          </div>
+
+          <div class="field full">
+            <label>Home address <span aria-hidden="true" style="color:var(--err)">*</span></label>
+            <div class="help">Where you currently live. We'll split it across the lines on the HMRC form.</div>
+            <input class="input" id="addr1" type="text" placeholder="Address line 1" autocomplete="address-line1" required />
+            <input class="input" id="addr2" type="text" placeholder="Address line 2 (optional)" autocomplete="address-line2" style="margin-top:8px" />
+            <input class="input" id="addr3" type="text" placeholder="Town / City" autocomplete="address-level2" style="margin-top:8px" required />
+            <div class="error">Please enter your home address.</div>
+          </div>
+          <div class="field">
+            <label for="postcode">Postcode <span aria-hidden="true" style="color:var(--err)">*</span></label>
+            <input class="input" id="postcode" type="text" autocomplete="postal-code" required style="text-transform:uppercase" />
+            <div class="error">Please enter your postcode.</div>
+          </div>
+          <div class="field">
+            <label for="country">Country <span aria-hidden="true" style="color:var(--err)">*</span></label>
+            <input class="input" id="country" type="text" autocomplete="country-name" value="United Kingdom" required />
+            <div class="error">Please enter your country.</div>
+          </div>
+
+          <div class="field full">
+            <label for="niNumber">National Insurance number <span style="color:var(--muted); font-weight:500">(if known)</span></label>
+            <div class="help">Looks like <strong>AB 12 34 56 C</strong>. Leave blank if you don't have one yet.</div>
+            <input class="input" id="niNumber" type="text" placeholder="e.g. AB123456C" maxlength="13" style="text-transform:uppercase" />
+            <div class="error">National Insurance number should look like AB 12 34 56 C.</div>
+          </div>
+
+          <div class="field full">
+            <label for="empStart">Employment start date <span aria-hidden="true" style="color:var(--err)">*</span></label>
+            <div class="help">The first day you'll be working with us. Ask your manager if you're not sure.</div>
+            <input class="input" id="empStart" type="date" required />
+            <div class="error">Please enter your employment start date.</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <span></span>
+          <button class="btn btn-primary" type="button" data-action="next">Continue
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 2: EMPLOYEE STATEMENT -->
+      <section class="step" data-step="2">
+        <h2>Employee statement</h2>
+        <p class="step-hint">Choose the option that <strong>best describes your situation</strong>. Picking the right one helps HMRC give you the correct tax code. If unsure, choose the safest match — you can update it later.</p>
+
+        <div class="choices" id="statementChoices" role="radiogroup" aria-label="Employee statement">
+          <label class="choice">
+            <input type="radio" name="statement" value="A" />
+            <div class="ctitle"><span class="badge">A</span> First job since 6 April</div>
+            <div class="cdesc">Choose A if this is your <strong>first job since 6 April</strong>, AND since 6 April you haven't received any of the following:</div>
+            <ul class="clist">
+              <li>Jobseeker's Allowance</li>
+              <li>Employment &amp; Support Allowance</li>
+              <li>Incapacity Benefit</li>
+            </ul>
+            <div class="cdesc"><em>Don't choose A if you receive a State, Works or Private Pension.</em></div>
+          </label>
+          <label class="choice">
+            <input type="radio" name="statement" value="B" />
+            <div class="ctitle"><span class="badge">B</span> Another job earlier this year</div>
+            <div class="cdesc">Choose B if, since 6 April, you've <strong>had another job (but no P45)</strong>, OR received Jobseeker's Allowance, Employment &amp; Support Allowance, or Incapacity Benefit.</div>
+            <div class="cdesc"><em>Don't choose B if you receive a State, Works or Private Pension.</em></div>
+          </label>
+          <label class="choice">
+            <input type="radio" name="statement" value="C" />
+            <div class="ctitle"><span class="badge">C</span> Another job or pension now</div>
+            <div class="cdesc">Choose C if either applies:</div>
+            <ul class="clist">
+              <li>You have <strong>another job right now</strong>, and/or</li>
+              <li>You're receiving a State, Works or Private Pension</li>
+            </ul>
+          </label>
+        </div>
+        <div class="error" id="statementError" style="display:none; color:var(--err); font-size:12px; margin-top:8px">Please select a statement.</div>
+
+        <div class="actions">
+          <button class="btn btn-ghost" type="button" data-action="prev">Back</button>
+          <button class="btn btn-primary" type="button" data-action="next">Continue
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 3: STUDENT LOANS -->
+      <section class="step" data-step="3">
+        <h2>Student loans</h2>
+        <p class="step-hint">Do any of these statements apply to you?</p>
+
+        <div class="check-row" id="slNoneRow" tabindex="0" role="checkbox" aria-checked="false">
+          <input type="checkbox" id="slNone" />
+          <div class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+          <div class="text">
+            <strong>None of these apply / I have no student loan to repay.</strong>
+            <div style="color:var(--muted); font-size:12.5px; margin-top:4px; line-height:1.5">
+              Tick this if any of the following are true:
+              <ul style="margin: 4px 0 0; padding-left: 18px">
+                <li>You don't have any Student or Postgraduate Loans</li>
+                <li>You're still studying full-time on a course your Student Loan relates to</li>
+                <li>You finished your course after 6 April this tax year</li>
+                <li>You're already repaying by direct debit with the Student Loans Company</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div id="slPlansBlock" style="margin-top:14px">
+          <div class="subhead">Otherwise, tick all the loans you have</div>
+          <div class="grid">
+            <label class="check-row" data-checkrow>
+              <input type="checkbox" id="plan1" />
+              <div class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+              <div class="text"><strong>Plan 1</strong>
+                <div style="color:var(--muted); font-size:12.5px; margin-top:3px">Northern Ireland, or England/Wales course started <strong>before 1 Sep 2012</strong>.</div>
+              </div>
+            </label>
+            <label class="check-row" data-checkrow>
+              <input type="checkbox" id="plan2" />
+              <div class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+              <div class="text"><strong>Plan 2</strong>
+                <div style="color:var(--muted); font-size:12.5px; margin-top:3px">England/Wales course started <strong>on or after 1 Sep 2012</strong>.</div>
+              </div>
+            </label>
+            <label class="check-row" data-checkrow>
+              <input type="checkbox" id="plan4" />
+              <div class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+              <div class="text"><strong>Plan 4</strong>
+                <div style="color:var(--muted); font-size:12.5px; margin-top:3px">Scotland (applied through SAAS).</div>
+              </div>
+            </label>
+            <label class="check-row" data-checkrow>
+              <input type="checkbox" id="planPG" />
+              <div class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+              <div class="text"><strong>Postgraduate Loan</strong> <span style="color:var(--muted); font-weight:500">(England &amp; Wales only)</span>
+                <div style="color:var(--muted); font-size:12.5px; margin-top:3px">Master's or Doctoral postgraduate loan.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-ghost" type="button" data-action="prev">Back</button>
+          <button class="btn btn-primary" type="button" data-action="next">Continue
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 4: REVIEW -->
+      <section class="step" data-step="4">
+        <h2>Review &amp; declaration</h2>
+        <p class="step-hint">Please review your details, then sign in the box below. Your signature is placed on the official PDF declaration page.</p>
+
+        <div class="review" id="reviewBlock"></div>
+
+        <div class="sig-pad-block">
+          <div class="subhead">Your signature</div>
+          <p class="help" style="margin-bottom:8px">Use your finger on mobile or mouse on a computer. Sign inside the box.</p>
+          <div class="sig-pad-wrap" id="sigPadWrap">
+            <canvas id="signaturePad" aria-label="Signature pad"></canvas>
+          </div>
+          <div class="sig-pad-actions">
+            <span class="help">This appears in the signature square on the HMRC form.</span>
+            <button type="button" class="btn-clear-sig" id="clearSignatureBtn">Clear signature</button>
+          </div>
+          <div class="error" id="signatureError" style="display:none; color:var(--err); font-size:12px; margin-top:8px">Please sign in the box above.</div>
+        </div>
+
+        <div class="subhead">Declaration</div>
+        <label class="check-row" id="declareRow" tabindex="0" role="checkbox" aria-checked="false">
+          <input type="checkbox" id="declareCheck" />
+          <div class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+          <div class="text">I confirm that the information I've given on this form is correct.</div>
+        </label>
+        <div class="error" id="declareError" style="display:none; color:var(--err); font-size:12px; margin-top:8px">Please confirm the declaration.</div>
+
+        <div class="actions">
+          <button class="btn btn-ghost" type="button" data-action="prev">Back</button>
+          <button class="btn btn-primary" type="button" id="generatePdfBtn">
+            <span class="btn-label">Generate PDF</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 5: DONE -->
+      <section class="step" data-step="5">
+        <div class="done-wrap">
+          <div class="done-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <h2 style="margin-bottom:6px">Your Starter Checklist is ready</h2>
+          <p class="step-hint" style="max-width:520px; margin:0 auto 12px">Your answers and <strong>signature</strong> are on the official PDF. A copy is sent to the <strong>admin portal</strong> automatically. Download a copy for your records and upload it on onboarding if HR asks for the signed file.</p>
+          <p class="portal-upload-status portal-upload-status--ok" id="portalUploadStatus" hidden aria-live="polite"></p>
+
+          <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap">
+            <button class="btn btn-primary" type="button" id="downloadPdfBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download filled PDF
+            </button>
+            <a class="btn btn-ghost" id="goToOnboardingUpload" href="onboarding_portal.html#docs">Go to upload</a>
+          </div>
+
+          <div style="margin-top:24px; padding:14px 18px; background:#fffbe9; border:1px solid #f1d96b; border-radius:12px; color:#7a5b00; font-size:13px; line-height:1.55; max-width:560px; margin-left:auto; margin-right:auto; text-align:left">
+            <strong>Tip:</strong> If anything looks off in the PDF, come back to this page and edit your answers — your inputs are saved on this device.
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    var STORAGE_KEY = 'cs_starter_checklist_v1';
+
+    // ----- State -----
+    var state = loadState() || {
+      firstNames: '', lastName: '',
+      gender: '',
+      dob: '',
+      addr1: '', addr2: '', addr3: '',
+      postcode: '', country: 'United Kingdom',
+      niNumber: '',
+      empStart: '',
+      statement: '',
+      slNone: false,
+      plan1: false, plan2: false, plan4: false, planPG: false,
+      declared: false
+    };
+
+    function loadState() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+    function saveState() {
+      try {
+        var copy = Object.assign({}, state);
+        delete copy.signatureDataUrl;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(copy));
+      } catch (e) {}
+    }
+
+    var PDF_URL = 'portal/Starter-checklist_English_2021_2022.pdf';
+
+    function portalBox() {
+      try { return window.__PORTAL_SUPABASE__ || {}; } catch (e) { return {}; }
+    }
+    function supabaseUrl() {
+      var box = portalBox();
+      if (box.url) return String(box.url).replace(/\/$/, '');
+      return 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+    }
+    function anonKey() {
+      var box = portalBox();
+      return box.anonKey ? String(box.anonKey) : '';
+    }
+    async function authToken() {
+      try {
+        var box = portalBox();
+        var client = box.client;
+        if (!client || !client.auth || typeof client.auth.getSession !== 'function') return '';
+        var res = await client.auth.getSession();
+        return (res && res.data && res.data.session && res.data.session.access_token) || '';
+      } catch (e) { return ''; }
+    }
+    async function edgePost(path, body) {
+      var token = await authToken();
+      if (!token) throw new Error('not_signed_in');
+      var res = await fetch(supabaseUrl() + '/functions/v1/' + path, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+          apikey: anonKey()
+        },
+        body: JSON.stringify(body || {})
+      });
+      var json = await res.json().catch(function () { return {}; });
+      if (!res.ok || !json.ok) {
+        var err = new Error(json.error || 'request_failed');
+        err.detail = json;
+        throw err;
+      }
+      return json;
+    }
+    function bytesToDataUrl(bytes, mime) {
+      var bin = '';
+      var chunk = 0x8000;
+      for (var i = 0; i < bytes.length; i += chunk) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      return 'data:' + (mime || 'application/pdf') + ';base64,' + btoa(bin);
+    }
+    function uploadFilledChecklistToAdminPortal(bytes, filename) {
+      var safeName = String(filename || 'Starter-Checklist.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
+      var dataUrl = bytesToDataUrl(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), 'application/pdf');
+      return edgePost('portal-staff-onboarding-doc-upload', {
+        action: 'upload',
+        doc_type: 'checklist',
+        file_name: safeName,
+        content_type: 'application/pdf',
+        content_base64: dataUrl
+      }).then(function (res) {
+        try { localStorage.setItem('portal_ob_checklist_done', '1'); } catch (e0) {}
+        return res;
+      });
+    }
+
+        function setPortalUploadStatus(kind, message) {
+      var el = document.getElementById('portalUploadStatus');
+      if (!el) return;
+      el.hidden = false;
+      el.className = 'portal-upload-status portal-upload-status--' + (kind === 'ok' ? 'ok' : 'warn');
+      el.textContent = message;
+    }
+
+    function wireApplicantNav() {
+      var q = new URLSearchParams(window.location.search);
+      var ret = q.get('return') || 'onboarding_portal.html#docs';
+      var navOb = document.getElementById('navOnboarding');
+      var navJob = document.getElementById('navJob');
+      var navHe = document.getElementById('navHealth');
+      if (navOb) navOb.setAttribute('href', ret);
+      if (navJob) navJob.setAttribute('href', 'onboarding_job_application.html');
+      if (navHe) navHe.setAttribute('href', 'onboarding_health_questionnaire.html');
+      var goUp = document.getElementById('goToOnboardingUpload');
+      if (goUp) goUp.setAttribute('href', 'onboarding_portal.html#docs');
+    }
+
+    function mergeJobDraftIntoState(job) {
+      if (!job || typeof job !== 'object') return false;
+      var changed = false;
+      function setIfEmpty(key, val) {
+        if (val == null || String(val).trim() === '') return;
+        if (state[key] && String(state[key]).trim()) return;
+        state[key] = String(val).trim();
+        changed = true;
+      }
+      setIfEmpty('firstNames', job.firstName || job.name || job.first_name);
+      setIfEmpty('lastName', job.lastName || job.surname || job.last_name);
+      setIfEmpty('dob', job.dob || job.date_of_birth);
+      var hasAddr = (state.addr1 || '').trim() || (state.addr2 || '').trim() || (state.addr3 || '').trim();
+      if (!hasAddr && job.address && String(job.address).trim()) {
+        var lines = String(job.address).split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+        var pcRe = /^[A-Z]{1,2}\d[A-Z0-9]?\s*\d[A-Z]{2}$/i;
+        function normPc(s) { return s.replace(/\s+/g, ' ').trim(); }
+        if (lines.length && pcRe.test(normPc(lines[lines.length - 1]))) {
+          if (!(state.postcode || '').trim()) {
+            state.postcode = normPc(lines.pop()).toUpperCase();
+            changed = true;
+          }
+        }
+        if (!(state.addr1 || '').trim() && lines[0]) { state.addr1 = lines[0]; changed = true; }
+        if (!(state.addr2 || '').trim() && lines[1]) { state.addr2 = lines[1]; changed = true; }
+        if (!(state.addr3 || '').trim() && lines.length > 2) {
+          state.addr3 = lines.slice(2).join(', ');
+          changed = true;
+        }
+      }
+      return changed;
+    }
+
+    function loadJobDraftFromSupabase() {
+      return Promise.resolve(window.__portalOnboardingFormReady || null).then(function () {
+        return edgePost('portal-staff-onboarding-draft-load', { form_type: 'job' });
+      }).then(function (res) {
+        if (res && res.ok && res.draft && res.draft.payload) {
+          return { ok: true, drafts: { job: { payload: res.draft.payload } } };
+        }
+        return { ok: true, drafts: {} };
+      }).catch(function () {
+        return { ok: false, drafts: {} };
+      });
+    }
+
+    // ----- DOM helpers -----
+    function $(s, r) { return (r || document).querySelector(s); }
+    function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+
+    function showToast(msg, type) {
+      var t = $('#toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + (type || '');
+      clearTimeout(t._t);
+      t._t = setTimeout(function () { t.className = 'toast'; }, 3000);
+    }
+
+    // ----- Signature pad (declaration box on PDF page 2) -----
+    var sigPad = { canvas: null, ctx: null, drawing: false, ink: false, wired: false };
+
+    function resizeSignatureCanvas() {
+      var canvas = sigPad.canvas || document.getElementById('signaturePad');
+      if (!canvas) return;
+      var wrap = document.getElementById('sigPadWrap');
+      var cssW = wrap ? Math.max(wrap.clientWidth, 280) : 560;
+      var cssH = 140;
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var prev = state.signatureDataUrl;
+      canvas.width = Math.floor(cssW * dpr);
+      canvas.height = Math.floor(cssH * dpr);
+      canvas.style.width = cssW + 'px';
+      canvas.style.height = cssH + 'px';
+      var ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.strokeStyle = '#0b214a';
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      sigPad.ctx = ctx;
+      if (prev) {
+        var img = new Image();
+        img.onload = function () {
+          ctx.drawImage(img, 0, 0, cssW, cssH);
+          sigPad.ink = true;
+        };
+        img.src = prev;
+      }
+    }
+
+    function clearSignaturePad() {
+      if (!sigPad.canvas) return;
+      var ctx = sigPad.canvas.getContext('2d');
+      ctx.clearRect(0, 0, sigPad.canvas.width, sigPad.canvas.height);
+      resizeSignatureCanvas();
+      sigPad.ink = false;
+      state.signatureDataUrl = null;
+      var err = $('#signatureError');
+      if (err) err.style.display = 'none';
+    }
+
+    function hasSignatureInk() {
+      return sigPad.ink || !!state.signatureDataUrl;
+    }
+
+    function captureSignatureFromPad() {
+      if (!sigPad.canvas || !sigPad.ink) return;
+      state.signatureDataUrl = sigPad.canvas.toDataURL('image/png');
+    }
+
+    function setupSignaturePad() {
+      var canvas = document.getElementById('signaturePad');
+      if (!canvas) return;
+      sigPad.canvas = canvas;
+      resizeSignatureCanvas();
+      if (sigPad.wired) return;
+      sigPad.wired = true;
+
+      function pointerPos(e) {
+        var rect = canvas.getBoundingClientRect();
+        var cx = e.clientX;
+        var cy = e.clientY;
+        if (e.touches && e.touches.length) {
+          cx = e.touches[0].clientX;
+          cy = e.touches[0].clientY;
+        }
+        return { x: cx - rect.left, y: cy - rect.top };
+      }
+
+      function strokeStart(e) {
+        e.preventDefault();
+        sigPad.drawing = true;
+        var p = pointerPos(e);
+        sigPad.ctx.beginPath();
+        sigPad.ctx.moveTo(p.x, p.y);
+      }
+      function strokeMove(e) {
+        if (!sigPad.drawing) return;
+        e.preventDefault();
+        sigPad.ink = true;
+        var err = $('#signatureError');
+        if (err) err.style.display = 'none';
+        var p = pointerPos(e);
+        sigPad.ctx.lineTo(p.x, p.y);
+        sigPad.ctx.stroke();
+      }
+      function strokeEnd(e) {
+        if (!sigPad.drawing) return;
+        e.preventDefault();
+        sigPad.drawing = false;
+      }
+
+      canvas.addEventListener('mousedown', strokeStart);
+      canvas.addEventListener('mousemove', strokeMove);
+      canvas.addEventListener('mouseup', strokeEnd);
+      canvas.addEventListener('mouseleave', strokeEnd);
+      canvas.addEventListener('touchstart', strokeStart, { passive: false });
+      canvas.addEventListener('touchmove', strokeMove, { passive: false });
+      canvas.addEventListener('touchend', strokeEnd, { passive: false });
+      canvas.addEventListener('touchcancel', strokeEnd, { passive: false });
+
+      var clearBtn = document.getElementById('clearSignatureBtn');
+      if (clearBtn) clearBtn.addEventListener('click', clearSignaturePad);
+      window.addEventListener('resize', function () {
+        if (currentStep === 4) resizeSignatureCanvas();
+      });
+    }
+
+    // ----- Steps navigation -----
+    var totalSteps = 5;
+    var currentStep = 1;
+
+    function showStep(n) {
+      currentStep = n;
+      $$('.step').forEach(function (el) {
+        el.classList.toggle('active', Number(el.dataset.step) === n);
+      });
+      $$('.step-chip').forEach(function (el) {
+        var s = Number(el.dataset.step);
+        el.classList.toggle('active', s === n);
+        el.classList.toggle('done', s < n);
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (n === 4) {
+        renderReview();
+        setTimeout(setupSignaturePad, 0);
+      }
+    }
+
+    function nextStep() {
+      if (!validateStep(currentStep)) return;
+      if (currentStep < totalSteps) showStep(currentStep + 1);
+    }
+    function prevStep() {
+      if (currentStep > 1) showStep(currentStep - 1);
+    }
+
+    // ----- Field <-> state binding -----
+    var inputIds = [
+      'firstNames', 'lastName', 'dob',
+      'addr1', 'addr2', 'addr3',
+      'postcode', 'country',
+      'niNumber', 'empStart'
+    ];
+    function hydrateInputs() {
+      inputIds.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && state[id]) el.value = state[id];
+      });
+      if (state.gender) {
+        var g = document.querySelector('input[name="gender"][value="' + state.gender + '"]');
+        if (g) { g.checked = true; g.closest('.choice').classList.add('is-selected'); }
+      }
+      if (state.statement) {
+        var s = document.querySelector('input[name="statement"][value="' + state.statement + '"]');
+        if (s) { s.checked = true; s.closest('.choice').classList.add('is-selected'); }
+      }
+      ['slNone', 'plan1', 'plan2', 'plan4', 'planPG', 'declareCheck'].forEach(function (id) {
+        var el = document.getElementById(id);
+        var on = id === 'declareCheck' ? state.declared : state[id];
+        if (el && on) {
+          el.checked = true;
+          var row = el.closest('.check-row');
+          if (row) row.classList.add('is-checked');
+        }
+      });
+      updateSlPlansVisibility();
+    }
+
+    function bindInputs() {
+      inputIds.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', function () {
+          state[id] = el.value;
+          el.closest('.field').classList.remove('has-error');
+          el.classList.remove('invalid');
+          saveState();
+        });
+      });
+
+      // Postcode + NI uppercase
+      ['postcode', 'niNumber'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', function () {
+          var pos = el.selectionStart;
+          el.value = el.value.toUpperCase();
+          try { el.setSelectionRange(pos, pos); } catch (e) {}
+          state[id] = el.value;
+        });
+      });
+
+      // Gender / Statement (radio choice tiles)
+      $$('#genderChoices .choice').forEach(function (lbl) {
+        lbl.addEventListener('click', function () {
+          $$('#genderChoices .choice').forEach(function (c) { c.classList.remove('is-selected'); });
+          lbl.classList.add('is-selected');
+          var inp = lbl.querySelector('input');
+          inp.checked = true;
+          state.gender = inp.value;
+          saveState();
+        });
+      });
+      $$('#statementChoices .choice').forEach(function (lbl) {
+        lbl.addEventListener('click', function () {
+          $$('#statementChoices .choice').forEach(function (c) { c.classList.remove('is-selected'); });
+          lbl.classList.add('is-selected');
+          var inp = lbl.querySelector('input');
+          inp.checked = true;
+          state.statement = inp.value;
+          $('#statementError').style.display = 'none';
+          saveState();
+        });
+      });
+
+      // <label class="check-row">: native label toggles the input — do not flip .checked again on click.
+      $$('.check-row').forEach(function (row) {
+        var inp = row.querySelector('input[type="checkbox"]');
+        if (!inp) return;
+        if (row.tagName === 'LABEL') return;
+        row.addEventListener('click', function () {
+          inp.checked = !inp.checked;
+          inp.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      });
+      $$('.check-row[tabindex]').forEach(function (row) {
+        row.addEventListener('keydown', function (e) {
+          if (e.key !== ' ' && e.key !== 'Enter') return;
+          e.preventDefault();
+          var inp = row.querySelector('input[type="checkbox"]');
+          if (!inp) return;
+          inp.checked = !inp.checked;
+          inp.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      });
+
+      ['slNone', 'plan1', 'plan2', 'plan4', 'planPG', 'declareCheck'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('change', function () {
+          var row = el.closest('.check-row');
+          if (row) row.classList.toggle('is-checked', el.checked);
+          if (id === 'declareCheck') {
+            state.declared = el.checked;
+            if (el.checked) $('#declareError').style.display = 'none';
+            var dr = document.getElementById('declareRow');
+            if (dr) dr.setAttribute('aria-checked', el.checked ? 'true' : 'false');
+          } else {
+            state[id] = el.checked;
+            if (id === 'slNone') {
+              var nr = document.getElementById('slNoneRow');
+              if (nr) nr.setAttribute('aria-checked', el.checked ? 'true' : 'false');
+            }
+            if (id === 'slNone' && el.checked) {
+              // Untick all plans
+              ['plan1', 'plan2', 'plan4', 'planPG'].forEach(function (pid) {
+                var p = document.getElementById(pid);
+                if (p) {
+                  p.checked = false;
+                  state[pid] = false;
+                  var pr = p.closest('.check-row');
+                  if (pr) pr.classList.remove('is-checked');
+                }
+              });
+            } else if (['plan1','plan2','plan4','planPG'].indexOf(id) !== -1 && el.checked) {
+              // If user picks a plan, untick "none"
+              var none = document.getElementById('slNone');
+              if (none && none.checked) {
+                none.checked = false;
+                state.slNone = false;
+                var nr = none.closest('.check-row');
+                if (nr) nr.classList.remove('is-checked');
+              }
+            }
+            updateSlPlansVisibility();
+          }
+          saveState();
+        });
+      });
+
+      // Nav buttons
+      $$('[data-action="next"]').forEach(function (b) { b.addEventListener('click', nextStep); });
+      $$('[data-action="prev"]').forEach(function (b) { b.addEventListener('click', prevStep); });
+
+      $('#generatePdfBtn').addEventListener('click', onGenerate);
+      $('#downloadPdfBtn').addEventListener('click', onDownload);
+    }
+
+    function updateSlPlansVisibility() {
+      // Visual emphasis: if "none" is ticked, dim plans (but keep visible for re-selection)
+      var block = $('#slPlansBlock');
+      if (!block) return;
+      block.style.opacity = state.slNone ? '0.55' : '1';
+    }
+
+    // ----- Validation -----
+    function setError(id, hasError) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var field = el.closest('.field');
+      if (!field) return;
+      field.classList.toggle('has-error', hasError);
+      el.classList.toggle('invalid', hasError);
+    }
+
+    function validateStep(n) {
+      if (n === 1) {
+        var required = ['firstNames', 'lastName', 'dob', 'addr1', 'addr3', 'postcode', 'country', 'empStart'];
+        var firstInvalid = null;
+        required.forEach(function (id) {
+          var v = (state[id] || '').toString().trim();
+          var bad = !v;
+          setError(id, bad);
+          if (bad && !firstInvalid) firstInvalid = id;
+        });
+        // Gender
+        if (!state.gender) {
+          $('#genderChoices').closest('.field').classList.add('has-error');
+          if (!firstInvalid) firstInvalid = 'genderChoices';
+        } else {
+          $('#genderChoices').closest('.field').classList.remove('has-error');
+        }
+        // NI optional but if filled must roughly match format
+        var ni = (state.niNumber || '').replace(/\s+/g, '').toUpperCase();
+        if (ni && !/^[A-Z]{2}\d{6}[A-Z]?$/.test(ni)) {
+          setError('niNumber', true);
+          if (!firstInvalid) firstInvalid = 'niNumber';
+        } else {
+          setError('niNumber', false);
+        }
+        if (firstInvalid) {
+          var el = document.getElementById(firstInvalid);
+          if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          showToast('Please fill in the highlighted fields.', 'err');
+          return false;
+        }
+        return true;
+      }
+      if (n === 2) {
+        if (!state.statement) {
+          $('#statementError').style.display = 'block';
+          showToast('Please pick statement A, B or C.', 'err');
+          return false;
+        }
+        return true;
+      }
+      if (n === 3) {
+        // Either "none" or at least one plan must be ticked
+        var anyPlan = state.plan1 || state.plan2 || state.plan4 || state.planPG;
+        if (!state.slNone && !anyPlan) {
+          showToast('Please tick "None of these apply" or at least one loan plan.', 'err');
+          return false;
+        }
+        return true;
+      }
+      if (n === 4) {
+        if (!hasSignatureInk()) {
+          $('#signatureError').style.display = 'block';
+          showToast('Please sign in the signature box.', 'err');
+          return false;
+        }
+        captureSignatureFromPad();
+        if (!state.declared) {
+          $('#declareError').style.display = 'block';
+          showToast('Please confirm the declaration.', 'err');
+          return false;
+        }
+        return true;
+      }
+      return true;
+    }
+
+    // ----- Review -----
+    function fmtDate(iso) {
+      if (!iso) return '';
+      var d = new Date(iso + 'T00:00:00');
+      if (isNaN(d.getTime())) return iso;
+      var pad = function (x) { return x < 10 ? '0' + x : '' + x; };
+      return pad(d.getDate()) + ' ' + pad(d.getMonth() + 1) + ' ' + d.getFullYear();
+    }
+    function fmtNI(v) {
+      var s = (v || '').replace(/\s+/g, '').toUpperCase();
+      if (!s) return '';
+      return s.replace(/^([A-Z]{2})(\d{2})(\d{2})(\d{2})([A-Z]?)$/, function (m, a, b, c, d, e) {
+        return a + ' ' + b + ' ' + c + ' ' + d + (e ? ' ' + e : '');
+      });
+    }
+    function renderReview() {
+      var name = ((state.firstNames || '') + ' ' + (state.lastName || '')).trim();
+      var addressLines = [state.addr1, state.addr2, state.addr3, state.postcode].filter(Boolean);
+      var address = addressLines.join(', ');
+      var plans = [];
+      if (state.slNone) plans.push('No student loan');
+      if (state.plan1) plans.push('Plan 1');
+      if (state.plan2) plans.push('Plan 2');
+      if (state.plan4) plans.push('Plan 4');
+      if (state.planPG) plans.push('Postgraduate');
+      var items = [
+        { label: 'Full name', value: name },
+        { label: 'Gender', value: state.gender ? state.gender.charAt(0).toUpperCase() + state.gender.slice(1) : '' },
+        { label: 'Date of birth', value: fmtDate(state.dob) },
+        { label: 'NI number', value: fmtNI(state.niNumber) || '(not provided)' },
+        { label: 'Address', value: address },
+        { label: 'Country', value: state.country },
+        { label: 'Employment start date', value: fmtDate(state.empStart) },
+        { label: 'Employee statement', value: state.statement ? 'Statement ' + state.statement : '' },
+        { label: 'Student loans', value: plans.length ? plans.join(', ') : '' }
+      ];
+      var wrap = $('#reviewBlock');
+      wrap.innerHTML = items.map(function (it) {
+        var v = it.value && it.value.toString().trim();
+        return '<div class="review-item"><div class="label">' + it.label + '</div>' +
+          '<div class="value' + (v ? '' : ' empty') + '">' + (v ? escapeHtml(v) : '— not provided —') + '</div></div>';
+      }).join('');
+    }
+    function escapeHtml(s) {
+      return s.replace(/[&<>"]/g, function (c) {
+        return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
+      });
+    }
+
+    // ----- PDF coordinate map (calibrated from the HMRC PDF — page height 841.89) -----
+    // pdf-lib uses bottom-left origin. Each entry: { x, y } in PDF points, where the bottom
+    // of the writing line sits. For ticks, x/y is the baseline of the "X" we draw.
+    var H = 841.89;
+    var COORDS = {
+      // PAGE 0 (page index 0)
+      lastName:        { page: 0, x: 66, y: H - 326 },
+      firstNames:      { page: 0, x: 66, y: H - 408 },
+      addr1:           { page: 0, x: 334, y: H - 326 },
+      addr2:           { page: 0, x: 334, y: H - 348 },
+      addr3:           { page: 0, x: 334, y: H - 370 },
+      postcode:        { page: 0, x: 444, y: H - 370 },
+      country:         { page: 0, x: 334, y: H - 391 },
+      niNumber:        { page: 0, x: 334, y: H - 433, spacing: 14.7, max: 9 },
+      empStart:        { page: 0, ddX: 334, mmX: 374, yyyyX: 416, y: H - 487, charSpacing: 13.5 },
+      dob:             { page: 0, ddX: 66,  mmX: 106, yyyyX: 148, y: H - 511, charSpacing: 13.5 },
+      maleTick:        { page: 0, x: 92, y: 378 },
+      femaleTick:      { page: 0, x: 161, y: 378 },
+      // Checkbox squares measured from HMRC PDF (PyMuPDF drawings)
+      statementA:      { page: 0, x: 180, y: 48 },
+      statementB:      { page: 0, x: 343, y: 48 },
+      statementC:      { page: 0, x: 505, y: 48 },
+
+      // PAGE 1 (page index 1) — Q9/Q10 boxes at x≈253 (not the right-hand guidance column)
+      ifNo:            { page: 1, x: 257, y: 605 },
+      ifYes:           { page: 1, x: 257, y: 568 },
+      plan1:           { page: 1, x: 257, y: 477 },
+      plan2:           { page: 1, x: 257, y: 452 },
+      plan4:           { page: 1, x: 257, y: 427 },
+      planPG:          { page: 1, x: 257, y: 402 },
+      signatureBox:    { page: 1, x: 42, y: 242, w: 212, h: 33 },
+      declFullName:    { page: 1, x: 312, y: H - 580 },
+      declDate:        { page: 1, ddX: 312, mmX: 346, yyyyX: 380, y: H - 632, charSpacing: 13.5 }
+    };
+
+    // ----- PDF generation -----
+    var cachedPdfBytes = null;
+    async function loadOriginalPdf() {
+      if (cachedPdfBytes) return cachedPdfBytes;
+      var resp = await fetch(PDF_URL);
+      if (!resp.ok) throw new Error('Could not load the original PDF (' + resp.status + ').');
+      cachedPdfBytes = new Uint8Array(await resp.arrayBuffer());
+      return cachedPdfBytes;
+    }
+
+    async function buildFilledPdf() {
+      var bytes = await loadOriginalPdf();
+      var pdfDoc = await PDFLib.PDFDocument.load(bytes);
+      var helv = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+      var helvBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+      var pages = pdfDoc.getPages();
+
+      function drawText(coord, text, opts) {
+        if (text == null || text === '') return;
+        opts = opts || {};
+        pages[coord.page].drawText(String(text), {
+          x: coord.x,
+          y: coord.y,
+          size: opts.size || 11,
+          font: opts.bold ? helvBold : helv,
+          color: PDFLib.rgb(0.05, 0.13, 0.30)
+        });
+      }
+      function drawTick(coord, size) {
+        if (!coord) return;
+        var s = size || 10;
+        pages[coord.page].drawText('X', {
+          x: coord.x,
+          y: coord.y,
+          size: s,
+          font: helvBold,
+          color: PDFLib.rgb(0.05, 0.13, 0.30)
+        });
+      }
+      async function drawSignatureImage(coord, dataUrl) {
+        if (!coord || !dataUrl) return;
+        var b64 = String(dataUrl).split(',')[1] || '';
+        if (!b64) return;
+        var raw = atob(b64);
+        var bytes = new Uint8Array(raw.length);
+        var i;
+        for (i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+        var png = await pdfDoc.embedPng(bytes);
+        var boxW = coord.w || 212;
+        var boxH = coord.h || 33;
+        var scale = Math.min(boxW / png.width, boxH / png.height, 1);
+        var drawW = png.width * scale;
+        var drawH = png.height * scale;
+        pages[coord.page].drawImage(png, {
+          x: coord.x + (boxW - drawW) / 2,
+          y: coord.y + (boxH - drawH) / 2,
+          width: drawW,
+          height: drawH
+        });
+      }
+      function drawSpaced(coord, text) {
+        if (!text) return;
+        var spacing = coord.spacing || 14;
+        var i;
+        for (i = 0; i < text.length && i < (coord.max || text.length); i++) {
+          pages[coord.page].drawText(text[i], {
+            x: coord.x + i * spacing,
+            y: coord.y,
+            size: 11,
+            font: helv,
+            color: PDFLib.rgb(0.05, 0.13, 0.30)
+          });
+        }
+      }
+      function drawDate(coord, iso) {
+        if (!iso) return;
+        var d = new Date(iso + 'T00:00:00');
+        if (isNaN(d.getTime())) return;
+        var pad = function (x) { return x < 10 ? '0' + x : '' + x; };
+        var dd = pad(d.getDate());
+        var mm = pad(d.getMonth() + 1);
+        var yy = String(d.getFullYear());
+        var cs = coord.charSpacing || 13;
+        [['ddX', dd], ['mmX', mm], ['yyyyX', yy]].forEach(function (pair) {
+          var startX = coord[pair[0]];
+          var s = pair[1];
+          var i;
+          for (i = 0; i < s.length; i++) {
+            pages[coord.page].drawText(s[i], {
+              x: startX + i * cs,
+              y: coord.y,
+              size: 11,
+              font: helv,
+              color: PDFLib.rgb(0.05, 0.13, 0.30)
+            });
+          }
+        });
+      }
+
+      // ---------- Page 1 ----------
+      drawText(COORDS.lastName, state.lastName);
+      drawText(COORDS.firstNames, state.firstNames);
+      drawText(COORDS.addr1, state.addr1);
+      drawText(COORDS.addr2, state.addr2);
+      drawText(COORDS.addr3, state.addr3);
+      drawText(COORDS.postcode, (state.postcode || '').toUpperCase());
+      drawText(COORDS.country, state.country);
+
+      // NI number (digits/letters spaced over the small boxes)
+      drawSpaced(COORDS.niNumber, (state.niNumber || '').replace(/\s+/g, '').toUpperCase());
+
+      // Dates
+      drawDate(COORDS.empStart, state.empStart);
+      drawDate(COORDS.dob, state.dob);
+
+      // Gender ticks
+      if (state.gender === 'male') drawTick(COORDS.maleTick);
+      if (state.gender === 'female') drawTick(COORDS.femaleTick);
+
+      // Statement A/B/C
+      if (state.statement === 'A') drawTick(COORDS.statementA);
+      if (state.statement === 'B') drawTick(COORDS.statementB);
+      if (state.statement === 'C') drawTick(COORDS.statementC);
+
+      // ---------- Page 2 ----------
+      if (state.slNone) {
+        drawTick(COORDS.ifYes); // "If Yes, tick this box and go straight to the Declaration" (none of the loans apply)
+      } else {
+        // At least one plan -> tick "If No, tick this box and go to question 10"
+        drawTick(COORDS.ifNo);
+        if (state.plan1) drawTick(COORDS.plan1);
+        if (state.plan2) drawTick(COORDS.plan2);
+        if (state.plan4) drawTick(COORDS.plan4);
+        if (state.planPG) drawTick(COORDS.planPG);
+      }
+
+      // Declaration
+      var fullName = ((state.firstNames || '') + ' ' + (state.lastName || '')).trim();
+      drawText(COORDS.declFullName, fullName);
+      var today = new Date();
+      var pad = function (x) { return x < 10 ? '0' + x : '' + x; };
+      var todayIso = today.getFullYear() + '-' + pad(today.getMonth() + 1) + '-' + pad(today.getDate());
+      drawDate(COORDS.declDate, todayIso);
+      if (state.signatureDataUrl) {
+        await drawSignatureImage(COORDS.signatureBox, state.signatureDataUrl);
+      }
+
+      var out = await pdfDoc.save();
+      return out;
+    }
+
+    var lastBlobUrl = null;
+    var lastFilename = null;
+
+    async function onGenerate() {
+      var btn = $('#generatePdfBtn');
+      if (!validateStep(4)) return;
+      var label = btn.querySelector('.btn-label');
+      label.innerHTML = '<span class="spinner"></span> Building PDF...';
+      btn.disabled = true;
+      try {
+        var bytes = await buildFilledPdf();
+        var blob = new Blob([bytes], { type: 'application/pdf' });
+        if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
+        lastBlobUrl = URL.createObjectURL(blob);
+        lastFilename = buildFilename();
+        triggerDownload(lastBlobUrl, lastFilename);
+        try {
+          await uploadFilledChecklistToAdminPortal(bytes, lastFilename);
+          setPortalUploadStatus(
+            'ok',
+            'Sent to the admin portal (Documents → Checklist). HR can open your pre-filled PDF there.'
+          );
+          showToast('Checklist sent to the admin portal.', 'ok');
+        } catch (upErr) {
+          console.warn('checklist portal upload', upErr);
+          setPortalUploadStatus(
+            'warn',
+            'Could not send to the admin portal automatically. Download the PDF and upload the signed copy on the onboarding page.'
+          );
+        }
+        showStep(5);
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Something went wrong creating the PDF.', 'err');
+      } finally {
+        label.textContent = 'Generate PDF';
+        btn.disabled = false;
+      }
+    }
+
+    function buildFilename() {
+      var name = ((state.firstNames || '') + '-' + (state.lastName || '')).trim().replace(/\s+/g, '-').replace(/[^A-Za-z0-9-]/g, '');
+      if (!name) name = 'Starter-Checklist';
+      return name + '-Starter-Checklist.pdf';
+    }
+
+    function triggerDownload(url, filename) {
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { document.body.removeChild(a); }, 100);
+    }
+
+    async function onDownload() {
+      if (lastBlobUrl && lastFilename) {
+        triggerDownload(lastBlobUrl, lastFilename);
+        return;
+      }
+      // Rebuild if missing
+      try {
+        var bytes = await buildFilledPdf();
+        var blob = new Blob([bytes], { type: 'application/pdf' });
+        lastBlobUrl = URL.createObjectURL(blob);
+        lastFilename = buildFilename();
+        triggerDownload(lastBlobUrl, lastFilename);
+      } catch (err) {
+        showToast(err.message || 'Could not prepare the PDF.', 'err');
+      }
+    }
+
+    // ----- Init -----
+    function init() {
+      wireApplicantNav();
+      loadJobDraftFromSupabase().then(function (res) {
+        if (res && res.ok && res.drafts && res.drafts.job && res.drafts.job.payload) {
+          if (mergeJobDraftIntoState(res.drafts.job.payload)) {
+            saveState();
+            showToast('We filled some fields from your job application draft.', 'ok');
+          }
+        }
+        hydrateInputs();
+        bindInputs();
+        showStep(1);
+      }).catch(function () {
+        hydrateInputs();
+        bindInputs();
+        showStep(1);
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
+</body>
+</html>
