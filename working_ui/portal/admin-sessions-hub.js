@@ -2323,6 +2323,7 @@
     var joined = raw.replace(/[^a-z0-9]+/g, "");
     var k = raw.split(/\s+/)[0] || "";
     if (k === "luliya" || k === "lulia" || k === "lulya" || k === "aida" || k === "stf021") return "luliya";
+    if (k === "youssef" || joined.indexOf("youssef") === 0 || k === "yousef" || k === "yusef") return "youssef";
     if (k === "aurora" || joined === "auroragarcia") return "aurora";
     if (k === "javiermarquez" || joined === "javiermarquez") return "javier";
     if (
@@ -3647,6 +3648,29 @@
     return out;
   }
 
+  /**
+   * Feedback "Reviewed by" / awaiting: workers still on duty.
+   * Day-off requested (staff_unavailability) and COVER NEEDED do not owe a submit.
+   */
+  function feedbackWhoOwesInstructors(hub, slot) {
+    if (!slot) return [];
+    var iso = String(slot.session_date || (hub && hub.selectedDay) || "").slice(0, 10);
+    var names = dedupeInstructorNames(slotInstructors(slot));
+    var out = [];
+    for (var i = 0; i < names.length; i++) {
+      var n = names[i];
+      if (!n) continue;
+      if (/^cover[\s_]*needed$/i.test(n) || canonicalStaffMatchKey(n) === "coverneeded") continue;
+      if (hub && iso && hubStaffAwayOnIso(hub, iso, n)) continue;
+      out.push(n);
+    }
+    return out;
+  }
+
+  function slotHasOnDutyFeedbackStaff(hub, slot) {
+    return feedbackWhoOwesInstructors(hub, slot).length > 0;
+  }
+
   function hubInstructorCellHtml(slot, slotOv, opts) {
     if (!slot) return "\u2014";
     opts = opts || {};
@@ -3654,9 +3678,13 @@
     var whoOwes = !!opts.feedbackWhoOwes;
     if (slot.portalShadowingHost && slot.portalShadowingObserverName) {
       if (whoOwes) {
+        var obs = slot.portalShadowingObserverName;
+        if (opts.hub && hubStaffAwayOnIso(opts.hub, slot.session_date, obs)) {
+          obs = "";
+        }
         return (
-          formatInstructorPill(slot.portalShadowingObserverName) ||
-          slotInstructors(slot).map(formatInstructorPill).join(" ") ||
+          (obs ? formatInstructorPill(obs) : "") ||
+          feedbackWhoOwesInstructors(opts.hub, slot).map(formatInstructorPill).join(" ") ||
           "\u2014"
         );
       }
@@ -3671,21 +3699,28 @@
         "</span>"
       );
     }
+    if (whoOwes) {
+      var oweNames = feedbackWhoOwesInstructors(opts.hub, slot);
+      var coverNeededWho = !!(
+        slot.__portalScheduleOverride &&
+        overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride)
+      );
+      if (oweNames.length) {
+        return oweNames
+          .map(function (n) {
+            return coverNeededWho ? formatInstructorPillCoverNeeded(n) : formatInstructorPill(n);
+          })
+          .join(" ") || "\u2014";
+      }
+      if (coverNeededWho) return formatInstructorPillCoverNeeded("COVER NEEDED");
+      return "\u2014";
+    }
     if (slot.portalInstructorReassigned && slot.portalOriginalInstructors && slot.portalOriginalInstructors.length) {
       var coverNeeded = !!(
         slot.__portalScheduleOverride &&
         overrideIsInstructorCoverNeededType(slot.__portalScheduleOverride)
       );
       var effective = dedupeInstructorNames(slotInstructors(slot));
-      if (whoOwes) {
-        return (
-          effective
-            .map(function (n) {
-              return coverNeeded ? formatInstructorPillCoverNeeded(n) : formatInstructorPill(n);
-            })
-            .join(" ") || "\u2014"
-        );
-      }
       var origHtml = normalizeInstructorList(slot.portalOriginalInstructors).map(formatInstructorPillOut).join("");
       var coverHtml = effective
         .map(function (n) {
@@ -7254,6 +7289,20 @@
     if (this.opts && this.opts.feedbackMixAwaitingSlots && this.feedbackUnitHasSubmitted(unit)) {
       return true;
     }
+    /* Day-off requested / not on duty: nobody left to submit (Youssef Fri 18). */
+    if (!this.feedbackUnitHasOnDutyStaff(unit)) return true;
+    return false;
+  };
+
+  AdminSessionsHub.prototype.feedbackUnitHasOnDutyStaff = function (unit) {
+    if (!unit || !unit.slots || !unit.slots.length) return false;
+    var hub = this;
+    for (var i = 0; i < unit.slots.length; i++) {
+      var slot = unit.slots[i];
+      if (shouldOmitOverviewSlot(hub, slot)) continue;
+      if (hub.opts && hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(slot)) continue;
+      if (slotHasOnDutyFeedbackStaff(hub, slot)) return true;
+    }
     return false;
   };
 
@@ -9054,6 +9103,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         }
         continue;
       }
+      if (!slotHasOnDutyFeedbackStaff(hub, slot)) continue;
       out.push({ _ashAwaitingSlot: true, slot: slot });
     }
     for (var j = 0; j < submitted.length; j++) {
@@ -9174,6 +9224,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (awaitOpen) {
         var awaitInstOpen = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot), {
           feedbackWhoOwes: true,
+          hub: hub,
         });
         return (
           '<tr class="ash-fb-row ash-fb-row--open-seat">' +
@@ -9194,6 +9245,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (absentRow) return hub.htmlFeedbackTableRow(absentRow, escFn, opts);
         var awaitInstAbsent = hubInstructorCellHtml(awaitSlot, hub.overrideForSlot(awaitSlot), {
           feedbackWhoOwes: true,
+          hub: hub,
         });
         return (
           '<tr class="ash-fb-row ash-fb-row--awaiting">' +
@@ -9210,7 +9262,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var awaitInst = hubInstructorCellHtml(
         awaitSlot,
         instructorReassignOverrideForSlot(hub, awaitSlot) || hub.overrideForSlot(awaitSlot),
-        { feedbackWhoOwes: true }
+        { feedbackWhoOwes: true, hub: hub }
       );
       return (
         '<tr class="ash-fb-row ash-fb-row--awaiting">' +
@@ -10296,7 +10348,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.missingFeedbackRowFromSlot = function (slot, ctx, meta) {
     var hub = this;
     meta = meta || {};
-    var inst = slotInstructors(slot);
+    var inst = feedbackWhoOwesInstructors(hub, slot);
+    if (!inst.length) inst = slotInstructors(slot);
     return {
       client: clean(slot.client_name),
       service: clean(slot.service) || "\u2014",
@@ -10382,6 +10435,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       if (fbDone) {
         counts.submitted++;
+        continue;
+      }
+      if (!slotHasOnDutyFeedbackStaff(hub, slot)) {
         continue;
       }
       pushMissing(slot, { kind: "awaiting" });

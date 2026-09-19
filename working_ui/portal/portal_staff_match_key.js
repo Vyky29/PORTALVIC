@@ -67,7 +67,13 @@
     ) {
       return "luliya";
     }
-    if (joined === "yousef" || joined === "yusef" || joined === "yousseff" || joined === "josep") {
+    if (
+      joined === "yousef" ||
+      joined === "yusef" ||
+      joined === "yousseff" ||
+      joined === "josep" ||
+      joined.indexOf("youssef") === 0
+    ) {
       return "youssef";
     }
     if (joined === "auroragarcia") return "aurora";
