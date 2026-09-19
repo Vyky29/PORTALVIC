@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Onboarding — clubSENsational Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
   <script src="/portal-static-bootstrap.js"></script>
   <script type="module">
     window.__portalOnboardingFormReady = (async function () {
@@ -11,13 +14,36 @@
       await bootstrapDashboardSupabase({ page: "onboarding" });
     })();
   </script>
-  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260911-ob-docs" />
+  <link rel="stylesheet" href="/portal/onboarding_applicant_form.css?v=20260919-corporate" />
 </head>
 <body>
   <main class="ob-form-page">
     <header class="ob-form-head">
       <a class="ob-form-back" id="obFormBack" href="staff_dashboard.html">← Back</a>
-      <p class="ob-form-kicker">clubSENsational</p>
+      <div class="ob-brand" aria-hidden="false">
+        <div class="ob-brand-mark" aria-hidden="true">
+          <svg class="ob-brand-orbits" viewBox="0 0 240 240">
+            <g class="ob-brand-orbit-a">
+              <circle cx="212" cy="120" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="148.43" cy="207.50" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="45.57" cy="174.04" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="45.57" cy="65.96" r="3" fill="#16325c" opacity="0.92"></circle>
+              <circle cx="148.43" cy="32.50" r="3" fill="#16325c" opacity="0.92"></circle>
+            </g>
+            <g class="ob-brand-orbit-b">
+              <circle cx="213.53" cy="174" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="120" cy="228" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="26.47" cy="174" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="26.47" cy="66" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="120" cy="12" r="5" fill="#f5b500" opacity="0.95"></circle>
+              <circle cx="213.53" cy="66" r="5" fill="#f5b500" opacity="0.95"></circle>
+            </g>
+          </svg>
+          <img class="ob-brand-logo" src="/portal/F-02-1.png" alt="clubSENsational" width="132" height="132" decoding="async" />
+        </div>
+        <p class="ob-brand-kicker">New staff</p>
+        <p class="ob-brand-name">clubSENsational</p>
+      </div>
       <h1>Onboarding</h1>
       <p>Photo, documents, job application and health — save drafts anytime.</p>
       <p id="obFormSession" class="ob-form-session" hidden aria-live="polite"></p>
@@ -398,7 +424,7 @@
   <script src="/portal/onboarding_job_form.js?v=20260614-sections"></script>
   <script src="/portal/onboarding_health_form.js?v=20260614-sections"></script>
   <script src="/portal/onboarding_applicant_form.js?v=20260614-sections"></script>
-  <script src="/portal/onboarding_hub.js?v=20260919-starter-hmrc"></script>
+  <script src="/portal/onboarding_hub.js?v=20260919-corporate"></script>
   <script>
     (function () {
       async function boot() {
