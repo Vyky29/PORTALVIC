@@ -2759,74 +2759,121 @@
     }
     state.saving = true;
     updateToolbar();
-    var uid = null;
-    try {
-      var box = global.__PORTAL_SUPABASE__;
-      if (box && box.session && box.session.user) uid = box.session.user.id;
-    } catch (_e) {}
-    if (!uid) {
-      state.saving = false;
-      cfg.toast("No auth user — reload and try again.");
-      updateToolbar();
-      return;
+
+    function resolveUid() {
+      try {
+        var box = global.__PORTAL_SUPABASE__;
+        if (box && box.session && box.session.user && box.session.user.id) {
+          return Promise.resolve(String(box.session.user.id));
+        }
+      } catch (_e) {}
+      if (client.auth && typeof client.auth.getUser === "function") {
+        return client.auth.getUser().then(function (res) {
+          var u = res && res.data && res.data.user;
+          return u && u.id ? String(u.id) : "";
+        }).catch(function () {
+          return "";
+        });
+      }
+      return Promise.resolve("");
     }
-    var payload = rows.map(function (row) {
-      return {
-        session_date: row.session_date,
-        day: row.day,
-        column_key: row.column_key,
-        raw_assignment: row.raw_assignment,
-        paid_hours: row.paid_hours || null,
-        status: row.status,
-        created_by: uid,
-        updated_by: uid,
-      };
-    });
-    client
-      .from("portal_staff_timetable_cells")
-      .upsert(payload, { onConflict: "session_date,column_key" })
-      .then(function (res) {
-        if (res.error) throw res.error;
-        if (global.PortalStaffTimetableMerge) global.PortalStaffTimetableMerge.invalidate();
-        Object.keys(state.dirty).forEach(function (key) {
-          delete state.dirtyBaseline[key];
+
+    function refreshAfterSave(payloadLen) {
+      if (global.PortalStaffTimetableMerge) global.PortalStaffTimetableMerge.invalidate();
+      Object.keys(state.dirty).forEach(function (key) {
+        delete state.dirtyBaseline[key];
+      });
+      Object.keys(state.dirtyPaid).forEach(function (key) {
+        delete state.dirtyPaidBaseline[key];
+      });
+      state.dirty = Object.create(null);
+      state.dirtyPaid = Object.create(null);
+      return applyOverridesToMerged()
+        .then(function () {
+          return loadChangeLog();
+        })
+        .then(function () {
+          refreshPanel();
+          cfg.toast(
+            "Staff hours saved (" +
+              payloadLen +
+              " cell" +
+              (payloadLen === 1 ? "" : "s") +
+              ") — dashboards pick up overrides on reload."
+          );
+        })
+        .then(function () {
+          var side = Promise.resolve();
+          if (global.PortalRosterRowsMerge && client) {
+            side = side.then(function () {
+              return global.PortalRosterRowsMerge.loadAndCache(client);
+            });
+          }
+          return side.then(function () {
+            if (typeof global.portalRefreshStaffDashboardSourceFromPortal === "function") {
+              global.portalRefreshStaffDashboardSourceFromPortal();
+            }
+          });
+        })
+        .catch(function (refreshErr) {
+          console.warn("[asr] saved but refresh failed", refreshErr);
+          cfg.toast("Staff hours saved — reload the page if the grid looks stale.");
         });
-        Object.keys(state.dirtyPaid).forEach(function (key) {
-          delete state.dirtyPaidBaseline[key];
+    }
+
+    resolveUid()
+      .then(function (uid) {
+        if (!uid) {
+          throw new Error("No auth user — reload and try again.");
+        }
+        if (client.auth && typeof client.auth.refreshSession === "function") {
+          return client.auth.refreshSession().then(function () {
+            return uid;
+          }).catch(function () {
+            return uid;
+          });
+        }
+        return uid;
+      })
+      .then(function (uid) {
+        var payload = rows.map(function (row) {
+          return {
+            session_date: row.session_date,
+            day: row.day,
+            column_key: row.column_key,
+            raw_assignment: row.raw_assignment,
+            paid_hours: row.paid_hours ? row.paid_hours : null,
+            status: row.status,
+            created_by: uid,
+            updated_by: uid,
+          };
         });
-        state.dirty = Object.create(null);
-        state.dirtyPaid = Object.create(null);
-        return applyOverridesToMerged();
-      })
-      .then(function () {
-        return loadChangeLog();
-      })
-      .then(function () {
-        refreshPanel();
-        cfg.toast(
-          "Staff hours saved (" +
-            payload.length +
-            " cell" +
-            (payload.length === 1 ? "" : "s") +
-            ") — dashboards pick up overrides on reload."
-        );
-        if (global.PortalRosterRowsMerge && client) {
-          return global.PortalRosterRowsMerge.loadAndCache(client);
-        }
-      })
-      .then(function () {
-        if (typeof global.portalRefreshStaffDashboardSourceFromPortal === "function") {
-          global.portalRefreshStaffDashboardSourceFromPortal();
-        }
+        return client
+          .from("portal_staff_timetable_cells")
+          .upsert(payload, { onConflict: "session_date,column_key" })
+          .select("id")
+          .then(function (res) {
+            if (res.error) throw res.error;
+            return refreshAfterSave(payload.length);
+          });
       })
       .catch(function (err) {
         var msg = String((err && err.message) || err || "Unknown error");
+        var code = err && err.code ? String(err.code) : "";
+        var details = err && err.details ? String(err.details) : "";
         if (/portal_staff_timetable_cells|relation.*does not exist/i.test(msg)) {
           msg += " — run migration 20260611120000_portal_staff_timetable_cells on Portal Supabase.";
         } else if (/paid_hours|column.*does not exist/i.test(msg)) {
           msg += " — run migration 20260917193000_portal_staff_timetable_paid_hours on Portal Supabase.";
+        } else if (code === "23502" && /updated_by/i.test(msg + details)) {
+          msg =
+            "Auth session missing on save (updated_by). Reload admin, sign in again, then Save.";
+        } else if (/row-level security|RLS|42501/i.test(msg + code)) {
+          msg = "Not allowed to save staff hours (admin/CEO role required). " + msg;
         }
+        if (code && msg.indexOf(code) < 0) msg = code + ": " + msg;
         cfg.toast("Save failed: " + msg);
+        console.warn("[asr] saveStaffHours", err);
       })
       .finally(function () {
         state.saving = false;
