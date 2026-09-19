@@ -1,4 +1,5 @@
 // @ts-nocheck — Edge Function (Deno). Cursor uses Node TypeScript; ignores URL/npm imports and Deno.* here.
+// Deploy: supabase functions deploy portal-push-dispatch-schedule-override --no-verify-jwt
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import webpush from "npm:web-push@3.6.7";
 
@@ -11,12 +12,17 @@ const corsHeaders: Record<string, string> = {
 /** Push to the instructor whose live book changes.
  * - makeup / absence / slot_open → anchor_staff_id
  * - instructor_reassign → covering_staff_id (the worker who gains the session)
- * No push for cancel / void / COVER NEEDED placeholders. */
+ * - instructor_reassign cancelled (was active) → same worker: cover removed
+ * - slot_clear_client / slot_close / client_cancelled → that worker (named cover if set)
+ * No push for move/reassign clears or COVER NEEDED placeholders. */
 const ELIGIBLE = new Set([
   "client_replace_in_slot",
   "client_absence_announced",
   "slot_open",
   "instructor_reassign",
+  "slot_clear_client",
+  "slot_close",
+  "client_cancelled",
 ]);
 
 function rosterKeyFromProfile(username: string, fullName: string): string {
@@ -68,6 +74,44 @@ function clientDisplayName(record: Record<string, unknown>): string {
   ).trim();
   if (fromPayload) return fromPayload;
   return prettyClientLabel(String(record.anchor_client_id ?? "").trim());
+}
+
+function isSessionCancelType(t: string): boolean {
+  return t === "slot_clear_client" || t === "slot_close" || t === "client_cancelled";
+}
+
+function isNamedBookedClient(record: Record<string, unknown>): boolean {
+  const id = String(record.anchor_client_id ?? "").trim().toLowerCase().replace(/\s+/g, "_");
+  if (!id) return false;
+  return !(
+    id === "available" ||
+    id === "no_participant" ||
+    id === "no_client" ||
+    id === "noclient" ||
+    id === "closed" ||
+    id === "office" ||
+    id === "manager" ||
+    id === "home" ||
+    id === "casa"
+  );
+}
+
+function isSessionCancelledForInstructor(record: Record<string, unknown>): boolean {
+  const t = String(record.override_type ?? "").trim();
+  if (!isSessionCancelType(t)) return false;
+  const pl = payloadObj(record);
+  if (flagTrue(pl.client_move) || flagTrue(pl.day_reassign) || flagTrue(pl.not_makeup)) {
+    return false;
+  }
+  const kind = String(
+    pl.replace_kind || pl.booking_kind || pl.clear_kind || pl.session_kind || "",
+  ).trim().toLowerCase();
+  if (kind === "day_reassign" || kind === "slot_move" || kind === "instructor_day_cover") {
+    return false;
+  }
+  if (!isNamedBookedClient(record)) return false;
+  if (t === "client_cancelled" || t === "slot_close") return true;
+  return t === "slot_clear_client" && flagTrue(pl.cancelled_by_admin);
 }
 
 function coverRosterKey(record: Record<string, unknown>): string {
@@ -156,11 +200,40 @@ function pushCopy(
       ? String(record.anchor_time_slot_label || "").trim()
       : "";
     const venue = record ? String(record.anchor_venue || "").trim() : "";
+    const removed = record && String(record.status || "").trim() === "cancelled";
+    if (removed) {
+      const bits = [
+        who || "This session",
+        "is no longer on your rota",
+      ];
+      if (when) bits.push(`· ${when}`);
+      if (venue) bits.push(`· ${venue}`);
+      return {
+        title: who ? `Cover removed: ${who}` : "Cover removed",
+        body: bits.join(" ") + ". You are not covering this session.",
+      };
+    }
     const bits = [who || "A participant", "is now on your roster (cover)"];
     if (when) bits.push(`· ${when}`);
     if (venue) bits.push(`· ${venue}`);
     return {
       title: who ? `Cover: ${who}` : "Cover session",
+      body: bits.join(" ") + ".",
+    };
+  }
+  if (isSessionCancelType(t)) {
+    const when = record
+      ? String(record.anchor_time_slot_label || "").trim()
+      : "";
+    const venue = record ? String(record.anchor_venue || "").trim() : "";
+    const bits = [
+      who || "A session",
+      "was cancelled on your roster",
+    ];
+    if (when) bits.push(`· ${when}`);
+    if (venue) bits.push(`· ${venue}`);
+    return {
+      title: who ? `Session cancelled: ${who}` : "Session cancelled",
       body: bits.join(" ") + ".",
     };
   }
@@ -242,7 +315,12 @@ Deno.serve(async (req) => {
   }
 
   const status = String(record.status ?? "").trim();
-  if (status !== "active") {
+  const oldStatus = String(payload.old_record?.status ?? "").trim();
+  const coverRemoved =
+    status === "cancelled" &&
+    String(record.override_type ?? "").trim() === "instructor_reassign" &&
+    (!oldStatus || oldStatus === "active");
+  if (status !== "active" && !coverRemoved) {
     return new Response(JSON.stringify({ skipped: true, reason: "not active" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -251,6 +329,12 @@ Deno.serve(async (req) => {
   const overrideType = String(record.override_type ?? "").trim();
   if (!ELIGIBLE.has(overrideType)) {
     return new Response(JSON.stringify({ skipped: true, reason: "type" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  if (isSessionCancelType(overrideType) &&
+    !isSessionCancelledForInstructor(record as Record<string, unknown>)) {
+    return new Response(JSON.stringify({ skipped: true, reason: "not instructor cancel" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -288,7 +372,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  /** instructor_reassign → covering worker; other eligible types → anchor. */
+  /** instructor_reassign → covering worker; session cancel prefers named cover else anchor. */
   let targetRosterKey = "";
   if (overrideType === "instructor_reassign") {
     targetRosterKey = coverRosterKey(record as Record<string, unknown>);
@@ -298,6 +382,9 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+  } else if (isSessionCancelType(overrideType)) {
+    targetRosterKey = coverRosterKey(record as Record<string, unknown>) ||
+      normSpreadsheetKey(String(record.anchor_staff_id ?? ""));
   } else {
     targetRosterKey = normSpreadsheetKey(String(record.anchor_staff_id ?? ""));
   }
@@ -332,6 +419,44 @@ Deno.serve(async (req) => {
   }
 
   const ids = [...targetUserIds];
+
+  /* Cover removed: the create-push already used override_id in the dedupe ledger.
+   * A staff notice (single user) is the second event and has its own push webhook. */
+  if (coverRemoved) {
+    const copy = pushCopy(overrideType, record as Record<string, unknown>);
+    const actor = String(record.updated_by || record.created_by || "").trim();
+    const sessionLabel = String(record.anchor_time_slot_label || "").trim();
+    const venue = String(record.anchor_venue || "").trim();
+    const bodyText =
+      `${copy.body} Date: ${sessionDate}` +
+      (sessionLabel ? ` · ${sessionLabel}` : "") +
+      (venue ? ` · ${venue}` : "") +
+      ".";
+    let notices = 0;
+    for (const uid of ids) {
+      const { error: annErr } = await admin.from("portal_staff_announcements").insert({
+        created_by: actor || uid,
+        title: copy.title.slice(0, 160),
+        body: bodyText.slice(0, 2000),
+        message_type: "schedule",
+        priority: "high",
+        audience_scope: "all_staff",
+        delivery_scope: "single_user",
+        target_user_id: uid,
+        ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+      if (annErr) {
+        console.warn("[portal-push-dispatch] cover removed notice", annErr.message);
+      } else {
+        notices++;
+      }
+    }
+    return new Response(
+      JSON.stringify({ ok: true, cover_removed: true, notices, targets: ids.length }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
   const { data: subs, error: subErr } = await admin.from("portal_push_subscriptions")
     .select("user_id, endpoint, subscription_json")
     .in("user_id", ids)
@@ -346,6 +471,46 @@ Deno.serve(async (req) => {
   }
 
   if (!subs?.length) {
+    if (isSessionCancelType(overrideType)) {
+      const copy = pushCopy(overrideType, record as Record<string, unknown>);
+      const actor = String(record.updated_by || record.created_by || "").trim();
+      const sessionLabel = String(record.anchor_time_slot_label || "").trim();
+      const venue = String(record.anchor_venue || "").trim();
+      const bodyText =
+        `${copy.body} Date: ${sessionDate}` +
+        (sessionLabel ? ` · ${sessionLabel}` : "") +
+        (venue ? ` · ${venue}` : "") +
+        ".";
+      let notices = 0;
+      for (const uid of ids) {
+        const { error: annErr } = await admin.from("portal_staff_announcements").insert({
+          created_by: actor || uid,
+          title: copy.title.slice(0, 160),
+          body: bodyText.slice(0, 2000),
+          message_type: "schedule",
+          priority: "high",
+          audience_scope: "all_staff",
+          delivery_scope: "single_user",
+          target_user_id: uid,
+          ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+        if (annErr) {
+          console.warn("[portal-push-dispatch] session cancel notice", annErr.message);
+        } else {
+          notices++;
+        }
+      }
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          sent: 0,
+          notices,
+          targets: ids.length,
+          note: "no push subscriptions; in-app notice saved",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     return new Response(
       JSON.stringify({
         ok: true,
