@@ -179,17 +179,14 @@
       countLabel = noteN === 1 ? "note" : "notes";
       if (noteN > 0) innerPct = 100;
     } else if (hub.tab === "feedback" || hub.mode === "feedback") {
-      /* Expected feedback units (not staffing seats / ghost omit rows). */
-      var dsFb = hub.dayStats(iso);
-      if (dsFb.total) {
-        innerPct = Math.round((100 * dsFb.done) / dsFb.total);
-        if (dsFb.done > 0 && innerPct < 8) innerPct = 8;
-      }
-      countStrong = dsFb.total ? dsFb.done + "/" + dsFb.total : "0";
-      countLabel = "expected";
-      if (dsFb.total && dsFb.done === 0) stateCls = " ash-day-card--none";
-      else if (dsFb.total && dsFb.done < dsFb.total) stateCls = " ash-day-card--partial";
-      else if (dsFb.total && dsFb.done >= dsFb.total) stateCls = " ash-day-card--complete";
+      /* Light counts only — dayStats expandSlots x 7 freezes Register after the 1000-row payload. */
+      var submittedN = hub.feedbackCountForDateLight
+        ? hub.feedbackCountForDateLight(iso)
+        : hub.feedbackCountForDate(iso);
+      countStrong = String(submittedN);
+      countLabel = submittedN === 1 ? "session" : "sessions";
+      if (submittedN > 0) innerPct = 100;
+      if (submittedN > 0) stateCls = " ash-day-card--complete";
     } else if (hub.tab === "tracking") {
       /* Overview: each board seat = 1 session = 1 feedback. Swim AA+MA pairs count as 2;
        * slotFeedbackComplete still paints both when either half is submitted. */
@@ -7804,10 +7801,12 @@
       var n = clean(rows[i].completed_by_name);
       if (n) raw.push(n);
     }
-    var overview = this.overviewFilterOptionsForDay(dayIso);
-    if (overview && overview.instructors) {
-      for (var j = 0; j < overview.instructors.length; j++) {
-        raw.push(overview.instructors[j]);
+    if (this.mode !== "feedback") {
+      var overview = this.overviewFilterOptionsForDay(dayIso);
+      if (overview && overview.instructors) {
+        for (var j = 0; j < overview.instructors.length; j++) {
+          raw.push(overview.instructors[j]);
+        }
       }
     }
     return uniqueInstructorFilterNames(raw);
@@ -7871,9 +7870,11 @@
   AdminSessionsHub.prototype.clientFilterOptionsForDay = function (dayIso) {
     var hub = this;
     var seen = {};
-    var roster = (hub.overviewFilterOptionsForDay(dayIso) || {}).participants || [];
-    for (var ri = 0; ri < roster.length; ri++) {
-      if (roster[ri]) seen[roster[ri]] = true;
+    if (hub.mode !== "feedback") {
+      var roster = (hub.overviewFilterOptionsForDay(dayIso) || {}).participants || [];
+      for (var ri = 0; ri < roster.length; ri++) {
+        if (roster[ri]) seen[roster[ri]] = true;
+      }
     }
     if (hub.tab === "feedback" || hub.mode === "feedback") {
       var rows = hub.feedbackLogRowsForDay(dayIso);
@@ -9532,36 +9533,30 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       ">" +
       (terminal ? cellNa() : cellNoteHtml(rawFeedback === "\u2014" ? "" : rawFeedback)) +
       "</td>";
-    // Feedback (filtered) tab, "Session feedback" column:
-    //  - from 7 Jul 2026: show only the session-feedback narrative (notes live
-    //    on the Notes tab, not here);
-    //  - up to 6 Jul 2026: keep the old positive_feedback + relevant_information
-    //    together, as they were captured before the notes split.
-    var rowDateForModel =
-      (typeof hub.feedbackRowDate === "function" ? hub.feedbackRowDate(fb) : "") ||
-      clean(fb.session_date);
-    var isLegacyNotesRow = rowDateForModel && rowDateForModel < NOTES_FIRST_DATE_ISO;
-    var filteredRawText;
-    if (isLegacyNotesRow) {
-      // Legacy: keep positive + relevant together; but if they're still empty
-      // (a raw narrative awaiting filtering, e.g. Bismark's), show the narrative
-      // so it can be filtered here.
-      filteredRawText =
-        [clean(fb.positive_feedback), clean(fb.relevant_information)]
-          .filter(Boolean)
-          .join("\n\n") ||
-        clean(fb.session_narrative) ||
-        "\u2014";
-    } else {
-      filteredRawText = clean(fb.session_narrative) || clean(fb.positive_feedback) || "\u2014";
+    var filteredRawCell = "";
+    var filteredCell = "";
+    if (variant !== "register") {
+      var rowDateForModel =
+        (typeof hub.feedbackRowDate === "function" ? hub.feedbackRowDate(fb) : "") ||
+        clean(fb.session_date);
+      var isLegacyNotesRow = rowDateForModel && rowDateForModel < NOTES_FIRST_DATE_ISO;
+      var filteredRawText;
+      if (isLegacyNotesRow) {
+        filteredRawText =
+          [clean(fb.positive_feedback), clean(fb.relevant_information)]
+            .filter(Boolean)
+            .join("\n\n") ||
+          clean(fb.session_narrative) ||
+          "\u2014";
+      } else {
+        filteredRawText = clean(fb.session_narrative) || clean(fb.positive_feedback) || "\u2014";
+      }
+      filteredRawCell =
+        '<td class="ash-cell-note ash-cell-raw-feedback">' +
+        (terminal ? cellNa() : cellNoteHtml(filteredRawText === "\u2014" ? "" : filteredRawText)) +
+        "</td>";
+      filteredCell = hub.htmlFamilySummaryCell(fb, esc, terminal);
     }
-    var filteredRawCell =
-      '<td class="ash-cell-note ash-cell-raw-feedback">' +
-      (terminal ? cellNa() : cellNoteHtml(filteredRawText === "\u2014" ? "" : filteredRawText)) +
-      "</td>";
-    // Filtered feedback = the parent-safe version released to families.
-    // Operational release control (Filter with AI + Save & release).
-    var filteredCell = hub.htmlFamilySummaryCell(fb, esc, terminal);
     // Notes (Relevant information) — internal only. On Register, click opens
     // escalate / ask-the-writer. Never released to families from here.
     var notesCell =
@@ -10376,8 +10371,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       } else if (this.tab === "absents") shell.innerHTML = this.htmlAbsents();
       else if (this.tab === "incidents") shell.innerHTML = this.htmlIncidents();
       else if (this.tab === "cancellations") shell.innerHTML = this.htmlCancellations();
-      else if (this.tab === "feedback") shell.innerHTML = this.htmlFeedback();
-      else if (this.tab === "schedule") shell.innerHTML = this.htmlSchedule();
+      else if (this.tab === "feedback") {
+        shell.innerHTML = this.htmlFeedback();
+        this.scheduleRegisterBodyPaint();
+      } else if (this.tab === "schedule") shell.innerHTML = this.htmlSchedule();
       this.bindAshFilterCombos();
     } catch (err) {
       console.warn("[AdminSessionsHub] renderPanels", err);
@@ -12791,6 +12788,34 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (tbody) tbody.innerHTML = this.htmlFeedbackRegisterTableBody();
   };
 
+  AdminSessionsHub.prototype.scheduleRegisterBodyPaint = function () {
+    var hub = this;
+    if (hub._registerBodyRaf != null && typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(hub._registerBodyRaf);
+    }
+    var paint = function () {
+      hub._registerBodyRaf = 0;
+      var tbody =
+        hub.root &&
+        hub.root.querySelector("table.ash-table--register tbody[data-ash-client-filter-tbody]");
+      if (!tbody) return;
+      try {
+        tbody.innerHTML = hub.htmlFeedbackRegisterTableBody();
+      } catch (err) {
+        console.warn("[AdminSessionsHub] register body", err);
+        tbody.innerHTML =
+          '<tr><td colspan="7"><div class="ash-empty">Could not paint register.</div></td></tr>';
+      }
+    };
+    if (typeof requestAnimationFrame === "function") {
+      hub._registerBodyRaf = requestAnimationFrame(function () {
+        requestAnimationFrame(paint);
+      });
+    } else {
+      setTimeout(paint, 0);
+    }
+  };
+
   AdminSessionsHub.prototype.overviewSurfaceReady = function () {
     var root = this.root;
     if (!root) return false;
@@ -13708,7 +13733,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.htmlFeedback = function () {
     var hub = this;
     var sum = this.engagementSummary(this.feedbackRowsForMetrics());
-    var tableRows = this.htmlFeedbackRegisterTableBody();
+    var tableRows =
+      '<tr><td colspan="7"><div class="ash-empty">Loading register\u2026</div></td></tr>';
 
     var weekBlock =
       hub.opts && hub.opts.showFullWeekDayStrip
@@ -14130,7 +14156,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     if (this.mode === "feedback") {
       this._stickyTopHtml = warn;
-      this.root.innerHTML = '<div class="ash-panels ash-panels--feedback-only"></div>';
+      if (
+        this.feedbackSurfaceReady() &&
+        typeof this.softPaintFeedbackDay === "function"
+      ) {
+        this.softPaintFeedbackDay();
+        return;
+      }
+      if (!this.root.querySelector(".ash-panels") && !this.root.querySelector(".ash-panels--feedback-only")) {
+        this.root.innerHTML = '<div class="ash-panels ash-panels--feedback-only"></div>';
+      }
       this.renderPanels();
       return;
     }

@@ -1033,6 +1033,19 @@
       hub.softRefreshOverview();
       return;
     }
+    if (
+      hub.mode === 'feedback' &&
+      typeof hub.scheduleRegisterBodyPaint === 'function' &&
+      typeof hub.feedbackSurfaceReady === 'function' &&
+      hub.feedbackSurfaceReady()
+    ) {
+      hub.scheduleRegisterBodyPaint();
+      return;
+    }
+    if (typeof hub.renderPanels === 'function' && hub.root.querySelector('.ash-panels, .ash-panels--feedback-only')) {
+      hub.renderPanels();
+      return;
+    }
     if (typeof hub.render === 'function') {
       hub.render();
     } else if (typeof hub.renderPanels === 'function') {
@@ -1107,14 +1120,9 @@
   function applyPendingFeedbackNav(hub) {
     if (!hub || pendingFeedbackNoteFilter === undefined) return;
     var nf = pendingFeedbackNoteFilter;
-    // "positive" tab = Feedback (filtered) — all submitted narratives, not positive_feedback notes.
     hub.feedbackNoteFilter = nf === 'relevant' ? 'relevant' : '';
     pendingFeedbackNoteFilter = undefined;
     if (hub.tab === 'positive' || hub.tab === 'relevant') hub.tab = 'feedback';
-    if (hub.tab === 'feedback') {
-      if (typeof hub.syncWeekPickerToCurrentWeek === 'function') hub.syncWeekPickerToCurrentWeek();
-    }
-    hub.render();
   }
 
   function overviewTabForC4k(tabId) {
@@ -1383,9 +1391,11 @@
     }
     if (feedbackHub && feedbackHub.root === root) {
       feedbackHub.refreshRosterRowsFromResolvedSource();
-      feedbackHub.setPayload(payload);
+      feedbackHub.setPayload(payload, { quiet: true });
       ensureSessionFeedbackLoadedSoon();
-      if (typeof feedbackHub.render === 'function') {
+      if (typeof feedbackHub.scheduleRegisterBodyPaint === 'function' && feedbackHub.feedbackSurfaceReady()) {
+        feedbackHub.scheduleRegisterBodyPaint();
+      } else if (typeof feedbackHub.render === 'function') {
         if (typeof requestAnimationFrame === 'function') {
           requestAnimationFrame(function () {
             feedbackHub.render();
@@ -1884,7 +1894,7 @@
           }
           function paintFeedbackHubFromPayload() {
             if (!fh) return;
-            if (typeof fh.setPayload === 'function') fh.setPayload(payload);
+            if (typeof fh.setPayload === 'function') fh.setPayload(payload, { quiet: true });
             fh.tab = fs.tab;
             fh.feedbackNoteFilter = fs.filter;
             applyPendingFeedbackNav(fh);
@@ -1892,10 +1902,8 @@
           }
           try {
             var enrichWaitFb = global.__PORTAL_DAY_OPS_ENRICH__;
-            if (enrichWaitFb) {
-              /* Short wait so Register paints quickly; late enrich still re-renders. */
-              await promiseWithTimeout(enrichWaitFb, ENRICH_WAIT_MS, null);
-              paintFeedbackHubFromPayload();
+            if (enrichWaitFb && typeof enrichWaitFb.then === 'function') {
+              /* Do not block Register on enrich — late payload still re-paints the table body. */
               enrichWaitFb.then(function () {
                 paintFeedbackHubFromPayload();
               }).catch(function () {});

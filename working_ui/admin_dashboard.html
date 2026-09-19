@@ -76,7 +76,7 @@
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260919-ops-hub-cal-right" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260919-ops-hub-4btns" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
   <script src="/portal/hr-contract-embed-html.js?v=20260727-role-names"></script>
@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
   <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260919-register-only"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260919-register-fast"></script>
   <script src="/portal/admin-portal-documents.js?v=20260915-ob-doc-chips"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260919-chip-center"></script>
@@ -24374,7 +24374,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
-    var PORTAL_ADMIN_HUB_BUILD = '20260919-register-only';
+    var PORTAL_ADMIN_HUB_BUILD = '20260919-register-fast';
     window.PORTAL_ADMIN_HUB_BUILD = PORTAL_ADMIN_HUB_BUILD;
     var ADMIN_SESSIONS_HUB_SRC =
       "/portal/admin-sessions-hub.js?v=" + PORTAL_ADMIN_HUB_BUILD;
@@ -27551,9 +27551,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }).join('') +
         '</div></div>';
       return (
-        '<div class="ops-hub__today ops-hub__today--cal-focus ops-hub__today--cal-right" role="region" aria-label="Schedule, sessions and calendar">' +
+        '<div class="ops-hub__today ops-hub__today--cal-focus ops-hub__today--cal-right" role="region" aria-label="Schedule, sessions, announcements, places and calendar">' +
         portalDashTileHtml('scheduling', '', 'scheduling', 'Schedule & Covers', 'Weekly anchors &amp; swap cover', false, 'scheduling', '', 'ops-hub__feature') +
         portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid &amp; feedback', false, 'sessions', 'sessions_hub_overview', 'ops-hub__feature') +
+        portalDashTileHtml('', '', 'announcements', 'Announcements', 'Notices &amp; reminders', false, 'notify', 'announcements_comms', 'ops-hub__feature') +
+        portalDashTileHtml('servicecap', '', 'servicecap', 'Places', 'Open seats if a family calls', false, 'bookings', '', 'ops-hub__feature') +
         '<button type="button" class="ops-hub__today-item ops-hub__today-item--calendar" id="opsHubCalendarGlance" aria-label="Open office calendar">' +
         '<span class="ops-hub-cal-glance__copy">' +
         '<span class="ops-hub__today-k">Calendar</span>' +
