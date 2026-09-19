@@ -99,12 +99,13 @@
     return n;
   }
 
-  /** True when 2+ aquatic rows that day share the same instructor token (merge → one feedback). */
+  /** True when 2+ aquatic rows that day share the same instructor team (merge → one feedback).
+   * 2:1 (Joelle · Aurora+Simon on both halves) counts as one team. Split covers do not. */
   function aquaticSameInstructorAllSlotsOnDate(iso, clientId, dayWord) {
     var cid = slugClient(clientId);
     if (!iso || !cid) return false;
     var rows = rosterRows();
-    var lead = "";
+    var byStart = Object.create(null);
     var n = 0;
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
@@ -113,14 +114,24 @@
       if (!rowIsAquatic(r)) continue;
       if (!rowIsBookedClient(r)) continue;
       n++;
-      var inst = String(r.instructors || "")
-        .trim()
-        .toUpperCase();
-      if (!inst) continue;
-      if (!lead) lead = inst;
-      else if (lead !== inst) return false;
+      var st = rowClockStartHm(r) || "_";
+      if (!byStart[st]) byStart[st] = Object.create(null);
+      var tok = rowInstructorToken(r);
+      if (tok) byStart[st][tok] = true;
     }
-    return n > 1 && !!lead;
+    var starts = Object.keys(byStart);
+    if (n < 2 || !starts.length) return false;
+    var lead = "";
+    for (var s = 0; s < starts.length; s++) {
+      var setKey = Object.keys(byStart[starts[s]])
+        .filter(Boolean)
+        .sort()
+        .join("+");
+      if (!setKey) return false;
+      if (!lead) lead = setKey;
+      else if (lead !== setKey) return false;
+    }
+    return !!lead;
   }
 
   /**

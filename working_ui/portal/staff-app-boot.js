@@ -184,7 +184,7 @@
   var STAFF_DEFERRED_HEAVY = [
     "/portal/clients_info_embed.js?v=20260910-joelle-406",
     "/portal/clients_gender_embed.js?v=20260605-gender3",
-      "/portal/portal_staff_lead_aquatic_slots.js?v=20260915-2to1-shared",
+      "/portal/portal_staff_lead_aquatic_slots.js?v=20260919-aquatic-hour-2to1",
     "/portal/portal_participant_general_hydrate.js?v=20260910-no-other-notes",
     "/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact",
     "/portal/portal_staff_photos.js?v=20260911-emmanuel-photo",

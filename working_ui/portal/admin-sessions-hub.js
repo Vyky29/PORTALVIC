@@ -4032,6 +4032,21 @@
     return false;
   }
 
+  function aquaticClockTeamKey(pool, cid, startHm) {
+    var want = clean(startHm);
+    if (!want || !cid || !pool) return "";
+    var names = [];
+    for (var i = 0; i < pool.length; i++) {
+      var s = pool[i];
+      if (canonicalClientSlug(s.client_name) !== cid) continue;
+      if (!isAquaticService(s.service)) continue;
+      var st = clean(s.time_start || normTimeKey(s.time_slot, s.day));
+      if (st !== want) continue;
+      names = names.concat(slotInstructors(s));
+    }
+    return instructorSetKeyFromNames(names);
+  }
+
   function autoConsecutiveSwimInstructorMergeKey(slot, daySlots) {
     if (!isConsecutiveSwimMergeableSlot(slot)) return "";
     if (isTeflonDemoRosterSlot(slot)) return "";
@@ -4051,10 +4066,16 @@
       } catch (_e) {}
       pool = rosterSlotsForDate(iso);
     }
+    var slotStart = clean(slot.time_start || normTimeKey(slot.time_slot, slot.day));
+    var teamKey = isAquaticService(slot.service) ? aquaticClockTeamKey(pool, cid, slotStart) : "";
     var candidates = pool.filter(function (s) {
       if (canonicalClientSlug(s.client_name) !== cid) return false;
       if (!isConsecutiveSwimMergeableSlot(s)) return false;
-      return slotsShareSwimInstructor(slot, s);
+      if (slotsShareSwimInstructor(slot, s)) return true;
+      if (!isAquaticService(slot.service) || !isAquaticService(s.service)) return false;
+      if (!teamKey || teamKey.indexOf("+") < 0) return false;
+      var otherStart = clean(s.time_start || normTimeKey(s.time_slot, s.day));
+      return aquaticClockTeamKey(pool, cid, otherStart) === teamKey;
     });
     if (candidates.length < 2) return "";
     var id = rosterSlotIdentity(slot);
@@ -4096,7 +4117,7 @@
       if (Object.prototype.hasOwnProperty.call(parent, k) && find(k) === root) componentSize++;
     }
     if (componentSize < 2) return "";
-    return "consec_swim|" + cid + "|" + primaryInstructorKey(slot);
+    return "consec_swim|" + cid + "|" + (teamKey || primaryInstructorKey(slot));
   }
 
   function shouldOmitAutoMergedSwimDuplicate(slot, daySlots) {
@@ -4389,15 +4410,51 @@
     return n;
   }
 
-  /** True when the client has 2+ aquatic blocks that day with the same instructor (e.g. Serine both with Roberto). */
+  function instructorSetKeyFromNames(names) {
+    var seen = Object.create(null);
+    var keys = [];
+    (names || []).forEach(function (name) {
+      var raw = clean(name);
+      if (!raw) return;
+      String(raw)
+        .split(/,|\/|&|\band\b/gi)
+        .map(function (p) {
+          return clean(p);
+        })
+        .filter(Boolean)
+        .forEach(function (part) {
+          var k = canonicalStaffMatchKey(part) || String(part).toLowerCase().replace(/[^a-z0-9]+/g, "");
+          if (!k || seen[k]) return;
+          seen[k] = true;
+          keys.push(k);
+        });
+    });
+    keys.sort();
+    return keys.join("+");
+  }
+
+  function slotInstructorSetKey(slot) {
+    return instructorSetKeyFromNames(slotInstructors(slot).concat(slot && slot.instructor_label ? [slot.instructor_label] : []));
+  }
+
+  /**
+   * Same aquatic team across every clock that day (1:1 hour with Aurora, or 2:1
+   * Joelle with Aurora+Simon on both 30' halves) → one feedback, not per half.
+   * Different instructors on different clocks (Eiji 17:30 vs 18:00) stay per-slot.
+   */
   function aquaticSameInstructorAllSlotsOnDate(iso, clientName) {
     var cid = canonicalClientSlug(clientName);
     if (!iso || !cid) return false;
     var src = global.STAFF_DASHBOARD_SOURCE;
     var rows = src && Array.isArray(src.rows) ? src.rows : [];
     var wd = weekdayLongFromIso(iso);
-    var lead = "";
+    var byStart = Object.create(null);
     var n = 0;
+    function addAtStart(startHm, instBlob) {
+      var st = clean(startHm) || "_";
+      if (!byStart[st]) byStart[st] = [];
+      if (instBlob) byStart[st].push(instBlob);
+    }
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
       if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
@@ -4405,20 +4462,47 @@
       if (!isAquaticService(r.service)) continue;
       if (!isRosterClient(r.client_name)) continue;
       n++;
-      var inst = clean(r.instructors).toUpperCase();
-      if (!inst) continue;
-      if (!lead) lead = inst;
-      else if (lead !== inst) return false;
+      var pt = parseTimeSlot(r.time_slot, wd);
+      addAtStart(pt && pt.start, r.instructors);
     }
     var makeups = aquaticMakeupSlotsForClientOnDate(iso, clientName);
     for (var m = 0; m < makeups.length; m++) {
       n++;
-      var minst = clean(makeups[m].instructor).toUpperCase();
-      if (!minst) continue;
-      if (!lead) lead = minst;
-      else if (lead !== minst) return false;
+      addAtStart(makeups[m].time_start || makeups[m].start, makeups[m].instructor);
     }
-    return n > 1 && !!lead;
+    var starts = Object.keys(byStart);
+    if (n < 2 || !starts.length) return false;
+    var lead = "";
+    for (var s = 0; s < starts.length; s++) {
+      var setKey = instructorSetKeyFromNames(byStart[starts[s]]);
+      if (!setKey) return false;
+      if (!lead) lead = setKey;
+      else if (lead !== setKey) return false;
+    }
+    return !!lead;
+  }
+
+  function aquaticRosterClockIsTwoToOne(slot) {
+    if (!slot || !isAquaticService(slot.service)) return false;
+    var iso = slot.session_date;
+    var cid = canonicalClientSlug(slot.client_name);
+    var wd = slot.day || weekdayLongFromIso(iso);
+    var want = clean(slot.time_start || ((parseTimeSlot(slot.time_slot, wd) || {}).start));
+    if (!iso || !cid || !want) return false;
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    var rows = src && Array.isArray(src.rows) ? src.rows : [];
+    var names = [];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
+      if (canonicalClientSlug(r.client_name) !== cid) continue;
+      if (!isAquaticService(r.service)) continue;
+      if (!isRosterClient(r.client_name)) continue;
+      var pt = parseTimeSlot(r.time_slot, wd);
+      if (!pt || pt.start !== want) continue;
+      names.push(r.instructors);
+    }
+    return instructorSetKeyFromNames(names).indexOf("+") >= 0;
   }
 
   function clientNeedsPerSlotAquaticFeedback(slot) {
@@ -4526,6 +4610,10 @@
       if (parts.length >= 3 && normTimeKey(parts[2]) === st) return true;
       var pkTime = (parts.length >= 2 && normTimeKey(parts[1])) || (parts.length >= 3 && normTimeKey(parts[2])) || "";
       if (pkTime && st && (staffBandTimeEquiv(pkTime) === st || staffBandTimeEquiv(st) === pkTime)) return true;
+    }
+    /* Same-team aquatic hour: Simon's 5.30–6 submit covers Joelle 6–6.30 (and Aqsa 4.30–5.30). */
+    if (isAquaticService(slot.service) && !clientNeedsPerSlotAquaticFeedback(slot)) {
+      return true;
     }
     if (clientNeedsPerSlotAquaticFeedback(slot)) return false;
     return !ft;
@@ -4827,6 +4915,7 @@
       return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
     }
     if (clientNeedsPerSlotAquaticFeedback(slot)) {
+      if (aquaticRosterClockIsTwoToOne(slot)) return true;
       return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
     }
     return true;
@@ -4855,7 +4944,16 @@
 
   /** Day Centre: one feedback per client per calendar day (any worker, any roster block). */
   function feedbackUnitKey(slot) {
-    var mergeGroup = feedbackMergeGroupForSlot(slot);
+    var mergeGroup = clean(slot && slot.feedback_merge_group) || feedbackMergeGroupForSlot(slot);
+    if (
+      mergeGroup &&
+      isAquaticService(slot.service) &&
+      !clientNeedsPerSlotAquaticFeedback(slot) &&
+      String(mergeGroup).indexOf("consec_swim|") === 0
+    ) {
+      /* Same-team aquatic hour (Aqsa 4.30–5.30 / Joelle 2:1): one unit, not per instructor. */
+      mergeGroup = "";
+    }
     if (mergeGroup) {
       return slot.session_date + "|merge|" + mergeGroup;
     }
@@ -5017,7 +5115,24 @@
       if ((slots[si].time_start || "") >= (last.time_start || "")) last = slots[si];
     }
     var merged = Object.assign({}, rep);
-    if (last !== rep && isDayCentreService(rep.service)) {
+    var minStart = "";
+    var maxEnd = "";
+    for (si = 0; si < slots.length; si++) {
+      var st = clean(slots[si].time_start);
+      var en = clean(slots[si].time_end) || st;
+      if (st && (!minStart || st < minStart)) minStart = st;
+      if (en && (!maxEnd || en > maxEnd)) maxEnd = en;
+    }
+    if (
+      minStart &&
+      maxEnd &&
+      (isDayCentreService(rep.service) || isAquaticService(rep.service))
+    ) {
+      merged.time_start = minStart;
+      merged.time_end = maxEnd;
+      var spanLbl = rosterTimeSlotLabelFromBounds(minStart, maxEnd, rep.day || weekdayLongFromIso(rep.session_date));
+      if (spanLbl) merged.time_slot = spanLbl;
+    } else if (last !== rep && isDayCentreService(rep.service)) {
       var a = clean(rep.time_slot);
       var b = clean(last.time_slot);
       if (a && b && a !== b) {
@@ -7440,6 +7555,7 @@
       /* One pass: auto consecutive swim merge using this day's slots only. */
       for (var mi = 0; mi < out.length; mi++) {
         out[mi].feedback_merge_group = feedbackMergeGroupForSlot(out[mi], { daySlots: out });
+        out[mi].feedback_unit_key = feedbackUnitKey(out[mi]);
       }
       if (this.opts && typeof this.opts.slotScopeFilter === "function") {
         out = out.filter(this.opts.slotScopeFilter);
