@@ -152,7 +152,7 @@
     var hash = String((global.location && global.location.hash) || "").replace(/^#/, "");
     if (hash) {
       var map = {
-        photo: "obHubPanelPhoto",
+        photo: "obHubPanelDocs",
         docs: "obHubPanelDocs",
         documents: "obHubPanelDocs",
         starter: "obHubPanelDocs",
@@ -168,7 +168,11 @@
         if (p) p.removeAttribute("hidden");
         if (t) t.setAttribute("aria-expanded", "true");
         try {
-          p.scrollIntoView({ behavior: "smooth", block: "start" });
+          var scrollEl =
+            hash.toLowerCase() === "photo"
+              ? global.document.getElementById("photo") || p
+              : p;
+          scrollEl.scrollIntoView({ behavior: "smooth", block: "start" });
         } catch (_) {}
       }
     }
