@@ -85,7 +85,6 @@
 
   function viewHtml() {
     return (
-      '<div class="sched-page-pop__bar"><button type="button" class="btn btn--sec btn--sm" id="schedPageClose">Close</button></div>' +
       '<h1 class="page-title">Sessions · Schedule &amp; Covers</h1>' +
       '<p class="page-intro">Day changes here update the same truth as <strong>Sessions Overview</strong> (covers, trials, absents). Use Overview to check the board; use this page to make the change. ' +
       '<a href="admin_roster_guide.html" target="_blank" rel="noopener" style="font-weight:700">Roster flow guide (English, with diagrams)</a> — which tool to use for term vs one-day changes.</p>' +
