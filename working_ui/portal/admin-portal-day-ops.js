@@ -1758,17 +1758,44 @@
       await renderLeadVenueTables();
     }
   }
+  function venueReviewPhotoPaths(r) {
+    var raw = r && r.photo_storage_paths;
+    if (Array.isArray(raw)) return raw.filter(function (p) { return String(p || '').trim(); });
+    if (typeof raw === 'string') {
+      try {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(function (p) { return String(p || '').trim(); });
+        }
+      } catch (_e) {}
+    }
+    return [];
+  }
   function venueReviewVideoCellHtml(r) {
     if (!venueReviewDayFinished(r)) return '—';
     var reviewId = String((r && r.id) || '').trim();
     var videoPath = String((r && r.video_storage_path) || '').trim();
+    var photoPaths = venueReviewPhotoPaths(r);
     var uploading = !!(reviewId && venueAdminVideoUploading[reviewId]);
     var playBtn = videoPath
       ? '<button type="button" class="portal-forms-view-btn" data-venue-video-path="' +
         esc(videoPath) +
-        '" aria-label="Play venue walkthrough video">Play</button>'
+        '" aria-label="Play venue walkthrough video">Play video</button>'
       : '';
-    var uploadLabel = uploading ? 'Uploading...' : videoPath ? 'Replace' : 'Upload';
+    var photoBtns = photoPaths
+      .map(function (p, i) {
+        return (
+          '<button type="button" class="portal-forms-view-btn" data-venue-video-path="' +
+          esc(String(p)) +
+          '" aria-label="Open venue photo ' +
+          (i + 1) +
+          '">Photo ' +
+          (i + 1) +
+          '</button>'
+        );
+      })
+      .join('');
+    var uploadLabel = uploading ? 'Uploading...' : videoPath ? 'Replace video' : 'Upload video';
     var uploadBtn = reviewId
       ? '<button type="button" class="portal-forms-view-btn" data-venue-video-upload="' +
         esc(reviewId) +
@@ -1780,8 +1807,8 @@
         uploadLabel +
         '</button>'
       : '';
-    if (!playBtn && !uploadBtn) return '—';
-    return '<div class="portal-venue-video-actions">' + playBtn + uploadBtn + '</div>';
+    if (!playBtn && !uploadBtn && !photoBtns) return '—';
+    return '<div class="portal-venue-video-actions">' + playBtn + photoBtns + uploadBtn + '</div>';
   }
   function uniqueVenueFilterValues(vals) {
     var seen = {};

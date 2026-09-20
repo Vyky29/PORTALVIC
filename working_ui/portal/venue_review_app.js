@@ -21,7 +21,7 @@ function clean(v) {
     .trim();
 }
 
-/** Dashboard: date, venue|location, kind|openingClosing, optional sessionKey, origin, completedBy|name */
+/** Dashboard: date, optional venue/kind prefills (staff can change them). */
 function contextFromQuery() {
   const kindRaw = clean(qs.get("kind") || qs.get("openingClosing") || "");
   let openingClosing = "";
@@ -33,10 +33,6 @@ function contextFromQuery() {
   if (origin !== "this_week" && origin !== "term" && origin !== "dashboard") origin = "dashboard";
   const date = clean(qs.get("date") || "");
   const completedBy = clean(qs.get("completedBy") || qs.get("name") || qs.get("ghostDisplayName") || "");
-  const requireVideoExplicit =
-    qs.get("video") === "1" ||
-    qs.get("requireVideo") === "1" ||
-    clean(qs.get("video") || "").toLowerCase() === "true";
   return {
     date,
     venue: clean(qs.get("venue") || qs.get("location") || ""),
@@ -45,52 +41,8 @@ function contextFromQuery() {
     portalSessionKey: clean(qs.get("sessionKey") || ""),
     origin,
     completedBy,
-    requireVideo: requireVideoExplicit || venueWalkthroughLikelyRequired(date, completedBy)
+    requireVideo: false
   };
-}
-
-/** Roberto Sunday open/close walkthrough — also infer if dashboard forgot ?video=1. */
-function venueWalkthroughLikelyRequired(dateIso, completedBy) {
-  const name = clean(completedBy).toLowerCase();
-  const looksRoberto = /\broberto\b/.test(name);
-  if (!looksRoberto) return false;
-  const iso = clean(dateIso);
-  let d = null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
-    const parts = iso.split("-").map(Number);
-    d = new Date(parts[0], parts[1] - 1, parts[2]);
-  } else {
-    d = new Date();
-  }
-  if (!d || isNaN(d.getTime())) return false;
-  return d.getDay() === 0;
-}
-
-function venueIsoIsSunday(dateIso) {
-  const iso = clean(dateIso);
-  let d = null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
-    const parts = iso.split("-").map(Number);
-    d = new Date(parts[0], parts[1] - 1, parts[2]);
-  } else {
-    d = new Date();
-  }
-  return !!(d && !isNaN(d.getTime()) && d.getDay() === 0);
-}
-
-function applyRobertoSundayVenueDefaults(ctx) {
-  if (!ctx) return ctx;
-  const looksRoberto = /\broberto\b/i.test(clean(ctx.completedBy));
-  if (!looksRoberto || !venueIsoIsSunday(ctx.date || localIsoDateToday())) return ctx;
-  if (!clean(ctx.venue) || /^venue not detected$/i.test(clean(ctx.venue))) {
-    ctx.venue = "SwimFarm";
-  }
-  if (!clean(ctx.openingClosing)) {
-    const nowM = new Date().getHours() * 60 + new Date().getMinutes();
-    ctx.openingClosing = nowM < 12 * 60 ? "Opening" : "Closing";
-  }
-  ctx.requireVideo = true;
-  return ctx;
 }
 
 function localIsoDateToday() {
@@ -258,6 +210,8 @@ function buildVenueReviewRow(ctx, formState, submission) {
     row.video_duration_sec =
       dur != null && Number.isFinite(Number(dur)) ? Number(dur) : null;
   }
+  const photos = Array.isArray(formState.photoStoragePaths) ? formState.photoStoragePaths : [];
+  if (photos.length) row.photo_storage_paths = photos;
   return row;
 }
 
@@ -354,7 +308,10 @@ function initVenueWalkthroughRecorder(ctx) {
   const btnStop = document.getElementById("venueWalkthroughStop");
   const btnRetake = document.getElementById("venueWalkthroughRetake");
   const fileEl = document.getElementById("venueWalkthroughFile");
-  const required = !!(ctx && ctx.requireVideo);
+  const captureEl = document.getElementById("venueWalkthroughCapture");
+  const phoneCamBtn = document.getElementById("venueWalkthroughPhoneCam");
+  const uploadBtn = document.getElementById("venueWalkthroughUploadBtn");
+  const required = false;
   const state = {
     stream: null,
     recorder: null,
@@ -387,19 +344,31 @@ function initVenueWalkthroughRecorder(ctx) {
       stopVenueMediaStream(state.stream);
       state.stream = null;
       state.recorder = null;
+    },
+    updateCopy: function () {
+      const venueSel = document.getElementById("venueSelect");
+      const kindSel = document.getElementById("kindSelect");
+      const v = clean(venueSel && venueSel.value) || "the venue";
+      const k = clean(kindSel && kindSel.value) || "opening or closing";
+      if (hintEl) {
+        hintEl.textContent =
+          "Record a short walkthrough of " +
+          v +
+          " for this " +
+          k.toLowerCase() +
+          " check (up to 3 minutes), use Record with Camera, or upload from Photos.";
+      }
     }
   };
-  if (!panel || !required) {
-    if (panel) panel.hidden = true;
-    return api;
-  }
-  panel.hidden = false;
-  const kindLabel = clean(ctx.openingClosing) || "venue";
+  if (!panel) return api;
+  const kindLabel = clean(ctx && ctx.openingClosing) || "venue";
   if (hintEl) {
     hintEl.textContent =
-      "Record a short walkthrough of SwimFarm for this " +
+      "Record a short walkthrough of " +
+      (clean(ctx && ctx.venue) || "the venue") +
+      " for this " +
       kindLabel.toLowerCase() +
-      " check (up to 3 minutes), or upload a video from Photos / Camera. The video stays internal with venue reviews.";
+      " check (up to 3 minutes), or upload a video. Photos can go in the section below.";
   }
 
   function setStatus(msg) {
@@ -619,17 +588,35 @@ function initVenueWalkthroughRecorder(ctx) {
   if (btnRec) btnRec.addEventListener("click", startRecording);
   if (btnStop) btnStop.addEventListener("click", stopRecording);
   if (btnRetake) btnRetake.addEventListener("click", retake);
-  if (fileEl) {
-    fileEl.addEventListener("change", function () {
-      const f = fileEl.files && fileEl.files[0];
+  function bindWalkthroughFile(el) {
+    if (!el) return;
+    el.addEventListener("change", function () {
+      const f = el.files && el.files[0];
       acceptWalkthroughFile(f);
       try {
-        fileEl.value = "";
+        el.value = "";
+      } catch (_) {}
+    });
+  }
+  bindWalkthroughFile(fileEl);
+  bindWalkthroughFile(captureEl);
+  if (phoneCamBtn && captureEl) {
+    phoneCamBtn.addEventListener("click", function () {
+      try {
+        captureEl.click();
+      } catch (_) {}
+    });
+  }
+  if (uploadBtn && fileEl) {
+    uploadBtn.addEventListener("click", function () {
+      try {
+        fileEl.click();
       } catch (_) {}
     });
   }
   setButtons("idle");
-  setStatus("Camera ready when you tap Start camera. You can also upload from Photos.");
+  api.updateCopy();
+  setStatus("After you pick the venue: Start camera, Record with Camera, or upload from Photos.");
   return api;
 }
 
@@ -662,6 +649,158 @@ async function uploadVenueWalkthroughVideo(supabase, submission, ctx, recorderAp
     mime: mime,
     durationSec: recorderApi.getDurationSec ? recorderApi.getDurationSec() : null
   };
+}
+
+const VENUE_PHOTO_MAX = 8;
+const VENUE_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
+const VENUE_PHOTO_MIME = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "image/gif"
+];
+
+function venuePhotoStorageMime(mime) {
+  const raw = String(mime || "")
+    .split(";")[0]
+    .trim()
+    .toLowerCase();
+  if (VENUE_PHOTO_MIME.indexOf(raw) >= 0) return raw;
+  if (raw.indexOf("heic") >= 0 || raw.indexOf("heif") >= 0) return "image/heic";
+  if (raw.indexOf("png") >= 0) return "image/png";
+  if (raw.indexOf("webp") >= 0) return "image/webp";
+  if (raw.indexOf("gif") >= 0) return "image/gif";
+  return "image/jpeg";
+}
+
+function venuePhotoExtForMime(mime) {
+  const m = String(mime || "").toLowerCase();
+  if (m.indexOf("png") >= 0) return "png";
+  if (m.indexOf("webp") >= 0) return "webp";
+  if (m.indexOf("gif") >= 0) return "gif";
+  if (m.indexOf("heic") >= 0 || m.indexOf("heif") >= 0) return "heic";
+  return "jpg";
+}
+
+function initVenuePhotoPicker() {
+  const fileEl = document.getElementById("venuePhotosFile");
+  const camEl = document.getElementById("venuePhotosCamera");
+  const takeBtn = document.getElementById("venuePhotosTakeBtn");
+  const libBtn = document.getElementById("venuePhotosLibraryBtn");
+  const thumbs = document.getElementById("venuePhotosThumbs");
+  const files = [];
+  const urls = [];
+  function revokeAll() {
+    for (let i = 0; i < urls.length; i++) {
+      try {
+        URL.revokeObjectURL(urls[i]);
+      } catch (_) {}
+    }
+    urls.length = 0;
+  }
+  function render() {
+    if (!thumbs) return;
+    revokeAll();
+    thumbs.replaceChildren();
+    files.forEach(function (file, idx) {
+      const wrap = document.createElement("div");
+      wrap.className = "venue-photos__thumb";
+      const img = document.createElement("img");
+      img.alt = "Venue photo " + (idx + 1);
+      try {
+        const u = URL.createObjectURL(file);
+        urls.push(u);
+        img.src = u;
+      } catch (_) {}
+      const rm = document.createElement("button");
+      rm.type = "button";
+      rm.setAttribute("aria-label", "Remove photo");
+      rm.textContent = "x";
+      rm.addEventListener("click", function () {
+        files.splice(idx, 1);
+        render();
+      });
+      wrap.appendChild(img);
+      wrap.appendChild(rm);
+      thumbs.appendChild(wrap);
+    });
+  }
+  function addFromInput(el) {
+    const list = el && el.files ? Array.prototype.slice.call(el.files) : [];
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i];
+      if (!f) continue;
+      if (files.length >= VENUE_PHOTO_MAX) break;
+      if (f.size > VENUE_PHOTO_MAX_BYTES) {
+        alert("A photo is over 8 MB. Pick a smaller one.");
+        continue;
+      }
+      const kind = String(f.type || "").toLowerCase();
+      if (kind && kind.indexOf("image") < 0 && kind.indexOf("heic") < 0) continue;
+      files.push(f);
+    }
+    try {
+      if (el) el.value = "";
+    } catch (_) {}
+    render();
+  }
+  if (fileEl) {
+    fileEl.addEventListener("change", function () {
+      addFromInput(fileEl);
+    });
+  }
+  if (camEl) {
+    camEl.addEventListener("change", function () {
+      addFromInput(camEl);
+    });
+  }
+  if (takeBtn && camEl) {
+    takeBtn.addEventListener("click", function () {
+      try {
+        camEl.click();
+      } catch (_) {}
+    });
+  }
+  if (libBtn && fileEl) {
+    libBtn.addEventListener("click", function () {
+      try {
+        fileEl.click();
+      } catch (_) {}
+    });
+  }
+  return {
+    getFiles: function () {
+      return files.slice();
+    }
+  };
+}
+
+async function uploadVenuePhotos(supabase, submission, ctx, photoFiles) {
+  const list = Array.isArray(photoFiles) ? photoFiles : [];
+  if (!list.length) return [];
+  const uid = clean(submission && submission.submittedByUserId);
+  if (!uid) throw new Error("Sign in required to upload venue photos.");
+  const kind =
+    clean(ctx.openingClosing).toLowerCase().indexOf("clos") >= 0 ? "close" : "open";
+  const day = parseReviewDate(ctx.date);
+  const stamp = String(Date.now());
+  const paths = [];
+  for (let i = 0; i < list.length; i++) {
+    const file = list[i];
+    const mime = venuePhotoStorageMime(file.type || "image/jpeg");
+    const ext = venuePhotoExtForMime(mime);
+    const path = uid + "/" + day + "/" + kind + "_photo_" + stamp + "_" + (i + 1) + "." + ext;
+    const uploadBlob = String(file.type || "").indexOf(";") >= 0 ? new Blob([file], { type: mime }) : file;
+    const { error } = await supabase.storage.from(VENUE_REVIEW_VIDEO_BUCKET).upload(path, uploadBlob, {
+      contentType: mime,
+      upsert: false
+    });
+    if (error) throw error;
+    paths.push(path);
+  }
+  return paths;
 }
 
 async function submitVenueReviewToSupabase(supabase, row) {
@@ -772,28 +911,17 @@ function showCompletionPopupAndReturnDashboard() {
 
 async function renderVenueContextHeader(ctx) {
   const completedByEl = document.getElementById("venueContextCompletedBy");
-  const venueEl = document.getElementById("venueContextVenue");
   const dateEl = document.getElementById("venueContextDate");
-  const kindEl = document.getElementById("venueContextKind");
-  if (!completedByEl || !venueEl || !dateEl) return;
+  const kindSel = document.getElementById("kindSelect");
+  if (!completedByEl || !dateEl) return;
 
   const fallbackName = clean(ctx.completedBy) || "Portal user";
-  const venue = clean(ctx.venue) || "Venue not detected";
   const date = toUkDisplayDate(parseReviewDate(ctx.date));
-  const kindLabel = clean(ctx.openingClosing) || "";
-
   completedByEl.textContent = fallbackName;
-  venueEl.textContent = venue;
   dateEl.textContent = date;
-  if (kindEl) {
-    const kindRow = document.getElementById("venueContextKindRow");
-    if (kindLabel) {
-      kindEl.textContent = kindLabel;
-      if (kindRow) kindRow.removeAttribute("hidden");
-    } else {
-      kindEl.textContent = "—";
-      if (kindRow) kindRow.setAttribute("hidden", "hidden");
-    }
+  /* Venue and time stay blank so staff pick them. Kind can come from an Opening/Closing reminder. */
+  if (kindSel && clean(ctx.openingClosing) && !clean(kindSel.value)) {
+    kindSel.value = clean(ctx.openingClosing);
   }
 
   try {
@@ -803,15 +931,30 @@ async function renderVenueContextHeader(ctx) {
   } catch (_) {}
 }
 
-function setAutomaticTime() {
-  const now = new Date();
+function syncVenueMediaPanels() {
+  const venueSel = document.getElementById("venueSelect");
+  const picked = !!(venueSel && clean(venueSel.value));
+  const videoPanel = document.getElementById("venueWalkthroughPanel");
+  const photoPanel = document.getElementById("venuePhotosPanel");
+  const wasHidden = !!(videoPanel && videoPanel.hidden);
+  if (videoPanel) videoPanel.hidden = !picked;
+  if (photoPanel) photoPanel.hidden = !picked;
+  if (picked && wasHidden && videoPanel) {
+    try {
+      videoPanel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    } catch (_) {}
+  }
+}
+
+function readVenueFormContext(base) {
+  const ctx = Object.assign({}, base || {});
+  const venueSel = document.getElementById("venueSelect");
+  const kindSel = document.getElementById("kindSelect");
   const timeEl = document.getElementById("time");
-  const timeContextEl = document.getElementById("venueContextTime");
-  const h = now.getHours();
-  const min = now.getMinutes();
-  const hhmm = (h < 10 ? "0" : "") + h + ":" + (min < 10 ? "0" : "") + min;
-  if (timeEl) timeEl.value = hhmm;
-  if (timeContextEl) timeContextEl.textContent = hhmm;
+  ctx.venue = clean(venueSel && venueSel.value);
+  ctx.openingClosing = clean(kindSel && kindSel.value);
+  ctx.time = clean(timeEl && timeEl.value);
+  return ctx;
 }
 
 function updateNoButtonText(btnNo) {
@@ -848,25 +991,26 @@ function initVenueReviewPage() {
   if (!form || !btnNo || !btnYes || !issuesCell || !issuesInput || !issuesLabel)
     return;
 
-  setAutomaticTime();
-  try {
-    window.setInterval(setAutomaticTime, 15000);
-  } catch (_) {}
   updateNoButtonText(btnNo);
-  let ctx = applyRobertoSundayVenueDefaults(contextFromQuery());
-  try {
-    const boot = window.__PORTAL_VENUE_BOOT__;
-    if (boot) {
-      if (!clean(ctx.venue) && boot.venue) ctx.venue = String(boot.venue);
-      if (!clean(ctx.openingClosing) && boot.kind) ctx.openingClosing = String(boot.kind);
-      if (boot.video) ctx.requireVideo = true;
-      if (!clean(ctx.completedBy) && boot.completedBy) ctx.completedBy = String(boot.completedBy);
-      if (!clean(ctx.date) && boot.date) ctx.date = String(boot.date);
-    }
-  } catch (_) {}
+  let ctx = contextFromQuery();
   void renderVenueContextHeader(ctx);
   void portalBindVenueReviewVoice(ctx);
   const walkthrough = initVenueWalkthroughRecorder(ctx);
+  const photos = initVenuePhotoPicker();
+  const venueSel = document.getElementById("venueSelect");
+  const kindSel = document.getElementById("kindSelect");
+  if (venueSel) {
+    venueSel.addEventListener("change", function () {
+      syncVenueMediaPanels();
+      if (walkthrough && typeof walkthrough.updateCopy === "function") walkthrough.updateCopy();
+    });
+  }
+  if (kindSel) {
+    kindSel.addEventListener("change", function () {
+      if (walkthrough && typeof walkthrough.updateCopy === "function") walkthrough.updateCopy();
+    });
+  }
+  syncVenueMediaPanels();
 
   function getIssueMode() {
     const m = clean(form.dataset.issueMode || "").toLowerCase();
@@ -931,8 +1075,21 @@ function initVenueReviewPage() {
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     const issueMode = getIssueMode();
-    const ctxNow = contextFromQuery();
+    const ctxNow = readVenueFormContext(contextFromQuery());
     const submitBtn = form.querySelector(".submit-btn");
+
+    if (!clean(ctxNow.venue)) {
+      alert("Please select the venue.");
+      return;
+    }
+    if (ctxNow.openingClosing !== "Opening" && ctxNow.openingClosing !== "Closing") {
+      alert("Please select Opening or Closing.");
+      return;
+    }
+    if (!clean(ctxNow.time)) {
+      alert("Please set the time you did this check.");
+      return;
+    }
 
     if (!issueMode) {
       alert(
@@ -981,13 +1138,15 @@ function initVenueReviewPage() {
       );
       return;
     }
-    if (walkthrough.required && !clean(submission.submittedByUserId)) {
-      alert("Sign in is required to submit the walkthrough video with this venue report.");
+    const photoFiles = photos && photos.getFiles ? photos.getFiles() : [];
+    const needsMediaUpload = !!(walkthrough.hasBlob() || (photoFiles && photoFiles.length));
+    if (needsMediaUpload && !clean(submission.submittedByUserId)) {
+      alert("Sign in is required to upload video or photos with this venue report.");
       return;
     }
 
     const formState = {
-      time: form.time.value,
+      time: ctxNow.time || form.time.value,
       issueMode,
       issuesReported: issuesInput.value
     };
@@ -995,7 +1154,7 @@ function initVenueReviewPage() {
     if (submitBtn) submitBtn.disabled = true;
     var successSubmitted = false;
     try {
-      if (walkthrough.required) {
+      if (walkthrough.hasBlob()) {
         const up = await uploadVenueWalkthroughVideo(
           submission.supabase,
           submission,
@@ -1005,6 +1164,14 @@ function initVenueReviewPage() {
         formState.videoStoragePath = up.path;
         formState.videoMimeType = up.mime;
         formState.videoDurationSec = up.durationSec;
+      }
+      if (photoFiles && photoFiles.length) {
+        formState.photoStoragePaths = await uploadVenuePhotos(
+          submission.supabase,
+          submission,
+          ctxNow,
+          photoFiles
+        );
       }
       const row = buildVenueReviewRow(ctxNow, formState, submission);
       await submitVenueReviewToSupabase(submission.supabase, row);

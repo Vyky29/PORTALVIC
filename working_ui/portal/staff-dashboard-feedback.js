@@ -2096,73 +2096,9 @@
           dateIso = String(typeof portalViewCalendarDateKey === 'function' ? portalViewCalendarDateKey() : '').trim();
         }catch(_){}
         if(/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) u.searchParams.set('date', dateIso);
-        const sid = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-        let isSunday = false;
-        try{
-          const dayName = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
-          if(/^sunday$/i.test(dayName)) isSunday = true;
-          else if(/^\d{4}-\d{2}-\d{2}$/.test(dateIso)){
-            const p = dateIso.split('-').map(Number);
-            const d = new Date(p[0], p[1] - 1, p[2]);
-            if(d.getDay() === 0) isSunday = true;
-          }else if(new Date().getDay() === 0){
-            isSunday = true;
-          }
-        }catch(_){}
-        let vkind = '';
-        try{
-          vkind = String(opts.kind || '').trim().toLowerCase();
-          if(vkind === 'opening') vkind = 'open';
-          if(vkind === 'closing') vkind = 'close';
-          if(!vkind && typeof portalVenueTimeWindowsForUser === 'function'){
-            const vw = portalVenueTimeWindowsForUser();
-            if(vw){
-              const openDoneV = typeof portalVenueFlagIsDone === 'function' && portalVenueFlagIsDone('open');
-              const closeDoneV = typeof portalVenueFlagIsDone === 'function' && portalVenueFlagIsDone('close');
-              if(vw.opening && !openDoneV) vkind = 'open';
-              else if(vw.closing && !closeDoneV) vkind = 'close';
-              else if(vw.closing) vkind = 'close';
-              else if(vw.opening) vkind = 'open';
-            }
-          }
-          /* Roberto Sunday open before noon / close after — even if roster windows are empty. */
-          if(!vkind && sid === 'roberto' && isSunday){
-            const nowM = new Date().getHours() * 60 + new Date().getMinutes();
-            vkind = nowM < 12 * 60 ? 'open' : 'close';
-          }
-          if(vkind) u.searchParams.set('kind', vkind);
-        }catch(_){}
-        let venue = '';
-        try{
-          venue = typeof formatTodayVenueOnlyLabel === 'function' ? String(formatTodayVenueOnlyLabel() || '').trim() : '';
-        }catch(_){}
-        if(!venue || venue === '—'){
-          try{
-            const vw2 = typeof portalVenueTimeWindowsForUser === 'function' ? portalVenueTimeWindowsForUser() : null;
-            if(vw2 && vw2.venue) venue = String(vw2.venue).trim();
-          }catch(_){}
-        }
-        if((!venue || venue === '—') && sid === 'roberto' && isSunday) venue = 'SwimFarm';
-        if(venue && venue !== '—') u.searchParams.set('venue', venue);
         try{
           const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
           if(nm) u.searchParams.set('completedBy', nm);
-        }catch(_){}
-        try{
-          let service = '';
-          if(window.dashboardData){
-            service = String(window.dashboardData.service || (window.dashboardData.morning && window.dashboardData.morning.service) || '').trim();
-          }
-          if((!service || service === '—') && sid === 'roberto' && isSunday) service = 'Sunday pool';
-          if(service && service !== '—') u.searchParams.set('service', service);
-        }catch(_){}
-        try{
-          const sched = typeof window !== 'undefined' ? window.PortalVenueReportSchedule : null;
-          let needVideo = sched && typeof sched.portalVenueReportRequiresWalkthroughVideo === 'function'
-            ? sched.portalVenueReportRequiresWalkthroughVideo(sid, typeof portalVenueScheduleCtx === 'function' ? portalVenueScheduleCtx() : {}, vkind || '')
-            : false;
-          if(!needVideo && sid === 'roberto' && isSunday) needVideo = true;
-          if(needVideo) u.searchParams.set('video', '1');
         }catch(_){}
         return portalAppendStaffMobileVerticalParam(u.href);
       }catch(_){
