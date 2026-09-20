@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260920-venue-day-group';
+  var PORTAL_DAY_OPS_BUILD = '20260920-venue-submit-col';
   var venueReviewFilters = {
     venue: '',
     staff: '',
@@ -1607,6 +1607,23 @@
     if (k === 'close' || k === 'closing') return 'Closing';
     return '';
   }
+  function venueReviewLondonTodayIso() {
+    try {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/London',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(new Date());
+    } catch (_tz) {
+      return new Date().toISOString().slice(0, 10);
+    }
+  }
+  function venueReviewDayFinished(row) {
+    var day = venueReviewIso(row);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return true;
+    return day < venueReviewLondonTodayIso();
+  }
   function venueReviewAdminClient() {
     var c = cfg.getClient && cfg.getClient();
     if (c && c.storage) return c;
@@ -1696,6 +1713,10 @@
       alert('Could not find that venue review.');
       return;
     }
+    if (!venueReviewDayFinished(row)) {
+      alert('This day has not finished yet. Attach the walkthrough after closing.');
+      return;
+    }
     var mime = venueAdminVideoMime(file.type || 'video/mp4');
     var ext = venueAdminVideoExt(mime);
     var day = String(row.review_date || '').slice(0, 10) || 'undated';
@@ -1738,6 +1759,7 @@
     }
   }
   function venueReviewVideoCellHtml(r) {
+    if (!venueReviewDayFinished(r)) return '—';
     var reviewId = String((r && r.id) || '').trim();
     var videoPath = String((r && r.video_storage_path) || '').trim();
     var uploading = !!(reviewId && venueAdminVideoUploading[reviewId]);
@@ -1982,6 +2004,9 @@
               '<td>' +
               esc(cellText(r.review_date)) +
               '</td>' +
+              '<td class="cell-wrap col-submitted-by"><div class="portal-forms-cell-main">' +
+              esc(cellText(r.submitted_by_name)) +
+              '</div></td>' +
               '<td>' +
               esc(kind) +
               '</td>' +
@@ -1997,9 +2022,6 @@
               '<td>' +
               videoCell +
               '</td>' +
-              '<td><div class="portal-forms-cell-main">' +
-              esc(cellText(r.submitted_by_name)) +
-              '</div></td>' +
               '</tr>'
             );
           })

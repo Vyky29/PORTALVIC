@@ -75,11 +75,17 @@
 .portal-day-ops-embed .portal-venue-video-actions .portal-forms-view-btn {
   min-width: 0;
 }
+.portal-day-ops-embed .portal-forms-table .col-submitted-by,
+.portal-day-ops-embed .portal-forms-table td.col-submitted-by {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
 .portal-day-ops-embed .files-table-wrap,
 .portal-day-ops-embed .portal-forms-table-wrap {
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 14px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   background: #fff;
   margin-bottom: 0;
 }
