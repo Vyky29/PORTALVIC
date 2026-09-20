@@ -172,10 +172,13 @@ export function firstNameOf(raw: string): string {
 }
 
 function slotDedupeKey(s: Feedback2030Slot): string {
+  /* Staff + client + service only. Occupants store Sunday Multi as 90' dual-kid
+   * bands (9.30-11) while roster is 45' cards (9.30-10.15 / 10.15-11). Counting
+   * both inflated Aurora's Sunday nag (13 instead of 9). Same kid twice in one
+   * programme with the same instructor is one feedback unit. */
   return [
     normalizeStaffKey(s.staff),
     slugClient(s.client),
-    String(s.time || "").toLowerCase().replace(/\s+/g, ""),
     slugClient(s.service),
   ].join("|");
 }

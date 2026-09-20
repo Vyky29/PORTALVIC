@@ -239,6 +239,39 @@ const admin = createClient(
 }
 
 
+/* --- 7) Sunday Aurora pool: 45' roster cards, not occupants 90' dual-kid bands --- */
+{
+  const iso = "2026-09-20";
+  const { data: tmpl } = await admin
+    .from("portal_roster_rows")
+    .select("client_name,instructors,time_slot,service,area,session_date,day")
+    .is("session_date", null)
+    .ilike("day", "Sunday");
+  const roster = slotsFromRosterRows(tmpl || [], iso).filter((s) =>
+    /^aurora$/i.test(String(s.staff || "").trim()),
+  );
+  const occ = slotsFromCapacityChainOccupants(
+    (standingOccupants as { bySlotId?: Record<string, unknown> }).bySlotId as never,
+    iso,
+  ).filter((s) => /^aurora$/i.test(String(s.staff || "").trim()));
+  const merged = mergeFeedback2030Slots([roster, occ]).filter((s) =>
+    /^aurora$/i.test(String(s.staff || "").trim()),
+  );
+  const debts = outstandingByStaff(merged, iso, {
+    feedbackRows: [],
+    cancelRows: [],
+    absentMarks: [],
+    feedbackDoneMarks: [],
+  });
+  const aurora = debts.find((d) => d.staffKey === "aurora");
+  ok(
+    "Sun20 Aurora feedback units match 45' pool book (not 90' occupant doubles)",
+    !!aurora && aurora.pending === roster.length && roster.length === 9,
+    "roster=" + roster.length + " occ=" + occ.length + " merged=" + merged.length +
+      " pending=" + (aurora ? aurora.pending : 0),
+  );
+}
+
 if (fails.length) {
   console.log("\nSMOKE FAIL (" + fails.length + ")");
   for (const f of fails) console.log(" - " + f);
