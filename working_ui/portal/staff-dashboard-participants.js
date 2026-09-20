@@ -990,6 +990,32 @@
     }
     function portalShareStaffAwayOnIso(staffKey, iso){
       try{
+        if(typeof portalStaffClubUnavailabilityOnIso === 'function' && portalStaffClubUnavailabilityOnIso(staffKey, iso)){
+          return true;
+        }
+      }catch(_){}
+      try{
+        if(typeof window !== 'undefined' && typeof window.portalStaffClubUnavailabilityOnIso === 'function'
+          && window.portalStaffClubUnavailabilityOnIso(staffKey, iso)){
+          return true;
+        }
+      }catch(_){}
+      try{
+        const rows = (typeof window !== 'undefined' && Array.isArray(window.__PORTAL_STAFF_UNAVAILABILITY__))
+          ? window.__PORTAL_STAFF_UNAVAILABILITY__
+          : [];
+        const want = String(staffKey || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+        const day = String(iso || '').slice(0, 10);
+        for(let i = 0; i < rows.length; i++){
+          const r = rows[i];
+          if(!r || String(r.off_date || '').slice(0, 10) !== day) continue;
+          const nk = String(r.name_key || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+          const sn = String(r.staff_name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+          const first = String(r.staff_name || '').trim().split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9]+/g, '');
+          if(nk === want || sn === want || first === want) return true;
+        }
+      }catch(_){}
+      try{
         if(typeof portalTermStaffAwayDatesFor === 'function'){
           const dates = portalTermStaffAwayDatesFor(staffKey) || [];
           if(dates.indexOf(iso) >= 0) return true;

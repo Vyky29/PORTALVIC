@@ -6,7 +6,7 @@
   "use strict";
   /* Injected by build-time perf patch on portalvic + clubsensational-staff. */
 
-    var VER = "20260920-sched-ov-next";
+    var VER = "20260920-team-day-truth";
 
   var TIER_ROSTER = [
     "/portal/term_from_timetable.js?v=20260914-raul-fri18-off",
@@ -16,7 +16,7 @@
     "/portal/portal_staff_feedback_data_loader.js?v=20260915-2to1-shared",
     "/portal-shared-js/portal_late_submission.js?v=20260716-cancel-selfserve",
       "/portal/portal-roster-rows-merge.js?v=20260910-yunis-se",
-      "/portal/portal_roster_canonical.js?v=20260920-victor-week1-snap",
+      "/portal/portal_roster_canonical.js?v=20260920-team-day-truth",
     "/portal/portal_madre_canonical.js?v=20260622-madre-live",
       "/portal/portal_madre_fold.js?v=20260903-cover-needed",
     "/portal/portal_client_day_visibility.js?v=20260916-short-names",
@@ -59,7 +59,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260920-team-slot-times",
+    "/portal/portal_lead_team_shift.js?v=20260920-team-day-truth",
   ];
 
   var TIER_IDLE = [

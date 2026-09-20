@@ -1543,6 +1543,7 @@
 
   function scrubAndEnsureSep8ActonRedistribute(rows) {
     var out = [];
+    var sawSep8Aquatic = false;
     (Array.isArray(rows) ? rows : []).forEach(function (r) {
       if (!r) return;
       if (normIso(r.session_date) !== "2026-09-08") {
@@ -1554,13 +1555,18 @@
         /acton/i.test(String(r.venue || "")) &&
         /\b(roberto|luliya|lulia|javier|aurora|javi)\b/i.test(String(r.instructors || ""))
       ) {
+        sawSep8Aquatic = true;
         return;
       }
       out.push(r);
     });
-    autumnTuesdaySep8ActonRedistributeRows().forEach(function (row) {
-      out.push(Object.assign({}, row));
-    });
+    /* Only mint the Tue 8 redistribute onto boards that actually include that ISO.
+       A single-day Team/Overview window (e.g. Tue 22) must keep standing Acton. */
+    if (sawSep8Aquatic) {
+      autumnTuesdaySep8ActonRedistributeRows().forEach(function (row) {
+        out.push(Object.assign({}, row));
+      });
+    }
     return out;
   }
 

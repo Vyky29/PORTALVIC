@@ -863,7 +863,7 @@
         if(rowIso === '2026-09-08' && iso && iso !== '2026-09-08'){
           const svcOut = String((s && (s.rosterService || s.activity || s.service)) || '').toLowerCase();
           const venueOut = String((s && s.venue) || '').toLowerCase();
-          if(/aquatic|swim/.test(svcOut) && venueOut.indexOf('acton') >= 0){
+          if(/aquatic|swim/.test(svcOut) && (venueOut.indexOf('acton') >= 0 || !venueOut)){
             return false;
           }
         }
@@ -958,13 +958,14 @@
       if(portalStaffHasDatedWeekdaySnapshots(sid, w, snap.floor, snap.through)) return false;
       return w === String(s.day || '').trim();
     }
-    try{
-      if(typeof window !== 'undefined'){
-        window.portalSessionSpreadsheetRowMatchesCalendarDate = portalSessionSpreadsheetRowMatchesCalendarDate;
-        window.portalStaffSessionKeptAfterCalendarInstructorRemap = portalStaffSessionKeptAfterCalendarInstructorRemap;
-        window.portalIsoIsFadiAbsentDcBoard = portalIsoIsFadiAbsentDcBoard;
-        window.portalFadiAbsentBoardIncludesSession = portalFadiAbsentBoardIncludesSession;
-      }
+        try{
+          if(typeof window !== 'undefined'){
+            window.portalSessionSpreadsheetRowMatchesCalendarDate = portalSessionSpreadsheetRowMatchesCalendarDate;
+            window.portalStaffSessionKeptAfterCalendarInstructorRemap = portalStaffSessionKeptAfterCalendarInstructorRemap;
+            window.portalIsoIsFadiAbsentDcBoard = portalIsoIsFadiAbsentDcBoard;
+            window.portalFadiAbsentBoardIncludesSession = portalFadiAbsentBoardIncludesSession;
+            window.portalStaffClubUnavailabilityOnIso = portalStaffClubUnavailabilityOnIso;
+          }
     }catch(_){}
     function portalScheduleOverrideFetchIsoList(opts){
       opts = opts || {};
@@ -1099,6 +1100,33 @@
         return [];
       }
     };
+    /** Club day-offs from staff_unavailability (Overview / Team of the Day). */
+    function portalStaffClubUnavailabilityOnIso(staffKey, isoYmd){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      const want = String(staffKey || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !want) return false;
+      const rows = (typeof window !== 'undefined' && Array.isArray(window.__PORTAL_STAFF_UNAVAILABILITY__))
+        ? window.__PORTAL_STAFF_UNAVAILABILITY__
+        : [];
+      function canon(v){
+        try{
+          if(typeof portalCanonicalStaffMatchKey === 'function'){
+            const c = String(portalCanonicalStaffMatchKey(v) || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+            if(c) return c;
+          }
+        }catch(_){}
+        return String(v || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+      }
+      for(let i = 0; i < rows.length; i++){
+        const r = rows[i];
+        if(!r) continue;
+        if(String(r.off_date || '').slice(0, 10) !== iso) continue;
+        if(canon(r.name_key) === want || canon(r.staff_name) === want) return true;
+        const first = String(r.staff_name || '').trim().split(/\s+/)[0];
+        if(first && canon(first) === want) return true;
+      }
+      return false;
+    }
     /**
      * Programme leads / Roberto Lead Team need peer day overrides.
      * Everyone else (e.g. Javier) only fetches own anchor + cover-as-me rows.
@@ -1254,15 +1282,37 @@
         try{ window.__PORTAL_SCHEDULE_OVERRIDES_NEED_AUTH_RETRY__ = false; }catch(_){}
         // Validated staff-requested days off (Session Disruption reports upsert
         // into staff_unavailability once admin validates). RLS lets a person read
-        // their own rows; these render as "Day off (Time Off Requested)" and
-        // replace the day's shift on the staff dashboard.
+        // their own rows; programme leads / ops also load the club day-off list so
+        // Team of the Day matches Sessions Overview (hide Luliya when HR off).
         try{
-          const off = await box.client.from('staff_unavailability')
-            .select('off_date,staff_id')
-            .eq('staff_id', sess.user.id);
+          const viewerSidOff = (typeof portalAuthStaffRosterId === 'function'
+            ? portalAuthStaffRosterId()
+            : '') || String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+          const wantClubOff = !!(viewerSidOff && typeof portalStaffNeedsFullDayOverrides === 'function'
+            && portalStaffNeedsFullDayOverrides(viewerSidOff));
+          let offQ = box.client.from('staff_unavailability')
+            .select('off_date,staff_id,name_key,staff_name');
+          if(!wantClubOff) offQ = offQ.eq('staff_id', sess.user.id);
+          let off = await offQ;
+          if(off.error && wantClubOff){
+            offQ = box.client.from('staff_unavailability')
+              .select('off_date,staff_id,name_key,staff_name')
+              .eq('staff_id', sess.user.id);
+            off = await offQ;
+          }
           if(!off.error && Array.isArray(off.data)){
+            try{
+              if(wantClubOff || !Array.isArray(window.__PORTAL_STAFF_UNAVAILABILITY__) || !window.__PORTAL_STAFF_UNAVAILABILITY__.length){
+                window.__PORTAL_STAFF_UNAVAILABILITY__ = off.data.slice();
+              }
+            }catch(_clubOff){}
             const offSet = Object.create(null);
             off.data.forEach(function(r){
+              if(wantClubOff){
+                const sidRow = String((r && r.staff_id) || '').trim().toLowerCase();
+                const uid = String((sess.user && sess.user.id) || '').trim().toLowerCase();
+                if(uid && sidRow && sidRow !== uid) return;
+              }
               const iso = String((r && r.off_date) || '').trim().slice(0, 10);
               if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) offSet[iso] = true;
             });
