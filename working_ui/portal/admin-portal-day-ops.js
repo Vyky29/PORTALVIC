@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260920-venue-video-admin';
+  var PORTAL_DAY_OPS_BUILD = '20260920-venue-day-group';
   var venueReviewFilters = {
     venue: '',
     staff: '',
@@ -1875,10 +1875,20 @@
     if (!leadTbody && !venueTbody) return;
     var lead = payload.lead_session_reports || [];
     var venue = (payload.venue_reviews || []).slice().sort(function (a, b) {
-      var ca = String(a.created_at || a.review_date || '');
-      var cb = String(b.created_at || b.review_date || '');
-      if (ca !== cb) return cb.localeCompare(ca);
-      return String(b.review_time || '').localeCompare(String(a.review_time || ''));
+      var da = venueReviewIso(a);
+      var db = venueReviewIso(b);
+      if (da !== db) return db.localeCompare(da);
+      var ta = String((a && a.review_time) || '');
+      var tb = String((b && b.review_time) || '');
+      if (ta && tb && ta !== tb) return ta.localeCompare(tb);
+      var ka = venueReviewKindKey(a) === 'Closing' ? 1 : venueReviewKindKey(a) === 'Opening' ? 0 : 2;
+      var kb = venueReviewKindKey(b) === 'Closing' ? 1 : venueReviewKindKey(b) === 'Opening' ? 0 : 2;
+      if (ka !== kb) return ka - kb;
+      return String((a && a.submitted_by_name) || '').localeCompare(
+        String((b && b.submitted_by_name) || ''),
+        'en',
+        { sensitivity: 'base' }
+      );
     });
     var Hub = null;
     if (leadTbody || document.getElementById('portalFormsLeadLog')) {
