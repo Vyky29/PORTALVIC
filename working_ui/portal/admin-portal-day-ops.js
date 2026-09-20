@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260919-register-fast2';
+  var PORTAL_DAY_OPS_BUILD = '20260920-venue-live';
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -484,13 +484,13 @@
     if (!portalRows.length) return;
     var byKey = {};
     var out = [];
-    portalRows.forEach(function (r) {
+    (payload.venue_reviews || []).forEach(function (r) {
       var k = venueReviewMergeKey(r);
       if (!k || byKey[k]) return;
       byKey[k] = true;
       out.push(r);
     });
-    (payload.venue_reviews || []).forEach(function (r) {
+    portalRows.forEach(function (r) {
       var k = venueReviewMergeKey(r);
       if (!k || byKey[k]) return;
       byKey[k] = true;
@@ -768,15 +768,26 @@
           });
       });
     }
-    if (client) {
+    if (cfg.fetchVenueReviews) {
+      tasks.push(function () {
+        return cfg.fetchVenueReviews().then(function (rows) {
+          out.venue_reviews = rows || [];
+        });
+      });
+    } else if (client) {
       tasks.push(function () {
         return client
           .from('venue_reviews')
           .select('*')
+          .order('review_date', { ascending: false })
           .order('created_at', { ascending: false })
-          .limit(400)
+          .limit(500)
           .then(function (ven) {
-            if (!ven.error) out.venue_reviews = ven.data || [];
+            if (ven.error) {
+              console.warn('[PortalDayOps] venue_reviews', ven.error.message || ven.error);
+              return;
+            }
+            out.venue_reviews = ven.data || [];
           });
       });
     }
@@ -793,6 +804,7 @@
       }
     }
     console.log('[PortalDayOps] incident_reports live rows:', (out.incident_reports || []).length);
+    console.log('[PortalDayOps] venue_reviews live rows:', (out.venue_reviews || []).length);
     return out;
   }
 
@@ -870,6 +882,10 @@
     }
     var incMeta = live.incident_reports || null;
     if (incMeta && incMeta.count && !incCount) incCount = incMeta.count;
+    var venueCount = (payload.venue_reviews || []).length;
+    if (!venueCount && global.__PORTAL_VENUE_REVIEWS__ && global.__PORTAL_VENUE_REVIEWS__.length) {
+      venueCount = global.__PORTAL_VENUE_REVIEWS__.length;
+    }
     var loaded = payload.session_feedback_loaded === true;
     var cache = global.__PORTAL_ADMIN_SESSION_FEEDBACK_CACHE__;
     if (!fbCount && Array.isArray(cache) && cache.length) {
@@ -905,6 +921,8 @@
       esc(String(ovCount)) +
       '</strong> · Incidents: <strong>' +
       esc(String(incCount)) +
+      '</strong> · Venue: <strong>' +
+      esc(String(venueCount)) +
       '</strong> · build <code>' +
       esc(PORTAL_DAY_OPS_BUILD) +
       '</code>';
@@ -1930,6 +1948,21 @@
               console.debug('[PortalDayOps] fetchLeadReports', eLeadTab);
             }
           }
+          if (tabId === 'venue' && cfg.fetchVenueReviews) {
+            try {
+              var deferWait = global.__PORTAL_DAY_OPS_DEFER__;
+              if (deferWait && typeof deferWait.then === 'function') {
+                await promiseWithTimeout(deferWait, 8000, null);
+              }
+            } catch (_deferVenue) {}
+            try {
+              var liveVenue = (await cfg.fetchVenueReviews()) || [];
+              if (liveVenue.length) payload.venue_reviews = liveVenue;
+              mergePortalVenueIntoPayload();
+            } catch (eVenueTab) {
+              console.debug('[PortalDayOps] fetchVenueReviews', eVenueTab);
+            }
+          }
           await renderLeadVenueTables();
           return null;
         }
@@ -1959,6 +1992,7 @@
         if (typeof window !== 'undefined') {
           window.__PORTAL_SCHEDULE_OVERRIDES__ = null;
           window.__PORTAL_STAFF_UNAVAILABILITY__ = null;
+          window.__PORTAL_VENUE_REVIEWS__ = null;
         }
       } catch (_eOv) {}
       try {

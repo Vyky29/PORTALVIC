@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
   <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260919-register-fast2"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260920-venue-live"></script>
   <script src="/portal/admin-portal-documents.js?v=20260915-ob-doc-chips"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260919-chip-center"></script>
@@ -23620,6 +23620,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_STAFF_UNAVAILABILITY__ = null;
       window.__PORTAL_INCIDENT_REPORTS__ = null;
       window.__PORTAL_LEAD_SESSION_REPORTS__ = null;
+      window.__PORTAL_VENUE_REVIEWS__ = null;
       window.__PORTAL_ADMIN_LIVE_LOAD__ = null;
       window.__PORTAL_ADMIN_SESSION_FEEDBACK_LOAD__ = null;
       window.__PORTAL_ADMIN_SESSION_FEEDBACK_CACHE__ = null;
@@ -23759,6 +23760,42 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         console.warn('[admin] schedule_overrides fetch failed', e);
         adminRecordLiveLoad('schedule_overrides', { count: 0, error: String(e && e.message ? e.message : e), via: 'client' });
         window.__PORTAL_SCHEDULE_OVERRIDES__ = [];
+        return [];
+      }
+    }
+    async function adminFetchVenueReviewsForHub(){
+      if(Array.isArray(window.__PORTAL_VENUE_REVIEWS__) && window.__PORTAL_VENUE_REVIEWS__.length){
+        return window.__PORTAL_VENUE_REVIEWS__;
+      }
+      var auth = await adminEnsureAuthedSupabaseClient();
+      if(!auth.client || !auth.tok){
+        adminRecordLiveLoad('venue_reviews', { count: 0, error: auth.error || 'no_client' });
+        window.__PORTAL_VENUE_REVIEWS__ = null;
+        return [];
+      }
+      try{
+        var res = await adminSupabaseWithRetry(function(){
+          return auth.client
+            .from('venue_reviews')
+            .select('*')
+            .order('review_date', { ascending: false })
+            .order('created_at', { ascending: false })
+            .limit(500);
+        });
+        if(res.error){
+          adminRecordLiveLoad('venue_reviews', { count: 0, error: res.error.message || String(res.error) });
+          window.__PORTAL_VENUE_REVIEWS__ = null;
+          return [];
+        }
+        window.__PORTAL_VENUE_REVIEWS__ = res.data || [];
+        adminRecordLiveLoad('venue_reviews', { count: window.__PORTAL_VENUE_REVIEWS__.length, error: null, via: 'client' });
+        if(window.__PORTAL_VENUE_REVIEWS__.length){
+          console.info('[admin] venue_reviews loaded:', window.__PORTAL_VENUE_REVIEWS__.length, 'via client');
+        }
+        return window.__PORTAL_VENUE_REVIEWS__;
+      }catch(e){
+        adminRecordLiveLoad('venue_reviews', { count: 0, error: String(e && e.message ? e.message : e) });
+        window.__PORTAL_VENUE_REVIEWS__ = null;
         return [];
       }
     }
@@ -24599,6 +24636,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         fetchIncidentReports: adminFetchIncidentReportsForHub,
         invalidateLiveCaches: adminInvalidateSessionsHubLiveCaches,
         fetchLeadReports: adminFetchLeadSessionReportsForHub,
+        fetchVenueReviews: adminFetchVenueReviewsForHub,
         fetchSessionFeedback: adminFetchSessionFeedbackForHub,
         fetchParentFeedbackShares: adminFetchParentFeedbackSharesForHub,
         onLogJumpWeek: function(weekStart){
