@@ -5871,6 +5871,21 @@
     return out.length ? '<span class="ash-regulation-group">' + out.join("") + "</span>" : "\u2014";
   }
 
+  function emotionFacesLite(fb, escFn) {
+    var tokens = emotionTokens(fb.client_emotions);
+    if (!tokens.length && clean(fb.client_emotions)) return escFn(fb.client_emotions);
+    if (!tokens.length) return "\u2014";
+    var labels = [];
+    var seen = {};
+    for (var i = 0; i < tokens.length; i++) {
+      var cat = categorizeEmotion(tokens[i]);
+      if (!cat || seen[cat]) continue;
+      seen[cat] = true;
+      labels.push(cat.replace(/_/g, " "));
+    }
+    return labels.length ? escFn(labels.join(", ")) : "\u2014";
+  }
+
   function termLabelFromRange(fromIso) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fromIso || "")) return "Selected range";
     var p = fromIso.split("-").map(Number);
@@ -6294,8 +6309,22 @@
   };
 
   AdminSessionsHub.prototype.indexAbsentMarks = function () {
+    var listSrc = this.payload.session_quick_marks || [];
+    var ovs = this.payload.schedule_overrides || [];
+    var fbsCount = (this.payload.session_feedback || []).length;
+    var skipSlotLookup = this.mode === "feedback";
+    var sig =
+      String(listSrc.length) +
+      "|" +
+      String(ovs.length) +
+      "|" +
+      String(fbsCount) +
+      "|" +
+      (skipSlotLookup ? "lite" : "full");
+    if (sig === this._absentIndexSig && this._absentMarksMerged && this._absentBySessionKey) return;
+    this._absentIndexSig = sig;
     var byKey = {};
-    var list = (this.payload.session_quick_marks || []).slice();
+    var list = listSrc.slice();
     var seen = {};
     function absentDedupeKey(mk) {
       var sd = clean(mk.session_date);
@@ -6408,7 +6437,7 @@
         if (!byKey[ak]) byKey[ak] = [];
         byKey[ak].push(m2);
       }
-      var slotMatch = this.slotForAbsentMark(m2);
+      var slotMatch = skipSlotLookup ? null : this.slotForAbsentMark(m2);
       if (slotMatch) {
         var slotKey = clean(slotMatch.session_key).toLowerCase();
         if (slotKey) {
@@ -7872,14 +7901,27 @@
     var hub = this;
     var ws = this.weekStart;
     var we = addDaysIso(ws, 6);
-    var rows = this.feedbackInRange().filter(function (fb) {
-      var d = hub.feedbackRowDate(fb);
-      return d && d >= ws && d <= we;
-    });
-    if (this.feedbackMetricsDay) {
-      rows = rows.filter(function (fb) {
-        return hub.feedbackRowDate(fb) === hub.feedbackMetricsDay;
+    var dayWant = this.feedbackMetricsDay || "";
+    var rows = [];
+    if (this._fbByDate) {
+      var d = dayWant || ws;
+      var last = dayWant || we;
+      while (d && d <= last) {
+        var dayRows = this._fbByDate[d] || [];
+        for (var di = 0; di < dayRows.length; di++) rows.push(dayRows[di]);
+        if (dayWant) break;
+        d = addDaysIso(d, 1);
+      }
+    } else {
+      rows = this.feedbackInRange().filter(function (fb) {
+        var iso = hub.feedbackRowDate(fb);
+        return iso && iso >= ws && iso <= we;
       });
+      if (dayWant) {
+        rows = rows.filter(function (fb) {
+          return hub.feedbackRowDate(fb) === dayWant;
+        });
+      }
     }
     var inst = clean(this.instructorFilter);
     if (inst) {
@@ -7890,7 +7932,7 @@
     var svcFilter = clean(this.serviceFilter);
     if (svcFilter) {
       rows = rows.filter(function (fb) {
-        return clean(hub.feedbackDisplayService(fb)) === svcFilter;
+        return clean(fb.service) === svcFilter;
       });
     }
     return rows;
@@ -9056,11 +9098,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       out.push(row);
     }
 
-    var fbs = this.payload.session_feedback || [];
+    var indexedDay = this._fbByDate && this._fbByDate[day];
+    var fbs = indexedDay || this.payload.session_feedback || [];
     for (var i = 0; i < fbs.length; i++) {
       var fb = fbs[i];
-      var fbDay = hub.feedbackRowDate(fb) || feedbackSessionDate(fb);
-      if (fbDay !== day) continue;
+      if (!indexedDay) {
+        var fbDay = hub.feedbackRowDate(fb) || feedbackSessionDate(fb);
+        if (fbDay !== day) continue;
+      }
       if (isMislabeledRosterAreaClientName(fb.client_name)) continue;
       if (hub.mode !== "feedback" && !hub.feedbackAllowedOnCalendarDay(fb)) continue;
       pushRow(fb);
@@ -9529,6 +9574,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     function cellNoteHtml(text) {
       var t = clean(text);
       if (!t) return "\u2014";
+      if (variant === "register") {
+        var clipped = t.split(/\n+/).slice(0, 3).join("\n");
+        if (clipped.length > 180) clipped = clipped.slice(0, 180).replace(/\s+\S*$/, "") + "\u2026";
+        t = clipped;
+      }
       return t
         .split(/\n+/)
         .map(function (line) {
@@ -9596,7 +9646,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       esc(svcLabel) +
       svcTimeSub +
       (sessionDay && !svcTimeSub ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
-      (global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
+      (variant !== "register" &&
+      global.PortalSwimSessionAxes &&
+      typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
         ? global.PortalSwimSessionAxes.swimAxesDisplayHtml(fb, esc).replace("pcso-swim-addon", "ash-swim-addon")
         : "") +
       "</td>";
@@ -9613,7 +9665,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         : absent
           ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent">Submitted (Absent)</span></div>'
           : "") +
-      (global.PortalSwimSessionAxes && typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
+      (variant !== "register" &&
+      global.PortalSwimSessionAxes &&
+      typeof global.PortalSwimSessionAxes.swimAxesDisplayHtml === "function"
         ? global.PortalSwimSessionAxes.swimAxesDisplayHtml(fb, esc).replace("pcso-swim-addon", "ash-swim-addon")
         : "") +
       "</td>";
@@ -9621,7 +9675,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "<td>" +
       (terminal ? cellNa() : fb.engagement_rating != null ? esc(fb.engagement_rating) : "\u2014") +
       "</td>";
-    var emotionCell = "<td>" + (terminal ? cellNa() : emotionFacesHtml(fb, esc)) + "</td>";
+    var emotionCell =
+      "<td>" +
+      (terminal
+        ? cellNa()
+        : variant === "register"
+          ? emotionFacesLite(fb, esc)
+          : emotionFacesHtml(fb, esc)) +
+      "</td>";
     var independenceCell =
       '<td class="ash-cell-note">' +
       (terminal ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
@@ -12893,17 +12954,25 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.htmlFeedbackRegisterTableBody = function () {
     var hub = this;
     var esc = this.escapeHtml;
-    var rows = this.feedbackRowsForSelectedDay();
-    var tableRows = rows
-      .map(function (fb, rowIdx) {
-        var awaiting = fb && fb._ashAwaitingSlot;
-        return hub.htmlFeedbackTableRow(fb, esc, {
-          rowIdx: awaiting ? null : rowIdx,
-          clickable: false,
-          variant: "register",
-        });
-      })
-      .join("");
+    var prevLite = hub._registerLitePaint;
+    hub._registerLitePaint = true;
+    var rows = [];
+    var tableRows = "";
+    try {
+      rows = this.feedbackRowsForSelectedDay();
+      tableRows = rows
+        .map(function (fb, rowIdx) {
+          var awaiting = fb && fb._ashAwaitingSlot;
+          return hub.htmlFeedbackTableRow(fb, esc, {
+            rowIdx: awaiting ? null : rowIdx,
+            clickable: false,
+            variant: "register",
+          });
+        })
+        .join("");
+    } finally {
+      hub._registerLitePaint = prevLite;
+    }
     if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
       return (
         '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>'
@@ -12929,45 +12998,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var root = this.root;
     var metrics = root.querySelector(".ash-metrics-dashboard");
     if (metrics) {
-      metrics.setAttribute("data-ash-metrics-lazy", "1");
-      metrics.innerHTML =
-        '<p class="ash-muted" style="margin:0;padding:12px;text-align:center">Loading week scores\u2026</p>';
+      try {
+        var sum = this.engagementSummary(this.feedbackRowsForMetrics());
+        var wrap = document.createElement("div");
+        wrap.innerHTML = this.htmlFeedbackMetricStripLite(sum);
+        var next = wrap.firstElementChild;
+        if (next && metrics.parentNode) metrics.parentNode.replaceChild(next, metrics);
+      } catch (_m) {}
     }
     var tbody = root.querySelector("table.ash-table--register tbody[data-ash-client-filter-tbody]");
     if (tbody) tbody.innerHTML = this.htmlFeedbackRegisterTableBody();
-    this.scheduleRegisterMetricsPaint();
-  };
-
-  AdminSessionsHub.prototype.paintRegisterMetricsIfLazy = function () {
-    var hub = this;
-    if (!hub.hubIsLive()) return;
-    var metrics = hub.root && hub.root.querySelector(".ash-metrics-dashboard[data-ash-metrics-lazy]");
-    if (!metrics) return;
-    try {
-      var sum = hub.engagementSummary(hub.feedbackRowsForMetrics());
-      var wrap = document.createElement("div");
-      wrap.innerHTML = hub.htmlFeedbackMetricStrip(sum);
-      var next = wrap.firstElementChild;
-      if (next && metrics.parentNode) metrics.parentNode.replaceChild(next, metrics);
-    } catch (err) {
-      console.warn("[AdminSessionsHub] register metrics", err);
-      metrics.removeAttribute("data-ash-metrics-lazy");
-      metrics.innerHTML =
-        '<p class="ash-muted" style="margin:0;padding:12px;text-align:center">Week scores unavailable.</p>';
-    }
-  };
-
-  AdminSessionsHub.prototype.scheduleRegisterMetricsPaint = function () {
-    var hub = this;
-    var run = function () {
-      if (!hub.hubIsLive()) return;
-      hub.paintRegisterMetricsIfLazy();
-    };
-    if (typeof requestIdleCallback === "function") {
-      requestIdleCallback(run, { timeout: 1600 });
-    } else {
-      setTimeout(run, 0);
-    }
   };
 
   AdminSessionsHub.prototype.scheduleRegisterBodyPaint = function () {
@@ -12982,13 +13022,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       } catch (_c) {}
       hub._registerBodyIdle = null;
     }
-    var paint = function (lite) {
+    var paint = function () {
       if (!hub.hubIsLive()) return;
       var tbody =
         hub.root &&
         hub.root.querySelector("table.ash-table--register tbody[data-ash-client-filter-tbody]");
       if (!tbody) return;
-      hub._registerLitePaint = !!lite;
       try {
         tbody.innerHTML = hub.htmlFeedbackRegisterTableBody();
       } catch (err) {
@@ -12996,27 +13035,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         tbody.innerHTML =
           '<tr><td colspan="7"><div class="ash-empty">Could not paint register.</div></td></tr>';
       }
-      hub._registerLitePaint = false;
-    };
-    var paintLiteThenMix = function () {
-      hub._registerBodyRaf = 0;
-      paint(true);
-      hub.scheduleRegisterMetricsPaint();
-      var mix = function () {
-        hub._registerBodyIdle = null;
-        if (!hub.hubIsLive()) return;
-        paint(false);
-      };
-      if (typeof requestIdleCallback === "function") {
-        hub._registerBodyIdle = requestIdleCallback(mix, { timeout: 1200 });
-      } else {
-        setTimeout(mix, 0);
-      }
     };
     if (typeof requestAnimationFrame === "function") {
-      hub._registerBodyRaf = requestAnimationFrame(paintLiteThenMix);
+      hub._registerBodyRaf = requestAnimationFrame(function () {
+        hub._registerBodyRaf = 0;
+        paint();
+      });
     } else {
-      setTimeout(paintLiteThenMix, 0);
+      setTimeout(paint, 0);
     }
   };
 
@@ -13289,6 +13315,23 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       rows +
       "</tbody></table></div>" +
       this.htmlAbsentsTermWeekLog()
+    );
+  };
+
+  AdminSessionsHub.prototype.htmlFeedbackMetricStripLite = function (sum) {
+    var esc = this.escapeHtml;
+    var scored = sum && sum.scored != null ? String(sum.scored) : "0";
+    var avg = sum && sum.avg != null ? String(sum.avg) : "\u2014";
+    var notes = sum && sum.relevantNotes != null ? String(sum.relevantNotes) : "0";
+    return (
+      '<div class="ash-metrics-dashboard ash-metrics-dashboard--lite">' +
+      '<p class="ash-metric-lite">This week: <strong>' +
+      esc(scored) +
+      "</strong> scored \u00b7 avg <strong>" +
+      esc(avg) +
+      "</strong> \u00b7 <strong>" +
+      esc(notes) +
+      "</strong> notes</p></div>"
     );
   };
 
@@ -13955,7 +13998,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     return (
-      '<div class="ash-metrics-dashboard" data-ash-metrics-lazy="1"><p class="ash-muted" style="margin:0;padding:12px;text-align:center">Loading week scores\u2026</p></div>' +
+      this.htmlFeedbackMetricStripLite(this.engagementSummary(this.feedbackRowsForMetrics())) +
       weekBlock +
       truncateHtml +
       noteFilterHtml +
@@ -14296,7 +14339,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.render = function () {
     if (!this.root || !this.root.isConnected) return;
     this.adoptLiveSessionFeedbackIfEmpty();
-    var skipHeavyIndex = this.tab === "tracking" && this.opts && this.opts.externalTabs;
+    var skipHeavyIndex =
+      this.opts &&
+      this.opts.externalTabs &&
+      (this.tab === "tracking" || (this.mode === "feedback" && this._fbByKey));
     try {
       if (!skipHeavyIndex) {
         this.indexAbsentMarks();

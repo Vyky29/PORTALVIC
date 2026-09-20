@@ -24,7 +24,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260920-venue-submit-col';
+  var PORTAL_DAY_OPS_BUILD = '20260920-register-fast';
   var venueReviewFilters = {
     venue: '',
     staff: '',
@@ -1103,7 +1103,7 @@
       mode: mode,
       externalTabs: true,
       payload: payload,
-      feedbackMixAwaitingSlots: mode === 'feedback',
+      feedbackMixAwaitingSlots: false,
       getFeedbackDayStats: cfg.getFeedbackDayStats,
       isClubClosedDay: cfg.isClubClosedDay,
       showFullWeekDayStrip: cfg.showFullWeekDayStrip,
