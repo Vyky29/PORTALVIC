@@ -75,7 +75,7 @@
   <script src="/portal/portal_staff_display_names.js?v=20260909-luliya-first"></script>
   <script type="module" src="/portal/portal_session_key.js?v=20260703-canonical-keys"></script>
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260919-sel-chip" />
-  <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260703-v17-incident-view-fix" />
+  <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260920-venue-filters" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260920-ops-hub-4btns" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260727-role-names" />
@@ -86,7 +86,7 @@
   <script src="/portal/participant_feedback_name.js?v=20260705-yusuf-spelling"></script>
   <script src="/portal/portal_swim_session_axes.js?v=20260914-dc-no-swim-choice"></script>
   <script src="/portal/portal_participant_identity.js?v=20260905-sessions-sync"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260920-venue-live"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260920-venue-filters"></script>
   <script src="/portal/admin-portal-documents.js?v=20260915-ob-doc-chips"></script>
   <script src="/portal/admin-portal-participant-documents.js?v=20260909-reenr-bookings"></script>
   <script src="/portal/admin-portal-parent-absences.js?v=20260919-chip-center"></script>
@@ -145,7 +145,7 @@
   <script src="/portal/admin-parent-notify-log.js?v=20260920-inbox-sync"></script>
   <script src="/portal/admin-staff-whatsapp.js?v=20260920-inbox-sync"></script>
   <script src="/portal/admin-parent-broadcast.js?v=20260813-otp-no-book"></script>
-  <script src="/portal/admin-open-places-2627.js?v=20260920-climb-12-1"></script>
+  <script src="/portal/admin-open-places-2627.js?v=20260920-offer-boot"></script>
   <link rel="stylesheet" href="/portal/portal_parent_notify_log.css?v=20260909-reply-only" />
   <link rel="stylesheet" href="/portal/admin-staff-whatsapp.css?v=20260905-chat-top" />
   <script src="/portal/portal-parent-notify-templates.js?v=20260917-instructor-update2"></script>
@@ -24121,11 +24121,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function c4kHubVenuePanelInnerHtml(){
       return (
         '<h2 class="portal-forms-heading">Venue reviews</h2>' +
+        '<div class="ash-filter-row portal-venue-review-filters" id="portalFormsVenueFilters"></div>' +
         '<div class="files-table-wrap portal-forms-table-wrap">' +
         '<table class="files-table portal-forms-table portal-forms-table--full-detail">' +
-        '<thead><tr><th class="col-venue-name">Venue</th><th>Review date</th><th>Time</th><th>Issues</th>' +
+        '<thead><tr><th class="col-venue-name">Venue</th><th>Review date</th><th>Open / close</th><th>Time</th><th>Issues</th>' +
         '<th class="col-issues-detail">Issue details</th><th>Video</th><th>Submitted by</th></tr></thead>' +
-        '<tbody id="portalFormsVenueTbody"><tr><td colspan="7"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
+        '<tbody id="portalFormsVenueTbody"><tr><td colspan="8"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
         '</table></div>'
       );
     }

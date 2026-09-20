@@ -574,6 +574,26 @@
       opacity: 0.45;
       cursor: not-allowed;
     }
+    .venue-walkthrough__file {
+      display: block;
+      margin-top: 12px;
+      min-width: 0;
+    }
+    .venue-walkthrough__file-label {
+      display: block;
+      margin: 0 0 6px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #173247;
+      overflow-wrap: break-word;
+    }
+    .venue-walkthrough__file input[type="file"] {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      font: 600 13px inherit;
+    }
 
     @media (max-width: 768px) {
       body {
@@ -689,13 +709,17 @@
             <video id="venueWalkthroughLive" playsinline muted autoplay></video>
             <video id="venueWalkthroughPlayback" playsinline controls hidden></video>
           </div>
-          <p class="venue-walkthrough__status" id="venueWalkthroughStatus" role="status" aria-live="polite">Camera ready when you tap Start camera.</p>
+          <p class="venue-walkthrough__status" id="venueWalkthroughStatus" role="status" aria-live="polite">Camera ready when you tap Start camera. You can also upload from Photos.</p>
           <div class="venue-walkthrough__actions">
             <button type="button" class="primary" id="venueWalkthroughStartCam">Start camera</button>
             <button type="button" class="danger" id="venueWalkthroughRecord" disabled>Record</button>
             <button type="button" id="venueWalkthroughStop" disabled>Stop</button>
             <button type="button" id="venueWalkthroughRetake" disabled>Retake</button>
           </div>
+          <label class="venue-walkthrough__file">
+            <span class="venue-walkthrough__file-label">Or upload from Photos / Camera</span>
+            <input id="venueWalkthroughFile" type="file" accept="video/*,video/mp4,video/quicktime,.mov,.mp4" />
+          </label>
         </section>
 
         <button type="submit" class="submit-btn">Submit</button>
@@ -769,6 +793,6 @@
   </script>
   <script src="/portal/portal_feedback_voice_input.js?v=20260705c-voice-ai-down-message"></script>
   <!-- Canonical module under /portal/ (not portal-shared-js) so auth-handler resolves correctly. -->
-  <script type="module" src="/portal/venue_review_app.js?v=20260913-venue-embed3"></script>
+  <script type="module" src="/portal/venue_review_app.js?v=20260920-video-upload"></script>
 </body>
 </html>

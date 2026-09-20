@@ -6655,6 +6655,14 @@
       const href = String(url || '').trim();
       if(!href) return;
       try{ if(typeof closeSheet === 'function') closeSheet({ skipHistory: true }); }catch(_){}
+      /* iOS PWA/iframe blocks getUserMedia. Walkthrough video needs a top-level page. */
+      try{
+        const probe = new URL(href, window.location.href);
+        if(probe.searchParams.get('video') === '1'){
+          window.location.href = probe.href;
+          return;
+        }
+      }catch(_){}
       let wrap = document.getElementById('portalVenueEmbedWrap');
       if(!wrap){
         wrap = document.createElement('div');
@@ -6664,7 +6672,7 @@
           '<div id="portalVenueEmbedBar">' +
           '<button type="button" id="portalVenueEmbedClose" aria-label="Back to dashboard">← Back</button>' +
           '</div>' +
-          '<iframe id="portalVenueEmbedFrame" title="Venue opening closing report" allow="camera; microphone; fullscreen"></iframe>';
+          '<iframe id="portalVenueEmbedFrame" title="Venue opening closing report" allow="camera *; microphone *; fullscreen *" allowfullscreen></iframe>';
         document.body.appendChild(wrap);
         const closeBtn = document.getElementById('portalVenueEmbedClose');
         if(closeBtn){
@@ -6679,6 +6687,8 @@
       document.documentElement.classList.add('portal-venue-embed-open');
       if(frame){
         try{
+          frame.setAttribute('allow', 'camera *; microphone *; fullscreen *');
+          frame.setAttribute('allowfullscreen', '');
           const tu = new URL(href, window.location.href);
           tu.searchParams.set('portalEmbed', '1');
           frame.src = tu.href;

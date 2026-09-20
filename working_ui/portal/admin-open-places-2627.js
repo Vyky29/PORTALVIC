@@ -1005,7 +1005,10 @@
       .then(function (res) {
         return res.json().then(function (body) {
           if (!res.ok || !body || body.ok === false) {
-            throw new Error((body && body.error) || "offer_http_" + res.status);
+            throw new Error(
+              (body && (body.error || body.message || body.code)) ||
+                "offer_http_" + res.status,
+            );
           }
           applyPayload(body);
           state.loading = false;
@@ -1021,7 +1024,13 @@
       })
       .catch(function (err) {
         state.loading = false;
-        state.error = (err && err.message) || "offer_load_failed";
+        var raw = (err && err.message) || "offer_load_failed";
+        if (/Failed to fetch|NetworkError|BOOT_ERROR|offer_http_503/i.test(raw)) {
+          state.error =
+            "Booking offer is down (server). Tap Retry in a moment.";
+        } else {
+          state.error = raw;
+        }
         render();
       });
   }

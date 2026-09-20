@@ -218,6 +218,13 @@
       ]
     },
     {
+      "source": "/portal-venue-review.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self)" }
+      ]
+    },
+    {
       "source": "/lead_dashboard.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }

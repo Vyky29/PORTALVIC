@@ -84,11 +84,25 @@ def main() -> None:
         json.dumps(places_out, separators=(",", ":"), ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
+    out_ts = OUT_PLACES.with_suffix(".ts")
+    out_ts.write_text(
+        "// Generated from portal_capacity_chain_places_occupants.json. Do not edit by hand.\n"
+        "const placesOccupants = "
+        + json.dumps(places_out, ensure_ascii=True, separators=(",", ":"))
+        + " as {\n"
+        "  generatedFrom?: string;\n"
+        "  note?: string;\n"
+        "  bySlotId: Record<string, unknown>;\n"
+        "};\n"
+        "export default placesOccupants;\n",
+        encoding="utf-8",
+    )
     OUT_STANDING.write_text(
         json.dumps(standing_out, separators=(",", ":"), ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
     print(f"wrote {OUT_PLACES.relative_to(ROOT)} slots={len(places_by)}")
+    print(f"wrote {out_ts.relative_to(ROOT)}")
     print(f"wrote {OUT_STANDING.relative_to(ROOT)} slots={len(standing_by)}")
 
 

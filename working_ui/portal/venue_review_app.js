@@ -263,12 +263,21 @@ function buildVenueReviewRow(ctx, formState, submission) {
 
 const VENUE_REVIEW_VIDEO_BUCKET = "venue-review-videos";
 const VENUE_WALKTHROUGH_MAX_MS = 3 * 60 * 1000;
+const VENUE_WALKTHROUGH_MAX_BYTES = 50 * 1024 * 1024;
+const VENUE_VIDEO_ALLOWED_MIME = [
+  "video/webm",
+  "video/mp4",
+  "video/quicktime",
+  "video/ogg",
+  "video/x-matroska"
+];
 
 function pickVenueVideoMimeType() {
   try {
     if (typeof MediaRecorder === "undefined") return "";
     const types = [
       "video/mp4",
+      "video/quicktime",
       "video/webm;codecs=vp9,opus",
       "video/webm;codecs=vp8,opus",
       "video/webm"
@@ -282,11 +291,40 @@ function pickVenueVideoMimeType() {
   return "";
 }
 
+/** Storage bucket allowlist is bare MIME (no codecs=...). iOS often sends video/mp4;codecs=avc1. */
+function venueVideoStorageMime(mime) {
+  const raw = String(mime || "")
+    .split(";")[0]
+    .trim()
+    .toLowerCase();
+  if (VENUE_VIDEO_ALLOWED_MIME.indexOf(raw) >= 0) return raw;
+  if (raw.indexOf("quicktime") >= 0 || raw.indexOf("mov") >= 0) return "video/quicktime";
+  if (raw.indexOf("mp4") >= 0 || raw.indexOf("m4v") >= 0) return "video/mp4";
+  if (raw.indexOf("ogg") >= 0) return "video/ogg";
+  if (raw.indexOf("matroska") >= 0 || raw.indexOf("mkv") >= 0) return "video/x-matroska";
+  return "video/webm";
+}
+
 function venueVideoExtForMime(mime) {
   const m = String(mime || "").toLowerCase();
-  if (m.indexOf("mp4") >= 0 || m.indexOf("quicktime") >= 0) return "mp4";
+  if (m.indexOf("mp4") >= 0 || m.indexOf("m4v") >= 0) return "mp4";
+  if (m.indexOf("quicktime") >= 0 || m.indexOf("mov") >= 0) return "mov";
   if (m.indexOf("ogg") >= 0) return "ogv";
   return "webm";
+}
+
+function formatVenueUploadError(err) {
+  const msg = String((err && err.message) || err || "");
+  if (/mime|not allowed|invalid|content type/i.test(msg)) {
+    return "This video format was not accepted. Use Upload from Photos, or record a shorter clip.";
+  }
+  if (/size|maximum|exceed|too large|payload/i.test(msg)) {
+    return "Video is too large (max 50 MB). Record a shorter clip.";
+  }
+  if (/Failed to fetch|network|timeout/i.test(msg)) {
+    return "Upload failed (network). Stay on WiFi and try again.";
+  }
+  return msg;
 }
 
 function stopVenueMediaStream(stream) {
@@ -315,6 +353,7 @@ function initVenueWalkthroughRecorder(ctx) {
   const btnRec = document.getElementById("venueWalkthroughRecord");
   const btnStop = document.getElementById("venueWalkthroughStop");
   const btnRetake = document.getElementById("venueWalkthroughRetake");
+  const fileEl = document.getElementById("venueWalkthroughFile");
   const required = !!(ctx && ctx.requireVideo);
   const state = {
     stream: null,
@@ -360,7 +399,7 @@ function initVenueWalkthroughRecorder(ctx) {
     hintEl.textContent =
       "Record a short walkthrough of SwimFarm for this " +
       kindLabel.toLowerCase() +
-      " check (up to 3 minutes). The video stays internal with venue reviews.";
+      " check (up to 3 minutes), or upload a video from Photos / Camera. The video stays internal with venue reviews.";
   }
 
   function setStatus(msg) {
@@ -451,13 +490,13 @@ function initVenueWalkthroughRecorder(ctx) {
       console.error(err);
       const name = String((err && err.name) || "");
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
-        setStatus("Camera/mic blocked. Allow access for this site in the browser settings, then tap Start camera.");
+        setStatus("Camera/mic blocked in this screen. Use Upload from Photos below, or open the report from the staff app (not an in-app window).");
       } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
-        setStatus("No camera found on this device.");
+        setStatus("No camera found. Use Upload from Photos below.");
       } else if (name === "NotReadableError" || name === "TrackStartError") {
-        setStatus("Camera is in use by another app. Close it and try again.");
+        setStatus("Camera is in use by another app. Close it, or use Upload from Photos.");
       } else {
-        setStatus("Could not open the camera. Check permissions and try again.");
+        setStatus("Could not open the camera. Use Upload from Photos below.");
       }
       setButtons("idle");
     }
@@ -474,12 +513,12 @@ function initVenueWalkthroughRecorder(ctx) {
     }
     state.chunks = [];
     state.blob = null;
-    state.mime = pickVenueVideoMimeType();
+    const recorderMime = pickVenueVideoMimeType();
     try {
-      state.recorder = state.mime
-        ? new MediaRecorder(state.stream, { mimeType: state.mime })
+      state.recorder = recorderMime
+        ? new MediaRecorder(state.stream, { mimeType: recorderMime })
         : new MediaRecorder(state.stream);
-      if (!state.mime) state.mime = state.recorder.mimeType || "video/webm";
+      state.mime = venueVideoStorageMime(state.recorder.mimeType || recorderMime || "video/webm");
     } catch (err) {
       console.error(err);
       setStatus("Could not start recording.");
@@ -496,6 +535,12 @@ function initVenueWalkthroughRecorder(ctx) {
         }
       } catch (_) {}
       const blob = new Blob(state.chunks, { type: state.mime || "video/webm" });
+      if (blob.size > VENUE_WALKTHROUGH_MAX_BYTES) {
+        state.blob = null;
+        setButtons("preview");
+        setStatus("Recording was over 50 MB. Record a shorter clip, or upload from Photos.");
+        return;
+      }
       state.blob = blob;
       if (state.startedAt) {
         state.durationSec = Math.max(
@@ -546,12 +591,45 @@ function initVenueWalkthroughRecorder(ctx) {
     }
   }
 
+  function acceptWalkthroughFile(file) {
+    if (!file) return;
+    if (file.size > VENUE_WALKTHROUGH_MAX_BYTES) {
+      setStatus("Video is too large (max 50 MB). Pick a shorter clip.");
+      return;
+    }
+    const kind = String(file.type || "").toLowerCase();
+    if (kind && kind.indexOf("video") < 0 && kind.indexOf("mp4") < 0 && kind.indexOf("quicktime") < 0) {
+      setStatus("Please choose a video file.");
+      return;
+    }
+    try {
+      if (state.recorder && state.recorder.state === "recording") state.recorder.stop();
+    } catch (_) {}
+    stopVenueMediaStream(state.stream);
+    state.stream = null;
+    state.blob = file;
+    state.mime = venueVideoStorageMime(file.type || "video/mp4");
+    state.durationSec = null;
+    showPlayback(file);
+    setButtons("ready");
+    setStatus("Video ready from Photos. You can Retake or Submit the venue report.");
+  }
+
   if (btnCam) btnCam.addEventListener("click", function () { void startCamera(); });
   if (btnRec) btnRec.addEventListener("click", startRecording);
   if (btnStop) btnStop.addEventListener("click", stopRecording);
   if (btnRetake) btnRetake.addEventListener("click", retake);
+  if (fileEl) {
+    fileEl.addEventListener("change", function () {
+      const f = fileEl.files && fileEl.files[0];
+      acceptWalkthroughFile(f);
+      try {
+        fileEl.value = "";
+      } catch (_) {}
+    });
+  }
   setButtons("idle");
-  setStatus("Camera ready when you tap Start camera.");
+  setStatus("Camera ready when you tap Start camera. You can also upload from Photos.");
   return api;
 }
 
@@ -560,15 +638,22 @@ async function uploadVenueWalkthroughVideo(supabase, submission, ctx, recorderAp
   if (!blob || !blob.size) throw new Error("Walkthrough video is required.");
   const uid = clean(submission && submission.submittedByUserId);
   if (!uid) throw new Error("Sign in required to upload the venue video.");
-  const mime = clean((recorderApi.getMime && recorderApi.getMime()) || blob.type || "video/webm");
+  const mime = venueVideoStorageMime(
+    clean((recorderApi.getMime && recorderApi.getMime()) || blob.type || "video/webm")
+  );
+  if (blob.size > VENUE_WALKTHROUGH_MAX_BYTES) {
+    throw new Error("Video is too large (max 50 MB). Record a shorter clip.");
+  }
   const ext = venueVideoExtForMime(mime);
   const kind =
     clean(ctx.openingClosing).toLowerCase().indexOf("clos") >= 0 ? "close" : "open";
   const day = parseReviewDate(ctx.date);
   const stamp = String(Date.now());
   const path = uid + "/" + day + "/" + kind + "_" + stamp + "." + ext;
-  const { error } = await supabase.storage.from(VENUE_REVIEW_VIDEO_BUCKET).upload(path, blob, {
-    contentType: mime || "video/webm",
+  const rawType = String(blob.type || "");
+  const uploadBlob = rawType.indexOf(";") >= 0 ? new Blob([blob], { type: mime }) : blob;
+  const { error } = await supabase.storage.from(VENUE_REVIEW_VIDEO_BUCKET).upload(path, uploadBlob, {
+    contentType: mime,
     upsert: false
   });
   if (error) throw error;
@@ -877,7 +962,7 @@ function initVenueReviewPage() {
           behavior: "smooth"
         });
       } catch (_) {}
-      alert("Please record the venue walkthrough video before submitting.");
+      alert("Please record or upload the venue walkthrough video before submitting.");
       return;
     }
 
@@ -933,7 +1018,7 @@ function initVenueReviewPage() {
       showCompletionPopupAndReturnDashboard();
     } catch (err) {
       console.error(err);
-      const msg = err && err.message ? String(err.message) : "";
+      const msg = formatVenueUploadError(err);
       alert("Submission failed. Please try again." + (msg ? "\n" + msg : ""));
     } finally {
       if (submitBtn && !successSubmitted) submitBtn.disabled = false;

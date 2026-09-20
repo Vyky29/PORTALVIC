@@ -9,21 +9,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { parentPortalCorsHeaders } from "../_shared/parent_portal_auth.ts";
 import type { MadreDoc } from "../_shared/portal_madre_fold_logic.ts";
 import { buildWeeklyOfferFromMadre, buildWeeklyOfferFromOccupants, applyBookingSlotHoldsToOffer } from "../_shared/portal_booking_seat_helper.ts";
-import placesOccupants from "../_shared/portal_capacity_chain_places_occupants.json" with {
-  type: "json",
-};
+import placesOccupants from "../_shared/portal_capacity_chain_places_occupants.ts";
 import { resolveSessionDateIso, calendarDateIsoInLondon } from "../_shared/portal_booking_context.ts";
 import {
   loadAdminDayOverridesForBookingWindow,
   resolveBookableSessionWithAdminOverrides,
 } from "../_shared/portal_booking_admin_day_override.ts";
-import { ensureReenrolUnconfirmedReleasedOnMadre } from "../_shared/portal_reenrol_release_madre.ts";
-import { runUnpaidAug15PlaceRelease } from "../_shared/portal_reenrol_release_unpaid_aug15.ts";
 import {
   BOOKING_SLOT_HOLD_STATUSES,
   filterActiveBookingHolds,
-  runBookingPayHoldMaintenance,
-} from "../_shared/portal_booking_pay_hold.ts";
+} from "../_shared/portal_booking_hold_status.ts";
 import {
   CRASH_HOLD_MINUTES,
   CRASH_INDIVIDUAL_WINDOWS,
@@ -387,41 +382,6 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  // Thu 23 Jul 2026+: auto-release unconfirmed / withdrawn standing seats on MADRE
-  // so free spaces appear on the public offer without waiting for a manual patch.
-  try {
-    const release = await ensureReenrolUnconfirmedReleasedOnMadre(supabase);
-    if (release.ok && release.changed > 0) {
-      console.log(
-        "[portal-booking-offer] reenrol MADRE release",
-        release.changed,
-        "rev",
-        release.revision,
-      );
-    } else if (!release.ok) {
-      console.error("[portal-booking-offer] reenrol MADRE release", release.error);
-    }
-  } catch (err) {
-    console.error("[portal-booking-offer] reenrol MADRE release", err);
-  }
-
-  // Sun 16 Aug 2026 00:00 London+: unpaid first Autumn bank payment → free seats.
-  try {
-    const unpaid = await runUnpaidAug15PlaceRelease(supabase, {});
-    if (unpaid.ok && !unpaid.skipped && unpaid.madre_changed > 0) {
-      console.log(
-        "[portal-booking-offer] unpaid Aug15 MADRE release",
-        unpaid.madre_changed,
-        "contacts",
-        unpaid.release_contacts?.length || 0,
-      );
-    } else if (!unpaid.ok) {
-      console.error("[portal-booking-offer] unpaid Aug15 MADRE release", unpaid.error);
-    }
-  } catch (err) {
-    console.error("[portal-booking-offer] unpaid Aug15 MADRE release", err);
-  }
-
   const { data: madreRow, error: madreErr } = await supabase
     .from("portal_madre_document")
     .select("document, revision, updated_at, term_key")
@@ -440,6 +400,7 @@ Deno.serve(async (req) => {
    * MADRE kept for release side-effects + fallback if occupants empty. */
   const occupantsWeekly = buildWeeklyOfferFromOccupants(
     (placesOccupants && placesOccupants.bySlotId) || {},
+    { todayIso: calendarDateIsoInLondon() },
   );
   const weekly =
     occupantsWeekly.slots.length > 0
@@ -455,13 +416,6 @@ Deno.serve(async (req) => {
     console.warn("[portal-booking-offer] occupants empty — MADRE fallback");
   }
   const intensive = await loadCrashIntensive(supabase);
-
-  // Soft holds from new-client registration forms (Booking Portal → registration).
-  try {
-    await runBookingPayHoldMaintenance(supabase);
-  } catch (e) {
-    console.warn("[portal-booking-offer] pay hold maintenance", e);
-  }
 
   await supabase
     .from("portal_booking_slot_reservations")
@@ -506,6 +460,7 @@ Deno.serve(async (req) => {
       bookedNames: _bn,
       instructors: _inst,
       openInstructors: _openInst,
+      ignoreHoldKeys: _ig,
       ...pub
     } = slot;
     const resolved = resolveBookableSessionWithAdminOverrides(

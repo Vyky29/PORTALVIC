@@ -24,7 +24,13 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260920-venue-live';
+  var PORTAL_DAY_OPS_BUILD = '20260920-venue-filters';
+  var venueReviewFilters = {
+    venue: '',
+    staff: '',
+    term: '',
+    kind: ''
+  };
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -1577,6 +1583,137 @@
     });
   }
 
+  function venueReviewIso(row) {
+    return String((row && (row.review_date || row.created_at)) || '').slice(0, 10);
+  }
+  function venueReviewTermId(iso) {
+    var d = String(iso || '').slice(0, 10);
+    if (d >= '2026-09-01' && d <= '2026-12-18') return 'autumn-2026';
+    if (d >= '2026-04-13' && d <= '2026-08-31') return 'summer-2026';
+    if (d >= '2026-01-06' && d <= '2026-04-12') return 'spring-2026';
+    return 'earlier';
+  }
+  function venueReviewTermLabel(id) {
+    if (id === 'autumn-2026') return 'Autumn 2026';
+    if (id === 'summer-2026') return 'Summer 2026';
+    if (id === 'spring-2026') return 'Spring 2026';
+    if (id === 'earlier') return 'Earlier';
+    return 'All terms';
+  }
+  function venueReviewKindKey(row) {
+    var k = String((row && row.opening_or_closing) || '').trim().toLowerCase();
+    if (k === 'open' || k === 'opening') return 'Opening';
+    if (k === 'close' || k === 'closing') return 'Closing';
+    return '';
+  }
+  function uniqueVenueFilterValues(vals) {
+    var seen = {};
+    var out = [];
+    (vals || []).forEach(function (raw) {
+      var s = String(raw || '').trim();
+      if (!s || s === '—') return;
+      var key = s.toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push(s);
+    });
+    out.sort(function (a, b) {
+      return a.localeCompare(b, 'en', { sensitivity: 'base' });
+    });
+    return out;
+  }
+  function venueReviewSelectHtml(id, label, value, options, allLabel) {
+    var html =
+      '<label class="portal-venue-review-filter">' +
+      esc(label) +
+      '<select id="' +
+      esc(id) +
+      '">' +
+      '<option value="">' +
+      esc(allLabel) +
+      '</option>';
+    (options || []).forEach(function (opt) {
+      var v = String(opt.value != null ? opt.value : opt);
+      var lab = String(opt.label != null ? opt.label : v);
+      html +=
+        '<option value="' +
+        esc(v) +
+        '"' +
+        (value === v ? ' selected' : '') +
+        '>' +
+        esc(lab) +
+        '</option>';
+    });
+    html += '</select></label>';
+    return html;
+  }
+  function venueReviewRowMatchesFilters(row) {
+    var venueWant = String(venueReviewFilters.venue || '').trim().toLowerCase();
+    var staffWant = String(venueReviewFilters.staff || '').trim().toLowerCase();
+    var termWant = String(venueReviewFilters.term || '').trim();
+    var kindWant = String(venueReviewFilters.kind || '').trim();
+    if (venueWant) {
+      if (String((row && row.venue) || '').trim().toLowerCase() !== venueWant) return false;
+    }
+    if (staffWant) {
+      if (String((row && row.submitted_by_name) || '').trim().toLowerCase() !== staffWant) return false;
+    }
+    if (termWant && venueReviewTermId(venueReviewIso(row)) !== termWant) return false;
+    if (kindWant && venueReviewKindKey(row) !== kindWant) return false;
+    return true;
+  }
+  function paintVenueReviewFilters(allRows) {
+    var host = document.getElementById('portalFormsVenueFilters');
+    if (!host) return;
+    var venues = uniqueVenueFilterValues(
+      (allRows || []).map(function (r) {
+        return r && r.venue;
+      })
+    ).map(function (v) {
+      return { value: v, label: v };
+    });
+    var staff = uniqueVenueFilterValues(
+      (allRows || []).map(function (r) {
+        return r && r.submitted_by_name;
+      })
+    ).map(function (v) {
+      return { value: v, label: v };
+    });
+    var termIds = {};
+    (allRows || []).forEach(function (r) {
+      termIds[venueReviewTermId(venueReviewIso(r))] = true;
+    });
+    var termOrder = ['autumn-2026', 'summer-2026', 'spring-2026', 'earlier'];
+    var terms = termOrder
+      .filter(function (id) {
+        return termIds[id];
+      })
+      .map(function (id) {
+        return { value: id, label: venueReviewTermLabel(id) };
+      });
+    var kinds = [
+      { value: 'Opening', label: 'Opening' },
+      { value: 'Closing', label: 'Closing' }
+    ];
+    host.innerHTML =
+      venueReviewSelectHtml('portalVenueFilterVenue', 'Venue', venueReviewFilters.venue, venues, 'Any venue') +
+      venueReviewSelectHtml('portalVenueFilterStaff', 'Instructor', venueReviewFilters.staff, staff, 'Any instructor') +
+      venueReviewSelectHtml('portalVenueFilterTerm', 'Term', venueReviewFilters.term, terms, 'All terms') +
+      venueReviewSelectHtml('portalVenueFilterKind', 'Open / close', venueReviewFilters.kind, kinds, 'Opening or closing') +
+      '<p class="portal-venue-review-filter-count" id="portalFormsVenueFilterCount"></p>';
+    if (!host._venueFilterBound) {
+      host._venueFilterBound = true;
+      host.addEventListener('change', function (ev) {
+        var t = ev.target;
+        if (!t || t.tagName !== 'SELECT') return;
+        if (t.id === 'portalVenueFilterVenue') venueReviewFilters.venue = String(t.value || '');
+        if (t.id === 'portalVenueFilterStaff') venueReviewFilters.staff = String(t.value || '');
+        if (t.id === 'portalVenueFilterTerm') venueReviewFilters.term = String(t.value || '');
+        if (t.id === 'portalVenueFilterKind') venueReviewFilters.kind = String(t.value || '');
+        void renderLeadVenueTables();
+      });
+    }
+  }
   async function renderLeadVenueTables() {
     var leadTbody = document.getElementById('portalFormsLeadTbody');
     var venueTbody = document.getElementById('portalFormsVenueTbody');
@@ -1652,11 +1789,23 @@
       renderLeadTermWeekLog(Hub, lead);
     }
     if (venueTbody) {
+      paintVenueReviewFilters(venue);
+      var filteredVenue = venue.filter(venueReviewRowMatchesFilters);
+      var countEl = document.getElementById('portalFormsVenueFilterCount');
+      if (countEl) {
+        countEl.textContent =
+          filteredVenue.length === venue.length
+            ? String(venue.length) + ' reviews'
+            : String(filteredVenue.length) + ' of ' + String(venue.length) + ' reviews';
+      }
       if (!venue.length) {
         venueTbody.innerHTML =
-          '<tr><td colspan="7"><div class="submission-state">No venue reviews yet.</div></td></tr>';
+          '<tr><td colspan="8"><div class="submission-state">No venue reviews yet.</div></td></tr>';
+      } else if (!filteredVenue.length) {
+        venueTbody.innerHTML =
+          '<tr><td colspan="8"><div class="submission-state">No reviews match these filters.</div></td></tr>';
       } else {
-        venueTbody.innerHTML = venue
+        venueTbody.innerHTML = filteredVenue
           .map(function (r) {
             var videoPath = String((r && r.video_storage_path) || '').trim();
             var videoCell = videoPath
@@ -1664,6 +1813,7 @@
                 esc(videoPath) +
                 '" aria-label="Play venue walkthrough video">Play</button>')
               : '—';
+            var kind = venueReviewKindKey(r) || '—';
             return (
               '<tr class="portal-forms-static-row">' +
               '<td class="cell-wrap col-venue-name">' +
@@ -1671,6 +1821,9 @@
               '</td>' +
               '<td>' +
               esc(cellText(r.review_date)) +
+              '</td>' +
+              '<td>' +
+              esc(kind) +
               '</td>' +
               '<td>' +
               esc(cellText(r.review_time)) +
