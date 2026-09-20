@@ -30,6 +30,9 @@
       transition:transform .22s ease;
       overflow:hidden;
       z-index:2;
+      height:100%;
+      max-height:100dvh;
+      min-height:0;
     }
     .admin-sidebar-brand{flex-shrink:0;padding:18px 18px 14px;border-bottom:1px solid rgba(255,255,255,.08);text-align:center;overflow:visible}
     .admin-sidebar-logo{
@@ -107,26 +110,46 @@
     }
     .admin-sidebar-brand strong{display:block;font-size:15px;font-weight:700;letter-spacing:-.02em;color:#fff;text-align:center}
     .admin-sidebar-brand span{font-size:12px;color:var(--sidebarText);margin-top:4px;display:block;text-align:center}
+    /* Shorter screens: shrink the lockup so Settings / Log out are not crushed under Roster guide */
+    @media (max-height:900px){
+      .admin-brand-wrap{width:112px;height:112px}
+      .admin-brand-mark{width:76px;height:76px}
+      .admin-sidebar-brand{padding:12px 14px 10px}
+    }
+    @media (max-height:760px){
+      .admin-brand-wrap{width:76px;height:76px}
+      .admin-brand-mark{width:52px;height:52px}
+      .admin-sidebar-brand{padding:10px 12px 8px}
+      .admin-sidebar-brand strong{font-size:13px}
+      .admin-sidebar-brand span{font-size:11px;margin-top:2px}
+    }
     @keyframes logoFloat{
       0%{transform:translateY(0) scale(1)}
       50%{transform:translateY(-4px) scale(1.02)}
       100%{transform:translateY(0) scale(1)}
     }
-    .admin-nav{
-      flex:1;
+    .admin-nav, #adminNav{
+      flex:1 1 0;
       min-height:0;
-      overflow-x:hidden;
-      overflow-y:auto;
+      overflow-x:hidden !important;
+      overflow-y:auto !important;
       -webkit-overflow-scrolling:touch;
-      padding:8px;
-      scrollbar-width:none; /* Firefox: hide bar, keep scrolling */
-      -ms-overflow-style:none; /* legacy Edge */
+      overscroll-behavior:contain;
+      padding:8px 8px 18px;
+      scrollbar-gutter:stable;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(148,163,184,.55) transparent;
     }
     .admin-nav::-webkit-scrollbar{
-      width:0;
-      height:0;
+      width:8px;
+      height:8px;
       background:transparent;
     }
+    .admin-nav::-webkit-scrollbar-thumb{
+      background:rgba(148,163,184,.45);
+      border-radius:99px;
+    }
+    .admin-nav::-webkit-scrollbar-track{background:transparent}
     .admin-nav button,.admin-nav a.admin-nav-external{
       width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;margin:2px 0;border:none;border-radius:8px;
       background:transparent;color:var(--sidebarText);font:inherit;font-size:13px;font-weight:500;text-align:left;cursor:pointer;
@@ -339,6 +362,9 @@
     .admin-sidebar-foot{
       flex-shrink:0;padding:12px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:var(--sidebarText);
       display:flex;flex-direction:column;gap:8px;min-width:0;
+      background:var(--sidebar);
+      position:relative;
+      z-index:3;
     }
     .admin-sidebar-staff-wa{
       display:flex;align-items:center;gap:8px;width:100%;margin:0;padding:8px 10px;
@@ -4700,6 +4726,8 @@
       body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) .admin-sidebar{
         position:fixed !important;left:0;top:0;bottom:0;transform:none !important;
         width:var(--sidebarRailW);min-width:var(--sidebarRailW);max-width:var(--sidebarRailW);
+        height:100dvh;max-height:100dvh;min-height:0;
+        display:flex;flex-direction:column;overflow:hidden;
         /* Above register sheet (#modalBackdrop.modal-backdrop--register, z-index 12150) — rail + hover expand stay on top */
         z-index:20050;
         transition:width .22s ease,min-width .22s ease,max-width .22s ease,box-shadow .22s ease;

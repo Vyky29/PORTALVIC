@@ -352,14 +352,20 @@
         host.style.setProperty("flex-direction", "row", "important");
         host.style.setProperty("align-items", "center", "important");
       }
-      var p = host.parentElement;
-      var n = 0;
-      while (p && n < 3) {
-        if (p === document.body || p === document.documentElement) break;
-        if (p.classList && p.classList.contains("app")) break;
-        p.style.setProperty("overflow", "visible", "important");
-        p = p.parentElement;
-        n += 1;
+      /* Nav unread hosts live inside #adminNav. Walking overflow:visible up the tree
+         unclips the sidebar and the last items sit under Roster guide. */
+      var inSidebarNav = !!(host.closest && host.closest("#adminNav, .admin-nav, .admin-sidebar"));
+      if (!inSidebarNav) {
+        var p = host.parentElement;
+        var n = 0;
+        while (p && n < 3) {
+          if (p === document.body || p === document.documentElement) break;
+          if (p.id === "adminNav" || p.id === "adminSidebar") break;
+          if (p.classList && (p.classList.contains("app") || p.classList.contains("admin-nav") || p.classList.contains("admin-sidebar"))) break;
+          p.style.setProperty("overflow", "visible", "important");
+          p = p.parentElement;
+          n += 1;
+        }
       }
     } catch (_p) {}
     if (count > 0) host.setAttribute("data-comms-count", unreadLabel(count));
