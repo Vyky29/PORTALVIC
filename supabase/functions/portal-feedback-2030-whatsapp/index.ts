@@ -1,11 +1,14 @@
-// @ts-nocheck — 20:00 then 20:30 Europe/London WhatsApp if same-day feedback still open.
+// @ts-nocheck — Feedback WhatsApp: 20:00 then 20:30 Europe/London weekdays;
+//   Saturday/Sunday 18:00 then 18:30. Second wave only if still outstanding.
 //
 // Secrets: SUPABASE_*, META_WHATSAPP_*, PORTAL_STAFF_WHATSAPP_TEMPLATE,
 //   PORTAL_PUSH_WEBHOOK_SECRET (header x-portal-webhook-secret)
 //
-// Cron:
-//   0 19,20 * * * UTC  body {wave:"2000"}  — 20:00 London
-//   30 19,20 * * * UTC body {wave:"2030"}  — 20:30 London (only if still outstanding)
+// Cron (UTC; function gates on London wall clock):
+//   0 19,20 * * 1-5  body {wave:"2000"}  — Mon-Fri 20:00 London
+//   30 19,20 * * 1-5 body {wave:"2030"}  — Mon-Fri 20:30 London
+//   0 17,18 * * 0,6  body {wave:"2000"}  — Sat/Sun 18:00 London
+//   30 17,18 * * 0,6 body {wave:"2030"}  — Sat/Sun 18:30 London
 // Manual: POST {"force":true,"wave":"2000"} or {"dryRun":true,"force":true,"wave":"2030"}
 //
 // Deploy: supabase functions deploy portal-feedback-2030-whatsapp --no-verify-jwt
@@ -90,16 +93,29 @@ function mergeStaffDebts(
   return [...map.values()].sort((a, b) => a.staffLabel.localeCompare(b.staffLabel));
 }
 
+function isLondonWeekend(london) {
+  const w = String((london && london.weekday) || "").toLowerCase();
+  return w === "saturday" || w === "sunday";
+}
+
+function waveClockLabel(wave, london) {
+  const weekend = isLondonWeekend(london);
+  if (wave === "2030") return weekend ? "18:30" : "20:30";
+  return weekend ? "18:00" : "20:00";
+}
+
 function resolveWave(raw, london) {
   const w = String(raw || "").trim();
   if (w === "2000" || w === "2030") return w;
-  if (london.hour === 20 && london.minute >= 25) return "2030";
-  if (london.hour === 20) return "2000";
+  const hourWant = isLondonWeekend(london) ? 18 : 20;
+  if (london.hour === hourWant && london.minute >= 25) return "2030";
+  if (london.hour === hourWant) return "2000";
   return "";
 }
 
 function inLondonWaveWindow(wave, london) {
-  if (london.hour !== 20) return false;
+  const hourWant = isLondonWeekend(london) ? 18 : 20;
+  if (london.hour !== hourWant) return false;
   if (wave === "2000") return london.minute <= 12;
   if (wave === "2030") return london.minute >= 25 && london.minute <= 45;
   return false;
@@ -145,14 +161,19 @@ function greetName(username: string, fullName: string, fallback: string): string
   return first;
 }
 
-function buildBody(first, pending, sample, wave) {
+function buildBody(first, pending, sample, wave, london) {
   const n = Math.max(1, pending);
   const list = sample.slice(0, 3).join(", ");
   const more = n > 3 ? ` (+${n - 3} more)` : "";
+  const weekend = isLondonWeekend(london);
   const timeLine =
     wave === "2030"
-      ? "Final reminder: 30 minutes left - the day closes at 9:00pm."
-      : "You have one hour - the day closes at 9:00pm.";
+      ? weekend
+        ? "Final reminder for today - please send them now."
+        : "Final reminder: 30 minutes left - the day closes at 9:00pm."
+      : weekend
+        ? "Please send them now."
+        : "You have one hour - the day closes at 9:00pm.";
   return (
     `Hi ${first},\n\n` +
     `Today's session feedback is not complete yet (${n} left${list ? ": " + list + more : ""}).\n\n` +
@@ -406,7 +427,7 @@ Deno.serve(async (req) => {
       skipped.push({ username: t.username, reason: "already_sent" });
       continue;
     }
-    const body = buildBody(t.staffLabel, t.pending, t.sample, wave);
+    const body = buildBody(t.staffLabel, t.pending, t.sample, wave, london);
     const templateBody = flattenWhatsappTemplateBody(body);
     const result = await sendParentMobileMessage(t.phone, templateBody, {
       kind: "staff_contact_update",
@@ -420,7 +441,7 @@ Deno.serve(async (req) => {
       staff_username: t.username,
       staff_display_name: t.staffLabel,
       staff_phone: t.phone,
-      subject: `Feedback reminder - ${iso} ${wave === "2030" ? "20:30" : "20:00"}`,
+      subject: `Feedback reminder - ${iso} ${waveClockLabel(wave, london)}`,
       body_text: body,
       whatsapp_status: result.ok ? "sent" : "failed",
       whatsapp_message_id: result.ok ? result.id : null,
