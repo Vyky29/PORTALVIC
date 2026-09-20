@@ -2209,6 +2209,76 @@ function bindUi() {
   });
 }
 
+function namesLikelyMatch(a, b) {
+  const left = String(a || "")
+    .trim()
+    .toLowerCase();
+  const right = String(b || "")
+    .trim()
+    .toLowerCase();
+  if (!left || !right) return false;
+  if (left === right) return true;
+  if (left.indexOf(right) === 0 || right.indexOf(left) === 0) return true;
+  const leftFirst = left.split(/\s+/)[0];
+  const rightFirst = right.split(/\s+/)[0];
+  return !!(leftFirst && rightFirst && leftFirst === rightFirst && leftFirst.length >= 3);
+}
+
+async function applyStaffDeepLink(params) {
+  let staffQ = String((params && params.get("staff")) || "").trim();
+  let prefill = "";
+  try {
+    if (!staffQ) staffQ = String(sessionStorage.getItem("portal_comms_staff") || "").trim();
+    prefill = String(sessionStorage.getItem("portal_comms_prefill") || "").trim();
+    sessionStorage.removeItem("portal_comms_staff");
+    sessionStorage.removeItem("portal_comms_prefill");
+  } catch (_ss) {}
+  function stampDraft() {
+    if (!prefill) return;
+    const draft = $("commsDraft");
+    if (draft) draft.value = prefill;
+  }
+  stampDraft();
+  if (!staffQ || !state.me || !state.me.can_act_as_administration) return;
+  const items = (state.inbox && state.inbox.items) || [];
+  const hit = items.find(function (it) {
+    if (it.kind !== "admin_staff" && String(it.kind || "").toLowerCase() !== "admin_staff") return false;
+    return namesLikelyMatch(it.display_name, staffQ);
+  });
+  if (hit && hit.conversation_id) {
+    await openConversation(hit.conversation_id, hit);
+    stampDraft();
+    return;
+  }
+  async function firstPersonForQuery(q) {
+    const data = await rpc("communication_search", { p_q: q, p_limit: 10 });
+    const people = (data && data.people) || [];
+    return (
+      people.find(function (p) {
+        return namesLikelyMatch(p.full_name, staffQ);
+      }) || (people.length === 1 ? people[0] : null)
+    );
+  }
+  try {
+    let person = await firstPersonForQuery(staffQ);
+    if (!person && staffQ.indexOf(" ") > 0) {
+      person = await firstPersonForQuery(staffQ.split(/\s+/)[0]);
+    }
+    if (!person || !person.id) return;
+    const out = await rpc("communication_open_staff_thread", { p_employee_id: person.id });
+    await loadInbox();
+    await openConversation(out.conversation_id, {
+      conversation_id: out.conversation_id,
+      kind: "admin_staff",
+      employee_id: out.employee_id,
+      display_name: out.display_name,
+    });
+    stampDraft();
+  } catch (err) {
+    console.warn("[comunicaciones] staff deep link", err);
+  }
+}
+
 async function boot() {
   try {
     await bootstrapDashboardSupabase({ page: "comunicaciones" });
@@ -2304,6 +2374,8 @@ async function boot() {
     if (conv) {
       await ensureModeForConversation(conv);
       await openConversation(conv);
+    } else {
+      await applyStaffDeepLink(params);
     }
     if (callId) {
       try {

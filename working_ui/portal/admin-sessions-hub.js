@@ -8496,12 +8496,13 @@
       '<p class="ash-modal__meta ash-modal__meta--sub">Instructor: ' +
       escFn(fb.completed_by_name || "\u2014") +
       "</p>" +
-      '<p class="ash-modal__lead">Does not change the register. Only Save &amp; release if you want families to see this version.</p>' +
+      '<p class="ash-modal__lead">Does not change the register. Filter when a parent asks, then Save &amp; release if families should see it.</p>' +
       '<div class="ash-modal__box"><div class="ash-modal__box-label">SESSION FEEDBACK</div><p class="ash-modal__box-text">' +
       escFn(raw).replace(/\n/g, "<br>") +
       "</p></div>" +
       hub.htmlFamilySummaryInner(fb, escFn, terminal) +
-      '<button type="button" class="ash-modal-btn ash-modal-btn--text" data-ash-modal-close>Close</button></div>';
+      '<div class="ash-modal-actions ash-modal-actions--portal">' +
+      '<button type="button" class="btn btn--ghost" data-ash-modal-close>Close</button></div></div>';
     hub.root.appendChild(backdrop);
   };
 
@@ -8510,7 +8511,6 @@
     var hub = this;
     var escFn = this.escapeHtml;
     var noteText = clean(fb.relevant_information);
-    if (!noteText) return;
     hub.closeModal();
     hub._modalFb = fb;
     hub._modalStep = "note";
@@ -8518,7 +8518,6 @@
     var svcLabel = hub.feedbackDisplayService(fb) || clean(fb.service) || "";
     var writer = clean(fb.completed_by_name) || "the instructor";
     var first = writer.split(/\s+/)[0] || "there";
-    var staffKey = first.toLowerCase();
     var shareData =
       'data-ash-note-who="' +
       escFn(fb.client_name || "") +
@@ -8556,31 +8555,27 @@
       '<p class="ash-modal__meta ash-modal__meta--sub">Written by: ' +
       escFn(writer) +
       "</p>" +
-      '<p class="ash-modal__lead">Internal only \u2014 not shown to parents. Escalate in the company, or ask the instructor who wrote it.</p>' +
+      '<p class="ash-modal__lead">Internal only \u2014 not shown to parents. Escalate in the company, or open Comms to ask the instructor who wrote it.</p>' +
       '<div class="ash-modal__box"><div class="ash-modal__box-label">NOTE</div><p class="ash-modal__box-text">' +
-      escFn(noteText).replace(/\n/g, "<br>") +
+      (noteText
+        ? escFn(noteText).replace(/\n/g, "<br>")
+        : '<span class="ash-cell-muted">No internal note on this session.</span>') +
       "</p></div>" +
-      '<div class="ash-modal-actions ash-note-share-wrap">' +
-      '<button type="button" class="ash-note-share-btn" data-ash-note-share="email" ' +
+      '<div class="ash-modal-actions ash-modal-actions--portal">' +
+      '<button type="button" class="btn btn--ghost" data-ash-note-share="email" ' +
       shareData +
-      ' title="Email this to the CEOs">Escalate \u2014 Email CEOs</button>' +
-      '<button type="button" class="ash-note-share-btn ash-note-share-btn--ann" data-ash-note-share="announce" ' +
+      ">Email CEOs</button>" +
+      '<button type="button" class="btn btn--ghost" data-ash-note-share="announce" ' +
       shareData +
-      ' title="Post as a dashboard announcement for staff">Escalate \u2014 Announce to staff</button>' +
-      '<button type="button" class="ash-note-share-btn ash-note-share-btn--wa" data-ash-note-share="askback" ' +
+      ">Announce to staff</button>" +
+      '<button type="button" class="btn btn--pri" data-ash-note-share="comms" ' +
       shareData +
       ' data-ash-note-ask-text="' +
       escFn(askText) +
-      '" title="WhatsApp the instructor who wrote this">Ask ' +
-      escFn(first) +
-      " on WhatsApp</button>" +
-      '<button type="button" class="ash-note-share-btn ash-note-share-btn--wa" data-ash-note-share="askstaff" data-ash-note-staff="' +
-      escFn(staffKey) +
-      '" title="Open their CS WhatsApp thread">Open CS WhatsApp with ' +
-      escFn(first) +
-      "</button>" +
-      "</div>" +
-      '<button type="button" class="ash-modal-btn ash-modal-btn--text" data-ash-modal-close>Close</button></div>';
+      '" data-ash-note-staff="' +
+      escFn(writer) +
+      '">Open in Comms</button>' +
+      '<button type="button" class="btn btn--ghost" data-ash-modal-close>Close</button></div></div>';
     hub.root.appendChild(backdrop);
   };
 
@@ -8956,11 +8951,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<span class="ash-family-summary__relevant" data-ash-family-relevant="' +
       esc(fbId) +
       '" style="display:none;font-size:11px;color:#6b7280;white-space:pre-wrap"></span>' +
-      '<div class="ash-family-summary__btns" style="display:flex;gap:8px;flex-wrap:wrap">' +
-      '<button type="button" class="ash-family-summary__filter" data-ash-family-filter="' +
+      '<div class="ash-family-summary__btns ash-modal-actions ash-modal-actions--portal">' +
+      '<button type="button" class="btn btn--pri ash-family-summary__filter" data-ash-family-filter="' +
       esc(fbId) +
       '">Filter with AI</button>' +
-      '<button type="button" class="ash-family-summary__save" data-ash-family-save="' +
+      '<button type="button" class="btn btn--ghost ash-family-summary__save" data-ash-family-save="' +
       esc(fbId) +
       '">Save &amp; release</button>' +
       "</div></div>"
@@ -9423,6 +9418,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.feedbackDisplayService = function (fb) {
     var svc = clean(fb && fb.service);
     if (svc) return svc;
+    if (fb && fb._ashDisplaySlot && clean(fb._ashDisplaySlot.service)) {
+      return clean(fb._ashDisplaySlot.service);
+    }
+    if (this._registerLitePaint) return "";
     var iso = this.feedbackRowDate(fb);
     if (!iso) return "";
     var slots = this.expandSlotsForDate(iso);
@@ -9628,17 +9627,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (terminal ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
       "</td>";
     var fbId = String((fb && (fb.id || fb.session_feedback_id)) || "").trim();
-    var canFilter =
-      variant === "register" &&
-      !terminal &&
-      !!fbId &&
-      !!clean(fb.session_narrative || fb.positive_feedback);
-    var canNoteAct =
-      variant === "register" &&
-      !terminal &&
-      !!fbId &&
-      !!clean(fb.relevant_information) &&
-      feedbackNoteDateAllowed(hub, fb);
+    var canFilter = variant === "register" && !terminal && !!fbId;
+    var canNoteAct = variant === "register" && !terminal && !!fbId;
     // Raw "Session feedback" exactly as the instructor submitted it.
     // On Register, click opens Filter with AI / Save & release (on demand).
     var rawFeedbackCell =
@@ -9652,6 +9642,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         : "") +
       ">" +
       (terminal ? cellNa() : cellNoteHtml(rawFeedback === "\u2014" ? "" : rawFeedback)) +
+      (canFilter ? '<div class="ash-cell-open">Open to filter</div>' : "") +
       "</td>";
     var filteredRawCell = "";
     var filteredCell = "";
@@ -9690,6 +9681,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         : "") +
       ">" +
       (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
+      (canNoteAct ? '<div class="ash-cell-open">Open to act</div>' : "") +
       "</td>";
     var reviewedByCell =
       '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
@@ -10043,32 +10035,44 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         bodyLines.push("Relevant information:");
         bodyLines.push(neText);
         var body = bodyLines.join("\r\n");
-        if (shareMode === "askstaff") {
-          var staffU = String(noteShareBtn.getAttribute("data-ash-note-staff") || "").trim().toLowerCase();
+        if (shareMode === "comms") {
+          var askBody =
+            noteShareBtn.getAttribute("data-ash-note-ask-text") ||
+            ("Hi, can you clarify this internal note?\n\n" + neText);
+          var staffQ = String(noteShareBtn.getAttribute("data-ash-note-staff") || neBy || "").trim();
           hub.closeModal();
-          if (typeof global.portalAdminSetView === "function") {
-            global.portalAdminSetView("portal_staff_whatsapp");
-          }
-          setTimeout(function () {
-            try {
-              if (global.PortalStaffWhatsappAdmin && typeof global.PortalStaffWhatsappAdmin.openStaff === "function") {
-                void global.PortalStaffWhatsappAdmin.openStaff(staffU);
-              }
-            } catch (_askStaff) {}
-          }, 400);
+          try {
+            sessionStorage.setItem("portal_comms_prefill", askBody);
+            if (staffQ) sessionStorage.setItem("portal_comms_staff", staffQ);
+          } catch (_ss) {}
+          var commsUrl = "comunicaciones.html?from=admin&mode=administration";
+          if (staffQ) commsUrl += "&staff=" + encodeURIComponent(staffQ);
+          window.location.href = commsUrl;
           return;
         }
-        if (shareMode === "askback") {
-          var askBody = noteShareBtn.getAttribute("data-ash-note-ask-text") || ("Hi, can you clarify this internal note?\n\n" + neText);
-          var askUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(askBody);
-          window.open(askUrl, "_blank", "noopener");
+        if (shareMode === "askstaff") {
+          var staffU = String(noteShareBtn.getAttribute("data-ash-note-staff") || "").trim();
+          hub.closeModal();
+          try {
+            if (staffU) sessionStorage.setItem("portal_comms_staff", staffU);
+          } catch (_as) {}
+          window.location.href =
+            "comunicaciones.html?from=admin&mode=administration" +
+            (staffU ? "&staff=" + encodeURIComponent(staffU) : "");
           return;
         }
-        if (shareMode === "whatsapp") {
-          // Share to WhatsApp — no fixed number, so the admin picks the CEO chat.
-          var waText = subject + "\r\n\r\n" + body;
-          var waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(waText);
-          window.open(waUrl, "_blank", "noopener");
+        if (shareMode === "askback" || shareMode === "whatsapp") {
+          var staffWa = String(noteShareBtn.getAttribute("data-ash-note-staff") || neBy || "").trim();
+          var askWa =
+            noteShareBtn.getAttribute("data-ash-note-ask-text") || subject + "\r\n\r\n" + body;
+          hub.closeModal();
+          try {
+            sessionStorage.setItem("portal_comms_prefill", askWa);
+            if (staffWa) sessionStorage.setItem("portal_comms_staff", staffWa);
+          } catch (_wa) {}
+          window.location.href =
+            "comunicaciones.html?from=admin&mode=administration" +
+            (staffWa ? "&staff=" + encodeURIComponent(staffWa) : "");
           return;
         }
         if (shareMode === "announce") {
@@ -10204,7 +10208,23 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       var fbRow = t.closest("[data-ash-fb-row]");
       if (fbRow && hub.mode === "feedback") {
-        if (hub.tab === "feedback") return;
+        if (hub.tab === "feedback") {
+          var filterInRow = fbRow.querySelector("[data-ash-open-filter]");
+          var noteInRow = fbRow.querySelector("[data-ash-open-note]");
+          if (filterInRow) {
+            var fid = filterInRow.getAttribute("data-ash-open-filter") || "";
+            var fbf = hub.findFeedbackById(fid);
+            if (fbf) hub.openFilterModal(fbf);
+            return;
+          }
+          if (noteInRow) {
+            var nid = noteInRow.getAttribute("data-ash-open-note") || "";
+            var nfb = hub.findFeedbackById(nid);
+            if (nfb) hub.openNoteActionsModal(nfb);
+            return;
+          }
+          return;
+        }
         var idx = parseInt(fbRow.getAttribute("data-ash-fb-row"), 10);
         var noteField = fbRow.getAttribute("data-ash-note-field") || "";
         var rows = hub.isFeedbackNotesTab()
@@ -12907,16 +12927,47 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     this.syncFeedbackChromeSelection();
     var root = this.root;
-    var sum = this.engagementSummary(this.feedbackRowsForMetrics());
     var metrics = root.querySelector(".ash-metrics-dashboard");
     if (metrics) {
-      var wrap = document.createElement("div");
-      wrap.innerHTML = this.htmlFeedbackMetricStrip(sum);
-      var next = wrap.firstElementChild;
-      if (next && metrics.parentNode) metrics.parentNode.replaceChild(next, metrics);
+      metrics.setAttribute("data-ash-metrics-lazy", "1");
+      metrics.innerHTML =
+        '<p class="ash-muted" style="margin:0;padding:12px;text-align:center">Loading week scores\u2026</p>';
     }
     var tbody = root.querySelector("table.ash-table--register tbody[data-ash-client-filter-tbody]");
     if (tbody) tbody.innerHTML = this.htmlFeedbackRegisterTableBody();
+    this.scheduleRegisterMetricsPaint();
+  };
+
+  AdminSessionsHub.prototype.paintRegisterMetricsIfLazy = function () {
+    var hub = this;
+    if (!hub.hubIsLive()) return;
+    var metrics = hub.root && hub.root.querySelector(".ash-metrics-dashboard[data-ash-metrics-lazy]");
+    if (!metrics) return;
+    try {
+      var sum = hub.engagementSummary(hub.feedbackRowsForMetrics());
+      var wrap = document.createElement("div");
+      wrap.innerHTML = hub.htmlFeedbackMetricStrip(sum);
+      var next = wrap.firstElementChild;
+      if (next && metrics.parentNode) metrics.parentNode.replaceChild(next, metrics);
+    } catch (err) {
+      console.warn("[AdminSessionsHub] register metrics", err);
+      metrics.removeAttribute("data-ash-metrics-lazy");
+      metrics.innerHTML =
+        '<p class="ash-muted" style="margin:0;padding:12px;text-align:center">Week scores unavailable.</p>';
+    }
+  };
+
+  AdminSessionsHub.prototype.scheduleRegisterMetricsPaint = function () {
+    var hub = this;
+    var run = function () {
+      if (!hub.hubIsLive()) return;
+      hub.paintRegisterMetricsIfLazy();
+    };
+    if (typeof requestIdleCallback === "function") {
+      requestIdleCallback(run, { timeout: 1600 });
+    } else {
+      setTimeout(run, 0);
+    }
   };
 
   AdminSessionsHub.prototype.scheduleRegisterBodyPaint = function () {
@@ -12950,6 +13001,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var paintLiteThenMix = function () {
       hub._registerBodyRaf = 0;
       paint(true);
+      hub.scheduleRegisterMetricsPaint();
       var mix = function () {
         hub._registerBodyIdle = null;
         if (!hub.hubIsLive()) return;
@@ -13786,32 +13838,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var sessionDay = formatFbDateShort(fb.session_date);
         var reviewDate = formatFbDate(submittedAt);
         var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
-        var emailCell = "";
-        if (kind === "relevant") {
-          if (noteText) {
-            var shareData =
-              'data-ash-note-who="' + esc(fb.client_name || "") + '" ' +
-              'data-ash-note-svc="' + esc(svcLabel) + '" ' +
-              'data-ash-note-date="' + esc(sessionDay || "") + '" ' +
-              'data-ash-note-by="' + esc(fb.completed_by_name || "") + '" ' +
-              'data-ash-note-text="' + esc(noteText) + '"';
-            emailCell =
-              '<td class="ash-cell-note-share">' +
-              '<div class="ash-note-share-wrap">' +
-              '<button type="button" class="ash-note-share-btn" data-ash-note-share="email" ' +
-              shareData +
-              ' title="Email this to the CEOs">Email CEOs</button>' +
-              '<button type="button" class="ash-note-share-btn ash-note-share-btn--wa" data-ash-note-share="whatsapp" ' +
-              shareData +
-              ' title="Share this on WhatsApp to the CEOs">WhatsApp</button>' +
-              '<button type="button" class="ash-note-share-btn ash-note-share-btn--ann" data-ash-note-share="announce" ' +
-              shareData +
-              ' title="Post as a dashboard announcement for staff">Announce to staff</button>' +
-              "</div></td>";
-          } else {
-            emailCell = '<td class="ash-cell-note-share"><span class="ash-cell-muted">\u2014</span></td>';
-          }
-        }
         return (
           '<tr class="ash-fb-row' +
           reviewCls +
@@ -13837,18 +13863,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '</div><div class="ash-cell-sub">' +
           esc(reviewDate) +
           (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
-          "</div></td>" +
-          emailCell +
-          "</tr>"
+          "</div></td></tr>"
         );
       })
       .join("");
 
     if (!tableRows) {
       tableRows =
-        '<tr><td colspan="' +
-        (kind === "relevant" ? 5 : 4) +
-        '"><div class="ash-empty">' +
+        '<tr><td colspan="4"><div class="ash-empty">' +
         esc(emptyMsg) +
         "</div></td></tr>";
     }
@@ -13871,7 +13893,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "<th>Participant</th><th>Service</th><th>" +
       esc(noteLabel) +
       "</th><th>Reviewed by:</th>" +
-      (kind === "relevant" ? "<th>Send to</th>" : "") +
       "</tr></thead><tbody data-ash-client-filter-tbody>" +
       tableRows +
       "</tbody></table></div>" +
@@ -13887,7 +13908,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
   AdminSessionsHub.prototype.htmlFeedback = function () {
     var hub = this;
-    var sum = this.engagementSummary(this.feedbackRowsForMetrics());
     var tableRows =
       '<tr><td colspan="7"><div class="ash-empty">Loading register\u2026</div></td></tr>';
 
@@ -13935,7 +13955,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     return (
-      this.htmlFeedbackMetricStrip(sum) +
+      '<div class="ash-metrics-dashboard" data-ash-metrics-lazy="1"><p class="ash-muted" style="margin:0;padding:12px;text-align:center">Loading week scores\u2026</p></div>' +
       weekBlock +
       truncateHtml +
       noteFilterHtml +
