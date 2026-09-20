@@ -4532,6 +4532,49 @@
         if(typeof portalTodayHasClientCardForObserverShadowing === 'function'
           && portalTodayHasClientCardForObserverShadowing(primary, ov)) return;
         const kind = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
+        if(kind === 'session' || kind === 'client' || kind === 'office'){
+          const pAdd = ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
+          const paxId = String(pAdd.client_id || ov.anchor_client_id || '').trim().toLowerCase();
+          const paxName = String(pAdd.client_name || '').trim()
+            || (kind === 'office' ? 'Office' : (paxId ? paxId.replace(/_/g, ' ') : 'Participant'));
+          const activityAdd = String(pAdd.service || 'Day Centre').trim() || 'Day Centre';
+          const stAdd = portalHmFromDbTime(ov.anchor_start) || '09:00';
+          const enAdd = portalHmFromDbTime(ov.anchor_end) || stAdd;
+          const sAdd = {
+            start: stAdd,
+            end: enAdd,
+            venue: ov.anchor_venue || 'SwimFarm',
+            activity: activityAdd,
+            area: pAdd.area || 'Hub Room'
+          };
+          const ttsAdd = portalSessionRowTimestamps(sessionDateKey, stAdd, enAdd, anchor);
+          const notesAdd = (typeof portalClientNotesLookup === 'function' ? portalClientNotesLookup(paxId) : null) || { name: paxName };
+          extra.push({
+            time: rosterSlotTimeLabel(sAdd),
+            kind: 'client',
+            clientId: paxId || paxName,
+            name: notesAdd.name || paxName,
+            activity: activityAdd,
+            areaLabel: String(pAdd.area || 'Hub Room').trim(),
+            poolLocationLabel: null,
+            showPoolSymbol: false,
+            showSpecialty: false,
+            specialtyLabel: '',
+            general: String(pAdd.note || ov.reason || '').trim(),
+            specialty: '',
+            openSheet: true,
+            sessionKey: sessionDateKey + '|' + stAdd + '|' + String(paxId || paxName).toLowerCase() + '|session_add',
+            sessionStartTs: ttsAdd.sessionStartTs,
+            sessionEndTs: ttsAdd.sessionEndTs,
+            noSessionFeedbackRequired: false,
+            actionsDisabled: false,
+            detailsOpenAllowed: true,
+            scheduleAdminAdjusted: true,
+            sessionVenue: String(ov.anchor_venue || 'SwimFarm').trim() || '—',
+            __portalScheduleOverride: ov
+          });
+          return;
+        }
         const displayTitle = kind === 'shadowing' ? 'Shadowing' : (kind === 'meeting' ? 'Team meeting' : 'Training session');
         const slug = kind === 'meeting' ? 'meeting' : (kind === 'shadowing' ? 'shadowing' : 'training');
         const cardTone = kind === 'shadowing' ? 'shadowing' : (kind === 'meeting' ? 'meeting' : 'training');

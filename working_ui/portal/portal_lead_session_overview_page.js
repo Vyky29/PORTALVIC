@@ -20,7 +20,7 @@ import {
   PORTAL_LEAD_SUMMER_TERM_START,
 } from "./portal_lead_session_scope.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260919-register-fast2";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260920-session-add-overview";
 
 function portalProgrammeLeadHubUrl(profile, authEmail) {
   return "staff_dashboard.html";

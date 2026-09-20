@@ -2512,6 +2512,118 @@
     return out;
   }
 
+  /** Schedule & Covers "+ Add session card" (session_add kind=session), not training/shadowing. */
+  function overrideIsCreatedSessionAdd(ov) {
+    if (String(ov && ov.override_type || "").trim() !== "session_add") return false;
+    if (String(ov && ov.status || "active").trim() !== "active") return false;
+    var p = overridePayloadObj(ov);
+    var k = String((p && p.kind) || ov.anchor_client_id || "").trim().toLowerCase();
+    return k === "session" || k === "client" || k === "office";
+  }
+
+  function slotFromCreatedSessionAdd(isoDate, wd, ov) {
+    if (!overrideIsCreatedSessionAdd(ov)) return null;
+    if (clean(ov.session_date) !== isoDate) return null;
+    var p = overridePayloadObj(ov);
+    var clientSlug = canonicalClientSlug(p.client_id || ov.anchor_client_id || "");
+    if (clientSlug === "training" || clientSlug === "shadowing" || clientSlug === "meeting") {
+      return null;
+    }
+    var clientName =
+      clean(p.client_name || p.to_client_name) ||
+      resolveRosterClientName(clientSlug) ||
+      (clientSlug ? String(clientSlug).replace(/_/g, " ") : "");
+    if (clientSlug === "office") clientName = "Office";
+    if (clientSlug === "no_participant" || clientSlug === "noparticipant") {
+      clientName = "No participant";
+    }
+    var rosterName = resolveRosterClientName(canonicalClientSlug(clientName || clientSlug));
+    if (rosterName) clientName = rosterName;
+    if (!clientName) return null;
+    var timeLabel = clean(ov.anchor_time_slot_label);
+    var slotTimes = parseTimeSlot(
+      timeLabel ||
+        (normTimeShort(ov.anchor_start) + " to " + normTimeShort(ov.anchor_end || ov.anchor_start)),
+      wd
+    );
+    var startHm = normTimeShort(ov.anchor_start) || slotTimes.start;
+    var endHm = normTimeShort(ov.anchor_end) || slotTimes.end;
+    var rosterTimeLabel =
+      rosterTimeSlotLabelFromBounds(startHm, endHm, wd) || timeLabel || slotTimes.label;
+    var staffLabel = resolveStaffDisplayName(ov.anchor_staff_id);
+    var instructors = staffLabel ? [staffLabel] : [];
+    var service = inferOverrideSlotService(ov, p);
+    var area = clean(p.area || "");
+    if (!area && serviceKey(service).indexOf("day") >= 0) area = "Hub Room";
+    var slotRow = {
+      session_date: isoDate,
+      day: wd,
+      client_name: clientName,
+      service: service,
+      time_slot: rosterTimeLabel,
+      time_start: startHm,
+      time_end: endHm,
+      venue: clean(ov.anchor_venue) || "SwimFarm",
+      area: area,
+      instructors: instructors,
+      instructor_label: instructors.join(", "),
+      anchor_staff_id: clean(ov.anchor_staff_id).toLowerCase(),
+      session_key: buildSessionKey(isoDate, {
+        client_name: clientName,
+        service: service,
+        time_slot: rosterTimeLabel,
+        venue: clean(ov.anchor_venue) || "SwimFarm",
+        area: area,
+        instructors: staffLabel,
+      }),
+      portalCreatedSession: true,
+      __portalScheduleOverride: ov,
+    };
+    slotRow.feedback_unit_key = feedbackUnitKey(slotRow);
+    slotRow.feedback_merge_group = feedbackMergeGroupForSlot(slotRow, { skipAutoSwim: true });
+    return slotRow;
+  }
+
+  function injectCreatedSessionAddSlots(hub, out, isoDate, wd) {
+    var ovs = (hub.payload && hub.payload.schedule_overrides) || [];
+    if (!ovs.length) return out;
+    var seenOvIds = Object.create(null);
+    var seenKeys = Object.create(null);
+    for (var i = 0; i < (out || []).length; i++) {
+      var s = out[i];
+      var ov0 = s && s.__portalScheduleOverride;
+      if (ov0 && ov0.id) seenOvIds[String(ov0.id)] = true;
+      var staff0 = canonicalStaffMatchKey(
+        ((s && s.instructors && s.instructors[0]) || (s && s.anchor_staff_id) || "")
+      );
+      var cid0 = canonicalClientSlug(s && s.client_name);
+      var st0 = s && (s.time_start || "");
+      if (staff0 && cid0 && st0) seenKeys[staff0 + "|" + cid0 + "|" + st0] = true;
+    }
+    var added = [];
+    for (var j = 0; j < ovs.length; j++) {
+      var ov = ovs[j];
+      if (clean(ov.session_date) !== isoDate) continue;
+      if (ov.id && seenOvIds[String(ov.id)]) continue;
+      var syn = slotFromCreatedSessionAdd(isoDate, wd, ov);
+      if (!syn) continue;
+      var staffK = canonicalStaffMatchKey(
+        (syn.instructors && syn.instructors[0]) || syn.anchor_staff_id || ""
+      );
+      var key = staffK + "|" + canonicalClientSlug(syn.client_name) + "|" + (syn.time_start || "");
+      if (seenKeys[key]) continue;
+      if (ov.id) seenOvIds[String(ov.id)] = true;
+      seenKeys[key] = true;
+      added.push(syn);
+    }
+    if (!added.length) return out;
+    out = (out || []).concat(added);
+    out.sort(function (a, b) {
+      return compareOverviewSlotsTimeThenCancelled(hub, a, b);
+    });
+    return out;
+  }
+
   /**
    * Active client_replace makeup whose ANCHOR is this booked participant — i.e. the original
    * participant told us they were not coming and admin handed their slot to someone else as a
@@ -7596,6 +7708,7 @@
       /* Term/Schedule time edits: rewrite standing clocks before cover match. */
       out = applySlotUpdateOverrides(this, out);
       out = applyInstructorReassignOverrides(this, out);
+      out = injectCreatedSessionAddSlots(this, out, isoDate, wd);
       out = annotateBespokeSharedUnitKeys(out);
       out = applyShadowingHostDisplay(this, out);
       /* One pass: auto consecutive swim merge using this day's slots only. */
