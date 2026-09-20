@@ -1,13 +1,14 @@
 /**
  * Admin — CS WhatsApp threads (all active staff).
  * Parallel to Family messages; uses portal_staff_* tables.
- * Unread = inbound from staff newer than localStorage seen cursor (per username).
+ * Unread = inbound from staff newer than the office seen cursor (shared across this login's devices).
  * Supports photo / file / voice attachments (Meta WhatsApp).
  */
 (function (global) {
   "use strict";
 
   var SEEN_STORE_KEY = "portalStaffWaAdminSeenV1";
+  var remoteSeen = {};
   var MAX_ATTACH_BYTES = 4 * 1024 * 1024;
   var WA_TEMPLATE_BODY_MAX = 700;
   /** Same Meta Utility shell as Family cold outbound (portal_parent_update / staff template). */
@@ -59,13 +60,38 @@
       .replace(/"/g, "&quot;");
   }
 
-  function readSeenMap() {
+  function readLocalSeenMap() {
     try {
       var raw = global.localStorage && global.localStorage.getItem(SEEN_STORE_KEY);
       var parsed = raw ? JSON.parse(raw) : {};
       return parsed && typeof parsed === "object" ? parsed : {};
     } catch (_e) {
       return {};
+    }
+  }
+
+  function writeLocalSeenMap(map) {
+    try {
+      if (global.localStorage) {
+        global.localStorage.setItem(SEEN_STORE_KEY, JSON.stringify(map || {}));
+      }
+    } catch (_e) {}
+  }
+
+  function readSeenMap() {
+    if (typeof global.portalOfficeInboxSeenMerge === "function") {
+      return global.portalOfficeInboxSeenMerge(readLocalSeenMap(), remoteSeen);
+    }
+    return readLocalSeenMap();
+  }
+
+  async function hydrateOfficeSeen() {
+    if (typeof global.portalOfficeInboxSeenLoad !== "function") return;
+    try {
+      remoteSeen = await global.portalOfficeInboxSeenLoad("staff_wa");
+      writeLocalSeenMap(readSeenMap());
+    } catch (_e) {
+      remoteSeen = remoteSeen || {};
     }
   }
 
@@ -78,12 +104,14 @@
       var next = String(iso || "");
       if (!next || next > prev) {
         map[key] = next || prev || new Date().toISOString();
-        if (global.localStorage) {
-          global.localStorage.setItem(SEEN_STORE_KEY, JSON.stringify(map));
-        }
+        remoteSeen[key] = map[key];
+        writeLocalSeenMap(map);
         try {
           global.dispatchEvent(new CustomEvent("portal:staff-wa-seen"));
         } catch (_ev) {}
+        if (typeof global.portalOfficeInboxSeenUpsert === "function") {
+          void global.portalOfficeInboxSeenUpsert("staff_wa", key, map[key]);
+        }
       }
     } catch (_e) {}
   }
@@ -878,6 +906,7 @@
 
   async function loadDirectory(opts) {
     opts = opts || {};
+    await hydrateOfficeSeen();
     var prevUnread = unreadLeadersCount();
     var res = await api("portal-staff-messages-list", { directory: true });
     if (!res.ok) {
@@ -1377,6 +1406,7 @@
   async function fetchUnreadCount() {
     try {
       if (!(await getAccessToken())) return 0;
+      await hydrateOfficeSeen();
       var res = await api("portal-staff-messages-list", { directory: true });
       if (!res.ok) return 0;
       var dir = Array.isArray(res.data.directory) ? res.data.directory : [];

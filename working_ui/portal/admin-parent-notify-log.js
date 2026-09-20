@@ -116,6 +116,7 @@
   };
 
   var SEEN_STORE_KEY = "portal_pnlog_seen_v1";
+  var remoteSeen = {};
   /**
    * Meta cold template shells (Utility · en). Only {{1}} is editable.
    * hello → portal_parent_update_v2 · urgent → portal_parent_urgent_v1
@@ -234,13 +235,38 @@
       });
   }
 
-  function readSeenMap() {
+  function readLocalSeenMap() {
     try {
       var raw = global.localStorage && global.localStorage.getItem(SEEN_STORE_KEY);
       var obj = raw ? JSON.parse(raw) : null;
       return obj && typeof obj === "object" ? obj : {};
     } catch (_e) {
       return {};
+    }
+  }
+
+  function writeLocalSeenMap(map) {
+    try {
+      if (global.localStorage) {
+        global.localStorage.setItem(SEEN_STORE_KEY, JSON.stringify(map || {}));
+      }
+    } catch (_e) {}
+  }
+
+  function readSeenMap() {
+    if (typeof global.portalOfficeInboxSeenMerge === "function") {
+      return global.portalOfficeInboxSeenMerge(readLocalSeenMap(), remoteSeen);
+    }
+    return readLocalSeenMap();
+  }
+
+  async function hydrateOfficeSeen() {
+    if (typeof global.portalOfficeInboxSeenLoad !== "function") return;
+    try {
+      remoteSeen = await global.portalOfficeInboxSeenLoad("family_wa");
+      writeLocalSeenMap(readSeenMap());
+    } catch (_e) {
+      remoteSeen = remoteSeen || {};
     }
   }
 
@@ -252,12 +278,14 @@
       var next = String(iso || "");
       if (!next || next > prev) {
         map[key] = next || prev || new Date().toISOString();
-        if (global.localStorage) {
-          global.localStorage.setItem(SEEN_STORE_KEY, JSON.stringify(map));
-        }
+        remoteSeen[key] = map[key];
+        writeLocalSeenMap(map);
         try {
           global.dispatchEvent(new CustomEvent("portal:family-msg-seen"));
         } catch (_ev) {}
+        if (typeof global.portalOfficeInboxSeenUpsert === "function") {
+          void global.portalOfficeInboxSeenUpsert("family_wa", key, map[key]);
+        }
       }
     } catch (_e) {}
   }
@@ -2931,6 +2959,7 @@
 
   async function loadRows(force) {
     if (state.loading && !force) return;
+    await hydrateOfficeSeen();
     var client = cfg.getClient();
     var statusEl = document.getElementById("portalParentNotifyLogStatus");
     var listEl = document.getElementById("portalParentNotifyLogList");
@@ -3107,6 +3136,7 @@
     client = client || (cfg.getClient && cfg.getClient());
     if (!client || typeof client.from !== "function") return 0;
     try {
+      await hydrateOfficeSeen();
       /* Prefer the same thread model as the inbox once it has loaded. */
       if (state.threads && state.threads.length) {
         var fromThreads = 0;
