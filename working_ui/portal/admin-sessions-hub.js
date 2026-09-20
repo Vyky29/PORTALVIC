@@ -12155,6 +12155,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           coverFromLabel: "",
         };
       }
+      /* Cancelled Office / Interviews / Manager: drop the card so the column does not stack. */
+      if (st.isCancelled && st.isDuty) continue;
       var iso = String(slot.session_date || hub.selectedDay || "").slice(0, 10);
       var origInsts = dayBoardResolveInstructorsForIso(
         dayBoardOriginalInstructorsForSlot(slot),
@@ -12507,7 +12509,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         ) {
           return;
         }
+        /* Standing-off weekdays (Victor Mon/Thu) hide empty columns only.
+         * Keep the column when Add session / cover already put cards on it. */
         if (
+          !hasLiveBoardItems &&
           PRC &&
           typeof PRC.autumnStaffStandingOffOnIso === "function" &&
           PRC.autumnStaffStandingOffOnIso(hub.selectedDay, labelByKey[key] || key)
