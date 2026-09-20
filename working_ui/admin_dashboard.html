@@ -15318,7 +15318,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="card card-pad"><div class="kpi-l">New override</div>'+
         '<div class="kpi-l" style="margin-top:10px">Action</div>'+
         schedOverrideActionPickerHtml(canMoveClient)+
-        '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Parent <strong>MakeUp</strong> (grants / Offer slot) is only under <button type="button" class="btn btn--ghost btn--sm" data-view-target="absents_refunds" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Absents, refunds &amp; credits</button>. Trials come from the booking portal. Saving Change Instructor, Cancelled, or Move sends the parent WhatsApp automatically (like Absents decide).</p>'+
+        '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Parent <strong>MakeUp</strong> (grants / Offer slot) is only under <button type="button" class="btn btn--ghost btn--sm" data-view-target="absents_refunds" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Absents, refunds &amp; credits</button>. Trials come from the booking portal. After-school / weekend Change Instructor, Cancelled, or Move still WhatsApps the parent. Day Centre instructor changes do not — Team updates only.</p>'+
         '<p id="schedTermMismatchWarn" role="status" hidden class="muted" style="margin:10px 0 0;padding:10px 12px;background:#fff7ed;border:1px solid rgba(234,88,12,.35);border-radius:8px;font-size:12px;line-height:1.5;min-width:0;overflow-wrap:break-word"></p>'+
         '<div id="schedWrapMoveTarget" style="display:none">'+
         '<label class="muted" for="schedFormMoveTarget" style="display:block;margin-top:12px">Target slot (same day)</label>'+
@@ -16061,6 +16061,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       ].filter(Boolean);
       return bits.join(' · ').slice(0, 160) || 'Session';
     }
+    /** Day Centre covers stay in Team — instructors rotate; do not WhatsApp the parent. */
+    function schedSlotIsDayCentre(slot){
+      var prog = String((slot && (slot.programme || slot.rosterService || slot.activity || slot.service)) || '');
+      if(typeof adminServicesIsDayCentreProgramme === 'function'){
+        return !!adminServicesIsDayCentreProgramme(prog);
+      }
+      var p = prog.toLowerCase();
+      return p.indexOf('day centre') >= 0 || p.indexOf('daycentre') >= 0 || /(^|\b)dc(\b|$)/.test(p);
+    }
     async function schedEnqueueCancelDecisionQueue(client, slot, overrideId, ovType, reason){
       var pax = await schedResolveParticipantForDecisionQueue(client, slot);
       if(!pax){
@@ -16574,9 +16583,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(ovType === 'instructor_reassign' && covering_staff_id && covering_staff_id !== 'cover_needed'){
         var coverNm = String(payload.covering_staff_name || '').trim().toLowerCase();
         if(coverNm && coverNm !== 'cover needed'){
-          autoNotifyKind = String(payload.prior_covering_staff_name || '').trim()
-            ? 'instructor_change_update'
-            : 'instructor_change';
+          if(schedSlotIsDayCentre(slot)){
+            autoNotifyKind = '';
+            try{
+              sched.lastMsg = 'Override saved. Day Centre cover is in Team only (no parent WhatsApp).';
+            }catch(_dcMsg){}
+          }else{
+            autoNotifyKind = String(payload.prior_covering_staff_name || '').trim()
+              ? 'instructor_change_update'
+              : 'instructor_change';
+          }
         }
       }
       if(ovType === 'slot_close' || ovType === 'client_cancelled' || ovType === 'slot_clear_client'){

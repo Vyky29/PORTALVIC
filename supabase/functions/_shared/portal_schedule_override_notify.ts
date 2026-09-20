@@ -384,6 +384,18 @@ export async function notifyScheduleOverrideParent(
     return { ok: false, skipped: true, reason: "no_named_cover", kind };
   }
 
+  /* Day Centre staff rotate between kids — Team shows the cover; do not WhatsApp. */
+  if (kind === "instructor_change" || kind === "instructor_change_update") {
+    const svc = clean(opts.serviceLabel, 160).toLowerCase();
+    if (
+      svc.indexOf("day centre") >= 0 ||
+      svc.indexOf("daycentre") >= 0 ||
+      /(^|\b)dc(\b|$)/.test(svc)
+    ) {
+      return { ok: true, skipped: true, reason: "day_centre_no_instructor_notify", kind };
+    }
+  }
+
   const overrideId = clean(opts.overrideId, 60);
   if (overrideId) {
     const { data: prior } = await admin
