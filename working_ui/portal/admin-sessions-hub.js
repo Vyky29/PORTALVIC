@@ -1350,8 +1350,8 @@
         }
         if (
           canon &&
-          typeof canon.shouldProjectDayCentreRowFromSnap === "function" &&
-          !canon.shouldProjectDayCentreRowFromSnap(r, standIso, isoDate)
+          typeof canon.shouldProjectSnapRosterRow === "function" &&
+          !canon.shouldProjectSnapRosterRow(r, standIso, isoDate)
         ) {
           return false;
         }

@@ -913,6 +913,13 @@
           if(dcSnap && dcSnap >= '2026-09-01'){
             if(rowIso !== dcSnap) return false;
             if(portalStaffClientHasDatedSameProgrammeOnIso(iso, s)) return false;
+            try{
+              const PRC = typeof window !== 'undefined' ? window.PortalRosterCanonical : null;
+              if(PRC && typeof PRC.shouldProjectSnapRosterRow === 'function'
+                && !PRC.shouldProjectSnapRosterRow(s, dcSnap, iso)){
+                return false;
+              }
+            }catch(_dcProj){}
             return true;
           }
         }
@@ -920,6 +927,15 @@
         if(!(iso && matchIso && rowIso === matchIso)) return false;
         /* Sparse dated booking for same client/programme replaces that standing seat only. */
         if(matchIso !== iso && portalStaffClientHasDatedSameProgrammeOnIso(iso, s)) return false;
+        if(matchIso !== iso){
+          try{
+            const PRCb = typeof window !== 'undefined' ? window.PortalRosterCanonical : null;
+            if(PRCb && typeof PRCb.shouldProjectSnapRosterRow === 'function'
+              && !PRCb.shouldProjectSnapRosterRow(s, matchIso, iso)){
+              return false;
+            }
+          }catch(_snapProj){}
+        }
         return true;
       }
       if(iso === '2026-09-06' && portalSessionIsSundaySwimfarmHubMulti(s)) return false;

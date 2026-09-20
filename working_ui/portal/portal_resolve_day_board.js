@@ -237,8 +237,8 @@
         if (rowSessionDate(sameDow[s]) !== snapIso) continue;
         if (
           PRCSnap &&
-          typeof PRCSnap.shouldProjectDayCentreRowFromSnap === "function" &&
-          !PRCSnap.shouldProjectDayCentreRowFromSnap(sameDow[s], snapIso, dateKey)
+          typeof PRCSnap.shouldProjectSnapRosterRow === "function" &&
+          !PRCSnap.shouldProjectSnapRosterRow(sameDow[s], snapIso, dateKey)
         ) {
           continue;
         }

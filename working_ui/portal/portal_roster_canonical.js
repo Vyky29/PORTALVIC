@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 135;
+  var SOURCE_VERSION = 136;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -749,6 +749,38 @@
     if (!isFadiAbsentDcBoardIso(snapIso)) return true;
     if (isFadiAbsentDcBoardIso(targetIso)) return true;
     return isAutumnDayCentreStandingSeat(row);
+  }
+
+  function coerceSnapProjectRow(row) {
+    if (!row) return row;
+    if (row.client_name || row.instructors) return row;
+    return {
+      client_name: row.clientName || row.clientDisplay || row.clientId || "",
+      instructors: row.instructors || row.staffId || "",
+      service: row.rosterService || row.activity || row.service || "",
+      time_slot: row.time_slot || row.timeSlot || "",
+      day: row.day || "",
+      session_date: row.session_date || row.sessionDate || "",
+      venue: row.venue || "",
+      area: row.rosterArea || row.area || "",
+    };
+  }
+
+  /** Hub Tinashe: Mon 7 Victor cover is dated only — do not project onto later Mondays. */
+  function shouldProjectBespokeHubRowFromSnap(row, snapIso, targetIso) {
+    if (!row || !isBespokeService(row.service)) return true;
+    if (!/^tinashe\b/i.test(String(row.client_name || "").trim())) return true;
+    var snap = normIso(snapIso);
+    var target = normIso(targetIso);
+    if (!snap || !target || snap === target) return true;
+    return autumnHubBespokeStandingHasStaff(row.day, row.instructors);
+  }
+
+  function shouldProjectSnapRosterRow(row, snapIso, targetIso) {
+    var r = coerceSnapProjectRow(row);
+    if (!shouldProjectDayCentreRowFromSnap(r, snapIso, targetIso)) return false;
+    if (!shouldProjectBespokeHubRowFromSnap(r, snapIso, targetIso)) return false;
+    return true;
   }
 
   function isTuesdayActonAquaticStandingRow(row) {
@@ -4314,6 +4346,7 @@
     isAutumnDcStandingTemplateRow: isAutumnDcStandingTemplateRow,
     isAutumnDayCentreStandingSeat: isAutumnDayCentreStandingSeat,
     shouldProjectDayCentreRowFromSnap: shouldProjectDayCentreRowFromSnap,
+    shouldProjectSnapRosterRow: shouldProjectSnapRosterRow,
     AUTUMN_NO_SESSION_STAFF_KEYS: AUTUMN_NO_SESSION_STAFF_KEYS,
     AUTUMN_TERM_FROM_ISO: AUTUMN_TERM_FROM_ISO,
     AUTUMN_STANDING_TEMPLATE_ISO_SET: AUTUMN_STANDING_TEMPLATE_ISO_SET,
