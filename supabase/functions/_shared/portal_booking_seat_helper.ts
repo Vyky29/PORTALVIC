@@ -38,6 +38,8 @@ export type OfferSlot = {
   bookedKeys?: string[];
   /** Display names on standing booked lines (office only — strip for parents). */
   bookedNames?: string[];
+  /** Past dated-trial clients on an open line — leftover holds must not fill the Place. */
+  ignoreHoldKeys?: string[];
 };
 
 export type OfferService = {
@@ -928,6 +930,10 @@ export type CapacityChainPlacesOccupantSlot = {
 const PLACES_SERVICE_IDS = new Set(["aquatic", "climbing", "physical", "multi"]);
 const OCCUPANTS_REFERENCE_DATE = "2026-09-15";
 
+function londonTodayIso(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+}
+
 /**
  * B2: public Places from capacity-chain occupants (same seat lines as Services / Overview).
  * Does not expand aquatic 60′ bands — occupants are already 30′.
@@ -962,6 +968,8 @@ export function buildWeeklyOfferFromOccupants(
     const openInstructors = new Set<string>();
     const bookedKeys = new Set<string>();
     const bookedNames = new Map<string, string>();
+    const ignoreHoldKeys = new Set<string>();
+    const todayIso = londonTodayIso();
 
     for (const line of lines) {
       const kind = String(line?.kind || "").trim().toLowerCase();
@@ -970,6 +978,11 @@ export function buildWeeklyOfferFromOccupants(
       if (kind === "open") {
         openSeats += 1;
         if (inst) openInstructors.add(inst.toUpperCase());
+        const trialIso = String(line?.trialDate || "").slice(0, 10);
+        const trialKey = clientKey(String(line?.trialClient || ""));
+        if (trialKey && /^\d{4}-\d{2}-\d{2}$/.test(trialIso) && trialIso < todayIso) {
+          ignoreHoldKeys.add(trialKey);
+        }
         continue;
       }
       if (kind === "closed") {
@@ -1023,6 +1036,7 @@ export function buildWeeklyOfferFromOccupants(
       bookedNames: [...bookedNames.values()].sort((a, b) =>
         a.localeCompare(b, "en", { sensitivity: "base" }),
       ),
+      ignoreHoldKeys: [...ignoreHoldKeys],
     });
 
     let vs = venueSets.get(serviceId);
@@ -1110,11 +1124,23 @@ export function applyBookingSlotHoldsToOffer(
       skippedRoster += 1;
       continue;
     }
+    if (
+      holdParticipantAlreadyOnOfferSlot(
+        hold.participant_name,
+        slot.ignoreHoldKeys,
+      )
+    ) {
+      skippedRoster += 1;
+      continue;
+    }
     const seats = seatsNeededFromHoldNotes(hold.notes);
     const cap = Number(slot.capacity) || 0;
     slot.taken = Math.min(cap, (Number(slot.taken) || 0) + seats);
     if (slot.openSeats != null) {
       slot.openSeats = Math.max(0, (Number(slot.openSeats) || 0) - seats);
+    }
+    if (Array.isArray(slot.openInstructors) && slot.openInstructors.length && seats > 0) {
+      slot.openInstructors = slot.openInstructors.slice(seats);
     }
     applied += 1;
   }

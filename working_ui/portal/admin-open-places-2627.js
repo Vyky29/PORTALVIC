@@ -320,19 +320,22 @@
         pushName(line.client || line.trialClient, kind === "closed" || kind === "hold");
       });
       cap = lines.length;
-      /* Live offer still wins for Place buttons when a hold has just landed. */
-      if (slot && slot.openSeats != null && Number(slot.capacity) > 0) {
-        cap = Math.max(0, Number(slot.capacity) || cap);
-        freeSeats = Math.max(0, Number(slot.openSeats) || 0);
-        takenSeats = Math.max(0, cap - freeSeats);
-      } else {
-        takenSeats = lineTaken;
-        freeSeats = lineOpen;
-      }
+      takenSeats = lineTaken;
+      freeSeats = lineOpen;
     } else {
       (slot && slot.bookedNames ? slot.bookedNames : []).forEach(function (nm) {
         pushName(nm, isOfficeHoldName(nm));
       });
+      var instOpen = 0;
+      if (Array.isArray(slot && slot.openInstructors)) {
+        instOpen = slot.openInstructors.filter(function (n) {
+          return String(n || "").trim();
+        }).length;
+      }
+      if (instOpen > freeSeats) {
+        freeSeats = instOpen;
+        if (cap > 0) takenSeats = Math.max(0, cap - freeSeats);
+      }
     }
 
     byParticipant.sort(function (a, b) {

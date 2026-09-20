@@ -506,6 +506,7 @@ Deno.serve(async (req) => {
       bookedNames: _bn,
       instructors: _inst,
       openInstructors: _openInst,
+      ignoreHoldKeys: _ig,
       ...pub
     } = slot;
     const resolved = resolveBookableSessionWithAdminOverrides(
