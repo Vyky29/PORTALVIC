@@ -26,8 +26,9 @@
     orders_all: "Todas",
     comms_bookings: "Avisos de staff y turnos",
     comms_ops: "Comunicaciones ops y registro",
-    portal_parent_notify_log: "Mensajes a familias",
-    portal_staff_whatsapp: "CS WhatsApp",
+    portal_parent_notify_log: "Mensajes familia (API)",
+    portal_staff_whatsapp: "Mensajes staff (API)",
+    portal_staff_comms: "Comms",
     portal_parent_broadcast: "Difusión a familias",
     clients: "Participantes",
     portal_nav_client_services: "Revisión de servicios de cliente",
@@ -130,6 +131,8 @@
     Monitoring: "Monitorización",
     "Other portals": "Otros portales",
     Session: "Sesión",
+    FAMILY: "FAMILIA",
+    STAFF: "STAFF",
   };
 
   /* Large phrase map — longest matches win when replacing inside longer strings. */
@@ -217,7 +220,10 @@
     "Ops comms & log": "Comunicaciones ops y registro",
     "Ops comms &amp; log": "Comunicaciones ops y registro",
     "Family messages": "Mensajes a familias",
+    "Family messages (API)": "Mensajes familia (API)",
     "CS WhatsApp": "CS WhatsApp",
+    "Staff messages (API)": "Mensajes staff (API)",
+    Comms: "Comms",
     "Family broadcast": "Difusión a familias",
     Participants: "CLIENT",
     CLIENT: "CLIENT",
