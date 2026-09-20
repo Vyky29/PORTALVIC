@@ -193,6 +193,28 @@ function staffOnInScopeRosterRow(staffKey, row, iso, scopes, source) {
 
 const PROGRAMME_LEAD_KEYS = new Set(["john", "berta", "michelle"]);
 
+/** Full club day for Team on shift (CEO ops + Sunday Lead Berta). Not used for Today cards. */
+const CLUB_WIDE_TEAM_SCOPES = [
+  {
+    id: "club-all-days",
+    label: "Club — Team of the Day",
+    weekdays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    serviceKeys: [],
+    includeAllServices: true,
+    programmeWideRoster: true,
+    leadTeamBanner: true,
+  },
+];
+
+function teamBoardUsesClubWideDay(dayKind) {
+  return dayKind === "ops_club_all" || dayKind === "sunday_ma_swimfarm";
+}
+
+function scopesForTeamBoard(ctx, dayKind) {
+  if (teamBoardUsesClubWideDay(dayKind)) return CLUB_WIDE_TEAM_SCOPES;
+  return (ctx && ctx.scopes) || [];
+}
+
 function portalLeadTeamDayKind(ctx, iso) {
   if (!ctx || !iso) return "";
   const wd = weekdayFromIso(iso);
@@ -952,15 +974,17 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   const dayKind = portalLeadTeamDayKind(ctx, iso);
   if (!dayKind) return null;
 
-  const src = dayKind === "ops_club_all" ? rosterSourceForLeadTeamBoard(iso) : rosterSource();
+  const boardScopes = scopesForTeamBoard(ctx, dayKind);
+  const src = teamBoardUsesClubWideDay(dayKind)
+    ? rosterSourceForLeadTeamBoard(iso)
+    : rosterSource();
   if (!portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes)) return null;
 
   let memberKeys = [];
-  /* Ops (Victor / Javi / Raul): Club — Team of the Day is the full club board,
-   * not only the venue they happen to cover. Covers replace the away instructor. */
-  memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
-  memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
-  const roleOverrides = coverChipRoleOverridesForIso(iso, ctx.scopes, src);
+  /* Ops + Sunday Lead (Berta): Team on shift is the full club day, not SwimFarm-only. */
+  memberKeys = collectInScopeMemberKeys(iso, boardScopes, src);
+  memberKeys = applyScheduleOverrideMembers(memberKeys, iso, boardScopes, src);
+  const roleOverrides = coverChipRoleOverridesForIso(iso, boardScopes, src);
   memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey, iso);
   memberKeys = memberKeys.filter(function (k) {
     if (!k || k === ctx.leadKey) return false;
@@ -977,7 +1001,7 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
       return true;
     }
     if (dayKind === "roberto_thu_dc" && k === "michelle") return true;
-    if (dayKind === "ops_club_all") return true;
+    if (dayKind === "ops_club_all" || dayKind === "sunday_ma_swimfarm") return true;
     return !PROGRAMME_LEAD_KEYS.has(k);
   });
   /* Seed expected Hub Multi support when standing rows did not resolve yet (Berta is Sunday Lead). */
@@ -993,7 +1017,9 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
 
   return {
     iso: iso,
-    programmeLabel: teamProgrammeLabelForDay(ctx.scopes, iso),
+    programmeLabel: teamProgrammeLabelForDay(boardScopes, iso),
+    boardScopes: boardScopes,
+    dayKind: dayKind,
     members: memberKeys.map(function (k) {
       return { key: k, name: staffDisplayName(k), chipRole: teamMemberChipRoleForDay(k, roleOverrides) };
     }),
@@ -1657,7 +1683,8 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
   rows.forEach(function (row) {
     if (!rosterRowMatchesIso(row, iso)) return;
     const slot = rosterRowToSlot(row, iso);
-    if (!portalLeadSlotInScope(slot, ctx.scopes)) return;
+    const paintScopes = (team && team.boardScopes) || ctx.scopes;
+    if (!portalLeadSlotInScope(slot, paintScopes)) return;
     const clientRaw = String(row.client_name || "").trim();
     if (isDutyClientName(clientRaw)) return;
     const clientKey = leadTeamClientCanon(clientRaw);
@@ -1727,8 +1754,9 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
     if (leadKey && k === leadKey) return false;
     /* Sunday MA: Berta stays as Leader column even with no clients. */
     if (k === "berta" && dayWord === "Sunday") return true;
-    /* Ops: drop covered-off staff (empty after remap). Keep anyone with clients. */
+    /* Ops / Sunday Lead: drop covered-off staff (empty after remap). Keep anyone with clients. */
     if (leadKey === "ops") return (byStaff[k] || []).length > 0;
+    if (leadKey === "berta" && dayWord === "Sunday") return (byStaff[k] || []).length > 0;
     return (byStaff[k] || []).length > 0;
   }).map(function (m) {
     if (normKey(m.key) === "berta" && dayWord === "Sunday") {
