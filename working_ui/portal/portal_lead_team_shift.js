@@ -363,7 +363,7 @@ function sortTeamMemberKeys(keys, roleOverrides) {
 function filterOpsClubTeam(keys) {
   return dedupeKeys(
     (keys || []).filter(function (k) {
-      return k && k !== "ops" && k !== "victor" && k !== "raul" && k !== "javi";
+      return k && k !== "ops";
     })
   );
 }
@@ -583,6 +583,64 @@ function collectInScopeMemberKeys(iso, scopes, source) {
     });
   });
   return memberKeys;
+}
+
+function venuesLooselyMatch(a, b) {
+  const na = normVenue(a);
+  const nb = normVenue(b);
+  if (!na || !nb) return true;
+  return na === nb || na.indexOf(nb) >= 0 || nb.indexOf(na) >= 0;
+}
+
+function namedCoverStaffKeyFromOverride(ov) {
+  const pl = parseOverridePayload(ov);
+  const cover = canonicalStaffKey(pl.covering_staff_id || pl.coveringStaffId);
+  if (!cover) return "";
+  if (cover === "coverneeded" || cover === "tbc" || cover === "cover") return "";
+  const nm = String(pl.covering_staff_name || "").trim().toLowerCase();
+  if (/cover needed|cover tbc|^tbc$/.test(nm)) return "";
+  return cover;
+}
+
+function hmToMinutes(raw) {
+  const m = String(raw || "").match(/(\d{1,2}):(\d{2})/);
+  if (!m) return NaN;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+function instructorReassignMatchesRow(ov, row, standingKey) {
+  if (!ov || !row) return false;
+  if (String(ov.status || "active") !== "active") return false;
+  if (String(ov.override_type || "").trim() !== "instructor_reassign") return false;
+  const anchor = canonicalStaffKey(ov.anchor_staff_id);
+  if (!anchor || anchor !== standingKey) return false;
+  const wantVenue = ov.anchor_venue;
+  if (wantVenue && !venuesLooselyMatch(row.venue, wantVenue)) return false;
+  const wantClient = String(ov.anchor_client_id || "").trim();
+  if (wantClient && !openSlotClientSlug(wantClient)) {
+    if (!rosterClientIdsMatch(row.client_name || row.clientId, wantClient)) return false;
+  }
+  const ovStart = hmToMinutes(ov.anchor_start || ov.start_time);
+  if (Number.isFinite(ovStart)) {
+    const rowStart = parseSlotStartMinutes(row.time_slot);
+    if (Number.isFinite(rowStart) && rowStart !== 9999 && rowStart !== ovStart) return false;
+  }
+  return true;
+}
+
+function instructorKeysAfterCover(row, iso, src) {
+  const standing = staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, src));
+  const ovs = scheduleOverrideRowsForIso(iso);
+  if (!ovs.length) return standing.map(normKey);
+  return standing.map(function (k) {
+    const nk = normKey(k);
+    for (let i = 0; i < ovs.length; i++) {
+      if (!instructorReassignMatchesRow(ovs[i], row, nk)) continue;
+      const cover = namedCoverStaffKeyFromOverride(ovs[i]);
+      if (cover) return cover;
+    }
+    return nk;
+  });
 }
 
 function applyScheduleOverrideMembers(memberKeys, iso, scopes, source) {
@@ -894,34 +952,14 @@ export function portalLeadTeamOnShiftForIso(iso, ctx) {
   const dayKind = portalLeadTeamDayKind(ctx, iso);
   if (!dayKind) return null;
 
-  const src = rosterSource();
+  const src = dayKind === "ops_club_all" ? rosterSourceForLeadTeamBoard(iso) : rosterSource();
   if (!portalLeadProgrammeLeadWorkingOnIso(ctx.leadKey, iso, ctx.scopes)) return null;
 
   let memberKeys = [];
-  /* Ops (Victor / Javi / Raul): Team of the Day = peers at the venue(s) they work today
-   * (Acton aquatic when covering there; SwimFarm MA Sunday like Berta — not club-wide empty). */
-  if (dayKind === "ops_club_all") {
-    const viewerKey = opsViewerPersonKey(ctx);
-    const venues = opsViewerVenuesForIso(iso, viewerKey);
-    if (viewerKey && venues.length) {
-      memberKeys = collectRosterMemberKeysForVenues(iso, venues, ctx.scopes, src);
-      const fromHours = collectTimetableMemberKeysForVenues(iso, venues);
-      fromHours.forEach(function (k) {
-        if (k && memberKeys.indexOf(k) < 0) memberKeys.push(k);
-      });
-      memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
-      /* Timetable seeds can be dropped when roster rows are thin — keep venue hours peers. */
-      fromHours.forEach(function (k) {
-        if (k && memberKeys.indexOf(k) < 0) memberKeys.push(k);
-      });
-    } else {
-      memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
-      memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
-    }
-  } else {
-    memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
-    memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
-  }
+  /* Ops (Victor / Javi / Raul): Club — Team of the Day is the full club board,
+   * not only the venue they happen to cover. Covers replace the away instructor. */
+  memberKeys = collectInScopeMemberKeys(iso, ctx.scopes, src);
+  memberKeys = applyScheduleOverrideMembers(memberKeys, iso, ctx.scopes, src);
   const roleOverrides = coverChipRoleOverridesForIso(iso, ctx.scopes, src);
   memberKeys = applyTeamDayFilter(memberKeys, dayKind, ctx.leadKey, iso);
   memberKeys = memberKeys.filter(function (k) {
@@ -1045,21 +1083,10 @@ function matchingLeadScopedRosterRow(ov, iso, scopes, source) {
   const openClient = openSlotClientSlug(wantClient);
   const src = source || rosterSource();
   const day = String(iso || "").slice(0, 10);
-  let rows = null;
-  try {
-    const cache = window.__PORTAL_LEAD_ROSTER_BY_ISO__;
-    if (cache && Array.isArray(cache[day])) rows = cache[day];
-  } catch (_) {}
-  if (!rows) {
-    const all = src && Array.isArray(src.rows) ? src.rows : [];
-    rows = [];
-    for (let r = 0; r < all.length; r++) {
-      if (rosterRowMatchesIso(all[r], day)) rows.push(all[r]);
-    }
-    try {
-      if (!window.__PORTAL_LEAD_ROSTER_BY_ISO__) window.__PORTAL_LEAD_ROSTER_BY_ISO__ = Object.create(null);
-      window.__PORTAL_LEAD_ROSTER_BY_ISO__[day] = rows;
-    } catch (_) {}
+  const all = src && Array.isArray(src.rows) ? src.rows : [];
+  const rows = [];
+  for (let r = 0; r < all.length; r++) {
+    if (rosterRowMatchesIso(all[r], day)) rows.push(all[r]);
   }
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -1073,7 +1100,7 @@ function matchingLeadScopedRosterRow(ov, iso, scopes, source) {
     const resolvedKeys = staffKeysFromInstructorLabel(resolvedInstructorsForRow(row, iso, src));
     const rawKeys = staffKeysFromInstructorLabel(row && row.instructors);
     if (resolvedKeys.indexOf(anchor) < 0 && rawKeys.indexOf(anchor) < 0) continue;
-    if (wantVenue && normVenue(row.venue) !== wantVenue) continue;
+    if (wantVenue && !venuesLooselyMatch(row.venue, wantVenue)) continue;
     if (!openClient && wantClient && !rosterClientIdsMatch(row.client_name || row.clientId, wantClient)) {
       continue;
     }
@@ -1622,6 +1649,10 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
   });
   // Viewing programme lead / ops person — always a column, even with no clients.
   if (viewerStaffKey && !byStaff[viewerStaffKey]) byStaff[viewerStaffKey] = [];
+  scheduleOverrideRowsForIso(iso).forEach(function (ov) {
+    const cover = namedCoverStaffKeyFromOverride(ov);
+    if (cover && !byStaff[cover]) byStaff[cover] = [];
+  });
 
   rows.forEach(function (row) {
     if (!rosterRowMatchesIso(row, iso)) return;
@@ -1636,14 +1667,13 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
     const rowIso = String(row.session_date || row.sessionDate || "")
       .trim()
       .slice(0, 10);
-    const instructorKeys = staffKeysFromInstructorLabel(
-      resolvedInstructorsForRow(row, iso, src)
-    );
+    const instructorKeys = instructorKeysAfterCover(row, iso, src);
     if (!instructorKeys.length) return;
     const ownOnly = instructorKeys.length === 1;
     instructorKeys.forEach(function (ik) {
       const k = normKey(ik);
-      if (!byStaff[k]) return;
+      if (!k) return;
+      if (!byStaff[k]) byStaff[k] = [];
       const entry = {
         client: client,
         clientKey: clientKey,
@@ -1697,14 +1727,25 @@ export function portalLeadTeamRosterTableModel(iso, ctx) {
     if (leadKey && k === leadKey) return false;
     /* Sunday MA: Berta stays as Leader column even with no clients. */
     if (k === "berta" && dayWord === "Sunday") return true;
-    /* Ops: keep Timetable peers even if a row failed to resolve — show blank not drop. */
-    if (leadKey === "ops") return true;
+    /* Ops: drop covered-off staff (empty after remap). Keep anyone with clients. */
+    if (leadKey === "ops") return (byStaff[k] || []).length > 0;
     return (byStaff[k] || []).length > 0;
   }).map(function (m) {
     if (normKey(m.key) === "berta" && dayWord === "Sunday") {
       return Object.assign({}, m, { isSundayLeader: true, chipRole: m.chipRole || "support-lead" });
     }
     return m;
+  });
+
+  Object.keys(byStaff).forEach(function (k) {
+    if (!k || k === viewerStaffKey || k === "ops" || k === leadKey) return;
+    if (!(byStaff[k] || []).length) return;
+    if (members.some(function (m) { return normKey(m.key) === k; })) return;
+    members.push({
+      key: k,
+      name: staffDisplayName(k),
+      chipRole: teamMemberChipRole(k),
+    });
   });
 
   if (viewerStaffKey) {
