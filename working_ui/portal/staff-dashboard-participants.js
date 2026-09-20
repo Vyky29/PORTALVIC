@@ -815,33 +815,244 @@
       return String(raw || '').split(/[,;|/]+/).map(function(p){ return p.trim(); }).filter(Boolean);
     }
     /**
-     * Standing 2:1 aquatic pairs — show "With X (2:1)" under the client name
-     * on each co-instructor's Today card (e.g. Joelle Thu Acton: Aurora + Simon).
+     * Shared seat line under the client name, e.g. "(2:1 with Raul)" / "(3:1 with Bismark & Godsway)".
+     * N = named staff on that client+service that calendar day (viewer included); names omit self.
      */
     function portalTwoToOneSupportLabelForSession(sessionRow, viewerStaffId, clientId){
-      const cid = String(clientId || (sessionRow && sessionRow.clientId) || '').trim().toLowerCase()
-        .replace(/[^a-z0-9]+/g, '_');
-      const sid = String(viewerStaffId || (sessionRow && sessionRow.staffId) || '').trim().toLowerCase()
-        .replace(/[^a-z0-9]+/g, '');
-      if(!cid || !sid) return '';
-      const day = String((sessionRow && sessionRow.day) || '').trim().toLowerCase();
-      const venue = String((sessionRow && sessionRow.venue) || '').trim().toLowerCase();
-      const pairs = [
-        {
-          client: 'joelle',
-          days: { thursday: 1 },
-          staff: { aurora: 'Simon', simon: 'Aurora' }
+      if(!sessionRow) return '';
+      const cidRaw = String(clientId || sessionRow.clientId || sessionRow.clientName || sessionRow.name || '').trim();
+      const sidRaw = String(viewerStaffId || sessionRow.staffId || '').trim();
+      if(!cidRaw || !sidRaw) return '';
+      const act = String(sessionRow.activity || sessionRow.rosterService || sessionRow.service || '').toLowerCase();
+      if(/office|training|shadowing|meeting|home visit|^home$|^manager$/.test(act)) return '';
+      const clientStem = portalShareClientStem(cidRaw);
+      if(!clientStem || clientStem === 'available' || clientStem === 'closed' || clientStem === 'none') return '';
+      const family = portalShareServiceFamily(sessionRow, clientStem);
+      if(!family) return '';
+      let iso = '';
+      try{
+        if(typeof portalViewCalendarDateKey === 'function'){
+          iso = String(portalViewCalendarDateKey() || '').slice(0, 10);
         }
-      ];
-      for(let i = 0; i < pairs.length; i++){
-        const p = pairs[i];
-        if(cid !== p.client && cid.indexOf(p.client + '_') !== 0) continue;
-        if(p.days && day && !p.days[day]) continue;
-        if(venue && venue.indexOf('acton') < 0) continue;
-        const other = p.staff[sid];
-        if(other) return 'With ' + other + ' (2:1)';
+      }catch(_){}
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+        iso = String(sessionRow.session_date || sessionRow.sessionDate || '').slice(0, 10);
       }
+      const weekday = String(sessionRow.day || '').trim()
+        || (iso ? new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' }) : '');
+      const viewerKey = portalShareCanonStaff(sidRaw);
+      if(!viewerKey) return '';
+      const byStaff = Object.create(null);
+      function addStaff(raw, startMins){
+        const key = portalShareCanonStaff(raw);
+        if(!key || portalShareStaffSkip(key)) return;
+        if(iso && portalShareStaffAwayOnIso(key, iso)
+          && !(typeof portalStaffHasAdminAddedShiftOnCalendarDate === 'function'
+            && portalStaffHasAdminAddedShiftOnCalendarDate(iso, key))) return;
+        const mins = Number(startMins);
+        const prev = byStaff[key];
+        if(!prev || (Number.isFinite(mins) && mins < prev.mins)){
+          byStaff[key] = { key: key, mins: Number.isFinite(mins) ? mins : 24 * 60 };
+        }
+      }
+      function rowOnDay(row){
+        if(!row) return false;
+        if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'){
+          return portalSessionSpreadsheetRowMatchesCalendarDate({
+            session_date: row.session_date || row.sessionDate || row.date,
+            sessionDate: row.session_date || row.sessionDate || row.date,
+            day: row.day
+          }, iso, weekday);
+        }
+        const sd = String(row.session_date || row.sessionDate || row.date || '').slice(0, 10);
+        if(sd && /^\d{4}-\d{2}-\d{2}$/.test(sd)) return sd === iso;
+        return String(row.day || '').trim() === weekday;
+      }
+      function considerRow(row){
+        if(!row || !rowOnDay(row)) return;
+        const stem = portalShareClientStem(row.clientId || row.client_name || row.clientName || row.client || row.name);
+        if(stem !== clientStem) return;
+        const fam = portalShareServiceFamily(row, stem);
+        if(fam !== family) return;
+        if(family === 'aquatic'){
+          const want = portalShareStartMins(sessionRow);
+          const got = portalShareStartMins(row);
+          if(Number.isFinite(want) && Number.isFinite(got) && Math.abs(want - got) > 5) return;
+        }
+        const mins = portalShareStartMins(row);
+        portalShareStaffTokens(row).forEach(function(tok){ addStaff(tok, mins); });
+      }
+      try{
+        const src = window.STAFF_DASHBOARD_SOURCE;
+        if(src && Array.isArray(src.rows)) src.rows.forEach(considerRow);
+      }catch(_){}
+      try{
+        const sm = window.sessionsModel;
+        const list = Array.isArray(sm) ? sm : (sm && (sm.sessions || sm.rows));
+        if(Array.isArray(list)) list.forEach(considerRow);
+      }catch(_){}
+      if(iso && typeof portalScheduleOverrideRowsForSessionIso === 'function'){
+        portalScheduleOverrideRowsForSessionIso(iso).forEach(function(ov){
+          if(!ov || String(ov.status || 'active') !== 'active') return;
+          const t = String(ov.override_type || '').trim();
+          if(t === 'session_add'){
+            const pAdd = ov.payload && typeof ov.payload === 'object' ? ov.payload : {};
+            const addKind = String(pAdd.kind || '').trim().toLowerCase();
+            if(addKind === 'training' || addKind === 'shadowing' || addKind === 'meeting' || addKind === 'office') return;
+            const pax = portalShareClientStem(pAdd.client_id || ov.anchor_client_id || pAdd.client_name);
+            if(pax !== clientStem) return;
+            const famOv = portalShareServiceFamily({
+              activity: pAdd.service || 'Day Centre',
+              service: pAdd.service || 'Day Centre',
+              clientId: pAdd.client_id || ov.anchor_client_id
+            }, pax);
+            if(famOv !== family) return;
+            const st = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_start) : ov.anchor_start;
+            addStaff(ov.anchor_staff_id, portalShareStartMins({ start: st, time_slot: ov.anchor_time_slot_label }));
+            return;
+          }
+          if(t === 'instructor_reassign'){
+            const pax = portalShareClientStem(ov.anchor_client_id || (ov.payload && ov.payload.client_id));
+            if(pax && pax !== clientStem) return;
+            const cover = (typeof portalInstructorCoverStaffKeyFromOverride === 'function'
+              ? portalInstructorCoverStaffKeyFromOverride(ov)
+              : '') || String((ov.payload && ov.payload.covering_staff_id) || '').trim();
+            const orig = ov.anchor_staff_id;
+            if(portalShareStaffSkip(portalShareCanonStaff(cover))){
+              if(orig && byStaff[portalShareCanonStaff(orig)]) delete byStaff[portalShareCanonStaff(orig)];
+              return;
+            }
+            const st = typeof portalHmFromDbTime === 'function' ? portalHmFromDbTime(ov.anchor_start) : ov.anchor_start;
+            addStaff(cover, portalShareStartMins({ start: st }));
+            const origKey = portalShareCanonStaff(orig);
+            if(origKey && origKey !== portalShareCanonStaff(cover) && byStaff[origKey]) delete byStaff[origKey];
+          }
+        });
+      }
+      addStaff(sidRaw, portalShareStartMins(sessionRow));
+      const keys = Object.keys(byStaff);
+      const others = keys.filter(function(k){ return k !== viewerKey; });
+      if(!others.length){
+        const cid = String(clientId || sessionRow.clientId || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        const sid = String(viewerStaffId || sessionRow.staffId || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+        const day = String((sessionRow && sessionRow.day) || weekday || '').trim().toLowerCase();
+        const venue = String((sessionRow && sessionRow.venue) || '').trim().toLowerCase();
+        if((cid === 'joelle' || cid.indexOf('joelle_') === 0) && day === 'thursday' && (!venue || venue.indexOf('acton') >= 0)){
+          const pair = { aurora: 'Simon', simon: 'Aurora' };
+          const other = pair[sid];
+          if(other) return '(2:1 with ' + other + ')';
+        }
+        return '';
+      }
+      others.sort(function(a, b){
+        const da = byStaff[a].mins - byStaff[b].mins;
+        if(da) return da;
+        return portalShareStaffFirstName(a).localeCompare(portalShareStaffFirstName(b));
+      });
+      const names = others.map(portalShareStaffFirstName).filter(Boolean);
+      if(!names.length) return '';
+      const n = names.length + 1;
+      return '(' + n + ':1 with ' + portalShareJoinNames(names) + ')';
+    }
+    function portalShareClientStem(v){
+      const raw = String(v || '').trim().toLowerCase();
+      if(!raw) return '';
+      const slug = raw.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      const first = slug.split('_')[0];
+      if(first === 'emmanuel' || first === 'emanuel') return 'emanuel';
+      return first;
+    }
+    function portalShareServiceFamily(row, clientStem){
+      const act = String((row && (row.activity || row.rosterService || row.service)) || '').toLowerCase();
+      const stem = String(clientStem || '').trim().toLowerCase();
+      if(typeof portalRosterSessionIsDayCentre === 'function' && portalRosterSessionIsDayCentre(row)) return 'day_centre';
+      if(typeof portalClientIsDayCentreSharedParticipant === 'function'
+        && portalClientIsDayCentreSharedParticipant(row && (row.clientId || row.client_name || row.clientName || row.name))) return 'day_centre';
+      if(/day\s*centre/.test(act)) return 'day_centre';
+      if(stem === 'tinashe' || (typeof portalRosterSessionIsBespokeShared === 'function' && portalRosterSessionIsBespokeShared(row))) return 'bespoke';
+      if(/bespoke/.test(act)) return 'bespoke';
+      if(/aquatic|swim/.test(act)) return 'aquatic';
       return '';
+    }
+    function portalShareCanonStaff(v){
+      try{
+        if(typeof portalCanonicalStaffKeyForMatch === 'function'){
+          const k = portalCanonicalStaffKeyForMatch(v);
+          if(k) return k;
+        }
+      }catch(_){}
+      return String(v || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+    }
+    function portalShareStaffSkip(key){
+      const k = String(key || '').trim().toLowerCase();
+      if(!k) return true;
+      return /coverneeded|unassigned|^tbc$|^tba$|^none$|^na$|^office$|^duty$|^manager$|^cover$/.test(k);
+    }
+    function portalShareStaffAwayOnIso(staffKey, iso){
+      try{
+        if(typeof portalTermStaffAwayDatesFor === 'function'){
+          const dates = portalTermStaffAwayDatesFor(staffKey) || [];
+          if(dates.indexOf(iso) >= 0) return true;
+        }
+      }catch(_){}
+      return false;
+    }
+    function portalShareStaffTokens(row){
+      const out = [];
+      function add(v){
+        String(v || '').split(/[,/&+]|\s+and\s+/i).forEach(function(p){
+          const t = String(p || '').trim();
+          if(t) out.push(t);
+        });
+      }
+      add(row && row.staffId);
+      add(row && row.staff_id);
+      add(row && row.instructors);
+      add(row && row.instructor);
+      add(row && row.staffNames);
+      return out;
+    }
+    function portalShareStartMins(row){
+      if(!row) return 24 * 60;
+      try{
+        if(typeof portalCanonicalHmToken === 'function'){
+          const hm = portalCanonicalHmToken(row.start || row.anchor_start || '');
+          if(hm && /^\d{1,2}:\d{2}$/.test(hm)){
+            const p = hm.split(':');
+            return (parseInt(p[0], 10) * 60) + parseInt(p[1], 10);
+          }
+        }
+      }catch(_){}
+      const ts = String(row.time_slot || row.time || row.anchor_time_slot_label || '').trim().toLowerCase();
+      const m = ts.match(/(\d{1,2})(?:[:.](\d{2}))?/);
+      if(!m) return 24 * 60;
+      let h = parseInt(m[1], 10);
+      let min = m[2] ? parseInt(m[2], 10) : 0;
+      if(h >= 1 && h <= 7) h += 12;
+      return h * 60 + min;
+    }
+    function portalShareStaffFirstName(staffKey){
+      try{
+        if(typeof portalStaffAuthorFirstName === 'function'){
+          const n = String(portalStaffAuthorFirstName(staffKey) || '').trim();
+          if(n) return n;
+        }
+      }catch(_){}
+      try{
+        if(typeof portalStaffDisplayName === 'function'){
+          const dn = String(portalStaffDisplayName(staffKey) || '').trim();
+          if(dn) return dn.split(/\s+/)[0];
+        }
+      }catch(_){}
+      const k = String(staffKey || '').trim();
+      if(!k) return '';
+      return k.charAt(0).toUpperCase() + k.slice(1);
+    }
+    function portalShareJoinNames(names){
+      if(!names.length) return '';
+      if(names.length === 1) return names[0];
+      if(names.length === 2) return names[0] + ' & ' + names[1];
+      return names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1];
     }
     try{ window.portalTwoToOneSupportLabelForSession = portalTwoToOneSupportLabelForSession; }catch(_){}
     function portalSessionAddPeopleChips(kind, payload, ov, sessionDateIso){
@@ -1820,7 +2031,11 @@
       const chipParts = chip ? (chip.match(/portal-session-slot-chip|portal-sched-ov-badge/g) || []).length : 0;
       const chipsWrapCls = chipParts > 1 ? ' session-chips-below-name--wrap' : '';
       const chipsRow = meetingChipsRow || (chip ? '<div class="session-chips-below-name' + chipsWrapCls + '">' + chip + '</div>' : '');
-      const namePart = `<span class="session-name-stack">${nameCore}${chipsRow}</span>`;
+      const supportSub = String(item.portalTwoToOneSupportLabel || '').trim();
+      const supportLine = supportSub
+        ? '<span class="session-meta-support">' + escapeHtml(supportSub) + '</span>'
+        : '';
+      const namePart = `<span class="session-name-stack">${nameCore}${supportLine}${chipsRow}</span>`;
       return `<div class="session-card-body session-card-body--segments">`
         + `<div class="session-line session-line--name session-line--name-lead">${namePart}</div>`
         + `<div class="session-seg-list">${todaySessionSegmentRowsHtml(item)}</div>`
@@ -3262,7 +3477,8 @@
         const sk = String(row.payload && row.payload.kind || '').trim().toLowerCase();
         if(sk === 'shadowing') return 'shadowing';
         if(sk === 'meeting') return 'meeting';
-        return 'training';
+        if(sk === 'training') return 'training';
+        return 'new_shift';
       }
       return 'other';
     }
@@ -3868,7 +4084,9 @@
           /* Off that day: do not surface Admin Changes for what happens while away. */
           try{
             const awaySid = typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '';
-            if(awaySid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, awaySid)) continue;
+            if(awaySid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, awaySid)
+              && !(typeof portalStaffHasAdminAddedShiftOnCalendarDate === 'function'
+                && portalStaffHasAdminAddedShiftOnCalendarDate(iso, awaySid))) continue;
           }catch(_){}
           if(String(r.override_type || '') === 'slot_open') continue;
           if(String(r.override_type || '') === 'client_absence_announced'){

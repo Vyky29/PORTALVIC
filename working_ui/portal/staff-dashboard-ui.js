@@ -1236,6 +1236,10 @@
       if(typeof portalTermStaffExtraCalendarDates === 'function' && portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0){
         return false;
       }
+      if(typeof portalStaffHasAdminAddedShiftOnCalendarDate === 'function'
+        && portalStaffHasAdminAddedShiftOnCalendarDate(iso, sid)){
+        return false;
+      }
       try{
         const dw = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
         if(typeof portalStaffClientSessionsOnCalendarDate === 'function'
@@ -1354,16 +1358,22 @@
       const iso = String(isoYmd || '').trim().slice(0, 10);
       const sid = String(staffId || '').trim().toLowerCase();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid) return false;
-      if(portalTermStaffAwayDatesFor(sid).indexOf(iso) >= 0) return false;
+      if(portalTermStaffAwayDatesFor(sid).indexOf(iso) >= 0
+        && !(typeof portalStaffHasAdminAddedShiftOnCalendarDate === 'function'
+          && portalStaffHasAdminAddedShiftOnCalendarDate(iso, sid))) return false;
       const rows = typeof portalScheduleOverrideRowsForSessionIso === 'function'
         ? portalScheduleOverrideRowsForSessionIso(iso)
         : (typeof portalScheduleOverrideRowsAll === 'function' ? portalScheduleOverrideRowsAll() : []);
       let found = false;
       rows.forEach(function(ov){
         if(!ov || String(ov.status || 'active') !== 'active') return;
-        if(String(ov.anchor_staff_id || '').trim().toLowerCase() !== sid) return;
+        if(typeof portalStaffKeysMatch === 'function'){
+          if(!portalStaffKeysMatch(ov.anchor_staff_id, sid)) return;
+        }else if(String(ov.anchor_staff_id || '').trim().toLowerCase() !== sid){
+          return;
+        }
         const t = String(ov.override_type || '').trim();
-        if(t === 'slot_update' || t === 'slot_close' || t === 'instructor_reassign' || t === 'client_cancelled') found = true;
+        if(t === 'slot_update' || t === 'slot_close' || t === 'instructor_reassign' || t === 'client_cancelled' || t === 'session_add') found = true;
         if(t === 'slot_clear_client' && !(ov.payload && ov.payload.cancelled_by_admin)) found = true;
       });
       return found;
@@ -1414,7 +1424,10 @@
           if(kind === 'shadowing') pack.hasShadowing = true;
           else if(kind === 'training') pack.hasTraining = true;
           else if(kind === 'meeting') pack.hasMeeting = true;
-          else pack.hasUpdated = true;
+          else {
+            pack.hasNewShift = true;
+            pack.hasUpdated = true;
+          }
         }else if(t === 'slot_update'){
           if(P && typeof P.overrideIsNewShiftDayUpdate === 'function' && P.overrideIsNewShiftDayUpdate(row)){
             pack.hasNewShift = true;
@@ -1758,6 +1771,10 @@
           if(kind === 'training') out.hasTraining = true;
           else if(kind === 'shadowing') out.hasShadowing = true;
           else if(kind === 'meeting') out.hasMeeting = true;
+          else {
+            out.hasNewShift = true;
+            out.hasUpdated = true;
+          }
         });
         const hostLabels = typeof portalShadowingHostLabelsForDay === 'function'
           ? portalShadowingHostLabelsForDay(iso, sid, dashboardData && dashboardData.staffName)
@@ -6125,6 +6142,16 @@
             portalAdminReminderId: pending.portalAdminReminderId || ''
           };
           portalReminderAckMapSave(remAck);
+          if(Array.isArray(pending.scheduleOverrideDismissIds) && pending.scheduleOverrideDismissIds.length
+            && typeof window.portalQuickMenuDismissOverrideById === 'function'){
+            pending.scheduleOverrideDismissIds.forEach(function(did){
+              if(did) window.portalQuickMenuDismissOverrideById(did);
+            });
+            try{ window.__PORTAL_NEXT_SESSION_CAL_CACHE__ = null; }catch(_){}
+            try{ if(typeof window.portalInvalidateSignableItemsMemo === 'function') window.portalInvalidateSignableItemsMemo(); }catch(_){}
+            try{ if(typeof window.portalInvalidateReminderStateCache === 'function') window.portalInvalidateReminderStateCache(); }catch(_){}
+            try{ window.__PORTAL_PENDING_OVERRIDE_DAYS__ = null; }catch(_){}
+          }
           if(isProfileCampaign && typeof portalAckAllAnnualProfileCampaignReminders === 'function'){
             portalAckAllAnnualProfileCampaignReminders(
               portalReminderAckMapLoad,
