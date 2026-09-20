@@ -59,7 +59,7 @@
 
   var TIER_UI_MODULES = [
     "/portal/portal_quick_menu_service_leads.js?v=20260621-pickup-lead-roster",
-    "/portal/portal_lead_team_shift.js?v=20260920-berta-full-day",
+    "/portal/portal_lead_team_shift.js?v=20260920-team-slot-times",
   ];
 
   var TIER_IDLE = [

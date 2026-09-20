@@ -1867,12 +1867,9 @@ function renderLeadTeamRosterTableHtml(model) {
                 ];
           const lines = segs
             .map(function (s) {
-              const t = leadTeamStaffFacingTimeLabel(
-                k,
-                iso,
-                s.time || h.time,
-                h.service
-              );
+              /* Each line is that slot (11-12 Day Centre / 12-1 Big Pool), not the
+                 worker's whole paid band stamped on every row. */
+              const t = formatLeadTeamTimeCompact(s.time || h.time);
               const area = s.area ? " " + escHtml(String(s.area).toUpperCase()) : "";
               return (
                 '<div class="portal-lead-team-roster__line">' +
