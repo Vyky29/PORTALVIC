@@ -101,7 +101,7 @@
   <script src="/portal/admin-payslips.js?v=20260702-payslip-month-view"></script>
   <script src="/portal/admin-portal-pins.js?v=20260911-roberto-fast"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
-  <script src="/portal/admin-training-progress.js?v=20260608-device-attribution"></script>
+  <script src="/portal/admin-training-progress.js?v=20260920-no-live-map"></script>
   <script src="/portal/admin-push-devices.js?v=20260619-push-devices"></script>
   <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
   <script src="/portal/admin-portal-parent-contact-edit.js?v=20260730-add-contact"></script>
@@ -112,12 +112,11 @@
   <script src="/portal/admin-portal-achievements.js?v=20260716-return-inbox-stay"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260703-ios-gallery-upload-fix" />
-  <script src="/portal/admin-portal-staff-map.js?v=20260610-live-map-all"></script>
 <script src="/portal/portal_ops_admin_display.js?v=20260630-sevitha-admin-fix"></script>
 <script src="/portal/portal_admin_topbar.js?v=20260919-sel-chip"></script>
   <script src="/portal/portal_admin_surface_map.js?v=20260704-login-map-fix"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260911-teleport-iso" />
-  <script src="/portal/admin-portal-ghost-teleport.js?v=20260911-teleport-iso"></script>
+  <script src="/portal/admin-portal-ghost-teleport.js?v=20260920-no-live-map"></script>
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
   <script src="/portal/portal_ld_funding_letters.js?v=20260714-ld-pdf-logo"></script>
   <script src="/portal/admin_ld_funding_review.js?v=20260714-ld-docs-rls"></script>
@@ -475,7 +474,6 @@
       { id:'portal_activity', label:'Portal activity' },
       { id:'portal_training_progress', label:'Training & readiness' },
       { id:'portal_push_devices', label:'Staff push devices' },
-      { id:'staff_live_map', label:'Staff live map' },
       { id:'staff_ghost_teleport', label:'Dashboard teleport' },
       { id:'staffhr', label:'H&R' },
       { id:'onboarding', label:'Onboarding' },
@@ -524,7 +522,7 @@
       { id:'g_messages', label:'Messages', children:['portal_parent_notify_log','portal_staff_whatsapp','portal_parent_broadcast'] },
       { id:'g_zoho', label:'H&R', children:['staffhr','roster_spreadsheets','onboarding','__h:Staff files','portal_docs_certificate','portal_docs_passport','__h:More HR','staffhr_contracts','staffhr_training_records','staffhr_uniform','recruitment','interviews'] },
       { id:'g_supabase', label:'Documents', children:['__h:Policies','policies_portal','policies','__h:Forms','portal_climbing_registrations','__h:Workers','portal_payslips','portal_docs_timesheet','portal_docs_expense','__h:More files','day_centre_documents','portal_docs_portalpin','portal_docs_checklist','portal_docs_firstaid'] },
-      { id:'g_more', label:'More', children:['__h:Extra hubs','dashboard','operations_admin','operator','receptionist','c4k_reviews','c4k_reports','comms_ops','comms_bookings','commissioning_terms','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_live_map','staff_ghost_teleport'] },
+      { id:'g_more', label:'More', children:['__h:Extra hubs','dashboard','operations_admin','operator','receptionist','c4k_reviews','c4k_reports','comms_ops','comms_bookings','commissioning_terms','__h:Monitoring','portal_activity','portal_training_progress','portal_push_devices','staff_ghost_teleport'] },
       { id:'g_settings_portal', label:'Settings', children:['settings','admin_office_help','portal_device_notifications','logs','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
@@ -581,7 +579,6 @@
       portal_activity:'<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>',
       portal_training_progress:'<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
       portal_push_devices:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/><path d="M12 2v2"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/>',
-      staff_live_map:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>',
       staff_ghost_teleport:'<path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>',
       reports:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
       policies:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
@@ -2188,13 +2185,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(prevViewId && prevViewId !== String(id || '')){
         portalAdminSaveViewScroll(prevViewId);
       }
-      if(state.view === 'staff_live_map' && id !== 'staff_live_map'){
-        try{
-          if(window.PortalStaffLiveMap && typeof window.PortalStaffLiveMap.destroyModule === 'function'){
-            window.PortalStaffLiveMap.destroyModule();
-          }
-        }catch(_mapDestroy){}
-      }
+      if(id === 'staff_live_map') id = 'nav_hub';
       if(state.view === 'staff_ghost_teleport' && id !== 'staff_ghost_teleport'){
         try{
           if(window.PortalGhostTeleport && typeof window.PortalGhostTeleport.destroyModule === 'function'){
@@ -26400,7 +26391,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='portal_training_progress') html = viewPortalTrainingProgress();
       else if(id==='portal_push_devices') html = viewPortalPushDevices();
       else if(id==='participant_achievements') html = viewParticipantAchievements();
-      else if(id==='staff_live_map') html = viewStaffLiveMap();
       else if(id==='staff_ghost_teleport') html = viewStaffGhostTeleport();
             else if(id==='policies') html = viewPoliciesSignoffs();
       else if(id==='onboarding') html = viewOnboarding();
@@ -27128,7 +27118,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_activity:'Staff portal visits — login, pages, and active-tab time (UK London).',
         portal_training_progress:'Staff readiness — training, compliance sign-offs, and app/device setup in one operational view.',
         portal_push_devices:'Who has Web Push registered on their phone or browser — real background alerts, not just the browser Allow flag.',
-        staff_live_map:'Live map for all rostered staff: GPS from 15 min before first session until 15 min after last. The portal app must stay open on each worker\'s phone — push alerts do not replace GPS.',
         staff_ghost_teleport:'Open any worker dashboard in read-only ghost view — roster and TODAY mirror without their PIN or logging them out.',
         policies:'Live matrix: every worker × company policies and procedures.',
         policies_portal:'Company policies and procedures library (How we work, What to open, emergency guides).',
@@ -27273,7 +27262,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         preview:[],
         status:'',
         primary:['admin_office_help','settings','logs','portal_nav_alerts'],
-        secondary:['dashboard','operations_admin','operator','portal_activity','staff_live_map','c4k_reviews','c4k_reports']
+        secondary:['dashboard','operations_admin','operator','portal_activity','c4k_reviews','c4k_reports']
       }
     ];
     function opsHubResolveAction(action){
@@ -27756,7 +27745,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('portal_activity', '', 'analytics', 'Portal activity', 'Login, pages & time on app', false, 'analytics')+
         portalDashTileHtml('portal_training_progress', '', 'analytics', 'Staff readiness', 'Training, compliance and app setup', false, 'analytics')+
         portalDashTileHtml('portal_push_devices', '', 'portal_push_devices', 'Staff push devices', 'Background alerts registered', false, 'analytics')+
-        portalDashTileHtml('staff_live_map', '', 'clients', 'Staff live map', 'On-site locations (~10 m)', false, 'scheduling')+
         portalDashTileHtml('staff_ghost_teleport', '', 'analytics', 'Dashboard teleport', 'Read-only ghost view of worker app', false, 'analytics')+
         portalDashTileHtml('', '', 'announcements', 'Announcements', 'Notices &amp; reminders', false, 'announcements', 'announcements_comms');
       return (
@@ -28489,25 +28477,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void window.portalAdminLoadHeavyScripts(['roster']).then(doBindAchievements).catch(doBindAchievements);
       }else{
         doBindAchievements();
-      }
-    }
-    function portalStaffLiveMapConfigureOnce(){
-      if(window.__portalStaffLiveMapConfigured || !window.PortalStaffLiveMap) return;
-      window.__portalStaffLiveMapConfigured = true;
-      window.PortalStaffLiveMap.configure({
-        esc: esc,
-        getClient: getSchedSupabaseClient
-      });
-    }
-    function viewStaffLiveMap(){
-      portalStaffLiveMapConfigureOnce();
-      return window.PortalStaffLiveMap ? window.PortalStaffLiveMap.viewHtml() : '<p class="page-intro">Staff map module failed to load.</p>';
-    }
-    function bindStaffLiveMapModule(){
-      portalStaffLiveMapConfigureOnce();
-      portalGhostTeleportConfigureOnce();
-      if(window.PortalStaffLiveMap && typeof window.PortalStaffLiveMap.bindModule === 'function'){
-        window.PortalStaffLiveMap.bindModule();
       }
     }
     function portalGhostTeleportConfigureOnce(){
@@ -30462,7 +30431,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='office_calendar'||v==='open_places_2627'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='staffhr_training_records'||v==='staffhr_uniform'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='reenrol_payments'||v==='commissioning_terms'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='day_centre_documents'||v==='portal_participant_documents'||v==='portal_climbing_registrations'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='office_calendar'||v==='open_places_2627'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='staffhr_training_records'||v==='staffhr_uniform'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='reenrol_payments'||v==='commissioning_terms'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='day_centre_documents'||v==='portal_participant_documents'||v==='portal_climbing_registrations'||v==='portal_parent_consents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='portal_push_devices'||v==='participant_achievements'||v==='portal_parent_notify_log'||v==='portal_staff_whatsapp'||v==='portal_parent_broadcast'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -30885,7 +30854,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='portal_staff_whatsapp') bindPortalStaffWhatsappModule();
       if(id==='portal_parent_broadcast') bindPortalParentBroadcastModule();
       if(id==='participant_achievements') bindParticipantAchievementsModule();
-      if(id==='staff_live_map') bindStaffLiveMapModule();
       if(id==='staff_ghost_teleport') bindStaffGhostTeleportModule();
       if(id==='cs_cliq') bindCsCliqModule();
       if(id==='clients'){
@@ -35232,8 +35200,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(qp && (navIdIsRoutableView(qp) || qp === 'reports')) initial = qp;
       else if(hash && (navIdIsRoutableView(hash) || hash === 'reports')) initial = hash;
-      /* Stale #staff_live_map bookmarks (old mobile default) — use hub unless ?view= is explicit. */
-      if(!qp && initial === 'staff_live_map') initial = 'nav_hub';
+      if(initial === 'staff_live_map' || qp === 'staff_live_map' || hash === 'staff_live_map') initial = 'nav_hub';
       if(qp === 'ceo' || hash === 'ceo') initial = 'dashboard';
       var pathLower = String(location.pathname || '').toLowerCase();
       if(pathLower.indexOf('/adminportal') >= 0 || pathLower.indexOf('/operations-admin') >= 0){
@@ -35322,7 +35289,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 surf &&
                 (surf.cohort === 'ops_admin' || surf.cohort === 'ceo_exec') &&
                 !surfParams.get('view') &&
-                (state.view === 'staff_live_map' || surfHash === 'staff_live_map')
+                surfHash === 'staff_live_map'
               ){
                 setView(surf.mobile.defaultView || surf.desktop.defaultView || 'nav_hub');
               }
