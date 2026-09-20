@@ -2727,17 +2727,21 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   border-radius:8px;
 }
 .ops-hub--today-first .ops-hub__today{
-  grid-template-columns:minmax(140px,0.85fr) minmax(0,2.6fr) minmax(140px,0.85fr);
+  grid-template-columns:repeat(4, minmax(88px, 0.55fr)) minmax(360px, 1.7fr);
   gap:clamp(10px,1.2vw,14px);
   margin:0 0 clamp(6px,1vh,10px);
   flex-shrink:0;
 }
 .ops-hub--today-first .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
-  min-height:clamp(168px,20vh,220px);
-  padding:clamp(14px,1.5vw,18px);
+  min-height:0;
+  max-height:188px;
+  height:188px;
+  padding:8px 10px;
   border-radius:10px;
-  grid-template-columns:minmax(120px,150px) minmax(0,1fr);
-  gap:clamp(12px,1.4vw,18px);
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:auto minmax(0,1fr);
+  gap:6px;
+  align-self:start;
 }
 .ops-hub--today-first .ops-hub__today--cal-focus .ops-hub__today-item--calendar > .ops-hub-cal-glance__copy > .ops-hub__today-v{
   font-size:clamp(22px,1.4vw + 14px,28px);
@@ -2787,12 +2791,30 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
 .ops-hub--today-first .ops-hub-cal-month__wd{
   font-size:10px;
 }
+.ops-hub--today-first .ops-hub__today > .ops-hub__feature{
+  align-self:stretch;
+  height:188px;
+  min-height:188px;
+  max-height:188px;
+}
+.ops-hub--today-first .ops-hub__feature{
+  justify-content:flex-start;
+}
+.ops-hub--today-first .ops-hub__today--cal-focus .ops-hub__today-item--calendar > .ops-hub-cal-glance__copy{
+  flex-direction:row;
+  align-items:baseline;
+  gap:8px;
+  align-self:stretch;
+}
+.ops-hub--today-first .ops-hub__today--cal-focus .ops-hub__today-item--calendar > .ops-hub-cal-glance__copy > .ops-hub__today-s{
+  display:none;
+}
 .ops-hub--today-first .ops-hub-cal-day{
-  border-radius:8px;
-  padding:4px 2px;
+  border-radius:4px;
+  padding:1px 0;
 }
 .ops-hub--today-first .ops-hub-cal-day__n{
-  font-size:clamp(12px,0.7vw + 10px,15px);
+  font-size:11px;
   font-weight:700;
 }
 .ops-hub--today-first .ops-hub__body--flat{
@@ -3004,12 +3026,15 @@ body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
   }
   .ops-hub--today-first .ops-hub__today--cal-focus .ops-hub__today-item--calendar{
     grid-column:1 / -1;
-    grid-row:1;
-    min-height:clamp(168px,22vh,200px);
+    grid-row:auto;
+    height:auto;
+    max-height:none;
+    min-height:160px;
   }
-  .ops-hub--today-first .ops-hub__today-item--alerts,
-  .ops-hub--today-first .ops-hub__today-item--pending{
+  .ops-hub--today-first .ops-hub__today > .ops-hub__feature{
+    height:auto;
     min-height:140px;
+    max-height:none;
   }
 }
 @media (max-width:720px){
