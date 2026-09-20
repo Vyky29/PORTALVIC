@@ -232,8 +232,17 @@
     meta.snapIso = snapIso;
     var standing = [];
     if (project && snapIso && snapIso !== dateKey) {
+      var PRCSnap = global.PortalRosterCanonical;
       for (var s = 0; s < sameDow.length; s++) {
-        if (rowSessionDate(sameDow[s]) === snapIso) standing.push(sameDow[s]);
+        if (rowSessionDate(sameDow[s]) !== snapIso) continue;
+        if (
+          PRCSnap &&
+          typeof PRCSnap.shouldProjectDayCentreRowFromSnap === "function" &&
+          !PRCSnap.shouldProjectDayCentreRowFromSnap(sameDow[s], snapIso, dateKey)
+        ) {
+          continue;
+        }
+        standing.push(sameDow[s]);
       }
     }
     meta.usedStanding = standing.length > 0;

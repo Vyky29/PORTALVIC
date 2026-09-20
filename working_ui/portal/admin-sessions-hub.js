@@ -1348,6 +1348,13 @@
         ) {
           return false;
         }
+        if (
+          canon &&
+          typeof canon.shouldProjectDayCentreRowFromSnap === "function" &&
+          !canon.shouldProjectDayCentreRowFromSnap(r, standIso, isoDate)
+        ) {
+          return false;
+        }
         /*
          * Sun 6 Sep Hub Multi is fully owned by scrubAndEnsureSep6HubCover (John + Berta books).
          * Do not also project summer standing Hub Multi onto that day.

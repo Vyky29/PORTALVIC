@@ -18,7 +18,7 @@
   "use strict";
 
   var SOURCE_ID = "live_madre+bundle+portal_roster_rows";
-  var SOURCE_VERSION = 134;
+  var SOURCE_VERSION = 135;
 
   /**
    * Autumn standing weekday stamps (first full standing week after week-1 DC).
@@ -699,6 +699,56 @@
   function isAutumnDcStandingTemplateRow(row) {
     if (!row || !isDayCentreService(row.service)) return false;
     return isAutumnStandingTemplateIso(row.session_date);
+  }
+
+  function dcStandingStaffKey(raw) {
+    return String(raw || "")
+      .trim()
+      .toLowerCase()
+      .split(/[,\s/]+/)[0]
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function dcStandingTimeKey(raw) {
+    return String(raw || "")
+      .toLowerCase()
+      .replace(/:/g, ".")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  /** True when this DC seat is Autumn standing (not Fadi-off Office / extra halves). */
+  function isAutumnDayCentreStandingSeat(row) {
+    if (!row || !isDayCentreService(row.service)) return false;
+    var dk = normalizeDowKey(row.day);
+    var cols = AUTUMN_DAY_CENTRE_BOARD[dk];
+    if (!cols || !cols.length) return false;
+    var staff = dcStandingStaffKey(row.instructors);
+    var client = String(row.client_name || "")
+      .trim()
+      .toLowerCase();
+    var time = dcStandingTimeKey(row.time_slot);
+    if (!staff || !client) return false;
+    for (var i = 0; i < cols.length; i++) {
+      if (dcStandingStaffKey(cols[i].staff) !== staff) continue;
+      var clients = cols[i].clients || [];
+      for (var j = 0; j < clients.length; j++) {
+        if (String(clients[j].name || "").trim().toLowerCase() !== client) continue;
+        if (dcStandingTimeKey(clients[j].time) === time) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Fadi-off DC seats are dated 7–19 Sep but share the Monday standing stamp (7 Sep).
+   * Do not project Office / extra halves onto later Mondays once Fadi is back.
+   */
+  function shouldProjectDayCentreRowFromSnap(row, snapIso, targetIso) {
+    if (!row || !isDayCentreService(row.service)) return true;
+    if (!isFadiAbsentDcBoardIso(snapIso)) return true;
+    if (isFadiAbsentDcBoardIso(targetIso)) return true;
+    return isAutumnDayCentreStandingSeat(row);
   }
 
   function isTuesdayActonAquaticStandingRow(row) {
@@ -4262,6 +4312,8 @@
     isFadiAbsentDcWindowIso: isFadiAbsentDcWindowIso,
     isFadiAbsentDcBoardIso: isFadiAbsentDcBoardIso,
     isAutumnDcStandingTemplateRow: isAutumnDcStandingTemplateRow,
+    isAutumnDayCentreStandingSeat: isAutumnDayCentreStandingSeat,
+    shouldProjectDayCentreRowFromSnap: shouldProjectDayCentreRowFromSnap,
     AUTUMN_NO_SESSION_STAFF_KEYS: AUTUMN_NO_SESSION_STAFF_KEYS,
     AUTUMN_TERM_FROM_ISO: AUTUMN_TERM_FROM_ISO,
     AUTUMN_STANDING_TEMPLATE_ISO_SET: AUTUMN_STANDING_TEMPLATE_ISO_SET,
