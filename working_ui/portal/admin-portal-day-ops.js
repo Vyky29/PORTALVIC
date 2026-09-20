@@ -24,13 +24,14 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var PORTAL_DAY_OPS_BUILD = '20260920-venue-filters';
+  var PORTAL_DAY_OPS_BUILD = '20260920-venue-video-admin';
   var venueReviewFilters = {
     venue: '',
     staff: '',
     term: '',
     kind: ''
   };
+  var venueAdminVideoUploading = {};
   function portalHubBuildToken() {
     return String(global.PORTAL_ADMIN_HUB_BUILD || PORTAL_DAY_OPS_BUILD || '').trim();
   }
@@ -1606,6 +1607,160 @@
     if (k === 'close' || k === 'closing') return 'Closing';
     return '';
   }
+  function venueReviewAdminClient() {
+    var c = cfg.getClient && cfg.getClient();
+    if (c && c.storage) return c;
+    var box = global.__PORTAL_SUPABASE__;
+    return box && box.client ? box.client : null;
+  }
+  function venueAdminVideoMime(mime) {
+    var raw = String(mime || '')
+      .split(';')[0]
+      .trim()
+      .toLowerCase();
+    if (
+      raw === 'video/webm' ||
+      raw === 'video/mp4' ||
+      raw === 'video/quicktime' ||
+      raw === 'video/ogg' ||
+      raw === 'video/x-matroska'
+    ) {
+      return raw;
+    }
+    if (raw.indexOf('quicktime') >= 0 || raw.indexOf('mov') >= 0) return 'video/quicktime';
+    if (raw.indexOf('mp4') >= 0 || raw.indexOf('m4v') >= 0) return 'video/mp4';
+    if (raw.indexOf('ogg') >= 0) return 'video/ogg';
+    if (raw.indexOf('matroska') >= 0 || raw.indexOf('mkv') >= 0) return 'video/x-matroska';
+    return 'video/webm';
+  }
+  function venueAdminVideoExt(mime) {
+    var m = String(mime || '').toLowerCase();
+    if (m.indexOf('mp4') >= 0 || m.indexOf('m4v') >= 0) return 'mp4';
+    if (m.indexOf('quicktime') >= 0 || m.indexOf('mov') >= 0) return 'mov';
+    if (m.indexOf('ogg') >= 0) return 'ogv';
+    return 'webm';
+  }
+  function ensureVenueAdminVideoInput() {
+    var inp = document.getElementById('portalVenueAdminVideoFile');
+    if (inp) return inp;
+    inp = document.createElement('input');
+    inp.type = 'file';
+    inp.id = 'portalVenueAdminVideoFile';
+    inp.accept = 'video/*,video/mp4,video/quicktime,.mov,.mp4,.webm';
+    inp.setAttribute('hidden', 'hidden');
+    document.body.appendChild(inp);
+    inp.addEventListener('change', function () {
+      var file = inp.files && inp.files[0];
+      var reviewId = String(inp.getAttribute('data-review-id') || '').trim();
+      try {
+        inp.value = '';
+      } catch (_clr) {}
+      if (!file || !reviewId) return;
+      void uploadVenueReviewAdminVideo(reviewId, file);
+    });
+    return inp;
+  }
+  function patchVenueReviewVideoLocal(reviewId, path, mime) {
+    (payload.venue_reviews || []).forEach(function (r) {
+      if (String((r && r.id) || '') === reviewId) {
+        r.video_storage_path = path;
+        r.video_mime_type = mime;
+      }
+    });
+    try {
+      if (Array.isArray(window.__PORTAL_VENUE_REVIEWS__)) {
+        window.__PORTAL_VENUE_REVIEWS__.forEach(function (r) {
+          if (String((r && r.id) || '') === reviewId) {
+            r.video_storage_path = path;
+            r.video_mime_type = mime;
+          }
+        });
+      }
+    } catch (_cache) {}
+  }
+  async function uploadVenueReviewAdminVideo(reviewId, file) {
+    var MAX = 50 * 1024 * 1024;
+    if (file.size > MAX) {
+      alert('Video is too large (max 50 MB).');
+      return;
+    }
+    var client = venueReviewAdminClient();
+    if (!client || !client.storage) {
+      alert('Sign in required to upload venue videos.');
+      return;
+    }
+    var row = (payload.venue_reviews || []).filter(function (r) {
+      return String((r && r.id) || '') === reviewId;
+    })[0];
+    if (!row) {
+      alert('Could not find that venue review.');
+      return;
+    }
+    var mime = venueAdminVideoMime(file.type || 'video/mp4');
+    var ext = venueAdminVideoExt(mime);
+    var day = String(row.review_date || '').slice(0, 10) || 'undated';
+    var kind = venueReviewKindKey(row) === 'Closing' ? 'close' : 'open';
+    var uid = String(row.submitted_by_user_id || 'admin').trim() || 'admin';
+    var path = uid + '/' + day + '/' + kind + '_admin_' + String(Date.now()) + '.' + ext;
+    var uploadBlob = String(file.type || '').indexOf(';') >= 0 ? new Blob([file], { type: mime }) : file;
+    venueAdminVideoUploading[reviewId] = true;
+    try {
+      await renderLeadVenueTables();
+      var up = await client.storage.from('venue-review-videos').upload(path, uploadBlob, {
+        contentType: mime,
+        upsert: false
+      });
+      if (up.error) throw up.error;
+      var patch = await client
+        .from('venue_reviews')
+        .update({
+          video_storage_path: path,
+          video_mime_type: mime
+        })
+        .eq('id', reviewId)
+        .select('id, video_storage_path, video_mime_type')
+        .maybeSingle();
+      if (patch.error) throw patch.error;
+      if (!patch.data || !patch.data.video_storage_path) {
+        throw new Error('Saved the file but could not attach it to this review. Try again.');
+      }
+      patchVenueReviewVideoLocal(reviewId, path, mime);
+    } catch (err) {
+      console.error(err);
+      var msg = String((err && err.message) || err || '');
+      if (/mime|not allowed|invalid|content type/i.test(msg)) {
+        msg = 'This video format was not accepted. Use MP4 or MOV from Photos.';
+      }
+      alert('Could not attach the video.\n' + msg);
+    } finally {
+      delete venueAdminVideoUploading[reviewId];
+      await renderLeadVenueTables();
+    }
+  }
+  function venueReviewVideoCellHtml(r) {
+    var reviewId = String((r && r.id) || '').trim();
+    var videoPath = String((r && r.video_storage_path) || '').trim();
+    var uploading = !!(reviewId && venueAdminVideoUploading[reviewId]);
+    var playBtn = videoPath
+      ? '<button type="button" class="portal-forms-view-btn" data-venue-video-path="' +
+        esc(videoPath) +
+        '" aria-label="Play venue walkthrough video">Play</button>'
+      : '';
+    var uploadLabel = uploading ? 'Uploading...' : videoPath ? 'Replace' : 'Upload';
+    var uploadBtn = reviewId
+      ? '<button type="button" class="portal-forms-view-btn" data-venue-video-upload="' +
+        esc(reviewId) +
+        '" aria-label="' +
+        (videoPath ? 'Replace' : 'Upload') +
+        ' venue walkthrough video"' +
+        (uploading ? ' disabled' : '') +
+        '>' +
+        uploadLabel +
+        '</button>'
+      : '';
+    if (!playBtn && !uploadBtn) return '—';
+    return '<div class="portal-venue-video-actions">' + playBtn + uploadBtn + '</div>';
+  }
   function uniqueVenueFilterValues(vals) {
     var seen = {};
     var out = [];
@@ -1807,12 +1962,7 @@
       } else {
         venueTbody.innerHTML = filteredVenue
           .map(function (r) {
-            var videoPath = String((r && r.video_storage_path) || '').trim();
-            var videoCell = videoPath
-              ? ('<button type="button" class="portal-forms-view-btn" data-venue-video-path="' +
-                esc(videoPath) +
-                '" aria-label="Play venue walkthrough video">Play</button>')
-              : '—';
+            var videoCell = venueReviewVideoCellHtml(r);
             var kind = venueReviewKindKey(r) || '—';
             return (
               '<tr class="portal-forms-static-row">' +
@@ -1851,6 +2001,20 @@
       if (venueTbody && !venueTbody.__venueVideoBound) {
         venueTbody.__venueVideoBound = true;
         venueTbody.addEventListener('click', function (ev) {
+          var uploadBtn =
+            ev.target && ev.target.closest ? ev.target.closest('[data-venue-video-upload]') : null;
+          if (uploadBtn) {
+            ev.preventDefault();
+            if (uploadBtn.disabled) return;
+            var reviewId = String(uploadBtn.getAttribute('data-venue-video-upload') || '').trim();
+            if (!reviewId || venueAdminVideoUploading[reviewId]) return;
+            var inp = ensureVenueAdminVideoInput();
+            inp.setAttribute('data-review-id', reviewId);
+            try {
+              inp.click();
+            } catch (_click) {}
+            return;
+          }
           var btn = ev.target && ev.target.closest ? ev.target.closest('[data-venue-video-path]') : null;
           if (!btn) return;
           ev.preventDefault();
@@ -1858,8 +2022,7 @@
           if (!path) return;
           void (async function () {
             try {
-              var box = global.__PORTAL_SUPABASE__;
-              var client = box && box.client ? box.client : null;
+              var client = venueReviewAdminClient();
               if (!client || !client.storage) {
                 alert('Sign in required to play venue videos.');
                 return;
