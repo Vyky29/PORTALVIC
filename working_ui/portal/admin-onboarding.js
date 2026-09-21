@@ -81,39 +81,35 @@
 
   function injectStyleOnce() {
     var old = document.getElementById("adminOnboardingStyle");
-    if (old && old.getAttribute("data-ob-pin-cards") === "1") return;
+    if (old && old.getAttribute("data-ob-pin-table") === "1") return;
     if (old) old.remove();
     var css =
-      ".ob-wrap{min-width:0}" +
       ".ob-wrap .ob-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}" +
       ".ob-wrap .ob-refresh{font-size:12px;font-weight:700;color:#0f2747;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:6px 12px;cursor:pointer}" +
       ".ob-wrap .ob-refresh:hover{background:#e0e7ff}" +
-      ".ob-wrap .ob-meta{margin:0 0 14px;font-size:13px;color:#64748b;line-height:1.45;overflow-wrap:break-word}" +
-      ".ob-list{display:flex;flex-direction:column;gap:12px;min-width:0}" +
-      ".ob-card{border:1px solid #e2e8f0;border-radius:14px;background:#fff;padding:14px;min-width:0}" +
-      ".ob-card-top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between;min-width:0}" +
-      ".ob-card-id{min-width:0;flex:1 1 160px}" +
-      ".ob-card-id strong{display:block;font-size:15px;color:#0f2747;overflow-wrap:break-word}" +
-      ".ob-card-checks{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:10px;min-width:0}" +
-      ".ob-check{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#475569;min-width:0}" +
-      ".ob-card-docs{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;min-width:0}" +
+      ".ob-wrap .ob-meta{margin:0 0 14px;font-size:13px;color:#64748b;line-height:1.45}" +
+      ".ob-wrap .ob-table-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:12px;background:#fff}" +
+      ".ob-wrap table.ob-table{width:100%;border-collapse:collapse;font-size:13px}" +
+      ".ob-wrap table.ob-table th,.ob-wrap table.ob-table td{padding:10px 12px;text-align:left;border-bottom:1px solid #e2e8f0;vertical-align:middle;min-width:0}" +
+      ".ob-wrap table.ob-table th{background:#f8fafc;font-weight:700;color:#0f2747;white-space:nowrap}" +
+      ".ob-wrap table.ob-table tr:last-child td{border-bottom:0}" +
       ".ob-pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}" +
       ".ob-pill--yes{background:#d1fae5;color:#065f46}" +
       ".ob-pill--no{background:#f1f5f9;color:#64748b}" +
-      ".ob-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}" +
+      ".ob-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}" +
       ".ob-chip{font-size:11px;font-weight:700;color:#1e3a8a;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:4px 10px;line-height:1.2;font-family:inherit}" +
       ".ob-chip--open{cursor:pointer}" +
       ".ob-chip--open:hover{background:#e0e7ff;border-color:#a5b4fc}" +
-      ".ob-counts{font-size:12px;color:#64748b;line-height:1.4;overflow-wrap:break-word}" +
+      ".ob-counts{font-size:12px;color:#64748b;line-height:1.4}" +
       ".ob-export{display:flex;flex-wrap:wrap;gap:6px}" +
       ".ob-export .ob-link{font-size:11px;font-weight:700;color:#0f2747;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 10px;cursor:pointer}" +
       ".ob-export .ob-link:hover{background:#e0e7ff}" +
       ".ob-export .ob-link:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}" +
-      ".ob-pin{min-width:0;flex:1 1 240px}" +
-      ".ob-pin-missing{margin:0 0 6px;font-size:12px;color:#9a3412;line-height:1.35;overflow-wrap:break-word}" +
-      ".ob-pin-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;letter-spacing:.06em;font-size:16px}" +
+      ".ob-pin{min-width:132px;max-width:200px}" +
+      ".ob-pin-missing{margin:0 0 4px;font-size:11px;color:#9a3412;line-height:1.35;overflow-wrap:break-word}" +
+      ".ob-pin-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;letter-spacing:.06em}" +
       ".ob-pin-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}" +
-      ".ob-pin-issue{font-size:13px;font-weight:700;color:#fff;background:#0f2747;border:1px solid #0f2747;border-radius:10px;padding:8px 14px;cursor:pointer}" +
+      ".ob-pin-issue{font-size:11px;font-weight:700;color:#fff;background:#0f2747;border:1px solid #0f2747;border-radius:8px;padding:4px 10px;cursor:pointer}" +
       ".ob-pin-issue:hover{background:#16345c}" +
       ".ob-pin-issue:disabled{opacity:.45;cursor:not-allowed}" +
       ".ob-pin-copy{font-size:11px;font-weight:700;color:#0f2747;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 10px;cursor:pointer}" +
@@ -126,7 +122,7 @@
       ".ob-notice{padding:16px;font-size:13px;color:#475569;line-height:1.5}";
     var st = document.createElement("style");
     st.id = "adminOnboardingStyle";
-    st.setAttribute("data-ob-pin-cards", "1");
+    st.setAttribute("data-ob-pin-table", "1");
     st.textContent = css;
     document.head.appendChild(st);
   }
@@ -191,7 +187,7 @@
         missingHtml +
         '<div class="ob-pin-actions"><button type="button" class="ob-pin-issue" data-ob-issue-pin="' +
         sid +
-        '">Validate and issue PIN</button></div></div>'
+        '">Issue PIN</button></div></div>'
       );
     }
     return (
@@ -199,7 +195,7 @@
       missingHtml +
       '<div class="ob-pin-actions"><button type="button" class="ob-pin-issue" disabled title="' +
       esc(missing.join(". ") || "Hub not complete") +
-      '">Validate and issue PIN</button></div></div>'
+      '">Issue PIN</button></div></div>'
     );
   }
 
@@ -233,51 +229,39 @@
     return txt;
   }
 
-  function cardsHtml() {
+  function rowsHtml() {
     if (state.error) {
-      return '<div class="ob-notice"><strong>Onboarding storage not linked.</strong> ' + esc(state.error) + "</div>";
+      return '<tr><td colspan="8"><div class="ob-notice"><strong>Onboarding storage not linked.</strong> ' + esc(state.error) + "</div></td></tr>";
     }
     if (!state.applicants.length) {
-      return '<div class="ob-notice"><strong>No applicants yet.</strong> After an invite they appear here as they use the onboarding hub. Admin validates Job, Health, photo and documents, then issues a PIN.</div>';
+      return '<tr><td colspan="8"><div class="ob-notice"><strong>No applicants yet.</strong> After an invite they appear here as they use the onboarding hub. Admin validates Job, Health, photo and documents, then issues a PIN.</div></td></tr>';
     }
-    return (
-      '<div class="ob-list">' +
-      state.applicants
-        .map(function (a) {
-          var name = (a.display_name || a.portal_staff_name || "").trim();
-          var sid = String(a.applicant_session_id || "");
-          if (!name) name = sid ? "Session " + sid.slice(0, 8) : "Unknown";
-          return (
-            '<article class="ob-card">' +
-            '<div class="ob-card-top">' +
-            '<div class="ob-card-id"><strong>' +
-            esc(name) +
-            '</strong><div class="ob-counts">Last online ' +
-            esc(fmtDate(a.last_online_at)) +
-            " · last upload " +
-            esc(fmtDate(a.last_upload_at)) +
-            "</div></div>" +
-            pinCell(a) +
-            "</div>" +
-            '<div class="ob-card-checks">' +
-            '<span class="ob-check">Job ' +
-            pill(!!a.job_submitted, !!a.job) +
-            "</span>" +
-            '<span class="ob-check">Health ' +
-            pill(!!a.health_submitted, !!a.health) +
-            "</span>" +
-            '<span class="ob-check">Photo ' +
-            pill(!!a.photo, false) +
-            "</span></div>" +
-            '<div class="ob-card-docs">' +
-            docChips(a.uploads, sid, name, a.upload_paths) +
-            exportActions(a) +
-            "</div></article>"
-          );
-        })
-        .join("") +
-      "</div>"
-    );
+    return state.applicants
+      .map(function (a) {
+        var name = (a.display_name || a.portal_staff_name || "").trim();
+        var sid = String(a.applicant_session_id || "");
+        if (!name) name = sid ? "Session " + sid.slice(0, 8) : "Unknown";
+        return (
+          "<tr><td>" +
+          esc(name) +
+          "</td><td>" +
+          pinCell(a) +
+          "</td><td>" +
+          pill(!!a.job_submitted, !!a.job) +
+          "</td><td>" +
+          pill(!!a.health_submitted, !!a.health) +
+          "</td><td>" +
+          pill(!!a.photo, false) +
+          '</td><td class="ob-counts">' +
+          docChips(a.uploads, sid, name, a.upload_paths) +
+          '</td><td class="ob-counts">' +
+          esc(fmtDate(a.last_online_at)) +
+          "</td><td>" +
+          exportActions(a) +
+          "</td></tr>"
+        );
+      })
+      .join("");
   }
 
   function render() {
@@ -290,8 +274,12 @@
       '<p class="ob-meta" id="obMeta">' +
       (state.loading ? "Loading applicant progress…" : esc(metaText())) +
       "</p>" +
-      (state.loading ? '<div class="ob-notice">Loading…</div>' : cardsHtml()) +
-      "</div>";
+      '<div class="ob-table-wrap"><table class="ob-table"><thead><tr>' +
+      "<th>Applicant</th><th>PIN</th><th>Job application</th><th>Health</th><th>Photo</th><th>Documents uploaded</th>" +
+      "<th>Last online</th><th>Export</th>" +
+      "</tr></thead><tbody>" +
+      (state.loading ? '<tr><td colspan="8"><div class="ob-notice">Loading…</div></td></tr>' : rowsHtml()) +
+      "</tbody></table></div></div>";
     bindRoot();
   }
 
@@ -431,7 +419,7 @@
         else alert(msg);
         if (btn) {
           btn.disabled = false;
-          btn.textContent = "Validate and issue PIN";
+          btn.textContent = "Issue PIN";
         }
         return;
       }
