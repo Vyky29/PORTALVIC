@@ -922,7 +922,7 @@
                   <label class="place-option"><input type="checkbox" name="workDay" value="Thursday"><span>Thursday</span></label>
                   <label class="place-option"><input type="checkbox" name="workDay" value="Friday"><span>Friday</span></label>
                 </div>
-                <p class="field-hint">11:00–16:00 = 5 paid hours/day; short comfort break if possible.</p>
+                <p class="field-hint">Ticking Monday–Friday does not mean 25 hours. Default is 5h/day (11:00–16:00) only if weekly hours match that. For 21 hours (Mon–Thu 11:00–15:00, Friday 11:00–16:00) enter <strong>21</strong> in contracted hours.</p>
                 <span class="error-msg">Select at least one work day.</span>
               </fieldset>
             </div>
@@ -933,7 +933,8 @@
             </div>
             <div class="form-group salaried-field hidden" id="fgWeeklyHours">
               <label for="weeklyHours">Contracted hours per week <span aria-hidden="true">*</span></label>
-              <input type="number" id="weeklyHours" name="weeklyHours" min="1" step="0.5" placeholder="e.g. 24">
+              <input type="number" id="weeklyHours" name="weeklyHours" min="1" step="0.5" placeholder="e.g. 21 or 25">
+              <p class="field-hint day-centre-field hidden">Must match the contract. 25 = five full days 11:00–16:00. 21 = Mon–Thu 11:00–15:00 and Friday 11:00–16:00.</p>
               <span class="error-msg">Weekly hours are required.</span>
             </div>
             <div class="form-group salaried-field hidden" id="fgJobTitleOverride">
@@ -1057,7 +1058,7 @@
     </section>
   </div>
 
-  <script src="portal/contract-core.js?v=20260727-role-names"></script>
+  <script src="portal/contract-core.js?v=20260921-21h"></script>
   <script type="module">
     import { bootstrapDashboardSupabase } from "./portal/auth-handler.js?v=20260521-2";
     const gate = document.getElementById("authGate");
@@ -1079,7 +1080,7 @@
         gate.classList.add("hidden");
         root.classList.remove("hidden");
         const s = document.createElement("script");
-        s.src = "portal/hr-contract-app.js?v=20260727-role-names";
+        s.src = "portal/hr-contract-app.js?v=20260921-21h";
         document.body.appendChild(s);
       } catch (e) {
         gate.innerHTML =

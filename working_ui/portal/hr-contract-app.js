@@ -604,16 +604,39 @@
     if (!isDayCentreKind()) return;
     const days = getSelectedWorkDays();
     const wh = $("weeklyHours");
-    if (wh && days.length) wh.value = String(days.length * 5);
+    // Do not overwrite a manually entered weekly hours value (e.g. Roberto 21h).
+    if (wh && days.length && !String(wh.value || "").trim()) {
+      wh.value = String(days.length * 5);
+    }
   }
 
   function getNormalHoursText() {
     if (isDayCentreKind()) {
       const days = getSelectedWorkDays();
-      if (days.length) {
+      if (!days.length) return C.EM;
+      const whRaw = $("weeklyHours") ? String($("weeklyHours").value || "").trim() : "";
+      const wh = whRaw ? Number(whRaw) : NaN;
+      // Standard pattern: N days × 5h (11:00–16:00).
+      if (!isNaN(wh) && wh === days.length * 5) {
         return days.join(", ") + ": 11:00–16:00 (5 paid hours per day)";
       }
-      return C.EM;
+      // Known Day Centre 21h pattern (Mon–Thu 11–15 + Fri 11–16).
+      if (!isNaN(wh) && wh === 21 && days.length === 5) {
+        return (
+          "Monday to Thursday: 11:00–15:00 (4 paid hours per day).\n" +
+          "Friday: 11:00–16:00 (5 paid hours).\n" +
+          "Total: 21 hours per week during weeks when the Day Centre is open (typically 43 weeks per year)."
+        );
+      }
+      if (!isNaN(wh)) {
+        return (
+          days.join(", ") +
+          "; " +
+          whRaw +
+          " paid hours per week during weeks when the Day Centre is open (typically 43 weeks per year)."
+        );
+      }
+      return days.join(", ") + ": 11:00–16:00 (5 paid hours per day)";
     }
     const venues = getSelectedVenues().filter((v) => v.key !== "other:__pending__");
     if (!venues.length) return C.EM;
@@ -648,6 +671,8 @@
       serviceSettings: getServiceSettings(),
       places: getPlaces(),
       normalHours: getNormalHoursText(),
+      normalHoursOfWork: getNormalHoursText(),
+      placeOfWork: formatPlaceOfWork() || "",
       directorName: $("directorName").value.trim(),
       hrNotes: $("hrNotes").value.trim()
     };
@@ -701,9 +726,17 @@
 
     if (isZeroHoursKind()) {
       const rateMsg = buildRateSummary();
+      const roles = getSelectedRoles ? getSelectedRoles() : [];
+      const zhVariant = C.zeroHoursServiceVariant ? C.zeroHoursServiceVariant(roles) : "activity";
+      let zhTip = "";
+      if (zhVariant === "dual") {
+        zhTip = "\nScope: Day Centre & Activity Services in this one zero-hours contract (no separate Day Centre agreement needed for these roles).";
+      } else if (zhVariant === "day_centre") {
+        zhTip = "\nScope: Day Centre only on this zero-hours contract. Activity Services would need a separate ZH if applicable.";
+      }
       if (rateMsg) {
-        $("rateDisplay").textContent = rateMsg;
-        $("reviewSummary").textContent = rateMsg;
+        $("rateDisplay").textContent = rateMsg + zhTip;
+        $("reviewSummary").textContent = rateMsg + zhTip;
       } else {
         $("rateDisplay").textContent = "Select at least one role and a scale for each role.";
         $("reviewSummary").textContent = "";
@@ -712,10 +745,17 @@
       const salary = $("annualSalary") ? $("annualSalary").value : "";
       const hours = $("weeklyHours") ? $("weeklyHours").value : "";
       const days = getSelectedWorkDays();
+      const hoursNum = hours ? Number(hours) : NaN;
       let msg = salary
         ? "Annual salary: " + C.formatSalary(salary) + ". Contracted: " + (hours || C.EM) + " hours/week."
         : "Enter annual salary and select work days.";
-      if (days.length) msg += " (" + days.length + " days × 5h)";
+      if (days.length && !isNaN(hoursNum) && hoursNum === days.length * 5) {
+        msg += " (" + days.length + " days × 5h)";
+      } else if (days.length && !isNaN(hoursNum) && hoursNum === 21 && days.length === 5) {
+        msg += " (Mon–Thu 4h + Friday 5h = 21h)";
+      } else if (days.length && hours) {
+        msg += " (" + days.length + " days)";
+      }
       msg += "\nTip: if they also work evening Activity Services, create a separate Zero Hours contract afterwards.";
       $("rateDisplay").textContent = msg;
       $("reviewSummary").textContent = msg;

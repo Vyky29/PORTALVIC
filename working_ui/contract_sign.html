@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign employment contract | clubSENsational Portal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="portal/contract-core.js?v=20260727-role-names"></script>
+  <script src="portal/contract-core.js?v=20260921-21h"></script>
   <script src="portal/portal_announcement_ack.js?v=20260623-contract-ack"></script>
   <link rel="stylesheet" href="portal/contract-preview.css?v=20260727-filled-hl">
   <style>
@@ -241,11 +241,46 @@
         }
         contractRow = res.contract;
         $("subRef").textContent = "Reference: " + (contractRow.contract_reference || "");
-        const td = contractRow.template_data || {};
+        const tdStored = contractRow.template_data || {};
+        const fp = contractRow.form_payload || {};
         contractKind =
-          td.CONTRACT_KIND ||
-          (contractRow.form_payload && contractRow.form_payload.contractKind) ||
+          tdStored.CONTRACT_KIND ||
+          fp.contractKind ||
           "zero_hours";
+        // Rebuild from form_payload so scope/hours pick up latest template rules
+        // (e.g. ZH dual Day Centre + Activity; Day Centre 21h not 25h default).
+        let td = tdStored;
+        if (C.buildTemplateData && fp && (fp.roles || fp.contractKind || fp.weeklyHours || fp.workDays)) {
+          const rebuilt = C.buildTemplateData({
+            contractKind: fp.contractKind || contractKind,
+            contractReference: contractRow.contract_reference,
+            employeeName: contractRow.employee_name || fp.employeeName,
+            employeeEmail: contractRow.employee_email || fp.employeeEmail,
+            employeeAddress: contractRow.employee_address || fp.employeeAddress,
+            contractDate: fp.contractDate || contractRow.contract_date,
+            commencementDate: fp.commencementDate || contractRow.commencement_date,
+            continuousEmploymentDate: fp.continuousEmploymentDate,
+            termEndDate: fp.termEndDate,
+            annualSalary: fp.annualSalary,
+            weeklyHours: fp.weeklyHours,
+            roles: fp.roles,
+            roleScales: fp.roleScales,
+            scale: fp.scale,
+            workDays: fp.workDays,
+            concurrentWithOther: fp.concurrentWithOther,
+            otherContractRef: fp.otherContractRef,
+            jobTitleOverride: fp.jobTitleOverride,
+            placeOfWork: fp.placeOfWork || tdStored.PLACE_OF_WORK,
+            normalHoursOfWork: fp.normalHoursOfWork || fp.normalHours,
+            directorName: tdStored.DIRECTOR_NAME || fp.directorName,
+            directorSignatureDataUrl: contractRow.director_signature,
+            employeePending: true
+          });
+          td = Object.assign({}, rebuilt, {
+            DIRECTOR_SIGNATURE: tdStored.DIRECTOR_SIGNATURE || rebuilt.DIRECTOR_SIGNATURE,
+            DIRECTOR_SIGNATURE_DATE: tdStored.DIRECTOR_SIGNATURE_DATE || rebuilt.DIRECTOR_SIGNATURE_DATE
+          });
+        }
         filledText = C.fillTemplate(td, contractKind);
         renderJobDescriptions();
         renderPreview("");

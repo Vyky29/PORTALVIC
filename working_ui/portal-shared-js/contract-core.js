@@ -1,4 +1,4 @@
-/* contract-core.js v2.8 — clubSENsational HR Contract Portal
+/* contract-core.js v2.10 — clubSENsational HR Contract Portal
  * Complete UK employment-contract template engine.
  * IIFE exporting global.ContractCore.
  */
@@ -9,7 +9,7 @@
    *  CONSTANTS
    * ================================================================ */
 
-  var CONTRACT_VERSION = '2.8';
+  var CONTRACT_VERSION = '2.10';
   var ADMIN_RATE = '13';
   var GBP = '\u00A3';
   var EM  = '\u2014';
@@ -473,6 +473,9 @@
     JOB_DESCRIPTIONS_HTML: true,
     JOB_DESCRIPTIONS_PLAIN: true,
     DUTIES_DESCRIPTION: true,
+    SCOPE_OF_AGREEMENT: true,
+    ZERO_HOURS_SERVICE_LABEL: true,
+    ZERO_HOURS_START_LABEL: true,
     CONCURRENT_CLAUSE: true,
     SUPERSEDE_CLAUSE: true,
     EMPLOYEE_SIGNATURE: true,
@@ -943,9 +946,71 @@
 
   /* ---------- ZERO HOURS ---------- */
 
+  /** Hub & Community on a ZH contract = Day Centre / Hub work (dual or DC-only ZH). */
+  function isZeroHoursDayCentreRole(role) {
+    var r = canonicalRoleName(role) || String(role || '');
+    return /Hub\s*&\s*Community/i.test(r) || /Day\s*Centre/i.test(r);
+  }
+
+  /**
+   * activity | day_centre | dual — drives ZH title, scope and duties so dual
+   * DC+Activity contracts do not say "Activity Services only / Day Centre separate".
+   */
+  function zeroHoursServiceVariant(roles) {
+    var list = Array.isArray(roles) ? roles : [];
+    var hasDc = false;
+    var hasActivity = false;
+    list.forEach(function (role) {
+      if (!role) return;
+      if (isZeroHoursDayCentreRole(role)) hasDc = true;
+      else hasActivity = true;
+    });
+    if (hasDc && hasActivity) return 'dual';
+    if (hasDc) return 'day_centre';
+    return 'activity';
+  }
+
+  function zeroHoursScopeCopy(roles) {
+    var variant = zeroHoursServiceVariant(roles);
+    if (variant === 'dual') {
+      return {
+        variant: variant,
+        serviceLabel: 'DAY CENTRE & ACTIVITY SERVICES',
+        startLabel: 'zero-hours Day Centre & Activity Services; no fixed end date',
+        scope:
+          BULLET + 'This Agreement covers both Day Centre Services (including Hub & Community support at the Day Centre / Hub) and Activity Services (including swimming, climbing, fitness and related support sessions), as applicable to the Employee\'s assigned role or roles under this Agreement.\n' +
+          BULLET + 'Day Centre hours and Activity Services hours may both be offered under this zero-hours Agreement. The applicable inclusive hourly rate for each role is set out under Employee Remuneration. No separate Day Centre employment agreement is required for work performed under the roles listed in this Agreement.',
+        duties:
+          'The Employee will perform any and all duties as requested by the Employer that are reasonable and customarily performed by a person holding a similar position in the industry or business of the Employer. Duties include Day Centre / Hub & Community support and delivering activity sessions (swimming, climbing, fitness or related support work as applicable to the assigned role or roles), preparing and tidying work areas, completing attendance and session/day records, completing required feedback after each session or day, attending planning meetings and supervision sessions, and any other reasonable tasks related to the Employer\'s Day Centre and Activity Services. Session feedback and records form part of the role and are included in the Delivery Service hourly rate(s) as set out under Employee Remuneration.'
+      };
+    }
+    if (variant === 'day_centre') {
+      return {
+        variant: variant,
+        serviceLabel: 'DAY CENTRE',
+        startLabel: 'zero-hours Day Centre; no fixed end date',
+        scope:
+          BULLET + 'This Agreement covers Day Centre Services only (including Hub & Community support delivered at the Day Centre / Hub), on a zero-hours basis.\n' +
+          BULLET + 'This Agreement does not cover Activity Services delivered outside the Day Centre (such as evening swimming, climbing or related sessions). If the Employee also performs Activity Services, that engagement must be set out in a separate zero-hours Activity Services agreement. The two agreements may operate concurrently.',
+        duties:
+          'The Employee will provide Day Centre / Hub & Community support services including facilitating structured activities and programmes for participants, assisting with personal care and support needs as required, maintaining a safe and welcoming environment, completing daily/session records and required feedback, liaising with families and external professionals, and any other reasonable duties related to the operation of the Employer\'s Day Centre service. Session feedback and records form part of the role and are included in the Delivery Service hourly rate(s) as set out under Employee Remuneration.'
+      };
+    }
+    return {
+      variant: 'activity',
+      serviceLabel: 'ACTIVITY SERVICES',
+      startLabel: 'zero-hours Activity Services; no fixed end date',
+      scope:
+        BULLET + 'This Agreement covers Activity Services only (including swimming, climbing, fitness and related support sessions delivered outside the Day Centre).\n' +
+        BULLET + 'This Agreement does not cover Day Centre Services. If the Employee also works in the Day Centre, that engagement must be set out in a separate Day Centre employment agreement. The two agreements may operate concurrently.',
+      duties:
+        'The Employee will perform any and all duties as requested by the Employer that are reasonable and customarily performed by a person holding a similar position in the industry or business of the Employer. Duties include delivering activity sessions (swimming, climbing, fitness or support work as applicable to the assigned role or roles), preparing and tidying session areas, completing attendance and session records, completing required session feedback after each session, attending planning meetings and supervision sessions, and any other reasonable tasks related to the delivery of the Employer\'s Activity Services. Session feedback and records form part of the role and are included in the Delivery Service hourly rate(s) as set out under Employee Remuneration.'
+    };
+  }
+
   function buildZeroHoursTemplate() {
     return [].concat(
-      ['ZERO HOURS EMPLOYMENT CONTRACT ' + EM + ' ACTIVITY SERVICES', ''],
+      ['ZERO HOURS EMPLOYMENT CONTRACT ' + EM + ' {{ZERO_HOURS_SERVICE_LABEL}}', ''],
       clauseOpening(), [''],
       clauseBackground(), [''],
       clauseParticulars(), [''],
@@ -958,8 +1023,7 @@
       ], [''],
       [
         'SCOPE OF THIS AGREEMENT',
-        BULLET + 'This Agreement covers Activity Services only (including swimming, climbing, fitness and related support sessions delivered outside the Day Centre).',
-        BULLET + 'This Agreement does not cover Day Centre Services. If the Employee also works in the Day Centre, that engagement must be set out in a separate Day Centre employment agreement. The two agreements may operate concurrently.'
+        '{{SCOPE_OF_AGREEMENT}}'
       ], [''],
       [
         'JOB TITLE AND DESCRIPTION',
@@ -1041,7 +1105,7 @@
         BULLET + 'Employee: {{EMPLOYEE_FULL_NAME}}, {{EMPLOYEE_ADDRESS}}',
         BULLET + 'Employer: clubSENsational Ltd, ' + COMPANY_REGISTERED_ADDRESS + ' (Company No. ' + COMPANY_NUMBER + ')',
         BULLET + 'Job Title: {{JOB_TITLE}}',
-        BULLET + 'Start Date: {{COMMENCEMENT_DATE}} (zero-hours Activity Services; no fixed end date)',
+        BULLET + 'Start Date: {{COMMENCEMENT_DATE}} ({{ZERO_HOURS_START_LABEL}})',
         BULLET + 'Continuous Employment: {{CONTINUOUS_EMPLOYMENT_SHORT}}',
         BULLET + 'Pay: Inclusive hourly rates as set out in Employee Remuneration (ordinary pay plus rolled-up holiday pay at 12.07% of the ordinary element, itemised separately on payslips; no additional 12.07% on top of the stated rates), paid monthly.',
         BULLET + 'Hours: Variable according to business need; no minimum guaranteed hours; days and hours vary according to offered and accepted shifts.',
@@ -1119,7 +1183,7 @@
         '{{WEEKLY_HOURS}} hours per week.',
         '{{NORMAL_HOURS_OF_WORK}}',
         BULLET + 'Normal Hours of Work apply during weeks when the Day Centre is open, as published by the Employer each year (typically 43 weeks). Weeks when the Day Centre is closed are not Normal Hours of Work; those weeks are when holiday is taken (see Holiday Entitlement).',
-        BULLET + 'Each working day runs from 11:00 to 16:00, totalling 5 paid hours per day. A short comfort break of 10 to 15 minutes may be taken when operationally possible; this does not reduce the paid hours.',
+        '{{DAY_CENTRE_PAID_DAY_CLAUSE}}',
         BULLET + "However, the Employee will, on receiving reasonable notice from the Employer, work additional hours and/or hours outside of the Employee's Normal Hours of Work as deemed necessary by the Employer to meet business needs, as permitted by law."
       ], [''],
       [
@@ -1170,7 +1234,7 @@
         BULLET + 'Start Date: {{COMMENCEMENT_DATE}} (permanent part-time; no fixed end date)',
         BULLET + 'Continuous Employment: {{CONTINUOUS_EMPLOYMENT_SHORT}}',
         BULLET + 'Salary: {{ANNUAL_SALARY}} per annum (gross), inclusive of statutory holiday pay, paid in 12 equal monthly instalments.',
-        BULLET + 'Hours: {{WEEKLY_HOURS}} hours per week during weeks when the Day Centre is open (typically 43 weeks per year); {{WORK_DAYS}}, 11:00' + EM + '16:00.',
+        BULLET + '{{HOURS_PARTICULARS}}',
         BULLET + 'Place of Work: {{PLACE_OF_WORK}}',
         BULLET + 'Holiday: statutory entitlement included in the annual salary; taken during published Day Centre closure periods; not paid in addition (see Holiday Entitlement).',
         BULLET + 'Pension: ' + PENSION_SCHEME_NAME + ' (or other qualifying scheme nominated by the Employer); auto-enrolment if eligible under UK law (earnings assessed by this Employer only).',
@@ -1534,11 +1598,11 @@
    *  DUTIES DESCRIPTIONS (per kind)
    * ================================================================ */
 
-  function dutiesDescription(kind) {
+  function dutiesDescription(kind, roles) {
     var k = normalizeContractKind(kind);
     switch (k) {
       case 'zero_hours':
-        return 'The Employee will perform any and all duties as requested by the Employer that are reasonable and customarily performed by a person holding a similar position in the industry or business of the Employer. Duties include delivering activity sessions (swimming, climbing, fitness or support work as applicable to the assigned role or roles), preparing and tidying session areas, completing attendance and session records, completing required session feedback after each session, attending planning meetings and supervision sessions, and any other reasonable tasks related to the delivery of the Employer\'s Activity Services. Session feedback and records form part of the role and are included in the Delivery Service hourly rate(s) as set out under Employee Remuneration.';
+        return zeroHoursScopeCopy(roles).duties;
       case 'day_centre_part_time':
         return 'The Employee will provide day centre support services including facilitating structured activities and programmes for participants, assisting with personal care and support needs as required, maintaining a safe and welcoming environment, completing daily records, reports and required session/day feedback, liaising with families and external professionals, and any other reasonable duties related to the operation of the Employer\'s Day Centre service. Session feedback and daily records form part of the role and are covered by the remuneration for this Agreement as set out under Employee Remuneration.';
       case 'full_time':
@@ -1565,6 +1629,7 @@
     var jobTitle   = o.jobTitleOverride || formatJobTitles(roles, kind) || (o.role ? String(o.role).trim() : '') || EM;
     var today      = new Date().toISOString().slice(0, 10);
     var workDays   = Array.isArray(o.workDays) ? o.workDays.filter(Boolean) : [];
+    var zhScope    = kind === 'zero_hours' ? zeroHoursScopeCopy(roles) : null;
 
     var directorSig  = o.directorSignatureDataUrl ? '[Signed electronically]' : (o.directorName || EM);
     var employeeSig  = o.employeeSignatureDataUrl ? '[Signed electronically]' : (o.employeePending ? 'Pending employee signature' : EM);
@@ -1600,7 +1665,7 @@
       COMMENCEMENT_DATE: formatUKDate(o.commencementDate),
       JOB_TITLE: jobTitle,
       PLACE_OF_WORK: o.placeOfWork || EM,
-      DUTIES_DESCRIPTION: dutiesDescription(kind),
+      DUTIES_DESCRIPTION: dutiesDescription(kind, roles),
       JOB_DESCRIPTIONS_PLAIN: formatJobDescriptionsPlain(roles, kind) || EM,
       JOB_DESCRIPTIONS_HTML: formatJobDescriptionsHtml(roles, kind),
       JOB_DESCRIPTION_VERSION: JOB_DESCRIPTION_VERSION,
@@ -1632,7 +1697,11 @@
         TERM_END_DATE: EM,
         ANNUAL_SALARY: EM,
         WEEKLY_HOURS: EM,
-        WORK_DAYS: EM
+        WORK_DAYS: EM,
+        ZERO_HOURS_SERVICE_LABEL: zhScope.serviceLabel,
+        ZERO_HOURS_START_LABEL: zhScope.startLabel,
+        SCOPE_OF_AGREEMENT: zhScope.scope,
+        ZERO_HOURS_VARIANT: zhScope.variant
       });
     }
 
@@ -1642,16 +1711,64 @@
         dcWeeklyHours = workDays.length * 5;
       }
       var dcNormalHours = o.normalHoursOfWork;
+      var dcHoursNum = dcWeeklyHours != null && dcWeeklyHours !== '' ? Number(dcWeeklyHours) : NaN;
+      var defaultFullDayHours = workDays.length ? workDays.length * 5 : NaN;
+      // Ignore stale "5 paid hours per day" text when weekly hours do not match that pattern (Roberto 21h bug).
+      if (
+        dcNormalHours &&
+        !isNaN(dcHoursNum) &&
+        !isNaN(defaultFullDayHours) &&
+        dcHoursNum !== defaultFullDayHours &&
+        /5\s*paid\s*hours\s*per\s*day/i.test(String(dcNormalHours))
+      ) {
+        dcNormalHours = '';
+      }
       if (!dcNormalHours && workDays.length) {
-        dcNormalHours = formatWorkDaysList(workDays) + ': 11:00' + EM + '16:00 (5 paid hours per day).';
+        // Only assume Mon–Fri 11:00–16:00 (5h/day) when weekly hours match that pattern.
+        // Otherwise (e.g. Roberto 21h) do not imply 25h.
+        if (!isNaN(dcHoursNum) && !isNaN(defaultFullDayHours) && dcHoursNum === defaultFullDayHours) {
+          dcNormalHours = formatWorkDaysList(workDays) + ': 11:00' + EM + '16:00 (5 paid hours per day).';
+        } else if (!isNaN(dcHoursNum) && dcHoursNum === 21 && workDays.length === 5) {
+          dcNormalHours =
+            'Monday to Thursday: 11:00' + EM + '15:00 (4 paid hours per day).\n' +
+            'Friday: 11:00' + EM + '16:00 (5 paid hours).\n' +
+            'Total: 21 hours per week during weeks when the Day Centre is open (typically 43 weeks per year).';
+        } else if (!isNaN(dcHoursNum)) {
+          dcNormalHours = formatWorkDaysList(workDays) + '; ' + String(dcWeeklyHours) + ' paid hours per week during weeks when the Day Centre is open (typically 43 weeks per year).';
+        } else {
+          dcNormalHours = formatWorkDaysList(workDays) + ': 11:00' + EM + '16:00 (5 paid hours per day).';
+        }
       }
       var dcWorkDaysStr = formatWorkDaysList(workDays) || EM;
+      var isFullFiveHourDays = !isNaN(dcHoursNum) && !isNaN(defaultFullDayHours) && dcHoursNum === defaultFullDayHours;
+      var isTwentyOneHourWeek = !isNaN(dcHoursNum) && dcHoursNum === 21 && workDays.length === 5;
+      var dcPaidDayClause = isFullFiveHourDays
+        ? (BULLET + 'Each working day runs from 11:00 to 16:00, totalling 5 paid hours per day. A short comfort break of 10 to 15 minutes may be taken when operationally possible; this does not reduce the paid hours.')
+        : (BULLET + 'A short comfort break of 10 to 15 minutes may be taken when operationally possible; this does not reduce the paid hours.');
+      var dcHoursParticulars;
+      if (isFullFiveHourDays) {
+        dcHoursParticulars = 'Hours: ' + String(dcWeeklyHours) + ' hours per week during weeks when the Day Centre is open (typically 43 weeks per year); ' + dcWorkDaysStr + ', 11:00' + EM + '16:00.';
+      } else if (isTwentyOneHourWeek) {
+        dcHoursParticulars = 'Hours: 21 hours per week during weeks when the Day Centre is open (typically 43 weeks per year); Monday to Thursday 11:00' + EM + '15:00 (4 paid hours per day), Friday 11:00' + EM + '16:00 (5 paid hours).';
+      } else {
+        dcHoursParticulars = 'Hours: ' + String(dcWeeklyHours != null && dcWeeklyHours !== '' ? dcWeeklyHours : EM) + ' hours per week during weeks when the Day Centre is open (typically 43 weeks per year); ' + dcWorkDaysStr + '.';
+      }
+      var dcContractType;
+      if (isFullFiveHourDays) {
+        dcContractType = 'Permanent Part-Time Term-Time Only (Day Centre) ' + EM + ' ' + dcWorkDaysStr + ', 11:00' + EM + '16:00, during weeks when the Day Centre is open (typically 43 weeks per year).';
+      } else if (!isNaN(dcHoursNum)) {
+        dcContractType = 'Permanent Part-Time Term-Time Only (Day Centre) ' + EM + ' ' + dcWorkDaysStr + ', ' + String(dcWeeklyHours) + ' hours per week during weeks when the Day Centre is open (typically 43 weeks per year).';
+      } else {
+        dcContractType = 'Permanent Part-Time Term-Time Only (Day Centre) ' + EM + ' ' + dcWorkDaysStr + ', during weeks when the Day Centre is open (typically 43 weeks per year).';
+      }
       return Object.assign(shared, {
-        CONTRACT_TYPE: 'Permanent Part-Time Term-Time Only (Day Centre) ' + EM + ' ' + dcWorkDaysStr + ', 11:00' + EM + '16:00, during weeks when the Day Centre is open (typically 43 weeks per year).',
+        CONTRACT_TYPE: dcContractType,
         ANNUAL_SALARY: formatSalary(o.annualSalary),
         WEEKLY_HOURS: dcWeeklyHours != null && dcWeeklyHours !== '' ? String(dcWeeklyHours) : EM,
         WORK_DAYS: dcWorkDaysStr,
         NORMAL_HOURS_OF_WORK: dcNormalHours || EM,
+        DAY_CENTRE_PAID_DAY_CLAUSE: dcPaidDayClause,
+        HOURS_PARTICULARS: dcHoursParticulars,
         TERM_END_DATE: EM,
         ROLE_SCALE: EM,
         DELIVERY_RATE: EM,
@@ -2022,6 +2139,9 @@
     normalizeContractKind: normalizeContractKind,
     isSalariedKind: isSalariedKind,
     isZeroHoursKind: isZeroHoursKind,
+    isZeroHoursDayCentreRole: isZeroHoursDayCentreRole,
+    zeroHoursServiceVariant: zeroHoursServiceVariant,
+    zeroHoursScopeCopy: zeroHoursScopeCopy,
     contractKindLabel: contractKindLabel,
     contractDocTitle: contractDocTitle,
     fillTemplate: fillTemplate,
